@@ -1542,6 +1542,9 @@ class JavaThread: public Thread {
   static ByteSize jmp_ring_offset()              { return byte_offset_of(JavaThread, _jmp_ring); }
 #endif // PRODUCT
   static ByteSize jni_environment_offset()       { return byte_offset_of(JavaThread, _jni_environment); }
+  static ByteSize pending_jni_exception_check_fn_offset() {
+    return byte_offset_of(JavaThread, _pending_jni_exception_check_fn);
+  }
   static ByteSize last_Java_sp_offset() {
     return byte_offset_of(JavaThread, _anchor) + JavaFrameAnchor::last_Java_sp_offset();
   }
@@ -1615,7 +1618,11 @@ class JavaThread: public Thread {
     assert(_jni_active_critical >= 0, "JNI critical nesting problem?");
   }
 
-  // Checked JNI, is the programmer required to check for exceptions, specify which function name
+  // Checked JNI: is the programmer required to check for exceptions, if so specify
+  // which function name. Returning to a Java frame should implicitly clear the
+  // pending check, this is done for Native->Java transitions (i.e. user JNI code).
+  // VM->Java transistions are not cleared, it is expected that JNI code enclosed
+  // within ThreadToNativeFromVM makes proper exception checks (i.e. VM internal).
   bool is_pending_jni_exception_check() const { return _pending_jni_exception_check_fn != NULL; }
   void clear_pending_jni_exception_check() { _pending_jni_exception_check_fn = NULL; }
   const char* get_pending_jni_exception_check() const { return _pending_jni_exception_check_fn; }

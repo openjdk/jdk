@@ -838,9 +838,13 @@ bool os::is_allocatable(size_t bytes) {
 // thread stack
 
 #ifdef AMD64
-size_t os::Bsd::min_stack_allowed  = 64 * K;
+size_t os::Posix::_compiler_thread_min_stack_allowed = 64 * K;
+size_t os::Posix::_java_thread_min_stack_allowed = 64 * K;
+size_t os::Posix::_vm_internal_thread_min_stack_allowed = 64 * K;
 #else
-size_t os::Bsd::min_stack_allowed  =  (48 DEBUG_ONLY(+4))*K;
+size_t os::Posix::_compiler_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
+size_t os::Posix::_java_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
+size_t os::Posix::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
 
 #ifdef __GNUC__
 #define GET_GS() ({int gs; __asm__ volatile("movw %%gs, %w0":"=q"(gs)); gs&0xffff;})
@@ -849,7 +853,7 @@ size_t os::Bsd::min_stack_allowed  =  (48 DEBUG_ONLY(+4))*K;
 #endif // AMD64
 
 // return default stack size for thr_type
-size_t os::Bsd::default_stack_size(os::ThreadType thr_type) {
+size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
   // default stack size (compiler thread needs larger stack)
 #ifdef AMD64
   size_t s = (thr_type == os::compiler_thread ? 4 * M : 1 * M);
@@ -859,11 +863,6 @@ size_t os::Bsd::default_stack_size(os::ThreadType thr_type) {
   return s;
 }
 
-size_t os::Bsd::default_guard_size(os::ThreadType thr_type) {
-  // Creating guard page is very expensive. Java thread has HotSpot
-  // guard page, only enable glibc guard page for non-Java threads.
-  return (thr_type == java_thread ? 0 : page_size());
-}
 
 // Java thread:
 //

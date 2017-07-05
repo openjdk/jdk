@@ -280,6 +280,7 @@ class ThreadToNativeFromVM : public ThreadStateTransition {
 
   ~ThreadToNativeFromVM() {
     trans_from_native(_thread_in_vm);
+    assert(!_thread->is_pending_jni_exception_check(), "Pending JNI Exception Check");
     // We don't need to clear_walkable because it will happen automagically when we return to java
   }
 };

@@ -80,7 +80,7 @@ bool Exceptions::special_exception(Thread* thread, const char* file, int line, H
   if (h_exception()->klass() == SystemDictionary::StackOverflowError_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(h_exception->klass());
     assert(ik->is_initialized(),
-           "need to increase min_stack_allowed calculation");
+           "need to increase java_thread_min_stack_allowed calculation");
   }
 #endif // ASSERT
 
@@ -227,7 +227,7 @@ void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file
     Klass* k = SystemDictionary::StackOverflowError_klass();
     oop e = InstanceKlass::cast(k)->allocate_instance(CHECK);
     exception = Handle(THREAD, e);  // fill_in_stack trace does gc
-    assert(InstanceKlass::cast(k)->is_initialized(), "need to increase min_stack_allowed calculation");
+    assert(InstanceKlass::cast(k)->is_initialized(), "need to increase java_thread_min_stack_allowed calculation");
     if (StackTraceInThrowable) {
       java_lang_Throwable::fill_in_stack_trace(exception, method());
     }

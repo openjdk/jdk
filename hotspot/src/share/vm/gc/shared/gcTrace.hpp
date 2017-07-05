@@ -235,10 +235,10 @@ class ParNewTracer : public YoungGCTracer {
 
 #if INCLUDE_ALL_GCS
 class G1MMUTracer : public AllStatic {
-  static void send_g1_mmu_event(double timeSlice, double gcTime, double maxTime);
+  static void send_g1_mmu_event(double time_slice_ms, double gc_time_ms, double max_time_ms);
 
  public:
-  static void report_mmu(double timeSlice, double gcTime, double maxTime);
+  static void report_mmu(double time_slice_sec, double gc_time_sec, double max_time_sec);
 };
 
 class G1NewTracer : public YoungGCTracer {

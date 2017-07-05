@@ -152,8 +152,8 @@ defaultPath(void)
 #ifdef __solaris__
     /* These really are the Solaris defaults! */
     return (geteuid() == 0 || getuid() == 0) ?
-        "/usr/xpg4/bin:/usr/ccs/bin:/usr/bin:/opt/SUNWspro/bin:/usr/sbin" :
-        "/usr/xpg4/bin:/usr/ccs/bin:/usr/bin:/opt/SUNWspro/bin:";
+        "/usr/xpg4/bin:/usr/bin:/opt/SUNWspro/bin:/usr/sbin" :
+        "/usr/xpg4/bin:/usr/bin:/opt/SUNWspro/bin:";
 #else
     return ":/bin:/usr/bin";    /* glibc */
 #endif

@@ -123,6 +123,7 @@ void HeapRegionManager::make_regions_available(uint start, uint num_regions) {
   for (uint i = start; i < start + num_regions; i++) {
     if (_regions.get_by_index(i) == NULL) {
       HeapRegion* new_hr = new_heap_region(i);
+      OrderAccess::storestore();
       _regions.set_by_index(i, new_hr);
       _allocated_heapregions_length = MAX2(_allocated_heapregions_length, i + 1);
     }

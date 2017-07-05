@@ -65,4 +65,7 @@ public class GrowableArray<T> extends GenericGrowableArray {
     super(addr);
     virtualConstructor = v;
   }
+  public Address getData() {
+    return dataField.getValue(getAddress());
+  }
 }

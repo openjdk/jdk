@@ -1176,10 +1176,9 @@ public class Parser extends AbstractParser implements Loggable {
                     labelStatement();
                     return;
                 }
-                final boolean allowPropertyFunction = (reparseFlags & ScriptFunctionData.IS_PROPERTY_ACCESSOR) != 0;
-                final boolean isES6Method = (reparseFlags & ScriptFunctionData.IS_ES6_METHOD) != 0;
-                if(allowPropertyFunction) {
-                    final String ident = (String)getValue();
+
+                if ((reparseFlags & ScriptFunctionData.IS_PROPERTY_ACCESSOR) != 0) {
+                    final String ident = (String) getValue();
                     final long propertyToken = token;
                     final int propertyLine = line;
                     if (GET_NAME.equals(ident)) {
@@ -1191,17 +1190,20 @@ public class Parser extends AbstractParser implements Loggable {
                         addPropertyFunctionStatement(propertySetterFunction(propertyToken, propertyLine));
                         return;
                     }
-                } else if (isES6Method) {
-                    final String ident = (String)getValue();
-                    IdentNode identNode = createIdentNode(token, finish, ident).setIsPropertyName();
-                    final long propertyToken = token;
-                    final int propertyLine = line;
-                    next();
-                    // Code below will need refinement once we fully support ES6 class syntax
-                    final int flags = CONSTRUCTOR_NAME.equals(ident) ? FunctionNode.ES6_IS_CLASS_CONSTRUCTOR : FunctionNode.ES6_IS_METHOD;
-                    addPropertyFunctionStatement(propertyMethodFunction(identNode, propertyToken, propertyLine, false, flags, false));
-                    return;
                 }
+            }
+
+            if ((reparseFlags & ScriptFunctionData.IS_ES6_METHOD) != 0
+                    && (type == IDENT || type == LBRACKET || isNonStrictModeIdent())) {
+                final String ident = (String)getValue();
+                final long propertyToken = token;
+                final int propertyLine = line;
+                final Expression propertyKey = propertyName();
+
+                // Code below will need refinement once we fully support ES6 class syntax
+                final int flags = CONSTRUCTOR_NAME.equals(ident) ? FunctionNode.ES6_IS_CLASS_CONSTRUCTOR : FunctionNode.ES6_IS_METHOD;
+                addPropertyFunctionStatement(propertyMethodFunction(propertyKey, propertyToken, propertyLine, false, flags, false));
+                return;
             }
 
             expressionStatement();

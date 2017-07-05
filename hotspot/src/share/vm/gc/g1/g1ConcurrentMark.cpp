@@ -1904,7 +1904,8 @@ G1ConcurrentMark::claim_region(uint worker_id) {
     assert(_g1h->is_in_g1_reserved(finger), "invariant");
 
     HeapRegion* curr_region = _g1h->heap_region_containing(finger);
-
+    // Make sure that the reads below do not float before loading curr_region.
+    OrderAccess::loadload();
     // Above heap_region_containing may return NULL as we always scan claim
     // until the end of the heap. In this case, just jump to the next region.
     HeapWord* end = curr_region != NULL ? curr_region->end() : finger + HeapRegion::GrainWords;

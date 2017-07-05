@@ -151,7 +151,7 @@ public class ImageStringsReader implements ImageStrings {
         try {
             charsFromMUTF8(chars, bytes, offset, count);
         } catch (UTFDataFormatException ex) {
-            throw new InternalError("Attempt to convert non modified UTF-8 byte sequence");
+            throw new InternalError("Attempt to convert non modified UTF-8 byte sequence", ex);
         }
 
         return new String(chars);
@@ -199,7 +199,8 @@ public class ImageStringsReader implements ImageStrings {
                     ch = buffer.get();
 
                     if ((ch & 0xC0) != 0x80) {
-                        throw new InternalError("Bad continuation in modified UTF-8 byte sequence");
+                        throw new InternalError("Bad continuation in " +
+                            "modified UTF-8 byte sequence: " + ch);
                     }
 
                     uch = ((uch & ~mask) << 6) | (ch & 0x3F);
@@ -208,7 +209,8 @@ public class ImageStringsReader implements ImageStrings {
             }
 
             if ((uch & 0xFFFF) != uch) {
-                throw new InternalError("UTF-32 char in modified UTF-8 byte sequence");
+                throw new InternalError("UTF-32 char in modified UTF-8 " +
+                    "byte sequence: " + uch);
             }
 
             chars[j++] = (char)uch;
