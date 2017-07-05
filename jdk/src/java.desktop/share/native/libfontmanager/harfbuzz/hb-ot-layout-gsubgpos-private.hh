@@ -469,6 +469,7 @@ struct hb_apply_context_t :
   unsigned int lookup_props;
   const GDEF &gdef;
   bool has_glyph_classes;
+  const VariationStore &var_store;
   skipping_iterator_t iter_input, iter_context;
   unsigned int lookup_index;
   unsigned int debug_depth;
@@ -487,6 +488,7 @@ struct hb_apply_context_t :
                         lookup_props (0),
                         gdef (*hb_ot_layout_from_face (face)->gdef),
                         has_glyph_classes (gdef.has_glyph_classes ()),
+                        var_store (gdef.get_var_store ()),
                         iter_input (),
                         iter_context (),
                         lookup_index ((unsigned int) -1),
@@ -999,8 +1001,12 @@ static inline bool apply_lookup (hb_apply_context_t *c,
     end = int (end) + delta;
     if (end <= match_positions[idx])
     {
+      /* End might end up being smaller than match_positions[idx] if the recursed
+       * lookup ended up removing many items, more than we have had matched.
+       * Just never rewind end back and get out of here.
+       * https://bugs.chromium.org/p/chromium/issues/detail?id=659496 */
+      end = match_positions[idx];
       /* There can't be any further changes. */
-      assert (end == match_positions[idx]);
       break;
     }
 
@@ -2269,6 +2275,24 @@ struct GSUBGPOS
   inline const Lookup& get_lookup (unsigned int i) const
   { return (this+lookupList)[i]; }
 
+  inline bool find_variations_index (const int *coords, unsigned int num_coords,
+                                     unsigned int *index) const
+  { return (version.to_int () >= 0x00010001u ? this+featureVars : Null(FeatureVariations))
+           .find_index (coords, num_coords, index); }
+  inline const Feature& get_feature_variation (unsigned int feature_index,
+                                               unsigned int variations_index) const
+  {
+    if (FeatureVariations::NOT_FOUND_INDEX != variations_index &&
+        version.to_int () >= 0x00010001u)
+    {
+      const Feature *feature = (this+featureVars).find_substitute (variations_index,
+                                                                   feature_index);
+      if (feature)
+        return *feature;
+    }
+    return get_feature (feature_index);
+  }
+
   inline bool sanitize (hb_sanitize_context_t *c) const
   {
     TRACE_SANITIZE (this);
@@ -2276,7 +2300,8 @@ struct GSUBGPOS
                   likely (version.major == 1) &&
                   scriptList.sanitize (c, this) &&
                   featureList.sanitize (c, this) &&
-                  lookupList.sanitize (c, this));
+                  lookupList.sanitize (c, this) &&
+                  (version.to_int () < 0x00010001u || featureVars.sanitize (c, this)));
   }
 
   protected:
@@ -2288,8 +2313,13 @@ struct GSUBGPOS
                 featureList;    /* FeatureList table */
   OffsetTo<LookupList>
                 lookupList;     /* LookupList table */
+  OffsetTo<FeatureVariations, ULONG>
+                featureVars;    /* Offset to Feature Variations
+                                   table--from beginning of table
+                                 * (may be NULL).  Introduced
+                                 * in version 0x00010001. */
   public:
-  DEFINE_SIZE_STATIC (10);
+  DEFINE_SIZE_MIN (10);
 };
 
 

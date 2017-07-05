@@ -57,12 +57,12 @@ _hb_options_init (void)
 
 /**
  * hb_tag_from_string:
- * @str: (array length=len) (element-type uint8_t):
- * @len:
+ * @str: (array length=len) (element-type uint8_t): 
+ * @len: 
  *
+ * 
  *
- *
- * Return value:
+ * Return value: 
  *
  * Since: 0.9.2
  **/
@@ -87,10 +87,10 @@ hb_tag_from_string (const char *str, int len)
 
 /**
  * hb_tag_to_string:
- * @tag:
- * @buf: (out caller-allocates) (array fixed-size=4) (element-type uint8_t):
+ * @tag: 
+ * @buf: (out caller-allocates) (array fixed-size=4) (element-type uint8_t): 
  *
- *
+ * 
  *
  * Since: 0.9.5
  **/
@@ -115,12 +115,12 @@ const char direction_strings[][4] = {
 
 /**
  * hb_direction_from_string:
- * @str: (array length=len) (element-type uint8_t):
- * @len:
+ * @str: (array length=len) (element-type uint8_t): 
+ * @len: 
  *
+ * 
  *
- *
- * Return value:
+ * Return value: 
  *
  * Since: 0.9.2
  **/
@@ -143,11 +143,11 @@ hb_direction_from_string (const char *str, int len)
 
 /**
  * hb_direction_to_string:
- * @direction:
+ * @direction: 
  *
+ * 
  *
- *
- * Return value: (transfer none):
+ * Return value: (transfer none): 
  *
  * Since: 0.9.2
  **/
@@ -337,7 +337,7 @@ hb_language_to_string (hb_language_t language)
 /**
  * hb_language_get_default:
  *
- *
+ * 
  *
  * Return value: (transfer none):
  *
@@ -366,7 +366,7 @@ hb_language_get_default (void)
  *
  * Converts an ISO 15924 script tag to a corresponding #hb_script_t.
  *
- * Return value:
+ * Return value: 
  * An #hb_script_t corresponding to the ISO 15924 tag.
  *
  * Since: 0.9.2
@@ -415,7 +415,7 @@ hb_script_from_iso15924_tag (hb_tag_t tag)
  * corresponding #hb_script_t. Shorthand for hb_tag_from_string() then
  * hb_script_from_iso15924_tag().
  *
- * Return value:
+ * Return value: 
  * An #hb_script_t corresponding to the ISO 15924 tag.
  *
  * Since: 0.9.2
@@ -445,11 +445,11 @@ hb_script_to_iso15924_tag (hb_script_t script)
 
 /**
  * hb_script_get_horizontal_direction:
- * @script:
+ * @script: 
  *
+ * 
  *
- *
- * Return value:
+ * Return value: 
  *
  * Since: 0.9.2
  **/
@@ -588,13 +588,13 @@ hb_version_string (void)
 
 /**
  * hb_version_atleast:
- * @major:
- * @minor:
- * @micro:
+ * @major: 
+ * @minor: 
+ * @micro: 
  *
+ * 
  *
- *
- * Return value:
+ * Return value: 
  *
  * Since: 0.9.30
  **/

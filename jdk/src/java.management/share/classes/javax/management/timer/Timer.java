@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Vector;
-import java.util.logging.Level;
+import java.lang.System.Logger.Level;
 
 // jmx imports
 //
@@ -221,8 +221,7 @@ public class Timer extends NotificationBroadcasterSupport
      */
     public void preDeregister() throws java.lang.Exception {
 
-        TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                "preDeregister", "stop the timer");
+        TIMER_LOGGER.log(Level.TRACE, "stop the timer");
 
         // Stop the timer.
         //
@@ -273,8 +272,7 @@ public class Timer extends NotificationBroadcasterSupport
      */
     public synchronized void start() {
 
-        TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                "start", "starting the timer");
+        TIMER_LOGGER.log(Level.TRACE, "starting the timer");
 
         // Start the TimerAlarmClock.
         //
@@ -323,11 +321,9 @@ public class Timer extends NotificationBroadcasterSupport
             //
             isActive = true;
 
-            TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                    "start", "timer started");
+            TIMER_LOGGER.log(Level.TRACE, "timer started");
         } else {
-            TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                    "start", "the timer is already activated");
+            TIMER_LOGGER.log(Level.TRACE, "the timer is already activated");
         }
     }
 
@@ -336,8 +332,7 @@ public class Timer extends NotificationBroadcasterSupport
      */
     public synchronized void stop() {
 
-        TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                "stop", "stopping the timer");
+        TIMER_LOGGER.log(Level.TRACE, "stopping the timer");
 
         // Stop the TimerAlarmClock.
         //
@@ -370,11 +365,9 @@ public class Timer extends NotificationBroadcasterSupport
             //
             isActive = false;
 
-            TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                    "stop", "timer stopped");
+            TIMER_LOGGER.log(Level.TRACE, "timer stopped");
         } else {
-            TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                    "stop", "the timer is already deactivated");
+            TIMER_LOGGER.log(Level.TRACE, "the timer is already deactivated");
         }
     }
 
@@ -444,9 +437,8 @@ public class Timer extends NotificationBroadcasterSupport
         if (currentDate.after(date)) {
 
             date.setTime(currentDate.getTime());
-            if (TIMER_LOGGER.isLoggable(Level.FINER)) {
-                TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                        "addNotification",
+            if (TIMER_LOGGER.isLoggable(Level.TRACE)) {
+                TIMER_LOGGER.log(Level.TRACE,
                         "update timer notification to add with:" +
                         "\n\tNotification date = " + date);
             }
@@ -486,7 +478,7 @@ public class Timer extends NotificationBroadcasterSupport
         obj[ALARM_CLOCK_INDEX] = (Object)alarmClock;
         obj[FIXED_RATE_INDEX] = Boolean.valueOf(fixedRate);
 
-        if (TIMER_LOGGER.isLoggable(Level.FINER)) {
+        if (TIMER_LOGGER.isLoggable(Level.TRACE)) {
             StringBuilder strb = new StringBuilder()
             .append("adding timer notification:\n\t")
             .append("Notification source = ")
@@ -503,8 +495,7 @@ public class Timer extends NotificationBroadcasterSupport
             .append(nbOccurences)
             .append("\n\tNotification executes at fixed rate = ")
             .append(fixedRate);
-            TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                    "addNotification", strb.toString());
+            TIMER_LOGGER.log(Level.TRACE, strb::toString);
         }
 
         timerTable.put(notifID, obj);
@@ -522,8 +513,7 @@ public class Timer extends NotificationBroadcasterSupport
           }
         }
 
-        TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                "addNotification", "timer notification added");
+        TIMER_LOGGER.log(Level.TRACE, "timer notification added");
         return notifID;
     }
 
@@ -677,7 +667,7 @@ public class Timer extends NotificationBroadcasterSupport
 
         // Remove the timer notification from the timer table.
         //
-        if (TIMER_LOGGER.isLoggable(Level.FINER)) {
+        if (TIMER_LOGGER.isLoggable(Level.TRACE)) {
             StringBuilder strb = new StringBuilder()
             .append("removing timer notification:")
             .append("\n\tNotification source = ")
@@ -694,14 +684,12 @@ public class Timer extends NotificationBroadcasterSupport
             .append(obj[TIMER_NB_OCCUR_INDEX])
             .append("\n\tNotification executes at fixed rate = ")
             .append(obj[FIXED_RATE_INDEX]);
-            TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                    "removeNotification", strb.toString());
+            TIMER_LOGGER.log(Level.TRACE, strb::toString);
         }
 
         timerTable.remove(id);
 
-        TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                "removeNotification", "timer notification removed");
+        TIMER_LOGGER.log(Level.TRACE, "timer notification removed");
     }
 
     /**
@@ -752,19 +740,16 @@ public class Timer extends NotificationBroadcasterSupport
         }
 
         // Remove all the timer notifications from the timer table.
-        TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                "removeAllNotifications", "removing all timer notifications");
+        TIMER_LOGGER.log(Level.TRACE, "removing all timer notifications");
 
         timerTable.clear();
 
-        TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                "removeAllNotifications", "all timer notifications removed");
+        TIMER_LOGGER.log(Level.TRACE, "all timer notifications removed");
         // Reset the counterID.
         //
         counterID = 0;
 
-        TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                "removeAllNotifications", "timer notification counter ID reset");
+        TIMER_LOGGER.log(Level.TRACE, "timer notification counter ID reset");
     }
 
     // GETTERS AND SETTERS
@@ -1021,7 +1006,7 @@ public class Timer extends NotificationBroadcasterSupport
             while ( (currentDate.after(date)) && (timerTable.containsKey(notifID)) ) {
 
                 if (currentFlag == true) {
-                    if (TIMER_LOGGER.isLoggable(Level.FINER)) {
+                    if (TIMER_LOGGER.isLoggable(Level.TRACE)) {
                         StringBuilder strb = new StringBuilder()
                         .append("sending past timer notification:")
                         .append("\n\tNotification source = ")
@@ -1038,13 +1023,11 @@ public class Timer extends NotificationBroadcasterSupport
                         .append(obj[TIMER_NB_OCCUR_INDEX])
                         .append("\n\tNotification executes at fixed rate = ")
                         .append(obj[FIXED_RATE_INDEX]);
-                        TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                                "sendPastNotifications", strb.toString());
+                        TIMER_LOGGER.log(Level.TRACE, strb::toString);
                     }
                     sendNotification(date, notif);
 
-                    TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                            "sendPastNotifications", "past timer notification sent");
+                    TIMER_LOGGER.log(Level.TRACE, "past timer notification sent");
                 }
 
                 // Update the date and the number of occurrences of the timer notification.
@@ -1107,7 +1090,7 @@ public class Timer extends NotificationBroadcasterSupport
                     timer.schedule(alarmClock, alarmClock.timeout);
                   }
                 }
-                if (TIMER_LOGGER.isLoggable(Level.FINER)) {
+                if (TIMER_LOGGER.isLoggable(Level.TRACE)) {
                     TimerNotification notif = (TimerNotification)obj[TIMER_NOTIF_INDEX];
                     StringBuilder strb = new StringBuilder()
                     .append("update timer notification with:")
@@ -1125,8 +1108,7 @@ public class Timer extends NotificationBroadcasterSupport
                     .append(nbOccurences)
                     .append("\n\tNotification executes at fixed rate = ")
                     .append(fixedRate);
-                    TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                            "updateTimerTable", strb.toString());
+                    TIMER_LOGGER.log(Level.TRACE, strb::toString);
                 }
             }
             else {
@@ -1211,7 +1193,7 @@ public class Timer extends NotificationBroadcasterSupport
      */
     void sendNotification(Date timeStamp, TimerNotification notification) {
 
-        if (TIMER_LOGGER.isLoggable(Level.FINER)) {
+        if (TIMER_LOGGER.isLoggable(Level.TRACE)) {
             StringBuilder strb = new StringBuilder()
             .append("sending timer notification:")
             .append("\n\tNotification source = ")
@@ -1222,8 +1204,7 @@ public class Timer extends NotificationBroadcasterSupport
             .append(notification.getNotificationID())
             .append("\n\tNotification date = ")
             .append(timeStamp);
-            TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                    "sendNotification", strb.toString());
+            TIMER_LOGGER.log(Level.TRACE, strb::toString);
         }
         long curSeqNumber;
         synchronized(this) {
@@ -1236,7 +1217,6 @@ public class Timer extends NotificationBroadcasterSupport
             this.sendNotification((TimerNotification)notification.cloneTimerNotification());
         }
 
-        TIMER_LOGGER.logp(Level.FINER, Timer.class.getName(),
-                "sendNotification", "timer notification sent");
+        TIMER_LOGGER.log(Level.TRACE, "timer notification sent");
     }
 }

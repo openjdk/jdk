@@ -1,4 +1,4 @@
-grant {
+grant codeBase "file:${test.classes}/*" {
 
     permission java.io.FilePermission "${test.src}${file.separator}*", "read";
     permission java.util.PropertyPermission "test.src", "read";
@@ -11,4 +11,6 @@ grant {
         "accessClassInPackage.sun.security.x509";
     permission java.lang.RuntimePermission
         "accessClassInPackage.sun.security.rsa";
+    permission java.lang.RuntimePermission
+        "accessClassInPackage.com.sun.crypto.provider";
 };

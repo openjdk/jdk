@@ -8,7 +8,7 @@ public class Version {
     protected void doNothing() {
     }
 
-    // extra publc method
+    // extra public method
     public void anyName() {
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -846,8 +846,11 @@ public class MethodHandles {
             // that does not bluntly restrict classes under packages within
             // java.base from looking up MethodHandles or VarHandles.
             if (allowedModes == ALL_MODES && lookupClass.getClassLoader() == null) {
-                if ((name.startsWith("java.") && !name.startsWith("java.util.concurrent.")) ||
-                        (name.startsWith("sun.") && !name.startsWith("sun.invoke."))) {
+                if ((name.startsWith("java.") &&
+                     !name.equals("java.lang.Thread") &&
+                     !name.startsWith("java.util.concurrent.")) ||
+                    (name.startsWith("sun.") &&
+                     !name.startsWith("sun.invoke."))) {
                     throw newIllegalArgumentException("illegal lookupClass: " + lookupClass);
                 }
             }

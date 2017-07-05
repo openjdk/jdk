@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package transform;
 
 import static jaxp.library.JAXPTestUtilities.getSystemProperty;
+import static jaxp.library.JAXPTestUtilities.tryRunWithTmpPermission;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -217,7 +218,7 @@ public class TransformerTest {
      * @summary Test for JDK-6272879
      */
     @Test
-    public final void testBug6272879() throws IOException, TransformerException {
+    public final void testBug6272879() throws Exception {
         final String xsl =
                 "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>" + LINE_SEPARATOR +
                 "<xsl:stylesheet version=\"1.0\" xmlns:xsl=\"http://www.w3.org/1999/XSL/Transform\">" + LINE_SEPARATOR +
@@ -274,9 +275,11 @@ public class TransformerTest {
 
         System.out.println("Result after transformation:");
         System.out.println("============================");
-        OutputFormat format = new OutputFormat();
-        format.setIndenting(true);
-        new XMLSerializer(System.out, format).serialize(document);
+        tryRunWithTmpPermission(() -> {
+            OutputFormat format = new OutputFormat();
+            format.setIndenting(true);
+            new XMLSerializer(System.out, format).serialize(document);
+        }, new RuntimePermission("accessClassInPackage.com.sun.org.apache.xml.internal.serialize"));
         System.out.println();
 
         System.out.println("Node content for element valeur2:");
@@ -529,7 +532,7 @@ public class TransformerTest {
             }
         }
 
-        public void run()  throws IOException, TransformerException {
+        public void run()  throws Exception {
             printSnippet("Source:", sourceXml);
 
             printSnippet("Stylesheet:", xsl);
@@ -545,9 +548,11 @@ public class TransformerTest {
 
             System.out.println("Result after transformation:");
             System.out.println("============================");
-            OutputFormat format = new OutputFormat();
-            format.setIndenting(true);
-            new XMLSerializer(System.out, format).serialize(document);
+            tryRunWithTmpPermission(() -> {
+                OutputFormat format = new OutputFormat();
+                format.setIndenting(true);
+                new XMLSerializer(System.out, format).serialize(document);
+            }, new RuntimePermission("accessClassInPackage.com.sun.org.apache.xml.internal.serialize"));
             System.out.println();
 
             checkNodeNS(document.getElementsByTagName("test1").item(0), "ns2", "ns2", null);
@@ -566,9 +571,7 @@ public class TransformerTest {
      *          definitions to reset the default namespace
      */
     @Test
-    public final void testBug8162598() throws IOException,
-        TransformerException
-    {
+    public final void testBug8162598() throws Exception {
         new Test8162598().run();
     }
 

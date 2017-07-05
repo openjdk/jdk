@@ -740,17 +740,21 @@ final class P11Signature extends SignatureSpi {
         }
     }
 
-    private static byte[] asn1ToDSA(byte[] signature) throws SignatureException {
+    private static byte[] asn1ToDSA(byte[] sig) throws SignatureException {
         try {
-            DerInputStream in = new DerInputStream(signature);
+            // Enforce strict DER checking for signatures
+            DerInputStream in = new DerInputStream(sig, 0, sig.length, false);
             DerValue[] values = in.getSequence(2);
+
+            // check number of components in the read sequence
+            // and trailing data
+            if ((values.length != 2) || (in.available() != 0)) {
+                throw new IOException("Invalid encoding for signature");
+            }
+
             BigInteger r = values[0].getPositiveBigInteger();
             BigInteger s = values[1].getPositiveBigInteger();
 
-            // Check for trailing signature data
-            if (in.available() != 0) {
-                throw new IOException("Incorrect signature length");
-            }
             byte[] br = toByteArray(r, 20);
             byte[] bs = toByteArray(s, 20);
             if ((br == null) || (bs == null)) {
@@ -760,21 +764,25 @@ final class P11Signature extends SignatureSpi {
         } catch (SignatureException e) {
             throw e;
         } catch (Exception e) {
-            throw new SignatureException("invalid encoding for signature", e);
+            throw new SignatureException("Invalid encoding for signature", e);
         }
     }
 
-    private byte[] asn1ToECDSA(byte[] signature) throws SignatureException {
+    private byte[] asn1ToECDSA(byte[] sig) throws SignatureException {
         try {
-            DerInputStream in = new DerInputStream(signature);
+            // Enforce strict DER checking for signatures
+            DerInputStream in = new DerInputStream(sig, 0, sig.length, false);
             DerValue[] values = in.getSequence(2);
+
+            // check number of components in the read sequence
+            // and trailing data
+            if ((values.length != 2) || (in.available() != 0)) {
+                throw new IOException("Invalid encoding for signature");
+            }
+
             BigInteger r = values[0].getPositiveBigInteger();
             BigInteger s = values[1].getPositiveBigInteger();
 
-            // Check for trailing signature data
-            if (in.available() != 0) {
-                throw new IOException("Incorrect signature length");
-            }
             // trim leading zeroes
             byte[] br = KeyUtil.trimZeroes(r.toByteArray());
             byte[] bs = KeyUtil.trimZeroes(s.toByteArray());
@@ -785,7 +793,7 @@ final class P11Signature extends SignatureSpi {
             System.arraycopy(bs, 0, res, res.length - bs.length, bs.length);
             return res;
         } catch (Exception e) {
-            throw new SignatureException("invalid encoding for signature", e);
+            throw new SignatureException("Invalid encoding for signature", e);
         }
     }
 
