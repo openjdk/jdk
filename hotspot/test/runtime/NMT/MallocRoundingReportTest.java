@@ -25,7 +25,7 @@
  * @test
  * @summary Test consistency of NMT by creating allocations of the Test type with various sizes and verifying visibility with jcmd
  * @key nmt jcmd
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build MallocRoundingReportTest

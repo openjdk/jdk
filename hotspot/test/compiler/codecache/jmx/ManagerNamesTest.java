@@ -27,7 +27,7 @@ import sun.hotspot.code.BlobType;
 
 /**
  * @test ManagerNamesTest
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.management
  * @build ManagerNamesTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

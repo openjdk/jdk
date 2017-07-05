@@ -30,24 +30,25 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
 
-PtrQueue::PtrQueue(PtrQueueSet* qset, bool perm, bool active) :
+PtrQueue::PtrQueue(PtrQueueSet* qset, bool permanent, bool active) :
   _qset(qset), _buf(NULL), _index(0), _sz(0), _active(active),
-  _perm(perm), _lock(NULL)
+  _permanent(permanent), _lock(NULL)
 {}
 
 PtrQueue::~PtrQueue() {
-  assert(_perm || (_buf == NULL), "queue must be flushed before delete");
+  assert(_permanent || (_buf == NULL), "queue must be flushed before delete");
 }
 
 void PtrQueue::flush_impl() {
-  if (!_perm && _buf != NULL) {
+  if (!_permanent && _buf != NULL) {
     if (_index == _sz) {
       // No work to do.
       qset()->deallocate_buffer(_buf);
     } else {
       // We must NULL out the unused entries, then enqueue.
-      for (size_t i = 0; i < _index; i += oopSize) {
-        _buf[byte_index_to_index((int)i)] = NULL;
+      size_t limit = byte_index_to_index(_index);
+      for (size_t i = 0; i < limit; ++i) {
+        _buf[i] = NULL;
       }
       qset()->enqueue_complete_buffer(_buf);
     }
@@ -66,8 +67,8 @@ void PtrQueue::enqueue_known_active(void* ptr) {
   }
 
   assert(_index > 0, "postcondition");
-  _index -= oopSize;
-  _buf[byte_index_to_index((int)_index)] = ptr;
+  _index -= sizeof(void*);
+  _buf[byte_index_to_index(_index)] = ptr;
   assert(_index <= _sz, "Invariant.");
 }
 
@@ -98,6 +99,26 @@ PtrQueueSet::PtrQueueSet(bool notify_when_complete) :
   _buf_free_list(NULL), _buf_free_list_sz(0)
 {
   _fl_owner = this;
+}
+
+PtrQueueSet::~PtrQueueSet() {
+  // There are presently only a couple (derived) instances ever
+  // created, and they are permanent, so no harm currently done by
+  // doing nothing here.
+}
+
+void PtrQueueSet::initialize(Monitor* cbl_mon,
+                             Mutex* fl_lock,
+                             int process_completed_threshold,
+                             int max_completed_queue,
+                             PtrQueueSet *fl_owner) {
+  _max_completed_queue = max_completed_queue;
+  _process_completed_threshold = process_completed_threshold;
+  _completed_queue_padding = 0;
+  assert(cbl_mon != NULL && fl_lock != NULL, "Init order issue?");
+  _cbl_mon = cbl_mon;
+  _fl_lock = fl_lock;
+  _fl_owner = (fl_owner != NULL) ? fl_owner : this;
 }
 
 void** PtrQueueSet::allocate_buffer() {
@@ -233,7 +254,7 @@ void PtrQueueSet::enqueue_complete_buffer(void** buf, size_t index) {
     if (_notify_when_complete)
       _cbl_mon->notify();
   }
-  debug_only(assert_completed_buffer_list_len_correct_locked());
+  DEBUG_ONLY(assert_completed_buffer_list_len_correct_locked());
 }
 
 int PtrQueueSet::completed_buffers_list_length() {
@@ -258,7 +279,7 @@ void PtrQueueSet::assert_completed_buffer_list_len_correct_locked() {
 
 void PtrQueueSet::set_buffer_size(size_t sz) {
   assert(_sz == 0 && sz > 0, "Should be called only once.");
-  _sz = sz * oopSize;
+  _sz = sz * sizeof(void*);
 }
 
 // Merge lists of buffers. Notify the processing threads.

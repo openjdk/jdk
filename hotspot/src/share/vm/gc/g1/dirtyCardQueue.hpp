@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 
 class FreeIdSet;
+class DirtyCardQueueSet;
 
 // A closure class for processing card table entries.  Note that we don't
 // require these closure objects to be stack-allocated.
@@ -42,14 +43,11 @@ public:
 // A ptrQueue whose elements are "oops", pointers to object heads.
 class DirtyCardQueue: public PtrQueue {
 public:
-  DirtyCardQueue(PtrQueueSet* qset_, bool perm = false) :
-    // Dirty card queues are always active, so we create them with their
-    // active field set to true.
-    PtrQueue(qset_, perm, true /* active */) { }
+  DirtyCardQueue(DirtyCardQueueSet* qset, bool permanent = false);
 
   // Flush before destroying; queue may be used to capture pending work while
   // doing something else, with auto-flush on completion.
-  ~DirtyCardQueue() { if (!is_permanent()) flush(); }
+  ~DirtyCardQueue();
 
   // Process queue entries and release resources.
   void flush() { flush_impl(); }
@@ -72,7 +70,6 @@ public:
                                       bool consume = true,
                                       uint worker_i = 0);
   void **get_buf() { return _buf;}
-  void set_buf(void **buf) {_buf = buf;}
   size_t get_index() { return _index;}
   void reinitialize() { _buf = 0; _sz = 0; _index = 0;}
 };
@@ -101,10 +98,13 @@ class DirtyCardQueueSet: public PtrQueueSet {
 public:
   DirtyCardQueueSet(bool notify_when_complete = true);
 
-  void initialize(CardTableEntryClosure* cl, Monitor* cbl_mon, Mutex* fl_lock,
+  void initialize(CardTableEntryClosure* cl,
+                  Monitor* cbl_mon,
+                  Mutex* fl_lock,
                   int process_completed_threshold,
                   int max_completed_queue,
-                  Mutex* lock, PtrQueueSet* fl_owner = NULL);
+                  Mutex* lock,
+                  DirtyCardQueueSet* fl_owner = NULL);
 
   // The number of parallel ids that can be claimed to allow collector or
   // mutator threads to do card-processing work.
