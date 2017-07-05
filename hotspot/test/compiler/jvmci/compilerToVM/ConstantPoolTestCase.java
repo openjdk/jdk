@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,118 +27,214 @@ package compiler.jvmci.compilerToVM;
 import java.util.HashMap;
 import java.util.Map;
 import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
-import jdk.internal.misc.SharedSecrets;
+import sun.hotspot.WhiteBox;
 import sun.reflect.ConstantPool;
+import sun.reflect.ConstantPool.Tag;
+import compiler.jvmci.compilerToVM.ConstantPoolTestsHelper.DummyClasses;
+import static compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes.*;
 
 /**
  * Common class for jdk.vm.ci.hotspot.CompilerToVM constant pool tests
  */
 public class ConstantPoolTestCase {
-    private final Map<ConstantPoolTestsHelper.ConstantTypes, Validator> typeTests;
+
+    private static final Map<Tag, ConstantTypes> TAG_TO_TYPE_MAP;
+    static {
+        TAG_TO_TYPE_MAP = new HashMap<>();
+        TAG_TO_TYPE_MAP.put(Tag.CLASS, CONSTANT_CLASS);
+        TAG_TO_TYPE_MAP.put(Tag.FIELDREF, CONSTANT_FIELDREF);
+        TAG_TO_TYPE_MAP.put(Tag.METHODREF, CONSTANT_METHODREF);
+        TAG_TO_TYPE_MAP.put(Tag.INTERFACEMETHODREF, CONSTANT_INTERFACEMETHODREF);
+        TAG_TO_TYPE_MAP.put(Tag.STRING, CONSTANT_STRING);
+        TAG_TO_TYPE_MAP.put(Tag.INTEGER, CONSTANT_INTEGER);
+        TAG_TO_TYPE_MAP.put(Tag.FLOAT, CONSTANT_FLOAT);
+        TAG_TO_TYPE_MAP.put(Tag.LONG, CONSTANT_LONG);
+        TAG_TO_TYPE_MAP.put(Tag.DOUBLE, CONSTANT_DOUBLE);
+        TAG_TO_TYPE_MAP.put(Tag.NAMEANDTYPE, CONSTANT_NAMEANDTYPE);
+        TAG_TO_TYPE_MAP.put(Tag.UTF8, CONSTANT_UTF8);
+        TAG_TO_TYPE_MAP.put(Tag.METHODHANDLE, CONSTANT_METHODHANDLE);
+        TAG_TO_TYPE_MAP.put(Tag.METHODTYPE, CONSTANT_METHODTYPE);
+        TAG_TO_TYPE_MAP.put(Tag.INVOKEDYNAMIC, CONSTANT_INVOKEDYNAMIC);
+        TAG_TO_TYPE_MAP.put(Tag.INVALID, CONSTANT_INVALID);
+    }
+    private static final WhiteBox WB = WhiteBox.getWhiteBox();
+    private final Map<ConstantTypes, Validator> typeTests;
+
+    public static enum ConstantTypes {
+        CONSTANT_CLASS {
+            @Override
+            public TestedCPEntry getTestedCPEntry(DummyClasses dummyClass, int index) {
+                ConstantPool constantPoolSS = dummyClass.constantPoolSS;
+                checkIndex(constantPoolSS, index);
+                Class<?> klass = constantPoolSS.getClassAt(index);
+                String klassName = klass.getName();
+                TestedCPEntry[] testedEntries = dummyClass.testedCP.get(this);
+                for (TestedCPEntry entry : testedEntries) {
+                    if (entry.klass.replaceAll("/", "\\.").equals(klassName)) {
+                        return entry;
+                    }
+                }
+                return null;
+            }
+        },
+        CONSTANT_FIELDREF {
+            @Override
+            public TestedCPEntry getTestedCPEntry(DummyClasses dummyClass, int index) {
+                return this.getTestedCPEntryForMethodAndField(dummyClass, index);
+            }
+        },
+        CONSTANT_METHODREF {
+            @Override
+            public TestedCPEntry getTestedCPEntry(DummyClasses dummyClass, int index) {
+                return this.getTestedCPEntryForMethodAndField(dummyClass, index);
+            }
+        },
+        CONSTANT_INTERFACEMETHODREF {
+            @Override
+            public TestedCPEntry getTestedCPEntry(DummyClasses dummyClass, int index) {
+                return this.getTestedCPEntryForMethodAndField(dummyClass, index);
+            }
+        },
+        CONSTANT_STRING {
+            @Override
+            public TestedCPEntry getTestedCPEntry(DummyClasses dummyClass, int index) {
+                ConstantPool constantPoolSS = dummyClass.constantPoolSS;
+                checkIndex(constantPoolSS, index);
+                String value = constantPoolSS.getStringAt(index);
+                TestedCPEntry[] testedEntries = dummyClass.testedCP.get(this);
+                for (TestedCPEntry entry : testedEntries) {
+                    if (entry.name.equals(value)) {
+                        return entry;
+                    }
+                }
+                return null;
+            }
+        },
+        CONSTANT_INTEGER,
+        CONSTANT_FLOAT,
+        CONSTANT_LONG,
+        CONSTANT_DOUBLE,
+        CONSTANT_NAMEANDTYPE,
+        CONSTANT_UTF8,
+        CONSTANT_METHODHANDLE,
+        CONSTANT_METHODTYPE,
+        CONSTANT_INVOKEDYNAMIC {
+            @Override
+            public TestedCPEntry getTestedCPEntry(DummyClasses dummyClass, int index) {
+                ConstantPool constantPoolSS = dummyClass.constantPoolSS;
+                checkIndex(constantPoolSS, index);
+                int nameAndTypeIndex = constantPoolSS.getNameAndTypeRefIndexAt(index);
+                String[] info = constantPoolSS.getNameAndTypeRefInfoAt(nameAndTypeIndex);
+                TestedCPEntry[] testedEntries = dummyClass.testedCP.get(this);
+                for (TestedCPEntry entry : testedEntries) {
+                    if (info[0].equals(entry.name) && info[1].equals(entry.type)) {
+                        return entry;
+                    }
+                }
+                return null;
+            }
+        },
+        CONSTANT_INVALID;
+
+        public TestedCPEntry getTestedCPEntry(DummyClasses dummyClass, int index) {
+            return null; // returning null by default
+        }
+
+        public TestedCPEntry[] getAllCPEntriesForType(DummyClasses dummyClass) {
+            TestedCPEntry[] toReturn = dummyClass.testedCP.get(this);
+            if (toReturn == null) {
+                return new TestedCPEntry[0];
+            }
+            return dummyClass.testedCP.get(this);
+        }
+
+        protected TestedCPEntry getTestedCPEntryForMethodAndField(DummyClasses dummyClass, int index) {
+            ConstantPool constantPoolSS = dummyClass.constantPoolSS;
+            checkIndex(constantPoolSS, index);
+            String[] info = constantPoolSS.getMemberRefInfoAt(index);
+            TestedCPEntry[] testedEntries = dummyClass.testedCP.get(this);
+            for (TestedCPEntry entry : testedEntries) {
+                if (info[0].equals(entry.klass) && info[1].equals(entry.name) && info[2].equals(entry.type)) {
+                    return entry;
+                }
+            }
+            return null;
+        }
+
+        protected void checkIndex(ConstantPool constantPoolSS, int index) {
+            ConstantPool.Tag tag = constantPoolSS.getTagAt(index);
+            ConstantTypes type = mapTagToCPType(tag);
+            if (!this.equals(type)) {
+                String msg = String.format("TESTBUG: CP tag should be a %s, but is %s",
+                                           this.name(),
+                                           type.name());
+               throw new Error(msg);
+            }
+        }
+    }
 
     public static interface Validator {
         void validate(jdk.vm.ci.meta.ConstantPool constantPoolCTVM,
-                ConstantPool constantPoolSS,
-            ConstantPoolTestsHelper.DummyClasses dummyClass, int index);
+                      ConstantTypes cpType,
+                      DummyClasses dummyClass,
+                      int index);
     }
 
-    public ConstantPoolTestCase(Map<ConstantPoolTestsHelper.ConstantTypes,Validator> typeTests) {
+    public static class TestedCPEntry {
+        public final String klass;
+        public final String name;
+        public final String type;
+        public final byte[] opcodes;
+        public final long accFlags;
+
+        public TestedCPEntry(String klass, String name, String type, byte[] opcodes, long accFlags) {
+            this.klass = klass;
+            this.name = name;
+            this.type = type;
+            if (opcodes != null) {
+                this.opcodes = new byte[opcodes.length];
+                System.arraycopy(opcodes, 0, this.opcodes, 0, opcodes.length);
+            } else {
+                this.opcodes = null;
+            }
+            this.accFlags = accFlags;
+        }
+
+        public TestedCPEntry(String klass, String name, String type, byte[] opcodes) {
+            this(klass, name, type, opcodes, 0);
+        }
+
+        public TestedCPEntry(String klass, String name, String type) {
+            this(klass, name, type, null, 0);
+        }
+    }
+
+    public static ConstantTypes mapTagToCPType(Tag tag) {
+        return TAG_TO_TYPE_MAP.get(tag);
+    }
+
+    public ConstantPoolTestCase(Map<ConstantTypes, Validator> typeTests) {
         this.typeTests = new HashMap<>();
         this.typeTests.putAll(typeTests);
     }
 
-    private void messageOnFail(Throwable t,
-            ConstantPoolTestsHelper.ConstantTypes cpType,
-            ConstantPoolTestsHelper.DummyClasses dummyClass, int index) {
-        ConstantPool constantPoolSS = SharedSecrets.getJavaLangAccess().
-                        getConstantPool(dummyClass.klass);
-        String msg = String.format("Test for %s constant pool entry of"
-                        + " type %s",
-                        dummyClass.klass, cpType.name());
-        switch (cpType) {
-            case CONSTANT_CLASS:
-            case CONSTANT_STRING:
-            case CONSTANT_METHODTYPE:
-                String utf8 = constantPoolSS
-                        .getUTF8At((int) dummyClass.cp.get(index).value);
-                msg = String.format("%s (%s) failed with %s", msg, utf8, t);
-                break;
-            case CONSTANT_INTEGER:
-                int intValue = constantPoolSS.getIntAt(index);
-                msg = String.format("%s (%d) failed with %s", msg, intValue, t);
-                break;
-            case CONSTANT_LONG:
-                long longValue = constantPoolSS.getLongAt(index);
-                msg = String.format("%s (%d) failed with %s", msg, longValue, t);
-                break;
-            case CONSTANT_FLOAT:
-                float floatValue = constantPoolSS.getFloatAt(index);
-                msg = String.format("%s (%E) failed with %s", msg, floatValue, t);
-                break;
-            case CONSTANT_DOUBLE:
-                double doubleValue = constantPoolSS.getDoubleAt(index);
-                msg = String.format("%s (%E) failed with %s", msg, doubleValue, t);
-                break;
-            case CONSTANT_UTF8:
-                String utf8Value = constantPoolSS.getUTF8At(index);
-                msg = String.format("%s (%s) failed with %s", msg, utf8Value, t);
-                break;
-            case CONSTANT_INVOKEDYNAMIC:
-                index = ((int[]) dummyClass.cp.get(index).value)[1];
-            case CONSTANT_NAMEANDTYPE:
-                String name = constantPoolSS
-                        .getUTF8At(((int[]) dummyClass.cp.get(index).value)[0]);
-                String type = constantPoolSS
-                        .getUTF8At(((int[]) dummyClass.cp.get(index).value)[1]);
-                msg = String.format("%s (%s:%s) failed with %s",
-                        msg, name, type, t);
-                break;
-            case CONSTANT_METHODHANDLE:
-                index = ((int[]) dummyClass.cp.get(index).value)[1];
-            case CONSTANT_METHODREF:
-            case CONSTANT_INTERFACEMETHODREF:
-            case CONSTANT_FIELDREF:
-                int classIndex = ((int[]) dummyClass.cp.get(index).value)[0];
-                int nameAndTypeIndex = ((int[]) dummyClass.cp.get(index).value)[1];
-                String cName = constantPoolSS
-                        .getUTF8At((int) dummyClass.cp.get(classIndex).value);
-                String mName = constantPoolSS
-                        .getUTF8At(((int[]) dummyClass.cp.get(nameAndTypeIndex).value)[0]);
-                String mType = constantPoolSS
-                        .getUTF8At(((int[]) dummyClass.cp.get(nameAndTypeIndex).value)[1]);
-                msg = String.format("%s (%s.%s:%s) failed with %s ",
-                        msg, cName, mName, mType, t);
-                break;
-            default:
-                msg = String.format("Test bug: unknown constant type %s ", cpType);
-        }
-        throw new Error(msg + t.getMessage(), t);
-    }
-
     public void test() {
-        for (ConstantPoolTestsHelper.DummyClasses dummyClass
-                : ConstantPoolTestsHelper.DummyClasses.values()) {
-            System.out.printf("%nTesting dummy %s%n", dummyClass.klass);
-            HotSpotResolvedObjectType holder = HotSpotResolvedObjectType
-                    .fromObjectClass(dummyClass.klass);
-            jdk.vm.ci.meta.ConstantPool constantPoolCTVM
-                    = holder.getConstantPool();
-            ConstantPool constantPoolSS = SharedSecrets.getJavaLangAccess().
-                        getConstantPool(dummyClass.klass);
-            for (Integer i : dummyClass.cp.keySet()) {
-                ConstantPoolTestsHelper.ConstantTypes cpType
-                        = dummyClass.cp.get(i).type;
+        for (DummyClasses dummyClass : DummyClasses.values()) {
+            boolean isCPCached = WB.getConstantPoolCacheLength(dummyClass.klass) > -1;
+            System.out.printf("Testing dummy %s with constant pool cached = %b%n",
+                              dummyClass.klass,
+                              isCPCached);
+            HotSpotResolvedObjectType holder = HotSpotResolvedObjectType.fromObjectClass(dummyClass.klass);
+            jdk.vm.ci.meta.ConstantPool constantPoolCTVM = holder.getConstantPool();
+            ConstantPool constantPoolSS = dummyClass.constantPoolSS;
+            for (int i = 0; i < constantPoolSS.getSize(); i++) {
+                Tag tag = constantPoolSS.getTagAt(i);
+                ConstantTypes cpType = mapTagToCPType(tag);
                 if (!typeTests.keySet().contains(cpType)) {
                     continue;
                 }
-                try {
-                    typeTests.get(cpType).validate(constantPoolCTVM,
-                            constantPoolSS, dummyClass, i);
-                } catch (Throwable t) {
-                    messageOnFail(t, cpType, dummyClass, i);
-                }
+                typeTests.get(cpType).validate(constantPoolCTVM, cpType, dummyClass, i);
             }
         }
     }
 }
-

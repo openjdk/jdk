@@ -81,10 +81,7 @@ jbyte* G1HotCardCache::insert(jbyte* card_ptr) {
 }
 
 void G1HotCardCache::drain(CardTableEntryClosure* cl, uint worker_i) {
-  if (!default_use_cache()) {
-    assert(_hot_cache == NULL, "Logic");
-    return;
-  }
+  assert(default_use_cache(), "Drain only necessary if we use the hot card cache.");
 
   assert(_hot_cache != NULL, "Logic");
   assert(!use_cache(), "cache should be disabled");

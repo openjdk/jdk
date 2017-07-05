@@ -551,6 +551,14 @@ JVMCIEnv::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler, Hand
                                        compiler, _debug_recorder, _dependencies, env, id,
                                        has_unsafe_access, _has_wide_vector, installed_code, compiled_code, speculation_log);
     cb = nm;
+    if (nm != NULL && env == NULL) {
+      DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, compiler);
+      bool printnmethods = directive->PrintAssemblyOption || directive->PrintNMethodsOption;
+      if (printnmethods || PrintDebugInfo || PrintRelocations || PrintDependencies || PrintExceptionHandlers) {
+        nm->print_nmethod(printnmethods);
+      }
+      DirectivesStack::release(directive);
+    }
   }
 
   if (cb != NULL) {

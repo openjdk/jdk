@@ -51,8 +51,13 @@
 #include "services/heapDumper.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/top.hpp"
 #include "utilities/vmError.hpp"
+
+#if INCLUDE_TRACE
+#include "trace/tracing.hpp"
+#endif
 
 #ifndef ASSERT
 #  ifdef _DEBUG
@@ -280,6 +285,12 @@ void report_out_of_shared_space(SharedSpaceType shared_space) {
    exit(2);
 }
 
+static void notify_tracing() {
+#if INCLUDE_TRACE
+  Tracing::on_vm_error(true);
+#endif
+}
+
 void report_insufficient_metaspace(size_t required_size) {
   warning("\nThe MaxMetaspaceSize of " SIZE_FORMAT " bytes is not large enough.\n"
           "Either don't specify the -XX:MaxMetaspaceSize=<size>\n"
@@ -301,6 +312,8 @@ void report_java_out_of_memory(const char* message) {
       tty->print_cr("java.lang.OutOfMemoryError: %s", message);
       HeapDumper::dump_heap_from_oome();
     }
+
+    notify_tracing();
 
     if (OnOutOfMemoryError && OnOutOfMemoryError[0]) {
       VMError::report_java_out_of_memory(message);

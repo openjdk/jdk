@@ -29,7 +29,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /* @test
- * @bug 8027351
+ * @bug 8027351 8148940
  * @summary Basic test of the finalize method
  */
 
@@ -63,6 +63,19 @@ public class FinalizeOverride {
         while (finalizedCount.get() != (count+1)) {
             System.gc();
             System.runFinalization();
+            // Running System.gc() and System.runFinalization() in a
+            // tight loop can trigger frequent safepointing that slows
+            // down the VM and, as a result, the test. (With the
+            // HotSpot VM, the effect of frequent safepointing is
+            // especially noticeable if the test is run with the
+            // -Xcomp flag.)  Sleeping for a second after every
+            // garbage collection and finalization cycle gives the VM
+            // time to make progress.
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                System.out.println("Main thread interrupted, continuing execution.");
+            }
         }
 
         if (privateFinalizeInvoked) {

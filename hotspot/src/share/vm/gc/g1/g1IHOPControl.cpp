@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,14 +47,16 @@ void G1IHOPControl::update_allocation_info(double allocation_time_s, size_t allo
 
 void G1IHOPControl::print() {
   size_t cur_conc_mark_start_threshold = get_conc_mark_start_threshold();
-  log_debug(gc, ihop)("Basic information (value update), threshold: " SIZE_FORMAT "B (%1.2f), target occupancy: " SIZE_FORMAT "B, current occupancy: " SIZE_FORMAT "B,"
-                      " recent old gen allocation rate: %1.2f, recent marking phase length: %1.2f",
+  log_debug(gc, ihop)("Basic information (value update), threshold: " SIZE_FORMAT "B (%1.2f), target occupancy: " SIZE_FORMAT "B, current occupancy: " SIZE_FORMAT "B, "
+                      "recent allocation size: " SIZE_FORMAT "B, recent allocation duration: %1.2fms, recent old gen allocation rate: %1.2fB/s, recent marking phase length: %1.2fms",
                       cur_conc_mark_start_threshold,
                       cur_conc_mark_start_threshold * 100.0 / _target_occupancy,
                       _target_occupancy,
                       G1CollectedHeap::heap()->used(),
+                      _last_allocated_bytes,
+                      _last_allocation_time_s * 1000.0,
                       _last_allocation_time_s > 0.0 ? _last_allocated_bytes / _last_allocation_time_s : 0.0,
-                      last_marking_length_s());
+                      last_marking_length_s() * 1000.0);
 }
 
 void G1IHOPControl::send_trace_event(G1NewTracer* tracer) {
@@ -191,13 +193,16 @@ void G1AdaptiveIHOPControl::update_marking_length(double marking_length_s) {
 void G1AdaptiveIHOPControl::print() {
   G1IHOPControl::print();
   size_t actual_target = actual_target_threshold();
-  log_debug(gc, ihop)("Adaptive IHOP information (value update), threshold: " SIZE_FORMAT "B (%1.2f), internal target occupancy: " SIZE_FORMAT "B,"
-                      " predicted old gen allocation rate: %1.2f, predicted marking phase length: %1.2f, prediction active: %s",
+  log_debug(gc, ihop)("Adaptive IHOP information (value update), threshold: " SIZE_FORMAT "B (%1.2f), internal target occupancy: " SIZE_FORMAT "B, "
+                      "occupancy: " SIZE_FORMAT "B, additional buffer size: " SIZE_FORMAT "B, predicted old gen allocation rate: %1.2fB/s, "
+                      "predicted marking phase length: %1.2fms, prediction active: %s",
                       get_conc_mark_start_threshold(),
                       percent_of(get_conc_mark_start_threshold(), actual_target),
                       actual_target,
+                      G1CollectedHeap::heap()->used(),
+                      _last_unrestrained_young_size,
                       _predictor->get_new_prediction(&_allocation_rate_s),
-                      _predictor->get_new_prediction(&_marking_times_s),
+                      _predictor->get_new_prediction(&_marking_times_s) * 1000.0,
                       have_enough_data_for_prediction() ? "true" : "false");
 }
 

@@ -193,36 +193,48 @@ public class ServiceUI {
             getLocalGraphicsEnvironment().getDefaultScreenDevice().
             getDefaultConfiguration().getBounds() : gc.getBounds();
 
+        x += gcBounds.x;
+        y += gcBounds.y;
         ServiceDialog dialog;
         if (owner instanceof Frame) {
             dialog = new ServiceDialog(gc,
-                                       x + gcBounds.x,
-                                       y + gcBounds.y,
+                                       x,
+                                       y,
                                        services, defaultIndex,
                                        flavor, attributes,
                                        (Frame)owner);
         } else {
             dialog = new ServiceDialog(gc,
-                                       x + gcBounds.x,
-                                       y + gcBounds.y,
+                                       x,
+                                       y,
                                        services, defaultIndex,
                                        flavor, attributes,
                                        (Dialog)owner);
         }
         Rectangle dlgBounds = dialog.getBounds();
 
-        // get union of all GC bounds
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        GraphicsDevice[] gs = ge.getScreenDevices();
-        for (int j=0; j<gs.length; j++) {
-            gcBounds =
-                gcBounds.union(gs[j].getDefaultConfiguration().getBounds());
-        }
-
         // if portion of dialog is not within the gc boundary
         if (!gcBounds.contains(dlgBounds)) {
-            // put in the center relative to parent frame/dialog
-            dialog.setLocationRelativeTo(owner);
+            // check if dialog exceed window bounds at left or bottom
+            // Then position the dialog by moving it by the amount it exceeds
+            // the window bounds
+            // If it results in dialog moving beyond the window bounds at top/left
+            // then position it at window top/left
+            if (dlgBounds.x + dlgBounds.width > gcBounds.x + gcBounds.width) {
+                if ((gcBounds.x + gcBounds.width - dlgBounds.width) > gcBounds.x) {
+                    x = (gcBounds.x + gcBounds.width) - dlgBounds.width;
+                } else {
+                    x = gcBounds.x;
+                }
+            }
+            if (dlgBounds.y + dlgBounds.height > gcBounds.y + gcBounds.height) {
+                if ((gcBounds.y + gcBounds.height - dlgBounds.height) > gcBounds.y) {
+                    y = (gcBounds.y + gcBounds.height) - dlgBounds.height;
+                } else {
+                    y = gcBounds.y;
+                }
+            }
+            dialog.setBounds(x, y, dlgBounds.width, dlgBounds.height);
         }
         dialog.show();
 

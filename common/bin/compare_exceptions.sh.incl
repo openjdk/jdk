@@ -185,7 +185,6 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "x86_64" ];
       ./lib/amd64/libjava.so
       ./lib/amd64/libjawt.so
       ./lib/amd64/libjdwp.so
-      ./lib/amd64/libjfr.so
       ./lib/amd64/libjpeg.so
       ./lib/amd64/libjsdt.so
       ./lib/amd64/libjsound.so
@@ -321,7 +320,6 @@ if [ "$OPENJDK_TARGET_OS" = "solaris" ] && [ "$OPENJDK_TARGET_CPU" = "sparcv9" ]
       ./lib/sparcv9/libjava.so
       ./lib/sparcv9/libjawt.so
       ./lib/sparcv9/libjdwp.so
-      ./lib/sparcv9/libjfr.so
       ./lib/sparcv9/libjpeg.so
       ./lib/sparcv9/libjsdt.so
       ./lib/sparcv9/libjsound.so
