@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,38 +29,38 @@ public final class TestImpl_Stub
     implements TestIface
 {
     private static final long serialVersionUID = 2;
-    
+
     private static java.lang.reflect.Method $method_testCall_0;
-    
+
     static {
-	try {
-	    $method_testCall_0 = TestIface.class.getMethod("testCall", new java.lang.Class[] {java.lang.String.class});
-	} catch (java.lang.NoSuchMethodException e) {
-	    throw new java.lang.NoSuchMethodError(
-		"stub class initialization failed");
-	}
+        try {
+            $method_testCall_0 = TestIface.class.getMethod("testCall", new java.lang.Class[] {java.lang.String.class});
+        } catch (java.lang.NoSuchMethodException e) {
+            throw new java.lang.NoSuchMethodError(
+                "stub class initialization failed");
+        }
     }
-    
+
     // constructors
     public TestImpl_Stub(java.rmi.server.RemoteRef ref) {
-	super(ref);
+        super(ref);
     }
-    
+
     // methods from remote interfaces
-    
+
     // implementation of testCall(String)
     public java.lang.String testCall(java.lang.String $param_String_1)
-	throws java.rmi.RemoteException
+        throws java.rmi.RemoteException
     {
-	try {
-	    Object $result = ref.invoke(this, $method_testCall_0, new java.lang.Object[] {$param_String_1}, -4495720265115653109L);
-	    return ((java.lang.String) $result);
-	} catch (java.lang.RuntimeException e) {
-	    throw e;
-	} catch (java.rmi.RemoteException e) {
-	    throw e;
-	} catch (java.lang.Exception e) {
-	    throw new java.rmi.UnexpectedException("undeclared checked exception", e);
-	}
+        try {
+            Object $result = ref.invoke(this, $method_testCall_0, new java.lang.Object[] {$param_String_1}, -4495720265115653109L);
+            return ((java.lang.String) $result);
+        } catch (java.lang.RuntimeException e) {
+            throw e;
+        } catch (java.rmi.RemoteException e) {
+            throw e;
+        } catch (java.lang.Exception e) {
+            throw new java.rmi.UnexpectedException("undeclared checked exception", e);
+        }
     }
 }

@@ -518,10 +518,10 @@ static bool core_get_lwp_regs(struct ps_prochandle* ph, lwpid_t lwp_id,
 }
 
 static ps_prochandle_ops core_ops = {
-   release:  core_release,
-   p_pread:  core_read_data,
-   p_pwrite: core_write_data,
-   get_lwp_regs: core_get_lwp_regs
+   .release=  core_release,
+   .p_pread=  core_read_data,
+   .p_pwrite= core_write_data,
+   .get_lwp_regs= core_get_lwp_regs
 };
 
 // read regs and create thread from NT_PRSTATUS entries from core file

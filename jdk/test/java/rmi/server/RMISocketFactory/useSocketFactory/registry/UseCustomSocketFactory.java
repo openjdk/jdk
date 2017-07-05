@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1998-1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,86 +47,86 @@ import java.rmi.registry.*;
  * (i.e. compression) client and server socket factories.
  */
 public class UseCustomSocketFactory {
-    
+
     Hello hello = null;
-    
+
     public static void main(String[] args) {
-	
-	Registry registry = null;
-	HelloImpl impl = null;
 
-	System.out.println("\nRegression test for bug 4148850\n");
-	
-	TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");	
+        Registry registry = null;
+        HelloImpl impl = null;
 
-	try {
-	    impl = new HelloImpl();
+        System.out.println("\nRegression test for bug 4148850\n");
 
-	    /* Make sure that the rmiregistry can communicate over a
-	     * custom socket.  Ensure that the functionality exists to
-	     * allow the rmiregistry to be secure.  
-	     */
-	    registry = LocateRegistry.
-		createRegistry(TestLibrary.REGISTRY_PORT,
-			       new Compress.CompressRMIClientSocketFactory(),
-			       new Compress.CompressRMIServerSocketFactory());
-	    registry.rebind("/HelloServer", impl);
-	    checkStub(registry, "RMIServerSocket");
-	    
-	} catch (Exception e) {
-	    TestLibrary.bomb("creating registry", e);
-	}
-	
-	JavaVM serverVM = new JavaVM("HelloImpl", "-Djava.security.policy=" + 
-				     TestParams.defaultPolicy, "");
+        TestLibrary.suggestSecurityManager("java.rmi.RMISecurityManager");
 
-	try {
+        try {
+            impl = new HelloImpl();
 
-	    /*
-	     * spawn VM for HelloServer which will download a client socket
-	     * factory 
-	     */
-	    serverVM.start();
+            /* Make sure that the rmiregistry can communicate over a
+             * custom socket.  Ensure that the functionality exists to
+             * allow the rmiregistry to be secure.
+             */
+            registry = LocateRegistry.
+                createRegistry(TestLibrary.REGISTRY_PORT,
+                               new Compress.CompressRMIClientSocketFactory(),
+                               new Compress.CompressRMIServerSocketFactory());
+            registry.rebind("/HelloServer", impl);
+            checkStub(registry, "RMIServerSocket");
 
-	    synchronized (impl) {
+        } catch (Exception e) {
+            TestLibrary.bomb("creating registry", e);
+        }
 
-		System.out.println("waiting for remote notification");
-		 
-		if (!HelloImpl.clientCalledSuccessfully) {
-		    impl.wait(75 * 1000);
-		}
-		
-		if (!HelloImpl.clientCalledSuccessfully) {
-		    throw new RuntimeException("Client did not execute call in time...");
-		}
-	    }
+        JavaVM serverVM = new JavaVM("HelloImpl", "-Djava.security.policy=" +
+                                     TestParams.defaultPolicy, "");
 
-	    System.err.println("\nRegression test for bug 4148850 passed.\n ");
+        try {
 
-	} catch (Exception e) {
-	    TestLibrary.bomb("test failed", e);
-	    
-	} finally {
-	    serverVM.destroy();
-	    try {
-		registry.unbind("/HelloServer");
-	    } catch (Exception e) {
-		TestLibrary.bomb("unbinding HelloServer", e);
-	    }
-	    TestLibrary.unexport(registry);
-	    TestLibrary.unexport(impl);
-	    impl = null;
-	    registry = null;
-	}
+            /*
+             * spawn VM for HelloServer which will download a client socket
+             * factory
+             */
+            serverVM.start();
+
+            synchronized (impl) {
+
+                System.out.println("waiting for remote notification");
+
+                if (!HelloImpl.clientCalledSuccessfully) {
+                    impl.wait(75 * 1000);
+                }
+
+                if (!HelloImpl.clientCalledSuccessfully) {
+                    throw new RuntimeException("Client did not execute call in time...");
+                }
+            }
+
+            System.err.println("\nRegression test for bug 4148850 passed.\n ");
+
+        } catch (Exception e) {
+            TestLibrary.bomb("test failed", e);
+
+        } finally {
+            serverVM.destroy();
+            try {
+                registry.unbind("/HelloServer");
+            } catch (Exception e) {
+                TestLibrary.bomb("unbinding HelloServer", e);
+            }
+            TestLibrary.unexport(registry);
+            TestLibrary.unexport(impl);
+            impl = null;
+            registry = null;
+        }
     }
 
     static void checkStub(Object stub, String toCheck) throws RemoteException {
-	System.err.println("Ensuring that the stub contains a socket factory string: " +
-			   toCheck);
-	System.err.println(stub);
-	if (stub.toString().indexOf(toCheck) < 0) {
-	    throw new RemoteException("RemoteStub.toString() did not contain instance of "
-				      + toCheck);
-	}
+        System.err.println("Ensuring that the stub contains a socket factory string: " +
+                           toCheck);
+        System.err.println(stub);
+        if (stub.toString().indexOf(toCheck) < 0) {
+            throw new RemoteException("RemoteStub.toString() did not contain instance of "
+                                      + toCheck);
+        }
     }
 }

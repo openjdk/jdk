@@ -19,7 +19,7 @@
 // Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
 // CA 95054 USA or visit www.sun.com if you need additional information or
 // have any questions.
-//  
+//
 //
 
 ad_<arch_model>.cpp                     adGlobals_<arch_model>.hpp
@@ -164,6 +164,7 @@ callGenerator.hpp                       deoptimization.hpp
 callGenerator.hpp                       type.hpp
 
 callnode.cpp                            callnode.hpp
+callnode.cpp                            bcEscapeAnalyzer.hpp
 callnode.cpp                            escape.hpp
 callnode.cpp                            locknode.hpp
 callnode.cpp                            machnode.hpp
@@ -176,7 +177,6 @@ callnode.cpp                            rootnode.hpp
 callnode.cpp                            runtime.hpp
 
 callnode.hpp                            connode.hpp
-callnode.hpp                            escape.hpp
 callnode.hpp                            mulnode.hpp
 callnode.hpp                            multnode.hpp
 callnode.hpp                            opcodes.hpp
@@ -347,7 +347,6 @@ connode.cpp                             addnode.hpp
 connode.cpp                             allocation.inline.hpp
 connode.cpp                             compile.hpp
 connode.cpp                             connode.hpp
-connode.cpp                             escape.hpp
 connode.cpp                             machnode.hpp
 connode.cpp                             matcher.hpp
 connode.cpp                             memnode.hpp
@@ -410,6 +409,7 @@ domgraph.cpp                            vectset.hpp
 
 escape.cpp                              allocation.hpp
 escape.cpp                              bcEscapeAnalyzer.hpp
+escape.cpp                              c2compiler.hpp
 escape.cpp                              callnode.hpp
 escape.cpp                              cfgnode.hpp
 escape.cpp                              compile.hpp
@@ -843,7 +843,6 @@ phaseX.cpp                              block.hpp
 phaseX.cpp                              callnode.hpp
 phaseX.cpp                              cfgnode.hpp
 phaseX.cpp                              connode.hpp
-phaseX.cpp                              escape.hpp
 phaseX.cpp                              loopnode.hpp
 phaseX.cpp                              machnode.hpp
 phaseX.cpp                              opcodes.hpp
@@ -990,6 +989,7 @@ stubRoutines.cpp                        runtime.hpp
 
 subnode.cpp                             addnode.hpp
 subnode.cpp                             allocation.inline.hpp
+subnode.cpp                             callnode.hpp
 subnode.cpp                             cfgnode.hpp
 subnode.cpp                             compileLog.hpp
 subnode.cpp                             connode.hpp
@@ -1086,7 +1086,7 @@ idealGraphPrinter.hpp                   growableArray.hpp
 idealGraphPrinter.hpp                   ostream.hpp
 
 idealGraphPrinter.cpp                   idealGraphPrinter.hpp
-idealGraphPrinter.cpp			chaitin.hpp
+idealGraphPrinter.cpp                   chaitin.hpp
 idealGraphPrinter.cpp                   machnode.hpp
 idealGraphPrinter.cpp                   parse.hpp
 idealGraphPrinter.cpp                   threadCritical.hpp
@@ -1098,4 +1098,4 @@ parse2.cpp                              idealGraphPrinter.hpp
 parse1.cpp                              idealGraphPrinter.hpp
 matcher.cpp                             idealGraphPrinter.hpp
 loopnode.cpp                            idealGraphPrinter.hpp
-chaitin.cpp				idealGraphPrinter.hpp
+chaitin.cpp                             idealGraphPrinter.hpp

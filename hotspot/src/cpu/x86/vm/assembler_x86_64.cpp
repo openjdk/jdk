@@ -1304,7 +1304,7 @@ void Assembler::movl(Address dst, Register src) {
   emit_operand(src, dst);
 }
 
-void Assembler::mov64(Register dst, int64_t imm64) {
+void Assembler::mov64(Register dst, intptr_t imm64) {
   InstructionMark im(this);
   int encode = prefixq_and_encode(dst->encoding());
   emit_byte(0xB8 | encode);
@@ -1331,7 +1331,7 @@ void Assembler::movq(Register dst, Address src) {
   emit_operand(dst, src);
 }
 
-void Assembler::mov64(Address dst, int64_t imm32) {
+void Assembler::mov64(Address dst, intptr_t imm32) {
   assert(is_simm32(imm32), "lost bits");
   InstructionMark im(this);
   prefixq(dst);
@@ -3369,6 +3369,21 @@ void Assembler::cvtss2sd(XMMRegister dst, XMMRegister src) {
   int encode = prefix_and_encode(dst->encoding(), src->encoding());
   emit_byte(0x0F);
   emit_byte(0x5A);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::cvtdq2pd(XMMRegister dst, XMMRegister src) {
+  emit_byte(0xF3);
+  int encode = prefix_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0xE6);
+  emit_byte(0xC0 | encode);
+}
+
+void Assembler::cvtdq2ps(XMMRegister dst, XMMRegister src) {
+  int encode = prefix_and_encode(dst->encoding(), src->encoding());
+  emit_byte(0x0F);
+  emit_byte(0x5B);
   emit_byte(0xC0 | encode);
 }
 

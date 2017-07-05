@@ -70,9 +70,11 @@ JAR="${TESTJAVA}/bin/jar"
 cp ${TESTSRC}/${AGENT}.java .
 cp ${TESTSRC}/${APP}.java .
 rm -rf ilib
-cp -r ${TESTSRC}/ilib .
-mkdir bootpath
-cp -r ${TESTSRC}/bootreporter bootpath
+mkdir ilib
+cp ${TESTSRC}/ilib/*.java ilib
+rm -rf bootpath
+mkdir -p bootpath/bootreporter
+cp ${TESTSRC}/bootreporter/*.java bootpath/bootreporter
 
 cd bootpath
 ${JAVAC} bootreporter/*.java

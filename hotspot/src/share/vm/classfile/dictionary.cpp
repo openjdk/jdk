@@ -155,8 +155,8 @@ bool Dictionary::do_unloading(BoolObjectClosure* is_alive) {
         for (int i = ik->previous_versions()->length() - 1; i >= 0; i--) {
           // check the previous versions array for GC'ed weak refs
           PreviousVersionNode * pv_node = ik->previous_versions()->at(i);
-          jweak cp_ref = pv_node->prev_constant_pool();
-          assert(cp_ref != NULL, "weak cp ref was unexpectedly cleared");
+          jobject cp_ref = pv_node->prev_constant_pool();
+          assert(cp_ref != NULL, "cp ref was unexpectedly cleared");
           if (cp_ref == NULL) {
             delete pv_node;
             ik->previous_versions()->remove_at(i);

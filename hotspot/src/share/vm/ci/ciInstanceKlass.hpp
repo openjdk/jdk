@@ -46,6 +46,7 @@ private:
   bool                   _has_subklass;
   ciFlags                _flags;
   jint                   _nonstatic_field_size;
+  jint                   _nonstatic_oop_map_size;
 
   // Lazy fields get filled in only upon request.
   ciInstanceKlass*       _super;
@@ -57,6 +58,8 @@ private:
   enum { implementors_limit = instanceKlass::implementors_limit };
   ciInstanceKlass*       _implementors[implementors_limit];
   jint                   _nof_implementors;
+
+  GrowableArray<ciField*>* _non_static_fields;
 
 protected:
   ciInstanceKlass(KlassHandle h_k);
@@ -129,6 +132,9 @@ public:
   jint                   nonstatic_field_size()  {
     assert(is_loaded(), "must be loaded");
     return _nonstatic_field_size; }
+  jint                   nonstatic_oop_map_size()  {
+    assert(is_loaded(), "must be loaded");
+    return _nonstatic_oop_map_size; }
   ciInstanceKlass*       super();
   jint                   nof_implementors()  {
     assert(is_loaded(), "must be loaded");
@@ -138,6 +144,9 @@ public:
 
   ciInstanceKlass* get_canonical_holder(int offset);
   ciField* get_field_by_offset(int field_offset, bool is_static);
+
+  GrowableArray<ciField*>* non_static_fields();
+
   // total number of nonstatic fields (including inherited):
   int nof_nonstatic_fields() {
     if (_nonstatic_fields == NULL)
