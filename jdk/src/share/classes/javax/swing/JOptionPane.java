@@ -56,6 +56,7 @@ import javax.swing.event.InternalFrameEvent;
 import javax.swing.event.InternalFrameAdapter;
 import javax.accessibility.*;
 import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP;
+import sun.awt.AWTAccessor;
 
 /**
  * <code>JOptionPane</code> makes it easy to pop up a standard dialog box that
@@ -1306,17 +1307,7 @@ public class JOptionPane extends JComponent implements Accessible
             }
         }
 
-        // Use reflection to get Container.startLWModal.
-        try {
-            Method method = AccessController.doPrivileged(new ModalPrivilegedAction(
-                    Container.class, "startLWModal"));
-            if (method != null) {
-                method.invoke(dialog, (Object[])null);
-            }
-        } catch (IllegalAccessException ex) {
-        } catch (IllegalArgumentException ex) {
-        } catch (InvocationTargetException ex) {
-        }
+        AWTAccessor.getContainerAccessor().startLWModal(dialog);
 
         if (parentComponent instanceof JInternalFrame) {
             try {
@@ -1451,17 +1442,7 @@ public class JOptionPane extends JComponent implements Accessible
             }
         }
 
-        // Use reflection to get Container.startLWModal.
-        try {
-            Method method = AccessController.doPrivileged(new ModalPrivilegedAction(
-                    Container.class, "startLWModal"));
-            if (method != null) {
-                method.invoke(dialog, (Object[])null);
-            }
-        } catch (IllegalAccessException ex) {
-        } catch (IllegalArgumentException ex) {
-        } catch (InvocationTargetException ex) {
-        }
+        AWTAccessor.getContainerAccessor().startLWModal(dialog);
 
         if (parentComponent instanceof JInternalFrame) {
             try {
@@ -1535,18 +1516,7 @@ public class JOptionPane extends JComponent implements Accessible
                 if (iFrame.isVisible() &&
                         event.getSource() == JOptionPane.this &&
                         event.getPropertyName().equals(VALUE_PROPERTY)) {
-                // Use reflection to get Container.stopLWModal().
-                try {
-                    Method method = AccessController.doPrivileged(
-                        new ModalPrivilegedAction(
-                            Container.class, "stopLWModal"));
-                    if (method != null) {
-                        method.invoke(iFrame, (Object[])null);
-                    }
-                } catch (IllegalAccessException ex) {
-                } catch (IllegalArgumentException ex) {
-                } catch (InvocationTargetException ex) {
-                }
+                    AWTAccessor.getContainerAccessor().stopLWModal(iFrame);
 
                 try {
                     iFrame.setClosed(true);
@@ -2511,33 +2481,6 @@ public class JOptionPane extends JComponent implements Accessible
         ",optionType=" + optionTypeString +
         ",wantsInput=" + wantsInputString;
     }
-
-    /**
-     * Retrieves a method from the provided class and makes it accessible.
-     */
-    private static class ModalPrivilegedAction implements PrivilegedAction<Method> {
-        private Class<?> clazz;
-        private String methodName;
-
-        public ModalPrivilegedAction(Class<?> clazz, String methodName) {
-            this.clazz = clazz;
-            this.methodName = methodName;
-        }
-
-        public Method run() {
-            Method method = null;
-            try {
-                method = clazz.getDeclaredMethod(methodName, (Class[])null);
-            } catch (NoSuchMethodException ex) {
-            }
-            if (method != null) {
-                method.setAccessible(true);
-            }
-            return method;
-        }
-    }
-
-
 
 ///////////////////
 // Accessibility support

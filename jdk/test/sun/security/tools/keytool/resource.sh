@@ -62,7 +62,7 @@ case "$OS" in
 esac
 
 # the test code
-${TESTJAVA}${FS}bin${FS}keytool > temp_file_40875602475 2> ${NULL}
+${TESTJAVA}${FS}bin${FS}keytool ${TESTTOOLVMOPTS} > temp_file_40875602475 2> ${NULL}
 grep MissingResourceException temp_file_40875602475
 
 if [ $? -eq 0 ]; then

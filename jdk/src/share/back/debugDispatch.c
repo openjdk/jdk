@@ -29,6 +29,7 @@
 #include "VirtualMachineImpl.h"
 #include "ReferenceTypeImpl.h"
 #include "ClassTypeImpl.h"
+#include "InterfaceTypeImpl.h"
 #include "ArrayTypeImpl.h"
 #include "FieldImpl.h"
 #include "MethodImpl.h"
@@ -67,6 +68,7 @@ debugDispatch_initialize(void)
     l1Array[JDWP_COMMAND_SET(VirtualMachine)] = (void *)VirtualMachine_Cmds;
     l1Array[JDWP_COMMAND_SET(ReferenceType)] = (void *)ReferenceType_Cmds;
     l1Array[JDWP_COMMAND_SET(ClassType)] = (void *)ClassType_Cmds;
+    l1Array[JDWP_COMMAND_SET(InterfaceType)] = (void *)InterfaceType_Cmds;
     l1Array[JDWP_COMMAND_SET(ArrayType)] = (void *)ArrayType_Cmds;
 
     l1Array[JDWP_COMMAND_SET(Field)] = (void *)Field_Cmds;

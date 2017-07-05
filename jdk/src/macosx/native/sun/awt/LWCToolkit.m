@@ -144,6 +144,18 @@ JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_LWCToolkit_nativeSyncQueue
     return JNI_FALSE;
 }
 
+/*
+ * Class:     sun_lwawt_macosx_LWCToolkit
+ * Method:    flushNativeSelectors
+ * Signature: ()J
+ */
+JNIEXPORT void JNICALL Java_sun_lwawt_macosx_LWCToolkit_flushNativeSelectors
+(JNIEnv *env, jclass clz)
+{
+JNF_COCOA_ENTER(env);
+        [ThreadUtilities performOnMainThreadWaiting:YES block:^(){}];
+JNF_COCOA_EXIT(env);
+}
 
 static JNF_CLASS_CACHE(jc_Component, "java/awt/Component");
 static JNF_MEMBER_CACHE(jf_Component_appContext, jc_Component, "appContext", "Lsun/awt/AppContext;");

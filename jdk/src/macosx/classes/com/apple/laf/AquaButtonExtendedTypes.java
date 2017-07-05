@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@ import apple.laf.JRSUIConstants.*;
 
 import com.apple.laf.AquaUtilControlSize.*;
 import com.apple.laf.AquaUtils.RecyclableSingleton;
+
+import static apple.laf.JRSUIConstants.FOCUS_SIZE;
 
 /**
  * All the "magic numbers" in this class should go away once
@@ -145,7 +147,8 @@ public class AquaButtonExtendedTypes {
     protected static Map<String, TypeSpecifier> getAllTypes() {
         final Map<String, TypeSpecifier> specifiersByName = new HashMap<String, TypeSpecifier>();
 
-        final Insets focusInsets = new Insets(4, 4, 4, 4);
+        final Insets focusInsets = new Insets(FOCUS_SIZE, FOCUS_SIZE,
+                                              FOCUS_SIZE, FOCUS_SIZE);
 
         final TypeSpecifier[] specifiers = {
             new TypeSpecifier("toolbar", true) {

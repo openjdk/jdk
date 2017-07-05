@@ -35,8 +35,6 @@ import java.io.IOException;
  */
 
 final class PendingFuture<V,A> implements Future<V> {
-    private static final CancellationException CANCELLED =
-        new CancellationException();
 
     private final AsynchronousChannel channel;
     private final CompletionHandler<V,? super A> handler;
@@ -180,7 +178,7 @@ final class PendingFuture<V,A> implements Future<V> {
                 latch.await();
         }
         if (exc != null) {
-            if (exc == CANCELLED)
+            if (exc instanceof CancellationException)
                 throw new CancellationException();
             throw new ExecutionException(exc);
         }
@@ -197,7 +195,7 @@ final class PendingFuture<V,A> implements Future<V> {
                 if (!latch.await(timeout, unit)) throw new TimeoutException();
         }
         if (exc != null) {
-            if (exc == CANCELLED)
+            if (exc instanceof CancellationException)
                 throw new CancellationException();
             throw new ExecutionException(exc);
         }
@@ -205,7 +203,7 @@ final class PendingFuture<V,A> implements Future<V> {
     }
 
     Throwable exception() {
-        return (exc != CANCELLED) ? exc : null;
+        return (exc instanceof CancellationException) ? null : exc;
     }
 
     V value() {
@@ -214,7 +212,7 @@ final class PendingFuture<V,A> implements Future<V> {
 
     @Override
     public boolean isCancelled() {
-        return (exc == CANCELLED);
+        return (exc instanceof CancellationException);
     }
 
     @Override
@@ -233,7 +231,7 @@ final class PendingFuture<V,A> implements Future<V> {
                 ((Cancellable)channel()).onCancel(this);
 
             // set result and cancel timer
-            exc = CANCELLED;
+            exc = new CancellationException();
             haveResult = true;
             if (timeoutTask != null)
                 timeoutTask.cancel(false);

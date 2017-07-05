@@ -85,7 +85,7 @@ EOF
 rm diffend.jar
 zip diffend.jar META-INF/MANIFEST.MF META-INF/x.RSA 1
 
-${TESTJAVA}${FS}bin${FS}jarsigner \
+${TESTJAVA}${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} \
     -keystore ${TESTSRC}${FS}JarSigning.keystore \
     -storepass bbbbbb \
     -digestalg SHA1 \
@@ -99,7 +99,7 @@ unzip -p diffend.new.jar META-INF/MANIFEST.MF | grep Today || exit 1
 rm diffend.jar
 zip diffend.jar META-INF/MANIFEST.MF 1
 
-${TESTJAVA}${FS}bin${FS}jarsigner \
+${TESTJAVA}${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} \
     -keystore ${TESTSRC}${FS}JarSigning.keystore \
     -storepass bbbbbb \
     -digestalg SHA1 \

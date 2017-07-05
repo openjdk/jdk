@@ -297,7 +297,7 @@ public abstract class ComponentUI {
     }
 
     /**
-     * Returns an enum indicating how the baseline of he component
+     * Returns an enum indicating how the baseline of the component
      * changes as the size changes.  This method is primarily meant for
      * layout managers and GUI builders.
      * <p>

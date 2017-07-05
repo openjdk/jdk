@@ -51,9 +51,9 @@ esac
 
 KSFILE=ns7.jks
 
-KT="${TESTJAVA}${FS}bin${FS}keytool -keystore ns7.jks -storepass changeit -keypass changeit -keyalg rsa"
-JAR="${TESTJAVA}${FS}bin${FS}jar"
-JS="${TESTJAVA}${FS}bin${FS}jarsigner -keystore ns7.jks -storepass changeit"
+KT="${TESTJAVA}${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -keystore ns7.jks -storepass changeit -keypass changeit -keyalg rsa"
+JAR="${TESTJAVA}${FS}bin${FS}jar ${TESTTOOLVMOPTS}"
+JS="${TESTJAVA}${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS} -keystore ns7.jks -storepass changeit"
 
 rm ns7.*
 

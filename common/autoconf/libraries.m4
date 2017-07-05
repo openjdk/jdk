@@ -286,9 +286,10 @@ AC_DEFUN([LIB_CHECK_POTENTIAL_FREETYPE],
           AC_MSG_NOTICE([Could not find $POTENTIAL_FREETYPE_LIB_PATH/freetype.lib. Ignoring location.])
           FOUND_FREETYPE=no
         fi
-      elif test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64 && test -s "$POTENTIAL_FREETYPE_LIB_PATH/amd64/$FREETYPE_LIB_NAME"; then
-        # On solaris-x86_86, default is (normally) PATH/lib/amd64. Update our guess!
-        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH/amd64"
+      elif test "x$OPENJDK_TARGET_OS" = xsolaris \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
+        # Found lib in isa dir, use that instead.
+        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
       fi
     fi
   fi

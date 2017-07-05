@@ -45,9 +45,9 @@ case "$OS" in
     ;;
 esac
 
-KT="$TESTJAVA${FS}bin${FS}keytool -storepass changeit -keypass changeit -keyalg rsa"
-JAR=$TESTJAVA${FS}bin${FS}jar
-JARSIGNER="$TESTJAVA${FS}bin${FS}jarsigner"
+KT="$TESTJAVA${FS}bin${FS}keytool ${TESTTOOLVMOPTS} -storepass changeit -keypass changeit -keyalg rsa"
+JAR="$TESTJAVA${FS}bin${FS}jar ${TESTTOOLVMOPTS}"
+JARSIGNER="$TESTJAVA${FS}bin${FS}jarsigner ${TESTTOOLVMOPTS}"
 
 rm js.jks trust.jks unrelated.jks 2> /dev/null
 

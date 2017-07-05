@@ -119,13 +119,13 @@ public abstract class Cache<K,V> {
         synchronized (this.queue) {
             // synchronized search improves stability
             // we must create and add new value if there are no needed entry
-            int index = index(hash, this.table);
-            current = getEntryValue(key, hash, this.table[index]);
+            current = getEntryValue(key, hash, this.table[index(hash, this.table)]);
             if (current != null) {
                 return current;
             }
             V value = create(key);
             Objects.requireNonNull(value, "value");
+            int index = index(hash, this.table);
             this.table[index] = new CacheEntry<>(hash, key, value, this.table[index]);
             if (++this.size >= this.threshold) {
                 if (this.table.length == MAXIMUM_CAPACITY) {
