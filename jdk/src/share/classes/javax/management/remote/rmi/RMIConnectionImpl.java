@@ -308,6 +308,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    @SuppressWarnings("rawtypes")  // MarshalledObject
     public ObjectInstance createMBean(String className,
                                       ObjectName name,
                                       MarshalledObject params,
@@ -368,6 +369,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    @SuppressWarnings("rawtypes")  // MarshalledObject
     public ObjectInstance createMBean(String className,
                                  ObjectName name,
                                  ObjectName loaderName,
@@ -493,6 +495,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    @SuppressWarnings("rawtypes")  // MarshalledObject
     public Set<ObjectInstance>
         queryMBeans(ObjectName name,
                     MarshalledObject query,
@@ -527,6 +530,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    @SuppressWarnings("rawtypes")  // MarshalledObject
     public Set<ObjectName>
         queryNames(ObjectName name,
                    MarshalledObject query,
@@ -668,6 +672,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    @SuppressWarnings("rawtypes")  // MarshalledObject
     public void setAttribute(ObjectName name,
                              MarshalledObject attribute,
                              Subject delegationSubject)
@@ -720,6 +725,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    @SuppressWarnings("rawtypes")  // MarshalledObject
     public AttributeList setAttributes(ObjectName name,
                          MarshalledObject attributes,
                          Subject delegationSubject)
@@ -765,6 +771,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    @SuppressWarnings("rawtypes")  // MarshalledObject
     public Object invoke(ObjectName name,
                          String operationName,
                          MarshalledObject params,
@@ -928,6 +935,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    @SuppressWarnings("rawtypes")  // MarshalledObject
     public Integer[] addNotificationListeners(ObjectName[] names,
                       MarshalledObject[] filters,
                       Subject[] delegationSubjects)
@@ -1013,6 +1021,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    @SuppressWarnings("rawtypes")  // MarshalledObject
     public void addNotificationListener(ObjectName name,
                        ObjectName listener,
                        MarshalledObject filter,
@@ -1148,6 +1157,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    @SuppressWarnings("rawtypes")  // MarshalledObject
     public void removeNotificationListener(ObjectName name,
                         ObjectName listener,
                         MarshalledObject filter,
@@ -1809,7 +1819,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
-    private static <T> T unwrap(final MarshalledObject mo,
+    private static <T> T unwrap(final MarshalledObject<?> mo,
                                 final ClassLoader cl,
                                 final Class<T> wrappedClass)
             throws IOException {
@@ -1847,7 +1857,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         return null;
     }
 
-    private static <T> T unwrap(final MarshalledObject mo,
+    private static <T> T unwrap(final MarshalledObject<?> mo,
                                 final ClassLoader cl1,
                                 final ClassLoader cl2,
                                 final Class<T> wrappedClass)

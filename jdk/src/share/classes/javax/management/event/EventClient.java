@@ -117,12 +117,12 @@ public class EventClient implements EventConsumer, NotificationManager {
     public static final String NONFATAL = "jmx.event.service.nonfatal";
 
     /**
-     * <p>A notification string type used by an {@code EventClient} object to
-     * inform a listener added by {@code #addEventClientListener} that it
-     * has detected that notifications have been lost.  The {@link
-     * Notification#getUserData() userData} of the notification is a Long which
-     * is an upper bound on the number of lost notifications that have just
-     * been detected.</p>
+     * <p>A notification string type used by an {@code EventClient} object
+     * to inform a listener added by {@link #addEventClientListener
+     * addEventClientListener} that it has detected that notifications have
+     * been lost.  The {@link Notification#getUserData() userData} of the
+     * notification is a Long which is an upper bound on the number of lost
+     * notifications that have just been detected.</p>
      *
      * @see #addEventClientListener
      */
@@ -577,8 +577,13 @@ public class EventClient implements EventConsumer, NotificationManager {
     }
 
     /**
-     * Returns the set of listeners that have been added through
-     * this {@code EventClient} and not subsequently removed.
+     * <p>Returns the collection of listeners that have been added through
+     * this {@code EventClient} and not subsequently removed.  The returned
+     * collection contains one entry for every listener added with
+     * {@link #addNotificationListener addNotificationListener} or
+     * {@link #subscribe subscribe} and not subsequently removed with
+     * {@link #removeNotificationListener removeNotificationListener} or
+     * {@link #unsubscribe unsubscribe}, respectively.</p>
      *
      * @return A collection of listener information. Empty if there are no
      * current listeners or if this {@code EventClient} has been {@linkplain
@@ -927,8 +932,10 @@ public class EventClient implements EventConsumer, NotificationManager {
     private final static MBeanNotificationInfo[] myInfo =
             new MBeanNotificationInfo[] {
         new MBeanNotificationInfo(
-                new String[] {FAILED, NOTIFS_LOST},
-                Notification.class.getName(), "")};
+                new String[] {FAILED, NONFATAL, NOTIFS_LOST},
+                Notification.class.getName(),
+                "Notifications that can be sent to a listener added with " +
+                "EventClient.addEventClientListener")};
 
     private final NotificationBroadcasterSupport broadcaster =
             new NotificationBroadcasterSupport();

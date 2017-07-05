@@ -59,7 +59,7 @@ public class ServerNotifForwarder {
 
 
     public ServerNotifForwarder(MBeanServer mbeanServer,
-                                Map env,
+                                Map<String, ?> env,
                                 NotificationBuffer notifBuffer,
                                 String connectionId) {
         this.mbeanServer = mbeanServer;

@@ -115,7 +115,7 @@ public class Introspector {
      *         Dynamic MBeans, <code>false</code> otherwise.
      *
      **/
-    public static final boolean isDynamic(final Class c) {
+    public static final boolean isDynamic(final Class<?> c) {
         // Check if the MBean implements the DynamicMBean interface
         return javax.management.DynamicMBean.class.isAssignableFrom(c);
     }
@@ -134,7 +134,7 @@ public class Introspector {
      *            MBeanServer.
      *
      **/
-    public static void testCreation(Class c)
+    public static void testCreation(Class<?> c)
         throws NotCompliantMBeanException {
         // Check if the class is a concrete class
         final int mods = c.getModifiers();
@@ -143,7 +143,7 @@ public class Introspector {
         }
 
         // Check if the MBean has a public constructor
-        final Constructor[] consList = c.getConstructors();
+        final Constructor<?>[] consList = c.getConstructors();
         if (consList.length == 0) {
             throw new NotCompliantMBeanException("MBean class must have public constructor");
         }
@@ -253,7 +253,7 @@ public class Introspector {
      * @exception NotCompliantMBeanException The specified class is not a
      *            JMX compliant MBean
      */
-    public static MBeanInfo testCompliance(Class baseClass)
+    public static MBeanInfo testCompliance(Class<?> baseClass)
         throws NotCompliantMBeanException {
 
         // ------------------------------
@@ -267,7 +267,7 @@ public class Introspector {
         return testCompliance(baseClass, null);
     }
 
-    public static void testComplianceMXBeanInterface(Class interfaceClass,
+    public static void testComplianceMXBeanInterface(Class<?> interfaceClass,
                                                      MXBeanMappingFactory factory)
             throws NotCompliantMBeanException {
         MXBeanIntrospector.getInstance(factory).getAnalyzer(interfaceClass);
@@ -596,10 +596,10 @@ public class Introspector {
                 ss[i] = (String) annotationToField(xx[i]);
             return ss;
         }
-        if (x instanceof Class)
+        if (x instanceof Class<?>)
             return ((Class<?>) x).getName();
-        if (x instanceof Enum)
-            return ((Enum) x).name();
+        if (x instanceof Enum<?>)
+            return ((Enum<?>) x).name();
         // The only other possibility is that the value is another
         // annotation, or that the language has evolved since this code
         // was written.  We don't allow for either of those currently.

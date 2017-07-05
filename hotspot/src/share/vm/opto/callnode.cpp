@@ -967,6 +967,7 @@ SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp,
   init_class_id(Class_SafePointScalarObject);
 }
 
+bool SafePointScalarObjectNode::pinned() const { return true; }
 
 uint SafePointScalarObjectNode::ideal_reg() const {
   return 0; // No matching to machine instruction
