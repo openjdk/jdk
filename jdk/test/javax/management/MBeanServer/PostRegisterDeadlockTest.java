@@ -26,7 +26,7 @@
  * @bug 6417044
  * @summary Test deadlock in MBeanRegistration.postRegister method
  * @author Eamonn McManus, Daniel Fuchs
- * @modules java.management
+ *
  * @run clean PostRegisterDeadlockTest
  * @run build PostRegisterDeadlockTest
  * @run main PostRegisterDeadlockTest

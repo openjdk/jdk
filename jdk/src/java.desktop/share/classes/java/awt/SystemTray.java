@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,17 @@
 
 package java.awt;
 
-import java.util.Vector;
+import java.awt.event.ActionListener;
 import java.awt.peer.SystemTrayPeer;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import sun.awt.AppContext;
-import sun.awt.SunToolkit;
-import sun.awt.HeadlessToolkit;
+import java.util.Vector;
+
 import sun.awt.AWTAccessor;
 import sun.awt.AWTPermissions;
+import sun.awt.AppContext;
+import sun.awt.HeadlessToolkit;
+import sun.awt.SunToolkit;
 
 /**
  * The {@code SystemTray} class represents the system tray for a

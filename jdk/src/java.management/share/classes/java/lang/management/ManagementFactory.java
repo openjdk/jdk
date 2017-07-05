@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * the management interface of a component of the Java virtual
  * machine.
  *
- * <h3><a name="MXBean">Platform MXBeans</a></h3>
+ * <h3><a id="MXBean">Platform MXBeans</a></h3>
  * <p>
  * A platform MXBean is a <i>managed bean</i> that
  * conforms to the <a href="../../../javax/management/package-summary.html">JMX</a>
@@ -83,7 +83,7 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * See <a href="../../../javax/management/MXBean.html#MXBean-spec">
  * the specification of MXBeans</a> for details.
  *
- * <a name="MXBeanNames"></a>
+ * <a id="MXBeanNames"></a>
  * <p>Each platform MXBean is a {@link PlatformManagedObject}
  * and it has a unique
  * {@link javax.management.ObjectName ObjectName} for
@@ -141,7 +141,8 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * interfaces:
  *
  * <blockquote>
- * <table border summary="The list of Management Interfaces and their single instances">
+ * <table border="1">
+ * <caption style="display:none">The list of Management Interfaces and their single instances</caption>
  * <tr>
  * <th>Management Interface</th>
  * <th>ObjectName</th>
@@ -184,7 +185,8 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * the following management interfaces.
  *
  * <blockquote>
- * <table border summary="The list of Management Interfaces and their single instances">
+ * <table border="1">
+ * <caption style="display:none">The list of Management Interfaces and their single instances</caption>
  * <tr>
  * <th>Management Interface</th>
  * <th>ObjectName</th>
@@ -201,7 +203,8 @@ import sun.management.spi.PlatformMBeanProvider.PlatformComponent;
  * A Java virtual machine may have one or more instances of the following
  * management interfaces.
  * <blockquote>
- * <table border summary="The list of Management Interfaces and their single instances">
+ * <table border="1">
+ * <caption style="display:none">The list of Management Interfaces and their single instances</caption>
  * <tr>
  * <th>Management Interface</th>
  * <th>ObjectName</th>

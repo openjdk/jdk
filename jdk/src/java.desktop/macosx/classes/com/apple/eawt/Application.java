@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,24 @@ import java.awt.Image;
 import java.awt.PopupMenu;
 import java.awt.Toolkit;
 import java.awt.Window;
-import java.awt.desktop.*;
+import java.awt.desktop.AboutHandler;
+import java.awt.desktop.AppForegroundListener;
+import java.awt.desktop.AppHiddenListener;
+import java.awt.desktop.AppReopenedListener;
+import java.awt.desktop.OpenFilesEvent;
+import java.awt.desktop.OpenFilesHandler;
+import java.awt.desktop.OpenURIEvent;
+import java.awt.desktop.OpenURIHandler;
+import java.awt.desktop.PreferencesHandler;
+import java.awt.desktop.PrintFilesEvent;
+import java.awt.desktop.PrintFilesHandler;
+import java.awt.desktop.QuitHandler;
+import java.awt.desktop.QuitResponse;
+import java.awt.desktop.QuitStrategy;
+import java.awt.desktop.ScreenSleepListener;
+import java.awt.desktop.SystemEventListener;
+import java.awt.desktop.SystemSleepListener;
+import java.awt.desktop.UserSessionListener;
 import java.beans.Beans;
 
 import javax.swing.JMenuBar;
@@ -108,10 +125,10 @@ public class Application {
      *
      * @see AppForegroundListener
      * @see AppHiddenListener
-     * @see AppReOpenedListener
-     * @see AppScreenSleepListener
-     * @see AppSystemSleepListener
-     * @see AppUserSessionListener
+     * @see AppReopenedListener
+     * @see ScreenSleepListener
+     * @see SystemSleepListener
+     * @see UserSessionListener
      *
      * @param listener
      * @since Java for Mac OS X 10.6 Update 3
@@ -126,10 +143,10 @@ public class Application {
      *
      * @see AppForegroundListener
      * @see AppHiddenListener
-     * @see AppReOpenedListener
-     * @see AppScreenSleepListener
-     * @see AppSystemSleepListener
-     * @see AppUserSessionListener
+     * @see AppReopenedListener
+     * @see ScreenSleepListener
+     * @see SystemSleepListener
+     * @see UserSessionListener
      *
      * @param listener
      * @since Java for Mac OS X 10.6 Update 3
@@ -144,7 +161,7 @@ public class Application {
      *
      * Setting the {@link AboutHandler} to {@code null} reverts it to the default Cocoa About window.
      *
-     * @param aboutHandler the handler to respond to the {@link AboutHandler#handleAbout()} message
+     * @param aboutHandler the handler to respond to the {@link AboutHandler#handleAbout} message
      * @since Java for Mac OS X 10.6 Update 3
      * @since Java for Mac OS X 10.5 Update 8
      */
@@ -167,7 +184,7 @@ public class Application {
 
     /**
      * Installs the handler which is notified when the application is asked to open a list of files.
-     * The {@link OpenFilesHandler#openFiles(AppEvent.OpenFilesEvent)} notifications are only sent if the Java app is a bundled application, with a {@code CFBundleDocumentTypes} array present in it's Info.plist.
+     * The {@link OpenFilesHandler#openFiles(OpenFilesEvent)} notifications are only sent if the Java app is a bundled application, with a {@code CFBundleDocumentTypes} array present in it's Info.plist.
      * See the <a href="http://developer.apple.com/mac/library/documentation/General/Reference/InfoPlistKeyReference">Info.plist Key Reference</a> for more information about adding a {@code CFBundleDocumentTypes} key to your app's Info.plist.
      *
      * @param openFileHandler
@@ -180,7 +197,7 @@ public class Application {
 
     /**
      * Installs the handler which is notified when the application is asked to print a list of files.
-     * The {@link PrintFilesHandler#printFiles(AppEvent.PrintFilesEvent)} notifications are only sent if the Java app is a bundled application, with a {@code CFBundleDocumentTypes} array present in it's Info.plist.
+     * The {@link PrintFilesHandler#printFiles(PrintFilesEvent)} notifications are only sent if the Java app is a bundled application, with a {@code CFBundleDocumentTypes} array present in it's Info.plist.
      * See the <a href="http://developer.apple.com/mac/library/documentation/General/Reference/InfoPlistKeyReference">Info.plist Key Reference</a> for more information about adding a {@code CFBundleDocumentTypes} key to your app's Info.plist.
      *
      * @param printFileHandler
@@ -193,10 +210,10 @@ public class Application {
 
     /**
      * Installs the handler which is notified when the application is asked to open a URL.
-     * The {@link OpenURIHandler#openURI(AppEvent.OpenURIEvent)} notifications are only sent if the Java app is a bundled application, with a {@code CFBundleURLTypes} array present in it's Info.plist.
+     * The {@link OpenURIHandler#openURI(OpenURIEvent)} notifications are only sent if the Java app is a bundled application, with a {@code CFBundleURLTypes} array present in it's Info.plist.
      * See the <a href="http://developer.apple.com/mac/library/documentation/General/Reference/InfoPlistKeyReference">Info.plist Key Reference</a> for more information about adding a {@code CFBundleURLTypes} key to your app's Info.plist.
      *
-     * Setting the handler to {@code null} causes all {@link OpenURIHandler#openURI(AppEvent.OpenURIEvent)} requests to be enqueued until another handler is set.
+     * Setting the handler to {@code null} causes all {@link OpenURIHandler#openURI(OpenURIEvent)} requests to be enqueued until another handler is set.
      *
      * @param openURIHandler
      * @since Java for Mac OS X 10.6 Update 3

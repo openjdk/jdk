@@ -190,6 +190,10 @@ void* CodeHeap::allocate(size_t instance_size) {
   if (block != NULL) {
     assert(block->length() >= number_of_segments && block->length() < number_of_segments + CodeCacheMinBlockLength, "sanity check");
     assert(!block->free(), "must be marked free");
+    guarantee((char*) block >= _memory.low_boundary() && (char*) block < _memory.high(),
+              "The newly allocated block " INTPTR_FORMAT " is not within the heap "
+              "starting with "  INTPTR_FORMAT " and ending with "  INTPTR_FORMAT,
+              p2i(block), p2i(_memory.low_boundary()), p2i(_memory.high()));
     DEBUG_ONLY(memset((void*)block->allocated_space(), badCodeHeapNewVal, instance_size));
     _max_allocated_capacity = MAX2(_max_allocated_capacity, allocated_capacity());
     _blob_count++;
@@ -204,6 +208,10 @@ void* CodeHeap::allocate(size_t instance_size) {
     HeapBlock* b =  block_at(_next_segment);
     b->initialize(number_of_segments);
     _next_segment += number_of_segments;
+    guarantee((char*) b >= _memory.low_boundary() && (char*) block < _memory.high(),
+              "The newly allocated block " INTPTR_FORMAT " is not within the heap "
+              "starting with "  INTPTR_FORMAT " and ending with " INTPTR_FORMAT,
+              p2i(b), p2i(_memory.low_boundary()), p2i(_memory.high()));
     DEBUG_ONLY(memset((void *)b->allocated_space(), badCodeHeapNewVal, instance_size));
     _max_allocated_capacity = MAX2(_max_allocated_capacity, allocated_capacity());
     _blob_count++;
@@ -219,6 +227,10 @@ void CodeHeap::deallocate(void* p) {
   // Find start of HeapBlock
   HeapBlock* b = (((HeapBlock *)p) - 1);
   assert(b->allocated_space() == p, "sanity check");
+  guarantee((char*) b >= _memory.low_boundary() && (char*) b < _memory.high(),
+            "The block to be deallocated " INTPTR_FORMAT " is not within the heap "
+            "starting with "  INTPTR_FORMAT " and ending with " INTPTR_FORMAT,
+            p2i(b), p2i(_memory.low_boundary()), p2i(_memory.high()));
   DEBUG_ONLY(memset((void *)b->allocated_space(), badCodeHeapFreeVal,
              segments_to_size(b->length()) - sizeof(HeapBlock)));
   add_to_freelist(b);
