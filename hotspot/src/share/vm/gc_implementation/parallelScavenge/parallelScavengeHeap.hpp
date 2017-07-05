@@ -220,6 +220,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   void prepare_for_verify();
   virtual void print_on(outputStream* st) const;
+  virtual void print_on_error(outputStream* st) const;
   virtual void print_gc_threads_on(outputStream* st) const;
   virtual void gc_threads_do(ThreadClosure* tc) const;
   virtual void print_tracing_info() const;

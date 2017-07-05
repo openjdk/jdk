@@ -33,7 +33,7 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
 
     public static void main(String[] args) throws Exception {
         // to prevent inlining #method into #compile()
-        WHITE_BOX.setDontInlineMethod(METHOD, true);
+        WHITE_BOX.testSetDontInlineMethod(METHOD, true);
         new MakeMethodNotCompilableTest().runTest();
     }
 
@@ -46,9 +46,6 @@ public class MakeMethodNotCompilableTest extends CompilerWhiteBoxTest {
             throw new RuntimeException(METHOD + " must be not compilable");
         }
         compile();
-        if (WHITE_BOX.isMethodQueuedForCompilation(METHOD)) {
-            throw new RuntimeException(METHOD + " must not be in queue");
-        }
         checkNotCompiled(METHOD);
         if (WHITE_BOX.isMethodCompilable(METHOD)) {
             throw new RuntimeException(METHOD + " must be not compilable");

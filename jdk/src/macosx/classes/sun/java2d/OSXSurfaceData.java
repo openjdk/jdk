@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,11 @@ import sun.java2d.loops.*;
 import sun.java2d.pipe.*;
 import sun.lwawt.macosx.*;
 
-import javax.tools.annotation.GenerateNativeHeader;
+import java.lang.annotation.Native;
 
 /*
  * This is the SurfaceData for a CGContextRef.
  */
-/* No native methods here, but the constants are needed in the supporting JNI code */
-@GenerateNativeHeader
 public abstract class OSXSurfaceData extends BufImgSurfaceData {
     final static float UPPER_BND = Float.MAX_VALUE / 2.0f;
     final static float LOWER_BND = -UPPER_BND;
@@ -198,147 +196,147 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
      // graphics primitives drawing implementation:
 
     // certain primitives don't care about all the states (ex. drawing an image needs not involve setting current paint)
-    static final int kPrimitive = 0;
-    static final int kImage = 1;
-    static final int kText = 2;
-    static final int kCopyArea = 3;
-    static final int kExternal = 4;
+    @Native static final int kPrimitive = 0;
+    @Native static final int kImage = 1;
+    @Native static final int kText = 2;
+    @Native static final int kCopyArea = 3;
+    @Native static final int kExternal = 4;
 
-    static final int kLine = 5; // belongs to kPrimitive
-    static final int kRect = 6; // belongs to kPrimitive
-    static final int kRoundRect = 7; // belongs to kPrimitive
-    static final int kOval = 8; // belongs to kPrimitive
-    static final int kArc = 9; // belongs to kPrimitive
-    static final int kPolygon = 10; // belongs to kPrimitive
-    static final int kShape = 11; // belongs to kPrimitive
+    @Native static final int kLine = 5; // belongs to kPrimitive
+    @Native static final int kRect = 6; // belongs to kPrimitive
+    @Native static final int kRoundRect = 7; // belongs to kPrimitive
+    @Native static final int kOval = 8; // belongs to kPrimitive
+    @Native static final int kArc = 9; // belongs to kPrimitive
+    @Native static final int kPolygon = 10; // belongs to kPrimitive
+    @Native static final int kShape = 11; // belongs to kPrimitive
     // static final int kImage = 12; // belongs to kImage
-    static final int kString = 13; // belongs to kText
-    static final int kGlyphs = 14; // belongs to kText
-    static final int kUnicodes = 15; // belongs to kText
+    @Native static final int kString = 13; // belongs to kText
+    @Native static final int kGlyphs = 14; // belongs to kText
+    @Native static final int kUnicodes = 15; // belongs to kText
     // static final int kCopyArea = 16; // belongs to kCopyArea
     // static final int kExternal = 17; // belongs to kExternal
 
-    static final int kCommonParameterCount = 1 + 1 + 4 + 4; // type + change flags + color info (type(1) align(1) and
+    @Native static final int kCommonParameterCount = 1 + 1 + 4 + 4; // type + change flags + color info (type(1) align(1) and
                                                             // value(2)) + parameters ((x1, y1, x2, y2) OR (x, y, w, h))
-    static final int kLineParametersCount = kCommonParameterCount; // kCommonParameterCount
-    static final int kRectParametersCount = kCommonParameterCount + 1; // kCommonParameterCount + isfill
-    static final int kRoundRectParametersCount = kCommonParameterCount + 2 + 1; // kCommonParameterCount + arcW + arcH +
+    @Native static final int kLineParametersCount = kCommonParameterCount; // kCommonParameterCount
+    @Native static final int kRectParametersCount = kCommonParameterCount + 1; // kCommonParameterCount + isfill
+    @Native static final int kRoundRectParametersCount = kCommonParameterCount + 2 + 1; // kCommonParameterCount + arcW + arcH +
                                                                                 // isfill
-    static final int kOvalParametersCount = kCommonParameterCount + 1; // kCommonParameterCount + isfill
-    static final int kArcParametersCount = kCommonParameterCount + 2 + 1 + 1;// kCommonParameterCount + startAngle +
+    @Native static final int kOvalParametersCount = kCommonParameterCount + 1; // kCommonParameterCount + isfill
+    @Native static final int kArcParametersCount = kCommonParameterCount + 2 + 1 + 1;// kCommonParameterCount + startAngle +
                                                                              // arcAngle + isfill + type
-    static final int kPolygonParametersCount = 0; // not supported
-    static final int kShapeParametersCount = 0; // not supported
-    static final int kImageParametersCount = kCommonParameterCount + 2 + 2 + 4 + 4; // flip horz vert + w&h + src + dst
-    static final int kStringParametersCount = 0; // not supported
-    static final int kGlyphsParametersCount = 0; // not supported
-    static final int kUnicodesParametersCount = 0; // not supported
-    static final int kPixelParametersCount = 0; // not supported
-    static final int kExternalParametersCount = 0; // not supported
+    @Native static final int kPolygonParametersCount = 0; // not supported
+    @Native static final int kShapeParametersCount = 0; // not supported
+    @Native static final int kImageParametersCount = kCommonParameterCount + 2 + 2 + 4 + 4; // flip horz vert + w&h + src + dst
+    @Native static final int kStringParametersCount = 0; // not supported
+    @Native static final int kGlyphsParametersCount = 0; // not supported
+    @Native static final int kUnicodesParametersCount = 0; // not supported
+    @Native static final int kPixelParametersCount = 0; // not supported
+    @Native static final int kExternalParametersCount = 0; // not supported
 
     // for intParameters
     // states info
-    static final int kChangeFlagIndex = 0; // kBoundsChangedBit | .. | kFontChangedBit
+    @Native static final int kChangeFlagIndex = 0; // kBoundsChangedBit | .. | kFontChangedBit
     // bounds info
-    static final int kBoundsXIndex = 1;
-    static final int kBoundsYIndex = 2;
-    static final int kBoundsWidthIndex = 3;
-    static final int kBoundsHeightIndex = 4;
+    @Native static final int kBoundsXIndex = 1;
+    @Native static final int kBoundsYIndex = 2;
+    @Native static final int kBoundsWidthIndex = 3;
+    @Native static final int kBoundsHeightIndex = 4;
     // clip info
-    static final int kClipStateIndex = 5;
-    static final int kClipNumTypesIndex = 6;
-    static final int kClipNumCoordsIndex = 7;
-    static final int kClipWindingRuleIndex = 8;
-    static final int kClipXIndex = 9;
-    static final int kClipYIndex = 10;
-    static final int kClipWidthIndex = 11;
-    static final int kClipHeightIndex = 12;
+    @Native static final int kClipStateIndex = 5;
+    @Native static final int kClipNumTypesIndex = 6;
+    @Native static final int kClipNumCoordsIndex = 7;
+    @Native static final int kClipWindingRuleIndex = 8;
+    @Native static final int kClipXIndex = 9;
+    @Native static final int kClipYIndex = 10;
+    @Native static final int kClipWidthIndex = 11;
+    @Native static final int kClipHeightIndex = 12;
     // ctm info
-    static final int kCTMaIndex = 13;
-    static final int kCTMbIndex = 14;
-    static final int kCTMcIndex = 15;
-    static final int kCTMdIndex = 16;
-    static final int kCTMtxIndex = 17;
-    static final int kCTMtyIndex = 18;
+    @Native static final int kCTMaIndex = 13;
+    @Native static final int kCTMbIndex = 14;
+    @Native static final int kCTMcIndex = 15;
+    @Native static final int kCTMdIndex = 16;
+    @Native static final int kCTMtxIndex = 17;
+    @Native static final int kCTMtyIndex = 18;
     // color info
-    static final int kColorStateIndex = 19; // kColorSimple or kColorGradient or kColorTexture
-    static final int kColorRGBValueIndex = 20; // if kColorSimple
-    static final int kColorIndexValueIndex = 21; // if kColorSystem
-    static final int kColorPointerIndex = 22; //
-    static final int kColorPointerIndex2 = 23; //
-    static final int kColorRGBValue1Index = 24; // if kColorGradient
-    static final int kColorWidthIndex = 25; // if kColorTexture
-    static final int kColorRGBValue2Index = 26; // if kColorGradient
-    static final int kColorHeightIndex = 27; // if kColorTexture
-    static final int kColorIsCyclicIndex = 28; // if kColorGradient (kColorNonCyclic or kColorCyclic)
-    static final int kColorx1Index = 29;
-    static final int kColortxIndex = 30;
-    static final int kColory1Index = 31;
-    static final int kColortyIndex = 32;
-    static final int kColorx2Index = 33;
-    static final int kColorsxIndex = 34;
-    static final int kColory2Index = 35;
-    static final int kColorsyIndex = 36;
+    @Native static final int kColorStateIndex = 19; // kColorSimple or kColorGradient or kColorTexture
+    @Native static final int kColorRGBValueIndex = 20; // if kColorSimple
+    @Native static final int kColorIndexValueIndex = 21; // if kColorSystem
+    @Native static final int kColorPointerIndex = 22; //
+    @Native static final int kColorPointerIndex2 = 23; //
+    @Native static final int kColorRGBValue1Index = 24; // if kColorGradient
+    @Native static final int kColorWidthIndex = 25; // if kColorTexture
+    @Native static final int kColorRGBValue2Index = 26; // if kColorGradient
+    @Native static final int kColorHeightIndex = 27; // if kColorTexture
+    @Native static final int kColorIsCyclicIndex = 28; // if kColorGradient (kColorNonCyclic or kColorCyclic)
+    @Native static final int kColorx1Index = 29;
+    @Native static final int kColortxIndex = 30;
+    @Native static final int kColory1Index = 31;
+    @Native static final int kColortyIndex = 32;
+    @Native static final int kColorx2Index = 33;
+    @Native static final int kColorsxIndex = 34;
+    @Native static final int kColory2Index = 35;
+    @Native static final int kColorsyIndex = 36;
     // composite info
-    static final int kCompositeRuleIndex = 37; // kCGCompositeClear or ... or kCGCompositeXor
-    static final int kCompositeValueIndex = 38;
+    @Native static final int kCompositeRuleIndex = 37; // kCGCompositeClear or ... or kCGCompositeXor
+    @Native static final int kCompositeValueIndex = 38;
     // stroke info
-    static final int kStrokeJoinIndex = 39; // see BasicStroke.java
-    static final int kStrokeCapIndex = 40; // see BasicStroke.java
-    static final int kStrokeWidthIndex = 41;
-    static final int kStrokeDashPhaseIndex = 42;
-    static final int kStrokeLimitIndex = 43;
+    @Native static final int kStrokeJoinIndex = 39; // see BasicStroke.java
+    @Native static final int kStrokeCapIndex = 40; // see BasicStroke.java
+    @Native static final int kStrokeWidthIndex = 41;
+    @Native static final int kStrokeDashPhaseIndex = 42;
+    @Native static final int kStrokeLimitIndex = 43;
     // hints info
-    static final int kHintsAntialiasIndex = 44;
-    static final int kHintsTextAntialiasIndex = 45;
-    static final int kHintsFractionalMetricsIndex = 46;
-    static final int kHintsRenderingIndex = 47;
-    static final int kHintsInterpolationIndex = 48;
+    @Native static final int kHintsAntialiasIndex = 44;
+    @Native static final int kHintsTextAntialiasIndex = 45;
+    @Native static final int kHintsFractionalMetricsIndex = 46;
+    @Native static final int kHintsRenderingIndex = 47;
+    @Native static final int kHintsInterpolationIndex = 48;
     // live resizing info
-    static final int kCanDrawDuringLiveResizeIndex = 49;
+    @Native static final int kCanDrawDuringLiveResizeIndex = 49;
 
-    static final int kSizeOfParameters = kCanDrawDuringLiveResizeIndex + 1;
+    @Native static final int kSizeOfParameters = kCanDrawDuringLiveResizeIndex + 1;
 
     // for objectParameters
-    static final int kClipCoordinatesIndex = 0;
-    static final int kClipTypesIndex = 1;
-    static final int kTextureImageIndex = 2;
-    static final int kStrokeDashArrayIndex = 3;
-    static final int kFontIndex = 4;
-    static final int kFontPaintIndex = 5;
+    @Native static final int kClipCoordinatesIndex = 0;
+    @Native static final int kClipTypesIndex = 1;
+    @Native static final int kTextureImageIndex = 2;
+    @Native static final int kStrokeDashArrayIndex = 3;
+    @Native static final int kFontIndex = 4;
+    @Native static final int kFontPaintIndex = 5;
 
     // possible state changes
-    static final int kBoundsChangedBit = 1 << 0;
-    static final int kBoundsNotChangedBit = ~kBoundsChangedBit;
-    static final int kClipChangedBit = 1 << 1;
-    static final int kClipNotChangedBit = ~kClipChangedBit;
-    static final int kCTMChangedBit = 1 << 2;
-    static final int kCTMNotChangedBit = ~kCTMChangedBit;
-    static final int kColorChangedBit = 1 << 3;
-    static final int kColorNotChangedBit = ~kColorChangedBit;
-    static final int kCompositeChangedBit = 1 << 4;
-    static final int kCompositeNotChangedBit = ~kCompositeChangedBit;
-    static final int kStrokeChangedBit = 1 << 5;
-    static final int kStrokeNotChangedBit = ~kStrokeChangedBit;
-    static final int kHintsChangedBit = 1 << 6;
-    static final int kHintsNotChangedBit = ~kHintsChangedBit;
-    static final int kFontChangedBit = 1 << 7;
-    static final int kFontNotChangedBit = ~kFontChangedBit;
-    static final int kEverythingChangedFlag = 0xffffffff;
+    @Native static final int kBoundsChangedBit = 1 << 0;
+    @Native static final int kBoundsNotChangedBit = ~kBoundsChangedBit;
+    @Native static final int kClipChangedBit = 1 << 1;
+    @Native static final int kClipNotChangedBit = ~kClipChangedBit;
+    @Native static final int kCTMChangedBit = 1 << 2;
+    @Native static final int kCTMNotChangedBit = ~kCTMChangedBit;
+    @Native static final int kColorChangedBit = 1 << 3;
+    @Native static final int kColorNotChangedBit = ~kColorChangedBit;
+    @Native static final int kCompositeChangedBit = 1 << 4;
+    @Native static final int kCompositeNotChangedBit = ~kCompositeChangedBit;
+    @Native static final int kStrokeChangedBit = 1 << 5;
+    @Native static final int kStrokeNotChangedBit = ~kStrokeChangedBit;
+    @Native static final int kHintsChangedBit = 1 << 6;
+    @Native static final int kHintsNotChangedBit = ~kHintsChangedBit;
+    @Native static final int kFontChangedBit = 1 << 7;
+    @Native static final int kFontNotChangedBit = ~kFontChangedBit;
+    @Native static final int kEverythingChangedFlag = 0xffffffff;
 
     // possible color states
-    static final int kColorSimple = 0;
-    static final int kColorSystem = 1;
-    static final int kColorGradient = 2;
-    static final int kColorTexture = 3;
+    @Native static final int kColorSimple = 0;
+    @Native static final int kColorSystem = 1;
+    @Native static final int kColorGradient = 2;
+    @Native static final int kColorTexture = 3;
 
     // possible gradient color states
-    static final int kColorNonCyclic = 0;
-    static final int kColorCyclic = 1;
+    @Native static final int kColorNonCyclic = 0;
+    @Native static final int kColorCyclic = 1;
 
     // possible clip states
-    static final int kClipRect = 0;
-    static final int kClipShape = 1;
+    @Native static final int kClipRect = 0;
+    @Native static final int kClipShape = 1;
 
     static int getRendererTypeForPrimitive(int primitiveType) {
         switch (primitiveType) {

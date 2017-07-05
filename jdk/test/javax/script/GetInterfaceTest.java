@@ -22,7 +22,6 @@
  */
 
 /*
- * @run ignore
  * @test
  * @bug 6960211
  * @summary JavaScript engine allows creation of interface although methods not available.
@@ -49,30 +48,30 @@ public class GetInterfaceTest {
         }
 
         // now define "run"
-        engine.eval("function run() { println('this is run function'); }");
+        engine.eval("function run() { print('this is run function'); }");
         runnable = ((Invocable)engine).getInterface(Runnable.class);
         // should not return null now!
         runnable.run();
 
         // define only one method of "Foo2"
-        engine.eval("function bar() { println('bar function'); }");
+        engine.eval("function bar() { print('bar function'); }");
         Foo2 foo2 = ((Invocable)engine).getInterface(Foo2.class);
         if (foo2 != null) {
             throw new RuntimeException("foo2 is not null!");
         }
 
         // now define other method of "Foo2"
-        engine.eval("function bar2() { println('bar2 function'); }");
+        engine.eval("function bar2() { print('bar2 function'); }");
         foo2 = ((Invocable)engine).getInterface(Foo2.class);
         foo2.bar();
         foo2.bar2();
     }
 
-    interface Foo {
+    public interface Foo {
         public void bar();
     }
 
-    interface Foo2 extends Foo {
+    public interface Foo2 extends Foo {
         public void bar2();
     }
 }

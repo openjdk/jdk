@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ void * operator new(size_t size) {return operator new(size, "stl", 1);}
 
 #include "java_awt_event_InputEvent.h"
 #include "java_awt_dnd_DnDConstants.h"
-#include "sun_awt_dnd_SunDragSourceContextPeer.h"
 #include "sun_awt_windows_WDragSourceContextPeer.h"
 
 #include "awt_ole.h"

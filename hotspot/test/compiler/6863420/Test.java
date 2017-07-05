@@ -27,17 +27,35 @@
  * @bug 6863420
  * @summary os::javaTimeNanos() go backward on Solaris x86
  *
- * @run main/othervm Test
+ * Notice the internal timeout in timeout thread Test.TOT.
+ * @run main/othervm/timeout=300 Test
  */
 
 public class Test {
+
+    static final int INTERNAL_TIMEOUT=240;
+    static class TOT extends Thread {
+       public void run() {
+           try {
+               Thread.sleep(INTERNAL_TIMEOUT*1000);
+           } catch (InterruptedException ex) {
+           }
+           done = true;
+       }
+    }
+
     static long value = 0;
     static boolean got_backward_time = false;
+    static volatile boolean done = false;
 
     public static void main(String args[]) {
         final int count = 100000;
 
-        for (int numThreads = 1; numThreads <= 32; numThreads++) {
+        TOT tot = new TOT();
+        tot.setDaemon(true);
+        tot.start();
+
+        for (int numThreads = 1; !done && numThreads <= 32; numThreads++) {
             final int numRuns = 1;
             for (int t=1; t <= numRuns; t++) {
                 final int curRun = t;
@@ -48,7 +66,7 @@ public class Test {
                     Runnable thread =
                         new Runnable() {
                             public void run() {
-                                for (long l = 0; l < 100000; l++) {
+                                for (long l = 0; !done && l < 100000; l++) {
                                     final long start = System.nanoTime();
                                     if (value == 12345678) {
                                         System.out.println("Wow!");

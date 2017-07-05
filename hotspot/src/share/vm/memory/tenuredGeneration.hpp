@@ -38,13 +38,6 @@ class ParGCAllocBufferWithBOT;
 class TenuredGeneration: public OneContigSpaceCardGeneration {
   friend class VMStructs;
  protected:
-  // current shrinking effect: this damps shrinking when the heap gets empty.
-  size_t _shrink_factor;
-  // Some statistics from before gc started.
-  // These are gathered in the gc_prologue (and should_collect)
-  // to control growing/shrinking policy in spite of promotions.
-  size_t _capacity_at_prologue;
-  size_t _used_at_prologue;
 
 #if INCLUDE_ALL_GCS
   // To support parallel promotion: an array of parallel allocation
@@ -80,9 +73,6 @@ class TenuredGeneration: public OneContigSpaceCardGeneration {
     return !CollectGen0First;
   }
 
-  // Mark sweep support
-  void compute_new_size();
-
   virtual void gc_prologue(bool full);
   virtual void gc_epilogue(bool full);
   bool should_collect(bool   full,
@@ -93,6 +83,7 @@ class TenuredGeneration: public OneContigSpaceCardGeneration {
                        bool clear_all_soft_refs,
                        size_t size,
                        bool is_tlab);
+  virtual void compute_new_size();
 
 #if INCLUDE_ALL_GCS
   // Overrides.
