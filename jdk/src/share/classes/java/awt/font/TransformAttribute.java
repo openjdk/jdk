@@ -120,7 +120,7 @@ public final class TransformAttribute implements Serializable {
         return this;
     }
 
-    // Added for serial backwards compatability (4348425)
+    // Added for serial backwards compatibility (4348425)
     static final long serialVersionUID = 3356247357827709530L;
 
     /**

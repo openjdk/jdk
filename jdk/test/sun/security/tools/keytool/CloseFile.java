@@ -59,7 +59,7 @@ public class CloseFile {
     }
 
     static void run(String s) throws Exception {
-        sun.security.tools.keytool.Main.main((s+" -debug").split(" "));
+        sun.security.tools.keytool.Main.main((s+" -debug -keyalg rsa").split(" "));
     }
     static void remove(String filename, boolean check) {
         new File(filename).delete();

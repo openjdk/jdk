@@ -29,7 +29,7 @@ package java.awt.image;
  *  This class represents image data which is stored in a pixel interleaved
  *  fashion and for
  *  which each sample of a pixel occupies one data element of the DataBuffer.
- *  It subclasses ComponentSampleModel but provides a more efficent
+ *  It subclasses ComponentSampleModel but provides a more efficient
  *  implementation for accessing pixel interleaved image data than is provided
  *  by ComponentSampleModel.  This class
  *  stores sample data for all bands in a single bank of the

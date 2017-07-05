@@ -51,7 +51,7 @@ esac
 
 KSFILE=ns7.jks
 
-KT="${TESTJAVA}${FS}bin${FS}keytool -keystore ns7.jks -storepass changeit -keypass changeit"
+KT="${TESTJAVA}${FS}bin${FS}keytool -keystore ns7.jks -storepass changeit -keypass changeit -keyalg rsa"
 JAR="${TESTJAVA}${FS}bin${FS}jar"
 JS="${TESTJAVA}${FS}bin${FS}jarsigner -keystore ns7.jks -storepass changeit"
 

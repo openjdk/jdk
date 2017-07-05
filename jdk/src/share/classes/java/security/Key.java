@@ -39,7 +39,7 @@ package java.security;
  * RSA), which will work with those algorithms and with related
  * algorithms (such as MD5 with RSA, SHA-1 with RSA, Raw DSA, etc.)
  * The name of the algorithm of a key is obtained using the
- * {@link #getAlgorithm() getAlgorithm} method.<P>
+ * {@link #getAlgorithm() getAlgorithm} method.
  *
  * <LI>An Encoded Form
  *
@@ -65,12 +65,11 @@ package java.security;
  * For more information, see
  * <a href="http://www.ietf.org/rfc/rfc3280.txt">RFC 3280:
  * Internet X.509 Public Key Infrastructure Certificate and CRL Profile</a>.
- * <P>
  *
  * <LI>A Format
  *
  * <P>This is the name of the format of the encoded key. It is returned
- * by the {@link #getFormat() getFormat} method.<P>
+ * by the {@link #getFormat() getFormat} method.
  *
  * </UL>
  *

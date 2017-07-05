@@ -2663,7 +2663,7 @@ public abstract class KeyboardFocusManager
                      * only if we have the last request to dispatch. If the last request
                      * fails, focus will be restored to either the component of the last
                      * previously succedded request, or to to the focus owner that was
-                     * before this clearing proccess.
+                     * before this clearing process.
                      */
                     if (!iter.hasNext()) {
                         disableRestoreFocus = false;

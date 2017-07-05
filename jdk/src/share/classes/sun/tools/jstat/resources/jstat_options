@@ -314,7 +314,7 @@ option gccapacity {
     format "0.0"
   }
   column {
-    header "^OGCMN^"	/* Old Generation Capacity - Minumum */
+    header "^OGCMN^"	/* Old Generation Capacity - Minimum */
     data sun.gc.generation.1.minCapacity
     scale K
     align right
@@ -776,7 +776,7 @@ option gcold {
 
 option gcoldcapacity {
   column {
-    header "^OGCMN^"	/* Old Generation Capacity - Minumum */
+    header "^OGCMN^"	/* Old Generation Capacity - Minimum */
     data sun.gc.generation.1.minCapacity
     scale K
     align right

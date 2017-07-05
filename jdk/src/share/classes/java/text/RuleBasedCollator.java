@@ -671,7 +671,7 @@ public class RuleBasedCollator extends Collator{
         if (tables.isFrenchSec())
         {
             if (preSecIgnore < secResult.length()) {
-                // If we've accumlated any secondary characters after the last base character,
+                // If we've accumulated any secondary characters after the last base character,
                 // reverse them.
                 RBCollationTables.reverse(secResult, preSecIgnore, secResult.length());
             }

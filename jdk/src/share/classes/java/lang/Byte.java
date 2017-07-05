@@ -244,7 +244,7 @@ public final class Byte extends Number implements Comparable<Byte> {
      * <dd><i>Sign<sub>opt</sub></i> {@code 0X} <i>HexDigits</i>
      * <dd><i>Sign<sub>opt</sub></i> {@code #} <i>HexDigits</i>
      * <dd><i>Sign<sub>opt</sub></i> {@code 0} <i>OctalDigits</i>
-     * <p>
+     *
      * <dt><i>Sign:</i>
      * <dd>{@code -}
      * <dd>{@code +}

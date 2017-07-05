@@ -401,7 +401,7 @@ public class ProtectionDomain {
         if (perms != null && permissions != null) {
             //
             // Weed out the duplicates from the policy. Unless a refresh
-            // has occured since the pd was consed this should result in
+            // has occurred since the pd was consed this should result in
             // an empty vector.
             synchronized (permissions) {
                 e = permissions.elements();   // domain vs policy

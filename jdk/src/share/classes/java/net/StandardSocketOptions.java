@@ -257,7 +257,7 @@ public final class StandardSocketOptions {
      * represents the outgoing interface for multicast datagrams sent by the
      * datagram-oriented socket. For {@link StandardProtocolFamily#INET6 IPv6}
      * sockets then it is system dependent whether setting this option also
-     * sets the outgoing interface for multlicast datagrams sent to IPv4
+     * sets the outgoing interface for multicast datagrams sent to IPv4
      * addresses.
      *
      * <p> The initial/default value of this socket option may be {@code null}

@@ -435,8 +435,12 @@ public abstract class CompositeView extends View {
      * might not allow access to some of the locations in the model.
      * This is a convenience method for {@link #getNextNorthSouthVisualPositionFrom}
      * and {@link #getNextEastWestVisualPositionFrom}.
+     * This method enables specifying a position to convert
+     * within the range of &gt;=0.  If the value is -1, a position
+     * will be calculated automatically.  If the value &lt; -1,
+     * the {@code BadLocationException} will be thrown.
      *
-     * @param pos the position to convert &gt;= 0
+     * @param pos the position to convert
      * @param b a bias value of either <code>Position.Bias.Forward</code>
      *  or <code>Position.Bias.Backward</code>
      * @param a the allocated region to render into
@@ -452,12 +456,16 @@ public abstract class CompositeView extends View {
      * @param biasRet an array containing the bias that was checked
      * @return the location within the model that best represents the next
      *  location visual position
-     * @exception BadLocationException
+     * @exception BadLocationException the given position is not a valid
+     *                                 position within the document
      * @exception IllegalArgumentException if <code>direction</code> is invalid
      */
     public int getNextVisualPositionFrom(int pos, Position.Bias b, Shape a,
                                          int direction, Position.Bias[] biasRet)
       throws BadLocationException {
+        if (pos < -1) {
+            throw new BadLocationException("invalid position", pos);
+        }
         Rectangle alloc = getInsideAllocation(a);
 
         switch (direction) {

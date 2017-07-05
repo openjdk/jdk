@@ -644,7 +644,7 @@ public class Introspector {
         /**
          * Returns the list of "getter" methods for the given class. The list
          * is ordered so that isXXX methods appear before getXXX methods - this
-         * is for compatability with the JavaBeans Introspector.
+         * is for compatibility with the JavaBeans Introspector.
          */
         static List<Method> getReadMethods(Class<?> clazz) {
             // return cached result if available
@@ -682,7 +682,7 @@ public class Introspector {
          * {@code null} if no method is found.
          */
         static Method getReadMethod(Class<?> clazz, String property) {
-            // first character in uppercase (compatability with JavaBeans)
+            // first character in uppercase (compatibility with JavaBeans)
             property = property.substring(0, 1).toUpperCase(Locale.ENGLISH) +
                 property.substring(1);
             String getMethod = GET_METHOD_PREFIX + property;

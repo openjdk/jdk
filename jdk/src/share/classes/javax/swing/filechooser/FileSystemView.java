@@ -122,7 +122,7 @@ public abstract class FileSystemView {
     }
 
     /**
-     * Determines if the given file is a root in the navigatable tree(s).
+     * Determines if the given file is a root in the navigable tree(s).
      * Examples: Windows 98 has one root, the Desktop folder. DOS has one root
      * per drive letter, <code>C:\</code>, <code>D:\</code>, etc. Unix has one root,
      * the <code>"/"</code> directory.
@@ -130,7 +130,7 @@ public abstract class FileSystemView {
      * The default implementation gets information from the <code>ShellFolder</code> class.
      *
      * @param f a <code>File</code> object representing a directory
-     * @return <code>true</code> if <code>f</code> is a root in the navigatable tree.
+     * @return <code>true</code> if <code>f</code> is a root in the navigable tree.
      * @see #isFileSystemRoot
      */
     public boolean isRoot(File f) {
@@ -201,7 +201,7 @@ public abstract class FileSystemView {
     /**
      * Type description for a file, directory, or folder as it would be displayed in
      * a system file browser. Example from Windows: the "Desktop" folder
-     * is desribed as "Desktop".
+     * is described as "Desktop".
      *
      * Override for platforms with native ShellFolder implementations.
      *
@@ -254,7 +254,7 @@ public abstract class FileSystemView {
      * parent directory in the filesystem. Folder could for example be the
      * "Desktop" folder which is not the same as file.getParentFile().
      *
-     * @param folder a <code>File</code> object repesenting a directory or special folder
+     * @param folder a <code>File</code> object representing a directory or special folder
      * @param file a <code>File</code> object
      * @return <code>true</code> if <code>folder</code> is a directory or special folder and contains <code>file</code>.
      * @since 1.4
@@ -281,7 +281,7 @@ public abstract class FileSystemView {
 
     /**
      *
-     * @param parent a <code>File</code> object repesenting a directory or special folder
+     * @param parent a <code>File</code> object representing a directory or special folder
      * @param fileName a name of a file or folder which exists in <code>parent</code>
      * @return a File object. This is normally constructed with <code>new
      * File(parent, fileName)</code> except when parent and child are both
@@ -698,7 +698,7 @@ class WindowsFileSystemView extends FileSystemView {
     /**
      * Type description for a file, directory, or folder as it would be displayed in
      * a system file browser. Example from Windows: the "Desktop" folder
-     * is desribed as "Desktop".
+     * is described as "Desktop".
      *
      * The Windows implementation gets information from the ShellFolder class.
      */

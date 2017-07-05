@@ -82,7 +82,7 @@ public class ContextEnumerator implements NamingEnumeration<Binding> {
             return ctx.listBindings("");
     }
 
-    // Subclass should overrride so that instance is of same type as subclass
+    // Subclass should override so that instance is of same type as subclass
     protected ContextEnumerator newEnumerator(Context ctx, int scope,
         String contextName, boolean returnSelf) throws NamingException {
             return new ContextEnumerator(ctx, scope, contextName, returnSelf);

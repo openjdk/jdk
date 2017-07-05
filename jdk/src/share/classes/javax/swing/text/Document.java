@@ -123,7 +123,7 @@ import javax.swing.event.*;
  * rather than a mutation to the <code>Document</code> made through its
  * api.
  * <p style="text-align:center"><img src="doc-files/Document-notification.gif"
- * alt="The preceeding text describes this graphic.">
+ * alt="The preceding text describes this graphic.">
  * <p>
  * Referring to the above diagram, suppose that the component shown
  * on the left mutates the document object represented by the blue

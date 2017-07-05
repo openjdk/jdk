@@ -367,7 +367,7 @@ final class ConnectionMultiplexer {
     /**
      * Send packet of requested data on connection to remote endpoint.
      * @param info connection information structure
-     * @param buf array containg bytes to send
+     * @param buf array containing bytes to send
      * @param off offset of first array index of packet
      * @param len number of bytes in packet to send
      */

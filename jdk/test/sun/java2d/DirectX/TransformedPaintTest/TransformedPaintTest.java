@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6689025
+ * @bug 6689025 8023483
  * @summary Tests that transformed Paints are rendered correctly
  * @author Dmitri.Trembovetski@sun.com: area=Graphics
  * @run main/othervm TransformedPaintTest

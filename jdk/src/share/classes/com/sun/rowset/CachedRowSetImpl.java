@@ -41,7 +41,7 @@ import com.sun.rowset.providers.*;
 /**
  * The standard implementation of the <code>CachedRowSet</code> interface.
  *
- * See interface defintion for full behaviour and implementation requirements.
+ * See interface definition for full behavior and implementation requirements.
  * This reference implementation has made provision for a one-to-one write back
  * facility and it is curremtly be possible to change the peristence provider
  * during the life-time of any CachedRowSetImpl.
@@ -119,14 +119,14 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
     private Vector<Object> rvh;
 
     /**
-     * The current postion of the cursor in this <code>CachedRowSetImpl</code>
+     * The current position of the cursor in this <code>CachedRowSetImpl</code>
      * object.
      * @serial
      */
     private int cursorPos;
 
     /**
-     * The current postion of the cursor in this <code>CachedRowSetImpl</code>
+     * The current position of the cursor in this <code>CachedRowSetImpl</code>
      * object not counting rows that have been deleted, if any.
      * <P>
      * For example, suppose that the cursor is on the last row of a rowset
@@ -236,7 +236,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
     private int startPos;
 
     /**
-     * The integer value indicating the positon from where the page prior to this
+     * The integer value indicating the position from where the page prior to this
      * was populated.
      */
     private int startPrev;
@@ -3730,7 +3730,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
 
         /*
          * Each call to internalPrevious may move the cursor
-         * over multiple rows, the absolute postion moves one one row
+         * over multiple rows, the absolute position moves one one row
          */
         if (ret == true)
             --absolutePos;
@@ -6265,7 +6265,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
     /**
      * Returns a result set containing the original value of the rowset. The
      * original value is the state of the <code>CachedRowSetImpl</code> after the
-     * last population or synchronization (whichever occured most recently) with
+     * last population or synchronization (whichever occurred most recently) with
      * the data source.
      * <p>
      * The cursor is positioned before the first row in the result set.
@@ -6300,7 +6300,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
      * Returns a result set containing the original value of the current
      * row only.
      * The original value is the state of the <code>CachedRowSetImpl</code> after
-     * the last population or synchronization (whichever occured most recently)
+     * the last population or synchronization (whichever occurred most recently)
      * with the data source.
      *
      * @return the original result set of the row
@@ -9061,7 +9061,7 @@ a
 
 
    /**
-  * Sets the designated paramter to the given <code>String</code> object.
+  * Sets the designated parameter to the given <code>String</code> object.
   * The driver converts this to a SQL <code>NCHAR</code> or
   * <code>NVARCHAR</code> or <code>LONGNVARCHAR</code> value
   * (depending on the argument's
@@ -9081,7 +9081,7 @@ a
 
 
  /**
-  * Sets the designated paramter to the given <code>String</code> object.
+  * Sets the designated parameter to the given <code>String</code> object.
   * The driver converts this to a SQL <code>NCHAR</code> or
   * <code>NVARCHAR</code> or <code>LONGNVARCHAR</code>
   * @param parameterName the name of the column to be set
@@ -9421,7 +9421,7 @@ a
     * if parameterIndex does not correspond
     * to a parameter marker in the SQL statement,  if the length specified
     * is less than zero or if the number of bytes in the inputstream does not match
-    * the specfied length.
+    * the specified length.
     * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
     *
     * @since 1.6
@@ -9481,7 +9481,7 @@ a
      * @throws SQLException  if parameterIndex does not correspond
      * to a parameter marker in the SQL statement,  or if the length specified
      * is less than zero; if the number of bytes in the inputstream does not match
-     * the specfied length; if a database access error occurs or
+     * the specified length; if a database access error occurs or
      * this method is called on a closed <code>CallableStatement</code>
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method

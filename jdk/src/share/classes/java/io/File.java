@@ -1685,7 +1685,7 @@ public class File
      *           operation will fail if the user does not have permission to
      *           change the access permissions of this abstract pathname.  If
      *           <code>executable</code> is <code>false</code> and the underlying
-     *           file system does not implement an excute permission, then the
+     *           file system does not implement an execute permission, then the
      *           operation will fail.
      *
      * @throws  SecurityException

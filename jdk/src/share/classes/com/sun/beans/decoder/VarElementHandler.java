@@ -30,7 +30,7 @@ package com.sun.beans.decoder;
  * For example:<pre>
  * &lt;var id="id1" idref="id2"/&gt;</pre>
  * is equivalent to {@code id1 = id2} in Java code.
- * <p>The following atributes are supported:
+ * <p>The following attributes are supported:
  * <dl>
  * <dt>idref
  * <dd>the identifier to refer to the variable
@@ -47,7 +47,7 @@ final class VarElementHandler extends ElementHandler {
 
     /**
      * Parses attributes of the element.
-     * The following atributes are supported:
+     * The following attributes are supported:
      * <dl>
      * <dt>idref
      * <dd>the identifier to refer to the variable

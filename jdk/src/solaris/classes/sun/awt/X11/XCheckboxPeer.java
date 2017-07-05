@@ -31,6 +31,7 @@ import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import javax.swing.plaf.basic.BasicGraphicsUtils;
 import java.awt.geom.AffineTransform;
+import java.util.Objects;
 
 import sun.util.logging.PlatformLogger;
 
@@ -135,14 +136,16 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
 
     public void keyReleased(KeyEvent e) {}
 
-    public void  setLabel(java.lang.String label) {
-        if ( label == null ) {
-            this.label = "";
-        } else {
-            this.label = label;
+    @Override
+    public void setLabel(String label) {
+        if (label == null) {
+            label = "";
         }
-        layout();
-        repaint();
+        if (!label.equals(this.label)) {
+            this.label = label;
+            layout();
+            repaint();
+        }
     }
 
     void handleJavaMouseEvent(MouseEvent e) {
@@ -377,10 +380,6 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
             g.drawImage(buffer, x, y, null);
         }
     }
-    public void setFont(Font f) {
-        super.setFont(f);
-        target.repaint();
-    }
 
     public void paintRadioButton(Graphics g, int x, int y, int w, int h) {
 
@@ -424,16 +423,21 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
         g.drawRect(x,y,w,h);
     }
 
+    @Override
     public void setState(boolean state) {
         if (selected != state) {
             selected = state;
             repaint();
         }
     }
-    public void setCheckboxGroup(CheckboxGroup g) {
-        // If changed from grouped/ungrouped, need to repaint()
-        checkBoxGroup = g;
-        repaint();
+
+    @Override
+    public void setCheckboxGroup(final CheckboxGroup g) {
+        if (!Objects.equals(g, checkBoxGroup)) {
+            // If changed from grouped/ungrouped, need to repaint()
+            checkBoxGroup = g;
+            repaint();
+        }
     }
 
     // NOTE: This method is called by privileged threads.

@@ -1903,9 +1903,9 @@ public final class OffsetDateTime
      * <a href="../../serialized-form.html#java.time.Ser">dedicated serialized form</a>.
      * @serialData
      * <pre>
-     *  out.writeByte(10);  // identifies a OffsetDateTime
-     *  out.writeObject(dateTime);
-     *  out.writeObject(offset);
+     *  out.writeByte(10);  // identifies an OffsetDateTime
+     *  // the <a href="../../serialized-form.html#java.time.LocalDateTime">datetime</a> excluding the one byte header
+     *  // the <a href="../../serialized-form.html#java.time.ZoneOffset">offset</a> excluding the one byte header
      * </pre>
      *
      * @return the instance of {@code Ser}, not null
@@ -1924,13 +1924,13 @@ public final class OffsetDateTime
     }
 
     void writeExternal(ObjectOutput out) throws IOException {
-        out.writeObject(dateTime);
-        out.writeObject(offset);
+        dateTime.writeExternal(out);
+        offset.writeExternal(out);
     }
 
     static OffsetDateTime readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        LocalDateTime dateTime = (LocalDateTime) in.readObject();
-        ZoneOffset offset = (ZoneOffset) in.readObject();
+        LocalDateTime dateTime = LocalDateTime.readExternal(in);
+        ZoneOffset offset = ZoneOffset.readExternal(in);
         return OffsetDateTime.of(dateTime, offset);
     }
 

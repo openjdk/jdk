@@ -106,7 +106,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         return info;
     }
 
-    /** Open the device from an aplication program.
+    /** Open the device from an application program.
      * Setting the open reference count to -1 here prevents Transmitters and Receivers that
      * opened the the device implicitly from closing it. The only way to close the device after
      * this call is a call to close().

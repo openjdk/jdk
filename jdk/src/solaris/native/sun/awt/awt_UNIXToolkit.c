@@ -67,7 +67,7 @@ JNIEXPORT jboolean JNICALL
 Java_sun_awt_UNIXToolkit_load_1gtk(JNIEnv *env, jclass klass)
 {
 #ifndef HEADLESS
-    return (jboolean)gtk2_load();
+    return (jboolean)gtk2_load(env);
 #else
     return JNI_FALSE;
 #endif /* !HEADLESS */

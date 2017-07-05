@@ -682,7 +682,7 @@ public class Main {
 
                         // The label finally contains 2 parts separated by '|':
                         // The legend displayed before the entry names, and
-                        // the cert info (if -certs specfied).
+                        // the cert info (if -certs specified).
 
                         if (!output.containsKey(label)) {
                             output.put(label, new ArrayList<String>());

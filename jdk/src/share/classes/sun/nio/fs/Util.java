@@ -27,6 +27,9 @@ package sun.nio.fs;
 
 import java.util.*;
 import java.nio.file.*;
+import java.nio.charset.Charset;
+import java.security.*;
+import sun.security.action.*;
 
 /**
  * Utility methods
@@ -34,6 +37,33 @@ import java.nio.file.*;
 
 class Util {
     private Util() { }
+
+    private static final Charset jnuEncoding = Charset.forName(
+        AccessController.doPrivileged(new GetPropertyAction("sun.jnu.encoding")));
+
+    /**
+     * Returns {@code Charset} corresponding to the sun.jnu.encoding property
+     */
+    static Charset jnuEncoding() {
+        return jnuEncoding;
+    }
+
+    /**
+     * Encodes the given String into a sequence of bytes using the {@code Charset}
+     * specified by the sun.jnu.encoding property.
+     */
+    static byte[] toBytes(String s) {
+        return s.getBytes(jnuEncoding);
+    }
+
+    /**
+     * Constructs a new String by decoding the specified array of bytes using the
+     * {@code Charset} specified by the sun.jnu.encoding property.
+     */
+    static String toString(byte[] bytes) {
+        return new String(bytes, jnuEncoding);
+    }
+
 
     /**
      * Splits a string around the given character. The array returned by this

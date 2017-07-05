@@ -105,17 +105,14 @@ public class XRBackendNative implements XRBackend {
         XRCreateLinearGradientPaintNative(float[] fractionsArray,
                                           short[] pixelsArray,
                                           int x1, int y1, int x2, int y2,
-                                          int numStops, int repeat,
-                                          int m00, int m01, int m02,
-                                           int m10, int m11, int m12);
+                                          int numStops, int repeat);
 
     private native static int
         XRCreateRadialGradientPaintNative(float[] fractionsArray,
                                           short[] pixelsArray, int numStops,
+                                          int centerX, int centerY,
                                           int innerRadius, int outerRadius,
-                                          int repeat,
-                                          int m00, int m01, int m02,
-                                          int m10, int m11, int m12);
+                                          int repeat);
 
     public native void setFilter(int picture, int filter);
 
@@ -175,40 +172,29 @@ public class XRBackendNative implements XRBackend {
     }
 
     public int createLinearGradient(Point2D p1, Point2D p2, float[] fractions,
-                              int[] pixels,  int repeat, AffineTransform trx) {
+                              int[] pixels,  int repeat) {
 
         short[] colorValues = getRenderColors(pixels);
         int gradient =
            XRCreateLinearGradientPaintNative(fractions, colorValues,
                 XDoubleToFixed(p1.getX()), XDoubleToFixed(p1.getY()),
                 XDoubleToFixed(p2.getX()), XDoubleToFixed(p2.getY()),
-                fractions.length, repeat,
-                XDoubleToFixed(trx.getScaleX()),
-                XDoubleToFixed(trx.getShearX()),
-                XDoubleToFixed(trx.getTranslateX()),
-                XDoubleToFixed(trx.getShearY()),
-                XDoubleToFixed(trx.getScaleY()),
-                XDoubleToFixed(trx.getTranslateY()));
+                fractions.length, repeat);
         return gradient;
     }
 
-    public int createRadialGradient(Point2D inner, Point2D outer,
+    public int createRadialGradient(float centerX, float centerY,
                                    float innerRadius, float outerRadius,
-                                   float[] fractions, int[] pixels, int repeat,
-                                   AffineTransform trx) {
+                                   float[] fractions, int[] pixels, int repeat) {
 
         short[] colorValues = getRenderColors(pixels);
         return XRCreateRadialGradientPaintNative
              (fractions, colorValues, fractions.length,
+              XDoubleToFixed(centerX),
+              XDoubleToFixed(centerY),
               XDoubleToFixed(innerRadius),
               XDoubleToFixed(outerRadius),
-              repeat,
-              XDoubleToFixed(trx.getScaleX()),
-              XDoubleToFixed(trx.getShearX()),
-              XDoubleToFixed(trx.getTranslateX()),
-              XDoubleToFixed(trx.getShearY()),
-              XDoubleToFixed(trx.getScaleY()),
-              XDoubleToFixed(trx.getTranslateY()));
+              repeat);
     }
 
     public void setGCClipRectangles(long gc, Region clip) {

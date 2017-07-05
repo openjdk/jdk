@@ -81,7 +81,7 @@ abstract class MultipleGradientPaintContext implements PaintContext {
     protected float a00, a01, a10, a11, a02, a12;
 
     /**
-     * This boolean specifies wether we are in simple lookup mode, where an
+     * This boolean specifies whether we are in simple lookup mode, where an
      * input value between 0 and 1 may be used to directly index into a single
      * array of gradient colors.  If this boolean value is false, then we have
      * to use a 2-step process where we have to determine which gradient array
