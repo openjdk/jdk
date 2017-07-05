@@ -40,6 +40,7 @@ import static java.awt.BufferCapabilities.FlipContents.UNDEFINED;
 
 /**
  * @test
+ * @key headful
  * @bug 8130390 8134732
  * @summary Applet fails to launch on virtual desktop
  * @modules java.desktop/sun.awt

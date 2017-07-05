@@ -97,10 +97,9 @@ public final class ReleaseInfoPlugin implements TransformerPlugin {
 
             case "del": {
                 // --release-info del:keys=openjdk,java_version
-                String[] keys = Utils.listParser.apply(config.get(KEYS));
-                for (String k : keys) {
+                Utils.parseList(config.get(KEYS)).stream().forEach((k) -> {
                     release.remove(k);
-                }
+                });
             }
             break;
 

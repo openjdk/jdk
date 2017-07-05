@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
 
     // DEVICE STATE
 
-    private boolean open          = false;
+    private volatile boolean open;
     private int openRefCount;
 
     /** List of Receivers and Transmitters that opened the device implicitely.
@@ -75,7 +75,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
     /**
      * This is the device handle returned from native code
      */
-    protected long id                   = 0;
+    protected volatile long id;
 
 
 
@@ -479,7 +479,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         (which opens the device implicitely).
      */
     abstract class AbstractReceiver implements MidiDeviceReceiver {
-        private boolean open = true;
+        private volatile boolean open = true;
 
 
         /** Deliver a MidiMessage.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug       7125044
   @summary   Tests defaut focus traversal policy in AWT & Swing toplevel windows.
   @author    anton.tarasov@sun.com: area=awt.focus

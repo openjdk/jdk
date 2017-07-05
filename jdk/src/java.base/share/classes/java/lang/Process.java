@@ -548,5 +548,36 @@ public abstract class Process {
         return toHandle().descendants();
     }
 
+    /**
+     * An input stream for a subprocess pipe that skips by reading bytes
+     * instead of seeking, the underlying pipe does not support seek.
+     */
+    static class PipeInputStream extends FileInputStream {
 
+        PipeInputStream(FileDescriptor fd) {
+            super(fd);
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+            long remaining = n;
+            int nr;
+
+            if (n <= 0) {
+                return 0;
+            }
+
+            int size = (int)Math.min(2048, remaining);
+            byte[] skipBuffer = new byte[size];
+            while (remaining > 0) {
+                nr = read(skipBuffer, 0, (int)Math.min(size, remaining));
+                if (nr < 0) {
+                    break;
+                }
+                remaining -= nr;
+            }
+
+            return n - remaining;
+        }
+    }
 }
