@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -232,7 +232,7 @@ public class X11GraphicsEnvironment
             return true;
         }
 
-        String isRemote = (String)java.security.AccessController.doPrivileged(
+        String isRemote = java.security.AccessController.doPrivileged(
             new sun.security.action.GetPropertyAction("sun.java2d.remote"));
         if (isRemote != null) {
             return isRemote.equals("false");

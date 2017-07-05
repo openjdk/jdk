@@ -604,6 +604,7 @@ public final class IsoChronology extends AbstractChronology implements Serializa
     /**
      * Defend against malicious streams.
      *
+     * @param s the stream to read
      * @throws InvalidObjectException always
      */
     private void readObject(ObjectInputStream s) throws InvalidObjectException {

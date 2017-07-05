@@ -87,7 +87,8 @@ class SATBMarkQueueSet: public PtrQueueSet {
   bool apply_closure_to_completed_buffer_work(bool par, int worker);
 
 #ifdef ASSERT
-  void dump_active_values(JavaThread* first, bool expected_active);
+  void dump_active_states(bool expected_active);
+  void verify_active_states(bool expected_active);
 #endif // ASSERT
 
 public:
@@ -99,11 +100,11 @@ public:
 
   static void handle_zero_index_for_thread(JavaThread* t);
 
-  // Apply "set_active(b)" to all Java threads' SATB queues. It should be
+  // Apply "set_active(active)" to all SATB queues in the set. It should be
   // called only with the world stopped. The method will assert that the
   // SATB queues of all threads it visits, as well as the SATB queue
   // set itself, has an active value same as expected_active.
-  void set_active_all_threads(bool b, bool expected_active);
+  void set_active_all_threads(bool active, bool expected_active);
 
   // Filter all the currently-active SATB buffers.
   void filter_thread_buffers();

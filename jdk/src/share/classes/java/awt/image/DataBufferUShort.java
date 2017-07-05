@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ public final class DataBufferUShort extends DataBuffer
             }
         }
 
-        bankdata = (short[][]) dataArray.clone();
+        bankdata = dataArray.clone();
         data = bankdata[0];
     }
 
@@ -213,7 +213,7 @@ public final class DataBufferUShort extends DataBuffer
             }
 
         }
-        bankdata = (short[][]) dataArray.clone();
+        bankdata = dataArray.clone();
         data = bankdata[0];
     }
 
@@ -260,7 +260,7 @@ public final class DataBufferUShort extends DataBuffer
      */
     public short[][] getBankData() {
         theTrackable.setUntrackable();
-        return (short[][]) bankdata.clone();
+        return bankdata.clone();
     }
 
     /**
@@ -272,7 +272,7 @@ public final class DataBufferUShort extends DataBuffer
      * @see #setElem(int, int, int)
      */
     public int getElem(int i) {
-        return (int)(data[i+offset]&0xffff);
+        return data[i+offset]&0xffff;
     }
 
     /**
@@ -285,7 +285,7 @@ public final class DataBufferUShort extends DataBuffer
      * @see #setElem(int, int, int)
      */
     public int getElem(int bank, int i) {
-        return (int)(bankdata[bank][i+offsets[bank]]&0xffff);
+        return bankdata[bank][i+offsets[bank]]&0xffff;
     }
 
     /**

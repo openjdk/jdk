@@ -1476,10 +1476,10 @@ class SecurityManager {
         /*
          * Traverse the list of packages, check for any matches.
          */
-        for (int i = 0; i < pkgs.length; i++) {
-            if (pkg.startsWith(pkgs[i]) || pkgs[i].equals(pkg + ".")) {
+        for (String restrictedPkg : pkgs) {
+            if (pkg.startsWith(restrictedPkg) || restrictedPkg.equals(pkg + ".")) {
                 checkPermission(
-                    new RuntimePermission("accessClassInPackage."+pkg));
+                    new RuntimePermission("accessClassInPackage." + pkg));
                 break;  // No need to continue; only need to check this once
             }
         }
@@ -1544,10 +1544,10 @@ class SecurityManager {
         /*
          * Traverse the list of packages, check for any matches.
          */
-        for (int i = 0; i < pkgs.length; i++) {
-            if (pkg.startsWith(pkgs[i]) || pkgs[i].equals(pkg + ".")) {
+        for (String restrictedPkg : pkgs) {
+            if (pkg.startsWith(restrictedPkg) || restrictedPkg.equals(pkg + ".")) {
                 checkPermission(
-                    new RuntimePermission("defineClassInPackage."+pkg));
+                    new RuntimePermission("defineClassInPackage." + pkg));
                 break; // No need to continue; only need to check this once
             }
         }

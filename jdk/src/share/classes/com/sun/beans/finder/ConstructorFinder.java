@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import static sun.reflect.misc.ReflectUtil.isPackageAccessible;
 public final class ConstructorFinder extends AbstractFinder<Constructor<?>> {
     private static final Cache<Signature, Constructor<?>> CACHE = new Cache<Signature, Constructor<?>>(SOFT, SOFT) {
         @Override
-        public Constructor create(Signature signature) {
+        public Constructor<?> create(Signature signature) {
             try {
                 ConstructorFinder finder = new ConstructorFinder(signature.getArgs());
                 return finder.find(signature.getType().getConstructors());

@@ -28,7 +28,7 @@
  * @author Dana Burns
  * @library ../../testlibrary
  * @build TestLibrary Legal LegalRegistryNames_Stub
- * @run main LegalRegistryNames
+ * @run main/othervm LegalRegistryNames
  */
 
 import java.net.InetAddress;

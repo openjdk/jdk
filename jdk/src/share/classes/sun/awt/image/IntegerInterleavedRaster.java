@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,7 +161,7 @@ public class IntegerInterleavedRaster extends IntegerComponentRaster {
      * band.
      */
     public int[] getDataOffsets() {
-        return (int[]) dataOffsets.clone();
+        return dataOffsets.clone();
     }
 
     /**

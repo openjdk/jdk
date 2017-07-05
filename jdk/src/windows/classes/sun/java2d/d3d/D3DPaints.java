@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,14 +132,14 @@ abstract class D3DPaints {
             }
 
             SurfaceData srcData =
-                dstData.getSourceSurfaceData(bi, sg2d.TRANSFORM_ISIDENT,
+                dstData.getSourceSurfaceData(bi, SunGraphics2D.TRANSFORM_ISIDENT,
                                              CompositeType.SrcOver, null);
             if (!(srcData instanceof D3DSurfaceData)) {
                 // REMIND: this is a hack that attempts to cache the system
                 //         memory image from the TexturePaint instance into a
                 //         D3D texture...
                 srcData =
-                    dstData.getSourceSurfaceData(bi, sg2d.TRANSFORM_ISIDENT,
+                    dstData.getSourceSurfaceData(bi, SunGraphics2D.TRANSFORM_ISIDENT,
                                                  CompositeType.SrcOver, null);
                 if (!(srcData instanceof D3DSurfaceData)) {
                     return false;

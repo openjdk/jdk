@@ -82,8 +82,9 @@ class NativeThreadSet {
 
     // Signals all threads in this set.
     //
-    void signalAndWait() {
-        synchronized (this) {
+    synchronized void signalAndWait() {
+        boolean interrupted = false;
+        while (used > 0) {
             int u = used;
             int n = elts.length;
             for (int i = 0; i < n; i++) {
@@ -96,16 +97,15 @@ class NativeThreadSet {
                     break;
             }
             waitingToEmpty = true;
-            boolean interrupted = false;
-            while (used > 0) {
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    interrupted = true;
-                }
+            try {
+                wait(50);
+            } catch (InterruptedException e) {
+                interrupted = true;
+            } finally {
+                waitingToEmpty = false;
             }
-            if (interrupted)
-                Thread.currentThread().interrupt();
         }
+        if (interrupted)
+            Thread.currentThread().interrupt();
     }
 }

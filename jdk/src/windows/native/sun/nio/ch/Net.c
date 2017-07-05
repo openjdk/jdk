@@ -554,11 +554,11 @@ Java_sun_nio_ch_Net_poll(JNIEnv* env, jclass this, jobject fdo, jint events, jlo
     FD_ZERO(&rd);
     FD_ZERO(&wr);
     FD_ZERO(&ex);
-    if (events & sun_nio_ch_PollArrayWrapper_POLLIN) {
+    if (events & POLLIN) {
         FD_SET(fd, &rd);
     }
-    if (events & sun_nio_ch_PollArrayWrapper_POLLOUT ||
-        events & sun_nio_ch_PollArrayWrapper_POLLCONN) {
+    if (events & POLLOUT ||
+        events & POLLCONN) {
         FD_SET(fd, &wr);
     }
     FD_SET(fd, &ex);
@@ -572,14 +572,50 @@ Java_sun_nio_ch_Net_poll(JNIEnv* env, jclass this, jobject fdo, jint events, jlo
     } else if (rv >= 0) {
         rv = 0;
         if (FD_ISSET(fd, &rd)) {
-            rv |= sun_nio_ch_PollArrayWrapper_POLLIN;
+            rv |= POLLIN;
         }
         if (FD_ISSET(fd, &wr)) {
-            rv |= sun_nio_ch_PollArrayWrapper_POLLOUT;
+            rv |= POLLOUT;
         }
         if (FD_ISSET(fd, &ex)) {
-            rv |= sun_nio_ch_PollArrayWrapper_POLLERR;
+            rv |= POLLERR;
         }
     }
     return rv;
+}
+
+JNIEXPORT jshort JNICALL
+Java_sun_nio_ch_Net_pollinValue(JNIEnv *env, jclass this)
+{
+    return (jshort)POLLIN;
+}
+
+JNIEXPORT jshort JNICALL
+Java_sun_nio_ch_Net_polloutValue(JNIEnv *env, jclass this)
+{
+    return (jshort)POLLOUT;
+}
+
+JNIEXPORT jshort JNICALL
+Java_sun_nio_ch_Net_pollerrValue(JNIEnv *env, jclass this)
+{
+    return (jshort)POLLERR;
+}
+
+JNIEXPORT jshort JNICALL
+Java_sun_nio_ch_Net_pollhupValue(JNIEnv *env, jclass this)
+{
+    return (jshort)POLLHUP;
+}
+
+JNIEXPORT jshort JNICALL
+Java_sun_nio_ch_Net_pollnvalValue(JNIEnv *env, jclass this)
+{
+    return (jshort)POLLNVAL;
+}
+
+JNIEXPORT jshort JNICALL
+Java_sun_nio_ch_Net_pollconnValue(JNIEnv *env, jclass this)
+{
+    return (jshort)POLLCONN;
 }

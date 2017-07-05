@@ -223,7 +223,7 @@ static double scalbnA (double x, int n) {
  *
  *      fq[]    final product of x*(2/pi) in fq[0],..,fq[jk]
  *
- *      ih      integer. If >0 it indicats q[] is >= 0.5, hence
+ *      ih      integer. If >0 it indicates q[] is >= 0.5, hence
  *              it also indicates the *sign* of the result.
  *
  */
@@ -347,7 +347,7 @@ recompute:
   if(z==0.0) {
     jz -= 1; q0 -= 24;
     while(iq[jz]==0) { jz--; q0-=24;}
-  } else { /* break z into 24-bit if neccessary */
+  } else { /* break z into 24-bit if necessary */
     z = scalbnA(z,-q0);
     if(z>=two24B) {
       fw = (double)((int)(twon24*z));
@@ -409,7 +409,7 @@ recompute:
 
 /*
  * ====================================================
- * Copyright (c) 1993 Oracle and/or its affilates. All rights reserved.
+ * Copyright (c) 1993 Oracle and/or its affiliates. All rights reserved.
  *
  * Developed at SunPro, a Sun Microsystems, Inc. business.
  * Permission to use, copy, modify, and distribute this

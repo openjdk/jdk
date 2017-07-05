@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,10 +191,8 @@ public abstract class IIOMetadata {
                 throw new IllegalArgumentException
                     ("extraMetadataFormatClassNames.length != extraMetadataFormatNames.length!");
             }
-            this.extraMetadataFormatNames =
-                (String[]) extraMetadataFormatNames.clone();
-            this.extraMetadataFormatClassNames =
-                (String[]) extraMetadataFormatClassNames.clone();
+            this.extraMetadataFormatNames = extraMetadataFormatNames.clone();
+            this.extraMetadataFormatClassNames = extraMetadataFormatClassNames.clone();
         } else {
             if (extraMetadataFormatClassNames != null) {
                 throw new IllegalArgumentException
@@ -285,7 +283,7 @@ public abstract class IIOMetadata {
         if (extraMetadataFormatNames == null) {
             return null;
         }
-        return (String[])extraMetadataFormatNames.clone();
+        return extraMetadataFormatNames.clone();
     }
 
     /**

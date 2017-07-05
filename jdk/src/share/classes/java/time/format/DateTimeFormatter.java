@@ -344,10 +344,7 @@ import java.util.Set;
  * <b>Fraction</b>: Outputs the nano-of-second field as a fraction-of-second.
  * The nano-of-second value has nine digits, thus the count of pattern letters
  * is from 1 to 9. If it is less than 9, then the nano-of-second value is
- * truncated, with only the most significant digits being output. When parsing
- * in strict mode, the number of parsed digits must match the count of pattern
- * letters. When parsing in lenient mode, the number of parsed digits must be at
- * least the count of pattern letters, up to 9 digits.
+ * truncated, with only the most significant digits being output.
  * <p>
  * <b>Year</b>: The count of letters determines the minimum field width below
  * which padding is used. If the count of letters is two, then a

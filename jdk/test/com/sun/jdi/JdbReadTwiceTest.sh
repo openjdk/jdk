@@ -213,10 +213,17 @@ if [ ! -r c:/ ] ; then
     # If the file exists, we try to read it.  The
     # read will fail.
     mkFiles $HOME/jdb.ini
-        chmod a-r $HOME/jdb.ini
-        doit
-        failIfNot 1 "open: $HOME/jdb.ini"
-        clean
+    id > $HOME/jdb.ini
+    chmod a-r $HOME/jdb.ini
+    if grep -q "uid=" $HOME/jdb.ini  ; then
+      echo "Unable to make file unreadable, so test will fail. chmod: $HOME/jdb.ini"
+      if grep -q "uid=0" $HOME/jdb.ini  ; then
+        echo "The test is running as root. Fix infrastructure!"
+      fi	
+    fi  
+    doit
+    failIfNot 1 "open: $HOME/jdb.ini"
+    clean
 fi
 
 

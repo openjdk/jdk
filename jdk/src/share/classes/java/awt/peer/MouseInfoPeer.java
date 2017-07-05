@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,10 @@ public interface MouseInfoPeer {
      * is located.
      * See java.awt.GraphicsConfiguration documentation for more
      * details about virtual screen devices.
+     * @param point holder for the current coordinates of the mouse
+     * cursor
+     * @return the number of the screen device where the pointer is
+     * located
      */
     int fillPointWithCoords(Point point);
 
@@ -63,6 +67,9 @@ public interface MouseInfoPeer {
      * pointer. The window is considered to be under the mouse pointer
      * if it is showing on the screen, and the mouse pointer is above
      * the part of the window that is not obscured by any other windows.
+     * @param w the window to check
+     * @return whether or not the window is located under the mouse
+     * pointer
      */
     boolean isWindowUnderMouse(Window w);
 

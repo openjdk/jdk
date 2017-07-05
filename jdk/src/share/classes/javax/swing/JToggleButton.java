@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,7 @@ import java.io.IOException;
  * @see JCheckBox
  * @author Jeff Dinkins
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class JToggleButton extends AbstractButton implements Accessible {
 
     /**
@@ -222,6 +223,7 @@ public class JToggleButton extends AbstractButton implements Accessible {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     public static class ToggleButtonModel extends DefaultButtonModel {
 
         /**
@@ -384,6 +386,7 @@ public class JToggleButton extends AbstractButton implements Accessible {
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
+    @SuppressWarnings("serial") // Same-version serialization only
     protected class AccessibleJToggleButton extends AccessibleAbstractButton
             implements ItemListener {
 

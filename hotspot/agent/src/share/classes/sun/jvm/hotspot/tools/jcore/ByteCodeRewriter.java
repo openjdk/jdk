@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,11 +98,14 @@ public class ByteCodeRewriter
            break;
        default: throw new IllegalArgumentException();
        }
+
        if (cpCache == null) {
           return (short) cpCacheIndex;
        } else if (fmt.indexOf("JJJJ") >= 0) {
-          // change byte-ordering and go via secondary cache entry
-           throw new InternalError("unimplemented");
+          // Invokedynamic require special handling
+          cpCacheIndex = ~cpCacheIndex;
+          cpCacheIndex = bytes.swapInt(cpCacheIndex);
+          return (short) cpCache.getEntryAt(cpCacheIndex).getConstantPoolIndex();
        } else if (fmt.indexOf("JJ") >= 0) {
           // change byte-ordering and go via cache
           return (short) cpCache.getEntryAt((int) (0xFFFF & bytes.swapShort((short)cpCacheIndex))).getConstantPoolIndex();

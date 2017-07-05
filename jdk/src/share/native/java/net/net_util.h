@@ -55,6 +55,8 @@ extern jfieldID iac_familyID;
 extern jfieldID iac_hostNameID;
 extern jfieldID ia_preferIPv6AddressID;
 
+JNIEXPORT void JNICALL initInetAddressIDs(JNIEnv *env);
+
 /** (Inet6Address accessors)
  * set_ methods return JNI_TRUE on success JNI_FALSE on error
  * get_ methods that return int/boolean, return -1 on error
@@ -137,7 +139,7 @@ NET_InetAddressToSockaddr(JNIEnv *env, jobject iaObj, int port, struct sockaddr 
 JNIEXPORT jobject JNICALL
 NET_SockaddrToInetAddress(JNIEnv *env, struct sockaddr *him, int *port);
 
-void initLocalAddrTable ();
+void platformInit();
 void parseExclusiveBindProperty(JNIEnv *env);
 
 void

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,9 +67,9 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         undecorated = Boolean.valueOf(target.isUndecorated());
         winAttr.nativeDecor = !target.isUndecorated();
         if (winAttr.nativeDecor) {
-            winAttr.decorations = winAttr.AWT_DECOR_ALL;
+            winAttr.decorations = XWindowAttributesData.AWT_DECOR_ALL;
         } else {
-            winAttr.decorations = winAttr.AWT_DECOR_NONE;
+            winAttr.decorations = XWindowAttributesData.AWT_DECOR_NONE;
         }
         winAttr.functions = MWMConstants.MWM_FUNC_ALL;
         winAttr.isResizable = true; // target.isResizable();

@@ -111,11 +111,6 @@ Java_java_net_Inet4AddressImpl_getLocalHostName (JNIEnv *env, jobject this) {
     return JNU_NewStringPlatform(env, hostname);
 }
 
-static jclass ni_iacls;
-static jclass ni_ia4cls;
-static jmethodID ni_ia4ctrID;
-static int initialized = 0;
-
 /*
  * Find an internet address for a given hostname.  Not this this
  * code only works for addresses of type INET. The translation
@@ -140,19 +135,8 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
 
     jobjectArray ret = NULL;
 
-    if (!initialized) {
-      ni_iacls = (*env)->FindClass(env, "java/net/InetAddress");
-      CHECK_NULL_RETURN(ni_iacls, NULL);
-      ni_iacls = (*env)->NewGlobalRef(env, ni_iacls);
-      CHECK_NULL_RETURN(ni_iacls, NULL);
-      ni_ia4cls = (*env)->FindClass(env, "java/net/Inet4Address");
-      CHECK_NULL_RETURN(ni_ia4cls, NULL);
-      ni_ia4cls = (*env)->NewGlobalRef(env, ni_ia4cls);
-      CHECK_NULL_RETURN(ni_ia4cls, NULL);
-      ni_ia4ctrID = (*env)->GetMethodID(env, ni_ia4cls, "<init>", "()V");
-      CHECK_NULL_RETURN(ni_ia4ctrID, NULL);
-      initialized = 1;
-    }
+    initInetAddressIDs(env);
+    JNU_CHECK_EXCEPTION_RETURN(env, NULL);
 
     if (IS_NULL(host)) {
         JNU_ThrowNullPointerException(env, "host argument");
@@ -196,13 +180,13 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         address |= (addr[1]<<8) & 0xff00;
         address |= addr[0];
 
-        ret = (*env)->NewObjectArray(env, 1, ni_iacls, NULL);
+        ret = (*env)->NewObjectArray(env, 1, ia_class, NULL);
 
         if (IS_NULL(ret)) {
             goto cleanupAndReturn;
         }
 
-        iaObj = (*env)->NewObject(env, ni_ia4cls, ni_ia4ctrID);
+        iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
         if (IS_NULL(iaObj)) {
           ret = NULL;
           goto cleanupAndReturn;
@@ -226,7 +210,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
             addrp++;
         }
 
-        ret = (*env)->NewObjectArray(env, i, ni_iacls, NULL);
+        ret = (*env)->NewObjectArray(env, i, ia_class, NULL);
 
         if (IS_NULL(ret)) {
             goto cleanupAndReturn;
@@ -235,7 +219,7 @@ Java_java_net_Inet4AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
         addrp = (struct in_addr **) hp->h_addr_list;
         i = 0;
         while (*addrp != (struct in_addr *) 0) {
-          jobject iaObj = (*env)->NewObject(env, ni_ia4cls, ni_ia4ctrID);
+          jobject iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
           if (IS_NULL(iaObj)) {
             ret = NULL;
             goto cleanupAndReturn;
