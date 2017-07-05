@@ -73,9 +73,7 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
             g.translate(x, y);
 
             if (c.isOpaque()) {
-                final Color background = c.getBackground();
-                g.setColor(background);
-                g.fillRect(0, 0, w - 1, h - 1);
+                AquaUtils.fillRect(g, c, c.getBackground(), 0, 0, w - 1, h - 1);
             }
 
             final Color oldColor = g.getColor();
@@ -136,5 +134,13 @@ public class AquaToolBarUI extends BasicToolBarUI implements SwingConstants {
         public boolean isBorderOpaque() {
             return true;
         }
+    }
+
+    @Override
+    public final void update(final Graphics g, final JComponent c) {
+        if (c.isOpaque()) {
+            AquaUtils.fillRect(g, c);
+        }
+        paint(g, c);
     }
 }

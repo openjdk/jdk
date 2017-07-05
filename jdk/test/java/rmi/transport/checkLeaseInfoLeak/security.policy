@@ -19,6 +19,7 @@ grant {
   permission java.util.PropertyPermission "user.dir", "read";
   permission java.util.PropertyPermission "java.home", "read";
 
+  permission java.util.PropertyPermission "rmi.registry.port", "read";
   permission java.util.PropertyPermission "java.security.policy", "read";
   permission java.util.PropertyPermission "java.security.manager", "read";
 

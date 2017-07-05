@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,15 +82,17 @@ public class KeepAliveDuringCall implements ShutdownMonitor {
             UnicastRemoteObject.exportObject(obj);
             System.err.println("exported shutdown monitor");
 
-            Registry localRegistry =
-                LocateRegistry.createRegistry(TestLibrary.REGISTRY_PORT);
+            Registry localRegistry = TestLibrary.createRegistryOnUnusedPort();
+            int registryPort = TestLibrary.getRegistryPort(localRegistry);
             System.err.println("created local registry");
 
             localRegistry.bind(BINDING, obj);
             System.err.println("bound shutdown monitor in local registry");
 
             System.err.println("starting remote ShutdownImpl VM...");
-            (new JavaVM("ShutdownImpl")).start();
+            (new JavaVM("ShutdownImpl",
+                        "-Drmi.registry.port=" +
+                        registryPort, "")).start();
 
             Shutdown s;
             synchronized (obj.lock) {

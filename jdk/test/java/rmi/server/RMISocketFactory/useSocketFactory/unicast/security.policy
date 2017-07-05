@@ -22,8 +22,17 @@ grant {
   permission java.util.PropertyPermission "user.dir", "read";
   permission java.util.PropertyPermission "java.home", "read";
 
+  permission java.util.PropertyPermission "rmi.registry.port", "read";	
+
   permission java.util.PropertyPermission "java.security.policy", "read";
   permission java.util.PropertyPermission "java.security.manager", "read";
+
+  // used by TestLibrary to get the RMI Registry port
+  permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.registry";
+  permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.server";
+  permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.transport";
+  permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.transport.proxy";
+  permission java.lang.RuntimePermission "accessClassInPackage.sun.rmi.transport.tcp";
 
   // test needs to export rmid and communicate with objects on arbitrary ports
   permission java.net.SocketPermission "*:1024-", "connect,accept,listen";

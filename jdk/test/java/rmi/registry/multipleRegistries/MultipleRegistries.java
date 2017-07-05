@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,8 @@
  * @summary Can't run multiple registries in the same VM
  * @author Ann Wollrath
  *
+ * @library ../../testlibrary
+ * @build TestLibrary
  * @build MultipleRegistries
  * @run main/othervm/timeout=240 MultipleRegistries
  */
@@ -58,12 +60,13 @@ public class MultipleRegistries implements RemoteInterface {
             System.err.println("proxy = " + proxy);
 
             System.err.println("export registries");
-            Registry registryImpl1 = LocateRegistry.createRegistry(2030);
-            Registry registryImpl2 = LocateRegistry.createRegistry(2040);
-
+            Registry registryImpl1 = TestLibrary.createRegistryOnUnusedPort();
+            int port1 = TestLibrary.getRegistryPort(registryImpl1);
+            Registry registryImpl2 = TestLibrary.createRegistryOnUnusedPort();
+            int port2 = TestLibrary.getRegistryPort(registryImpl2);
             System.err.println("bind remote object in registries");
-            Registry registry1 = LocateRegistry.getRegistry(2030);
-            Registry registry2 = LocateRegistry.getRegistry(2040);
+            Registry registry1 = LocateRegistry.getRegistry(port1);
+            Registry registry2 = LocateRegistry.getRegistry(port2);
 
             registry1.bind(NAME, proxy);
             registry2.bind(NAME, proxy);
