@@ -34,6 +34,7 @@ public class Platform {
     private static final String osArch      = System.getProperty("os.arch");
     private static final String vmName      = System.getProperty("java.vm.name");
     private static final String userName    = System.getProperty("user.name");
+    private static final String compiler    = System.getProperty("sun.management.compiler");
 
     public static boolean isClient() {
         return vmName.endsWith(" Client VM");
@@ -53,6 +54,10 @@ public class Platform {
 
     public static boolean isEmbedded() {
         return vmName.contains("Embedded");
+    }
+
+    public static boolean isTieredSupported() {
+        return compiler.contains("Tiered Compilers");
     }
 
     public static boolean is32bit() {

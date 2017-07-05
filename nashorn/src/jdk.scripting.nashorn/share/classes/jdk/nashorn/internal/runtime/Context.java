@@ -703,7 +703,7 @@ public final class Context {
         final ScriptFunction func = getProgramFunction(clazz, scope);
         Object evalThis;
         if (directEval) {
-            evalThis = callThis instanceof ScriptObject || strictFlag ? callThis : global;
+            evalThis = (callThis != UNDEFINED && callThis != null) || strictFlag ? callThis : global;
         } else {
             evalThis = global;
         }

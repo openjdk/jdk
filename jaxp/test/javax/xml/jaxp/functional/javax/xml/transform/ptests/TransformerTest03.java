@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,30 +25,20 @@ package javax.xml.transform.ptests;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Properties;
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
-import static javax.xml.transform.ptests.TransformerTestConst.CLASS_DIR;
 import static javax.xml.transform.ptests.TransformerTestConst.GOLDEN_DIR;
 import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import jaxp.library.JAXPFileBaseTest;
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static jaxp.library.JAXPTestUtilities.failCleanup;
-import static jaxp.library.JAXPTestUtilities.failUnexpected;
 import static org.testng.Assert.assertTrue;
 import org.testng.annotations.Test;
-import org.w3c.dom.Document;
-import org.xml.sax.SAXException;
 
 /**
  * Here Properties Object is populated with required properties.A transformer
@@ -56,13 +46,15 @@ import org.xml.sax.SAXException;
  * for transformer. Then transform(StreamSource, StreamResult) is used for
  * transformation. This tests the setOutputProperties() method.
  */
-public class TransformerTest03 {
+public class TransformerTest03 extends JAXPFileBaseTest {
     /**
      * Test for Transformer.setOutputProperties method.
+     *
+     * @throws Exception If any errors occur.
      */
     @Test
-    public void testcase01() {
-        String outputFile = CLASS_DIR + "transformer03.out";
+    public void testcase01() throws Exception {
+        String outputFile = USER_DIR + "transformer03.out";
         String goldFile = GOLDEN_DIR + "transformer03GF.out";
         String xsltFile = XML_DIR + "cities.xsl";
         String xmlFile = XML_DIR + "cities.xml";
@@ -81,29 +73,14 @@ public class TransformerTest03 {
 
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
             dbf.setNamespaceAware(true);
-            DocumentBuilder db = dbf.newDocumentBuilder();
-            Document document = db.parse(new File(xsltFile));
-            DOMSource domSource = new DOMSource(document);
+            DOMSource domSource = new DOMSource(dbf.newDocumentBuilder().
+                    parse(new File(xsltFile)));
 
             Transformer transformer = TransformerFactory.newInstance().
                     newTransformer(domSource);
-            StreamSource streamSource = new StreamSource(fis);
-            StreamResult streamResult = new StreamResult(fos);
-
             transformer.setOutputProperties(properties);
-            transformer.transform( streamSource, streamResult);
-            assertTrue(compareWithGold(goldFile, outputFile));
-        } catch (ParserConfigurationException | SAXException
-                | IOException | TransformerException ex){
-            failUnexpected(ex);
-        } finally {
-            try {
-                Path outputPath = Paths.get(outputFile);
-                if(Files.exists(outputPath))
-                    Files.delete(outputPath);
-            } catch (IOException ex) {
-                failCleanup(ex, outputFile);
-            }
+            transformer.transform(new StreamSource(fis), new StreamResult(fos));
         }
+        assertTrue(compareWithGold(goldFile, outputFile));
     }
 }

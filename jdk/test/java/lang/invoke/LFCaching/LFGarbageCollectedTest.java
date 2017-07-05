@@ -30,11 +30,13 @@
  * @build TestMethods
  * @build LambdaFormTestCase
  * @build LFGarbageCollectedTest
- * @run main/othervm LFGarbageCollectedTest
+ * @run main/othervm -Xmx64m -XX:SoftRefLRUPolicyMSPerMB=0 -XX:+HeapDumpOnOutOfMemoryError -DHEAP_DUMP=false LFGarbageCollectedTest
  */
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 import java.lang.ref.PhantomReference;
+import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.InvocationTargetException;
 import java.util.EnumSet;
@@ -44,6 +46,7 @@ import java.util.Map;
  * Lambda forms garbage collection test class.
  */
 public final class LFGarbageCollectedTest extends LambdaFormTestCase {
+    private static boolean HEAP_DUMP = Boolean.getBoolean("HEAP_DUMP");
 
     /**
      * Constructor for a lambda forms garbage collection test case.
@@ -55,36 +58,85 @@ public final class LFGarbageCollectedTest extends LambdaFormTestCase {
         super(testMethod);
     }
 
+    PhantomReference ph;
+    ReferenceQueue rq = new ReferenceQueue();
+    MethodType mtype;
+    Map<String, Object> data;
+
     @Override
     public void doTest() {
         try {
-            Map<String, Object> data = getTestMethod().getTestCaseData();
+            TestMethods testCase = getTestMethod();
+            data = testCase.getTestCaseData();
             MethodHandle adapter;
             try {
-                adapter = getTestMethod().getTestCaseMH(data, TestMethods.Kind.ONE);
+                adapter = testCase.getTestCaseMH(data, TestMethods.Kind.ONE);
             } catch (NoSuchMethodException ex) {
                 throw new Error("Unexpected exception: ", ex);
             }
-            Object lambdaForm = LambdaFormTestCase.INTERNAL_FORM.invoke(adapter);
+            mtype = adapter.type();
+            Object lambdaForm = INTERNAL_FORM.invoke(adapter);
             if (lambdaForm == null) {
                 throw new Error("Unexpected error: Lambda form of the method handle is null");
             }
-            ReferenceQueue rq = new ReferenceQueue();
-            PhantomReference ph = new PhantomReference(lambdaForm, rq);
+
+            String debugName = (String)DEBUG_NAME.get(lambdaForm);
+            if (debugName != null && debugName.startsWith("identity_")) {
+                // Ignore identity_* LambdaForms.
+                return;
+            }
+
+            ph = new PhantomReference(lambdaForm, rq);
             lambdaForm = null;
-            data = null;
             adapter = null;
-            for (int i = 0; i < 1000 && !ph.isEnqueued(); i++) {
-                System.gc();
-            }
-            if (!ph.isEnqueued()) {
-                throw new AssertionError("Error: Lambda form is not garbage collected");
-            }
+
+            collectLambdaForm();
         } catch (IllegalAccessException | IllegalArgumentException |
                 InvocationTargetException ex) {
             throw new Error("Unexpected exception: ", ex);
         }
     }
+
+
+    private void collectLambdaForm() throws IllegalAccessException {
+        // Usually, 2 System.GCs are necessary to enqueue a SoftReference.
+        System.gc();
+        System.gc();
+
+        Reference ref = null;
+        for (int i = 0; i < 10; i++) {
+            try {
+                ref = rq.remove(1000);
+            } catch (InterruptedException e) {
+                /* ignore */
+            }
+            if (ref != null) {
+                break;
+            }
+            System.gc(); // If the reference hasn't been queued yet, trigger one more GC.
+        }
+
+        if (ref == null) {
+            dumpTestData();
+            System.err.println("Method type: " + mtype);
+            System.err.println("LambdaForm:  " + REF_FIELD.get(ph));
+
+            if (HEAP_DUMP) {
+                // Trigger OOM to force heap dump for post-mortem analysis.
+                val = new long[1_000_000_000];
+            }
+            throw new AssertionError("Error: LambdaForm is not garbage collected");
+        };
+    }
+
+    private void dumpTestData() {
+        System.err.println("Test case: " + getTestMethod());
+        for (String s : data.keySet()) {
+            System.err.printf("\t%20s => %s\n", s, data.get(s));
+        }
+    }
+
+    private static long[] val;
 
     /**
      * Main routine for lambda forms garbage collection test.
@@ -101,7 +153,9 @@ public final class LFGarbageCollectedTest extends LambdaFormTestCase {
                 TestMethods.IDENTITY,
                 TestMethods.CONSTANT,
                 TestMethods.ARRAY_ELEMENT_GETTER,
-                TestMethods.ARRAY_ELEMENT_SETTER));
+                TestMethods.ARRAY_ELEMENT_SETTER,
+                TestMethods.EXACT_INVOKER,
+                TestMethods.INVOKER));
         LambdaFormTestCase.runTests(LFGarbageCollectedTest::new, testMethods);
     }
 }
