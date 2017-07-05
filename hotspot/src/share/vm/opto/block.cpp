@@ -880,6 +880,7 @@ void PhaseCFG::dump_headers() {
 }
 
 void PhaseCFG::verify( ) const {
+#ifdef ASSERT
   // Verify sane CFG
   for( uint i = 0; i < _num_blocks; i++ ) {
     Block *b = _blocks[i];
@@ -894,10 +895,20 @@ void PhaseCFG::verify( ) const {
                 "CreateEx must be first instruction in block" );
       }
       for( uint k = 0; k < n->req(); k++ ) {
-        Node *use = n->in(k);
-        if( use && use != n ) {
-          assert( _bbs[use->_idx] || use->is_Con(),
+        Node *def = n->in(k);
+        if( def && def != n ) {
+          assert( _bbs[def->_idx] || def->is_Con(),
                   "must have block; constants for debug info ok" );
+          // Verify that instructions in the block is in correct order.
+          // Uses must follow their definition if they are at the same block.
+          // Mostly done to check that MachSpillCopy nodes are placed correctly
+          // when CreateEx node is moved in build_ifg_physical().
+          if( _bbs[def->_idx] == b &&
+              !(b->head()->is_Loop() && n->is_Phi()) &&
+              // See (+++) comment in reg_split.cpp
+              !(n->jvms() != NULL && n->jvms()->is_monitor_use(k)) ) {
+            assert( b->find_node(def) < j, "uses must follow definitions" );
+          }
         }
       }
     }
@@ -914,6 +925,7 @@ void PhaseCFG::verify( ) const {
       assert( b->_num_succs == 2, "Conditional branch must have two targets");
     }
   }
+#endif
 }
 #endif
 

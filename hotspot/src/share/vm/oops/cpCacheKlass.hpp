@@ -32,7 +32,7 @@ class constantPoolCacheKlass: public Klass {
 
   // Allocation
   DEFINE_ALLOCATE_PERMANENT(constantPoolCacheKlass);
-  constantPoolCacheOop allocate(int length, TRAPS);
+  constantPoolCacheOop allocate(int length, bool is_conc_safe, TRAPS);
   static klassOop create_klass(TRAPS);
 
   // Casting from klassOop
@@ -48,6 +48,7 @@ class constantPoolCacheKlass: public Klass {
   // Garbage collection
   void oop_follow_contents(oop obj);
   int oop_adjust_pointers(oop obj);
+  virtual bool oop_is_conc_safe(oop obj) const;
 
   // Parallel Scavenge and Parallel Old
   PARALLEL_GC_DECLS

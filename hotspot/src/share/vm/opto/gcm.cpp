@@ -29,6 +29,9 @@
 #include "incls/_precompiled.incl"
 #include "incls/_gcm.cpp.incl"
 
+// To avoid float value underflow
+#define MIN_BLOCK_FREQUENCY 1.e-35f
+
 //----------------------------schedule_node_into_block-------------------------
 // Insert node n into block b. Look for projections of n and make sure they
 // are in b also.
@@ -1380,6 +1383,13 @@ void PhaseCFG::Estimate_Block_Frequency() {
     }
   }
 
+#ifdef ASSERT
+  for (uint i = 0; i < _num_blocks; i++ ) {
+    Block *b = _blocks[i];
+    assert(b->_freq >= MIN_BLOCK_FREQUENCY, "Register Allocator requiers meaningful block frequency");
+  }
+#endif
+
 #ifndef PRODUCT
   if (PrintCFGBlockFreq) {
     tty->print_cr("CFG Block Frequencies");
@@ -1877,7 +1887,9 @@ void CFGLoop::scale_freq() {
   float loop_freq = _freq * trip_count();
   for (int i = 0; i < _members.length(); i++) {
     CFGElement* s = _members.at(i);
-    s->_freq *= loop_freq;
+    float block_freq = s->_freq * loop_freq;
+    if (block_freq < MIN_BLOCK_FREQUENCY) block_freq = MIN_BLOCK_FREQUENCY;
+    s->_freq = block_freq;
   }
   CFGLoop* ch = _child;
   while (ch != NULL) {

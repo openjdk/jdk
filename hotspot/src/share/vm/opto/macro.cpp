@@ -952,13 +952,6 @@ void PhaseMacroExpand::expand_allocate_common(
   Node* klass_node        = alloc->in(AllocateNode::KlassNode);
   Node* initial_slow_test = alloc->in(AllocateNode::InitialTest);
 
-  // With escape analysis, the entire memory state was needed to be able to
-  // eliminate the allocation.  Since the allocations cannot be eliminated,
-  // optimize it to the raw slice.
-  if (mem->is_MergeMem()) {
-    mem = mem->as_MergeMem()->memory_at(Compile::AliasIdxRaw);
-  }
-
   assert(ctrl != NULL, "must have control");
   // We need a Region and corresponding Phi's to merge the slow-path and fast-path results.
   // they will not be used if "always_slow" is set
@@ -1016,6 +1009,11 @@ void PhaseMacroExpand::expand_allocate_common(
   Node *slow_mem = mem;  // save the current memory state for slow path
   // generate the fast allocation code unless we know that the initial test will always go slow
   if (!always_slow) {
+    // Fast path modifies only raw memory.
+    if (mem->is_MergeMem()) {
+      mem = mem->as_MergeMem()->memory_at(Compile::AliasIdxRaw);
+    }
+
     Node* eden_top_adr;
     Node* eden_end_adr;
 
@@ -1238,8 +1236,6 @@ void PhaseMacroExpand::expand_allocate_common(
       --i;
     }
   }
-
-  mem = result_phi_rawmem;
 
   // An allocate node has separate i_o projections for the uses on the control and i_o paths
   // Replace uses of the control i_o projection with result_phi_i_o (unless we are only generating a slow call)
