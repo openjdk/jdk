@@ -426,6 +426,7 @@ ifndef OPENJDK
 ifeq ($(ENABLE_JFR), true)
     $(eval $(call SetupArchive,BUILD_JFR_JAR,,\
 		SRCS:=$(JDK_OUTPUTDIR)/classes,\
+		SUFFIXES:=.class .jfc .xsd,\
 		INCLUDES:=com/oracle/jrockit/jfr \
 			  oracle/jrockit/jfr,\
 		JAR:=$(IMAGES_OUTPUTDIR)/lib/jfr.jar,\

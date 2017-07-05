@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -317,7 +317,7 @@ void Matcher::match( ) {
   find_shared( C->root() );
   find_shared( C->top() );
 
-  C->print_method("Before Matching");
+  C->print_method(PHASE_BEFORE_MATCHING);
 
   // Create new ideal node ConP #NULL even if it does exist in old space
   // to avoid false sharing if the corresponding mach node is not used.
@@ -1848,7 +1848,7 @@ void Matcher::ReduceOper( State *s, int rule, Node *&mem, MachNode *mach ) {
 
   for( uint i=0; kid != NULL && i<2; kid = s->_kids[1], i++ ) {   // binary tree
     int newrule;
-    if( i == 0 )
+    if( i == 0)
       newrule = kid->_rule[_leftOp[rule]];
     else
       newrule = kid->_rule[_rightOp[rule]];

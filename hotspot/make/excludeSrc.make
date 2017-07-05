@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 ifeq ($(INCLUDE_JVMTI), false)
       CXXFLAGS += -DINCLUDE_JVMTI=0
@@ -100,7 +100,7 @@ ifeq ($(INCLUDE_ALL_GCS), false)
 	parCardTableModRefBS.cpp parGCAllocBuffer.cpp parNewGeneration.cpp mutableSpace.cpp \
 	gSpaceCounters.cpp allocationStats.cpp spaceCounters.cpp gcAdaptivePolicyCounters.cpp \
 	mutableNUMASpace.cpp immutableSpace.cpp yieldingWorkGroup.cpp
-endif 
+endif
 
 ifeq ($(INCLUDE_NMT), false)
       CXXFLAGS += -DINCLUDE_NMT=0
@@ -110,3 +110,5 @@ ifeq ($(INCLUDE_NMT), false)
 	 memBaseline.cpp memPtr.cpp memRecorder.cpp memReporter.cpp memSnapshot.cpp memTrackWorker.cpp \
 	 memTracker.cpp nmtDCmd.cpp
 endif
+
+-include $(HS_ALT_MAKE)/excludeSrc.make
