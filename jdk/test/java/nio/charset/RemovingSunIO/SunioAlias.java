@@ -675,6 +675,12 @@ public class SunioAlias {
         aliasTable.put("1124",                  "Cp1124");
 
         // MIBenum: ????
+        aliasTable.put("ibm1166",               "Cp1166");
+        aliasTable.put("ibm-1166",              "Cp1166");
+        aliasTable.put("cp1166",                "Cp1166");
+        aliasTable.put("1166",                  "Cp1166");
+
+        // MIBenum: ????
         aliasTable.put("ibm1381",               "Cp1381");        /* MDA */
         aliasTable.put("ibm-1381",              "Cp1381");        /* MDA */
         aliasTable.put("cp1381",                "Cp1381");        /* MDA */

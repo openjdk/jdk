@@ -155,7 +155,7 @@ public abstract class Clock {
      * @return a clock that uses the best available system clock in the UTC zone, not null
      */
     public static Clock systemUTC() {
-        return new SystemClock(ZoneOffset.UTC);
+        return SystemClock.UTC;
     }
 
     /**
@@ -198,6 +198,9 @@ public abstract class Clock {
      */
     public static Clock system(ZoneId zone) {
         Objects.requireNonNull(zone, "zone");
+        if (zone == ZoneOffset.UTC) {
+            return SystemClock.UTC;
+        }
         return new SystemClock(zone);
     }
 
@@ -451,6 +454,8 @@ public abstract class Clock {
         private static final long serialVersionUID = 6740630888130243051L;
         private static final long OFFSET_SEED =
                 System.currentTimeMillis()/1000 - 1024; // initial offest
+        static final SystemClock UTC = new SystemClock(ZoneOffset.UTC);
+
         private final ZoneId zone;
         // We don't actually need a volatile here.
         // We don't care if offset is set or read concurrently by multiple

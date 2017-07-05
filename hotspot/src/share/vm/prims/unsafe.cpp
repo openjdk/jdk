@@ -25,6 +25,8 @@
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.inline.hpp"
+#include "oops/objArrayOop.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "prims/jni.h"
 #include "prims/jvm.h"
 #include "runtime/atomic.inline.hpp"

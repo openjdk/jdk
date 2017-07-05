@@ -43,21 +43,28 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
     private final ThreadInfo threadInfo;
     private final CompositeData cdata;
     private final boolean currentVersion;
+    private final boolean hasV6;
 
     private ThreadInfoCompositeData(ThreadInfo ti) {
         this.threadInfo = ti;
         this.currentVersion = true;
         this.cdata = null;
+        this.hasV6 = true;
     }
 
     private ThreadInfoCompositeData(CompositeData cd) {
         this.threadInfo = null;
         this.currentVersion = ThreadInfoCompositeData.isCurrentVersion(cd);
         this.cdata = cd;
+        this.hasV6 = ThreadInfoCompositeData.hasV6(cd);
     }
 
     public ThreadInfo getThreadInfo() {
         return threadInfo;
+    }
+
+    public boolean hasV6() {
+        return hasV6;
     }
 
     public boolean isCurrentVersion() {
@@ -124,6 +131,8 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
                 threadInfo.isInNative(),
             lockedMonitorsData,
             lockedSyncsData,
+            threadInfo.isDaemon(),
+            threadInfo.getPriority(),
         };
 
         try {
@@ -151,6 +160,8 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
     private static final String STACK_TRACE     = "stackTrace";
     private static final String SUSPENDED       = "suspended";
     private static final String IN_NATIVE       = "inNative";
+    private static final String DAEMON          = "daemon";
+    private static final String PRIORITY        = "priority";
     private static final String LOCKED_MONITORS = "lockedMonitors";
     private static final String LOCKED_SYNCS    = "lockedSynchronizers";
 
@@ -171,6 +182,8 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
         IN_NATIVE,
         LOCKED_MONITORS,
         LOCKED_SYNCS,
+        DAEMON,
+        PRIORITY,
     };
 
     // New attributes added in 6.0 ThreadInfo
@@ -180,9 +193,16 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
         LOCKED_SYNCS,
     };
 
+    private static final String[] threadInfoV9Attributes = {
+        DAEMON,
+        PRIORITY,
+    };
+
     // Current version of ThreadInfo
     private static final CompositeType threadInfoCompositeType;
     // Previous version of ThreadInfo
+    private static final CompositeType threadInfoV6CompositeType;
+    // Previous-previous version of ThreadInfo
     private static final CompositeType threadInfoV5CompositeType;
     private static final CompositeType lockInfoCompositeType;
     static {
@@ -193,7 +213,7 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
             String[] itemNames =
                 threadInfoCompositeType.keySet().toArray(new String[0]);
             int numV5Attributes = threadInfoItemNames.length -
-                                      threadInfoV6Attributes.length;
+                threadInfoV6Attributes.length - threadInfoV9Attributes.length;
             String[] v5ItemNames = new String[numV5Attributes];
             String[] v5ItemDescs = new String[numV5Attributes];
             OpenType<?>[] v5ItemTypes = new OpenType<?>[numV5Attributes];
@@ -213,6 +233,31 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
                                   v5ItemNames,
                                   v5ItemDescs,
                                   v5ItemTypes);
+
+
+            // Form a CompositeType for JDK 6.0 ThreadInfo version
+            int numV6Attributes = threadInfoItemNames.length -
+                                      threadInfoV9Attributes.length;
+            String[] v6ItemNames = new String[numV6Attributes];
+            String[] v6ItemDescs = new String[numV6Attributes];
+            OpenType<?>[] v6ItemTypes = new OpenType<?>[numV6Attributes];
+            i = 0;
+            for (String n : itemNames) {
+                if (isV5Attribute(n) || isV6Attribute(n)) {
+                    v6ItemNames[i] = n;
+                    v6ItemDescs[i] = threadInfoCompositeType.getDescription(n);
+                    v6ItemTypes[i] = threadInfoCompositeType.getType(n);
+                    i++;
+                }
+            }
+
+            threadInfoV6CompositeType =
+                new CompositeType("java.lang.management.ThreadInfo",
+                                  "Java SE 6 java.lang.management.ThreadInfo",
+                                  v6ItemNames,
+                                  v6ItemDescs,
+                                  v6ItemTypes);
+
         } catch (OpenDataException e) {
             // Should never reach here
             throw new AssertionError(e);
@@ -236,6 +281,20 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
                 return false;
             }
         }
+        for (String n : threadInfoV9Attributes) {
+            if (itemName.equals(n)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isV6Attribute(String itemName) {
+        for (String n : threadInfoV9Attributes) {
+            if (itemName.equals(n)) {
+                return false;
+            }
+        }
         return true;
     }
 
@@ -246,6 +305,15 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
 
         return isTypeMatched(threadInfoCompositeType, cd.getCompositeType());
     }
+
+    private static boolean hasV6(CompositeData cd) {
+        if (cd == null) {
+            throw new NullPointerException("Null CompositeData");
+        }
+
+        return isTypeMatched(threadInfoCompositeType, cd.getCompositeType()) ||
+               isTypeMatched(threadInfoV6CompositeType, cd.getCompositeType());
+     }
 
     public long threadId() {
         return getLong(cdata, THREAD_ID);
@@ -302,6 +370,14 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
 
     public boolean inNative() {
         return getBoolean(cdata, IN_NATIVE);
+    }
+
+    public boolean isDaemon() {
+        return getBoolean(cdata, DAEMON);
+    }
+
+    public int getPriority(){
+        return getInt(cdata, PRIORITY);
     }
 
     public StackTraceElement[] stackTrace() {
@@ -368,9 +444,10 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
         if (!isTypeMatched(threadInfoCompositeType, type)) {
             currentVersion = false;
             // check if cd is an older version
-            if (!isTypeMatched(threadInfoV5CompositeType, type)) {
-                throw new IllegalArgumentException(
-                    "Unexpected composite type for ThreadInfo");
+            if (!isTypeMatched(threadInfoV5CompositeType, type) &&
+                !isTypeMatched(threadInfoV6CompositeType, type)) {
+              throw new IllegalArgumentException(
+                  "Unexpected composite type for ThreadInfo");
             }
         }
 

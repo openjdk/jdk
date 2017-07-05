@@ -80,12 +80,12 @@ public class EUC_TW {
 
     private static Pattern euctw = Pattern.compile("(?:8ea)?(\\p{XDigit}++)\\s++(\\p{XDigit}++)?\\s*+.*");
 
-    static void genClass(String args[]) throws Exception
+    static void genClass(String pkg, String args[]) throws Exception
     {
         InputStream is = new FileInputStream(new File(args[0], "euc_tw.map"));
         PrintStream ps = new PrintStream(new File(args[1], "EUC_TWMapping.java"),
                                          "ISO-8859-1");
-        String copyright = getCopyright(new File(args[3]));
+        String copyright = getCopyright(new File(args[7], "EUC_TW.java"));
 
 
         // ranges of byte1 and byte2, something should come from a "config" file
@@ -128,7 +128,7 @@ public class EUC_TW {
 
             out.format(copyright);
             out.format("%n// -- This file was mechanically generated: Do not edit! -- //%n");
-            out.format("package sun.nio.cs.ext;%n%n");
+            out.format("package %s;%n%n", pkg);
             out.format("class EUC_TWMapping {%n%n");
 
             // boundaries

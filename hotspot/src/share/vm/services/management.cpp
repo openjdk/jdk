@@ -30,6 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/klass.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"

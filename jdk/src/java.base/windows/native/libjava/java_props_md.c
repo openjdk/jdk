@@ -188,6 +188,7 @@ getJavaIDFromLangID(LANGID langID)
             free(elems[index]);
         }
     } else {
+        free(ret);
         ret = NULL;
     }
 
