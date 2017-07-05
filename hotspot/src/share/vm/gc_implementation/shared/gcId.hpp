@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +22,30 @@
  *
  */
 
-#ifndef CPU_PPC_VM_BYTECODES_PPC_HPP
-#define CPU_PPC_VM_BYTECODES_PPC_HPP
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_GCID_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_GCID_HPP
 
-// No ppc64 specific bytecodes
+#include "memory/allocation.hpp"
 
-#endif // CPU_PPC_VM_BYTECODES_PPC_HPP
+class GCId VALUE_OBJ_CLASS_SPEC {
+ private:
+  uint _id;
+  GCId(uint id) : _id(id) {}
+  GCId() { } // Unused
+
+  static uint _next_id;
+  static const uint UNDEFINED = (uint)-1;
+
+ public:
+  uint id() const {
+    assert(_id != UNDEFINED, "Using undefined GC ID");
+    return _id;
+  }
+  bool is_undefined() const;
+
+  static const GCId create();
+  static const GCId peek();
+  static const GCId undefined();
+};
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_GCID_HPP

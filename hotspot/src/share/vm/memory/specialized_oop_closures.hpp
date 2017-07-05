@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_MEMORY_SPECIALIZED_OOP_CLOSURES_HPP
 #define SHARE_VM_MEMORY_SPECIALIZED_OOP_CLOSURES_HPP
 
-#include "runtime/atomic.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/g1_specialized_oop_closures.hpp"

@@ -44,6 +44,7 @@
 #include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -3525,11 +3526,6 @@ os::YieldResult os::NakedYield() {
 }
 
 void os::yield() {  os::NakedYield(); }
-
-void os::yield_all() {
-  // Yields to all threads, including threads with lower priorities
-  Sleep(1);
-}
 
 // Win32 only gives you access to seven real priorities at a time,
 // so we compress Java's ten down to seven.  It would be better

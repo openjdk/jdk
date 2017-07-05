@@ -26,6 +26,7 @@
 #include "classfile/javaClasses.hpp"
 #include "gc_implementation/g1/g1StringDedupQueue.hpp"
 #include "memory/gcLocker.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/stack.inline.hpp"
 

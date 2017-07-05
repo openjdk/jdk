@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007 Red Hat, Inc.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +22,24 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "interpreter/bytecodes.hpp"
+package sun.jvm.hotspot.gc_interface;
 
-void Bytecodes::pd_initialize() {
-  // No zero specific initialization
+//These definitions should be kept in sync with the definitions in the HotSpot
+//code.
+
+public enum G1YCType {
+  Normal ("Normal"),
+  InitialMark ("Initial Mark"),
+  DuringMark ("During Mark"),
+  Mixed ("Mixed"),
+  G1YCTypeEndSentinel ("Unknown");
+
+  private final String value;
+
+  G1YCType(String val) {
+    this.value = val;
+  }
+  public String value() {
+    return value;
+  }
 }
