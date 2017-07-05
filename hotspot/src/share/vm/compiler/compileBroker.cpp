@@ -252,7 +252,7 @@ CompileTask* CompileTask::allocate() {
   } else {
     task = new CompileTask();
     DEBUG_ONLY(_num_allocated_tasks++;)
-    assert (_num_allocated_tasks < 10000, "Leaking compilation tasks?");
+    assert (WhiteBoxAPI || _num_allocated_tasks < 10000, "Leaking compilation tasks?");
     task->set_next(NULL);
     task->set_is_free(true);
   }
