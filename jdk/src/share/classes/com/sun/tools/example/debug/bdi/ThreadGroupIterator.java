@@ -26,7 +26,6 @@
 package com.sun.tools.example.debug.bdi;
 
 import com.sun.jdi.ThreadGroupReference;
-import com.sun.jdi.ThreadReference;
 import java.util.List;
 import java.util.Stack;
 import java.util.ArrayList;
@@ -73,10 +72,12 @@ public class ThreadGroupIterator implements Iterator<ThreadGroupReference> {
         }
     }
 
+    @Override
     public boolean hasNext() {
         return !stack.isEmpty();
     }
 
+    @Override
     public ThreadGroupReference next() {
         return nextThreadGroup();
     }
@@ -87,6 +88,7 @@ public class ThreadGroupIterator implements Iterator<ThreadGroupReference> {
         return tg;
     }
 
+    @Override
     public void remove() {
         throw new UnsupportedOperationException();
     }

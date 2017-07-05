@@ -26,9 +26,6 @@
 package com.sun.tools.example.debug.bdi;
 
 import com.sun.jdi.*;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
 
 //### Should handle target VM death or connection failure cleanly.
 

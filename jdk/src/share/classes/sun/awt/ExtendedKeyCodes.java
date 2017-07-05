@@ -13,7 +13,7 @@ public class ExtendedKeyCodes {
      */
      // Keycodes declared in KeyEvent.java with corresponding Unicode values.
      private final static HashMap<Integer, Integer>  regularKeyCodesMap =
-                                          new HashMap<Integer,Integer>(83, 1.0f);
+                                          new HashMap<Integer,Integer>(98, 1.0f);
 
      // Keycodes derived from Unicode values. Here should be collected codes
      // for characters appearing on the primary layer of at least one
@@ -108,6 +108,21 @@ public class ExtendedKeyCodes {
          regularKeyCodesMap.put(0x5E, KeyEvent.VK_CIRCUMFLEX);
          regularKeyCodesMap.put(0x5F, KeyEvent.VK_UNDERSCORE);
          regularKeyCodesMap.put(0x60, KeyEvent.VK_BACK_QUOTE);
+         regularKeyCodesMap.put(0x61, KeyEvent.VK_A);
+         regularKeyCodesMap.put(0x62, KeyEvent.VK_B);
+         regularKeyCodesMap.put(0x63, KeyEvent.VK_C);
+         regularKeyCodesMap.put(0x64, KeyEvent.VK_D);
+         regularKeyCodesMap.put(0x65, KeyEvent.VK_E);
+         regularKeyCodesMap.put(0x66, KeyEvent.VK_F);
+         regularKeyCodesMap.put(0x67, KeyEvent.VK_G);
+         regularKeyCodesMap.put(0x68, KeyEvent.VK_H);
+         regularKeyCodesMap.put(0x69, KeyEvent.VK_I);
+         regularKeyCodesMap.put(0x6A, KeyEvent.VK_J);
+         regularKeyCodesMap.put(0x6B, KeyEvent.VK_K);
+         regularKeyCodesMap.put(0x6C, KeyEvent.VK_L);
+         regularKeyCodesMap.put(0x6D, KeyEvent.VK_M);
+         regularKeyCodesMap.put(0x6E, KeyEvent.VK_N);
+         regularKeyCodesMap.put(0x6F, KeyEvent.VK_O);
          regularKeyCodesMap.put(0x70, KeyEvent.VK_P);
          regularKeyCodesMap.put(0x71, KeyEvent.VK_Q);
          regularKeyCodesMap.put(0x72, KeyEvent.VK_R);

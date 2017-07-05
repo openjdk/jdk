@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import sun.security.krb5.PrincipalName;
 import sun.security.ssl.Krb5Proxy;
 
 /**
- * An implementatin of Krb5Proxy that simply delegates to the appropriate
+ * An implementation of Krb5Proxy that simply delegates to the appropriate
  * Kerberos APIs.
  */
 public class Krb5ProxyImpl implements Krb5Proxy {
@@ -62,7 +62,7 @@ public class Krb5ProxyImpl implements Krb5Proxy {
     @Override
     public SecretKey[] getServerKeys(AccessControlContext acc)
             throws LoginException {
-        return Krb5Util.getKeys(GSSCaller.CALLER_SSL_SERVER, null, acc);
+        return Krb5Util.getServiceCreds(GSSCaller.CALLER_SSL_SERVER, null, acc).getKKeys();
     }
 
     @Override
