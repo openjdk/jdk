@@ -1735,9 +1735,14 @@ ClassFileParser::AnnotationCollector::annotation_index(ClassLoaderData* loader_d
                                                                 Symbol* name) {
   vmSymbols::SID sid = vmSymbols::find_sid(name);
   // Privileged code can use all annotations.  Other code silently drops some.
-  bool privileged = loader_data->is_the_null_class_loader_data() ||
-                    loader_data->is_anonymous();
+  const bool privileged = loader_data->is_the_null_class_loader_data() ||
+                          loader_data->is_ext_class_loader_data() ||
+                          loader_data->is_anonymous();
   switch (sid) {
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(sun_reflect_CallerSensitive_signature):
+    if (_location != _in_method)  break;  // only allow for methods
+    if (!privileged)              break;  // only allow in privileged code
+    return _method_CallerSensitive;
   case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_ForceInline_signature):
     if (_location != _in_method)  break;  // only allow for methods
     if (!privileged)              break;  // only allow in privileged code
@@ -1775,6 +1780,8 @@ ClassFileParser::FieldAnnotationCollector::~FieldAnnotationCollector() {
 }
 
 void ClassFileParser::MethodAnnotationCollector::apply_to(methodHandle m) {
+  if (has_annotation(_method_CallerSensitive))
+    m->set_caller_sensitive(true);
   if (has_annotation(_method_ForceInline))
     m->set_force_inline(true);
   if (has_annotation(_method_DontInline))

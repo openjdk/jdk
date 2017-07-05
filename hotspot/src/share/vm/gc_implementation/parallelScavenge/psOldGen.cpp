@@ -256,7 +256,7 @@ void PSOldGen::expand(size_t bytes) {
   }
 
   if (PrintGC && Verbose) {
-    if (success && GC_locker::is_active()) {
+    if (success && GC_locker::is_active_and_needs_gc()) {
       gclog_or_tty->print_cr("Garbage collection disabled, expanded heap instead");
     }
   }
