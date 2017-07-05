@@ -105,7 +105,7 @@ public abstract class TransportService {
          * multiple concurrent connections to a single address that
          * it is listening on.
          *
-         * @return  <tt>true</tt> if, and only if, this transport
+         * @return  {@code true} if, and only if, this transport
          *          service supports multiple connections.
          */
         public abstract boolean supportsMultipleConnections();
@@ -115,7 +115,7 @@ public abstract class TransportService {
          * Tell whether or not this transport service supports a timeout
          * when attaching to a target VM.
          *
-         * @return      <tt>true</tt> if, and only if, this transport
+         * @return      {@code true} if, and only if, this transport
          *              service supports attaching with a timeout.
          *
          * @see #attach(String,long,long)
@@ -126,7 +126,7 @@ public abstract class TransportService {
          * Tell whether or not this transport service supports a
          * timeout while waiting for a target VM to connect.
          *
-         * @return  <tt>true</tt> if, and only if, this transport
+         * @return  {@code true} if, and only if, this transport
          *          service supports timeout while waiting for
          *          a target VM to connect.
          *
@@ -138,7 +138,7 @@ public abstract class TransportService {
          * Tells whether or not this transport service supports a
          * timeout when handshaking with the target VM.
          *
-         * @return  <tt>true</tt> if, and only if, this transport
+         * @return  {@code true} if, and only if, this transport
          *          service supports a timeout while handshaking
          *          with the target VM.
          *
@@ -176,15 +176,15 @@ public abstract class TransportService {
      *
      * @param   attachTimeout
      *          If this transport service supports an attach timeout,
-     *          and if <tt>attachTimeout</tt> is positive, then it specifies
+     *          and if {@code attachTimeout} is positive, then it specifies
      *          the timeout, in milliseconds (more or less), to use
      *          when attaching to the target VM.  If the transport service
-     *          does not support an attach timeout, or if <tt>attachTimeout</tt>
+     *          does not support an attach timeout, or if {@code attachTimeout}
      *          is specified as zero then attach without any timeout.
      *
      * @param   handshakeTimeout
      *          If this transport service supports a handshake timeout,
-     *          and if <tt>handshakeTimeout</tt> is positive, then it
+     *          and if {@code handshakeTimeout} is positive, then it
      *          specifies the timeout, in milliseconds (more or less), to
      *          use when handshaking with the target VM. The exact
      *          usage of the timeout are specific to the transport service.
@@ -195,7 +195,7 @@ public abstract class TransportService {
      *          use the handshakeTimeout as a timeout for the duration of the
      *          handshake exchange.
      *          If the transport service does not support a handshake
-     *          timeout, or if <tt>handshakeTimeout</tt> is specified
+     *          timeout, or if {@code handshakeTimeout} is specified
      *          as zero then the handshake does not timeout if there
      *          isn't a response from the target VM.
      *
@@ -221,9 +221,9 @@ public abstract class TransportService {
     /**
      * A <i>listen key</i>.
      *
-     * <p> A <tt>TransportService</tt> may listen on multiple, yet
+     * <p> A {@code TransportService} may listen on multiple, yet
      * different, addresses at the same time. To uniquely identify
-     * each <tt>listener</tt> a listen key is created each time that
+     * each {@code listener} a listen key is created each time that
      * {@link #startListening startListening} is called. The listen
      * key is used in calls to the {@link #accept accept} method
      * to accept inbound connections to that listener. A listen
@@ -250,7 +250,7 @@ public abstract class TransportService {
      *
      * @param   address
      *          The address to start listening for connections,
-     *          or <tt>null</tt> to listen on an address chosen
+     *          or {@code null} to listen on an address chosen
      *          by the transport service.
      *
      * @return  a listen key to be used in subsequent calls to be
@@ -268,8 +268,8 @@ public abstract class TransportService {
     /**
      * Listens on an address chosen by the transport service.
      *
-     * <p> This convenience method works as if by invoking {@link
-     * #startListening(String) startListening(<tt>null</tt>)}. </p>
+     * <p> This convenience method works as if by invoking
+     * {@link #startListening(String) startListening(null)}.
      *
      * @return  a listen key to be used in subsequent calls to be
      *          {@link #accept accept} or {@link #stopListening
@@ -327,16 +327,16 @@ public abstract class TransportService {
      *
      * @param   acceptTimeout
      *          if this transport service supports an accept timeout, and
-     *          if <tt>acceptTimeout</tt> is positive then block for up to
-     *          <tt>acceptTimeout</tt> milliseconds, more or less, while waiting
+     *          if {@code acceptTimeout} is positive then block for up to
+     *          {@code acceptTimeout} milliseconds, more or less, while waiting
      *          for the target VM to connect.
      *          If the transport service does not support an accept timeout
-     *          or if <tt>acceptTimeout</tt> is zero then block indefinitely
+     *          or if {@code acceptTimeout} is zero then block indefinitely
      *          for a target VM to connect.
      *
      * @param   handshakeTimeout
      *          If this transport service supports a handshake timeout,
-     *          and if <tt>handshakeTimeout</tt> is positive, then it
+     *          and if {@code handshakeTimeout} is positive, then it
      *          specifies the timeout, in milliseconds (more or less), to
      *          use when handshaking with the target VM. The exact
      *          usage of the timeout is specific to the transport service.
@@ -347,7 +347,7 @@ public abstract class TransportService {
      *          use the timeout as a timeout for the duration of the
      *          handshake exchange.
      *          If the transport service does not support a handshake
-     *          timeout, of if <tt>handshakeTimeout</tt> is specified
+     *          timeout, of if {@code handshakeTimeout} is specified
      *          as zero then the handshake does not timeout if there
      *          isn't a response from the target VM.
      *

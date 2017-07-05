@@ -970,8 +970,12 @@ void MacroAssembler::addss(XMMRegister dst, AddressLiteral src) {
 }
 
 void MacroAssembler::align(int modulus) {
-  if (offset() % modulus != 0) {
-    nop(modulus - (offset() % modulus));
+  align(modulus, offset());
+}
+
+void MacroAssembler::align(int modulus, int target) {
+  if (target % modulus != 0) {
+    nop(modulus - (target % modulus));
   }
 }
 

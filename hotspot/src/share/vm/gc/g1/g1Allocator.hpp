@@ -33,17 +33,36 @@
 
 class EvacuationInfo;
 
-// Base class for G1 allocators.
+// Interface to keep track of which regions G1 is currently allocating into. Provides
+// some accessors (e.g. allocating into them, or getting their occupancy).
+// Also keeps track of retained regions across GCs.
 class G1Allocator : public CHeapObj<mtGC> {
   friend class VMStructs;
 protected:
   G1CollectedHeap* _g1h;
 
+  virtual MutatorAllocRegion* mutator_alloc_region(AllocationContext_t context) = 0;
+
+  // Accessors to the allocation regions.
+  virtual SurvivorGCAllocRegion* survivor_gc_alloc_region(AllocationContext_t context) = 0;
+  virtual OldGCAllocRegion* old_gc_alloc_region(AllocationContext_t context) = 0;
+
+  // Allocation attempt during GC for a survivor object / PLAB.
+  inline HeapWord* survivor_attempt_allocation(size_t word_size,
+                                               AllocationContext_t context);
+  // Allocation attempt during GC for an old object / PLAB.
+  inline HeapWord* old_attempt_allocation(size_t word_size,
+                                          AllocationContext_t context);
 public:
   G1Allocator(G1CollectedHeap* heap) : _g1h(heap) { }
+  virtual ~G1Allocator() { }
 
   static G1Allocator* create_allocator(G1CollectedHeap* g1h);
 
+#ifdef ASSERT
+  // Do we currently have an active mutator region to allocate into?
+  bool has_mutator_alloc_region(AllocationContext_t context) { return mutator_alloc_region(context)->get() != NULL; }
+#endif
   virtual void init_mutator_alloc_region() = 0;
   virtual void release_mutator_alloc_region() = 0;
 
@@ -51,24 +70,35 @@ public:
   virtual void release_gc_alloc_regions(EvacuationInfo& evacuation_info) = 0;
   virtual void abandon_gc_alloc_regions() = 0;
 
-  virtual MutatorAllocRegion*    mutator_alloc_region(AllocationContext_t context) = 0;
-  virtual SurvivorGCAllocRegion* survivor_gc_alloc_region(AllocationContext_t context) = 0;
-  virtual OldGCAllocRegion*      old_gc_alloc_region(AllocationContext_t context) = 0;
-  virtual size_t                 used_in_alloc_regions() = 0;
-  virtual bool                   is_retained_old_region(HeapRegion* hr) = 0;
+  // Management of retained regions.
 
-  void                           reuse_retained_old_region(EvacuationInfo& evacuation_info,
-                                                           OldGCAllocRegion* old,
-                                                           HeapRegion** retained);
+  virtual bool is_retained_old_region(HeapRegion* hr) = 0;
+  void reuse_retained_old_region(EvacuationInfo& evacuation_info,
+                                 OldGCAllocRegion* old,
+                                 HeapRegion** retained);
 
-  virtual HeapRegion* new_heap_region(uint hrs_index,
-                                      G1BlockOffsetSharedArray* sharedOffsetArray,
-                                      MemRegion mr) {
-    return new HeapRegion(hrs_index, sharedOffsetArray, mr);
-  }
+  // Allocate blocks of memory during mutator time.
+
+  inline HeapWord* attempt_allocation(size_t word_size, AllocationContext_t context);
+  inline HeapWord* attempt_allocation_locked(size_t word_size, AllocationContext_t context);
+  inline HeapWord* attempt_allocation_force(size_t word_size, AllocationContext_t context);
+
+  size_t unsafe_max_tlab_alloc(AllocationContext_t context);
+
+  // Allocate blocks of memory during garbage collection. Will ensure an
+  // allocation region, either by picking one or expanding the
+  // heap, and then allocate a block of the given size. The block
+  // may not be a humongous - it must fit into a single heap region.
+  HeapWord* par_allocate_during_gc(InCSetState dest,
+                                   size_t word_size,
+                                   AllocationContext_t context);
+
+  virtual size_t used_in_alloc_regions() = 0;
 };
 
-// The default allocator for G1.
+// The default allocation region manager for G1. Provides a single mutator, survivor
+// and old generation allocation region.
+// Can retain the (single) old generation allocation region across GCs.
 class G1DefaultAllocator : public G1Allocator {
 protected:
   // Alloc region used to satisfy mutator allocation requests.
@@ -152,10 +182,14 @@ public:
   }
 };
 
-class G1ParGCAllocator : public CHeapObj<mtGC> {
+// Manages the PLABs used during garbage collection. Interface for allocation from PLABs.
+// Needs to handle multiple contexts, extra alignment in any "survivor" area and some
+// statistics.
+class G1PLABAllocator : public CHeapObj<mtGC> {
   friend class G1ParScanThreadState;
 protected:
   G1CollectedHeap* _g1h;
+  G1Allocator* _allocator;
 
   // The survivor alignment in effect in bytes.
   // == 0 : don't align survivors
@@ -182,11 +216,10 @@ protected:
   }
 
 public:
-  G1ParGCAllocator(G1CollectedHeap* g1h) :
-    _g1h(g1h), _survivor_alignment_bytes(calc_survivor_alignment_bytes()) { }
-  virtual ~G1ParGCAllocator() { }
+  G1PLABAllocator(G1Allocator* allocator);
+  virtual ~G1PLABAllocator() { }
 
-  static G1ParGCAllocator* create_allocator(G1CollectedHeap* g1h);
+  static G1PLABAllocator* create_allocator(G1Allocator* allocator);
 
   virtual void waste(size_t& wasted, size_t& undo_wasted) = 0;
 
@@ -219,18 +252,18 @@ public:
     return allocate_direct_or_new_plab(dest, word_sz, context);
   }
 
-  void undo_allocation(InCSetState dest, HeapWord* obj, size_t word_sz, AllocationContext_t context) {
-    alloc_buffer(dest, context)->undo_allocation(obj, word_sz);
-  }
+  void undo_allocation(InCSetState dest, HeapWord* obj, size_t word_sz, AllocationContext_t context);
 };
 
-class G1DefaultParGCAllocator : public G1ParGCAllocator {
+// The default PLAB allocator for G1. Keeps the current (single) PLAB for survivor
+// and old generation allocation.
+class G1DefaultPLABAllocator : public G1PLABAllocator {
   G1PLAB  _surviving_alloc_buffer;
   G1PLAB  _tenured_alloc_buffer;
   G1PLAB* _alloc_buffers[InCSetState::Num];
 
 public:
-  G1DefaultParGCAllocator(G1CollectedHeap* g1h);
+  G1DefaultPLABAllocator(G1Allocator* _allocator);
 
   virtual G1PLAB* alloc_buffer(InCSetState dest, AllocationContext_t context) {
     assert(dest.is_valid(),

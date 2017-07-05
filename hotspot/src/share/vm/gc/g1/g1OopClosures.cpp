@@ -48,7 +48,7 @@ void G1ParClosureSuper::set_par_scan_thread_state(G1ParScanThreadState* par_scan
   assert(par_scan_state != NULL, "Must set par_scan_state to non-NULL.");
 
   _par_scan_state = par_scan_state;
-  _worker_id = par_scan_state->queue_num();
+  _worker_id = par_scan_state->worker_id();
 
   assert(_worker_id < ParallelGCThreads,
          err_msg("The given worker id %u must be less than the number of threads %u", _worker_id, ParallelGCThreads));

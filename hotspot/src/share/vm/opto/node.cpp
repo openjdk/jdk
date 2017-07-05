@@ -1799,7 +1799,7 @@ static void collect_nodes_i(GrowableArray<Node*> *nstack, const Node* start, int
 static void dump_nodes(const Node* start, int d, bool only_ctrl) {
   if (NotANode(start)) return;
 
-  GrowableArray <Node *> nstack(Compile::current()->unique());
+  GrowableArray <Node *> nstack(Compile::current()->live_nodes());
   collect_nodes_i(&nstack, start, d, (uint) ABS(d), true, only_ctrl, false);
 
   int end = nstack.length();

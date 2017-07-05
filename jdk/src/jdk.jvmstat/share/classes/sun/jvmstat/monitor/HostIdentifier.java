@@ -42,26 +42,26 @@ import java.net.*;
  * to the string <em>local://localhost</em>. The components of the
  * HostIdentifier are:
  * <ul>
- *   <li><p><tt>protocol</tt> - The communications protocol. If omitted,
+ *   <li><p>{@code protocol} - The communications protocol. If omitted,
  *          and a hostname is not specified, then default local protocol,
  *          <em>local:</em>, is assumed. If the protocol is omitted and a
  *          hostname is specified then the default remote protocol,
  *          <em>rmi:</em> is assumed.
  *       </p></li>
- *   <li><p><tt>hostname</tt> - The hostname. If omitted, then
+ *   <li><p>{@code hostname} - The hostname. If omitted, then
  *          <em>localhost</em> is assumed. If the protocol is also omitted,
  *          then default local protocol <em>local:</em> is also assumed.
  *          If the hostname is not omitted but the protocol is omitted,
  *          then the default remote protocol, <em>rmi:</em> is assumed.
  *       </p></li>
- *   <li><p><tt>port</tt> - The port for the communications protocol.
- *          Treatment of the <tt>port</tt> parameter is implementation
+ *   <li><p>{@code port} - The port for the communications protocol.
+ *          Treatment of the {@code port} parameter is implementation
  *          (protocol) specific. It is unused by the default local protocol,
  *          <em>local:</em>. For the default remote protocol, <em>rmi:</em>,
- *          <tt>port</tt> indicates the port number of the <em>rmiregistry</em>
+ *          {@code port} indicates the port number of the <em>rmiregistry</em>
  *          on the target host and defaults to port 1099.
  *       </p></li>
- *   <li><p><tt>servername</tt> - The treatment of the Path, Query, and
+ *   <li><p>{@code servername} - The treatment of the Path, Query, and
  *          Fragment components of the HostIdentifier are implementation
  *          (protocol) dependent. These components are ignored by the
  *          default local protocol, <em>local:</em>. For the default remote

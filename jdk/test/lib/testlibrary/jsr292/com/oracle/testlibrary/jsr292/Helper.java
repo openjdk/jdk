@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,5 +314,34 @@ public class Helper {
             return ((value % 29) & 1) == 0;
         }
         return null;
+    }
+
+    /**
+     * Routine used to obtain a randomly generated method type.
+     *
+     * @param arity Arity of returned method type.
+     * @return MethodType generated randomly.
+     */
+    public static MethodType randomMethodTypeGenerator(int arity) {
+        final Class<?>[] CLASSES = {
+            Object.class,
+            int.class,
+            boolean.class,
+            byte.class,
+            short.class,
+            char.class,
+            long.class,
+            float.class,
+            double.class
+        };
+        if (arity > MAX_ARITY) {
+            throw new IllegalArgumentException(
+                    String.format("Arity should not exceed %d!", MAX_ARITY));
+        }
+        List<Class<?>> list = randomClasses(CLASSES, arity);
+        list = getParams(list, false, arity);
+        int i = RNG.nextInt(CLASSES.length + 1);
+        Class<?> rtype = i == CLASSES.length ? void.class : CLASSES[i];
+        return MethodType.methodType(rtype, list);
     }
 }

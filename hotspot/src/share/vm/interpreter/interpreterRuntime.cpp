@@ -1303,7 +1303,7 @@ void SignatureHandlerLibrary::add(uint64_t fingerprint, address handler) {
   if (handler_index < 0) {
     if (PrintSignatureHandlers && (handler != Interpreter::slow_signature_handler())) {
       tty->cr();
-      tty->print_cr("argument handler #%d at "PTR_FORMAT" for fingerprint " UINT64_FORMAT,
+      tty->print_cr("argument handler #%d at " PTR_FORMAT " for fingerprint " UINT64_FORMAT,
                     _handlers->length(),
                     handler,
                     fingerprint);
@@ -1313,7 +1313,7 @@ void SignatureHandlerLibrary::add(uint64_t fingerprint, address handler) {
   } else {
     if (PrintSignatureHandlers) {
       tty->cr();
-      tty->print_cr("duplicate argument handler #%d for fingerprint " UINT64_FORMAT "(old: "PTR_FORMAT", new : "PTR_FORMAT")",
+      tty->print_cr("duplicate argument handler #%d for fingerprint " UINT64_FORMAT "(old: " PTR_FORMAT ", new : " PTR_FORMAT ")",
                     _handlers->length(),
                     fingerprint,
                     _handlers->at(handler_index),

@@ -87,12 +87,12 @@ public abstract class AbstractPerfDataBuffer {
      * instrumentation exported by this Java Virtual Machine. If an
      * instrumentation object with the given name exists, a Monitor interface
      * to that object will be return. Otherwise, the method returns
-     * <tt>null</tt>.
+     * {@code null}.
      *
      * @param name the name of the Instrumentation object to find.
      * @return Monitor - the {@link Monitor} object that can be used to
      *                   monitor the named instrumentation object, or
-     *                   <tt>null</tt> if the named object doesn't exist.
+     *                   {@code null} if the named object doesn't exist.
      * @throws MonitorException Thrown if an error occurs while communicating
      *                          with the target Java Virtual Machine.
      */

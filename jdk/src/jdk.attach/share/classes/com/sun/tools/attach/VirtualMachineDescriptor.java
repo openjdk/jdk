@@ -30,7 +30,7 @@ import com.sun.tools.attach.spi.AttachProvider;
 /**
  * Describes a Java virtual machine.
  *
- * <p> A <code>VirtualMachineDescriptor</code> is a container class used to
+ * <p> A {@code VirtualMachineDescriptor} is a container class used to
  * describe a Java virtual machine. It encapsulates an identifier that identifies
  * a target virtual machine, and a reference to the {@link
  * com.sun.tools.attach.spi.AttachProvider AttachProvider} that should be used
@@ -39,15 +39,15 @@ import com.sun.tools.attach.spi.AttachProvider;
  * environments where each Java virtual machine runs in its own operating system
  * process. </p>
  *
- * <p> A <code>VirtualMachineDescriptor</code> also has a {@link #displayName() displayName}.
+ * <p> A {@code VirtualMachineDescriptor} also has a {@link #displayName() displayName}.
  * The display name is typically a human readable string that a tool might
  * display to a user. For example, a tool that shows a list of Java
  * virtual machines running on a system might use the display name rather
- * than the identifier. A <code>VirtualMachineDescriptor</code> may be
+ * than the identifier. A {@code VirtualMachineDescriptor} may be
  * created without a <i>display name</i>. In that case the identifier is
  * used as the <i>display name</i>.
  *
- * <p> <code>VirtualMachineDescriptor</code> instances are typically created by
+ * <p> {@code VirtualMachineDescriptor} instances are typically created by
  * invoking the {@link com.sun.tools.attach.VirtualMachine#list VirtualMachine.list()}
  * method. This returns the complete list of descriptors to describe the
  * Java virtual machines known to all installed {@link
@@ -72,7 +72,7 @@ public class VirtualMachineDescriptor {
      * @param   displayName   The display name.
      *
      * @throws  NullPointerException
-     *          If any of the arguments are <code>null</code>
+     *          If any of the arguments are {@code null}
      */
     public VirtualMachineDescriptor(AttachProvider provider, String id, String displayName) {
         if (provider == null) {
@@ -95,10 +95,10 @@ public class VirtualMachineDescriptor {
      * <p> This convenience constructor works as if by invoking the
      * three-argument constructor as follows:
      *
-     * <blockquote><tt>
+     * <blockquote><code>
      * new&nbsp;{@link #VirtualMachineDescriptor(AttachProvider, String, String)
      * VirtualMachineDescriptor}(provider, &nbsp;id, &nbsp;id);
-     * </tt></blockquote>
+     * </code></blockquote>
      *
      * <p> That is, it creates a virtual machine descriptor such that
      * the <i>display name</i> is the same as the virtual machine
@@ -108,16 +108,16 @@ public class VirtualMachineDescriptor {
      * @param   id            The virtual machine identifier.
      *
      * @throws  NullPointerException
-     *          If <tt>provider</tt> or <tt>id</tt> is <tt>null</tt>.
+     *          If {@code provider} or {@code id} is {@code null}.
      */
     public VirtualMachineDescriptor(AttachProvider provider, String id) {
         this(provider, id, id);
     }
 
     /**
-     * Return the <code>AttachProvider</code> that this descriptor references.
+     * Return the {@code AttachProvider} that this descriptor references.
      *
-     * @return The <code>AttachProvider</code> that this descriptor references.
+     * @return The {@code AttachProvider} that this descriptor references.
      */
     public AttachProvider provider() {
         return provider;
@@ -161,7 +161,7 @@ public class VirtualMachineDescriptor {
      * Tests this VirtualMachineDescriptor for equality with another object.
      *
      * <p> If the given object is not a VirtualMachineDescriptor then this
-     * method returns <tt>false</tt>. For two VirtualMachineDescriptors to
+     * method returns {@code false}. For two VirtualMachineDescriptors to
      * be considered equal requires that they both reference the same
      * provider, and their {@link #id() identifiers} are equal. </p>
      *
@@ -170,7 +170,7 @@ public class VirtualMachineDescriptor {
      *
      * @param   ob   The object to which this object is to be compared
      *
-     * @return  <tt>true</tt> if, and only if, the given object is
+     * @return  {@code true} if, and only if, the given object is
      *                a VirtualMachineDescriptor that is equal to this
      *                VirtualMachineDescriptor.
      */
@@ -190,7 +190,7 @@ public class VirtualMachineDescriptor {
     }
 
     /**
-     * Returns the string representation of the <code>VirtualMachineDescriptor</code>.
+     * Returns the string representation of the {@code VirtualMachineDescriptor}.
      */
     public String toString() {
         String s = provider.toString() + ": " + id;
