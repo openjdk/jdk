@@ -2471,6 +2471,8 @@ const Type *TypeOopPtr::filter( const Type *kills ) const {
   const Type* ft = join(kills);
   const TypeInstPtr* ftip = ft->isa_instptr();
   const TypeInstPtr* ktip = kills->isa_instptr();
+  const TypeKlassPtr* ftkp = ft->isa_klassptr();
+  const TypeKlassPtr* ktkp = kills->isa_klassptr();
 
   if (ft->empty()) {
     // Check for evil case of 'this' being a class and 'kills' expecting an
@@ -2483,6 +2485,8 @@ const Type *TypeOopPtr::filter( const Type *kills ) const {
     // into a Phi which "knows" it's an Interface type we'll have to
     // uplift the type.
     if (!empty() && ktip != NULL && ktip->is_loaded() && ktip->klass()->is_interface())
+      return kills;             // Uplift to interface
+    if (!empty() && ktkp != NULL && ktkp->klass()->is_loaded() && ktkp->klass()->is_interface())
       return kills;             // Uplift to interface
 
     return Type::TOP;           // Canonical empty value
@@ -2498,6 +2502,12 @@ const Type *TypeOopPtr::filter( const Type *kills ) const {
       ktip->is_loaded() && !ktip->klass()->is_interface()) {
     // Happens in a CTW of rt.jar, 320-341, no extra flags
     return ktip->cast_to_ptr_type(ftip->ptr());
+  }
+  if (ftkp != NULL && ktkp != NULL &&
+      ftkp->is_loaded() &&  ftkp->klass()->is_interface() &&
+      ktkp->is_loaded() && !ktkp->klass()->is_interface()) {
+    // Happens in a CTW of rt.jar, 320-341, no extra flags
+    return ktkp->cast_to_ptr_type(ftkp->ptr());
   }
 
   return ft;
@@ -3657,7 +3667,7 @@ const TypePtr *TypeKlassPtr::add_offset( intptr_t offset ) const {
 
 //------------------------------cast_to_ptr_type-------------------------------
 const Type *TypeKlassPtr::cast_to_ptr_type(PTR ptr) const {
-  assert(_base == OopPtr, "subclass must override cast_to_ptr_type");
+  assert(_base == KlassPtr, "subclass must override cast_to_ptr_type");
   if( ptr == _ptr ) return this;
   return make(ptr, _klass, _offset);
 }

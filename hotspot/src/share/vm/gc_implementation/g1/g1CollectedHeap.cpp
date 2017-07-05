@@ -141,7 +141,7 @@ YoungList::YoungList(G1CollectedHeap* g1h)
     _scan_only_head(NULL), _scan_only_tail(NULL), _curr_scan_only(NULL),
     _length(0), _scan_only_length(0),
     _last_sampled_rs_lengths(0),
-    _survivor_head(NULL), _survivors_tail(NULL), _survivor_length(0)
+    _survivor_head(NULL), _survivor_tail(NULL), _survivor_length(0)
 {
   guarantee( check_list_empty(false), "just making sure..." );
 }
@@ -159,16 +159,15 @@ void YoungList::push_region(HeapRegion *hr) {
 }
 
 void YoungList::add_survivor_region(HeapRegion* hr) {
-  assert(!hr->is_survivor(), "should not already be for survived");
+  assert(hr->is_survivor(), "should be flagged as survivor region");
   assert(hr->get_next_young_region() == NULL, "cause it should!");
 
   hr->set_next_young_region(_survivor_head);
   if (_survivor_head == NULL) {
-    _survivors_tail = hr;
+    _survivor_tail = hr;
   }
   _survivor_head = hr;
 
-  hr->set_survivor();
   ++_survivor_length;
 }
 
@@ -239,7 +238,7 @@ void YoungList::empty_list() {
 
   empty_list(_survivor_head);
   _survivor_head = NULL;
-  _survivors_tail = NULL;
+  _survivor_tail = NULL;
   _survivor_length = 0;
 
   _last_sampled_rs_lengths = 0;
@@ -391,6 +390,7 @@ YoungList::reset_auxilary_lists() {
 
   // Add survivor regions to SurvRateGroup.
   _g1h->g1_policy()->note_start_adding_survivor_regions();
+  _g1h->g1_policy()->finished_recalculating_age_indexes(true /* is_survivors */);
   for (HeapRegion* curr = _survivor_head;
        curr != NULL;
        curr = curr->get_next_young_region()) {
@@ -401,7 +401,7 @@ YoungList::reset_auxilary_lists() {
   if (_survivor_head != NULL) {
     _head           = _survivor_head;
     _length         = _survivor_length + _scan_only_length;
-    _survivors_tail->set_next_young_region(_scan_only_head);
+    _survivor_tail->set_next_young_region(_scan_only_head);
   } else {
     _head           = _scan_only_head;
     _length         = _scan_only_length;
@@ -418,9 +418,9 @@ YoungList::reset_auxilary_lists() {
   _curr_scan_only   = NULL;
 
   _survivor_head    = NULL;
-  _survivors_tail   = NULL;
+  _survivor_tail   = NULL;
   _survivor_length  = 0;
-  _g1h->g1_policy()->finished_recalculating_age_indexes();
+  _g1h->g1_policy()->finished_recalculating_age_indexes(false /* is_survivors */);
 
   assert(check_list_well_formed(), "young list should be well formed");
 }
@@ -553,7 +553,7 @@ HeapRegion* G1CollectedHeap::newAllocRegionWithExpansion(int purpose,
   if (_gc_alloc_region_counts[purpose] < g1_policy()->max_regions(purpose)) {
     alloc_region = newAllocRegion_work(word_size, true, zero_filled);
     if (purpose == GCAllocForSurvived && alloc_region != NULL) {
-      _young_list->add_survivor_region(alloc_region);
+      alloc_region->set_survivor();
     }
     ++_gc_alloc_region_counts[purpose];
   } else {
@@ -948,6 +948,10 @@ void G1CollectedHeap::do_collection(bool full, bool clear_all_soft_refs,
     double end = os::elapsedTime();
     GCOverheadReporter::recordSTWEnd(end);
     g1_policy()->record_full_collection_end();
+
+#ifdef TRACESPINNING
+    ParallelTaskTerminator::print_termination_counts();
+#endif
 
     gc_epilogue(true);
 
@@ -2593,6 +2597,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
         _young_list->print();
 #endif // SCAN_ONLY_VERBOSE
 
+        g1_policy()->record_survivor_regions(_young_list->survivor_length(),
+                                             _young_list->first_survivor_region(),
+                                             _young_list->last_survivor_region());
         _young_list->reset_auxilary_lists();
       }
     } else {
@@ -2619,7 +2626,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
 #endif // SCAN_ONLY_VERBOSE
 
     double end_time_sec = os::elapsedTime();
-    g1_policy()->record_pause_time((end_time_sec - start_time_sec)*1000.0);
+    if (!evacuation_failed()) {
+      g1_policy()->record_pause_time((end_time_sec - start_time_sec)*1000.0);
+    }
     GCOverheadReporter::recordSTWEnd(end_time_sec);
     g1_policy()->record_collection_pause_end(popular_region != NULL,
                                              abandoned);
@@ -2642,8 +2651,13 @@ G1CollectedHeap::do_collection_pause_at_safepoint(HeapRegion* popular_region) {
       }
     }
 
-    if (mark_in_progress())
+    if (mark_in_progress()) {
       concurrent_mark()->update_g1_committed();
+    }
+
+#ifdef TRACESPINNING
+    ParallelTaskTerminator::print_termination_counts();
+#endif
 
     gc_epilogue(false);
   }
@@ -2754,6 +2768,13 @@ void G1CollectedHeap::forget_alloc_region_list() {
     _gc_alloc_region_list = r->next_gc_alloc_region();
     r->set_next_gc_alloc_region(NULL);
     r->set_is_gc_alloc_region(false);
+    if (r->is_survivor()) {
+      if (r->is_empty()) {
+        r->set_not_young();
+      } else {
+        _young_list->add_survivor_region(r);
+      }
+    }
     if (r->is_empty()) {
       ++_free_regions;
     }
@@ -3150,6 +3171,20 @@ HeapWord* G1CollectedHeap::par_allocate_during_gc(GCAllocPurpose purpose,
   return block;
 }
 
+void G1CollectedHeap::retire_alloc_region(HeapRegion* alloc_region,
+                                            bool par) {
+  // Another thread might have obtained alloc_region for the given
+  // purpose, and might be attempting to allocate in it, and might
+  // succeed.  Therefore, we can't do the "finalization" stuff on the
+  // region below until we're sure the last allocation has happened.
+  // We ensure this by allocating the remaining space with a garbage
+  // object.
+  if (par) par_allocate_remaining_space(alloc_region);
+  // Now we can do the post-GC stuff on the region.
+  alloc_region->note_end_of_copying();
+  g1_policy()->record_after_bytes(alloc_region->used());
+}
+
 HeapWord*
 G1CollectedHeap::allocate_during_gc_slow(GCAllocPurpose purpose,
                                          HeapRegion*    alloc_region,
@@ -3167,16 +3202,7 @@ G1CollectedHeap::allocate_during_gc_slow(GCAllocPurpose purpose,
     // Otherwise, continue; this new region is empty, too.
   }
   assert(alloc_region != NULL, "We better have an allocation region");
-  // Another thread might have obtained alloc_region for the given
-  // purpose, and might be attempting to allocate in it, and might
-  // succeed.  Therefore, we can't do the "finalization" stuff on the
-  // region below until we're sure the last allocation has happened.
-  // We ensure this by allocating the remaining space with a garbage
-  // object.
-  if (par) par_allocate_remaining_space(alloc_region);
-  // Now we can do the post-GC stuff on the region.
-  alloc_region->note_end_of_copying();
-  g1_policy()->record_after_bytes(alloc_region->used());
+  retire_alloc_region(alloc_region, par);
 
   if (_gc_alloc_region_counts[purpose] >= g1_policy()->max_regions(purpose)) {
     // Cannot allocate more regions for the given purpose.
@@ -3185,7 +3211,7 @@ G1CollectedHeap::allocate_during_gc_slow(GCAllocPurpose purpose,
     if (purpose != alt_purpose) {
       HeapRegion* alt_region = _gc_alloc_regions[alt_purpose];
       // Has not the alternative region been aliased?
-      if (alloc_region != alt_region) {
+      if (alloc_region != alt_region && alt_region != NULL) {
         // Try to allocate in the alternative region.
         if (par) {
           block = alt_region->par_allocate(word_size);
@@ -3194,9 +3220,10 @@ G1CollectedHeap::allocate_during_gc_slow(GCAllocPurpose purpose,
         }
         // Make an alias.
         _gc_alloc_regions[purpose] = _gc_alloc_regions[alt_purpose];
-      }
-      if (block != NULL) {
-        return block;
+        if (block != NULL) {
+          return block;
+        }
+        retire_alloc_region(alt_region, par);
       }
       // Both the allocation region and the alternative one are full
       // and aliased, replace them with a new allocation region.
@@ -3497,6 +3524,7 @@ protected:
   OverflowQueue* _overflowed_refs;
 
   G1ParGCAllocBuffer _alloc_buffers[GCAllocPurposeCount];
+  ageTable           _age_table;
 
   size_t           _alloc_buffer_waste;
   size_t           _undo_waste;
@@ -3538,6 +3566,7 @@ public:
       _refs(g1h->task_queue(queue_num)),
       _hash_seed(17), _queue_num(queue_num),
       _term_attempts(0),
+      _age_table(false),
 #if G1_DETAILED_STATS
       _pushes(0), _pops(0), _steals(0),
       _steal_attempts(0),  _overflow_pushes(0),
@@ -3572,8 +3601,9 @@ public:
 
   RefToScanQueue*   refs()            { return _refs;             }
   OverflowQueue*    overflowed_refs() { return _overflowed_refs;  }
+  ageTable*         age_table()       { return &_age_table;       }
 
-  inline G1ParGCAllocBuffer* alloc_buffer(GCAllocPurpose purpose) {
+  G1ParGCAllocBuffer* alloc_buffer(GCAllocPurpose purpose) {
     return &_alloc_buffers[purpose];
   }
 
@@ -3834,7 +3864,9 @@ oop G1ParCopyHelper::copy_to_survivor_space(oop old) {
           (!from_region->is_young() && young_index == 0), "invariant" );
   G1CollectorPolicy* g1p = _g1->g1_policy();
   markOop m = old->mark();
-  GCAllocPurpose alloc_purpose = g1p->evacuation_destination(from_region, m->age(),
+  int age = m->has_displaced_mark_helper() ? m->displaced_mark_helper()->age()
+                                           : m->age();
+  GCAllocPurpose alloc_purpose = g1p->evacuation_destination(from_region, age,
                                                              word_sz);
   HeapWord* obj_ptr = _par_scan_state->allocate(alloc_purpose, word_sz);
   oop       obj     = oop(obj_ptr);
@@ -3872,9 +3904,12 @@ oop G1ParCopyHelper::copy_to_survivor_space(oop old) {
         obj->incr_age();
       } else {
         m = m->incr_age();
+        obj->set_mark(m);
       }
+      _par_scan_state->age_table()->add(obj, word_sz);
+    } else {
+      obj->set_mark(m);
     }
-    obj->set_mark(m);
 
     // preserve "next" mark bit
     if (_g1->mark_in_progress() && !_g1->is_obj_ill(old)) {
@@ -4129,6 +4164,9 @@ public:
       _g1h->g1_policy()->record_obj_copy_time(i, elapsed_ms-term_ms);
       _g1h->g1_policy()->record_termination_time(i, term_ms);
     }
+    if (G1UseSurvivorSpace) {
+      _g1h->g1_policy()->record_thread_age_table(pss.age_table());
+    }
     _g1h->update_surviving_young_words(pss.surviving_young_words()+1);
 
     // Clean up any par-expanded rem sets.
@@ -4368,7 +4406,7 @@ void G1CollectedHeap::evacuate_collection_set() {
   // Is this the right thing to do here?  We don't save marks
   // on individual heap regions when we allocate from
   // them in parallel, so this seems like the correct place for this.
-  all_alloc_regions_note_end_of_copying();
+  retire_all_alloc_regions();
   {
     G1IsAliveClosure is_alive(this);
     G1KeepAliveClosure keep_alive(this);
@@ -5008,7 +5046,7 @@ bool G1CollectedHeap::all_alloc_regions_no_allocs_since_save_marks() {
   return no_allocs;
 }
 
-void G1CollectedHeap::all_alloc_regions_note_end_of_copying() {
+void G1CollectedHeap::retire_all_alloc_regions() {
   for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
     HeapRegion* r = _gc_alloc_regions[ap];
     if (r != NULL) {
@@ -5021,8 +5059,7 @@ void G1CollectedHeap::all_alloc_regions_note_end_of_copying() {
         }
       }
       if (!has_processed_alias) {
-        r->note_end_of_copying();
-        g1_policy()->record_after_bytes(r->used());
+        retire_alloc_region(r, false /* par */);
       }
     }
   }

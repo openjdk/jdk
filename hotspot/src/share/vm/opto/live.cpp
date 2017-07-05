@@ -271,9 +271,9 @@ void PhaseLive::dump( const Block *b ) const {
 
 //------------------------------verify_base_ptrs-------------------------------
 // Verify that base pointers and derived pointers are still sane.
-// Basically, if a derived pointer is live at a safepoint, then its
-// base pointer must be live also.
 void PhaseChaitin::verify_base_ptrs( ResourceArea *a ) const {
+#ifdef ASSERT
+  Unique_Node_List worklist(a);
   for( uint i = 0; i < _cfg._num_blocks; i++ ) {
     Block *b = _cfg._blocks[i];
     for( uint j = b->end_idx() + 1; j > 1; j-- ) {
@@ -287,28 +287,81 @@ void PhaseChaitin::verify_base_ptrs( ResourceArea *a ) const {
           // Now scan for a live derived pointer
           if (jvms->oopoff() < sfpt->req()) {
             // Check each derived/base pair
-            for (uint idx = jvms->oopoff(); idx < sfpt->req(); idx += 2) {
+            for (uint idx = jvms->oopoff(); idx < sfpt->req(); idx++) {
               Node *check = sfpt->in(idx);
-              uint j = 0;
+              bool is_derived = ((idx - jvms->oopoff()) & 1) == 0;
               // search upwards through spills and spill phis for AddP
-              while(true) {
-                if( !check ) break;
-                int idx = check->is_Copy();
-                if( idx ) {
-                  check = check->in(idx);
-                } else if( check->is_Phi() && check->_idx >= _oldphi ) {
-                  check = check->in(1);
-                } else
-                  break;
-                j++;
-                assert(j < 100000,"Derived pointer checking in infinite loop");
+              worklist.clear();
+              worklist.push(check);
+              uint k = 0;
+              while( k < worklist.size() ) {
+                check = worklist.at(k);
+                assert(check,"Bad base or derived pointer");
+                // See PhaseChaitin::find_base_for_derived() for all cases.
+                int isc = check->is_Copy();
+                if( isc ) {
+                  worklist.push(check->in(isc));
+                } else if( check->is_Phi() ) {
+                  for (uint m = 1; m < check->req(); m++)
+                    worklist.push(check->in(m));
+                } else if( check->is_Con() ) {
+                  if (is_derived) {
+                    // Derived is NULL+offset
+                    assert(!is_derived || check->bottom_type()->is_ptr()->ptr() == TypePtr::Null,"Bad derived pointer");
+                  } else {
+                    assert(check->bottom_type()->is_ptr()->_offset == 0,"Bad base pointer");
+                    // Base either ConP(NULL) or loadConP
+                    if (check->is_Mach()) {
+                      assert(check->as_Mach()->ideal_Opcode() == Op_ConP,"Bad base pointer");
+                    } else {
+                      assert(check->Opcode() == Op_ConP &&
+                             check->bottom_type()->is_ptr()->ptr() == TypePtr::Null,"Bad base pointer");
+                    }
+                  }
+                } else if( check->bottom_type()->is_ptr()->_offset == 0 ) {
+                  if(check->is_Proj() || check->is_Mach() &&
+                     (check->as_Mach()->ideal_Opcode() == Op_CreateEx ||
+                      check->as_Mach()->ideal_Opcode() == Op_ThreadLocal ||
+                      check->as_Mach()->ideal_Opcode() == Op_CMoveP ||
+                      check->as_Mach()->ideal_Opcode() == Op_CheckCastPP ||
+#ifdef _LP64
+                      UseCompressedOops && check->as_Mach()->ideal_Opcode() == Op_CastPP ||
+                      UseCompressedOops && check->as_Mach()->ideal_Opcode() == Op_DecodeN ||
+#endif
+                      check->as_Mach()->ideal_Opcode() == Op_LoadP ||
+                      check->as_Mach()->ideal_Opcode() == Op_LoadKlass)) {
+                    // Valid nodes
+                  } else {
+                    check->dump();
+                    assert(false,"Bad base or derived pointer");
+                  }
+                } else {
+                  assert(is_derived,"Bad base pointer");
+                  assert(check->is_Mach() && check->as_Mach()->ideal_Opcode() == Op_AddP,"Bad derived pointer");
+                }
+                k++;
+                assert(k < 100000,"Derived pointer checking in infinite loop");
               } // End while
-              assert(check->is_Mach() && check->as_Mach()->ideal_Opcode() == Op_AddP,"Bad derived pointer")
             }
           } // End of check for derived pointers
         } // End of Kcheck for debug info
       } // End of if found a safepoint
     } // End of forall instructions in block
   } // End of forall blocks
+#endif
 }
+
+//------------------------------verify-------------------------------------
+// Verify that graphs and base pointers are still sane.
+void PhaseChaitin::verify( ResourceArea *a, bool verify_ifg ) const {
+#ifdef ASSERT
+  if( VerifyOpto || VerifyRegisterAllocator ) {
+    _cfg.verify();
+    verify_base_ptrs(a);
+    if(verify_ifg)
+      _ifg->verify(this);
+  }
+#endif
+}
+
 #endif

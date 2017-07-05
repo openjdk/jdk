@@ -2654,7 +2654,7 @@ void PhaseIdealLoop::build_loop_late_post( Node *n, const PhaseIdealLoop *verify
     case Op_ModF:
     case Op_ModD:
     case Op_LoadB:              // Same with Loads; they can sink
-    case Op_LoadC:              // during loop optimizations.
+    case Op_LoadUS:             // during loop optimizations.
     case Op_LoadD:
     case Op_LoadF:
     case Op_LoadI:
