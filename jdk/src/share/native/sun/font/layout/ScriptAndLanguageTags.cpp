@@ -126,13 +126,13 @@ const LETag OpenTypeLayoutEngine::scriptTags[] = {
     linaScriptTag, /* 'lina' (LINA) */
     mandScriptTag, /* 'mand' (MANDAIC) */
     mayaScriptTag, /* 'maya' (MAYA) */
-    meroScriptTag, /* 'mero' (MERO) */
+    meroScriptTag, /* 'mero' (MEROITIC_HIEROGLYPHS) */
     nkooScriptTag, /* 'nko ' (NKO) */
     orkhScriptTag, /* 'orkh' (OLD_TURKIC) */
     permScriptTag, /* 'perm' (PERM) */
     phagScriptTag, /* 'phag' (PHAGS_PA) */
     phnxScriptTag, /* 'phnx' (PHOENICIAN) */
-    plrdScriptTag, /* 'plrd' (PLRD) */
+    plrdScriptTag, /* 'plrd' (MIAO/POLLARD) */
     roroScriptTag, /* 'roro' (RORO) */
     saraScriptTag, /* 'sara' (SARA) */
     syreScriptTag, /* 'syre' (SYRE) */
@@ -158,7 +158,7 @@ const LETag OpenTypeLayoutEngine::scriptTags[] = {
     mteiScriptTag, /* 'mtei' (MEETEI_MAYEK) */
     armiScriptTag, /* 'armi' (IMPERIAL_ARAMAIC) */
     avstScriptTag, /* 'avst' (AVESTAN) */
-    cakmScriptTag, /* 'cakm' (CAKM) */
+    cakmScriptTag, /* 'cakm' (CHAKMA) */
     koreScriptTag, /* 'kore' (KORE) */
     kthiScriptTag, /* 'kthi' (KAITHI) */
     maniScriptTag, /* 'mani' (MANI) */
@@ -181,7 +181,7 @@ const LETag OpenTypeLayoutEngine::scriptTags[] = {
     kpelScriptTag, /* 'kpel' (KPEL) */
     lomaScriptTag, /* 'loma' (LOMA) */
     mendScriptTag, /* 'mend' (MEND) */
-    mercScriptTag, /* 'merc' (MERC) */
+    mercScriptTag, /* 'merc' (MEROITIC_CURSIVE) */
     narbScriptTag, /* 'narb' (NARB) */
     nbatScriptTag, /* 'nbat' (NBAT) */
     palmScriptTag, /* 'palm' (PALM) */

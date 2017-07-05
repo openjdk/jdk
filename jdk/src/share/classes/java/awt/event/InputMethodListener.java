@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,17 +40,17 @@ import java.util.EventListener;
  * @see java.awt.im.InputMethodRequests
  * @since 1.2
  */
-
 public interface InputMethodListener extends EventListener {
 
     /**
      * Invoked when the text entered through an input method has changed.
+     * @param event the event to be processed
      */
     void inputMethodTextChanged(InputMethodEvent event);
 
     /**
      * Invoked when the caret within composed text has changed.
+     * @param event the event to be processed
      */
     void caretPositionChanged(InputMethodEvent event);
-
 }

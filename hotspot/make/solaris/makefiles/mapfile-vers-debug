@@ -28,10 +28,6 @@
 
 SUNWprivate_1.1 {
         global:
-		# debug JVM
-		JVM_AccessVMBooleanFlag;
-		JVM_AccessVMIntFlag;
-		JVM_VMBreakPoint;
 
 		# miscellaneous
 };

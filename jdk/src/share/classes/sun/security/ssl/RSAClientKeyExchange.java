@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,26 +133,37 @@ final class RSAClientKeyExchange extends HandshakeMessage {
         } else {
             encrypted = new byte [messageSize];
             if (input.read(encrypted) != messageSize) {
-                throw new SSLProtocolException
-                        ("SSL: read PreMasterSecret: short read");
+                throw new SSLProtocolException(
+                        "SSL: read PreMasterSecret: short read");
             }
         }
 
+        Exception failover = null;
+        byte[] encoded = null;
         try {
             Cipher cipher = JsseJce.getCipher(JsseJce.CIPHER_RSA_PKCS1);
-            cipher.init(Cipher.UNWRAP_MODE, privateKey);
-            preMaster = (SecretKey)cipher.unwrap(encrypted,
-                                "TlsRsaPremasterSecret", Cipher.SECRET_KEY);
-
-            // polish the premaster secret
-            preMaster = polishPreMasterSecretKey(currentVersion, maxVersion,
-                                                generator, preMaster, null);
+            // Cannot generate key here, please don't use Cipher.UNWRAP_MODE!
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+            encoded = cipher.doFinal(encrypted);
+        } catch (BadPaddingException bpe) {
+            failover = bpe;
+            encoded = null;
+        } catch (IllegalBlockSizeException ibse) {
+            // the message it too big to process with RSA
+            throw new SSLProtocolException(
+                "Unable to process PreMasterSecret, may be too big");
         } catch (Exception e) {
-            // polish the premaster secret
-            preMaster =
-                    polishPreMasterSecretKey(currentVersion, maxVersion,
-                                                generator, null, e);
+            // unlikely to happen, otherwise, must be a provider exception
+            if (debug != null && Debug.isOn("handshake")) {
+                System.out.println("RSA premaster secret decryption error:");
+                e.printStackTrace(System.out);
+            }
+            throw new RuntimeException("Could not generate dummy secret", e);
         }
+
+        // polish the premaster secret
+        preMaster = polishPreMasterSecretKey(
+                    currentVersion, maxVersion, generator, encoded, failover);
     }
 
     /**
@@ -163,85 +174,74 @@ final class RSAClientKeyExchange extends HandshakeMessage {
      *
      * RFC 5246 describes the approach as :
      *
-     *  1. Generate a string R of 46 random bytes
+     *  1. Generate a string R of 48 random bytes
      *
      *  2. Decrypt the message to recover the plaintext M
      *
      *  3. If the PKCS#1 padding is not correct, or the length of message
      *     M is not exactly 48 bytes:
-     *        pre_master_secret = ClientHello.client_version || R
+     *        pre_master_secret = R
      *     else If ClientHello.client_version <= TLS 1.0, and version
      *     number check is explicitly disabled:
-     *        pre_master_secret = M
+     *        premaster secret = M
+     *     else If M[0..1] != ClientHello.client_version:
+     *        premaster secret = R
      *     else:
-     *        pre_master_secret = ClientHello.client_version || M[2..47]
+     *        premaster secret = M
+     *
+     * Note that #2 has completed before the call of this method.
      */
     private SecretKey polishPreMasterSecretKey(ProtocolVersion currentVersion,
             ProtocolVersion clientHelloVersion, SecureRandom generator,
-            SecretKey secretKey, Exception failoverException) {
+            byte[] encoded, Exception failoverException) {
 
         this.protocolVersion = clientHelloVersion;
+        if (generator == null) {
+            generator = new SecureRandom();
+        }
+        byte[] random = new byte[48];
+        generator.nextBytes(random);
 
-        if (failoverException == null && secretKey != null) {
+        if (failoverException == null && encoded != null) {
             // check the length
-            byte[] encoded = secretKey.getEncoded();
-            if (encoded == null) {      // unable to get the encoded key
-                if (debug != null && Debug.isOn("handshake")) {
-                    System.out.println(
-                        "unable to get the plaintext of the premaster secret");
-                }
-
-                int keySize = KeyUtil.getKeySize(secretKey);
-                if (keySize > 0 && keySize != 384) {       // 384 = 48 * 8
-                    if (debug != null && Debug.isOn("handshake")) {
-                        System.out.println(
-                            "incorrect length of premaster secret: " +
-                            (keySize/8));
-                    }
-
-                    return generateDummySecret(clientHelloVersion);
-                }
-
-                // The key size is exactly 48 bytes or not accessible.
-                //
-                // Conservatively, pass the checking to master secret
-                // calculation.
-                return secretKey;
-            } else if (encoded.length == 48) {
-                // check the version
-                if (clientHelloVersion.major == encoded[0] &&
-                    clientHelloVersion.minor == encoded[1]) {
-
-                    return secretKey;
-                } else if (clientHelloVersion.v <= ProtocolVersion.TLS10.v &&
-                           currentVersion.major == encoded[0] &&
-                           currentVersion.minor == encoded[1]) {
-                    /*
-                     * For compatibility, we maintain the behavior that the
-                     * version in pre_master_secret can be the negotiated
-                     * version for TLS v1.0 and SSL v3.0.
-                     */
-                    this.protocolVersion = currentVersion;
-                    return secretKey;
-                }
-
-                if (debug != null && Debug.isOn("handshake")) {
-                    System.out.println("Mismatching Protocol Versions, " +
-                        "ClientHello.client_version is " + clientHelloVersion +
-                        ", while PreMasterSecret.client_version is " +
-                        ProtocolVersion.valueOf(encoded[0], encoded[1]));
-                }
-
-                return generateDummySecret(clientHelloVersion);
-            } else {
+            if (encoded.length != 48) {
                 if (debug != null && Debug.isOn("handshake")) {
                     System.out.println(
                         "incorrect length of premaster secret: " +
                         encoded.length);
                 }
 
-                return generateDummySecret(clientHelloVersion);
+                return generatePreMasterSecret(
+                        clientHelloVersion, random, generator);
             }
+
+            if (clientHelloVersion.major != encoded[0] ||
+                        clientHelloVersion.minor != encoded[1]) {
+
+                if (clientHelloVersion.v <= ProtocolVersion.TLS10.v &&
+                       currentVersion.major == encoded[0] &&
+                       currentVersion.minor == encoded[1]) {
+                    /*
+                     * For compatibility, we maintain the behavior that the
+                     * version in pre_master_secret can be the negotiated
+                     * version for TLS v1.0 and SSL v3.0.
+                     */
+                    this.protocolVersion = currentVersion;
+                } else {
+                    if (debug != null && Debug.isOn("handshake")) {
+                        System.out.println("Mismatching Protocol Versions, " +
+                            "ClientHello.client_version is " +
+                            clientHelloVersion +
+                            ", while PreMasterSecret.client_version is " +
+                            ProtocolVersion.valueOf(encoded[0], encoded[1]));
+                    }
+
+                    encoded = random;
+                }
+            }
+
+            return generatePreMasterSecret(
+                    clientHelloVersion, encoded, generator);
         }
 
         if (debug != null && Debug.isOn("handshake") &&
@@ -250,11 +250,14 @@ final class RSAClientKeyExchange extends HandshakeMessage {
             failoverException.printStackTrace(System.out);
         }
 
-        return generateDummySecret(clientHelloVersion);
+        return generatePreMasterSecret(clientHelloVersion, random, generator);
     }
 
     // generate a premaster secret with the specified version number
-    static SecretKey generateDummySecret(ProtocolVersion version) {
+    private static SecretKey generatePreMasterSecret(
+            ProtocolVersion version, byte[] encodedSecret,
+            SecureRandom generator) {
+
         if (debug != null && Debug.isOn("handshake")) {
             System.out.println("Generating a random fake premaster secret");
         }
@@ -263,11 +266,17 @@ final class RSAClientKeyExchange extends HandshakeMessage {
             String s = ((version.v >= ProtocolVersion.TLS12.v) ?
                 "SunTls12RsaPremasterSecret" : "SunTlsRsaPremasterSecret");
             KeyGenerator kg = JsseJce.getKeyGenerator(s);
-            kg.init(new TlsRsaPremasterSecretParameterSpec
-                    (version.major, version.minor));
+            kg.init(new TlsRsaPremasterSecretParameterSpec(
+                    version.major, version.minor, encodedSecret), generator);
             return kg.generateKey();
-        } catch (GeneralSecurityException e) {
-            throw new RuntimeException("Could not generate dummy secret", e);
+        } catch (InvalidAlgorithmParameterException |
+                NoSuchAlgorithmException iae) {
+            // unlikely to happen, otherwise, must be a provider exception
+            if (debug != null && Debug.isOn("handshake")) {
+                System.out.println("RSA premaster secret generation error:");
+                iae.printStackTrace(System.out);
+            }
+            throw new RuntimeException("Could not generate dummy secret", iae);
         }
     }
 

@@ -667,9 +667,6 @@ void DefNewGeneration::collect(bool   full,
     // for full GC's.
     AdaptiveSizePolicy* size_policy = gch->gen_policy()->size_policy();
     size_policy->reset_gc_overhead_limit_count();
-    if (PrintGC && !PrintGCDetails) {
-      gch->print_heap_change(gch_prev_used);
-    }
     assert(!gch->incremental_collection_failed(), "Should be clear");
   } else {
     assert(_promo_failure_scan_stack.is_empty(), "post condition");
@@ -694,6 +691,9 @@ void DefNewGeneration::collect(bool   full,
 
     // Reset the PromotionFailureALot counters.
     NOT_PRODUCT(Universe::heap()->reset_promotion_should_fail();)
+  }
+  if (PrintGC && !PrintGCDetails) {
+    gch->print_heap_change(gch_prev_used);
   }
   // set new iteration safe limit for the survivor spaces
   from()->set_concurrent_iteration_safe_limit(from()->top());

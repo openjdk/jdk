@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import javax.print.attribute.EnumSyntax;
  * <P>
  * <B>IPP Compatibility:</B> MediaName is a representation class for
  * values of the IPP "media" attribute which names media.
- * <P>
  *
  */
 public class MediaName extends Media implements Attribute {

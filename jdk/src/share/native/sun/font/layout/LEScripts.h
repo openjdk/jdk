@@ -30,7 +30,7 @@
  * WARNING: THIS FILE IS MACHINE GENERATED. DO NOT HAND EDIT IT UNLESS
  * YOU REALLY KNOW WHAT YOU'RE DOING.
  *
- * Generated on: 10/26/2010 02:53:33 PM PDT
+ * Generated on: 11/01/2011 04:08:09 PM PDT
  */
 
 #ifndef __LESCRIPTS_H
@@ -262,7 +262,16 @@ enum ScriptCodes {
     khojScriptCode = 157,
     tirhScriptCode = 158,
 
-    scriptCodeCount = 159
+/**
+ * @stable ICU 52
+ */
+    aghbScriptCode = 159,
+    mahjScriptCode = 160,
+
+/**
+ * @stable ICU 2.2
+ */
+    scriptCodeCount
 };
 
 U_NAMESPACE_END

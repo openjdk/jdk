@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,11 +52,13 @@ import java.util.EventListener;
 public interface HierarchyBoundsListener extends EventListener {
     /**
      * Called when an ancestor of the source is moved.
+     * @param e the event to be processed
      */
     public void ancestorMoved(HierarchyEvent e);
 
     /**
      * Called when an ancestor of the source is resized.
+     * @param e the event to be processed
      */
     public void ancestorResized(HierarchyEvent e);
 }

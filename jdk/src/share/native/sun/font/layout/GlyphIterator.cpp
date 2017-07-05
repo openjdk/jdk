@@ -41,14 +41,13 @@
 U_NAMESPACE_BEGIN
 
 GlyphIterator::GlyphIterator(LEGlyphStorage &theGlyphStorage, GlyphPositionAdjustments *theGlyphPositionAdjustments, le_bool rightToLeft, le_uint16 theLookupFlags,
-                             FeatureMask theFeatureMask, const LEReferenceTo<GlyphDefinitionTableHeader> &theGlyphDefinitionTableHeader)
+                             FeatureMask theFeatureMask, const LEReferenceTo<GlyphDefinitionTableHeader> &theGlyphDefinitionTableHeader, LEErrorCode &success)
   : direction(1), position(-1), nextLimit(-1), prevLimit(-1),
     glyphStorage(theGlyphStorage), glyphPositionAdjustments(theGlyphPositionAdjustments),
     srcIndex(-1), destIndex(-1), lookupFlags(theLookupFlags), featureMask(theFeatureMask), glyphGroup(0),
     glyphClassDefinitionTable(), markAttachClassDefinitionTable()
 
 {
-  LEErrorCode success = LE_NO_ERROR; // TODO
     le_int32 glyphCount = glyphStorage.getGlyphCount();
 
     if (theGlyphDefinitionTableHeader.isValid()) {
@@ -388,7 +387,7 @@ void GlyphIterator::setCursiveGlyph()
 
 void GlyphIterator::filterResetCache(void) {
   filterCacheValid = FALSE;
-    }
+}
 
 le_bool GlyphIterator::filterGlyph(le_uint32 index)
 {
@@ -399,53 +398,53 @@ le_bool GlyphIterator::filterGlyph(le_uint32 index)
 
       le_bool &filterResult = filterCache.result;  // NB: Making this a reference to accept the updated value, in case
                                                // we want more fancy cacheing in the future.
-    if (LE_GET_GLYPH(glyphID) >= 0xFFFE) {
+      if (LE_GET_GLYPH(glyphID) >= 0xFFFE) {
         filterResult = TRUE;
       } else {
         LEErrorCode success = LE_NO_ERROR;
         le_int32 glyphClass = gcdNoGlyphClass;
-    if (glyphClassDefinitionTable.isValid()) {
-      glyphClass = glyphClassDefinitionTable->getGlyphClass(glyphClassDefinitionTable, glyphID, success);
-    }
+        if (glyphClassDefinitionTable.isValid()) {
+          glyphClass = glyphClassDefinitionTable->getGlyphClass(glyphClassDefinitionTable, glyphID, success);
+        }
         switch (glyphClass) {
-    case gcdNoGlyphClass:
+        case gcdNoGlyphClass:
           filterResult = FALSE;
           break;
 
-    case gcdSimpleGlyph:
+        case gcdSimpleGlyph:
           filterResult = (lookupFlags & lfIgnoreBaseGlyphs) != 0;
           break;
 
-    case gcdLigatureGlyph:
+        case gcdLigatureGlyph:
           filterResult = (lookupFlags & lfIgnoreLigatures) != 0;
           break;
 
-    case gcdMarkGlyph:
-        if ((lookupFlags & lfIgnoreMarks) != 0) {
+        case gcdMarkGlyph:
+          if ((lookupFlags & lfIgnoreMarks) != 0) {
             filterResult = TRUE;
           } else {
-        le_uint16 markAttachType = (lookupFlags & lfMarkAttachTypeMask) >> lfMarkAttachTypeShift;
+            le_uint16 markAttachType = (lookupFlags & lfMarkAttachTypeMask) >> lfMarkAttachTypeShift;
 
-        if ((markAttachType != 0) && (markAttachClassDefinitionTable.isValid())) {
+            if ((markAttachType != 0) && (markAttachClassDefinitionTable.isValid())) {
               filterResult = (markAttachClassDefinitionTable
                           -> getGlyphClass(markAttachClassDefinitionTable, glyphID, success) != markAttachType);
             } else {
               filterResult = FALSE;
-        }
-    }
+            }
+          }
           break;
 
-    case gcdComponentGlyph:
+        case gcdComponentGlyph:
           filterResult = ((lookupFlags & lfIgnoreBaseGlyphs) != 0);
           break;
 
-    default:
+        default:
           filterResult = FALSE;
           break;
-    }
+        }
       }
       filterCacheValid = TRUE;
-        }
+    }
 
     return filterCache.result;
 }

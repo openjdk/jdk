@@ -28,7 +28,10 @@ package sun.reflect.generics.reflectiveObjects;
 import java.lang.annotation.*;
 import java.lang.reflect.AnnotatedType;
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericDeclaration;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.util.LinkedHashMap;
@@ -40,6 +43,7 @@ import sun.reflect.annotation.AnnotationType;
 import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.tree.FieldTypeSignature;
 import sun.reflect.generics.visitor.Reifier;
+import sun.reflect.misc.ReflectUtil;
 
 /**
  * Implementation of <tt>java.lang.reflect.TypeVariable</tt> interface
@@ -95,6 +99,13 @@ public class TypeVariableImpl<D extends GenericDeclaration>
                              TypeVariableImpl<T> make(T decl, String name,
                                                       FieldTypeSignature[] bs,
                                                       GenericsFactory f) {
+
+        if (!((decl instanceof Class) ||
+                (decl instanceof Method) ||
+                (decl instanceof Constructor))) {
+            throw new AssertionError("Unexpected kind of GenericDeclaration" +
+                    decl.getClass().toString());
+        }
         return new TypeVariableImpl<T>(decl, name, bs, f);
     }
 
@@ -149,6 +160,13 @@ public class TypeVariableImpl<D extends GenericDeclaration>
      * @since 1.5
      */
     public D getGenericDeclaration(){
+        if (genericDeclaration instanceof Class)
+            ReflectUtil.checkPackageAccess((Class)genericDeclaration);
+        else if ((genericDeclaration instanceof Method) ||
+                (genericDeclaration instanceof Constructor))
+            ReflectUtil.conservativeCheckMemberAccess((Member)genericDeclaration);
+        else
+            throw new AssertionError("Unexpected kind of GenericDeclaration");
         return genericDeclaration;
     }
 
@@ -164,7 +182,8 @@ public class TypeVariableImpl<D extends GenericDeclaration>
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof TypeVariable) {
+        if (o instanceof TypeVariable &&
+                o.getClass() == TypeVariableImpl.class) {
             TypeVariable<?> that = (TypeVariable<?>) o;
 
             GenericDeclaration thatDecl = that.getGenericDeclaration();

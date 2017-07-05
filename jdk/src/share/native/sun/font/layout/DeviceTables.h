@@ -50,7 +50,7 @@ struct DeviceTable
     le_uint16  deltaFormat;
     le_uint16  deltaValues[ANY_NUMBER];
 
-    le_int16   getAdjustment(le_uint16 ppem) const;
+    le_int16   getAdjustment(const LEReferenceTo<DeviceTable> &base, le_uint16 ppem, LEErrorCode &success) const;
 
 private:
     static const le_uint16 fieldMasks[];

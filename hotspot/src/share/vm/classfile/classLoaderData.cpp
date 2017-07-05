@@ -648,12 +648,12 @@ GrowableArray<ClassLoaderData*>* ClassLoaderDataGraph::new_clds() {
   return array;
 }
 
-#ifndef PRODUCT
-// for debugging and hsfind(x)
-bool ClassLoaderDataGraph::contains(address x) {
-  // I think we need the _metaspace_lock taken here because the class loader
-  // data graph could be changing while we are walking it (new entries added,
-  // new entries being unloaded, etc).
+// For profiling and hsfind() only.  Otherwise, this is unsafe (and slow).  This
+// is done lock free to avoid lock inversion problems.  It is safe because
+// new ClassLoaderData are added to the end of the CLDG, and only removed at
+// safepoint.  The _unloading list can be deallocated concurrently with CMS so
+// this doesn't look in metaspace for classes that have been unloaded.
+bool ClassLoaderDataGraph::contains(const void* x) {
   if (DumpSharedSpaces) {
     // There are only two metaspaces to worry about.
     ClassLoaderData* ncld = ClassLoaderData::the_null_class_loader_data();
@@ -670,16 +670,11 @@ bool ClassLoaderDataGraph::contains(address x) {
     }
   }
 
-  // Could also be on an unloading list which is okay, ie. still allocated
-  // for a little while.
-  for (ClassLoaderData* ucld = _unloading; ucld != NULL; ucld = ucld->next()) {
-    if (ucld->metaspace_or_null() != NULL && ucld->metaspace_or_null()->contains(x)) {
-      return true;
-    }
-  }
+  // Do not check unloading list because deallocation can be concurrent.
   return false;
 }
 
+#ifndef PRODUCT
 bool ClassLoaderDataGraph::contains_loader_data(ClassLoaderData* loader_data) {
   for (ClassLoaderData* data = _head; data != NULL; data = data->next()) {
     if (loader_data == data) {

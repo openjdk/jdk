@@ -29,7 +29,6 @@
 static void  usage(ArchDesc& AD);          // Print usage message and exit
 static char *strip_ext(char *fname);       // Strip off name extension
 static char *base_plus_suffix(const char* base, const char *suffix);// New concatenated string
-static char *prefix_plus_base_plus_suffix(const char* prefix, const char* base, const char *suffix);// New concatenated string
 static int get_legal_text(FileBuff &fbuf, char **legal_text); // Get pointer to legal text
 
 ArchDesc* globalAD = NULL;      // global reference to Architecture Description object

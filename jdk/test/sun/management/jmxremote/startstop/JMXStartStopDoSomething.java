@@ -21,37 +21,20 @@
  * questions.
  */
 
-import java.io.File;
+import java.io.IOException;
+import jdk.testlibrary.ProcessTools;
 
 public class JMXStartStopDoSomething {
-
-    private static final String lockFileName = "JMXStartStop.lck";
-
-    public static void doSomething() {
-        try {
-            File lockFile = new File(lockFileName);
-            lockFile.createNewFile();
-
-            while(lockFile.exists()) {
-                long datetime = lockFile.lastModified();
-                long epoch = System.currentTimeMillis()/1000;
-
-                // Don't allow test app to run more than an hour
-                if (epoch - datetime > 3600) {
-                    System.err.println("Lock is too old. Aborting");
-                    return;
-                }
-                Thread.sleep(500);
-            }
-
-        } catch (Throwable e) {
-            System.err.println("Something bad happens:" +e);
-        }
+    public static void doSomething() throws IOException{
+        int r = System.in.read();
+        System.out.println("read: " + r);
     }
 
     public static void main(String args[]) throws Exception {
-        System.err.println("main enter");
+        System.out.println("pid:" + ProcessTools.getProcessId());
+        System.out.println("main enter");
+        System.out.flush();
         doSomething();
-        System.err.println("main exit");
+        System.out.println("main exit");
     }
 }

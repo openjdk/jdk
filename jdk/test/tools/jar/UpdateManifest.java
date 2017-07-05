@@ -39,6 +39,8 @@ public class UpdateManifest {
     static PrintStream err = System.err;
     static boolean debug = true;
 
+    static final Logger JAR_LOGGER = Logger.getLogger("java.util.jar");
+
     public static void realMain(String[] args) throws Throwable {
         if (args.length == 0) {
             debug = false;
@@ -47,7 +49,7 @@ public class UpdateManifest {
             out = new PrintStream(new FileOutputStream(tmp));
             err = out;
             // Attributes.read() can log a message we don't care to see.
-            Logger.getLogger("java.util.jar").setLevel(Level.OFF);
+            JAR_LOGGER.setLevel(Level.OFF);
         }
 
         try { testManifestExistence(); } catch (Throwable t) { unexpected(t); }

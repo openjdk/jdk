@@ -1579,9 +1579,20 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
         jobj->set_scalar_replaceable(false);
         return;
       }
+      // 2. An object is not scalar replaceable if the field into which it is
+      // stored has multiple bases one of which is null.
+      if (field->base_count() > 1) {
+        for (BaseIterator i(field); i.has_next(); i.next()) {
+          PointsToNode* base = i.get();
+          if (base == null_obj) {
+            jobj->set_scalar_replaceable(false);
+            return;
+          }
+        }
+      }
     }
     assert(use->is_Field() || use->is_LocalVar(), "sanity");
-    // 2. An object is not scalar replaceable if it is merged with other objects.
+    // 3. An object is not scalar replaceable if it is merged with other objects.
     for (EdgeIterator j(use); j.has_next(); j.next()) {
       PointsToNode* ptn = j.get();
       if (ptn->is_JavaObject() && ptn != jobj) {
@@ -1600,13 +1611,13 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
     FieldNode* field = j.get()->as_Field();
     int offset = field->as_Field()->offset();
 
-    // 3. An object is not scalar replaceable if it has a field with unknown
+    // 4. An object is not scalar replaceable if it has a field with unknown
     // offset (array's element is accessed in loop).
     if (offset == Type::OffsetBot) {
       jobj->set_scalar_replaceable(false);
       return;
     }
-    // 4. Currently an object is not scalar replaceable if a LoadStore node
+    // 5. Currently an object is not scalar replaceable if a LoadStore node
     // access its field since the field value is unknown after it.
     //
     Node* n = field->ideal_node();
@@ -1617,7 +1628,7 @@ void ConnectionGraph::adjust_scalar_replaceable_state(JavaObjectNode* jobj) {
       }
     }
 
-    // 5. Or the address may point to more then one object. This may produce
+    // 6. Or the address may point to more then one object. This may produce
     // the false positive result (set not scalar replaceable)
     // since the flow-insensitive escape analysis can't separate
     // the case when stores overwrite the field's value from the case

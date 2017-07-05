@@ -49,6 +49,7 @@ struct ClassDefinitionTable
     le_int32  getGlyphClass(const LETableReference &base, LEGlyphID glyphID, LEErrorCode &success) const;
     le_bool   hasGlyphClass(const LETableReference &base, le_int32 glyphClass, LEErrorCode &success) const;
 
+#if LE_ENABLE_RAW
   le_int32 getGlyphClass(LEGlyphID glyphID) const {
     LETableReference base((const le_uint8*)this);
     LEErrorCode ignored = LE_NO_ERROR;
@@ -60,6 +61,7 @@ struct ClassDefinitionTable
     LEErrorCode ignored = LE_NO_ERROR;
     return hasGlyphClass(base,glyphClass,ignored);
   }
+#endif
 };
 
 struct ClassDefFormat1Table : ClassDefinitionTable

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,23 @@
  * questions.
  */
 
+//
+// Security properties, once set, cannot revert to unset.  To avoid
+// conflicts with tests running in the same VM isolate this test by
+// running it in otherVM mode.
+//
+
 /*
  * @test
  * @bug 7167988
  * @summary PKIX CertPathBuilder in reverse mode doesn't work if more than
  *          one trust anchor is specified
+ * @run main/othervm ReverseBuild
  */
 import java.io.*;
 import java.util.*;
 import java.security.cert.*;
+import java.security.Security;
 
 import sun.security.provider.certpath.SunCertPathBuilderParameters;
 
@@ -279,6 +287,9 @@ public class ReverseBuild {
 
 
     public static void main(String args[]) throws Exception {
+        // MD5 is used in this test case, don't disable MD5 algorithm.
+        Security.setProperty(
+                "jdk.certpath.disabledAlgorithms", "MD2, RSA keySize < 1024");
 
         // generate certificate from cert string
         CertificateFactory cf = CertificateFactory.getInstance("X.509");

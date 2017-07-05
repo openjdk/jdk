@@ -24,12 +24,30 @@
 
 package sun.jvm.hotspot.jdi;
 
-import com.sun.jdi.*;
-import sun.jvm.hotspot.oops.Klass;
+import java.lang.ref.SoftReference;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import sun.jvm.hotspot.oops.InstanceKlass;
 
-import java.util.*;
-import java.lang.ref.SoftReference;
+import com.sun.jdi.ClassNotLoadedException;
+import com.sun.jdi.ClassType;
+import com.sun.jdi.Field;
+import com.sun.jdi.IncompatibleThreadStateException;
+import com.sun.jdi.InterfaceType;
+import com.sun.jdi.InvalidTypeException;
+import com.sun.jdi.InvocationException;
+import com.sun.jdi.Method;
+import com.sun.jdi.ObjectReference;
+import com.sun.jdi.ReferenceType;
+import com.sun.jdi.ThreadReference;
+import com.sun.jdi.Value;
+import com.sun.jdi.VirtualMachine;
 
 public class ClassTypeImpl extends ReferenceTypeImpl
     implements ClassType
@@ -195,22 +213,26 @@ public class ClassTypeImpl extends ReferenceTypeImpl
         return null;
     }
 
-    void addVisibleMethods(Map methodMap) {
+    @Override
+    void addVisibleMethods(Map<String, Method> methodMap, Set<InterfaceType> seenInterfaces) {
         /*
          * Add methods from
          * parent types first, so that the methods in this class will
          * overwrite them in the hash table
          */
 
-        Iterator iter = interfaces().iterator();
+        Iterator<InterfaceType> iter = interfaces().iterator();
         while (iter.hasNext()) {
             InterfaceTypeImpl interfaze = (InterfaceTypeImpl)iter.next();
-            interfaze.addVisibleMethods(methodMap);
+            if (!seenInterfaces.contains(interfaze)) {
+                interfaze.addVisibleMethods(methodMap, seenInterfaces);
+                seenInterfaces.add(interfaze);
+            }
         }
 
         ClassTypeImpl clazz = (ClassTypeImpl)superclass();
         if (clazz != null) {
-            clazz.addVisibleMethods(methodMap);
+            clazz.addVisibleMethods(methodMap, seenInterfaces);
         }
 
         addToMethodMap(methodMap, methods());
