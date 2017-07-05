@@ -70,7 +70,7 @@ class CompilationImpl implements CompilationMXBean {
     }
 
     public ObjectName getObjectName() {
-        return Util.newObjectName(ManagementFactory.COMPILATION_MXBEAN_NAME);
+        return ObjectName.valueOf(ManagementFactory.COMPILATION_MXBEAN_NAME);
     }
 
 

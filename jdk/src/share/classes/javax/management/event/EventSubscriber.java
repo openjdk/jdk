@@ -149,10 +149,10 @@ public class EventSubscriber implements EventConsumer {
         if (listener == null)
             throw new IllegalArgumentException("Null listener");
 
-        final ListenerInfo li = new ListenerInfo(listener, filter, handback);
-        List<ListenerInfo> list;
+        final MyListenerInfo li = new MyListenerInfo(listener, filter, handback);
+        List<MyListenerInfo> list;
 
-        Map<ObjectName, List<ListenerInfo>> map;
+        Map<ObjectName, List<MyListenerInfo>> map;
         Set<ObjectName> names;
         if (name.isPattern()) {
             map = patternSubscriptionMap;
@@ -165,7 +165,7 @@ public class EventSubscriber implements EventConsumer {
         synchronized (map) {
             list = map.get(name);
             if (list == null) {
-                list = new ArrayList<ListenerInfo>();
+                list = new ArrayList<MyListenerInfo>();
                 map.put(name, list);
             }
             list.add(li);
@@ -186,7 +186,6 @@ public class EventSubscriber implements EventConsumer {
     public void unsubscribe(ObjectName name,
             NotificationListener listener)
             throws ListenerNotFoundException, IOException {
-
         if (logger.traceOn())
             logger.trace("unsubscribe", "" + name);
 
@@ -196,7 +195,7 @@ public class EventSubscriber implements EventConsumer {
         if (listener == null)
             throw new ListenerNotFoundException();
 
-        Map<ObjectName, List<ListenerInfo>> map;
+        Map<ObjectName, List<MyListenerInfo>> map;
         Set<ObjectName> names;
 
         if (name.isPattern()) {
@@ -207,22 +206,39 @@ public class EventSubscriber implements EventConsumer {
             names = Collections.singleton(name);
         }
 
-        final ListenerInfo li = new ListenerInfo(listener, null, null);
-        List<ListenerInfo> list;
+        List<MyListenerInfo> toRemove = new ArrayList<MyListenerInfo>();
         synchronized (map) {
-            list = map.get(name);
-            if (list == null || !list.remove(li))
+            List<MyListenerInfo> list = map.get(name);
+            if (list == null) {
                 throw new ListenerNotFoundException();
+            }
+
+            for (MyListenerInfo info : list) {
+                if (info.listener == listener) {
+                    toRemove.add(info);
+                }
+            }
+
+            if (toRemove.isEmpty()) {
+                throw new ListenerNotFoundException();
+            }
+
+            for (MyListenerInfo info : toRemove) {
+                list.remove(info);
+            }
 
             if (list.isEmpty())
                 map.remove(name);
         }
 
         for (ObjectName mbeanName : names) {
-            try {
-                mbeanServer.removeNotificationListener(mbeanName, li.listener);
-            } catch (Exception e) {
-                logger.fine("unsubscribe", "removeNotificationListener", e);
+            for (MyListenerInfo i : toRemove) {
+                try {
+                    mbeanServer.removeNotificationListener(mbeanName,
+                        i.listener, i.filter, i.handback);
+                } catch (Exception e) {
+                    logger.fine("unsubscribe", "removeNotificationListener", e);
+                }
             }
         }
     }
@@ -256,12 +272,12 @@ public class EventSubscriber implements EventConsumer {
                 return;
             }
 
-            final List<ListenerInfo> listeners = new ArrayList<ListenerInfo>();
+            final List<MyListenerInfo> listeners = new ArrayList<MyListenerInfo>();
 
             // If there are subscribers for the exact name that has just arrived
             // then add their listeners to the list.
             synchronized (exactSubscriptionMap) {
-                List<ListenerInfo> exactListeners = exactSubscriptionMap.get(name);
+                List<MyListenerInfo> exactListeners = exactSubscriptionMap.get(name);
                 if (exactListeners != null)
                     listeners.addAll(exactListeners);
             }
@@ -277,7 +293,7 @@ public class EventSubscriber implements EventConsumer {
             }
 
             // Add all the listeners just found to the new MBean.
-            for (ListenerInfo li : listeners) {
+            for (MyListenerInfo li : listeners) {
                 try {
                     mbeanServer.addNotificationListener(
                             name,
@@ -292,12 +308,12 @@ public class EventSubscriber implements EventConsumer {
         }
     };
 
-    private static class ListenerInfo {
+    private static class MyListenerInfo {
         public final NotificationListener listener;
         public final NotificationFilter filter;
         public final Object handback;
 
-        public ListenerInfo(NotificationListener listener,
+        public MyListenerInfo(NotificationListener listener,
                 NotificationFilter filter,
                 Object handback) {
 
@@ -307,26 +323,6 @@ public class EventSubscriber implements EventConsumer {
             this.listener = listener;
             this.filter = filter;
             this.handback = handback;
-        }
-
-        /* Two ListenerInfo instances are equal if they have the same
-         * NotificationListener.  This means that we can use List.remove
-         * to implement the two-argument removeNotificationListener.
-         */
-        @Override
-        public boolean equals(Object o) {
-            if (o == this)
-                return true;
-
-            if (!(o instanceof ListenerInfo))
-                return false;
-
-            return listener.equals(((ListenerInfo)o).listener);
-        }
-
-        @Override
-        public int hashCode() {
-            return listener.hashCode();
         }
     }
 
@@ -338,10 +334,10 @@ public class EventSubscriber implements EventConsumer {
     // ---------------------------------
     private final MBeanServer mbeanServer;
 
-    private final Map<ObjectName, List<ListenerInfo>> exactSubscriptionMap =
-            new HashMap<ObjectName, List<ListenerInfo>>();
-    private final Map<ObjectName, List<ListenerInfo>> patternSubscriptionMap =
-            new HashMap<ObjectName, List<ListenerInfo>>();
+    private final Map<ObjectName, List<MyListenerInfo>> exactSubscriptionMap =
+            new HashMap<ObjectName, List<MyListenerInfo>>();
+    private final Map<ObjectName, List<MyListenerInfo>> patternSubscriptionMap =
+            new HashMap<ObjectName, List<MyListenerInfo>>();
 
 
 

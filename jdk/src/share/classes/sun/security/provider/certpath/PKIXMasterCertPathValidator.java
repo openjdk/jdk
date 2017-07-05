@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,12 @@ import sun.security.util.Debug;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.Iterator;
+import java.security.cert.CertificateRevokedException;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidatorException;
-import java.security.cert.CertificateRevokedException;
+import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.PKIXCertPathChecker;
+import java.security.cert.PKIXReason;
 import java.security.cert.X509Certificate;
 
 /**
@@ -153,10 +154,11 @@ class PKIXMasterCertPathValidator {
                      */
                     CertPathValidatorException currentCause =
                         new CertPathValidatorException(cpve.getMessage(),
-                            cpve.getCause(), cpOriginal, cpSize - (i + 1));
+                            cpve.getCause(), cpOriginal, cpSize - (i + 1),
+                            cpve.getReason());
 
                     // Check if OCSP has confirmed that the cert was revoked
-                    if (cpve.getCause() instanceof CertificateRevokedException) {
+                    if (cpve.getReason() == BasicReason.REVOKED) {
                         throw currentCause;
                     }
                     // Check if it is appropriate to failover
@@ -184,7 +186,8 @@ class PKIXMasterCertPathValidator {
                 debug.println("checking for unresolvedCritExts");
             if (!unresolvedCritExts.isEmpty()) {
                 throw new CertPathValidatorException("unrecognized " +
-                    "critical extension(s)", null, cpOriginal, cpSize-(i+1));
+                    "critical extension(s)", null, cpOriginal, cpSize-(i+1),
+                    PKIXReason.UNRECOGNIZED_CRIT_EXT);
             }
 
             if (debug != null)

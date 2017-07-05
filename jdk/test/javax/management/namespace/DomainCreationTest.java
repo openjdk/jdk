@@ -23,6 +23,7 @@
 /*
  *
  * @test DomainCreationTest.java
+ * @bug 5072476
  * @summary Test the creation and registration of JMXDomain instances.
  * @author Daniel Fuchs
  * @run clean DomainCreationTest Wombat WombatMBean

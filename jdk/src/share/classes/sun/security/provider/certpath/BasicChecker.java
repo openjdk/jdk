@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,12 +29,18 @@ import java.math.BigInteger;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Set;
+import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
+import java.security.SignatureException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.X509Certificate;
 import java.security.cert.PKIXCertPathChecker;
-import java.security.cert.CertPathValidatorException;
+import java.security.cert.PKIXReason;
 import java.security.cert.TrustAnchor;
 import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
@@ -152,11 +158,11 @@ class BasicChecker extends PKIXCertPathChecker {
 
         try {
             cert.verify(prevPubKey, sigProvider);
-        } catch (Exception e) {
-            if (debug != null) {
-                debug.println(e.getMessage());
-                e.printStackTrace();
-            }
+        } catch (SignatureException e) {
+            throw new CertPathValidatorException
+                (msg + " check failed", e, null, -1,
+                 BasicReason.INVALID_SIGNATURE);
+        } catch (GeneralSecurityException e) {
             throw new CertPathValidatorException(msg + " check failed", e);
         }
 
@@ -176,12 +182,12 @@ class BasicChecker extends PKIXCertPathChecker {
 
         try {
             cert.checkValidity(date);
-        } catch (Exception e) {
-            if (debug != null) {
-                debug.println(e.getMessage());
-                e.printStackTrace();
-            }
-            throw new CertPathValidatorException(msg + " check failed", e);
+        } catch (CertificateExpiredException e) {
+            throw new CertPathValidatorException
+                (msg + " check failed", e, null, -1, BasicReason.EXPIRED);
+        } catch (CertificateNotYetValidException e) {
+            throw new CertPathValidatorException
+                (msg + " check failed", e, null, -1, BasicReason.NOT_YET_VALID);
         }
 
         if (debug != null)
@@ -204,12 +210,16 @@ class BasicChecker extends PKIXCertPathChecker {
             // reject null or empty issuer DNs
 
             if (X500Name.asX500Name(currIssuer).isEmpty()) {
-                throw new CertPathValidatorException(msg + " check failed: " +
-                    "empty/null issuer DN in certificate is invalid");
+                throw new CertPathValidatorException
+                    (msg + " check failed: " +
+                     "empty/null issuer DN in certificate is invalid", null,
+                     null, -1, PKIXReason.NAME_CHAINING);
             }
 
             if (!(currIssuer.equals(prevSubject))) {
-                throw new CertPathValidatorException(msg + " check failed");
+                throw new CertPathValidatorException
+                    (msg + " check failed", null, null, -1,
+                     PKIXReason.NAME_CHAINING);
             }
 
             if (debug != null)
@@ -270,7 +280,7 @@ class BasicChecker extends PKIXCertPathChecker {
                                                        params.getQ(),
                                                        params.getG());
             usableKey = kf.generatePublic(ks);
-        } catch (Exception e) {
+        } catch (GeneralSecurityException e) {
             throw new CertPathValidatorException("Unable to generate key with" +
                                                  " inherited parameters: " +
                                                  e.getMessage(), e);

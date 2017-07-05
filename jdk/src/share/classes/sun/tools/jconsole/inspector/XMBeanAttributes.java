@@ -872,8 +872,8 @@ public class XMBeanAttributes extends XTable {
         MaximizedCellRenderer(Component comp) {
             this.comp = comp;
             Dimension d = comp.getPreferredSize();
-            if (d.getHeight() > 200) {
-                comp.setPreferredSize(new Dimension((int) d.getWidth(), 200));
+            if (d.getHeight() > 220) {
+                comp.setPreferredSize(new Dimension((int) d.getWidth(), 220));
             }
         }
         @Override

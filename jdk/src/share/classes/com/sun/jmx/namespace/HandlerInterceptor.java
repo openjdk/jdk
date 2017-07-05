@@ -63,8 +63,8 @@ import javax.management.namespace.JMXNamespace;
 /**
  * This interceptor wraps a JMXNamespace, and performs
  * {@code ObjectName} rewriting. {@code HandlerInterceptor} are
- * usually created and managed by a {@link NamespaceDispatcher} or
- * {@link DomainDispatcher}.
+ * created and managed by a {@link NamespaceDispatchInterceptor} or a
+ * {@link DomainDispatchInterceptor}.
  * <p><b>
  * This API is a Sun internal API and is subject to changes without notice.
  * </b></p>
@@ -90,6 +90,12 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         this.handler = handler;
     }
 
+    //
+    // The {@code source} connection is a connection to the MBeanServer
+    // that contains the actual MBeans.
+    // In the case of cascading, that would be a connection to the sub
+    // agent. Practically, this is JMXNamespace.getSourceServer();
+    //
     @Override
     protected MBeanServer source() {
          return handler.getSourceServer();
@@ -105,7 +111,9 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
          return source();
     }
 
-    T getNamespace() {
+    // The namespace or domain handler - this either a JMXNamespace or a
+    // a JMXDomain
+    T getHandlerInterceptorMBean() {
         return handler;
     }
 
@@ -122,12 +130,16 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
                     Util.newRuntimeIOException(x));
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public AttributeList getAttributes(ObjectName name, String[] attributes)
         throws InstanceNotFoundException, ReflectionException {
         try {
-            return super.getAttributes(name, attributes);
+            final String[] authorized =
+                    checkAttributes(name,attributes,"getAttribute");
+            final AttributeList attrList =
+                    super.getAttributes(name,authorized);
+            return attrList;
         } catch (IOException ex) {
             throw handleIOException(ex,"getAttributes",name,attributes);
         }
@@ -172,18 +184,19 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public void removeNotificationListener(ObjectName name, ObjectName listener)
         throws InstanceNotFoundException, ListenerNotFoundException {
         try {
-            super.removeNotificationListener(name, listener);
+            check(name,null,"removeNotificationListener");
+            super.removeNotificationListener(name,listener);
         } catch (IOException ex) {
             throw handleIOException(ex,"removeNotificationListener",name,listener);
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public String getDefaultDomain() {
         try {
@@ -193,17 +206,19 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public String[] getDomains() {
         try {
-            return super.getDomains();
+            check(null,null,"getDomains");
+            final String[] domains = super.getDomains();
+            return checkDomains(domains,"getDomains");
         } catch (IOException ex) {
             throw handleIOException(ex,"getDomains");
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public Integer getMBeanCount() {
         try {
@@ -213,64 +228,74 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public void setAttribute(ObjectName name, Attribute attribute)
         throws InstanceNotFoundException, AttributeNotFoundException,
             InvalidAttributeValueException, MBeanException,
             ReflectionException {
         try {
-            super.setAttribute(name, attribute);
+            check(name,
+                  (attribute==null?null:attribute.getName()),
+                  "setAttribute");
+            super.setAttribute(name,attribute);
         } catch (IOException ex) {
             throw handleIOException(ex,"setAttribute",name, attribute);
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public Set<ObjectName> queryNames(ObjectName name, QueryExp query) {
+        if (name == null) name=ObjectName.WILDCARD;
         try {
-            return super.queryNames(name, query);
+            checkPattern(name,null,"queryNames");
+            return super.queryNames(name,query);
         } catch (IOException ex) {
             throw handleIOException(ex,"queryNames",name, query);
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public Set<ObjectInstance> queryMBeans(ObjectName name, QueryExp query) {
+        if (name == null) name=ObjectName.WILDCARD;
         try {
-            return super.queryMBeans(name, query);
+            checkPattern(name,null,"queryMBeans");
+            return super.queryMBeans(name,query);
         } catch (IOException ex) {
             throw handleIOException(ex,"queryMBeans",name, query);
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public boolean isInstanceOf(ObjectName name, String className)
         throws InstanceNotFoundException {
         try {
+            check(name, null, "isInstanceOf");
             return super.isInstanceOf(name, className);
         } catch (IOException ex) {
             throw handleIOException(ex,"isInstanceOf",name, className);
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public ObjectInstance createMBean(String className, ObjectName name)
         throws ReflectionException, InstanceAlreadyExistsException,
             MBeanRegistrationException, MBeanException,
             NotCompliantMBeanException {
         try {
+            checkCreate(name, className, "instantiate");
+            checkCreate(name, className, "registerMBean");
             return super.createMBean(className, name);
         } catch (IOException ex) {
             throw handleIOException(ex,"createMBean",className, name);
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public ObjectInstance createMBean(String className, ObjectName name,
                         ObjectName loaderName)
@@ -278,30 +303,34 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
                 MBeanRegistrationException, MBeanException,
                 NotCompliantMBeanException, InstanceNotFoundException {
         try {
+            checkCreate(name, className, "instantiate");
+            checkCreate(name, className, "registerMBean");
             return super.createMBean(className, name, loaderName);
         } catch (IOException ex) {
             throw handleIOException(ex,"createMBean",className, name, loaderName);
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public Object getAttribute(ObjectName name, String attribute)
         throws MBeanException, AttributeNotFoundException,
             InstanceNotFoundException, ReflectionException {
         try {
+            check(name, attribute, "getAttribute");
             return super.getAttribute(name, attribute);
         } catch (IOException ex) {
             throw handleIOException(ex,"getAttribute",name, attribute);
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public void removeNotificationListener(ObjectName name, ObjectName listener,
                             NotificationFilter filter, Object handback)
         throws InstanceNotFoundException, ListenerNotFoundException {
         try {
+            check(name,null,"removeNotificationListener");
             super.removeNotificationListener(name, listener, filter, handback);
         } catch (IOException ex) {
             throw handleIOException(ex,"removeNotificationListener",name,
@@ -309,13 +338,14 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public void removeNotificationListener(ObjectName name,
                       NotificationListener listener, NotificationFilter filter,
                       Object handback)
         throws InstanceNotFoundException, ListenerNotFoundException {
         try {
+            check(name,null,"removeNotificationListener");
             super.removeNotificationListener(name, listener, filter, handback);
         } catch (IOException ex) {
             throw handleIOException(ex,"removeNotificationListener",name,
@@ -323,12 +353,13 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public void removeNotificationListener(ObjectName name,
                 NotificationListener listener)
         throws InstanceNotFoundException, ListenerNotFoundException {
         try {
+            check(name,null,"removeNotificationListener");
             super.removeNotificationListener(name, listener);
         } catch (IOException ex) {
             throw handleIOException(ex,"removeNotificationListener",name,
@@ -336,12 +367,13 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public void addNotificationListener(ObjectName name,
                     NotificationListener listener, NotificationFilter filter,
                     Object handback) throws InstanceNotFoundException {
         try {
+            check(name,null,"addNotificationListener");
             super.addNotificationListener(name, listener, filter, handback);
         } catch (IOException ex) {
             throw handleIOException(ex,"addNotificationListener",name,
@@ -349,12 +381,13 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public void addNotificationListener(ObjectName name, ObjectName listener,
                 NotificationFilter filter, Object handback)
         throws InstanceNotFoundException {
         try {
+            check(name,null,"addNotificationListener");
             super.addNotificationListener(name, listener, filter, handback);
         } catch (IOException ex) {
             throw handleIOException(ex,"addNotificationListener",name,
@@ -362,7 +395,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public boolean isRegistered(ObjectName name) {
         try {
@@ -372,41 +405,44 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public void unregisterMBean(ObjectName name)
         throws InstanceNotFoundException, MBeanRegistrationException {
         try {
+            check(name, null, "unregisterMBean");
             super.unregisterMBean(name);
         } catch (IOException ex) {
             throw handleIOException(ex,"unregisterMBean",name);
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public MBeanInfo getMBeanInfo(ObjectName name)
         throws InstanceNotFoundException, IntrospectionException,
             ReflectionException {
         try {
+            check(name, null, "getMBeanInfo");
             return super.getMBeanInfo(name);
         } catch (IOException ex) {
             throw handleIOException(ex,"getMBeanInfo",name);
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public ObjectInstance getObjectInstance(ObjectName name)
         throws InstanceNotFoundException {
         try {
+            check(name, null, "getObjectInstance");
             return super.getObjectInstance(name);
         } catch (IOException ex) {
             throw handleIOException(ex,"getObjectInstance",name);
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public ObjectInstance createMBean(String className, ObjectName name,
                 Object[] params, String[] signature)
@@ -414,6 +450,8 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
             MBeanRegistrationException, MBeanException,
             NotCompliantMBeanException {
         try {
+            checkCreate(name, className, "instantiate");
+            checkCreate(name, className, "registerMBean");
             return super.createMBean(className, name, params, signature);
         } catch (IOException ex) {
             throw handleIOException(ex,"createMBean",className, name,
@@ -421,7 +459,7 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public ObjectInstance createMBean(String className, ObjectName name,
                 ObjectName loaderName, Object[] params, String[] signature)
@@ -429,6 +467,8 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
             MBeanRegistrationException, MBeanException,
             NotCompliantMBeanException, InstanceNotFoundException {
         try {
+            checkCreate(name, className, "instantiate");
+            checkCreate(name, className, "registerMBean");
             return super.createMBean(className, name, loaderName, params,
                     signature);
         } catch (IOException ex) {
@@ -437,23 +477,26 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public AttributeList setAttributes(ObjectName name,AttributeList attributes)
     throws InstanceNotFoundException, ReflectionException {
         try {
-            return super.setAttributes(name, attributes);
+            final AttributeList authorized =
+                    checkAttributes(name, attributes, "setAttribute");
+            return super.setAttributes(name, authorized);
         } catch (IOException ex) {
             throw handleIOException(ex,"setAttributes",name, attributes);
         }
     }
 
-    // From MBeanServer: catch & handles IOException
+    // From MBeanServerConnection: catch & handles IOException
     @Override
     public Object invoke(ObjectName name, String operationName, Object[] params,
                 String[] signature)
         throws InstanceNotFoundException, MBeanException, ReflectionException {
         try {
+            check(name, operationName, "invoke");
             return super.invoke(name, operationName, params, signature);
         } catch (IOException ex) {
             throw handleIOException(ex,"invoke",name, operationName,
@@ -573,5 +616,119 @@ public abstract class HandlerInterceptor<T extends JMXNamespace>
             new UnsupportedOperationException(
                 "Not supported in this namespace: "+namespace));
     }
+
+    /**
+     * A result might be excluded for security reasons.
+     */
+    @Override
+    boolean excludesFromResult(ObjectName targetName, String queryMethod) {
+        return !checkQuery(targetName, queryMethod);
+    }
+
+
+    //----------------------------------------------------------------------
+    // Hooks for checking permissions
+    //----------------------------------------------------------------------
+
+   /**
+     * This method is a hook to implement permission checking in subclasses.
+     * A subclass may override this method and throw a {@link
+     * SecurityException} if the permission is denied.
+     *
+     * @param routingName The name of the MBean in the enclosing context.
+     *        This is of the form {@code <namespace>//<ObjectName>}.
+     * @param member The {@link
+     *  javax.management.namespace.JMXNamespacePermission#getMember member}
+     *  name.
+     * @param action The {@link
+     *  javax.management.namespace.JMXNamespacePermission#getActions action}
+     *  name.
+     * @throws SecurityException if the caller doesn't have the permission
+     *         to perform the given action on the MBean pointed to
+     *         by routingName.
+     */
+    abstract void check(ObjectName routingName,
+                        String member, String action);
+
+    // called in createMBean and registerMBean
+    abstract void checkCreate(ObjectName routingName, String className,
+                                String action);
+
+    /**
+     * This is a hook to implement permission checking in subclasses.
+     *
+     * Checks that the caller has sufficient permission for returning
+     * information about {@code sourceName} in {@code action}.
+     *
+     * Subclass may override this method and return false if the caller
+     * doesn't have sufficient permissions.
+     *
+     * @param routingName The name of the MBean to include or exclude from
+     *        the query, expressed in the enclosing context.
+     *        This is of the form {@code <namespace>//<ObjectName>}.
+     * @param action one of "queryNames" or "queryMBeans"
+     * @return true if {@code sourceName} can be returned.
+     */
+    abstract boolean checkQuery(ObjectName routingName, String action);
+
+    /**
+     * This method is a hook to implement permission checking in subclasses.
+     *
+     * @param routingName The name of the MBean in the enclosing context.
+     *        This is of the form {@code <namespace>//<ObjectName>}.
+     * @param attributes  The list of attributes to check permission for.
+     * @param action one of "getAttribute" or "setAttribute"
+     * @return The list of attributes for which the callers has the
+     *         appropriate {@link
+     *         javax.management.namespace.JMXNamespacePermission}.
+     * @throws SecurityException if the caller doesn't have the permission
+     *         to perform {@code action} on the MBean pointed to by routingName.
+     */
+    abstract String[] checkAttributes(ObjectName routingName,
+            String[] attributes, String action);
+
+    /**
+     * This method is a hook to implement permission checking in subclasses.
+     *
+     * @param routingName The name of the MBean in the enclosing context.
+     *        This is of the form {@code <namespace>//<ObjectName>}.
+     * @param attributes The list of attributes to check permission for.
+     * @param action one of "getAttribute" or "setAttribute"
+     * @return The list of attributes for which the callers has the
+     *         appropriate {@link
+     *         javax.management.namespace.JMXNamespacePermission}.
+     * @throws SecurityException if the caller doesn't have the permission
+     *         to perform {@code action} on the MBean pointed to by routingName.
+     */
+    abstract AttributeList checkAttributes(ObjectName routingName,
+            AttributeList attributes, String action);
+
+    /**
+     * This method is a hook to implement permission checking in subclasses.
+     * Checks that the caller as the necessary permissions to view the
+     * given domain. If not remove the domains for which the caller doesn't
+     * have permission from the list.
+     * <p>
+     * By default, this method always returns {@code domains}
+     *
+     * @param domains The domains to return.
+     * @param action  "getDomains"
+     * @return a filtered list of domains.
+     */
+    String[] checkDomains(String[] domains, String action) {
+        return domains;
+    }
+
+    // A priori check for queryNames/queryMBeans/
+    void checkPattern(ObjectName routingPattern,
+               String member, String action) {
+        // pattern is checked only at posteriori by checkQuery.
+        // checking it a priori usually doesn't work, because ObjectName.apply
+        // does not work between two patterns.
+        // We only check that we have the permission requested for 'action'.
+        check(null,null,action);
+    }
+
+
 
 }

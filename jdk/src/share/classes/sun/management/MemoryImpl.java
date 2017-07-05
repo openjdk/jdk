@@ -177,7 +177,7 @@ class MemoryImpl extends NotificationEmitterSupport
     }
 
     public ObjectName getObjectName() {
-        return Util.newObjectName(ManagementFactory.MEMORY_MXBEAN_NAME);
+        return ObjectName.valueOf(ManagementFactory.MEMORY_MXBEAN_NAME);
     }
 
 }
