@@ -120,7 +120,7 @@ public class GenerateCurrencyData {
     private static int[] specialCaseOldCurrenciesNumericCode = new int[maxSpecialCases];
     private static int[] specialCaseNewCurrenciesNumericCode = new int[maxSpecialCases];
 
-    private static final int maxOtherCurrencies = 65;
+    private static final int maxOtherCurrencies = 70;
     private static int otherCurrenciesCount = 0;
     private static StringBuffer otherCurrencies = new StringBuffer();
     private static int[] otherCurrenciesDefaultFractionDigits = new int[maxOtherCurrencies];

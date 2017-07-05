@@ -291,15 +291,6 @@ int InstructForm::is_tls_instruction() const {
 }
 
 
-// Return 'true' if this instruction matches an ideal 'Copy*' node
-bool InstructForm::is_ideal_unlock() const {
-  return _matrule ? _matrule->is_ideal_unlock() : false;
-}
-
-bool InstructForm::is_ideal_call_leaf() const {
-  return _matrule ? _matrule->is_ideal_call_leaf() : false;
-}
-
 // Return 'true' if this instruction matches an ideal 'If' node
 bool InstructForm::is_ideal_if() const {
   if( _matrule == NULL ) return false;
@@ -349,12 +340,11 @@ bool InstructForm::is_ideal_jump() const {
   return _matrule->is_ideal_jump();
 }
 
-// Return 'true' if instruction matches ideal 'If' | 'Goto' |
-//                    'CountedLoopEnd' | 'Jump'
+// Return 'true' if instruction matches ideal 'If' | 'Goto' | 'CountedLoopEnd'
 bool InstructForm::is_ideal_branch() const {
   if( _matrule == NULL ) return false;
 
-  return _matrule->is_ideal_if() || _matrule->is_ideal_goto() || _matrule->is_ideal_jump();
+  return _matrule->is_ideal_if() || _matrule->is_ideal_goto();
 }
 
 
@@ -392,7 +382,7 @@ bool InstructForm::is_ideal_nop() const {
 bool InstructForm::is_ideal_control() const {
   if ( ! _matrule)  return false;
 
-  return is_ideal_return() || is_ideal_branch() || is_ideal_halt();
+  return is_ideal_return() || is_ideal_branch() || _matrule->is_ideal_jump() || is_ideal_halt();
 }
 
 // Return 'true' if this instruction matches an ideal 'Call' node
@@ -633,6 +623,8 @@ bool InstructForm::is_wide_memory_kill(FormDict &globals) const {
 
   if( strcmp(_matrule->_opType,"MemBarRelease") == 0 ) return true;
   if( strcmp(_matrule->_opType,"MemBarAcquire") == 0 ) return true;
+  if( strcmp(_matrule->_opType,"MemBarReleaseLock") == 0 ) return true;
+  if( strcmp(_matrule->_opType,"MemBarAcquireLock") == 0 ) return true;
 
   return false;
 }
@@ -1094,6 +1086,9 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   else if (is_ideal_if()) {
     return "MachIfNode";
   }
+  else if (is_ideal_goto()) {
+    return "MachGotoNode";
+  }
   else if (is_ideal_fastlock()) {
     return "MachFastLockNode";
   }
@@ -1185,6 +1180,34 @@ bool InstructForm::check_branch_variant(ArchDesc &AD, InstructForm *short_branch
       strcmp(reduce_result(), short_branch->reduce_result()) == 0 &&
       _matrule->equivalent(AD.globalNames(), short_branch->_matrule)) {
     // The instructions are equivalent.
+
+    // Now verify that both instructions have the same parameters and
+    // the same effects. Both branch forms should have the same inputs
+    // and resulting projections to correctly replace a long branch node
+    // with corresponding short branch node during code generation.
+
+    bool different = false;
+    if (short_branch->_components.count() != _components.count()) {
+       different = true;
+    } else if (_components.count() > 0) {
+      short_branch->_components.reset();
+      _components.reset();
+      Component *comp;
+      while ((comp = _components.iter()) != NULL) {
+        Component *short_comp = short_branch->_components.iter();
+        if (short_comp == NULL ||
+            short_comp->_type != comp->_type ||
+            short_comp->_usedef != comp->_usedef) {
+          different = true;
+          break;
+        }
+      }
+      if (short_branch->_components.iter() != NULL)
+        different = true;
+    }
+    if (different) {
+      globalAD->syntax_err(short_branch->_linenum, "Instruction %s and its short form %s have different parameters\n", _ident, short_branch->_ident);
+    }
     if (AD._short_branch_debug) {
       fprintf(stderr, "Instruction %s has short form %s\n", _ident, short_branch->_ident);
     }
@@ -2706,7 +2729,6 @@ void ConstructRule::output(FILE *fp) {
 int         AttributeForm::_insId   = 0;           // start counter at 0
 int         AttributeForm::_opId    = 0;           // start counter at 0
 const char* AttributeForm::_ins_cost = "ins_cost"; // required name
-const char* AttributeForm::_ins_pc_relative = "ins_pc_relative";
 const char* AttributeForm::_op_cost  = "op_cost";  // required name
 
 AttributeForm::AttributeForm(char *attr, int type, char *attrdef)
@@ -3368,7 +3390,9 @@ int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
     "ClearArray"
   };
   int cnt = sizeof(needs_ideal_memory_list)/sizeof(char*);
-  if( strcmp(_opType,"PrefetchRead")==0 || strcmp(_opType,"PrefetchWrite")==0 )
+  if( strcmp(_opType,"PrefetchRead")==0 ||
+      strcmp(_opType,"PrefetchWrite")==0 ||
+      strcmp(_opType,"PrefetchAllocation")==0 )
     return 1;
   if( _lChild ) {
     const char *opType = _lChild->_opType;
@@ -3623,7 +3647,27 @@ bool MatchNode::equivalent(FormDict &globals, MatchNode *mNode2) {
   assert( mNode2->_opType, "Must have _opType");
   const Form *form  = globals[_opType];
   const Form *form2 = globals[mNode2->_opType];
-  return (form == form2);
+  if( form != form2 ) {
+    return false;
+  }
+
+  // Check that their children also match
+  if (_lChild ) {
+    if( !_lChild->equivalent(globals, mNode2->_lChild) )
+      return false;
+  } else if (mNode2->_lChild) {
+    return false; // I have NULL left child, mNode2 has non-NULL left child.
+  }
+
+  if (_rChild ) {
+    if( !_rChild->equivalent(globals, mNode2->_rChild) )
+      return false;
+  } else if (mNode2->_rChild) {
+    return false; // I have NULL right child, mNode2 has non-NULL right child.
+  }
+
+  // We've made it through the gauntlet.
+  return true;
 }
 
 //-------------------------- has_commutative_op -------------------------------
@@ -3909,19 +3953,6 @@ int MatchRule::is_expensive() const {
   return 0;
 }
 
-bool MatchRule::is_ideal_unlock() const {
-  if( !_opType ) return false;
-  return !strcmp(_opType,"Unlock") || !strcmp(_opType,"FastUnlock");
-}
-
-
-bool MatchRule::is_ideal_call_leaf() const {
-  if( !_opType ) return false;
-  return !strcmp(_opType,"CallLeaf")     ||
-         !strcmp(_opType,"CallLeafNoFP");
-}
-
-
 bool MatchRule::is_ideal_if() const {
   if( !_opType ) return false;
   return
@@ -3941,6 +3972,8 @@ bool MatchRule::is_ideal_membar() const {
   return
     !strcmp(_opType,"MemBarAcquire"  ) ||
     !strcmp(_opType,"MemBarRelease"  ) ||
+    !strcmp(_opType,"MemBarAcquireLock") ||
+    !strcmp(_opType,"MemBarReleaseLock") ||
     !strcmp(_opType,"MemBarVolatile" ) ||
     !strcmp(_opType,"MemBarCPUOrder" ) ;
 }

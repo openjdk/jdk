@@ -3252,7 +3252,6 @@ bool os::unguard_memory(char* addr, size_t bytes) {
 //                                 supported Solaris versions, this combination
 //                                 is equivalent to +UseISM -UseMPSS.
 
-typedef int (*getpagesizes_func_type) (size_t[], int);
 static size_t _large_page_size = 0;
 
 bool os::Solaris::ism_sanity_check(bool warn, size_t * page_size) {
@@ -3284,23 +3283,29 @@ static void insertion_sort_descending(size_t* array, int len) {
 }
 
 bool os::Solaris::mpss_sanity_check(bool warn, size_t * page_size) {
-  getpagesizes_func_type getpagesizes_func =
-    CAST_TO_FN_PTR(getpagesizes_func_type, dlsym(RTLD_DEFAULT, "getpagesizes"));
-  if (getpagesizes_func == NULL) {
-    if (warn) {
-      warning("MPSS is not supported by the operating system.");
-    }
-    return false;
-  }
-
   const unsigned int usable_count = VM_Version::page_size_count();
   if (usable_count == 1) {
     return false;
   }
 
+  // Find the right getpagesizes interface.  When solaris 11 is the minimum
+  // build platform, getpagesizes() (without the '2') can be called directly.
+  typedef int (*gps_t)(size_t[], int);
+  gps_t gps_func = CAST_TO_FN_PTR(gps_t, dlsym(RTLD_DEFAULT, "getpagesizes2"));
+  if (gps_func == NULL) {
+    gps_func = CAST_TO_FN_PTR(gps_t, dlsym(RTLD_DEFAULT, "getpagesizes"));
+    if (gps_func == NULL) {
+      if (warn) {
+        warning("MPSS is not supported by the operating system.");
+      }
+      return false;
+    }
+  }
+
   // Fill the array of page sizes.
-  int n = getpagesizes_func(_page_sizes, page_sizes_max);
+  int n = (*gps_func)(_page_sizes, page_sizes_max);
   assert(n > 0, "Solaris bug?");
+
   if (n == page_sizes_max) {
     // Add a sentinel value (necessary only if the array was completely filled
     // since it is static (zeroed at initialization)).
@@ -3308,6 +3313,7 @@ bool os::Solaris::mpss_sanity_check(bool warn, size_t * page_size) {
     DEBUG_ONLY(warning("increase the size of the os::_page_sizes array.");)
   }
   assert(_page_sizes[n] == 0, "missing sentinel");
+  trace_page_sizes("available page sizes", _page_sizes, n);
 
   if (n == 1) return false;     // Only one page size available.
 
@@ -3337,6 +3343,7 @@ bool os::Solaris::mpss_sanity_check(bool warn, size_t * page_size) {
   }
   *page_size = _page_sizes[0];
 
+  trace_page_sizes("usable page sizes", _page_sizes, end + 1);
   return true;
 }
 

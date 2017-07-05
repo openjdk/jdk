@@ -150,8 +150,7 @@ class StubGenerator: public StubCodeGenerator {
     { const Register t = G3_scratch;
       Label L;
       __ ld_ptr(G2_thread, in_bytes(Thread::pending_exception_offset()), t);
-      __ br_null(t, false, Assembler::pt, L);
-      __ delayed()->nop();
+      __ br_null_short(t, Assembler::pt, L);
       __ stop("StubRoutines::call_stub: entered with pending exception");
       __ bind(L);
     }
@@ -207,8 +206,7 @@ class StubGenerator: public StubCodeGenerator {
       Label exit;
       __ ld_ptr(parameter_size.as_in().as_address(), cnt);      // parameter counter
       __ add( FP, STACK_BIAS, dst );
-      __ tst(cnt);
-      __ br(Assembler::zero, false, Assembler::pn, exit);
+      __ cmp_zero_and_br(Assembler::zero, cnt, exit);
       __ delayed()->sub(dst, BytesPerWord, dst);                 // setup Lentry_args
 
       // copy parameters if any
@@ -282,20 +280,20 @@ class StubGenerator: public StubCodeGenerator {
       __ delayed()->restore();
 
       __ BIND(is_object);
-      __ ba(false, exit);
+      __ ba(exit);
       __ delayed()->st_ptr(O0, addr, G0);
 
       __ BIND(is_float);
-      __ ba(false, exit);
+      __ ba(exit);
       __ delayed()->stf(FloatRegisterImpl::S, F0, addr, G0);
 
       __ BIND(is_double);
-      __ ba(false, exit);
+      __ ba(exit);
       __ delayed()->stf(FloatRegisterImpl::D, F0, addr, G0);
 
       __ BIND(is_long);
 #ifdef _LP64
-      __ ba(false, exit);
+      __ ba(exit);
       __ delayed()->st_long(O0, addr, G0);      // store entire long
 #else
 #if defined(COMPILER2)
@@ -307,11 +305,11 @@ class StubGenerator: public StubCodeGenerator {
   // do this here. Unfortunately if we did a rethrow we'd see an machepilog node
   // first which would move g1 -> O0/O1 and destroy the exception we were throwing.
 
-      __ ba(false, exit);
+      __ ba(exit);
       __ delayed()->stx(G1, addr, G0);  // store entire long
 #else
       __ st(O1, addr, BytesPerInt);
-      __ ba(false, exit);
+      __ ba(exit);
       __ delayed()->st(O0, addr, G0);
 #endif /* COMPILER2 */
 #endif /* _LP64 */
@@ -382,8 +380,7 @@ class StubGenerator: public StubCodeGenerator {
     // make sure that this code is only executed if there is a pending exception
     { Label L;
       __ ld_ptr(exception_addr, Gtemp);
-      __ br_notnull(Gtemp, false, Assembler::pt, L);
-      __ delayed()->nop();
+      __ br_notnull_short(Gtemp, Assembler::pt, L);
       __ stop("StubRoutines::forward exception: no pending exception (1)");
       __ bind(L);
     }
@@ -406,8 +403,7 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef ASSERT
     // make sure exception is set
     { Label L;
-      __ br_notnull(Oexception, false, Assembler::pt, L);
-      __ delayed()->nop();
+      __ br_notnull_short(Oexception, Assembler::pt, L);
       __ stop("StubRoutines::forward exception: no pending exception (2)");
       __ bind(L);
     }
@@ -501,8 +497,7 @@ class StubGenerator: public StubCodeGenerator {
     Address exception_addr(G2_thread, Thread::pending_exception_offset());
     Register scratch_reg = Gtemp;
     __ ld_ptr(exception_addr, scratch_reg);
-    __ br_notnull(scratch_reg, false, Assembler::pt, L);
-    __ delayed()->nop();
+    __ br_notnull_short(scratch_reg, Assembler::pt, L);
     __ should_not_reach_here();
     __ bind(L);
 #endif // ASSERT
@@ -614,9 +609,7 @@ class StubGenerator: public StubCodeGenerator {
     __ mov(G0,yield_reg);
 
     __ BIND(retry);
-    __ cmp(yield_reg, V8AtomicOperationUnderLockSpinCount);
-    __ br(Assembler::less, false, Assembler::pt, dontyield);
-    __ delayed()->nop();
+    __ cmp_and_br_short(yield_reg, V8AtomicOperationUnderLockSpinCount, Assembler::less, Assembler::pt, dontyield);
 
     // This code can only be called from inside the VM, this
     // stub is only invoked from Atomic::add().  We do not
@@ -676,9 +669,7 @@ class StubGenerator: public StubCodeGenerator {
       // try to replace O2 with O3
       __ cas_under_lock(O1, O2, O3,
       (address)StubRoutines::Sparc::atomic_memory_operation_lock_addr(),false);
-      __ cmp(O2, O3);
-      __ br(Assembler::notEqual, false, Assembler::pn, retry);
-      __ delayed()->nop();
+      __ cmp_and_br_short(O2, O3, Assembler::notEqual, Assembler::pn, retry);
 
       __ retl(false);
       __ delayed()->mov(O2, O0);  // report previous value to caller
@@ -798,11 +789,9 @@ class StubGenerator: public StubCodeGenerator {
       __ BIND(retry);
 
       __ lduw(O1, 0, O2);
-      __ add(O0,   O2, O3);
-      __ cas(O1,   O2, O3);
-      __ cmp(      O2, O3);
-      __ br(Assembler::notEqual, false, Assembler::pn, retry);
-      __ delayed()->nop();
+      __ add(O0, O2, O3);
+      __ cas(O1, O2, O3);
+      __ cmp_and_br_short(O2, O3, Assembler::notEqual, Assembler::pn, retry);
       __ retl(false);
       __ delayed()->add(O0, O2, O0); // note that cas made O2==O3
     } else {
@@ -1370,8 +1359,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // copy tailing bytes
     __ BIND(L_copy_byte);
-      __ br_zero(Assembler::zero, false, Assembler::pt, count, L_exit);
-      __ delayed()->nop();
+      __ cmp_and_br_short(count, 0, Assembler::equal, Assembler::pt, L_exit);
       __ align(OptoLoopAlignment);
     __ BIND(L_copy_byte_loop);
       __ ldub(from, offset, O3);
@@ -1482,8 +1470,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // copy 1 element (2 bytes) at a time
     __ BIND(L_copy_byte);
-      __ br_zero(Assembler::zero, false, Assembler::pt, count, L_exit);
-      __ delayed()->nop();
+      __ cmp_and_br_short(count, 0, Assembler::equal, Assembler::pt, L_exit);
       __ align(OptoLoopAlignment);
     __ BIND(L_copy_byte_loop);
       __ dec(end_from);
@@ -1600,8 +1587,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // copy 1 element at a time
     __ BIND(L_copy_2_bytes);
-      __ br_zero(Assembler::zero, false, Assembler::pt, count, L_exit);
-      __ delayed()->nop();
+      __ cmp_and_br_short(count, 0, Assembler::equal, Assembler::pt, L_exit);
       __ align(OptoLoopAlignment);
     __ BIND(L_copy_2_bytes_loop);
       __ lduh(from, offset, O3);
@@ -1946,8 +1932,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // copy 1 element (2 bytes) at a time
     __ BIND(L_copy_2_bytes);
-      __ br_zero(Assembler::zero, false, Assembler::pt, count, L_exit);
-      __ delayed()->nop();
+      __ cmp_and_br_short(count, 0, Assembler::equal, Assembler::pt, L_exit);
     __ BIND(L_copy_2_bytes_loop);
       __ dec(end_from, 2);
       __ dec(end_to, 2);
@@ -2060,8 +2045,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // copy 1 element at a time
     __ BIND(L_copy_4_bytes);
-      __ br_zero(Assembler::zero, false, Assembler::pt, count, L_exit);
-      __ delayed()->nop();
+      __ cmp_and_br_short(count, 0, Assembler::equal, Assembler::pt, L_exit);
     __ BIND(L_copy_4_bytes_loop);
       __ ld(from, offset, O3);
       __ deccc(count);
@@ -2193,8 +2177,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // copy 1 element (4 bytes) at a time
     __ BIND(L_copy_4_bytes);
-      __ br_zero(Assembler::zero, false, Assembler::pt, count, L_exit);
-      __ delayed()->nop();
+      __ cmp_and_br_short(count, 0, Assembler::equal, Assembler::pt, L_exit);
     __ BIND(L_copy_4_bytes_loop);
       __ dec(end_from, 4);
       __ dec(end_to, 4);
@@ -2576,7 +2559,7 @@ class StubGenerator: public StubCodeGenerator {
                                      super_klass->after_save(),
                                      L0, L1, L2, L4,
                                      NULL, &L_pop_to_miss);
-    __ ba(false, L_success);
+    __ ba(L_success);
     __ delayed()->restore();
 
     __ bind(L_pop_to_miss);
@@ -2673,8 +2656,7 @@ class StubGenerator: public StubCodeGenerator {
     // ======== loop entry is here ========
     __ BIND(load_element);
     __ load_heap_oop(O0_from, O5_offset, G3_oop);  // load the oop
-    __ br_null(G3_oop, true, Assembler::pt, store_element);
-    __ delayed()->nop();
+    __ br_null_short(G3_oop, Assembler::pt, store_element);
 
     __ load_klass(G3_oop, G4_klass); // query the object klass
 
@@ -2896,8 +2878,7 @@ class StubGenerator: public StubCodeGenerator {
     //  assert(src->klass() != NULL);
     BLOCK_COMMENT("assert klasses not null");
     { Label L_a, L_b;
-      __ br_notnull(G3_src_klass, false, Assembler::pt, L_b); // it is broken if klass is NULL
-      __ delayed()->nop();
+      __ br_notnull_short(G3_src_klass, Assembler::pt, L_b); // it is broken if klass is NULL
       __ bind(L_a);
       __ stop("broken null klass");
       __ bind(L_b);
@@ -2937,9 +2918,7 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     //  if (src->klass() != dst->klass()) return -1;
-    __ cmp(G3_src_klass, G4_dst_klass);
-    __ brx(Assembler::notEqual, false, Assembler::pn, L_failed);
-    __ delayed()->nop();
+    __ cmp_and_brx_short(G3_src_klass, G4_dst_klass, Assembler::notEqual, Assembler::pn, L_failed);
 
     //  if (!src->is_Array()) return -1;
     __ cmp(G5_lh, Klass::_lh_neutral_value); // < 0
@@ -3007,9 +2986,7 @@ class StubGenerator: public StubCodeGenerator {
     __ delayed()->signx(length, count); // length
 #ifdef ASSERT
     { Label L;
-      __ cmp(G3_elsize, LogBytesPerLong);
-      __ br(Assembler::equal, false, Assembler::pt, L);
-      __ delayed()->nop();
+      __ cmp_and_br_short(G3_elsize, LogBytesPerLong, Assembler::equal, Assembler::pt, L);
       __ stop("must be long copy, but elsize is wrong");
       __ bind(L);
     }

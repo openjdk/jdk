@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,21 @@
 #ifndef SHARE_VM_CODE_DEPENDENCIES_HPP
 #define SHARE_VM_CODE_DEPENDENCIES_HPP
 
+#include "ci/ciCallSite.hpp"
 #include "ci/ciKlass.hpp"
+#include "ci/ciMethodHandle.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "code/compressedStream.hpp"
 #include "code/nmethod.hpp"
 #include "utilities/growableArray.hpp"
 
 //** Dependencies represent assertions (approximate invariants) within
-// the class hierarchy.  An example is an assertion that a given
-// method is not overridden; another example is that a type has only
-// one concrete subtype.  Compiled code which relies on such
-// assertions must be discarded if they are overturned by changes in
-// the class hierarchy.  We can think of these assertions as
-// approximate invariants, because we expect them to be overturned
+// the runtime system, e.g. class hierarchy changes.  An example is an
+// assertion that a given method is not overridden; another example is
+// that a type has only one concrete subtype.  Compiled code which
+// relies on such assertions must be discarded if they are overturned
+// by changes in the runtime system.  We can think of these assertions
+// as approximate invariants, because we expect them to be overturned
 // very infrequently.  We are willing to perform expensive recovery
 // operations when they are overturned.  The benefit, of course, is
 // performing optimistic optimizations (!) on the object code.
@@ -52,6 +55,8 @@ class OopRecorder;
 class xmlStream;
 class CompileLog;
 class DepChange;
+class   KlassDepChange;
+class   CallSiteDepChange;
 class No_Safepoint_Verifier;
 
 class Dependencies: public ResourceObj {
@@ -152,6 +157,9 @@ class Dependencies: public ResourceObj {
     // subclasses require finalization registration.
     no_finalizable_subclasses,
 
+    // This dependency asserts when the CallSite.target value changed.
+    call_site_target_value,
+
     TYPE_LIMIT
   };
   enum {
@@ -179,6 +187,7 @@ class Dependencies: public ResourceObj {
   static int  dep_context_arg(DepType dept) {
     return dept_in_mask(dept, ctxk_types)? 0: -1;
   }
+  static void check_valid_dependency_type(DepType dept);
 
  private:
   // State for writing a new set of dependencies:
@@ -255,6 +264,7 @@ class Dependencies: public ResourceObj {
   void assert_abstract_with_exclusive_concrete_subtypes(ciKlass* ctxk, ciKlass* k1, ciKlass* k2);
   void assert_exclusive_concrete_methods(ciKlass* ctxk, ciMethod* m1, ciMethod* m2);
   void assert_has_no_finalizable_subclasses(ciKlass* ctxk);
+  void assert_call_site_target_value(ciKlass* ctxk, ciCallSite* call_site, ciMethodHandle* method_handle);
 
   // Define whether a given method or type is concrete.
   // These methods define the term "concrete" as used in this module.
@@ -296,19 +306,19 @@ class Dependencies: public ResourceObj {
   static klassOop check_evol_method(methodOop m);
   static klassOop check_leaf_type(klassOop ctxk);
   static klassOop check_abstract_with_unique_concrete_subtype(klassOop ctxk, klassOop conck,
-                                                              DepChange* changes = NULL);
+                                                              KlassDepChange* changes = NULL);
   static klassOop check_abstract_with_no_concrete_subtype(klassOop ctxk,
-                                                          DepChange* changes = NULL);
+                                                          KlassDepChange* changes = NULL);
   static klassOop check_concrete_with_no_concrete_subtype(klassOop ctxk,
-                                                          DepChange* changes = NULL);
+                                                          KlassDepChange* changes = NULL);
   static klassOop check_unique_concrete_method(klassOop ctxk, methodOop uniqm,
-                                               DepChange* changes = NULL);
+                                               KlassDepChange* changes = NULL);
   static klassOop check_abstract_with_exclusive_concrete_subtypes(klassOop ctxk, klassOop k1, klassOop k2,
-                                                                  DepChange* changes = NULL);
+                                                                  KlassDepChange* changes = NULL);
   static klassOop check_exclusive_concrete_methods(klassOop ctxk, methodOop m1, methodOop m2,
-                                                   DepChange* changes = NULL);
-  static klassOop check_has_no_finalizable_subclasses(klassOop ctxk,
-                                                      DepChange* changes = NULL);
+                                                   KlassDepChange* changes = NULL);
+  static klassOop check_has_no_finalizable_subclasses(klassOop ctxk, KlassDepChange* changes = NULL);
+  static klassOop check_call_site_target_value(klassOop ctxk, oop call_site, oop method_handle, CallSiteDepChange* changes = NULL);
   // A returned klassOop is NULL if the dependency assertion is still
   // valid.  A non-NULL klassOop is a 'witness' to the assertion
   // failure, a point in the class hierarchy where the assertion has
@@ -415,7 +425,10 @@ class Dependencies: public ResourceObj {
     inline oop recorded_oop_at(int i);
         // => _code? _code->oop_at(i): *_deps->_oop_recorder->handle_at(i)
 
-    klassOop check_dependency_impl(DepChange* changes);
+    klassOop check_klass_dependency(KlassDepChange* changes);
+    klassOop check_call_site_dependency(CallSiteDepChange* changes);
+
+    void trace_and_log_witness(klassOop witness);
 
   public:
     DepStream(Dependencies* deps)
@@ -453,10 +466,13 @@ class Dependencies: public ResourceObj {
       return (klassOop) x;
     }
 
-    // The point of the whole exercise:  Is this dep is still OK?
+    // The point of the whole exercise:  Is this dep still OK?
     klassOop check_dependency() {
-      return check_dependency_impl(NULL);
+      klassOop result = check_klass_dependency(NULL);
+      if (result != NULL)  return result;
+      return check_call_site_dependency(NULL);
     }
+
     // A lighter version:  Checks only around recent changes in a class
     // hierarchy.  (See Universe::flush_dependents_on.)
     klassOop spot_check_dependency_at(DepChange& changes);
@@ -472,12 +488,26 @@ class Dependencies: public ResourceObj {
   static void print_statistics() PRODUCT_RETURN;
 };
 
-// A class hierarchy change coming through the VM (under the Compile_lock).
-// The change is structured as a single new type with any number of supers
-// and implemented interface types.  Other than the new type, any of the
-// super types can be context types for a relevant dependency, which the
-// new type could invalidate.
+
+// Every particular DepChange is a sub-class of this class.
 class DepChange : public StackObj {
+ public:
+  // What kind of DepChange is this?
+  virtual bool is_klass_change()     const { return false; }
+  virtual bool is_call_site_change() const { return false; }
+
+  // Subclass casting with assertions.
+  KlassDepChange*    as_klass_change() {
+    assert(is_klass_change(), "bad cast");
+    return (KlassDepChange*) this;
+  }
+  CallSiteDepChange* as_call_site_change() {
+    assert(is_call_site_change(), "bad cast");
+    return (CallSiteDepChange*) this;
+  }
+
+  void print();
+
  public:
   enum ChangeType {
     NO_CHANGE = 0,              // an uninvolved klass
@@ -487,28 +517,6 @@ class DepChange : public StackObj {
     CHANGE_LIMIT,
     Start_Klass = CHANGE_LIMIT  // internal indicator for ContextStream
   };
-
- private:
-  // each change set is rooted in exactly one new type (at present):
-  KlassHandle _new_type;
-
-  void initialize();
-
- public:
-  // notes the new type, marks it and all its super-types
-  DepChange(KlassHandle new_type)
-    : _new_type(new_type)
-  {
-    initialize();
-  }
-
-  // cleans up the marks
-  ~DepChange();
-
-  klassOop new_type()                   { return _new_type(); }
-
-  // involves_context(k) is true if k is new_type or any of the super types
-  bool involves_context(klassOop k);
 
   // Usage:
   // for (DepChange::ContextStream str(changes); str.next(); ) {
@@ -530,14 +538,7 @@ class DepChange : public StackObj {
     int         _ti_limit;
 
     // start at the beginning:
-    void start() {
-      klassOop new_type = _changes.new_type();
-      _change_type = (new_type == NULL ? NO_CHANGE: Start_Klass);
-      _klass = new_type;
-      _ti_base = NULL;
-      _ti_index = 0;
-      _ti_limit = 0;
-    }
+    void start();
 
    public:
     ContextStream(DepChange& changes)
@@ -555,8 +556,62 @@ class DepChange : public StackObj {
     klassOop   klass()           { return _klass; }
   };
   friend class DepChange::ContextStream;
+};
 
-  void print();
+
+// A class hierarchy change coming through the VM (under the Compile_lock).
+// The change is structured as a single new type with any number of supers
+// and implemented interface types.  Other than the new type, any of the
+// super types can be context types for a relevant dependency, which the
+// new type could invalidate.
+class KlassDepChange : public DepChange {
+ private:
+  // each change set is rooted in exactly one new type (at present):
+  KlassHandle _new_type;
+
+  void initialize();
+
+ public:
+  // notes the new type, marks it and all its super-types
+  KlassDepChange(KlassHandle new_type)
+    : _new_type(new_type)
+  {
+    initialize();
+  }
+
+  // cleans up the marks
+  ~KlassDepChange();
+
+  // What kind of DepChange is this?
+  virtual bool is_klass_change() const { return true; }
+
+  klassOop new_type() { return _new_type(); }
+
+  // involves_context(k) is true if k is new_type or any of the super types
+  bool involves_context(klassOop k);
+};
+
+
+// A CallSite has changed its target.
+class CallSiteDepChange : public DepChange {
+ private:
+  Handle _call_site;
+  Handle _method_handle;
+
+ public:
+  CallSiteDepChange(Handle call_site, Handle method_handle)
+    : _call_site(call_site),
+      _method_handle(method_handle)
+  {
+    assert(_call_site()    ->is_a(SystemDictionary::CallSite_klass()),     "must be");
+    assert(_method_handle()->is_a(SystemDictionary::MethodHandle_klass()), "must be");
+  }
+
+  // What kind of DepChange is this?
+  virtual bool is_call_site_change() const { return true; }
+
+  oop call_site()     const { return _call_site();     }
+  oop method_handle() const { return _method_handle(); }
 };
 
 #endif // SHARE_VM_CODE_DEPENDENCIES_HPP

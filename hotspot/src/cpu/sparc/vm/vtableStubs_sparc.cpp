@@ -76,9 +76,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
     Label L;
     // check offset vs vtable length
     __ ld(G3_scratch, instanceKlass::vtable_length_offset()*wordSize, G5);
-    __ cmp(G5, vtable_index*vtableEntry::size());
-    __ br(Assembler::greaterUnsigned, false, Assembler::pt, L);
-    __ delayed()->nop();
+    __ cmp_and_br_short(G5, vtable_index*vtableEntry::size(), Assembler::greaterUnsigned, Assembler::pt, L);
     __ set(vtable_index, O2);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, bad_compiled_vtable_index), O0, O2);
     __ bind(L);
@@ -95,8 +93,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 #ifndef PRODUCT
   if (DebugVtables) {
     Label L;
-    __ br_notnull(G5_method, false, Assembler::pt, L);
-    __ delayed()->nop();
+    __ br_notnull_short(G5_method, Assembler::pt, L);
     __ stop("Vtable entry is ZERO");
     __ bind(L);
   }
@@ -177,8 +174,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 #ifndef PRODUCT
   if (DebugVtables) {
     Label L01;
-    __ bpr(Assembler::rc_nz, false, Assembler::pt, L5_method, L01);
-    __ delayed()->nop();
+    __ br_notnull_short(L5_method, Assembler::pt, L01);
     __ stop("methodOop is null");
     __ bind(L01);
     __ verify_oop(L5_method);

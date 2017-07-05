@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "prims/jvm.h"
+#include "runtime/os.hpp"
 #include "utilities/decoder.hpp"
 
 HMODULE                   Decoder::_dbghelp_handle = NULL;
@@ -35,7 +36,7 @@ void Decoder::initialize() {
   if (!_initialized) {
     _initialized = true;
 
-    HMODULE handle = ::LoadLibrary("dbghelp.dll");
+    HINSTANCE handle = os::win32::load_Windows_dll("dbghelp.dll", NULL, 0);
     if (!handle) {
       _decoder_status = helper_not_found;
         return;
