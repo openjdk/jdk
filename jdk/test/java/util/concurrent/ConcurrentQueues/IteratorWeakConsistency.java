@@ -49,7 +49,7 @@ public class IteratorWeakConsistency {
         test(new LinkedBlockingDeque());
         test(new LinkedBlockingDeque(20));
         test(new ConcurrentLinkedQueue());
-//         test(new LinkedTransferQueue());
+        test(new LinkedTransferQueue());
         // Other concurrent queues (e.g. ArrayBlockingQueue) do not
         // currently have weakly consistent iterators.
         // test(new ArrayBlockingQueue(20));

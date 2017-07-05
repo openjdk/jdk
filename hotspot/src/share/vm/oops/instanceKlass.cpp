@@ -1900,7 +1900,7 @@ void instanceKlass::release_C_heap_structures() {
   }
 }
 
-char* instanceKlass::signature_name() const {
+const char* instanceKlass::signature_name() const {
   const char* src = (const char*) (name()->as_C_string());
   const int src_length = (int)strlen(src);
   char* dest = NEW_RESOURCE_ARRAY(char, src_length + 3);
@@ -2259,6 +2259,10 @@ void instanceKlass::oop_print_on(oop obj, outputStream* st) {
     st->print(BULLET"fake entry for array: ");
     array_klass->print_value_on(st);
     st->cr();
+  } else if (as_klassOop() == SystemDictionary::MethodType_klass()) {
+    st->print(BULLET"signature: ");
+    java_dyn_MethodType::print_signature(obj, st);
+    st->cr();
   }
 }
 
@@ -2284,6 +2288,9 @@ void instanceKlass::oop_print_value_on(oop obj, outputStream* st) {
       const char* tname = type2name(java_lang_Class::primitive_type(obj));
       st->print("%s", tname ? tname : "type?");
     }
+  } else if (as_klassOop() == SystemDictionary::MethodType_klass()) {
+    st->print(" = ");
+    java_dyn_MethodType::print_signature(obj, st);
   } else if (java_lang_boxing_object::is_instance(obj)) {
     st->print(" = ");
     java_lang_boxing_object::print(obj, st);

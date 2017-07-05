@@ -33,7 +33,7 @@ include $(BUILDDIR)/common/Defs.gmk
 all build: $(GENSRCDIR)/sun/misc/Version.java
 
 $(GENSRCDIR)/sun/misc/Version.java: \
-		$(SHARE_SRC)/classes/sun/misc/Version-template.java
+		$(SHARE_SRC)/classes/sun/misc/Version.java.template
 	$(prep-target)
 	$(RM) $@.temp
 	$(SED) -e 's/@@launcher_name@@/$(LAUNCHER_NAME)/g' \
