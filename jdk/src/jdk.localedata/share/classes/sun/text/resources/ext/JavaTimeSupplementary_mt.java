@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 /*
  * COPYRIGHT AND PERMISSION NOTICE
  *
- * Copyright (C) 1991-2015 Unicode, Inc. All rights reserved.
+ * Copyright (C) 1991-2016 Unicode, Inc. All rights reserved.
  * Distributed under the Terms of Use in
  * http://www.unicode.org/copyright.html.
  *
@@ -119,6 +119,12 @@ public class JavaTimeSupplementary_mt extends OpenListResourceBundle {
                 "Sena" },
             { "field.zone",
                 "\u017bona" },
+            { "islamic.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
+                }
+            },
             { "islamic.DatePatterns",
                 new String[] {
                     "EEEE, d 'ta'\u2019 MMMM y GGGG",
@@ -226,6 +232,12 @@ public class JavaTimeSupplementary_mt extends OpenListResourceBundle {
                 new String[] {
                     "QK",
                     "WK",
+                }
+            },
+            { "roc.AmPmMarkers",
+                new String[] {
+                    "AM",
+                    "PM",
                 }
             },
             { "roc.DatePatterns",

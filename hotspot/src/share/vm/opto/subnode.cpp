@@ -578,8 +578,12 @@ const Type *CmpUNode::sub( const Type *t1, const Type *t2 ) const {
     // All unsigned values are LE -1 and GE 0.
     if (lo0 == 0 && hi0 == 0) {
       return TypeInt::CC_LE;            //   0 <= bot
+    } else if ((jint)lo0 == -1 && (jint)hi0 == -1) {
+      return TypeInt::CC_GE;            // -1 >= bot
     } else if (lo1 == 0 && hi1 == 0) {
       return TypeInt::CC_GE;            // bot >= 0
+    } else if ((jint)lo1 == -1 && (jint)hi1 == -1) {
+      return TypeInt::CC_LE;            // bot <= -1
     }
   } else {
     // We can use ranges of the form [lo..hi] if signs are the same.

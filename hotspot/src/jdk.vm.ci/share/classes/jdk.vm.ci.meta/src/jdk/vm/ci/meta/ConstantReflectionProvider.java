@@ -56,39 +56,10 @@ public interface ConstantReflectionProvider {
     JavaConstant readArrayElement(JavaConstant array, int index);
 
     /**
-     * Reads a value from the given array at the given index if it is a stable array. Returns
-     * {@code null} if the constant is not a stable array, if it is a default value, if the index is
-     * out of bounds, or if the value is not available at this point.
-     */
-    JavaConstant readConstantArrayElement(JavaConstant array, int index);
-
-    /**
-     * Reads a value from the given array at the given offset if it is a stable array. The offset
-     * will be decoded relative to the platform addressing into an index into the array. Returns
-     * {@code null} if the constant is not a stable array, if it is a default value, if the offset
-     * is out of bounds, or if the value is not available at this point.
-     */
-    JavaConstant readConstantArrayElementForOffset(JavaConstant array, long offset);
-
-    /**
-     * Gets the constant value of this field. Note that a {@code static final} field may not be
-     * considered constant if its declaring class is not yet initialized or if it is a well known
-     * field that can be updated via other means (e.g., {@link System#setOut(java.io.PrintStream)}).
-     *
-     * @param receiver object from which this field's value is to be read. This value is ignored if
-     *            this field is static.
-     * @return the constant value of this field or {@code null} if this field is not considered
-     *         constant by the runtime
-     */
-    JavaConstant readConstantFieldValue(ResolvedJavaField field, JavaConstant receiver);
-
-    /**
      * Gets the current value of this field for a given object, if available.
      *
      * There is no guarantee that the same value will be returned by this method for a field unless
-     * the field is considered to be
-     * {@linkplain #readConstantFieldValue(ResolvedJavaField, JavaConstant) constant} by the
-     * runtime.
+     * the field is considered to be constant by the runtime.
      *
      * @param receiver object from which this field's value is to be read. This value is ignored if
      *            this field is static.
@@ -96,23 +67,6 @@ public interface ConstantReflectionProvider {
      *         the field holder is not yet initialized).
      */
     JavaConstant readFieldValue(ResolvedJavaField field, JavaConstant receiver);
-
-    /**
-     * Gets the current value of this field for a given object, if available. Like
-     * {@link #readFieldValue(ResolvedJavaField, JavaConstant)} but treats array fields as stable.
-     *
-     * There is no guarantee that the same value will be returned by this method for a field unless
-     * the field is considered to be
-     * {@linkplain #readConstantFieldValue(ResolvedJavaField, JavaConstant) constant} by the
-     * runtime.
-     *
-     * @param receiver object from which this field's value is to be read. This value is ignored if
-     *            this field is static.
-     * @param isDefaultStable if {@code true}, default values are considered stable
-     * @return the value of this field or {@code null} if the value is not available (e.g., because
-     *         the field holder is not yet initialized).
-     */
-    JavaConstant readStableFieldValue(ResolvedJavaField field, JavaConstant receiver, boolean isDefaultStable);
 
     /**
      * Converts the given {@link JavaKind#isPrimitive() primitive} constant to a boxed
@@ -123,10 +77,10 @@ public interface ConstantReflectionProvider {
     JavaConstant boxPrimitive(JavaConstant source);
 
     /**
-     * Converts the given {@link JavaKind#Object object} constant to a
-     * {@link JavaKind#isPrimitive() primitive} constant, according to the Java unboxing rules.
-     * Returns {@code null} if the source is is not an object constant that can be unboxed, or the
-     * unboxed value is not available at this point.
+     * Converts the given {@link JavaKind#Object object} constant to a {@link JavaKind#isPrimitive()
+     * primitive} constant, according to the Java unboxing rules. Returns {@code null} if the source
+     * is is not an object constant that can be unboxed, or the unboxed value is not available at
+     * this point.
      */
     JavaConstant unboxPrimitive(JavaConstant source);
 

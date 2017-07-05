@@ -57,7 +57,7 @@ void PackageEntry::add_qexport(ModuleEntry* m) {
     // Lazily create a package's qualified exports list.
     // Initial size is small, do not anticipate export lists to be large.
     _qualified_exports =
-      new (ResourceObj::C_HEAP, mtClass) GrowableArray<ModuleEntry*>(QUAL_EXP_SIZE, true);
+      new (ResourceObj::C_HEAP, mtModule) GrowableArray<ModuleEntry*>(QUAL_EXP_SIZE, true);
   }
   _qualified_exports->append_if_missing(m);
 }
@@ -124,7 +124,7 @@ void PackageEntry::delete_qualified_exports() {
 }
 
 PackageEntryTable::PackageEntryTable(int table_size)
-  : Hashtable<Symbol*, mtClass>(table_size, sizeof(PackageEntry))
+  : Hashtable<Symbol*, mtModule>(table_size, sizeof(PackageEntry))
 {
 }
 
@@ -155,7 +155,7 @@ PackageEntryTable::~PackageEntryTable() {
 
 PackageEntry* PackageEntryTable::new_entry(unsigned int hash, Symbol* name, ModuleEntry* module) {
   assert_locked_or_safepoint(Module_lock);
-  PackageEntry* entry = (PackageEntry*) NEW_C_HEAP_ARRAY(char, entry_size(), mtClass);
+  PackageEntry* entry = (PackageEntry*) NEW_C_HEAP_ARRAY(char, entry_size(), mtModule);
 
   // Initialize everything BasicHashtable would
   entry->set_next(NULL);
@@ -178,7 +178,7 @@ PackageEntry* PackageEntryTable::new_entry(unsigned int hash, Symbol* name, Modu
 
 void PackageEntryTable::add_entry(int index, PackageEntry* new_entry) {
   assert_locked_or_safepoint(Module_lock);
-  Hashtable<Symbol*, mtClass>::add_entry(index, (HashtableEntry<Symbol*, mtClass>*)new_entry);
+  Hashtable<Symbol*, mtModule>::add_entry(index, (HashtableEntry<Symbol*, mtModule>*)new_entry);
 }
 
 // Create package in loader's package entry table and return the entry.

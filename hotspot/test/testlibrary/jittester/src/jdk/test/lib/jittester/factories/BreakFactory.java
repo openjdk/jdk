@@ -24,12 +24,11 @@
 package jdk.test.lib.jittester.factories;
 
 import jdk.test.lib.jittester.Break;
-import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.ProductionFailedException;
 
-class BreakFactory extends Factory {
+class BreakFactory extends Factory<Break> {
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public Break produce() throws ProductionFailedException {
         return new Break();
     }
 }

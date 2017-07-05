@@ -25,8 +25,9 @@ package jdk.test.lib.jittester.factories;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import jdk.test.lib.jittester.Block;
 import jdk.test.lib.jittester.CatchBlock;
-import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.TryCatchBlock;
 import jdk.test.lib.jittester.Type;
@@ -35,7 +36,7 @@ import jdk.test.lib.jittester.utils.TypeUtil;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.utils.PseudoRandom;
 
-class TryCatchBlockFactory extends Factory {
+class TryCatchBlockFactory extends Factory<TryCatchBlock> {
     private final static double CATCH_SELECTION_COEF = 0.1d;
     private final Type returnType;
     private final long complexityLimit;
@@ -64,7 +65,7 @@ class TryCatchBlockFactory extends Factory {
     }
 
     @Override
-    public IRNode produce() throws ProductionFailedException {
+    public TryCatchBlock produce() throws ProductionFailedException {
         if (complexityLimit < 1 || statementLimit < 1) {
             throw new ProductionFailedException();
         }
@@ -77,7 +78,7 @@ class TryCatchBlockFactory extends Factory {
                 .setCanHaveReturn(canHaveReturn)
                 .setCanHaveContinues(canHaveContinues)
                 .setCanHaveBreaks(canHaveBreaks);
-        IRNode body = getBlock(builder, 0.6);
+        Block body = getBlock(builder, 0.6);
         int catchBlocksCount = (int) (CATCH_SELECTION_COEF
                 * PseudoRandom.random() * uncheckedThrowables.size());
         List<CatchBlock> catchBlocks = new ArrayList<>();
@@ -92,7 +93,7 @@ class TryCatchBlockFactory extends Factory {
             catchBlocks.add(new CatchBlock(getBlock(builder, 0.3/catchBlocksCount),
                     whatToCatch, level));
         }
-        IRNode finallyBody = PseudoRandom.randomBoolean() || catchBlocksCount == 0 ? getBlock(builder, 0.1) : null;
+        Block finallyBody = PseudoRandom.randomBoolean() || catchBlocksCount == 0 ? getBlock(builder, 0.1) : null;
         return new TryCatchBlock(body, finallyBody, catchBlocks, level);
     }
 
@@ -106,7 +107,7 @@ class TryCatchBlockFactory extends Factory {
         return selected;
     }
 
-    private IRNode getBlock(IRNodeBuilder builder, double weight)
+    private Block getBlock(IRNodeBuilder builder, double weight)
             throws ProductionFailedException {
         long actualComplexityLim = (long) (weight * PseudoRandom.random()
                 * complexityLimit);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,10 +201,12 @@ void VM_Verify::doit() {
 }
 
 bool VM_PrintThreads::doit_prologue() {
-  assert(Thread::current()->is_Java_thread(), "just checking");
-
   // Make sure AbstractOwnableSynchronizer is loaded
-  java_util_concurrent_locks_AbstractOwnableSynchronizer::initialize(JavaThread::current());
+  JavaThread* jt = JavaThread::current();
+  java_util_concurrent_locks_AbstractOwnableSynchronizer::initialize(jt);
+  if (jt->has_pending_exception()) {
+    return false;
+  }
 
   // Get Heap_lock if concurrent locks will be dumped
   if (_print_concurrent_locks) {
@@ -240,11 +242,13 @@ VM_FindDeadlocks::~VM_FindDeadlocks() {
 }
 
 bool VM_FindDeadlocks::doit_prologue() {
-  assert(Thread::current()->is_Java_thread(), "just checking");
-
-  // Load AbstractOwnableSynchronizer class
   if (_concurrent_locks) {
-    java_util_concurrent_locks_AbstractOwnableSynchronizer::initialize(JavaThread::current());
+    // Make sure AbstractOwnableSynchronizer is loaded
+    JavaThread* jt = JavaThread::current();
+    java_util_concurrent_locks_AbstractOwnableSynchronizer::initialize(jt);
+    if (jt->has_pending_exception()) {
+      return false;
+    }
   }
 
   return true;
@@ -298,10 +302,12 @@ VM_ThreadDump::VM_ThreadDump(ThreadDumpResult* result,
 }
 
 bool VM_ThreadDump::doit_prologue() {
-  assert(Thread::current()->is_Java_thread(), "just checking");
-
-  // Load AbstractOwnableSynchronizer class before taking thread snapshots
-  java_util_concurrent_locks_AbstractOwnableSynchronizer::initialize(JavaThread::current());
+  // Make sure AbstractOwnableSynchronizer is loaded
+  JavaThread* jt = JavaThread::current();
+  java_util_concurrent_locks_AbstractOwnableSynchronizer::initialize(jt);
+  if (jt->has_pending_exception()) {
+    return false;
+  }
 
   if (_with_locked_synchronizers) {
     // Acquire Heap_lock to dump concurrent locks

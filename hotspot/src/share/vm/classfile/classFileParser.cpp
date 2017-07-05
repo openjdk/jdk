@@ -1401,9 +1401,11 @@ class ClassFileParser::FieldAllocationCount : public ResourceObj {
 
   FieldAllocationType update(bool is_static, BasicType type) {
     FieldAllocationType atype = basic_type_to_atype(is_static, type);
-    // Make sure there is no overflow with injected fields.
-    assert(count[atype] < 0xFFFF, "More than 65535 fields");
-    count[atype]++;
+    if (atype != BAD_ALLOCATION_TYPE) {
+      // Make sure there is no overflow with injected fields.
+      assert(count[atype] < 0xFFFF, "More than 65535 fields");
+      count[atype]++;
+    }
     return atype;
   }
 };
@@ -2002,13 +2004,6 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
       if (!privileged)              break;  // only allow in privileged code
       return _method_HotSpotIntrinsicCandidate;
     }
-#if INCLUDE_JVMCI
-    case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_vm_ci_hotspot_Stable_signature): {
-      if (_location != _in_field)   break;  // only allow for fields
-      if (!privileged)              break;  // only allow in privileged code
-      return _field_Stable;
-    }
-#endif
     case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_internal_vm_annotation_Stable_signature): {
       if (_location != _in_field)   break;  // only allow for fields
       if (!privileged)              break;  // only allow in privileged code
@@ -3335,8 +3330,9 @@ void ClassFileParser::parse_classfile_attributes(const ClassFileStream* const cf
         }
       } else if (tag == vmSymbols::tag_bootstrap_methods() &&
                  _major_version >= Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
-        if (parsed_bootstrap_methods_attribute)
+        if (parsed_bootstrap_methods_attribute) {
           classfile_parse_error("Multiple BootstrapMethods attributes in class file %s", CHECK);
+        }
         parsed_bootstrap_methods_attribute = true;
         parse_classfile_bootstrap_methods_attribute(cfs, cp, attribute_length, CHECK);
       } else if (tag == vmSymbols::tag_runtime_visible_type_annotations()) {

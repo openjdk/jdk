@@ -23,12 +23,11 @@
 
 package jdk.test.lib.jittester.factories;
 
-import jdk.test.lib.jittester.IRNode;
 import jdk.test.lib.jittester.OperatorKind;
 import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Type;
+import jdk.test.lib.jittester.TypeList;
 import jdk.test.lib.jittester.UnaryOperator;
-import jdk.test.lib.jittester.types.TypeBoolean;
 import jdk.test.lib.jittester.types.TypeKlass;
 
 class LogicalInversionOperatorFactory extends UnaryOperatorFactory {
@@ -39,11 +38,11 @@ class LogicalInversionOperatorFactory extends UnaryOperatorFactory {
 
     @Override
     protected boolean isApplicable(Type resultType) {
-        return resultType.equals(new TypeBoolean());
+        return resultType.equals(TypeList.BOOLEAN);
     }
 
     @Override
-    protected IRNode generateProduction(Type resultType) throws ProductionFailedException {
+    protected UnaryOperator generateProduction(Type resultType) throws ProductionFailedException {
         return new UnaryOperator(opKind, new ExpressionFactory(complexityLimit - 1,
                 operatorLimit - 1, (TypeKlass) ownerClass, resultType, exceptionSafe, noconsts).produce());
     }

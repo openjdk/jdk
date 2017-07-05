@@ -23,12 +23,14 @@
 
 package jdk.test.lib.jittester.factories;
 
-public abstract class OperatorFactory extends Factory {
-    protected long complexityLimit;
-    protected boolean exceptionSafe;
-    protected boolean noconsts;
+import jdk.test.lib.jittester.Operator;
+
+public abstract class OperatorFactory<T extends Operator> extends Factory<T> {
+    protected final long complexityLimit;
+    protected final boolean exceptionSafe;
+    protected final boolean noconsts;
+    protected final int operatorPriority;
     protected int operatorLimit;
-    protected int operatorPriority;
 
     protected OperatorFactory(int operatorPriority, long complexityLimit, int operatorLimit,
             boolean exceptionSafe, boolean noconsts) {

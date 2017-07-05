@@ -22,131 +22,13 @@
  */
 package jdk.vm.ci.meta;
 
-import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Miscellaneous collection of utility methods used by {@code jdk.vm.ci.meta} and its clients.
  */
 public class MetaUtil {
-
-    private static class ClassInfo {
-        public long totalSize;
-        public long instanceCount;
-
-        @Override
-        public String toString() {
-            return "totalSize=" + totalSize + ", instanceCount=" + instanceCount;
-        }
-    }
-
-    /**
-     * Returns the number of bytes occupied by this constant value or constant object and
-     * recursively all values reachable from this value.
-     *
-     * @param constant the constant whose bytes should be measured
-     * @param printTopN print total size and instance count of the top n classes is desired
-     * @return the number of bytes occupied by this constant
-     */
-    public static long getMemorySizeRecursive(MetaAccessProvider access, ConstantReflectionProvider constantReflection, JavaConstant constant, PrintStream out, int printTopN) {
-        Set<JavaConstant> marked = new HashSet<>();
-        Deque<JavaConstant> stack = new ArrayDeque<>();
-        if (constant.getJavaKind() == JavaKind.Object && constant.isNonNull()) {
-            marked.add(constant);
-        }
-        final HashMap<ResolvedJavaType, ClassInfo> histogram = new HashMap<>();
-        stack.push(constant);
-        long sum = 0;
-        while (!stack.isEmpty()) {
-            JavaConstant c = stack.pop();
-            long memorySize = access.getMemorySize(constant);
-            sum += memorySize;
-            if (c.getJavaKind() == JavaKind.Object && c.isNonNull()) {
-                ResolvedJavaType clazz = access.lookupJavaType(c);
-                if (!histogram.containsKey(clazz)) {
-                    histogram.put(clazz, new ClassInfo());
-                }
-                ClassInfo info = histogram.get(clazz);
-                info.instanceCount++;
-                info.totalSize += memorySize;
-                ResolvedJavaType type = access.lookupJavaType(c);
-                if (type.isArray()) {
-                    if (!type.getComponentType().isPrimitive()) {
-                        int length = constantReflection.readArrayLength(c);
-                        for (int i = 0; i < length; i++) {
-                            JavaConstant value = constantReflection.readArrayElement(c, i);
-                            pushConstant(marked, stack, value);
-                        }
-                    }
-                } else {
-                    ResolvedJavaField[] instanceFields = type.getInstanceFields(true);
-                    for (ResolvedJavaField f : instanceFields) {
-                        if (f.getJavaKind() == JavaKind.Object) {
-                            JavaConstant value = constantReflection.readFieldValue(f, c);
-                            pushConstant(marked, stack, value);
-                        }
-                    }
-                }
-            }
-        }
-        ArrayList<ResolvedJavaType> clazzes = new ArrayList<>();
-        clazzes.addAll(histogram.keySet());
-        Collections.sort(clazzes, new Comparator<ResolvedJavaType>() {
-
-            @Override
-            public int compare(ResolvedJavaType o1, ResolvedJavaType o2) {
-                long l1 = histogram.get(o1).totalSize;
-                long l2 = histogram.get(o2).totalSize;
-                if (l1 > l2) {
-                    return -1;
-                } else if (l1 == l2) {
-                    return 0;
-                } else {
-                    return 1;
-                }
-            }
-        });
-
-        int z = 0;
-        for (ResolvedJavaType c : clazzes) {
-            if (z > printTopN) {
-                break;
-            }
-            out.println("Class " + c + ", " + histogram.get(c));
-            ++z;
-        }
-
-        return sum;
-    }
-
-    private static void pushConstant(Set<JavaConstant> marked, Deque<JavaConstant> stack, JavaConstant value) {
-        if (value.isNonNull()) {
-            if (!marked.contains(value)) {
-                marked.add(value);
-                stack.push(value);
-            }
-        }
-    }
-
-    /**
-     * Calls {@link JavaType#resolve(ResolvedJavaType)} on an array of types.
-     */
-    public static ResolvedJavaType[] resolveJavaTypes(JavaType[] types, ResolvedJavaType accessingClass) {
-        ResolvedJavaType[] result = new ResolvedJavaType[types.length];
-        for (int i = 0; i < result.length; i++) {
-            result[i] = types[i].resolve(accessingClass);
-        }
-        return result;
-    }
 
     /**
      * Extends the functionality of {@link Class#getSimpleName()} to include a non-empty string for
@@ -184,7 +66,17 @@ public class MetaUtil {
         return name.substring(index + 1);
     }
 
-    static String internalNameToJava(String name, boolean qualified, boolean classForNameCompatible) {
+    /**
+     * Converts a type name in internal form to an external form.
+     *
+     * @param name the internal name to convert
+     * @param qualified whether the returned name should be qualified with the package name
+     * @param classForNameCompatible specifies if the returned name for array types should be in
+     *            {@link Class#forName(String)} format (e.g., {@code "[Ljava.lang.Object;"},
+     *            {@code "[[I"}) or in Java source code format (e.g., {@code "java.lang.Object[]"},
+     *            {@code "int[][]"} ).
+     */
+    public static String internalNameToJava(String name, boolean qualified, boolean classForNameCompatible) {
         switch (name.charAt(0)) {
             case 'L': {
                 String result = name.substring(1, name.length() - 1).replace('/', '.');
@@ -203,19 +95,6 @@ public class MetaUtil {
                     throw new IllegalArgumentException("Illegal internal name: " + name);
                 }
                 return JavaKind.fromPrimitiveOrVoidTypeChar(name.charAt(0)).getJavaName();
-        }
-    }
-
-    /**
-     * Turns an class name in internal format into a resolved Java type.
-     */
-    public static ResolvedJavaType classForName(String internal, MetaAccessProvider metaAccess, ClassLoader cl) {
-        JavaKind k = JavaKind.fromTypeString(internal);
-        try {
-            String n = internalNameToJava(internal, true, true);
-            return metaAccess.lookupJavaType(k.isPrimitive() ? k.toJavaClass() : Class.forName(n, true, cl));
-        } catch (ClassNotFoundException cnfe) {
-            throw new IllegalArgumentException("could not instantiate class described by " + internal, cnfe);
         }
     }
 
@@ -334,21 +213,6 @@ public class MetaUtil {
                 break;
         }
         return result.toString();
-    }
-
-    /**
-     * Prepends the String {@code indentation} to every line in String {@code lines}, including a
-     * possibly non-empty line following the final newline.
-     */
-    public static String indent(String lines, String indentation) {
-        if (lines.length() == 0) {
-            return lines;
-        }
-        final String newLine = "\n";
-        if (lines.endsWith(newLine)) {
-            return indentation + (lines.substring(0, lines.length() - 1)).replace(newLine, newLine + indentation) + newLine;
-        }
-        return indentation + lines.replace(newLine, newLine + indentation);
     }
 
     /**

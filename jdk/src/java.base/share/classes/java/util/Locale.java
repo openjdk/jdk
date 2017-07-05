@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,7 +198,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  *
  * <p>The keywords are mapped to a BCP 47 extension value using the
  * extension key 'u' ({@link #UNICODE_LOCALE_EXTENSION}).  The above
- * example, "nu-thai", becomes the extension "u-nu-thai".code
+ * example, "nu-thai", becomes the extension "u-nu-thai".
  *
  * <p>Thus, when a <code>Locale</code> object contains Unicode locale
  * attributes and keywords,

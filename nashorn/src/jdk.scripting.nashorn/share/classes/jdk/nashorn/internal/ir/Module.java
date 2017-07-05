@@ -44,7 +44,7 @@ public final class Module {
     /**
      * A module ExportEntry record.
      *
-     * @link http://www.ecma-international.org/ecma-262/6.0/#sec-source-text-module-records
+     * @see <a href="http://www.ecma-international.org/ecma-262/6.0/#sec-source-text-module-records">es6 modules</a>
      */
     public static final class ExportEntry {
         private final String exportName;
@@ -164,7 +164,7 @@ public final class Module {
     /**
      * An ImportEntry record.
      *
-     * @link http://www.ecma-international.org/ecma-262/6.0/#sec-source-text-module-records
+     * @see <a href="http://www.ecma-international.org/ecma-262/6.0/#sec-source-text-module-records">es6 modules</a>
      */
     public static final class ImportEntry {
         private final String moduleRequest;

@@ -1641,7 +1641,6 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   }
 
   log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
-  log_trace(gc)("ConcGCThreads: %u", ConcGCThreads);
 }
 #endif // INCLUDE_ALL_GCS
 
@@ -1949,7 +1948,6 @@ void Arguments::set_g1_gc_flags() {
   }
 
   log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
-  log_trace(gc)("ConcGCThreads: %u", ConcGCThreads);
 }
 
 void Arguments::set_gc_specific_flags() {
