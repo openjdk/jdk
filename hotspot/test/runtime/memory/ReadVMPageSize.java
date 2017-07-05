@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,15 +21,26 @@
  * questions.
  */
 
-#ifndef _VERSION_COMP_H
-#define _VERSION_COMP_H
-
 /*
- * Function prototypes.
+ * @test
+ * @summary Using WhiteBox to get VM page size
+ * @library /testlibrary /testlibrary/whitebox
+ * @build ReadVMPageSize
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm  -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI  ReadVMPageSize
  */
-int JLI_ExactVersionId(const char *id1, char *id2);
-int JLI_PrefixVersionId(const char *id1, char *id2);
-int JLI_AcceptableRelease(const char *release, char *version_string);
-int JLI_ValidVersionString(char *version_string);
 
-#endif /* _VERSION_COMP_H */
+import com.oracle.java.testlibrary.*;
+import sun.hotspot.WhiteBox;
+
+public class ReadVMPageSize {
+  public static void main(String args[]) throws Exception {
+    WhiteBox wb = WhiteBox.getWhiteBox();
+    int pageSize = wb.getVMPageSize();
+    if (pageSize < 0) {
+      throw new Exception("pageSize < 0");
+    } else {
+      System.out.println("Page size = " + pageSize);
+    }
+  }
+}

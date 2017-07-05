@@ -463,12 +463,12 @@ public final class DNSNameService implements NameService {
 
     // ---------
 
-    private static void appendIfLiteralAddress(String addr, StringBuffer sb) {
+    private static void appendIfLiteralAddress(String addr, StringBuilder sb) {
         if (IPAddressUtil.isIPv4LiteralAddress(addr)) {
-            sb.append("dns://" + addr + " ");
+            sb.append("dns://").append(addr).append(' ');
         } else {
             if (IPAddressUtil.isIPv6LiteralAddress(addr)) {
-                sb.append("dns://[" + addr + "] ");
+                sb.append("dns://[").append(addr).append("] ");
             }
         }
     }
@@ -478,7 +478,7 @@ public final class DNSNameService implements NameService {
      *         corresponding to the supplied List of nameservers.
      */
     private static String createProviderURL(List<String> nsList) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (String s: nsList) {
             appendIfLiteralAddress(s, sb);
         }
@@ -491,7 +491,7 @@ public final class DNSNameService implements NameService {
      *         contained in the provided str.
      */
     private static String createProviderURL(String str) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         StringTokenizer st = new StringTokenizer(str, ",");
         while (st.hasMoreTokens()) {
             appendIfLiteralAddress(st.nextToken(), sb);

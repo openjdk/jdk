@@ -154,11 +154,11 @@ RSHashTable::RSHashTable(size_t capacity) :
 
 RSHashTable::~RSHashTable() {
   if (_entries != NULL) {
-    FREE_C_HEAP_ARRAY(SparsePRTEntry, _entries, mtGC);
+    FREE_C_HEAP_ARRAY(SparsePRTEntry, _entries);
     _entries = NULL;
   }
   if (_buckets != NULL) {
-    FREE_C_HEAP_ARRAY(int, _buckets, mtGC);
+    FREE_C_HEAP_ARRAY(int, _buckets);
     _buckets = NULL;
   }
 }

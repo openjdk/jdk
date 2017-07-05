@@ -73,31 +73,25 @@ AC_DEFUN([BOOTJDK_DO_CHECK],
           AC_MSG_NOTICE([(This might be an JRE instead of an JDK)])
           BOOT_JDK_FOUND=no
         else
-          # Do we have an rt.jar? (On MacOSX it is called classes.jar)
-          if test ! -f "$BOOT_JDK/jre/lib/rt.jar" && test ! -f "$BOOT_JDK/../Classes/classes.jar"; then
-            AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK did not contain an rt.jar; ignoring])
+          # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
+          BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
+
+          # Extra M4 quote needed to protect [] in grep expression.
+          [FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`]
+          if test "x$FOUND_CORRECT_VERSION" = x; then
+            AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring])
+            AC_MSG_NOTICE([(Your Boot JDK must be version 8 or 9)])
             BOOT_JDK_FOUND=no
           else
-            # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
-            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
-
-            # Extra M4 quote needed to protect [] in grep expression.
-            [FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`]
-            if test "x$FOUND_CORRECT_VERSION" = x; then
-              AC_MSG_NOTICE([Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring])
-              AC_MSG_NOTICE([(Your Boot JDK must be version 8 or 9)])
-              BOOT_JDK_FOUND=no
-            else
-              # We're done! :-)
-              BOOT_JDK_FOUND=yes
-              BASIC_FIXUP_PATH(BOOT_JDK)
-              AC_MSG_CHECKING([for Boot JDK])
-              AC_MSG_RESULT([$BOOT_JDK])
-              AC_MSG_CHECKING([Boot JDK version])
-              BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $TR '\n\r' '  '`
-              AC_MSG_RESULT([$BOOT_JDK_VERSION])
-            fi # end check jdk version
-          fi # end check rt.jar
+            # We're done! :-)
+            BOOT_JDK_FOUND=yes
+            BASIC_FIXUP_PATH(BOOT_JDK)
+            AC_MSG_CHECKING([for Boot JDK])
+            AC_MSG_RESULT([$BOOT_JDK])
+            AC_MSG_CHECKING([Boot JDK version])
+            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $TR '\n\r' '  '`
+            AC_MSG_RESULT([$BOOT_JDK_VERSION])
+          fi # end check jdk version
         fi # end check javac
       fi # end check java
     fi # end check boot jdk found

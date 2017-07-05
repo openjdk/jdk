@@ -458,11 +458,11 @@ public class LogManager {
         JavaAWTAccess javaAwtAccess = SharedSecrets.getJavaAWTAccess();
         if (sm != null && javaAwtAccess != null) {
             // for each applet, it has its own LoggerContext isolated from others
-            synchronized (javaAwtAccess) {
-                // find the AppContext of the applet code
-                // will be null if we are in the main app context.
-                final Object ecx = javaAwtAccess.getAppletContext();
-                if (ecx != null) {
+            final Object ecx = javaAwtAccess.getAppletContext();
+            if (ecx != null) {
+                synchronized (javaAwtAccess) {
+                    // find the AppContext of the applet code
+                    // will be null if we are in the main app context.
                     if (contextsMap == null) {
                         contextsMap = new WeakHashMap<>();
                     }

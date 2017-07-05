@@ -75,7 +75,7 @@ public class GetNMethodTest extends CompilerWhiteBoxTest {
                 break;
             case 2:
             case 3:
-                checkBlockType(nmethod, BlobType.MethodNonProfiled);
+                checkBlockType(nmethod, BlobType.MethodProfiled);
                 break;
             default:
                 throw new Error("unexpected comp level " + nmethod);

@@ -272,7 +272,7 @@ public class ChoiceFormat extends NumberFormat {
             double tryLess = Math.abs(Math.IEEEremainder(less, 1.0d));
 
             if (tryLessOrEqual < tryLess) {
-                result.append(""+choiceLimits[i]);
+                result.append(choiceLimits[i]);
                 result.append('#');
             } else {
                 if (choiceLimits[i] == Double.POSITIVE_INFINITY) {
@@ -280,7 +280,7 @@ public class ChoiceFormat extends NumberFormat {
                 } else if (choiceLimits[i] == Double.NEGATIVE_INFINITY) {
                     result.append("-\u221E");
                 } else {
-                    result.append(""+less);
+                    result.append(less);
                 }
                 result.append('<');
             }
