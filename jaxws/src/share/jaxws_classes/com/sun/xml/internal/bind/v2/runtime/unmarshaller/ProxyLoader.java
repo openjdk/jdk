@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public abstract class ProxyLoader extends Loader {
     @Override
     public final void startElement(UnmarshallingContext.State state, TagName ea) throws SAXException {
         Loader loader = selectLoader(state,ea);
-        state.loader = loader;
+        state.setLoader(loader);
         loader.startElement(state,ea);
     }
 

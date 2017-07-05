@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,14 @@
  *
  */
 
-#ifndef CPU_X86_VM_BYTECODES_X86_HPP
-#define CPU_X86_VM_BYTECODES_X86_HPP
+#ifndef SHARE_VM_RUNTIME_VMSTRUCTS_TRACE_HPP
+#define SHARE_VM_RUNTIME_VMSTRUCTS_TRACE_HPP
 
-// No i486 specific bytecodes
+#define VM_INT_CONSTANTS_TRACE(a)
 
-#endif // CPU_X86_VM_BYTECODES_X86_HPP
+#define VM_STRUCTS_TRACE(a, b)
+
+#define VM_TYPES_TRACE(a, b)
+
+
+#endif // SHARE_VM_RUNTIME_VMSTRUCTS_TRACE_HPP

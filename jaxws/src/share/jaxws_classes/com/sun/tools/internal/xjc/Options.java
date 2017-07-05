@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -773,7 +773,10 @@ public class Options
      */
     public void addCatalog(File catalogFile) throws IOException {
         if(entityResolver==null) {
-            CatalogManager.getStaticManager().setIgnoreMissingProperties(true);
+            final CatalogManager staticManager = CatalogManager.getStaticManager();
+            // hack to force initialization so catalog manager system properties take effect
+            staticManager.getVerbosity();
+            staticManager.setIgnoreMissingProperties(true);
             entityResolver = new CatalogResolver(true);
         }
         ((CatalogResolver)entityResolver).getCatalog().parseCatalog(catalogFile.getPath());

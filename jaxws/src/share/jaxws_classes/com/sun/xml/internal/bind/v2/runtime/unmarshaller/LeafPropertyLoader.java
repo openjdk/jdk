@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class LeafPropertyLoader extends Loader {
 
     public void text(UnmarshallingContext.State state, CharSequence text) throws SAXException {
         try {
-            xacc.parse(state.prev.target,text);
+            xacc.parse(state.getPrev().getTarget(), text);
         } catch (AccessorException e) {
             handleGenericException(e,true);
         } catch (RuntimeException e) {

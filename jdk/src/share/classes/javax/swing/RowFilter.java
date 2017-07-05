@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,6 +159,8 @@ public abstract class RowFilter<M,I> {
      * {@link java.util.regex.Pattern} for a complete description of
      * the supported regular-expression constructs.
      *
+     * @param <M> the type of the model to which the {@code RowFilter} applies
+     * @param <I> the type of the identifier passed to the {@code RowFilter}
      * @param regex the regular expression to filter on
      * @param indices the indices of the values to check.  If not supplied all
      *               values are evaluated
@@ -186,6 +188,8 @@ public abstract class RowFilter<M,I> {
      *   RowFilter.dateFilter(ComparisonType.AFTER, new Date());
      * </pre>
      *
+     * @param <M> the type of the model to which the {@code RowFilter} applies
+     * @param <I> the type of the identifier passed to the {@code RowFilter}
      * @param type the type of comparison to perform
      * @param date the date to compare against
      * @param indices the indices of the values to check.  If not supplied all
@@ -214,7 +218,10 @@ public abstract class RowFilter<M,I> {
      *   RowFilter.numberFilter(ComparisonType.EQUAL, 10);
      * </pre>
      *
+     * @param <M> the type of the model to which the {@code RowFilter} applies
+     * @param <I> the type of the identifier passed to the {@code RowFilter}
      * @param type the type of comparison to perform
+     * @param number a {@code Number} value to compare against
      * @param indices the indices of the values to check.  If not supplied all
      *               values are evaluated
      * @return a <code>RowFilter</code> implementing the specified criteria
@@ -241,6 +248,8 @@ public abstract class RowFilter<M,I> {
      *   RowFilter&lt;Object,Object&gt; fooBarFilter = RowFilter.orFilter(filters);
      * </pre>
      *
+     * @param <M> the type of the model to which the {@code RowFilter} applies
+     * @param <I> the type of the identifier passed to the {@code RowFilter}
      * @param filters the <code>RowFilter</code>s to test
      * @throws IllegalArgumentException if any of the filters
      *         are <code>null</code>
@@ -267,6 +276,8 @@ public abstract class RowFilter<M,I> {
      *   RowFilter&lt;Object,Object&gt; fooBarFilter = RowFilter.andFilter(filters);
      * </pre>
      *
+     * @param <M> the type of the model the {@code RowFilter} applies to
+     * @param <I> the type of the identifier passed to the {@code RowFilter}
      * @param filters the <code>RowFilter</code>s to test
      * @return a <code>RowFilter</code> implementing the specified criteria
      * @throws IllegalArgumentException if any of the filters
@@ -283,6 +294,8 @@ public abstract class RowFilter<M,I> {
      * Returns a <code>RowFilter</code> that includes entries if the
      * supplied filter does not include the entry.
      *
+     * @param <M> the type of the model to which the {@code RowFilter} applies
+     * @param <I> the type of the identifier passed to the {@code RowFilter}
      * @param filter the <code>RowFilter</code> to negate
      * @return a <code>RowFilter</code> implementing the specified criteria
      * @throws IllegalArgumentException if <code>filter</code> is

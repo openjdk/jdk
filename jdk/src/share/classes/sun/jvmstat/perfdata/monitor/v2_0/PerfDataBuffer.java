@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
     private static final boolean DEBUG = false;
     private static final int syncWaitMs =
             Integer.getInteger("sun.jvmstat.perdata.syncWaitMs", 5000);
-    private static final ArrayList EMPTY_LIST = new ArrayList(0);
+    private static final ArrayList<Monitor> EMPTY_LIST = new ArrayList<>(0);
 
     /*
      * These are primarily for documentary purposes and the match up
@@ -198,10 +198,10 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
         getNewMonitors(map);
 
         // current implementation doesn't support deletion of reuse of entries
-        ArrayList removed = EMPTY_LIST;
-        ArrayList inserted = insertedMonitors;
+        ArrayList<Monitor> removed = EMPTY_LIST;
+        ArrayList<Monitor> inserted = insertedMonitors;
 
-        insertedMonitors = new ArrayList<Monitor>();
+        insertedMonitors = new ArrayList<>();
         return new MonitorStatus(inserted, removed);
     }
 
@@ -524,7 +524,7 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
 
             System.err.println("Dump for " + lvmid);
             int j = 0;
-            for (Iterator i = keys.iterator(); i.hasNext(); j++) {
+            for (Iterator<String> i = keys.iterator(); i.hasNext(); j++) {
                 Monitor monitor = map.get(i.next());
                 System.err.println(j + "\t" + monitor.getName()
                                    + "=" + monitor.getValue());

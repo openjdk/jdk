@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,7 +154,7 @@ public abstract class ProviderSkeleton implements InvocationHandler, Provider {
      * @return always null, if the method is a user-defined probe
      */
     public Object invoke(Object proxy, Method method, Object[] args) {
-        Class declaringClass = method.getDeclaringClass();
+        Class<?> declaringClass = method.getDeclaringClass();
         // not a provider subtype's own method
         if (declaringClass != providerType) {
             try {

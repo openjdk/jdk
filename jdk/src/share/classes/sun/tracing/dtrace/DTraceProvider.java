@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ class DTraceProvider extends ProviderSkeleton {
     private Object proxy;
 
     // For proxy generation
-    private final static Class[] constructorParams = { InvocationHandler.class };
+    private final static Class<?>[] constructorParams = { InvocationHandler.class };
     private final String proxyClassNamePrefix = "$DTraceTracingProxy";
 
     static final String DEFAULT_MODULE = "java_tracing";
@@ -135,7 +135,7 @@ class DTraceProvider extends ProviderSkeleton {
          * Invoke its constructor with the designated invocation handler.
          */
         try {
-            Constructor cons = proxyClass.getConstructor(constructorParams);
+            Constructor<?> cons = proxyClass.getConstructor(constructorParams);
             return (T)cons.newInstance(new Object[] { this });
         } catch (ReflectiveOperationException e) {
             throw new InternalError(e.toString(), e);

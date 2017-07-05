@@ -31,6 +31,7 @@
 #include "memory/allocation.inline.hpp"
 #include "prims/jni.h"
 #include "prims/jvm.h"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/prefetch.inline.hpp"
@@ -891,6 +892,14 @@ UNSAFE_ENTRY(jclass, Unsafe_DefineClass(JNIEnv *env, jobject unsafe, jstring nam
   }
 UNSAFE_END
 
+static jobject get_class_loader(JNIEnv* env, jclass cls) {
+  if (java_lang_Class::is_primitive(JNIHandles::resolve_non_null(cls))) {
+    return NULL;
+  }
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
+  oop loader = k->class_loader();
+  return JNIHandles::make_local(env, loader);
+}
 
 UNSAFE_ENTRY(jclass, Unsafe_DefineClass0(JNIEnv *env, jobject unsafe, jstring name, jbyteArray data, int offset, int length))
   UnsafeWrapper("Unsafe_DefineClass");
@@ -899,7 +908,7 @@ UNSAFE_ENTRY(jclass, Unsafe_DefineClass0(JNIEnv *env, jobject unsafe, jstring na
 
     int depthFromDefineClass0 = 1;
     jclass  caller = JVM_GetCallerClass(env, depthFromDefineClass0);
-    jobject loader = (caller == NULL) ? NULL : JVM_GetClassLoader(env, caller);
+    jobject loader = (caller == NULL) ? NULL : get_class_loader(env, caller);
     jobject pd     = (caller == NULL) ? NULL : JVM_GetProtectionDomain(env, caller);
 
     return Unsafe_DefineClass_impl(env, name, data, offset, length, loader, pd);

@@ -280,6 +280,8 @@ address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type
     case T_BYTE   : __ sign_extend_byte (rax); break;
     case T_SHORT  : __ sign_extend_short(rax); break;
     case T_INT    : /* nothing to do */        break;
+    case T_LONG   : /* nothing to do */        break;
+    case T_VOID   : /* nothing to do */        break;
     case T_DOUBLE :
     case T_FLOAT  :
       { const Register t = InterpreterRuntime::SignatureHandlerGenerator::temp();
