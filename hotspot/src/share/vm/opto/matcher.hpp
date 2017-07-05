@@ -373,8 +373,8 @@ public:
   // to implement the UseStrictFP mode.
   static const bool strict_fp_requires_explicit_rounding;
 
-  // Do floats take an entire double register or just half?
-  static const bool float_in_double;
+  // Are floats conerted to double when stored to stack during deoptimization?
+  static bool float_in_double();
   // Do ints take an entire long register or just half?
   static const bool int_in_long;
 

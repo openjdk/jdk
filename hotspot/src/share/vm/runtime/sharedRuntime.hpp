@@ -96,10 +96,9 @@ class SharedRuntime: AllStatic {
   static jdouble dexp(jdouble x);
   static jdouble dpow(jdouble x, jdouble y);
 
-
   // exception handling across interpreter/compiler boundaries
-  static address raw_exception_handler_for_return_address(address return_address);
-  static address exception_handler_for_return_address(address return_address);
+  static address raw_exception_handler_for_return_address(JavaThread* thread, address return_address);
+  static address exception_handler_for_return_address(JavaThread* thread, address return_address);
 
 #ifndef SERIALGC
   // G1 write barriers
@@ -568,9 +567,6 @@ class AdapterHandlerEntry : public BasicHashtableEntry {
   AdapterHandlerEntry();
 
  public:
-  // The name we give all buffer blobs
-  static const char* name;
-
   address get_i2c_entry()            { return _i2c_entry; }
   address get_c2i_entry()            { return _c2i_entry; }
   address get_c2i_unverified_entry() { return _c2i_unverified_entry; }

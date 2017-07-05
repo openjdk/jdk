@@ -39,7 +39,8 @@ class ConcurrentG1Refine: public CHeapObj {
   * running. If the length becomes red (max queue length) the mutators start
   * processing the buffers.
   *
-  * There are some interesting cases (with G1AdaptiveConcRefine turned off):
+  * There are some interesting cases (when G1UseAdaptiveConcRefinement
+  * is turned off):
   * 1) green = yellow = red = 0. In this case the mutator will process all
   *    buffers. Except for those that are created by the deferred updates
   *    machinery during a collection.

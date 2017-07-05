@@ -1,5 +1,5 @@
 //
-// Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+// Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -246,6 +246,7 @@ c1_LIRGenerator.cpp                     c1_LIRAssembler.hpp
 c1_LIRGenerator.cpp                     c1_LIRGenerator.hpp
 c1_LIRGenerator.cpp                     c1_ValueStack.hpp
 c1_LIRGenerator.cpp                     ciArrayKlass.hpp
+c1_LIRGenerator.cpp                     ciCPCache.hpp
 c1_LIRGenerator.cpp                     ciInstance.hpp
 c1_LIRGenerator.cpp                     heapRegion.hpp
 c1_LIRGenerator.cpp                     sharedRuntime.hpp
