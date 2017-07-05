@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6226610
+ * @bug 6226610 6973030
  * @run main/othervm B6226610
  * @summary HTTP tunnel connections send user headers to proxy
  */
@@ -36,45 +36,23 @@
 
 import java.io.*;
 import java.net.*;
-import javax.net.ssl.*;
-import javax.net.ServerSocketFactory;
-import sun.net.www.*;
-import java.util.Enumeration;
+import sun.net.www.MessageHeader;
 
 public class B6226610 {
     static HeaderCheckerProxyTunnelServer proxy;
 
-    // it seems there's no proxy ever if a url points to 'localhost',
-    // even if proxy related properties are set. so we need to bind
-    // our simple http proxy and http server to a non-loopback address
-    static InetAddress firstNonLoAddress = null;
-
-    public static void main(String[] args)
+    public static void main(String[] args) throws Exception
     {
-       try {
-          proxy = new HeaderCheckerProxyTunnelServer();
-          proxy.start();
-       } catch (Exception e) {
-          System.out.println("Cannot create proxy: " + e);
-       }
+        proxy = new HeaderCheckerProxyTunnelServer();
+        proxy.start();
 
-       try {
-            firstNonLoAddress = getNonLoAddress();
-
-            if (firstNonLoAddress == null) {
-                System.out.println("The test needs at least one non-loopback address to run. Quit now.");
-                System.exit(0);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        System.setProperty( "https.proxyHost", firstNonLoAddress.getHostAddress());
-        System.setProperty( "https.proxyPort", (new Integer(proxy.getLocalPort())).toString() );
+        String hostname = InetAddress.getLocalHost().getHostName();
 
         try {
-           URL u = new URL("https://" + firstNonLoAddress.getHostAddress());
-           java.net.URLConnection c = u.openConnection();
+           URL u = new URL("https://" + hostname + "/");
+           System.out.println("Connecting to " + u);
+           InetSocketAddress proxyAddr = new InetSocketAddress(hostname, proxy.getLocalPort());
+           java.net.URLConnection c = u.openConnection(new Proxy(Proxy.Type.HTTP, proxyAddr));
 
            /* I want this header to go to the destination server only, protected
             * by SSL
@@ -89,32 +67,14 @@ public class B6226610 {
             }
             else
                System.out.println(e);
-
+         } finally {
+             if (proxy != null) proxy.shutdown();
          }
 
          if (HeaderCheckerProxyTunnelServer.failed)
-            throw new RuntimeException("Test failed: Proxy should not receive user defined headers for tunneled requests");
+            throw new RuntimeException("Test failed; see output");
     }
-
-    public static InetAddress getNonLoAddress() throws Exception {
-        NetworkInterface loNIC = NetworkInterface.getByInetAddress(InetAddress.getByName("localhost"));
-        Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
-        while (nics.hasMoreElements()) {
-            NetworkInterface nic = nics.nextElement();
-            if (!nic.getName().equalsIgnoreCase(loNIC.getName())) {
-                Enumeration<InetAddress> addrs = nic.getInetAddresses();
-                while (addrs.hasMoreElements()) {
-                    InetAddress addr = addrs.nextElement();
-                    if (!addr.isLoopbackAddress())
-                        return addr;
-                }
-            }
-        }
-        return null;
-    }
-
 }
-
 
 class HeaderCheckerProxyTunnelServer extends Thread
 {
@@ -137,6 +97,10 @@ class HeaderCheckerProxyTunnelServer extends Thread
        if (ss == null) {
           ss = new ServerSocket(0);
        }
+    }
+
+    void shutdown() {
+        try { ss.close(); } catch (IOException e) {}
     }
 
     public void run()
@@ -178,6 +142,15 @@ class HeaderCheckerProxyTunnelServer extends Thread
            retrieveConnectInfo(statusLine);
 
            if (mheader.findValue("X-TestHeader") != null) {
+             System.out.println("Proxy should not receive user defined headers for tunneled requests");
+             failed = true;
+           }
+
+           // 6973030
+           String value;
+           if ((value = mheader.findValue("Proxy-Connection")) == null ||
+                !value.equals("keep-alive")) {
+             System.out.println("Proxy-Connection:keep-alive not being sent");
              failed = true;
            }
 

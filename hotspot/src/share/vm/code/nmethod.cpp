@@ -433,6 +433,10 @@ void nmethod::init_defaults() {
   _unload_reported            = false;           // jvmti state
 
   NOT_PRODUCT(_has_debug_info = false);
+#ifdef ASSERT
+  _oops_are_stale             = false;
+#endif
+
   _oops_do_mark_link       = NULL;
   _jmethod_id              = NULL;
   _osr_link                = NULL;
@@ -1230,11 +1234,10 @@ void nmethod::log_state_change() const {
 bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   assert(state == zombie || state == not_entrant, "must be zombie or not_entrant");
 
-  bool was_alive = false;
-
   // Make sure neither the nmethod nor the method is flushed in case of a safepoint in code below.
   nmethodLocker nml(this);
   methodHandle the_method(method());
+  No_Safepoint_Verifier nsv;
 
   {
     // If the method is already zombie there is nothing to do
@@ -1303,13 +1306,27 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   // state will be flushed later when the transition to zombie
   // happens or they get unloaded.
   if (state == zombie) {
-    // zombie only - if a JVMTI agent has enabled the CompiledMethodUnload event
-    // and it hasn't already been reported for this nmethod then report it now.
-    // (the event may have been reported earilier if the GC marked it for unloading).
-    post_compiled_method_unload();
+    {
+      // Flushing dependecies must be done before any possible
+      // safepoint can sneak in, otherwise the oops used by the
+      // dependency logic could have become stale.
+      MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      flush_dependencies(NULL);
+    }
 
-    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    flush_dependencies(NULL);
+    {
+      // zombie only - if a JVMTI agent has enabled the CompiledMethodUnload event
+      // and it hasn't already been reported for this nmethod then report it now.
+      // (the event may have been reported earilier if the GC marked it for unloading).
+      Pause_No_Safepoint_Verifier pnsv(&nsv);
+      post_compiled_method_unload();
+    }
+
+#ifdef ASSERT
+    // It's no longer safe to access the oops section since zombie
+    // nmethods aren't scanned for GC.
+    _oops_are_stale = true;
+#endif
   } else {
     assert(state == not_entrant, "other cases may need to be handled differently");
   }

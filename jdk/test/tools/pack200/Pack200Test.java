@@ -24,111 +24,97 @@
 
 import java.util.*;
 import java.io.*;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
 import java.util.jar.*;
-import java.util.zip.*;
 
-/*
- * Pack200Test.java
- *
- * @author ksrini
- */
+ /*
+  * @test
+  * @bug 6521334 6712743
+  * @summary check for memory leaks, test general packer/unpacker functionality\
+  *          using native and java unpackers
+  * @compile -XDignore.symbol.file Utils.java Pack200Test.java
+  * @run main/othervm/timeout=1200 -Xmx512m Pack200Test
+  * @author ksrini
+  */
 
 /**
- * These tests are very rudimentary smoke tests to ensure that the packing
- * unpacking process works on a select set of JARs.
+ * Tests the packing/unpacking via the APIs.
  */
 public class Pack200Test {
 
     private static ArrayList <File> jarList = new ArrayList<File>();
-    static final String PACKEXT = ".pack";
+    static final MemoryMXBean mmxbean = ManagementFactory.getMemoryMXBean();
+    static final long m0 = getUsedMemory();
+    static final int LEAK_TOLERANCE = 20000; // OS and GC related variations.
 
     /** Creates a new instance of Pack200Test */
     private Pack200Test() {}
 
+    static long getUsedMemory() {
+        mmxbean.gc();
+        mmxbean.gc();
+        mmxbean.gc();
+        return mmxbean.getHeapMemoryUsage().getUsed()/1024;
+    }
+
+    private static void leakCheck() throws Exception {
+        long diff = getUsedMemory() - m0;
+        System.out.println("  Info: memory diff = " + diff + "K");
+        if ( diff  > LEAK_TOLERANCE) {
+            throw new Exception("memory leak detected " + diff);
+        }
+    }
+
     private static void doPackUnpack() {
         for (File in : jarList) {
-            Pack200.Packer packer = Pack200.newPacker();
-            Map<String, String> p = packer.properties();
-            // Take the time optimization vs. space
-            p.put(packer.EFFORT, "1");  // CAUTION: do not use 0.
-            // Make the memory consumption as effective as possible
-            p.put(packer.SEGMENT_LIMIT,"10000");
-            // throw an error if an attribute is unrecognized
-            p.put(packer.UNKNOWN_ATTRIBUTE, packer.ERROR);
-            // ignore all JAR deflation requests to save time
-            p.put(packer.DEFLATE_HINT, packer.FALSE);
-            // save the file ordering of the original JAR
-            p.put(packer.KEEP_FILE_ORDER, packer.TRUE);
-
+            JarOutputStream javaUnpackerStream = null;
+            JarOutputStream nativeUnpackerStream = null;
+            JarFile jarFile = null;
             try {
-                JarFile jarFile = new JarFile(in);
+                jarFile = new JarFile(in);
 
                 // Write out to a jtreg scratch area
-                FileOutputStream fos = new FileOutputStream(in.getName() + PACKEXT);
+                File packFile = new File(in.getName() + Utils.PACK_FILE_EXT);
 
-                System.out.print("Packing [" + in.toString() + "]...");
+                System.out.println("Packing [" + in.toString() + "]");
                 // Call the packer
-                packer.pack(jarFile, fos);
+                Utils.pack(jarFile, packFile);
                 jarFile.close();
-                fos.close();
+                leakCheck();
 
-                System.out.print("Unpacking...");
-                File f = new File(in.getName() + PACKEXT);
-
+                System.out.println("  Unpacking using java unpacker");
+                File javaUnpackedJar = new File("java-" + in.getName());
                 // Write out to current directory, jtreg will setup a scratch area
-                JarOutputStream jostream = new JarOutputStream(new FileOutputStream(in.getName()));
-
-                // Unpack the files
-                Pack200.Unpacker unpacker = Pack200.newUnpacker();
-                // Call the unpacker
-                unpacker.unpack(f, jostream);
-                // Must explicitly close the output.
-                jostream.close();
-                System.out.print("Testing...");
+                javaUnpackerStream = new JarOutputStream(
+                        new FileOutputStream(javaUnpackedJar));
+                Utils.unpackj(packFile, javaUnpackerStream);
+                javaUnpackerStream.close();
+                System.out.println("  Testing...java unpacker");
+                leakCheck();
                 // Ok we have unpacked the file, lets test it.
-                doTest(in);
+                Utils.doCompareVerify(in.getAbsoluteFile(), javaUnpackedJar);
+
+                System.out.println("  Unpacking using native unpacker");
+                // Write out to current directory
+                File nativeUnpackedJar = new File("native-" + in.getName());
+                nativeUnpackerStream = new JarOutputStream(
+                        new FileOutputStream(nativeUnpackedJar));
+                Utils.unpackn(packFile, nativeUnpackerStream);
+                nativeUnpackerStream.close();
+                System.out.println("  Testing...native unpacker");
+                leakCheck();
+                // the unpackers (native and java) should produce identical bits
+                // so we use use bit wise compare, the verification compare is
+                // very expensive wrt. time.
+                Utils.doCompareBitWise(javaUnpackedJar, nativeUnpackedJar);
                 System.out.println("Done.");
             } catch (Exception e) {
-                System.out.println("ERROR: " + e.getMessage());
-                System.exit(1);
-            }
-        }
-    }
-
-    private static ArrayList <String> getZipFileEntryNames(ZipFile z) {
-        ArrayList <String> out = new ArrayList<String>();
-        for (ZipEntry ze : Collections.list(z.entries())) {
-            out.add(ze.getName());
-        }
-        return out;
-    }
-
-    private static void doTest(File in) throws Exception {
-       // make sure all the files in the original jar exists in the other
-       ArrayList <String> refList = getZipFileEntryNames(new ZipFile(in));
-       ArrayList <String> cmpList = getZipFileEntryNames(new ZipFile(in.getName()));
-
-       System.out.print(refList.size() + "/" + cmpList.size() + " entries...");
-
-       if (refList.size() != cmpList.size()) {
-           throw new Exception("Missing: files ?, entries don't match");
-       }
-
-       for (String ename: refList) {
-          if (!cmpList.contains(ename)) {
-              throw new Exception("Does not contain : " + ename);
-          }
-       }
-    }
-
-    private static void doSanity(String[] args) {
-        for (String s: args) {
-            File f = new File(s);
-            if (f.exists()) {
-                jarList.add(f);
-            } else {
-                System.out.println("Warning: The JAR file " + f.toString() + " does not exist,");
-                System.out.println("         this test requires a JDK image, this file will be skipped.");
+                throw new RuntimeException(e);
+            } finally {
+                Utils.close(nativeUnpackerStream);
+                Utils.close(javaUnpackerStream);
+                Utils.close((Closeable) jarFile);
             }
         }
     }
@@ -137,11 +123,12 @@ public class Pack200Test {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        if (args.length < 1) {
-            System.out.println("Usage: jar1 jar2 jar3 .....");
-            System.exit(1);
-        }
-        doSanity(args);
+        // select the jars carefully, adding more jars will increase the
+        // testing time, especially for jprt.
+        jarList.add(Utils.locateJar("tools.jar"));
+        jarList.add(Utils.locateJar("rt.jar"));
+        jarList.add(Utils.locateJar("golden.jar"));
+        System.out.println(jarList);
         doPackUnpack();
     }
 }

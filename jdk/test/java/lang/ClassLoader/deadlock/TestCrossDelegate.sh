@@ -55,7 +55,7 @@ case "$OS" in
   Linux )
     FS="/"
     ;;
-  Windows* )
+  Windows* | CYGWIN* )
     FS="\\"
     ;;
 esac
