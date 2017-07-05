@@ -341,7 +341,7 @@ public final class ModuleBootstrap {
         // resolve all root modules
         Configuration cf = Configuration.empty()
                 .resolveRequires(finder,
-                                 ModuleFinder.empty(),
+                                 ModuleFinder.of(),
                                  roots);
 
         // module name -> reference

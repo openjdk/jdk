@@ -27,6 +27,8 @@ package java.io;
 
 import java.nio.channels.FileChannel;
 import java.util.concurrent.atomic.AtomicBoolean;
+import jdk.internal.misc.JavaIORandomAccessFileAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.nio.ch.FileChannelImpl;
 
 
@@ -75,6 +77,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     private static final int O_RDWR =   2;
     private static final int O_SYNC =   4;
     private static final int O_DSYNC =  8;
+    private static final int O_TEMPORARY =  16;
 
     /**
      * Creates a random access file stream to read from, and optionally
@@ -203,6 +206,12 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
     public RandomAccessFile(File file, String mode)
         throws FileNotFoundException
     {
+        this(file, mode, false);
+    }
+
+    private RandomAccessFile(File file, String mode, boolean openAndDelete)
+        throws FileNotFoundException
+    {
         String name = (file != null ? file.getPath() : null);
         int imode = -1;
         if (mode.equals("r"))
@@ -219,6 +228,8 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
                     imode = -1;
             }
         }
+        if (openAndDelete)
+            imode |= O_TEMPORARY;
         if (imode < 0)
             throw new IllegalArgumentException("Illegal mode \"" + mode
                                                + "\" must be one of "
@@ -1165,5 +1176,15 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
 
     static {
         initIDs();
+        SharedSecrets.setJavaIORandomAccessFileAccess(new JavaIORandomAccessFileAccess()
+        {
+            // This is for j.u.z.ZipFile.OPEN_DELETE. The O_TEMPORARY flag
+            // is only implemented/supported on windows.
+            public RandomAccessFile openAndDelete(File file, String mode)
+                throws IOException
+            {
+                return new RandomAccessFile(file, mode, true);
+            }
+        });
     }
 }

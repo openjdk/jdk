@@ -74,7 +74,6 @@ public class TTYResources_zh_CN extends java.util.ListResourceBundle {
         {"Array element is not a method", "\u6570\u7EC4\u5143\u7D20\u4E0D\u662F\u65B9\u6CD5"},
         {"Array index must be a integer type", "\u6570\u7EC4\u7D22\u5F15\u5FC5\u987B\u4E3A\u6574\u6570\u7C7B\u578B"},
         {"base directory:", "\u57FA\u76EE\u5F55: {0}"},
-        {"bootclasspath:", "\u5F15\u5BFC\u7C7B\u8DEF\u5F84: {0}"},
         {"Breakpoint hit:", "\u65AD\u70B9\u547D\u4E2D: "},
         {"breakpoint", "\u65AD\u70B9{0}"},
         {"Breakpoints set:", "\u65AD\u70B9\u96C6:"},

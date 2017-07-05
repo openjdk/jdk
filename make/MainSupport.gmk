@@ -30,10 +30,10 @@
 ifndef _MAINSUPPORT_GMK
 _MAINSUPPORT_GMK := 1
 
-# Run the tests specified by $1.
+# Run the tests specified by $1, with PRODUCT_HOME specified by $2
 define RunTests
 	($(CD) $(SRC_ROOT)/test && $(MAKE) $(MAKE_ARGS) -j1 -k MAKEFLAGS= \
-	    JT_HOME=$(JT_HOME) PRODUCT_HOME=$(JDK_IMAGE_DIR) \
+	    JT_HOME=$(JT_HOME) PRODUCT_HOME=$(strip $2) \
 	    TEST_IMAGE_DIR=$(TEST_IMAGE_DIR) \
 	    ALT_OUTPUTDIR=$(OUTPUT_ROOT) TEST_JOBS=$(TEST_JOBS) \
 	    JOBS=$(JOBS) $1) || true

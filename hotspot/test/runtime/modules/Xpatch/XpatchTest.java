@@ -25,6 +25,7 @@
  * @test
  * @bug 8130399
  * @summary Make sure -Xpatch works for modules besides java.base.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @compile XpatchMain.java
  * @run main XpatchTest

@@ -38,7 +38,7 @@ public class BaselineWithParameter {
 
   public static void main(String args[]) throws Exception {
     // Grab my own PID
-    String pid = Integer.toString(ProcessTools.getProcessId());
+    String pid = Long.toString(ProcessTools.getProcessId());
     OutputAnalyzer output;
 
     ProcessBuilder pb = new ProcessBuilder();

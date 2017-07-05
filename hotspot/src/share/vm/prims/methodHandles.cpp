@@ -38,7 +38,6 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
-#include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/timerTrace.hpp"
@@ -1084,17 +1083,15 @@ void MemberNameTable::adjust_method_entries(InstanceKlass* holder, bool * trace_
 
     java_lang_invoke_MemberName::set_vmtarget(mem_name, new_method);
 
-    if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
+    if (log_is_enabled(Info, redefine, class, update)) {
+      ResourceMark rm;
       if (!(*trace_name_printed)) {
-        // RC_TRACE_MESG macro has an embedded ResourceMark
-        RC_TRACE_MESG(("adjust: name=%s",
-                       old_method->method_holder()->external_name()));
+        log_info(redefine, class, update)("adjust: name=%s", old_method->method_holder()->external_name());
         *trace_name_printed = true;
       }
-      // RC_TRACE macro has an embedded ResourceMark
-      RC_TRACE(0x00400000, ("MemberName method update: %s(%s)",
-                            new_method->name()->as_C_string(),
-                            new_method->signature()->as_C_string()));
+      log_debug(redefine, class, update, constantpool)
+        ("MemberName method update: %s(%s)",
+         new_method->name()->as_C_string(), new_method->signature()->as_C_string());
     }
   }
 }

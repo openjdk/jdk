@@ -74,6 +74,7 @@ public class TestSurvivorRatioFlag {
 
         Collections.addAll(vmOptions,
                 "-Xbootclasspath/a:.",
+                "-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
                 "-XX:GCLockerEdenExpansionPercent=0",

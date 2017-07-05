@@ -546,7 +546,7 @@ JVMCIEnv::CodeInstallResult JVMCIEnv::register_method(
           if (entry_bci == InvocationEntryBci) {
             if (TieredCompilation) {
               // If there is an old version we're done with it
-              nmethod* old = method->code();
+              CompiledMethod* old = method->code();
               if (TraceMethodReplacement && old != NULL) {
                 ResourceMark rm;
                 char *method_name = method->name_and_sig_as_C_string();

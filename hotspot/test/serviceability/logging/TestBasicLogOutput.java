@@ -24,6 +24,7 @@
 /*
  * @test TestBasicLogOutput
  * @summary Ensure logging can be enabled and successfully prints to stdout.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  */
 

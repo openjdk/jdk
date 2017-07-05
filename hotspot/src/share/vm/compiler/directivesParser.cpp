@@ -57,7 +57,7 @@ void DirectivesParser::clean_tmp() {
 }
 
 int DirectivesParser::parse_string(const char* text, outputStream* st) {
-  DirectivesParser cd(text, st);
+  DirectivesParser cd(text, st, false);
   if (cd.valid()) {
     return cd.install_directives();
   } else {
@@ -132,8 +132,8 @@ int DirectivesParser::install_directives() {
   }
 }
 
-DirectivesParser::DirectivesParser(const char* text, outputStream* st)
-: JSON(text, false, st), depth(0), current_directive(NULL), current_directiveset(NULL), _tmp_top(NULL), _tmp_depth(0) {
+DirectivesParser::DirectivesParser(const char* text, outputStream* st, bool silent)
+: JSON(text, silent, st), depth(0), current_directive(NULL), current_directiveset(NULL), _tmp_top(NULL), _tmp_depth(0) {
 #ifndef PRODUCT
   memset(stack, 0, MAX_DEPTH * sizeof(stack[0]));
 #endif
@@ -594,7 +594,7 @@ bool DirectivesParser::callback(JSON_TYPE t, JSON_VAL* v, uint rlimit) {
 
 #ifndef PRODUCT
 void DirectivesParser::test(const char* text, bool should_pass) {
-  DirectivesParser cd(text, tty);
+  DirectivesParser cd(text, tty, !VerboseInternalVMTests);
   if (should_pass) {
     assert(cd.valid() == true, "failed on a valid DirectivesParser string");
     if (VerboseInternalVMTests) {

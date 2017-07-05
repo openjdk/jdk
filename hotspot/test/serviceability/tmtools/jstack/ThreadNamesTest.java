@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Checks that jstack correctly prints the thread names
+ * @modules java.base/jdk.internal.misc
  * @library /test/lib/share/classes
  * @library ../share
  * @build common.*

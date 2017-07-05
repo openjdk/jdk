@@ -3313,6 +3313,9 @@ void LIR_Assembler::membar_storeload() {
   __ membar(Assembler::Membar_mask_bits(Assembler::StoreLoad));
 }
 
+void LIR_Assembler::on_spin_wait() {
+  Unimplemented();
+}
 
 // Pack two sequential registers containing 32 bit values
 // into a single 64 bit register.

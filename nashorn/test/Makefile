@@ -301,7 +301,10 @@ ifdef TESTDIRS
 endif
 
 ifdef CONCURRENCY
-  EXTRA_JTREG_OPTIONS += -concurrency:$(CONCURRENCY)
+  JTREG_BASIC_OPTIONS += -concurrency:$(CONCURRENCY)
+endif
+ifdef EXTRA_JTREG_OPTIONS
+  JTREG_BASIC_OPTIONS += $(EXTRA_JTREG_OPTIONS)
 endif
 
 # Default JTREG to run
@@ -328,8 +331,6 @@ JTREG_MEMORY_OPTION = -J-Xmx512m
 JTREG_BASIC_OPTIONS += $(JTREG_MEMORY_OPTION)
 # Give tests access to JT_JAVA, see JDK-8141609
 JTREG_BASIC_OPTIONS += -e:JDK8_HOME=${JT_JAVA}
-# Add any extra options
-JTREG_BASIC_OPTIONS += $(EXTRA_JTREG_OPTIONS)
 # Set other vm and test options
 JTREG_TEST_OPTIONS = $(JAVA_ARGS:%=-javaoptions:%) $(JAVA_VM_ARGS:%=-vmoption:%)
 # Set the GC options for test vms

@@ -80,5 +80,5 @@ $JAR ${TESTTOOLVMOPTS} -cfm "${TESTCLASSES}"/ClassUnloadTest.jar "${MANIFEST}" \
 
 # Finally we run the test
 (cd "${TESTCLASSES}"; \
-  $JAVA ${TESTVMOPTS} -Xverify:none -Xlog:classunload \
+  $JAVA ${TESTVMOPTS} -Xverify:none -Xlog:class+unload \
     -javaagent:ClassUnloadTest.jar ClassUnloadTest "${OTHERDIR}" Bar.jar)

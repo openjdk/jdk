@@ -31,7 +31,7 @@ import java.awt.color.ColorSpace;
  * color space.
  */
 public final class SimpleCMYKColorSpace extends ColorSpace {
-    private static final long serialVersionUID = 666L; // XXX Revise UID value
+    private static final long serialVersionUID = 5387117338644522424L;
 
     private static ColorSpace theInstance = null;
     private ColorSpace csRGB;

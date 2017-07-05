@@ -83,7 +83,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
   // Each bit in this bitmap indicates that the corresponding region is available
   // for allocation.
-  BitMap _available_map;
+  CHeapBitMap _available_map;
 
    // The number of regions committed in the heap.
   uint _num_committed;

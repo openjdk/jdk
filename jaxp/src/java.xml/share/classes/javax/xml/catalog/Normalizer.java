@@ -100,7 +100,7 @@ class Normalizer {
         } catch (UnsupportedEncodingException ex) {
             CatalogMessages.reportRunTimeError(CatalogMessages.ERR_OTHER, ex);
         }
-        return "urn:publicid:" + urn;
+        return Util.URN + urn;
     }
 
     /**
@@ -114,7 +114,7 @@ class Normalizer {
     static String decodeURN(String urn) {
         String publicId;
 
-        if (urn != null && urn.startsWith("urn:publicid:")) {
+        if (urn != null && urn.startsWith(Util.URN)) {
             publicId = urn.substring(13);
         } else {
             return urn;

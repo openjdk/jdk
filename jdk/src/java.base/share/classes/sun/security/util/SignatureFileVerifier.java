@@ -145,11 +145,10 @@ public class SignatureFileVerifier {
      */
     public static boolean isBlockOrSF(String s) {
         // we currently only support DSA and RSA PKCS7 blocks
-        if (s.endsWith(".SF") || s.endsWith(".DSA") ||
-                s.endsWith(".RSA") || s.endsWith(".EC")) {
-            return true;
-        }
-        return false;
+        return s.endsWith(".SF")
+            || s.endsWith(".DSA")
+            || s.endsWith(".RSA")
+            || s.endsWith(".EC");
     }
 
     /**

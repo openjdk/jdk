@@ -43,8 +43,9 @@ ALL_MODULES := $(call FindAllModules)
 
 $(eval $(call ReadImportMetaData))
 
-JRE_MODULES += $(filter-out $(MODULES_FILTER), $(BOOT_MODULES) $(PLATFORM_MODULES) $(JRE_TOOL_MODULES))
-JDK_MODULES += $(filter-out $(MODULES_FILTER), $(ALL_MODULES))
+JRE_MODULES += $(filter $(ALL_MODULES), $(BOOT_MODULES) \
+    $(PLATFORM_MODULES) $(JRE_TOOL_MODULES))
+JDK_MODULES += $(ALL_MODULES)
 
 # Compact builds have additional modules
 COMPACT1_EXTRA_MODULES := jdk.localedata jdk.crypto.pkcs11 jdk.crypto.ec

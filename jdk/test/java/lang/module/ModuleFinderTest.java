@@ -76,9 +76,9 @@ public class ModuleFinderTest {
 
 
     /**
-     * Test ModuleFinder.of with zero entries
+     * Test ModuleFinder.of with no entries
      */
-    public void testOfZeroEntries() {
+    public void testOfNoEntries() {
         ModuleFinder finder = ModuleFinder.of();
         assertTrue(finder.findAll().isEmpty());
         assertFalse(finder.find("java.rhubarb").isPresent());
@@ -454,18 +454,46 @@ public class ModuleFinderTest {
 
 
     /**
-     * Test ModuleFinder.compose
+     * Test ModuleFinder.compose with no module finders
      */
-    public void testCompose() throws Exception {
+    public void testComposeOfNone() throws Exception {
+        ModuleFinder finder = ModuleFinder.of();
+        assertTrue(finder.findAll().isEmpty());
+        assertFalse(finder.find("java.rhubarb").isPresent());
+    }
+
+
+    /**
+     * Test ModuleFinder.compose with one module finder
+     */
+    public void testComposeOfOne() throws Exception {
+        Path dir = Files.createTempDirectory(USER_DIR, "mods");
+        createModularJar(dir.resolve("m1.jar"), "m1");
+        createModularJar(dir.resolve("m2.jar"), "m2");
+
+        ModuleFinder finder1 = ModuleFinder.of(dir);
+
+        ModuleFinder finder = ModuleFinder.compose(finder1);
+        assertTrue(finder.findAll().size() == 2);
+        assertTrue(finder.find("m1").isPresent());
+        assertTrue(finder.find("m2").isPresent());
+        assertFalse(finder.find("java.rhubarb").isPresent());
+    }
+
+
+    /**
+     * Test ModuleFinder.compose with two module finders
+     */
+    public void testComposeOfTwo() throws Exception {
         Path dir1 = Files.createTempDirectory(USER_DIR, "mods1");
-        createExplodedModule(dir1.resolve("m1"), "m1@1.0");
-        createExplodedModule(dir1.resolve("m2"), "m2@1.0");
+        createModularJar(dir1.resolve("m1.jar"), "m1@1.0");
+        createModularJar(dir1.resolve("m2.jar"), "m2@1.0");
 
         Path dir2 = Files.createTempDirectory(USER_DIR, "mods2");
-        createExplodedModule(dir2.resolve("m1"), "m1@2.0");
-        createExplodedModule(dir2.resolve("m2"), "m2@2.0");
-        createExplodedModule(dir2.resolve("m3"), "m3");
-        createExplodedModule(dir2.resolve("m4"), "m4");
+        createModularJar(dir2.resolve("m1.jar"), "m1@2.0");
+        createModularJar(dir2.resolve("m2.jar"), "m2@2.0");
+        createModularJar(dir2.resolve("m3.jar"), "m3");
+        createModularJar(dir2.resolve("m4.jar"), "m4");
 
         ModuleFinder finder1 = ModuleFinder.of(dir1);
         ModuleFinder finder2 = ModuleFinder.of(dir2);
@@ -478,23 +506,65 @@ public class ModuleFinderTest {
         assertTrue(finder.find("m4").isPresent());
         assertFalse(finder.find("java.rhubarb").isPresent());
 
-        // check that m1@1.0 (and not m1@2.0) is found
+        // check that m1@1.0 is found
         ModuleDescriptor m1 = finder.find("m1").get().descriptor();
         assertEquals(m1.version().get().toString(), "1.0");
 
-        // check that m2@1.0 (and not m2@2.0) is found
+        // check that m2@1.0 is found
         ModuleDescriptor m2 = finder.find("m2").get().descriptor();
         assertEquals(m2.version().get().toString(), "1.0");
     }
 
 
     /**
-     * Test ModuleFinder.empty
+     * Test ModuleFinder.compose with three module finders
      */
-    public void testEmpty() {
-        ModuleFinder finder = ModuleFinder.empty();
-        assertTrue(finder.findAll().isEmpty());
+    public void testComposeOfThree() throws Exception {
+        Path dir1 = Files.createTempDirectory(USER_DIR, "mods1");
+        createModularJar(dir1.resolve("m1.jar"), "m1@1.0");
+        createModularJar(dir1.resolve("m2.jar"), "m2@1.0");
+
+        Path dir2 = Files.createTempDirectory(USER_DIR, "mods2");
+        createModularJar(dir2.resolve("m1.jar"), "m1@2.0");
+        createModularJar(dir2.resolve("m2.jar"), "m2@2.0");
+        createModularJar(dir2.resolve("m3.jar"), "m3@2.0");
+        createModularJar(dir2.resolve("m4.jar"), "m4@2.0");
+
+        Path dir3 = Files.createTempDirectory(USER_DIR, "mods3");
+        createModularJar(dir3.resolve("m3.jar"), "m3@3.0");
+        createModularJar(dir3.resolve("m4.jar"), "m4@3.0");
+        createModularJar(dir3.resolve("m5.jar"), "m5");
+        createModularJar(dir3.resolve("m6.jar"), "m6");
+
+        ModuleFinder finder1 = ModuleFinder.of(dir1);
+        ModuleFinder finder2 = ModuleFinder.of(dir2);
+        ModuleFinder finder3 = ModuleFinder.of(dir3);
+
+        ModuleFinder finder = ModuleFinder.compose(finder1, finder2, finder3);
+        assertTrue(finder.findAll().size() == 6);
+        assertTrue(finder.find("m1").isPresent());
+        assertTrue(finder.find("m2").isPresent());
+        assertTrue(finder.find("m3").isPresent());
+        assertTrue(finder.find("m4").isPresent());
+        assertTrue(finder.find("m5").isPresent());
+        assertTrue(finder.find("m6").isPresent());
         assertFalse(finder.find("java.rhubarb").isPresent());
+
+        // check that m1@1.0 is found
+        ModuleDescriptor m1 = finder.find("m1").get().descriptor();
+        assertEquals(m1.version().get().toString(), "1.0");
+
+        // check that m2@1.0 is found
+        ModuleDescriptor m2 = finder.find("m2").get().descriptor();
+        assertEquals(m2.version().get().toString(), "1.0");
+
+        // check that m3@2.0 is found
+        ModuleDescriptor m3 = finder.find("m3").get().descriptor();
+        assertEquals(m3.version().get().toString(), "2.0");
+
+        // check that m4@2.0 is found
+        ModuleDescriptor m4 = finder.find("m4").get().descriptor();
+        assertEquals(m4.version().get().toString(), "2.0");
     }
 
 
@@ -503,33 +573,45 @@ public class ModuleFinderTest {
      */
     public void testNulls() {
 
+        // ofSystem
         try {
             ModuleFinder.ofSystem().find(null);
             assertTrue(false);
         } catch (NullPointerException expected) { }
 
+        // of
+        Path dir = Paths.get("d");
         try {
             ModuleFinder.of().find(null);
             assertTrue(false);
         } catch (NullPointerException expected) { }
-
         try {
-            ModuleFinder.empty().find(null);
+            ModuleFinder.of((Path)null);
             assertTrue(false);
         } catch (NullPointerException expected) { }
-
         try {
             ModuleFinder.of((Path[])null);
             assertTrue(false);
         } catch (NullPointerException expected) { }
-
         try {
-            ModuleFinder.of((Path)null);
+            ModuleFinder.of(dir, null);
+            assertTrue(false);
+        } catch (NullPointerException expected) { }
+        try {
+            ModuleFinder.of(null, dir);
             assertTrue(false);
         } catch (NullPointerException expected) { }
 
         // compose
         ModuleFinder finder = ModuleFinder.of();
+        try {
+            ModuleFinder.compose((ModuleFinder)null);
+            assertTrue(false);
+        } catch (NullPointerException expected) { }
+        try {
+            ModuleFinder.compose((ModuleFinder[])null);
+            assertTrue(false);
+        } catch (NullPointerException expected) { }
         try {
             ModuleFinder.compose(finder, null);
             assertTrue(false);

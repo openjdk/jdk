@@ -39,6 +39,7 @@ import java.util.List;
  * @summary Checks that heap counters work as expected after humongous allocations/deallocations
  * @requires vm.gc=="G1" | vm.gc=="null"
  * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build sun.hotspot.WhiteBox
  *        gc.testlibrary.Helpers

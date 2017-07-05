@@ -44,8 +44,8 @@ import java.util.Set;
 
 import jdk.tools.jlink.internal.PluginOrderingGraph;
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.tools.jlink.plugin.Plugin.CATEGORY;
-import jdk.tools.jlink.plugin.Pool;
+import jdk.tools.jlink.plugin.Plugin.Category;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 
 public class PluginOrderTest {
@@ -96,8 +96,8 @@ public class PluginOrderTest {
         set.add("plug2");
         List<Plugin> plugins = new ArrayList<>();
         plugins.add(new Plug("plug2", Collections.emptySet(), Collections.emptySet(),
-                CATEGORY.TRANSFORMER));
-        plugins.add(new Plug("plug1", set, Collections.emptySet(), CATEGORY.TRANSFORMER));
+                Category.TRANSFORMER));
+        plugins.add(new Plug("plug1", set, Collections.emptySet(), Category.TRANSFORMER));
         List<Plugin> ordered = PluginOrderingGraph.sort(plugins);
         if (ordered.get(0) != plugins.get(1) || ordered.get(1) != plugins.get(0)) {
             throw new Exception("Invalid sorting");
@@ -108,32 +108,32 @@ public class PluginOrderTest {
         Set<String> lst1 = new HashSet<>();
         lst1.add("plug2");
         lst1.add("plug3");
-        Plugin p1 = new Plug("plug1", lst1, Collections.emptySet(), CATEGORY.TRANSFORMER);
+        Plugin p1 = new Plug("plug1", lst1, Collections.emptySet(), Category.TRANSFORMER);
 
-        Plugin p2 = new Plug("plug2", Collections.emptySet(), Collections.emptySet(), CATEGORY.TRANSFORMER);
+        Plugin p2 = new Plug("plug2", Collections.emptySet(), Collections.emptySet(), Category.TRANSFORMER);
 
         Set<String> lst3 = new HashSet<>();
         lst3.add("plug4");
         lst3.add("plug6");
-        Plugin p3 = new Plug("plug3", lst3, Collections.emptySet(), CATEGORY.TRANSFORMER);
+        Plugin p3 = new Plug("plug3", lst3, Collections.emptySet(), Category.TRANSFORMER);
 
-        Plugin p4 = new Plug("plug4", Collections.emptySet(), Collections.emptySet(), CATEGORY.TRANSFORMER);
+        Plugin p4 = new Plug("plug4", Collections.emptySet(), Collections.emptySet(), Category.TRANSFORMER);
 
         Set<String> lst5 = new HashSet<>();
         lst5.add("plug3");
         lst5.add("plug1");
         lst5.add("plug2");
         lst5.add("plug6");
-        Plugin p5 = new Plug("plug5", lst5, Collections.emptySet(), CATEGORY.TRANSFORMER);
+        Plugin p5 = new Plug("plug5", lst5, Collections.emptySet(), Category.TRANSFORMER);
 
         Set<String> lst6 = new HashSet<>();
         lst6.add("plug4");
         lst6.add("plug2");
-        Plugin p6 = new Plug("plug6", lst6, Collections.emptySet(), CATEGORY.TRANSFORMER);
+        Plugin p6 = new Plug("plug6", lst6, Collections.emptySet(), Category.TRANSFORMER);
 
-        Plugin p7 = new Plug("plug7", Collections.emptySet(), Collections.emptySet(), CATEGORY.TRANSFORMER);
+        Plugin p7 = new Plug("plug7", Collections.emptySet(), Collections.emptySet(), Category.TRANSFORMER);
 
-        Plugin p8 = new Plug("plug8", Collections.emptySet(), Collections.emptySet(), CATEGORY.TRANSFORMER);
+        Plugin p8 = new Plug("plug8", Collections.emptySet(), Collections.emptySet(), Category.TRANSFORMER);
 
         List<Plugin> plugins = new ArrayList<>();
         plugins.add(p1);
@@ -153,11 +153,11 @@ public class PluginOrderTest {
         set2.add("plug1");
         List<Plugin> plugins = new ArrayList<>();
         plugins.add(new Plug("plug2", set2, Collections.emptySet(),
-                CATEGORY.TRANSFORMER));
+                Category.TRANSFORMER));
 
         Set<String> set1 = new HashSet<>();
         set1.add("plug2");
-        plugins.add(new Plug("plug1", set1, Collections.emptySet(), CATEGORY.TRANSFORMER));
+        plugins.add(new Plug("plug1", set1, Collections.emptySet(), Category.TRANSFORMER));
         PluginOrderingGraph.sort(plugins);
 
     }
@@ -166,31 +166,31 @@ public class PluginOrderTest {
         Set<String> lst1 = new HashSet<>();
         lst1.add("plug2");
         lst1.add("plug3");
-        Plugin p1 = new Plug("plug1", lst1, Collections.emptySet(), CATEGORY.TRANSFORMER);
+        Plugin p1 = new Plug("plug1", lst1, Collections.emptySet(), Category.TRANSFORMER);
 
-        Plugin p2 = new Plug("plug2", Collections.emptySet(), Collections.emptySet(), CATEGORY.TRANSFORMER);
+        Plugin p2 = new Plug("plug2", Collections.emptySet(), Collections.emptySet(), Category.TRANSFORMER);
 
         Set<String> lst3 = new HashSet<>();
         lst3.add("plug4");
         lst3.add("plug6");
-        Plugin p3 = new Plug("plug3", lst3, Collections.emptySet(), CATEGORY.TRANSFORMER);
+        Plugin p3 = new Plug("plug3", lst3, Collections.emptySet(), Category.TRANSFORMER);
 
-        Plugin p4 = new Plug("plug4", Collections.emptySet(), Collections.emptySet(), CATEGORY.TRANSFORMER);
+        Plugin p4 = new Plug("plug4", Collections.emptySet(), Collections.emptySet(), Category.TRANSFORMER);
 
         Set<String> lst5 = new HashSet<>();
         lst5.add("plug3");
         lst5.add("plug1");
         lst5.add("plug2");
-        Plugin p5 = new Plug("plug5", lst5, Collections.emptySet(), CATEGORY.TRANSFORMER);
+        Plugin p5 = new Plug("plug5", lst5, Collections.emptySet(), Category.TRANSFORMER);
 
         Set<String> lst6 = new HashSet<>();
         lst6.add("plug4");
         lst6.add("plug1");
-        Plugin p6 = new Plug("plug6", lst6, Collections.emptySet(), CATEGORY.TRANSFORMER);
+        Plugin p6 = new Plug("plug6", lst6, Collections.emptySet(), Category.TRANSFORMER);
 
-        Plugin p7 = new Plug("plug7", Collections.emptySet(), Collections.emptySet(), CATEGORY.TRANSFORMER);
+        Plugin p7 = new Plug("plug7", Collections.emptySet(), Collections.emptySet(), Category.TRANSFORMER);
 
-        Plugin p8 = new Plug("plug8", Collections.emptySet(), Collections.emptySet(), CATEGORY.TRANSFORMER);
+        Plugin p8 = new Plug("plug8", Collections.emptySet(), Collections.emptySet(), Category.TRANSFORMER);
 
         List<Plugin> plugins = new ArrayList<>();
         plugins.add(p1);
@@ -208,8 +208,8 @@ public class PluginOrderTest {
         Set<String> lst1 = new HashSet<>();
         lst1.add("plug2");
         lst1.add("plug3");
-        Plugin p = new Plug("plug1", lst1, Collections.emptySet(), CATEGORY.TRANSFORMER);
-        Plugin p2 = new Plug("plug2", Collections.emptySet(), Collections.emptySet(), CATEGORY.TRANSFORMER);
+        Plugin p = new Plug("plug1", lst1, Collections.emptySet(), Category.TRANSFORMER);
+        Plugin p2 = new Plug("plug2", Collections.emptySet(), Collections.emptySet(), Category.TRANSFORMER);
 
         Set<String> lst3 = new HashSet<>();
         lst3.add("plug2");
@@ -217,7 +217,7 @@ public class PluginOrderTest {
         Set<String> lst4 = new HashSet<>();
         lst4.add("plug1");
 
-        Plugin p3 = new Plug("plug3", lst4, lst3, CATEGORY.TRANSFORMER);
+        Plugin p3 = new Plug("plug3", lst4, lst3, Category.TRANSFORMER);
         List<Plugin> plugins = new ArrayList<>();
         plugins.add(p);
         plugins.add(p2);
@@ -229,10 +229,10 @@ public class PluginOrderTest {
 
         private final Set<String> isBefore;
         private final Set<String> isAfter;
-        private final CATEGORY category;
+        private final Category category;
         private final String name;
 
-        private Plug(String name, Set<String> isBefore, Set<String> isAfter, CATEGORY category) {
+        private Plug(String name, Set<String> isBefore, Set<String> isAfter, Category category) {
             this.name = name;
             this.isBefore = isBefore;
             this.isAfter = isAfter;
@@ -255,12 +255,12 @@ public class PluginOrderTest {
         }
 
         @Override
-        public void visit(Pool in, Pool out) {
+        public void visit(ModulePool in, ModulePool out) {
 
         }
 
         @Override
-        public Set<PluginType> getType() {
+        public Set<Category> getType() {
             return Collections.singleton(category);
         }
 

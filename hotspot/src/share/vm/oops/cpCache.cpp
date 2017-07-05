@@ -25,12 +25,12 @@
 #include "precompiled.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -438,17 +438,14 @@ bool ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
       // match old_method so need an update
       // NOTE: can't use set_f2_as_vfinal_method as it asserts on different values
       _f2 = (intptr_t)new_method;
-      if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
+      if (log_is_enabled(Info, redefine, class, update)) {
+        ResourceMark rm;
         if (!(*trace_name_printed)) {
-          // RC_TRACE_MESG macro has an embedded ResourceMark
-          RC_TRACE_MESG(("adjust: name=%s",
-            old_method->method_holder()->external_name()));
+          log_info(redefine, class, update)("adjust: name=%s", old_method->method_holder()->external_name());
           *trace_name_printed = true;
         }
-        // RC_TRACE macro has an embedded ResourceMark
-        RC_TRACE(0x00400000, ("cpc vf-entry update: %s(%s)",
-          new_method->name()->as_C_string(),
-          new_method->signature()->as_C_string()));
+        log_debug(redefine, class, update, constantpool)
+          ("cpc vf-entry update: %s(%s)", new_method->name()->as_C_string(), new_method->signature()->as_C_string());
       }
       return true;
     }
@@ -465,17 +462,14 @@ bool ConstantPoolCacheEntry::adjust_method_entry(Method* old_method,
 
   if (_f1 == old_method) {
     _f1 = new_method;
-    if (RC_TRACE_IN_RANGE(0x00100000, 0x00400000)) {
+    if (log_is_enabled(Info, redefine, class, update)) {
+      ResourceMark rm;
       if (!(*trace_name_printed)) {
-        // RC_TRACE_MESG macro has an embedded ResourceMark
-        RC_TRACE_MESG(("adjust: name=%s",
-          old_method->method_holder()->external_name()));
+        log_info(redefine, class, update)("adjust: name=%s", old_method->method_holder()->external_name());
         *trace_name_printed = true;
       }
-      // RC_TRACE macro has an embedded ResourceMark
-      RC_TRACE(0x00400000, ("cpc entry update: %s(%s)",
-        new_method->name()->as_C_string(),
-        new_method->signature()->as_C_string()));
+      log_debug(redefine, class, update, constantpool)
+        ("cpc entry update: %s(%s)", new_method->name()->as_C_string(), new_method->signature()->as_C_string());
     }
     return true;
   }
@@ -569,7 +563,7 @@ void ConstantPoolCache::initialize(const intArray& inverse_index_map,
                                    const intArray& invokedynamic_references_map) {
   for (int i = 0; i < inverse_index_map.length(); i++) {
     ConstantPoolCacheEntry* e = entry_at(i);
-    int original_index = inverse_index_map[i];
+    int original_index = inverse_index_map.at(i);
     e->initialize_entry(original_index);
     assert(entry_at(i) == e, "sanity");
   }
@@ -579,19 +573,19 @@ void ConstantPoolCache::initialize(const intArray& inverse_index_map,
   for (int i = 0; i < invokedynamic_inverse_index_map.length(); i++) {
     int offset = i + invokedynamic_offset;
     ConstantPoolCacheEntry* e = entry_at(offset);
-    int original_index = invokedynamic_inverse_index_map[i];
+    int original_index = invokedynamic_inverse_index_map.at(i);
     e->initialize_entry(original_index);
     assert(entry_at(offset) == e, "sanity");
   }
 
   for (int ref = 0; ref < invokedynamic_references_map.length(); ref++) {
-    const int cpci = invokedynamic_references_map[ref];
+    const int cpci = invokedynamic_references_map.at(ref);
     if (cpci >= 0) {
 #ifdef ASSERT
       // invokedynamic and invokehandle have more entries; check if they
       // all point to the same constant pool cache entry.
       for (int entry = 1; entry < ConstantPoolCacheEntry::_indy_resolved_references_entries; entry++) {
-        const int cpci_next = invokedynamic_references_map[ref + entry];
+        const int cpci_next = invokedynamic_references_map.at(ref + entry);
         assert(cpci == cpci_next, "%d == %d", cpci, cpci_next);
       }
 #endif

@@ -125,7 +125,7 @@ public final class RecognizeHugeWaveExtFiles {
      * Tests the {@code AudioInputStream} fetched from the fake header.
      * <p>
      * Note that the frameLength is stored as long which means that {@code
-     * AudioInputStream} must store all possible data from au file.
+     * AudioInputStream} must store all possible data from wave file.
      */
     private static void testAIS(final int[] type, final int rate,
                                 final int channel, final long size)
@@ -166,8 +166,9 @@ public final class RecognizeHugeWaveExtFiles {
             System.err.println("Actual: " + format.getChannels());
             throw new RuntimeException();
         }
-        if (format.getFrameSize() != ((bits + 7) / 8) * channel) {
-            System.err.println("Expected: " + (bits * channel + 1) / 8);
+        int frameSize = ((bits + 7) / 8) * channel;
+        if (format.getFrameSize() != frameSize) {
+            System.err.println("Expected: " + frameSize);
             System.err.println("Actual: " + format.getFrameSize());
             throw new RuntimeException();
         }

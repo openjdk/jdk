@@ -66,7 +66,6 @@ class CommandLineFlagRangeList : public AllStatic {
   static GrowableArray<CommandLineFlagRange*>* _ranges;
 public:
   static void init();
-  static void add_globals_ext();
   static int length() { return (_ranges != NULL) ? _ranges->length() : 0; }
   static CommandLineFlagRange* at(int i) { return (_ranges != NULL) ? _ranges->at(i) : NULL; }
   static CommandLineFlagRange* find(const char* name);

@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/moduleEntry.hpp"
+#include "classfile/packageEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -135,14 +137,7 @@ Klass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
   // GC walks these as strong roots.
   loader_data->add_class(oak);
 
-  // The array is defined in the module of its bottom class
-  Klass* bottom_klass = oak->bottom_klass();
-  ModuleEntry* module;
-  if (bottom_klass->is_instance_klass()) {
-    module = InstanceKlass::cast(bottom_klass)->module();
-  } else {
-    module = ModuleEntryTable::javabase_module();
-  }
+  ModuleEntry* module = oak->module();
   assert(module != NULL, "No module entry for array");
 
   // Call complete_create_array_klass after all instance variables has been initialized.
@@ -422,6 +417,16 @@ jint ObjArrayKlass::compute_modifier_flags(TRAPS) const {
                         | (JVM_ACC_ABSTRACT | JVM_ACC_FINAL);
 }
 
+ModuleEntry* ObjArrayKlass::module() const {
+  assert(bottom_klass() != NULL, "ObjArrayKlass returned unexpected NULL bottom_klass");
+  // The array is defined in the module of its bottom class
+  return bottom_klass()->module();
+}
+
+PackageEntry* ObjArrayKlass::package() const {
+  assert(bottom_klass() != NULL, "ObjArrayKlass returned unexpected NULL bottom_klass");
+  return bottom_klass()->package();
+}
 
 // Printing
 

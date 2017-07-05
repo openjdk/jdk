@@ -152,7 +152,7 @@ import java.util.stream.Collectors;
  *    Configuration parent = Layer.boot().configuration();
  *
  *    Configuration cf = parent.resolveRequires(finder,
- *                                              ModuleFinder.empty(),
+ *                                              ModuleFinder.of(),
  *                                              Set.of("myapp"));
  *    cf.modules().forEach(m -> {
  *        System.out.format("%s -> %s%n",
@@ -366,7 +366,7 @@ public final class Configuration {
         Configuration parent = empty();
 
         Resolver resolver
-            = new Resolver(finder, parent, ModuleFinder.empty(), traceOutput);
+            = new Resolver(finder, parent, ModuleFinder.of(), traceOutput);
         resolver.resolveRequires(roots).resolveUses();
 
         return new Configuration(parent, resolver, check);

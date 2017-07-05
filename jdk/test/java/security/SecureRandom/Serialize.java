@@ -24,6 +24,7 @@
 /* @test
  * @bug 4102896
  * @summary Make sure that a SecureRandom object can be serialized
+ * @run main/othervm Serialize
  */
 
 import java.security.*;
@@ -32,6 +33,8 @@ import java.io.*;
 public class Serialize {
 
     public static void main(String args[]) throws Exception {
+        System.setProperty("java.security.egd", "file:/dev/urandom");
+
         for (String alg: new String[]{
                 "SHA1PRNG", "DRBG", "Hash_DRBG", "HMAC_DRBG", "CTR_DRBG",
                 "Hash_DRBG,SHA-512,192,pr_and_reseed"}) {

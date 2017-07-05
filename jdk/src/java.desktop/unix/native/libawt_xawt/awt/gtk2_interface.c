@@ -817,52 +817,22 @@ GtkApi* gtk2_load(JNIEnv *env, const char* lib_name)
     io_handler = XSetIOErrorHandler(NULL);
 
     if (fp_gtk_check_version(2, 2, 0) == NULL) {
-        jclass clazz = (*env)->FindClass(env, "sun/misc/GThreadHelper");
-        jmethodID mid_getAndSetInitializationNeededFlag =
-                (*env)->GetStaticMethodID(env, clazz, "getAndSetInitializationNeededFlag", "()Z");
-        jmethodID mid_lock = (*env)->GetStaticMethodID(env, clazz, "lock", "()V");
-        jmethodID mid_unlock = (*env)->GetStaticMethodID(env, clazz, "unlock", "()V");
-
-        // Init the thread system to use GLib in a thread-safe mode
-        (*env)->CallStaticVoidMethod(env, clazz, mid_lock);
-        if ((*env)->ExceptionCheck(env)) {
-            AWT_UNLOCK();
-            return FALSE;
-        }
 
         // Calling g_thread_init() multiple times leads to crash on GLib < 2.24
         // We can use g_thread_get_initialized () but it is available only for
-        // GLib >= 2.20. We rely on GThreadHelper for GLib < 2.20.
+        // GLib >= 2.20.
         gboolean is_g_thread_get_initialized = FALSE;
         if (GLIB_CHECK_VERSION(2, 20, 0)) {
             is_g_thread_get_initialized = fp_g_thread_get_initialized();
         }
 
-        if (!(*env)->CallStaticBooleanMethod(env, clazz, mid_getAndSetInitializationNeededFlag)) {
-            if (!is_g_thread_get_initialized) {
-                fp_g_thread_init(NULL);
-            }
+        if (!is_g_thread_get_initialized) {
+            fp_g_thread_init(NULL);
+        }
 
-            //According the GTK documentation, gdk_threads_init() should be
-            //called before gtk_init() or gtk_init_check()
-            fp_gdk_threads_init();
-        }
-        jthrowable pendExcpn = NULL;
-        // Exception raised during mid_getAndSetInitializationNeededFlag
-        // call is saved and error handling is done
-        // after unlock method is called
-        if ((pendExcpn = (*env)->ExceptionOccurred(env)) != NULL) {
-            (*env)->ExceptionClear(env);
-        }
-        (*env)->CallStaticVoidMethod(env, clazz, mid_unlock);
-        if (pendExcpn != NULL) {
-            (*env)->Throw(env, pendExcpn);
-        }
-        // check if any exception occured during mid_unlock call
-        if ((*env)->ExceptionCheck(env)) {
-            AWT_UNLOCK();
-            return FALSE;
-        }
+        //According the GTK documentation, gdk_threads_init() should be
+        //called before gtk_init() or gtk_init_check()
+        fp_gdk_threads_init();
     }
     result = (*fp_gtk_init_check)(NULL, NULL);
 

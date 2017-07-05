@@ -33,51 +33,52 @@
 
 import jdk.test.lib.Utils;
 import java.util.Random;
+import jdk.internal.misc.Unsafe;
 
 public class UnsafeRaw {
   public static class Tests {
-    public static int int_index(sun.misc.Unsafe unsafe, long base, int index) throws Exception {
+    public static int int_index(Unsafe unsafe, long base, int index) throws Exception {
       return unsafe.getInt(base + (index << 2));
     }
-    public static int long_index(sun.misc.Unsafe unsafe, long base, long index) throws Exception {
+    public static int long_index(Unsafe unsafe, long base, long index) throws Exception {
       return unsafe.getInt(base + (index << 2));
     }
-    public static int int_index_back_ashift(sun.misc.Unsafe unsafe, long base, int index) throws Exception {
+    public static int int_index_back_ashift(Unsafe unsafe, long base, int index) throws Exception {
       return unsafe.getInt(base + (index >> 2));
     }
-    public static int int_index_back_lshift(sun.misc.Unsafe unsafe, long base, int index) throws Exception {
+    public static int int_index_back_lshift(Unsafe unsafe, long base, int index) throws Exception {
       return unsafe.getInt(base + (index >>> 2));
     }
-    public static int long_index_back_ashift(sun.misc.Unsafe unsafe, long base, long index) throws Exception {
+    public static int long_index_back_ashift(Unsafe unsafe, long base, long index) throws Exception {
       return unsafe.getInt(base + (index >> 2));
     }
-    public static int long_index_back_lshift(sun.misc.Unsafe unsafe, long base, long index) throws Exception {
+    public static int long_index_back_lshift(Unsafe unsafe, long base, long index) throws Exception {
       return unsafe.getInt(base + (index >>> 2));
     }
-    public static int int_const_12345678_index(sun.misc.Unsafe unsafe, long base) throws Exception {
+    public static int int_const_12345678_index(Unsafe unsafe, long base) throws Exception {
       int idx4 = 0x12345678;
       return unsafe.getInt(base + idx4);
     }
-    public static int long_const_1234567890abcdef_index(sun.misc.Unsafe unsafe, long base) throws Exception {
+    public static int long_const_1234567890abcdef_index(Unsafe unsafe, long base) throws Exception {
       long idx5 = 0x1234567890abcdefL;
       return unsafe.getInt(base + idx5);
     }
-    public static int int_index_mul(sun.misc.Unsafe unsafe, long base, int index) throws Exception {
+    public static int int_index_mul(Unsafe unsafe, long base, int index) throws Exception {
       return unsafe.getInt(base + (index * 4));
     }
-    public static int long_index_mul(sun.misc.Unsafe unsafe, long base, long index) throws Exception {
+    public static int long_index_mul(Unsafe unsafe, long base, long index) throws Exception {
       return unsafe.getInt(base + (index * 4));
     }
-    public static int int_index_mul_scale_16(sun.misc.Unsafe unsafe, long base, int index) throws Exception {
+    public static int int_index_mul_scale_16(Unsafe unsafe, long base, int index) throws Exception {
       return unsafe.getInt(base + (index * 16));
     }
-    public static int long_index_mul_scale_16(sun.misc.Unsafe unsafe, long base, long index) throws Exception {
+    public static int long_index_mul_scale_16(Unsafe unsafe, long base, long index) throws Exception {
       return unsafe.getInt(base + (index * 16));
     }
   }
 
   public static void main(String[] args) throws Exception {
-    sun.misc.Unsafe unsafe = Utils.getUnsafe();
+    Unsafe unsafe = Utils.getUnsafe();
     final int array_size = 128;
     final int element_size = 4;
     final int magic = 0x12345678;

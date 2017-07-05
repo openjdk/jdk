@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,21 +41,8 @@ final class RandomCookie {
     byte[] random_bytes;  // exactly 32 bytes
 
     RandomCookie(SecureRandom generator) {
-        long temp = System.currentTimeMillis() / 1000;
-        int gmt_unix_time;
-        if (temp < Integer.MAX_VALUE) {
-            gmt_unix_time = (int) temp;
-        } else {
-            gmt_unix_time = Integer.MAX_VALUE;          // Whoops!
-        }
-
         random_bytes = new byte[32];
         generator.nextBytes(random_bytes);
-
-        random_bytes[0] = (byte)(gmt_unix_time >> 24);
-        random_bytes[1] = (byte)(gmt_unix_time >> 16);
-        random_bytes[2] = (byte)(gmt_unix_time >>  8);
-        random_bytes[3] = (byte)gmt_unix_time;
     }
 
     RandomCookie(HandshakeInStream m) throws IOException {
@@ -68,22 +55,15 @@ final class RandomCookie {
     }
 
     void print(PrintStream s) {
-        int i, gmt_unix_time;
-
-        gmt_unix_time = ((random_bytes[0] & 0xFF) << 24) |
-                        ((random_bytes[1] & 0xFF) << 16) |
-                        ((random_bytes[2] & 0xFF) << 8) |
-                         (random_bytes[3] & 0xFF);
-
-        s.print("GMT: " + gmt_unix_time + " ");
-        s.print("bytes = { ");
-
-        for (i = 4; i < 32; i++) {
-            if (i != 4) {
-                s.print(", ");
+        s.print("random_bytes = {");
+        for (int i = 0; i < 32; i++) {
+            int k = random_bytes[i] & 0xFF;
+            if (i != 0) {
+                s.print(' ');
             }
-            s.print(random_bytes[i] & 0x0ff);
+            s.print(Utilities.hexDigits[k >>> 4]);
+            s.print(Utilities.hexDigits[k & 0xf]);
         }
-        s.println(" }");
+        s.println("}");
     }
 }

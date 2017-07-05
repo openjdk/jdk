@@ -35,12 +35,11 @@ import java.io.File;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
-import jdk.tools.jlink.internal.PoolImpl;
+import jdk.tools.jlink.internal.ModulePoolImpl;
 
 import jdk.tools.jlink.internal.plugins.ExcludeFilesPlugin;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
-import jdk.tools.jlink.plugin.Pool.ModuleDataType;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 
 public class ExcludeFilesPluginTest {
@@ -73,20 +72,20 @@ public class ExcludeFilesPluginTest {
         prop.put(ExcludeFilesPlugin.NAME, s);
         ExcludeFilesPlugin fplug = new ExcludeFilesPlugin();
         fplug.configure(prop);
-        PoolImpl files = new PoolImpl();
-        PoolImpl fresult = new PoolImpl();
-        ModuleData f = Pool.newImageFile(module, "/" + module + "/" + sample,
-                ModuleDataType.CONFIG, new ByteArrayInputStream(new byte[0]), 0);
+        ModulePoolImpl files = new ModulePoolImpl();
+        ModulePoolImpl fresult = new ModulePoolImpl();
+        ModuleEntry f = ModuleEntry.create(module, "/" + module + "/" + sample,
+                ModuleEntry.Type.CONFIG, new ByteArrayInputStream(new byte[0]), 0);
         files.add(f);
 
         fplug.visit(files, fresult);
 
         if (exclude) {
-            if (fresult.getContent().contains(f)) {
+            if (fresult.contains(f)) {
                 throw new Exception(sample + " should be excluded by " + s);
             }
         } else {
-            if (!fresult.getContent().contains(f)) {
+            if (!fresult.contains(f)) {
                 throw new Exception(sample + " shouldn't be excluded by " + s);
             }
         }

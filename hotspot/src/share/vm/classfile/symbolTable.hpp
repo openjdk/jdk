@@ -41,6 +41,7 @@
 
 class BoolObjectClosure;
 class outputStream;
+class SerializeClosure;
 
 // TempNewSymbol acts as a handle class in a handle/body idiom and is
 // responsible for proper resource management of the body (which is a Symbol*).
@@ -251,8 +252,7 @@ public:
   static void read(const char* filename, TRAPS);
 
   // Sharing
-  static bool copy_compact_table(char** top, char* end);
-  static const char* init_shared_table(const char* buffer);
+  static void serialize(SerializeClosure* soc);
 
   // Rehash the symbol table if it gets out of balance
   static void rehash_table();

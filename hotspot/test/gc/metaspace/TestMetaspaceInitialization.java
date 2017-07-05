@@ -26,6 +26,7 @@ import java.util.ArrayList;
 /* @test TestMetaspaceInitialization
  * @bug 8042933
  * @summary Tests to initialize metaspace with a very low MetaspaceSize
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run main/othervm -XX:MetaspaceSize=2m TestMetaspaceInitialization
  */

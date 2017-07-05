@@ -88,9 +88,11 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Module;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -98,6 +100,9 @@ import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.SecureLookupSupplier;
 import jdk.dynalink.internal.AccessControlContextFactory;
 import jdk.dynalink.linker.support.Lookup;
+import jdk.internal.module.Modules;
+import jdk.internal.reflect.CallerSensitive;
+
 
 /**
  * A dynamic method bound to exactly one Java method or constructor that is caller sensitive. Since the target method is
@@ -159,18 +164,73 @@ class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
                 GET_LOOKUP_CONTEXT);
 
         if(target instanceof Method) {
-            final MethodHandle mh = Lookup.unreflectCallerSensitive(lookup, (Method)target);
+            final MethodHandle mh = unreflect(lookup, (Method)target);
             if(Modifier.isStatic(((Member)target).getModifiers())) {
                 return StaticClassIntrospector.editStaticMethodHandle(mh);
             }
             return mh;
         }
-        return StaticClassIntrospector.editConstructorMethodHandle(Lookup.unreflectConstructorCallerSensitive(lookup,
+        return StaticClassIntrospector.editConstructorMethodHandle(unreflectConstructor(lookup,
                 (Constructor<?>)target));
     }
 
     @Override
     boolean isConstructor() {
         return target instanceof Constructor;
+    }
+
+    private static MethodHandle unreflect(final MethodHandles.Lookup lookup, final Method m) {
+        try {
+            return Lookup.unreflect(lookup, m);
+        } catch (final IllegalAccessError iae) {
+            if (addModuleRead(lookup, m)) {
+                try {
+                    return Lookup.unreflect(lookup, m);
+                } catch (final IllegalAccessError e2) {
+                    // fall through and throw original error as cause
+                }
+            }
+            throw iae;
+        }
+    }
+
+    private static MethodHandle unreflectConstructor(final MethodHandles.Lookup lookup, final Constructor<?> c) {
+        try {
+            return Lookup.unreflectConstructor(lookup, c);
+        } catch (final IllegalAccessError iae) {
+            if (addModuleRead(lookup, c)) {
+                try {
+                    return Lookup.unreflectConstructor(lookup, c);
+                } catch (final IllegalAccessError e2) {
+                    // fall through and throw original error as cause
+                }
+            }
+            throw iae;
+        }
+    }
+
+
+    private static boolean addModuleRead(final MethodHandles.Lookup lookup, final Executable e) {
+        // Don't add module read link if this is not a CallerSensitive member
+        if (!e.isAnnotationPresent(CallerSensitive.class)) {
+            return false;
+        }
+
+        // If the lookup is public lookup, don't bother adding module read link!
+        // public lookup cannot unreflect caller sensitives anyway!
+        if (lookup == MethodHandles.publicLookup()) {
+            return false;
+        }
+
+        // try to add missing module read from using module to declararing module!
+        final Class<?> declClass = e.getDeclaringClass();
+        final Module useModule = lookup.lookupClass().getModule();
+        final Module declModule = declClass.getModule();
+        if (useModule != null && declModule != null && declModule.isExported(declClass.getPackageName())) {
+            Modules.addReads(useModule, declModule);
+            return true;
+        }
+
+        return false;
     }
 }

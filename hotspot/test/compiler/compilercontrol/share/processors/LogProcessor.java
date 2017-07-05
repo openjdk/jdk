@@ -28,7 +28,6 @@ import compiler.compilercontrol.share.method.MethodGenerator;
 import compiler.compilercontrol.share.scenario.State;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.Pair;
 import pool.PoolHelper;
 
 import java.io.File;
@@ -55,18 +54,17 @@ public class LogProcessor implements Consumer<OutputAnalyzer> {
             "method='([^']+)'");
     private final List<String> loggedMethods;
     private final List<String> testMethods;
-    private Scanner scanner = null;
 
     public LogProcessor(Map<Executable, State> states) {
         loggedMethods = states.keySet().stream()
                 .filter(x -> states.get(x).isLog())
-                .map(MethodGenerator::logDescriptor)
+                .map(MethodGenerator::commandDescriptor)
                 .map(MethodDescriptor::getString)
                 .collect(Collectors.toList());
         testMethods = new PoolHelper().getAllMethods()
                 .stream()
                 .map(pair -> pair.first)
-                .map(MethodGenerator::logDescriptor)
+                .map(MethodGenerator::commandDescriptor)
                 .map(MethodDescriptor::getString)
                 .collect(Collectors.toList());
     }
@@ -76,8 +74,7 @@ public class LogProcessor implements Consumer<OutputAnalyzer> {
         if (loggedMethods.isEmpty()) {
             return;
         }
-        getScanner();
-        matchTasks();
+        matchTasks(getScanner());
     }
 
     /*
@@ -85,6 +82,7 @@ public class LogProcessor implements Consumer<OutputAnalyzer> {
      */
     private Scanner getScanner() {
         File logFile = new File(LOG_FILE);
+        Scanner scanner;
         try {
             scanner = new Scanner(logFile);
         } catch (FileNotFoundException e) {
@@ -97,29 +95,35 @@ public class LogProcessor implements Consumer<OutputAnalyzer> {
      * Parses for &lt;task method='java.lang.String indexOf (I)I' &gt;
      * and finds if there is a compilation log for this task
      */
-    private void matchTasks() {
+    private void matchTasks(Scanner scanner) {
         String task = scanner.findWithinHorizon(TASK_ELEMENT, 0);
         while (task != null) {
             String element = scanner.findWithinHorizon(ANY_ELEMENT, 0);
             if (Pattern.matches(TASK_DONE_ELEMENT, element)
                     || Pattern.matches(TASK_END_ELEMENT, element)) {
                 /* If there is nothing between <task> and </task>
-                   except <task done /> then compilation log is empty */
-                Asserts.assertTrue(matchMethod(task), "Compilation log "
+                   except <task done /> then compilation log is empty.
+                   Check the method in this task should not be logged */
+                Asserts.assertFalse(matchMethod(task), "Compilation log "
                         + "expected. Met: " + element);
             }
             task = scanner.findWithinHorizon(TASK_ELEMENT, 0);
         }
     }
 
-    // Matches given string to regular expression
+    // Check that input method should be logged
     private boolean matchMethod(String input) {
         Matcher matcher = METHOD_PATTERN.matcher(input);
         Asserts.assertTrue(matcher.find(), "Wrong matcher or input");
         // Get method and normalize it
         String method = normalize(matcher.group(1));
-        // Check that this method matches regexp
-        return loggedMethods.contains(method) || !testMethods.contains(method);
+        if (loggedMethods.contains(method)) {
+            return true;
+        }
+        if (!testMethods.contains(method)) {
+            return false;
+        }
+        return false;
     }
 
     // Normalize given signature to conform regular expression used in tests

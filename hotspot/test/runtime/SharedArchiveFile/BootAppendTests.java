@@ -154,7 +154,7 @@ public class BootAppendTests {
                 APP_CLASS,
                 BOOT_APPEND_DUPLICATE_MODULE_CLASS_NAME);
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("[classload] org.omg.CORBA.Context source: jrt:/java.corba");
+            output.shouldContain("[class,load] org.omg.CORBA.Context source: jrt:/java.corba");
         }
     }
 
@@ -179,11 +179,11 @@ public class BootAppendTests {
                 APP_CLASS,
                 BOOT_APPEND_MODULE_CLASS_NAME);
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("[classload] javax.sound.sampled.MyClass");
+            output.shouldContain("[class,load] javax.sound.sampled.MyClass");
 
             // When CDS is enabled, the shared class should be loaded from the archive.
             if (mode.equals("on")) {
-                output.shouldContain("[classload] javax.sound.sampled.MyClass source: shared objects file");
+                output.shouldContain("[class,load] javax.sound.sampled.MyClass source: shared objects file");
             }
         }
     }
@@ -211,8 +211,8 @@ public class BootAppendTests {
                 APP_CLASS,
                 BOOT_APPEND_DUPLICATE_MODULE_CLASS_NAME);
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("[classload] org.omg.CORBA.Context");
-            output.shouldMatch(".*\\[classload\\] org.omg.CORBA.Context source:.*bootAppend.jar");
+            output.shouldContain("[class,load] org.omg.CORBA.Context");
+            output.shouldMatch(".*\\[class,load\\] org.omg.CORBA.Context source:.*bootAppend.jar");
         }
     }
 
@@ -235,13 +235,13 @@ public class BootAppendTests {
                 APP_CLASS,
                 BOOT_APPEND_CLASS_NAME);
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldContain("[classload] nonjdk.myPackage.MyClass");
+            output.shouldContain("[class,load] nonjdk.myPackage.MyClass");
 
             // If CDS is enabled, the nonjdk.myPackage.MyClass should be loaded
             // from the shared archive.
             if (mode.equals("on")) {
                 output.shouldContain(
-                    "[classload] nonjdk.myPackage.MyClass source: shared objects file");
+                    "[class,load] nonjdk.myPackage.MyClass source: shared objects file");
             }
         }
     }
