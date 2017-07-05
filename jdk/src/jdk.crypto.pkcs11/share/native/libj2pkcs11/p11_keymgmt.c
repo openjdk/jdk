@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -152,6 +152,8 @@ JNIEXPORT jlongArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1Generate
     CK_OBJECT_HANDLE_PTR ckpKeyHandles;     /* pointer to array with Public and Private Key */
     jlongArray jKeyHandles = NULL;
     CK_RV rv;
+    int attempts;
+    const int MAX_ATTEMPTS = 3;
 
     CK_FUNCTION_LIST_PTR ckpFunctions = getFunctionList(env, obj);
     if (ckpFunctions == NULL) { return NULL; }
@@ -190,10 +192,35 @@ JNIEXPORT jlongArray JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1Generate
         return NULL;
     }
 
-    rv = (*ckpFunctions->C_GenerateKeyPair)(ckSessionHandle, &ckMechanism,
-                     ckpPublicKeyAttributes, ckPublicKeyAttributesLength,
-                     ckpPrivateKeyAttributes, ckPrivateKeyAttributesLength,
-                     ckpPublicKeyHandle, ckpPrivateKeyHandle);
+    /*
+     * Workaround for NSS bug 1012786:
+     *
+     * Key generation may fail with CKR_FUNCTION_FAILED error
+     * if there is insufficient entropy to generate a random key.
+     *
+     * PKCS11 spec says the following about CKR_FUNCTION_FAILED error
+     * (see section 11.1.1):
+     *
+     *      ... In any event, although the function call failed, the situation
+     *      is not necessarily totally hopeless, as it is likely to be
+     *      when CKR_GENERAL_ERROR is returned. Depending on what the root cause of
+     *      the error actually was, it is possible that an attempt
+     *      to make the exact same function call again would succeed.
+     *
+     * Call C_GenerateKeyPair() several times if CKR_FUNCTION_FAILED occurs.
+     */
+    for (attempts = 0; attempts < MAX_ATTEMPTS; attempts++) {
+        rv = (*ckpFunctions->C_GenerateKeyPair)(ckSessionHandle, &ckMechanism,
+                        ckpPublicKeyAttributes, ckPublicKeyAttributesLength,
+                        ckpPrivateKeyAttributes, ckPrivateKeyAttributesLength,
+                        ckpPublicKeyHandle, ckpPrivateKeyHandle);
+        if (rv == CKR_FUNCTION_FAILED) {
+            printDebug("C_1GenerateKeyPair(): C_GenerateKeyPair() failed \
+                    with CKR_FUNCTION_FAILED error, try again\n");
+        } else {
+            break;
+        }
+    }
 
     if (ckAssertReturnValueOK(env, rv) == CK_ASSERT_OK) {
         jKeyHandles = ckULongArrayToJLongArray(env, ckpKeyHandles, 2);
