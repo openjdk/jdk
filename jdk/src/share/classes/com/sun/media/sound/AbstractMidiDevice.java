@@ -75,13 +75,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
     /**
      * This is the device handle returned from native code
      */
-    /*
-     * $$rratta Solaris 64 bit holds pointer must be long
-     *
-     * $$mp 2003-08-07:
-     * 'id' is a really bad name. The variable should
-     * be called nativePointer or something similar.
-     */
     protected long id                   = 0;
 
 
@@ -586,7 +579,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
 
         private ArrayList<Transmitter> transmitters = new ArrayList<Transmitter>();
         private MidiOutDevice.MidiOutReceiver midiOutReceiver;
-        private MixerSynth.SynthReceiver mixerSynthReceiver;
 
         // how many transmitters must be present for optimized
         // handling
@@ -621,22 +613,14 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
                 if (midiOutReceiver == oldR) {
                     midiOutReceiver = null;
                 }
-                if (mixerSynthReceiver == oldR) {
-                    mixerSynthReceiver = null;
-                }
                 if (newR != null) {
                     if ((newR instanceof MidiOutDevice.MidiOutReceiver)
                         && (midiOutReceiver == null)) {
                         midiOutReceiver = ((MidiOutDevice.MidiOutReceiver) newR);
                     }
-                    if ((newR instanceof MixerSynth.SynthReceiver)
-                        && (mixerSynthReceiver == null)) {
-                        mixerSynthReceiver = ((MixerSynth.SynthReceiver) newR);
-                    }
                 }
                 optimizedReceiverCount =
-                      ((midiOutReceiver!=null)?1:0)
-                    + ((mixerSynthReceiver!=null)?1:0);
+                      ((midiOutReceiver!=null)?1:0);
             }
             // more potential for optimization here
         }
@@ -670,10 +654,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
                             if (TRACE_TRANSMITTER) Printer.println("Sending packed message to MidiOutReceiver");
                             midiOutReceiver.sendPackedMidiMessage(packedMessage, timeStamp);
                         }
-                        if (mixerSynthReceiver != null) {
-                            if (TRACE_TRANSMITTER) Printer.println("Sending packed message to MixerSynthReceiver");
-                            mixerSynthReceiver.sendPackedMidiMessage(packedMessage, timeStamp);
-                        }
                     } else {
                         if (TRACE_TRANSMITTER) Printer.println("Sending packed message to "+size+" transmitter's receivers");
                         for (int i = 0; i < size; i++) {
@@ -682,9 +662,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
                                 if (optimizedReceiverCount > 0) {
                                     if (receiver instanceof MidiOutDevice.MidiOutReceiver) {
                                         ((MidiOutDevice.MidiOutReceiver) receiver).sendPackedMidiMessage(packedMessage, timeStamp);
-                                    }
-                                    else if (receiver instanceof MixerSynth.SynthReceiver) {
-                                        ((MixerSynth.SynthReceiver) receiver).sendPackedMidiMessage(packedMessage, timeStamp);
                                     } else {
                                         receiver.send(new FastShortMessage(packedMessage), timeStamp);
                                     }
@@ -738,10 +715,6 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
                     if (midiOutReceiver != null) {
                         if (TRACE_TRANSMITTER) Printer.println("Sending MIDI message to MidiOutReceiver");
                         midiOutReceiver.send(message, timeStamp);
-                    }
-                    if (mixerSynthReceiver != null) {
-                        if (TRACE_TRANSMITTER) Printer.println("Sending MIDI message to MixerSynthReceiver");
-                        mixerSynthReceiver.send(message, timeStamp);
                     }
                 } else {
                     if (TRACE_TRANSMITTER) Printer.println("Sending MIDI message to "+size+" transmitter's receivers");

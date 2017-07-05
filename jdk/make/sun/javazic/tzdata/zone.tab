@@ -64,14 +64,15 @@ AQ	-7824+10654	Antarctica/Vostok	Vostok Station, S Magnetic Pole
 AQ	-6640+14001	Antarctica/DumontDUrville	Dumont-d'Urville Station, Terre Adelie
 AQ	-690022+0393524	Antarctica/Syowa	Syowa Station, E Ongul I
 AR	-3436-05827	America/Argentina/Buenos_Aires	Buenos Aires (BA, CF)
-AR	-3124-06411	America/Argentina/Cordoba	most locations (CB, CC, CN, ER, FM, LP, MN, NQ, RN, SA, SE, SF)
-AR	-3319-06621	America/Argentina/San_Luis	San Luis (SL)
+AR	-3124-06411	America/Argentina/Cordoba	most locations (CB, CC, CN, ER, FM, MN, SE, SF)
+AR	-2447-06525	America/Argentina/Salta	(SA, LP, NQ, RN)
 AR	-2411-06518	America/Argentina/Jujuy	Jujuy (JY)
 AR	-2649-06513	America/Argentina/Tucuman	Tucuman (TM)
 AR	-2828-06547	America/Argentina/Catamarca	Catamarca (CT), Chubut (CH)
 AR	-2926-06651	America/Argentina/La_Rioja	La Rioja (LR)
 AR	-3132-06831	America/Argentina/San_Juan	San Juan (SJ)
 AR	-3253-06849	America/Argentina/Mendoza	Mendoza (MZ)
+AR	-3319-06621	America/Argentina/San_Luis	San Luis (SL)
 AR	-5138-06913	America/Argentina/Rio_Gallegos	Santa Cruz (SC)
 AR	-5448-06818	America/Argentina/Ushuaia	Tierra del Fuego (TF)
 AS	-1416-17042	Pacific/Pago_Pago
@@ -137,7 +138,7 @@ CA	+4901-08816	America/Nipigon	Eastern Time - Ontario & Quebec - places that did
 CA	+4823-08915	America/Thunder_Bay	Eastern Time - Thunder Bay, Ontario
 CA	+6344-06828	America/Iqaluit	Eastern Time - east Nunavut - most locations
 CA	+6608-06544	America/Pangnirtung	Eastern Time - Pangnirtung, Nunavut
-CA	+744144-0944945	America/Resolute	Eastern Time - Resolute, Nunavut
+CA	+744144-0944945	America/Resolute	Eastern Standard Time - Resolute, Nunavut
 CA	+484531-0913718	America/Atikokan	Eastern Standard Time - Atikokan, Ontario and Southampton I, Nunavut
 CA	+624900-0920459	America/Rankin_Inlet	Central Time - central Nunavut
 CA	+4953-09709	America/Winnipeg	Central Time - Manitoba & west Ontario
@@ -313,9 +314,9 @@ NG	+0627+00324	Africa/Lagos
 NI	+1209-08617	America/Managua
 NL	+5222+00454	Europe/Amsterdam
 NO	+5955+01045	Europe/Oslo
-NP	+2743+08519	Asia/Katmandu
+NP	+2743+08519	Asia/Kathmandu
 NR	-0031+16655	Pacific/Nauru
-NU	-1901+16955	Pacific/Niue
+NU	-1901-16955	Pacific/Niue
 NZ	-3652+17446	Pacific/Auckland	most locations
 NZ	-4357-17633	Pacific/Chatham	Chatham Islands
 OM	+2336+05835	Asia/Muscat
@@ -406,13 +407,13 @@ US	+381515-0854534	America/Kentucky/Louisville	Eastern Time - Kentucky - Louisvi
 US	+364947-0845057	America/Kentucky/Monticello	Eastern Time - Kentucky - Wayne County
 US	+394606-0860929	America/Indiana/Indianapolis	Eastern Time - Indiana - most locations
 US	+384038-0873143	America/Indiana/Vincennes	Eastern Time - Indiana - Daviess, Dubois, Knox & Martin Counties
-US	+411745-0863730	America/Indiana/Knox	Eastern Time - Indiana - Starke County
 US	+410305-0863611	America/Indiana/Winamac	Eastern Time - Indiana - Pulaski County
 US	+382232-0862041	America/Indiana/Marengo	Eastern Time - Indiana - Crawford County
+US	+382931-0871643	America/Indiana/Petersburg	Eastern Time - Indiana - Pike County
 US	+384452-0850402	America/Indiana/Vevay	Eastern Time - Indiana - Switzerland County
 US	+415100-0873900	America/Chicago	Central Time
 US	+375711-0864541	America/Indiana/Tell_City	Central Time - Indiana - Perry County
-US	+382931-0871643	America/Indiana/Petersburg	Central Time - Indiana - Pike County
+US	+411745-0863730	America/Indiana/Knox	Central Time - Indiana - Starke County
 US	+450628-0873651	America/Menominee	Central Time - Michigan - Dickinson, Gogebic, Iron & Menominee Counties
 US	+470659-1011757	America/North_Dakota/Center	Central Time - North Dakota - Oliver County
 US	+465042-1012439	America/North_Dakota/New_Salem	Central Time - North Dakota - Morton County (except Mandan area)

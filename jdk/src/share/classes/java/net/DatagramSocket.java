@@ -41,10 +41,11 @@ import java.security.PrivilegedExceptionAction;
  * one machine to another may be routed differently, and may arrive in
  * any order.
  *
- * <p>UDP broadcasts sends are always enabled on a DatagramSocket.
- * In order to receive broadcast packets a DatagramSocket
- * should be bound to the wildcard address. In some
- * implementations, broadcast packets may also be received when
+ * <p> Where possible, a newly constructed {@code DatagramSocket} has the
+ * {@link SocketOptions#SO_BROADCAST SO_BROADCAST} socket option enabled so as
+ * to allow the transmission of broadcast datagrams. In order to receive
+ * broadcast packets a DatagramSocket should be bound to the wildcard address.
+ * In some implementations, broadcast packets may also be received when
  * a DatagramSocket is bound to a more specific address.
  * <p>
  * Example:
@@ -1017,9 +1018,18 @@ class DatagramSocket implements java.io.Closeable {
 
     /**
      * Enable/disable SO_BROADCAST.
-     * @param on     whether or not to have broadcast turned on.
-     * @exception SocketException if there is an error
-     * in the underlying protocol, such as an UDP error.
+     *
+     * <p> Some operating systems may require that the Java virtual machine be
+     * started with implementation specific privileges to enable this option or
+     * send broadcast datagrams.
+     *
+     * @param  on
+     *         whether or not to have broadcast turned on.
+     *
+     * @throws  SocketException
+     *          if there is an error in the underlying protocol, such as an UDP
+     *          error.
+     *
      * @since 1.4
      * @see #getBroadcast()
      */

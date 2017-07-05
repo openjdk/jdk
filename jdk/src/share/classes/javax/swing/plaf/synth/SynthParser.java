@@ -59,16 +59,16 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import org.xml.sax.AttributeList;
-import org.xml.sax.HandlerBase;
+import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
+import org.xml.sax.helpers.DefaultHandler;
 
-import com.sun.beans.ObjectHandler;
+import com.sun.beans.decoder.DocumentHandler;
 
-class SynthParser extends HandlerBase {
+class SynthParser extends DefaultHandler {
     //
     // Known element names
     //
@@ -119,7 +119,7 @@ class SynthParser extends HandlerBase {
     /**
      * Lazily created, used for anything we don't understand.
      */
-    private ObjectHandler _handler;
+    private DocumentHandler _handler;
 
     /**
      * Indicates the depth of how many elements we've encountered but don't
@@ -292,8 +292,9 @@ class SynthParser extends HandlerBase {
     /**
      * Handles beans persistance.
      */
-    private ObjectHandler getHandler() {
+    private DocumentHandler getHandler() {
         if (_handler == null) {
+            _handler = new DocumentHandler();
             if (_urlResourceBase != null) {
                 // getHandler() is never called before parse() so it is safe
                 // to create a URLClassLoader with _resourceBase.
@@ -304,14 +305,13 @@ class SynthParser extends HandlerBase {
                 URL[] urls = new URL[] { getResource(".") };
                 ClassLoader parent = Thread.currentThread().getContextClassLoader();
                 ClassLoader urlLoader = new URLClassLoader(urls, parent);
-                _handler = new ObjectHandler(null, urlLoader);
+                _handler.setClassLoader(urlLoader);
             } else {
-                _handler = new ObjectHandler(null,
-                    _classResourceBase.getClassLoader());
+                _handler.setClassLoader(_classResourceBase.getClassLoader());
             }
 
             for (String key : _mapping.keySet()) {
-                _handler.register(key, _mapping.get(key));
+                _handler.setVariable(key, _mapping.get(key));
             }
         }
         return _handler;
@@ -336,8 +336,8 @@ class SynthParser extends HandlerBase {
     private Object lookup(String key, Class type) throws SAXException {
         Object value;
         if (_handler != null) {
-            if ((value = _handler.lookup(key)) != null) {
-                return checkCast(value, type);
+            if (_handler.hasVariable(key)) {
+                return checkCast(_handler.getVariable(key), type);
             }
         }
         value = _mapping.get(key);
@@ -354,11 +354,11 @@ class SynthParser extends HandlerBase {
     private void register(String key, Object value) throws SAXException {
         if (key != null) {
             if (_mapping.get(key) != null ||
-                     (_handler != null && _handler.lookup(key) != null)) {
+                     (_handler != null && _handler.hasVariable(key))) {
                 throw new SAXException("ID " + key + " is already defined");
             }
             if (_handler != null) {
-                _handler.register(key, value);
+                _handler.setVariable(key, value);
             }
             else {
                 _mapping.put(key, value);
@@ -400,12 +400,12 @@ class SynthParser extends HandlerBase {
     // The following methods are invoked from startElement/stopElement
     //
 
-    private void startStyle(AttributeList attributes) throws SAXException {
+    private void startStyle(Attributes attributes) throws SAXException {
         String id = null;
 
         _style = null;
         for(int i = attributes.getLength() - 1; i >= 0; i--) {
-            String key = attributes.getName(i);
+            String key = attributes.getQName(i);
             if (key.equals(ATTRIBUTE_CLONE)) {
                 _style = (ParsedSynthStyle)((ParsedSynthStyle)lookup(
                          attributes.getValue(i), ParsedSynthStyle.class)).
@@ -421,7 +421,7 @@ class SynthParser extends HandlerBase {
         register(id, _style);
     }
 
-    private void endStyle() throws SAXException {
+    private void endStyle() {
         int size = _stylePainters.size();
         if (size > 0) {
             _style.setPainters(_stylePainters.toArray(new ParsedSynthStyle.PainterInfo[size]));
@@ -435,14 +435,14 @@ class SynthParser extends HandlerBase {
         _style = null;
     }
 
-    private void startState(AttributeList attributes) throws SAXException {
+    private void startState(Attributes attributes) throws SAXException {
         ParsedSynthStyle.StateInfo stateInfo = null;
         int state = 0;
         String id = null;
 
         _stateInfo = null;
         for(int i = attributes.getLength() - 1; i >= 0; i--) {
-            String key = attributes.getName(i);
+            String key = attributes.getQName(i);
             if (key.equals(ATTRIBUTE_ID)) {
                 id = attributes.getValue(i);
             }
@@ -496,7 +496,7 @@ class SynthParser extends HandlerBase {
         _stateInfos.add(_stateInfo);
     }
 
-    private void endState() throws SAXException {
+    private void endState() {
         int size = _statePainters.size();
         if (size > 0) {
             _stateInfo.setPainters(_statePainters.toArray(new ParsedSynthStyle.PainterInfo[size]));
@@ -505,7 +505,7 @@ class SynthParser extends HandlerBase {
         _stateInfo = null;
     }
 
-    private void startFont(AttributeList attributes) throws SAXException {
+    private void startFont(Attributes attributes) throws SAXException {
         Font font = null;
         int style = Font.PLAIN;
         int size = 0;
@@ -513,7 +513,7 @@ class SynthParser extends HandlerBase {
         String name = null;
 
         for(int i = attributes.getLength() - 1; i >= 0; i--) {
-            String key = attributes.getName(i);
+            String key = attributes.getQName(i);
             if (key.equals(ATTRIBUTE_ID)) {
                 id = attributes.getValue(i);
             }
@@ -568,13 +568,13 @@ class SynthParser extends HandlerBase {
         }
     }
 
-    private void startColor(AttributeList attributes) throws SAXException {
+    private void startColor(Attributes attributes) throws SAXException {
         Color color = null;
         String id = null;
 
         _colorTypes.clear();
         for(int i = attributes.getLength() - 1; i >= 0; i--) {
-            String key = attributes.getName(i);
+            String key = attributes.getQName(i);
             if (key.equals(ATTRIBUTE_ID)) {
                 id = attributes.getValue(i);
             }
@@ -697,7 +697,7 @@ class SynthParser extends HandlerBase {
         }
     }
 
-    private void startProperty(AttributeList attributes,
+    private void startProperty(Attributes attributes,
                                Object property) throws SAXException {
         Object value = null;
         String key = null;
@@ -707,7 +707,7 @@ class SynthParser extends HandlerBase {
         String aValue = null;
 
         for(int i = attributes.getLength() - 1; i >= 0; i--) {
-            String aName = attributes.getName(i);
+            String aName = attributes.getQName(i);
             if (aName.equals(ATTRIBUTE_TYPE)) {
                 String type = attributes.getValue(i).toUpperCase();
                 if (type.equals("IDREF")) {
@@ -795,11 +795,11 @@ class SynthParser extends HandlerBase {
         }
     }
 
-    private void startGraphics(AttributeList attributes) throws SAXException {
+    private void startGraphics(Attributes attributes) throws SAXException {
         SynthGraphicsUtils graphics = null;
 
         for(int i = attributes.getLength() - 1; i >= 0; i--) {
-            String key = attributes.getName(i);
+            String key = attributes.getQName(i);
             if (key.equals(ATTRIBUTE_IDREF)) {
                 graphics = (SynthGraphicsUtils)lookup(attributes.getValue(i),
                                                  SynthGraphicsUtils.class);
@@ -813,7 +813,7 @@ class SynthParser extends HandlerBase {
         }
     }
 
-    private void startInsets(AttributeList attributes) throws SAXException {
+    private void startInsets(Attributes attributes) throws SAXException {
         int top = 0;
         int bottom = 0;
         int left = 0;
@@ -822,7 +822,7 @@ class SynthParser extends HandlerBase {
         String id = null;
 
         for(int i = attributes.getLength() - 1; i >= 0; i--) {
-            String key = attributes.getName(i);
+            String key = attributes.getQName(i);
 
             try {
                 if (key.equals(ATTRIBUTE_IDREF)) {
@@ -858,13 +858,13 @@ class SynthParser extends HandlerBase {
         }
     }
 
-    private void startBind(AttributeList attributes) throws SAXException {
+    private void startBind(Attributes attributes) throws SAXException {
         ParsedSynthStyle style = null;
         String path = null;
         int type = -1;
 
         for(int i = attributes.getLength() - 1; i >= 0; i--) {
-            String key = attributes.getName(i);
+            String key = attributes.getQName(i);
 
             if (key.equals(ATTRIBUTE_STYLE)) {
                 style = (ParsedSynthStyle)lookup(attributes.getValue(i),
@@ -899,7 +899,7 @@ class SynthParser extends HandlerBase {
         }
     }
 
-    private void startPainter(AttributeList attributes, String type) throws SAXException {
+    private void startPainter(Attributes attributes, String type) throws SAXException {
         Insets sourceInsets = null;
         Insets destInsets = null;
         String path = null;
@@ -915,7 +915,7 @@ class SynthParser extends HandlerBase {
         boolean paintCenterSpecified = false;
 
         for(int i = attributes.getLength() - 1; i >= 0; i--) {
-            String key = attributes.getName(i);
+            String key = attributes.getQName(i);
             String value = attributes.getValue(i);
 
             if (key.equals(ATTRIBUTE_ID)) {
@@ -1042,12 +1042,12 @@ class SynthParser extends HandlerBase {
         painters.add(painterInfo);
     }
 
-    private void startImageIcon(AttributeList attributes) throws SAXException {
+    private void startImageIcon(Attributes attributes) throws SAXException {
         String path = null;
         String id = null;
 
         for(int i = attributes.getLength() - 1; i >= 0; i--) {
-            String key = attributes.getName(i);
+            String key = attributes.getQName(i);
 
             if (key.equals(ATTRIBUTE_ID)) {
                 id = attributes.getValue(i);
@@ -1062,12 +1062,11 @@ class SynthParser extends HandlerBase {
         register(id, new LazyImageIcon(getResource(path)));
        }
 
-    private void startOpaque(AttributeList attributes) throws
-                      SAXException {
+    private void startOpaque(Attributes attributes) {
         if (_style != null) {
             _style.setOpaque(true);
             for(int i = attributes.getLength() - 1; i >= 0; i--) {
-                String key = attributes.getName(i);
+                String key = attributes.getQName(i);
 
                 if (key.equals(ATTRIBUTE_VALUE)) {
                     _style.setOpaque("true".equals(attributes.getValue(i).
@@ -1077,12 +1076,12 @@ class SynthParser extends HandlerBase {
         }
     }
 
-    private void startInputMap(AttributeList attributes) throws SAXException {
+    private void startInputMap(Attributes attributes) throws SAXException {
         _inputMapBindings.clear();
         _inputMapID = null;
         if (_style != null) {
             for(int i = attributes.getLength() - 1; i >= 0; i--) {
-                String key = attributes.getName(i);
+                String key = attributes.getQName(i);
 
                 if (key.equals(ATTRIBUTE_ID)) {
                     _inputMapID = attributes.getValue(i);
@@ -1101,7 +1100,7 @@ class SynthParser extends HandlerBase {
         _inputMapID = null;
     }
 
-    private void startBindKey(AttributeList attributes) throws SAXException {
+    private void startBindKey(Attributes attributes) throws SAXException {
         if (_inputMapID == null) {
             // Not in an inputmap, bail.
             return;
@@ -1110,7 +1109,7 @@ class SynthParser extends HandlerBase {
             String key = null;
             String value = null;
             for(int i = attributes.getLength() - 1; i >= 0; i--) {
-                String aKey = attributes.getName(i);
+                String aKey = attributes.getQName(i);
 
                 if (aKey.equals(ATTRIBUTE_KEY)) {
                     key = attributes.getValue(i);
@@ -1129,26 +1128,26 @@ class SynthParser extends HandlerBase {
     }
 
     //
-    // SAX methods, these forward to the ObjectHandler if we don't know
+    // SAX methods, these forward to the DocumentHandler if we don't know
     // the element name.
     //
 
     public InputSource resolveEntity(String publicId, String systemId)
-                              throws SAXException {
+                              throws IOException, SAXException {
         if (isForwarding()) {
             return getHandler().resolveEntity(publicId, systemId);
         }
         return null;
     }
 
-    public void notationDecl(String name, String publicId, String systemId) {
+    public void notationDecl(String name, String publicId, String systemId) throws SAXException {
         if (isForwarding()) {
             getHandler().notationDecl(name, publicId, systemId);
         }
     }
 
     public void unparsedEntityDecl(String name, String publicId,
-                                   String systemId, String notationName) {
+                                   String systemId, String notationName) throws SAXException {
         if (isForwarding()) {
             getHandler().unparsedEntityDecl(name, publicId, systemId,
                                             notationName);
@@ -1173,7 +1172,7 @@ class SynthParser extends HandlerBase {
         }
     }
 
-    public void startElement(String name, AttributeList attributes)
+    public void startElement(String uri, String local, String name, Attributes attributes)
                      throws SAXException {
         name = name.intern();
         if (name == ELEMENT_STYLE) {
@@ -1223,18 +1222,18 @@ class SynthParser extends HandlerBase {
         }
         else if (name != ELEMENT_SYNTH) {
             if (_depth++ == 0) {
-                getHandler().reset();
+                getHandler().startDocument();
             }
-            getHandler().startElement(name, attributes);
+            getHandler().startElement(uri, local, name, attributes);
         }
     }
 
-    public void endElement(String name) throws SAXException {
+    public void endElement(String uri, String local, String name) throws SAXException {
         if (isForwarding()) {
-            getHandler().endElement(name);
+            getHandler().endElement(uri, local, name);
             _depth--;
             if (!isForwarding()) {
-                getHandler().reset();
+                getHandler().startDocument();
             }
         }
         else {
