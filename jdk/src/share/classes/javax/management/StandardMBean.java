@@ -689,7 +689,7 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
                     getImplementationClass().getName());
         }
 
-        MBeanSupport msupport = mbean;
+        MBeanSupport<?> msupport = mbean;
         final MBeanInfo bi = msupport.getMBeanInfo();
         final Object impl = msupport.getWrappedObject();
 
@@ -1391,8 +1391,8 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
      * garbage collected just because we know whether its MBeanInfo
      * is immutable.
      */
-    private static final Map<Class, Boolean> mbeanInfoSafeMap =
-        new WeakHashMap<Class, Boolean>();
+    private static final Map<Class<?>, Boolean> mbeanInfoSafeMap =
+        new WeakHashMap<Class<?>, Boolean>();
 
     /**
      * Return true if {@code subclass} is known to preserve the immutability
@@ -1438,9 +1438,9 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
     private static class MBeanInfoSafeAction
             implements PrivilegedAction<Boolean> {
 
-        private final Class subclass;
+        private final Class<?> subclass;
 
-        MBeanInfoSafeAction(Class subclass) {
+        MBeanInfoSafeAction(Class<?> subclass) {
             this.subclass = subclass;
         }
 
@@ -1454,13 +1454,13 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
             // Check for "MBeanInfo getCachedMBeanInfo()" method.
             //
             if (overrides(subclass, StandardMBean.class,
-                          "getCachedMBeanInfo", (Class[]) null))
+                          "getCachedMBeanInfo", (Class<?>[]) null))
                 return false;
 
             // Check for "MBeanInfo getMBeanInfo()" method.
             //
             if (overrides(subclass, StandardMBean.class,
-                          "getMBeanInfo", (Class[]) null))
+                          "getMBeanInfo", (Class<?>[]) null))
                 return false;
 
             // Check for "MBeanNotificationInfo[] getNotificationInfo()"
@@ -1473,7 +1473,7 @@ public class StandardMBean implements DynamicWrapperMBean, MBeanRegistration {
             //
             if (StandardEmitterMBean.class.isAssignableFrom(subclass))
                 if (overrides(subclass, StandardEmitterMBean.class,
-                              "getNotificationInfo", (Class[]) null))
+                              "getNotificationInfo", (Class<?>[]) null))
                     return false;
             return true;
         }

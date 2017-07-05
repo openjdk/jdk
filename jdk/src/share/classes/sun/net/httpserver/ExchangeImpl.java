@@ -43,7 +43,7 @@ class ExchangeImpl {
     String method;
     URI uri;
     HttpConnection connection;
-    int reqContentLen;
+    long reqContentLen;
     long rspContentLen;
     /* raw streams which access the socket directly */
     InputStream ris;
@@ -79,7 +79,7 @@ class ExchangeImpl {
     ServerImpl server;
 
     ExchangeImpl (
-        String m, URI u, Request req, int len, HttpConnection connection
+        String m, URI u, Request req, long len, HttpConnection connection
     ) throws IOException {
         this.req = req;
         this.reqHdrs = req.headers();
@@ -148,7 +148,7 @@ class ExchangeImpl {
         if (uis != null) {
             return uis;
         }
-        if (reqContentLen == -1) {
+        if (reqContentLen == -1L) {
             uis_orig = new ChunkedInputStream (this, ris);
             uis = uis_orig;
         } else {

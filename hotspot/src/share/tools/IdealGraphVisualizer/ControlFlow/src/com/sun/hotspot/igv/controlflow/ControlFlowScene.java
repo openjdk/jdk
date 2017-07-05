@@ -33,7 +33,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Hashtable;
+import java.util.HashMap;
 import java.util.Set;
 import javax.swing.BorderFactory;
 import org.netbeans.api.visual.action.ActionFactory;
@@ -44,7 +44,6 @@ import org.netbeans.api.visual.action.SelectProvider;
 import org.netbeans.api.visual.action.WidgetAction;
 import org.netbeans.api.visual.anchor.AnchorFactory;
 import org.netbeans.api.visual.anchor.AnchorShape;
-import com.sun.hotspot.igv.controlflow.HierarchicalGraphLayout;
 import org.netbeans.api.visual.layout.LayoutFactory;
 import org.netbeans.api.visual.router.RouterFactory;
 import org.netbeans.api.visual.widget.LayerWidget;
@@ -61,8 +60,8 @@ import org.openide.util.Lookup;
  */
 public class ControlFlowScene extends GraphScene<InputBlock, InputBlockEdge> implements SelectProvider, MoveProvider, RectangularSelectDecorator, RectangularSelectProvider {
 
-    private Set<BlockWidget> selection;
-    private Hashtable<InputBlock, BlockWidget> blockMap;
+    private HashSet<BlockWidget> selection;
+    private HashMap<InputBlock, BlockWidget> blockMap;
     private InputGraph oldGraph;
     private LayerWidget edgeLayer;
     private LayerWidget mainLayer;

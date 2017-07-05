@@ -285,9 +285,9 @@ public class RoleUnresolved implements Serializable {
         result.append("role name: " + roleName);
         if (roleValue != null) {
             result.append("; value: ");
-            for (Iterator objNameIter = roleValue.iterator();
+            for (Iterator<ObjectName> objNameIter = roleValue.iterator();
                  objNameIter.hasNext();) {
-                ObjectName currObjName = (ObjectName)(objNameIter.next());
+                ObjectName currObjName = objNameIter.next();
                 result.append(currObjName.toString());
                 if (objNameIter.hasNext()) {
                     result.append(", ");
@@ -344,7 +344,7 @@ public class RoleUnresolved implements Serializable {
         //
         ObjectOutputStream.PutField fields = out.putFields();
         fields.put("myRoleName", roleName);
-        fields.put("myRoleValue", (ArrayList)roleValue);
+        fields.put("myRoleValue", roleValue);
         fields.put("myPbType", problemType);
         out.writeFields();
       }

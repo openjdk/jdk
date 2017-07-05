@@ -354,7 +354,7 @@ public class MBeanServerNotificationFilter extends NotificationFilterSupport {
 
         // Checks the type first
         String ntfType = notif.getType();
-        Vector enabledTypes = getEnabledTypes();
+        Vector<String> enabledTypes = getEnabledTypes();
         if (!(enabledTypes.contains(ntfType))) {
             RELATION_LOGGER.logp(Level.FINER,
                     MBeanServerNotificationFilter.class.getName(),
@@ -464,8 +464,8 @@ public class MBeanServerNotificationFilter extends NotificationFilterSupport {
         // Serializes this instance in the old serial form
         //
         ObjectOutputStream.PutField fields = out.putFields();
-        fields.put("mySelectObjNameList", (Vector)selectedNames);
-        fields.put("myDeselectObjNameList", (Vector)deselectedNames);
+        fields.put("mySelectObjNameList", selectedNames);
+        fields.put("myDeselectObjNameList", deselectedNames);
         out.writeFields();
       }
       else
