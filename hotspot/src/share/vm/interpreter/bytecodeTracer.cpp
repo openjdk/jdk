@@ -328,24 +328,35 @@ void BytecodePrinter::print_field_or_method(int orig_i, int i, outputStream* st)
   constantPoolOop constants = method()->constants();
   constantTag tag = constants->tag_at(i);
 
-  int nt_index = -1;
+  bool has_klass = true;
 
   switch (tag.value()) {
   case JVM_CONSTANT_InterfaceMethodref:
   case JVM_CONSTANT_Methodref:
   case JVM_CONSTANT_Fieldref:
+    break;
   case JVM_CONSTANT_NameAndType:
+  case JVM_CONSTANT_InvokeDynamic:
+    has_klass = false;
     break;
   default:
     st->print_cr(" bad tag=%d at %d", tag.value(), i);
     return;
   }
 
-  symbolOop klass = constants->klass_name_at(constants->uncached_klass_ref_index_at(i));
   symbolOop name = constants->uncached_name_ref_at(i);
   symbolOop signature = constants->uncached_signature_ref_at(i);
   const char* sep = (tag.is_field() ? "/" : "");
-  st->print_cr(" %d <%s.%s%s%s> ", i, klass->as_C_string(), name->as_C_string(), sep, signature->as_C_string());
+  if (has_klass) {
+    symbolOop klass = constants->klass_name_at(constants->uncached_klass_ref_index_at(i));
+    st->print_cr(" %d <%s.%s%s%s> ", i, klass->as_C_string(), name->as_C_string(), sep, signature->as_C_string());
+  } else {
+    if (tag.is_invoke_dynamic()) {
+      int bsm = constants->invoke_dynamic_bootstrap_method_ref_index_at(i);
+      st->print(" bsm=%d", bsm);
+    }
+    st->print_cr(" %d <%s%s%s>", i, name->as_C_string(), sep, signature->as_C_string());
+  }
 }
 
 

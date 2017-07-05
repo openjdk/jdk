@@ -303,16 +303,25 @@ public class ClassWriter implements /* imports */ ClassConstants
                 case JVM_CONSTANT_MethodHandle: {
                      dos.writeByte(cpConstType);
                      int value = cpool.getIntAt(ci);
-                     short refIndex = (short) extractHighShortFromInt(value);
-                     byte  refKind  = (byte)  extractLowShortFromInt(value);
-                     dos.writeByte(refKind);
-                     dos.writeShort(refIndex);
-                     if (DEBUG) debugMessage("CP[" + ci + "] = MH index = " + refIndex
-                                        + ", kind = " + refKind);
+                     short bootstrapMethodIndex = (short) extractLowShortFromInt(value);
+                     short nameAndTypeIndex = (short) extractHighShortFromInt(value);
+                     dos.writeShort(bootstrapMethodIndex);
+                     dos.writeShort(nameAndTypeIndex);
+                     if (DEBUG) debugMessage("CP[" + ci + "] = indy BSM = " +
+                           bootstrapMethodIndex + ", N&T = " + nameAndTypeIndex);
                      break;
                 }
 
                 case JVM_CONSTANT_MethodType: {
+                     dos.writeByte(cpConstType);
+                     int value = cpool.getIntAt(ci);
+                     short refIndex = (short) value;
+                     dos.writeShort(refIndex);
+                     if (DEBUG) debugMessage("CP[" + ci + "] = MT index = " + refIndex);
+                     break;
+                }
+
+                case JVM_CONSTANT_InvokeDynamic: {
                      dos.writeByte(cpConstType);
                      int value = cpool.getIntAt(ci);
                      short refIndex = (short) value;

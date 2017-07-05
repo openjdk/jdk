@@ -702,10 +702,6 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
 
   methodHandle caller_method(thread, method(thread));
 
-  // first find the bootstrap method
-  KlassHandle caller_klass(thread, caller_method->method_holder());
-  Handle bootm = SystemDictionary::find_bootstrap_method(caller_klass, CHECK);
-
   constantPoolHandle pool(thread, caller_method->constants());
   pool->set_invokedynamic();    // mark header to flag active call sites
 
@@ -726,7 +722,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
     CallInfo info;
     LinkResolver::resolve_invoke(info, Handle(), pool,
                                  site_index, bytecode, CHECK);
-    // The main entry corresponds to a JVM_CONSTANT_NameAndType, and serves
+    // The main entry corresponds to a JVM_CONSTANT_InvokeDynamic, and serves
     // as a common reference point for all invokedynamic call sites with
     // that exact call descriptor.  We will link it in the CP cache exactly
     // as if it were an invokevirtual of MethodHandle.invoke.
@@ -734,22 +730,29 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_invokedynamic(JavaThread* thread)) {
       bytecode,
       info.resolved_method(),
       info.vtable_index());
-    assert(pool->cache()->entry_at(main_index)->is_vfinal(), "f2 must be a methodOop");
   }
 
   // The method (f2 entry) of the main entry is the MH.invoke for the
   // invokedynamic target call signature.
-  intptr_t f2_value = pool->cache()->entry_at(main_index)->f2();
-  methodHandle signature_invoker(THREAD, (methodOop) f2_value);
+  oop f1_value = pool->cache()->entry_at(main_index)->f1();
+  methodHandle signature_invoker(THREAD, (methodOop) f1_value);
   assert(signature_invoker.not_null() && signature_invoker->is_method() && signature_invoker->is_method_handle_invoke(),
          "correct result from LinkResolver::resolve_invokedynamic");
+
+  Handle bootm = SystemDictionary::find_bootstrap_method(caller_method, caller_bci,
+                                                         main_index, CHECK);
+  if (bootm.is_null()) {
+    THROW_MSG(vmSymbols::java_lang_IllegalStateException(),
+              "no bootstrap method found for invokedynamic");
+  }
+
+  // Short circuit if CallSite has been bound already:
+  if (!pool->cache()->secondary_entry_at(site_index)->is_f1_null())
+    return;
 
   symbolHandle call_site_name(THREAD, pool->name_ref_at(site_index));
 
   Handle info;  // NYI: Other metadata from a new kind of CP entry.  (Annotations?)
-
-  // this is the index which gets stored on the CallSite object (as "callerPosition"):
-  int call_site_position = constantPoolCacheOopDesc::decode_secondary_index(site_index);
 
   Handle call_site
     = SystemDictionary::make_dynamic_call_site(bootm,

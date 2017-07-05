@@ -91,6 +91,8 @@ const char* constantTag::internal_name() const {
       return "MethodHandle";
     case JVM_CONSTANT_MethodType :
       return "MethodType";
+    case JVM_CONSTANT_InvokeDynamic :
+      return "InvokeDynamic";
     case JVM_CONSTANT_Object :
       return "Object";
     case JVM_CONSTANT_Utf8 :
