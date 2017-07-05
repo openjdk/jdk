@@ -29,7 +29,7 @@ import java.lang.invoke.SwitchPoint;
 
 /**
  * This class represents a property map that can be shared among multiple prototype objects, allowing all inheriting
- * top-level objects to also share one property map. This is class is only used for prototype objects, the
+ * top-level objects to also share one property map. This class is only used for prototype objects, the
  * top-level objects use ordinary {@link PropertyMap}s with the {@link PropertyMap#sharedProtoMap} field
  * set to the expected shared prototype map.
  *

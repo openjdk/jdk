@@ -27,6 +27,7 @@ package java.lang;
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -46,12 +47,16 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.Stack;
 import java.util.NoSuchElementException;
 import java.util.Vector;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.module.ServicesCatalog;
@@ -1167,17 +1172,7 @@ public abstract class ClassLoader {
     protected final Class<?> findSystemClass(String name)
         throws ClassNotFoundException
     {
-        ClassLoader system = getSystemClassLoader();
-        if (system == null) {
-            if (!checkName(name))
-                throw new ClassNotFoundException(name);
-            Class<?> cls = findBootstrapClass(name);
-            if (cls == null) {
-                throw new ClassNotFoundException(name);
-            }
-            return cls;
-        }
-        return system.loadClass(name);
+        return getSystemClassLoader().loadClass(name);
     }
 
     /**
@@ -1354,6 +1349,57 @@ public abstract class ClassLoader {
     }
 
     /**
+     * Returns a stream whose elements are the URLs of all the resources with
+     * the given name. A resource is some data (images, audio, text, etc) that
+     * can be accessed by class code in a way that is independent of the
+     * location of the code.
+     *
+     * Resources in a named module are private to that module. This method does
+     * not find resources in named modules.
+     *
+     * <p> The name of a resource is a {@code /}-separated path name that
+     * identifies the resource.
+     *
+     * <p> The search order is described in the documentation for {@link
+     * #getResource(String)}.
+     *
+     * <p> The resources will be located when the returned stream is evaluated.
+     * If the evaluation results in an {@code IOException} then the I/O
+     * exception is wrapped in an {@link UncheckedIOException} that is then
+     * thrown.
+     *
+     * @apiNote When overriding this method it is recommended that an
+     * implementation ensures that any delegation is consistent with the {@link
+     * #getResource(java.lang.String) getResource(String)} method. This should
+     * ensure that the first element returned by the stream is the same
+     * resource that the {@code getResource(String)} method would return.
+     *
+     * @param  name
+     *         The resource name
+     *
+     * @return  A stream of resource {@link java.net.URL URL} objects. If no
+     *          resources could  be found, the stream will be empty.  Resources
+     *          that the class loader doesn't have access to will not be in the
+     *          stream.
+     *
+     * @see  #findResources(String)
+     *
+     * @since  9
+     */
+    public Stream<URL> resources(String name) {
+        int characteristics = Spliterator.NONNULL | Spliterator.IMMUTABLE;
+        Supplier<Spliterator<URL>> si = () -> {
+            try {
+                return Spliterators.spliteratorUnknownSize(
+                    getResources(name).asIterator(), characteristics);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        };
+        return StreamSupport.stream(si, characteristics, false);
+    }
+
+    /**
      * Finds the resource with the given name. Class loader implementations
      * should override this method to specify where to find resources.
      *
@@ -1437,11 +1483,7 @@ public abstract class ClassLoader {
      * @since  1.1
      */
     public static URL getSystemResource(String name) {
-        ClassLoader system = getSystemClassLoader();
-        if (system == null) {
-            return BootLoader.findResource(name);
-        }
-        return system.getResource(name);
+        return getSystemClassLoader().getResource(name);
     }
 
     /**
@@ -1464,17 +1506,13 @@ public abstract class ClassLoader {
      *
      * @throws  IOException
      *          If I/O errors occur
-
+     *
      * @since  1.2
      */
     public static Enumeration<URL> getSystemResources(String name)
         throws IOException
     {
-        ClassLoader system = getSystemClassLoader();
-        if (system == null) {
-            return BootLoader.findResources(name);
-        }
-        return system.getResources(name);
+        return getSystemClassLoader().getResources(name);
     }
 
     /**
@@ -1631,8 +1669,7 @@ public abstract class ClassLoader {
      * this method during startup should take care not to cache the return
      * value until the system is fully initialized.
      *
-     * @return  The system <tt>ClassLoader</tt> for delegation, or
-     *          <tt>null</tt> if none
+     * @return  The system <tt>ClassLoader</tt> for delegation
      *
      * @throws  SecurityException
      *          If a security manager is present, and the caller's class loader
@@ -1941,9 +1978,14 @@ public abstract class ClassLoader {
      * @return The {@code Package} of the given name defined by this class loader,
      *         or {@code null} if not found
      *
+     * @throws  NullPointerException
+     *          if {@code name} is {@code null}.
+     *
      * @since  9
      */
     public final Package getDefinedPackage(String name) {
+        Objects.requireNonNull(name, "name cannot be null");
+
         NamedPackage p = packages.get(name);
         if (p == null)
             return null;
@@ -1980,6 +2022,9 @@ public abstract class ClassLoader {
      *
      * @return The {@code Package} corresponding to the given name defined by
      *         this class loader or its ancestors, or {@code null} if not found.
+     *
+     * @throws  NullPointerException
+     *          if {@code name} is {@code null}.
      *
      * @deprecated
      * If multiple class loaders delegate to each other and define classes

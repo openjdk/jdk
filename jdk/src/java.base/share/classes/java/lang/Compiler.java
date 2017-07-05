@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,21 +29,18 @@ package java.lang;
  * The {@code Compiler} class is provided to support Java-to-native-code
  * compilers and related services. By design, the {@code Compiler} class does
  * nothing; it serves as a placeholder for a JIT compiler implementation.
+ * If no compiler is available, these methods do nothing.
  *
- * <p> When the Java Virtual Machine first starts, it determines if the system
- * property {@code java.compiler} exists. (System properties are accessible
- * through {@link System#getProperty(String)} and {@link
- * System#getProperty(String, String)}.  If so, it is assumed to be the name of
- * a library (with a platform-dependent exact location and type); {@link
- * System#loadLibrary} is called to load that library. If this loading
- * succeeds, the function named {@code java_lang_Compiler_start()} in that
- * library is called.
- *
- * <p> If no compiler is available, these methods do nothing.
+ * @deprecated JIT compilers and their technologies vary too widely to
+ * be controlled effectively by a standardized interface. As such, many
+ * JIT compiler implementations ignore this interface, and are instead
+ * controllable by implementation-specific mechanisms such as command-line
+ * options. This class is subject to removal in a future version of Java SE.
  *
  * @author  Frank Yellin
  * @since   1.0
  */
+@Deprecated(since="9", forRemoval=true)
 public final class Compiler  {
     private Compiler() {}               // don't make instances
 

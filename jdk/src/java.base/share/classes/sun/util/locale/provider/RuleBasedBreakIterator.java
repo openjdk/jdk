@@ -444,7 +444,10 @@ class RuleBasedBreakIterator extends BreakIterator {
         BufferedInputStream is;
         try {
             PrivilegedExceptionAction<BufferedInputStream> pa = () -> {
-                InputStream in = module.getResourceAsStream("sun/text/resources/" + datafile);
+                String pathName = "jdk.localedata".equals(module.getName()) ?
+                     "sun/text/resources/ext/" :
+                     "sun/text/resources/";
+                InputStream in = module.getResourceAsStream(pathName + datafile);
                 if (in == null) {
                     // Try to load the file with "java.base" module instance. Assumption
                     // here is that the fall back data files to be read should reside in

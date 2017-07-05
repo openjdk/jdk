@@ -23,22 +23,28 @@
 
 /*
  * @test
- * @bug 8132734 8144062
+ * @bug 8132734 8144062 8165723
  * @summary Test the extended API and the aliasing additions in JarFile that
  *          support multi-release jar files
- * @library /lib/testlibrary/java/util/jar
+ * @library /lib/testlibrary/java/util/jar /lib/testlibrary/
  * @build Compiler JarBuilder CreateMultiReleaseTestJars
+ * @build jdk.testlibrary.RandomFactory
  * @run testng MultiReleaseJarAPI
  */
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Random;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import jdk.testlibrary.RandomFactory;
 
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -48,11 +54,14 @@ import org.testng.annotations.Test;
 
 public class MultiReleaseJarAPI {
 
+    private static final Random RANDOM = RandomFactory.getRandom();
+
     String userdir = System.getProperty("user.dir",".");
     CreateMultiReleaseTestJars creator =  new CreateMultiReleaseTestJars();
     File unversioned = new File(userdir, "unversioned.jar");
     File multirelease = new File(userdir, "multi-release.jar");
     File signedmultirelease = new File(userdir, "signed-multi-release.jar");
+
 
     @BeforeClass
     public void initialize() throws Exception {
@@ -99,10 +108,35 @@ public class MultiReleaseJarAPI {
         testCustomMultiReleaseValue("true\r ", false);
         testCustomMultiReleaseValue("true\n true", false);
         testCustomMultiReleaseValue("true\r\n true", false);
+
+        // generate "random" Strings to use as extra attributes, and
+        // verify that Multi-Release: true is always properly matched
+        for (int i = 0; i < 100; i++) {
+            byte[] keyBytes = new byte[RANDOM.nextInt(70) + 1];
+            Arrays.fill(keyBytes, (byte)('a' + RANDOM.nextInt(24)));
+            byte[] valueBytes = new byte[RANDOM.nextInt(70) + 1];
+            Arrays.fill(valueBytes, (byte)('a' + RANDOM.nextInt(24)));
+
+            String key = new String(keyBytes, StandardCharsets.UTF_8);
+            String value = new String(valueBytes, StandardCharsets.UTF_8);
+            // test that Multi-Release: true anywhere in the manifest always
+            // return true
+            testCustomMultiReleaseValue("true", Map.of(key, value), true);
+
+            // test that we don't get any false positives
+            testCustomMultiReleaseValue("false", Map.of(key, value), false);
+        }
     }
 
-    private void testCustomMultiReleaseValue(String value, boolean expected) throws Exception {
-        creator.buildCustomMultiReleaseJar("custom-mr.jar", value);
+    private void testCustomMultiReleaseValue(String value, boolean expected)
+            throws Exception {
+        testCustomMultiReleaseValue(value, Map.of(), expected);
+    }
+
+    private void testCustomMultiReleaseValue(String value,
+            Map<String, String> extraAttributes, boolean expected)
+            throws Exception {
+        creator.buildCustomMultiReleaseJar("custom-mr.jar", value, extraAttributes);
         File custom = new File(userdir, "custom-mr.jar");
         try (JarFile jf = new JarFile(custom, true, ZipFile.OPEN_READ, Runtime.version())) {
             Assert.assertEquals(jf.isMultiRelease(), expected);

@@ -25,6 +25,7 @@
  /*
  * @test
  * @bug 8145136
+ * @modules jdk.localedata
  * @summary Tests CLDR 28/29 newly added feature LikelySubtags is correctly reflected in JDK.
  * @run main/othervm -Djava.locale.providers=CLDR Bug8145136
  */
