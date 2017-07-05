@@ -38,7 +38,7 @@ public final class Region {
         final StringBuilder sb = new StringBuilder();
         sb.append("Region: \n");
         for (int i=0; i<beg.length; i++) {
-            sb.append(" " + i + ": (" + beg[i] + "-" + end[i] + ")");
+            sb.append(" ").append(i).append(": (").append(beg[i]).append("-").append(end[i]).append(")");
         }
         return sb.toString();
     }

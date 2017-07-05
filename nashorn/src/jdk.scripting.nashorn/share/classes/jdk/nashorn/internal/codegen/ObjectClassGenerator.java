@@ -69,7 +69,6 @@ import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
-import jdk.nashorn.internal.runtime.options.Options;
 
 /**
  * Generates the ScriptObject subclass structure with fields for a user objects.

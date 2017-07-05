@@ -278,7 +278,7 @@ public class ScriptObjectMirrorTest {
 
         ScriptObjectMirror obj = (ScriptObjectMirror)e.eval(
             "({ valueOf: function() { return 42 } })");
-        assertEquals(Double.valueOf(42.0), obj.to(Double.class));
+        assertEquals(42.0, obj.to(Double.class));
 
         obj = (ScriptObjectMirror)e.eval(
             "({ toString: function() { return 'foo' } })");

@@ -38,10 +38,10 @@ import javax.security.auth.callback.CallbackHandler;
   * @author Rosanna Lee
   */
 public final class FactoryImpl implements SaslClientFactory, SaslServerFactory {
-    private static final String myMechs[] = {
+    private static final String[] myMechs = {
         "GSSAPI"};
 
-    private static final int mechPolicies[] = {
+    private static final int[] mechPolicies = {
         PolicyUtils.NOPLAINTEXT|PolicyUtils.NOANONYMOUS|PolicyUtils.NOACTIVE
     };
 

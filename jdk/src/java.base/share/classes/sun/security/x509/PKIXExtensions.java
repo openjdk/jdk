@@ -49,32 +49,32 @@ import sun.security.util.*;
  */
 public class PKIXExtensions {
     // The object identifiers
-    private static final int AuthorityKey_data [] = { 2, 5, 29, 35 };
-    private static final int SubjectKey_data [] = { 2, 5, 29, 14 };
-    private static final int KeyUsage_data [] = { 2, 5, 29, 15 };
-    private static final int PrivateKeyUsage_data [] = { 2, 5, 29, 16 };
-    private static final int CertificatePolicies_data [] = { 2, 5, 29, 32 };
-    private static final int PolicyMappings_data [] = { 2, 5, 29, 33 };
-    private static final int SubjectAlternativeName_data [] = { 2, 5, 29, 17 };
-    private static final int IssuerAlternativeName_data [] = { 2, 5, 29, 18 };
-    private static final int SubjectDirectoryAttributes_data [] = { 2, 5, 29, 9 };
-    private static final int BasicConstraints_data [] = { 2, 5, 29, 19 };
-    private static final int NameConstraints_data [] = { 2, 5, 29, 30 };
-    private static final int PolicyConstraints_data [] = { 2, 5, 29, 36 };
-    private static final int CRLDistributionPoints_data [] = { 2, 5, 29, 31 };
-    private static final int CRLNumber_data [] = { 2, 5, 29, 20 };
-    private static final int IssuingDistributionPoint_data [] = { 2, 5, 29, 28 };
-    private static final int DeltaCRLIndicator_data [] = { 2, 5, 29, 27 };
-    private static final int ReasonCode_data [] = { 2, 5, 29, 21 };
-    private static final int HoldInstructionCode_data [] = { 2, 5, 29, 23 };
-    private static final int InvalidityDate_data [] = { 2, 5, 29, 24 };
-    private static final int ExtendedKeyUsage_data [] = { 2, 5, 29, 37 };
-    private static final int InhibitAnyPolicy_data [] = { 2, 5, 29, 54 };
-    private static final int CertificateIssuer_data [] = { 2, 5, 29, 29 };
-    private static final int AuthInfoAccess_data [] = { 1, 3, 6, 1, 5, 5, 7, 1, 1};
-    private static final int SubjectInfoAccess_data [] = { 1, 3, 6, 1, 5, 5, 7, 1, 11};
-    private static final int FreshestCRL_data [] = { 2, 5, 29, 46 };
-    private static final int OCSPNoCheck_data [] = { 1, 3, 6, 1, 5, 5, 7,
+    private static final int[] AuthorityKey_data = { 2, 5, 29, 35 };
+    private static final int[] SubjectKey_data = { 2, 5, 29, 14 };
+    private static final int[] KeyUsage_data = { 2, 5, 29, 15 };
+    private static final int[] PrivateKeyUsage_data = { 2, 5, 29, 16 };
+    private static final int[] CertificatePolicies_data = { 2, 5, 29, 32 };
+    private static final int[] PolicyMappings_data = { 2, 5, 29, 33 };
+    private static final int[] SubjectAlternativeName_data = { 2, 5, 29, 17 };
+    private static final int[] IssuerAlternativeName_data = { 2, 5, 29, 18 };
+    private static final int[] SubjectDirectoryAttributes_data = { 2, 5, 29, 9 };
+    private static final int[] BasicConstraints_data = { 2, 5, 29, 19 };
+    private static final int[] NameConstraints_data = { 2, 5, 29, 30 };
+    private static final int[] PolicyConstraints_data = { 2, 5, 29, 36 };
+    private static final int[] CRLDistributionPoints_data = { 2, 5, 29, 31 };
+    private static final int[] CRLNumber_data = { 2, 5, 29, 20 };
+    private static final int[] IssuingDistributionPoint_data = { 2, 5, 29, 28 };
+    private static final int[] DeltaCRLIndicator_data = { 2, 5, 29, 27 };
+    private static final int[] ReasonCode_data = { 2, 5, 29, 21 };
+    private static final int[] HoldInstructionCode_data = { 2, 5, 29, 23 };
+    private static final int[] InvalidityDate_data = { 2, 5, 29, 24 };
+    private static final int[] ExtendedKeyUsage_data = { 2, 5, 29, 37 };
+    private static final int[] InhibitAnyPolicy_data = { 2, 5, 29, 54 };
+    private static final int[] CertificateIssuer_data = { 2, 5, 29, 29 };
+    private static final int[] AuthInfoAccess_data = { 1, 3, 6, 1, 5, 5, 7, 1, 1};
+    private static final int[] SubjectInfoAccess_data = { 1, 3, 6, 1, 5, 5, 7, 1, 11};
+    private static final int[] FreshestCRL_data = { 2, 5, 29, 46 };
+    private static final int[] OCSPNoCheck_data = { 1, 3, 6, 1, 5, 5, 7,
                                                     48, 1, 5};
 
     /**

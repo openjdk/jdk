@@ -272,12 +272,12 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
     }
 
     private static class SymbolConversions {
-        private static byte I2L = 1 << 0;
-        private static byte I2D = 1 << 1;
-        private static byte I2O = 1 << 2;
-        private static byte L2D = 1 << 3;
-        private static byte L2O = 1 << 4;
-        private static byte D2O = 1 << 5;
+        private static final byte I2L = 1 << 0;
+        private static final byte I2D = 1 << 1;
+        private static final byte I2O = 1 << 2;
+        private static final byte L2D = 1 << 3;
+        private static final byte L2O = 1 << 4;
+        private static final byte D2O = 1 << 5;
 
         private byte conversions;
 

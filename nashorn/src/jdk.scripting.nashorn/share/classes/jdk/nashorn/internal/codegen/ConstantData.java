@@ -162,7 +162,7 @@ final class ConstantData {
         final Integer value = stringMap.get(string);
 
         if (value != null) {
-            return value.intValue();
+            return value;
         }
 
         constants.add(string);
@@ -191,7 +191,7 @@ final class ConstantData {
         final Integer value = objectMap.get(entry);
 
         if (value != null) {
-            return value.intValue();
+            return value;
         }
 
         constants.add(object);

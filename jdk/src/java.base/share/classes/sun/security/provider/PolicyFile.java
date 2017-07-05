@@ -795,7 +795,7 @@ public class PolicyFile extends java.security.Policy {
                         // an unresolved permission which will be resolved
                         // when implies is called
                         // Add it to entry
-                        Certificate certs[];
+                        Certificate[] certs;
                         if (pe.signedBy != null) {
                             certs = getCertificates(keyStore,
                                                     pe.signedBy,
@@ -817,7 +817,7 @@ public class PolicyFile extends java.security.Policy {
                         debug.println("  "+perm);
                     }
                 } catch (ClassNotFoundException cnfe) {
-                    Certificate certs[];
+                    Certificate[] certs;
                     if (pe.signedBy != null) {
                         certs = getCertificates(keyStore,
                                                 pe.signedBy,
@@ -2032,7 +2032,7 @@ public class PolicyFile extends java.security.Policy {
          *
          * @serial
          */
-        private Certificate certs[];
+        private Certificate[] certs;
 
         /**
          * Creates a new SelfPermission containing the permission
@@ -2048,7 +2048,7 @@ public class PolicyFile extends java.security.Policy {
          * certificate first and the (root) certificate authority last).
          */
         public SelfPermission(String type, String name, String actions,
-                              Certificate certs[])
+                              Certificate[] certs)
         {
             super(type);
             if (type == null) {

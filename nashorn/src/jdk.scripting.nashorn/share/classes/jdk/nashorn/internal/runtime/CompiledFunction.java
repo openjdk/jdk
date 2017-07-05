@@ -907,7 +907,7 @@ final class CompiledFunction {
         OptimismInfo(final RecompilableScriptFunctionData data, final Map<Integer, Type> invalidatedProgramPoints) {
             this.data = data;
             this.log  = data.getLogger();
-            this.invalidatedProgramPoints = invalidatedProgramPoints == null ? new TreeMap<Integer, Type>() : invalidatedProgramPoints;
+            this.invalidatedProgramPoints = invalidatedProgramPoints == null ? new TreeMap<>() : invalidatedProgramPoints;
             newOptimisticAssumptions();
         }
 

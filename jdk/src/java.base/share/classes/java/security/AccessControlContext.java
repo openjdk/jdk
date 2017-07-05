@@ -76,7 +76,7 @@ import sun.security.util.SecurityConstants;
 
 public final class AccessControlContext {
 
-    private ProtectionDomain context[];
+    private ProtectionDomain[] context;
     // isPrivileged and isAuthorized are referenced by the VM - do not remove
     // or change their names
     private boolean isPrivileged;
@@ -89,13 +89,13 @@ public final class AccessControlContext {
     private DomainCombiner combiner = null;
 
     // limited privilege scope
-    private Permission permissions[];
+    private Permission[] permissions;
     private AccessControlContext parent;
     private boolean isWrapped;
 
     // is constrained by limited privilege scope?
     private boolean isLimited;
-    private ProtectionDomain limitedContext[];
+    private ProtectionDomain[] limitedContext;
 
     private static boolean debugInit = false;
     private static Debug debug = null;
@@ -123,7 +123,7 @@ public final class AccessControlContext {
      * changes to the array will not affect this AccessControlContext.
      * @throws NullPointerException if {@code context} is {@code null}
      */
-    public AccessControlContext(ProtectionDomain context[])
+    public AccessControlContext(ProtectionDomain[] context)
     {
         if (context.length == 0) {
             this.context = null;
@@ -282,7 +282,7 @@ public final class AccessControlContext {
      * package private constructor for AccessController.getContext()
      */
 
-    AccessControlContext(ProtectionDomain context[],
+    AccessControlContext(ProtectionDomain[] context,
                          boolean isPrivileged)
     {
         this.context = context;
@@ -643,7 +643,7 @@ public final class AccessControlContext {
     /*
      * Combine the current (stack) and assigned domains.
      */
-    private static ProtectionDomain[] combine(ProtectionDomain[]current,
+    private static ProtectionDomain[] combine(ProtectionDomain[] current,
         ProtectionDomain[] assigned) {
 
         // current could be null if only system code is on the stack;
@@ -666,7 +666,7 @@ public final class AccessControlContext {
         int n = (skipAssigned) ? 0 : assigned.length;
 
         // now we combine both of them, and create a new context
-        ProtectionDomain pd[] = new ProtectionDomain[slen + n];
+        ProtectionDomain[] pd = new ProtectionDomain[slen + n];
 
         // first copy in the assigned context domains, no need to compress
         if (!skipAssigned) {
@@ -695,7 +695,7 @@ public final class AccessControlContext {
             } else if (skipAssigned && n == slen) {
                 return current;
             }
-            ProtectionDomain tmp[] = new ProtectionDomain[n];
+            ProtectionDomain[] tmp = new ProtectionDomain[n];
             System.arraycopy(pd, 0, tmp, 0, n);
             pd = tmp;
         }

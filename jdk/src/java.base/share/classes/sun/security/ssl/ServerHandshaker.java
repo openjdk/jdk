@@ -986,7 +986,7 @@ final class ServerHandshaker extends Handshaker {
                 ClientKeyExchangeService.find(keyExchange.name) == null) {
 
             CertificateRequest m4;
-            X509Certificate caCerts[];
+            X509Certificate[] caCerts;
 
             Collection<SignatureAndHashAlgorithm> localSignAlgs = null;
             if (protocolVersion.useTLS12PlusSpec()) {

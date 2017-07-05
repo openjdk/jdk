@@ -272,7 +272,7 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
      */
 
     /** This array maps the characters to their 6 bit values */
-    private final static char pem_array[] = {
+    private final static char[] pem_array = {
         //       0   1   2   3   4   5   6   7
                 'A','B','C','D','E','F','G','H', // 0
                 'I','J','K','L','M','N','O','P', // 1
@@ -1068,7 +1068,7 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
                 byte[] hMAC_MD5 = m.doFinal();
 
                 /* First 10 bytes of HMAC_MD5 digest */
-                byte macBuffer[] = new byte[10];
+                byte[] macBuffer = new byte[10];
                 System.arraycopy(hMAC_MD5, 0, macBuffer, 0, 10);
 
                 return macBuffer;
