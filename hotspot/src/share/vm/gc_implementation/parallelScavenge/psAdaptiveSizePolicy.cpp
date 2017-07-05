@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "gc_implementation/parallelScavenge/generationSizer.hpp"
 #include "gc_implementation/parallelScavenge/psAdaptiveSizePolicy.hpp"
 #include "gc_implementation/parallelScavenge/psGCAdaptivePolicyCounters.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"

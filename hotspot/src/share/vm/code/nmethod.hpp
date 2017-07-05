@@ -119,7 +119,6 @@ class nmethod : public CodeBlob {
   // To support simple linked-list chaining of nmethods:
   nmethod*  _osr_link;         // from InstanceKlass::osr_nmethods_head
   nmethod*  _scavenge_root_link; // from CodeCache::scavenge_root_nmethods
-  nmethod*  _saved_nmethod_link; // from CodeCache::speculatively_disconnect
 
   static nmethod* volatile _oops_do_mark_nmethods;
   nmethod*        volatile _oops_do_mark_link;
@@ -165,7 +164,6 @@ class nmethod : public CodeBlob {
 
   // protected by CodeCache_lock
   bool _has_flushed_dependencies;            // Used for maintenance of dependencies (CodeCache_lock)
-  bool _speculatively_disconnected;          // Marked for potential unload
 
   bool _marked_for_reclamation;              // Used by NMethodSweeper (set only by sweeper)
   bool _marked_for_deoptimization;           // Used for stack deoptimization
@@ -180,7 +178,7 @@ class nmethod : public CodeBlob {
   unsigned int _has_wide_vectors:1;          // Preserve wide vectors at safepoints
 
   // Protected by Patching_lock
-  unsigned char _state;                      // {alive, not_entrant, zombie, unloaded}
+  volatile unsigned char _state;             // {alive, not_entrant, zombie, unloaded}
 
 #ifdef ASSERT
   bool _oops_are_stale;  // indicates that it's no longer safe to access oops section
@@ -202,10 +200,17 @@ class nmethod : public CodeBlob {
 
   // not_entrant method removal. Each mark_sweep pass will update
   // this mark to current sweep invocation count if it is seen on the
-  // stack.  An not_entrant method can be removed when there is no
+  // stack.  An not_entrant method can be removed when there are no
   // more activations, i.e., when the _stack_traversal_mark is less than
   // current sweep traversal index.
   long _stack_traversal_mark;
+
+  // The _hotness_counter indicates the hotness of a method. The higher
+  // the value the hotter the method. The hotness counter of a nmethod is
+  // set to [(ReservedCodeCacheSize / (1024 * 1024)) * 2] each time the method
+  // is active while stack scanning (mark_active_nmethods()). The hotness
+  // counter is decreased (by 1) while sweeping.
+  int _hotness_counter;
 
   ExceptionCache *_exception_cache;
   PcDescCache     _pc_desc_cache;
@@ -382,6 +387,10 @@ class nmethod : public CodeBlob {
 
   int total_size        () const;
 
+  void dec_hotness_counter()        { _hotness_counter--; }
+  void set_hotness_counter(int val) { _hotness_counter = val; }
+  int  hotness_counter() const      { return _hotness_counter; }
+
   // Containment
   bool consts_contains       (address addr) const { return consts_begin       () <= addr && addr < consts_end       (); }
   bool insts_contains        (address addr) const { return insts_begin        () <= addr && addr < insts_end        (); }
@@ -408,8 +417,8 @@ class nmethod : public CodeBlob {
   // alive.  It is used when an uncommon trap happens.  Returns true
   // if this thread changed the state of the nmethod or false if
   // another thread performed the transition.
-  bool  make_not_entrant()                        { return make_not_entrant_or_zombie(not_entrant); }
-  bool  make_zombie()                             { return make_not_entrant_or_zombie(zombie); }
+  bool  make_not_entrant() { return make_not_entrant_or_zombie(not_entrant); }
+  bool  make_zombie()      { return make_not_entrant_or_zombie(zombie); }
 
   // used by jvmti to track if the unload event has been reported
   bool  unload_reported()                         { return _unload_reported; }
@@ -436,9 +445,6 @@ class nmethod : public CodeBlob {
 
   bool  has_method_handle_invokes() const         { return _has_method_handle_invokes; }
   void  set_has_method_handle_invokes(bool z)     { _has_method_handle_invokes = z; }
-
-  bool  is_speculatively_disconnected() const     { return _speculatively_disconnected; }
-  void  set_speculatively_disconnected(bool z)    { _speculatively_disconnected = z; }
 
   bool  is_lazy_critical_native() const           { return _lazy_critical_native; }
   void  set_lazy_critical_native(bool z)          { _lazy_critical_native = z; }
@@ -498,9 +504,6 @@ public:
 #endif //PRODUCT
   nmethod* scavenge_root_link() const                  { return _scavenge_root_link; }
   void     set_scavenge_root_link(nmethod *n)          { _scavenge_root_link = n; }
-
-  nmethod* saved_nmethod_link() const                  { return _saved_nmethod_link; }
-  void     set_saved_nmethod_link(nmethod *n)          { _saved_nmethod_link = n; }
 
  public:
 

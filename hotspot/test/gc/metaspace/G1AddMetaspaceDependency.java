@@ -107,7 +107,6 @@ public class G1AddMetaspaceDependency {
     Loader f_loader = new Loader(b_name, b_bytes, a_name, a_loader);
     Loader g_loader = new Loader(b_name, b_bytes, a_name, a_loader);
 
-    byte[] b = new byte[20 * 2 << 20];
     Class<?> c;
     c = b_loader.loadClass(b_name);
     c = c_loader.loadClass(b_name);
