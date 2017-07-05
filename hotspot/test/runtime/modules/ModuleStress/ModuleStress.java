@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class ModuleStress {
         //   those loaders never die.
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
              "-Xbootclasspath/a:.",
-             "-Xlog:modules=trace",
+             "-Xlog:module=trace",
              "-version");
 
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
@@ -83,12 +83,12 @@ public class ModuleStress {
              InMemoryJavaCompiler.compile("p1.c1", source1), System.getProperty("test.classes"));
 
         // Test #2: Load two modules defined to the same customer class loader.
-        //   m1's module readability list and package p2's exportability should
+        //   m1x's module readability list and package p2's exportability should
         //   not be walked at a GC safepoint since both modules are defined to
         //   the same loader and thus have the exact same life cycle.
         pb = ProcessTools.createJavaProcessBuilder(
              "-Xbootclasspath/a:.",
-             "-Xlog:modules=trace",
+             "-Xlog:module=trace",
              "ModuleSameCLMain");
 
         oa = new OutputAnalyzer(pb.start());
@@ -97,35 +97,35 @@ public class ModuleStress {
           .shouldHaveExitValue(0);
 
         // Test #3: Load two modules in differing custom class loaders.
-        //   m1's module readability list and package p2's exportability list must
+        //   m1x's module readability list and package p2's exportability list must
         //   be walked at a GC safepoint since both modules are defined to non-builtin
         //   class loaders which could die and thus be unloaded.
         pb = ProcessTools.createJavaProcessBuilder(
              "-Xbootclasspath/a:.",
-             "-Xlog:modules=trace",
+             "-Xlog:module=trace",
              "ModuleNonBuiltinCLMain");
 
         oa = new OutputAnalyzer(pb.start());
-        oa.shouldContain("module m1 reads list must be walked")
-          .shouldContain("package p2 defined in module m2, exports list must be walked")
-          .shouldNotContain("module m2 reads list must be walked")
+        oa.shouldContain("module m1x reads list must be walked")
+          .shouldContain("package p2 defined in module m2x, exports list must be walked")
+          .shouldNotContain("module m2x reads list must be walked")
           .shouldHaveExitValue(0);
 
         // Test #4: Load two modules in differing custom class loaders,
         //   of which one has been designated as the custom system class loader
         //   via -Djava.system.class.loader=CustomSystemClassLoader. Since
-        //   m3 is defined to the system class loader, m2's module readability
+        //   m3x is defined to the system class loader, m2x's module readability
         //   list does not have to be walked at a GC safepoint, but package p2's
         //   exportability list does.
         pb = ProcessTools.createJavaProcessBuilder(
              "-Djava.system.class.loader=CustomSystemClassLoader",
              "-Xbootclasspath/a:.",
-             "-Xlog:modules=trace",
+             "-Xlog:module=trace",
              "ModuleNonBuiltinCLMain");
 
         oa = new OutputAnalyzer(pb.start());
-        oa.shouldContain("package p2 defined in module m2, exports list must be walked")
-          .shouldNotContain("module m2 reads list must be walked")
+        oa.shouldContain("package p2 defined in module m2x, exports list must be walked")
+          .shouldNotContain("module m2x reads list must be walked")
           .shouldHaveExitValue(0);
 
     }
