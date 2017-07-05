@@ -1,73 +1,91 @@
-." Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH extcheck 1 "10 May 2011"
+'\" t
+.\"  Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.\"     Arch: generic
+.\"     Software: JDK 8
+.\"     Date: 21 November 2013
+.\"     SectDesc: Basic Tools
+.\"     Title: extcheck.1
+.\"
+.if n .pl 99999
+.TH extcheck 1 "21 November 2013" "JDK 8" "Basic Tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
 
-.LP
-.SH "Name"
-extcheck \- A utility to detect jar conflicts
-.LP
-.LP
-\f3extcheck\fP detects version conflicts between a target jar file and currently installed extension jar files.
-.LP
-.SH "SYNOPSIS"
-.LP
-.nf
-\f3
-.fl
-extcheck [ \-verbose ] targetfile.jar
-.fl
-\fP
-.fi
+.SH NAME    
+extcheck \- Detects version conflicts between a target Java Archive (JAR) file and currently installed extension JAR files\&.
+.SH SYNOPSIS    
+.sp     
+.nf     
 
-.LP
-.SH "DESCRIPTION"
-.LP
-.LP
-The \f3extcheck\fP utility checks a specified Jar file for title and version conflicts with any extensions installed in the Java(TM) SDK. Before installing an extension, you can use this utility to see if the same or a more recent version of the extension is already installed.
-.LP
-.LP
-The \f3extcheck\fP utility compares the \f2Specification\-title\fP and \f2Specification\-version\fP headers in the manifest of the \f2targetfile.jar\fP file against the corresponding headers in all Jar files currently installed in the extension directory. (The extension directory is \f2jre/lib/ext\fP by default.) The \f3extcheck\fP utility compares version numbers in the same way as the method \f2java.lang.Package.isCompatibleWith\fP.
-.LP
-.LP
-If no conflict is detected, the return code is \f20\fP.
-.LP
-.LP
-If the manifest of any jar file in the extensions directory has the same \f2Specification\-title\fP and the same or a newer \f2Specification\-version\fP number, a non\-zero error code is returned. A non\-zero error code is also returned if \f2targetfile.jar\fP does not have the \f2Specification\-title\fP or \f2Specification\-version\fP attributes in its manifest.
-.LP
-.SH "OPTIONS"
-.LP
-.RS 3
-.TP 3
-\-verbose 
-Lists Jar files in the extension directory as they are checked. Additionally, manifest attributes of the target jar file and any conflicting jar files are also reported. 
-.TP 3
-\-Joption 
-Pass \f2option\fP to the Java virtual machine, where \f2option\fP is one of the options described on the reference page for the java(1). For example, \f3\-J\-Xms48m\fP sets the startup memory to 48 megabytes. 
-.RE
-
-.LP
-.SH "SEE ALSO"
-.LP
-.LP
+\fBextcheck\fR [\fIoptions\fR] \fItargetfile\&.jar\fR
+.fi     
+.sp     
+.TP     
+\fIoptions\fR
+The command-line options\&. See Options\&.
+.TP     
+\fItargetfile\&.jar\fR
+The target JAR file against which the currently installed extension JAR files are compared to detect version conflicts\&.
+.SH DESCRIPTION    
+The \f3extcheck\fR command checks a specified JAR file for title and version conflicts with any extensions installed in the Java SE SDK\&. Before installing an extension, you can use this utility to see whether the same or a more recent version of the extension is already installed\&.
+.PP
+The \f3extcheck\fR command compares the Specification-title and Specification-version headers in the manifest of the \f3targetfile\&.jar\fR file against the corresponding headers in all JAR files currently installed in the extension directory\&. By default, the extension directory is \f3jre/lib/ext\fR on Oracle Solaris and \f3\ejre\elib\eext\fR on Windows\&. The \f3extcheck\fR command compares version numbers in the same way as the \f3java\&.lang\&.Package\&.isCompatibleWith\fR method\&.
+.PP
+If no conflict is detected, then the return code is 0\&.
+.PP
+If the manifest of any JAR file in the extensions directory has the same \f3Specification-title\fR and the same or a newer \f3Specification-version\fR number, then a non-zero error code is returned\&. A non-zero error code is also returned when \f3targetfile\&.jar\fR does not have the \f3Specification-title\fR or \f3Specification-version\fR attributes in its manifest file\&.
+.SH OPTIONS    
+.TP
+-verbose
+.br
+Lists JAR files in the extension directory as they are checked\&. Additionally, manifest attributes of the target JAR file and any conflicting JAR files are also reported\&.
+.TP
+-J\fIoption\fR
+.br
+Passes \fIoption\fR to the Java Virtual Machine (JVM), where option is one of the options described on the reference page for the Java launcher\&. For example, \f3-J-Xms48m\fR sets the startup memory to 48 MB\&. See java(1)\&.
+.SH SEE\ ALSO    
+.TP 0.2i    
+\(bu
 jar(1)
-.LP
- 
+.RE
+.br
+'pl 8.5i
+'bp
