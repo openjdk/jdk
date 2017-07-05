@@ -28,7 +28,6 @@ package sun.nio.fs;
 import java.nio.file.*;
 import java.io.IOException;
 import java.util.*;
-import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
 import static sun.nio.fs.SolarisNativeDispatcher.*;
 
@@ -43,8 +42,7 @@ class SolarisFileSystem extends UnixFileSystem {
         super(provider, dir);
 
         // check os.version
-        String osversion = AccessController
-            .doPrivileged(new GetPropertyAction("os.version"));
+        String osversion = GetPropertyAction.getProperty("os.version");
         String[] vers = Util.split(osversion, '.');
         assert vers.length >= 2;
         int majorVersion = Integer.parseInt(vers[0]);

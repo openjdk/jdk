@@ -53,10 +53,8 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
   // The closure applied to completed log buffers.
   CardTableEntryClosure* _refine_closure;
 
-  size_t _thread_threshold_step;
-  // This thread activation threshold
-  size_t _threshold;
-  // This thread deactivation threshold
+  // This thread's activation/deactivation thresholds
+  size_t _activation_threshold;
   size_t _deactivation_threshold;
 
   void wait_for_completed_buffers();
@@ -75,9 +73,11 @@ public:
   // Constructor
   ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread* next,
                            CardTableEntryClosure* refine_closure,
-                           uint worker_id_offset, uint worker_id);
+                           uint worker_id_offset, uint worker_id,
+                           size_t activate, size_t deactivate);
 
-  void initialize();
+  void update_thresholds(size_t activate, size_t deactivate);
+  size_t activation_threshold() const { return _activation_threshold; }
 
   // Total virtual time so far.
   double vtime_accum() { return _vtime_accum; }

@@ -94,8 +94,7 @@ public class PatternSyntaxException
     }
 
     private static final String nl =
-        java.security.AccessController
-            .doPrivileged(new GetPropertyAction("line.separator"));
+            GetPropertyAction.getProperty("line.separator");
 
     /**
      * Returns a multi-line string containing the description of the syntax

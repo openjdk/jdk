@@ -101,10 +101,10 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
     @Override
     public FileSystem newFileSystem(URI uri, Map<String, ?> env)
             throws IOException {
+        Objects.requireNonNull(env);
         checkPermission();
         checkUri(uri);
-
-        if (env != null && env.containsKey("java.home")) {
+        if (env.containsKey("java.home")) {
             return newFileSystem((String)env.get("java.home"), uri, env);
         } else {
             return new JrtFileSystem(this, env);

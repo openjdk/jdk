@@ -71,6 +71,10 @@ ByteOffset LigatureSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyp
 {
   LEErrorCode success = LE_NO_ERROR;
   const LigatureSubstitutionStateEntry *entry = entryTable.getAlias(index, success);
+  if (LE_FAILURE(success)) {
+      currGlyph++;
+      return 0;
+  }
 
     ByteOffset newState = SWAPW(entry->newStateOffset);
     le_uint16 flags = SWAPW(entry->flags);
@@ -91,6 +95,10 @@ ByteOffset LigatureSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyp
 
     if (actionOffset != 0) {
       LEReferenceTo<LigatureActionEntry> ap(stHeader, success, actionOffset);
+      if (LE_FAILURE(success)) {
+          currGlyph++;
+          return newState;
+      }
         LigatureActionEntry action;
         le_int32 offset, i = 0, j = 0;
         le_int32 stack[nComponents];
@@ -101,6 +109,10 @@ ByteOffset LigatureSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyp
 
             if (j++ > 0) {
                 ap.addObject(success);
+                if (LE_FAILURE(success)) {
+                    currGlyph++;
+                    return newState;
+                }
             }
 
             action = SWAPL(*ap.getAlias());
@@ -124,9 +136,17 @@ ByteOffset LigatureSubstitutionProcessor::processStateEntry(LEGlyphStorage &glyp
                 return newState; // get out! bad font
               }
               i += SWAPW(offsetTable.getObject(LE_GET_GLYPH(glyphStorage[componentGlyph]), success));
+              if (LE_FAILURE(success)) {
+                  currGlyph++;
+                  return newState;
+              }
 
                 if (action & (lafLast | lafStore))  {
                   LEReferenceTo<TTGlyphID> ligatureOffset(stHeader, success, i);
+                  if (LE_FAILURE(success)) {
+                      currGlyph++;
+                      return newState;
+                  }
                   TTGlyphID ligatureGlyph = SWAPW(*ligatureOffset.getAlias());
 
                   glyphStorage[componentGlyph] = LE_SET_GLYPH(glyphStorage[componentGlyph], ligatureGlyph);

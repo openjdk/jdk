@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ import javax.security.auth.callback.ConfirmationCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.TextOutputCallback;
 
-import sun.misc.ManagedLocalsThread;
 import sun.security.util.Debug;
 import sun.security.util.ResourcesMgr;
 
@@ -816,7 +815,7 @@ public final class SunPKCS11 extends AuthProvider {
             return;
         }
         final TokenPoller poller = new TokenPoller(this);
-        Thread t = new ManagedLocalsThread(poller, "Poller " + getName());
+        Thread t = new Thread(null, poller, "Poller " + getName(), 0, false);
         t.setDaemon(true);
         t.setPriority(Thread.MIN_PRIORITY);
         t.start();

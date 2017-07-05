@@ -459,7 +459,7 @@ public class ThreadPoolImpl implements ThreadPool
     }
 
 
-    private class WorkerThread extends sun.misc.ManagedLocalsThread implements Closeable
+    private class WorkerThread extends Thread implements Closeable
     {
         private Work currentWork;
         private int threadId = 0; // unique id for the thread
@@ -469,7 +469,7 @@ public class ThreadPoolImpl implements ThreadPool
         private StringBuffer workerThreadName = new StringBuffer();
 
         WorkerThread(ThreadGroup tg, String threadPoolName) {
-            super(tg, "Idle");
+            super(tg, null, "Idle", 0, false);
             this.threadId = ThreadPoolImpl.getUniqueThreadId();
             this.threadPoolName = threadPoolName;
             setName(composeWorkerThreadName(threadPoolName, "Idle"));

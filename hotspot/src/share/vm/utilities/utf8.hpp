@@ -26,7 +26,6 @@
 #define SHARE_VM_UTILITIES_UTF8_HPP
 
 #include "memory/allocation.hpp"
-#include "utilities/top.hpp"
 
 // Low-level interface for UTF8 strings
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.awt.image.WritableRaster;
 import java.awt.image.RasterFormatException;
 import java.awt.image.SampleModel;
 import java.awt.image.BandedSampleModel;
-import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferUShort;
 import java.awt.Rectangle;
 import java.awt.Point;
@@ -72,10 +71,9 @@ public class ShortBandedRaster extends SunWritableRaster {
      * @param sampleModel     The SampleModel that specifies the layout.
      * @param origin          The Point that specified the origin.
      */
-    public ShortBandedRaster(SampleModel sampleModel,
-                                Point origin) {
+    public ShortBandedRaster(SampleModel sampleModel, Point origin) {
         this(sampleModel,
-             sampleModel.createDataBuffer(),
+             (DataBufferUShort) sampleModel.createDataBuffer(),
              new Rectangle(origin.x,
                            origin.y,
                            sampleModel.getWidth(),
@@ -95,8 +93,9 @@ public class ShortBandedRaster extends SunWritableRaster {
      * @param origin          The Point that specifies the origin.
      */
     public ShortBandedRaster(SampleModel sampleModel,
-                                DataBuffer dataBuffer,
-                                Point origin) {
+                             DataBufferUShort dataBuffer,
+                             Point origin)
+    {
         this(sampleModel, dataBuffer,
              new Rectangle(origin.x, origin.y,
                            sampleModel.getWidth(),
@@ -123,32 +122,27 @@ public class ShortBandedRaster extends SunWritableRaster {
      * @param parent          The parent (if any) of this raster.
      */
     public ShortBandedRaster(SampleModel sampleModel,
-                                DataBuffer dataBuffer,
-                                Rectangle aRegion,
-                                Point origin,
-                                ShortBandedRaster parent) {
-
+                             DataBufferUShort dataBuffer,
+                             Rectangle aRegion,
+                             Point origin,
+                             ShortBandedRaster parent)
+    {
         super(sampleModel, dataBuffer, aRegion, origin, parent);
         this.maxX = minX + width;
         this.maxY = minY + height;
-        if (!(dataBuffer instanceof DataBufferUShort)) {
-           throw new RasterFormatException("ShortBandedRaster must have " +
-                "ushort DataBuffers");
-        }
-        DataBufferUShort dbus = (DataBufferUShort)dataBuffer;
 
         if (sampleModel instanceof BandedSampleModel) {
             BandedSampleModel bsm = (BandedSampleModel)sampleModel;
             this.scanlineStride = bsm.getScanlineStride();
             int bankIndices[] = bsm.getBankIndices();
             int bandOffsets[] = bsm.getBandOffsets();
-            int dOffsets[] = dbus.getOffsets();
+            int dOffsets[] = dataBuffer.getOffsets();
             dataOffsets = new int[bankIndices.length];
             data = new short[bankIndices.length][];
             int xOffset = aRegion.x - origin.x;
             int yOffset = aRegion.y - origin.y;
             for (int i = 0; i < bankIndices.length; i++) {
-               data[i] = stealData(dbus, bankIndices[i]);
+               data[i] = stealData(dataBuffer, bankIndices[i]);
                dataOffsets[i] = dOffsets[bankIndices[i]] +
                    xOffset + yOffset*scanlineStride + bandOffsets[i];
             }
@@ -670,7 +664,7 @@ public class ShortBandedRaster extends SunWritableRaster {
         int deltaY = y0 - y;
 
         return new ShortBandedRaster(sm,
-                                     dataBuffer,
+                                     (DataBufferUShort) dataBuffer,
                                      new Rectangle(x0, y0, width, height),
                                      new Point(sampleModelTranslateX+deltaX,
                                                sampleModelTranslateY+deltaY),

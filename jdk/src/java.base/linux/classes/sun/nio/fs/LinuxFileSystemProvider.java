@@ -102,8 +102,8 @@ public class LinuxFileSystemProvider extends UnixFileSystemProvider {
 
     @Override
     FileTypeDetector getFileTypeDetector() {
-        Path userMimeTypes = Paths.get(AccessController.doPrivileged(
-            new GetPropertyAction("user.home")), ".mime.types");
+        String userHome = GetPropertyAction.getProperty("user.home");
+        Path userMimeTypes = Paths.get(userHome, ".mime.types");
         Path etcMimeTypes = Paths.get("/etc/mime.types");
 
         return chain(new GioFileTypeDetector(),

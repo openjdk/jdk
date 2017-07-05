@@ -50,7 +50,7 @@ void InternalVMTests::run() {
   run_unit_test(TestMetaspaceAux_test);
   run_unit_test(TestMetachunk_test);
   run_unit_test(TestVirtualSpaceNode_test);
-  run_unit_test(GlobalDefinitions_test);
+  run_unit_test(TestGlobalDefinitions_test);
   run_unit_test(GCTimer_test);
   run_unit_test(arrayOopDesc_test);
   run_unit_test(CollectedHeap_test);
@@ -67,6 +67,7 @@ void InternalVMTests::run() {
   run_unit_test(Test_linked_list);
   run_unit_test(TestChunkedList_test);
   run_unit_test(JSON_test);
+  run_unit_test(Test_log_tag_combinations_limit);
   run_unit_test(Test_logtarget);
   run_unit_test(Test_logstream);
   run_unit_test(Test_loghandle);
@@ -77,6 +78,9 @@ void InternalVMTests::run() {
   run_unit_test(Test_log_prefix);
   run_unit_test(Test_log_big);
   run_unit_test(Test_logtagset_duplicates);
+  run_unit_test(Test_log_file_startup_rotation);
+  run_unit_test(Test_log_file_startup_truncation);
+  run_unit_test(Test_invalid_log_file);
   run_unit_test(DirectivesParser_test);
   run_unit_test(Test_TempNewSymbol);
 #if INCLUDE_VM_STRUCTS

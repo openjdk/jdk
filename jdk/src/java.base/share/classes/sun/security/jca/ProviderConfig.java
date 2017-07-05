@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,9 +236,8 @@ final class ProviderConfig {
                 if (debug != null) {
                     debug.println("Loading provider " + ProviderConfig.this);
                 }
-                ProviderLoader pl = new ProviderLoader();
                 try {
-                    Provider p = pl.load(provName);
+                    Provider p = ProviderLoader.INSTANCE.load(provName);
                     if (p != null) {
                         if (hasArgument()) {
                             p = p.configure(argument);
@@ -303,9 +302,11 @@ final class ProviderConfig {
 
     // Inner class for loading security providers listed in java.security file
     private static final class ProviderLoader {
+        static final ProviderLoader INSTANCE = new ProviderLoader();
+
         private final ServiceLoader<Provider> services;
 
-        ProviderLoader() {
+        private ProviderLoader() {
             // VM should already been booted at this point, if not
             // - Only providers in java.base should be loaded, don't use
             //   ServiceLoader

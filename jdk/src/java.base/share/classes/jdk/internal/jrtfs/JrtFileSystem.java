@@ -299,13 +299,9 @@ class JrtFileSystem extends FileSystem {
     }
 
     // clean up this file system - called from finalize and close
-    void cleanup() throws IOException {
-        if (!isOpen) {
-            return;
-        }
-        synchronized (this) {
+    synchronized void cleanup() throws IOException {
+        if (isOpen) {
             isOpen = false;
-            // close image reader and null out
             image.close();
             image = null;
         }
@@ -461,8 +457,8 @@ class JrtFileSystem extends FileSystem {
     private Node lookup(String path) {
         try {
             return image.findNode(path);
-        } catch (RuntimeException re) {
-            throw new InvalidPathException(path, re.toString());
+        } catch (RuntimeException | IOException ex) {
+            throw new InvalidPathException(path, ex.toString());
         }
     }
 

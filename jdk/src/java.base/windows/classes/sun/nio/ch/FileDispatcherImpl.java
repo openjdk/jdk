@@ -27,9 +27,9 @@ package sun.nio.ch;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.security.PrivilegedAction;
 import jdk.internal.misc.SharedSecrets;
 import jdk.internal.misc.JavaIOFileDescriptorAccess;
+import sun.security.action.GetPropertyAction;
 
 class FileDispatcherImpl extends FileDispatcher {
 
@@ -119,13 +119,8 @@ class FileDispatcherImpl extends FileDispatcher {
     }
 
     static boolean isFastFileTransferRequested() {
-        String fileTransferProp = java.security.AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
-                @Override
-                public String run() {
-                    return System.getProperty("jdk.nio.enableFastFileTransfer");
-                }
-            });
+        String fileTransferProp = GetPropertyAction
+                .getProperty("jdk.nio.enableFastFileTransfer");
         boolean enable;
         if ("".equals(fileTransferProp)) {
             enable = true;

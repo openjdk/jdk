@@ -56,7 +56,6 @@ import java.util.List;
 import javax.print.attribute.*;
 import javax.print.PrintService;
 
-import sun.misc.ManagedLocalsThread;
 import sun.reflect.misc.ReflectUtil;
 
 import sun.swing.SwingUtilities2;
@@ -6375,7 +6374,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         };
 
         // start printing on another thread
-        Thread th = new ManagedLocalsThread(runnable);
+        Thread th = new Thread(null, runnable, "JTablePrint", 0, false);
         th.start();
 
         printingStatus.showModal(true);

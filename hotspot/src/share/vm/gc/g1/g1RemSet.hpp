@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_G1_G1REMSET_HPP
 
 #include "gc/g1/dirtyCardQueue.hpp"
+#include "gc/g1/g1CardLiveData.hpp"
 #include "gc/g1/g1RemSetSummary.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "memory/allocation.hpp"
@@ -48,9 +49,10 @@ class HeapRegionClaimer;
 // A G1RemSet in which each heap region has a rem set that records the
 // external heap references into it.  Uses a mod ref bs to track updates,
 // so that they can be used to update the individual region remsets.
-
 class G1RemSet: public CHeapObj<mtGC> {
 private:
+  G1CardLiveData _card_live_data;
+
   G1RemSetSummary _prev_period_summary;
 
   // A DirtyCardQueueSet that is used to hold cards that contain
@@ -83,7 +85,7 @@ public:
   static uint num_par_rem_sets();
 
   // Initialize data that depends on the heap size being known.
-  static void initialize(uint max_regions);
+  void initialize(size_t capacity, uint max_regions);
 
   // This is called to reset dual hash tables after the gc pause
   // is finished and the initial hash table is no longer being
@@ -140,7 +142,7 @@ public:
   // set entries that correspond to dead heap ranges. "worker_num" is the
   // parallel thread id of the current thread, and "hrclaimer" is the
   // HeapRegionClaimer that should be used.
-  void scrub(BitMap* region_bm, BitMap* card_bm, uint worker_num, HeapRegionClaimer* hrclaimer);
+  void scrub(uint worker_num, HeapRegionClaimer* hrclaimer);
 
   // Refine the card corresponding to "card_ptr".
   // If check_for_refs_into_cset is true, a true result is returned
@@ -162,6 +164,19 @@ public:
   size_t conc_refine_cards() const {
     return _conc_refine_cards;
   }
+
+  void create_card_live_data(WorkGang* workers, G1CMBitMap* mark_bitmap);
+  void finalize_card_live_data(WorkGang* workers, G1CMBitMap* mark_bitmap);
+
+  // Verify that the liveness count data created concurrently matches one created
+  // during this safepoint.
+  void verify_card_live_data(WorkGang* workers, G1CMBitMap* actual_bitmap);
+
+  void clear_card_live_data(WorkGang* workers);
+
+#ifdef ASSERT
+  void verify_card_live_data_is_clear();
+#endif
 };
 
 class ScanRSClosure : public HeapRegionClosure {

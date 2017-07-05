@@ -33,6 +33,7 @@ import java.util.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.net.ExtendedOptionsImpl;
+import sun.security.action.GetPropertyAction;
 
 
 public class Net {
@@ -382,13 +383,8 @@ public class Net {
     }
 
     public static boolean isFastTcpLoopbackRequested() {
-        String loopbackProp = java.security.AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
-                @Override
-                public String run() {
-                    return System.getProperty("jdk.net.useFastTcpLoopback");
-                }
-            });
+        String loopbackProp =
+                GetPropertyAction.getProperty("jdk.net.useFastTcpLoopback");
         boolean enable;
         if ("".equals(loopbackProp)) {
             enable = true;
@@ -647,16 +643,9 @@ public class Net {
         int availLevel = isExclusiveBindAvailable();
         if (availLevel >= 0) {
             String exclBindProp =
-                java.security.AccessController.doPrivileged(
-                    new PrivilegedAction<String>() {
-                        @Override
-                        public String run() {
-                            return System.getProperty(
-                                    "sun.net.useExclusiveBind");
-                        }
-                    });
+                    GetPropertyAction.getProperty("sun.net.useExclusiveBind");
             if (exclBindProp != null) {
-                exclusiveBind = exclBindProp.length() == 0 ?
+                exclusiveBind = exclBindProp.isEmpty() ?
                         true : Boolean.parseBoolean(exclBindProp);
             } else if (availLevel == 1) {
                 exclusiveBind = true;

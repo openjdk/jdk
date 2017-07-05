@@ -31,6 +31,7 @@ import sun.net.ResourceManager;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
+import sun.security.action.GetPropertyAction;
 
 /**
  * Abstract datagram and multicast socket implementation base class.
@@ -51,9 +52,7 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
     protected InetAddress connectedAddress = null;
     private int connectedPort = -1;
 
-    private static final String os = AccessController.doPrivileged(
-        new sun.security.action.GetPropertyAction("os.name")
-    );
+    private static final String os = GetPropertyAction.getProperty("os.name");
 
     /**
      * flag set if the native connect() call not to be used

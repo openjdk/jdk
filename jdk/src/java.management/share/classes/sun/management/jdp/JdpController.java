@@ -34,7 +34,6 @@ import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import sun.management.VMManagement;
-import sun.misc.ManagedLocalsThread;
 
 /**
  * JdpController is responsible to create and manage a broadcast loop.
@@ -219,7 +218,7 @@ public final class JdpController {
 
         controller = new JDPControllerRunner(bcast, packet, pause);
 
-        Thread t = new ManagedLocalsThread(controller, "JDP broadcaster");
+        Thread t = new Thread(null, controller, "JDP broadcaster", 0, false);
         t.setDaemon(true);
         t.start();
     }

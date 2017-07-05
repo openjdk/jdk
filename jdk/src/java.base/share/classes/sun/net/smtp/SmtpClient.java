@@ -25,10 +25,10 @@
 
 package sun.net.smtp;
 
-import java.util.StringTokenizer;
 import java.io.*;
 import java.net.*;
 import sun.net.TransferProtocolClient;
+import sun.security.action.GetPropertyAction;
 
 /**
  * This class implements the SMTP client.
@@ -157,8 +157,7 @@ public class SmtpClient extends TransferProtocolClient {
         }
         try {
             String s;
-            mailhost = java.security.AccessController.doPrivileged(
-                    new sun.security.action.GetPropertyAction("mail.host"));
+            mailhost = GetPropertyAction.getProperty("mail.host");
             if (mailhost != null) {
                 openServer(mailhost);
                 return;
@@ -184,8 +183,7 @@ public class SmtpClient extends TransferProtocolClient {
         setConnectTimeout(to);
         try {
             String s;
-            mailhost = java.security.AccessController.doPrivileged(
-                    new sun.security.action.GetPropertyAction("mail.host"));
+            mailhost = GetPropertyAction.getProperty("mail.host");
             if (mailhost != null) {
                 openServer(mailhost);
                 return;

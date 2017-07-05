@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "prims/jvm.h"
 #include "utilities/accessFlags.hpp"
+#include "utilities/ostream.hpp"
 
 // ciFlags
 //

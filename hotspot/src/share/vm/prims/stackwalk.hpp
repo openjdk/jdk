@@ -45,12 +45,12 @@ public:
   vframeStream&   vframe_stream()         { return _vfst; }
   JavaThread*     thread()                { return _thread; }
 
-  void setup_magic_on_entry(objArrayHandle classes_array);
-  bool check_magic(objArrayHandle classes_array);
-  bool cleanup_magic_on_exit(objArrayHandle classes_array);
+  void setup_magic_on_entry(objArrayHandle frames_array);
+  bool check_magic(objArrayHandle frames_array);
+  bool cleanup_magic_on_exit(objArrayHandle frames_array);
 
-  bool is_valid_in(Thread* thread, objArrayHandle classes_array) {
-    return (_thread == thread && check_magic(classes_array));
+  bool is_valid_in(Thread* thread, objArrayHandle frames_array) {
+    return (_thread == thread && check_magic(frames_array));
   }
 
   jlong address_value() {
@@ -64,7 +64,6 @@ class StackWalk : public AllStatic {
 private:
   static int fill_in_frames(jlong mode, vframeStream& vfst,
                             int max_nframes, int start_index,
-                            objArrayHandle classes_array,
                             objArrayHandle frames_array,
                             int& end_index, TRAPS);
 
@@ -82,20 +81,18 @@ private:
   static inline bool live_frame_info(int mode) {
     return (mode & JVM_STACKWALK_FILL_LIVE_STACK_FRAMES) != 0;
   }
-  static inline bool fill_in_stacktrace(int mode) {
-    return (mode & JVM_STACKWALK_FILTER_FILL_IN_STACK_TRACE) != 0;
-  }
 
 public:
+  static inline bool use_frames_array(int mode) {
+    return (mode & JVM_STACKWALK_FILL_CLASS_REFS_ONLY) == 0;
+  }
   static oop walk(Handle stackStream, jlong mode,
                   int skip_frames, int frame_count, int start_index,
-                  objArrayHandle classes_array,
                   objArrayHandle frames_array,
                   TRAPS);
 
   static jint moreFrames(Handle stackStream, jlong mode, jlong magic,
                          int frame_count, int start_index,
-                         objArrayHandle classes_array,
                          objArrayHandle frames_array,
                          TRAPS);
 };
