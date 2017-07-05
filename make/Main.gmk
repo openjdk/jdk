@@ -630,13 +630,12 @@ else
   # in javadoc.
   java.desktop-gensrc-jdk: java.base-gensrc
 
-  # The annotation processing for jdk.vm.ci needs java.base classes from the
-  # current JDK.
-  jdk.vm.ci-gensrc-hotspot: java.base-java
-
-  # The annotation processing for jdk.vm.compiler needs classes from the current JDK.
-  jdk.vm.compiler-gensrc-hotspot: java.base-java java.management-java \
-      jdk.management-java jdk.vm.ci-java jdk.unsupported-java
+  # The annotation processing for jdk.vm.ci and jdk.vm.compiler needs classes
+  # from the current JDK.
+  jdk.vm.ci-gensrc-hotspot: $(addsuffix -java, \
+      $(call FindTransitiveDepsForModule, jdk.vm.ci))
+  jdk.vm.compiler-gensrc-hotspot: $(addsuffix -java, \
+      $(call FindTransitiveDepsForModule, jdk.vm.compiler))
 
   # For jdk.vm.compiler, the gensrc step is generating a module-info.java.extra
   # file to be processed by the gensrc-moduleinfo target.

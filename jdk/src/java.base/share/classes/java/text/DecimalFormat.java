@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -514,6 +514,8 @@ public class DecimalFormat extends NumberFormat {
      * @param result    where the text is to be appended
      * @param fieldPosition    On input: an alignment field, if desired.
      * On output: the offsets of the alignment field.
+     * @exception NullPointerException if {@code result} or
+     *            {@code fieldPosition} is {@code null}
      * @exception ArithmeticException if rounding is needed with rounding
      *            mode being set to RoundingMode.UNNECESSARY
      * @return The formatted number string
@@ -632,6 +634,8 @@ public class DecimalFormat extends NumberFormat {
      * @param result    where the text is to be appended
      * @param fieldPosition    On input: an alignment field, if desired.
      * On output: the offsets of the alignment field.
+     * @exception       NullPointerException if {@code result} or
+     *                  {@code fieldPosition} is {@code null}
      * @exception       ArithmeticException if rounding is needed with rounding
      *                  mode being set to RoundingMode.UNNECESSARY
      * @return The formatted number string

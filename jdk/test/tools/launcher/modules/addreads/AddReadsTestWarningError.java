@@ -27,7 +27,7 @@
  * @summary  Basic argument validation for --add-reads
  * @library /lib/testlibrary
  * @modules jdk.compiler
- * @build AddReadsTestWarningError CompilerUtils ModuleSourceBuilder
+ * @build AddReadsTestWarningError CompilerUtils ModuleInfoMaker
  * @build jdk.testlibrary.*
  * @run testng AddReadsTestWarningError
  */
@@ -59,7 +59,7 @@ public class AddReadsTestWarningError {
 
     @BeforeTest
     public void setup() throws Exception {
-        ModuleSourceBuilder builder = new ModuleSourceBuilder(SRC_DIR);
+        ModuleInfoMaker builder = new ModuleInfoMaker(SRC_DIR);
         builder.writeJavaFiles("m1",
             "module m1 { requires m4; }",
             "package p1; public class C1 { " +
