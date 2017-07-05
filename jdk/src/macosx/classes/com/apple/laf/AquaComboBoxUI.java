@@ -259,7 +259,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     protected void installKeyboardActions() {
         super.installKeyboardActions();
 
-        final ActionMap actionMap = comboBox.getActionMap();
+        ActionMap actionMap = new ActionMapUIResource();
+
         actionMap.put("aquaSelectNext", highlightNextAction);
         actionMap.put("aquaSelectPrevious", highlightPreviousAction);
         actionMap.put("aquaEnterPressed", triggerSelectionAction);
@@ -269,6 +270,8 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         actionMap.put("aquaSelectEnd", highlightLastAction);
         actionMap.put("aquaSelectPageUp", highlightPageUpAction);
         actionMap.put("aquaSelectPageDown", highlightPageDownAction);
+
+        SwingUtilities.replaceUIActionMap(comboBox, actionMap);
     }
 
     abstract class ComboBoxAction extends AbstractAction {

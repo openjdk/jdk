@@ -62,6 +62,13 @@ BITS=$1
 case "$OS" in
     Windows* | CYGWIN* )
 
+        echo "Removing the keypair if it already exists (for unknown reason)..."
+        ${TESTJAVA}${FS}bin${FS}keytool \
+            -delete \
+            -storetype Windows-My \
+            -debug \
+            -alias 7106773.$BITS
+
         echo "Creating a temporary RSA keypair in the Windows-My store..."
         ${TESTJAVA}${FS}bin${FS}keytool \
             -genkeypair \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,7 +171,21 @@ public class InvalidLdapFilters {
         // env.put(Context.SECURITY_CREDENTIALS,"root");
 
         // create initial context
-        DirContext context = new InitialDirContext(env);
+        DirContext context = null;
+        int i = 0;
+        while (true) {
+            try {
+                context = new InitialDirContext(env);
+                break;
+            } catch (NamingException ne) {
+                // may be a connection or read timeout, try again
+                // no more than 5 times
+                if (i++ > 5) {
+                    throw new Exception(
+                        "Maybe timeout during context initialization", ne);
+                }
+            }
+        }
 
         // searching
         SearchControls scs = new SearchControls();
