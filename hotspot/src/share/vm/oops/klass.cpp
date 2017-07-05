@@ -56,7 +56,7 @@ bool Klass::is_subclass_of(Klass* k) const {
 
   while (t != NULL) {
     if (t == k) return true;
-    t = Klass::cast(t)->super();
+    t = t->super();
   }
   return false;
 }
@@ -243,16 +243,16 @@ void Klass::initialize_supers(Klass* k, TRAPS) {
       juint j = super_depth();
       assert(j == my_depth, "computed accessor gets right answer");
       Klass* t = this;
-      while (!Klass::cast(t)->can_be_primary_super()) {
-        t = Klass::cast(t)->super();
-        j = Klass::cast(t)->super_depth();
+      while (!t->can_be_primary_super()) {
+        t = t->super();
+        j = t->super_depth();
       }
       for (juint j1 = j+1; j1 < primary_super_limit(); j1++) {
         assert(primary_super_of_depth(j1) == NULL, "super list padding");
       }
       while (t != NULL) {
         assert(primary_super_of_depth(j) == t, "super list initialization");
-        t = Klass::cast(t)->super();
+        t = t->super();
         --j;
       }
       assert(j == (juint)-1, "correct depth count");
@@ -333,7 +333,7 @@ GrowableArray<Klass*>* Klass::compute_secondary_supers(int num_extra_slots) {
 
 
 Klass* Klass::subklass() const {
-  return _subklass == NULL ? NULL : Klass::cast(_subklass);
+  return _subklass == NULL ? NULL : _subklass;
 }
 
 InstanceKlass* Klass::superklass() const {
@@ -342,7 +342,7 @@ InstanceKlass* Klass::superklass() const {
 }
 
 Klass* Klass::next_sibling() const {
-  return _next_sibling == NULL ? NULL : Klass::cast(_next_sibling);
+  return _next_sibling == NULL ? NULL : _next_sibling;
 }
 
 void Klass::set_subklass(Klass* s) {

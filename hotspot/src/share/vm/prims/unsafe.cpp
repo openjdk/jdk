@@ -771,7 +771,7 @@ UNSAFE_ENTRY(void, Unsafe_EnsureClassInitialized(JNIEnv *env, jobject unsafe, jo
   oop mirror = JNIHandles::resolve_non_null(clazz);
 
   Klass* klass = java_lang_Class::as_Klass(mirror);
-  if (klass != NULL && Klass::cast(klass)->should_be_initialized()) {
+  if (klass != NULL && klass->should_be_initialized()) {
     InstanceKlass* k = InstanceKlass::cast(klass);
     k->initialize(CHECK);
   }
@@ -785,7 +785,7 @@ UNSAFE_ENTRY(jboolean, Unsafe_ShouldBeInitialized(JNIEnv *env, jobject unsafe, j
   }
   oop mirror = JNIHandles::resolve_non_null(clazz);
   Klass* klass = java_lang_Class::as_Klass(mirror);
-  if (klass != NULL && Klass::cast(klass)->should_be_initialized()) {
+  if (klass != NULL && klass->should_be_initialized()) {
     return true;
   }
   return false;

@@ -262,17 +262,12 @@ public:
   // The string table
   static StringTable* the_table() { return _the_table; }
 
+  // Size of one bucket in the string table.  Used when checking for rollover.
+  static uint bucket_size() { return sizeof(HashtableBucket<mtSymbol>); }
+
   static void create_table() {
     assert(_the_table == NULL, "One string table allowed.");
     _the_table = new StringTable();
-  }
-
-  static void create_table(HashtableBucket<mtSymbol>* t, int length,
-                           int number_of_entries) {
-    assert(_the_table == NULL, "One string table allowed.");
-    assert((size_t)length == StringTableSize * sizeof(HashtableBucket<mtSymbol>),
-           "bad shared string size.");
-    _the_table = new StringTable(t, number_of_entries);
   }
 
   // GC support

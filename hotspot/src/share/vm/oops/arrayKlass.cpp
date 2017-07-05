@@ -67,7 +67,7 @@ oop ArrayKlass::multi_allocate(int rank, jint* sizes, TRAPS) {
 Method* ArrayKlass::uncached_lookup_method(Symbol* name, Symbol* signature) const {
   // There are no methods in an array klass but the super class (Object) has some
   assert(super(), "super klass must be present");
-  return Klass::cast(super())->uncached_lookup_method(name, signature);
+  return super()->uncached_lookup_method(name, signature);
 }
 
 ArrayKlass::ArrayKlass(Symbol* name) {
