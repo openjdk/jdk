@@ -2139,7 +2139,7 @@ void TemplateTable::load_invoke_cp_cache_entry(int byte_no,
   const int index_offset = in_bytes(ConstantPoolCache::base_offset() +
                                     ConstantPoolCacheEntry::f2_offset());
 
-    size_t index_size = (is_invokedynamic ? sizeof(u4) : sizeof(u2));
+  size_t index_size = (is_invokedynamic ? sizeof(u4) : sizeof(u2));
   resolve_cache_and_index(byte_no, cache, index, index_size);
     __ movptr(method, Address(cache, index, Address::times_ptr, method_offset));
 
@@ -2876,6 +2876,7 @@ void TemplateTable::prepare_invoke(int byte_no,
     // since the parameter_size includes it.
     __ push(rbx);
     __ mov(rbx, index);
+    assert(ConstantPoolCacheEntry::_indy_resolved_references_appendix_offset == 0, "appendix expected at index+0");
     __ load_resolved_reference_at_index(index, rbx);
     __ pop(rbx);
     __ push(index);  // push appendix (MethodType, CallSite, etc.)
@@ -3093,8 +3094,8 @@ void TemplateTable::invokeinterface(int byte_no) {
 void TemplateTable::invokehandle(int byte_no) {
   transition(vtos, vtos);
   assert(byte_no == f1_byte, "use this argument");
-  const Register rbx_method = rbx;  // (from f2)
-  const Register rax_mtype  = rax;  // (from f1)
+  const Register rbx_method = rbx;
+  const Register rax_mtype  = rax;
   const Register rcx_recv   = rcx;
   const Register rdx_flags  = rdx;
 
@@ -3104,12 +3105,13 @@ void TemplateTable::invokehandle(int byte_no) {
     return;
   }
 
-  prepare_invoke(byte_no,
-                 rbx_method, rax_mtype,  // get f2 Method*, f1 MethodType
-                 rcx_recv);
+  prepare_invoke(byte_no, rbx_method, rax_mtype, rcx_recv);
   __ verify_method_ptr(rbx_method);
   __ verify_oop(rcx_recv);
   __ null_check(rcx_recv);
+
+  // rax: MethodType object (from cpool->resolved_references[f1], if necessary)
+  // rbx: MH.invokeExact_MT method (from f2)
 
   // Note:  rax_mtype is already pushed (if necessary) by prepare_invoke
 
@@ -3140,7 +3142,7 @@ void TemplateTable::invokedynamic(int byte_no) {
 
   prepare_invoke(byte_no, rbx_method, rax_callsite);
 
-  // rax: CallSite object (from cpool->resolved_references[])
+  // rax: CallSite object (from cpool->resolved_references[f1])
   // rbx: MH.linkToCallSite method (from f2)
 
   // Note:  rax_callsite is already pushed by prepare_invoke

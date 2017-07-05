@@ -198,8 +198,6 @@ void VM_CollectForMetadataAllocation::doit() {
   CollectedHeap* heap = Universe::heap();
   GCCauseSetter gccs(heap, _gc_cause);
 
-  bool do_cms_concurrent = false;
-
   // Check again if the space is available.  Another thread
   // may have similarly failed a metadata allocation and induced
   // a GC that freed space for the allocation.
@@ -208,23 +206,25 @@ void VM_CollectForMetadataAllocation::doit() {
     }
 
   if (_result == NULL) {
-    if (!UseConcMarkSweepGC) {
-      // Don't clear the soft refs the first time.
-      heap->collect_as_vm_thread(GCCause::_metadata_GC_threshold);
-      _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
-      // Don't do this for now
-      // This seems too costly to do a second full GC
-      // Let the metaspace grow instead
-      // if (_result == NULL) {
-      //  // If allocation fails again, clear soft refs
-      //  heap->collect_as_vm_thread(GCCause::_last_ditch_collection);
-      //  _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
-      // }
-    } else {
-      MetaspaceGC::set_should_concurrent_collect(true);
-      do_cms_concurrent = true;
+    if (UseConcMarkSweepGC) {
+      if (CMSClassUnloadingEnabled) {
+        MetaspaceGC::set_should_concurrent_collect(true);
+      }
+      // For CMS expand since the collection is going to be concurrent.
+      _result =
+        _loader_data->metaspace_non_null()->expand_and_allocate(_size, _mdtype);
     }
     if (_result == NULL) {
+      // Don't clear the soft refs.  This GC is for reclaiming metadata
+      // and is unrelated to the fullness of the Java heap which should
+      // be the criteria for clearing SoftReferences.
+      if (Verbose && PrintGCDetails && UseConcMarkSweepGC) {
+        gclog_or_tty->print_cr("\nCMS full GC for Metaspace");
+      }
+      heap->collect_as_vm_thread(GCCause::_metadata_GC_threshold);
+      _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
+    }
+    if (_result == NULL && !UseConcMarkSweepGC /* CMS already tried */) {
       // If still failing, allow the Metaspace to expand.
       // See delta_capacity_until_GC() for explanation of the
       // amount of the expansion.
@@ -233,18 +233,10 @@ void VM_CollectForMetadataAllocation::doit() {
       _result =
         _loader_data->metaspace_non_null()->expand_and_allocate(_size, _mdtype);
 
-      if (do_cms_concurrent && _result == NULL) {
-        // Rather than fail with a metaspace out-of-memory, do a full
-        // GC for CMS.
-        heap->collect_as_vm_thread(GCCause::_metadata_GC_threshold);
-        _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
-      }
-      if (_result == NULL) {
-        if (PrintGCDetails) {
-          gclog_or_tty->print_cr("\nAfter Metaspace GC failed to allocate size "
-                                 SIZE_FORMAT, _size);
-        }
-      }
+    }
+    if (Verbose && PrintGCDetails && _result == NULL) {
+      gclog_or_tty->print_cr("\nAfter Metaspace GC failed to allocate size "
+                             SIZE_FORMAT, _size);
     }
   }
 

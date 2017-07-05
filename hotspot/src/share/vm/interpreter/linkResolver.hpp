@@ -76,12 +76,13 @@ class CallInfo: public LinkInfo {
   methodHandle _selected_method;        // dynamic (actual) target method
   int          _vtable_index;           // vtable index of selected method
   Handle       _resolved_appendix;      // extra argument in constant pool (if CPCE::has_appendix)
+  Handle       _resolved_method_type;   // MethodType (for invokedynamic and invokehandle call sites)
 
-  void         set_static(   KlassHandle resolved_klass,                             methodHandle resolved_method                                                , TRAPS);
-  void         set_interface(KlassHandle resolved_klass, KlassHandle selected_klass, methodHandle resolved_method, methodHandle selected_method                  , TRAPS);
-  void         set_virtual(  KlassHandle resolved_klass, KlassHandle selected_klass, methodHandle resolved_method, methodHandle selected_method, int vtable_index, TRAPS);
-  void         set_handle(                                                           methodHandle resolved_method,   Handle resolved_appendix,                     TRAPS);
-  void         set_common(   KlassHandle resolved_klass, KlassHandle selected_klass, methodHandle resolved_method, methodHandle selected_method, int vtable_index, TRAPS);
+  void         set_static(   KlassHandle resolved_klass,                             methodHandle resolved_method                                                       , TRAPS);
+  void         set_interface(KlassHandle resolved_klass, KlassHandle selected_klass, methodHandle resolved_method, methodHandle selected_method                         , TRAPS);
+  void         set_virtual(  KlassHandle resolved_klass, KlassHandle selected_klass, methodHandle resolved_method, methodHandle selected_method, int vtable_index       , TRAPS);
+  void         set_handle(                                                           methodHandle resolved_method, Handle resolved_appendix, Handle resolved_method_type, TRAPS);
+  void         set_common(   KlassHandle resolved_klass, KlassHandle selected_klass, methodHandle resolved_method, methodHandle selected_method, int vtable_index       , TRAPS);
 
   friend class LinkResolver;
 
@@ -91,6 +92,7 @@ class CallInfo: public LinkInfo {
   methodHandle resolved_method() const           { return _resolved_method; }
   methodHandle selected_method() const           { return _selected_method; }
   Handle       resolved_appendix() const         { return _resolved_appendix; }
+  Handle       resolved_method_type() const      { return _resolved_method_type; }
 
   BasicType    result_type() const               { return selected_method()->result_type(); }
   bool         has_vtable_index() const          { return _vtable_index >= 0; }
@@ -113,7 +115,7 @@ class LinkResolver: AllStatic {
   static void lookup_instance_method_in_klasses (methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, TRAPS);
   static void lookup_method_in_interfaces       (methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature, TRAPS);
   static void lookup_polymorphic_method         (methodHandle& result, KlassHandle klass, Symbol* name, Symbol* signature,
-                                                 KlassHandle current_klass, Handle* appendix_result_or_null, TRAPS);
+                                                 KlassHandle current_klass, Handle *appendix_result_or_null, Handle *method_type_result, TRAPS);
 
   static int vtable_index_of_miranda_method(KlassHandle klass, Symbol* name, Symbol* signature, TRAPS);
 

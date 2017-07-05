@@ -326,7 +326,7 @@ private:
   void init_gc_alloc_regions();
 
   // It releases the GC alloc regions at the end of a GC.
-  void release_gc_alloc_regions();
+  void release_gc_alloc_regions(uint no_of_gc_workers);
 
   // It does any cleanup that needs to be done on the GC alloc regions
   // before a Full GC.
@@ -652,11 +652,11 @@ protected:
 
   // Process any reference objects discovered during
   // an incremental evacuation pause.
-  void process_discovered_references();
+  void process_discovered_references(uint no_of_gc_workers);
 
   // Enqueue any remaining discovered references
   // after processing.
-  void enqueue_discovered_references();
+  void enqueue_discovered_references(uint no_of_gc_workers);
 
 public:
 
