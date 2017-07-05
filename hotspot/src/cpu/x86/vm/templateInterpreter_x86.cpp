@@ -76,12 +76,7 @@ void AbstractInterpreter::layout_activation(Method* method,
     Interpreter::stackElementWords;
 
 #ifdef ASSERT
-  if (!EnableInvokeDynamic) {
-    // @@@ FIXME: Should we correct interpreter_frame_sender_sp in the calling sequences?
-    // Probably, since deoptimization doesn't work yet.
-    assert(caller->unextended_sp() == interpreter_frame->interpreter_frame_sender_sp(), "Frame not properly walkable");
-  }
-  assert(caller->sp() == interpreter_frame->sender_sp(), "Frame not properly walkable(2)");
+  assert(caller->sp() == interpreter_frame->sender_sp(), "Frame not properly walkable");
 #endif
 
   interpreter_frame->interpreter_frame_set_method(method);

@@ -377,11 +377,9 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   char* skip_over_field_signature(char* signature, bool void_ok, unsigned int length, TRAPS);
 
   bool is_anonymous() {
-    assert(EnableInvokeDynamic || _host_klass.is_null(), "");
     return _host_klass.not_null();
   }
   bool has_cp_patch_at(int index) {
-    assert(EnableInvokeDynamic, "");
     assert(index >= 0, "oob");
     return (_cp_patches != NULL
             && index < _cp_patches->length()
@@ -404,10 +402,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   // constant pool construction, but in later versions they can.
   // %%% Let's phase out the old is_klass_reference.
   bool valid_klass_reference_at(int index) {
-    return _cp->is_within_bounds(index) &&
-         (EnableInvokeDynamic
-            ? _cp->tag_at(index).is_klass_or_reference()
-            : _cp->tag_at(index).is_klass_reference());
+    return _cp->is_within_bounds(index) && _cp->tag_at(index).is_klass_or_reference();
   }
 
   // Checks that the cpool index is in range and is a utf8

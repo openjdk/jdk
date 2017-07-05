@@ -39,6 +39,7 @@ import jdk.testlibrary.Utils;
  * @test
  * @bug 7104647
  * @library /lib/testlibrary
+ * @build jdk.testlibrary.*
  * @run main TestJcmdDefaults
  */
 public class TestJcmdDefaults {

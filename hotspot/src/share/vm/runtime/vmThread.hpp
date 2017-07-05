@@ -128,9 +128,6 @@ class VMThread: public NamedThread {
   // GC support
   void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
 
-  // Debugging
-  void print_on(outputStream* st) const;
-  void print() const                              { print_on(tty); }
   void verify();
 
   // Performance measurement

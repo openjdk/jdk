@@ -30,7 +30,7 @@ import jdk.testlibrary.Utils;
  * @bug 6289149
  * @summary test when the agent's class is missing the premain() function.
  * @library /lib/testlibrary
- * @run build DummyMain
+ * @run build jdk.testlibrary.* DummyMain
  * @run shell ../MakeJAR3.sh NoPremainAgent
  * @run main NoPremainAgentTest
  */
