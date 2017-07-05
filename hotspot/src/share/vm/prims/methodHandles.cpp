@@ -59,7 +59,7 @@ MethodHandlesAdapterBlob* MethodHandles::_adapter_code = NULL;
 // MethodHandles::generate_adapters
 //
 void MethodHandles::generate_adapters() {
-  if (!EnableInvokeDynamic || SystemDictionary::MethodHandle_klass() == NULL)  return;
+  if (SystemDictionary::MethodHandle_klass() == NULL)  return;
 
   assert(_adapter_code == NULL, "generate only once");
 
@@ -98,7 +98,7 @@ void MethodHandlesAdapterGenerator::generate() {
 
 void MethodHandles::set_enabled(bool z) {
   if (_enabled != z) {
-    guarantee(z && EnableInvokeDynamic, "can only enable once, and only if -XX:+EnableInvokeDynamic");
+    guarantee(z, "can only enable once");
     _enabled = z;
   }
 }
@@ -1374,11 +1374,6 @@ static bool register_natives(JNIEnv* env, jclass clazz, const JNINativeMethod* m
  * This one function is exported, used by NativeLookup.
  */
 JVM_ENTRY(void, JVM_RegisterMethodHandleMethods(JNIEnv *env, jclass MHN_class)) {
-  if (!EnableInvokeDynamic) {
-    warning("JSR 292 is disabled in this JVM.  Use -XX:+UnlockDiagnosticVMOptions -XX:+EnableInvokeDynamic to enable.");
-    return;  // bind nothing
-  }
-
   assert(!MethodHandles::enabled(), "must not be enabled");
   bool enable_MH = true;
 

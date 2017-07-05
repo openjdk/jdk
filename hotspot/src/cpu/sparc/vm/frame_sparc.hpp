@@ -259,8 +259,8 @@
 
   // next two fns read and write Lmonitors value,
  private:
-  BasicObjectLock* interpreter_frame_monitors()           const  { return *interpreter_frame_monitors_addr(); }
-  void interpreter_frame_set_monitors(BasicObjectLock* monitors) {        *interpreter_frame_monitors_addr() = monitors; }
+  BasicObjectLock* interpreter_frame_monitors() const;
+  void interpreter_frame_set_monitors(BasicObjectLock* monitors);
 #else
  public:
   inline interpreterState get_interpreterState() const {

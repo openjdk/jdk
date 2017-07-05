@@ -26,11 +26,8 @@
 #define OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP
 
 #include "runtime/atomic.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
-
-#ifdef TARGET_OS_ARCH_windows_x86
-# include "orderAccess_windows_x86.inline.hpp"
-#endif
 
 inline const char* os::file_separator()                { return "\\"; }
 inline const char* os::line_separator()                { return "\r\n"; }

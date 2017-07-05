@@ -1,5 +1,5 @@
 <!--
- Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ Provides the management interfaces for monitoring and management of the
 Java virtual machine and other components in the Java runtime.
 It allows both local and remote
 monitoring and management of the running Java virtual machine.
-<p>
 
 <h4><a name="MXBean">Platform MXBean</a></h4>
 <p>
@@ -41,7 +40,6 @@ Instrumentation Specification and only uses a set of basic data types.
 Each platform MXBean is a {@link java.lang.management.PlatformManagedObject}
 with a unique
 {@linkplain java.lang.management.PlatformManagedObject#getObjectName name}.
-<p>
 <h4>ManagementFactory</h4>
 
 <p>The {@link java.lang.management.ManagementFactory} class is the management
@@ -80,7 +78,6 @@ MXBean</a> specification for details.
 Java virtual machine and the runtime in the following ways:
 <p>
 <b>1. Direct access to an MXBean interface</b>
-<p>
 <ul>
 <li>Get an MXBean instance locally in the running Java virtual machine:
 <pre>
@@ -100,7 +97,6 @@ Java virtual machine and the runtime in the following ways:
    // Get the standard attribute "VmVendor"
    String vendor = mxbean.getVmVendor();
 </pre>
-<p>
 </li>
 <li>Construct an MXBean proxy instance that forwards the
     method calls to a given MBeanServer:
@@ -132,7 +128,7 @@ Java virtual machine and the runtime in the following ways:
 </li>
 </ul>
 <p>
-<b>2. Indirect access to an MXBean interface via MBeanServer</b><p>
+<b>2. Indirect access to an MXBean interface via MBeanServer</b>
 <ul>
 <li>Go through the
     {@link java.lang.management.ManagementFactory#getPlatformMBeanServer
@@ -143,7 +139,7 @@ Java virtual machine and the runtime in the following ways:
     <em>JMX open types</em> which include basic data types,
     {@link javax.management.openmbean.CompositeData CompositeData},
     and {@link javax.management.openmbean.TabularData TabularData}
-    defined in {@link javax.management.openmbean.OpenType OpenType}.<p>
+    defined in {@link javax.management.openmbean.OpenType OpenType}.
 <pre>
    MBeanServerConnection mbs;
 

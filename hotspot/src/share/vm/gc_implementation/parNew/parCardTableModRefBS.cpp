@@ -32,6 +32,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/virtualspace.hpp"
 #include "runtime/vmThread.hpp"
 

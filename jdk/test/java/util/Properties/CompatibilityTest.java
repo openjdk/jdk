@@ -25,8 +25,6 @@
  * @test
  * @bug 8005280 8004371
  * @summary Compatibility test
- * @run main CompatibilityTest
- * @run main/othervm -Dsun.util.spi.XmlPropertiesProvider=jdk.internal.util.xml.BasicXmlPropertiesProvider CompatibilityTest
  */
 
 import java.io.FileInputStream;

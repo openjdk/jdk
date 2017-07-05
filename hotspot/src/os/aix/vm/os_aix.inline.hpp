@@ -26,12 +26,9 @@
 #ifndef OS_AIX_VM_OS_AIX_INLINE_HPP
 #define OS_AIX_VM_OS_AIX_INLINE_HPP
 
-#include "runtime/atomic.hpp"
+#include "runtime/atomic.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
-#ifdef TARGET_OS_ARCH_aix_ppc
-# include "atomic_aix_ppc.inline.hpp"
-# include "orderAccess_aix_ppc.inline.hpp"
-#endif
 
 // System includes
 

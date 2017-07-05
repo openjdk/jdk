@@ -26,14 +26,8 @@
 #define OS_BSD_VM_OS_BSD_INLINE_HPP
 
 #include "runtime/atomic.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
-
-#ifdef TARGET_OS_ARCH_bsd_x86
-# include "orderAccess_bsd_x86.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_bsd_zero
-# include "orderAccess_bsd_zero.inline.hpp"
-#endif
 
 // System includes
 

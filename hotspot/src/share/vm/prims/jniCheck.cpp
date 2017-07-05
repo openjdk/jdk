@@ -35,7 +35,7 @@
 #include "runtime/handles.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/thread.inline.hpp"
 #ifdef TARGET_ARCH_x86
 # include "jniTypes_x86.hpp"
 #endif

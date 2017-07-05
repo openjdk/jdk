@@ -467,7 +467,6 @@ void OopMapSet::update_register_map(const frame *fr, RegisterMap *reg_map) {
   assert(cb != NULL, "no codeblob");
 
   // Any reg might be saved by a safepoint handler (see generate_handler_blob).
-  const int max_saved_on_entry_reg_count = ConcreteRegisterImpl::number_of_registers;
   assert( reg_map->_update_for_id == NULL || fr->is_older(reg_map->_update_for_id),
          "already updated this map; do not 'update' it twice!" );
   debug_only(reg_map->_update_for_id = fr->id());
@@ -477,27 +476,20 @@ void OopMapSet::update_register_map(const frame *fr, RegisterMap *reg_map) {
           !cb->caller_must_gc_arguments(reg_map->thread())),
          "include_argument_oops should already be set");
 
-  int nof_callee = 0;
-  oop*        locs[2*max_saved_on_entry_reg_count+1];
-  VMReg regs[2*max_saved_on_entry_reg_count+1];
-  // ("+1" because max_saved_on_entry_reg_count might be zero)
-
   // Scan through oopmap and find location of all callee-saved registers
   // (we do not do update in place, since info could be overwritten)
 
   address pc = fr->pc();
-
   OopMap* map  = cb->oop_map_for_return_address(pc);
+  assert(map != NULL, "no ptr map found");
+  DEBUG_ONLY(int nof_callee = 0;)
 
-  assert(map != NULL, " no ptr map found");
-
-  OopMapValue omv;
-  for(OopMapStream oms(map,OopMapValue::callee_saved_value); !oms.is_done(); oms.next()) {
-    omv = oms.current();
-    assert(nof_callee < 2*max_saved_on_entry_reg_count, "overflow");
-    regs[nof_callee] = omv.content_reg();
-    locs[nof_callee] = fr->oopmapreg_to_location(omv.reg(),reg_map);
-    nof_callee++;
+  for (OopMapStream oms(map, OopMapValue::callee_saved_value); !oms.is_done(); oms.next()) {
+    OopMapValue omv = oms.current();
+    VMReg reg = omv.content_reg();
+    oop* loc = fr->oopmapreg_to_location(omv.reg(), reg_map);
+    reg_map->set_location(reg, (address) loc);
+    DEBUG_ONLY(nof_callee++;)
   }
 
   // Check that runtime stubs save all callee-saved registers
@@ -506,11 +498,6 @@ void OopMapSet::update_register_map(const frame *fr, RegisterMap *reg_map) {
          (nof_callee >= SAVED_ON_ENTRY_REG_COUNT || nof_callee >= C_SAVED_ON_ENTRY_REG_COUNT),
          "must save all");
 #endif // COMPILER2
-
-  // Copy found callee-saved register to reg_map
-  for(int i = 0; i < nof_callee; i++) {
-    reg_map->set_location(regs[i], (address)locs[i]);
-  }
 }
 
 //=============================================================================
