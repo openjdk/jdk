@@ -238,12 +238,12 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIR_Opr getThreadPointer();
 
   void do_RegisterFinalizer(Intrinsic* x);
+  void do_isInstance(Intrinsic* x);
   void do_getClass(Intrinsic* x);
   void do_currentThread(Intrinsic* x);
   void do_MathIntrinsic(Intrinsic* x);
   void do_ArrayCopy(Intrinsic* x);
   void do_CompareAndSwap(Intrinsic* x, ValueType* type);
-  void do_AttemptUpdate(Intrinsic* x);
   void do_NIOCheckIndex(Intrinsic* x);
   void do_FPIntrinsics(Intrinsic* x);
   void do_Reference_get(Intrinsic* x);
