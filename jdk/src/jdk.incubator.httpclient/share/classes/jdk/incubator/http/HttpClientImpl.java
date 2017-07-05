@@ -125,7 +125,11 @@ class HttpClientImpl extends HttpClient {
                 Redirect.NEVER : builder.followRedirects;
         this.proxySelector = builder.proxy;
         authenticator = builder.authenticator;
-        version = builder.version;
+        if (builder.version == null) {
+            version = HttpClient.Version.HTTP_2;
+        } else {
+            version = builder.version;
+        }
         if (builder.sslParams == null) {
             sslParams = getDefaultParams(sslContext);
         } else {

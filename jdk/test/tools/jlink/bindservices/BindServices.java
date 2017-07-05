@@ -33,7 +33,6 @@ import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static jdk.testlibrary.Asserts.assertTrue;
 import static jdk.testlibrary.ProcessTools.*;
 
 import org.testng.annotations.BeforeTest;
@@ -114,7 +113,7 @@ public class BindServices {
                   "--module-path", MODULE_PATH,
                   "--add-modules", "m1",
                   "--bind-services",
-                  "--limit-modules", "m1,m2,m3,java.base");
+                  "--limit-modules", "m1,m2,m3");
 
         testImage(dir, "m1", "m2", "m3");
     }
@@ -131,21 +130,40 @@ public class BindServices {
                       "--add-modules", "m1",
                       "--bind-services",
                       "--verbose",
-                      "--limit-modules", "m1,m2,m3,java.base").output();
+                      "--limit-modules", "m1,m2,m3").output();
 
         List<String> expected = List.of(
-            "module m1 (" + MODS_DIR.resolve("m1").toUri().toString() + ")",
-            "module m2 (" + MODS_DIR.resolve("m2").toUri().toString() + ")",
-            "module m3 (" + MODS_DIR.resolve("m3").toUri().toString() + ")",
-            "module m1 provides p1.S, used by m1",
-            "module m2 provides p1.S, used by m1",
-            "module m2 provides p2.T, used by m2",
-            "module m3 provides p2.T, used by m2"
+            "m1 " + MODS_DIR.resolve("m1").toUri().toString(),
+            "m2 " + MODS_DIR.resolve("m2").toUri().toString(),
+            "m3 " + MODS_DIR.resolve("m3").toUri().toString(),
+            "java.base provides java.nio.file.spi.FileSystemProvider used by java.base",
+            "m1 provides p1.S used by m1",
+            "m2 provides p1.S used by m1",
+            "m2 provides p2.T used by m2",
+            "m3 provides p2.T used by m2",
+            "m3 provides p3.S not used by any observable module"
         );
 
         assertTrue(output.containsAll(expected));
 
         testImage(dir, "m1", "m2", "m3");
+    }
+
+    @Test
+    public void testVerboseAndNoBindServices() throws Throwable {
+        if (!hasJmods()) return;
+
+        Path dir = Paths.get("verboseNoBind");
+
+        List<String> output =
+            JLink.run("--output", dir.toString(),
+                      "--module-path", MODULE_PATH,
+                      "--verbose",
+                      "--add-modules", "m1").output();
+
+        assertTrue(output.contains("m1 provides p1.S used by m1"));
+
+        testImage(dir, "m1");
     }
 
     /*

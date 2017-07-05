@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.security.util;
 
+import java.io.PrintStream;
 import java.math.BigInteger;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
@@ -32,7 +33,7 @@ import java.util.Locale;
 import sun.security.action.GetPropertyAction;
 
 /**
- * A utility class for debuging.
+ * A utility class for debugging.
  *
  * @author Roland Schemers
  */
@@ -118,6 +119,7 @@ public class Debug {
         System.err.println("The following can be used with certpath:");
         System.err.println();
         System.err.println("ocsp          dump the OCSP protocol exchanges");
+        System.err.println("verbose       verbose debugging");
         System.err.println();
         System.err.println("Note: Separate multiple options with a comma");
         System.exit(0);
@@ -166,6 +168,13 @@ public class Debug {
     }
 
     /**
+     * Check if verbose messages is enabled for extra debugging.
+     */
+    public static boolean isVerbose() {
+        return isOn("verbose");
+    }
+
+    /**
      * print a message to stderr that is prefixed with the prefix
      * created from the call to getInstance.
      */
@@ -201,6 +210,13 @@ public class Debug {
     public static void println(String prefix, String message)
     {
         System.err.println(prefix + ": "+message);
+    }
+
+    /**
+     * PrintStream for debug methods. Currently only System.err is supported.
+     */
+    public PrintStream getPrintStream() {
+        return System.err;
     }
 
     /**

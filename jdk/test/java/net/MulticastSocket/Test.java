@@ -35,6 +35,10 @@ public class Test {
     static int count = 0;
     static int failures = 0;
 
+    static boolean isSolaris = System.getProperty("os.name")
+        .toLowerCase()
+        .startsWith("sunos");
+
     void doTest(String address) throws Exception {
         boolean failed = false;
 
@@ -123,6 +127,14 @@ public class Test {
         }
     }
 
+    static boolean isValidIpv6Address(InetAddress addr) {
+        if (! (addr instanceof Inet6Address))
+            return false;
+        if (!isSolaris)
+            return true;
+        return !(addr.isAnyLocalAddress() || addr.isLoopbackAddress());
+    }
+
     void allTests() throws Exception {
 
         /*
@@ -146,7 +158,7 @@ public class Test {
             while (addrs.hasMoreElements()) {
                 InetAddress ia = (InetAddress)addrs.nextElement();
 
-                if (ia instanceof Inet6Address) {
+                if (isValidIpv6Address(ia)) {
                     has_ipv6 = true;
                     if (ia.isLinkLocalAddress()) has_linklocaladdress = true;
                     if (ia.isSiteLocalAddress()) has_siteaddress = true;

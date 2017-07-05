@@ -91,7 +91,7 @@ import sun.util.calendar.ZoneInfo;
  * adjustment may be made if desired for dates that are prior to the Gregorian
  * changeover and which fall between January 1 and March 24.
  *
- * <h3><a name="week_and_year">Week Of Year and Week Year</a></h3>
+ * <h3><a id="week_and_year">Week Of Year and Week Year</a></h3>
  *
  * <p>Values calculated for the {@link Calendar#WEEK_OF_YEAR
  * WEEK_OF_YEAR} field range from 1 to 53. The first week of a
@@ -108,7 +108,7 @@ import sun.util.calendar.ZoneInfo;
  * <p>The {@code getFirstDayOfWeek()} and {@code
  * getMinimalDaysInFirstWeek()} values are initialized using
  * locale-dependent resources when constructing a {@code
- * GregorianCalendar}. <a name="iso8601_compatible_setting">The week
+ * GregorianCalendar}. <a id="iso8601_compatible_setting">The week
  * determination is compatible</a> with the ISO 8601 standard when {@code
  * getFirstDayOfWeek()} is {@code MONDAY} and {@code
  * getMinimalDaysInFirstWeek()} is 4, which values are used in locales
@@ -117,7 +117,7 @@ import sun.util.calendar.ZoneInfo;
  * {@link Calendar#setMinimalDaysInFirstWeek(int)
  * setMinimalDaysInFirstWeek()}.
  *
- * <p>A <a name="week_year"><em>week year</em></a> is in sync with a
+ * <p>A <a id="week_year"><em>week year</em></a> is in sync with a
  * {@code WEEK_OF_YEAR} cycle. All weeks between the first and last
  * weeks (inclusive) have the same <em>week year</em> value.
  * Therefore, the first and last days of a week year may have

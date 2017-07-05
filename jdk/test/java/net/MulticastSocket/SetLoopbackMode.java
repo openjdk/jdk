@@ -25,9 +25,14 @@
  * @test
  * @bug 4686717
  * @summary Test MulticastSocket.setLoopbackMode
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.NetworkConfiguration
+ * @run main/othervm SetLoopbackMode
  */
 import java.net.*;
 import java.io.IOException;
+import java.util.Enumeration;
+import jdk.testlibrary.NetworkConfiguration;
 
 public class SetLoopbackMode {
 
@@ -85,8 +90,13 @@ public class SetLoopbackMode {
         return PASSED;
     }
 
+    private static boolean canUseIPv6(NetworkConfiguration nc) {
+        return nc.ip6MulticastInterfaces().toArray().length > 0;
+    }
+
     public static void main (String args[]) throws Exception {
         int failures = 0;
+        NetworkConfiguration nc = NetworkConfiguration.probe();
 
         MulticastSocket mc = new MulticastSocket();
         InetAddress grp = InetAddress.getByName("224.80.80.80");
@@ -97,11 +107,12 @@ public class SetLoopbackMode {
          * to workaround Linux IPv6 bug whereby !IPV6_MULTICAST_LOOP
          * doesn't prevent loopback of IPv4 multicast packets.
          */
-        InetAddress lb = InetAddress.getByName("::1");
-        if (NetworkInterface.getByInetAddress(lb) != null) {
+
+        if (canUseIPv6(nc)) {
             grp = InetAddress.getByName("ff01::1");
         }
 
+        //mc.setNetworkInterface(NetworkInterface.getByInetAddress(lb));
         System.out.println("\nTest will use multicast group: " + grp);
         mc.joinGroup(grp);
 
