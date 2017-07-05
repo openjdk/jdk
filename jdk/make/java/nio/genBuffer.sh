@@ -154,7 +154,7 @@ if [ $BIN ]; then
   mv $DST $DST.tmp
   sed -e '/#BIN/,$d' <$DST.tmp >$DST
   rm -f $DST.tmp
-  binops=`dirname $SRC`/`basename $SRC .java`-bin.java
+  binops=`dirname $SRC`/`basename $SRC .java.template`-bin.java.template
   genBinOps char character 1 two one $binops >>$DST
   genBinOps short short 1 two one $binops >>$DST
   genBinOps int integer 2 four three $binops >>$DST

@@ -42,7 +42,7 @@ public class NMethod extends CodeBlob {
   /** To support simple linked-list chaining of nmethods */
   private static AddressField  osrLinkField;
   private static AddressField  scavengeRootLinkField;
-  private static CIntegerField scavengeRootStateField;
+  private static JByteField    scavengeRootStateField;
 
   /** Offsets for different nmethod parts */
   private static CIntegerField exceptionOffsetField;
@@ -92,7 +92,7 @@ public class NMethod extends CodeBlob {
     entryBCIField               = type.getCIntegerField("_entry_bci");
     osrLinkField                = type.getAddressField("_osr_link");
     scavengeRootLinkField       = type.getAddressField("_scavenge_root_link");
-    scavengeRootStateField      = type.getCIntegerField("_scavenge_root_state");
+    scavengeRootStateField      = type.getJByteField("_scavenge_root_state");
 
     exceptionOffsetField        = type.getCIntegerField("_exception_offset");
     deoptOffsetField            = type.getCIntegerField("_deoptimize_offset");
@@ -274,7 +274,7 @@ public class NMethod extends CodeBlob {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(pd != null, "scope must be present");
     }
-    return new ScopeDesc(this, pd.getScopeDecodeOffset(), pd.getReexecute());
+    return new ScopeDesc(this, pd.getScopeDecodeOffset(), pd.getObjDecodeOffset(), pd.getReexecute());
   }
 
   /** This is only for use by the debugging system, and is only
@@ -306,11 +306,11 @@ public class NMethod extends CodeBlob {
   public ScopeDesc getScopeDescNearDbg(Address pc) {
     PCDesc pd = getPCDescNearDbg(pc);
     if (pd == null) return null;
-    return new ScopeDesc(this, pd.getScopeDecodeOffset(), pd.getReexecute());
+    return new ScopeDesc(this, pd.getScopeDecodeOffset(), pd.getObjDecodeOffset(), pd.getReexecute());
   }
 
-  public Map/*<Address, PcDesc>*/ getSafepoints() {
-    Map safepoints = new HashMap(); // Map<Address, PcDesc>
+  public Map/*<Address, PCDesc>*/ getSafepoints() {
+    Map safepoints = new HashMap(); // Map<Address, PCDesc>
     sun.jvm.hotspot.debugger.Address p = null;
     for (p = scopesPCsBegin(); p.lessThan(scopesPCsEnd());
          p = p.addOffsetTo(pcDescSize)) {

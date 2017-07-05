@@ -2116,7 +2116,7 @@ JNI_ENTRY(jobject, jni_GetObjectArrayElement(JNIEnv *env, jobjectArray array, js
   DT_RETURN_MARK(GetObjectArrayElement, jobject, (const jobject&)ret);
   objArrayOop a = objArrayOop(JNIHandles::resolve_non_null(array));
   if (a->is_within_bounds(index)) {
-    jobject ret = JNIHandles::make_local(env, a->obj_at(index));
+    ret = JNIHandles::make_local(env, a->obj_at(index));
     return ret;
   } else {
     char buf[jintAsStringSize];
@@ -2150,14 +2150,14 @@ JNI_END
 
 #define DEFINE_NEWSCALARARRAY(Return,Allocator,Result) \
 \
-  DT_RETURN_MARK_DECL_FOR(Result, New##Result##Array, Return);\
+  DT_RETURN_MARK_DECL(New##Result##Array, Return);\
 \
 JNI_ENTRY(Return, \
           jni_New##Result##Array(JNIEnv *env, jsize len)) \
   JNIWrapper("New" XSTR(Result) "Array"); \
   DTRACE_PROBE2(hotspot_jni, New##Result##Array__entry, env, len);\
   Return ret = NULL;\
-  DT_RETURN_MARK_FOR(Result, New##Result##Array, Return, (const Return&)ret);\
+  DT_RETURN_MARK(New##Result##Array, Return, (const Return&)ret);\
 \
   oop obj= oopFactory::Allocator(len, CHECK_0); \
   ret = (Return) JNIHandles::make_local(env, obj); \

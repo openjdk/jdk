@@ -49,6 +49,13 @@
     <!-- Project build properties. -->
     <property file="build.properties"/>
 
+    <!-- See if drop sources were included. -->
+    <condition property="drop.dir" 
+               value="${drop.included.dir}" 
+               else="${drop.expanded.dir}">
+        <available file="${drop.included.dir}" type="dir"/>
+    </condition>
+
     <!-- Get shared targets. -->
     <import file="build-defs.xml"/>
 
@@ -131,6 +138,16 @@
             description="Populate all source file directories">
     </target>
 
+    <!-- Populate drop_included area. -->
+    <target name="drop_included"
+            depends="clobber"
+            description="Populate all source file directories">
+        <delete dir="${drop.included.dir}"/>
+        <antcall target="source"/>
+        <move file="${drop.expanded.dir}" tofile="${drop.included.dir}"/>
+        <delete dir="${drop.included.dir}/bundles"/>
+    </target>
+
     <!-- Clean up compiled files. -->
     <target name="clean"
             description="Delete all generated files">
@@ -142,7 +159,7 @@
     <target name="clobber"
 	    depends="clean"
             description="Delete all generated files, including imported sources">
-        <delete dir="${drop.dir}"/>
+        <delete dir="${drop.expanded.dir}"/>
     </target>
 
     <target name="-banner">

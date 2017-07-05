@@ -1516,7 +1516,8 @@ void G1CollectorPolicy::record_collection_pause_end(bool abandoned) {
       (end_time_sec - _recent_prev_end_times_for_all_gcs_sec->oldest()) * 1000.0;
     update_recent_gc_times(end_time_sec, elapsed_ms);
     _recent_avg_pause_time_ratio = _recent_gc_times_ms->sum()/interval_ms;
-    assert(recent_avg_pause_time_ratio() < 1.00, "All GC?");
+    // using 1.01 to account for floating point inaccuracies
+    assert(recent_avg_pause_time_ratio() < 1.01, "All GC?");
   }
 
   if (G1PolicyVerbose > 1) {
