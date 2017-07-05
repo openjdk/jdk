@@ -333,6 +333,7 @@ static void (*fp_gtk_widget_destroy)(GtkWidget *widget);
 static GdkPixbuf* (*fp_gtk_widget_render_icon)(GtkWidget *widget,
         const gchar *stock_id, GtkIconSize size, const gchar *detail);
 static void (*fp_gtk_widget_set_name)(GtkWidget *widget, const gchar *name);
+static void (*fp_gtk_widget_set_parent)(GtkWidget *widget, GtkWidget *parent);
 static void (*fp_gtk_widget_set_direction)(GtkWidget *widget,
         GtkTextDirection direction);
 static void (*fp_gtk_widget_style_get)(GtkWidget *widget,
@@ -570,6 +571,8 @@ gboolean gtk2_load()
             dl_symbol("gtk_widget_render_icon");
         fp_gtk_widget_set_name =
             dl_symbol("gtk_widget_set_name");
+        fp_gtk_widget_set_parent =
+            dl_symbol("gtk_widget_set_parent");
         fp_gtk_widget_set_direction =
             dl_symbol("gtk_widget_set_direction");
         fp_gtk_widget_style_get =
@@ -1040,7 +1043,7 @@ static GtkWidget *gtk2_get_widget(WidgetType widget_type)
                     (NULL == gtk2_widgets[_GTK_COMBO_BOX_ARROW_BUTTON_TYPE]))
             {
                 gtk2_widgets[_GTK_COMBO_BOX_ARROW_BUTTON_TYPE] =
-                     (*fp_gtk_button_new)();
+                     (*fp_gtk_toggle_button_new)();
             }
             result = gtk2_widgets[_GTK_COMBO_BOX_ARROW_BUTTON_TYPE];
             break;
@@ -1414,12 +1417,20 @@ static GtkWidget *gtk2_get_widget(WidgetType widget_type)
                  widget_type == COMBO_BOX_TEXT_FIELD)
         {
             /*
-             * We add a regular GtkButton/GtkEntry to a GtkComboBoxEntry
-             * in order to trick engines into thinking it's a real combobox
-             * arrow button/text field.
-             */
+            * We add a regular GtkButton/GtkEntry to a GtkComboBoxEntry
+            * in order to trick engines into thinking it's a real combobox
+            * arrow button/text field.
+            */
             GtkWidget *combo = (*fp_gtk_combo_box_entry_new)();
-            (*fp_gtk_container_add)((GtkContainer *)combo, result);
+
+            if (widget_type == COMBO_BOX_TEXT_FIELD)
+                (*fp_gtk_container_add)((GtkContainer *)combo, result);
+            else
+            {
+                (*fp_gtk_widget_set_parent)(result, combo);
+                ((GtkBin*)combo)->child = result;
+            }
+
             (*fp_gtk_container_add)((GtkContainer *)gtk2_fixed, combo);
             (*fp_gtk_widget_realize)(result);
             return result;

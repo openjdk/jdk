@@ -269,7 +269,7 @@ private:
   // Remove outgoing deferred edges from the node referenced by "ni".
   // Any outgoing edges from the target of the deferred edge are copied
   // to "ni".
-  void remove_deferred(uint ni);
+  void remove_deferred(uint ni, GrowableArray<uint>* deferred_edges, VectorSet* visited);
 
   Node_Array _node_map; // used for bookeeping during type splitting
                         // Used for the following purposes:

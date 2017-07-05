@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.*;
+import java.beans.Transient;
 import java.util.Vector;
 import java.util.Enumeration;
 
@@ -236,6 +237,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
      *
      * @return the <code>JMenu</code> that delivers help to the user
      */
+    @Transient
     public JMenu getHelpMenu() {
         throw new Error("getHelpMenu() not yet implemented.");
     }

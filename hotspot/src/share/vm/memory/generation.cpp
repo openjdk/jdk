@@ -171,7 +171,7 @@ bool Generation::promotion_attempt_is_safe(size_t promotion_in_bytes,
 }
 
 // Ignores "ref" and calls allocate().
-oop Generation::promote(oop obj, size_t obj_size, oop* ref) {
+oop Generation::promote(oop obj, size_t obj_size) {
   assert(obj_size == (size_t)obj->size(), "bad obj_size passed in");
 
 #ifndef PRODUCT
@@ -186,7 +186,7 @@ oop Generation::promote(oop obj, size_t obj_size, oop* ref) {
     return oop(result);
   } else {
     GenCollectedHeap* gch = GenCollectedHeap::heap();
-    return gch->handle_failed_promotion(this, obj, obj_size, ref);
+    return gch->handle_failed_promotion(this, obj, obj_size);
   }
 }
 

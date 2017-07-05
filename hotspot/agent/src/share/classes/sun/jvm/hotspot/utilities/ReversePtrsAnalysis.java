@@ -282,6 +282,15 @@ public class ReversePtrsAnalysis {
       markAndTraverse(next);
     }
 
+    public void visitCompOopAddress(Address addr) {
+      Oop next = heap.newOop(addr.getCompOopHandleAt(0));
+      LivenessPathElement lp = new LivenessPathElement(null,
+                                        new NamedFieldIdentifier(baseRootDescription +
+                                                                 " @ " + addr));
+      rp.put(lp, next);
+      markAndTraverse(next);
+    }
+
     private String baseRootDescription;
   }
 

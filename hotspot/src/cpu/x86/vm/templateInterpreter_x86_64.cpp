@@ -664,7 +664,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // work registers
   const Register method = rbx;
-  const Register t      = r12;
+  const Register t      = r11;
 
   // allocate space for parameters
   __ get_method(method);
@@ -844,6 +844,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     __ andq(rsp, -16); // align stack as required by ABI
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
     __ movq(rsp, r12); // restore sp
+    __ reinit_heapbase();
     __ bind(Continue);
   }
 
@@ -891,6 +892,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages)));
     __ movq(rsp, r12); // restore sp
     __ popaq(); // XXX only restore smashed registers
+    __ reinit_heapbase();
 
     __ bind(no_reguard);
   }
@@ -1360,6 +1362,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // rdx: return address/pc that threw exception
   __ restore_bcp();    // r13 points to call/send
   __ restore_locals();
+  __ reinit_heapbase();  // restore r12 as heapbase.
   // Entry point for exceptions thrown within interpreter code
   Interpreter::_throw_exception_entry = __ pc();
   // expression stack is undefined here
@@ -1658,6 +1661,7 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
   __ andq(rsp, -16); // align stack as required by ABI
   __ call(RuntimeAddress(Interpreter::trace_code(t->tos_in())));
   __ movq(rsp, r12); // restore sp
+  __ reinit_heapbase();
 }
 
 

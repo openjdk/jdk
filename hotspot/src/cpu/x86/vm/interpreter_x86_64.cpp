@@ -375,7 +375,7 @@ address InterpreterGenerator::generate_accessor_entry(void) {
     __ cmpl(rdx, atos);
     __ jcc(Assembler::notEqual, notObj);
     // atos
-    __ movq(rax, field_address);
+    __ load_heap_oop(rax, field_address);
     __ jmp(xreturn_path);
 
     __ bind(notObj);

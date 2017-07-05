@@ -145,7 +145,7 @@ public class GcInfoBuilder {
                         allItemTypes[i] = SimpleType.DOUBLE;
                         break;
                     default:
-                        throw new InternalError(
+                        throw new AssertionError(
                             "Unsupported type [" + gcExtItemTypes[i] + "]");
                 }
             }

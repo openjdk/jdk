@@ -68,7 +68,7 @@ public class MemoryUsageCompositeData extends LazyCompositeData {
                                             memoryUsageItemValues);
         } catch (OpenDataException e) {
             // Should never reach here
-            throw Util.newInternalError(e);
+            throw new AssertionError(e);
         }
     }
 
@@ -79,7 +79,7 @@ public class MemoryUsageCompositeData extends LazyCompositeData {
                 MappedMXBeanType.toOpenType(MemoryUsage.class);
         } catch (OpenDataException e) {
             // Should never reach here
-            throw Util.newInternalError(e);
+            throw new AssertionError(e);
         }
     }
 

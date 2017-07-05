@@ -26,6 +26,8 @@
 package sun.management;
 
 import java.lang.management.ClassLoadingMXBean;
+import java.lang.management.ManagementFactory;
+import javax.management.ObjectName;
 
 /**
  * Implementation class for the class loading subsystem.
@@ -62,9 +64,13 @@ class ClassLoadingImpl implements ClassLoadingMXBean {
     }
 
     public void setVerbose(boolean value) {
-        ManagementFactory.checkControlAccess();
+        Util.checkControlAccess();
 
         setVerboseClass(value);
     }
     native static void setVerboseClass(boolean value);
+
+    public ObjectName getObjectName() {
+        return Util.newObjectName(ManagementFactory.CLASS_LOADING_MXBEAN_NAME);
+    }
 }

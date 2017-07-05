@@ -359,7 +359,7 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XDestroyWindow
     XDestroyWindow( (Display *)jlong_to_ptr(display),(Window) window);
 }
 
-JNIEXPORT int JNICALL Java_sun_awt_X11_XlibWrapper_XGrabPointer
+JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_XGrabPointer
 (JNIEnv *env, jclass clazz, jlong display, jlong window,
  jint owner_events, jint event_mask, jint pointer_mode,
  jint keyboard_mode, jlong confine_to, jlong cursor, jlong time)
@@ -377,7 +377,7 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XUngrabPointer
     XUngrabPointer( (Display *)jlong_to_ptr(display), (Time) time);
 }
 
-JNIEXPORT int JNICALL Java_sun_awt_X11_XlibWrapper_XGrabKeyboard
+JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_XGrabKeyboard
 (JNIEnv *env, jclass clazz, jlong display, jlong window,
  jint owner_events, jint pointer_mode,
  jint keyboard_mode, jlong time)
@@ -621,7 +621,7 @@ JNIEXPORT void JNICALL Java_sun_awt_X11_XlibWrapper_XSync
 
 }
 
-JNIEXPORT int JNICALL Java_sun_awt_X11_XlibWrapper_XTranslateCoordinates
+JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_XTranslateCoordinates
 (JNIEnv *env, jclass clazz, jlong display, jlong src_w, jlong dest_w,
  jlong src_x, jlong src_y, jlong dest_x_return, jlong dest_y_return,
  jlong child_return)
@@ -634,7 +634,7 @@ JNIEXPORT int JNICALL Java_sun_awt_X11_XlibWrapper_XTranslateCoordinates
                   (Window *) jlong_to_ptr(child_return));
 }
 
-JNIEXPORT int JNICALL Java_sun_awt_X11_XlibWrapper_XEventsQueued
+JNIEXPORT jint JNICALL Java_sun_awt_X11_XlibWrapper_XEventsQueued
 (JNIEnv *env, jclass clazz, jlong display, jint mode) {
 
     AWT_CHECK_HAVE_LOCK();

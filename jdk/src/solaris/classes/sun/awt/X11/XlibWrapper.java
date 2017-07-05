@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import sun.misc.*;
 
-public class XlibWrapper implements XConstants, XUtilConstants, XProtocolConstants,
-                                    XCursorFontConstants
+final public class XlibWrapper
 {
     static Unsafe unsafe = Unsafe.getUnsafe();
     // strange constants
@@ -321,7 +320,7 @@ static native String XSetLocaleModifiers(String modifier_list);
         if (XPropertyCache.isCachingSupported() &&
             XToolkit.windowToXWindow(window) != null &&
             WindowPropertyGetter.isCacheableProperty(XAtom.get(atom)) &&
-            mode == PropModeReplace)
+            mode == XConstants.PropModeReplace)
         {
             int length = (format / 8) * nelements;
             XPropertyCache.storeCache(
@@ -585,25 +584,25 @@ static native String XSetLocaleModifiers(String modifier_list);
 
     static String hintsToString(long flags) {
         StringBuffer buf = new StringBuffer();
-        if ((flags & PMaxSize) != 0) {
+        if ((flags & XUtilConstants.PMaxSize) != 0) {
             buf.append("PMaxSize ");
         }
-        if ((flags & PMinSize) != 0) {
+        if ((flags & XUtilConstants.PMinSize) != 0) {
             buf.append("PMinSize ");
         }
-        if ((flags & USSize) != 0) {
+        if ((flags & XUtilConstants.USSize) != 0) {
             buf.append("USSize ");
         }
-        if ((flags & USPosition) != 0) {
+        if ((flags & XUtilConstants.USPosition) != 0) {
             buf.append("USPosition ");
         }
-        if ((flags & PPosition) != 0) {
+        if ((flags & XUtilConstants.PPosition) != 0) {
             buf.append("PPosition ");
         }
-        if ((flags & PSize) != 0) {
+        if ((flags & XUtilConstants.PSize) != 0) {
             buf.append("PSize ");
         }
-        if ((flags & PWinGravity) != 0) {
+        if ((flags & XUtilConstants.PWinGravity) != 0) {
             buf.append("PWinGravity ");
         }
         return buf.toString();

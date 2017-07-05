@@ -131,7 +131,7 @@ class HotspotCompilation
         }
 
         // FIXME: should tolerate if counter doesn't exist
-        throw new InternalError("Counter " + name + " does not exist");
+        throw new AssertionError("Counter " + name + " does not exist");
     }
 
     private void initCompilerCounters() {

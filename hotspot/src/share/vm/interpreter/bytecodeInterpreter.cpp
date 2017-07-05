@@ -518,16 +518,16 @@ BytecodeInterpreter::run(interpreterState istate) {
 
 /* 0xC0 */ &&opc_checkcast,   &&opc_instanceof,     &&opc_monitorenter, &&opc_monitorexit,
 /* 0xC4 */ &&opc_wide,        &&opc_multianewarray, &&opc_ifnull,       &&opc_ifnonnull,
-/* 0xC8 */ &&opc_goto_w,      &&opc_jsr_w,          &&opc_breakpoint,   &&opc_fast_igetfield,
-/* 0xCC */ &&opc_fastagetfield,&&opc_fast_aload_0,  &&opc_fast_iaccess_0, &&opc__fast_aaccess_0,
+/* 0xC8 */ &&opc_goto_w,      &&opc_jsr_w,          &&opc_breakpoint,   &&opc_default,
+/* 0xCC */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
 
-/* 0xD0 */ &&opc_fast_linearswitch, &&opc_fast_binaryswitch, &&opc_return_register_finalizer,      &&opc_default,
+/* 0xD0 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
 /* 0xD4 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
 /* 0xD8 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
 /* 0xDC */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
 
 /* 0xE0 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
-/* 0xE4 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
+/* 0xE4 */ &&opc_default,     &&opc_return_register_finalizer,        &&opc_default,      &&opc_default,
 /* 0xE8 */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
 /* 0xEC */ &&opc_default,     &&opc_default,        &&opc_default,      &&opc_default,
 

@@ -137,7 +137,8 @@ public:
   }
 
   // Polymorphic factory method:
-  static LoadNode* make( Compile *C, Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *rt, BasicType bt );
+  static Node* make( PhaseGVN& gvn, Node *c, Node *mem, Node *adr,
+                     const TypePtr* at, const Type *rt, BasicType bt );
 
   virtual uint hash()   const;  // Check the type
 
@@ -330,6 +331,29 @@ public:
   virtual bool depends_only_on_test() const { return adr_type() != TypeRawPtr::BOTTOM; }
 };
 
+
+//------------------------------LoadNNode--------------------------------------
+// Load a narrow oop from memory (either object or array)
+class LoadNNode : public LoadNode {
+public:
+  LoadNNode( Node *c, Node *mem, Node *adr, const TypePtr *at, const Type* t )
+    : LoadNode(c,mem,adr,at,t) {}
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegN; }
+  virtual int store_Opcode() const { return Op_StoreN; }
+  virtual BasicType memory_type() const { return T_NARROWOOP; }
+  // depends_only_on_test is almost always true, and needs to be almost always
+  // true to enable key hoisting & commoning optimizations.  However, for the
+  // special case of RawPtr loads from TLS top & end, the control edge carries
+  // the dependence preventing hoisting past a Safepoint instead of the memory
+  // edge.  (An unfortunate consequence of having Safepoints not set Raw
+  // Memory; itself an unfortunate consequence of having Nodes which produce
+  // results (new raw memory state) inside of loops preventing all manner of
+  // other optimizations).  Basically, it's ugly but so is the alternative.
+  // See comment in macro.cpp, around line 125 expand_allocate_common().
+  virtual bool depends_only_on_test() const { return adr_type() != TypeRawPtr::BOTTOM; }
+};
+
 //------------------------------LoadKlassNode----------------------------------
 // Load a Klass from an object
 class LoadKlassNode : public LoadPNode {
@@ -376,7 +400,8 @@ public:
   }
 
   // Polymorphic factory method:
-  static StoreNode* make( Compile *C, Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val, BasicType bt );
+  static StoreNode* make( PhaseGVN& gvn, Node *c, Node *mem, Node *adr,
+                          const TypePtr* at, Node *val, BasicType bt );
 
   virtual uint hash() const;    // Check the type
 
@@ -488,6 +513,15 @@ public:
   virtual BasicType memory_type() const { return T_ADDRESS; }
 };
 
+//------------------------------StoreNNode-------------------------------------
+// Store narrow oop to memory
+class StoreNNode : public StoreNode {
+public:
+  StoreNNode( Node *c, Node *mem, Node *adr, const TypePtr* at, Node *val ) : StoreNode(c,mem,adr,at,val) {}
+  virtual int Opcode() const;
+  virtual BasicType memory_type() const { return T_NARROWOOP; }
+};
+
 //------------------------------StoreCMNode-----------------------------------
 // Store card-mark byte to memory for CM
 // The last StoreCM before a SafePoint must be preserved and occur after its "oop" store
@@ -597,6 +631,13 @@ public:
 class CompareAndSwapPNode : public LoadStoreNode {
 public:
   CompareAndSwapPNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex) : LoadStoreNode(c, mem, adr, val, ex) { }
+  virtual int Opcode() const;
+};
+
+//------------------------------CompareAndSwapNNode---------------------------
+class CompareAndSwapNNode : public LoadStoreNode {
+public:
+  CompareAndSwapNNode( Node *c, Node *mem, Node *adr, Node *val, Node *ex) : LoadStoreNode(c, mem, adr, val, ex) { }
   virtual int Opcode() const;
 };
 

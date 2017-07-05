@@ -26,48 +26,58 @@
 package sun.management;
 
 import java.lang.management.*;
-import static java.lang.management.ManagementFactory.*;
 import java.util.List;
+import java.security.Permission;
+import javax.management.ObjectName;
+import javax.management.MalformedObjectNameException;
+
+import static java.lang.management.ManagementFactory.*;
 
 class Util {
-    static String getMBeanObjectName(MemoryPoolMXBean pool) {
-        return MEMORY_POOL_MXBEAN_DOMAIN_TYPE +
-            ",name=" + pool.getName();
+    static RuntimeException newException(Exception e) {
+        throw new RuntimeException(e);
     }
 
-    static String getMBeanObjectName(MemoryManagerMXBean mgr) {
-        if (mgr instanceof GarbageCollectorMXBean) {
-            return getMBeanObjectName((GarbageCollectorMXBean) mgr);
-        } else {
-            return MEMORY_MANAGER_MXBEAN_DOMAIN_TYPE +
-                ",name=" + mgr.getName();
+    private static final String[] EMPTY_STRING_ARRAY = new String[0];
+    static String[] toStringArray(List<String> list) {
+        return (String[]) list.toArray(EMPTY_STRING_ARRAY);
+    }
+
+    static ObjectName newObjectName(String name) {
+        return com.sun.jmx.mbeanserver.Util.newObjectName(name);
+    }
+
+    public static ObjectName newObjectName(String domainAndType, String name) {
+        return newObjectName(domainAndType + ",name=" + name);
+    }
+
+    private static ManagementPermission monitorPermission =
+        new ManagementPermission("monitor");
+    private static ManagementPermission controlPermission =
+        new ManagementPermission("control");
+
+    /**
+     * Check that the current context is trusted to perform monitoring
+     * or management.
+     * <p>
+     * If the check fails we throw a SecurityException, otherwise
+     * we return normally.
+     *
+     * @exception  SecurityException  if a security manager exists and if
+     *             the caller does not have ManagementPermission("control").
+     */
+    static void checkAccess(ManagementPermission p)
+         throws SecurityException {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(p);
         }
     }
 
-    static String getMBeanObjectName(GarbageCollectorMXBean gc) {
-        return GARBAGE_COLLECTOR_MXBEAN_DOMAIN_TYPE +
-            ",name=" + gc.getName();
+    static void checkMonitorAccess() throws SecurityException {
+        checkAccess(monitorPermission);
     }
-
-    static RuntimeException newException(Exception e) {
-        RuntimeException e1 = new RuntimeException(e.getMessage());
-        e1.initCause(e);
-        return e1;
-    }
-
-    static InternalError newInternalError(Exception e) {
-        InternalError e1 = new InternalError(e.getMessage());
-        e1.initCause(e);
-        return e1;
-    }
-    static AssertionError newAssertionError(Exception e) {
-        AssertionError e1 = new AssertionError(e.getMessage());
-        e1.initCause(e);
-        return e1;
-    }
-
-    private static String[] EMPTY_STRING_ARRAY = new String[0];
-    static String[] toStringArray(List<String> list) {
-        return (String[]) list.toArray(EMPTY_STRING_ARRAY);
+    static void checkControlAccess() throws SecurityException {
+        checkAccess(controlPermission);
     }
 }

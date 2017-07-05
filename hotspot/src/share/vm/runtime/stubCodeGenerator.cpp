@@ -69,7 +69,6 @@ StubCodeGenerator::StubCodeGenerator(CodeBuffer* code) {
   _first_stub = _last_stub = NULL;
 }
 
-#ifndef PRODUCT
 extern "C" {
   static int compare_cdesc(const void* void_a, const void* void_b) {
     int ai = (*((StubCodeDesc**) void_a))->index();
@@ -77,10 +76,8 @@ extern "C" {
     return ai - bi;
   }
 }
-#endif
 
 StubCodeGenerator::~StubCodeGenerator() {
-#ifndef PRODUCT
   if (PrintStubCode) {
     CodeBuffer* cbuf = _masm->code();
     CodeBlob*   blob = CodeCache::find_blob_unsafe(cbuf->insts()->start());
@@ -105,7 +102,6 @@ StubCodeGenerator::~StubCodeGenerator() {
       tty->cr();
     }
   }
-#endif //PRODUCT
 }
 
 

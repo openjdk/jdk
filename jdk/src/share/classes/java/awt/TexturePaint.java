@@ -45,6 +45,7 @@ import java.awt.image.ColorModel;
  * replicated <code>Rectangle2D</code>.
  * @see Paint
  * @see Graphics2D#setPaint
+ * @version 1.48, 06/05/07
  */
 
 public class TexturePaint implements Paint {
@@ -93,20 +94,32 @@ public class TexturePaint implements Paint {
     }
 
     /**
-     * Creates and returns a context used to generate the color pattern.
-     * @param cm the {@link ColorModel} that receives the
-     * <code>Paint</code> data. This is used only as a hint.
-     * @param deviceBounds the device space bounding box of the graphics
-     * primitive being rendered
-     * @param userBounds the user space bounding box of the graphics
-     * primitive being rendered
-     * @param xform the {@link AffineTransform} from user space
-     *          into device space
-     * @param hints a {@link RenderingHints} object that can be used to
-     *          specify how the pattern is ultimately rendered
-     * @return the {@link PaintContext} used for generating color
-     *          patterns.
+     * Creates and returns a {@link PaintContext} used to
+     * generate a tiled image pattern.
+     * See the {@link Paint#createContext specification} of the
+     * method in the {@link Paint} interface for information
+     * on null parameter handling.
+     *
+     * @param cm the preferred {@link ColorModel} which represents the most convenient
+     *           format for the caller to receive the pixel data, or {@code null}
+     *           if there is no preference.
+     * @param deviceBounds the device space bounding box
+     *                     of the graphics primitive being rendered.
+     * @param userBounds the user space bounding box
+     *                   of the graphics primitive being rendered.
+     * @param xform the {@link AffineTransform} from user
+     *              space into device space.
+     * @param hints the set of hints that the context object can use to
+     *              choose between rendering alternatives.
+     * @return the {@code PaintContext} for
+     *         generating color patterns.
+     * @see Paint
      * @see PaintContext
+     * @see ColorModel
+     * @see Rectangle
+     * @see Rectangle2D
+     * @see AffineTransform
+     * @see RenderingHints
      */
     public PaintContext createContext(ColorModel cm,
                                       Rectangle deviceBounds,

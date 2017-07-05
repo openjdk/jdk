@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class XFocusProxyWindow extends XBaseWindow {
         super(new XCreateWindowParams(new Object[] {
             BOUNDS, new Rectangle(-1, -1, 1, 1),
             PARENT_WINDOW, new Long(owner.getWindow()),
-            EVENT_MASK, new Long(FocusChangeMask | KeyPressMask | KeyReleaseMask)
+            EVENT_MASK, new Long(XConstants.FocusChangeMask | XConstants.KeyPressMask | XConstants.KeyReleaseMask)
         }));
         this.owner = owner;
     }
@@ -67,8 +67,8 @@ public class XFocusProxyWindow extends XBaseWindow {
         int type = ev.get_type();
         switch (type)
         {
-          case XlibWrapper.FocusIn:
-          case XlibWrapper.FocusOut:
+          case XConstants.FocusIn:
+          case XConstants.FocusOut:
               handleFocusEvent(ev);
               break;
         }

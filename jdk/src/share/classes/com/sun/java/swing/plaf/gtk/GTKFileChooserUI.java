@@ -97,14 +97,11 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     private static final Dimension hstrut3 = new Dimension(3, 1);
     private static final Dimension vstrut10 = new Dimension(1, 10);
 
-    private static final Insets insets = new Insets(10, 10, 10, 10);
-
     private static Dimension prefListSize = new Dimension(75, 150);
 
     private static Dimension PREF_SIZE = new Dimension(435, 360);
     private static Dimension MIN_SIZE = new Dimension(200, 300);
 
-    private static Dimension PREF_ACC_SIZE = new Dimension(10, 10);
     private static Dimension ZERO_ACC_SIZE = new Dimension(1, 1);
 
     private static Dimension MAX_SIZE = new Dimension(Short.MAX_VALUE, Short.MAX_VALUE);
@@ -125,7 +122,6 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     private JPanel bottomButtonPanel;
     private GTKDirectoryModel model = null;
     private Action newFolderAction;
-    private JPanel interior;
     private boolean readOnly;
     private boolean showDirectoryIcons;
     private boolean showFileIcons;
@@ -710,15 +706,19 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         bottomButtonPanel.setName("GTKFileChooser.bottomButtonPanel");
         align(bottomButtonPanel);
 
+        JPanel pnButtons = new JPanel(new GridLayout(1, 2, 5, 0));
+
         JButton cancelButton = getCancelButton(fc);
         align(cancelButton);
         cancelButton.setMargin(buttonMargin);
-        bottomButtonPanel.add(cancelButton);
+        pnButtons.add(cancelButton);
 
-        JButton approveButton = getApproveButton(fc);;
+        JButton approveButton = getApproveButton(fc);
         align(approveButton);
         approveButton.setMargin(buttonMargin);
-        bottomButtonPanel.add(approveButton);
+        pnButtons.add(approveButton);
+
+        bottomButtonPanel.add(pnButtons);
 
         if (fc.getControlButtonsAreShown()) {
             fc.add(bottomButtonPanel, BorderLayout.SOUTH);
@@ -1108,7 +1108,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
             // Get the canonical (full) path. This has the side
             // benefit of removing extraneous chars from the path,
             // for example /foo/bar/ becomes /foo/bar
-            File canonical = null;
+            File canonical;
             try {
                 canonical = fsv.createFileObject(ShellFolder.getNormalizedFile(directory).getPath());
             } catch (IOException e) {

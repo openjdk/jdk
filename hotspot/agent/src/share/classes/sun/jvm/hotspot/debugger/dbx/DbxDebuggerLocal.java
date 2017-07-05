@@ -460,10 +460,21 @@ public class DbxDebuggerLocal extends DebuggerBase implements DbxDebugger {
     return (value == 0 ? null : new DbxAddress(this, value));
   }
 
+  public DbxAddress readCompOopAddress(long address)
+    throws UnmappedAddressException, UnalignedAddressException {
+    long value = readCompOopAddressValue(address);
+    return (value == 0 ? null : new DbxAddress(this, value));
+  }
+
   /** From the DbxDebugger interface */
   public DbxOopHandle readOopHandle(long address)
     throws UnmappedAddressException, UnalignedAddressException, NotInHeapException {
     long value = readAddressValue(address);
+    return (value == 0 ? null : new DbxOopHandle(this, value));
+  }
+  public DbxOopHandle readCompOopHandle(long address)
+    throws UnmappedAddressException, UnalignedAddressException, NotInHeapException {
+    long value = readCompOopAddressValue(address);
     return (value == 0 ? null : new DbxOopHandle(this, value));
   }
 

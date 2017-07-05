@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2004 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,9 @@ import java.lang.ref.WeakReference;
 import java.lang.ref.SoftReference;
 
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
+
+import java.util.Enumeration;
+import java.util.Hashtable;
 
 /**
  * The FeatureDescriptor class is the common baseclass for PropertyDescriptor,
@@ -46,6 +48,7 @@ import java.lang.reflect.Type;
  */
 
 public class FeatureDescriptor {
+    private static final String TRANSIENT = "transient";
 
     private Reference<Class> classRef;
 
@@ -187,10 +190,7 @@ public class FeatureDescriptor {
      * @param value  The value.
      */
     public void setValue(String attributeName, Object value) {
-        if (table == null) {
-            table = new java.util.Hashtable();
-        }
-        table.put(attributeName, value);
+        getTable().put(attributeName, value);
     }
 
     /**
@@ -201,10 +201,9 @@ public class FeatureDescriptor {
      *     the attribute is unknown.
      */
     public Object getValue(String attributeName) {
-        if (table == null) {
-           return null;
-        }
-        return table.get(attributeName);
+        return (this.table != null)
+                ? this.table.get(attributeName)
+                : null;
     }
 
     /**
@@ -214,11 +213,8 @@ public class FeatureDescriptor {
      * @return  An enumeration of the locale-independent names of any
      *    attributes that have been registered with setValue.
      */
-    public java.util.Enumeration<String> attributeNames() {
-        if (table == null) {
-            table = new java.util.Hashtable();
-        }
-        return table.keys();
+    public Enumeration<String> attributeNames() {
+        return getTable().keys();
     }
 
     /**
@@ -268,16 +264,54 @@ public class FeatureDescriptor {
         addTable(old.table);
     }
 
-    private void addTable(java.util.Hashtable t) {
-        if (t == null) {
-            return;
+    /**
+     * Copies all values from the specified attribute table.
+     * If some attribute is exist its value should be overridden.
+     *
+     * @param table  the attribute table with new values
+     */
+    private void addTable(Hashtable<String, Object> table) {
+        if ((table != null) && !table.isEmpty()) {
+            getTable().putAll(table);
         }
-        java.util.Enumeration keys = t.keys();
-        while (keys.hasMoreElements()) {
-            String key = (String)keys.nextElement();
-            Object value = t.get(key);
-            setValue(key, value);
+    }
+
+    /**
+     * Returns the initialized attribute table.
+     *
+     * @return the initialized attribute table
+     */
+    private Hashtable<String, Object> getTable() {
+        if (this.table == null) {
+            this.table = new Hashtable<String, Object>();
         }
+        return this.table;
+    }
+
+    /**
+     * Sets the "transient" attribute according to the annotation.
+     * If the "transient" attribute is already set
+     * it should not be changed.
+     *
+     * @param annotation  the annotation of the element of the feature
+     */
+    void setTransient(Transient annotation) {
+        if ((annotation != null) && (null == getValue(TRANSIENT))) {
+            setValue(TRANSIENT, annotation.value());
+        }
+    }
+
+    /**
+     * Indicates whether the feature is transient.
+     *
+     * @return {@code true} if the feature is transient,
+     *         {@code false} otherwise
+     */
+    boolean isTransient() {
+        Object value = getValue(TRANSIENT);
+        return (value instanceof Boolean)
+                ? (Boolean) value
+                : false;
     }
 
     // Package private methods for recreating the weak/soft referent
@@ -290,39 +324,6 @@ public class FeatureDescriptor {
         return (this.classRef != null)
                 ? this.classRef.get()
                 : null;
-    }
-
-    /**
-     * Create a Reference wrapper for the object.
-     *
-     * @param obj object that will be wrapped
-     * @param soft true if a SoftReference should be created; otherwise Soft
-     * @return a Reference or null if obj is null.
-     */
-    static Reference createReference(Object obj, boolean soft) {
-        Reference ref = null;
-        if (obj != null) {
-            if (soft) {
-                ref = new SoftReference(obj);
-            } else {
-                ref = new WeakReference(obj);
-            }
-        }
-        return ref;
-    }
-
-    // Convenience method which creates a WeakReference.
-    static Reference createReference(Object obj) {
-        return createReference(obj, false);
-    }
-
-    /**
-     * Returns an object from a Reference wrapper.
-     *
-     * @return the Object in a wrapper or null.
-     */
-    static Object getObject(Reference ref) {
-        return (ref == null) ? null : (Object)ref.get();
     }
 
     /**
@@ -391,5 +392,5 @@ public class FeatureDescriptor {
     private String shortDescription;
     private String name;
     private String displayName;
-    private java.util.Hashtable table;
+    private Hashtable<String, Object> table;
 }

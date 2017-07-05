@@ -122,5 +122,6 @@ public interface Type {
   public JShortField         getJShortField        (String fieldName) throws WrongTypeException;
   public CIntegerField       getCIntegerField      (String fieldName) throws WrongTypeException;
   public OopField            getOopField           (String fieldName) throws WrongTypeException;
+  public NarrowOopField      getNarrowOopField     (String fieldName) throws WrongTypeException;
   public AddressField        getAddressField       (String fieldName);
 }

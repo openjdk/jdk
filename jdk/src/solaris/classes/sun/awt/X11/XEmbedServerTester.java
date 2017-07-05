@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,7 +260,7 @@ public class XEmbedServerTester implements XEventDispatcher {
         mapped = 0;
         embedCompletely();
         sleep(1000);
-        if (XlibUtil.getWindowMapState(window.getWindow()) != XlibWrapper.IsUnmapped) {
+        if (XlibUtil.getWindowMapState(window.getWindow()) != IsUnmapped) {
             throw new RuntimeException("Client has been mapped");
         }
     }
@@ -383,11 +383,11 @@ public class XEmbedServerTester implements XEventDispatcher {
         try {
             XCreateWindowParams params =
                 new XCreateWindowParams(new Object[] {
-                    XBaseWindow.PARENT_WINDOW, new Long(reparent?XToolkit.getDefaultRootWindow():parent),
+                    XBaseWindow.PARENT_WINDOW, Long.valueOf(reparent?XToolkit.getDefaultRootWindow():parent),
                     XBaseWindow.BOUNDS, initialBounds,
                     XBaseWindow.EMBEDDED, Boolean.TRUE,
                     XBaseWindow.VISIBLE, Boolean.valueOf(mapped == XEmbedHelper.XEMBED_MAPPED),
-                    XBaseWindow.EVENT_MASK, new Long(VisibilityChangeMask | StructureNotifyMask |
+                    XBaseWindow.EVENT_MASK, Long.valueOf(VisibilityChangeMask | StructureNotifyMask |
                                                      SubstructureNotifyMask | KeyPressMask)});
             window = new XBaseWindow(params);
 
@@ -613,12 +613,12 @@ public class XEmbedServerTester implements XEventDispatcher {
         }
     }
     private void checkMapped() {
-        if (XlibUtil.getWindowMapState(window.getWindow()) == XlibWrapper.IsUnmapped) {
+        if (XlibUtil.getWindowMapState(window.getWindow()) == IsUnmapped) {
             throw new RuntimeException("Client is not mapped");
         }
     }
     private void checkNotMapped() {
-        if (XlibUtil.getWindowMapState(window.getWindow()) != XlibWrapper.IsUnmapped) {
+        if (XlibUtil.getWindowMapState(window.getWindow()) != IsUnmapped) {
             throw new RuntimeException("Client is mapped");
         }
     }

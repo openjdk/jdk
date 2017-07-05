@@ -1125,6 +1125,11 @@ void Arguments::set_cms_and_parnew_gc_flags() {
   }
 }
 
+inline uintx max_heap_for_compressed_oops() {
+  LP64_ONLY(return oopDesc::OopEncodingHeapMax - MaxPermSize - os::vm_page_size());
+  NOT_LP64(return DefaultMaxRAM);
+}
+
 bool Arguments::should_auto_select_low_pause_collector() {
   if (UseAutoGCSelectPolicy &&
       !FLAG_IS_DEFAULT(MaxGCPauseMillis) &&
@@ -1163,6 +1168,31 @@ void Arguments::set_ergonomics_flags() {
       no_shared_spaces();
     }
   }
+
+#ifdef _LP64
+  // Compressed Headers do not work with CMS, which uses a bit in the klass
+  // field offset to determine free list chunk markers.
+  // Check that UseCompressedOops can be set with the max heap size allocated
+  // by ergonomics.
+  if (!UseConcMarkSweepGC && MaxHeapSize <= max_heap_for_compressed_oops()) {
+    if (FLAG_IS_DEFAULT(UseCompressedOops)) {
+      FLAG_SET_ERGO(bool, UseCompressedOops, true);
+    }
+  } else {
+    if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
+      // If specified, give a warning
+      if (UseConcMarkSweepGC){
+        warning("Compressed Oops does not work with CMS");
+      } else {
+        warning(
+          "Max heap size too large for Compressed Oops");
+      }
+      FLAG_SET_DEFAULT(UseCompressedOops, false);
+    }
+  }
+  // Also checks that certain machines are slower with compressed oops
+  // in vm_version initialization code.
+#endif // _LP64
 }
 
 void Arguments::set_parallel_gc_flags() {
@@ -1180,7 +1210,10 @@ void Arguments::set_parallel_gc_flags() {
     if (FLAG_IS_DEFAULT(MaxHeapSize)) {
       const uint64_t reasonable_fraction =
         os::physical_memory() / DefaultMaxRAMFraction;
-      const uint64_t maximum_size = (uint64_t) DefaultMaxRAM;
+      const uint64_t maximum_size = (uint64_t)
+                 (FLAG_IS_DEFAULT(DefaultMaxRAM) && UseCompressedOops ?
+                     MIN2(max_heap_for_compressed_oops(), DefaultMaxRAM) :
+                     DefaultMaxRAM);
       size_t reasonable_max =
         (size_t) os::allocatable_physical_memory(reasonable_fraction);
       if (reasonable_max > maximum_size) {

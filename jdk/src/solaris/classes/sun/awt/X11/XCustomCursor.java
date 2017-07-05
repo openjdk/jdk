@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public class XCustomCursor extends X11CustomCursor {
             long colormap = XToolkit.getDefaultXColormap();
             XColor fore_color = new XColor();
 
-            fore_color.set_flags((byte) (XlibWrapper.DoRed | XlibWrapper.DoGreen | XlibWrapper.DoBlue));
+            fore_color.set_flags((byte) (XConstants.DoRed | XConstants.DoGreen | XConstants.DoBlue));
             fore_color.set_red((short)(((fcolor >> 16) & 0x000000ff) << 8));
             fore_color.set_green((short) (((fcolor >> 8) & 0x000000ff) << 8));
             fore_color.set_blue((short)(((fcolor >> 0) & 0x000000ff) << 8));
@@ -92,7 +92,7 @@ public class XCustomCursor extends X11CustomCursor {
 
 
             XColor back_color = new XColor();
-            back_color.set_flags((byte) (XlibWrapper.DoRed | XlibWrapper.DoGreen | XlibWrapper.DoBlue));
+            back_color.set_flags((byte) (XConstants.DoRed | XConstants.DoGreen | XConstants.DoBlue));
 
             back_color.set_red((short) (((bcolor >> 16) & 0x000000ff) << 8));
             back_color.set_green((short) (((bcolor >> 8) & 0x000000ff) << 8));

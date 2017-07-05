@@ -135,7 +135,7 @@ private:
   ProfilerNode** table;
 
 private:
-  void record_interpreted_tick(frame fr, TickPosition where, int* ticks);
+  void record_interpreted_tick(JavaThread* thread, frame fr, TickPosition where, int* ticks);
   void record_compiled_tick   (JavaThread* thread, frame fr, TickPosition where);
   void interpreted_update(methodOop method, TickPosition where);
   void compiled_update   (methodOop method, TickPosition where);

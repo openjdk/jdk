@@ -76,7 +76,7 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
                                             stackTraceElementItemValues);
         } catch (OpenDataException e) {
             // Should never reach here
-            throw Util.newInternalError(e);
+            throw new AssertionError(e);
         }
     }
 
@@ -87,7 +87,7 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
                 MappedMXBeanType.toOpenType(StackTraceElement.class);
         } catch (OpenDataException e) {
             // Should never reach here
-            throw Util.newInternalError(e);
+            throw new AssertionError(e);
         }
     }
 

@@ -96,7 +96,7 @@ class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
             }
             taskBar.setBackground(desktop.getBackground());
             desktop.add(taskBar,
-                new Integer(JLayeredPane.PALETTE_LAYER.intValue() + 1));
+                Integer.valueOf(JLayeredPane.PALETTE_LAYER.intValue() + 1));
             if (desktop.isShowing()) {
                 taskBar.adjustSize();
             }

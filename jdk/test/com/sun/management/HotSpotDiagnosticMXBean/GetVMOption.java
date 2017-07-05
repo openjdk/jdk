@@ -34,6 +34,7 @@ import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.VMOption;
 import com.sun.management.VMOption.Origin;
 import java.lang.management.ManagementFactory;
+import java.util.List;
 import javax.management.MBeanServer;
 
 public class GetVMOption {
@@ -44,8 +45,9 @@ public class GetVMOption {
         "com.sun.management:type=HotSpotDiagnostic";
 
     public static void main(String[] args) throws Exception {
-        HotSpotDiagnosticMXBean mbean =
-            sun.management.ManagementFactory.getDiagnosticMXBean();
+        List<HotSpotDiagnosticMXBean> list =
+            ManagementFactory.getPlatformMXBeans(HotSpotDiagnosticMXBean.class);
+        HotSpotDiagnosticMXBean mbean = list.get(0);
         checkVMOption(mbean);
 
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();

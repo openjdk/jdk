@@ -27,6 +27,7 @@
 enum Opcodes {
   Op_Node = 0,
   macro(Set)                    // Instruction selection match rule
+  macro(RegN)                   // Machine narrow oop register
   macro(RegI)                   // Machine integer register
   macro(RegP)                   // Machine pointer register
   macro(RegF)                   // Machine float   register

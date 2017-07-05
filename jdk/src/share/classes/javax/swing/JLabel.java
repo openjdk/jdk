@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.awt.Image;
 import java.awt.*;
 import java.text.*;
 import java.awt.geom.*;
+import java.beans.Transient;
 
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
@@ -422,6 +423,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      * @see javax.swing.LookAndFeel#getDisabledIcon
      * @see ImageIcon
      */
+    @Transient
     public Icon getDisabledIcon() {
         if (!disabledIconSet && disabledIcon == null && defaultIcon != null) {
             disabledIcon = UIManager.getLookAndFeel().getDisabledIcon(this, defaultIcon);

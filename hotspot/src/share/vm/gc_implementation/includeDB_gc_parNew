@@ -19,7 +19,7 @@
 // Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
 // CA 95054 USA or visit www.sun.com if you need additional information or
 // have any questions.
-//  
+//
 //
 
 asParNewGeneration.hpp			adaptiveSizePolicy.hpp
@@ -66,8 +66,8 @@ parNewGeneration.cpp                    handles.hpp
 parNewGeneration.cpp                    handles.inline.hpp
 parNewGeneration.cpp                    java.hpp
 parNewGeneration.cpp                    objArrayOop.hpp
-parNewGeneration.cpp                    oop.pcgc.inline.hpp
 parNewGeneration.cpp                    oop.inline.hpp
+parNewGeneration.cpp                    oop.pcgc.inline.hpp
 parNewGeneration.cpp                    parGCAllocBuffer.hpp
 parNewGeneration.cpp                    parNewGeneration.hpp
 parNewGeneration.cpp                    parOopClosures.inline.hpp
@@ -80,3 +80,8 @@ parNewGeneration.cpp                    workgroup.hpp
 parNewGeneration.hpp                    defNewGeneration.hpp
 parNewGeneration.hpp                    parGCAllocBuffer.hpp
 parNewGeneration.hpp                    taskqueue.hpp
+
+parOopClosures.hpp                      genOopClosures.hpp
+
+parOopClosures.inline.hpp               parNewGeneration.hpp
+parOopClosures.inline.hpp               parOopClosures.hpp

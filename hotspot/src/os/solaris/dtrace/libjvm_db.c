@@ -148,9 +148,11 @@ struct jvm_agent {
 
   uint64_t Universe_methodKlassObj_address;
   uint64_t CodeCache_heap_address;
+  uint64_t Universe_heap_base_address;
 
   /* Volatiles */
   uint64_t Universe_methodKlassObj;
+  uint64_t Universe_heap_base;
   uint64_t CodeCache_low;
   uint64_t CodeCache_high;
   uint64_t CodeCache_segmap_low;
@@ -165,7 +167,6 @@ struct jvm_agent {
   Frame_t   prev_fr;
   Frame_t   curr_fr;
 };
-
 
 static int
 read_string(struct ps_prochandle *P,
@@ -183,6 +184,14 @@ read_string(struct ps_prochandle *P,
     buf += 1;
   }
   return -1;
+}
+
+static int read_compressed_pointer(jvm_agent_t* J, uint64_t base, uint32_t *ptr) {
+  int err = -1;
+  uint32_t ptr32;
+  err = ps_pread(J->P, base, &ptr32, sizeof(uint32_t));
+  *ptr = ptr32;
+  return err;
 }
 
 static int read_pointer(jvm_agent_t* J, uint64_t base, uint64_t* ptr) {
@@ -270,6 +279,9 @@ static int parse_vmstructs(jvm_agent_t* J) {
       if (strcmp("_methodKlassObj", vmp->fieldName) == 0) {
         J->Universe_methodKlassObj_address = vmp->address;
       }
+      if (strcmp("_heap_base", vmp->fieldName) == 0) {
+        J->Universe_heap_base_address = vmp->address;
+      }
     }
     CHECK_FAIL(err);
 
@@ -291,6 +303,8 @@ static int read_volatiles(jvm_agent_t* J) {
   int err;
 
   err = read_pointer(J, J->Universe_methodKlassObj_address, &J->Universe_methodKlassObj);
+  CHECK_FAIL(err);
+  err = read_pointer(J, J->Universe_heap_base_address, &J->Universe_heap_base);
   CHECK_FAIL(err);
   err = read_pointer(J, J->CodeCache_heap_address + OFFSET_CodeHeap_memory +
                      OFFSET_VirtualSpace_low, &J->CodeCache_low);
@@ -444,7 +458,17 @@ void Jagent_destroy(jvm_agent_t *J) {
 static int is_methodOop(jvm_agent_t* J, uint64_t methodOopPtr) {
   uint64_t klass;
   int err;
-  err = read_pointer(J, methodOopPtr + OFFSET_oopDesc_klass, &klass);
+  // If heap_base is nonnull, this was a compressed oop.
+  if (J->Universe_heap_base != NULL) {
+    uint32_t cklass;
+    err = read_compressed_pointer(J, methodOopPtr + OFFSET_oopDesc_metadata,
+          &cklass);
+    // decode heap oop, same as oop.inline.hpp
+    klass = (uint64_t)((uintptr_t)J->Universe_heap_base +
+            ((uintptr_t)cklass << 3));
+  } else {
+    err = read_pointer(J, methodOopPtr + OFFSET_oopDesc_metadata, &klass);
+  }
   if (err != PS_OK) goto fail;
   return klass == J->Universe_methodKlassObj;
 
