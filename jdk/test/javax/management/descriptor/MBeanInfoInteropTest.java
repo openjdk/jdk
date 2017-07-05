@@ -26,7 +26,7 @@
  * @bug 6204469
  * @summary Check that descriptors have not broken serial interop.
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean MBeanInfoInteropTest SerializedInfo
  * @run build MBeanInfoInteropTest SerializedInfo
  * @run main MBeanInfoInteropTest SerializedInfo
