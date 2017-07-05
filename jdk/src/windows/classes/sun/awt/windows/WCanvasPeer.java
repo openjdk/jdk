@@ -78,25 +78,6 @@ class WCanvasPeer extends WComponentPeer implements CanvasPeer {
         super.paint(g);
     }
 
-    public void print(Graphics g) {
-        if (!(target instanceof Window) ||
-            AWTAccessor.getWindowAccessor().isOpaque((Window)target))
-        {
-            Dimension d = ((Component)target).getSize();
-            if (g instanceof Graphics2D ||
-                g instanceof sun.awt.Graphics2Delegate) {
-                // background color is setup correctly, so just use clearRect
-                g.clearRect(0, 0, d.width, d.height);
-            } else {
-                // emulate clearRect
-                g.setColor(((Component)target).getBackground());
-                g.fillRect(0, 0, d.width, d.height);
-                g.setColor(((Component)target).getForeground());
-            }
-        }
-        super.print(g);
-    }
-
     public boolean shouldClearRectBeforePaint() {
         return eraseBackground;
     }

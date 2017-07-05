@@ -96,9 +96,13 @@ public class Robot {
         init(GraphicsEnvironment.getLocalGraphicsEnvironment()
             .getDefaultScreenDevice());
         int tmpMask = 0;
+
         if (Toolkit.getDefaultToolkit().areExtraMouseButtonsEnabled()){
-            for (int i = 0; i < peer.getNumberOfButtons(); i++){
-                tmpMask |= InputEvent.getMaskForButton(i+1);
+            if (Toolkit.getDefaultToolkit() instanceof SunToolkit) {
+                final int buttonsNumber = ((SunToolkit)(Toolkit.getDefaultToolkit())).getNumberOfButtons();
+                for (int i = 0; i < buttonsNumber; i++){
+                    tmpMask |= InputEvent.getMaskForButton(i+1);
+                }
             }
         }
         tmpMask |= InputEvent.BUTTON1_MASK|

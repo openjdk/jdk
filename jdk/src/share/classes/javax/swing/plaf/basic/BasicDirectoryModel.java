@@ -230,51 +230,46 @@ public class BasicDirectoryModel extends AbstractListModel implements PropertyCh
         }
 
         public void run0() {
+            FileSystemView fileSystem = filechooser.getFileSystemView();
+
+            File[] list = fileSystem.getFiles(currentDirectory, filechooser.isFileHidingEnabled());
+
+            if (isInterrupted()) {
+                return;
+            }
+
+            final Vector<File> newFileCache = new Vector<File>();
+            Vector<File> newFiles = new Vector<File>();
+
+            // run through the file list, add directories and selectable files to fileCache
+            // Note that this block must be OUTSIDE of Invoker thread because of
+            // deadlock possibility with custom synchronized FileSystemView
+            for (File file : list) {
+                if (filechooser.accept(file)) {
+                    boolean isTraversable = filechooser.isTraversable(file);
+
+                    if (isTraversable) {
+                        newFileCache.addElement(file);
+                    } else if (filechooser.isFileSelectionEnabled()) {
+                        newFiles.addElement(file);
+                    }
+
+                    if (isInterrupted()) {
+                        return;
+                    }
+                }
+            }
+
+            // First sort alphabetically by filename
+            sort(newFileCache);
+            sort(newFiles);
+
+            newFileCache.addAll(newFiles);
+
+            // To avoid loads of synchronizations with Invoker and improve performance we
+            // execute the whole block on the COM thread
             DoChangeContents doChangeContents = ShellFolder.getInvoker().invoke(new Callable<DoChangeContents>() {
                 public DoChangeContents call() throws Exception {
-                    FileSystemView fileSystem = filechooser.getFileSystemView();
-
-                    File[] list = fileSystem.getFiles(currentDirectory, filechooser.isFileHidingEnabled());
-
-                    Vector<File> acceptsList = new Vector<File>();
-
-                    if (isInterrupted()) {
-                        return null;
-                    }
-
-                    // run through the file list, add directories and selectable files to fileCache
-                    for (File file : list) {
-                        if (filechooser.accept(file)) {
-                            acceptsList.addElement(file);
-                        }
-                    }
-
-                    if (isInterrupted()) {
-                        return null;
-                    }
-
-                    // First sort alphabetically by filename
-                    sort(acceptsList);
-
-                    Vector<File> newDirectories = new Vector<File>(50);
-                    Vector<File> newFiles = new Vector<File>();
-                    // run through list grabbing directories in chunks of ten
-                    for (int i = 0; i < acceptsList.size(); i++) {
-                        File f = acceptsList.elementAt(i);
-                        boolean isTraversable = filechooser.isTraversable(f);
-                        if (isTraversable) {
-                            newDirectories.addElement(f);
-                        } else if (!isTraversable && filechooser.isFileSelectionEnabled()) {
-                            newFiles.addElement(f);
-                        }
-                        if (isInterrupted()) {
-                            return null;
-                        }
-                    }
-
-                    Vector<File> newFileCache = new Vector<File>(newDirectories);
-                    newFileCache.addAll(newFiles);
-
                     int newSize = newFileCache.size();
                     int oldSize = fileCache.size();
 

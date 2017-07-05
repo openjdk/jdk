@@ -69,6 +69,10 @@ else
   endif
 endif
 
+ifeq ($(DEBUG_CLASSFILES), true)
+  ANT_OPTIONS += -Djavac.debug=true
+endif
+
 # Note: jdk/make/common/Defs.gmk uses LANGUAGE_VERSION (-source NN)
 # and the somewhat misnamed CLASS_VERSION (-target NN)
 ifdef TARGET_CLASS_VERSION
