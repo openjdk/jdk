@@ -1,5 +1,5 @@
 /*
- * Copyright 2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.io.InputStream;
 import java.io.IOException;
 
 import java.security.cert.*;
+import java.security.cert.PKIXReason;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -69,6 +70,9 @@ public final class ValidateCertPath {
             validate(path, params);
             throw new Exception("Successfully validated invalid path.");
         } catch (CertPathValidatorException e) {
+            if (e.getReason() != PKIXReason.INVALID_NAME) {
+                throw new Exception("unexpected reason: " + e.getReason());
+            }
             System.out.println("Path rejected as expected: " + e);
         }
     }
@@ -86,14 +90,14 @@ public final class ValidateCertPath {
         args = new String[] {"jane2jane.cer", "jane2steve.cer", "steve2tom.cer"};
 
         TrustAnchor anchor = new TrustAnchor(getCertFromFile(args[0]), null);
-        List list = new ArrayList();
+        List<X509Certificate> list = new ArrayList<X509Certificate>();
         for (int i = 1; i < args.length; i++) {
             list.add(0, getCertFromFile(args[i]));
         }
         CertificateFactory cf = CertificateFactory.getInstance("X509");
         path = cf.generateCertPath(list);
 
-        Set anchors = Collections.singleton(anchor);
+        Set<TrustAnchor> anchors = Collections.singleton(anchor);
         params = new PKIXParameters(anchors);
         params.setRevocationEnabled(false);
     }

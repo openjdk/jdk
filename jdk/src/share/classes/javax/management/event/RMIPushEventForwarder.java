@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,7 @@ public class RMIPushEventForwarder implements EventForwarder {
 
     private static final ExecutorService executor =
             Executors.newCachedThreadPool(
-            new DaemonThreadFactory("RMIEventForwarder Executor"));
+            new DaemonThreadFactory("JMX RMIEventForwarder Executor"));
     private final SendingJob sendingJob = new SendingJob();
 
     private final BlockingQueue<TargetedNotification> buffer;

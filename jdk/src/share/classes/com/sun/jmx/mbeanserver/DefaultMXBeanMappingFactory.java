@@ -1172,10 +1172,10 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             final Class<ConstructorProperties> propertyNamesClass = ConstructorProperties.class;
 
             Class targetClass = getTargetClass();
-            Constructor[] constrs = targetClass.getConstructors();
+            Constructor<?>[] constrs = targetClass.getConstructors();
 
             // Applicable if and only if there are any annotated constructors
-            List<Constructor> annotatedConstrList = newList();
+            List<Constructor<?>> annotatedConstrList = newList();
             for (Constructor<?> constr : constrs) {
                 if (Modifier.isPublic(constr.getModifiers())
                         && constr.getAnnotation(propertyNamesClass) != null)
@@ -1206,7 +1206,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             // Also remember the set of properties in that constructor
             // so we can test unambiguity.
             Set<BitSet> getterIndexSets = newSet();
-            for (Constructor constr : annotatedConstrList) {
+            for (Constructor<?> constr : annotatedConstrList) {
                 String[] propertyNames =
                     constr.getAnnotation(propertyNamesClass).value();
 
@@ -1363,10 +1363,10 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
         }
 
         private static class Constr {
-            final Constructor constructor;
+            final Constructor<?> constructor;
             final int[] paramIndexes;
             final BitSet presentParams;
-            Constr(Constructor constructor, int[] paramIndexes,
+            Constr(Constructor<?> constructor, int[] paramIndexes,
                    BitSet presentParams) {
                 this.constructor = constructor;
                 this.paramIndexes = paramIndexes;

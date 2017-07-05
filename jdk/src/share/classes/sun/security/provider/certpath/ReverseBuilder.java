@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,15 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.Principal;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreException;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXCertPathChecker;
 import java.security.cert.PKIXParameters;
+import java.security.cert.PKIXReason;
 import java.security.cert.TrustAnchor;
+import java.security.cert.X509Certificate;
 import java.security.cert.X509CertSelector;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -402,7 +403,8 @@ class ReverseBuilder extends Builder {
              */
             if ((currentState.remainingCACerts <= 0) && !X509CertImpl.isSelfIssued(cert)) {
                     throw new CertPathValidatorException
-                        ("pathLenConstraint violated, path too long");
+                        ("pathLenConstraint violated, path too long", null,
+                         null, -1, PKIXReason.PATH_TOO_LONG);
             }
 
             /*
@@ -438,7 +440,8 @@ class ReverseBuilder extends Builder {
                 try {
                     if (!currentState.nc.verify(cert)){
                         throw new CertPathValidatorException
-                            ("name constraints check failed");
+                            ("name constraints check failed", null, null, -1,
+                             PKIXReason.INVALID_NAME);
                     }
                 } catch (IOException ioe){
                     throw new CertPathValidatorException(ioe);
@@ -483,7 +486,9 @@ class ReverseBuilder extends Builder {
             unresolvedCritExts.remove(PKIXExtensions.ExtendedKeyUsage_Id.toString());
 
             if (!unresolvedCritExts.isEmpty())
-                throw new CertificateException("Unrecognized critical extension(s)");
+                throw new CertPathValidatorException
+                    ("Unrecognized critical extension(s)", null, null, -1,
+                     PKIXReason.UNRECOGNIZED_CRIT_EXT);
         }
 
         /*

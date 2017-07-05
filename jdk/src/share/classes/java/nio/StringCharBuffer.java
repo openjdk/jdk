@@ -99,7 +99,7 @@ class StringCharBuffer                                  // package-private
         return str.toString().substring(start + offset, end + offset);
     }
 
-    public final CharSequence subSequence(int start, int end) {
+    public final CharBuffer subSequence(int start, int end) {
         try {
             int pos = position();
             return new StringCharBuffer(str, -1,

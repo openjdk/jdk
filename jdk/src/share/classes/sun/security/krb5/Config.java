@@ -803,7 +803,7 @@ public class Config {
             for (int j = 0; j < line.length(); j++) {
                 if (line.charAt(j) == '=') {
                     int index;
-                    key = line.substring(0, j - 1).trim();
+                    key = line.substring(0, j).trim();
                     if (! exists(key, keyVector)) {
                         keyVector.addElement(key);
                         nameVector = new Vector<String> ();
