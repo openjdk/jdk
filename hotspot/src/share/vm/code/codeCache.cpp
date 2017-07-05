@@ -199,15 +199,10 @@ void CodeCache::initialize_heaps() {
   }
   guarantee(NonProfiledCodeHeapSize + ProfiledCodeHeapSize + NonNMethodCodeHeapSize <= ReservedCodeCacheSize, "Size check");
 
-  // Align reserved sizes of CodeHeaps
-  size_t non_method_size   = ReservedCodeSpace::allocation_align_size_up(NonNMethodCodeHeapSize);
-  size_t profiled_size     = ReservedCodeSpace::allocation_align_size_up(ProfiledCodeHeapSize);
-  size_t non_profiled_size = ReservedCodeSpace::allocation_align_size_up(NonProfiledCodeHeapSize);
-
-  // Compute initial sizes of CodeHeaps
-  size_t init_non_method_size   = MIN2(InitialCodeCacheSize, non_method_size);
-  size_t init_profiled_size     = MIN2(InitialCodeCacheSize, profiled_size);
-  size_t init_non_profiled_size = MIN2(InitialCodeCacheSize, non_profiled_size);
+  // Align CodeHeaps
+  size_t alignment = heap_alignment();
+  size_t non_method_size = align_size_up(NonNMethodCodeHeapSize, alignment);
+  size_t profiled_size   = align_size_down(ProfiledCodeHeapSize, alignment);
 
   // Reserve one continuous chunk of memory for CodeHeaps and split it into
   // parts for the individual heaps. The memory layout looks like this:
@@ -216,18 +211,27 @@ void CodeCache::initialize_heaps() {
   //      Profiled nmethods
   //         Non-nmethods
   // ---------- low ------------
-  ReservedCodeSpace rs = reserve_heap_memory(non_profiled_size + profiled_size + non_method_size);
+  ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize);
   ReservedSpace non_method_space    = rs.first_part(non_method_size);
   ReservedSpace rest                = rs.last_part(non_method_size);
   ReservedSpace profiled_space      = rest.first_part(profiled_size);
   ReservedSpace non_profiled_space  = rest.last_part(profiled_size);
 
   // Non-nmethods (stubs, adapters, ...)
-  add_heap(non_method_space, "CodeHeap 'non-nmethods'", init_non_method_size, CodeBlobType::NonNMethod);
+  add_heap(non_method_space, "CodeHeap 'non-nmethods'", CodeBlobType::NonNMethod);
   // Tier 2 and tier 3 (profiled) methods
-  add_heap(profiled_space, "CodeHeap 'profiled nmethods'", init_profiled_size, CodeBlobType::MethodProfiled);
+  add_heap(profiled_space, "CodeHeap 'profiled nmethods'", CodeBlobType::MethodProfiled);
   // Tier 1 and tier 4 (non-profiled) methods and native methods
-  add_heap(non_profiled_space, "CodeHeap 'non-profiled nmethods'", init_non_profiled_size, CodeBlobType::MethodNonProfiled);
+  add_heap(non_profiled_space, "CodeHeap 'non-profiled nmethods'", CodeBlobType::MethodNonProfiled);
+}
+
+size_t CodeCache::heap_alignment() {
+  // If large page support is enabled, align code heaps according to large
+  // page size to make sure that code cache is covered by large pages.
+  const size_t page_size = os::can_execute_large_page_memory() ?
+             os::page_size_for_region_unaligned(ReservedCodeCacheSize, 8) :
+             os::vm_page_size();
+  return MAX2(page_size, (size_t) os::vm_allocation_granularity());
 }
 
 ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
@@ -284,7 +288,7 @@ const char* CodeCache::get_code_heap_flag_name(int code_blob_type) {
   return NULL;
 }
 
-void CodeCache::add_heap(ReservedSpace rs, const char* name, size_t size_initial, int code_blob_type) {
+void CodeCache::add_heap(ReservedSpace rs, const char* name, int code_blob_type) {
   // Check if heap is needed
   if (!heap_available(code_blob_type)) {
     return;
@@ -295,8 +299,8 @@ void CodeCache::add_heap(ReservedSpace rs, const char* name, size_t size_initial
   _heaps->append(heap);
 
   // Reserve Space
+  size_t size_initial = MIN2(InitialCodeCacheSize, rs.size());
   size_initial = round_to(size_initial, os::vm_page_size());
-
   if (!heap->reserve(rs, size_initial, CodeCacheSegmentSize)) {
     vm_exit_during_initialization("Could not reserve enough space for code cache");
   }
@@ -840,7 +844,7 @@ void CodeCache::initialize() {
   } else {
     // Use a single code heap
     ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize);
-    add_heap(rs, "CodeCache", InitialCodeCacheSize, CodeBlobType::All);
+    add_heap(rs, "CodeCache", CodeBlobType::All);
   }
 
   // Initialize ICache flush mechanism
