@@ -787,10 +787,9 @@ double G1CollectorPolicy::predict_survivor_regions_evac_time() const {
   return survivor_regions_evac_time;
 }
 
-void G1CollectorPolicy::revise_young_list_target_length_if_necessary() {
+void G1CollectorPolicy::revise_young_list_target_length_if_necessary(size_t rs_lengths) {
   guarantee( adaptive_young_list_length(), "should not call this otherwise" );
 
-  size_t rs_lengths = _g1->young_list()->sampled_rs_lengths();
   if (rs_lengths > _rs_lengths_prediction) {
     // add 10% to avoid having to recalculate often
     size_t rs_lengths_prediction = rs_lengths * 1100 / 1000;
@@ -1118,14 +1117,15 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
   _short_lived_surv_rate_group->start_adding_regions();
   // Do that for any other surv rate groups
 
+  double scan_hcc_time_ms = ConcurrentG1Refine::hot_card_cache_enabled() ? average_time_ms(G1GCPhaseTimes::ScanHCC) : 0.0;
+
   if (update_stats) {
     double cost_per_card_ms = 0.0;
-    double cost_scan_hcc = average_time_ms(G1GCPhaseTimes::ScanHCC);
     if (_pending_cards > 0) {
-      cost_per_card_ms = (average_time_ms(G1GCPhaseTimes::UpdateRS) - cost_scan_hcc) / (double) _pending_cards;
+      cost_per_card_ms = (average_time_ms(G1GCPhaseTimes::UpdateRS) - scan_hcc_time_ms) / (double) _pending_cards;
       _cost_per_card_ms_seq->add(cost_per_card_ms);
     }
-    _cost_scan_hcc_seq->add(cost_scan_hcc);
+    _cost_scan_hcc_seq->add(scan_hcc_time_ms);
 
     double cost_per_entry_ms = 0.0;
     if (cards_scanned > 10) {
@@ -1215,8 +1215,6 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
 
-  double scan_hcc_time_ms = average_time_ms(G1GCPhaseTimes::ScanHCC);
-
   if (update_rs_time_goal_ms < scan_hcc_time_ms) {
     log_debug(gc, ergo, refine)("Adjust concurrent refinement thresholds (scanning the HCC expected to take longer than Update RS time goal)."
                                 "Update RS time goal: %1.2fms Scan HCC time: %1.2fms",
@@ -1302,12 +1300,12 @@ void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
     const int k_gy = 3, k_gr = 6;
     const double inc_k = 1.1, dec_k = 0.9;
 
-    int g = cg1r->green_zone();
+    size_t g = cg1r->green_zone();
     if (update_rs_time > goal_ms) {
-      g = (int)(g * dec_k);  // Can become 0, that's OK. That would mean a mutator-only processing.
+      g = (size_t)(g * dec_k);  // Can become 0, that's OK. That would mean a mutator-only processing.
     } else {
       if (update_rs_time < goal_ms && update_rs_processed_buffers > g) {
-        g = (int)MAX2(g * inc_k, g + 1.0);
+        g = (size_t)MAX2(g * inc_k, g + 1.0);
       }
     }
     // Change the refinement threads params
@@ -1316,15 +1314,15 @@ void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
     cg1r->set_red_zone(g * k_gr);
     cg1r->reinitialize_threads();
 
-    int processing_threshold_delta = MAX2((int)(cg1r->green_zone() * _predictor.sigma()), 1);
-    int processing_threshold = MIN2(cg1r->green_zone() + processing_threshold_delta,
+    size_t processing_threshold_delta = MAX2<size_t>(cg1r->green_zone() * _predictor.sigma(), 1);
+    size_t processing_threshold = MIN2(cg1r->green_zone() + processing_threshold_delta,
                                     cg1r->yellow_zone());
     // Change the barrier params
-    dcqs.set_process_completed_threshold(processing_threshold);
-    dcqs.set_max_completed_queue(cg1r->red_zone());
+    dcqs.set_process_completed_threshold((int)processing_threshold);
+    dcqs.set_max_completed_queue((int)cg1r->red_zone());
   }
 
-  int curr_queue_size = dcqs.completed_buffers_num();
+  size_t curr_queue_size = dcqs.completed_buffers_num();
   if (curr_queue_size >= cg1r->yellow_zone()) {
     dcqs.set_completed_queue_padding(curr_queue_size);
   } else {

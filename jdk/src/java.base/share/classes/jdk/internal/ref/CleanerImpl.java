@@ -31,6 +31,7 @@ import java.lang.ref.ReferenceQueue;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import jdk.internal.misc.InnocuousThread;
@@ -39,7 +40,7 @@ import jdk.internal.misc.InnocuousThread;
  * CleanerImpl manages a set of object references and corresponding cleaning actions.
  * CleanerImpl provides the functionality of {@link java.lang.ref.Cleaner}.
  */
-public final class CleanerImpl {
+public final class CleanerImpl implements Runnable {
 
     /**
      * An object to access the CleanerImpl from a Cleaner; set by Cleaner init.
@@ -103,7 +104,7 @@ public final class CleanerImpl {
         }
         // schedule a nop cleaning action for the cleaner, so the associated thread
         // will continue to run at least until the cleaner is reclaimable.
-        new PhantomCleanableRef(cleaner, cleaner, () -> {});
+        new CleanerCleanable(cleaner);
 
         if (threadFactory == null) {
             threadFactory = CleanerImpl.InnocuousThreadFactory.factory();
@@ -112,7 +113,7 @@ public final class CleanerImpl {
         // now that there's at least one cleaning action, for the cleaner,
         // we can start the associated thread, which runs until
         // all cleaning actions have been run.
-        Thread thread = threadFactory.newThread(this::run);
+        Thread thread = threadFactory.newThread(this);
         thread.setDaemon(true);
         thread.start();
     }
@@ -128,7 +129,8 @@ public final class CleanerImpl {
      * If the thread is a ManagedLocalsThread, the threadlocals
      * are erased before each cleanup
      */
-    private void run() {
+    @Override
+    public void run() {
         Thread t = Thread.currentThread();
         InnocuousThread mlThread = (t instanceof InnocuousThread)
                 ? (InnocuousThread) t
@@ -147,10 +149,9 @@ public final class CleanerImpl {
                 if (ref != null) {
                     ref.clean();
                 }
-            } catch (InterruptedException i) {
-                continue;   // ignore the interruption
             } catch (Throwable e) {
                 // ignore exceptions from the cleanup action
+                // (including interruption of cleanup thread)
             }
         }
     }
@@ -320,14 +321,32 @@ public final class CleanerImpl {
             return factory;
         }
 
+        final AtomicInteger cleanerThreadNumber = new AtomicInteger();
+
         public Thread newThread(Runnable r) {
-            return AccessController.doPrivileged((PrivilegedAction<Thread>) () -> {
-                Thread t = new InnocuousThread(r);
-                t.setPriority(Thread.MAX_PRIORITY - 2);
-                t.setName("Cleaner-" + t.getId());
-                return t;
+            return AccessController.doPrivileged(new PrivilegedAction<Thread>() {
+                @Override
+                public Thread run() {
+                    Thread t = new InnocuousThread(r);
+                    t.setPriority(Thread.MAX_PRIORITY - 2);
+                    t.setName("Cleaner-" + cleanerThreadNumber.getAndIncrement());
+                    return t;
+                }
             });
         }
     }
 
+    /**
+     * A PhantomCleanable implementation for tracking the Cleaner itself.
+     */
+    static final class CleanerCleanable extends PhantomCleanable<Cleaner> {
+        CleanerCleanable(Cleaner cleaner) {
+            super(cleaner, cleaner);
+        }
+
+        @Override
+        protected void performCleanup() {
+            // no action
+        }
+    }
 }

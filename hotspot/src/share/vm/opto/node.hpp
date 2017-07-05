@@ -60,6 +60,8 @@ class CmpNode;
 class CodeBuffer;
 class ConstraintCastNode;
 class ConNode;
+class CompareAndSwapNode;
+class CompareAndExchangeNode;
 class CountedLoopNode;
 class CountedLoopEndNode;
 class DecodeNarrowPtrNode;
@@ -679,6 +681,9 @@ public:
       DEFINE_CLASS_ID(Store, Mem, 1)
         DEFINE_CLASS_ID(StoreVector, Store, 0)
       DEFINE_CLASS_ID(LoadStore, Mem, 2)
+        DEFINE_CLASS_ID(LoadStoreConditional, LoadStore, 0)
+          DEFINE_CLASS_ID(CompareAndSwap, LoadStoreConditional, 0)
+        DEFINE_CLASS_ID(CompareAndExchangeNode, LoadStore, 1)
 
     DEFINE_CLASS_ID(Region, Node, 5)
       DEFINE_CLASS_ID(Loop, Region, 0)

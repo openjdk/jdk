@@ -396,7 +396,7 @@ template<class E> class GrowableArray : public GenericGrowableArray {
     int max = length() - 1;
 
     while (max >= min) {
-      int mid = (max + min) / 2;
+      int mid = (int)(((uint)max + min) / 2);
       E value = at(mid);
       int diff = compare(key, value);
       if (diff > 0) {

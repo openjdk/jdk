@@ -334,9 +334,6 @@ javax/imageio/plugins/tiff/WriteToSequenceAfterAbort.java       generic-all
 
 # jdk_time
 
-# 8134979
-java/time/tck/java/time/chrono/TCKJapaneseChronology.java       generic-all
-
 ############################################################################
 
 # jdk_tools
