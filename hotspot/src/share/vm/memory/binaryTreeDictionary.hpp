@@ -60,13 +60,18 @@ class TreeList: public FreeList<Chunk> {
   TreeList<Chunk>* left()   const { return _left;   }
   TreeList<Chunk>* right()  const { return _right;  }
 
-  // Wrapper on call to base class, to get the template to compile.
-  Chunk* head() const { return FreeList<Chunk>::head(); }
-  Chunk* tail() const { return FreeList<Chunk>::tail(); }
-  void set_head(Chunk* head) { FreeList<Chunk>::set_head(head); }
-  void set_tail(Chunk* tail) { FreeList<Chunk>::set_tail(tail); }
+  // Explicitly import these names into our namespace to fix name lookup with templates
+  using FreeList<Chunk>::head;
+  using FreeList<Chunk>::set_head;
 
-  size_t size() const { return FreeList<Chunk>::size(); }
+  using FreeList<Chunk>::tail;
+  using FreeList<Chunk>::set_tail;
+  using FreeList<Chunk>::link_tail;
+
+  using FreeList<Chunk>::increment_count;
+  NOT_PRODUCT(using FreeList<Chunk>::increment_returned_bytes_by;)
+  using FreeList<Chunk>::verify_chunk_in_free_list;
+  using FreeList<Chunk>::size;
 
   // Accessors for links in tree.
 
