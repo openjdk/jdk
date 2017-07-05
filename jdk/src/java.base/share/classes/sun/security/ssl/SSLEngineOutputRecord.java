@@ -31,7 +31,7 @@ import java.util.*;
 
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 import static sun.security.ssl.Ciphertext.RecordType;
 
 /**

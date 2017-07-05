@@ -31,6 +31,7 @@
 #include "runtime/commandLineFlagRangeList.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/thread.inline.hpp"
 #include "utilities/defaultStream.hpp"
 
 #if INCLUDE_ALL_GCS
@@ -506,6 +507,19 @@ Flag::Error InitialBootClassLoaderMetaspaceSizeConstraintFunc(size_t value, bool
   return Flag::SUCCESS;
 }
 
+// To avoid an overflow by 'align_size_up(value, alignment)'.
+static Flag::Error MaxSizeForAlignment(const char* name, size_t value, size_t alignment, bool verbose) {
+  size_t aligned_max = ((max_uintx - alignment) & ~(alignment-1));
+  if (value > aligned_max) {
+    CommandLineError::print(verbose,
+                            "%s (" SIZE_FORMAT ") must be "
+                            "less than or equal to aligned maximum value (" SIZE_FORMAT ")\n",
+                            name, value, aligned_max);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+  return Flag::SUCCESS;
+}
+
 static Flag::Error MaxSizeForHeapAlignment(const char* name, size_t value, bool verbose) {
   // For G1 GC, we don't know until G1CollectorPolicy is created.
   size_t heap_alignment;
@@ -519,16 +533,7 @@ static Flag::Error MaxSizeForHeapAlignment(const char* name, size_t value, bool 
     heap_alignment = CollectorPolicy::compute_heap_alignment();
   }
 
-  // Not to overflow 'align_size_up(value, _heap_alignment) used from CollectorPolicy::initialize_flags()'.
-  size_t aligned_max = ((max_uintx - heap_alignment) & ~(heap_alignment-1));
-  if (value > aligned_max) {
-    CommandLineError::print(verbose,
-                            "%s (" SIZE_FORMAT ") must be "
-                            "less than or equal to aligned maximum value (" SIZE_FORMAT ")\n",
-                            name, value, aligned_max);
-    return Flag::VIOLATES_CONSTRAINT;
-  }
-  return Flag::SUCCESS;
+  return MaxSizeForAlignment(name, value, heap_alignment, verbose);
 }
 
 Flag::Error InitialHeapSizeConstraintFunc(size_t value, bool verbose) {
@@ -542,6 +547,29 @@ Flag::Error MaxHeapSizeConstraintFunc(size_t value, bool verbose) {
     status = CheckMaxHeapSizeAndSoftRefLRUPolicyMSPerMB(value, SoftRefLRUPolicyMSPerMB, verbose);
   }
   return status;
+}
+
+Flag::Error HeapBaseMinAddressConstraintFunc(size_t value, bool verbose) {
+  // If an overflow happened in Arguments::set_heap_size(), MaxHeapSize will have too large a value.
+  // Check for this by ensuring that MaxHeapSize plus the requested min base address still fit within max_uintx.
+  if (UseCompressedOops && FLAG_IS_ERGO(MaxHeapSize) && (value > (max_uintx - MaxHeapSize))) {
+    CommandLineError::print(verbose,
+                            "HeapBaseMinAddress (" SIZE_FORMAT ") or MaxHeapSize (" SIZE_FORMAT ") is too large. "
+                            "Sum of them must be less than or equal to maximum of size_t (" SIZE_FORMAT ")\n",
+                            value, MaxHeapSize, max_uintx);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+
+  return MaxSizeForHeapAlignment("HeapBaseMinAddress", value, verbose);
+}
+
+Flag::Error NUMAInterleaveGranularityConstraintFunc(size_t value, bool verbose) {
+  if (UseNUMA && UseNUMAInterleaving) {
+    size_t min_interleave_granularity = UseLargePages ? os::large_page_size() : os::vm_allocation_granularity();
+    return MaxSizeForAlignment("NUMAInterleaveGranularity", value, min_interleave_granularity, verbose);
+  } else {
+    return Flag::SUCCESS;
+  }
 }
 
 Flag::Error NewSizeConstraintFunc(size_t value, bool verbose) {
@@ -590,6 +618,24 @@ Flag::Error TLABSizeConstraintFunc(size_t value, bool verbose) {
                               "TLABSize (" SIZE_FORMAT ") must be "
                               "less than or equal to ergonomic TLAB maximum size (" SIZE_FORMAT ")\n",
                               value, (ThreadLocalAllocBuffer::max_size() * HeapWordSize));
+      return Flag::VIOLATES_CONSTRAINT;
+    }
+  }
+  return Flag::SUCCESS;
+}
+
+// We will protect overflow from ThreadLocalAllocBuffer::record_slow_allocation(),
+// so AfterMemoryInit type is enough to check.
+Flag::Error TLABWasteIncrementConstraintFunc(uintx value, bool verbose) {
+  if (UseTLAB) {
+    size_t refill_waste_limit = Thread::current()->tlab().refill_waste_limit();
+
+    // Compare with 'max_uintx' as ThreadLocalAllocBuffer::_refill_waste_limit is 'size_t'.
+    if (refill_waste_limit > (max_uintx - value)) {
+      CommandLineError::print(verbose,
+                              "TLABWasteIncrement (" UINTX_FORMAT ") must be "
+                              "less than or equal to ergonomic TLAB waste increment maximum size(" SIZE_FORMAT ")\n",
+                              value, (max_uintx - refill_waste_limit));
       return Flag::VIOLATES_CONSTRAINT;
     }
   }

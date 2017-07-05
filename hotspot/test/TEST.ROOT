@@ -30,7 +30,7 @@
 keys=cte_test jcmd nmt regression gc stress
 
 groups=TEST.groups [closed/TEST.groups]
-requires.properties=sun.arch.data.model
+requires.properties=sun.arch.data.model java.version
 
 # Tests using jtreg 4.1 b12 features
 requiredVersion=4.1 b12

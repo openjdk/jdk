@@ -33,7 +33,7 @@
 import java.io.*;
 import java.util.Arrays;
 
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 import sun.security.pkcs.PKCS9Attribute;
 import sun.security.util.DerValue;
 import sun.security.util.ObjectIdentifier;

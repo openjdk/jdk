@@ -215,9 +215,7 @@ And for specific systems:
 
  * **Mac OS X**
 
-   Install [XCode 4.5.2](https://developer.apple.com/xcode/) and also
-   install the "Command line tools" found under the preferences pane
-   "Downloads"
+   Install [XCode 6.3](https://developer.apple.com/xcode/)
 
 <a name="linux"></a>
 #### Linux
@@ -239,36 +237,66 @@ OpenJDK.
 <a name="studio"></a>
 ##### Studio Compilers
 
-At a minimum, the [Studio 12 Update 1 Compilers](http://www.oracle.com/
+At a minimum, the [Studio 12 Update 4 Compilers](http://www.oracle.com/
 technetwork/server-storage/solarisstudio/downloads/index.htm) (containing
-version 5.10 of the C and C++ compilers) is required, including specific
+version 5.13 of the C and C++ compilers) is required, including specific
 patches.
 
-The Solaris SPARC patch list is:
+The Solaris Studio installation should contain at least these packages:
 
- * 118683-05: SunOS 5.10: Patch for profiling libraries and assembler
- * 119963-21: SunOS 5.10: Shared library patch for C++
- * 120753-08: SunOS 5.10: Microtasking libraries (libmtsk) patch
- * 128228-09: Sun Studio 12 Update 1: Patch for Sun C++ Compiler
- * 141860-03: Sun Studio 12 Update 1: Patch for Compiler Common patch for Sun C
-   C++ F77 F95
- * 141861-05: Sun Studio 12 Update 1: Patch for Sun C Compiler
- * 142371-01: Sun Studio 12.1 Update 1: Patch for dbx
- * 143384-02: Sun Studio 12 Update 1: Patch for debuginfo handling
- * 143385-02: Sun Studio 12 Update 1: Patch for Compiler Common patch for Sun C
-   C++ F77 F95
- * 142369-01: Sun Studio 12.1: Patch for Performance Analyzer Tools
+>  <table border="1">
+     <thead>
+       <tr>
+         <td>**Package**</td>
+         <td>**Version**</td>
+       </tr>
+     </thead>
+     <tbody>
+       <tr>
+         <td>developer/solarisstudio-124/backend</td>
+         <td>12.4-1.0.6.0</td>
+       </tr>
+       <tr>
+         <td>developer/solarisstudio-124/c++</td>
+         <td>12.4-1.0.10.0</td>
+       </tr>
+       <tr>
+         <td>developer/solarisstudio-124/cc</td>
+         <td>12.4-1.0.4.0</td>
+       </tr>
+       <tr>
+         <td>developer/solarisstudio-124/library/c++-libs</td>
+         <td>12.4-1.0.10.0</td>
+       </tr>
+       <tr>
+         <td>developer/solarisstudio-124/library/math-libs</td>
+         <td>12.4-1.0.0.1</td>
+       </tr>
+       <tr>
+         <td>developer/solarisstudio-124/library/studio-gccrt</td>
+         <td>12.4-1.0.0.1</td>
+       </tr>
+       <tr>
+         <td>developer/solarisstudio-124/studio-common</td>
+         <td>12.4-1.0.0.1</td>
+       </tr>
+       <tr>
+         <td>developer/solarisstudio-124/studio-ja</td>
+         <td>12.4-1.0.0.1</td>
+       </tr>
+       <tr>
+         <td>developer/solarisstudio-124/studio-legal</td>
+         <td>12.4-1.0.0.1</td>
+       </tr>
+       <tr>
+         <td>developer/solarisstudio-124/studio-zhCN</td>
+         <td>12.4-1.0.0.1</td>
+       </tr>
+     </tbody>
+   </table>
 
-The Solaris X86 patch list is:
-
- * 119961-07: SunOS 5.10_x86, x64, Patch for profiling libraries and assembler
- * 119964-21: SunOS 5.10_x86: Shared library patch for C++\_x86
- * 120754-08: SunOS 5.10_x86: Microtasking libraries (libmtsk) patch
- * 141858-06: Sun Studio 12 Update 1_x86: Sun Compiler Common patch for x86
-   backend
- * 128229-09: Sun Studio 12 Update 1_x86: Patch for C++ Compiler
- * 142363-05: Sun Studio 12 Update 1_x86: Patch for C Compiler
- * 142368-01: Sun Studio 12.1_x86: Patch for Performance Analyzer Tools
+In particular backend 12.4-1.0.6.0 contains a critical patch for the sparc
+version.
 
 Place the `bin` directory in `PATH`.
 
@@ -1044,10 +1072,6 @@ where the resulting bits can be used.
 With Linux, it was just a matter of picking a stable distribution that is a
 good representative for Linux in general.
 
-**NOTE: We expect a change here from Fedora 9 to something else, but it has not
-been completely determined yet, possibly Ubuntu 12.04 X64, unbiased community
-feedback would be welcome on what a good choice would be here.**
-
 It is understood that most developers will NOT be using these specific
 versions, and in fact creating these specific versions may be difficult due to
 the age of some of this software. It is expected that developers are more often
@@ -1075,7 +1099,7 @@ so that they can be dealt with accordingly.
        <tr>
          <td>Linux X86 (32-bit) and X64 (64-bit)</td>
          <td>Oracle Enterprise Linux 6.4</td>
-         <td>gcc 4.8.2 </td>
+         <td>gcc 4.9.2 </td>
          <td>JDK 8</td>
          <td>2 or more</td>
          <td>1 GB</td>
@@ -1083,8 +1107,8 @@ so that they can be dealt with accordingly.
        </tr>
        <tr>
          <td>Solaris SPARCV9 (64-bit)</td>
-         <td>Solaris 10 Update 10</td>
-         <td>Studio 12 Update 3 + patches</td>
+         <td>Solaris 11 Update 1</td>
+         <td>Studio 12 Update 4 + patches</td>
          <td>JDK 8</td>
          <td>4 or more</td>
          <td>4 GB</td>
@@ -1092,8 +1116,8 @@ so that they can be dealt with accordingly.
        </tr>
        <tr>
          <td>Solaris X64 (64-bit)</td>
-         <td>Solaris 10 Update 10</td>
-         <td>Studio 12 Update 3 + patches</td>
+         <td>Solaris 11 Update 1</td>
+         <td>Studio 12 Update 4 + patches</td>
          <td>JDK 8</td>
          <td>4 or more</td>
          <td>4 GB</td>
@@ -1120,7 +1144,7 @@ so that they can be dealt with accordingly.
        <tr>
          <td>Mac OS X X64 (64-bit)</td>
          <td>Mac OS X 10.9 "Mavericks"</td>
-         <td>XCode 5.1.1 or newer</td>
+         <td>Xcode 6.3 or newer</td>
          <td>JDK 8</td>
          <td>2 or more</td>
          <td>4 GB</td>

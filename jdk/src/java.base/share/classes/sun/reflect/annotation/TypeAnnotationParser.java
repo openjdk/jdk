@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.nio.BufferUnderflowException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import jdk.internal.misc.SharedSecrets;
@@ -67,9 +66,8 @@ public final class TypeAnnotationParser {
             Type type,
             TypeAnnotationTarget filter) {
         TypeAnnotation[] tas = parseTypeAnnotations(rawAnnotations,
-                                                    cp,
-                                                    decl,
-                                                    container);
+                cp, decl, container);
+
         List<TypeAnnotation> l = new ArrayList<>(tas.length);
         for (TypeAnnotation t : tas) {
             TypeAnnotationTargetInfo ti = t.getTargetInfo();
@@ -78,10 +76,10 @@ public final class TypeAnnotationParser {
         }
         TypeAnnotation[] typeAnnotations = l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY);
         return AnnotatedTypeFactory.buildAnnotatedType(type,
-                                                       LocationInfo.BASE_LOCATION,
-                                                       typeAnnotations,
-                                                       typeAnnotations,
-                                                       decl);
+                AnnotatedTypeFactory.nestingForType(type, LocationInfo.BASE_LOCATION),
+                typeAnnotations,
+                typeAnnotations,
+                decl);
     }
 
     /**
@@ -110,9 +108,8 @@ public final class TypeAnnotationParser {
         ArrayList[] l = new ArrayList[size]; // array of ArrayList<TypeAnnotation>
 
         TypeAnnotation[] tas = parseTypeAnnotations(rawAnnotations,
-                                                    cp,
-                                                    decl,
-                                                    container);
+                cp, decl, container);
+
         for (TypeAnnotation t : tas) {
             TypeAnnotationTargetInfo ti = t.getTargetInfo();
             if (ti.getTarget() == filter) {
@@ -136,10 +133,10 @@ public final class TypeAnnotationParser {
                 typeAnnotations = EMPTY_TYPE_ANNOTATION_ARRAY;
             }
             result[i] = AnnotatedTypeFactory.buildAnnotatedType(types[i],
-                                                                LocationInfo.BASE_LOCATION,
-                                                                typeAnnotations,
-                                                                typeAnnotations,
-                                                                decl);
+                    AnnotatedTypeFactory.nestingForType(types[i], LocationInfo.BASE_LOCATION),
+                    typeAnnotations,
+                    typeAnnotations,
+                    decl);
 
         }
         return result;
@@ -278,7 +275,7 @@ public final class TypeAnnotationParser {
                     }
                 }
                 res[i] = AnnotatedTypeFactory.buildAnnotatedType(bounds[i],
-                        loc,
+                        AnnotatedTypeFactory.nestingForType(bounds[i], loc),
                         l.toArray(EMPTY_TYPE_ANNOTATION_ARRAY),
                         candidates.toArray(EMPTY_TYPE_ANNOTATION_ARRAY),
                         (AnnotatedElement)decl);

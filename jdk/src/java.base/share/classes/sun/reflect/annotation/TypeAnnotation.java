@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,13 +187,28 @@ public final class TypeAnnotation {
             return new LocationInfo(newDepth, res);
         }
 
+        /** Pop a series of locations matching {@code tag}. Stop poping as soon as a non-matching tag is found. */
+        public LocationInfo popAllLocations(byte tag) {
+            LocationInfo l = this;
+            int newDepth = l.depth;
+            while(newDepth > 0 && l.locations[newDepth - 1].tag == tag) {
+                newDepth--;
+            }
+            if (newDepth != l.depth) {
+                Location[] res = new Location[newDepth];
+                System.arraycopy(this.locations, 0, res, 0, newDepth);
+                return new LocationInfo(newDepth, res);
+            } else
+                return l;
+        }
+
         public TypeAnnotation[] filter(TypeAnnotation[] ta) {
             ArrayList<TypeAnnotation> l = new ArrayList<>(ta.length);
             for (TypeAnnotation t : ta) {
                 if (isSameLocationInfo(t.getLocationInfo()))
                     l.add(t);
             }
-            return l.toArray(new TypeAnnotation[0]);
+            return l.toArray(AnnotatedTypeFactory.EMPTY_TYPE_ANNOTATION_ARRAY);
         }
 
         boolean isSameLocationInfo(LocationInfo other) {

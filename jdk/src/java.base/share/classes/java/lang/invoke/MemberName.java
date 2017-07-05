@@ -1073,11 +1073,6 @@ import java.util.Objects;
         }
     }
 
-//    static {
-//        System.out.println("Hello world!  My methods are:");
-//        System.out.println(Factory.INSTANCE.getMethods(MemberName.class, true, null));
-//    }
-
     static {
         // Allow privileged classes outside of java.lang
         jdk.internal.misc.SharedSecrets.setJavaLangInvokeAccess(new jdk.internal.misc.JavaLangInvokeAccess() {
