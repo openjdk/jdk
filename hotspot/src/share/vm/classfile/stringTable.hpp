@@ -111,7 +111,7 @@ public:
   // Hashing algorithm, used as the hash value used by the
   //     StringTable for bucket selection and comparison (stored in the
   //     HashtableEntry structures).  This is used in the String.intern() method.
-  static unsigned int hash_string(const jchar* s, int len);
+  template<typename T> static unsigned int hash_string(const T* s, int len);
 
   // Internal test.
   static void test_alt_hash() PRODUCT_RETURN;

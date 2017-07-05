@@ -435,10 +435,14 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-  $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static.a: $(BUILD_LIBJLI_STATIC)
+  ifeq ($(STATIC_BUILD), true)
+    TARGETS += $(BUILD_LIBJLI_STATIC)
+  else
+    $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static.a: $(BUILD_LIBJLI_STATIC)
 	$(call install-file)
 
-  TARGETS += $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static.a
+    TARGETS += $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static.a
+  endif
 
 else ifeq ($(OPENJDK_TARGET_OS), aix)
   # AIX also requires a static libjli because the compiler doesn't support '-rpath'

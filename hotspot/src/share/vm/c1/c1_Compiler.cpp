@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ BufferBlob* Compiler::init_buffer_blob() {
   return buffer_blob;
 }
 
-bool Compiler::is_intrinsic_supported(methodHandle method) {
+bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   vmIntrinsics::ID id = method->intrinsic_id();
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
@@ -225,6 +225,8 @@ bool Compiler::is_intrinsic_supported(methodHandle method) {
   case vmIntrinsics::_updateByteBufferCRC32:
   case vmIntrinsics::_compareAndSwapInt:
   case vmIntrinsics::_compareAndSwapObject:
+  case vmIntrinsics::_getCharStringU:
+  case vmIntrinsics::_putCharStringU:
 #ifdef TRACE_HAVE_INTRINSICS
   case vmIntrinsics::_classID:
   case vmIntrinsics::_threadID:

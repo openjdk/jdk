@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <jni.h>
+#include "jni_util.h"
 #include "jvm.h"
 #include "management.h"
 
@@ -35,7 +36,7 @@ JavaVM* jvm = NULL;
 jint jmm_version = 0;
 
 JNIEXPORT jint JNICALL
-   JNI_OnLoad(JavaVM *vm, void *reserved) {
+   DEF_JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv* env;
 
     jvm = vm;

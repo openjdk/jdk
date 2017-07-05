@@ -393,7 +393,7 @@ class Method : public Metadata {
   bool was_executed_more_than(int n);
   bool was_never_executed()                      { return !was_executed_more_than(0); }
 
-  static void build_interpreter_method_data(methodHandle method, TRAPS);
+  static void build_interpreter_method_data(const methodHandle& method, TRAPS);
 
   static MethodCounters* build_method_counters(Method* m, TRAPS);
 
@@ -435,7 +435,7 @@ class Method : public Metadata {
   address get_c2i_unverified_entry();
   AdapterHandlerEntry* adapter() {  return _adapter; }
   // setup entry points
-  void link_method(methodHandle method, TRAPS);
+  void link_method(const methodHandle& method, TRAPS);
   // clear entry points. Used by sharing code
   void unlink_method();
 

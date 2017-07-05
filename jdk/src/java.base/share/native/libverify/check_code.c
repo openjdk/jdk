@@ -86,6 +86,7 @@
 #include <stdlib.h>
 
 #include "jni.h"
+#include "jni_util.h"
 #include "jvm.h"
 #include "classfile_constants.h"
 #include "opcodes.in_out"
@@ -480,6 +481,11 @@ static void print_flags(context_type *, flag_type, flag_type);
 static void print_formatted_fieldname(context_type *context, int index);
 static void print_formatted_methodname(context_type *context, int index);
 #endif
+
+/*
+ * Declare library specific JNI_Onload entry if static build
+ */
+DEF_STATIC_JNI_OnLoad
 
 void initialize_class_hash(context_type *context)
 {

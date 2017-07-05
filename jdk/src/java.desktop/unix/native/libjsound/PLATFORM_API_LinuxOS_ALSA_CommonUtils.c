@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,11 @@ static void alsaDebugOutput(const char *file, int line, const char *function, in
 static int alsa_inited = 0;
 static int alsa_enumerate_pcm_subdevices = FALSE; // default: no
 static int alsa_enumerate_midi_subdevices = FALSE; // default: no
+
+/*
+ * Declare library specific JNI_Onload entry if static build
+ */
+DEF_STATIC_JNI_OnLoad
 
 void initAlsaSupport() {
     char* enumerate;

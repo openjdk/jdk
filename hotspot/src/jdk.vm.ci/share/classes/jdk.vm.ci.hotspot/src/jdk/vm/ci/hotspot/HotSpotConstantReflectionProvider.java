@@ -22,12 +22,24 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider.Options.*;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Array;
 
-import jdk.vm.ci.meta.*;
-import jdk.vm.ci.options.*;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaField;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.MemoryAccessProvider;
+import jdk.vm.ci.meta.MethodHandleAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.options.Option;
+import jdk.vm.ci.options.OptionType;
+import jdk.vm.ci.options.OptionValue;
+import jdk.vm.ci.options.StableOptionValue;
 
 /**
  * HotSpot implementation of {@link ConstantReflectionProvider}.
@@ -58,11 +70,6 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
     @Override
     public MemoryAccessProvider getMemoryAccessProvider() {
         return memoryAccess;
-    }
-
-    @Override
-    public boolean isEmbeddable(Constant constant) {
-        return true;
     }
 
     @Override
@@ -110,8 +117,8 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
         }
         Class<?> componentType = ((HotSpotObjectConstantImpl) array).object().getClass().getComponentType();
         JavaKind kind = runtime.getHostJVMCIBackend().getMetaAccess().lookupJavaType(componentType).getJavaKind();
-        int arraybase = runtime.getArrayBaseOffset(kind);
-        int scale = runtime.getArrayIndexScale(kind);
+        int arraybase = getArrayBaseOffset(kind);
+        int scale = getArrayIndexScale(kind);
         if (offset < arraybase) {
             return -1;
         }
@@ -207,6 +214,10 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
         return HotSpotObjectConstantImpl.forObject(value);
     }
 
+    public JavaConstant forObject(Object value) {
+        return HotSpotObjectConstantImpl.forObject(value);
+    }
+
     @Override
     public ResolvedJavaType asJavaType(Constant constant) {
         if (constant instanceof HotSpotObjectConstant) {
@@ -216,7 +227,7 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
             }
         }
         if (constant instanceof HotSpotMetaspaceConstant) {
-            Object obj = HotSpotMetaspaceConstantImpl.getMetaspaceObject(constant);
+            MetaspaceWrapperObject obj = HotSpotMetaspaceConstantImpl.getMetaspaceObject(constant);
             if (obj instanceof HotSpotResolvedObjectTypeImpl) {
                 return (ResolvedJavaType) obj;
             }
@@ -251,7 +262,7 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
      *            {@code value} was read
      */
     protected boolean isFinalInstanceFieldValueConstant(JavaConstant value, Class<?> receiverClass) {
-        return !value.isDefaultForKind() || TrustFinalDefaultFields.getValue();
+        return !value.isDefaultForKind() || Options.TrustFinalDefaultFields.getValue();
     }
 
     /**
@@ -327,7 +338,7 @@ public class HotSpotConstantReflectionProvider implements ConstantReflectionProv
         if (!hotspotField.isStable()) {
             return readNonStableFieldValue(field, receiver);
         } else {
-            return readStableFieldValue(field, receiver, false);
+            return readStableFieldValue(field, receiver, hotspotField.isDefaultStable());
         }
     }
 

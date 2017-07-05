@@ -38,7 +38,7 @@ public class FieldInfo {
     private String signature;
     private int    modifiers;
     // This is compatible with the old reflection implementation's
-    // "slot" value to allow sun.misc.Unsafe to work
+    // "slot" value to allow jdk.internal.misc.Unsafe to work
     private int    slot;
 
     // Not really necessary to provide a constructor since the VM

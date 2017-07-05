@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ class AbstractInterpreter: AllStatic {
                                      bool is_bottom_frame);
 
   // Runtime support
-  static bool       is_not_reached(                       methodHandle method, int bci);
+  static bool       is_not_reached(const methodHandle& method, int bci);
   // Safepoint support
   static void       notice_safepoints()                         { ShouldNotReachHere(); } // stops the thread when reaching a safepoint
   static void       ignore_safepoints()                         { ShouldNotReachHere(); } // ignores safepoints

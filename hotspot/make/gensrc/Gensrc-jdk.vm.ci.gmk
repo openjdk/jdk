@@ -56,10 +56,10 @@ $(eval $(call SetupJavaCompilation, BUILD_JVMCI_SERVICE, \
 ################################################################################
 
 PROC_SRC_SUBDIRS := \
-    jdk.vm.ci.compiler \
     jdk.vm.ci.hotspot \
     jdk.vm.ci.hotspot.amd64 \
     jdk.vm.ci.hotspot.sparc \
+    jdk.vm.ci.runtime \
     #
 
 PROC_SRC_DIRS := $(patsubst %, $(SRC_DIR)/%/src, $(PROC_SRC_SUBDIRS))
@@ -94,11 +94,7 @@ TARGETS += $(GENSRC_DIR)/_gensrc_proc_done
 $(GENSRC_DIR)/META-INF/services/jdk.vm.ci.options.OptionDescriptors: \
     $(GENSRC_DIR)/_gensrc_proc_done
 	$(MKDIR) -p $(@D)
-	($(CD) $(GENSRC_DIR)/META-INF/jvmci.options && \
-	    $(RM) -f $@; \
-	    for i in $$(ls); do \
-	      echo $${i}_OptionDescriptors >> $@; \
-	    done)
+	$(FIND) $(GENSRC_DIR) -name '*_OptionDescriptors.java' | $(SED) 's:.*/jdk\.vm\.ci/\(.*\)\.java:\1:' | $(TR) '/' '.' > $@
 
 TARGETS += $(GENSRC_DIR)/META-INF/services/jdk.vm.ci.options.OptionDescriptors
 

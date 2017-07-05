@@ -222,7 +222,7 @@ class HeapRegionRemSet : public CHeapObj<mtGC> {
 
 public:
   enum Event {
-    Event_EvacStart, Event_EvacEnd, Event_RSUpdateEnd
+    Event_EvacStart, Event_EvacEnd, Event_RSUpdateEnd, Event_illegal
   };
 
 private:

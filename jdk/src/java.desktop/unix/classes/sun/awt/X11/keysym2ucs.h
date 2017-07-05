@@ -65,7 +65,7 @@ tojava  */
 tojava
 tojava package sun.awt.X11;
 tojava import java.util.Hashtable;
-tojava import sun.misc.Unsafe;
+tojava import jdk.internal.misc.Unsafe;
 tojava
 tojava import sun.util.logging.PlatformLogger;
 tojava

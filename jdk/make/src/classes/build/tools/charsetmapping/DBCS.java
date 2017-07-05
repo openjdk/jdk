@@ -197,6 +197,7 @@ public class DBCS {
                        .replace("$B1MAX$"   , "0x" + Integer.toString(b1Max, 16))
                        .replace("$B2MIN$"   , "0x" + Integer.toString(b2Min, 16))
                        .replace("$B2MAX$"   , "0x" + Integer.toString(b2Max, 16))
+                       .replace("$ASCIICOMPATIBLE$", isASCII ? "true" : "false")
                        .replace("$B2C$", b2c)
                        .replace("$C2BLENGTH$", "0x" + Integer.toString(c2bOff, 16))
                        .replace("$NONROUNDTRIP_B2C$", b2cNR)

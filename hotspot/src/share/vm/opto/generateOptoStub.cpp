@@ -261,7 +261,7 @@ void GraphKit::gen_stub(address C_function,
 
   //-----------------------------
   // If this is a normal subroutine return, issue the return and be done.
-  Node *ret;
+  Node *ret = NULL;
   switch( is_fancy_jump ) {
   case 0:                       // Make a return instruction
     // Return to caller, free any space for return address

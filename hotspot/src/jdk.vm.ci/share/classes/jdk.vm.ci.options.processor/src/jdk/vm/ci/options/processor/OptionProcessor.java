@@ -22,19 +22,40 @@
  */
 package jdk.vm.ci.options.processor;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
-import javax.annotation.processing.*;
-import javax.lang.model.*;
-import javax.lang.model.element.*;
-import javax.lang.model.type.*;
-import javax.lang.model.util.*;
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.Filer;
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
+import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
+import javax.tools.JavaFileObject;
 
-import jdk.vm.ci.options.*;
-
-import javax.tools.*;
+import jdk.vm.ci.options.Option;
+import jdk.vm.ci.options.OptionDescriptor;
+import jdk.vm.ci.options.OptionDescriptors;
+import jdk.vm.ci.options.OptionValue;
 
 /**
  * Processes static fields annotated with {@link Option}. An {@link OptionDescriptors}
@@ -105,11 +126,11 @@ public class OptionProcessor extends AbstractProcessor {
         DeclaredType declaredOptionValueType = declaredFieldType;
         while (!types.isSameType(types.erasure(declaredOptionValueType), types.erasure(optionValueType))) {
             List<? extends TypeMirror> directSupertypes = types.directSupertypes(declaredFieldType);
-            assert!directSupertypes.isEmpty();
+            assert !directSupertypes.isEmpty();
             declaredOptionValueType = (DeclaredType) directSupertypes.get(0);
         }
 
-        assert!declaredOptionValueType.getTypeArguments().isEmpty();
+        assert !declaredOptionValueType.getTypeArguments().isEmpty();
         String optionType = declaredOptionValueType.getTypeArguments().get(0).toString();
         if (optionType.startsWith("java.lang.")) {
             optionType = optionType.substring("java.lang.".length());
@@ -194,8 +215,7 @@ public class OptionProcessor extends AbstractProcessor {
                 if (info.options.size() == 1) {
                     out.printf("            return %s.create(\"%s\", %s.class, \"%s\", %s.class, \"%s\", %s);\n", desc, name, type, help, declaringClass, fieldName, optionValue);
                 } else {
-                    out.printf("            case \"" + name + "\": return %s.create(\"%s\", %s.class, \"%s\", %s.class, \"%s\", %s);\n", desc, name, type, help, declaringClass, fieldName,
-                                    optionValue);
+                    out.printf("            case \"" + name + "\": return %s.create(\"%s\", %s.class, \"%s\", %s.class, \"%s\", %s);\n", desc, name, type, help, declaringClass, fieldName, optionValue);
                 }
             }
             out.println("        }");
@@ -241,19 +261,6 @@ public class OptionProcessor extends AbstractProcessor {
             }
             out.println("}");
         }
-
-        try {
-            createOptionsFile(pkg, topDeclaringClass.toString(), originatingElements);
-        } catch (IOException e) {
-            processingEnv.getMessager().printMessage(Kind.ERROR, e.getMessage(), info.topDeclaringType);
-        }
-    }
-
-    private void createOptionsFile(String pkg, String relativeName, Element... originatingElements) throws IOException {
-        String filename = "META-INF/jvmci.options/" + pkg + "." + relativeName;
-        FileObject file = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT, "", filename, originatingElements);
-        PrintWriter writer = new PrintWriter(new OutputStreamWriter(file.openOutputStream(), "UTF-8"));
-        writer.close();
     }
 
     protected PrintWriter createSourceFile(String pkg, String relativeName, Filer filer, Element... originatingElements) {

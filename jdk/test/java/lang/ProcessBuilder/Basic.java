@@ -1248,7 +1248,7 @@ public class Basic {
                 () -> p.toHandle(),
                 () -> p.supportsNormalTermination(),
                 () -> p.children(),
-                () -> p.allChildren());
+                () -> p.descendants());
 
     }
 

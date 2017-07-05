@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,19 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.JavaField;
+import jdk.vm.ci.meta.JavaType;
 
 /**
  * A implementation of {@link JavaField} for an unresolved field.
  */
-public class HotSpotUnresolvedField implements JavaField {
+class HotSpotUnresolvedField implements JavaField {
 
     private final String name;
     private final JavaType holder;
     private final JavaType type;
 
-    public HotSpotUnresolvedField(JavaType holder, String name, JavaType type) {
+    HotSpotUnresolvedField(JavaType holder, String name, JavaType type) {
         this.name = name;
         this.type = type;
         this.holder = holder;
