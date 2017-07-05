@@ -78,7 +78,19 @@ public:
                                            TRAPS) {
     return NULL;
   }
+
   static void serialize(SerializeClosure* soc) {}
+
+  // The (non-application) CDS implementation supports only classes in the boot
+  // class loader, which ensures that the verification constraints are the same
+  // during archive creation time and runtime. Thus we can do the constraint checks
+  // entirely during archive creation time.
+  static bool add_verification_constraint(Klass* k, Symbol* name,
+                  Symbol* from_name, bool from_field_is_protected,
+                  bool from_is_array, bool from_is_object) {return false;}
+  static void finalize_verification_constraints() {}
+  static void check_verification_constraints(instanceKlassHandle klass,
+                                              TRAPS) {}
 };
 
 #endif // SHARE_VM_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP

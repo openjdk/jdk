@@ -251,6 +251,5 @@ G1ParRemoveSelfForwardPtrsTask::G1ParRemoveSelfForwardPtrsTask() :
 void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
   RemoveSelfForwardPtrHRClosure rsfp_cl(worker_id, &_hrclaimer);
 
-  HeapRegion* hr = _g1h->start_cset_region_for_worker(worker_id);
-  _g1h->collection_set_iterate_from(hr, &rsfp_cl);
+  _g1h->collection_set_iterate_from(&rsfp_cl, worker_id);
 }
