@@ -148,6 +148,7 @@
   template(java_lang_InstantiationException,          "java/lang/InstantiationException")         \
   template(java_lang_InstantiationError,              "java/lang/InstantiationError")             \
   template(java_lang_InterruptedException,            "java/lang/InterruptedException")           \
+  template(java_lang_BootstrapMethodError,            "java/lang/BootstrapMethodError")           \
   template(java_lang_LinkageError,                    "java/lang/LinkageError")                   \
   template(java_lang_NegativeArraySizeException,      "java/lang/NegativeArraySizeException")     \
   template(java_lang_NoSuchFieldException,            "java/lang/NoSuchFieldException")           \

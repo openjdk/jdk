@@ -158,6 +158,7 @@ class ciMethod : public ciObject {
   int interpreter_throwout_count() const         { check_is_loaded(); return _interpreter_throwout_count; }
 
   int comp_level();
+  int highest_osr_comp_level();
 
   Bytecodes::Code java_code_at_bci(int bci) {
     address bcp = code() + bci;

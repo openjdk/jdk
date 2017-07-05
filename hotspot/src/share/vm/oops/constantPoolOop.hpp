@@ -103,7 +103,8 @@ class constantPoolOopDesc : public oopDesc {
 
   enum FlagBit {
     FB_has_invokedynamic = 1,
-    FB_has_pseudo_string = 2
+    FB_has_pseudo_string = 2,
+    FB_has_preresolution = 3
   };
 
   int flags() const                         { return _flags; }
@@ -179,8 +180,10 @@ class constantPoolOopDesc : public oopDesc {
 
   bool has_pseudo_string() const            { return flag_at(FB_has_pseudo_string); }
   bool has_invokedynamic() const            { return flag_at(FB_has_invokedynamic); }
+  bool has_preresolution() const            { return flag_at(FB_has_preresolution); }
   void set_pseudo_string()                  {    set_flag_at(FB_has_pseudo_string); }
   void set_invokedynamic()                  {    set_flag_at(FB_has_invokedynamic); }
+  void set_preresolution()                  {    set_flag_at(FB_has_preresolution); }
 
   // Klass holding pool
   klassOop pool_holder() const              { return _pool_holder; }
@@ -663,6 +666,8 @@ class constantPoolOopDesc : public oopDesc {
   friend class SystemDictionary;
 
   // Used by compiler to prevent classloading.
+  static methodOop method_at_if_loaded        (constantPoolHandle this_oop, int which,
+                                               Bytecodes::Code bc = Bytecodes::_illegal);
   static klassOop klass_at_if_loaded          (constantPoolHandle this_oop, int which);
   static klassOop klass_ref_at_if_loaded      (constantPoolHandle this_oop, int which);
   // Same as above - but does LinkResolving.

@@ -38,7 +38,6 @@ import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;
 import java.awt.Image;
 import java.awt.Insets;
-import java.awt.KeyboardFocusManager;
 import java.awt.Rectangle;
 import java.awt.SystemColor;
 import java.awt.Toolkit;
@@ -59,15 +58,11 @@ import java.awt.image.ImageProducer;
 import java.awt.image.VolatileImage;
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.ContainerPeer;
-import java.awt.peer.LightweightPeer;
 import java.lang.reflect.*;
 import java.security.*;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
-import java.util.Vector;
 import sun.util.logging.PlatformLogger;
-
 import sun.awt.*;
 import sun.awt.event.IgnorePaintEvent;
 import sun.awt.image.SunVolatileImage;
@@ -428,27 +423,23 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     public void disable() {
         setEnabled(false);
     }
-
-    public void paint(Graphics g) {
+    @Override
+    public void paint(final Graphics g) {
+        super.paint(g);
+        // allow target to change the picture
+        target.paint(g);
     }
-    public void repaint(long tm, int x, int y, int width, int height) {
-        repaint();
-    }
-
 
     public Graphics getGraphics() {
         return getGraphics(surfaceData, getPeerForeground(), getPeerBackground(), getPeerFont());
     }
-
-
-
     public void print(Graphics g) {
         // clear rect here to emulate X clears rect before Expose
         g.setColor(target.getBackground());
         g.fillRect(0, 0, target.getWidth(), target.getHeight());
         g.setColor(target.getForeground());
         // paint peer
-        paint(g);
+        paintPeer(g);
         // allow target to change the picture
         target.print(g);
     }

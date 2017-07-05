@@ -255,7 +255,11 @@ inline void Assembler::stf(    FloatRegisterImpl::Width w, FloatRegister d, Regi
 inline void Assembler::stf(    FloatRegisterImpl::Width w, FloatRegister d, Register s1, Register s2) { emit_long( op(ldst_op) | fd(d, w) | alt_op3(stf_op3, w) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::stf(    FloatRegisterImpl::Width w, FloatRegister d, Register s1, int simm13a) { emit_data( op(ldst_op) | fd(d, w) | alt_op3(stf_op3, w) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
-inline void Assembler::stf(    FloatRegisterImpl::Width w, FloatRegister d, const Address& a, int offset) { relocate(a.rspec(offset)); stf(w, d, a.base(), a.disp() + offset); }
+inline void Assembler::stf(    FloatRegisterImpl::Width w, FloatRegister d, const Address& a, int offset) {
+  relocate(a.rspec(offset));
+  if (a.has_index()) { assert(offset == 0, ""); stf(w, d, a.base(), a.index()        ); }
+  else               {                          stf(w, d, a.base(), a.disp() + offset); }
+}
 
 inline void Assembler::stfsr(  Register s1, Register s2) { v9_dep();   emit_long( op(ldst_op) |             op3(stfsr_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::stfsr(  Register s1, int simm13a) { v9_dep();   emit_data( op(ldst_op) |             op3(stfsr_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }

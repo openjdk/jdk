@@ -251,7 +251,10 @@ public class Logger {
     protected Logger(String name, String resourceBundleName) {
         this.manager = LogManager.getLogManager();
         if (resourceBundleName != null) {
-            // Note: we may get a MissingResourceException here.
+            // MissingResourceException or IllegalArgumentException can
+            // be thrown by setupResourceInfo(). Since this is the Logger
+            // constructor, the resourceBundleName field is null so
+            // IllegalArgumentException cannot happen here.
             setupResourceInfo(resourceBundleName);
         }
         this.name = name;
@@ -374,13 +377,10 @@ public class Logger {
     public static Logger getLogger(String name, String resourceBundleName) {
         LogManager manager = LogManager.getLogManager();
         Logger result = manager.demandLogger(name);
-        if (result.resourceBundleName == null) {
-            // Note: we may get a MissingResourceException here.
-            result.setupResourceInfo(resourceBundleName);
-        } else if (!result.resourceBundleName.equals(resourceBundleName)) {
-            throw new IllegalArgumentException(result.resourceBundleName +
-                                " != " + resourceBundleName);
-        }
+
+        // MissingResourceException or IllegalArgumentException can be
+        // thrown by setupResourceInfo().
+        result.setupResourceInfo(resourceBundleName);
         return result;
     }
 
@@ -1353,14 +1353,29 @@ public class Logger {
     }
 
     // Private utility method to initialize our one entry
-    // resource bundle cache.
+    // resource bundle name cache.
     // Note: for consistency reasons, we are careful to check
     // that a suitable ResourceBundle exists before setting the
-    // ResourceBundleName.
+    // resourceBundleName field.
+    // Synchronized to prevent races in setting the field.
     private synchronized void setupResourceInfo(String name) {
         if (name == null) {
             return;
         }
+
+        if (resourceBundleName != null) {
+            // this Logger already has a ResourceBundle
+
+            if (resourceBundleName.equals(name)) {
+                // the names match so there is nothing more to do
+                return;
+            }
+
+            // cannot change ResourceBundles once they are set
+            throw new IllegalArgumentException(
+                resourceBundleName + " != " + name);
+        }
+
         ResourceBundle rb = findResourceBundle(name);
         if (rb == null) {
             // We've failed to find an expected ResourceBundle.

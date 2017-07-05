@@ -2367,6 +2367,8 @@ methodOop SystemDictionary::find_method_handle_invoke(Symbol* name,
         // Link m to his method type, if it is suitably generic.
         oop mtform = java_lang_invoke_MethodType::form(mt());
         if (mtform != NULL && mt() == java_lang_invoke_MethodTypeForm::erasedType(mtform)
+            // vmlayout must be an invokeExact:
+            && name_id == vmSymbols::VM_SYMBOL_ENUM_NAME(invokeExact_name)
             && java_lang_invoke_MethodTypeForm::vmlayout_offset_in_bytes() > 0) {
           java_lang_invoke_MethodTypeForm::init_vmlayout(mtform, m());
         }
