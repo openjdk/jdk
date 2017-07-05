@@ -338,29 +338,14 @@ $(JDK_OUTPUTDIR)/gensrc_headers/_the.jdk.base.headers: $(JDK_BASE_HEADER_JAVA_FI
 
 ##########################################################################################
 
-#
-# This is an empty jar (only contains manifest) and fits poorly into framework...
-#   create simple rule instead
-#
-MANAGEMENT_AGENT_JAR_DEPS := $(JDK_TOPDIR)/src/share/classes/sun/management/manifest
-
-$(JDK_OUTPUTDIR)/lib/management-agent.jar : $(JDK_TOPDIR)/src/share/classes/sun/management/manifest
-	$(JAR) cfm $@ $(JDK_TOPDIR)/src/share/classes/sun/management/manifest
-
-JARS += $(JDK_OUTPUTDIR)/lib/management-agent.jar
-
-##########################################################################################
-
 ifndef OPENJDK
 
-$(eval $(call SetupJavaCompilation,BUILD_ALTCLASSES_JAR,\
+    $(eval $(call SetupJavaCompilation,BUILD_ALTCLASSES,\
 		SETUP:=GENERATE_JDKBYTECODE,\
 		SRC:=$(JDK_TOPDIR)/src/closed/share/altclasses, \
-		BIN:=$(JDK_OUTPUTDIR)/altclasses_classes,\
-		JAR:=$(JDK_OUTPUTDIR)/lib/alt-rt.jar))
+		BIN:=$(JDK_OUTPUTDIR)/altclasses_classes))
 
-$(BUILD_ALTCLASSES_JAR): $(BUILD_JDK)
-JARS += $(JDK_OUTPUTDIR)/lib/alt-rt.jar
+    $(BUILD_ALTCLASSES): $(BUILD_JDK)
 
 endif
 
@@ -383,7 +368,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_15BYTECODE,\
      SERVER_DIR:=$(SJAVAC_SERVER_DIR),\
      SERVER_JVM:=$(SJAVAC_SERVER_JAVA)))
 
-$(eval $(call SetupJavaCompilation,BUILD_JOBJC_JAR,\
+$(eval $(call SetupJavaCompilation,BUILD_JOBJC,\
 		SETUP:=GENERATE_15BYTECODE,\
 		DISABLE_SJAVAC:=true,\
 		SRC:=$(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/java \
@@ -395,11 +380,9 @@ $(eval $(call SetupJavaCompilation,BUILD_JOBJC_JAR,\
 		JAR:=$(JDK_OUTPUTDIR)/lib/JObjC.jar, \
 		JARINDEX := true))
 
-$(BUILD_JOBJC_JAR) : $(BUILD_JDK)
+$(BUILD_JOBJC) : $(BUILD_JDK)
 
-JARS += $(JDK_OUTPUTDIR)/lib/JObjC.jar
-
-$(eval $(call SetupJavaCompilation,BUILD_JOBJC_HEADERS_JAR,\
+$(eval $(call SetupJavaCompilation,BUILD_JOBJC_HEADERS,\
 		SETUP:=GENERATE_JDKBYTECODE,\
 		SRC:=$(JDK_TOPDIR)/src/macosx/native/jobjc/src/core/java \
 		     $(JDK_TOPDIR)/src/macosx/native/jobjc/src/runtime-additions/java \
@@ -409,16 +392,15 @@ $(eval $(call SetupJavaCompilation,BUILD_JOBJC_HEADERS_JAR,\
 		BIN:=$(JDK_OUTPUTDIR)/jobjc_classes_headers,\
 		HEADERS:=$(JDK_OUTPUTDIR)/gensrc_headers_jobjc))
 
-$(BUILD_JOBJC_HEADERS_JAR) : $(BUILD_JDK)
-
-JARS += $(BUILD_JOBJC_HEADERS_JAR)
+$(BUILD_JOBJC_HEADERS) : $(BUILD_JDK)
 
 endif
 
 ##########################################################################################
 
 # copy with -a to preserve timestamps so dependencies down the line aren't messed up
-all: $(BUILD_JDK) $(JARS) $(COPY_EXTRA) $(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin \
+all: $(BUILD_JDK) $(BUILD_ALTCLASSES) $(BUILD_JOBJC) $(BUILD_JOBJC_HEADERS) $(COPY_EXTRA) \
+	$(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.tools.xjc.Plugin \
 	$(JDK_OUTPUTDIR)/gensrc_headers/_the.jdk.base.headers
 
 .PHONY: all

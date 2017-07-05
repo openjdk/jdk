@@ -879,7 +879,8 @@ oop* frame::interpreter_callee_receiver_addr(Symbol* signature) {
 }
 
 
-void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache) {
+void frame::oops_interpreted_do(OopClosure* f, CLDToOopClosure* cld_f,
+    const RegisterMap* map, bool query_oop_map_cache) {
   assert(is_interpreted_frame(), "Not an interpreted frame");
   assert(map != NULL, "map must be set");
   Thread *thread = Thread::current();
@@ -906,6 +907,16 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool quer
   }
 
   // process fixed part
+  if (cld_f != NULL) {
+    // The method pointer in the frame might be the only path to the method's
+    // klass, and the klass needs to be kept alive while executing. The GCs
+    // don't trace through method pointers, so typically in similar situations
+    // the mirror or the class loader of the klass are installed as a GC root.
+    // To minimze the overhead of doing that here, we ask the GC to pass down a
+    // closure that knows how to keep klasses alive given a ClassLoaderData.
+    cld_f->do_cld(m->method_holder()->class_loader_data());
+  }
+
 #if !defined(PPC) || defined(ZERO)
   if (m->is_native()) {
 #ifdef CC_INTERP
@@ -1108,7 +1119,7 @@ void frame::oops_entry_do(OopClosure* f, const RegisterMap* map) {
 }
 
 
-void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache) {
+void frame::oops_do_internal(OopClosure* f, CLDToOopClosure* cld_f, CodeBlobClosure* cf, RegisterMap* map, bool use_interpreter_oop_map_cache) {
 #ifndef PRODUCT
   // simulate GC crash here to dump java thread in error report
   if (CrashGCForDumpingJavaThread) {
@@ -1117,7 +1128,7 @@ void frame::oops_do_internal(OopClosure* f, CodeBlobClosure* cf, RegisterMap* ma
   }
 #endif
   if (is_interpreted_frame()) {
-    oops_interpreted_do(f, map, use_interpreter_oop_map_cache);
+    oops_interpreted_do(f, cld_f, map, use_interpreter_oop_map_cache);
   } else if (is_entry_frame()) {
     oops_entry_do(f, map);
   } else if (CodeCache::contains(pc())) {
@@ -1278,7 +1289,7 @@ void frame::verify(const RegisterMap* map) {
     }
   }
   COMPILER2_PRESENT(assert(DerivedPointerTable::is_empty(), "must be empty before verify");)
-  oops_do_internal(&VerifyOopClosure::verify_oop, NULL, (RegisterMap*)map, false);
+  oops_do_internal(&VerifyOopClosure::verify_oop, NULL, NULL, (RegisterMap*)map, false);
 }
 
 

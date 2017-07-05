@@ -26,19 +26,8 @@
 #define SHARE_VM_RUNTIME_VMTHREAD_HPP
 
 #include "runtime/perfData.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vm_operations.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "thread_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "thread_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "thread_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "thread_bsd.inline.hpp"
-#endif
 
 //
 // Prioritized queue of VM operations.
@@ -137,7 +126,7 @@ class VMThread: public NamedThread {
   static VMThread* vm_thread()                    { return _vm_thread; }
 
   // GC support
-  void oops_do(OopClosure* f, CodeBlobClosure* cf);
+  void oops_do(OopClosure* f, CLDToOopClosure* cld_f, CodeBlobClosure* cf);
 
   // Debugging
   void print_on(outputStream* st) const;

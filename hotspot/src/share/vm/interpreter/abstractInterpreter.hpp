@@ -27,6 +27,7 @@
 
 #include "code/stubs.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/top.hpp"
 #ifdef TARGET_ARCH_MODEL_x86_32
@@ -46,18 +47,6 @@
 #endif
 #ifdef TARGET_ARCH_MODEL_ppc
 # include "interp_masm_ppc.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_linux
-# include "thread_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "thread_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "thread_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "thread_bsd.inline.hpp"
 #endif
 
 // This file contains the platform-independent parts

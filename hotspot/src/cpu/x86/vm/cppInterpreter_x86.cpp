@@ -538,9 +538,9 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
 
     // compute full expression stack limit
 
-    const Address size_of_stack    (rbx, Method::max_stack_offset());
     const int extra_stack = 0; //6815692//Method::extra_stack_words();
-    __ load_unsigned_short(rdx, size_of_stack);                           // get size of expression stack in words
+    __ movptr(rdx, Address(rbx, Method::const_offset()));
+    __ load_unsigned_short(rdx, Address(rdx, ConstMethod::max_stack_offset())); // get size of expression stack in words
     __ negptr(rdx);                                                       // so we can subtract in next step
     // Allocate expression stack
     __ lea(rsp, Address(rsp, rdx, Address::times_ptr, -extra_stack));
@@ -682,12 +682,12 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
   const Address stack_size(thread, Thread::stack_size_offset());
 
   // locals + overhead, in bytes
-    const Address size_of_stack    (rbx, Method::max_stack_offset());
-    // Always give one monitor to allow us to start interp if sync method.
-    // Any additional monitors need a check when moving the expression stack
-    const int one_monitor = frame::interpreter_frame_monitor_size() * wordSize;
-    const int extra_stack = 0; //6815692//Method::extra_stack_entries();
-  __ load_unsigned_short(rax, size_of_stack);                           // get size of expression stack in words
+  // Always give one monitor to allow us to start interp if sync method.
+  // Any additional monitors need a check when moving the expression stack
+  const int one_monitor = frame::interpreter_frame_monitor_size() * wordSize;
+  const int extra_stack = 0; //6815692//Method::extra_stack_entries();
+  __ movptr(rax, Address(rbx, Method::const_offset()));
+  __ load_unsigned_short(rax, Address(rax, ConstMethod::max_stack_offset())); // get size of expression stack in words
   __ lea(rax, Address(noreg, rax, Interpreter::stackElementScale(), extra_stack + one_monitor));
   __ lea(rax, Address(rax, rdx, Interpreter::stackElementScale(), overhead_size));
 

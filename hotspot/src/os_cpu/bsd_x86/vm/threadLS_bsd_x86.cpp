@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/threadLocalStorage.hpp"
-#include "thread_bsd.inline.hpp"
 
 // Map stack pointer (%esp) to thread pointer for faster TLS access
 //

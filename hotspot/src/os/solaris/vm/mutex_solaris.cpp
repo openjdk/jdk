@@ -26,7 +26,7 @@
 #include "mutex_solaris.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/mutex.hpp"
-#include "thread_solaris.inline.hpp"
+#include "runtime/thread.inline.hpp"
 #include "utilities/events.hpp"
 
 // Solaris-specific include, therefore not in includeDB_*
