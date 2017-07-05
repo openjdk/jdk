@@ -36,6 +36,8 @@
 
 package java.util.concurrent;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.AbstractQueue;
 import java.util.Collection;
 import java.util.Collections;
@@ -247,7 +249,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
             boolean casNext(SNode cmp, SNode val) {
                 return cmp == next &&
-                    U.compareAndSwapObject(this, NEXT, cmp, val);
+                    SNEXT.compareAndSet(this, cmp, val);
             }
 
             /**
@@ -260,7 +262,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
              */
             boolean tryMatch(SNode s) {
                 if (match == null &&
-                    U.compareAndSwapObject(this, MATCH, null, s)) {
+                    SMATCH.compareAndSet(this, null, s)) {
                     Thread w = waiter;
                     if (w != null) {    // waiters need at most one unpark
                         waiter = null;
@@ -275,24 +277,21 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
              * Tries to cancel a wait by matching node to itself.
              */
             void tryCancel() {
-                U.compareAndSwapObject(this, MATCH, null, this);
+                SMATCH.compareAndSet(this, null, this);
             }
 
             boolean isCancelled() {
                 return match == this;
             }
 
-            // Unsafe mechanics
-            private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-            private static final long MATCH;
-            private static final long NEXT;
-
+            // VarHandle mechanics
+            private static final VarHandle SMATCH;
+            private static final VarHandle SNEXT;
             static {
                 try {
-                    MATCH = U.objectFieldOffset
-                        (SNode.class.getDeclaredField("match"));
-                    NEXT = U.objectFieldOffset
-                        (SNode.class.getDeclaredField("next"));
+                    MethodHandles.Lookup l = MethodHandles.lookup();
+                    SMATCH = l.findVarHandle(SNode.class, "match", SNode.class);
+                    SNEXT = l.findVarHandle(SNode.class, "next", SNode.class);
                 } catch (ReflectiveOperationException e) {
                     throw new Error(e);
                 }
@@ -304,7 +303,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
         boolean casHead(SNode h, SNode nh) {
             return h == head &&
-                U.compareAndSwapObject(this, HEAD, h, nh);
+                SHEAD.compareAndSet(this, h, nh);
         }
 
         /**
@@ -451,8 +450,10 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                         continue;
                     }
                 }
-                if (spins > 0)
+                if (spins > 0) {
+                    Thread.onSpinWait();
                     spins = shouldSpin(s) ? (spins - 1) : 0;
+                }
                 else if (s.waiter == null)
                     s.waiter = w; // establish waiter so can park next iter
                 else if (!timed)
@@ -508,13 +509,12 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
             }
         }
 
-        // Unsafe mechanics
-        private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-        private static final long HEAD;
+        // VarHandle mechanics
+        private static final VarHandle SHEAD;
         static {
             try {
-                HEAD = U.objectFieldOffset
-                    (TransferStack.class.getDeclaredField("head"));
+                MethodHandles.Lookup l = MethodHandles.lookup();
+                SHEAD = l.findVarHandle(TransferStack.class, "head", SNode.class);
             } catch (ReflectiveOperationException e) {
                 throw new Error(e);
             }
@@ -546,19 +546,19 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
             boolean casNext(QNode cmp, QNode val) {
                 return next == cmp &&
-                    U.compareAndSwapObject(this, NEXT, cmp, val);
+                    QNEXT.compareAndSet(this, cmp, val);
             }
 
             boolean casItem(Object cmp, Object val) {
                 return item == cmp &&
-                    U.compareAndSwapObject(this, ITEM, cmp, val);
+                    QITEM.compareAndSet(this, cmp, val);
             }
 
             /**
              * Tries to cancel by CAS'ing ref to this as item.
              */
             void tryCancel(Object cmp) {
-                U.compareAndSwapObject(this, ITEM, cmp, this);
+                QITEM.compareAndSet(this, cmp, this);
             }
 
             boolean isCancelled() {
@@ -574,17 +574,14 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                 return next == this;
             }
 
-            // Unsafe mechanics
-            private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-            private static final long ITEM;
-            private static final long NEXT;
-
+            // VarHandle mechanics
+            private static final VarHandle QITEM;
+            private static final VarHandle QNEXT;
             static {
                 try {
-                    ITEM = U.objectFieldOffset
-                        (QNode.class.getDeclaredField("item"));
-                    NEXT = U.objectFieldOffset
-                        (QNode.class.getDeclaredField("next"));
+                    MethodHandles.Lookup l = MethodHandles.lookup();
+                    QITEM = l.findVarHandle(QNode.class, "item", Object.class);
+                    QNEXT = l.findVarHandle(QNode.class, "next", QNode.class);
                 } catch (ReflectiveOperationException e) {
                     throw new Error(e);
                 }
@@ -614,7 +611,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
          */
         void advanceHead(QNode h, QNode nh) {
             if (h == head &&
-                U.compareAndSwapObject(this, HEAD, h, nh))
+                QHEAD.compareAndSet(this, h, nh))
                 h.next = h; // forget old next
         }
 
@@ -623,7 +620,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
          */
         void advanceTail(QNode t, QNode nt) {
             if (tail == t)
-                U.compareAndSwapObject(this, TAIL, t, nt);
+                QTAIL.compareAndSet(this, t, nt);
         }
 
         /**
@@ -631,7 +628,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
          */
         boolean casCleanMe(QNode cmp, QNode val) {
             return cleanMe == cmp &&
-                U.compareAndSwapObject(this, CLEANME, cmp, val);
+                QCLEANME.compareAndSet(this, cmp, val);
         }
 
         /**
@@ -752,8 +749,10 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                         continue;
                     }
                 }
-                if (spins > 0)
+                if (spins > 0) {
                     --spins;
+                    Thread.onSpinWait();
+                }
                 else if (s.waiter == null)
                     s.waiter = w;
                 else if (!timed)
@@ -817,18 +816,19 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
             }
         }
 
-        private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
-        private static final long HEAD;
-        private static final long TAIL;
-        private static final long CLEANME;
+        // VarHandle mechanics
+        private static final VarHandle QHEAD;
+        private static final VarHandle QTAIL;
+        private static final VarHandle QCLEANME;
         static {
             try {
-                HEAD = U.objectFieldOffset
-                    (TransferQueue.class.getDeclaredField("head"));
-                TAIL = U.objectFieldOffset
-                    (TransferQueue.class.getDeclaredField("tail"));
-                CLEANME = U.objectFieldOffset
-                    (TransferQueue.class.getDeclaredField("cleanMe"));
+                MethodHandles.Lookup l = MethodHandles.lookup();
+                QHEAD = l.findVarHandle(TransferQueue.class, "head",
+                                        QNode.class);
+                QTAIL = l.findVarHandle(TransferQueue.class, "tail",
+                                        QNode.class);
+                QCLEANME = l.findVarHandle(TransferQueue.class, "cleanMe",
+                                           QNode.class);
             } catch (ReflectiveOperationException e) {
                 throw new Error(e);
             }

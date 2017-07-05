@@ -35,6 +35,8 @@
 
 package java.util.concurrent.locks;
 
+import jdk.internal.misc.Unsafe;
+
 /**
  * Basic thread blocking primitives for creating locks and other
  * synchronization classes.
@@ -405,16 +407,30 @@ public class LockSupport {
         return r;
     }
 
+    /**
+     * Returns the thread id for the given thread.  We must access
+     * this directly rather than via method Thread.getId() because
+     * getId() is not final, and has been known to be overridden in
+     * ways that do not preserve unique mappings.
+     */
+    static final long getThreadId(Thread thread) {
+        return U.getLongVolatile(thread, TID);
+    }
+
     // Hotspot implementation via intrinsics API
-    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
+    private static final Unsafe U = Unsafe.getUnsafe();
     private static final long PARKBLOCKER;
     private static final long SECONDARY;
+    private static final long TID;
     static {
         try {
             PARKBLOCKER = U.objectFieldOffset
                 (Thread.class.getDeclaredField("parkBlocker"));
             SECONDARY = U.objectFieldOffset
                 (Thread.class.getDeclaredField("threadLocalRandomSecondarySeed"));
+            TID = U.objectFieldOffset
+                (Thread.class.getDeclaredField("tid"));
+
         } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }

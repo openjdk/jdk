@@ -382,10 +382,8 @@ size_t G1RemSet::scan_rem_set(G1ParPushHeapRSClosure* oops_in_heap_closure,
                               uint worker_i) {
   double rs_time_start = os::elapsedTime();
 
-  HeapRegion *startRegion = _g1->start_cset_region_for_worker(worker_i);
-
   G1ScanRSClosure cl(_scan_state, oops_in_heap_closure, heap_region_codeblobs, worker_i);
-  _g1->collection_set_iterate_from(startRegion, &cl);
+  _g1->collection_set_iterate_from(&cl, worker_i);
 
    double scan_rs_time_sec = (os::elapsedTime() - rs_time_start) -
                               cl.strong_code_root_scan_time_sec();

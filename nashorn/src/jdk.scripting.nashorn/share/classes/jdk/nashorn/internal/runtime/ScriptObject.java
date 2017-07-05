@@ -796,7 +796,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @param start the object on which the lookup was originally initiated
      * @return FindPropertyData or null if not found.
      */
-    protected FindProperty findProperty(final Object key, final boolean deep, boolean isScope, final ScriptObject start) {
+    protected FindProperty findProperty(final Object key, final boolean deep, final boolean isScope, final ScriptObject start) {
 
         final PropertyMap selfMap  = getMap();
         final Property    property = selfMap.findProperty(key);
@@ -1108,7 +1108,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      *
      * @return value of property as a MethodHandle or null.
      */
-    protected MethodHandle getCallMethodHandle(final FindProperty find, final MethodType type, final String bindName) {
+    protected static MethodHandle getCallMethodHandle(final FindProperty find, final MethodType type, final String bindName) {
         return getCallMethodHandle(find.getObjectValue(), type, bindName);
     }
 
@@ -1121,7 +1121,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      *
      * @return value of property as a MethodHandle or null.
      */
-    protected static MethodHandle getCallMethodHandle(final Object value, final MethodType type, final String bindName) {
+    private static MethodHandle getCallMethodHandle(final Object value, final MethodType type, final String bindName) {
         return value instanceof ScriptFunction ? ((ScriptFunction)value).getCallMethodHandle(type, bindName) : null;
     }
 
@@ -2107,13 +2107,13 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @param desc           call site descriptor
      * @return method handle for getter
      */
-    protected MethodHandle findGetIndexMethodHandle(final Class<?> returnType, final String name, final Class<?> elementType, final CallSiteDescriptor desc) {
+    private static MethodHandle findGetIndexMethodHandle(final Class<?> returnType, final String name, final Class<?> elementType, final CallSiteDescriptor desc) {
         if (!returnType.isPrimitive()) {
-            return findOwnMH_V(getClass(), name, returnType, elementType);
+            return findOwnMH_V(name, returnType, elementType);
         }
 
         return MH.insertArguments(
-                findOwnMH_V(getClass(), name, returnType, elementType, int.class),
+                findOwnMH_V(name, returnType, elementType, int.class),
                 2,
                 NashornCallSiteDescriptor.isOptimistic(desc) ?
                         NashornCallSiteDescriptor.getProgramPoint(desc) :
@@ -2184,7 +2184,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         FindProperty find = findProperty(name, true, NashornCallSiteDescriptor.isScope(desc), this);
 
         // If it's not a scope search, then we don't want any inherited properties except those with user defined accessors.
-        if (find != null && find.isInherited() && !find.getProperty().isAccessorProperty()) {
+        if (find != null && find.isInheritedOrdinaryProperty()) {
             // We should still check if inherited data property is not writable
             if (isExtensible() && !find.getProperty().isWritable()) {
                 return createEmptySetMethod(desc, explicitInstanceOfCheck, "property.not.writable", true);
@@ -2257,11 +2257,11 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         }
     }
 
-    private GuardedInvocation findMegaMorphicSetMethod(final CallSiteDescriptor desc, final String name) {
+    private static GuardedInvocation findMegaMorphicSetMethod(final CallSiteDescriptor desc, final String name) {
         Context.getContextTrusted().getLogger(ObjectClassGenerator.class).warning("Megamorphic setter: ", desc, " ", name);
         final MethodType        type = desc.getMethodType().insertParameterTypes(1, Object.class);
         //never bother with ClassCastExceptionGuard for megamorphic callsites
-        final GuardedInvocation inv = findSetIndexMethod(getClass(), desc, false, type);
+        final GuardedInvocation inv = findSetIndexMethod(desc, false, type);
         return inv.replaceMethods(MH.insertArguments(inv.getInvocation(), 1, name), inv.getGuard());
     }
 
@@ -2284,25 +2284,24 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @return GuardedInvocation to be invoked at call site.
      */
     protected GuardedInvocation findSetIndexMethod(final CallSiteDescriptor desc, final LinkRequest request) { // array, index, value
-        return findSetIndexMethod(getClass(), desc, explicitInstanceOfCheck(desc, request), desc.getMethodType());
+        return findSetIndexMethod(desc, explicitInstanceOfCheck(desc, request), desc.getMethodType());
     }
 
     /**
      * Find the appropriate SETINDEX method for an invoke dynamic call.
      *
-     * @param clazz the receiver class
      * @param desc  the call site descriptor
      * @param explicitInstanceOfCheck add an explicit instanceof check?
      * @param callType the method type at the call site
      *
      * @return GuardedInvocation to be invoked at call site.
      */
-    private static GuardedInvocation findSetIndexMethod(final Class<? extends ScriptObject> clazz, final CallSiteDescriptor desc, final boolean explicitInstanceOfCheck, final MethodType callType) {
+    private static GuardedInvocation findSetIndexMethod(final CallSiteDescriptor desc, final boolean explicitInstanceOfCheck, final MethodType callType) {
         assert callType.parameterCount() == 3;
         final Class<?> keyClass   = callType.parameterType(1);
         final Class<?> valueClass = callType.parameterType(2);
 
-        MethodHandle methodHandle = findOwnMH_V(clazz, "set", void.class, keyClass, valueClass, int.class);
+        MethodHandle methodHandle = findOwnMH_V("set", void.class, keyClass, valueClass, int.class);
         methodHandle = MH.insertArguments(methodHandle, 3, NashornCallSiteDescriptor.getFlags(desc));
 
         return new GuardedInvocation(methodHandle, getScriptObjectGuard(callType, explicitInstanceOfCheck), (SwitchPoint)null, explicitInstanceOfCheck ? null : ClassCastException.class);
@@ -2953,18 +2952,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         return false;
     }
 
-    private boolean doesNotHaveCheckArrayKeys(final long longIndex, final long value, final int callSiteFlags) {
-        if (getMap().containsArrayKeys()) {
-            final String       key  = JSType.toString(longIndex);
-            final FindProperty find = findProperty(key, true);
-            if (find != null) {
-                setObject(find, callSiteFlags, key, value);
-                return true;
-            }
-        }
-        return false;
-    }
-
     private boolean doesNotHaveCheckArrayKeys(final long longIndex, final double value, final int callSiteFlags) {
          if (getMap().containsArrayKeys()) {
             final String       key  = JSType.toString(longIndex);
@@ -3044,7 +3031,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
         invalidateGlobalConstant(key);
 
-        if (f != null && f.isInherited() && !f.getProperty().isAccessorProperty()) {
+        if (f != null && f.isInheritedOrdinaryProperty()) {
             final boolean isScope = isScopeFlag(callSiteFlags);
             // If the start object of the find is not this object it means the property was found inside a
             // 'with' statement expression (see WithObject.findProperty()). In this case we forward the 'set'
@@ -3467,13 +3454,8 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         return this;
     }
 
-    private static MethodHandle findOwnMH_V(final Class<? extends ScriptObject> clazz, final String name, final Class<?> rtype, final Class<?>... types) {
-        // TODO: figure out how can it work for NativeArray$Prototype etc.
-        return MH.findVirtual(MethodHandles.lookup(), ScriptObject.class, name, MH.type(rtype, types));
-    }
-
     private static MethodHandle findOwnMH_V(final String name, final Class<?> rtype, final Class<?>... types) {
-        return findOwnMH_V(ScriptObject.class, name, rtype, types);
+        return MH.findVirtual(MethodHandles.lookup(), ScriptObject.class, name, MH.type(rtype, types));
     }
 
     private static MethodHandle findOwnMH_S(final String name, final Class<?> rtype, final Class<?>... types) {

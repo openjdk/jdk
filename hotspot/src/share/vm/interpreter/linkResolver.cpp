@@ -970,7 +970,7 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
       if (is_initialized_static_final_update || is_initialized_instance_final_update) {
         ss.print("Update to %s final field %s.%s attempted from a different method (%s) than the initializer method %s ",
                  is_static ? "static" : "non-static", resolved_klass()->external_name(), fd.name()->as_C_string(),
-                 current_klass()->external_name(),
+                 m()->name()->as_C_string(),
                  is_static ? "<clinit>" : "<init>");
         THROW_MSG(vmSymbols::java_lang_IllegalAccessError(), ss.as_string());
       }

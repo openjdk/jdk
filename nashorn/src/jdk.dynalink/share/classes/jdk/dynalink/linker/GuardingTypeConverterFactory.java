@@ -108,15 +108,19 @@ public interface GuardingTypeConverterFactory {
      * language's objects to Java interfaces and classes by generating adapters
      * for them.
      * <p>
-     * The type of the invocation is {@code targetType(sourceType)}, while the
-     * type of the guard is {@code boolean(sourceType)}. You are allowed to
+     * The type of the invocation is <tt>(sourceType)&rarr;targetType</tt>, while the
+     * type of the guard is <tt>(sourceType)&rarr;boolean</tt>. You are allowed to
      * return unconditional invocations (with no guard) if the source type is
      * specific to your runtime and your runtime only.
-     * <p>Note that this method will never be invoked for type conversions
-     * allowed by the JLS 5.3 "Method Invocation Conversion", see
-     * {@link TypeUtilities#isMethodInvocationConvertible(Class, Class)} for
-     * details. An implementation can assume it is never requested to produce a
-     * converter for these conversions.
+     * <p>Note that this method will never be invoked for
+     * {@link TypeUtilities#isMethodInvocationConvertible(Class, Class) method
+     * invocation conversions} as those can be automatically applied by
+     * {@link java.lang.invoke.MethodHandle#asType(MethodType)}.
+     * An implementation can assume it is never requested to produce a
+     * converter for those conversions. If a language runtime needs to customize
+     * method invocation conversions, it should
+     * {@link jdk.dynalink.DynamicLinkerFactory#setAutoConversionStrategy(MethodTypeConversionStrategy)
+     * set an autoconversion strategy in the dynamic linker factory} instead.
      * <p>Dynalink is at liberty to either cache some of the returned converters
      * or to repeatedly request the converter factory to create the same
      * conversion.
@@ -127,6 +131,9 @@ public interface GuardingTypeConverterFactory {
      * on whose behalf a type converter is requested. When a converter is
      * requested as part of linking an {@code invokedynamic} instruction the
      * supplier will return the lookup passed to the bootstrap method, otherwise
+     * if the method is invoked from within a
+     * {@link LinkerServices#getWithLookup(Supplier, jdk.dynalink.SecureLookupSupplier)}
+     * it will delegate to the secure lookup supplier. In any other case,
      * it will return the public lookup. A typical case where the lookup might
      * be needed is when the converter creates a Java adapter class on the fly
      * (e.g. to convert some object from the dynamic language into a Java
