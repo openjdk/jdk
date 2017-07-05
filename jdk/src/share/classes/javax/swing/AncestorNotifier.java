@@ -42,6 +42,7 @@ import java.io.Serializable;
  * @author Dave Moore
  */
 
+@SuppressWarnings("serial")
 class AncestorNotifier implements ComponentListener, PropertyChangeListener, Serializable
 {
     Component firstInvisibleAncestor;

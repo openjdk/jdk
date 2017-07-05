@@ -82,15 +82,18 @@ bool Flag::is_unlocked() const {
 }
 
 bool Flag::is_writeable() const {
-  return (strcmp(kind, "{manageable}") == 0 || strcmp(kind, "{product rw}") == 0);
+  return strcmp(kind, "{manageable}") == 0 ||
+         strcmp(kind, "{product rw}") == 0 ||
+         is_writeable_ext();
 }
 
-// All flags except "manageable" are assumed internal flags.
+// All flags except "manageable" are assumed to be internal flags.
 // Long term, we need to define a mechanism to specify which flags
 // are external/stable and change this function accordingly.
 bool Flag::is_external() const {
-  return (strcmp(kind, "{manageable}") == 0);
+  return strcmp(kind, "{manageable}") == 0 || is_external_ext();
 }
+
 
 // Length of format string (e.g. "%.1234s") for printing ccstr below
 #define FORMAT_BUFFER_LEN 16

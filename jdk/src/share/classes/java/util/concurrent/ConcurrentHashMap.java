@@ -37,9 +37,6 @@ package java.util.concurrent;
 import java.util.concurrent.locks.*;
 import java.util.*;
 import java.io.Serializable;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 
 /**
  * A hash table supporting full concurrency of retrievals and
@@ -228,7 +225,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
         static {
             try {
                 UNSAFE = sun.misc.Unsafe.getUnsafe();
-                Class k = HashEntry.class;
+                Class<?> k = HashEntry.class;
                 nextOffset = UNSAFE.objectFieldOffset
                     (k.getDeclaredField("next"));
             } catch (Exception e) {
@@ -433,7 +430,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
             int newCapacity = oldCapacity << 1;
             threshold = (int)(newCapacity * loadFactor);
             HashEntry<K,V>[] newTable =
-                (HashEntry<K,V>[]) new HashEntry[newCapacity];
+                (HashEntry<K,V>[]) new HashEntry<?,?>[newCapacity];
             int sizeMask = newCapacity - 1;
             for (int i = 0; i < oldCapacity ; i++) {
                 HashEntry<K,V> e = oldTable[i];
@@ -677,7 +674,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
             int cap = proto.table.length;
             float lf = proto.loadFactor;
             int threshold = (int)(cap * lf);
-            HashEntry<K,V>[] tab = (HashEntry<K,V>[])new HashEntry[cap];
+            HashEntry<K,V>[] tab = (HashEntry<K,V>[])new HashEntry<?,?>[cap];
             if ((seg = (Segment<K,V>)UNSAFE.getObjectVolatile(ss, u))
                 == null) { // recheck
                 Segment<K,V> s = new Segment<K,V>(lf, threshold, tab);
@@ -694,7 +691,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     // Hash-based segment and entry accesses
 
     /**
-     * Get the segment for the given hash
+     * Gets the segment for the given hash code.
      */
     @SuppressWarnings("unchecked")
     private Segment<K,V> segmentForHash(int h) {
@@ -703,7 +700,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Gets the table entry for the given segment and hash
+     * Gets the table entry for the given segment and hash code.
      */
     @SuppressWarnings("unchecked")
     static final <K,V> HashEntry<K,V> entryForHash(Segment<K,V> seg, int h) {
@@ -758,8 +755,8 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
         // create segments and segments[0]
         Segment<K,V> s0 =
             new Segment<K,V>(loadFactor, (int)(cap * loadFactor),
-                             (HashEntry<K,V>[])new HashEntry[cap]);
-        Segment<K,V>[] ss = (Segment<K,V>[])new Segment[ssize];
+                             (HashEntry<K,V>[])new HashEntry<?,?>[cap]);
+        Segment<K,V>[] ss = (Segment<K,V>[])new Segment<?,?>[ssize];
         UNSAFE.putOrderedObject(ss, SBASE, s0); // ordered write of segments[0]
         this.segments = ss;
     }
@@ -916,6 +913,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
      *
      * @throws NullPointerException if the specified key is null
      */
+    @SuppressWarnings("unchecked")
     public V get(Object key) {
         Segment<K,V> s; // manually integrate access methods to reduce overhead
         HashEntry<K,V>[] tab;
@@ -1026,7 +1024,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * full compatibility with class {@link java.util.Hashtable},
      * which supported this method prior to introduction of the
      * Java Collections framework.
-
+     *
      * @param  value a value to search for
      * @return <tt>true</tt> if and only if some key maps to the
      *         <tt>value</tt> argument in this table as
@@ -1262,7 +1260,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
         }
 
         /**
-         * Set nextEntry to first node of next non-empty table
+         * Sets nextEntry to first node of next non-empty table
          * (in backwards order, to simplify checks).
          */
         final void advance() {
@@ -1326,12 +1324,14 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     final class WriteThroughEntry
         extends AbstractMap.SimpleEntry<K,V>
     {
+        static final long serialVersionUID = 7249069246763182397L;
+
         WriteThroughEntry(K k, V v) {
             super(k,v);
         }
 
         /**
-         * Set our entry's value and write through to the map. The
+         * Sets our entry's value and writes through to the map. The
          * value to return is somewhat arbitrary here. Since a
          * WriteThroughEntry does not necessarily track asynchronous
          * changes, the most recent "previous" value could be
@@ -1427,15 +1427,16 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     /* ---------------- Serialization Support -------------- */
 
     /**
-     * Save the state of the <tt>ConcurrentHashMap</tt> instance to a
-     * stream (i.e., serialize it).
+     * Saves the state of the <tt>ConcurrentHashMap</tt> instance to a
+     * stream (i.e., serializes it).
      * @param s the stream
      * @serialData
      * the key (Object) and value (Object)
      * for each key-value mapping, followed by a null pair.
      * The key-value mappings are emitted in no particular order.
      */
-    private void writeObject(java.io.ObjectOutputStream s) throws IOException {
+    private void writeObject(java.io.ObjectOutputStream s)
+            throws java.io.IOException {
         // force all segments for serialization compatibility
         for (int k = 0; k < segments.length; ++k)
             ensureSegment(k);
@@ -1463,13 +1464,13 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Reconstitute the <tt>ConcurrentHashMap</tt> instance from a
-     * stream (i.e., deserialize it).
+     * Reconstitutes the <tt>ConcurrentHashMap</tt> instance from a
+     * stream (i.e., deserializes it).
      * @param s the stream
      */
     @SuppressWarnings("unchecked")
     private void readObject(java.io.ObjectInputStream s)
-        throws IOException, ClassNotFoundException {
+            throws java.io.IOException, ClassNotFoundException {
         s.defaultReadObject();
 
         // Re-initialize segments to be minimally sized, and let grow.
@@ -1479,7 +1480,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
             Segment<K,V> seg = segments[k];
             if (seg != null) {
                 seg.threshold = (int)(cap * seg.loadFactor);
-                seg.table = (HashEntry<K,V>[]) new HashEntry[cap];
+                seg.table = (HashEntry<K,V>[]) new HashEntry<?,?>[cap];
             }
         }
 
@@ -1504,8 +1505,8 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
         int ss, ts;
         try {
             UNSAFE = sun.misc.Unsafe.getUnsafe();
-            Class tc = HashEntry[].class;
-            Class sc = Segment[].class;
+            Class<?> tc = HashEntry[].class;
+            Class<?> sc = Segment[].class;
             TBASE = UNSAFE.arrayBaseOffset(tc);
             SBASE = UNSAFE.arrayBaseOffset(sc);
             ts = UNSAFE.arrayIndexScale(tc);

@@ -238,6 +238,7 @@ class WDesktopProperties {
      * Called by WToolkit when Windows settings change-- we (re)load properties and
      * set new values.
      */
+    @SuppressWarnings("unchecked")
     synchronized Map<String, Object> getProperties() {
         ThemeReader.flush();
 

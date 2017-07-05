@@ -61,6 +61,7 @@ import javax.swing.DefaultListSelectionModel;
  *
  * @author Scott Violet
  */
+@SuppressWarnings("serial")
 public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeSelectionModel
 {
     /** Property name for selectionMode. */
@@ -1073,7 +1074,7 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
      * @deprecated As of JDK version 1.7
      */
     @Deprecated
-    protected void notifyPathChange(Vector changedPaths,
+    protected void notifyPathChange(Vector<?> changedPaths,
                                     TreePath oldLeadSelection) {
         int                    cPathCount = changedPaths.size();
         boolean[]              newness = new boolean[cPathCount];

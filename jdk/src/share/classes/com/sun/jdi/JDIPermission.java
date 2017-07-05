@@ -79,7 +79,7 @@ package com.sun.jdi;
  */
 
 public final class JDIPermission extends java.security.BasicPermission {
-
+    private static final long serialVersionUID = -6988461416938786271L;
     /**
      * The <code>JDIPermission</code> class represents access rights to the
      * <code>VirtualMachineManager</code>

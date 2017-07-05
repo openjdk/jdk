@@ -26,10 +26,13 @@
 package sun.awt;
 
 import java.awt.AWTEvent;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Map;
+import java.util.Set;
+
 import sun.util.logging.PlatformLogger;
 
 /**
@@ -81,7 +84,7 @@ public final class AWTAutoShutdown implements Runnable {
      * new event to appear in their event queue.
      * Access is synchronized on the main lock object.
      */
-    private final HashSet busyThreadSet = new HashSet(7);
+    private final Set<Thread> busyThreadSet = new HashSet<>(7);
 
     /**
      * Indicates whether the toolkit thread is waiting for a new native
@@ -93,7 +96,7 @@ public final class AWTAutoShutdown implements Runnable {
      * This is a map between components and their peers.
      * we should work with in under activationLock&mainLock lock.
      */
-    private final Map peerMap = new IdentityHashMap();
+    private final Map<Object, Object> peerMap = new IdentityHashMap<>();
 
     /**
      * References the alive non-daemon thread that is currently used
@@ -319,8 +322,10 @@ public final class AWTAutoShutdown implements Runnable {
         }
     }
 
+    @SuppressWarnings("serial")
     static AWTEvent getShutdownEvent() {
-        return new AWTEvent(getInstance(), 0) {};
+        return new AWTEvent(getInstance(), 0) {
+        };
     }
 
     /**

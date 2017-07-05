@@ -36,6 +36,7 @@ package com.sun.jdi;
  */
 @Deprecated
 public class InvalidLineNumberException extends RuntimeException {
+    private static final long serialVersionUID = 4048709912372692875L;
     public InvalidLineNumberException() {
         super();
     }

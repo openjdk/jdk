@@ -89,7 +89,7 @@ class OutNode extends AbstractTypeListNode {
         if (Main.genDebug) {
             indent(writer, depth+1);
             writer.println(
-                "if ((vm.traceFlags & vm.TRACE_SENDS) != 0) {");
+                "if ((vm.traceFlags & VirtualMachineImpl.TRACE_SENDS) != 0) {");
             indent(writer, depth+2);
             writer.print(
                 "vm.printTrace(\"Sending Command(id=\" + ps.pkt.id + \") ");

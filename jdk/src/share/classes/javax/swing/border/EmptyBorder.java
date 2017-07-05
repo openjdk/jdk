@@ -46,6 +46,7 @@ import java.beans.ConstructorProperties;
  *
  * @author David Kloba
  */
+@SuppressWarnings("serial")
 public class EmptyBorder extends AbstractBorder implements Serializable
 {
     protected int left, right, top, bottom;
