@@ -876,10 +876,12 @@ class InetAddress implements java.io.Serializable {
                 nameService = java.security.AccessController.doPrivileged(
                     new java.security.PrivilegedExceptionAction<NameService>() {
                         public NameService run() {
-                            Iterator itr = Service.providers(NameServiceDescriptor.class);
+                            // sun.misc.Service.providers returns a raw Iterator
+                            @SuppressWarnings("unchecked")
+                            Iterator<NameServiceDescriptor> itr =
+                                Service.providers(NameServiceDescriptor.class);
                             while (itr.hasNext()) {
-                                NameServiceDescriptor nsd
-                                    = (NameServiceDescriptor)itr.next();
+                                NameServiceDescriptor nsd = itr.next();
                                 if (providerName.
                                     equalsIgnoreCase(nsd.getType()+","
                                         +nsd.getProviderName())) {

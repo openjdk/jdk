@@ -23,7 +23,7 @@
 
 /* @test
  * @summary Check that error cases are replaced correctly in String/ISR/OSW
- * @bug 4457851
+ * @bug 4457851 7096080
  *
  * @build Errors Util
  * @run main Errors
@@ -193,11 +193,9 @@ public class Errors {
         t.test("\uFFFF", new byte[] { (byte)0xEF, (byte)0xBF, (byte)0xBF });
         t.test(new byte[] { X, (byte)0x7f, Y }, "x\u007Fy");
         t.test(new byte[] { X, (byte)0x80, Y }, "x\uFFFDy");
-        t.test(new byte[] { (byte)0xf0, (byte)0xf0 }, "\uFFFD");
     }
 
     public static void main(String[] args) throws Exception {
-
         test_US_ASCII(new TestString("US-ASCII"));
         test_US_ASCII(new TestStream("US-ASCII"));
 
