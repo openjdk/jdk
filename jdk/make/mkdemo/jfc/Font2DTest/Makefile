@@ -33,7 +33,7 @@ DEMONAME = Font2DTest
 include $(BUILDDIR)/common/Defs.gmk
 
 DEMO_ROOT       = $(SHARE_SRC)/demo/jfc/$(DEMONAME)
-DEMO_TOPFILES   = ./README.txt
+DEMO_TOPFILES   = ./README.txt ./$(DEMONAME).html
 DEMO_MAINCLASS  = $(DEMONAME)
 DEMO_DESTDIR    = $(DEMODIR)/jfc/$(DEMONAME)
 

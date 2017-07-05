@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+package sun.jvm.hotspot.oops;
+
+import java.util.*;
+
+import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.memory.*;
+import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.types.Type;
+import sun.jvm.hotspot.types.TypeDataBase;
+import sun.jvm.hotspot.utilities.*;
+import sun.jvm.hotspot.jdi.JVMTIThreadState;
+
+/** A utility class encapsulating useful oop operations */
+
+// initialize fields for java.lang.Class
+public class java_lang_Class {
+
+  // java.lang.Class fields
+  static OopField klassField;
+  static IntField oopSizeField;
+
+  static {
+    VM.registerVMInitializedObserver(new Observer() {
+        public void update(Observable o, Object data) {
+          initialize(VM.getVM().getTypeDataBase());
+        }
+      });
+  }
+
+  private static synchronized void initialize(TypeDataBase db) {
+    // klass and oop_size are HotSpot magic fields and hence we can't
+    // find them from InstanceKlass for java.lang.Class.
+    Type jlc = db.lookupType("java_lang_Class");
+    int klassOffset = (int) jlc.getCIntegerField("klass_offset").getValue();
+    if (VM.getVM().isCompressedOopsEnabled()) {
+      klassField = new NarrowOopField(new NamedFieldIdentifier("klass"), klassOffset, true);
+    } else {
+      klassField = new OopField(new NamedFieldIdentifier("klass"), klassOffset, true);
+    }
+    int oopSizeOffset = (int) jlc.getCIntegerField("oop_size_offset").getValue();
+    oopSizeField = new IntField(new NamedFieldIdentifier("oop_size"), oopSizeOffset, true);
+  }
+
+  /** get klassOop field at offset hc_klass_offset from a java.lang.Class object */
+  public static Klass asKlass(Oop aClass) {
+    return (Klass) java_lang_Class.klassField.getValue(aClass);
+  }
+
+  /** get oop_size field at offset oop_size_offset from a java.lang.Class object */
+  public static long getOopSize(Oop aClass) {
+    return java_lang_Class.oopSizeField.getValue(aClass);
+  }
+}
