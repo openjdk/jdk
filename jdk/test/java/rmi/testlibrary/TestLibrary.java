@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,7 +135,8 @@ public class TestLibrary {
      */
 
     public static boolean checkIfRegistryRunning(int port, int msTimeout) {
-        long stopTime = System.currentTimeMillis() + msTimeout;
+        final long POLLTIME_MS = 100L;
+        long stopTime = computeDeadline(System.currentTimeMillis(), msTimeout);
         do {
             try {
                 Registry r = LocateRegistry.getRegistry(port);
@@ -145,12 +146,12 @@ public class TestLibrary {
             } catch (RemoteException e) {
                 // problem - not ready ? Try again
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep(POLLTIME_MS);
                 } catch (InterruptedException ie) {
                     // not expected
                 }
             }
-        } while (stopTime > System.currentTimeMillis());
+        } while (System.currentTimeMillis() < stopTime);
         return false;
     }
 
@@ -167,6 +168,31 @@ public class TestLibrary {
             bomb("Exception getting property " + property, ex);
             throw new AssertionError("this should be unreachable");
         }
+    }
+
+    public static double getTimeoutFactor() {
+        String prop = getProperty("test.timeout.factor", "1.0");
+        double timeoutFactor = 1.0;
+
+        try {
+            timeoutFactor = Double.parseDouble(prop);
+        } catch (NumberFormatException ignore) { }
+
+        return timeoutFactor;
+    }
+
+    /**
+     * Computes a deadline from a timestamp and a timeout value.
+     * Maximum timeout (before multipliers are applied) is one hour.
+     */
+    public static long computeDeadline(long timestamp, long timeout) {
+        final long MAX_TIMEOUT_MS = 3_600_000L;
+
+        if (timeout < 0L || timeout > MAX_TIMEOUT_MS) {
+            throw new IllegalArgumentException("timeout " + timeout + "ms out of range");
+        }
+
+        return timestamp + (long)(timeout * getTimeoutFactor());
     }
 
     /**
