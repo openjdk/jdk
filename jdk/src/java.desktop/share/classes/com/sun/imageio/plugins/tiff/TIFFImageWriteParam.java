@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,11 +122,11 @@ import javax.imageio.ImageWriteParam;
  * quality value is passed directly to the JPEG writer plug-in which
  * interprets it in the usual way.</p>
  *
- * <p> The <code>canWriteTiles</code> and
- * <code>canWriteCompressed</code> methods will return
- * <code>true</code>; the <code>canOffsetTiles</code> and
- * <code>canWriteProgressive</code> methods will return
- * <code>false</code>.</p>
+ * <p> The {@code canWriteTiles} and
+ * {@code canWriteCompressed} methods will return
+ * {@code true}; the {@code canOffsetTiles} and
+ * {@code canWriteProgressive} methods will return
+ * {@code false}.</p>
  *
  * <p> If tiles are being written, then each of their dimensions will be
  * rounded to the nearest multiple of 16 per the TIFF specification. If
@@ -140,10 +140,10 @@ import javax.imageio.ImageWriteParam;
 public class TIFFImageWriteParam extends ImageWriteParam {
 
     /**
-     * Constructs a <code>TIFFImageWriteParam</code> instance
-     * for a given <code>Locale</code>.
+     * Constructs a {@code TIFFImageWriteParam} instance
+     * for a given {@code Locale}.
      *
-     * @param locale the <code>Locale</code> for which messages
+     * @param locale the {@code Locale} for which messages
      * should be localized.
      */
     public TIFFImageWriteParam(Locale locale) {

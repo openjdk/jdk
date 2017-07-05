@@ -39,29 +39,23 @@
                                                                             \
   experimental(bool, UseJVMCICompiler, false,                               \
           "Use JVMCI as the default compiler")                              \
-          constraint(EnableJVMCIMustBeEnabledConstraintFunc,AtParse)        \
                                                                             \
   experimental(bool, BootstrapJVMCI, false,                                 \
           "Bootstrap JVMCI before running Java main method")                \
-          constraint(EnableJVMCIMustBeEnabledConstraintFunc,AtParse)        \
                                                                             \
   experimental(bool, PrintBootstrap, true,                                  \
           "Print JVMCI bootstrap progress and summary")                     \
-          constraint(EnableJVMCIMustBeEnabledConstraintFunc,AtParse)        \
                                                                             \
   experimental(intx, JVMCIThreads, 1,                                       \
           "Force number of JVMCI compiler threads to use")                  \
           range(1, max_jint)                                                \
-          constraint(EnableJVMCIMustBeEnabledConstraintFunc,AtParse)        \
                                                                             \
   experimental(intx, JVMCIHostThreads, 1,                                   \
           "Force number of compiler threads for JVMCI host compiler")       \
           range(1, max_jint)                                                \
-          constraint(EnableJVMCIMustBeEnabledConstraintFunc,AtParse)        \
                                                                             \
   experimental(bool, CodeInstallSafepointChecks, true,                      \
           "Perform explicit safepoint checks while installing code")        \
-          constraint(EnableJVMCIMustBeEnabledConstraintFunc,AtParse)        \
                                                                             \
   NOT_COMPILER2(product(intx, MaxVectorSize, 64,                            \
           "Max vector size in bytes, "                                      \
@@ -74,28 +68,22 @@
           "Trace level for JVMCI: "                                         \
           "1 means emit a message for each CompilerToVM call,"              \
           "levels greater than 1 provide progressively greater detail")     \
-          constraint(EnableJVMCIMustBeEnabledConstraintFunc,AtParse)        \
                                                                             \
   experimental(intx, JVMCICounterSize, 0,                                   \
           "Reserved size for benchmark counters")                           \
           range(0, max_jint)                                                \
-          constraint(EnableJVMCIMustBeEnabledConstraintFunc,AtParse)        \
                                                                             \
   experimental(bool, JVMCICountersExcludeCompiler, true,                    \
           "Exclude JVMCI compiler threads from benchmark counters")         \
-          constraint(EnableJVMCIMustBeEnabledConstraintFunc,AtParse)        \
                                                                             \
   develop(bool, JVMCIUseFastLocking, true,                                  \
           "Use fast inlined locking code")                                  \
-          constraint(EnableJVMCIMustBeEnabledConstraintFunc,AtParse)        \
                                                                             \
   experimental(intx, JVMCINMethodSizeLimit, (80*K)*wordSize,                \
           "Maximum size of a compiled method.")                             \
-          constraint(EnableJVMCIMustBeEnabledConstraintFunc,AtParse)        \
                                                                             \
   develop(bool, TraceUncollectedSpeculations, false,                        \
-          "Print message when a failed speculation was not collected")      \
-          constraint(EnableJVMCIMustBeEnabledConstraintFunc,AtParse)        \
+          "Print message when a failed speculation was not collected")
 
 
 // Read default values for JVMCI globals
@@ -110,4 +98,11 @@ JVMCI_FLAGS(DECLARE_DEVELOPER_FLAG, \
             IGNORE_RANGE, \
             IGNORE_CONSTRAINT)
 
+class JVMCIGlobals {
+ public:
+  // Return true if jvmci flags are consistent.
+  static bool check_jvmci_flags_are_consistent();
+  // Print jvmci arguments inconsistency error message.
+  static void print_jvmci_args_inconsistency_error_message();
+};
 #endif // SHARE_VM_JVMCI_JVMCIGLOBALS_HPP

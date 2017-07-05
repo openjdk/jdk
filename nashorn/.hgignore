@@ -28,3 +28,4 @@ test/script/external/*
 .project
 .externalToolBuilders/*
 .settings/*
+NashornProfile.txt

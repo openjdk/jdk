@@ -328,8 +328,6 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
 #ifdef TRACE_HAVE_INTRINSICS
-  case vmIntrinsics::_classID:
-  case vmIntrinsics::_threadID:
   case vmIntrinsics::_counterTime:
 #endif
   case vmIntrinsics::_currentTimeMillis:
@@ -544,6 +542,42 @@ bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
   case vmIntrinsics::_putLongVolatile:
   case vmIntrinsics::_putFloatVolatile:
   case vmIntrinsics::_putDoubleVolatile:
+  case vmIntrinsics::_getObjectAcquire:
+  case vmIntrinsics::_getBooleanAcquire:
+  case vmIntrinsics::_getByteAcquire:
+  case vmIntrinsics::_getShortAcquire:
+  case vmIntrinsics::_getCharAcquire:
+  case vmIntrinsics::_getIntAcquire:
+  case vmIntrinsics::_getLongAcquire:
+  case vmIntrinsics::_getFloatAcquire:
+  case vmIntrinsics::_getDoubleAcquire:
+  case vmIntrinsics::_putObjectRelease:
+  case vmIntrinsics::_putBooleanRelease:
+  case vmIntrinsics::_putByteRelease:
+  case vmIntrinsics::_putShortRelease:
+  case vmIntrinsics::_putCharRelease:
+  case vmIntrinsics::_putIntRelease:
+  case vmIntrinsics::_putLongRelease:
+  case vmIntrinsics::_putFloatRelease:
+  case vmIntrinsics::_putDoubleRelease:
+  case vmIntrinsics::_getObjectOpaque:
+  case vmIntrinsics::_getBooleanOpaque:
+  case vmIntrinsics::_getByteOpaque:
+  case vmIntrinsics::_getShortOpaque:
+  case vmIntrinsics::_getCharOpaque:
+  case vmIntrinsics::_getIntOpaque:
+  case vmIntrinsics::_getLongOpaque:
+  case vmIntrinsics::_getFloatOpaque:
+  case vmIntrinsics::_getDoubleOpaque:
+  case vmIntrinsics::_putObjectOpaque:
+  case vmIntrinsics::_putBooleanOpaque:
+  case vmIntrinsics::_putByteOpaque:
+  case vmIntrinsics::_putShortOpaque:
+  case vmIntrinsics::_putCharOpaque:
+  case vmIntrinsics::_putIntOpaque:
+  case vmIntrinsics::_putLongOpaque:
+  case vmIntrinsics::_putFloatOpaque:
+  case vmIntrinsics::_putDoubleOpaque:
   case vmIntrinsics::_getByte_raw:
   case vmIntrinsics::_getShort_raw:
   case vmIntrinsics::_getChar_raw:
@@ -569,9 +603,27 @@ bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
   case vmIntrinsics::_loadFence:
   case vmIntrinsics::_storeFence:
   case vmIntrinsics::_fullFence:
-  case vmIntrinsics::_compareAndSwapObject:
   case vmIntrinsics::_compareAndSwapLong:
+  case vmIntrinsics::_weakCompareAndSwapLong:
+  case vmIntrinsics::_weakCompareAndSwapLongAcquire:
+  case vmIntrinsics::_weakCompareAndSwapLongRelease:
   case vmIntrinsics::_compareAndSwapInt:
+  case vmIntrinsics::_weakCompareAndSwapInt:
+  case vmIntrinsics::_weakCompareAndSwapIntAcquire:
+  case vmIntrinsics::_weakCompareAndSwapIntRelease:
+  case vmIntrinsics::_compareAndSwapObject:
+  case vmIntrinsics::_weakCompareAndSwapObject:
+  case vmIntrinsics::_weakCompareAndSwapObjectAcquire:
+  case vmIntrinsics::_weakCompareAndSwapObjectRelease:
+  case vmIntrinsics::_compareAndExchangeIntVolatile:
+  case vmIntrinsics::_compareAndExchangeIntAcquire:
+  case vmIntrinsics::_compareAndExchangeIntRelease:
+  case vmIntrinsics::_compareAndExchangeLongVolatile:
+  case vmIntrinsics::_compareAndExchangeLongAcquire:
+  case vmIntrinsics::_compareAndExchangeLongRelease:
+  case vmIntrinsics::_compareAndExchangeObjectVolatile:
+  case vmIntrinsics::_compareAndExchangeObjectAcquire:
+  case vmIntrinsics::_compareAndExchangeObjectRelease:
     if (!InlineUnsafeOps) return true;
     break;
   case vmIntrinsics::_getShortUnaligned:

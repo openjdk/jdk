@@ -62,10 +62,6 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   PROVIDER_MODULES += jdk.crypto.ucrypto
 endif
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-  MAIN_MODULES += jdk.deploy.osx
-endif
-
 JRE_MODULES := $(filter-out $(MODULES_FILTER), $(MAIN_MODULES) $(PROVIDER_MODULES))
 JDK_MODULES := $(filter-out $(MODULES_FILTER), $(JRE_MODULES) $(TOOLS_MODULES))
 
