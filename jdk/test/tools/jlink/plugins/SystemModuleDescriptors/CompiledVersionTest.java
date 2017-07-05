@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.util.FileUtils;
 import static jdk.testlibrary.ProcessTools.*;
 
@@ -41,7 +42,8 @@ import static org.testng.Assert.*;
  * @test
  * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler jdk.jlink
- * @build CompiledVersionTest CompilerUtils jdk.testlibrary.ProcessTools
+ * @build CompiledVersionTest jdk.testlibrary.ProcessTools
+ *        jdk.test.lib.compiler.CompilerUtils
  * @run testng CompiledVersionTest
  */
 

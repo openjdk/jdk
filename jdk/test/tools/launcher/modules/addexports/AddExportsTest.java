@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 /**
  * @test
- * @library /lib/testlibrary
+ * @library /lib/testlibrary /test/lib
  * @modules jdk.compiler
- * @build AddExportsTest CompilerUtils jdk.testlibrary.*
+ * @build AddExportsTest jdk.test.lib.compiler.CompilerUtils jdk.testlibrary.*
  * @run testng AddExportsTest
  * @summary Basic tests for java --add-exports
  */
@@ -34,6 +34,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
 
+import jdk.test.lib.compiler.CompilerUtils;
 import jdk.testlibrary.OutputAnalyzer;
 import static jdk.testlibrary.ProcessTools.*;
 
