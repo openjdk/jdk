@@ -151,6 +151,18 @@ BOOL isShowing(JNIEnv *env, jobject axContext, jobject component)
     return showing;
 }
 
+BOOL isSelectable(JNIEnv *env, jobject axContext, jobject component)
+{
+    static JNF_STATIC_MEMBER_CACHE( jm_SELECTABLE,
+                                    sjc_AccessibleState,
+                                    "SELECTABLE",
+                                    "Ljavax/accessibility/AccessibleState;" );
+    jobject axSelectableState = JNFGetStaticObjectField(env, jm_SELECTABLE);
+    BOOL selectable = containsAxState(env, axContext, axSelectableState, component);
+    (*env)->DeleteLocalRef(env, axSelectableState);
+    return selectable;
+}
+
 NSPoint getAxComponentLocationOnScreen(JNIEnv *env, jobject axComponent, jobject component)
 {
     static JNF_STATIC_MEMBER_CACHE(jm_getLocationOnScreen, sjc_CAccessibility, "getLocationOnScreen", "(Ljavax/accessibility/AccessibleComponent;Ljava/awt/Component;)Ljava/awt/Point;");

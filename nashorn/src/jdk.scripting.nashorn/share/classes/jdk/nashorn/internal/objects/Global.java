@@ -3057,6 +3057,7 @@ public final class Global extends Scope {
 
         LexicalScope(final Global global) {
             super(global, PropertyMap.newMap());
+            setIsInternal();
         }
 
         @Override

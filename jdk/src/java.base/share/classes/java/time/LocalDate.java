@@ -338,6 +338,7 @@ public final class LocalDate
      * @throws DateTimeException if the epoch day exceeds the supported date range
      */
     public static LocalDate ofEpochDay(long epochDay) {
+        EPOCH_DAY.checkValidValue(epochDay);
         long zeroDay = epochDay + DAYS_0000_TO_1970;
         // find the march-based year
         zeroDay -= 60;  // adjust to 0000-03-01 so leap day is at end of four year cycle

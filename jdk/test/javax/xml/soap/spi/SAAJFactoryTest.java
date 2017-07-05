@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import java.nio.file.StandardOpenOption;
  * run main/othervm SAAJFactoryTest saaj.factory.Valid -
  *      scenario14 javax.xml.soap.MessageFactory=saaj.factory.Valid saaj.factory.Valid2 -
  *
+ * @modules java.xml.ws
  * @compile -addmods java.xml.ws saaj/factory/Invalid.java saaj/factory/Valid.java
  *     saaj/factory/Valid2.java saaj/factory/Valid3.java SAAJFactoryTest.java
  *
