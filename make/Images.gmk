@@ -56,19 +56,11 @@ JRE_COMPACT1_MODULES := java.compact1 $(COMPACT1_EXTRA_MODULES)
 JRE_COMPACT2_MODULES := $(JRE_COMPACT1_MODULES) java.compact2 $(COMPACT2_EXTRA_MODULES)
 JRE_COMPACT3_MODULES := $(JRE_COMPACT2_MODULES) java.compact3 $(COMPACT3_EXTRA_MODULES)
 
-# Replacing double-comma with a single comma is to workaround the issue
-# with some version of make on windows that doesn't substitute spaces
-# with one comma properly as with make 4.0
-SubstComma = \
-    $(strip \
-        $(subst $(COMMA)$(COMMA),$(COMMA),$(subst $(SPACE),$(COMMA),$(strip $1))) \
-    )
-
-JRE_MODULES_LIST := $(call SubstComma, $(JRE_MODULES))
-JDK_MODULES_LIST := $(call SubstComma, $(JDK_MODULES))
-JRE_COMPACT1_MODULES_LIST := $(call SubstComma, $(JRE_COMPACT1_MODULES))
-JRE_COMPACT2_MODULES_LIST := $(call SubstComma, $(JRE_COMPACT2_MODULES))
-JRE_COMPACT3_MODULES_LIST := $(call SubstComma, $(JRE_COMPACT3_MODULES))
+JRE_MODULES_LIST := $(call CommaList, $(JRE_MODULES))
+JDK_MODULES_LIST := $(call CommaList, $(JDK_MODULES))
+JRE_COMPACT1_MODULES_LIST := $(call CommaList, $(JRE_COMPACT1_MODULES))
+JRE_COMPACT2_MODULES_LIST := $(call CommaList, $(JRE_COMPACT2_MODULES))
+JRE_COMPACT3_MODULES_LIST := $(call CommaList, $(JRE_COMPACT3_MODULES))
 
 ################################################################################
 # Release file
@@ -362,6 +354,23 @@ $(JDK_IMAGE_DIR)/src.zip: $(SUPPORT_OUTPUTDIR)/src.zip
 	$(install-file)
 
 JDK_TARGETS += $(JDK_IMAGE_DIR)/src.zip
+
+################################################################################
+# classlist
+
+$(eval $(call SetupCopyFiles, JDK_COPY_CLASSLIST, \
+    FILES := $(SUPPORT_OUTPUTDIR)/classlist/classlist, \
+    DEST := $(JDK_IMAGE_DIR)/lib, \
+))
+
+JDK_TARGETS += $(JDK_COPY_CLASSLIST)
+
+$(eval $(call SetupCopyFiles, JRE_COPY_CLASSLIST, \
+    FILES := $(SUPPORT_OUTPUTDIR)/classlist/classlist, \
+    DEST := $(JRE_IMAGE_DIR)/lib, \
+))
+
+JRE_TARGETS += $(JRE_COPY_CLASSLIST)
 
 ################################################################################
 # /demo dir

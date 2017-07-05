@@ -262,4 +262,14 @@ abstract class HmacCore extends MacSpi implements Cloneable {
             super("SHA-512", 128);
         }
     }
+    public static final class HmacSHA512_224 extends HmacCore {
+        public HmacSHA512_224() throws NoSuchAlgorithmException {
+            super("SHA-512/224", 128);
+        }
+    }
+    public static final class HmacSHA512_256 extends HmacCore {
+        public HmacSHA512_256() throws NoSuchAlgorithmException {
+            super("SHA-512/256", 128);
+        }
+    }
 }

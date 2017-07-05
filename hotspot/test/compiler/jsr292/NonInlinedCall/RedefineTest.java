@@ -35,7 +35,7 @@
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  *                              compiler.jsr292.NonInlinedCall.RedefineTest
- * @run main/bootclasspath -javaagent:agent.jar
+ * @run main/bootclasspath/othervm -javaagent:agent.jar
  *                         -XX:+IgnoreUnrecognizedVMOptions
  *                         -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                         -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1

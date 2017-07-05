@@ -124,7 +124,9 @@ public final class JrtFileSystemProvider extends FileSystemProvider {
         ClassLoader cl = newJrtFsLoader(jrtfs);
         try {
             Class<?> c = Class.forName(JrtFileSystemProvider.class.getName(), false, cl);
-            return ((FileSystemProvider)c.newInstance()).newFileSystem(uri, newEnv);
+            @SuppressWarnings("deprecation")
+            Object tmp = c.newInstance();
+            return ((FileSystemProvider)tmp).newFileSystem(uri, newEnv);
         } catch (ClassNotFoundException |
                  IllegalAccessException |
                  InstantiationException e) {

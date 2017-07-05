@@ -370,7 +370,10 @@ public class WindowsTerminal
                 }
             } else {
                 // virtual keycodes: http://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
-                // just add support for basic editing keys (no control state, no numpad keys)
+                // xterm escape codes: E. Moy, S. Gildea and T. Dickey, "XTerm Control Sequences":
+                // http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+                // http://xorg.freedesktop.org/releases/X11R6.8.1/PDF/ctlseqs.pdf
+                // just add support for basic editing keys and function keys
                 String escapeSequence = null;
                 switch (keyEvent.keyCode) {
                 case 0x21: // VK_PRIOR PageUp
@@ -402,6 +405,42 @@ public class WindowsTerminal
                     break;
                 case 0x2E: // VK_DELETE
                     escapeSequence = escapeSequence(keyEvent.controlKeyState, "\u001B[3~", "\u001B[3;%d~");
+                    break;
+                case 0x70: // VK_F1
+                    escapeSequence = escapeSequence(keyEvent.controlKeyState, "\u001BOP", "\u001BO%dP");
+                    break;
+                case 0x71: // VK_F2
+                    escapeSequence = escapeSequence(keyEvent.controlKeyState, "\u001BOQ", "\u001BO%dQ");
+                    break;
+                case 0x72: // VK_F3
+                    escapeSequence = escapeSequence(keyEvent.controlKeyState, "\u001BOR", "\u001BO%dR");
+                    break;
+                case 0x73: // VK_F4
+                    escapeSequence = escapeSequence(keyEvent.controlKeyState, "\u001BOS", "\u001BO%dS");
+                    break;
+                case 0x74: // VK_F5
+                    escapeSequence = escapeSequence(keyEvent.controlKeyState, "\u001B[15~", "\u001B[15;%d~");
+                    break;
+                case 0x75: // VK_F6
+                    escapeSequence = escapeSequence(keyEvent.controlKeyState, "\u001B[17~", "\u001B[17;%d~");
+                    break;
+                case 0x76: // VK_F7
+                    escapeSequence = escapeSequence(keyEvent.controlKeyState, "\u001B[18~", "\u001B[18;%d~");
+                    break;
+                case 0x77: // VK_F8
+                    escapeSequence = escapeSequence(keyEvent.controlKeyState, "\u001B[19~", "\u001B[19;%d~");
+                    break;
+                case 0x78: // VK_F9
+                    escapeSequence = escapeSequence(keyEvent.controlKeyState, "\u001B[20~", "\u001B[20;%d~");
+                    break;
+                case 0x79: // VK_F10
+                    escapeSequence = escapeSequence(keyEvent.controlKeyState, "\u001B[21~", "\u001B[21;%d~");
+                    break;
+                case 0x7A: // VK_F11
+                    escapeSequence = escapeSequence(keyEvent.controlKeyState, "\u001B[23~", "\u001B[23;%d~");
+                    break;
+                case 0x7B: // VK_F12
+                    escapeSequence = escapeSequence(keyEvent.controlKeyState, "\u001B[24~", "\u001B[24;%d~");
                     break;
                 default:
                     break;

@@ -57,7 +57,7 @@ abstract class UnixFileSystem
         // process working directory then paths must be resolved against the
         // default directory.
         String propValue = GetPropertyAction
-                .getProperty("sun.nio.fs.chdirAllowed", "false");
+                .privilegedGetProperty("sun.nio.fs.chdirAllowed", "false");
         boolean chdirAllowed = (propValue.length() == 0) ?
             true : Boolean.valueOf(propValue);
         if (chdirAllowed) {

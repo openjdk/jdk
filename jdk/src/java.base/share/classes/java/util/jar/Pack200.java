@@ -695,7 +695,7 @@ public abstract class Pack200 {
             Class<?> impl = (PACK_PROVIDER.equals(prop))? packerImpl: unpackerImpl;
             if (impl == null) {
                 // The first time, we must decide which class to use.
-                implName = GetPropertyAction.getProperty(prop,"");
+                implName = GetPropertyAction.privilegedGetProperty(prop,"");
                 if (implName != null && !implName.equals(""))
                     impl = Class.forName(implName);
                 else if (PACK_PROVIDER.equals(prop))
@@ -704,7 +704,9 @@ public abstract class Pack200 {
                     impl = com.sun.java.util.jar.pack.UnpackerImpl.class;
             }
             // We have a class.  Now instantiate it.
-            return impl.newInstance();
+            @SuppressWarnings("deprecation")
+            Object result = impl.newInstance();
+            return result;
         } catch (ClassNotFoundException e) {
             throw new Error("Class not found: " + implName +
                                 ":\ncheck property " + prop +

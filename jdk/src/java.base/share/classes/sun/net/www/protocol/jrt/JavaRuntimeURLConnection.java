@@ -161,7 +161,7 @@ public class JavaRuntimeURLConnection extends URLConnection {
     public Permission getPermission() throws IOException {
         Permission p = permission;
         if (p == null) {
-            String home = GetPropertyAction.getProperty("java.home");
+            String home = GetPropertyAction.privilegedGetProperty("java.home");
             p = new FilePermission(home + File.separator + "-", "read");
             permission = p;
         }

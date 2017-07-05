@@ -71,6 +71,7 @@ public class QuickResponses {
     public static void main(String[] args) throws Exception {
         server = new Server(0);
         URI uri = new URI(server.getURL());
+        server.start();
 
         HttpRequest request = HttpRequest.create(uri)
                 .GET();
@@ -78,7 +79,6 @@ public class QuickResponses {
         CompletableFuture<HttpResponse> cf1 = request.responseAsync();
         Server.Connection s1 = server.activity();
         s1.send(entireResponse());
-
 
         HttpResponse r = cf1.join();
         if (r.statusCode()!= 200 || !r.body(HttpResponse.asString()).equals(responses[0]))

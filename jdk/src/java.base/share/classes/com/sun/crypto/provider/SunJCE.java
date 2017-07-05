@@ -704,6 +704,12 @@ public final class SunJCE extends Provider {
                     put("Alg.Alias.Mac.OID.1.2.840.113549.2.11", "HmacSHA512");
                     put("Alg.Alias.Mac.1.2.840.113549.2.11", "HmacSHA512");
 
+                    // TODO: aliases with OIDs
+                    put("Mac.HmacSHA512/224",
+                            "com.sun.crypto.provider.HmacCore$HmacSHA512_224");
+                    put("Mac.HmacSHA512/256",
+                            "com.sun.crypto.provider.HmacCore$HmacSHA512_256");
+
                     put("Mac.HmacPBESHA1",
                         "com.sun.crypto.provider.HmacPKCS12PBESHA1");
 

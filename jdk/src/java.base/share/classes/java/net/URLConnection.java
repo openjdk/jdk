@@ -1323,7 +1323,9 @@ public abstract class URLConnection {
                     }
                 }
                 if (cls != null) {
-                    return (ContentHandler) cls.newInstance();
+                    @SuppressWarnings("deprecation")
+                    Object tmp = cls.newInstance();
+                    return (ContentHandler) tmp;
                 }
             } catch(Exception ignored) { }
         }
@@ -1397,7 +1399,7 @@ public abstract class URLConnection {
      */
     private String getContentHandlerPkgPrefixes() {
         String packagePrefixList =
-                GetPropertyAction.getProperty(contentPathProp, "");
+                GetPropertyAction.privilegedGetProperty(contentPathProp, "");
 
         if (packagePrefixList != "") {
             packagePrefixList += "|";

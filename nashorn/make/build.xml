@@ -35,7 +35,6 @@
     <path id="nashorn.jar.path">
          <pathelement location="${nashorn.jar}"/>
     </path>
-    <property name="nashorn.override.option" value="-Xpatch:${build.classes.dir}"/>
     <condition property="svn.executable" value="/usr/local/bin/svn" else="svn">
       <available file="/usr/local/bin/svn"/>
     </condition>
@@ -176,6 +175,10 @@
       <compilerarg value="-Xdiags:verbose"/>
       <compilerarg value="-parameters"/>
     </javac>
+    <!-- -Xpatch does not like module-info.class files! -->
+    <delete>
+      <fileset dir="${build.classes.dir}" includes="**/module-info.class"/>
+    </delete>
     <javac srcdir="${nashorn.module.src.dir}"
            destdir="${nashorn.module.classes.dir}"
            source="${javac.source}"
@@ -187,8 +190,12 @@
       <compilerarg value="-XDignore.symbol.file"/>
       <compilerarg value="-Xdiags:verbose"/>
       <compilerarg value="-parameters"/>
-      <compilerarg value="${nashorn.override.option}"/>
+      <compilerarg line="${nashorn.override.option}"/>
     </javac>
+    <!-- -Xpatch does not like module-info.class files! -->
+    <delete>
+      <fileset dir="${build.classes.dir}" includes="**/module-info.class"/>
+    </delete>
     <javac srcdir="${nashorn.shell.module.src.dir}"
            destdir="${nashorn.shell.module.classes.dir}"
            source="${javac.source}"
@@ -200,7 +207,7 @@
       <compilerarg value="-XDignore.symbol.file"/>
       <compilerarg value="-Xdiags:verbose"/>
       <compilerarg value="-parameters"/>
-      <compilerarg value="${nashorn.override.option}"/>
+      <compilerarg line="${nashorn.override.option}"/>
     </javac>
     <!-- -Xpatch does not like module-info.class files! -->
     <delete>
@@ -348,11 +355,11 @@
            debug="${javac.debug}"
            encoding="${javac.encoding}"
            includeantruntime="false" fork="true">
-        <compilerarg value="${nashorn.override.option}"/>
+        <compilerarg line="${nashorn.override.option}"/>
         <compilerarg value="-Xlint:unchecked"/>
         <compilerarg value="-Xlint:deprecation"/>
         <compilerarg value="-Xdiags:verbose"/>
-        <compilerarg value="-XaddExports:${test.module.imports}"/>
+        <compilerarg line="${test.module.imports}"/>
     </javac>
 
     <copy todir="${build.test.classes.dir}/META-INF/services">

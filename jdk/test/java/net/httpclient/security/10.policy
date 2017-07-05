@@ -1,8 +1,7 @@
 // Policy 10
 grant {
     // permissions common to all tests
-    permission java.util.PropertyPermission "test.src", "read";
-    permission java.util.PropertyPermission "test.classes", "read";
+    permission java.util.PropertyPermission "*", "read";
     permission java.io.FilePermission "${test.classes}${/}-", "read,write,delete";
     permission java.net.NetPermission "getDefaultHttpClient";
     permission java.lang.RuntimePermission "modifyThread";
@@ -12,7 +11,7 @@ grant {
     permission java.lang.RuntimePermission "createClassLoader";
 
     // permissions specific to this test
-    permission java.net.URLPermission "http://127.0.0.1:*/files/foo.txt", "GET:*";
+    permission java.net.URLPermission "http://127.0.0.1:${port.number}/files/foo.txt", "GET:*";
 };
 
 // For proxy only. Not being tested

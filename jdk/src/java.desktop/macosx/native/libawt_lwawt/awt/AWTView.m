@@ -29,6 +29,7 @@
 #import "AWTWindow.h"
 #import "JavaComponentAccessibility.h"
 #import "JavaTextAccessibility.h"
+#import "JavaAccessibilityUtilities.h"
 #import "GeomUtilities.h"
 #import "OSVersion.h"
 #import "ThreadUtilities.h"
@@ -129,7 +130,7 @@ static BOOL shouldUsePressAndHold() {
     self.cglLayer = nil;
     
     JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
-    (*env)->DeleteGlobalRef(env, m_cPlatformView);
+    (*env)->DeleteWeakGlobalRef(env, m_cPlatformView);
     m_cPlatformView = NULL;
     
     if (fInputMethodLOCKABLE != NULL)
@@ -396,7 +397,11 @@ static BOOL shouldUsePressAndHold() {
     
     static JNF_CLASS_CACHE(jc_PlatformView, "sun/lwawt/macosx/CPlatformView");
     static JNF_MEMBER_CACHE(jm_deliverMouseEvent, jc_PlatformView, "deliverMouseEvent", "(Lsun/lwawt/macosx/NSEvent;)V");
-    JNFCallVoidMethod(env, m_cPlatformView, jm_deliverMouseEvent, jEvent);
+    jobject jlocal = (*env)->NewLocalRef(env, m_cPlatformView);
+    if (!(*env)->IsSameObject(env, jlocal, NULL)) {
+        JNFCallVoidMethod(env, jlocal, jm_deliverMouseEvent, jEvent);
+        (*env)->DeleteLocalRef(env, jlocal);
+    }
     (*env)->DeleteLocalRef(env, jEvent);
 }
 
@@ -459,8 +464,11 @@ static BOOL shouldUsePressAndHold() {
     static JNF_CLASS_CACHE(jc_PlatformView, "sun/lwawt/macosx/CPlatformView");
     static JNF_MEMBER_CACHE(jm_deliverKeyEvent, jc_PlatformView,
                             "deliverKeyEvent", "(Lsun/lwawt/macosx/NSEvent;)V");
-    JNFCallVoidMethod(env, m_cPlatformView, jm_deliverKeyEvent, jEvent);
-    
+    jobject jlocal = (*env)->NewLocalRef(env, m_cPlatformView);
+    if (!(*env)->IsSameObject(env, jlocal, NULL)) {
+        JNFCallVoidMethod(env, jlocal, jm_deliverKeyEvent, jEvent);
+        (*env)->DeleteLocalRef(env, jlocal);
+    }
     if (characters != NULL) {
         (*env)->DeleteLocalRef(env, characters);
     }
@@ -475,7 +483,12 @@ static BOOL shouldUsePressAndHold() {
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     static JNF_CLASS_CACHE(jc_PlatformView, "sun/lwawt/macosx/CPlatformView");
     static JNF_MEMBER_CACHE(jm_deliverResize, jc_PlatformView, "deliverResize", "(IIII)V");
-    JNFCallVoidMethod(env, m_cPlatformView, jm_deliverResize, x,y,w,h);
+
+    jobject jlocal = (*env)->NewLocalRef(env, m_cPlatformView);
+    if (!(*env)->IsSameObject(env, jlocal, NULL)) {
+        JNFCallVoidMethod(env, jlocal, jm_deliverResize, x,y,w,h);
+        (*env)->DeleteLocalRef(env, jlocal);
+    }
 }
 
 
@@ -504,7 +517,11 @@ static BOOL shouldUsePressAndHold() {
          */
         static JNF_CLASS_CACHE(jc_CPlatformView, "sun/lwawt/macosx/CPlatformView");
         static JNF_MEMBER_CACHE(jm_deliverWindowDidExposeEvent, jc_CPlatformView, "deliverWindowDidExposeEvent", "()V");
-        JNFCallVoidMethod(env, m_cPlatformView, jm_deliverWindowDidExposeEvent);
+        jobject jlocal = (*env)->NewLocalRef(env, m_cPlatformView);
+        if (!(*env)->IsSameObject(env, jlocal, NULL)) {
+            JNFCallVoidMethod(env, jlocal, jm_deliverWindowDidExposeEvent);
+            (*env)->DeleteLocalRef(env, jlocal);
+        }
         /*
          }
          */
@@ -541,7 +558,13 @@ static BOOL shouldUsePressAndHold() {
         }
         return NULL;
     }
-    jobject peer = JNFGetObjectField(env, m_cPlatformView, jf_Peer);
+
+    jobject peer = NULL;
+    jobject jlocal = (*env)->NewLocalRef(env, m_cPlatformView);
+    if (!(*env)->IsSameObject(env, jlocal, NULL)) {
+        peer = JNFGetObjectField(env, jlocal, jf_Peer);
+        (*env)->DeleteLocalRef(env, jlocal);
+    }
     static JNF_CLASS_CACHE(jc_LWWindowPeer, "sun/lwawt/LWWindowPeer");
     static JNF_MEMBER_CACHE(jf_Target, jc_LWWindowPeer, "target", "Ljava/awt/Component;");
     if (peer == NULL) {
@@ -549,12 +572,27 @@ static BOOL shouldUsePressAndHold() {
         JNFDumpJavaStack(env);
         return NULL;
     }
-    return JNFGetObjectField(env, peer, jf_Target);
+    jobject comp = JNFGetObjectField(env, peer, jf_Target);
+    (*env)->DeleteLocalRef(env, peer);
+    return comp;
+}
+
++ (AWTView *) awtView:(JNIEnv*)env ofAccessible:(jobject)jaccessible
+{
+    static JNF_STATIC_MEMBER_CACHE(jm_getAWTView, sjc_CAccessibility, "getAWTView", "(Ljavax/accessibility/Accessible;)J");
+
+    jlong jptr = JNFCallStaticLongMethod(env, jm_getAWTView, jaccessible);
+    if (jptr == 0) return nil;
+
+    return (AWTView *)jlong_to_ptr(jptr);
 }
 
 - (id)getAxData:(JNIEnv*)env
 {
-    return [[[JavaComponentAccessibility alloc] initWithParent:self withEnv:env withAccessible:[self awtComponent:env] withIndex:-1 withView:self withJavaRole:nil] autorelease];
+    jobject jcomponent = [self awtComponent:env];
+    id ax = [[[JavaComponentAccessibility alloc] initWithParent:self withEnv:env withAccessible:jcomponent withIndex:-1 withView:self withJavaRole:nil] autorelease];
+    (*env)->DeleteLocalRef(env, jcomponent);
+    return ax;
 }
 
 - (NSArray *)accessibilityAttributeNames
@@ -1299,7 +1337,7 @@ Java_sun_lwawt_macosx_CPlatformView_nativeCreateView
     JNF_COCOA_ENTER(env);
     
     NSRect rect = NSMakeRect(originX, originY, width, height);
-    jobject cPlatformView = (*env)->NewGlobalRef(env, obj);
+    jobject cPlatformView = (*env)->NewWeakGlobalRef(env, obj);
     
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
         

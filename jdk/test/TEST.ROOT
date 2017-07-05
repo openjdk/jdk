@@ -26,9 +26,12 @@ groups=TEST.groups [closed/TEST.groups]
 # Allow querying of sun.arch.data.model in @requires clauses
 requires.properties=sun.arch.data.model 
 
-# Tests using jtreg 4.2 b01 features
-requiredVersion=4.2 b01
+# Tests using jtreg 4.2 b02 features
+requiredVersion=4.2 b02
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them
 external.lib.roots = ../../
+
+# Use new form of -Xpatch
+useNewXpatch=true
