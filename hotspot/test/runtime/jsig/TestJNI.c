@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,41 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "runtime/deoptimization.hpp"
-#include "runtime/frame.inline.hpp"
-#include "runtime/stubRoutines.hpp"
-#include "runtime/thread.inline.hpp"
+#define _GNU_SOURCE // for the definition of REG_RIP in ucontext.h
+#include <stdio.h>
+#include <jni.h>
+#include <signal.h>
+#include <sys/ucontext.h>
 
-// Implementation of the platform-specific part of StubRoutines - for
-// a description of how to extend it, see the stubRoutines.hpp file.
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-address StubRoutines::x86::_get_previous_fp_entry = NULL;
-address StubRoutines::x86::_get_previous_sp_entry = NULL;
+void sig_handler(int sig, siginfo_t *info, ucontext_t *context) {
+    int thrNum;
 
-address StubRoutines::x86::_f2i_fixup = NULL;
-address StubRoutines::x86::_f2l_fixup = NULL;
-address StubRoutines::x86::_d2i_fixup = NULL;
-address StubRoutines::x86::_d2l_fixup = NULL;
-address StubRoutines::x86::_float_sign_mask = NULL;
-address StubRoutines::x86::_float_sign_flip = NULL;
-address StubRoutines::x86::_double_sign_mask = NULL;
-address StubRoutines::x86::_double_sign_flip = NULL;
+    printf( " HANDLER (1) " );
+    // Move forward RIP to skip failing instruction
+    context->uc_mcontext.gregs[REG_RIP] += 6;
+}
+
+JNIEXPORT void JNICALL Java_TestJNI_doSomething(JNIEnv *env, jclass klass, jint val) {
+    struct sigaction act;
+    struct sigaction oact;
+
+    act.sa_flags = SA_ONSTACK|SA_RESTART|SA_SIGINFO;
+    sigfillset(&act.sa_mask);
+    act.sa_handler = SIG_DFL;
+    act.sa_sigaction = (void (*)())sig_handler;
+    sigaction(0x20+val, &act, &oact);
+
+    printf( " doSomething(%d) " , val);
+    printf( " old handler = %p " , oact.sa_handler);
+}
+
+#ifdef __cplusplus
+}
+#endif
+

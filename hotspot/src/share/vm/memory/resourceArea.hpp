@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,10 @@ protected:
   Chunk *_chunk;                // saved arena chunk
   char *_hwm, *_max;
   size_t _size_in_bytes;
+#ifdef ASSERT
+  Thread* _thread;
+  ResourceMark* _previous_resource_mark;
+#endif //ASSERT
 
   void initialize(Thread *thread) {
     _area = thread->resource_area();
@@ -92,6 +96,11 @@ protected:
     _size_in_bytes = _area->size_in_bytes();
     debug_only(_area->_nesting++;)
     assert( _area->_nesting > 0, "must stack allocate RMs" );
+#ifdef ASSERT
+    _thread = thread;
+    _previous_resource_mark = thread->current_resource_mark();
+    thread->set_current_resource_mark(this);
+#endif // ASSERT
   }
  public:
 
@@ -111,6 +120,17 @@ protected:
     _size_in_bytes = r->_size_in_bytes;
     debug_only(_area->_nesting++;)
     assert( _area->_nesting > 0, "must stack allocate RMs" );
+#ifdef ASSERT
+    Thread* thread = ThreadLocalStorage::thread();
+    if (thread != NULL) {
+      _thread = thread;
+      _previous_resource_mark = thread->current_resource_mark();
+      thread->set_current_resource_mark(this);
+    } else {
+      _thread = NULL;
+      _previous_resource_mark = NULL;
+    }
+#endif // ASSERT
   }
 
   void reset_to_mark() {
@@ -137,6 +157,11 @@ protected:
     assert( _area->_nesting > 0, "must stack allocate RMs" );
     debug_only(_area->_nesting--;)
     reset_to_mark();
+#ifdef ASSERT
+    if (_thread != NULL) {
+      _thread->set_current_resource_mark(_previous_resource_mark);
+    }
+#endif // ASSERT
   }
 
 
