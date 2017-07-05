@@ -760,7 +760,6 @@ void ConcurrentMark::checkpointRootsInitialPost() {
   rp->setup_policy(false); // snapshot the soft ref policy to be used in this cycle
 
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
-  satb_mq_set.set_process_completed_threshold(G1SATBProcessCompletedThreshold);
   satb_mq_set.set_active_all_threads(true);
 
   // update_g1_committed() will be called at the end of an evac pause

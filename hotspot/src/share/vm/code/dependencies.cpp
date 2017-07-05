@@ -1528,19 +1528,23 @@ void DepChange::print() {
   int nsup = 0, nint = 0;
   for (ContextStream str(*this); str.next(); ) {
     klassOop k = str.klass();
-    switch (str._change_type) {
+    switch (str.change_type()) {
     case Change_new_type:
       tty->print_cr("  dependee = %s", instanceKlass::cast(k)->external_name());
       break;
     case Change_new_sub:
-      if (!WizardMode)
-           ++nsup;
-      else tty->print_cr("  context super = %s", instanceKlass::cast(k)->external_name());
+      if (!WizardMode) {
+        ++nsup;
+      } else {
+        tty->print_cr("  context super = %s", instanceKlass::cast(k)->external_name());
+      }
       break;
     case Change_new_impl:
-      if (!WizardMode)
-           ++nint;
-      else tty->print_cr("  context interface = %s", instanceKlass::cast(k)->external_name());
+      if (!WizardMode) {
+        ++nint;
+      } else {
+        tty->print_cr("  context interface = %s", instanceKlass::cast(k)->external_name());
+      }
       break;
     }
   }

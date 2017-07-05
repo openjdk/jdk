@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4635230 6283345 6303830 6824440
+ * @bug 4635230 6283345 6303830 6824440 6867348
  * @summary Basic unit tests for generating XML Signatures with JSR 105
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java GenerationTests.java
@@ -126,13 +126,14 @@ public class GenerationTests {
         test_create_signature_x509_is();
         test_create_signature_x509_ski();
         test_create_signature_x509_sn();
-//      test_create_signature();
+        test_create_signature();
         test_create_exc_signature();
         test_create_sign_spec();
         test_create_signature_enveloping_sha256_dsa();
         test_create_signature_enveloping_sha384_rsa_sha256();
         test_create_signature_enveloping_sha512_rsa_sha384();
         test_create_signature_enveloping_sha512_rsa_sha512();
+        test_create_signature_reference_dependency();
     }
 
     private static void setup() throws Exception {
@@ -410,6 +411,55 @@ public class GenerationTests {
         System.out.println();
     }
 
+    static void test_create_signature_reference_dependency() throws Exception {
+        System.out.println("* Generating signature-reference-dependency.xml");
+        // create references
+        List<Reference> refs = Collections.singletonList
+            (fac.newReference("#object-1", sha1));
+
+        // create SignedInfo
+        SignedInfo si = fac.newSignedInfo(withoutComments, rsaSha1, refs);
+
+        // create objects
+        List<XMLStructure> objs = new ArrayList<XMLStructure>();
+
+        // Object 1
+        List<Reference> manRefs = Collections.singletonList
+            (fac.newReference("#object-2", sha1));
+        objs.add(fac.newXMLObject(Collections.singletonList
+            (fac.newManifest(manRefs, "manifest-1")), "object-1", null, null));
+
+        // Object 2
+        Document doc = db.newDocument();
+        Element nc = doc.createElementNS(null, "NonCommentandus");
+        nc.setAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns", "");
+        nc.appendChild(doc.createComment(" Commentandum "));
+        objs.add(fac.newXMLObject(Collections.singletonList
+            (new DOMStructure(nc)), "object-2", null, null));
+
+        // create XMLSignature
+        XMLSignature sig = fac.newXMLSignature(si, rsa, objs, "signature", null);
+        DOMSignContext dsc = new DOMSignContext(getPrivateKey("RSA"), doc);
+
+        sig.sign(dsc);
+
+//      dumpDocument(doc, new PrintWriter(System.out));
+
+        DOMValidateContext dvc = new DOMValidateContext
+            (kvks, doc.getDocumentElement());
+        XMLSignature sig2 = fac.unmarshalXMLSignature(dvc);
+
+        if (sig.equals(sig2) == false) {
+            throw new Exception
+                ("Unmarshalled signature is not equal to generated signature");
+        }
+        if (sig2.validate(dvc) == false) {
+            throw new Exception("Validation of generated signature failed");
+        }
+
+        System.out.println();
+    }
+
     static void test_create_signature() throws Exception {
         System.out.println("* Generating signature.xml");
 
@@ -645,6 +695,7 @@ public class GenerationTests {
             envDoc.getElementsByTagName("YoursSincerely").item(0);
 
         DOMSignContext dsc = new DOMSignContext(signingKey, ys);
+        dsc.setURIDereferencer(httpUd);
 
         sig.sign(dsc);
 
@@ -660,6 +711,7 @@ public class GenerationTests {
 
         DOMValidateContext dvc = new DOMValidateContext
             (new X509KeySelector(ks), sigElement);
+        dvc.setURIDereferencer(httpUd);
         File f = new File(
             System.getProperty("dir.test.vector.baltimore") +
             System.getProperty("file.separator") +
