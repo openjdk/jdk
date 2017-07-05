@@ -189,6 +189,9 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
         String MHT[] = new String[] {"Heure des Iles Marshall", "MHT",
                                      "Heure d'\u00e9t\u00e9 des Iles Marshall", "MHST",
                                      "Heure des Iles Marshall", "MHT"};
+        String MMT[] = new String[] {"Heure de Myanmar", "MMT",
+                                     "Heure d'\u00e9t\u00e9 de Myanmar", "MMST",
+                                     "Heure de Myanmar", "MMT"};
         String MSK[] = new String[] {"Heure standard de Moscou", "MSK",
                                      "Heure avanc\u00e9e de Moscou", "MSD",
                                      "Moscou", "MT"};
@@ -684,9 +687,7 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
             {"Asia/Qyzylorda", new String[] {"Heure de Kyzylorda", "QYZT",
                                              "Heure d'\u00e9t\u00e9 de Kyzylorda", "QYZST",
                                              "Heure de Kyzylorda", "QYZT"}},
-            {"Asia/Rangoon", new String[] {"Heure de Myanmar", "MMT",
-                                           "Heure d'\u00e9t\u00e9 de Myanmar", "MMST",
-                                           "Heure de Myanmar", "MMT"}},
+            {"Asia/Rangoon", MMT},
             {"Asia/Riyadh", ARAST},
             {"Asia/Saigon", ICT},
             {"Asia/Sakhalin", new String[] {"Heure de Sakhalin", "SAKT",
@@ -719,6 +720,7 @@ public final class TimeZoneNames_fr extends TimeZoneNamesBundle {
                                                "Heure d'\u00e9t\u00e9 de Vladivostok", "VLAST",
                                                "Heure de Vladivostok", "VLAT"}},
             {"Asia/Yakutsk", YAKT},
+            {"Asia/Yangon", MMT},
             {"Asia/Yekaterinburg", new String[] {"Heure de Yekaterinburg", "YEKT",
                                                  "Heure d'\u00e9t\u00e9 de Yekaterinburg", "YEKST",
                                                  "Heure de Yekaterinburg", "YEKT"}},

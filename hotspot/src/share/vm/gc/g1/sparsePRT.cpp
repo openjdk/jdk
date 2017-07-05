@@ -283,7 +283,7 @@ size_t RSHashTable::mem_size() const {
 
 // ----------------------------------------------------------------------
 
-SparsePRT* SparsePRT::_head_expanded_list = NULL;
+SparsePRT* volatile SparsePRT::_head_expanded_list = NULL;
 
 void SparsePRT::add_to_expanded_list(SparsePRT* sprt) {
   // We could expand multiple times in a pause -- only put on list once.

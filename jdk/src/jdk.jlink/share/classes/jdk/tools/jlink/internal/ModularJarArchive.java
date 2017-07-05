@@ -27,6 +27,8 @@ package jdk.tools.jlink.internal;
 
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.zip.ZipEntry;
+
 import jdk.tools.jlink.internal.Archive.Entry.EntryType;
 
 /**
@@ -35,6 +37,7 @@ import jdk.tools.jlink.internal.Archive.Entry.EntryType;
 public class ModularJarArchive extends JarArchive {
 
     private static final String JAR_EXT = ".jar";
+    private static final String MODULE_INFO = "module-info.class";
 
     public ModularJarArchive(String mn, Path jmod) {
         super(mn, jmod);
@@ -47,6 +50,17 @@ public class ModularJarArchive extends JarArchive {
     @Override
     EntryType toEntryType(String section) {
         return EntryType.CLASS_OR_RESOURCE;
+    }
+
+    @Override
+    Entry toEntry(ZipEntry ze) {
+        if (ze.isDirectory()) {
+            return null;
+        }
+
+        String name = ze.getName();
+        EntryType type = toEntryType(name);
+        return new JarEntry(ze.getName(), getFileName(name), type, zipFile, ze);
     }
 
     @Override

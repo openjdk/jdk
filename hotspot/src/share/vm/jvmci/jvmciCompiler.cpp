@@ -114,11 +114,11 @@ void JVMCICompiler::bootstrap(TRAPS) {
   JVMCIRuntime::bootstrap_finished(CHECK);
 }
 
-#define CHECK_ABORT THREAD); \
+#define CHECK_EXIT THREAD); \
 if (HAS_PENDING_EXCEPTION) { \
   char buf[256]; \
   jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
-  JVMCICompiler::abort_on_pending_exception(PENDING_EXCEPTION, buf); \
+  JVMCICompiler::exit_on_pending_exception(PENDING_EXCEPTION, buf); \
   return; \
 } \
 (void)(0
@@ -133,10 +133,10 @@ void JVMCICompiler::compile_method(const methodHandle& method, int entry_bci, JV
       return;
   }
 
-  JVMCIRuntime::initialize_well_known_classes(CHECK_ABORT);
+  JVMCIRuntime::initialize_well_known_classes(CHECK_EXIT);
 
   HandleMark hm;
-  Handle receiver = JVMCIRuntime::get_HotSpotJVMCIRuntime(CHECK_ABORT);
+  Handle receiver = JVMCIRuntime::get_HotSpotJVMCIRuntime(CHECK_EXIT);
 
   JavaValue method_result(T_OBJECT);
   JavaCallArguments args;
@@ -202,23 +202,22 @@ CompLevel JVMCIRuntime::adjust_comp_level(methodHandle method, bool is_osr, Comp
   return level;
 }
 
-/**
- * Aborts the VM due to an unexpected exception.
- */
-void JVMCICompiler::abort_on_pending_exception(Handle exception, const char* message, bool dump_core) {
-  Thread* THREAD = Thread::current();
+void JVMCICompiler::exit_on_pending_exception(Handle exception, const char* message) {
+  JavaThread* THREAD = JavaThread::current();
   CLEAR_PENDING_EXCEPTION;
 
-  java_lang_Throwable::java_printStackTrace(exception, THREAD);
+  static volatile int report_error = 0;
+  if (!report_error && Atomic::cmpxchg(1, &report_error, 0) == 0) {
+    // Only report an error once
+    tty->print_raw_cr(message);
+    java_lang_Throwable::java_printStackTrace(exception, THREAD);
+  } else {
+    // Allow error reporting thread to print the stack trace.
+    os::sleep(THREAD, 200, false);
+  }
 
-  // Give other aborting threads to also print their stack traces.
-  // This can be very useful when debugging class initialization
-  // failures.
-  assert(THREAD->is_Java_thread(), "compiler threads should be Java threads");
-  const bool interruptible = true;
-  os::sleep(THREAD, 200, interruptible);
-
-  vm_abort(dump_core);
+  before_exit(THREAD);
+  vm_exit(-1);
 }
 
 // Compilation entry point for methods

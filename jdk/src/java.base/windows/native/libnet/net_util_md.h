@@ -247,9 +247,9 @@ void NET_ThrowCurrent(JNIEnv *env, char *msg);
 int NET_GetDefaultTOS(void);
 
 typedef union {
-    struct sockaddr     him;
-    struct sockaddr_in  him4;
-    struct SOCKADDR_IN6 him6;
+    struct sockaddr     sa;
+    struct sockaddr_in  sa4;
+    struct SOCKADDR_IN6 sa6;
 } SOCKETADDRESS;
 
 /*
@@ -257,14 +257,10 @@ typedef union {
  * sockets. On return they may refer to different sockets.
  */
 struct ipv6bind {
-    SOCKETADDRESS       *addr;
-    SOCKET               ipv4_fd;
-    SOCKET               ipv6_fd;
+    SOCKETADDRESS      *addr;
+    SOCKET              ipv4_fd;
+    SOCKET              ipv6_fd;
 };
-
-#define SOCKETADDRESS_LEN(X)    \
-        (((X)->him.sa_family==AF_INET6)? sizeof(struct SOCKADDR_IN6) : \
-                         sizeof(struct sockaddr_in))
 
 #define SOCKETADDRESS_COPY(DST,SRC) {                           \
     if ((SRC)->sa_family == AF_INET6) {                         \
@@ -274,20 +270,20 @@ struct ipv6bind {
     }                                                           \
 }
 
-#define SET_PORT(X,Y) {                         \
-    if ((X)->him.sa_family == AF_INET) {        \
-        (X)->him4.sin_port = (Y);               \
-    } else {                                    \
-        (X)->him6.sin6_port = (Y);              \
-    }                                           \
+#define SET_PORT(X,Y) {                    \
+    if ((X)->sa.sa_family == AF_INET) {    \
+        (X)->sa4.sin_port = (Y);           \
+    } else {                               \
+        (X)->sa6.sin6_port = (Y);          \
+    }                                      \
 }
 
-#define GET_PORT(X) ((X)->him.sa_family==AF_INET ?(X)->him4.sin_port: (X)->him6.sin6_port)
+#define GET_PORT(X) ((X)->sa.sa_family == AF_INET ? (X)->sa4.sin_port : (X)->sa6.sin6_port)
 
 #define IS_LOOPBACK_ADDRESS(x) ( \
-    ((x)->him.sa_family == AF_INET) ? \
-        (ntohl((x)->him4.sin_addr.s_addr)==INADDR_LOOPBACK) : \
-        (IN6ADDR_ISLOOPBACK (x)) \
+    ((x)->sa.sa_family == AF_INET) ? \
+        (ntohl((x)->sa4.sin_addr.s_addr) == INADDR_LOOPBACK) : \
+        (IN6ADDR_ISLOOPBACK(x)) \
 )
 
 JNIEXPORT int JNICALL NET_SocketClose(int fd);
@@ -297,7 +293,7 @@ JNIEXPORT int JNICALL NET_Timeout(int fd, long timeout);
 int NET_Socket(int domain, int type, int protocol);
 
 void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
-         const char *defaultDetail);
+                                  const char *defaultDetail);
 
 /*
  * differs from NET_Timeout() as follows:
@@ -312,46 +308,39 @@ void NET_ThrowByNameWithLastError(JNIEnv *env, const char *name,
  */
 JNIEXPORT int JNICALL NET_Timeout2(int fd, int fd1, long timeout, int *fdret);
 
-JNIEXPORT int JNICALL NET_BindV6(struct ipv6bind* b, jboolean exclBind);
-
-#define NET_WAIT_READ   0x01
-#define NET_WAIT_WRITE  0x02
-#define NET_WAIT_CONNECT        0x04
-
-extern jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
+JNIEXPORT int JNICALL NET_BindV6(struct ipv6bind *b, jboolean exclBind);
 
 JNIEXPORT int JNICALL NET_WinBind(int s, struct sockaddr *him, int len,
-                                   jboolean exclBind);
+                                  jboolean exclBind);
 
 /* XP versions of the native routines */
 
 JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0_XP
-    (JNIEnv *env, jclass cls, jstring name);
+  (JNIEnv *env, jclass cls, jstring name);
 
 JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0_XP
   (JNIEnv *env, jclass cls, jint index);
 
 JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0_XP
-    (JNIEnv *env, jclass cls, jobject iaObj);
+  (JNIEnv *env, jclass cls, jobject iaObj);
 
 JNIEXPORT jobjectArray JNICALL Java_java_net_NetworkInterface_getAll_XP
-    (JNIEnv *env, jclass cls);
+  (JNIEnv *env, jclass cls);
 
 JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_supportsMulticast0_XP
-(JNIEnv *env, jclass cls, jstring name, jint index);
+  (JNIEnv *env, jclass cls, jstring name, jint index);
 
 JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isUp0_XP
-(JNIEnv *env, jclass cls, jstring name, jint index);
+  (JNIEnv *env, jclass cls, jstring name, jint index);
 
 JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isP2P0_XP
-(JNIEnv *env, jclass cls, jstring name, jint index);
+  (JNIEnv *env, jclass cls, jstring name, jint index);
 
 JNIEXPORT jbyteArray JNICALL Java_java_net_NetworkInterface_getMacAddr0_XP
-(JNIEnv *env, jclass cls, jstring name, jint index);
+  (JNIEnv *env, jclass cls, jstring name, jint index);
 
 JNIEXPORT jint JNICALL Java_java_net_NetworkInterface_getMTU0_XP
-(JNIEnv *env, jclass class, jstring name, jint index);
+  (JNIEnv *env, jclass class, jstring name, jint index);
 
 JNIEXPORT jboolean JNICALL Java_java_net_NetworkInterface_isLoopback0_XP
-(JNIEnv *env, jclass cls, jstring name, jint index);
-
+  (JNIEnv *env, jclass cls, jstring name, jint index);

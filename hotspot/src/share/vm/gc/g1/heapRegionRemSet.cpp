@@ -56,7 +56,7 @@ class PerRegionTable: public CHeapObj<mtGC> {
   PerRegionTable * _collision_list_next;
 
   // Global free list of PRTs
-  static PerRegionTable* _free_list;
+  static PerRegionTable* volatile _free_list;
 
 protected:
   // We need access in order to union things into the base table.
@@ -249,7 +249,7 @@ public:
   static void test_fl_mem_size();
 };
 
-PerRegionTable* PerRegionTable::_free_list = NULL;
+PerRegionTable* volatile PerRegionTable::_free_list = NULL;
 
 size_t OtherRegionsTable::_max_fine_entries = 0;
 size_t OtherRegionsTable::_mod_max_fine_entries_mask = 0;

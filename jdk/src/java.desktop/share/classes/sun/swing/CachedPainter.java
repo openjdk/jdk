@@ -25,7 +25,6 @@
 package sun.swing;
 
 import java.awt.*;
-import java.awt.geom.AffineTransform;
 import java.awt.image.*;
 import java.util.*;
 
@@ -60,7 +59,11 @@ public abstract class CachedPainter {
         synchronized(CachedPainter.class) {
             ImageCache cache = cacheMap.get(key);
             if (cache == null) {
-                cache = new ImageCache(1);
+                if (key == PainterMultiResolutionCachedImage.class) {
+                    cache = new ImageCache(32);
+                } else {
+                    cache = new ImageCache(1);
+                }
                 cacheMap.put(key, cache);
             }
             return cache;
@@ -271,7 +274,8 @@ public abstract class CachedPainter {
         public Image getResolutionVariant(double destWidth, double destHeight) {
             int w = (int) Math.ceil(destWidth);
             int h = (int) Math.ceil(destHeight);
-            return getImage(this, c, baseWidth, baseHeight, w, h, args);
+            return getImage(PainterMultiResolutionCachedImage.class,
+                    c, baseWidth, baseHeight, w, h, args);
         }
 
         @Override

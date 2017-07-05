@@ -2437,6 +2437,10 @@ public class TIFFImageWriter extends ImageWriter {
 
         clearAbortRequest();
         processImageStarted(0);
+        if (abortRequested()) {
+            processWriteAborted();
+            return;
+        }
 
         // Optionally write the header.
         if (writeHeader) {
@@ -2587,9 +2591,6 @@ public class TIFFImageWriter extends ImageWriter {
                         nextSpace = pos + byteCount;
                     }
 
-                    pixelsDone += tileRect.width*tileRect.height;
-                    processImageProgress(100.0F*pixelsDone/totalPixels);
-
                     // Fill in the offset and byte count for the file
                     stream.mark();
                     stream.seek(stripOrTileOffsetsPosition);
@@ -2600,13 +2601,15 @@ public class TIFFImageWriter extends ImageWriter {
                     stream.writeInt(byteCount);
                     stripOrTileByteCountsPosition += 4;
                     stream.reset();
+
+                    pixelsDone += tileRect.width*tileRect.height;
+                    processImageProgress(100.0F*pixelsDone/totalPixels);
+                    if (abortRequested()) {
+                        processWriteAborted();
+                        return;
+                    }
                 } catch (IOException e) {
                     throw new IIOException("I/O error writing TIFF file!", e);
-                }
-
-                if (abortRequested()) {
-                    processWriteAborted();
-                    return;
                 }
             }
         }

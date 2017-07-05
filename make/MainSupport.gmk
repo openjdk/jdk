@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -88,9 +88,7 @@ define Clean-native
 	@$(PRINTF) "\n" $(LOG_DEBUG)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/native/$(strip $1)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_libs/$(strip $1)
-	$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_libs-stripped/$(strip $1)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_cmds/$(strip $1)
-	$(RM) -r $(SUPPORT_OUTPUTDIR)/modules_cmds-stripped/$(strip $1)
 	@$(PRINTF) " done\n"
 endef
 

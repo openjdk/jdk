@@ -179,6 +179,7 @@ void FileMapInfo::FileMapHeader::populate(FileMapInfo* mapinfo, size_t alignment
   _classpath_entry_table_size = mapinfo->_classpath_entry_table_size;
   _classpath_entry_table = mapinfo->_classpath_entry_table;
   _classpath_entry_size = mapinfo->_classpath_entry_size;
+  _num_patch_mod_prefixes = ClassLoader::num_patch_mod_prefixes();
 
   // The following fields are for sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -911,11 +912,6 @@ bool FileMapInfo::FileMapHeader::validate() {
     return false;
   }
 
-  if (Arguments::get_patch_mod_prefix() != NULL) {
-    FileMapInfo::fail_continue("The shared archive file cannot be used with --patch-module.");
-    return false;
-  }
-
   if (!Arguments::has_jimage()) {
     FileMapInfo::fail_continue("The shared archive file cannot be used with an exploded module build.");
     return false;
@@ -950,6 +946,23 @@ bool FileMapInfo::FileMapHeader::validate() {
                   _compact_strings ? "enabled" : "disabled",
                   CompactStrings   ? "enabled" : "disabled");
     return false;
+  }
+
+  // Check if there is a mismatch in --patch-module entry counts between dump time and run time.
+  // More checks will be performed on individual --patch-module entry in the
+  // SharedPathsMiscInfo::check() function.
+  GrowableArray<ModulePatchPath*>* patch_mod_args = Arguments::get_patch_mod_prefix();
+  if (patch_mod_args != NULL) {
+    if (_num_patch_mod_prefixes == 0) {
+      FileMapInfo::fail_stop("--patch-module found in run time but none was specified in dump time");
+    }
+    if (patch_mod_args->length() != _num_patch_mod_prefixes) {
+      FileMapInfo::fail_stop("mismatched --patch-module entry counts between dump time and run time");
+    }
+  } else {
+    if (_num_patch_mod_prefixes > 0) {
+      FileMapInfo::fail_stop("--patch-module specified in dump time but none was specified in run time");
+    }
   }
 
   return true;

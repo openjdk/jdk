@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -438,21 +438,7 @@ public class BasicRadioButtonUI extends BasicToggleButtonUI
         // Check if the next object to gain focus belongs
         // to the button group or not
         Component getFocusTransferBaseComponent(boolean next){
-            Component focusBaseComp = activeBtn;
-            Container container = focusBaseComp.getFocusCycleRootAncestor();
-            if (container != null) {
-                FocusTraversalPolicy policy = container.getFocusTraversalPolicy();
-                Component comp = next ? policy.getComponentAfter(container, activeBtn)
-                                      : policy.getComponentBefore(container, activeBtn);
-
-                // If next component in the button group, use last/first button as base focus
-                // otherwise, use the activeBtn as the base focus
-                if (containsInGroup(comp)) {
-                    focusBaseComp = next ? lastBtn : firstBtn;
-                }
-            }
-
-            return focusBaseComp;
+            return firstBtn;
         }
 
         boolean getButtonGroupInfo() {

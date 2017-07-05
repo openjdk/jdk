@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -429,8 +429,8 @@ int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP)
                 return -1;
             }
 
-            curr->addr.him4.sin_family = AF_INET;
-            curr->addr.him4.sin_addr.s_addr = tableP->table[i].dwAddr;
+            curr->addr.sa4.sin_family = AF_INET;
+            curr->addr.sa4.sin_addr.s_addr = tableP->table[i].dwAddr;
             /*
              * Get netmask / broadcast address
              */
@@ -447,11 +447,11 @@ int enumAddresses_win(JNIEnv *env, netif *netifP, netaddr **netaddrPP)
                * to 0 or 1.
                * Yes, I know it's stupid, but what can I say, it's MSFTs API.
                */
-              curr->brdcast.him4.sin_family = AF_INET;
+              curr->brdcast.sa4.sin_family = AF_INET;
               if (tableP->table[i].dwBCastAddr == 1)
-                curr->brdcast.him4.sin_addr.s_addr = (tableP->table[i].dwAddr & tableP->table[i].dwMask) | (0xffffffff ^ tableP->table[i].dwMask);
+                curr->brdcast.sa4.sin_addr.s_addr = (tableP->table[i].dwAddr & tableP->table[i].dwMask) | (0xffffffff ^ tableP->table[i].dwMask);
               else
-                curr->brdcast.him4.sin_addr.s_addr = (tableP->table[i].dwAddr & tableP->table[i].dwMask);
+                curr->brdcast.sa4.sin_addr.s_addr = (tableP->table[i].dwAddr & tableP->table[i].dwMask);
               mask = ntohl(tableP->table[i].dwMask);
               curr->mask = 0;
               while (mask) {
@@ -584,7 +584,7 @@ jobject createNetworkInterface
     while (addrs != NULL) {
         jobject iaObj, ia2Obj;
         jobject ibObj = NULL;
-        if (addrs->addr.him.sa_family == AF_INET) {
+        if (addrs->addr.sa.sa_family == AF_INET) {
             iaObj = (*env)->NewObject(env, ia4_class, ia4_ctrID);
             if (iaObj == NULL) {
                 free_netaddr(netaddrP);
@@ -592,7 +592,7 @@ jobject createNetworkInterface
             }
             /* default ctor will set family to AF_INET */
 
-            setInetAddress_addr(env, iaObj, ntohl(addrs->addr.him4.sin_addr.s_addr));
+            setInetAddress_addr(env, iaObj, ntohl(addrs->addr.sa4.sin_addr.s_addr));
             if (addrs->mask != -1) {
               ibObj = (*env)->NewObject(env, ni_ibcls, ni_ibctrID);
               if (ibObj == NULL) {
@@ -605,7 +605,7 @@ jobject createNetworkInterface
                 free_netaddr(netaddrP);
                 return NULL;
               }
-              setInetAddress_addr(env, ia2Obj, ntohl(addrs->brdcast.him4.sin_addr.s_addr));
+              setInetAddress_addr(env, ia2Obj, ntohl(addrs->brdcast.sa4.sin_addr.s_addr));
               (*env)->SetObjectField(env, ibObj, ni_ibbroadcastID, ia2Obj);
               (*env)->SetShortField(env, ibObj, ni_ibmaskID, addrs->mask);
               (*env)->SetObjectArrayElement(env, bindsArr, bind_index++, ibObj);
@@ -614,12 +614,12 @@ jobject createNetworkInterface
             int scope;
             iaObj = (*env)->NewObject(env, ia6_class, ia6_ctrID);
             if (iaObj) {
-                jboolean ret = setInet6Address_ipaddress(env, iaObj,  (jbyte *)&(addrs->addr.him6.sin6_addr.s6_addr));
+                jboolean ret = setInet6Address_ipaddress(env, iaObj,  (jbyte *)&(addrs->addr.sa6.sin6_addr.s6_addr));
                 if (ret == JNI_FALSE) {
                     return NULL;
                 }
 
-                scope = addrs->addr.him6.sin6_scope_id;
+                scope = addrs->addr.sa6.sin6_scope_id;
                 if (scope != 0) { /* zero is default value, no need to set */
                     setInet6Address_scopeid(env, iaObj, scope);
                     setInet6Address_scopeifname(env, iaObj, netifObj);
@@ -795,7 +795,7 @@ JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0
         addrP = addrList;
 
         while (addrP != NULL) {
-            if ((unsigned long)addr == ntohl(addrP->addr.him4.sin_addr.s_addr)) {
+            if ((unsigned long)addr == ntohl(addrP->addr.sa4.sin_addr.s_addr)) {
                 break;
             }
             addrP = addrP->next;

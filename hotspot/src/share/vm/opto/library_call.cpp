@@ -320,6 +320,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_montgomeryMultiply();
   bool inline_montgomerySquare();
   bool inline_vectorizedMismatch();
+  bool inline_fma(vmIntrinsics::ID id);
 
   bool inline_profileBoolean();
   bool inline_isCompileConstant();
@@ -828,6 +829,10 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_hasNegatives:
     return inline_hasNegatives();
+
+  case vmIntrinsics::_fmaD:
+  case vmIntrinsics::_fmaF:
+    return inline_fma(intrinsic_id());
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
@@ -6696,6 +6701,35 @@ Node* LibraryCallKit::inline_digestBase_implCompressMB_predicate(int predicate) 
   Node* instof_false = generate_guard(bool_instof, NULL, PROB_MIN);
 
   return instof_false;  // even if it is NULL
+}
+
+//-------------inline_fma-----------------------------------
+bool LibraryCallKit::inline_fma(vmIntrinsics::ID id) {
+  Node *a = NULL;
+  Node *b = NULL;
+  Node *c = NULL;
+  Node* result = NULL;
+  switch (id) {
+  case vmIntrinsics::_fmaD:
+    assert(callee()->signature()->size() == 6, "fma has 3 parameters of size 2 each.");
+    // no receiver since it is static method
+    a = round_double_node(argument(0));
+    b = round_double_node(argument(2));
+    c = round_double_node(argument(4));
+    result = _gvn.transform(new FmaDNode(control(), a, b, c));
+    break;
+  case vmIntrinsics::_fmaF:
+    assert(callee()->signature()->size() == 3, "fma has 3 parameters of size 1 each.");
+    a = argument(0);
+    b = argument(1);
+    c = argument(2);
+    result = _gvn.transform(new FmaFNode(control(), a, b, c));
+    break;
+  default:
+    fatal_unexpected_iid(id);  break;
+  }
+  set_result(result);
+  return true;
 }
 
 bool LibraryCallKit::inline_profileBoolean() {

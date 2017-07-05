@@ -67,6 +67,11 @@ public class TestStringObjectInitialization {
         add(s + Arrays.toString(sArray) + " const ");
     }
 
+    public void reset() {
+        // Reset string to avoid OOMEs
+        myString = "";
+    }
+
     private static class Runner implements Runnable {
         private TestStringObjectInitialization test;
 
@@ -76,8 +81,9 @@ public class TestStringObjectInitialization {
 
         public void run() {
             String[] array = {"a", "b", "c"};
-            for (int i = 0; i < 10000; ++i) {
+            for (int i = 0; i < 100_000; ++i) {
                 test.run("a", array);
+                test.reset();
             }
         }
     }

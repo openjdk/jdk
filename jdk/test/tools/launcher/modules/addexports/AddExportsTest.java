@@ -202,7 +202,7 @@ public class AddExportsTest {
 
 
     /**
-     * --add-exports can only be specified once
+     * --add-exports allows duplicates
      */
     public void testWithDuplicateOption() throws Exception {
 
@@ -212,10 +212,40 @@ public class AddExportsTest {
                                "-version")
                 .outputTo(System.out)
                 .errorTo(System.out)
-                .shouldContain("specified more than once")
                 .getExitValue();
 
-        assertTrue(exitValue != 0);
+        assertTrue(exitValue == 0);
+    }
+
+
+    /**
+     * Exercise --add-exports with unknown values.  Warning is emitted.
+     */
+    @Test(dataProvider = "unknownvalues")
+    public void testWithUnknownValue(String value, String ignore) throws Exception {
+
+        //  --add-exports $VALUE -version
+        int exitValue =
+            executeTestJava("--add-exports", value,
+                            "-version")
+                .stderrShouldMatch("WARNING: .*.monkey.*")
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .getExitValue();
+
+        assertTrue(exitValue == 0);
+    }
+
+    @DataProvider(name = "unknownvalues")
+    public Object[][] unknownValues() {
+        return new Object[][]{
+
+            { "java.base/jdk.internal.misc=sun.monkey", null }, // unknown target
+            { "java.monkey/sun.monkey=ALL-UNNAMED",     null }, // unknown module
+            { "java.base/sun.monkey=ALL-UNNAMED",       null }, // unknown package
+            { "java.monkey/sun.monkey=ALL-UNNAMED",     null }, // unknown module/package
+
+        };
     }
 
 
@@ -241,10 +271,6 @@ public class AddExportsTest {
         return new Object[][]{
 
             { "java.base/jdk.internal.misc",            null }, // missing target
-            { "java.base/jdk.internal.misc=sun.monkey", null }, // unknown target
-            { "java.monkey/sun.monkey=ALL-UNNAMED",     null }, // unknown module
-            { "java.base/sun.monkey=ALL-UNNAMED",       null }, // unknown package
-            { "java.monkey/sun.monkey=ALL-UNNAMED",     null }, // unknown module/package
             { "java.base=ALL-UNNAMED",                  null }, // missing package
             { "java.base/=ALL-UNNAMED",                 null }  // missing package
 

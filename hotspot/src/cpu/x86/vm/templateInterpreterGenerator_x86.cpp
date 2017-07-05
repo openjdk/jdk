@@ -55,7 +55,7 @@
 // Run with +PrintInterpreter to get the VM to print out the size.
 // Max size with JVMTI
 #ifdef AMD64
-int TemplateInterpreter::InterpreterCodeSize = 256 * 1024;
+int TemplateInterpreter::InterpreterCodeSize = JVMCI_ONLY(268) NOT_JVMCI(256) * 1024;
 #else
 int TemplateInterpreter::InterpreterCodeSize = 224 * 1024;
 #endif // AMD64
