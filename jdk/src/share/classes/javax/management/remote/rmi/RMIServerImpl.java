@@ -474,6 +474,15 @@ public abstract class RMIServerImpl implements Closeable, RMIServer {
         String clientHost = "";
         try {
             clientHost = RemoteServer.getClientHost();
+            /*
+             * According to the rules specified in the javax.management.remote
+             * package description, a numeric IPv6 address (detected by the
+             * presence of otherwise forbidden ":" character) forming a part
+             * of the connection id must be enclosed in square brackets.
+             */
+            if (clientHost.contains(":")) {
+                clientHost = "[" + clientHost + "]";
+            }
         } catch (ServerNotActiveException e) {
             logger.trace("makeConnectionId", "getClientHost", e);
         }

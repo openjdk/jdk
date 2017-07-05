@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -494,7 +494,7 @@ public:
 };
 
 // Represents a set of free small integer ids.
-class FreeIdSet {
+class FreeIdSet : public CHeapObj<mtInternal> {
   enum {
     end_of_list = -1,
     claimed = -2

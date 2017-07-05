@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -37,14 +37,42 @@
  * this sample code.
  */
 
-
 /*
  * Concurrency utilities for JavaScript. These are based on
- * java.lang and java.util.concurrent API. The following functions 
+ * java.lang and java.util.concurrent API. The following functions
  * provide a simpler API for scripts. Instead of directly using java.lang
  * and java.util.concurrent classes, scripts can use functions and
- * objects exported from here. 
+ * objects exported from here.
  */
+
+// shortcut for j.u.c lock classes
+var Lock = java.util.concurrent.locks.ReentrantLock;
+var RWLock = java.util.concurrent.locks.ReentrantReadWriteLock;
+
+// check if there is a build in sync function, define one if missing
+if (typeof sync === "undefined") {
+    var sync = function(func, obj) {
+        if (arguments.length < 1 || arguments.length > 2 ) {
+            throw "sync(function [,object]) parameter count mismatch";
+        }
+
+        var syncobj = (arguments.length == 2 ? obj : this);
+
+        if (!syncobj._syncLock) {
+            syncobj._syncLock = new Lock();
+        }
+
+        return function() {
+            syncobj._syncLock.lock();
+            try {
+                func.apply(null, arguments);
+            } finally {
+                syncobj._syncLock.unlock();
+            }
+        };
+    };
+    sync.docString = "synchronize a function, optionally on an object";
+}
 
 /**
  * Wrapper for java.lang.Object.wait
@@ -58,7 +86,6 @@ function wait(object) {
 }
 wait.docString = "convenient wrapper for java.lang.Object.wait method";
 
-
 /**
  * Wrapper for java.lang.Object.notify
  *
@@ -70,7 +97,6 @@ function notify(object) {
     notifyMethod.invoke(object, null);
 }
 notify.docString = "convenient wrapper for java.lang.Object.notify method";
-
 
 /**
  * Wrapper for java.lang.Object.notifyAll
@@ -84,7 +110,6 @@ function notifyAll(object)  {
 }
 notifyAll.docString = "convenient wrapper for java.lang.Object.notifyAll method";
 
-
 /**
  * Creates a java.lang.Runnable from a given script
  * function.
@@ -97,7 +122,7 @@ Function.prototype.runnable = function() {
             func.apply(null, args);
         }
     }
-}
+};
 
 /**
  * Executes the function on a new Java Thread.
@@ -106,7 +131,7 @@ Function.prototype.thread = function() {
     var t = new java.lang.Thread(this.runnable.apply(this, arguments));
     t.start();
     return t;
-}
+};
 
 /**
  * Executes the function on a new Java daemon Thread.
@@ -116,7 +141,7 @@ Function.prototype.daemon = function() {
     t.setDaemon(true);
     t.start();
     return t;
-}
+};
 
 /**
  * Creates a java.util.concurrent.Callable from a given script
@@ -128,7 +153,7 @@ Function.prototype.callable = function() {
     return new java.util.concurrent.Callable() {
           call: function() { return func.apply(null, args); }
     }
-}
+};
 
 /**
  * Registers the script function so that it will be called exit.
@@ -137,10 +162,10 @@ Function.prototype.atexit = function () {
     var args = arguments;
     java.lang.Runtime.getRuntime().addShutdownHook(
          new java.lang.Thread(this.runnable.apply(this, args)));
-}
+};
 
 /**
- * Executes the function asynchronously.  
+ * Executes the function asynchronously.
  *
  * @return a java.util.concurrent.FutureTask
  */
@@ -152,12 +177,8 @@ Function.prototype.future = (function() {
     (function() { theExecutor.shutdown(); }).atexit();
     return function() {
         return theExecutor.submit(this.callable.apply(this, arguments));
-    }
+    };
 })();
-
-// shortcut for j.u.c lock classes
-var Lock = java.util.concurrent.locks.ReentrantLock;
-var RWLock = java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * Executes a function after acquiring given lock. On return,
@@ -179,7 +200,7 @@ Function.prototype.sync = function (lock) {
     } finally {
         lock.unlock();
     }
-}
+};
 
 /**
  * Causes current thread to sleep for specified
@@ -193,30 +214,29 @@ function sleep(interval) {
 sleep.docString = "wrapper for java.lang.Thread.sleep method";
 
 /**
- * Schedules a task to be executed once in
- * every N milliseconds specified. 
+ * Schedules a task to be executed once in N milliseconds specified.
  *
  * @param callback function or expression to evaluate
  * @param interval in milliseconds to sleep
  * @return timeout ID (which is nothing but Thread instance)
  */
 function setTimeout(callback, interval) {
-    if (! (callback instanceof Function)) {
+    if (! (callback instanceof Function) && typeof callback !== "function") {
         callback = new Function(callback);
     }
 
     // start a new thread that sleeps given time
     // and calls callback in an infinite loop
     return (function() {
-         while (true) {
+         try {
              sleep(interval);
-             callback();
-         }
+         } catch (x) { }
+         callback();
     }).daemon();
 }
-setTimeout.docString = "calls given callback once after specified interval"
+setTimeout.docString = "calls given callback once after specified interval";
 
-/** 
+/**
  * Cancels a timeout set earlier.
  * @param tid timeout ID returned from setTimeout
  */
@@ -224,23 +244,62 @@ function clearTimeout(tid) {
     // we just interrupt the timer thread
     tid.interrupt();
 }
+clearTimeout.docString = "interrupt a setTimeout timer";
 
 /**
- * Simple access to thread local storage. 
+ * Schedules a task to be executed once in
+ * every N milliseconds specified.
+ *
+ * @param callback function or expression to evaluate
+ * @param interval in milliseconds to sleep
+ * @return timeout ID (which is nothing but Thread instance)
+ */
+function setInterval(callback, interval) {
+    if (! (callback instanceof Function) && typeof callback !== "function") {
+        callback = new Function(callback);
+    }
+
+    // start a new thread that sleeps given time
+    // and calls callback in an infinite loop
+    return (function() {
+         while (true) {
+             try {
+                 sleep(interval);
+             } catch (x) {
+                 break;
+             }
+             callback();
+         }
+    }).daemon();
+}
+setInterval.docString = "calls given callback every specified interval";
+
+/**
+ * Cancels a timeout set earlier.
+ * @param tid timeout ID returned from setTimeout
+ */
+function clearInterval(tid) {
+    // we just interrupt the timer thread
+    tid.interrupt();
+}
+clearInterval.docString = "interrupt a setInterval timer";
+
+/**
+ * Simple access to thread local storage.
  *
  * Script sample:
  *
  *  __thread.x = 44;
- *  function f() { 
- *      __thread.x = 'hello'; 
- *      print(__thread.x); 
+ *  function f() {
+ *      __thread.x = 'hello';
+ *      print(__thread.x);
  *  }
  *  f.thread();       // prints 'hello'
  * print(__thread.x); // prints 44 in main thread
  */
 var __thread = (function () {
     var map = new Object();
-    return new JSAdapter() {
+    return new JSAdapter({
         __has__: function(name) {
             return map[name] != undefined;
         },
@@ -263,8 +322,8 @@ var __thread = (function () {
         __delete__: function(name) {
             if (map[name] != undefined) {
                 map[name].set(null);
-            }            
+            }
         }
-    }
+    });
 })();
 

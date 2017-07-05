@@ -316,8 +316,8 @@ public class MethodData extends Metadata {
     int iic = method.interpreterInvocationCount();
     if (mileage < iic)  mileage = iic;
 
-    long ic = method.getInvocationCounter();
-    long bc = method.getBackedgeCounter();
+    long ic = method.getInvocationCount();
+    long bc = method.getBackedgeCount();
 
     long icval = ic >> 3;
     if ((ic & 4) != 0) icval += CompileThreshold;

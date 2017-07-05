@@ -90,7 +90,6 @@ public:
   void classes_do(void f(Klass*));
   void classes_do(void f(Klass*, TRAPS), TRAPS);
   void classes_do(void f(Klass*, ClassLoaderData*));
-  void classes_do(void f(Klass*, ClassLoaderData*, TRAPS), TRAPS);
 
   void methods_do(void f(Method*));
 

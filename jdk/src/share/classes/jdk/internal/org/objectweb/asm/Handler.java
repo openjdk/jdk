@@ -101,9 +101,12 @@ class Handler {
      * Removes the range between start and end from the given exception
      * handlers.
      *
-     * @param h an exception handler list.
-     * @param start the start of the range to be removed.
-     * @param end the end of the range to be removed. Maybe null.
+     * @param h
+     *            an exception handler list.
+     * @param start
+     *            the start of the range to be removed.
+     * @param end
+     *            the end of the range to be removed. Maybe null.
      * @return the exception handler list with the start-end range removed.
      */
     static Handler remove(Handler h, Label start, Label end) {

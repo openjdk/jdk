@@ -45,6 +45,7 @@ class Constants {
         1.5 to 1.5.X 49,0
         1.6 to 1.5.x 50,0
         1.7 to 1.6.x 51,0
+        1.8 to 1.7.x 52,0
     */
 
     public final static Package.Version JAVA_MIN_CLASS_VERSION =
@@ -161,7 +162,9 @@ class Constants {
         METHOD_ATTR_RuntimeInvisibleParameterAnnotations = 24,
         CLASS_ATTR_ClassFile_version = 24,
         METHOD_ATTR_AnnotationDefault = 25,
-        METHOD_ATTR_MethodParameters = 26,
+        METHOD_ATTR_MethodParameters = 26,           // JDK8
+        X_ATTR_RuntimeVisibleTypeAnnotations = 27,   // JDK8
+        X_ATTR_RuntimeInvisibleTypeAnnotations = 28, // JDK8
         CODE_ATTR_StackMapTable = 0,  // new in Java 6
         CODE_ATTR_LineNumberTable = 1,
         CODE_ATTR_LocalVariableTable = 2,

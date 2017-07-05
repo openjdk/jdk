@@ -1,0 +1,12 @@
+Path: .
+Working Copy Root Path: /w/lthudson/hudson-data/jobs/objectweb-cr-pull/workspace/ASM_5_FUTURE
+URL: svn://svn.forge.objectweb.org/svnroot/asm/branches/ASM_5_FUTURE
+Repository Root: svn://svn.forge.objectweb.org/svnroot/asm
+Repository UUID: 271bd773-ee82-43a6-9b2b-1890ed8ce7f9
+Revision: 1681
+Node Kind: directory
+Schedule: normal
+Last Changed Author: forax
+Last Changed Rev: 1681
+Last Changed Date: 2013-04-01 11:28:58 -0700 (Mon, 01 Apr 2013)
+

@@ -170,7 +170,8 @@ import sun.util.locale.provider.LocaleResources;
  * <tr><th>2009-01-05</th><td>Monday</td>
  *  <td>Week 2 of 2009</td><td>Week 1 of 2009</td></tr>
  * </table>
- * <h3>Specification for implementors</h3>
+ *
+ * @implSpec
  * This class is immutable and thread-safe.
  *
  * @since 1.8
@@ -200,8 +201,6 @@ public final class WeekFields implements Serializable {
      * Note that the first week may start in the previous calendar year.
      * Note also that the first few days of a calendar year may be in the
      * week-based-year corresponding to the previous calendar year.
-     * <p>
-     * This field is an immutable and thread-safe singleton.
      */
     public static final WeekFields ISO = new WeekFields(DayOfWeek.MONDAY, 4);
 
@@ -211,8 +210,6 @@ public final class WeekFields implements Serializable {
      * <p>
      * Defined as starting on Sunday and with a minimum of 1 day in the month.
      * This week definition is in use in the US and other European countries.
-     * <p>
-     * This field is an immutable and thread-safe singleton.
      */
     public static final WeekFields SUNDAY_START = WeekFields.of(DayOfWeek.SUNDAY, 1);
 
@@ -230,7 +227,7 @@ public final class WeekFields implements Serializable {
      * In that case, the week is set to the last week of the year
      * with the same day-of-week.
      * <p>
-     * This field is an immutable and thread-safe singleton.
+     * This unit is an immutable and thread-safe singleton.
      */
     public static final TemporalUnit WEEK_BASED_YEARS = IsoFields.WEEK_BASED_YEARS;
 
@@ -247,22 +244,18 @@ public final class WeekFields implements Serializable {
      * The minimal number of days in the first week.
      */
     private final int minimalDays;
-
     /**
      * The field used to access the computed DayOfWeek.
      */
     private transient final TemporalField dayOfWeek = ComputedDayOfField.ofDayOfWeekField(this);
-
     /**
      * The field used to access the computed WeekOfMonth.
      */
     private transient final TemporalField weekOfMonth = ComputedDayOfField.ofWeekOfMonthField(this);
-
     /**
      * The field used to access the computed WeekOfYear.
      */
     private transient final TemporalField weekOfYear = ComputedDayOfField.ofWeekOfYearField(this);
-
     /**
      * The field that represents the week-of-week-based-year.
      * <p>
@@ -271,7 +264,6 @@ public final class WeekFields implements Serializable {
      * This unit is an immutable and thread-safe singleton.
      */
     private transient final TemporalField weekOfWeekBasedYear = ComputedDayOfField.ofWeekOfWeekBasedYearField(this);
-
     /**
      * The field that represents the week-based-year.
      * <p>
@@ -281,6 +273,7 @@ public final class WeekFields implements Serializable {
      */
     private transient final TemporalField weekBasedYear = ComputedDayOfField.ofWeekBasedYearField(this);
 
+    //-----------------------------------------------------------------------
     /**
      * Obtains an instance of {@code WeekFields} appropriate for a locale.
      * <p>
@@ -359,8 +352,7 @@ public final class WeekFields implements Serializable {
         try {
             return WeekFields.of(firstDayOfWeek, minimalDays);
         } catch (IllegalArgumentException iae) {
-            throw new InvalidObjectException("Invalid serialized WeekFields: "
-                    + iae.getMessage());
+            throw new InvalidObjectException("Invalid serialized WeekFields: " + iae.getMessage());
         }
     }
 
@@ -394,21 +386,24 @@ public final class WeekFields implements Serializable {
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a field to access the day of week,
-     * computed based on this WeekFields.
+     * Returns a field to access the day of week based on this {@code WeekFields}.
      * <p>
-     * The days of week are numbered from 1 to 7.
-     * Day number 1 is the {@link #getFirstDayOfWeek() first day-of-week}.
+     * This is similar to {@link ChronoField#DAY_OF_WEEK} but uses values for
+     * the day-of-week based on this {@code WeekFields}.
+     * The days are numbered from 1 to 7 where the
+     * {@link #getFirstDayOfWeek() first day-of-week} is assigned the value 1.
+     * <p>
+     * For example, if the first day-of-week is Sunday, then that will have the
+     * value 1, with other days ranging from Monday as 2 to Saturday as 7.
      *
-     * @return the field for day-of-week using this week definition, not null
+     * @return a field providing access to the day-of-week with localized numbering, not null
      */
     public TemporalField dayOfWeek() {
         return dayOfWeek;
     }
 
     /**
-     * Returns a field to access the week of month,
-     * computed based on this WeekFields.
+     * Returns a field to access the week of month based on this {@code WeekFields}.
      * <p>
      * This represents the concept of the count of weeks within the month where weeks
      * start on a fixed day-of-week, such as Monday.
@@ -426,15 +421,15 @@ public final class WeekFields implements Serializable {
      * - if the 5th day of the month is a Monday, week two starts on the 5th and the 1st to 4th is in week one<br>
      * <p>
      * This field can be used with any calendar system.
-     * @return a TemporalField to access the WeekOfMonth, not null
+     *
+     * @return a field providing access to the week-of-month, not null
      */
     public TemporalField weekOfMonth() {
         return weekOfMonth;
     }
 
     /**
-     * Returns a field to access the week of year,
-     * computed based on this WeekFields.
+     * Returns a field to access the week of year based on this {@code WeekFields}.
      * <p>
      * This represents the concept of the count of weeks within the year where weeks
      * start on a fixed day-of-week, such as Monday.
@@ -452,15 +447,15 @@ public final class WeekFields implements Serializable {
      * - if the 5th day of the year is a Monday, week two starts on the 5th and the 1st to 4th is in week one<br>
      * <p>
      * This field can be used with any calendar system.
-     * @return a TemporalField to access the WeekOfYear, not null
+     *
+     * @return a field providing access to the week-of-year, not null
      */
     public TemporalField weekOfYear() {
         return weekOfYear;
     }
 
     /**
-     * Returns a field to access the week of a week-based-year,
-     * computed based on this WeekFields.
+     * Returns a field to access the week of a week-based-year based on this {@code WeekFields}.
      * <p>
      * This represents the concept of the count of weeks within the year where weeks
      * start on a fixed day-of-week, such as Monday and each week belongs to exactly one year.
@@ -482,15 +477,15 @@ public final class WeekFields implements Serializable {
      *   the 1st to 4th is in week one<br>
      * <p>
      * This field can be used with any calendar system.
-     * @return a TemporalField to access the week of week-based-year, not null
+     *
+     * @return a field providing access to the week-of-week-based-year, not null
      */
     public TemporalField weekOfWeekBasedYear() {
         return weekOfWeekBasedYear;
     }
 
     /**
-     * Returns a field to access the year of a week-based-year,
-     * computed based on this WeekFields.
+     * Returns a field to access the year of a week-based-year based on this {@code WeekFields}.
      * <p>
      * This represents the concept of the year where weeks start on a fixed day-of-week,
      * such as Monday and each week belongs to exactly one year.
@@ -504,14 +499,16 @@ public final class WeekFields implements Serializable {
      * is in the last week of the previous year.
      * <p>
      * This field can be used with any calendar system.
-     * @return a TemporalField to access the year of week-based-year, not null
+     *
+     * @return a field providing access to the week-based-year, not null
      */
     public TemporalField weekBasedYear() {
         return weekBasedYear;
     }
 
+    //-----------------------------------------------------------------------
     /**
-     * Checks if this WeekFields is equal to the specified object.
+     * Checks if this {@code WeekFields} is equal to the specified object.
      * <p>
      * The comparison is based on the entire state of the rules, which is
      * the first day-of-week and minimal days.
@@ -531,7 +528,7 @@ public final class WeekFields implements Serializable {
     }
 
     /**
-     * A hash code for these rules.
+     * A hash code for this {@code WeekFields}.
      *
      * @return a suitable hash code
      */
@@ -542,7 +539,7 @@ public final class WeekFields implements Serializable {
 
     //-----------------------------------------------------------------------
     /**
-     * A string representation of this definition.
+     * A string representation of this {@code WeekFields} instance.
      *
      * @return the string representation, not null
      */
@@ -957,7 +954,6 @@ public final class WeekFields implements Serializable {
         /**
          * Map the field range to a week range of a week year.
          * @param temporal  the temporal
-         * @param field  the field to get the range of
          * @return the ValueRange with the range adjusted to weeks.
          */
         private ValueRange rangeWeekOfWeekBasedYear(TemporalAccessor temporal) {

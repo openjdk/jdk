@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,14 +239,25 @@ public final class TimeZoneNameUtility {
 
             for (int i = 1; i <= 4; i ++) {
                 names[i] = tznp.getDisplayName(id, i>=3, i%2, locale);
-                if (i >= 3 && names[i] == null) {
-                    names[i] = names[i-2];
+
+                if (names[i] == null) {
+                    switch (i) {
+                    case 1:
+                        // this id seems not localized by this provider
+                        return null;
+                    case 2:
+                    case 4:
+                        // If the display name for SHORT is not supplied,
+                        // copy the LONG name.
+                        names[i] = names[i-1];
+                        break;
+                    case 3:
+                        // If the display name for DST is not supplied,
+                        // copy the "standard" name.
+                        names[3] = names[1];
+                        break;
                 }
             }
-
-            if (names[1] == null) {
-                // this id seems not localized by this provider
-                names = null;
             }
 
             return names;

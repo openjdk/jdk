@@ -32,9 +32,20 @@
 #ifndef _GSSAPI_H_
 #define _GSSAPI_H_
 
+#if defined(__MACH__) && defined(__APPLE__)
+#       include <TargetConditionals.h>
+#       if TARGET_RT_MAC_CFM
+#               error "Use KfM 4.0 SDK headers for CFM compilation."
+#       endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+#if TARGET_OS_MAC
+#    pragma pack(push,2)
+#endif
 
 /*
  * First, include stddef.h to get size_t defined.
@@ -670,6 +681,10 @@ OM_uint32 gss_canonicalize_name(
         const gss_OID,          /* mech_type */
         gss_name_t *            /* output_name */
 );
+
+#if TARGET_OS_MAC
+#    pragma pack(pop)
+#endif
 
 #ifdef __cplusplus
 }

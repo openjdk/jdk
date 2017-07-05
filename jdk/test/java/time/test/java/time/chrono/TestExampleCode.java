@@ -109,21 +109,20 @@ public class TestExampleCode {
     }
 
     //-----------------------------------------------------------------------
-    // Data provider for Hijrah Variant names
+    // Data provider for Hijrah Type names
     //-----------------------------------------------------------------------
-    @DataProvider(name = "HijrahVariantNames")
+    @DataProvider(name = "HijrahTypeNames")
     Object[][] data_of_ummalqura() {
         return new Object[][]{
-            { "Hijrah-umalqura", "islamic", "umalqura"},
+            { "Hijrah-umalqura", "islamic-umalqura"},
         };
     }
 
-    @Test(dataProvider= "HijrahVariantNames")
-    public void test_HijrahVariantViaLocale(String calendarId, String calendarType, String variant) {
+    @Test(dataProvider= "HijrahTypeNames")
+    public void test_HijrahTypeViaLocale(String calendarId, String calendarType) {
         Locale.Builder builder = new Locale.Builder();
         builder.setLanguage("en").setRegion("US");
         builder.setUnicodeLocaleKeyword("ca", calendarType);
-        builder.setUnicodeLocaleKeyword("cv", variant);
         Locale locale = builder.build();
         Chronology chrono = Chronology.ofLocale(locale);
         System.out.printf(" Locale language tag: %s, Chronology ID: %s, type: %s%n",
