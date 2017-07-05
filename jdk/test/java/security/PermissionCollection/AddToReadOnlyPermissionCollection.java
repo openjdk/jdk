@@ -107,11 +107,11 @@ public class AddToReadOnlyPermissionCollection {
 
     static void tryFilePC() throws Exception {
         try {
-            FilePermission p0 = new FilePermission("/home/foobar","read");
+            FilePermission p0 = new FilePermission("/tmp/foobar","read");
             PermissionCollection pc = p0.newPermissionCollection();
             pc.setReadOnly();   // this should lock out future adds
             //
-            FilePermission p1 = new FilePermission("/home/quux","read");
+            FilePermission p1 = new FilePermission("/tmp/quux","read");
             pc.add(p1);
             throw new
                 Exception("Failed...FilePermission added to readonly FilePermissionCollection.");

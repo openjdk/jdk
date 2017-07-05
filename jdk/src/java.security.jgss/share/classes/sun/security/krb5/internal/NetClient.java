@@ -31,10 +31,9 @@
 
 package sun.security.krb5.internal;
 
-import sun.misc.IOUtils;
-
 import java.io.*;
 import java.net.*;
+import sun.security.util.IOUtils;
 
 public abstract class NetClient implements AutoCloseable {
     public static NetClient getInstance(String protocol, String hostname, int port,
