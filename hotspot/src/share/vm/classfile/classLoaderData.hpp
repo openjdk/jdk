@@ -30,6 +30,7 @@
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "runtime/mutex.hpp"
+#include "trace/traceMacros.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_TRACE
@@ -78,7 +79,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static bool _metaspace_oom;
 
   static ClassLoaderData* add(Handle class_loader, bool anonymous, TRAPS);
-  static void post_class_unload_events(void);
+  static void post_class_unload_events();
  public:
   static ClassLoaderData* find_or_create(Handle class_loader, TRAPS);
   static void purge();
@@ -89,6 +90,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static void always_strong_oops_do(OopClosure* blk, KlassClosure* klass_closure, bool must_claim);
   // cld do
   static void cld_do(CLDClosure* cl);
+  static void cld_unloading_do(CLDClosure* cl);
   static void roots_cld_do(CLDClosure* strong, CLDClosure* weak);
   static void keep_alive_cld_do(CLDClosure* cl);
   static void always_strong_cld_do(CLDClosure* cl);
@@ -209,6 +211,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   // class loader for now).
   static Metaspace* _ro_metaspace;
   static Metaspace* _rw_metaspace;
+
+  TRACE_DEFINE_TRACE_ID_FIELD;
 
   void set_next(ClassLoaderData* next) { _next = next; }
   ClassLoaderData* next() const        { return _next; }
@@ -342,6 +346,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
     assert(_shared_class_loader_id <0, "cannot be assigned more than once");
     _shared_class_loader_id = id;
   }
+
+  TRACE_DEFINE_TRACE_ID_METHODS;
 };
 
 // An iterator that distributes Klasses to parallel worker threads.

@@ -152,7 +152,7 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
 
   // NB: if you do a whole-heap invalidation, the "usual invariant" defined
   // above no longer applies.
-  void invalidate(MemRegion mr, bool whole_heap = false);
+  void invalidate(MemRegion mr);
 
   void write_region_work(MemRegion mr)    { invalidate(mr); }
   void write_ref_array_work(MemRegion mr) { invalidate(mr); }

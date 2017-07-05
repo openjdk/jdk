@@ -49,6 +49,7 @@ import java.util.Set;
  */
 public final class AppRuntimeImageBuilder {
     private Path outputDir = null;
+    private Map<String, String> launchers = Collections.emptyMap();
     private List<Path> modulePath = null;
     private Set<String> addModules = null;
     private Set<String> limitModules = null;
@@ -60,6 +61,10 @@ public final class AppRuntimeImageBuilder {
 
     public void setOutputDir(Path value) {
         outputDir = value;
+    }
+
+    public void setLaunchers(Map<String, String> value) {
+        launchers = value;
     }
 
     public void setModulePath(List<Path> value) {
@@ -120,7 +125,7 @@ public final class AppRuntimeImageBuilder {
 
         // build the image
         Jlink.PluginsConfiguration pluginConfig = new Jlink.PluginsConfiguration(
-            plugins, new DefaultImageBuilder(outputDir), null);
+            plugins, new DefaultImageBuilder(outputDir, launchers), null);
         Jlink jlink = new Jlink();
         jlink.build(jlinkConfig, pluginConfig);
     }

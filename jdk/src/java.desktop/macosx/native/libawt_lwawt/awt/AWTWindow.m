@@ -430,7 +430,22 @@ AWT_ASSERT_APPKIT_THREAD;
     [super dealloc];
 }
 
-// Tests wheather the corresponding Java paltform window is visible or not
+// Tests whether window is blocked by modal dialog/window
+- (BOOL) isBlocked {
+    BOOL isBlocked = NO;
+    
+    JNIEnv *env = [ThreadUtilities getJNIEnv];
+    jobject platformWindow = [self.javaPlatformWindow jObjectWithEnv:env];
+    if (platformWindow != NULL) {
+        static JNF_MEMBER_CACHE(jm_isBlocked, jc_CPlatformWindow, "isBlocked", "()Z");
+        isBlocked = JNFCallBooleanMethod(env, platformWindow, jm_isBlocked) == JNI_TRUE ? YES : NO;
+        (*env)->DeleteLocalRef(env, platformWindow);
+    }
+    
+    return isBlocked;
+}
+
+// Tests whether the corresponding Java platform window is visible or not
 + (BOOL) isJavaPlatformWindowVisible:(NSWindow *)window {
     BOOL isVisible = NO;
 
@@ -454,8 +469,9 @@ AWT_ASSERT_APPKIT_THREAD;
 - (void) orderChildWindows:(BOOL)focus {
 AWT_ASSERT_APPKIT_THREAD;
 
-    if (self.isMinimizing) {
+    if (self.isMinimizing || [self isBlocked]) {
         // Do not perform any ordering, if iconify is in progress
+        // or the window is blocked by a modal window
         return;
     }
 
@@ -809,18 +825,20 @@ AWT_ASSERT_APPKIT_THREAD;
 
 - (void)sendEvent:(NSEvent *)event {
         if ([event type] == NSLeftMouseDown || [event type] == NSRightMouseDown || [event type] == NSOtherMouseDown) {
-            // Move parent windows to front and make sure that a child window is displayed
-            // in front of its nearest parent.
-            if (self.ownerWindow != nil) {
-                JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
-                jobject platformWindow = [self.javaPlatformWindow jObjectWithEnv:env];
-                if (platformWindow != NULL) {
-                    static JNF_MEMBER_CACHE(jm_orderAboveSiblings, jc_CPlatformWindow, "orderAboveSiblings", "()V");
-                    JNFCallVoidMethod(env,platformWindow, jm_orderAboveSiblings);
-                    (*env)->DeleteLocalRef(env, platformWindow);
+            if ([self isBlocked]) {
+                // Move parent windows to front and make sure that a child window is displayed
+                // in front of its nearest parent.
+                if (self.ownerWindow != nil) {
+                    JNIEnv *env = [ThreadUtilities getJNIEnvUncached];
+                    jobject platformWindow = [self.javaPlatformWindow jObjectWithEnv:env];
+                    if (platformWindow != NULL) {
+                        static JNF_MEMBER_CACHE(jm_orderAboveSiblings, jc_CPlatformWindow, "orderAboveSiblings", "()V");
+                        JNFCallVoidMethod(env,platformWindow, jm_orderAboveSiblings);
+                        (*env)->DeleteLocalRef(env, platformWindow);
+                    }
                 }
+                [self orderChildWindows:YES];
             }
-            [self orderChildWindows:YES];
 
             NSPoint p = [NSEvent mouseLocation];
             NSRect frame = [self.nsWindow frame];

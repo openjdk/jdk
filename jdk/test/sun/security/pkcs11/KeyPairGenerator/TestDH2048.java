@@ -27,7 +27,7 @@
  * @summary Ensure that DH key pairs can be generated for 512 - 8192 bits
  * @author Valerie Peng
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm TestDH2048
  * @run main/othervm TestDH2048 sm
  */

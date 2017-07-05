@@ -375,7 +375,7 @@ int LIR_Assembler::emit_exception_handler() {
   __ nop();
 
   // generate code for exception handler
-  address handler_base = __ start_a_stub(exception_handler_size);
+  address handler_base = __ start_a_stub(exception_handler_size());
   if (handler_base == NULL) {
     // not enough space left for the handler
     bailout("exception handler overflow");
@@ -393,7 +393,7 @@ int LIR_Assembler::emit_exception_handler() {
 
   // search an exception handler (r0: exception oop, r3: throwing pc)
   __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::handle_exception_from_callee_id)));  __ should_not_reach_here();
-  guarantee(code_offset() - offset <= exception_handler_size, "overflow");
+  guarantee(code_offset() - offset <= exception_handler_size(), "overflow");
   __ end_a_stub();
 
   return offset;
@@ -467,7 +467,7 @@ int LIR_Assembler::emit_deopt_handler() {
   __ nop();
 
   // generate code for exception handler
-  address handler_base = __ start_a_stub(deopt_handler_size);
+  address handler_base = __ start_a_stub(deopt_handler_size());
   if (handler_base == NULL) {
     // not enough space left for the handler
     bailout("deopt handler overflow");
@@ -478,7 +478,7 @@ int LIR_Assembler::emit_deopt_handler() {
 
   __ adr(lr, pc());
   __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
-  guarantee(code_offset() - offset <= deopt_handler_size, "overflow");
+  guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
   __ end_a_stub();
 
   return offset;
@@ -1055,7 +1055,7 @@ int LIR_Assembler::array_element_size(BasicType type) const {
   return exact_log2(elem_size);
 }
 
-void LIR_Assembler::emit_op3(LIR_Op3* op) {
+void LIR_Assembler::arithmetic_idiv(LIR_Op3* op, bool is_irem) {
   Register Rdividend = op->in_opr1()->as_register();
   Register Rdivisor  = op->in_opr2()->as_register();
   Register Rscratch  = op->in_opr3()->as_register();
@@ -1076,12 +1076,31 @@ void LIR_Assembler::emit_op3(LIR_Op3* op) {
     // convert division by a power of two into some shifts and logical operations
   }
 
-  if (op->code() == lir_irem) {
-    __ corrected_idivl(Rresult, Rdividend, Rdivisor, true, rscratch1);
-   } else if (op->code() == lir_idiv) {
-    __ corrected_idivl(Rresult, Rdividend, Rdivisor, false, rscratch1);
-  } else
-    ShouldNotReachHere();
+  __ corrected_idivl(Rresult, Rdividend, Rdivisor, is_irem, rscratch1);
+}
+
+void LIR_Assembler::emit_op3(LIR_Op3* op) {
+  switch (op->code()) {
+  case lir_idiv:
+    arithmetic_idiv(op, false);
+    break;
+  case lir_irem:
+    arithmetic_idiv(op, true);
+    break;
+  case lir_fmad:
+    __ fmaddd(op->result_opr()->as_double_reg(),
+              op->in_opr1()->as_double_reg(),
+              op->in_opr2()->as_double_reg(),
+              op->in_opr3()->as_double_reg());
+    break;
+  case lir_fmaf:
+    __ fmadds(op->result_opr()->as_float_reg(),
+              op->in_opr1()->as_float_reg(),
+              op->in_opr2()->as_float_reg(),
+              op->in_opr3()->as_float_reg());
+    break;
+  default:      ShouldNotReachHere(); break;
+  }
 }
 
 void LIR_Assembler::emit_opBranch(LIR_OpBranch* op) {
@@ -2001,7 +2020,7 @@ void LIR_Assembler::vtable_call(LIR_OpJavaCall* op) {
 
 void LIR_Assembler::emit_static_call_stub() {
   address call_pc = __ pc();
-  address stub = __ start_a_stub(call_stub_size);
+  address stub = __ start_a_stub(call_stub_size());
   if (stub == NULL) {
     bailout("static call stub overflow");
     return;
@@ -2014,7 +2033,7 @@ void LIR_Assembler::emit_static_call_stub() {
   __ movptr(rscratch1, 0);
   __ br(rscratch1);
 
-  assert(__ offset() - start <= call_stub_size, "stub too big");
+  assert(__ offset() - start <= call_stub_size(), "stub too big");
   __ end_a_stub();
 }
 
@@ -2247,6 +2266,25 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   }
   if (flags & LIR_OpArrayCopy::dst_null_check) {
     __ cbz(dst, *stub->entry());
+  }
+
+  // If the compiler was not able to prove that exact type of the source or the destination
+  // of the arraycopy is an array type, check at runtime if the source or the destination is
+  // an instance type.
+  if (flags & LIR_OpArrayCopy::type_check) {
+    if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::dst_objarray)) {
+      __ load_klass(tmp, dst);
+      __ ldrw(rscratch1, Address(tmp, in_bytes(Klass::layout_helper_offset())));
+      __ cmpw(rscratch1, Klass::_lh_neutral_value);
+      __ br(Assembler::GE, *stub->entry());
+    }
+
+    if (!(flags & LIR_OpArrayCopy::LIR_OpArrayCopy::src_objarray)) {
+      __ load_klass(tmp, src);
+      __ ldrw(rscratch1, Address(tmp, in_bytes(Klass::layout_helper_offset())));
+      __ cmpw(rscratch1, Klass::_lh_neutral_value);
+      __ br(Assembler::GE, *stub->entry());
+    }
   }
 
   // check if negative

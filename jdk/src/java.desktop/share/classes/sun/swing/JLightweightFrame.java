@@ -305,6 +305,12 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
             int startY = (int)Math.floor(y * scaleY);
             int width  = (int)Math.ceil((x + w) * scaleX) - startX;
             int height = (int)Math.ceil((y + h) * scaleY) - startY;
+            if (startX + width > linestride) {
+                width = linestride - startX;
+            }
+            if (startY + height > bbImage.getHeight()) {
+                height = bbImage.getHeight() - startY;
+            }
 
             for (int i = 0; i < height; i++) {
                 int from = (startY + i) * linestride + startX;

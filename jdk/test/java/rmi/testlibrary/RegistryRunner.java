@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,16 @@ import java.rmi.registry.*;
 import java.rmi.server.*;
 
 /**
- * Class to run a registry whos VM can be told to exit remotely; using
+ * Class to run a registry whose VM can be told to exit remotely; using
  * the rmiregistry in this fashion makes tests more robust under
  * windows where Process.destroy() seems not to be 100% reliable.
  */
 public class RegistryRunner extends UnicastRemoteObject
     implements RemoteExiter
 {
+    private static final String PORT_LABEL_START = "RegistryRunner.port.start:";
+    private static final String PORT_LABEL_END = "RegistryRunner.port.end";
+
     private static Registry registry = null;
     private static RemoteExiter exiter = null;
 
@@ -59,16 +62,16 @@ public class RegistryRunner extends UnicastRemoteObject
     public static void requestExit(int port) {
 
         try {
-            RemoteExiter exiter =
+            RemoteExiter e =
                 (RemoteExiter)
                 Naming.lookup("rmi://localhost:" +
                               port +
                               "/RemoteExiter");
             try {
-                exiter.exit();
+                e.exit();
             } catch (RemoteException re) {
             }
-            exiter = null;
+            e = null;
         } catch (java.net.MalformedURLException mfue) {
             // will not happen
         } catch (NotBoundException nbe) {
@@ -79,7 +82,21 @@ public class RegistryRunner extends UnicastRemoteObject
         }
     }
 
+    public static int getRegistryPort(String output) {
+        int idxStart = output.indexOf(PORT_LABEL_START);
+        int idxEnd = output.indexOf(PORT_LABEL_END);
+        if (idxStart == -1 || idxEnd == -1) {
+            return -1;
+        }
+        idxStart = idxStart+PORT_LABEL_START.length();
+        String portStr = output.substring(idxStart, idxEnd);
+        int port = Integer.valueOf(portStr);
+        System.err.println("registry is running at port: " + port);
+        return port;
+    }
+
     public static void main(String[] args) {
+
         try {
             if (args.length == 0) {
                 System.err.println("Usage: <port>");
@@ -88,16 +105,22 @@ public class RegistryRunner extends UnicastRemoteObject
             int port = -1;
             try {
                 port = Integer.parseInt(args[0]);
-            } catch (NumberFormatException nfe) {
-            }
+            } catch (NumberFormatException ignore) { }
 
             // create a registry
             registry = LocateRegistry.createRegistry(port);
+            if (port == 0) {
+                port = TestLibrary.getRegistryPort(registry);
+            }
 
             // create a remote object to tell this VM to exit
             exiter = new RegistryRunner();
             Naming.rebind("rmi://localhost:" + port +
                           "/RemoteExiter", exiter);
+
+            // this output is important for REGISTRY to get the port
+            // where rmiregistry is serving
+            System.out.println(PORT_LABEL_START + port + PORT_LABEL_END);
 
         } catch (Exception e) {
             System.err.println(e.getMessage());

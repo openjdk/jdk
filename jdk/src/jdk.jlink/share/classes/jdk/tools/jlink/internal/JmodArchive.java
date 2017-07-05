@@ -130,14 +130,16 @@ public class JmodArchive implements Archive {
                 return EntryType.CLASS_OR_RESOURCE;
             case CONFIG:
                 return EntryType.CONFIG;
+            case HEADER_FILES:
+                return EntryType.HEADER_FILE;
+            case LEGAL_NOTICES:
+                return EntryType.LEGAL_NOTICE;
+            case MAN_PAGES:
+                return EntryType.MAN_PAGE;
             case NATIVE_LIBS:
                 return EntryType.NATIVE_LIB;
             case NATIVE_CMDS:
                 return EntryType.NATIVE_CMD;
-            case HEADER_FILES:
-                return EntryType.HEADER_FILE;
-            case MAN_PAGES:
-                return EntryType.MAN_PAGE;
             default:
                 throw new InternalError("unexpected entry: " + section);
         }
@@ -145,13 +147,28 @@ public class JmodArchive implements Archive {
 
     private Entry toEntry(JmodFile.Entry entry) {
         EntryType type = toEntryType(entry.section());
+        String prefix = entry.section().jmodDir();
         String name = entry.name();
-        String path = entry.section().jmodDir() + "/" + name;
-
-        // Entry.path() contains the kind of file native, conf, bin, ...
-        // Keep it to avoid naming conflict (eg: native/jvm.cfg and config/jvm.cfg
+        String path = prefix + "/" + name;
         String resourceName = name;
-        if (type != EntryType.CLASS_OR_RESOURCE) {
+
+        // The resource name represents the path of ResourcePoolEntry
+        // and its subpath defines the ultimate path to be written
+        // to the image relative to the directory corresponding to that
+        // resource type.
+        //
+        // For classes and resources, the resource name does not have
+        // a prefix (<package>/<name>). They will be written to the jimage.
+        //
+        // For other kind of entries, it will keep the section name as
+        // the prefix for unique identification.  The subpath (taking
+        // out the section name) is the pathname to be written to the
+        // corresponding directory in the image.
+        //
+        if (type == EntryType.LEGAL_NOTICE) {
+            // legal notices are written to per-module directory
+            resourceName = prefix + "/" + moduleName + "/" + name;
+        } else if (type != EntryType.CLASS_OR_RESOURCE) {
             resourceName = path;
         }
 

@@ -27,7 +27,7 @@
  * @summary KAT test for DH (normal and with secret that has leading a 0x00 byte)
  * @author Andreas Sterbenz
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm TestShort
  * @run main/othervm TestShort sm
  */

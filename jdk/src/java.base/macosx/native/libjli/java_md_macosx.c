@@ -171,8 +171,6 @@ struct NSAppArgs {
  * Main
  */
 
-#define GetArch() GetArchPath(CURRENT_DATA_MODEL)
-
 /* Store the name of the executable once computed */
 static char *execname = NULL;
 
@@ -183,16 +181,6 @@ const char *
 GetExecName() {
     return execname;
 }
-
-const char *
-GetArchPath(int nbits)
-{
-    switch(nbits) {
-        default:
-            return LIBARCHNAME;
-    }
-}
-
 
 /*
  * Exports the JNI interface from libjli
@@ -211,7 +199,7 @@ static InvocationFunctions *GetExportedJNIFunctions() {
     if (sExportedJNIFunctions != NULL) return sExportedJNIFunctions;
 
     char jrePath[PATH_MAX];
-    jboolean gotJREPath = GetJREPath(jrePath, sizeof(jrePath), GetArch(), JNI_FALSE);
+    jboolean gotJREPath = GetJREPath(jrePath, sizeof(jrePath), JNI_FALSE);
     if (!gotJREPath) {
         JLI_ReportErrorMessage("Failed to GetJREPath()");
         return NULL;
@@ -229,7 +217,7 @@ static InvocationFunctions *GetExportedJNIFunctions() {
     }
 
     char jvmPath[PATH_MAX];
-    jboolean gotJVMPath = GetJVMPath(jrePath, preferredJVM, jvmPath, sizeof(jvmPath), GetArch(), CURRENT_DATA_MODEL);
+    jboolean gotJVMPath = GetJVMPath(jrePath, preferredJVM, jvmPath, sizeof(jvmPath), CURRENT_DATA_MODEL);
     if (!gotJVMPath) {
         JLI_ReportErrorMessage("Failed to GetJVMPath()");
         return NULL;
@@ -390,7 +378,6 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 
     /* Check data model flags, and exec process, if needed */
     {
-      char *arch        = (char *)GetArch(); /* like sparc or sparcv9 */
       char * jvmtype    = NULL;
       int  argc         = *pargc;
       char **argv       = *pargv;
@@ -462,7 +449,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
          jvmpath does not exist */
       if (wanted == running) {
         /* Find out where the JRE is that we will be using. */
-        if (!GetJREPath(jrepath, so_jrepath, arch, JNI_FALSE) ) {
+        if (!GetJREPath(jrepath, so_jrepath, JNI_FALSE) ) {
           JLI_ReportErrorMessage(JRE_ERROR1);
           exit(2);
         }
@@ -481,7 +468,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
             exit(4);
         }
 
-        if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath, arch, wanted)) {
+        if (!GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath, wanted)) {
           JLI_ReportErrorMessage(CFG_ERROR8, jvmtype, jvmpath);
           exit(4);
         }
@@ -502,7 +489,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
 #if defined(DUAL_MODE)
         if (running != wanted) {
           /* Find out where the JRE is that we will be using. */
-          if (!GetJREPath(jrepath, so_jrepath, GetArchPath(wanted), JNI_TRUE)) {
+          if (!GetJREPath(jrepath, so_jrepath, JNI_TRUE)) {
             /* give up and let other code report error message */
             JLI_ReportErrorMessage(JRE_ERROR2, wanted);
             exit(1);
@@ -526,7 +513,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
           }
 
           /* exec child can do error checking on the existence of the path */
-          jvmpathExists = GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath, GetArchPath(wanted), wanted);
+          jvmpathExists = GetJVMPath(jrepath, jvmtype, jvmpath, so_jvmpath, wanted);
         }
 #else /* ! DUAL_MODE */
         JLI_ReportErrorMessage(JRE_ERROR2, wanted);
@@ -579,7 +566,7 @@ CreateExecutionEnvironment(int *pargc, char ***pargv,
  */
 static jboolean
 GetJVMPath(const char *jrepath, const char *jvmtype,
-           char *jvmpath, jint jvmpathsize, const char * arch, int bitsWanted)
+           char *jvmpath, jint jvmpathsize, int bitsWanted)
 {
     struct stat s;
 
@@ -613,7 +600,7 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
  * Find path to JRE based on .exe's location or registry settings.
  */
 static jboolean
-GetJREPath(char *path, jint pathsize, const char * arch, jboolean speculative)
+GetJREPath(char *path, jint pathsize, jboolean speculative)
 {
     char libjava[MAXPATHLEN];
 
@@ -841,7 +828,7 @@ static void* hSplashLib = NULL;
 void* SplashProcAddress(const char* name) {
     if (!hSplashLib) {
         char jrePath[PATH_MAX];
-        if (!GetJREPath(jrePath, sizeof(jrePath), GetArch(), JNI_FALSE)) {
+        if (!GetJREPath(jrePath, sizeof(jrePath), JNI_FALSE)) {
             JLI_ReportErrorMessage(JRE_ERROR1);
             return NULL;
         }

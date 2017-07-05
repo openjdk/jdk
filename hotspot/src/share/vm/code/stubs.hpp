@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -217,8 +217,6 @@ class StubQueue: public CHeapObj<mtCode> {
   void  verify();                                // verifies the stub queue
   void  print();                                 // prints information about the stub queue
 
-  // Fixup for pregenerated code
-  void fix_buffer(address buffer, address queue_end, address buffer_end, int number_of_stubs);
 };
 
 #endif // SHARE_VM_CODE_STUBS_HPP

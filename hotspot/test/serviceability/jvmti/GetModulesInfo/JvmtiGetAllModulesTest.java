@@ -49,6 +49,17 @@ import jdk.test.lib.Asserts;
 
 public class JvmtiGetAllModulesTest {
 
+    static class MyModuleReference extends ModuleReference {
+        public MyModuleReference(ModuleDescriptor descriptor, URI uri) {
+            super(descriptor, uri);
+        }
+
+        // Trivial implementation to make the class non-abstract
+        public ModuleReader open() {
+            return null;
+        }
+    }
+
     private static native Module[] getModulesNative();
 
     private static Set<Module> getModulesJVMTI() {
@@ -103,11 +114,7 @@ public class JvmtiGetAllModulesTest {
 
             URI uri = URI.create("module:/" + name);
 
-            Supplier<ModuleReader> supplier = () -> {
-                throw new UnsupportedOperationException();
-            };
-
-            ModuleReference mref = new ModuleReference(descriptor, uri, supplier);
+            ModuleReference mref = new MyModuleReference(descriptor, uri);
 
             namesToReference.put(name, mref);
         }

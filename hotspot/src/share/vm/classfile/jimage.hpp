@@ -94,7 +94,7 @@ typedef void (*JImageClose_t)(JImageFile* jimage);
  * Ex.
  *  const char* package = (*JImagePackageToModule)(image, "java/lang");
  *  tty->print_cr(package);
- *  —> java.base
+ *  -> java.base
  */
 
 extern "C" const char * JIMAGE_PackageToModule(JImageFile* jimage, const char* package_name);
@@ -126,7 +126,7 @@ typedef JImageLocationRef(*JImageFindResource_t)(JImageFile* jimage,
 
 
 /*
- * JImageGetResource - Given an open image file (see JImageOpen), a resource’s
+ * JImageGetResource - Given an open image file (see JImageOpen), a resource's
  * location information (see JImageFindResource), a buffer of appropriate
  * size and the size, retrieve the bytes associated with the
  * resource. If the size is less than the resource size then the read is truncated.
@@ -158,7 +158,7 @@ typedef jlong(*JImageGetResource_t)(JImageFile* jimage, JImageLocationRef locati
  * Ex.
  *   bool ctw_visitor(JImageFile* jimage, const char* module_name, const char* version,
  *                  const char* package, const char* name, const char* extension, void* arg) {
- *     if (strcmp(extension, “class”) == 0) {
+ *     if (strcmp(extension, "class") == 0) {
  *       char path[JIMAGE_MAX_PATH];
  *       Thread* THREAD = Thread::current();
  *       jio_snprintf(path, JIMAGE_MAX_PATH - 1, "/%s/%s", package, name);

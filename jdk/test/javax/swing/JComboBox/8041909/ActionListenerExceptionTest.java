@@ -26,7 +26,7 @@
   * @summary Test to check JComboBox does not lose its ability to invoke
   * registerd ActionListener in case of exception in ActionListener
   * @run main ActionListenerExceptionTest
-  */
+ */
 
 import java.awt.AWTEvent;
 import java.awt.AWTException;
@@ -44,6 +44,7 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPopupMenu;
+import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
 public class ActionListenerExceptionTest {
@@ -133,7 +134,11 @@ public class ActionListenerExceptionTest {
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 Object comp = combo.getUI().getAccessibleChild(combo, 0);
-                JComponent scrollPane = (JComponent) ((JPopupMenu) comp).getComponent(0);
+                int i = 0;
+                JComponent scrollPane;
+                do {
+                    scrollPane = (JComponent) ((JPopupMenu) comp).getComponent(i++);
+                } while (!(scrollPane instanceof JScrollPane));
 
                 menuItemHeight = scrollPane.getSize().height / TOTAL_MENU_ITEMS;
                 yPos = scrollPane.getLocationOnScreen().y + menuItemHeight / 2;

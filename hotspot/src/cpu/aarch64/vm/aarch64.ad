@@ -9646,6 +9646,10 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN
 
 
 // ---------------------------------------------------------------------
+
+
+// BEGIN This section of the file is automatically generated. Do not edit --------------
+
 // Sundry CAS operations.  Note that release is always true,
 // regardless of the memory ordering of the CAS.  This is because we
 // need the volatile case to be sequentially consistent but there is
@@ -9656,10 +9660,11 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegNNoSp oldval, iRegN
 // This section is generated from aarch64_ad_cas.m4
 
 
-instruct compareAndExchangeB(iRegI_R0 res, indirect mem, iRegI_R2 oldval, iRegI_R3 newval, rFlagsReg cr) %{
+
+instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
-  effect(KILL cr);
+  effect(TEMP_DEF res, KILL cr);
   format %{
     "cmpxchg $res = $mem, $oldval, $newval\t# (byte, weak) if $mem == $oldval then $mem <-- $newval"
   %}
@@ -9673,10 +9678,10 @@ instruct compareAndExchangeB(iRegI_R0 res, indirect mem, iRegI_R2 oldval, iRegI_
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndExchangeS(iRegI_R0 res, indirect mem, iRegI_R2 oldval, iRegI_R3 newval, rFlagsReg cr) %{
+instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
-  effect(KILL cr);
+  effect(TEMP_DEF res, KILL cr);
   format %{
     "cmpxchg $res = $mem, $oldval, $newval\t# (short, weak) if $mem == $oldval then $mem <-- $newval"
   %}
@@ -9690,10 +9695,10 @@ instruct compareAndExchangeS(iRegI_R0 res, indirect mem, iRegI_R2 oldval, iRegI_
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndExchangeI(iRegI_R0 res, indirect mem, iRegI_R2 oldval, iRegI_R3 newval, rFlagsReg cr) %{
+instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeI mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
-  effect(KILL cr);
+  effect(TEMP_DEF res, KILL cr);
   format %{
     "cmpxchg $res = $mem, $oldval, $newval\t# (int, weak) if $mem == $oldval then $mem <-- $newval"
   %}
@@ -9705,10 +9710,10 @@ instruct compareAndExchangeI(iRegI_R0 res, indirect mem, iRegI_R2 oldval, iRegI_
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndExchangeL(iRegL_R0 res, indirect mem, iRegL_R2 oldval, iRegL_R3 newval, rFlagsReg cr) %{
+instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL newval, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeL mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
-  effect(KILL cr);
+  effect(TEMP_DEF res, KILL cr);
   format %{
     "cmpxchg $res = $mem, $oldval, $newval\t# (long, weak) if $mem == $oldval then $mem <-- $newval"
   %}
@@ -9720,10 +9725,10 @@ instruct compareAndExchangeL(iRegL_R0 res, indirect mem, iRegL_R2 oldval, iRegL_
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndExchangeN(iRegN_R0 res, indirect mem, iRegN_R2 oldval, iRegN_R3 newval, rFlagsReg cr) %{
+instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
-  effect(KILL cr);
+  effect(TEMP_DEF res, KILL cr);
   format %{
     "cmpxchg $res = $mem, $oldval, $newval\t# (narrow oop, weak) if $mem == $oldval then $mem <-- $newval"
   %}
@@ -9735,10 +9740,10 @@ instruct compareAndExchangeN(iRegN_R0 res, indirect mem, iRegN_R2 oldval, iRegN_
   ins_pipe(pipe_slow);
 %}
 
-instruct compareAndExchangeP(iRegP_R0 res, indirect mem, iRegP_R2 oldval, iRegP_R3 newval, rFlagsReg cr) %{
+instruct compareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, rFlagsReg cr) %{
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   ins_cost(2 * VOLATILE_REF_COST);
-  effect(KILL cr);
+  effect(TEMP_DEF res, KILL cr);
   format %{
     "cmpxchg $res = $mem, $oldval, $newval\t# (ptr, weak) if $mem == $oldval then $mem <-- $newval"
   %}
@@ -9853,6 +9858,8 @@ instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
   %}
   ins_pipe(pipe_slow);
 %}
+
+// END This section of the file is automatically generated. Do not edit --------------
 // ---------------------------------------------------------------------
 
 instruct get_and_setI(indirect mem, iRegINoSp newv, iRegI prev) %{
@@ -12990,137 +12997,146 @@ instruct mulD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
   ins_pipe(fp_dop_reg_reg_d);
 %}
 
-// We cannot use these fused mul w add/sub ops because they don't
-// produce the same result as the equivalent separated ops
-// (essentially they don't round the intermediate result). that's a
-// shame. leaving them here in case we can idenitfy cases where it is
-// legitimate to use them
+// src1 * src2 + src3
+instruct maddF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
+  predicate(UseFMA);
+  match(Set dst (FmaF src3 (Binary src1 src2)));
 
+  format %{ "fmadds   $dst, $src1, $src2, $src3" %}
 
-// instruct maddF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
-//   match(Set dst (AddF (MulF src1 src2) src3));
+  ins_encode %{
+    __ fmadds(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg),
+             as_FloatRegister($src3$$reg));
+  %}
 
-//   format %{ "fmadds   $dst, $src1, $src2, $src3" %}
+  ins_pipe(pipe_class_default);
+%}
 
-//   ins_encode %{
-//     __ fmadds(as_FloatRegister($dst$$reg),
-//              as_FloatRegister($src1$$reg),
-//              as_FloatRegister($src2$$reg),
-//              as_FloatRegister($src3$$reg));
-//   %}
+// src1 * src2 + src3
+instruct maddD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
+  predicate(UseFMA);
+  match(Set dst (FmaD src3 (Binary src1 src2)));
 
-//   ins_pipe(pipe_class_default);
-// %}
+  format %{ "fmaddd   $dst, $src1, $src2, $src3" %}
 
-// instruct maddD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
-//   match(Set dst (AddD (MulD src1 src2) src3));
+  ins_encode %{
+    __ fmaddd(as_FloatRegister($dst$$reg),
+             as_FloatRegister($src1$$reg),
+             as_FloatRegister($src2$$reg),
+             as_FloatRegister($src3$$reg));
+  %}
 
-//   format %{ "fmaddd   $dst, $src1, $src2, $src3" %}
+  ins_pipe(pipe_class_default);
+%}
 
-//   ins_encode %{
-//     __ fmaddd(as_FloatRegister($dst$$reg),
-//              as_FloatRegister($src1$$reg),
-//              as_FloatRegister($src2$$reg),
-//              as_FloatRegister($src3$$reg));
-//   %}
+// -src1 * src2 + src3
+instruct msubF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
+  predicate(UseFMA);
+  match(Set dst (FmaF src3 (Binary (NegF src1) src2)));
+  match(Set dst (FmaF src3 (Binary src1 (NegF src2))));
 
-//   ins_pipe(pipe_class_default);
-// %}
+  format %{ "fmsubs   $dst, $src1, $src2, $src3" %}
 
-// instruct msubF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
-//   match(Set dst (AddF (MulF (NegF src1) src2) src3));
-//   match(Set dst (AddF (NegF (MulF src1 src2)) src3));
+  ins_encode %{
+    __ fmsubs(as_FloatRegister($dst$$reg),
+              as_FloatRegister($src1$$reg),
+              as_FloatRegister($src2$$reg),
+              as_FloatRegister($src3$$reg));
+  %}
 
-//   format %{ "fmsubs   $dst, $src1, $src2, $src3" %}
+  ins_pipe(pipe_class_default);
+%}
 
-//   ins_encode %{
-//     __ fmsubs(as_FloatRegister($dst$$reg),
-//               as_FloatRegister($src1$$reg),
-//               as_FloatRegister($src2$$reg),
-//              as_FloatRegister($src3$$reg));
-//   %}
+// -src1 * src2 + src3
+instruct msubD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
+  predicate(UseFMA);
+  match(Set dst (FmaD src3 (Binary (NegD src1) src2)));
+  match(Set dst (FmaD src3 (Binary src1 (NegD src2))));
 
-//   ins_pipe(pipe_class_default);
-// %}
+  format %{ "fmsubd   $dst, $src1, $src2, $src3" %}
 
-// instruct msubD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
-//   match(Set dst (AddD (MulD (NegD src1) src2) src3));
-//   match(Set dst (AddD (NegD (MulD src1 src2)) src3));
+  ins_encode %{
+    __ fmsubd(as_FloatRegister($dst$$reg),
+              as_FloatRegister($src1$$reg),
+              as_FloatRegister($src2$$reg),
+              as_FloatRegister($src3$$reg));
+  %}
 
-//   format %{ "fmsubd   $dst, $src1, $src2, $src3" %}
+  ins_pipe(pipe_class_default);
+%}
 
-//   ins_encode %{
-//     __ fmsubd(as_FloatRegister($dst$$reg),
-//               as_FloatRegister($src1$$reg),
-//               as_FloatRegister($src2$$reg),
-//               as_FloatRegister($src3$$reg));
-//   %}
+// -src1 * src2 - src3
+instruct mnaddF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
+  predicate(UseFMA);
+  match(Set dst (FmaF (NegF src3) (Binary (NegF src1) src2)));
+  match(Set dst (FmaF (NegF src3) (Binary src1 (NegF src2))));
 
-//   ins_pipe(pipe_class_default);
-// %}
+  format %{ "fnmadds  $dst, $src1, $src2, $src3" %}
 
-// instruct mnaddF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
-//   match(Set dst (SubF (MulF (NegF src1) src2) src3));
-//   match(Set dst (SubF (NegF (MulF src1 src2)) src3));
+  ins_encode %{
+    __ fnmadds(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src1$$reg),
+               as_FloatRegister($src2$$reg),
+               as_FloatRegister($src3$$reg));
+  %}
 
-//   format %{ "fnmadds  $dst, $src1, $src2, $src3" %}
+  ins_pipe(pipe_class_default);
+%}
 
-//   ins_encode %{
-//     __ fnmadds(as_FloatRegister($dst$$reg),
-//                as_FloatRegister($src1$$reg),
-//                as_FloatRegister($src2$$reg),
-//                as_FloatRegister($src3$$reg));
-//   %}
+// -src1 * src2 - src3
+instruct mnaddD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
+  predicate(UseFMA);
+  match(Set dst (FmaD (NegD src3) (Binary (NegD src1) src2)));
+  match(Set dst (FmaD (NegD src3) (Binary src1 (NegD src2))));
 
-//   ins_pipe(pipe_class_default);
-// %}
+  format %{ "fnmaddd   $dst, $src1, $src2, $src3" %}
 
-// instruct mnaddD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
-//   match(Set dst (SubD (MulD (NegD src1) src2) src3));
-//   match(Set dst (SubD (NegD (MulD src1 src2)) src3));
+  ins_encode %{
+    __ fnmaddd(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src1$$reg),
+               as_FloatRegister($src2$$reg),
+               as_FloatRegister($src3$$reg));
+  %}
 
-//   format %{ "fnmaddd   $dst, $src1, $src2, $src3" %}
+  ins_pipe(pipe_class_default);
+%}
 
-//   ins_encode %{
-//     __ fnmaddd(as_FloatRegister($dst$$reg),
-//                as_FloatRegister($src1$$reg),
-//                as_FloatRegister($src2$$reg),
-//                as_FloatRegister($src3$$reg));
-//   %}
+// src1 * src2 - src3
+instruct mnsubF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3, immF0 zero) %{
+  predicate(UseFMA);
+  match(Set dst (FmaF (NegF src3) (Binary src1 src2)));
 
-//   ins_pipe(pipe_class_default);
-// %}
+  format %{ "fnmsubs  $dst, $src1, $src2, $src3" %}
 
-// instruct mnsubF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3, immF0 zero) %{
-//   match(Set dst (SubF (MulF src1 src2) src3));
+  ins_encode %{
+    __ fnmsubs(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src1$$reg),
+               as_FloatRegister($src2$$reg),
+               as_FloatRegister($src3$$reg));
+  %}
 
-//   format %{ "fnmsubs  $dst, $src1, $src2, $src3" %}
+  ins_pipe(pipe_class_default);
+%}
 
-//   ins_encode %{
-//     __ fnmsubs(as_FloatRegister($dst$$reg),
-//                as_FloatRegister($src1$$reg),
-//                as_FloatRegister($src2$$reg),
-//                as_FloatRegister($src3$$reg));
-//   %}
+// src1 * src2 - src3
+instruct mnsubD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3, immD0 zero) %{
+  predicate(UseFMA);
+  match(Set dst (FmaD (NegD src3) (Binary src1 src2)));
 
-//   ins_pipe(pipe_class_default);
-// %}
+  format %{ "fnmsubd   $dst, $src1, $src2, $src3" %}
 
-// instruct mnsubD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3, immD0 zero) %{
-//   match(Set dst (SubD (MulD src1 src2) src3));
+  ins_encode %{
+  // n.b. insn name should be fnmsubd
+    __ fnmsub(as_FloatRegister($dst$$reg),
+              as_FloatRegister($src1$$reg),
+              as_FloatRegister($src2$$reg),
+              as_FloatRegister($src3$$reg));
+  %}
 
-//   format %{ "fnmsubd   $dst, $src1, $src2, $src3" %}
-
-//   ins_encode %{
-//   // n.b. insn name should be fnmsubd
-//     __ fnmsub(as_FloatRegister($dst$$reg),
-//                as_FloatRegister($src1$$reg),
-//                as_FloatRegister($src2$$reg),
-//                as_FloatRegister($src3$$reg));
-//   %}
-
-//   ins_pipe(pipe_class_default);
-// %}
+  ins_pipe(pipe_class_default);
+%}
 
 
 instruct divF_reg_reg(vRegF dst, vRegF src1, vRegF src2) %{

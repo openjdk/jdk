@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,27 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package java.awt;
 
-import java.awt.peer.MenuComponentPeer;
 import java.awt.event.ActionEvent;
+import java.awt.peer.MenuComponentPeer;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import sun.awt.AppContext;
-import sun.awt.AWTAccessor;
-import sun.awt.ComponentFactory;
-
-import javax.accessibility.*;
-
 import java.security.AccessControlContext;
 import java.security.AccessController;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleComponent;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleSelection;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+
+import sun.awt.AWTAccessor;
+import sun.awt.AppContext;
+import sun.awt.ComponentFactory;
 
 /**
  * The abstract class {@code MenuComponent} is the superclass
@@ -60,13 +67,13 @@ public abstract class MenuComponent implements java.io.Serializable {
     }
 
     transient volatile MenuComponentPeer peer;
-    transient MenuContainer parent;
+    transient volatile MenuContainer parent;
 
     /**
      * The {@code AppContext} of the {@code MenuComponent}.
      * This is set in the constructor and never changes.
      */
-    transient AppContext appContext;
+    private transient volatile AppContext appContext;
 
     /**
      * The menu component's font. This value can be
@@ -77,7 +84,7 @@ public abstract class MenuComponent implements java.io.Serializable {
      * @see #setFont(Font)
      * @see #getFont()
      */
-    volatile Font font;
+    private volatile Font font;
 
     /**
      * The menu component's name, which defaults to {@code null}.
@@ -85,7 +92,7 @@ public abstract class MenuComponent implements java.io.Serializable {
      * @see #getName()
      * @see #setName(String)
      */
-    private String name;
+    private volatile String name;
 
     /**
      * A variable to indicate whether a name is explicitly set.
@@ -94,14 +101,14 @@ public abstract class MenuComponent implements java.io.Serializable {
      * @serial
      * @see #setName(String)
      */
-    private boolean nameExplicitlySet = false;
+    private volatile boolean nameExplicitlySet;
 
     /**
      * Defaults to {@code false}.
      * @serial
      * @see #dispatchEvent(AWTEvent)
      */
-    boolean newEventsOnly = false;
+    volatile boolean newEventsOnly;
 
     /*
      * The menu's AccessControlContext.
