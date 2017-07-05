@@ -25,6 +25,58 @@
 # include "incls/_precompiled.incl"
 # include "incls/_instanceKlass.cpp.incl"
 
+#ifdef DTRACE_ENABLED
+
+HS_DTRACE_PROBE_DECL4(hotspot, class__initialization__required,
+  char*, intptr_t, oop, intptr_t);
+HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__recursive,
+  char*, intptr_t, oop, intptr_t, int);
+HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__concurrent,
+  char*, intptr_t, oop, intptr_t, int);
+HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__erroneous,
+  char*, intptr_t, oop, intptr_t, int);
+HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__super__failed,
+  char*, intptr_t, oop, intptr_t, int);
+HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__clinit,
+  char*, intptr_t, oop, intptr_t, int);
+HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__error,
+  char*, intptr_t, oop, intptr_t, int);
+HS_DTRACE_PROBE_DECL5(hotspot, class__initialization__end,
+  char*, intptr_t, oop, intptr_t, int);
+
+#define DTRACE_CLASSINIT_PROBE(type, clss, thread_type)          \
+  {                                                              \
+    char* data = NULL;                                           \
+    int len = 0;                                                 \
+    symbolOop name = (clss)->name();                             \
+    if (name != NULL) {                                          \
+      data = (char*)name->bytes();                               \
+      len = name->utf8_length();                                 \
+    }                                                            \
+    HS_DTRACE_PROBE4(hotspot, class__initialization__##type,     \
+      data, len, (clss)->class_loader(), thread_type);           \
+  }
+
+#define DTRACE_CLASSINIT_PROBE_WAIT(type, clss, thread_type, wait) \
+  {                                                              \
+    char* data = NULL;                                           \
+    int len = 0;                                                 \
+    symbolOop name = (clss)->name();                             \
+    if (name != NULL) {                                          \
+      data = (char*)name->bytes();                               \
+      len = name->utf8_length();                                 \
+    }                                                            \
+    HS_DTRACE_PROBE5(hotspot, class__initialization__##type,     \
+      data, len, (clss)->class_loader(), thread_type, wait);     \
+  }
+
+#else //  ndef DTRACE_ENABLED
+
+#define DTRACE_CLASSINIT_PROBE(type, clss, thread_type)
+#define DTRACE_CLASSINIT_PROBE_WAIT(type, clss, thread_type, wait)
+
+#endif //  ndef DTRACE_ENABLED
+
 bool instanceKlass::should_be_initialized() const {
   return !is_initialized();
 }
@@ -292,6 +344,10 @@ void instanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
   // A class could already be verified, since it has been reflected upon.
   this_oop->link_class(CHECK);
 
+  DTRACE_CLASSINIT_PROBE(required, instanceKlass::cast(this_oop()), -1);
+
+  bool wait = false;
+
   // refer to the JVM book page 47 for description of steps
   // Step 1
   { ObjectLocker ol(this_oop, THREAD);
@@ -303,19 +359,25 @@ void instanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
     // we might end up throwing IE from link/symbol resolution sites
     // that aren't expected to throw.  This would wreak havoc.  See 6320309.
     while(this_oop->is_being_initialized() && !this_oop->is_reentrant_initialization(self)) {
+        wait = true;
       ol.waitUninterruptibly(CHECK);
     }
 
     // Step 3
-    if (this_oop->is_being_initialized() && this_oop->is_reentrant_initialization(self))
+    if (this_oop->is_being_initialized() && this_oop->is_reentrant_initialization(self)) {
+      DTRACE_CLASSINIT_PROBE_WAIT(recursive, instanceKlass::cast(this_oop()), -1,wait);
       return;
+    }
 
     // Step 4
-    if (this_oop->is_initialized())
+    if (this_oop->is_initialized()) {
+      DTRACE_CLASSINIT_PROBE_WAIT(concurrent, instanceKlass::cast(this_oop()), -1,wait);
       return;
+    }
 
     // Step 5
     if (this_oop->is_in_error_state()) {
+      DTRACE_CLASSINIT_PROBE_WAIT(erroneous, instanceKlass::cast(this_oop()), -1,wait);
       ResourceMark rm(THREAD);
       const char* desc = "Could not initialize class ";
       const char* className = this_oop->external_name();
@@ -348,6 +410,7 @@ void instanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
         this_oop->set_initialization_state_and_notify(initialization_error, THREAD); // Locks object, set state, and notify all waiting threads
         CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, superclass initialization error is thrown below
       }
+      DTRACE_CLASSINIT_PROBE_WAIT(super__failed, instanceKlass::cast(this_oop()), -1,wait);
       THROW_OOP(e());
     }
   }
@@ -356,6 +419,7 @@ void instanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
   {
     assert(THREAD->is_Java_thread(), "non-JavaThread in initialize_impl");
     JavaThread* jt = (JavaThread*)THREAD;
+    DTRACE_CLASSINIT_PROBE_WAIT(clinit, instanceKlass::cast(this_oop()), -1,wait);
     // Timer includes any side effects of class initialization (resolution,
     // etc), but not recursive entry into call_class_initializer().
     PerfClassTraceTime timer(ClassLoader::perf_class_init_time(),
@@ -383,6 +447,7 @@ void instanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
       this_oop->set_initialization_state_and_notify(initialization_error, THREAD);
       CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, class initialization error is thrown below
     }
+    DTRACE_CLASSINIT_PROBE_WAIT(error, instanceKlass::cast(this_oop()), -1,wait);
     if (e->is_a(SystemDictionary::Error_klass())) {
       THROW_OOP(e());
     } else {
@@ -392,6 +457,7 @@ void instanceKlass::initialize_impl(instanceKlassHandle this_oop, TRAPS) {
                 &args);
     }
   }
+  DTRACE_CLASSINIT_PROBE_WAIT(end, instanceKlass::cast(this_oop()), -1,wait);
 }
 
 
