@@ -715,7 +715,6 @@ Node* PhaseIdealLoop::exact_limit( IdealLoopTree *loop ) {
     long limit_con = cl->limit()->get_int();
     julong trip_cnt = cl->trip_count();
     long final_con = init_con + trip_cnt*stride_con;
-    final_con -= stride_con;
     int final_int = (int)final_con;
     // The final value should be in integer range since the loop
     // is counted and the limit was checked for overflow.
@@ -1947,7 +1946,7 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
   }
 
   // Nothing to do, so get out
-  if( !C->has_loops() && !do_split_ifs && !_verify_me && !_verify_only ) {
+  if( !C->has_loops() && !skip_loop_opts && !do_split_ifs && !_verify_me && !_verify_only ) {
     _igvn.optimize();           // Cleanup NeverBranches
     return;
   }
