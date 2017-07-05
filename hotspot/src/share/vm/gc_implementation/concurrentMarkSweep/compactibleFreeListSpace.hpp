@@ -91,10 +91,10 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   enum SomeConstants {
     SmallForLinearAlloc = 16,        // size < this then use _sLAB
     SmallForDictionary  = 257,       // size < this then use _indexedFreeList
-    IndexSetSize        = SmallForDictionary,  // keep this odd-sized
-    IndexSetStart       = MinObjAlignment,
-    IndexSetStride      = MinObjAlignment
+    IndexSetSize        = SmallForDictionary  // keep this odd-sized
   };
+  static int IndexSetStart;
+  static int IndexSetStride;
 
  private:
   enum FitStrategyOptions {
@@ -277,6 +277,9 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   FreeBlockDictionary* dictionary() const { return _dictionary; }
   HeapWord* nearLargestChunk() const { return _nearLargestChunk; }
   void set_nearLargestChunk(HeapWord* v) { _nearLargestChunk = v; }
+
+  // Set CMS global values
+  static void set_cms_values();
 
   // Return the free chunk at the end of the space.  If no such
   // chunk exists, return NULL.

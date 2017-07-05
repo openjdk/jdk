@@ -715,7 +715,10 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       }
 
       if (opJavaCall->_info)                     do_info(opJavaCall->_info);
-      if (opJavaCall->is_method_handle_invoke()) do_temp(FrameMap::method_handle_invoke_SP_save_opr());
+      if (opJavaCall->is_method_handle_invoke()) {
+        opJavaCall->_method_handle_invoke_SP_save_opr = FrameMap::method_handle_invoke_SP_save_opr();
+        do_temp(opJavaCall->_method_handle_invoke_SP_save_opr);
+      }
       do_call();
       if (opJavaCall->_result->is_valid())       do_output(opJavaCall->_result);
 

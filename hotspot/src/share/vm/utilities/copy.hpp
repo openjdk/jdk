@@ -51,7 +51,7 @@ extern "C" {
 class Copy : AllStatic {
  public:
   // Block copy methods have four attributes.  We don't define all possibilities.
-  //   alignment: aligned according to minimum Java object alignment (MinObjAlignment)
+  //   alignment: aligned to BytesPerLong
   //   arrayof:   arraycopy operation with both operands aligned on the same
   //              boundary as the first element of an array of the copy unit.
   //              This is currently a HeapWord boundary on all platforms, except
@@ -70,7 +70,7 @@ class Copy : AllStatic {
   //     [ '_atomic' ]
   //
   // Except in the arrayof case, whatever the alignment is, we assume we can copy
-  // whole alignment units.  E.g., if MinObjAlignment is 2x word alignment, an odd
+  // whole alignment units.  E.g., if BytesPerLong is 2x word alignment, an odd
   // count may copy an extra word.  In the arrayof case, we are allowed to copy
   // only the number of copy units specified.
 
@@ -305,17 +305,17 @@ class Copy : AllStatic {
   }
   static void assert_params_aligned(HeapWord* from, HeapWord* to) {
 #ifdef ASSERT
-    if (mask_bits((uintptr_t)from, MinObjAlignmentInBytes-1) != 0)
-      basic_fatal("not object aligned");
-    if (mask_bits((uintptr_t)to, MinObjAlignmentInBytes-1) != 0)
-      basic_fatal("not object aligned");
+    if (mask_bits((uintptr_t)from, BytesPerLong-1) != 0)
+      basic_fatal("not long aligned");
+    if (mask_bits((uintptr_t)to, BytesPerLong-1) != 0)
+      basic_fatal("not long aligned");
 #endif
   }
 
   static void assert_params_aligned(HeapWord* to) {
 #ifdef ASSERT
-    if (mask_bits((uintptr_t)to, MinObjAlignmentInBytes-1) != 0)
-      basic_fatal("not object aligned");
+    if (mask_bits((uintptr_t)to, BytesPerLong-1) != 0)
+      basic_fatal("not long aligned");
 #endif
   }
 

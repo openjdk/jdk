@@ -65,7 +65,7 @@ do
     done
     rm -f $$
 
-    i=$(expr $i + 1)
+    i=`expr $i + 1`
 done
 
 exit $rc

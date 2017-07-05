@@ -95,10 +95,10 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset);
   void get_cache_and_index_at_bcp(Register cache, Register index,
-                                  int bcp_offset, bool giant_index = false);
+                                  int bcp_offset, size_t index_size = sizeof(u2));
   void get_cache_entry_pointer_at_bcp(Register cache, Register tmp,
-                                      int bcp_offset, bool giant_index = false);
-  void get_cache_index_at_bcp(Register index, int bcp_offset, bool giant_index = false);
+                                      int bcp_offset, size_t index_size = sizeof(u2));
+  void get_cache_index_at_bcp(Register index, int bcp_offset, size_t index_size = sizeof(u2));
 
 
   void pop_ptr(Register r = rax);
