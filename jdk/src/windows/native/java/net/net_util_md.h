@@ -222,7 +222,8 @@ LPFN_GETNAMEINFO getnameinfo_ptr;
 #define IN6_IS_ADDR_ANY(a)      \
     (((a)->s6_words[0] == 0) && ((a)->s6_words[1] == 0) &&      \
     ((a)->s6_words[2] == 0) && ((a)->s6_words[3] == 0) &&       \
-    ((a)->s6_words[4] == 0) && ((a)->s6_words[5] == 0))
+    ((a)->s6_words[4] == 0) && ((a)->s6_words[5] == 0) &&       \
+    ((a)->s6_words[6] == 0) && ((a)->s6_words[7] == 0))
 #endif
 
 #ifndef IPV6_V6ONLY

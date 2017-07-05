@@ -218,18 +218,19 @@ void ConstantPoolCacheEntry::set_interface_call(methodHandle method, int index) 
 }
 
 
-void ConstantPoolCacheEntry::set_dynamic_call(Handle call_site, int extra_data) {
-  methodOop method = (methodOop) java_dyn_CallSite::vmmethod(call_site());
-  assert(method->is_method(), "must be initialized properly");
-  int param_size = method->size_of_parameters();
+void ConstantPoolCacheEntry::set_dynamic_call(Handle call_site,
+                                              methodHandle signature_invoker) {
+  int param_size = signature_invoker->size_of_parameters();
   assert(param_size >= 1, "method argument size must include MH.this");
   param_size -= 1;              // do not count MH.this; it is not stacked for invokedynamic
   if (Atomic::cmpxchg_ptr(call_site(), &_f1, NULL) == NULL) {
     // racing threads might be trying to install their own favorites
     set_f1(call_site());
   }
-  set_f2(extra_data);
-  set_flags(as_flags(as_TosState(method->result_type()), method->is_final_method(), false, false, false, true) | param_size);
+  //set_f2(0);
+  bool is_final = true;
+  assert(signature_invoker->is_final_method(), "is_final");
+  set_flags(as_flags(as_TosState(signature_invoker->result_type()), is_final, false, false, false, true) | param_size);
   // do not do set_bytecode on a secondary CP cache entry
   //set_bytecode_1(Bytecodes::_invokedynamic);
 }

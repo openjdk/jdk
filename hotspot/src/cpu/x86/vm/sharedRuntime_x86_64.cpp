@@ -452,22 +452,6 @@ static void patch_callers_callsite(MacroAssembler *masm) {
   __ bind(L);
 }
 
-// Helper function to put tags in interpreter stack.
-static void  tag_stack(MacroAssembler *masm, const BasicType sig, int st_off) {
-  if (TaggedStackInterpreter) {
-    int tag_offset = st_off + Interpreter::expr_tag_offset_in_bytes(0);
-    if (sig == T_OBJECT || sig == T_ARRAY) {
-      __ movptr(Address(rsp, tag_offset), (int32_t) frame::TagReference);
-    } else if (sig == T_LONG || sig == T_DOUBLE) {
-      int next_tag_offset = st_off + Interpreter::expr_tag_offset_in_bytes(1);
-      __ movptr(Address(rsp, next_tag_offset), (int32_t) frame::TagValue);
-      __ movptr(Address(rsp, tag_offset), (int32_t) frame::TagValue);
-    } else {
-      __ movptr(Address(rsp, tag_offset), (int32_t) frame::TagValue);
-    }
-  }
-}
-
 
 static void gen_c2i_adapter(MacroAssembler *masm,
                             int total_args_passed,
@@ -489,7 +473,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
   // we also account for the return address location since
   // we store it first rather than hold it in rax across all the shuffling
 
-  int extraspace = (total_args_passed * Interpreter::stackElementSize()) + wordSize;
+  int extraspace = (total_args_passed * Interpreter::stackElementSize) + wordSize;
 
   // stack is aligned, keep it that way
   extraspace = round_to(extraspace, 2*wordSize);
@@ -513,9 +497,8 @@ static void gen_c2i_adapter(MacroAssembler *masm,
     }
 
     // offset to start parameters
-    int st_off   = (total_args_passed - i) * Interpreter::stackElementSize() +
-                   Interpreter::value_offset_in_bytes();
-    int next_off = st_off - Interpreter::stackElementSize();
+    int st_off   = (total_args_passed - i) * Interpreter::stackElementSize;
+    int next_off = st_off - Interpreter::stackElementSize;
 
     // Say 4 args:
     // i   st_off
@@ -543,7 +526,6 @@ static void gen_c2i_adapter(MacroAssembler *masm,
         // sign extend??
         __ movl(rax, Address(rsp, ld_off));
         __ movptr(Address(rsp, st_off), rax);
-        tag_stack(masm, sig_bt[i], st_off);
 
       } else {
 
@@ -560,10 +542,8 @@ static void gen_c2i_adapter(MacroAssembler *masm,
           __ mov64(rax, CONST64(0xdeadffffdeadaaaa));
           __ movptr(Address(rsp, st_off), rax);
 #endif /* ASSERT */
-          tag_stack(masm, sig_bt[i], next_off);
         } else {
           __ movq(Address(rsp, st_off), rax);
-          tag_stack(masm, sig_bt[i], st_off);
         }
       }
     } else if (r_1->is_Register()) {
@@ -572,7 +552,6 @@ static void gen_c2i_adapter(MacroAssembler *masm,
         // must be only an int (or less ) so move only 32bits to slot
         // why not sign extend??
         __ movl(Address(rsp, st_off), r);
-        tag_stack(masm, sig_bt[i], st_off);
       } else {
         // Two VMREgs|OptoRegs can be T_OBJECT, T_ADDRESS, T_DOUBLE, T_LONG
         // T_DOUBLE and T_LONG use two slots in the interpreter
@@ -584,10 +563,8 @@ static void gen_c2i_adapter(MacroAssembler *masm,
           __ movptr(Address(rsp, st_off), rax);
 #endif /* ASSERT */
           __ movq(Address(rsp, next_off), r);
-          tag_stack(masm, sig_bt[i], next_off);
         } else {
           __ movptr(Address(rsp, st_off), r);
-          tag_stack(masm, sig_bt[i], st_off);
         }
       }
     } else {
@@ -595,7 +572,6 @@ static void gen_c2i_adapter(MacroAssembler *masm,
       if (!r_2->is_valid()) {
         // only a float use just part of the slot
         __ movflt(Address(rsp, st_off), r_1->as_XMMRegister());
-        tag_stack(masm, sig_bt[i], st_off);
       } else {
 #ifdef ASSERT
         // Overwrite the unused slot with known junk
@@ -603,7 +579,6 @@ static void gen_c2i_adapter(MacroAssembler *masm,
         __ movptr(Address(rsp, st_off), rax);
 #endif /* ASSERT */
         __ movdbl(Address(rsp, next_off), r_1->as_XMMRegister());
-        tag_stack(masm, sig_bt[i], next_off);
       }
     }
   }
@@ -688,9 +663,9 @@ static void gen_i2c_adapter(MacroAssembler *masm,
     assert(!regs[i].second()->is_valid() || regs[i].first()->next() == regs[i].second(),
             "scrambled load targets?");
     // Load in argument order going down.
-    int ld_off = (total_args_passed - i)*Interpreter::stackElementSize() + Interpreter::value_offset_in_bytes();
+    int ld_off = (total_args_passed - i)*Interpreter::stackElementSize;
     // Point to interpreter value (vs. tag)
-    int next_off = ld_off - Interpreter::stackElementSize();
+    int next_off = ld_off - Interpreter::stackElementSize;
     //
     //
     //
@@ -2535,7 +2510,7 @@ nmethod *SharedRuntime::generate_dtrace_nmethod(MacroAssembler *masm,
 // this function returns the adjust size (in number of words) to a c2i adapter
 // activation for use during deoptimization
 int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals ) {
-  return (callee_locals - callee_parameters) * Interpreter::stackElementWords();
+  return (callee_locals - callee_parameters) * Interpreter::stackElementWords;
 }
 
 

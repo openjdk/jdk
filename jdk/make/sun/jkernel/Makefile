@@ -52,6 +52,11 @@ ifeq ($(ARCH_DATA_MODEL), 32)
 
 ifeq ($(PLATFORM), windows)
 
+# If this is the VS Express compiler it will lack vc/atlmfc/
+ATL_MFC_DIR :=$(call DirExists,$(COMPILER_PATH)/../atlmfc,,)
+
+ifneq ($(ATL_MFC_DIR),)
+
 include FILES_c_windows.gmk
 
 vpath %.cpp   $(PLATFORM_SRC)/native/sun/jkernel
@@ -62,6 +67,8 @@ VERSIONINFO_RESOURCE = $(PLATFORM_SRC)/native/sun/jkernel/kernel.rc
 LDLIBS += urlmon.lib wininet.lib shlwapi.lib version.lib comctl32.lib gdi32.lib -def:$(PLATFORM_SRC)/native/sun/jkernel/kernel.def
 
 include $(BUILDDIR)/common/Library.gmk
+
+endif
 
 endif
 

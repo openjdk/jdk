@@ -2867,12 +2867,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
 #endif // _LP64
 
-  // MethodHandles code does not support TaggedStackInterpreter.
-  if (EnableMethodHandles && TaggedStackInterpreter) {
-    warning("TaggedStackInterpreter is not supported by MethodHandles code.  Disabling TaggedStackInterpreter.");
-    TaggedStackInterpreter = false;
-  }
-
   // Check the GC selections again.
   if (!check_gc_consistency()) {
     return JNI_EINVAL;
@@ -2914,11 +2908,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   FLAG_SET_DEFAULT(UseBiasedLocking, false);
   LP64_ONLY(FLAG_SET_DEFAULT(UseCompressedOops, false));
 #endif // CC_INTERP
-
-#ifdef ZERO
-  // Clear flags not supported by Zero
-  FLAG_SET_DEFAULT(TaggedStackInterpreter, false);
-#endif // ZERO
 
 #ifdef COMPILER2
   if (!UseBiasedLocking || EmitSync != 0) {
