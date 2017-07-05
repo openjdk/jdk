@@ -24,7 +24,7 @@
  */
 package jdk.tools.jlink.internal;
 
-import jdk.tools.jlink.plugin.Pool;
+import jdk.tools.jlink.plugin.ModulePool;
 
 /**
  * Plugin wishing to pre-visit the resources must implement this interface.
@@ -44,5 +44,5 @@ public interface ResourcePrevisitor {
      * usage.
      * @throws PluginException
      */
-    public void previsit(Pool resources, StringTable strings);
+    public void previsit(ModulePool resources, StringTable strings);
 }

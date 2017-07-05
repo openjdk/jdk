@@ -44,16 +44,18 @@ import java.util.ArrayList;
  * @see Logger
  * @see LogManager
  */
-class Logging implements LoggingMXBean {
+@SuppressWarnings("deprecation") // implements LoggingMXBean
+final class Logging implements LoggingMXBean {
 
     private static LogManager logManager = LogManager.getLogManager();
 
     /** Constructor of Logging which is the implementation class
      *  of LoggingMXBean.
      */
-    Logging() {
+    private Logging() {
     }
 
+    @Override
     public List<String> getLoggerNames() {
         Enumeration<String> loggers = logManager.getLoggerNames();
         ArrayList<String> array = new ArrayList<>();
@@ -65,6 +67,7 @@ class Logging implements LoggingMXBean {
     }
 
     private static String EMPTY_STRING = "";
+    @Override
     public String getLoggerLevel(String loggerName) {
         Logger l = logManager.getLogger(loggerName);
         if (l == null) {
@@ -79,6 +82,7 @@ class Logging implements LoggingMXBean {
         }
     }
 
+    @Override
     public void setLoggerLevel(String loggerName, String levelName) {
         if (loggerName == null) {
             throw new NullPointerException("loggerName is null");
@@ -102,6 +106,7 @@ class Logging implements LoggingMXBean {
         logger.setLevel(level);
     }
 
+    @Override
     public String getParentLoggerName( String loggerName ) {
         Logger l = logManager.getLogger( loggerName );
         if (l == null) {
@@ -116,4 +121,11 @@ class Logging implements LoggingMXBean {
             return p.getName();
         }
     }
+
+    static Logging getInstance() {
+        return INSTANCE;
+    }
+
+    private static final Logging INSTANCE = new Logging();
+
 }

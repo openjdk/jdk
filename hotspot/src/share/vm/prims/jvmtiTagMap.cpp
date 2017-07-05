@@ -146,11 +146,7 @@ class JvmtiTagHashmap : public CHeapObj<mtInternal> {
     _size_index = size_index;
     _size = initial_size;
     _entry_count = 0;
-    if (TraceJVMTIObjectTagging) {
-      _trace_threshold = initial_trace_threshold;
-    } else {
-      _trace_threshold = -1;
-    }
+    _trace_threshold = initial_trace_threshold;
     _load_factor = load_factor;
     _resize_threshold = (int)(_load_factor * _size);
     _resizing_enabled = true;
@@ -329,8 +325,7 @@ class JvmtiTagHashmap : public CHeapObj<mtInternal> {
     }
 
     _entry_count++;
-    if (trace_threshold() > 0 && entry_count() >= trace_threshold()) {
-      assert(TraceJVMTIObjectTagging, "should only get here when tracing");
+    if (log_is_enabled(Debug, jvmti, objecttagging) && entry_count() >= trace_threshold()) {
       print_memory_usage();
       compute_next_trace_threshold();
     }
@@ -409,6 +404,7 @@ void JvmtiTagHashmap::print_memory_usage() {
 
 // compute threshold for the next trace message
 void JvmtiTagHashmap::compute_next_trace_threshold() {
+  _trace_threshold = entry_count();
   if (trace_threshold() < medium_trace_threshold) {
     _trace_threshold += small_trace_threshold;
   } else {
@@ -3413,12 +3409,6 @@ void JvmtiTagMap::do_weak_oops(BoolObjectClosure* is_alive, OopClosure* f) {
     delayed_add = next;
   }
 
-  // stats
-  if (TraceJVMTIObjectTagging) {
-    int post_total = hashmap->_entry_count;
-    int pre_total = post_total + freed;
-
-    tty->print_cr("(%d->%d, %d freed, %d total moves)",
-        pre_total, post_total, freed, moved);
-  }
+  log_debug(jvmti, objecttagging)("(%d->%d, %d freed, %d total moves)",
+                                  hashmap->_entry_count + freed, hashmap->_entry_count, freed, moved);
 }

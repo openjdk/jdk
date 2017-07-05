@@ -33,6 +33,7 @@ import sun.hotspot.code.BlobType;
 /**
  * @test MemoryPoolsPresenceTest
  * @library /testlibrary /test/lib
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build MemoryPoolsPresenceTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

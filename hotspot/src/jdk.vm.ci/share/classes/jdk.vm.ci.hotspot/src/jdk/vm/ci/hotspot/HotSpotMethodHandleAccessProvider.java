@@ -130,7 +130,7 @@ public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProv
 
         /* Load non-public field: LambdaForm MethodHandle.form */
         JavaConstant lambdaForm = constantReflection.readFieldValue(LazyInitialization.methodHandleFormField, methodHandle);
-        if (lambdaForm.isNull()) {
+        if (lambdaForm == null || lambdaForm.isNull()) {
             return null;
         }
 

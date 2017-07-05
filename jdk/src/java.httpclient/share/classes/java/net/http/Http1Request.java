@@ -101,16 +101,13 @@ class Http1Request {
 
         for (Map.Entry<String,List<String>> entry : entries) {
             String key = entry.getKey();
-            sb.append(key).append(": ");
             List<String> values = entry.getValue();
-            int num = values.size();
             for (String value : values) {
-                sb.append(value);
-                if (--num > 0) {
-                    sb.append(',');
-                }
+                sb.append(key)
+                  .append(": ")
+                  .append(value)
+                  .append("\r\n");
             }
-            sb.append("\r\n");
         }
     }
 

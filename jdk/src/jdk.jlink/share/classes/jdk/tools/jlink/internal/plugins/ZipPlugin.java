@@ -34,10 +34,9 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.zip.Deflater;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.internal.PoolImpl;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
-import jdk.tools.jlink.plugin.Pool.ModuleDataType;
+import jdk.tools.jlink.internal.ModulePoolImpl;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 import jdk.tools.jlink.internal.Utils;
 
@@ -68,9 +67,9 @@ public final class ZipPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<PluginType> getType() {
-        Set<PluginType> set = new HashSet<>();
-        set.add(CATEGORY.COMPRESSOR);
+    public Set<Category> getType() {
+        Set<Category> set = new HashSet<>();
+        set.add(Category.COMPRESSOR);
         return Collections.unmodifiableSet(set);
     }
 
@@ -124,16 +123,16 @@ public final class ZipPlugin implements TransformerPlugin {
     }
 
     @Override
-    public void visit(Pool in, Pool out) {
-        in.visit((resource) -> {
-            ModuleData res = resource;
-            if (resource.getType().equals(ModuleDataType.CLASS_OR_RESOURCE)
+    public void visit(ModulePool in, ModulePool out) {
+        in.transformAndCopy((resource) -> {
+            ModuleEntry res = resource;
+            if (resource.getType().equals(ModuleEntry.Type.CLASS_OR_RESOURCE)
                     && predicate.test(resource.getPath())) {
                 byte[] compressed;
                 compressed = compress(resource.getBytes());
-                res = PoolImpl.newCompressedResource(resource,
+                res = ModulePoolImpl.newCompressedResource(resource,
                         ByteBuffer.wrap(compressed), getName(), null,
-                        ((PoolImpl) in).getStringTable(), in.getByteOrder());
+                        ((ModulePoolImpl) in).getStringTable(), in.getByteOrder());
             }
             return res;
         }, out);

@@ -93,7 +93,10 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_VARIANTS],
   # Check that the selected variants are valid
 
   # grep filter function inspired by a comment to http://stackoverflow.com/a/1617326
-  INVALID_VARIANTS=`$GREP -Fvx "${VALID_JVM_VARIANTS// /$'\n'}" <<< "${JVM_VARIANTS// /$'\n'}"`
+  # Notice that the original variant failes on SLES 10 and 11
+  NEEDLE=${VALID_JVM_VARIANTS// /$'\n'}
+  STACK=${JVM_VARIANTS// /$'\n'}
+  INVALID_VARIANTS=`$GREP -Fvx "${NEEDLE}" <<< "${STACK}"`
   if test "x$INVALID_VARIANTS" != x; then
     AC_MSG_NOTICE([Unknown variant(s) specified: $INVALID_VARIANTS])
     AC_MSG_ERROR([The available JVM variants are: $VALID_JVM_VARIANTS])
@@ -101,7 +104,9 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_JVM_VARIANTS],
 
   # All "special" variants share the same output directory ("server")
   VALID_MULTIPLE_JVM_VARIANTS="server client minimal"
-  INVALID_MULTIPLE_VARIANTS=`$GREP -Fvx "${VALID_MULTIPLE_JVM_VARIANTS// /$'\n'}" <<< "${JVM_VARIANTS// /$'\n'}"`
+  NEEDLE=${VALID_MULTIPLE_JVM_VARIANTS// /$'\n'}
+  STACK=${JVM_VARIANTS// /$'\n'}
+  INVALID_MULTIPLE_VARIANTS=`$GREP -Fvx "${NEEDLE}" <<< "${STACK}"`
   if  test "x$INVALID_MULTIPLE_VARIANTS" != x && test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = xtrue; then
     AC_MSG_ERROR([You cannot build multiple variants with anything else than $VALID_MULTIPLE_JVM_VARIANTS.])
   fi
@@ -293,146 +298,51 @@ AC_DEFUN_ONCE([HOTSPOT_VALIDATE_JVM_FEATURES],
     features_var_name=JVM_FEATURES_$variant
     JVM_FEATURES_TO_TEST=${!features_var_name}
     AC_MSG_RESULT([$JVM_FEATURES_TO_TEST])
-    INVALID_FEATURES=`$GREP -Fvx "${VALID_JVM_FEATURES// /$'\n'}" <<< "${JVM_FEATURES_TO_TEST// /$'\n'}"`
+    NEEDLE=${VALID_JVM_FEATURES// /$'\n'}
+    STACK=${JVM_FEATURES_TO_TEST// /$'\n'}
+    INVALID_FEATURES=`$GREP -Fvx "${NEEDLE}" <<< "${STACK}"`
     if test "x$INVALID_FEATURES" != x; then
       AC_MSG_ERROR([Invalid JVM feature(s): $INVALID_FEATURES])
     fi
   done
 ])
 
-###############################################################################
-# Support for old hotspot build. Remove once new hotspot build has proven
-# to work satisfactory.
+################################################################################
+# Check if gtest should be built
 #
-AC_DEFUN_ONCE([HOTSPOT_SETUP_LEGACY_BUILD],
+AC_DEFUN_ONCE([HOTSPOT_ENABLE_DISABLE_GTEST],
 [
-  AC_ARG_ENABLE(new-hotspot-build, [AS_HELP_STRING([--disable-new-hotspot-build],
-      [disable the new hotspot build system (use the old) @<:@enabled@:>@])])
+  AC_ARG_ENABLE([hotspot-gtest], [AS_HELP_STRING([--disable-hotspot-gtest],
+      [Disables building of the Hotspot unit tests])])
 
-   if test "x$enable_new_hotspot_build" = "x" || test "x$enable_new_hotspot_build" = "xyes"; then
-     USE_NEW_HOTSPOT_BUILD=true
-   else
-     USE_NEW_HOTSPOT_BUILD=false
-   fi
-  AC_SUBST(USE_NEW_HOTSPOT_BUILD)
-
-  case $HOTSPOT_DEBUG_LEVEL in
-    product )
-      VARIANT="OPT"
-      FASTDEBUG="false"
-      DEBUG_CLASSFILES="false"
-      ;;
-    fastdebug )
-      VARIANT="DBG"
-      FASTDEBUG="true"
-      DEBUG_CLASSFILES="true"
-      ;;
-    debug )
-      VARIANT="DBG"
-      FASTDEBUG="false"
-      DEBUG_CLASSFILES="true"
-      ;;
-    optimized )
-      VARIANT="OPT"
-      FASTDEBUG="false"
-      DEBUG_CLASSFILES="false"
-      ;;
-  esac
-  AC_SUBST(VARIANT)
-  AC_SUBST(FASTDEBUG)
-  AC_SUBST(DEBUG_CLASSFILES)
-
-  if test "x$OPENJDK_TARGET_OS" = "xmacosx"; then
-    MACOSX_UNIVERSAL="true"
-  fi
-
-  AC_SUBST(MACOSX_UNIVERSAL)
-
-  # Make sure JVM_VARIANTS_COMMA use minimal1 for backwards compatibility
-  JVM_VARIANTS_COMMA=`$ECHO ,$JVM_VARIANTS_OPT, | $SED -e 's/,minimal,/,minimal1,/'`
-
-  JVM_VARIANT_SERVER=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,server,/!s/.*/false/g' -e '/,server,/s/.*/true/g'`
-  JVM_VARIANT_CLIENT=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,client,/!s/.*/false/g' -e '/,client,/s/.*/true/g'`
-  JVM_VARIANT_MINIMAL1=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,minimal1\?,/!s/.*/false/g' -e '/,minimal1\?,/s/.*/true/g'`
-  JVM_VARIANT_CORE=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,core,/!s/.*/false/g' -e '/,core,/s/.*/true/g'`
-  JVM_VARIANT_ZERO=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,zero,/!s/.*/false/g' -e '/,zero,/s/.*/true/g'`
-  JVM_VARIANT_ZEROSHARK=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,zeroshark,/!s/.*/false/g' -e '/,zeroshark,/s/.*/true/g'`
-  JVM_VARIANT_CUSTOM=`$ECHO "$JVM_VARIANTS_COMMA" | $SED -e '/,custom,/!s/.*/false/g' -e '/,custom,/s/.*/true/g'`
-
-  #####
-  # Generate the legacy makefile targets for hotspot.
-  HOTSPOT_TARGET=""
-
-  if test "x$JVM_VARIANT_SERVER" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL} "
-  fi
-
-  if test "x$JVM_VARIANT_CLIENT" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}1 "
-  fi
-
-  if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}minimal1 "
-  fi
-
-  if test "x$JVM_VARIANT_ZERO" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}zero "
-  fi
-
-  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}shark "
-  fi
-
-  if test "x$JVM_VARIANT_CORE" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}core "
-  fi
-
-  HOTSPOT_TARGET="$HOTSPOT_TARGET docs export_$HOTSPOT_DEBUG_LEVEL"
-
-  # On Macosx universal binaries are produced, but they only contain
-  # 64 bit intel. This invalidates control of which jvms are built
-  # from configure, but only server is valid anyway. Fix this
-  # when hotspot makefiles are rewritten.
-  if test "x$MACOSX_UNIVERSAL" = xtrue; then
-    HOTSPOT_TARGET=universal_${HOTSPOT_DEBUG_LEVEL}
-  fi
-
-  HOTSPOT_MAKE_ARGS="$HOTSPOT_TARGET"
-  AC_SUBST(HOTSPOT_MAKE_ARGS)
-
-  # Control wether Hotspot runs Queens test after build.
-  AC_ARG_ENABLE([hotspot-test-in-build], [AS_HELP_STRING([--enable-hotspot-test-in-build],
-      [run the Queens test after Hotspot build @<:@disabled@:>@])],,
-      [enable_hotspot_test_in_build=no])
-  if test "x$enable_hotspot_test_in_build" = "xyes"; then
-    TEST_IN_BUILD=true
+  if test -e "$HOTSPOT_TOPDIR/test/native"; then
+    GTEST_DIR_EXISTS="true"
   else
-    TEST_IN_BUILD=false
-  fi
-  AC_SUBST(TEST_IN_BUILD)
-
-  if test "x$USE_NEW_HOTSPOT_BUILD" = xfalse; then
-    if test "x$JVM_VARIANT_CLIENT" = xtrue; then
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        AC_MSG_ERROR([You cannot build a client JVM for a 64-bit machine.])
-      fi
-    fi
-    if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        AC_MSG_ERROR([You cannot build a minimal JVM for a 64-bit machine.])
-      fi
-    fi
-    if test "x$JVM_VARIANT_CUSTOM" = xtrue; then
-        AC_MSG_ERROR([You cannot build a custom JVM using the old hotspot build system.])
-    fi
+    GTEST_DIR_EXISTS="false"
   fi
 
-  AC_SUBST(JVM_VARIANTS_COMMA)
-  AC_SUBST(JVM_VARIANT_SERVER)
-  AC_SUBST(JVM_VARIANT_CLIENT)
-  AC_SUBST(JVM_VARIANT_MINIMAL1)
-  AC_SUBST(JVM_VARIANT_HOTSPOT)
-  AC_SUBST(JVM_VARIANT_ZERO)
-  AC_SUBST(JVM_VARIANT_ZEROSHARK)
-  AC_SUBST(JVM_VARIANT_CORE)
+  AC_MSG_CHECKING([if Hotspot gtest unit tests should be built])
+  if test "x$enable_hotspot_gtest" = "xyes"; then
+    if test "x$GTEST_DIR_EXISTS" = "xtrue"; then
+      AC_MSG_RESULT([yes, forced])
+      BUILD_GTEST="true"
+    else
+      AC_MSG_ERROR([Cannot build gtest without the test source])
+    fi
+  elif test "x$enable_hotspot_gtest" = "xno"; then
+    AC_MSG_RESULT([no, forced])
+    BUILD_GTEST="false"
+  elif test "x$enable_hotspot_gtest" = "x"; then
+    if test "x$GTEST_DIR_EXISTS" = "xtrue"; then
+      AC_MSG_RESULT([yes])
+      BUILD_GTEST="true"
+    else
+      AC_MSG_RESULT([no])
+      BUILD_GTEST="false"
+    fi
+  else
+    AC_MSG_ERROR([--enable-gtest must be either yes or no])
+  fi
+
+  AC_SUBST(BUILD_GTEST)
 ])

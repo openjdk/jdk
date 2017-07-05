@@ -67,7 +67,7 @@ void LinearScan::allocate_fpu_stack() {
       //       register information would be incorrect.
       if (b->number_of_preds() > 1) {
         int id = b->first_lir_instruction_id();
-        BitMap regs(FrameMap::nof_fpu_regs);
+        ResourceBitMap regs(FrameMap::nof_fpu_regs);
         regs.clear();
 
         iw.walk_to(id);   // walk after the first instruction (always a label) of the block
@@ -786,58 +786,6 @@ void FpuStackAllocator::handle_op2(LIR_Op2* op2) {
       break;
     }
 
-    case lir_log10: {
-      // log and log10 need one temporary fpu stack slot, so
-      // there is one temporary registers stored in temp of the
-      // operation. the stack allocator must guarantee that the stack
-      // slots are really free, otherwise there might be a stack
-      // overflow.
-      assert(right->is_illegal(), "must be");
-      assert(left->is_fpu_register(), "must be");
-      assert(res->is_fpu_register(), "must be");
-      assert(op2->tmp1_opr()->is_fpu_register(), "must be");
-
-      insert_free_if_dead(op2->tmp1_opr());
-      insert_free_if_dead(res, left);
-      insert_exchange(left);
-      do_rename(left, res);
-
-      new_left = to_fpu_stack_top(res);
-      new_res = new_left;
-
-      op2->set_fpu_stack_size(sim()->stack_size());
-      assert(sim()->stack_size() <= 7, "at least one stack slot must be free");
-      break;
-    }
-
-
-    case lir_tan: {
-      // sin, cos and exp need two temporary fpu stack slots, so there are two temporary
-      // registers (stored in right and temp of the operation).
-      // the stack allocator must guarantee that the stack slots are really free,
-      // otherwise there might be a stack overflow.
-      assert(left->is_fpu_register(), "must be");
-      assert(res->is_fpu_register(), "must be");
-      // assert(left->is_last_use(), "old value gets destroyed");
-      assert(right->is_fpu_register(), "right is used as the first temporary register");
-      assert(op2->tmp1_opr()->is_fpu_register(), "temp is used as the second temporary register");
-      assert(fpu_num(left) != fpu_num(right) && fpu_num(right) != fpu_num(op2->tmp1_opr()) && fpu_num(op2->tmp1_opr()) != fpu_num(res), "need distinct temp registers");
-
-      insert_free_if_dead(right);
-      insert_free_if_dead(op2->tmp1_opr());
-
-      insert_free_if_dead(res, left);
-      insert_exchange(left);
-      do_rename(left, res);
-
-      new_left = to_fpu_stack_top(res);
-      new_res = new_left;
-
-      op2->set_fpu_stack_size(sim()->stack_size());
-      assert(sim()->stack_size() <= 6, "at least two stack slots must be free");
-      break;
-    }
-
     default: {
       assert(false, "missed a fpu-operation");
     }
@@ -1121,7 +1069,7 @@ bool FpuStackAllocator::merge_fpu_stack_with_successors(BlockBegin* block) {
       // clean up stack first so that there are no dead values on the stack
       if (ComputeExactFPURegisterUsage) {
         FpuStackSim* cur_sim = sim();
-        BitMap live_fpu_regs = block->sux_at(0)->fpu_register_usage();
+        ResourceBitMap live_fpu_regs = block->sux_at(0)->fpu_register_usage();
         assert(live_fpu_regs.size() == FrameMap::nof_fpu_regs, "missing register usage");
 
         merge_cleanup_fpu_stack(instrs, cur_sim, live_fpu_regs);

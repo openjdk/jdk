@@ -36,6 +36,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -50,9 +51,10 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.Pool;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 import jdk.tools.jlink.internal.plugins.SystemModuleDescriptorPlugin.Builder.*;
+import jdk.tools.jlink.plugin.ModuleEntry;
 
 /**
  * Jlink plugin to reconstitute module descriptors for installed modules.
@@ -81,8 +83,8 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<PluginType> getType() {
-        return Collections.singleton(CATEGORY.TRANSFORMER);
+    public Set<Category> getType() {
+        return Collections.singleton(Category.TRANSFORMER);
     }
 
     @Override
@@ -96,9 +98,9 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<STATE> getState() {
-        return enabled ? EnumSet.of(STATE.AUTO_ENABLED, STATE.FUNCTIONAL)
-                       : EnumSet.of(STATE.DISABLED);
+    public Set<State> getState() {
+        return enabled ? EnumSet.of(State.AUTO_ENABLED, State.FUNCTIONAL)
+                       : EnumSet.of(State.DISABLED);
     }
 
     @Override
@@ -110,7 +112,7 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
 
 
     @Override
-    public void visit(Pool in, Pool out) {
+    public void visit(ModulePool in, ModulePool out) {
         if (!enabled) {
             throw new PluginException(NAME + " was set");
         }
@@ -119,13 +121,14 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
 
         // generate the byte code to create ModuleDescriptors
         // skip parsing module-info.class and skip name check
-        for (Pool.Module module : in.getModules()) {
-            Pool.ModuleData data = module.get("module-info.class");
-            if (data == null) {
+        in.modules().forEach(module -> {
+            Optional<ModuleEntry> optData = module.findEntry("module-info.class");
+            if (! optData.isPresent()) {
                 // automatic module not supported yet
                 throw new PluginException("module-info.class not found for " +
                                           module.getName() + " module");
             }
+            ModuleEntry data = optData.get();
             assert module.getName().equals(data.getModule());
             try {
                 ByteArrayInputStream bain = new ByteArrayInputStream(data.getBytes());
@@ -141,7 +144,7 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
                     ModuleInfoRewriter minfoWriter =
                         new ModuleInfoRewriter(bain, mbuilder.conceals());
                     // replace with the overridden version
-                    data = new Pool.ModuleData(data.getModule(),
+                    data = ModuleEntry.create(data.getModule(),
                                                data.getPath(),
                                                data.getType(),
                                                minfoWriter.stream(),
@@ -151,19 +154,17 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
             } catch (IOException e) {
                 throw new PluginException(e);
             }
-
-        }
+        });
 
         // Generate the new class
         ClassWriter cwriter = builder.build();
-        for (Pool.ModuleData data : in.getContent()) {
+        in.entries().forEach(data -> {
             if (data.getPath().endsWith("module-info.class"))
-                continue;
-
+                return;
             if (builder.isOverriddenClass(data.getPath())) {
                 byte[] bytes = cwriter.toByteArray();
-                Pool.ModuleData ndata =
-                    new Pool.ModuleData(data.getModule(),
+                ModuleEntry ndata =
+                    ModuleEntry.create(data.getModule(),
                                         data.getPath(),
                                         data.getType(),
                                         new ByteArrayInputStream(bytes),
@@ -172,7 +173,7 @@ public final class SystemModuleDescriptorPlugin implements TransformerPlugin {
             } else {
                 out.add(data);
             }
-        }
+        });
     }
 
     /*

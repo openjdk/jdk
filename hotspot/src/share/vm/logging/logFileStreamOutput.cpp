@@ -25,14 +25,13 @@
 #include "logging/logDecorators.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logFileStreamOutput.hpp"
+#include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.inline.hpp"
 
 LogStdoutOutput LogStdoutOutput::_instance;
 LogStderrOutput LogStderrOutput::_instance;
 
-int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
-  char decoration_buf[LogDecorations::DecorationsBufferSize];
-  char* position = decoration_buf;
+int LogFileStreamOutput::write_decorations(const LogDecorations& decorations) {
   int total_written = 0;
 
   for (uint i = 0; i < LogDecorators::Count; i++) {
@@ -40,23 +39,50 @@ int LogFileStreamOutput::write(const LogDecorations& decorations, const char* ms
     if (!_decorators.is_decorator(decorator)) {
       continue;
     }
-    int written = jio_snprintf(position, sizeof(decoration_buf) - total_written, "[%-*s]",
-                               _decorator_padding[decorator],
-                               decorations.decoration(decorator));
+
+    int written = jio_fprintf(_stream, "[%-*s]",
+                              _decorator_padding[decorator],
+                              decorations.decoration(decorator));
     if (written <= 0) {
       return -1;
     } else if (static_cast<size_t>(written - 2) > _decorator_padding[decorator]) {
       _decorator_padding[decorator] = written - 2;
     }
-    position += written;
     total_written += written;
   }
+  return total_written;
+}
 
-  if (total_written == 0) {
-    total_written = jio_fprintf(_stream, "%s\n", msg);
-  } else {
-    total_written = jio_fprintf(_stream, "%s %s\n", decoration_buf, msg);
+int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
+  const bool use_decorations = !_decorators.is_empty();
+
+  int written = 0;
+  os::flockfile(_stream);
+  if (use_decorations) {
+    written += write_decorations(decorations);
+    written += jio_fprintf(_stream, " ");
+  }
+  written += jio_fprintf(_stream, "%s\n", msg);
+  fflush(_stream);
+  os::funlockfile(_stream);
+
+  return written;
+}
+
+int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
+  const bool use_decorations = !_decorators.is_empty();
+
+  int written = 0;
+  os::flockfile(_stream);
+  for (; !msg_iterator.is_at_end(); msg_iterator++) {
+    if (use_decorations) {
+      written += write_decorations(msg_iterator.decorations());
+      written += jio_fprintf(_stream, " ");
+    }
+    written += jio_fprintf(_stream, "%s\n", msg_iterator.message());
   }
   fflush(_stream);
-  return total_written;
+  os::funlockfile(_stream);
+
+  return written;
 }

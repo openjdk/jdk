@@ -40,9 +40,10 @@ import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import jdk.tools.jlink.plugin.TransformerPlugin;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleDataType;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.internal.Utils;
+import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.PluginException;
 
 /**
@@ -102,24 +103,24 @@ public final class ExcludeVMPlugin implements TransformerPlugin {
      * e.g.: /java.base/native/amd64/server/libjvm.so
      * /java.base/native/server/libjvm.dylib
      */
-    private List<Pool.ModuleData> getVMs(Pool in) {
+    private List<ModuleEntry> getVMs(ModulePool in) {
         String jvmlib = jvmlib();
-        List<Pool.ModuleData> ret = in.getModule("java.base").getContent().stream().filter((t) -> {
+        List<ModuleEntry> ret = in.findModule("java.base").get().entries().filter((t) -> {
             return t.getPath().endsWith("/" + jvmlib);
         }).collect(Collectors.toList());
         return ret;
     }
 
     @Override
-    public void visit(Pool in, Pool out) {
+    public void visit(ModulePool in, ModulePool out) {
         String jvmlib = jvmlib();
         TreeSet<Jvm> existing = new TreeSet<>(new JvmComparator());
         TreeSet<Jvm> removed = new TreeSet<>(new JvmComparator());
         if (!keepAll) {
             // First retrieve all available VM names and removed VM
-            List<Pool.ModuleData> jvms = getVMs(in);
+            List<ModuleEntry> jvms = getVMs(in);
             for (Jvm jvm : Jvm.values()) {
-                for (Pool.ModuleData md : jvms) {
+                for (ModuleEntry md : jvms) {
                     if (md.getPath().endsWith("/" + jvm.getName() + "/" + jvmlib)) {
                         existing.add(jvm);
                         if (isRemoved(md)) {
@@ -137,9 +138,9 @@ public final class ExcludeVMPlugin implements TransformerPlugin {
         }
 
         // Rewrite the jvm.cfg file.
-        in.visit((file) -> {
+        in.transformAndCopy((file) -> {
             if (!keepAll) {
-                if (file.getType().equals(ModuleDataType.NATIVE_LIB)) {
+                if (file.getType().equals(ModuleEntry.Type.NATIVE_LIB)) {
                     if (file.getPath().endsWith(JVM_CFG)) {
                         try {
                             file = handleJvmCfgFile(file, existing, removed);
@@ -155,14 +156,14 @@ public final class ExcludeVMPlugin implements TransformerPlugin {
 
     }
 
-    private boolean isRemoved(Pool.ModuleData file) {
+    private boolean isRemoved(ModuleEntry file) {
         return !predicate.test(file.getPath());
     }
 
     @Override
-    public Set<PluginType> getType() {
-        Set<PluginType> set = new HashSet<>();
-        set.add(CATEGORY.FILTER);
+    public Set<Category> getType() {
+        Set<Category> set = new HashSet<>();
+        set.add(Category.FILTER);
         return Collections.unmodifiableSet(set);
     }
 
@@ -217,7 +218,7 @@ public final class ExcludeVMPlugin implements TransformerPlugin {
         }
     }
 
-    private Pool.ModuleData handleJvmCfgFile(Pool.ModuleData orig,
+    private ModuleEntry handleJvmCfgFile(ModuleEntry orig,
             TreeSet<Jvm> existing,
             TreeSet<Jvm> removed) throws IOException {
         if (keepAll) {
@@ -253,7 +254,7 @@ public final class ExcludeVMPlugin implements TransformerPlugin {
 
         byte[] content = builder.toString().getBytes(StandardCharsets.UTF_8);
 
-        return Pool.newImageFile(orig.getModule(),
+        return ModuleEntry.create(orig.getModule(),
                 orig.getPath(),
                 orig.getType(),
                 new ByteArrayInputStream(content), content.length);

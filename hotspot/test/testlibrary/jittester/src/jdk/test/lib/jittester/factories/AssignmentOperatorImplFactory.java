@@ -31,7 +31,7 @@ import jdk.test.lib.jittester.ProductionFailedException;
 import jdk.test.lib.jittester.Rule;
 import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.TypeList;
-import jdk.test.lib.jittester.TypeUtil;
+import jdk.test.lib.jittester.utils.TypeUtil;
 import jdk.test.lib.jittester.VariableBase;
 import jdk.test.lib.jittester.VariableInfo;
 import jdk.test.lib.jittester.types.TypeKlass;

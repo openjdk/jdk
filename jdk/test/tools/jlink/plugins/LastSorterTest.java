@@ -26,6 +26,7 @@
  * @summary Test last sorter property
  * @author Jean-Francois Denise
  * @modules jdk.jlink/jdk.tools.jlink.internal
+ *          jdk.jlink/jdk.tools.jlink
  * @run main/othervm LastSorterTest
  */
 
@@ -40,12 +41,12 @@ import java.util.Set;
 import jdk.tools.jlink.internal.ImagePluginConfiguration;
 import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.internal.ImagePluginStack;
-import jdk.tools.jlink.internal.PoolImpl;
+import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.Jlink;
 import jdk.tools.jlink.Jlink.PluginsConfiguration;
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 import jdk.tools.jlink.plugin.TransformerPlugin;
 
 public class LastSorterTest {
@@ -80,7 +81,7 @@ public class LastSorterTest {
         ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(config);
 
         // check order
-        PoolImpl res = fillOutResourcePool();
+        ModulePoolImpl res = fillOutResourceModulePool();
 
         try {
             stack.visitResources(res);
@@ -91,18 +92,18 @@ public class LastSorterTest {
         }
     }
 
-    private PoolImpl fillOutResourcePool() throws Exception {
-        PoolImpl res = new PoolImpl();
-        res.add(Pool.newResource("/eee/bbb/res1.class", new byte[90]));
-        res.add(Pool.newResource("/aaaa/bbb/res2.class", new byte[90]));
-        res.add(Pool.newResource("/bbb/aa/res1.class", new byte[90]));
-        res.add(Pool.newResource("/aaaa/bbb/res3.class", new byte[90]));
-        res.add(Pool.newResource("/bbb/aa/res2.class", new byte[90]));
-        res.add(Pool.newResource("/fff/bbb/res1.class", new byte[90]));
-        res.add(Pool.newResource("/aaaa/bbb/res1.class", new byte[90]));
-        res.add(Pool.newResource("/bbb/aa/res3.class", new byte[90]));
-        res.add(Pool.newResource("/ccc/bbb/res1.class", new byte[90]));
-        res.add(Pool.newResource("/ddd/bbb/res1.class", new byte[90]));
+    private ModulePoolImpl fillOutResourceModulePool() throws Exception {
+        ModulePoolImpl res = new ModulePoolImpl();
+        res.add(ModuleEntry.create("/eee/bbb/res1.class", new byte[90]));
+        res.add(ModuleEntry.create("/aaaa/bbb/res2.class", new byte[90]));
+        res.add(ModuleEntry.create("/bbb/aa/res1.class", new byte[90]));
+        res.add(ModuleEntry.create("/aaaa/bbb/res3.class", new byte[90]));
+        res.add(ModuleEntry.create("/bbb/aa/res2.class", new byte[90]));
+        res.add(ModuleEntry.create("/fff/bbb/res1.class", new byte[90]));
+        res.add(ModuleEntry.create("/aaaa/bbb/res1.class", new byte[90]));
+        res.add(ModuleEntry.create("/bbb/aa/res3.class", new byte[90]));
+        res.add(ModuleEntry.create("/ccc/bbb/res1.class", new byte[90]));
+        res.add(ModuleEntry.create("/ddd/bbb/res1.class", new byte[90]));
         return res;
     }
 
@@ -124,7 +125,7 @@ public class LastSorterTest {
         ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(config);
 
         // check order
-        PoolImpl res = fillOutResourcePool();
+        ModulePoolImpl res = fillOutResourceModulePool();
 
         stack.visitResources(res);
     }
@@ -159,7 +160,7 @@ public class LastSorterTest {
         ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(config);
 
         // check order
-        PoolImpl res = fillOutResourcePool();
+        ModulePoolImpl res = fillOutResourceModulePool();
         try {
             stack.visitResources(res);
             throw new AssertionError("Order was changed after the last sorter, but no exception occurred");
@@ -178,17 +179,17 @@ public class LastSorterTest {
         }
 
         @Override
-        public void visit(Pool resources, Pool output) {
-            List<ModuleData> paths = new ArrayList<>();
-            for (ModuleData res : resources.getContent()) {
+        public void visit(ModulePool resources, ModulePool output) {
+            List<ModuleEntry> paths = new ArrayList<>();
+            resources.entries().forEach(res -> {
                 if (res.getPath().startsWith(starts)) {
                     paths.add(0, res);
                 } else {
                     paths.add(res);
                 }
-            }
+            });
 
-            for (ModuleData r : paths) {
+            for (ModuleEntry r : paths) {
                 output.add(r);
             }
         }
@@ -199,9 +200,9 @@ public class LastSorterTest {
         }
 
         @Override
-        public Set<PluginType> getType() {
-            Set<PluginType> set = new HashSet<>();
-            set.add(CATEGORY.TRANSFORMER);
+        public Set<Category> getType() {
+            Set<Category> set = new HashSet<>();
+            set.add(Category.TRANSFORMER);
             return Collections.unmodifiableSet(set);
         }
 

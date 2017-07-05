@@ -72,7 +72,7 @@ public class Main {
 
         Configuration cf = Layer.boot().configuration()
             .resolveRequiresAndUses(finder,
-                                    ModuleFinder.empty(),
+                                    ModuleFinder.of(),
                                     Set.of(appModuleName));
 
         System.out.println("Resolved");

@@ -26,6 +26,7 @@
  * @bug 8076987
  * @bug 8078438
  * @summary Verify UseCondCardMark works
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @build Basic
  * @run main/othervm -Xint Basic

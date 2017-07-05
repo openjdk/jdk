@@ -40,5 +40,5 @@ public interface TransformerPlugin extends Plugin {
      *
      * @throws PluginException
      */
-    public void visit(Pool in, Pool out);
+    public void visit(ModulePool in, ModulePool out);
 }

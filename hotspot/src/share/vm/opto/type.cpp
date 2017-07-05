@@ -225,74 +225,156 @@ const Type* Type::get_typeflow_type(ciType* type) {
 
 
 //-----------------------make_from_constant------------------------------------
-const Type* Type::make_from_constant(ciConstant constant, bool require_constant) {
+const Type* Type::make_from_constant(ciConstant constant, bool require_constant,
+                                     int stable_dimension, bool is_narrow_oop,
+                                     bool is_autobox_cache) {
   switch (constant.basic_type()) {
-  case T_BOOLEAN:  return TypeInt::make(constant.as_boolean());
-  case T_CHAR:     return TypeInt::make(constant.as_char());
-  case T_BYTE:     return TypeInt::make(constant.as_byte());
-  case T_SHORT:    return TypeInt::make(constant.as_short());
-  case T_INT:      return TypeInt::make(constant.as_int());
-  case T_LONG:     return TypeLong::make(constant.as_long());
-  case T_FLOAT:    return TypeF::make(constant.as_float());
-  case T_DOUBLE:   return TypeD::make(constant.as_double());
-  case T_ARRAY:
-  case T_OBJECT:
-    {
-      // cases:
-      //   can_be_constant    = (oop not scavengable || ScavengeRootsInCode != 0)
-      //   should_be_constant = (oop not scavengable || ScavengeRootsInCode >= 2)
-      // An oop is not scavengable if it is in the perm gen.
-      ciObject* oop_constant = constant.as_object();
-      if (oop_constant->is_null_object()) {
-        return Type::get_zero_type(T_OBJECT);
-      } else if (require_constant || oop_constant->should_be_constant()) {
-        return TypeOopPtr::make_from_constant(oop_constant, require_constant);
+    case T_BOOLEAN:  return TypeInt::make(constant.as_boolean());
+    case T_CHAR:     return TypeInt::make(constant.as_char());
+    case T_BYTE:     return TypeInt::make(constant.as_byte());
+    case T_SHORT:    return TypeInt::make(constant.as_short());
+    case T_INT:      return TypeInt::make(constant.as_int());
+    case T_LONG:     return TypeLong::make(constant.as_long());
+    case T_FLOAT:    return TypeF::make(constant.as_float());
+    case T_DOUBLE:   return TypeD::make(constant.as_double());
+    case T_ARRAY:
+    case T_OBJECT: {
+        // cases:
+        //   can_be_constant    = (oop not scavengable || ScavengeRootsInCode != 0)
+        //   should_be_constant = (oop not scavengable || ScavengeRootsInCode >= 2)
+        // An oop is not scavengable if it is in the perm gen.
+        const Type* con_type = NULL;
+        ciObject* oop_constant = constant.as_object();
+        if (oop_constant->is_null_object()) {
+          con_type = Type::get_zero_type(T_OBJECT);
+        } else if (require_constant || oop_constant->should_be_constant()) {
+          con_type = TypeOopPtr::make_from_constant(oop_constant, require_constant);
+          if (con_type != NULL) {
+            if (Compile::current()->eliminate_boxing() && is_autobox_cache) {
+              con_type = con_type->is_aryptr()->cast_to_autobox_cache(true);
+            }
+            if (stable_dimension > 0) {
+              assert(FoldStableValues, "sanity");
+              assert(!con_type->is_zero_type(), "default value for stable field");
+              con_type = con_type->is_aryptr()->cast_to_stable(true, stable_dimension);
+            }
+          }
+        }
+        if (is_narrow_oop) {
+          con_type = con_type->make_narrowoop();
+        }
+        return con_type;
       }
-    }
-  case T_ILLEGAL:
-    // Invalid ciConstant returned due to OutOfMemoryError in the CI
-    assert(Compile::current()->env()->failing(), "otherwise should not see this");
-    return NULL;
+    case T_ILLEGAL:
+      // Invalid ciConstant returned due to OutOfMemoryError in the CI
+      assert(Compile::current()->env()->failing(), "otherwise should not see this");
+      return NULL;
   }
   // Fall through to failure
   return NULL;
 }
 
+static ciConstant check_mismatched_access(ciConstant con, BasicType loadbt, bool is_unsigned) {
+  BasicType conbt = con.basic_type();
+  switch (conbt) {
+    case T_BOOLEAN: conbt = T_BYTE;   break;
+    case T_ARRAY:   conbt = T_OBJECT; break;
+  }
+  switch (loadbt) {
+    case T_BOOLEAN:   loadbt = T_BYTE;   break;
+    case T_NARROWOOP: loadbt = T_OBJECT; break;
+    case T_ARRAY:     loadbt = T_OBJECT; break;
+    case T_ADDRESS:   loadbt = T_OBJECT; break;
+  }
+  if (conbt == loadbt) {
+    if (is_unsigned && conbt == T_BYTE) {
+      // LoadB (T_BYTE) with a small mask (<=8-bit) is converted to LoadUB (T_BYTE).
+      return ciConstant(T_INT, con.as_int() & 0xFF);
+    } else {
+      return con;
+    }
+  }
+  if (conbt == T_SHORT && loadbt == T_CHAR) {
+    // LoadS (T_SHORT) with a small mask (<=16-bit) is converted to LoadUS (T_CHAR).
+    return ciConstant(T_INT, con.as_int() & 0xFFFF);
+  }
+  return ciConstant(); // T_ILLEGAL
+}
 
-const Type* Type::make_constant(ciField* field, Node* obj) {
-  if (!field->is_constant())  return NULL;
+// Try to constant-fold a stable array element.
+const Type* Type::make_constant_from_array_element(ciArray* array, int off, int stable_dimension,
+                                                   BasicType loadbt, bool is_unsigned_load) {
+  // Decode the results of GraphKit::array_element_address.
+  ciConstant element_value = array->element_value_by_offset(off);
+  if (element_value.basic_type() == T_ILLEGAL) {
+    return NULL; // wrong offset
+  }
+  ciConstant con = check_mismatched_access(element_value, loadbt, is_unsigned_load);
 
-  const Type* con_type = NULL;
+  assert(con.basic_type() != T_ILLEGAL, "elembt=%s; loadbt=%s; unsigned=%d",
+         type2name(element_value.basic_type()), type2name(loadbt), is_unsigned_load);
+
+  if (con.is_valid() &&          // not a mismatched access
+      !con.is_null_or_zero()) {  // not a default value
+    bool is_narrow_oop = (loadbt == T_NARROWOOP);
+    return Type::make_from_constant(con, /*require_constant=*/true, stable_dimension, is_narrow_oop, /*is_autobox_cache=*/false);
+  }
+  return NULL;
+}
+
+const Type* Type::make_constant_from_field(ciInstance* holder, int off, bool is_unsigned_load, BasicType loadbt) {
+  ciField* field;
+  ciType* type = holder->java_mirror_type();
+  if (type != NULL && type->is_instance_klass() && off >= InstanceMirrorKlass::offset_of_static_fields()) {
+    // Static field
+    field = type->as_instance_klass()->get_field_by_offset(off, /*is_static=*/true);
+  } else {
+    // Instance field
+    field = holder->klass()->as_instance_klass()->get_field_by_offset(off, /*is_static=*/false);
+  }
+  if (field == NULL) {
+    return NULL; // Wrong offset
+  }
+  return Type::make_constant_from_field(field, holder, loadbt, is_unsigned_load);
+}
+
+const Type* Type::make_constant_from_field(ciField* field, ciInstance* holder,
+                                           BasicType loadbt, bool is_unsigned_load) {
+  if (!field->is_constant()) {
+    return NULL; // Non-constant field
+  }
+  ciConstant field_value;
   if (field->is_static()) {
     // final static field
-    con_type = Type::make_from_constant(field->constant_value(), /*require_const=*/true);
-    if (Compile::current()->eliminate_boxing() && field->is_autobox_cache() && con_type != NULL) {
-      con_type = con_type->is_aryptr()->cast_to_autobox_cache(true);
-    }
-  } else {
+    field_value = field->constant_value();
+  } else if (holder != NULL) {
     // final or stable non-static field
     // Treat final non-static fields of trusted classes (classes in
     // java.lang.invoke and sun.invoke packages and subpackages) as
     // compile time constants.
-    if (obj->is_Con()) {
-      const TypeOopPtr* oop_ptr = obj->bottom_type()->isa_oopptr();
-      ciObject* constant_oop = oop_ptr->const_oop();
-      ciConstant constant = field->constant_value_of(constant_oop);
-      con_type = Type::make_from_constant(constant, /*require_const=*/true);
-    }
+    field_value = field->constant_value_of(holder);
   }
-  if (FoldStableValues && field->is_stable() && con_type != NULL) {
-    if (con_type->is_zero_type()) {
-      return NULL; // the field hasn't been initialized yet
-    } else if (con_type->isa_oopptr()) {
-      const Type* stable_type = Type::get_const_type(field->type());
-      if (field->type()->is_array_klass()) {
-        int stable_dimension = field->type()->as_array_klass()->dimension();
-        stable_type = stable_type->is_aryptr()->cast_to_stable(true, stable_dimension);
-      }
-      if (stable_type != NULL) {
-        con_type = con_type->join_speculative(stable_type);
-      }
+  if (!field_value.is_valid()) {
+    return NULL; // Not a constant
+  }
+
+  ciConstant con = check_mismatched_access(field_value, loadbt, is_unsigned_load);
+
+  assert(con.is_valid(), "elembt=%s; loadbt=%s; unsigned=%d",
+         type2name(field_value.basic_type()), type2name(loadbt), is_unsigned_load);
+
+  bool is_stable_array = FoldStableValues && field->is_stable() && field->type()->is_array_klass();
+  int stable_dimension = (is_stable_array ? field->type()->as_array_klass()->dimension() : 0);
+  bool is_narrow_oop = (loadbt == T_NARROWOOP);
+
+  const Type* con_type = make_from_constant(con, /*require_constant=*/ true,
+                                            stable_dimension, is_narrow_oop,
+                                            field->is_autobox_cache());
+  if (con_type != NULL && field->is_call_site_target()) {
+    ciCallSite* call_site = holder->as_call_site();
+    if (!call_site->is_constant_call_site()) {
+      ciMethodHandle* target = call_site->get_target();
+      Compile::current()->dependencies()->assert_call_site_target_value(call_site, target);
     }
   }
   return con_type;

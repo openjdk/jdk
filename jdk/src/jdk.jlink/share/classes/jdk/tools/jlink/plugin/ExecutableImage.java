@@ -24,66 +24,41 @@
  */
 package jdk.tools.jlink.plugin;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 /**
- * An executable runtime image. Instance of this class contains the information
- * needed to create image processes.
+ * An executable runtime image. Contains the information about the executable
+ * image created.
  */
-public abstract class ExecutableImage {
-
-    private final Path home;
-    private final List<String> args;
-    private final Set<String> modules;
-
-    protected ExecutableImage(Path home, Set<String> modules,
-            List<String> args) {
-        Objects.requireNonNull(home);
-        Objects.requireNonNull(args);
-        if (!Files.exists(home)) {
-            throw new IllegalArgumentException("Invalid image home");
-        }
-        this.home = home;
-        this.modules = Collections.unmodifiableSet(modules);
-        this.args = Collections.unmodifiableList(args);
-    }
+public interface ExecutableImage {
 
     /**
      * Image home directory,
      *
      * @return The home directory.
      */
-    public Path getHome() {
-        return home;
-    }
+    public Path getHome();
 
     /**
      * The names of the modules located in the image.
      *
      * @return The set of modules.
      */
-    public Set<String> getModules() {
-        return modules;
-    }
+    public Set<String> getModules();
 
     /**
      * The list of arguments required to execute the image.
      *
      * @return The list of arguments.
      */
-    public List<String> getExecutionArgs() {
-        return args;
-    }
+    public List<String> getExecutionArgs();
 
     /**
      * Store new arguments required to execute the image.
      *
      * @param args Additional arguments
      */
-    public abstract void storeLaunchArgs(List<String> args);
+    public void storeLaunchArgs(List<String> args);
 }

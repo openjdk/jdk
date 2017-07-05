@@ -235,94 +235,75 @@ void ciField::initialize_from(fieldDescriptor* fd) {
   _holder = CURRENT_ENV->get_instance_klass(fd->field_holder());
 
   // Check to see if the field is constant.
-  bool is_final = this->is_final();
-  bool is_stable = FoldStableValues && this->is_stable();
-  if (_holder->is_initialized() && (is_final || is_stable)) {
-    if (!this->is_static()) {
-      // A field can be constant if it's a final static field or if
-      // it's a final non-static field of a trusted class (classes in
-      // java.lang.invoke and sun.invoke packages and subpackages).
-      if (is_stable || trust_final_non_static_fields(_holder)) {
-        _is_constant = true;
-        return;
-      }
-      _is_constant = false;
-      return;
-    }
-
-    // This field just may be constant.  The only case where it will
-    // not be constant is when the field is a *special* static&final field
-    // whose value may change.  The three examples are java.lang.System.in,
-    // java.lang.System.out, and java.lang.System.err.
-
-    KlassHandle k = _holder->get_Klass();
-    assert( SystemDictionary::System_klass() != NULL, "Check once per vm");
-    if( k() == SystemDictionary::System_klass() ) {
-      // Check offsets for case 2: System.in, System.out, or System.err
-      if( _offset == java_lang_System::in_offset_in_bytes()  ||
-          _offset == java_lang_System::out_offset_in_bytes() ||
-          _offset == java_lang_System::err_offset_in_bytes() ) {
-        _is_constant = false;
-        return;
-      }
-    }
-
-    Handle mirror = k->java_mirror();
-
-    switch(type()->basic_type()) {
-    case T_BYTE:
-      _constant_value = ciConstant(type()->basic_type(), mirror->byte_field(_offset));
-      break;
-    case T_CHAR:
-      _constant_value = ciConstant(type()->basic_type(), mirror->char_field(_offset));
-      break;
-    case T_SHORT:
-      _constant_value = ciConstant(type()->basic_type(), mirror->short_field(_offset));
-      break;
-    case T_BOOLEAN:
-      _constant_value = ciConstant(type()->basic_type(), mirror->bool_field(_offset));
-      break;
-    case T_INT:
-      _constant_value = ciConstant(type()->basic_type(), mirror->int_field(_offset));
-      break;
-    case T_FLOAT:
-      _constant_value = ciConstant(mirror->float_field(_offset));
-      break;
-    case T_DOUBLE:
-      _constant_value = ciConstant(mirror->double_field(_offset));
-      break;
-    case T_LONG:
-      _constant_value = ciConstant(mirror->long_field(_offset));
-      break;
-    case T_OBJECT:
-    case T_ARRAY:
-      {
-        oop o = mirror->obj_field(_offset);
-
-        // A field will be "constant" if it is known always to be
-        // a non-null reference to an instance of a particular class,
-        // or to a particular array.  This can happen even if the instance
-        // or array is not perm.  In such a case, an "unloaded" ciArray
-        // or ciInstance is created.  The compiler may be able to use
-        // information about the object's class (which is exact) or length.
-
-        if (o == NULL) {
-          _constant_value = ciConstant(type()->basic_type(), ciNullObject::make());
-        } else {
-          _constant_value = ciConstant(type()->basic_type(), CURRENT_ENV->get_object(o));
-          assert(_constant_value.as_object() == CURRENT_ENV->get_object(o), "check interning");
+  Klass* k = _holder->get_Klass();
+  bool is_stable_field = FoldStableValues && is_stable();
+  if (is_final() || is_stable_field) {
+    if (is_static()) {
+      // This field just may be constant.  The only case where it will
+      // not be constant is when the field is a *special* static & final field
+      // whose value may change.  The three examples are java.lang.System.in,
+      // java.lang.System.out, and java.lang.System.err.
+      assert(SystemDictionary::System_klass() != NULL, "Check once per vm");
+      if (k == SystemDictionary::System_klass()) {
+        // Check offsets for case 2: System.in, System.out, or System.err
+        if( _offset == java_lang_System::in_offset_in_bytes()  ||
+            _offset == java_lang_System::out_offset_in_bytes() ||
+            _offset == java_lang_System::err_offset_in_bytes() ) {
+          _is_constant = false;
+          return;
         }
       }
-    }
-    if (is_stable && _constant_value.is_null_or_zero()) {
-      // It is not a constant after all; treat it as uninitialized.
-      _is_constant = false;
-    } else {
       _is_constant = true;
+    } else {
+      // An instance field can be constant if it's a final static field or if
+      // it's a final non-static field of a trusted class (classes in
+      // java.lang.invoke and sun.invoke packages and subpackages).
+      _is_constant = is_stable_field || trust_final_non_static_fields(_holder);
     }
   } else {
-    _is_constant = false;
+    // For CallSite objects treat the target field as a compile time constant.
+    assert(SystemDictionary::CallSite_klass() != NULL, "should be already initialized");
+    if (k == SystemDictionary::CallSite_klass() &&
+        _offset == java_lang_invoke_CallSite::target_offset_in_bytes()) {
+      _is_constant = true;
+    } else {
+      // Non-final & non-stable fields are not constants.
+      _is_constant = false;
+    }
   }
+}
+
+// ------------------------------------------------------------------
+// ciField::constant_value
+// Get the constant value of a this static field.
+ciConstant ciField::constant_value() {
+  assert(is_static() && is_constant(), "illegal call to constant_value()");
+  if (!_holder->is_initialized()) {
+    return ciConstant(); // Not initialized yet
+  }
+  if (_constant_value.basic_type() == T_ILLEGAL) {
+    // Static fields are placed in mirror objects.
+    VM_ENTRY_MARK;
+    ciInstance* mirror = CURRENT_ENV->get_instance(_holder->get_Klass()->java_mirror());
+    _constant_value = mirror->field_value_impl(type()->basic_type(), offset());
+  }
+  if (FoldStableValues && is_stable() && _constant_value.is_null_or_zero()) {
+    return ciConstant();
+  }
+  return _constant_value;
+}
+
+// ------------------------------------------------------------------
+// ciField::constant_value_of
+// Get the constant value of non-static final field in the given object.
+ciConstant ciField::constant_value_of(ciObject* object) {
+  assert(!is_static() && is_constant(), "only if field is non-static constant");
+  assert(object->is_instance(), "must be instance");
+  ciConstant field_value = object->as_instance()->field_value(this);
+  if (FoldStableValues && is_stable() && field_value.is_null_or_zero()) {
+    return ciConstant();
+  }
+  return field_value;
 }
 
 // ------------------------------------------------------------------

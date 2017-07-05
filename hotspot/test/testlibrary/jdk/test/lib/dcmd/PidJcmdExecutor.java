@@ -32,7 +32,7 @@ import java.util.List;
  * Executes Diagnostic Commands on the target VM (specified by pid) using the jcmd tool
  */
 public class PidJcmdExecutor extends JcmdExecutor {
-    protected final int pid;
+    protected final long pid;
 
     /**
      * Instantiates a new PidJcmdExecutor targeting the current VM
@@ -53,11 +53,11 @@ public class PidJcmdExecutor extends JcmdExecutor {
      */
     public PidJcmdExecutor(String target) {
         super();
-        pid = Integer.valueOf(target);
+        pid = Long.valueOf(target);
     }
 
     protected List<String> createCommandLine(String cmd) throws CommandExecutorException {
-        return Arrays.asList(jcmdBinary, Integer.toString(pid), cmd);
+        return Arrays.asList(jcmdBinary, Long.toString(pid), cmd);
     }
 
 }

@@ -258,7 +258,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
     /*
      * Convenience method for simple commands
      */
-    private InputStream executeCommand(String cmd, Object ... args) throws IOException {
+    public InputStream executeCommand(String cmd, Object ... args) throws IOException {
         try {
             return execute(cmd, args);
         } catch (AgentLoadException x) {

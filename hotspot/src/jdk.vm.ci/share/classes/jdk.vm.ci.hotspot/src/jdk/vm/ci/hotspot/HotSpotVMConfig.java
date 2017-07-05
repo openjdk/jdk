@@ -38,7 +38,7 @@ import jdk.vm.ci.hotspotvmconfig.HotSpotVMData;
 import jdk.vm.ci.hotspotvmconfig.HotSpotVMField;
 import jdk.vm.ci.hotspotvmconfig.HotSpotVMFlag;
 import jdk.vm.ci.hotspotvmconfig.HotSpotVMType;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 //JaCoCo Exclude
 
@@ -1077,6 +1077,7 @@ public class HotSpotVMConfig {
     @HotSpotVMConstant(name = "JVM_ACC_FIELD_STABLE") @Stable public int jvmAccFieldStable;
     @HotSpotVMConstant(name = "JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE") @Stable public int jvmAccFieldHasGenericSignature;
     @HotSpotVMConstant(name = "JVM_ACC_WRITTEN_FLAGS") @Stable public int jvmAccWrittenFlags;
+    @HotSpotVMConstant(name = "JVM_ACC_IS_CLONEABLE_FAST") @Stable public int jvmAccIsCloneableFast;
 
     // Modifier.SYNTHETIC is not public so we get it via vmStructs.
     @HotSpotVMConstant(name = "JVM_ACC_SYNTHETIC") @Stable public int jvmAccSynthetic;
@@ -1230,7 +1231,7 @@ public class HotSpotVMConfig {
     @HotSpotVMField(name = "Method::_method_counters", type = "MethodCounters*", get = HotSpotVMField.Type.OFFSET) @Stable public int methodCountersOffset;
     @HotSpotVMField(name = "Method::_method_data", type = "MethodData*", get = HotSpotVMField.Type.OFFSET) @Stable public int methodDataOffset;
     @HotSpotVMField(name = "Method::_from_compiled_entry", type = "address", get = HotSpotVMField.Type.OFFSET) @Stable public int methodCompiledEntryOffset;
-    @HotSpotVMField(name = "Method::_code", type = "nmethod*", get = HotSpotVMField.Type.OFFSET) @Stable public int methodCodeOffset;
+    @HotSpotVMField(name = "Method::_code", type = "CompiledMethod*", get = HotSpotVMField.Type.OFFSET) @Stable public int methodCodeOffset;
 
     @HotSpotVMConstant(name = "Method::_jfr_towrite") @Stable public int methodFlagsJfrTowrite;
     @HotSpotVMConstant(name = "Method::_caller_sensitive") @Stable public int methodFlagsCallerSensitive;
@@ -1558,13 +1559,13 @@ public class HotSpotVMConfig {
 
     @HotSpotVMAddress(name = "os::javaTimeMillis") @Stable public long javaTimeMillisAddress;
     @HotSpotVMAddress(name = "os::javaTimeNanos") @Stable public long javaTimeNanosAddress;
-    @HotSpotVMAddress(name = "SharedRuntime::dsin") @Stable public long arithmeticSinAddress;
-    @HotSpotVMAddress(name = "SharedRuntime::dcos") @Stable public long arithmeticCosAddress;
-    @HotSpotVMAddress(name = "SharedRuntime::dtan") @Stable public long arithmeticTanAddress;
-    @HotSpotVMAddress(name = "SharedRuntime::dexp") @Stable public long arithmeticExpAddress;
-    @HotSpotVMAddress(name = "SharedRuntime::dlog") @Stable public long arithmeticLogAddress;
-    @HotSpotVMAddress(name = "SharedRuntime::dlog10") @Stable public long arithmeticLog10Address;
-    @HotSpotVMAddress(name = "SharedRuntime::dpow") @Stable public long arithmeticPowAddress;
+    @HotSpotVMField(name = "CompilerToVM::Data::dsin", type = "address", get = HotSpotVMField.Type.VALUE) @Stable public long arithmeticSinAddress;
+    @HotSpotVMField(name = "CompilerToVM::Data::dcos", type = "address", get = HotSpotVMField.Type.VALUE) @Stable public long arithmeticCosAddress;
+    @HotSpotVMField(name = "CompilerToVM::Data::dtan", type = "address", get = HotSpotVMField.Type.VALUE) @Stable public long arithmeticTanAddress;
+    @HotSpotVMField(name = "CompilerToVM::Data::dexp", type = "address", get = HotSpotVMField.Type.VALUE) @Stable public long arithmeticExpAddress;
+    @HotSpotVMField(name = "CompilerToVM::Data::dlog", type = "address", get = HotSpotVMField.Type.VALUE) @Stable public long arithmeticLogAddress;
+    @HotSpotVMField(name = "CompilerToVM::Data::dlog10", type = "address", get = HotSpotVMField.Type.VALUE) @Stable public long arithmeticLog10Address;
+    @HotSpotVMField(name = "CompilerToVM::Data::dpow", type = "address", get = HotSpotVMField.Type.VALUE) @Stable public long arithmeticPowAddress;
 
     @HotSpotVMFlag(name = "JVMCICounterSize") @Stable public int jvmciCountersSize;
 

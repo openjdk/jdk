@@ -27,6 +27,7 @@
  * @bug 8141445
  * @summary make sure the Solaris Sparc M7 libadimalloc.so library generates SIGSEGV's on buffer overflow
  * @requires (os.family == "solaris" & os.arch == "sparcv9")
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @build jdk.test.lib.*
  * @compile SEGVOverflow.java

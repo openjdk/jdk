@@ -162,6 +162,11 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
 
   jvmtiCapabilities *get_prohibited_capabilities()  { return &_prohibited_capabilities; }
 
+  bool early_class_hook_env() {
+    return get_capabilities()->can_generate_early_class_hook_events != 0
+        && get_capabilities()->can_generate_all_class_hook_events != 0;
+  }
+
   bool early_vmstart_env() {
     return get_capabilities()->can_generate_early_vmstart != 0;
   }

@@ -29,22 +29,22 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.net.URISyntaxException;
 
 import com.sun.tools.attach.AttachOperationFailedException;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
-import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
 
 import sun.tools.attach.HotSpotVirtualMachine;
+import sun.tools.common.ProcessArgumentMatcher;
 import sun.tools.jstat.JStatLogger;
 import sun.jvmstat.monitor.Monitor;
 import sun.jvmstat.monitor.MonitoredHost;
 import sun.jvmstat.monitor.MonitoredVm;
-import sun.jvmstat.monitor.MonitoredVmUtil;
 import sun.jvmstat.monitor.MonitorException;
 import sun.jvmstat.monitor.VmIdentifier;
 
@@ -73,52 +73,18 @@ public class JCmd {
             System.exit(0);
         }
 
-        List<String> pids = new ArrayList<String>();
-        if (arg.getPid() == 0) {
-            // find all VMs
-            List<VirtualMachineDescriptor> vmds = VirtualMachine.list();
-            for (VirtualMachineDescriptor vmd : vmds) {
-                if (!isJCmdProcess(vmd)) {
-                    pids.add(vmd.id());
-                }
-            }
-        } else if (arg.getProcessSubstring() != null) {
-            // use the partial class-name match
-            List<VirtualMachineDescriptor> vmds = VirtualMachine.list();
-            for (VirtualMachineDescriptor vmd : vmds) {
-                if (isJCmdProcess(vmd)) {
-                    continue;
-                }
-                try {
-                    String mainClass = getMainClass(vmd);
-                    if (mainClass != null
-                        && mainClass.indexOf(arg.getProcessSubstring()) != -1) {
-                            pids.add(vmd.id());
-                    }
-                } catch (MonitorException|URISyntaxException e) {
-                    if (e.getMessage() != null) {
-                        System.err.println(e.getMessage());
-                    } else {
-                        Throwable cause = e.getCause();
-                        if ((cause != null) && (cause.getMessage() != null)) {
-                            System.err.println(cause.getMessage());
-                        } else {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-            }
-            if (pids.isEmpty()) {
-                System.err.println("Could not find any processes matching : '"
-                                   + arg.getProcessSubstring() + "'");
-                System.exit(1);
-            }
-        } else if (arg.getPid() == -1) {
+        Collection<String> pids = Collections.emptyList();
+        try {
+            ProcessArgumentMatcher ap = new ProcessArgumentMatcher(arg.getProcessString(), JCmd.class);
+            pids = ap.getPids();
+        } catch (IllegalArgumentException iae) {
             System.err.println("Invalid pid specified");
             System.exit(1);
-        } else {
-            // Use the found pid
-            pids.add(arg.getPid() + "");
+        }
+        if (pids.isEmpty()) {
+            System.err.println("Could not find any processes matching : '"
+                               + arg.getProcessString() + "'");
+            System.exit(1);
         }
 
         boolean success = true;
@@ -196,36 +162,6 @@ public class JCmd {
             monitoredHost.detach(monitoredVm);
         } catch (MonitorException ex) {
             ex.printStackTrace();
-        }
-    }
-
-    private static boolean isJCmdProcess(VirtualMachineDescriptor vmd) {
-        try {
-            String mainClass = getMainClass(vmd);
-            return mainClass != null && mainClass.equals(JCmd.class.getName());
-        } catch (URISyntaxException|MonitorException ex) {
-            return false;
-        }
-    }
-
-    private static String getMainClass(VirtualMachineDescriptor vmd)
-            throws URISyntaxException, MonitorException {
-        try {
-            String mainClass = null;
-            VmIdentifier vmId = new VmIdentifier(vmd.id());
-            MonitoredHost monitoredHost = MonitoredHost.getMonitoredHost(vmId);
-            MonitoredVm monitoredVm = monitoredHost.getMonitoredVm(vmId, -1);
-            mainClass = MonitoredVmUtil.mainClass(monitoredVm, true);
-            monitoredHost.detach(monitoredVm);
-            return mainClass;
-        } catch(NullPointerException e) {
-            // There is a potential race, where a running java app is being
-            // queried, unfortunately the java app has shutdown after this
-            // method is started but before getMonitoredVM is called.
-            // If this is the case, then the /tmp/hsperfdata_xxx/pid file
-            // will have disappeared and we will get a NullPointerException.
-            // Handle this gracefully....
-            return null;
         }
     }
 

@@ -25,7 +25,7 @@
 package rtm;
 
 import jdk.test.lib.Utils;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Current RTM locking implementation force transaction abort

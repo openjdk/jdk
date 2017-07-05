@@ -28,6 +28,7 @@ import sun.hotspot.code.BlobType;
 /**
  * @test BeanTypeTest
  * @library /testlibrary /test/lib
+ * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build BeanTypeTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

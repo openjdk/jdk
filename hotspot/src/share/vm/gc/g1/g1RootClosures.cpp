@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ public:
 
   CLDClosure* weak_clds()             { return &_closures._clds; }
   CLDClosure* strong_clds()           { return &_closures._clds; }
-  CLDClosure* thread_root_clds()      { return NULL; }
   CLDClosure* second_pass_weak_clds() { return NULL; }
 
   CodeBlobClosure* strong_codeblobs()      { return &_closures._codeblobs; }
@@ -89,7 +88,6 @@ public:
 
   // If MarkWeak is G1MarkFromRoot then all CLDs are processed by the weak and strong variants
   // return a NULL closure for the following specialized versions in that case.
-  CLDClosure* thread_root_clds()      { return null_if<G1MarkFromRoot>(&_strong._clds); }
   CLDClosure* second_pass_weak_clds() { return null_if<G1MarkFromRoot>(&_weak._clds); }
 
   CodeBlobClosure* strong_codeblobs()      { return &_strong._codeblobs; }

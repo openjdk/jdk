@@ -40,10 +40,11 @@ public abstract class AESIntrinsicsBase extends CommandLineOptionTest {
     public static final String USE_AES_INTRINSICS = "UseAESIntrinsics";
     public static final String USE_SSE = "UseSSE";
     public static final String USE_VIS = "UseVIS";
+    public static final String[] USE_DIAGNOSTIC_CMD
+            = {"-XX:+UnlockDiagnosticVMOptions", "-XX:+PrintIntrinsics"};
     public static final String[] TEST_AES_CMD
             = {"-XX:+IgnoreUnrecognizedVMOptions", "-XX:+PrintFlagsFinal",
-            "-Xbatch","-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+PrintIntrinsics", "-DcheckOutput=true", "-Dmode=CBC",
+            "-Xbatch", "-DcheckOutput=true", "-Dmode=CBC",
             "TestAESMain"};
 
     protected AESIntrinsicsBase(BooleanSupplier predicate) {
@@ -52,14 +53,18 @@ public abstract class AESIntrinsicsBase extends CommandLineOptionTest {
 
     /**
      * Prepares command for TestAESMain execution.
+     * Intrinsics flags are of diagnostic type
+     * and must be preceded by UnlockDiagnosticVMOptions.
      * @param args flags that must be added to command
      * @return command for TestAESMain execution
      */
     public static String[] prepareArguments(String... args) {
-        String[] command = Arrays.copyOf(args, TEST_AES_CMD.length
-                + args.length);
-        System.arraycopy(TEST_AES_CMD, 0, command, args.length,
-                TEST_AES_CMD.length);
+        String[] command = Arrays.copyOf(USE_DIAGNOSTIC_CMD, args.length
+                + USE_DIAGNOSTIC_CMD.length + TEST_AES_CMD.length);
+        System.arraycopy(args, 0, command, USE_DIAGNOSTIC_CMD.length,
+                args.length);
+        System.arraycopy(TEST_AES_CMD, 0, command, args.length
+                + USE_DIAGNOSTIC_CMD.length, TEST_AES_CMD.length);
         return command;
     }
 }

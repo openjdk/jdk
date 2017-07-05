@@ -23,15 +23,15 @@ import jdk.internal.org.objectweb.asm.tree.MethodInsnNode;
 import jdk.internal.org.objectweb.asm.tree.MethodNode;
 import jdk.internal.org.objectweb.asm.tree.TryCatchBlockNode;
 import jdk.tools.jlink.internal.PluginRepository;
-import jdk.tools.jlink.internal.PoolImpl;
+import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.internal.plugins.OptimizationPlugin;
 import jdk.tools.jlink.internal.plugins.asm.AsmModulePool;
 import jdk.tools.jlink.internal.plugins.asm.AsmPlugin;
 import jdk.tools.jlink.internal.plugins.asm.AsmPools;
 import jdk.tools.jlink.internal.plugins.optim.ControlFlow;
 import jdk.tools.jlink.internal.plugins.optim.ControlFlow.Block;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 
 import tests.Helper;
 import tests.JImageGenerator;
@@ -134,9 +134,9 @@ public class JLinkOptimTest {
         }
 
         @Override
-        public Set<PluginType> getType() {
-            Set<PluginType> set = new HashSet<>();
-            set.add(CATEGORY.TRANSFORMER);
+        public Set<Category> getType() {
+            Set<Category> set = new HashSet<>();
+            set.add(Category.TRANSFORMER);
             return Collections.unmodifiableSet(set);
         }
     }
@@ -150,13 +150,13 @@ public class JLinkOptimTest {
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
         Path root = fs.getPath("/modules/java.base");
         // Access module-info.class to be reused as fake module-info.class
-        List<ModuleData> javabaseResources = new ArrayList<>();
+        List<ModuleEntry> javabaseResources = new ArrayList<>();
         try (Stream<Path> stream = Files.walk(root)) {
             for (Iterator<Path> iterator = stream.iterator(); iterator.hasNext();) {
                 Path p = iterator.next();
                 if (Files.isRegularFile(p)) {
                     try {
-                        javabaseResources.add(Pool.newResource(p.toString().
+                        javabaseResources.add(ModuleEntry.create(p.toString().
                                 substring("/modules".length()), Files.readAllBytes(p)));
                     } catch (Exception ex) {
                         throw new RuntimeException(ex);
@@ -166,18 +166,18 @@ public class JLinkOptimTest {
         }
 
         //forName folding
-        PoolImpl pool = new PoolImpl();
+        ModulePoolImpl pool = new ModulePoolImpl();
         byte[] content = Files.readAllBytes(classes.
                 resolve("optim").resolve("ForNameTestCase.class"));
         byte[] content2 = Files.readAllBytes(classes.
                 resolve("optim").resolve("AType.class"));
         byte[] mcontent = Files.readAllBytes(classes.resolve("module-info.class"));
 
-        pool.add(Pool.newResource("/optimplugin/optim/ForNameTestCase.class", content));
-        pool.add(Pool.newResource("/optimplugin/optim/AType.class", content2));
-        pool.add(Pool.newResource("/optimplugin/module-info.class", mcontent));
+        pool.add(ModuleEntry.create("/optimplugin/optim/ForNameTestCase.class", content));
+        pool.add(ModuleEntry.create("/optimplugin/optim/AType.class", content2));
+        pool.add(ModuleEntry.create("/optimplugin/module-info.class", mcontent));
 
-        for (ModuleData r : javabaseResources) {
+        for (ModuleEntry r : javabaseResources) {
             pool.add(r);
         }
 
@@ -186,10 +186,10 @@ public class JLinkOptimTest {
         optional.put(OptimizationPlugin.NAME, OptimizationPlugin.FORNAME_REMOVAL);
         optional.put(OptimizationPlugin.LOG, "forName.log");
         plugin.configure(optional);
-        Pool out = new PoolImpl();
+        ModulePool out = new ModulePoolImpl();
         plugin.visit(pool, out);
 
-        ModuleData result = out.getContent().iterator().next();
+        ModuleEntry result = out.entries().iterator().next();
 
         ClassReader optimReader = new ClassReader(result.getBytes());
         ClassNode optimClass = new ClassNode();

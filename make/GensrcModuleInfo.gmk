@@ -85,21 +85,41 @@ ifneq ($(MOD_FILES), )
   MODS_REST := $(filter-out $(MODS_QUALIFIED_EXPORTS), $(MOD_FILE_CONTENTS))
 
   # Filter the contents for modules that are actually being built
-  MODULES_FILTER := $(addprefix %/, $(addsuffix ;, $(ALL_MODULES)))
-  MODIFICATIONS := $(filter $(MODULES_FILTER), $(MODS_QUALIFIED_EXPORTS)) \
+  ALL_MODULES_FILTER := $(addprefix %/, $(addsuffix ;, $(ALL_MODULES)))
+  MODIFICATIONS := $(filter $(ALL_MODULES_FILTER), $(MODS_QUALIFIED_EXPORTS)) \
       $(MODS_REST)
+
+  # Returns non empty if the package exists in the current module
+  # Param 1 - Name of package with dots
+  PackageExists = \
+      $(strip $(wildcard $(addsuffix $(subst .,/,/$(strip $1)), \
+          $(MODULE_CLASSES_DIRS) \
+          $(addsuffix /$(MODULE), $(IMPORT_MODULES_CLASSES)) \
+      )))
 
   # Convert the modification lines into arguments for the modification tool.
   # Filter out modifications for non existing to-modules.
   $(foreach line, $(MODIFICATIONS), \
     $(eval split_line := $(subst /,$(SPACE),$(line))) \
     $(eval command := $(word 1, $(split_line))) \
-    $(eval package := $(patsubst %;,%,$(word 2, $(split_line)))) \
-    $(eval to_module := $(patsubst %;,%,$(word 4, $(split_line)))) \
-    $(if $(to_module), \
-      $(eval ARGS += -$(command) $(package)/$(to_module)) \
+    $(if $(filter $(command), exports), \
+      $(eval package := $(patsubst %;,%,$(word 2, $(split_line)))) \
+      $(if $(call PackageExists, $(package)), \
+        $(eval to_module := $(patsubst %;,%,$(word 4, $(split_line)))) \
+        $(if $(to_module), \
+          $(eval ARGS += -$(command) $(package)/$(to_module)) \
+        , \
+          $(eval ARGS += -$(command) $(package)) \
+        ) \
+      ) \
     , \
-      $(eval ARGS += -$(command) $(package)) \
+      $(if $(filter $(command), provides), \
+        $(eval provider := $(patsubst %;,%,$(word 2, $(split_line)))) \
+        $(eval class := $(patsubst %;,%,$(word 4, $(split_line)))) \
+        $(eval ARGS += -$(command) $(provider)/$(class)) \
+      , \
+        $(error A module-info.extra in $(MODULE) contains invalid command $(command)) \
+      ) \
     ) \
   )
 

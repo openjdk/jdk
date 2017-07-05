@@ -292,7 +292,7 @@ public class ModuleSummary {
     static Configuration resolve(Set<String> roots) {
         return Configuration.empty()
             .resolveRequires(ModuleFinder.ofSystem(),
-                             ModuleFinder.empty(),
+                             ModuleFinder.of(),
                              roots);
     }
 

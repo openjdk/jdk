@@ -29,8 +29,9 @@
 #include "utilities/hashtable.hpp"
 
 template <class T, class N> class CompactHashtable;
-class CompactHashtableWriter;
+class CompactStringTableWriter;
 class FileMapInfo;
+class SerializeClosure;
 
 class StringTable : public RehashableHashtable<oop, mtSymbol> {
   friend class VMStructs;
@@ -155,10 +156,9 @@ public:
   static bool shared_string_ignored()       { return _ignore_shared_strings; }
   static void shared_oops_do(OopClosure* f);
   static bool copy_shared_string(GrowableArray<MemRegion> *string_space,
-                                 CompactHashtableWriter* ch_table);
-  static bool copy_compact_table(char** top, char* end, GrowableArray<MemRegion> *string_space,
-                                 size_t* space_size);
-  static const char* init_shared_table(FileMapInfo *mapinfo, char* buffer);
+                                 CompactStringTableWriter* ch_table);
+  static void serialize(SerializeClosure* soc, GrowableArray<MemRegion> *string_space,
+                        size_t* space_size);
   static void reverse() {
     the_table()->Hashtable<oop, mtSymbol>::reverse();
   }

@@ -38,23 +38,23 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.tools.jlink.internal.PoolImpl;
+import jdk.tools.jlink.internal.ModulePoolImpl;
 import jdk.tools.jlink.internal.StringTable;
 
 import jdk.tools.jlink.internal.plugins.asm.AsmPlugin;
 import jdk.tools.jlink.internal.plugins.asm.AsmPools;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 
 public abstract class AsmPluginTestBase {
 
     protected static final String TEST_MODULE = "jlink.test";
     protected static final Map<String, List<String>> MODULES;
 
-    private static final Predicate<ModuleData> isClass = r -> r.getPath().endsWith(".class");
+    private static final Predicate<ModuleEntry> isClass = r -> r.getPath().endsWith(".class");
     private final List<String> classes;
     private final List<String> resources;
-    private final Pool pool;
+    private final ModulePool pool;
 
     static {
         Map<String, List<String>> map = new HashMap<>();
@@ -75,7 +75,7 @@ public abstract class AsmPluginTestBase {
             List<String> classes = new ArrayList<>();
             List<String> resources = new ArrayList<>();
 
-            pool = new PoolImpl();
+            pool = new ModulePoolImpl();
 
             FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
             Path root = fs.getPath("/modules");
@@ -100,7 +100,7 @@ public abstract class AsmPluginTestBase {
                                     MODULES.get(module).add(toResourceFile(p));
                                 }
                                 resources.add(toPath(p.toString()));
-                                ModuleData res = Pool.newResource(toPath(p.toString()), content);
+                                ModuleEntry res = ModuleEntry.create(toPath(p.toString()), content);
                                 pool.add(res);
                             } catch (Exception ex) {
                                 throw new RuntimeException(ex);
@@ -110,17 +110,17 @@ public abstract class AsmPluginTestBase {
                 }
             }
             // There is more than 10 classes in java.base...
-            if (classes.size() < 10 || pool.getContent().size() < 10) {
+            if (classes.size() < 10 || pool.getEntryCount() < 10) {
                 throw new AssertionError("Not expected resource or class number");
             }
 
             //Add a fake resource file
             String content = "java.lang.Object";
             String path = "META-INF/services/com.foo.BarProvider";
-            ModuleData resFile = Pool.newResource("/" + TEST_MODULE + "/" +
+            ModuleEntry resFile = ModuleEntry.create("/" + TEST_MODULE + "/" +
                     path, content.getBytes());
             pool.add(resFile);
-            ModuleData fakeInfoFile = Pool.newResource("/" + TEST_MODULE
+            ModuleEntry fakeInfoFile = ModuleEntry.create("/" + TEST_MODULE
                     + "/module-info.class", moduleInfos.get(0));
             pool.add(fakeInfoFile);
             MODULES.get(TEST_MODULE).add(path);
@@ -144,20 +144,20 @@ public abstract class AsmPluginTestBase {
         return resources;
     }
 
-    public Pool getPool() {
+    public ModulePool getPool() {
         return pool;
     }
 
     public abstract void test() throws Exception;
 
-    public Collection<ModuleData> extractClasses(Pool pool) {
-        return pool.getContent().stream()
+    public Collection<ModuleEntry> extractClasses(ModulePool pool) {
+        return pool.entries()
                 .filter(isClass)
                 .collect(Collectors.toSet());
     }
 
-    public Collection<ModuleData> extractResources(Pool pool) {
-        return pool.getContent().stream()
+    public Collection<ModuleEntry> extractResources(ModulePool pool) {
+        return pool.entries()
                 .filter(isClass.negate())
                 .collect(Collectors.toSet());
     }
@@ -209,9 +209,9 @@ public abstract class AsmPluginTestBase {
             return pools != null;
         }
 
-        public Pool visit(Pool inResources) throws IOException {
+        public ModulePool visit(ModulePool inResources) throws IOException {
             try {
-                Pool outResources = new PoolImpl(inResources.getByteOrder(), new StringTable() {
+                ModulePool outResources = new ModulePoolImpl(inResources.getByteOrder(), new StringTable() {
                     @Override
                     public int addString(String str) {
                         return -1;
@@ -239,7 +239,7 @@ public abstract class AsmPluginTestBase {
         }
 
         public abstract void visit();
-        public abstract void test(Pool inResources, Pool outResources) throws Exception;
+        public abstract void test(ModulePool inResources, ModulePool outResources) throws Exception;
 
         @Override
         public String getName() {

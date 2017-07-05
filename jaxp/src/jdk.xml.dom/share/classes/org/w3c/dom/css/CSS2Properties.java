@@ -92,7 +92,7 @@ import org.w3c.dom.DOMException;
  * property with a value of "menu", querying for the values of the component
  * longhand properties should return the empty string.
  * <p>See also the <a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Style-20001113'>Document Object Model (DOM) Level 2 Style Specification</a>.
- * @since DOM Level 2
+ * @since 1.4, DOM Level 2
  */
 public interface CSS2Properties {
     /**

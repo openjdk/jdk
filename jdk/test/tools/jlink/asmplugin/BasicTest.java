@@ -45,8 +45,8 @@ import java.util.logging.Logger;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.tools.jlink.internal.plugins.asm.AsmModulePool;
 import jdk.tools.jlink.internal.plugins.asm.AsmPool;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ModuleEntry;
+import jdk.tools.jlink.plugin.ModulePool;
 
 public class BasicTest extends AsmPluginTestBase {
 
@@ -61,7 +61,7 @@ public class BasicTest extends AsmPluginTestBase {
     @Override
     public void test() throws Exception {
         BasicPlugin basicPlugin = new BasicPlugin(getClasses());
-        Pool res = basicPlugin.visit(getPool());
+        ModulePool res = basicPlugin.visit(getPool());
         basicPlugin.test(getPool(), res);
     }
 
@@ -107,13 +107,13 @@ public class BasicTest extends AsmPluginTestBase {
         }
 
         @Override
-        public void test(Pool inResources, Pool outResources) throws Exception {
+        public void test(ModulePool inResources, ModulePool outResources) throws Exception {
             if (!isVisitCalled()) {
                 throw new AssertionError("Resources not visited");
             }
-            if (inResources.getContent().size() != outResources.getContent().size()) {
-                throw new AssertionError("Input size " + inResources.getContent().size() +
-                        " != to " + outResources.getContent().size());
+            if (inResources.getEntryCount() != outResources.getEntryCount()) {
+                throw new AssertionError("Input size " + inResources.getEntryCount() +
+                        " != to " + outResources.getEntryCount());
             }
         }
 
@@ -142,7 +142,7 @@ public class BasicTest extends AsmPluginTestBase {
 
         private void testPools() throws IOException {
             Set<String> remain = new HashSet<>(classes);
-            for (ModuleData res : getPools().getGlobalPool().getClasses()) {
+            for (ModuleEntry res : getPools().getGlobalPool().getClasses()) {
                 ClassReader reader = getPools().getGlobalPool().getClassReader(res);
                 String className = reader.getClassName();
                 // Wrong naming of module-info.class in ASM

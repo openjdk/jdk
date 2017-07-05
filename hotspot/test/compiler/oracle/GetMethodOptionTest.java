@@ -30,6 +30,7 @@ import sun.hotspot.WhiteBox;
 /*
  * @test
  * @bug 8074980
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @build sun.hotspot.WhiteBox jdk.test.lib.Asserts GetMethodOptionTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

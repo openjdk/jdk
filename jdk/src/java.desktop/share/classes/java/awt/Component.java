@@ -9739,19 +9739,24 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     int getAccessibleIndexInParent() {
         synchronized (getTreeLock()) {
-            int index = -1;
-            Container parent = this.getParent();
-            if (parent != null && parent instanceof Accessible) {
-                Component ca[] = parent.getComponents();
-                for (int i = 0; i < ca.length; i++) {
-                    if (ca[i] instanceof Accessible) {
-                        index++;
-                    }
-                    if (this.equals(ca[i])) {
-                        return index;
-                    }
+
+            AccessibleContext accContext = getAccessibleContext();
+            if (accContext == null) {
+                return -1;
+            }
+
+            Accessible parent = accContext.getAccessibleParent();
+            if (parent == null) {
+                return -1;
+            }
+
+            accContext = parent.getAccessibleContext();
+            for (int i = 0; i < accContext.getAccessibleChildrenCount(); i++) {
+                if (this.equals(accContext.getAccessibleChild(i))) {
+                    return i;
                 }
             }
+
             return -1;
         }
     }

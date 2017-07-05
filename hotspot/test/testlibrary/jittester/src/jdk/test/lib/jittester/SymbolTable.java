@@ -26,6 +26,7 @@ package jdk.test.lib.jittester;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 import jdk.test.lib.jittester.types.TypeKlass;
 
@@ -37,7 +38,7 @@ public class SymbolTable {
     private static int VARIABLE_NUMBER = 0;
     private static int FUNCTION_NUMBER = 0;
 
-    static private void initExternalSymbols() {
+    private static void initExternalSymbols() {
 
         String classList = ProductionParams.addExternalSymbols.value();
         if (classList.equals("all")) {
@@ -254,12 +255,12 @@ public class SymbolTable {
     public static void push() {
         // Do deep cloning..
         HashMap<Type, ArrayList<Symbol>> prev = SYMBOL_STACK.peek();
-        SYMBOL_STACK.push(new HashMap<>());
-        HashMap<Type, ArrayList<Symbol>> top = SYMBOL_STACK.peek();
-        for (Type type : prev.keySet()) {
-            ArrayList<Symbol> prevArray = prev.get(type);
-            top.put(type, new ArrayList<>(prevArray.size()));
-            ArrayList<Symbol> topArray = top.get(type);
+        HashMap<Type, ArrayList<Symbol>> top = new HashMap<>(prev.size());
+        SYMBOL_STACK.push(top);
+        for (Map.Entry<Type, ArrayList<Symbol>> entry : prev.entrySet()) {
+            ArrayList<Symbol> prevArray = entry.getValue();
+            ArrayList<Symbol> topArray = new ArrayList<>(prevArray.size());
+            top.put(entry.getKey(), topArray);
             for (Symbol symbol : prevArray) {
                 topArray.add(symbol.copy());
             }

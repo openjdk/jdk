@@ -24,6 +24,7 @@ package compiler.whitebox;
 
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.NMethod;
+
 import java.lang.reflect.Executable;
 import java.util.Objects;
 import java.util.concurrent.Callable;
@@ -58,6 +59,8 @@ public abstract class CompilerWhiteBoxTest {
     /** Value of {@code -XX:BackgroundCompilation} */
     protected static final boolean BACKGROUND_COMPILATION
             = Boolean.valueOf(getVMOption("BackgroundCompilation", "true"));
+    protected static final boolean USE_COUNTER_DECAY
+            = Boolean.valueOf(getVMOption("UseCounterDecay", "true"));
     /** Value of {@code -XX:TieredCompilation} */
     protected static final boolean TIERED_COMPILATION
             = Boolean.valueOf(getVMOption("TieredCompilation", "false"));
@@ -370,7 +373,10 @@ public abstract class CompilerWhiteBoxTest {
      * @return accumulated result
      * @see #compile(int)
      */
-    protected final int compile() {
+    protected final int compile() throws Exception {
+        if (USE_COUNTER_DECAY) {
+            throw new Exception("Tests using compile method must turn off counter decay for reliability");
+        }
         if (testCase.isOsr()) {
             return compile(1);
         } else {

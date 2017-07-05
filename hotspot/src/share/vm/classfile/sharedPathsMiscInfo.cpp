@@ -34,7 +34,7 @@
 #include "utilities/ostream.hpp"
 
 void SharedPathsMiscInfo::add_path(const char* path, int type) {
-  log_info(classpath)("type=%s ", type_name(type));
+  log_info(class, path)("type=%s ", type_name(type));
   ClassLoader::trace_class_path("add misc shared path ", path);
   write(path, strlen(path) + 1);
   write_jint(jint(type));
@@ -75,7 +75,7 @@ bool SharedPathsMiscInfo::fail(const char* msg, const char* name) {
 
 void SharedPathsMiscInfo::print_path(int type, const char* path) {
   ResourceMark rm;
-  outputStream* out = Log(classpath)::info_stream();
+  outputStream* out = Log(class, path)::info_stream();
   switch (type) {
   case BOOT:
     out->print("Expecting BOOT path=%s", path);
@@ -109,7 +109,7 @@ bool SharedPathsMiscInfo::check() {
     if (!read_jint(&type)) {
       return fail("Corrupted archive file header");
     }
-    log_info(classpath)("type=%s ", type_name(type));
+    log_info(class, path)("type=%s ", type_name(type));
     print_path(type, path);
     if (!check(type, path)) {
       if (!PrintSharedArchiveAndExit) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,18 +65,30 @@ final class CatalogUriResolverImpl implements CatalogUriResolver {
 
         if (href == null) return null;
 
+        String result = null;
         CatalogImpl c = (CatalogImpl)catalog;
         String uri = Normalizer.normalizeURI(href);
-        String result;
-
-        //remove fragment if any.
-        int hashPos = uri.indexOf("#");
-        if (hashPos >= 0) {
-            uri = uri.substring(0, hashPos);
+        //check whether uri is an urn
+        if (uri != null && uri.startsWith(Util.URN)) {
+            String publicId = Normalizer.decodeURN(uri);
+            if (publicId != null) {
+                result = Util.resolve(c, publicId, null);
+            }
         }
 
-        //search the current catalog
-        result = resolve(c, uri);
+        //if no match with a public id, continue search for an URI
+        if (result == null) {
+            //remove fragment if any.
+            int hashPos = uri.indexOf("#");
+            if (hashPos >= 0) {
+                uri = uri.substring(0, hashPos);
+            }
+
+            //search the current catalog
+            result = resolve(c, uri);
+        }
+
+        //Report error or return the URI as is when no match is found
         if (result == null) {
             GroupEntry.ResolveType resolveType = c.getResolve();
             switch (resolveType) {

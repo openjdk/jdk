@@ -87,9 +87,9 @@ public class GeoTIFFTagSet extends TIFFTagSet {
         }
     }
 
-    static class ModelTiePoint extends TIFFTag {
-        public ModelTiePoint() {
-            super("ModelTiePointTag",
+    static class ModelTiepoint extends TIFFTag {
+        public ModelTiepoint() {
+            super("ModelTiepointTag",
                   TAG_MODEL_TIE_POINT,
                   1 << TIFFTag.TIFF_DOUBLE);
         }
@@ -126,7 +126,7 @@ public class GeoTIFFTagSet extends TIFFTagSet {
 
         tags.add(new GeoTIFFTagSet.ModelPixelScale());
         tags.add(new GeoTIFFTagSet.ModelTransformation());
-        tags.add(new GeoTIFFTagSet.ModelTiePoint());
+        tags.add(new GeoTIFFTagSet.ModelTiepoint());
         tags.add(new GeoTIFFTagSet.GeoKeyDirectory());
         tags.add(new GeoTIFFTagSet.GeoDoubleParams());
         tags.add(new GeoTIFFTagSet.GeoAsciiParams());

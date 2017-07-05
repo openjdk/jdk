@@ -26,6 +26,7 @@
  * @bug 7162400
  * @key regression
  * @summary Regression test for attach issue where stale pid files in /tmp lead to connection issues
+ * @modules java.base/jdk.internal.misc
  * @modules jdk.attach/sun.tools.attach
  * @library /testlibrary
  * @build jdk.test.lib.* AttachWithStalePidFileTarget

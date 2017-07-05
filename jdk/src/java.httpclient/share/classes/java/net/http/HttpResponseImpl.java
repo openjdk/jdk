@@ -176,7 +176,7 @@ class HttpResponseImpl extends HttpResponse {
      *
      * @return
      */
-    RawChannel rawChannel() {
+    RawChannel rawChannel() throws IOException {
         if (rawchan == null) {
             rawchan = new RawChannel(request.client(), connection);
         }

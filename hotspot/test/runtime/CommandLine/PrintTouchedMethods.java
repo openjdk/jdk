@@ -106,7 +106,7 @@ public class PrintTouchedMethods {
       output.shouldHaveExitValue(0);
 
       // Test jcmd PrintTouchedMethods VM.print_touched_methods
-      String pid = Integer.toString(ProcessTools.getProcessId());
+      String pid = Long.toString(ProcessTools.getProcessId());
       pb = new ProcessBuilder();
       pb.command(new String[] {JDKToolFinder.getJDKTool("jcmd"), pid, "VM.print_touched_methods"});
       output = new OutputAnalyzer(pb.start());

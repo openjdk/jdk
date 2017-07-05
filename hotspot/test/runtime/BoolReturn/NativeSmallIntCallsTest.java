@@ -24,6 +24,7 @@
 /* @test
  * @bug 8149170
  * @summary Test native functions return booleans as 0/1 but differently than java functions
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @compile BoolConstructor.java
  * @run main/native NativeSmallIntCallsTest

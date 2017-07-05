@@ -31,7 +31,18 @@
 // Defines all globals flags used by the garbage-first compiler.
 //
 
-#define G1_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw, range, constraint) \
+#define G1_FLAGS(develop, \
+                 develop_pd, \
+                 product, \
+                 product_pd, \
+                 diagnostic, \
+                 experimental, \
+                 notproduct, \
+                 manageable, \
+                 product_rw, \
+                 range, \
+                 constraint, \
+                 writeable) \
                                                                             \
   product(bool, G1UseAdaptiveIHOP, true,                                    \
           "Adaptively adjust the initiating heap occupancy from the "       \
@@ -179,12 +190,6 @@
   develop(bool, G1ScrubRemSets, true,                                       \
           "When true, do RS scrubbing after cleanup.")                      \
                                                                             \
-  develop(intx, G1YoungSurvRateNumRegionsSummary, 0,                        \
-          "the number of regions for which we'll print a surv rate "        \
-          "summary.")                                                       \
-          range(0, max_intx)                                                \
-          constraint(G1YoungSurvRateNumRegionsSummaryConstraintFunc,AfterErgo)\
-                                                                            \
   product(uintx, G1ReservePercent, 10,                                      \
           "It determines the minimum reserve we should have in the heap "   \
           "to minimize the probability of promotion failure.")              \
@@ -323,6 +328,7 @@ G1_FLAGS(DECLARE_DEVELOPER_FLAG, \
          DECLARE_MANAGEABLE_FLAG, \
          DECLARE_PRODUCT_RW_FLAG, \
          IGNORE_RANGE, \
-         IGNORE_CONSTRAINT)
+         IGNORE_CONSTRAINT, \
+         IGNORE_WRITEABLE)
 
 #endif // SHARE_VM_GC_G1_G1_GLOBALS_HPP
