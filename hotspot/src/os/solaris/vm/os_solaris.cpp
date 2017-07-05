@@ -1643,7 +1643,8 @@ inline hrtime_t oldgetTimeNanos() {
 inline hrtime_t getTimeNanos() {
   if (VM_Version::supports_cx8()) {
     const hrtime_t now = gethrtime();
-    const hrtime_t prev = max_hrtime;
+    // Use atomic long load since 32-bit x86 uses 2 registers to keep long.
+    const hrtime_t prev = Atomic::load((volatile jlong*)&max_hrtime);
     if (now <= prev)  return prev;   // same or retrograde time;
     const hrtime_t obsv = Atomic::cmpxchg(now, (volatile jlong*)&max_hrtime, prev);
     assert(obsv >= prev, "invariant");   // Monotonicity
