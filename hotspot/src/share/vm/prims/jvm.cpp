@@ -45,7 +45,6 @@
 #include "prims/privilegedStack.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.inline.hpp"
-#include "runtime/dtraceJSDT.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -304,7 +303,7 @@ JVM_END
 // java.lang.System, but we choose to keep it here so that it stays next
 // to JVM_CurrentTimeMillis and JVM_NanoTime
 
-const jlong MAX_DIFF_SECS = 0x0100000000LL; //  2^32
+const jlong MAX_DIFF_SECS = CONST64(0x0100000000); //  2^32
 const jlong MIN_DIFF_SECS = -MAX_DIFF_SECS; // -2^32
 
 JVM_LEAF(jlong, JVM_GetNanoTimeAdjustment(JNIEnv *env, jclass ignored, jlong offset_secs))
@@ -3560,36 +3559,6 @@ JVM_END
 JVM_LEAF(jboolean, JVM_SupportsCX8())
   JVMWrapper("JVM_SupportsCX8");
   return VM_Version::supports_cx8();
-JVM_END
-
-// DTrace ///////////////////////////////////////////////////////////////////
-
-JVM_ENTRY(jint, JVM_DTraceGetVersion(JNIEnv* env))
-  JVMWrapper("JVM_DTraceGetVersion");
-  return (jint)JVM_TRACING_DTRACE_VERSION;
-JVM_END
-
-JVM_ENTRY(jlong,JVM_DTraceActivate(
-    JNIEnv* env, jint version, jstring module_name, jint providers_count,
-    JVM_DTraceProvider* providers))
-  JVMWrapper("JVM_DTraceActivate");
-  return DTraceJSDT::activate(
-    version, module_name, providers_count, providers, THREAD);
-JVM_END
-
-JVM_ENTRY(jboolean,JVM_DTraceIsProbeEnabled(JNIEnv* env, jmethodID method))
-  JVMWrapper("JVM_DTraceIsProbeEnabled");
-  return DTraceJSDT::is_probe_enabled(method);
-JVM_END
-
-JVM_ENTRY(void,JVM_DTraceDispose(JNIEnv* env, jlong handle))
-  JVMWrapper("JVM_DTraceDispose");
-  DTraceJSDT::dispose(handle);
-JVM_END
-
-JVM_ENTRY(jboolean,JVM_DTraceIsSupported(JNIEnv* env))
-  JVMWrapper("JVM_DTraceIsSupported");
-  return DTraceJSDT::is_supported();
 JVM_END
 
 // Returns an array of all live Thread objects (VM internal JavaThreads,

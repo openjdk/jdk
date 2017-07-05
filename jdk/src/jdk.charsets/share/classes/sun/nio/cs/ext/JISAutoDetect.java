@@ -33,9 +33,11 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.MalformedInputException;
+import sun.nio.cs.DelegatableDecoder;
 import sun.nio.cs.HistoricallyNamedCharset;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import sun.nio.cs.*;
 import static java.lang.Character.UnicodeBlock;
 
 

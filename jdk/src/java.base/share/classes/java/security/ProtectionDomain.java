@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@ package java.security;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
@@ -60,35 +59,44 @@ import sun.misc.SharedSecrets;
  */
 
 public class ProtectionDomain {
+    private static class JavaSecurityAccessImpl implements JavaSecurityAccess {
+
+        private JavaSecurityAccessImpl() {
+        }
+
+        @Override
+        public <T> T doIntersectionPrivilege(
+                PrivilegedAction<T> action,
+                final AccessControlContext stack,
+                final AccessControlContext context) {
+            if (action == null) {
+                throw new NullPointerException();
+            }
+
+            return AccessController.doPrivileged(
+                action,
+                getCombinedACC(context, stack)
+            );
+        }
+
+        @Override
+        public <T> T doIntersectionPrivilege(
+                PrivilegedAction<T> action,
+                AccessControlContext context) {
+            return doIntersectionPrivilege(action,
+                AccessController.getContext(), context);
+        }
+
+        private static AccessControlContext getCombinedACC(AccessControlContext context, AccessControlContext stack) {
+            AccessControlContext acc = new AccessControlContext(context, stack.getCombiner(), true);
+
+            return new AccessControlContext(stack.getContext(), acc).optimize();
+        }
+    }
 
     static {
         // Set up JavaSecurityAccess in SharedSecrets
-        SharedSecrets.setJavaSecurityAccess(
-            new JavaSecurityAccess() {
-                public <T> T doIntersectionPrivilege(
-                    PrivilegedAction<T> action,
-                    final AccessControlContext stack,
-                    final AccessControlContext context)
-                {
-                    if (action == null) {
-                        throw new NullPointerException();
-                    }
-                    return AccessController.doPrivileged(
-                        action,
-                        new AccessControlContext(
-                            stack.getContext(), context).optimize()
-                    );
-                }
-
-                public <T> T doIntersectionPrivilege(
-                    PrivilegedAction<T> action,
-                    AccessControlContext context)
-                {
-                    return doIntersectionPrivilege(action,
-                        AccessController.getContext(), context);
-                }
-            }
-       );
+        SharedSecrets.setJavaSecurityAccess(new JavaSecurityAccessImpl());
     }
 
     /* CodeSource */
