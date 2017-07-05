@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -671,34 +671,36 @@ public:
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
-  // Update the heuristic info to record a collection pause of the given
-  // start time, where the given number of bytes were used at the start.
-  // This may involve changing the desired size of a collection set.
+  // Record the start and end of an evacuation pause.
+  void record_collection_pause_start(double start_time_sec);
+  void record_collection_pause_end(double pause_time_ms);
 
-  void record_stop_world_start();
-
-  void record_collection_pause_start(double start_time_sec, size_t start_used);
+  // Record the start and end of a full collection.
+  void record_full_collection_start();
+  void record_full_collection_end();
 
   // Must currently be called while the world is stopped.
-  void record_concurrent_mark_init_end(double
-                                           mark_init_elapsed_time_ms);
+  void record_concurrent_mark_init_end(double mark_init_elapsed_time_ms);
 
+  // Record start and end of remark.
   void record_concurrent_mark_remark_start();
   void record_concurrent_mark_remark_end();
 
+  // Record start, end, and completion of cleanup.
   void record_concurrent_mark_cleanup_start();
   void record_concurrent_mark_cleanup_end(int no_of_gc_threads);
   void record_concurrent_mark_cleanup_completed();
 
-  void record_concurrent_pause();
+  // Records the information about the heap size for reporting in
+  // print_detailed_heap_transition
+  void record_heap_size_info_at_start();
 
-  void record_collection_pause_end(double pause_time);
+  // Print heap sizing transition (with less and more detail).
   void print_heap_transition();
   void print_detailed_heap_transition();
 
-  // Record the fact that a full collection occurred.
-  void record_full_collection_start();
-  void record_full_collection_end();
+  void record_stop_world_start();
+  void record_concurrent_pause();
 
   // Record how much space we copied during a GC. This is typically
   // called when a GC alloc region is being retired.
