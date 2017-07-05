@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import javax.net.ssl.SSLException;
  *
  * @author David Brownell
  */
-class HandshakeInStream extends InputStream {
+public class HandshakeInStream extends InputStream {
 
     InputRecord r;
 
@@ -196,7 +196,7 @@ class HandshakeInStream extends InputStream {
         return b;
     }
 
-    byte[] getBytes16() throws IOException {
+    public byte[] getBytes16() throws IOException {
         int len = getInt16();
         byte b[] = new byte[len];
 

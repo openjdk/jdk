@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,9 @@ public class Providers {
     private static final String[] jarVerificationProviders = {
         "sun.security.provider.Sun",
         "sun.security.rsa.SunRsaSign",
+        // Note: SunEC *is* in a signed JAR file, but it's not signed
+        // by EC itself. So it's still safe to be listed here.
+        "sun.security.ec.SunEC",
         BACKUP_PROVIDER_CLASSNAME,
     };
 

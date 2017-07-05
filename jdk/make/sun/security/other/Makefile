@@ -39,6 +39,7 @@ AUTO_FILES_JAVA_DIRS = \
     sun/security/provider \
     sun/security/rsa \
     sun/security/ssl \
+    sun/security/ssl/krb5 \
     sun/security/timestamp \
     sun/security/validator \
     sun/security/x509 \

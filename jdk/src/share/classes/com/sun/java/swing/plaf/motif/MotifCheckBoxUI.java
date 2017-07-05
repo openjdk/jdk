@@ -25,6 +25,8 @@
 
 package com.sun.java.swing.plaf.motif;
 
+import sun.awt.AppContext;
+
 import javax.swing.*;
 
 import javax.swing.plaf.*;
@@ -45,7 +47,7 @@ import java.awt.*;
  */
 public class MotifCheckBoxUI extends MotifRadioButtonUI {
 
-    private static final MotifCheckBoxUI motifCheckBoxUI = new MotifCheckBoxUI();
+    private static final Object MOTIF_CHECK_BOX_UI_KEY = new Object();
 
     private final static String propertyPrefix = "CheckBox" + ".";
 
@@ -55,7 +57,14 @@ public class MotifCheckBoxUI extends MotifRadioButtonUI {
     // ********************************
     //         Create PLAF
     // ********************************
-    public static ComponentUI createUI(JComponent c){
+    public static ComponentUI createUI(JComponent c) {
+        AppContext appContext = AppContext.getAppContext();
+        MotifCheckBoxUI motifCheckBoxUI =
+                (MotifCheckBoxUI) appContext.get(MOTIF_CHECK_BOX_UI_KEY);
+        if (motifCheckBoxUI == null) {
+            motifCheckBoxUI = new MotifCheckBoxUI();
+            appContext.put(MOTIF_CHECK_BOX_UI_KEY, motifCheckBoxUI);
+        }
         return motifCheckBoxUI;
     }
 

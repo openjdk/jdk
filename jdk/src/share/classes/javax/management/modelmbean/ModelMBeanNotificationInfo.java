@@ -186,14 +186,14 @@ public class ModelMBeanNotificationInfo
      * @param descriptor An instance of Descriptor containing the
      *        appropriate metadata for this instance of the
      *        MBeanNotificationInfo. If it is null a default descriptor
-     *        will be created. If the descriptor does not contain all the
-     *        fields "name", "descriptorType", "displayName" and "severity",
+     *        will be created. If the descriptor does not contain the
+     *        fields "displayName" or "severity",
      *        the missing ones are added with their default values.
      *
      * @exception RuntimeOperationsException Wraps an
      *    {@link IllegalArgumentException}. The descriptor is invalid, or
-     *    descriptor field "name" is present but not equal to parameter name, or
-     *    descriptor field "descriptorType" is present but not equal to "notification".
+     *    descriptor field "name" is not equal to parameter name, or
+     *    descriptor field "descriptorType" is not equal to "notification".
      *
      **/
     public ModelMBeanNotificationInfo(String[] notifTypes,
@@ -341,7 +341,8 @@ public class ModelMBeanNotificationInfo
      */
     private Descriptor validDescriptor(final Descriptor in) throws RuntimeOperationsException {
         Descriptor clone;
-        if (in == null) {
+        boolean defaulted = (in == null);
+        if (defaulted) {
             clone = new DescriptorSupport();
             MODELMBEAN_LOGGER.finer("Null Descriptor, creating new.");
         } else {
@@ -349,11 +350,11 @@ public class ModelMBeanNotificationInfo
         }
 
         //Setting defaults.
-        if (clone.getFieldValue("name")==null) {
+        if (defaulted && clone.getFieldValue("name")==null) {
             clone.setField("name", this.getName());
             MODELMBEAN_LOGGER.finer("Defaulting Descriptor name to " + this.getName());
         }
-        if (clone.getFieldValue("descriptorType")==null) {
+        if (defaulted && clone.getFieldValue("descriptorType")==null) {
             clone.setField("descriptorType", "notification");
             MODELMBEAN_LOGGER.finer("Defaulting descriptorType to \"notification\"");
         }
@@ -372,12 +373,12 @@ public class ModelMBeanNotificationInfo
                 "The isValid() method of the Descriptor object itself returned false,"+
                 "one or more required fields are invalid. Descriptor:" + clone.toString());
         }
-        if (! ((String)clone.getFieldValue("name")).equalsIgnoreCase(this.getName())) {
+        if (!getName().equalsIgnoreCase((String) clone.getFieldValue("name"))) {
                 throw new RuntimeOperationsException(new IllegalArgumentException("Invalid Descriptor argument"),
                 "The Descriptor \"name\" field does not match the object described. " +
                  " Expected: "+ this.getName() + " , was: " + clone.getFieldValue("name"));
         }
-        if (! ((String)clone.getFieldValue("descriptorType")).equalsIgnoreCase("notification")) {
+        if (!"notification".equalsIgnoreCase((String) clone.getFieldValue("descriptorType"))) {
                  throw new RuntimeOperationsException(new IllegalArgumentException("Invalid Descriptor argument"),
                 "The Descriptor \"descriptorType\" field does not match the object described. " +
                  " Expected: \"notification\" ," + " was: " + clone.getFieldValue("descriptorType"));

@@ -49,4 +49,6 @@ class StringCounterSnapshot extends AbstractCounter
     public String stringValue() {
         return value;
     }
+
+    private static final long serialVersionUID = 1132921539085572034L;
 }

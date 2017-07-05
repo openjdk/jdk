@@ -1039,12 +1039,16 @@ public class LogManager {
 
     /**
      * Returns <tt>LoggingMXBean</tt> for managing loggers.
-     * The <tt>LoggingMXBean</tt> can also obtained from the
-     * {@link java.lang.management.ManagementFactory#getPlatformMBeanServer
-     * platform <tt>MBeanServer</tt>} method.
+     * An alternative way to manage loggers is using
+     * the {@link java.lang.management.ManagementFactory#getPlatformMXBeans(Class)
+     * ManagementFactory.getPlatformMXBeans} method as follows:
+     * <pre>
+     *     List&lt{@link PlatformLoggingMXBean}&gt result = ManagementFactory.getPlatformMXBeans(PlatformLoggingMXBean.class);
+     * </pre>
      *
      * @return a {@link LoggingMXBean} object.
      *
+     * @see PlatformLoggingMXBean
      * @see java.lang.management.ManagementFactory
      * @since 1.5
      */

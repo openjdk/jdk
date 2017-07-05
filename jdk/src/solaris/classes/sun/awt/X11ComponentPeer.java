@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,4 +39,5 @@ public interface X11ComponentPeer {
     Rectangle getBounds();
     Graphics getGraphics();
     Object getTarget();
+    void setFullScreenExclusiveModeState(boolean state);
 }

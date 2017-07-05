@@ -687,7 +687,7 @@ BOOL AwtPrintControl::InitPrintDialog(JNIEnv *env,
     // Now, set-up the struct for the real calls to ::PrintDlg and ::CreateDC
 
     pd.hwndOwner = hwndOwner;
-    pd.Flags = PD_ENABLEPRINTHOOK | PD_RETURNDC;
+    pd.Flags = PD_ENABLEPRINTHOOK | PD_RETURNDC | PD_USEDEVMODECOPIESANDCOLLATE;
     pd.lpfnPrintHook = (LPPRINTHOOKPROC)PrintDlgHook;
 
     if (env->CallBooleanMethod(printCtrl, AwtPrintControl::getCollateID)) {

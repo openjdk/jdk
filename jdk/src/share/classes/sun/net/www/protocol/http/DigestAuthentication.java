@@ -200,19 +200,9 @@ class DigestAuthentication extends AuthenticationInfo {
     /**
      * @return true if this authentication supports preemptive authorization
      */
-    boolean supportsPreemptiveAuthorization() {
+    @Override
+    public boolean supportsPreemptiveAuthorization() {
         return true;
-    }
-
-    /**
-     * @return the name of the HTTP header this authentication wants set
-     */
-    String getHeaderName() {
-        if (type == SERVER_AUTHENTICATION) {
-            return "Authorization";
-        } else {
-            return "Proxy-Authorization";
-        }
     }
 
     /**
@@ -229,7 +219,8 @@ class DigestAuthentication extends AuthenticationInfo {
      *
      * @return the value of the HTTP header this authentication wants set
      */
-    String getHeaderValue(URL url, String method) {
+    @Override
+    public String getHeaderValue(URL url, String method) {
         return getHeaderValueImpl(url.getFile(), method);
     }
 
@@ -259,7 +250,8 @@ class DigestAuthentication extends AuthenticationInfo {
      * returning false means we have to go back to the user to ask for a new
      * username password.
      */
-    boolean isAuthorizationStale (String header) {
+    @Override
+    public boolean isAuthorizationStale (String header) {
         HeaderParser p = new HeaderParser (header);
         String s = p.findValue ("stale");
         if (s == null || !s.equals("true"))
@@ -279,19 +271,22 @@ class DigestAuthentication extends AuthenticationInfo {
      * @param raw Raw header values for this connection, if needed.
      * @return true if all goes well, false if no headers were set.
      */
-    boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw) {
+    @Override
+    public boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw) {
         params.setNonce (p.findValue("nonce"));
         params.setOpaque (p.findValue("opaque"));
         params.setQop (p.findValue("qop"));
 
-        String uri;
+        String uri="";
         String method;
         if (type == PROXY_AUTHENTICATION &&
                 conn.tunnelState() == HttpURLConnection.TunnelState.SETUP) {
             uri = HttpURLConnection.connectRequestURI(conn.getURL());
             method = HTTP_CONNECT;
         } else {
-            uri = conn.getRequestURI();
+            try {
+                uri = conn.getRequestURI();
+            } catch (IOException e) {}
             method = conn.getMethod();
         }
 

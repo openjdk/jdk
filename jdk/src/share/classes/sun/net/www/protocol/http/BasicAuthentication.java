@@ -131,19 +131,9 @@ class BasicAuthentication extends AuthenticationInfo {
     /**
      * @return true if this authentication supports preemptive authorization
      */
-    boolean supportsPreemptiveAuthorization() {
+    @Override
+    public boolean supportsPreemptiveAuthorization() {
         return true;
-    }
-
-    /**
-     * @return the name of the HTTP header this authentication wants set
-     */
-    String getHeaderName() {
-        if (type == SERVER_AUTHENTICATION) {
-            return "Authorization";
-        } else {
-            return "Proxy-authorization";
-        }
     }
 
     /**
@@ -154,7 +144,8 @@ class BasicAuthentication extends AuthenticationInfo {
      * @param raw The raw header values for this connection, if needed.
      * @return true if all goes well, false if no headers were set.
      */
-    boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw) {
+    @Override
+    public boolean setHeaders(HttpURLConnection conn, HeaderParser p, String raw) {
         conn.setAuthenticationProperty(getHeaderName(), getHeaderValue(null,null));
         return true;
     }
@@ -162,7 +153,8 @@ class BasicAuthentication extends AuthenticationInfo {
     /**
      * @return the value of the HTTP header this authentication wants set
      */
-    String getHeaderValue(URL url, String method) {
+    @Override
+    public String getHeaderValue(URL url, String method) {
         /* For Basic the authorization string does not depend on the request URL
          * or the request method
          */
@@ -174,7 +166,8 @@ class BasicAuthentication extends AuthenticationInfo {
      * In other words there is no possibility to reuse the credentials.
      * They are always either valid or invalid.
      */
-    boolean isAuthorizationStale (String header) {
+    @Override
+    public boolean isAuthorizationStale (String header) {
         return false;
     }
 

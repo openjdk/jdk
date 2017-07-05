@@ -42,11 +42,10 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-
-import java.sql.Timestamp;
 
 import java.util.*;
 
@@ -290,13 +289,44 @@ class java_util_Date_PersistenceDelegate extends PersistenceDelegate {
  * @author Sergey A. Malenkov
  */
 final class java_sql_Timestamp_PersistenceDelegate extends java_util_Date_PersistenceDelegate {
-    protected void initialize(Class<?> type, Object oldInstance, Object newInstance, Encoder out) {
-        Timestamp oldTime = (Timestamp)oldInstance;
-        Timestamp newTime = (Timestamp)newInstance;
+    private static final Method getNanosMethod = getNanosMethod();
 
-        int nanos = oldTime.getNanos();
-        if (nanos != newTime.getNanos()) {
-            out.writeStatement(new Statement(oldTime, "setNanos", new Object[] {nanos}));
+    private static Method getNanosMethod() {
+        try {
+            Class<?> c = Class.forName("java.sql.Timestamp", true, null);
+            return c.getMethod("getNanos");
+        } catch (ClassNotFoundException e) {
+            return null;
+        } catch (NoSuchMethodException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    /**
+     * Invoke Timstamp getNanos.
+     */
+    private static int getNanos(Object obj) {
+        if (getNanosMethod == null)
+            throw new AssertionError("Should not get here");
+        try {
+            return (Integer)getNanosMethod.invoke(obj);
+        } catch (InvocationTargetException e) {
+            Throwable cause = e.getCause();
+            if (cause instanceof RuntimeException)
+                throw (RuntimeException)cause;
+            if (cause instanceof Error)
+                throw (Error)cause;
+            throw new AssertionError(e);
+        } catch (IllegalAccessException iae) {
+            throw new AssertionError(iae);
+        }
+    }
+
+    protected void initialize(Class<?> type, Object oldInstance, Object newInstance, Encoder out) {
+        // assumes oldInstance and newInstance are Timestamps
+        int nanos = getNanos(oldInstance);
+        if (nanos != getNanos(newInstance)) {
+            out.writeStatement(new Statement(oldInstance, "setNanos", new Object[] {nanos}));
         }
     }
 }

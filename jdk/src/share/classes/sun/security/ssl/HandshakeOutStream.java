@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import java.security.MessageDigest;
  *
  * @author  David Brownell
  */
-class HandshakeOutStream extends OutputStream {
+public class HandshakeOutStream extends OutputStream {
 
     private SSLSocketImpl socket;
     private SSLEngineImpl engine;
@@ -196,7 +196,7 @@ class HandshakeOutStream extends OutputStream {
         write(b, 0, b.length);
     }
 
-    void putBytes16(byte b[]) throws IOException {
+    public void putBytes16(byte b[]) throws IOException {
         if (b == null) {
             putInt16(0);
             return;

@@ -73,22 +73,22 @@ class NetworkConfiguration {
 
             List<InetAddress> addrs = Collections.list(nif.getInetAddresses());
             for (InetAddress addr: addrs) {
-                if (addr instanceof Inet4Address) {
-                    List<InetAddress> list = ip4Interfaces.get(nif);
-                    if (list == null) {
-                        list = new LinkedList<InetAddress>();
+                if (!addr.isAnyLocalAddress()) {
+                    if (addr instanceof Inet4Address) {
+                        List<InetAddress> list = ip4Interfaces.get(nif);
+                        if (list == null) {
+                            list = new LinkedList<InetAddress>();
+                        }
+                        list.add(addr);
+                        ip4Interfaces.put(nif, list);
+                    } else if (addr instanceof Inet6Address) {
+                        List<InetAddress> list = ip6Interfaces.get(nif);
+                        if (list == null) {
+                            list = new LinkedList<InetAddress>();
+                        }
+                        list.add(addr);
+                        ip6Interfaces.put(nif, list);
                     }
-                    list.add(addr);
-                    ip4Interfaces.put(nif, list);
-                }
-                if (addr instanceof Inet6Address) {
-                    List<InetAddress> list = ip6Interfaces.get(nif);
-                    if (list == null) {
-                        list = new LinkedList<InetAddress>();
-                    }
-                    list.add(addr);
-                    ip6Interfaces.put(nif, list);
-
                 }
             }
         }
