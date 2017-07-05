@@ -182,26 +182,16 @@ CallGenerator* Compile::call_generator(ciMethod* call_method, int vtable_index, 
             }
           }
           CallGenerator* miss_cg;
+          Deoptimization::DeoptReason reason = (profile.morphism() == 2) ?
+                                    Deoptimization::Reason_bimorphic :
+                                    Deoptimization::Reason_class_check;
           if (( profile.morphism() == 1 ||
                (profile.morphism() == 2 && next_hit_cg != NULL) ) &&
-
-              !too_many_traps(Deoptimization::Reason_class_check)
-
-              // Check only total number of traps per method to allow
-              // the transition from monomorphic to bimorphic case between
-              // compilations without falling into virtual call.
-              // A monomorphic case may have the class_check trap flag is set
-              // due to the time gap between the uncommon trap processing
-              // when flags are set in MDO and the call site bytecode execution
-              // in Interpreter when MDO counters are updated.
-              // There was also class_check trap in monomorphic case due to
-              // the bug 6225440.
-
+              !too_many_traps(jvms->method(), jvms->bci(), reason)
              ) {
             // Generate uncommon trap for class check failure path
             // in case of monomorphic or bimorphic virtual call site.
-            miss_cg = CallGenerator::for_uncommon_trap(call_method,
-                        Deoptimization::Reason_class_check,
+            miss_cg = CallGenerator::for_uncommon_trap(call_method, reason,
                         Deoptimization::Action_maybe_recompile);
           } else {
             // Generate virtual call for class check failure path

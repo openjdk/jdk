@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1173,6 +1173,7 @@ void JavaThread::initialize() {
   _exception_handler_pc = 0;
   _exception_stack_size = 0;
   _jvmti_thread_state= NULL;
+  _should_post_on_exceptions_flag = JNI_FALSE;
   _jvmti_get_loaded_classes_closure = NULL;
   _interp_only_mode    = 0;
   _special_runtime_exit_condition = _no_async_condition;

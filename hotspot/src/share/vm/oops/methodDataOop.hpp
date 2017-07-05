@@ -1391,6 +1391,9 @@ public:
   }
   void inc_decompile_count() {
     _nof_decompiles += 1;
+    if (decompile_count() > (uint)PerMethodRecompilationCutoff) {
+      method()->set_not_compilable();
+    }
   }
 
   // Support for code generation
