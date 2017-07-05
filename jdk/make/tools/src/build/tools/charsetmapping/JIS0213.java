@@ -25,29 +25,71 @@
 
 package build.tools.charsetmapping;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.io.*;
+import java.util.regex.*;
 import java.util.*;
+import static build.tools.charsetmapping.Utils.*;
 
-public class CharsetMapping {
-    public final static char UNMAPPABLE_DECODING = '\uFFFD';
-    public final static int  UNMAPPABLE_ENCODING = 0xFFFD;
+public class JIS0213 {
 
-    public static class Entry {
-        public int bs;   //byte sequence reps
-        public int cp;   //Unicode codepoint
-        public int cp2;  //CC of composite
+    // regex pattern to parse the "jis0213.map" file
+    static Pattern sjis0213 = Pattern.compile("0x(\\p{XDigit}++)\\s++U\\+(\\p{XDigit}++)(?:\\+(\\p{XDigit}++))?\\s++#.*");
 
-        public Entry () {}
-        public Entry (int bytes, int cp, int cp2) {
-            this.bs = bytes;
-            this.cp = cp;
-            this.cp2 = cp2;
+    static void genClass(String argv[]) throws IOException
+    {
+        InputStream in = new FileInputStream(argv[0]) ;
+        OutputStream out = new FileOutputStream(argv[1]);
+
+        int[] sb = new int[0x100];                         // singlebyte
+        int[] db = new int[0x10000];                       // doublebyte
+        int[] indexC2B = new int[256];
+        Entry[] supp = new Entry[0x10000];
+        Entry[] comp = new Entry[0x100];
+        int suppTotal = 0;
+        int compTotal = 0;
+
+        int b1Min1 = 0x81;
+        int b1Max1 = 0x9f;
+        int b1Min2 = 0xe0;
+        int b1Max2 = 0xfc;
+        int b2Min = 0x40;
+        int b2Max = 0xfe;
+
+        //init
+        for (int i = 0; i < 0x80; i++) sb[i] = i;
+        for (int i = 0x80; i < 0x100; i++) sb[i] = UNMAPPABLE_DECODING;
+        for (int i = 0; i < 0x10000; i++) db[i] = UNMAPPABLE_DECODING;
+        try {
+            Parser p = new Parser(in, sjis0213);
+            Entry  e = null;
+            while ((e = p.next()) != null) {
+                if (e.cp2 != 0) {
+                    comp[compTotal++] = e;
+                } else {
+                    if (e.cp <= 0xffff) {
+                        if (e.bs <= 0xff)
+                            sb[e.bs] = e.cp;
+                        else
+                            db[e.bs] = e.cp;
+                        indexC2B[e.cp>>8] = 1;
+                    } else {
+                        supp[suppTotal++] = e;
+                    }
+                }
+            }
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            // c2b Index Table, always the first one
+            writeINDEXC2B(baos, indexC2B);
+            writeSINGLEBYTE(baos, sb);
+            writeDOUBLEBYTE1(baos, db, b1Min1, b1Max1, b2Min, b2Max);
+            writeDOUBLEBYTE2(baos, db, b1Min2, b1Max2, b2Min, b2Max);
+            writeSUPPLEMENT(baos, supp, suppTotal);
+            writeCOMPOSITE(baos, comp, compTotal);
+            writeSIZE(out, baos.size());
+            baos.writeTo(out);
+            out.close();
+        } catch (Exception x) {
+            x.printStackTrace();
         }
     }
 
@@ -60,76 +102,6 @@ public class CharsetMapping {
                 return this == obj;
             }
     };
-
-    public static class Parser {
-        static final Pattern basic = Pattern.compile("(?:0x)?(\\p{XDigit}++)\\s++(?:0x)?(\\p{XDigit}++)?\\s*+.*");
-        static final int gBS = 1;
-        static final int gCP = 2;
-        static final int gCP2 = 3;
-
-        BufferedReader reader;
-        boolean closed;
-        Matcher matcher;
-        int gbs, gcp, gcp2;
-
-        public Parser (InputStream in, Pattern p, int gbs, int gcp, int gcp2)
-            throws IOException
-        {
-            this.reader = new BufferedReader(new InputStreamReader(in));
-            this.closed = false;
-            this.matcher = p.matcher("");
-            this.gbs = gbs;
-            this.gcp = gcp;
-            this.gcp2 = gcp2;
-        }
-
-        public Parser (InputStream in, Pattern p) throws IOException {
-            this(in, p, gBS, gCP, gCP2);
-        }
-
-        public Parser (InputStream in) throws IOException {
-            this(in, basic, gBS, gCP, gCP2);
-        }
-
-        protected boolean isDirective(String line) {
-            return line.startsWith("#");
-        }
-
-        protected Entry parse(Matcher matcher, Entry mapping) {
-            mapping.bs = Integer.parseInt(matcher.group(gbs), 16);
-            mapping.cp = Integer.parseInt(matcher.group(gcp), 16);
-            if (gcp2 <= matcher.groupCount() &&
-                matcher.group(gcp2) != null)
-                mapping.cp2 = Integer.parseInt(matcher.group(gcp2), 16);
-            else
-                mapping.cp2 = 0;
-            return mapping;
-        }
-
-        public Entry next() throws Exception {
-            return next(new Entry());
-        }
-
-        // returns null and closes the input stream if the eof has beenreached.
-        public Entry next(Entry mapping) throws Exception {
-            if (closed)
-                return null;
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (isDirective(line))
-                    continue;
-                matcher.reset(line);
-                if (!matcher.lookingAt()) {
-                    //System.out.println("Missed: " + line);
-                    continue;
-                }
-                return parse(matcher, mapping);
-            }
-            reader.close();
-            closed = true;
-            return null;
-        }
-    }
 
     // tags of different charset mapping tables
     private final static int MAP_SINGLEBYTE      = 0x1; // 0..256  : c
@@ -161,7 +133,7 @@ public class CharsetMapping {
         }
     }
 
-    public static final void writeSIZE(OutputStream out, int data)
+    private static final void writeSIZE(OutputStream out, int data)
         throws IOException
     {
         out.write((data >>> 24) & 0xFF);
@@ -170,7 +142,7 @@ public class CharsetMapping {
         out.write((data       ) & 0xFF);
     }
 
-    public static void writeINDEXC2B(OutputStream out, int[] indexC2B)
+    private static void writeINDEXC2B(OutputStream out, int[] indexC2B)
         throws IOException
     {
         writeShort(out, MAP_INDEXC2B);
@@ -186,7 +158,7 @@ public class CharsetMapping {
         }
     }
 
-    public static void writeSINGLEBYTE(OutputStream out, int[] sb)
+    private static void writeSINGLEBYTE(OutputStream out, int[] sb)
         throws IOException
     {
         writeShortArray(out, MAP_SINGLEBYTE, sb, 0, 256);
@@ -212,7 +184,8 @@ public class CharsetMapping {
             }
         }
     }
-    public static void writeDOUBLEBYTE1(OutputStream out,
+
+    private static void writeDOUBLEBYTE1(OutputStream out,
                                         int[] db,
                                         int b1Min, int b1Max,
                                         int b2Min, int b2Max)
@@ -221,7 +194,7 @@ public class CharsetMapping {
         writeDOUBLEBYTE(out, MAP_DOUBLEBYTE1, db, b1Min, b1Max, b2Min, b2Max);
     }
 
-    public static void writeDOUBLEBYTE2(OutputStream out,
+    private static void writeDOUBLEBYTE2(OutputStream out,
                                         int[] db,
                                         int b1Min, int b1Max,
                                         int b2Min, int b2Max)
@@ -231,7 +204,7 @@ public class CharsetMapping {
     }
 
     // the c2b table is output as well
-    public static void writeSUPPLEMENT(OutputStream out, Entry[] supp, int size)
+    private static void writeSUPPLEMENT(OutputStream out, Entry[] supp, int size)
         throws IOException
     {
         writeShort(out, MAP_SUPPLEMENT);
@@ -256,7 +229,7 @@ public class CharsetMapping {
         }
     }
 
-    public static void writeCOMPOSITE(OutputStream out, Entry[] comp, int size)
+    private static void writeCOMPOSITE(OutputStream out, Entry[] comp, int size)
         throws IOException
     {
         writeShort(out, MAP_COMPOSITE);

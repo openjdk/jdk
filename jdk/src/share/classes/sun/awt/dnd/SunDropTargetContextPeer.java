@@ -57,6 +57,7 @@ import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
+import sun.security.util.SecurityConstants;
 
 /**
  * <p>
@@ -216,6 +217,18 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
       throws UnsupportedFlavorException, IOException,
         InvalidDnDOperationException
     {
+
+        SecurityManager sm = System.getSecurityManager();
+        try {
+            if (!dropComplete && sm != null) {
+                sm.checkSystemClipboardAccess();
+            }
+        } catch (Exception e) {
+            Thread currentThread = Thread.currentThread();
+            currentThread.getUncaughtExceptionHandler().uncaughtException(currentThread, e);
+            return null;
+        }
+
         Long lFormat = null;
         Transferable localTransferable = local;
 

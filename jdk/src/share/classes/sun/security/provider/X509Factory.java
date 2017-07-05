@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.security.provider;
 
 import java.io.*;
-import java.util.Collection;
 import java.util.*;
 import java.security.cert.*;
 import sun.security.x509.X509CertImpl;
@@ -37,6 +36,7 @@ import sun.security.provider.certpath.X509CertificatePair;
 import sun.security.util.DerValue;
 import sun.security.util.Cache;
 import sun.misc.BASE64Decoder;
+import sun.security.pkcs.ParsingException;
 
 /**
  * This class defines a certificate factory for X.509 v3 certificates &
@@ -61,10 +61,6 @@ public class X509Factory extends CertificateFactorySpi {
 
     public static final String BEGIN_CERT = "-----BEGIN CERTIFICATE-----";
     public static final String END_CERT = "-----END CERTIFICATE-----";
-
-    private static final int defaultExpectedLineLength = 80;
-
-    private static final char[] endBoundary = "-----END".toCharArray();
 
     private static final int ENC_MAX_LENGTH = 4096 * 1024; // 4 MB MAX
 
@@ -92,13 +88,7 @@ public class X509Factory extends CertificateFactorySpi {
             throw new CertificateException("Missing input stream");
         }
         try {
-            if (is.markSupported() == false) {
-                // consume the entire input stream
-                byte[] totalBytes;
-                totalBytes = getTotalBytes(new BufferedInputStream(is));
-                is = new ByteArrayInputStream(totalBytes);
-            }
-            byte[] encoding = readSequence(is);
+            byte[] encoding = readOneBlock(is);
             if (encoding != null) {
                 X509CertImpl cert = (X509CertImpl)getFromCache(certCache, encoding);
                 if (cert != null) {
@@ -108,19 +98,7 @@ public class X509Factory extends CertificateFactorySpi {
                 addToCache(certCache, cert.getEncodedInternal(), cert);
                 return cert;
             } else {
-                X509CertImpl cert;
-                // determine if binary or Base64 encoding. If Base64 encoding,
-                // the certificate must be bounded at the beginning by
-                // "-----BEGIN".
-                if (isBase64(is)) {
-                    // Base64
-                    byte[] data = base64_to_binary(is);
-                    cert = new X509CertImpl(data);
-                } else {
-                    // binary
-                    cert = new X509CertImpl(new DerValue(is));
-                }
-                return intern(cert);
+                throw new IOException("Empty input");
             }
         } catch (IOException ioe) {
             throw (CertificateException)new CertificateException
@@ -129,73 +107,21 @@ public class X509Factory extends CertificateFactorySpi {
     }
 
     /**
-     * Read a DER SEQUENCE from an InputStream and return the encoding.
-     * If data does not represent a SEQUENCE, it uses indefinite length
-     * encoding, or is longer than ENC_MAX_LENGTH, the stream is reset
-     * and this method returns null.
-     */
-    private static byte[] readSequence(InputStream in) throws IOException {
-        in.mark(ENC_MAX_LENGTH);
-        byte[] b = new byte[4];
-        int i = readFully(in, b, 0, b.length);
-        if ((i != b.length) || (b[0] != 0x30)) { // first byte must be SEQUENCE
-            in.reset();
-            return null;
-        }
-        i = b[1] & 0xff;
-        int totalLength;
-        if (i < 0x80) {
-            int valueLength = i;
-            totalLength = valueLength + 2;
-        } else if (i == 0x81) {
-            int valueLength = b[2] & 0xff;
-            totalLength = valueLength + 3;
-        } else if (i == 0x82) {
-            int valueLength = ((b[2] & 0xff) << 8) | (b[3] & 0xff);
-            totalLength = valueLength + 4;
-        } else { // ignore longer length forms
-            in.reset();
-            return null;
-        }
-        if (totalLength > ENC_MAX_LENGTH) {
-            in.reset();
-            return null;
-        }
-        byte[] encoding = new byte[totalLength];
-        if( totalLength < b.length ) {
-            in.reset();
-            i = readFully(in, encoding, 0, totalLength);
-            if( i != totalLength ) {
-                in.reset();
-                return null;
-            }
-        } else {
-            System.arraycopy(b, 0, encoding, 0, b.length);
-            int n = totalLength - b.length;
-            i = readFully(in, encoding, b.length, n);
-            if (i != n) {
-                in.reset();
-                return null;
-            }
-        }
-        return encoding;
-    }
-
-    /**
      * Read from the stream until length bytes have been read or EOF has
      * been reached. Return the number of bytes actually read.
      */
-    private static int readFully(InputStream in, byte[] buffer, int offset,
+    private static int readFully(InputStream in, ByteArrayOutputStream bout,
             int length) throws IOException {
         int read = 0;
+        byte[] buffer = new byte[2048];
         while (length > 0) {
-            int n = in.read(buffer, offset, length);
+            int n = in.read(buffer, 0, length<2048?length:2048);
             if (n <= 0) {
                 break;
             }
+            bout.write(buffer, 0, n);
             read += n;
             length -= n;
-            offset += n;
         }
         return read;
     }
@@ -309,21 +235,11 @@ public class X509Factory extends CertificateFactorySpi {
             throw new CertificateException("Missing input stream");
         }
         try {
-            if (inStream.markSupported() == false) {
-                // consume the entire input stream
-                byte[] totalBytes;
-                totalBytes = getTotalBytes(new BufferedInputStream(inStream));
-                inStream = new ByteArrayInputStream(totalBytes);
-            }
-            // determine if binary or Base64 encoding. If Base64 encoding,
-            // each certificate must be bounded at the beginning by
-            // "-----BEGIN".
-            if (isBase64(inStream)) {
-                // Base64
-                byte[] data = base64_to_binary(inStream);
-                return new X509CertPath(new ByteArrayInputStream(data));
+            byte[] encoding = readOneBlock(inStream);
+            if (encoding != null) {
+                return new X509CertPath(new ByteArrayInputStream(encoding));
             } else {
-                return new X509CertPath(inStream);
+                throw new IOException("Empty input");
             }
         } catch (IOException ioe) {
             throw new CertificateException(ioe.getMessage());
@@ -350,21 +266,11 @@ public class X509Factory extends CertificateFactorySpi {
             throw new CertificateException("Missing input stream");
         }
         try {
-            if (inStream.markSupported() == false) {
-                // consume the entire input stream
-                byte[] totalBytes;
-                totalBytes = getTotalBytes(new BufferedInputStream(inStream));
-                inStream = new ByteArrayInputStream(totalBytes);
-            }
-            // determine if binary or Base64 encoding. If Base64 encoding,
-            // each certificate must be bounded at the beginning by
-            // "-----BEGIN".
-            if (isBase64(inStream)) {
-                // Base64
-                byte[] data = base64_to_binary(inStream);
+            byte[] data = readOneBlock(inStream);
+            if (data != null) {
                 return new X509CertPath(new ByteArrayInputStream(data), encoding);
             } else {
-                return(new X509CertPath(inStream, encoding));
+                throw new IOException("Empty input");
             }
         } catch (IOException ioe) {
             throw new CertificateException(ioe.getMessage());
@@ -426,11 +332,6 @@ public class X509Factory extends CertificateFactorySpi {
             throw new CertificateException("Missing input stream");
         }
         try {
-            if (is.markSupported() == false) {
-                // consume the entire input stream
-                is = new ByteArrayInputStream
-                     (getTotalBytes(new BufferedInputStream(is)));
-            }
             return parseX509orPKCS7Cert(is);
         } catch (IOException ioe) {
             throw new CertificateException(ioe);
@@ -458,13 +359,7 @@ public class X509Factory extends CertificateFactorySpi {
             throw new CRLException("Missing input stream");
         }
         try {
-            if (is.markSupported() == false) {
-                // consume the entire input stream
-                byte[] totalBytes;
-                totalBytes = getTotalBytes(new BufferedInputStream(is));
-                is = new ByteArrayInputStream(totalBytes);
-            }
-            byte[] encoding = readSequence(is);
+            byte[] encoding = readOneBlock(is);
             if (encoding != null) {
                 X509CRLImpl crl = (X509CRLImpl)getFromCache(crlCache, encoding);
                 if (crl != null) {
@@ -474,19 +369,7 @@ public class X509Factory extends CertificateFactorySpi {
                 addToCache(crlCache, crl.getEncodedInternal(), crl);
                 return crl;
             } else {
-                X509CRLImpl crl;
-                // determine if binary or Base64 encoding. If Base64 encoding,
-                // the CRL must be bounded at the beginning by
-                // "-----BEGIN".
-                if (isBase64(is)) {
-                    // Base64
-                    byte[] data = base64_to_binary(is);
-                    crl = new X509CRLImpl(data);
-                } else {
-                    // binary
-                    crl = new X509CRLImpl(new DerValue(is));
-                }
-                return intern(crl);
+                throw new IOException("Empty input");
             }
         } catch (IOException ioe) {
             throw new CRLException(ioe.getMessage());
@@ -504,19 +387,13 @@ public class X509Factory extends CertificateFactorySpi {
      *
      * @exception CRLException on parsing errors.
      */
-    public Collection<? extends java.security.cert.CRL> engineGenerateCRLs(InputStream
-is)
-        throws CRLException
+    public Collection<? extends java.security.cert.CRL> engineGenerateCRLs(
+            InputStream is) throws CRLException
     {
         if (is == null) {
             throw new CRLException("Missing input stream");
         }
         try {
-            if (is.markSupported() == false) {
-                // consume the entire input stream
-                is = new ByteArrayInputStream
-                    (getTotalBytes(new BufferedInputStream(is)));
-            }
             return parseX509orPKCS7CRL(is);
         } catch (IOException ioe) {
             throw new CRLException(ioe.getMessage());
@@ -533,42 +410,25 @@ is)
         throws CertificateException, IOException
     {
         Collection<X509CertImpl> coll = new ArrayList<X509CertImpl>();
-        boolean first = true;
-        while (is.available() != 0) {
-            // determine if binary or Base64 encoding. If Base64 encoding,
-            // each certificate must be bounded at the beginning by
-            // "-----BEGIN".
-            InputStream is2 = is;
-            if (isBase64(is2)) {
-                // Base64
-                is2 = new ByteArrayInputStream(base64_to_binary(is2));
+        byte[] data = readOneBlock(is);
+        if (data == null) {
+            return new ArrayList<X509CertImpl>(0);
+        }
+        try {
+            PKCS7 pkcs7 = new PKCS7(data);
+            X509Certificate[] certs = pkcs7.getCertificates();
+            // certs are optional in PKCS #7
+            if (certs != null) {
+                return Arrays.asList(certs);
+            } else {
+                // no crls provided
+                return new ArrayList<X509Certificate>(0);
             }
-            if (first)
-                is2.mark(is2.available());
-            try {
-                // treat as X.509 cert
-                coll.add(intern(new X509CertImpl(new DerValue(is2))));
-            } catch (CertificateException e) {
-                Throwable cause = e.getCause();
-                // only treat as PKCS#7 if this is the first cert parsed
-                // and the root cause of the decoding failure is an IOException
-                if (first && cause != null && (cause instanceof IOException)) {
-                    // treat as PKCS#7
-                    is2.reset();
-                    PKCS7 pkcs7 = new PKCS7(is2);
-                    X509Certificate[] certs = pkcs7.getCertificates();
-                    // certs are optional in PKCS #7
-                    if (certs != null) {
-                        return Arrays.asList(certs);
-                    } else {
-                        // no certs provided
-                        return new ArrayList<X509Certificate>(0);
-                    }
-                } else {
-                    throw e;
-                }
+        } catch (ParsingException e) {
+            while (data != null) {
+                coll.add(new X509CertImpl(data));
+                data = readOneBlock(is);
             }
-            first = false;
         }
         return coll;
     }
@@ -583,162 +443,215 @@ is)
         throws CRLException, IOException
     {
         Collection<X509CRLImpl> coll = new ArrayList<X509CRLImpl>();
-        boolean first = true;
-        while (is.available() != 0) {
-            // determine if binary or Base64 encoding. If Base64 encoding,
-            // the CRL must be bounded at the beginning by
-            // "-----BEGIN".
-            InputStream is2 = is;
-            if (isBase64(is)) {
-                // Base64
-                is2 = new ByteArrayInputStream(base64_to_binary(is2));
+        byte[] data = readOneBlock(is);
+        if (data == null) {
+            return new ArrayList<X509CRL>(0);
+        }
+        try {
+            PKCS7 pkcs7 = new PKCS7(data);
+            X509CRL[] crls = pkcs7.getCRLs();
+            // CRLs are optional in PKCS #7
+            if (crls != null) {
+                return Arrays.asList(crls);
+            } else {
+                // no crls provided
+                return new ArrayList<X509CRL>(0);
             }
-            if (first)
-                is2.mark(is2.available());
-            try {
-                // treat as X.509 CRL
-                coll.add(new X509CRLImpl(is2));
-            } catch (CRLException e) {
-                // only treat as PKCS#7 if this is the first CRL parsed
-                if (first) {
-                    is2.reset();
-                    PKCS7 pkcs7 = new PKCS7(is2);
-                    X509CRL[] crls = pkcs7.getCRLs();
-                    // CRLs are optional in PKCS #7
-                    if (crls != null) {
-                        return Arrays.asList(crls);
-                    } else {
-                        // no crls provided
-                        return new ArrayList<X509CRL>(0);
-                    }
-                }
+        } catch (ParsingException e) {
+            while (data != null) {
+                coll.add(new X509CRLImpl(data));
+                data = readOneBlock(is);
             }
-            first = false;
         }
         return coll;
     }
 
-    /*
-     * Converts a Base64-encoded X.509 certificate or X.509 CRL or PKCS#7 data
-     * to binary encoding.
-     * In all cases, the data must be bounded at the beginning by
-     * "-----BEGIN", and must be bounded at the end by "-----END".
-     */
-    private byte[] base64_to_binary(InputStream is)
-        throws IOException
-    {
-        long len = 0; // total length of base64 encoding, including boundaries
-
-        is.mark(is.available());
-
-        BufferedInputStream bufin = new BufferedInputStream(is);
-        BufferedReader br =
-            new BufferedReader(new InputStreamReader(bufin, "ASCII"));
-
-        // First read all of the data that is found between
-        // the "-----BEGIN" and "-----END" boundaries into a buffer.
-        String temp;
-        while (true) {
-            temp=readLine(br);
-            if (temp == null) {
-                throw new IOException("Unsupported encoding");
-            }
-            len += temp.length();
-            if (temp.startsWith("-----BEGIN")) {
-                break;
-            }
-        }
-        StringBuffer strBuf = new StringBuffer();
-        while ((temp=readLine(br))!=null && !temp.startsWith("-----END")) {
-            strBuf.append(temp);
-        }
-        if (temp == null) {
-            throw new IOException("Unsupported encoding");
-        } else {
-            len += temp.length();
-        }
-
-        // consume only as much as was needed
-        len += strBuf.length();
-        is.reset();
-        is.skip(len);
-
-        // Now, that data is supposed to be a single X.509 certificate or
-        // X.509 CRL or PKCS#7 formatted data... Base64 encoded.
-        // Decode into binary and return the result.
-        BASE64Decoder decoder = new BASE64Decoder();
-        return decoder.decodeBuffer(strBuf.toString());
-    }
-
-    /*
-     * Reads the entire input stream into a byte array.
-     */
-    private byte[] getTotalBytes(InputStream is) throws IOException {
-        byte[] buffer = new byte[8192];
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(2048);
-        int n;
-        baos.reset();
-        while ((n = is.read(buffer, 0, buffer.length)) != -1) {
-            baos.write(buffer, 0, n);
-        }
-        return baos.toByteArray();
-    }
-
-    /*
-     * Determines if input is binary or Base64 encoded.
-     */
-    private boolean isBase64(InputStream is) throws IOException {
-        if (is.available() >= 1) {
-            is.mark(1);
-            int c1 = is.read();
-            is.reset();
-            if (c1 != DerValue.tag_Sequence) {
-                return true;
-            } else {
-                return false;
-            }
-        } else {
-            return false;
-        }
-    }
-
-    /*
-     * Read a line of text.  A line is considered to be terminated by any one
-     * of a line feed ('\n'), a carriage return ('\r'), a carriage return
-     * followed immediately by a linefeed, or an end-of-certificate marker.
+    /**
+     * Returns an ASN.1 SEQUENCE from a stream, which might be a BER-encoded
+     * binary block or a PEM-style BASE64-encoded ASCII data. In the latter
+     * case, it's de-BASE64'ed before return.
      *
-     * @return     A String containing the contents of the line, including
-     *             any line-termination characters, or null if the end of the
-     *             stream has been reached.
+     * After the reading, the input stream pointer is after the BER block, or
+     * after the newline character after the -----END SOMETHING----- line.
+     *
+     * @param is the InputStream
+     * @returns byte block or null if end of stream
+     * @throws IOException If any parsing error
      */
-    private String readLine(BufferedReader br) throws IOException {
-        int c;
-        int i = 0;
-        boolean isMatch = true;
-        boolean matched = false;
-        StringBuffer sb = new StringBuffer(defaultExpectedLineLength);
-        do {
-            c = br.read();
-            if (isMatch && (i < endBoundary.length)) {
-                isMatch = ((char)c != endBoundary[i++]) ? false : true;
-            }
-            if (!matched)
-                matched = (isMatch && (i == endBoundary.length));
-            sb.append((char)c);
-        } while ((c != -1) && (c != '\n') && (c != '\r'));
+    private static byte[] readOneBlock(InputStream is) throws IOException {
 
-        if (!matched && c == -1) {
+        // The first character of a BLOCK.
+        int c = is.read();
+        if (c == -1) {
             return null;
         }
-        if (c == '\r') {
-            br.mark(1);
-            int c2 = br.read();
-            if (c2 == '\n') {
-                sb.append((char)c);
-            } else {
-                br.reset();
+        if (c == DerValue.tag_Sequence) {
+            ByteArrayOutputStream bout = new ByteArrayOutputStream(2048);
+            bout.write(c);
+            readBERInternal(is, bout, c);
+            return bout.toByteArray();
+        } else {
+            // Read BASE64 encoded data, might skip info at the beginning
+            char[] data = new char[2048];
+            int pos = 0;
+
+            // Step 1: Read until header is found
+            int hyphen = (c=='-') ? 1: 0;   // count of consequent hyphens
+            int last = (c=='-') ? -1: c;    // the char before hyphen
+            while (true) {
+                int next = is.read();
+                if (next == -1) {
+                    // We accept useless data after the last block,
+                    // say, empty lines.
+                    return null;
+                }
+                if (next == '-') {
+                    hyphen++;
+                } else {
+                    hyphen = 0;
+                    last = next;
+                }
+                if (hyphen == 5 && (last==-1 || last=='\r' || last=='\n')) {
+                    break;
+                }
+            }
+
+            // Step 2: Read the rest of header, determine the line end
+            int end;
+            while (true) {
+                int next = is.read();
+                if (next == -1) {
+                    throw new IOException("Incomplete data");
+                }
+                if (next == '\n') {
+                    end = '\n';
+                    break;
+                }
+                if (next == '\r') {
+                    next = is.read();
+                    if (next == -1) {
+                        throw new IOException("Incomplete data");
+                    }
+                    if (next == '\n') {
+                        end = '\n';
+                    } else {
+                        end = '\r';
+                        data[pos++] = (char)next;
+                    }
+                    break;
+                }
+            }
+
+            // Step 3: Read the data
+            while (true) {
+                int next = is.read();
+                if (next == -1) {
+                    throw new IOException("Incomplete data");
+                }
+                if (next != '-') {
+                    data[pos++] = (char)next;
+                    if (pos >= data.length) {
+                        data = Arrays.copyOf(data, data.length+1024);
+                    }
+                } else {
+                    break;
+                }
+            }
+
+            // Step 4: Consume the footer
+            while (true) {
+                int next = is.read();
+                // Add next == '\n' for maximum safety, in case endline
+                // is not consistent.
+                if (next == -1 || next == end || next == '\n') {
+                    break;
+                }
+            }
+
+            BASE64Decoder decoder = new BASE64Decoder();
+            return decoder.decodeBuffer(new String(data, 0, pos));
+        }
+    }
+
+    /**
+     * Read one BER data block. This method is aware of indefinite-length BER
+     * encoding and will read all of the sub-sections in a recursive way
+     *
+     * @param is    Read from this InputStream
+     * @param bout  Write into this OutputStream
+     * @param tag   Tag already read (-1 mean not read)
+     * @returns     The current tag, used to check EOC in indefinite-length BER
+     * @throws IOException Any parsing error
+     */
+    private static int readBERInternal(InputStream is,
+            ByteArrayOutputStream bout, int tag) throws IOException {
+
+        if (tag == -1) {        // Not read before the call, read now
+            tag = is.read();
+            if (tag == -1) {
+                throw new IOException("BER/DER tag info absent");
+            }
+            if ((tag & 0x1f) == 0x1f) {
+                throw new IOException("Multi octets tag not supported");
+            }
+            bout.write(tag);
+        }
+
+        int n = is.read();
+        if (n == -1) {
+            throw new IOException("BER/DER length info ansent");
+        }
+        bout.write(n);
+
+        int length;
+
+        if (n == 0x80) {        // Indefinite-length encoding
+            if ((tag & 0x20) != 0x20) {
+                throw new IOException(
+                        "Non constructed encoding must have definite length");
+            }
+            while (true) {
+                int subTag = readBERInternal(is, bout, -1);
+                if (subTag == 0) {   // EOC, end of indefinite-length section
+                    break;
+                }
+            }
+        } else {
+            if (n < 0x80) {
+                length = n;
+            } else if (n == 0x81) {
+                length = is.read();
+                if (length == -1) {
+                    throw new IOException("Incomplete BER/DER length info");
+                }
+                bout.write(length);
+            } else if (n == 0x82) {
+                int highByte = is.read();
+                int lowByte = is.read();
+                if (lowByte == -1) {
+                    throw new IOException("Incomplete BER/DER length info");
+                }
+                bout.write(highByte);
+                bout.write(lowByte);
+                length = (highByte << 8) | lowByte;
+            } else if (n == 0x83) {
+                int highByte = is.read();
+                int midByte = is.read();
+                int lowByte = is.read();
+                if (lowByte == -1) {
+                    throw new IOException("Incomplete BER/DER length info");
+                }
+                bout.write(highByte);
+                bout.write(midByte);
+                bout.write(lowByte);
+                length = (highByte << 16) | (midByte << 8) | lowByte;
+            } else { // ignore longer length forms
+                throw new IOException("Invalid BER/DER data (too huge?)");
+            }
+            if (readFully(is, bout, length) != length) {
+                throw new IOException("Incomplete BER/DER data");
             }
         }
-        return sb.toString();
+        return tag;
     }
 }

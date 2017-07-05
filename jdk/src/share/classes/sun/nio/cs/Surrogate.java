@@ -78,8 +78,8 @@ public class Surrogate {
      * Tells whether or not the given UCS-4 character is in the Basic
      * Multilingual Plane, and can be represented using a single char.
      */
-    public static boolean isBMP(int uc) {
-        return (int) (char) uc == uc;
+    public static boolean isBMPCodePoint(int uc) {
+        return uc >> 16 == 0;
     }
 
     /**
@@ -290,7 +290,7 @@ public class Surrogate {
          *           error() will return a descriptive result object
          */
         public int generate(int uc, int len, CharBuffer dst) {
-            if (Surrogate.isBMP(uc)) {
+            if (Surrogate.isBMPCodePoint(uc)) {
                 if (Surrogate.is(uc)) {
                     error = CoderResult.malformedForLength(len);
                     return -1;
@@ -334,7 +334,7 @@ public class Surrogate {
          *           error() will return a descriptive result object
          */
         public int generate(int uc, int len, char[] da, int dp, int dl) {
-            if (Surrogate.isBMP(uc)) {
+            if (Surrogate.isBMPCodePoint(uc)) {
                 if (Surrogate.is(uc)) {
                     error = CoderResult.malformedForLength(len);
                     return -1;

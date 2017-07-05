@@ -25,8 +25,16 @@
  * @bug 4191147
  * @summary 1.2beta4 does not load user defined content handlers
  * @build UserContentHandler
- * @run main UserContentHandler
+ * @run main/othervm UserContentHandler
  */
+
+/* Run in othervm mode since the test sets a system property, java.content.handler.pkgs,
+ * that prepends a specific package prefix defining a text/plain content
+ * handler. If other URLConnection tests run before this one they might trigger
+ * the Sun implementation text/plain content handler in sun.net.www.content
+ * to be loaded and cached, this will break this test.
+ */
+
 import java.net.*;
 import java.io.*;
 import java.util.*;
@@ -55,7 +63,7 @@ public class UserContentHandler implements Runnable {
             // don't close the connection immediately as otherwise
             // the http headers may not have been received and the
             // http client will re-connect.
-            Thread.currentThread().sleep(2000);
+            Thread.sleep(2000);
 
             s.close();
 

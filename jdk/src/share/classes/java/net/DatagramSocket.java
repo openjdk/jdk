@@ -118,6 +118,7 @@ class DatagramSocket implements java.io.Closeable {
         if (address == null) {
             throw new IllegalArgumentException("connect: null address");
         }
+        checkAddress (address, "connect");
         if (isClosed())
             return;
         SecurityManager security = System.getSecurityManager();
@@ -363,18 +364,29 @@ class DatagramSocket implements java.io.Closeable {
         InetSocketAddress epoint = (InetSocketAddress) addr;
         if (epoint.isUnresolved())
             throw new SocketException("Unresolved address");
+        InetAddress iaddr = epoint.getAddress();
+        int port = epoint.getPort();
+        checkAddress(iaddr, "bind");
         SecurityManager sec = System.getSecurityManager();
         if (sec != null) {
-            sec.checkListen(epoint.getPort());
+            sec.checkListen(port);
         }
         try {
-            getImpl().bind(epoint.getPort(),
-                           epoint.getAddress());
+            getImpl().bind(port, iaddr);
         } catch (SocketException e) {
             getImpl().close();
             throw e;
         }
         bound = true;
+    }
+
+    void checkAddress (InetAddress addr, String op) {
+        if (addr == null) {
+            return;
+        }
+        if (!(addr instanceof Inet4Address || addr instanceof Inet6Address)) {
+            throw new IllegalArgumentException(op + ": invalid address type");
+        }
     }
 
     /**
@@ -603,6 +615,7 @@ class DatagramSocket implements java.io.Closeable {
         synchronized (p) {
             if (isClosed())
                 throw new SocketException("Socket is closed");
+            checkAddress (p.getAddress(), "send");
             if (connectState == ST_NOT_CONNECTED) {
                 // check the address is ok wiht the security manager on every send.
                 SecurityManager security = System.getSecurityManager();

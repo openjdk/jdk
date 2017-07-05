@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2003 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +23,24 @@
  * have any questions.
  */
 
-
-
-package sun.io;
-
-import sun.nio.cs.ext.HKSCS;
+package java.util.zip;
 
 /**
- * Tables and data to convert Unicode to HKSCS
- *
- * @author  ConverterGenerator tool
+ * A reference to the native zlib's z_stream structure.
  */
 
-public class CharToByteHKSCS extends CharToByteDoubleByte {
+class ZStreamRef {
 
-    public String getCharacterEncoding() {
-        return "HKSCS";
+    private long address;
+    ZStreamRef (long address) {
+        this.address = address;
     }
 
-    public CharToByteHKSCS() {
-        super.index1 = HKSCS.getEncoderIndex1();
-        super.index2 = HKSCS.getEncoderIndex2();
+    long address() {
+        return address;
+    }
+
+    void clear() {
+        address = 0;
     }
 }

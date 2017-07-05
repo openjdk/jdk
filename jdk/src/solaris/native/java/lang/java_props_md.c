@@ -337,22 +337,24 @@ GetJavaProperties(JNIEnv *env)
                 std_encoding = "EUC-JP-LINUX";
             }
 #else
-            /* For Solaris use customized vendor defined character
-             * customized EUC-JP converter
-             */
             if (strcmp(p,"eucJP") == 0) {
+                /* For Solaris use customized vendor defined character
+                 * customized EUC-JP converter
+                 */
                 std_encoding = "eucJP-open";
-            }
-#endif
-#ifndef __linux__
-            /*
-             * Remap the encoding string to Big5_Solaris which augments
-             * the default converter for Solaris Big5 locales to include
-             * seven additional ideographic characters beyond those included
-             * in the Java "Big5" converter.
-             */
-            if (strcmp(p, "Big5") == 0) {
-                    std_encoding = "Big5_Solaris";
+            } else if (strcmp(p, "Big5") == 0 || strcmp(p, "BIG5") == 0) {
+                /*
+                 * Remap the encoding string to Big5_Solaris which augments
+                 * the default converter for Solaris Big5 locales to include
+                 * seven additional ideographic characters beyond those included
+                 * in the Java "Big5" converter.
+                 */
+                std_encoding = "Big5_Solaris";
+            } else if (strcmp(p, "Big5-HKSCS") == 0) {
+                /*
+                 * Solaris uses HKSCS2001
+                 */
+                std_encoding = "Big5-HKSCS-2001";
             }
 #endif
             sprops.encoding = std_encoding;
@@ -413,4 +415,10 @@ GetJavaProperties(JNIEnv *env)
     setPathEnvironment("XFILESEARCHPATH=/usr/dt/app-defaults/%L/Dt");
 
     return &sprops;
+}
+
+jstring
+GetStringPlatform(JNIEnv *env, nchar* cstr)
+{
+    return JNU_NewStringPlatform(env, cstr);
 }

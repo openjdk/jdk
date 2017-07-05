@@ -55,7 +55,7 @@ import sun.misc.VM;
  */
 public
 class ThreadGroup implements Thread.UncaughtExceptionHandler {
-    ThreadGroup parent;
+    private final ThreadGroup parent;
     String name;
     int maxPriority;
     boolean destroyed;
@@ -76,6 +76,7 @@ class ThreadGroup implements Thread.UncaughtExceptionHandler {
     private ThreadGroup() {     // called from C code
         this.name = "system";
         this.maxPriority = Thread.MAX_PRIORITY;
+        this.parent = null;
     }
 
     /**
@@ -113,16 +114,26 @@ class ThreadGroup implements Thread.UncaughtExceptionHandler {
      * @since   JDK1.0
      */
     public ThreadGroup(ThreadGroup parent, String name) {
-        if (parent == null) {
-            throw new NullPointerException();
-        }
-        parent.checkAccess();
+        this(checkParentAccess(parent), parent, name);
+    }
+
+    private ThreadGroup(Void unused, ThreadGroup parent, String name) {
         this.name = name;
         this.maxPriority = parent.maxPriority;
         this.daemon = parent.daemon;
         this.vmAllowSuspension = parent.vmAllowSuspension;
         this.parent = parent;
         parent.add(this);
+    }
+
+    /*
+     * @throws  NullPointerException  if the parent argument is {@code null}
+     * @throws  SecurityException     if the current thread cannot create a
+     *                                thread in the specified thread group.
+     */
+    private static Void checkParentAccess(ThreadGroup parent) {
+        parent.checkAccess();
+        return null;
     }
 
     /**
