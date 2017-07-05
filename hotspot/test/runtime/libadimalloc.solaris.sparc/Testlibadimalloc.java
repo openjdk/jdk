@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class Testlibadimalloc {
 
         // Start the process, get the pid and then wait for the test to finish
         Process process = builder.start();
-        long pid = process.getPid();
+        long pid = process.pid();
         int retval = process.waitFor();
 
         // make sure the SEGVOverflow test crashed

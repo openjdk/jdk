@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -533,4 +533,14 @@ public abstract class JAXBRIContext extends JAXBContext {
      * @since 2.2.6
      */
     public static final String DISABLE_XML_SECURITY  = "com.sun.xml.internal.bind.disableXmlSecurity";
+
+    /**
+     * If true and element namespace is not specified, namespace of parent element will be used.
+     * The default value is false.
+     *
+     * Boolean
+     * @since 2.3.0
+     */
+    public static final String BACKUP_WITH_PARENT_NAMESPACE = "com.sun.xml.internal.bind.backupWithParentNamespace";
+
 }

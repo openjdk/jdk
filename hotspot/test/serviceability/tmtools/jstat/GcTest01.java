@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ public class GcTest01 {
     public static void main(String[] args) throws Exception {
 
         // We will be running "jstat -gc" tool
-        JstatGcTool jstatGcTool = new JstatGcTool(ProcessHandle.current().getPid());
+        JstatGcTool jstatGcTool = new JstatGcTool(ProcessHandle.current().pid());
 
         // Run once and get the  results asserting that they are reasonable
         JstatGcResults measurement1 = jstatGcTool.measure();
