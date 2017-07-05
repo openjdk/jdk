@@ -51,47 +51,55 @@ define add_native_source
     # param 5 = the c compiler
     # param 6 = the c++ flags to the compiler
     # param 7 = the c++ compiler
+    # param 8 = the flags to the assembler
 
     ifneq (,$$(filter %.c,$2))
         # Compile as a C file
-        $1_$2_FLAGS=$4 $$($1_$(notdir $2)_CFLAGS)
+        $1_$2_FLAGS=$4 $$($1_$(notdir $2)_CFLAGS) -c
         $1_$2_COMP=$5
         $1_$2_DEP_FLAG:=$(C_FLAG_DEPS)
     else ifneq (,$$(filter %.m,$2))
         # Compile as a objective-c file
-        $1_$2_FLAGS=-x objective-c $4 $$($1_$(notdir $2)_CFLAGS)
+        $1_$2_FLAGS=-x objective-c $4 $$($1_$(notdir $2)_CFLAGS) -c
         $1_$2_COMP=$5
         $1_$2_DEP_FLAG:=$(C_FLAG_DEPS)
+    else ifneq (,$$(filter %.s,$2))
+        # Compile as assembler file
+        $1_$2_FLAGS=$8
+        $1_$2_COMP=$(AS)
+        $1_$2_DEP_FLAG:=
     else
         # Compile as a C++ file
-        $1_$2_FLAGS=$6 $$($1_$(notdir $2)_CXXFLAGS)
+        $1_$2_FLAGS=$6 $$($1_$(notdir $2)_CXXFLAGS) -c
         $1_$2_COMP=$7
         $1_$2_DEP_FLAG:=$(CXX_FLAG_DEPS)
     endif
     # Generate the .o (.obj) file name and place it in the bin dir.
-    $1_$2_OBJ:=$3/$$(patsubst %.cpp,%$(OBJ_SUFFIX),$$(patsubst %.c,%$(OBJ_SUFFIX),$$(patsubst %.m,%$(OBJ_SUFFIX),$$(notdir $2))))
+    $1_$2_OBJ:=$3/$$(patsubst %.cpp,%$(OBJ_SUFFIX),$$(patsubst %.c,%$(OBJ_SUFFIX),$$(patsubst %.m,%$(OBJ_SUFFIX),$$(patsubst %.s,%$(OBJ_SUFFIX),$$(notdir $2)))))
     # Only continue if this object file hasn't been processed already. This lets the first found
     # source file override any other with the same name.
     ifeq (,$$(findstring $$($1_$2_OBJ),$$($1_OBJS_SO_FAR)))
         $1_OBJS_SO_FAR+=$$($1_$2_OBJ)
-        # And this is the dependency file for this obj file.
-        $1_$2_DEP:=$$(patsubst %$(OBJ_SUFFIX),%.d,$$($1_$2_OBJ))
-        # Include previously generated dependency information. (if it exists)
-        -include $$($1_$2_DEP)
+        ifeq (,$$(filter %.s,$2))
+          # And this is the dependency file for this obj file.
+          $1_$2_DEP:=$$(patsubst %$(OBJ_SUFFIX),%.d,$$($1_$2_OBJ))
+          # Include previously generated dependency information. (if it exists)
+          -include $$($1_$2_DEP)
 
-        ifeq ($(COMPILER_TYPE),CL)
-            $1_$2_DEBUG_OUT_FLAGS:=-Fd$$(patsubst %$(OBJ_SUFFIX),%.pdb,$$($1_$2_OBJ)) \
-				   -Fm$$(patsubst %$(OBJ_SUFFIX),%.map,$$($1_$2_OBJ))
+          ifeq ($(COMPILER_TYPE),CL)
+              $1_$2_DEBUG_OUT_FLAGS:=-Fd$$(patsubst %$(OBJ_SUFFIX),%.pdb,$$($1_$2_OBJ)) \
+                                     -Fm$$(patsubst %$(OBJ_SUFFIX),%.map,$$($1_$2_OBJ))
+          endif
         endif
 
         $$($1_$2_OBJ) : $2
         ifeq ($(COMPILER_TYPE),CC)
 		$$(call COMPILING_MSG,$$(notdir $2))
-		$$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEP_FLAG) $$($1_$2_DEP) -c $(CC_OUT_OPTION)$$($1_$2_OBJ) $2
+		$$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEP_FLAG) $$($1_$2_DEP) $(CC_OUT_OPTION)$$($1_$2_OBJ) $2
         endif
         ifeq ($(COMPILER_TYPE),CL)
 		$$(call COMPILING_MSG,$$(notdir $2))
-		$$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEBUG_OUT_FLAGS) -c $(CC_OUT_OPTION)$$($1_$2_OBJ) $2
+		$$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEBUG_OUT_FLAGS) $(CC_OUT_OPTION)$$($1_$2_OBJ) $2
         endif
     endif
 endef
@@ -107,9 +115,9 @@ define SetupNativeCompilation
     #    LDFLAGS_SUFFIX the linker flags to be added last on the commandline
     #        typically the libraries linked to.
     #    ARFLAGS the archiver flags to be used
-    #    BIN the directory where we store the object files
-    #    LIB the resulting library file
-    #    EXE the resulting exec file
+    #    OBJECT_DIR the directory where we store the object files
+    #    LIBRARY the resulting library file
+    #    PROGRAM the resulting exec file
     #    INCLUDES only pick source from these directories
     #    EXCLUDES do not pick source from these directories
     #    INCLUDE_FILES only compile exactly these files!
@@ -118,6 +126,9 @@ define SetupNativeCompilation
     #    RC_FLAGS flags for RC.
     #    MAPFILE mapfile
     #    REORDER reorder file
+    #    DEBUG_SYMBOLS add debug symbols (if configured on)
+    #    CC the compiler to use, default is $(CC)
+    #    LDEXE the linker to use for linking executables, default is $(LDEXE)
     $(if $2,$1_$(strip $2))
     $(if $3,$1_$(strip $3))
     $(if $4,$1_$(strip $4))
@@ -137,13 +148,94 @@ define SetupNativeCompilation
     $(if $(18),$1_$(strip $(18)))
     $(if $(19),$1_$(strip $(19)))
     $(if $(20),$1_$(strip $(20)))
+    $(if $(21),$1_$(strip $(21)))
+    $(if $(22),$(error Internal makefile error: Too many arguments to SetupNativeCompilation, please update NativeCompilation.gmk))
+
+    ifneq (,$$($1_BIN))
+        $$(error BIN has been replaced with OBJECT_DIR)
+    endif
+
+    ifneq (,$$($1_LIB))
+        $$(error LIB has been replaced with LIBRARY)
+    endif
+
+    ifneq (,$$($1_EXE))
+        $$(error EXE has been replaced with PROGRAM)
+    endif
+
+    ifneq (,$$($1_LIBRARY))
+        ifeq (,$$($1_OUTPUT_DIR))
+            $$(error LIBRARY requires OUTPUT_DIR)
+        endif
+
+        ifneq ($$($1_LIBRARY),$(basename $$($1_LIBRARY)))
+            $$(error directory of LIBRARY should be specified using OUTPUT_DIR)
+        endif
+
+        ifneq (,$(findstring $(SHARED_LIBRARY_SUFFIX),$$($1_LIBRARY)))
+            $$(error LIBRARY should be specified without SHARED_LIBRARY_SUFFIX: $(SHARED_LIBRARY_SUFFIX))
+        endif
+
+        ifneq (,$(findstring $(LIBRARY_PREFIX),$$($1_LIBRARY)))
+            $$(error LIBRARY should be specified without LIBRARY_PREFIX: $(LIBRARY_PREFIX))
+        endif
+
+        $1_BASENAME:=$(LIBRARY_PREFIX)$$($1_LIBRARY)$(SHARED_LIBRARY_SUFFIX)
+        $1_TARGET:=$$($1_OUTPUT_DIR)/$$($1_BASENAME)
+
+    endif
+
+    ifneq (,$$($1_STATIC_LIBRARY))
+        ifeq (,$$($1_OUTPUT_DIR))
+            $$(error STATIC_LIBRARY requires OUTPUT_DIR)
+        endif
+
+        ifneq ($$($1_STATIC_LIBRARY),$(basename $$($1_STATIC_LIBRARY)))
+            $$(error directory of STATIC_LIBRARY should be specified using OUTPUT_DIR)
+        endif
+
+        ifneq (,$(findstring $(STATIC_LIBRARY_SUFFIX),$$($1_STATIC_LIBRARY)))
+            $$(error STATIC_LIBRARY should be specified without STATIC_LIBRARY_SUFFIX: $(STATIC_LIBRARY_SUFFIX))
+        endif
+
+        ifneq (,$(findstring $(LIBRARY_PREFIX),$$($1_STATIC_LIBRARY)))
+            $$(error STATIC_LIBRARY should be specified without LIBRARY_PREFIX: $(LIBRARY_PREFIX))
+        endif
+
+        $1_BASENAME:=$(LIBRARY_PREFIX)$$($1_STATIC_LIBRARY)$(STATIC_LIBRARY_SUFFIX)
+        $1_TARGET:=$$($1_OUTPUT_DIR)/$$($1_BASENAME)
+    endif
+
+    ifneq (,$$($1_PROGRAM))
+        ifeq (,$$($1_OUTPUT_DIR))
+            $$(error PROGRAM requires OUTPUT_DIR)
+        endif
+
+        ifneq ($$($1_PROGRAM),$(basename $$($1_PROGRAM)))
+            $$(error directory of PROGRAM should be specified using OUTPUT_DIR)
+        endif
+
+        ifneq (,$(findstring $(EXE_SUFFIX),$$($1_PROGRAM)))
+            $$(error PROGRAM should be specified without EXE_SUFFIX: $(EXE_SUFFIX))
+        endif
+
+        $1_BASENAME:=$$($1_PROGRAM)$(EXE_SUFFIX)
+        $1_TARGET:=$$($1_OUTPUT_DIR)/$$($1_BASENAME)
+
+    endif
+
+    ifeq (,$$($1_TARGET))
+        $$(error Neither PROGRAM, LIBRARY nor STATIC_LIBRARY has been specified for SetupNativeCompilation)
+    endif
 
     ifeq (,$$($1_LANG))
         $$(error You have to specify LANG for native compilation $1)
     endif
     ifeq (C,$$($1_LANG))
+    ifeq ($$($1_LDEXE),)
+	    $1_LDEXE:=$(LDEXE)
+    endif
 	$1_LD:=$(LD)
-	$1_LDEXE:=$(LDEXE)
     else
        ifeq (C++,$$($1_LANG))
            $1_LD:=$(LDCXX)
@@ -153,8 +245,12 @@ define SetupNativeCompilation
        endif
     endif
 
+    ifeq ($$($1_CC),)
+        $1_CC:=$(CC)
+    endif
+
     # Make sure the dirs exist.
-    $$(shell $(MKDIR) -p $$($1_SRC) $$($1_BIN) $$(dir $$($1_LIB)) $$(dir $$($1_EXE)))
+    $$(shell $(MKDIR) -p $$($1_SRC) $$($1_OBJECT_DIR) $$($1_OUTPUT_DIR))
     # Find all files in the source trees. Sort to remove duplicates.
     $1_ALL_SRCS := $$(sort $$(foreach i,$$($1_SRC), $$(shell $(FIND) $$i -type f)))
     # Extract the C/C++ files.
@@ -163,7 +259,7 @@ define SetupNativeCompilation
     ifneq ($$($1_EXCLUDE_FILES),)
         $1_EXCLUDE_FILES:=$$(addprefix %,$$($1_EXCLUDE_FILES))
     endif
-    $1_SRCS     := $$(filter-out $$($1_EXCLUDE_FILES),$$(filter %.c %.cpp %.m,$$($1_ALL_SRCS)))
+    $1_SRCS     := $$(filter-out $$($1_EXCLUDE_FILES),$$(filter %.s %.c %.cpp %.m,$$($1_ALL_SRCS)))
     ifneq (,$$(strip $$($1_INCLUDE_FILES)))
         $1_SRCS := $$(filter $$($1_INCLUDE_FILES),$$($1_SRCS))
     endif
@@ -171,7 +267,7 @@ define SetupNativeCompilation
         $$(error No sources found for $1 when looking inside the dirs $$($1_SRC))
     endif
     # There can be only a single bin dir root, no need to foreach over the roots.
-    $1_BINS     := $$(wildcard $$($1_BIN)/*$(OBJ_SUFFIX))
+    $1_BINS     := $$(wildcard $$($1_OBJECT_DIR)/*$(OBJ_SUFFIX))
     # Now we have a list of all c/c++ files to compile: $$($1_SRCS)
     # and we have a list of all existing object files: $$($1_BINS)
 
@@ -187,37 +283,36 @@ define SetupNativeCompilation
 
     # Calculate the expected output from compiling the sources (sort to remove duplicates. Also provides
     # a reproducable order on the input files to the linker).
-    $1_EXPECTED_OBJS:=$$(sort $$(addprefix $$($1_BIN)/,$$(patsubst %.cpp,%$(OBJ_SUFFIX),$$(patsubst %.c,%$(OBJ_SUFFIX),$$(patsubst %.m,%$(OBJ_SUFFIX),$$(notdir $$($1_SRCS)))))))
-    $1 := $$($1_EXPECTED_OBJS)
+    $1_EXPECTED_OBJS:=$$(sort $$(addprefix $$($1_OBJECT_DIR)/,$$(patsubst %.cpp,%$(OBJ_SUFFIX),$$(patsubst %.c,%$(OBJ_SUFFIX),$$(patsubst %.m,%$(OBJ_SUFFIX),$$(patsubst %.s,%$(OBJ_SUFFIX),$$(notdir $$($1_SRCS))))))))
     # Are there too many object files on disk? Perhaps because some source file was removed?
     $1_SUPERFLOUS_OBJS:=$$(sort $$(filter-out $$($1_EXPECTED_OBJS),$$($1_BINS)))
     # Clean out the superfluous object files.
     $$(shell $(RM) -f $$($1_SUPERFLUOUS_OBJS))
 
-    # Pickup extra HOST_OS_API and/or PLATFORM dependent variables for CFLAGS.
-    $1_EXTRA_CFLAGS:=$$($1_CFLAGS_$(HOST_OS_API)) $$($1_CFLAGS_$(PLATFORM))
+    # Pickup extra OPENJDK_TARGET_OS_API and/or OPENJDK_TARGET_OS dependent variables for CFLAGS.
+    $1_EXTRA_CFLAGS:=$$($1_CFLAGS_$(OPENJDK_TARGET_OS_API)) $$($1_CFLAGS_$(OPENJDK_TARGET_OS))
     ifneq ($(DEBUG_LEVEL),release)
         # Pickup extra debug dependent variables for CFLAGS
         $1_EXTRA_CFLAGS+=$$($1_CFLAGS_debug)
-        $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(HOST_OS_API)_debug)
-        $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(PLATFORM)_debug)
+        $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(OPENJDK_TARGET_OS_API)_debug)
+        $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(OPENJDK_TARGET_OS)_debug)
     else
         $1_EXTRA_CFLAGS+=$$($1_CFLAGS_release)
-        $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(HOST_OS_API)_release)
-        $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(PLATFORM)_release)
+        $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(OPENJDK_TARGET_OS_API)_release)
+        $1_EXTRA_CFLAGS+=$$($1_CFLAGS_$(OPENJDK_TARGET_OS)_release)
     endif
 
-    # Pickup extra HOST_OS_API and/or PLATFORM dependent variables for CXXFLAGS.
-    $1_EXTRA_CXXFLAGS:=$$($1_CXXFLAGS_$(HOST_OS_API)) $$($1_CXXFLAGS_$(PLATFORM))
+    # Pickup extra OPENJDK_TARGET_OS_API and/or OPENJDK_TARGET_OS dependent variables for CXXFLAGS.
+    $1_EXTRA_CXXFLAGS:=$$($1_CXXFLAGS_$(OPENJDK_TARGET_OS_API)) $$($1_CXXFLAGS_$(OPENJDK_TARGET_OS))
     ifneq ($(DEBUG_LEVEL),release)
         # Pickup extra debug dependent variables for CXXFLAGS
         $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_debug)
-        $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_$(HOST_OS_API)_debug)
-        $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_$(PLATFORM)_debug)
+        $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_$(OPENJDK_TARGET_OS_API)_debug)
+        $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_$(OPENJDK_TARGET_OS)_debug)
     else
         $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_release)
-        $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_$(HOST_OS_API)_release)
-        $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_$(PLATFORM)_release)
+        $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_$(OPENJDK_TARGET_OS_API)_release)
+        $1_EXTRA_CXXFLAGS+=$$($1_CXXFLAGS_$(OPENJDK_TARGET_OS)_release)
     endif
 
     ifeq ($$($1_CXXFLAGS),)
@@ -232,33 +327,62 @@ define SetupNativeCompilation
           $1_EXTRA_CXXFLAGS += $$(CXX_FLAG_REORDER)
     endif
 
+    ifneq (no, $(ENABLE_DEBUG_SYMBOLS))
+	ifneq ($(OPENJDK_TARGET_OS), solaris)
+# <weird code />
+# There is very weird code in Defs-solaris.gmk that first sets variables as decribed below
+#   and then a couple of hundreds of line below resets them...
+#   this feels like a sure bug...but before this is confirmed, mimic this behaviour
+# (note: skip indenting this as it will surely be removed anyway)
+# <weird code />
+
+        ifneq (,$$($1_DEBUG_SYMBOLS))
+		$1_OPTIMIZATION := LOW
+		$1_EXTRA_CFLAGS += $(CFLAGS_DEBUG_SYMBOLS)
+		$1_EXTRA_CXXFLAGS += $(CXXFLAGS_DEBUG_SYMBOLS)
+        endif
+
+# <weird code />
+	endif
+# <weird code />
+    endif
+
+    ifeq (NONE, $$($1_OPTIMIZATION))
+	$1_EXTRA_CFLAGS += $$(C_O_FLAG_NONE)
+	$1_EXTRA_CXXFLAGS += $$(CXX_O_FLAG_NONE)
+    else ifeq (LOW, $$($1_OPTIMIZATION))
+	$1_EXTRA_CFLAGS += $$(C_O_FLAG_NORM)
+	$1_EXTRA_CXXFLAGS += $$(CXX_O_FLAG_NORM)
+    else ifeq (HIGH, $$($1_OPTIMIZATION))
+	$1_EXTRA_CFLAGS += $$(C_O_FLAG_HI)
+	$1_EXTRA_CXXFLAGS += $$(CXX_O_FLAG_HI)
+    else ifeq (HIGHEST, $$($1_OPTIMIZATION))
+	$1_EXTRA_CFLAGS += $$(C_O_FLAG_HIGHEST)
+	$1_EXTRA_CXXFLAGS += $$(CXX_O_FLAG_HIGHEST)
+    else ifneq (, $$($1_OPTIMIZATION))
+	$$(error Unknown value for OPTIMIZATION: $$($1_OPTIMIZATION))
+    endif
+
     # Now create a list of the packages that are about to compile. Used when sending source
     # in a batch to the compiler.
-    $$(shell $(RM) $$($1_BIN)/_the.list_of_sources)
-    $$(eval $$(call ListPathsSafelyNow,$1_SRCS,\n, >> $$($1_BIN)/_the.list_of_sources))
+    $$(shell $(RM) $$($1_OBJECT_DIR)/_the.list_of_sources)
+    $$(eval $$(call ListPathsSafelyNow,$1_SRCS,\n, >> $$($1_OBJECT_DIR)/_the.list_of_sources))
 
     # Now call add_native_source for each source file we are going to compile.
     $$(foreach p,$$($1_SRCS),\
-        $$(eval $$(call add_native_source,$1,$$p,$$($1_BIN),\
-                        $$($1_CFLAGS) $$($1_EXTRA_CFLAGS),$(CC),\
-			$$($1_CXXFLAGS) $$($1_EXTRA_CXXFLAGS),$(CXX))))
+        $$(eval $$(call add_native_source,$1,$$p,$$($1_OBJECT_DIR),\
+                        $$($1_CFLAGS) $$($1_EXTRA_CFLAGS),$$($1_CC),\
+			$$($1_CXXFLAGS) $$($1_EXTRA_CXXFLAGS),$(CXX),$$($1_ASFLAGS))))
 
     # On windows we need to create a resource file
-    ifeq ($(HOST_OS_API), winapi)
+    ifeq ($(OPENJDK_TARGET_OS_API), winapi)
         ifneq (,$$($1_VERSIONINFO_RESOURCE))
-            ifneq (,$$($1_LIB))
-                $1_BASENAME:=$$(basename $$(notdir $$($1_LIB)))
-            endif
-            ifneq (,$$($1_EXE))
-                $1_BASENAME:=$$(basename $$(notdir $$($1_EXE)))
-            endif
-            $1_RES:=$$($1_BIN)/$$($1_BASENAME).res
+            $1_RES:=$$($1_OBJECT_DIR)/$$($1_BASENAME).res
             $$($1_RES): $$($1_VERSIONINFO_RESOURCE)
 		$(RC) $$($1_RC_FLAGS) $(CC_OUT_OPTION)$$@ $$($1_VERSIONINFO_RESOURCE)
         endif
         ifneq (,$$($1_MANIFEST))
-            $1_PROGRAM:=$$(basename $$(notdir $$($1_EXE)))
-            $1_GEN_MANIFEST:=$$($1_BIN)/$$($1_PROGRAM).manifest
+            $1_GEN_MANIFEST:=$$($1_OBJECT_DIR)/$$($1_PROGRAM).manifest
             IMVERSIONVALUE:=$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION).$(JDK_UPDATE_VERSION).$(COOKED_BUILD_NUMBER)
             $$($1_GEN_MANIFEST): $$($1_MANIFEST)
 		$(SED) 's%IMVERSION%$$(IMVERSIONVALUE)%g;s%PROGRAM%$$($1_PROGRAM)%g' $$< > $$@
@@ -266,54 +390,184 @@ define SetupNativeCompilation
     endif
 
     # mapfile doesnt seem to be implemented on macosx (yet??)
-    ifneq ($(HOST_OS),macosx)
-    ifneq ($(HOST_OS),windows)
-        $1_REAL_MAPFILE := $$($1_MAPFILE)
+    ifneq ($(OPENJDK_TARGET_CPU),ppc)
+    ifneq ($(OPENJDK_TARGET_CPU),arm)
+    ifneq ($(OPENJDK_TARGET_OS),macosx)
+    ifneq ($(OPENJDK_TARGET_OS),windows)
+        $1_REAL_MAPFILE:=$$($1_MAPFILE)
         ifneq (,$$($1_REORDER))
-            $1_REAL_MAPFILE := $$($1_BIN)/mapfile
+            $1_REAL_MAPFILE:=$$($1_OBJECT_DIR)/mapfile
 
             $$($1_REAL_MAPFILE) : $$($1_MAPFILE) $$($1_REORDER)
 		$$(MKDIR) -p $$(@D)
 		$$(CP) $$($1_MAPFILE) $$@.tmp
-		$$(SED) -e 's=OUTPUTDIR=$$($1_BIN)=' $$($1_REORDER) >> $$@.tmp
+		$$(SED) -e 's=OUTPUTDIR=$$($1_OBJECT_DIR)=' $$($1_REORDER) >> $$@.tmp
 		$$(MV) $$@.tmp $$@
         endif
     endif
     endif
+    endif
+    endif
 
-    # Pickup extra HOST_OS_API dependent variables (posix or winapi) and 
+    # Pickup extra OPENJDK_TARGET_OS_API dependent variables (posix or winapi) and 
     # (linux,solaris,windows,bsd) for LDFLAGS and LDFLAGS_SUFFIX
-    $1_EXTRA_LDFLAGS:=$$($1_LDFLAGS_$(HOST_OS_API)) $$($1_LDFLAGS_$(PLATFORM))
-    $1_EXTRA_LDFLAGS_SUFFIX:=$$($1_LDFLAGS_SUFFIX_$(HOST_OS_API)) $$($1_LDFLAGS_SUFFIX_$(PLATFORM))
+    $1_EXTRA_LDFLAGS:=$$($1_LDFLAGS_$(OPENJDK_TARGET_OS_API)) $$($1_LDFLAGS_$(OPENJDK_TARGET_OS))
+    $1_EXTRA_LDFLAGS_SUFFIX:=$$($1_LDFLAGS_SUFFIX_$(OPENJDK_TARGET_OS_API)) $$($1_LDFLAGS_SUFFIX_$(OPENJDK_TARGET_OS))
     ifneq (,$$($1_REAL_MAPFILE))
-	$1_EXTRA_LDFLAGS += $(call SET_SHARED_LIBRARY_MAPFILE,$$($1_REAL_MAPFILE))
+        $1_EXTRA_LDFLAGS += $(call SET_SHARED_LIBRARY_MAPFILE,$$($1_REAL_MAPFILE))
     endif
 
-    ifneq (,$$($1_LIB))
-        ifeq (dynamic,$$(patsubst %$(SHARED_LIBRARY_SUFFIX),dynamic,$$($1_LIB)))
-            # Generating a dynamic library.
-            $1_EXTRA_LDFLAGS+=$$(call SET_SHARED_LIBRARY_NAME,$$(notdir $$($1_LIB)))
-            $$($1_LIB) : $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_REAL_MAPFILE)
-	    	$$(call LINKING_MSG,$$(notdir $$($1_LIB)))
-		$$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $(LD_OUT_OPTION)$$($1_LIB) \
-			$$($1_EXPECTED_OBJS) $$($1_RES) $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
-        else
-            # Generating a static library, ie object file archive.
-            $$($1_LIB) : $$($1_EXPECTED_OBJS) $$($1_RES)
-	    	$$(call ARCHIVING_MSG,$$(notdir $$($1_LIB)))
-		$(AR) $$($1_AR_FLAGS) $(AR_OUT_OPTION)$$($1_LIB) $$($1_EXPECTED_OBJS) \
-			$$($1_RES) $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
-       endif
+    $1 := $$($1_TARGET)
+    ifneq (,$$($1_LIBRARY))
+        # Generating a dynamic library.
+        $1_EXTRA_LDFLAGS+=$$(call SET_SHARED_LIBRARY_NAME,$$($1_BASENAME))
+        ifeq ($(OPENJDK_TARGET_OS), windows)
+            $1_EXTRA_LDFLAGS+="-implib:$$($1_OBJECT_DIR)/$$($1_LIBRARY).lib"
+        endif
+
+        ifneq (,$$($1_DEBUG_SYMBOLS))
+            ifeq ($(ENABLE_DEBUG_SYMBOLS), yes)
+                ifeq ($(OPENJDK_TARGET_OS), windows)
+                    $1_EXTRA_LDFLAGS+="-pdb:$$($1_OBJECT_DIR)/$$($1_LIBRARY).pdb" \
+				      "-map:$$($1_OBJECT_DIR)/$$($1_LIBRARY).map"
+                endif
+
+                $$($1_OUTPUT_DIR)/% : $$($1_OBJECT_DIR)/%
+			$(CP) $$< $$@
+
+
+                ifeq ($(OPENJDK_TARGET_OS), solaris)
+                    # gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
+                    # Use $(FIX_EMPTY_SEC_HDR_FLAGS) to clear the SHF_ALLOC flag (if set) from
+                    # empty section headers until a fixed $(OBJCOPY) is available.
+                    # An empty section header has sh_addr == 0 and sh_size == 0.
+                    # This problem has only been seen on Solaris X64, but we call this tool
+                    # on all Solaris builds just in case.
+                    #
+                    # $(OBJCOPY) --add-gnu-debuglink=... corrupts SUNW_* sections.
+                    # Use $(ADD_GNU_DEBUGLINK) until a fixed $(OBJCOPY) is available.
+                    $$($1_OBJECT_DIR)/$$(LIBRARY_PREFIX)$$($1_LIBRARY).debuginfo : $$($1_TARGET) \
+					$(FIX_EMPTY_SEC_HDR_FLAGS) $(ADD_GNU_DEBUGLINK)
+			$(RM) $$@
+			$(FIX_EMPTY_SEC_HDR_FLAGS) $$<
+			$(OBJCOPY) --only-keep-debug $$< $$@
+			$(CD) $$(@D) && $(ADD_GNU_DEBUGLINK) $$(@F) $$<
+                else # not solaris
+                    $$($1_OBJECT_DIR)/$$(LIBRARY_PREFIX)$$($1_LIBRARY).debuginfo : $$($1_TARGET)
+			$(RM) $$@
+			$(OBJCOPY) --only-keep-debug $$< $$@
+			$(CD) $$(@D) && $(OBJCOPY) --add-gnu-debuglink=$$(@F) $$<
+                endif # Touch to not retrigger rule on rebuild
+			$(TOUCH) $$@
+
+                ifeq ($(ZIP_DEBUGINFO_FILES), 1)
+                    $1 += $$($1_OUTPUT_DIR)/$$(LIBRARY_PREFIX)$$($1_LIBRARY).diz
+
+                    ifeq ($(OPENJDK_TARGET_OS), windows)
+                        $$($1_OBJECT_DIR)/$$(LIBRARY_PREFIX)$$($1_LIBRARY).diz : $$($1_TARGET)
+				$(CD) $$($1_OBJECT_DIR) \
+				&& $(ZIP) -q $$@ $$($1_LIBRARY).map $$($1_LIBRARY).pdb
+                    else
+                        $$($1_OBJECT_DIR)/$$(LIBRARY_PREFIX)$$($1_LIBRARY).diz : $$($1_TARGET) \
+					$$($1_OBJECT_DIR)/$$(LIBRARY_PREFIX)$$($1_LIBRARY).debuginfo
+				$(CD) $$($1_OBJECT_DIR) \
+				&& $(ZIP) -q $$@ $$(LIBRARY_PREFIX)$$($1_LIBRARY).debuginfo 
+                    endif
+                else
+                    ifeq ($(OPENJDK_TARGET_OS), windows)
+                        $1 += $$($1_OUTPUT_DIR)/$$($1_LIBRARY).map \
+			      $$($1_OUTPUT_DIR)/$$($1_LIBRARY).pdb
+                    else
+                        $1 += $$($1_OUTPUT_DIR)/$$(LIBRARY_PREFIX)$$($1_LIBRARY).debuginfo
+                    endif
+                endif
+            endif
+        endif
+
+        $$($1_TARGET) : $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_REAL_MAPFILE)
+		$$(call LINKING_MSG,$$($1_BASENAME))
+		$$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $(LD_OUT_OPTION)$$@ \
+		$$($1_EXPECTED_OBJS) $$($1_RES) $$($1_LDFLAGS_SUFFIX) \
+		$$($1_EXTRA_LDFLAGS_SUFFIX)
+
     endif
-    ifneq (,$$($1_EXE))
+
+    ifneq (,$$($1_STATIC_LIBRARY))
+        # Generating a static library, ie object file archive.
+        $$($1_TARGET) : $$($1_EXPECTED_OBJS) $$($1_RES)
+	        $$(call ARCHIVING_MSG,$$($1_LIBRARY))
+	        $(AR) $$($1_AR_FLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_EXPECTED_OBJS) \
+			$$($1_RES) $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
+    endif
+
+    ifneq (,$$($1_PROGRAM))
         # A executable binary has been specified, setup the target for it.
-        $$($1_EXE) : $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_GEN_MANIFEST)
-	    	$$(call LINKING_EXE_MSG,$$(notdir $$($1_EXE)))
-		$$($1_LDEXE) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $(EXE_OUT_OPTION)$$($1_EXE) \
+        ifneq (,$$($1_DEBUG_SYMBOLS))
+            ifeq ($(ENABLE_DEBUG_SYMBOLS), yes)
+                ifeq ($(OPENJDK_TARGET_OS), windows)
+                    $1_EXTRA_LDFLAGS+="-pdb:$$($1_OBJECT_DIR)/$$($1_PROGRAM).pdb" \
+				      "-map:$$($1_OBJECT_DIR)/$$($1_PROGRAM).map"
+                endif
+
+                $$($1_OUTPUT_DIR)/% : $$($1_OBJECT_DIR)/%
+			$(CP) $$< $$@
+
+                ifeq ($(OPENJDK_TARGET_OS), solaris)
+                    # gobjcopy crashes on "empty" section headers with the SHF_ALLOC flag set.
+                    # Use $(FIX_EMPTY_SEC_HDR_FLAGS) to clear the SHF_ALLOC flag (if set) from
+                    # empty section headers until a fixed $(OBJCOPY) is available.
+                    # An empty section header has sh_addr == 0 and sh_size == 0.
+                    # This problem has only been seen on Solaris X64, but we call this tool
+                    # on all Solaris builds just in case.
+                    #
+                    # $(OBJCOPY) --add-gnu-debuglink=... corrupts SUNW_* sections.
+                    # Use $(ADD_GNU_DEBUGLINK) until a fixed $(OBJCOPY) is available.
+                    $$($1_OBJECT_DIR)/$$($1_PROGRAM).debuginfo : $$($1_TARGET) \
+					$(FIX_EMPTY_SEC_HDR_FLAGS) $(ADD_GNU_DEBUGLINK)
+			$(RM) $$@
+			$(FIX_EMPTY_SEC_HDR_FLAGS) $$<
+			$(OBJCOPY) --only-keep-debug $$< $$@
+			$(CD) $$(@D) && $(ADD_GNU_DEBUGLINK) $$(@F) $$<
+                else # not solaris
+                    $$($1_OBJECT_DIR)/$$($1_PROGRAM).debuginfo : $$($1_TARGET)
+			$(RM) $$@
+			$(OBJCOPY) --only-keep-debug $$< $$@
+			$(CD) $$(@D) && $(OBJCOPY) --add-gnu-debuglink=$$(@F) $$<
+                endif
+			$(TOUCH) $$@
+
+                ifeq ($(ZIP_DEBUGINFO_FILES), 1)
+                    $1 += $$($1_OUTPUT_DIR)/$$($1_PROGRAM).diz
+
+                    ifeq ($(OPENJDK_TARGET_OS), windows)
+                        $$($1_OBJECT_DIR)/$$($1_PROGRAM).diz : $$($1_TARGET)
+				$(CD) $$($1_OBJECT_DIR) \
+				&& $(ZIP) -q $$@ $$($1_PROGRAM).map $$($1_PROGRAM).pdb
+                    else
+                        $$($1_OBJECT_DIR)/$$(PROGRAM_PREFIX)$$($1_PROGRAM).diz : $$($1_TARGET) \
+					$$($1_OBJECT_DIR)/$$($1_PROGRAM).debuginfo
+				$(CD) $$($1_OBJECT_DIR) \
+				&& $(ZIP) -q $$@ $$($1_PROGRAM).debuginfo 
+                    endif
+                else
+                    ifeq ($(OPENJDK_TARGET_OS), windows)
+                        $1 += $$($1_OUTPUT_DIR)/$$($1_PROGRAM).map \
+			      $$($1_OUTPUT_DIR)/$$($1_PROGRAM).pdb
+                    else
+                        $1 += $$($1_OUTPUT_DIR)/$$($1_PROGRAM).debuginfo
+                    endif
+                endif
+            endif
+        endif
+
+        $$($1_TARGET) : $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_GEN_MANIFEST)
+	    	$$(call LINKING_EXE_MSG,$$($1_BASENAME))
+		$$($1_LDEXE) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $(EXE_OUT_OPTION)$$($1_TARGET) \
 			$$($1_EXPECTED_OBJS) $$($1_RES) $$($1_LDFLAGS_SUFFIX) \
 			$$($1_EXTRA_LDFLAGS_SUFFIX)
         ifneq (,$$($1_GEN_MANIFEST))
 		$(MT) -nologo /manifest $$($1_GEN_MANIFEST) /outputresource:$$@;#1
         endif
+
     endif
 endef
