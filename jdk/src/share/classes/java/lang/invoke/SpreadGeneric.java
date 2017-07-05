@@ -126,7 +126,7 @@ class SpreadGeneric {
         return spreadGen;
     }
 
-    public String toString() {
+    String debugString() {
         return getClass().getSimpleName()+targetType+"["+spreadCount+"]";
     }
 
@@ -224,7 +224,7 @@ class SpreadGeneric {
         protected final MethodHandle target;   // (any**N) => R
 
         @Override
-        public String toString() {
+        String debugString() {
             return addTypeString(target, this);
         }
 
