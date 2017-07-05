@@ -29,9 +29,6 @@ import java.net.URL;
 import java.net.InetAddress;
 import java.net.SocketPermission;
 import java.io.*;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.StringTokenizer;
 import java.security.Permission;
 import sun.net.www.*;
 import sun.net.smtp.SmtpClient;
@@ -86,11 +83,11 @@ public class MailToURLConnection extends URLConnection {
     }
 
     public void connect() throws IOException {
-        System.err.println("connect. Timeout = " + connectTimeout);
         client = new SmtpClient(connectTimeout);
         client.setReadTimeout(readTimeout);
     }
 
+    @Override
     public synchronized OutputStream getOutputStream() throws IOException {
         if (os != null) {
             return os;
@@ -107,6 +104,7 @@ public class MailToURLConnection extends URLConnection {
         return os;
     }
 
+    @Override
     public Permission getPermission() throws IOException {
         if (permission == null) {
             connect();
@@ -116,22 +114,26 @@ public class MailToURLConnection extends URLConnection {
         return permission;
     }
 
+    @Override
     public void setConnectTimeout(int timeout) {
         if (timeout < 0)
             throw new IllegalArgumentException("timeouts can't be negative");
         connectTimeout = timeout;
     }
 
+    @Override
     public int getConnectTimeout() {
         return (connectTimeout < 0 ? 0 : connectTimeout);
     }
 
+    @Override
     public void setReadTimeout(int timeout) {
         if (timeout < 0)
             throw new IllegalArgumentException("timeouts can't be negative");
         readTimeout = timeout;
     }
 
+    @Override
     public int getReadTimeout() {
         return readTimeout < 0 ? 0 : readTimeout;
     }

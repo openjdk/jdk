@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,9 @@
 package sun.awt.X11;
 
 import java.awt.*;
-import java.awt.event.*;
-import java.awt.peer.*;
-import java.beans.PropertyChangeListener;
-import sun.awt.*;
-import java.util.*;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseEvent;
+import java.awt.datatransfer.Clipboard;
 import java.awt.dnd.DragSource;
 import java.awt.dnd.DragGestureListener;
 import java.awt.dnd.DragGestureEvent;
@@ -37,20 +35,27 @@ import java.awt.dnd.DragGestureRecognizer;
 import java.awt.dnd.MouseDragGestureRecognizer;
 import java.awt.dnd.InvalidDnDOperationException;
 import java.awt.dnd.peer.DragSourceContextPeer;
-import java.awt.image.*;
-import java.security.*;
 import java.awt.im.InputMethodHighlight;
 import java.awt.im.spi.InputMethodDescriptor;
-import java.awt.datatransfer.Clipboard;
+import java.awt.image.ColorModel;
+import java.awt.peer.*;
+import java.beans.PropertyChangeListener;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.LookAndFeel;
 import javax.swing.UIDefaults;
-import java.util.logging.*;
+import sun.awt.*;
 import sun.font.FontManager;
 import sun.misc.PerformanceLogger;
 import sun.print.PrintJob2D;
-import java.lang.reflect.*;
 
-public class XToolkit extends UNIXToolkit implements Runnable, XConstants {
+public final class XToolkit extends UNIXToolkit implements Runnable, XConstants
+{
     private static Logger log = Logger.getLogger("sun.awt.X11.XToolkit");
     private static Logger eventLog = Logger.getLogger("sun.awt.X11.event.XToolkit");
     private static final Logger timeoutTaskLog = Logger.getLogger("sun.awt.X11.timeoutTask.XToolkit");
@@ -1871,9 +1876,7 @@ public class XToolkit extends UNIXToolkit implements Runnable, XConstants {
     }
 
     public boolean isAlwaysOnTopSupported() {
-        Iterator iter = XWM.getWM().getProtocols(XLayerProtocol.class).iterator();
-        while (iter.hasNext()) {
-            XLayerProtocol proto = (XLayerProtocol)iter.next();
+        for (XLayerProtocol proto : XWM.getWM().getProtocols(XLayerProtocol.class)) {
             if (proto.supportsLayer(XLayerProtocol.LAYER_ALWAYS_ON_TOP)) {
                 return true;
             }

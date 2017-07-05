@@ -273,6 +273,10 @@ LRESULT CALLBACK AwtDialog::MouseHookProc(int nCode,
         {
             HWND blocker = AwtWindow::GetModalBlocker(AwtComponent::GetTopLevelParentForWindow(hWnd));
             HWND topMostBlocker = blocker;
+            HWND prevForegroundWindow = ::GetForegroundWindow();
+            if (::IsWindow(blocker)) {
+                ::BringWindowToTop(hWnd);
+            }
             while (::IsWindow(blocker)) {
                 topMostBlocker = blocker;
                 ::BringWindowToTop(blocker);
@@ -282,7 +286,7 @@ LRESULT CALLBACK AwtDialog::MouseHookProc(int nCode,
                 // no beep/flash if the mouse was clicked in the taskbar menu
                 // or the dialog is currently inactive
                 if ((::WindowFromPoint(mhs->pt) == hWnd) &&
-                    (::GetForegroundWindow() == topMostBlocker))
+                    (prevForegroundWindow == topMostBlocker))
                 {
                     ::MessageBeep(MB_OK);
                     // some heuristics: 3 times x 64 milliseconds
@@ -292,6 +296,7 @@ LRESULT CALLBACK AwtDialog::MouseHookProc(int nCode,
                     ::BringWindowToTop(topMostBlocker);
                     ::SetForegroundWindow(topMostBlocker);
                 }
+                return 1;
             }
         }
     }

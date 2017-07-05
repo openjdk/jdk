@@ -26,13 +26,16 @@
 /* Test program for freetype sanity check.
    Prints "Failed" messages to STDOUT if check fails. */
 
+#include <stdio.h>
+#include <string.h>
+
 #include "ft2build.h"
 #include FT_FREETYPE_H
 
 #define QUOTEMACRO(x) QUOTEME(x)
 #define QUOTEME(x) #x
 
-int main(char** argv, int argc) {
+int main(int argc, char** argv) {
    char v[50];
    FT_Int major, minor, patch;
    FT_Library library;

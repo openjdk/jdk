@@ -31,6 +31,10 @@
  * @run main QueryExpStringTest
  */
 
+// This test is mostly obsolete, since we now have Query.fromString.
+// The test includes its own parser, from which Query.fromString was derived.
+// The parsers are not identical and the one here is no longer maintained.
+
 import java.util.*;
 import javax.management.*;
 
@@ -39,6 +43,11 @@ public class QueryExpStringTest {
     private static final ValueExp
         attr = Query.attr("attr"),
         qattr = Query.attr("className", "attr"),
+        aa = Query.attr("A"),
+        bb = Query.attr("B"),
+        cc = Query.attr("C"),
+        dd = Query.attr("D"),
+        zero = Query.value(0),
         classattr = Query.classattr(),
         simpleString = Query.value("simpleString"),
         complexString = Query.value("a'b\\'\""),
@@ -66,10 +75,14 @@ public class QueryExpStringTest {
                                          (StringValueExp) simpleString),
         initialStar = Query.initialSubString((AttributeValueExp) attr,
                                              Query.value("*")),
+        initialPercent = Query.initialSubString((AttributeValueExp) attr,
+                                                Query.value("%")),
         any = Query.anySubString((AttributeValueExp) attr,
                                  (StringValueExp) simpleString),
         anyStar = Query.anySubString((AttributeValueExp) attr,
                                      Query.value("*")),
+        anyPercent = Query.anySubString((AttributeValueExp) attr,
+                                        Query.value("%")),
         ffinal = Query.finalSubString((AttributeValueExp) attr,
                                       (StringValueExp) simpleString),
         finalMagic = Query.finalSubString((AttributeValueExp) attr,
@@ -77,16 +90,20 @@ public class QueryExpStringTest {
         in = Query.in(intValue, new ValueExp[] {intValue, floatValue}),
         and = Query.and(gt, lt),
         or = Query.or(gt, lt),
-        not = Query.not(gt);
+        not = Query.not(gt),
+        aPlusB_PlusC = Query.gt(Query.plus(Query.plus(aa, bb), cc), zero),
+        aPlus_BPlusC = Query.gt(Query.plus(aa, Query.plus(bb, cc)), zero);
 
     // Commented-out tests below require change to implementation
 
     private static final Object tests[] = {
         attr, "attr",
-        qattr, "className.attr",
+//      qattr, "className.attr",
+// Preceding form now appears as className#attr, an incompatible change
+// which we don't mind much because nobody uses the two-arg Query.attr.
         classattr, "Class",
         simpleString, "'simpleString'",
-//      complexString, "'a\\'b\\\\\\'\"'",
+        complexString, "'a''b\\\''\"'",
         intValue, "12345678",
         integerValue, "12345678",
         longValue, "12345678",
@@ -104,16 +121,20 @@ public class QueryExpStringTest {
         eq, "(12345678) = (2.5)",
         between, "(12345678) between (2.5) and (2.5)",
         match, "attr like 'simpleString'",
-//      initial, "attr like 'simpleString*'",
-//      initialStar, "attr like '\\\\**'",
-//      any, "attr like '*simpleString*'",
-//      anyStar, "attr like '*\\\\**'",
-//      ffinal, "attr like '*simpleString'",
-//      finalMagic, "attr like '*\\\\?\\\\*\\\\[\\\\\\\\'",
+        initial, "attr like 'simpleString%'",
+        initialStar, "attr like '\\*%'",
+        initialPercent, "attr like '\\%%'",
+        any, "attr like '%simpleString%'",
+        anyStar, "attr like '%\\*%'",
+        anyPercent, "attr like '%\\%%'",
+        ffinal, "attr like '%simpleString'",
+        finalMagic, "attr like '%\\?\\*\\[\\\\'",
         in, "12345678 in (12345678, 2.5)",
         and, "((12345678) > (2.5)) and ((12345678) < (2.5))",
         or, "((12345678) > (2.5)) or ((12345678) < (2.5))",
         not, "not ((12345678) > (2.5))",
+        aPlusB_PlusC, "(A + B + C) > (0)",
+//        aPlus_BPlusC, "(A + (B + C)) > (0)",
     };
 
     public static void main(String[] args) throws Exception {
@@ -185,7 +206,9 @@ public class QueryExpStringTest {
                 throw new Exception("Expected types `attr like string': " +
                                     exp + " like " + pat);
             }
-            return Query.match((AttributeValueExp) exp, (StringValueExp) pat);
+            StringValueExp spat = (StringValueExp) pat;
+            spat = Query.value(translateMatch(spat.getValue()));
+            return Query.match((AttributeValueExp) exp, spat);
         }
 
         if (skip(ss, " in (")) {
@@ -201,6 +224,28 @@ public class QueryExpStringTest {
         }
 
         throw new Exception("Expected in or like after expression");
+    }
+
+    private static String translateMatch(String s) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {  // logic not correct for wide chars
+            char c = s.charAt(i);
+            switch (c) {
+                case '\\':
+                    sb.append(c).append(s.charAt(++i)); break;
+                case '%':
+                    sb.append('*'); break;
+                case '_':
+                    sb.append('?'); break;
+                case '*':
+                    sb.append("\\*"); break;
+                case '?':
+                    sb.append("\\?"); break;
+                default:
+                    sb.append(c); break;
+            }
+        }
+        return sb.toString();
     }
 
     private static QueryExp parseQueryAfterParen(String[] ss)
@@ -229,7 +274,7 @@ public class QueryExpStringTest {
             ss[0] = start;
             ValueExp lhs = parseExp(ss);
             if (!skip(ss, ") "))
-                throw new Exception("Expected `) ' after subexpression");
+                throw new Exception("Expected `) ' after subexpression: " + ss[0]);
             String op = scanWord(ss);
             if (!skip(ss, " ("))
                 throw new Exception("Expected ` (' after `" + op + "'");
@@ -258,15 +303,16 @@ public class QueryExpStringTest {
     }
 
     private static ValueExp parseExp(String[] ss) throws Exception {
-        final ValueExp prim = parsePrimary(ss);
+        ValueExp lhs = parsePrimary(ss);
 
+        while (true) {
         /* Look ahead to see if we have an arithmetic operator. */
         String back = ss[0];
         if (!skip(ss, " "))
-            return prim;
+                return lhs;
         if (ss[0].equals("") || "+-*/".indexOf(ss[0].charAt(0)) < 0) {
             ss[0] = back;
-            return prim;
+                return lhs;
         }
 
         final String op = scanWord(ss);
@@ -276,14 +322,15 @@ public class QueryExpStringTest {
             throw new Exception("Unknown arithmetic operator: " + op);
         if (!skip(ss, " "))
             throw new Exception("Expected space after arithmetic operator");
-        ValueExp rhs = parseExp(ss);
+            ValueExp rhs = parsePrimary(ss);
         switch (op.charAt(0)) {
-        case '+': return Query.plus(prim, rhs);
-        case '-': return Query.minus(prim, rhs);
-        case '*': return Query.times(prim, rhs);
-        case '/': return Query.div(prim, rhs);
+            case '+': lhs = Query.plus(lhs, rhs); break;
+            case '-': lhs = Query.minus(lhs, rhs); break;
+            case '*': lhs = Query.times(lhs, rhs); break;
+            case '/': lhs = Query.div(lhs, rhs); break;
         default: throw new Exception("Can't happen: " + op.charAt(0));
         }
+    }
     }
 
     private static ValueExp parsePrimary(String[] ss) throws Exception {
@@ -324,14 +371,19 @@ public class QueryExpStringTest {
     private static String scanWord(String[] ss) throws Exception {
         String s = ss[0];
         int space = s.indexOf(' ');
-        if (space < 0) {
+        int rpar = s.indexOf(')');
+        if (space < 0 && rpar < 0) {
             ss[0] = "";
             return s;
-        } else {
-            String word = s.substring(0, space);
-            ss[0] = s.substring(space);
-            return word;
         }
+        int stop;
+        if (space >= 0 && rpar >= 0)  // string has both space and ), stop at first
+            stop = Math.min(space, rpar);
+        else                          // string has only one, stop at it
+            stop = Math.max(space, rpar);
+        String word = s.substring(0, stop);
+        ss[0] = s.substring(stop);
+        return word;
     }
 
     private static boolean matchWord(String[] ss, String word)
@@ -381,13 +433,11 @@ public class QueryExpStringTest {
         for (i = 0; i < len; i++) {
             char c = s.charAt(i);
             if (c == '\'') {
-                ss[0] = s.substring(i + 1);
+                ++i;
+                if (i >= len || s.charAt(i) != '\'') {
+                    ss[0] = s.substring(i);
                 return Query.value(buf.toString());
             }
-            if (c == '\\') {
-                if (++i == len)
-                    throw new Exception("\\ at end of string");
-                c = s.charAt(i);
             }
             buf.append(c);
         }

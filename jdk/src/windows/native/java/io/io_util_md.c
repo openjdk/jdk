@@ -42,7 +42,7 @@
 
 extern jboolean onNT = JNI_FALSE;
 
-static int MAX_INPUT_EVENTS = 2000;
+static DWORD MAX_INPUT_EVENTS = 2000;
 
 void
 initializeWindowsVersion() {
@@ -190,9 +190,16 @@ pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE) {
 jlong
 winFileHandleOpen(JNIEnv *env, jstring path, int flags)
 {
+    /* To implement O_APPEND, we use the strategy from
+       http://msdn2.microsoft.com/en-us/library/aa363858.aspx
+       "You can get atomic append by opening a file with
+       FILE_APPEND_DATA access and _without_ FILE_WRITE_DATA access.
+       If you do this then all writes will ignore the current file
+       pointer and be done at the end-of file." */
     const DWORD access =
-        (flags & O_RDWR)   ? (GENERIC_WRITE | GENERIC_READ) :
+        (flags & O_APPEND) ? (FILE_GENERIC_WRITE & ~FILE_WRITE_DATA) :
         (flags & O_WRONLY) ?  GENERIC_WRITE :
+        (flags & O_RDWR)   ? (GENERIC_READ | GENERIC_WRITE) :
         GENERIC_READ;
     const DWORD sharing =
         FILE_SHARE_READ | FILE_SHARE_WRITE;
@@ -444,24 +451,6 @@ handleSetLength(jlong fd, jlong length) {
     return 0;
 }
 
-int
-handleFileSizeFD(jlong fd, jlong *size)
-{
-    DWORD sizeLow = 0;
-    DWORD sizeHigh = 0;
-    HANDLE h = (HANDLE)fd;
-    if (h == INVALID_HANDLE_VALUE) {
-        return -1;
-    }
-    sizeLow = GetFileSize(h, &sizeHigh);
-    if (sizeLow == ((DWORD)-1)) {
-        if (GetLastError() != ERROR_SUCCESS) {
-            return -1;
-        }
-    }
-    return (((jlong)sizeHigh) << 32) | sizeLow;
-}
-
 JNIEXPORT
 size_t
 handleRead(jlong fd, void *buf, jint len)
@@ -513,7 +502,7 @@ handleClose(JNIEnv *env, jobject this, jfieldID fid)
     FD fd = GET_FD(this, fid);
     HANDLE h = (HANDLE)fd;
 
-    if (fd == INVALID_HANDLE_VALUE) {
+    if (h == INVALID_HANDLE_VALUE) {
         return 0;
     }
 

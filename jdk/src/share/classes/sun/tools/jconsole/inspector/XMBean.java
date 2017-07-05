@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,47 +28,56 @@ package sun.tools.jconsole.inspector;
 import java.io.IOException;
 import javax.management.*;
 import javax.swing.Icon;
+import sun.tools.jconsole.JConsole;
 import sun.tools.jconsole.MBeansTab;
 
-public class XMBean extends Object {
-    private ObjectName objectName;
+public class XMBean {
+
+    private final MBeansTab mbeansTab;
+    private final ObjectName objectName;
     private Icon icon;
     private String text;
-    private boolean broadcaster;
+    private Boolean broadcaster;
+    private final Object broadcasterLock = new Object();
     private MBeanInfo mbeanInfo;
-    private MBeansTab mbeansTab;
+    private final Object mbeanInfoLock = new Object();
 
-    public XMBean(ObjectName objectName, MBeansTab mbeansTab)
-        throws InstanceNotFoundException, IntrospectionException,
-            ReflectionException, IOException {
+    public XMBean(ObjectName objectName, MBeansTab mbeansTab) {
         this.mbeansTab = mbeansTab;
-        setObjectName(objectName);
+        this.objectName = objectName;
+        text = objectName.getKeyProperty("name");
+        if (text == null) {
+            text = objectName.getDomain();
+        }
         if (MBeanServerDelegate.DELEGATE_NAME.equals(objectName)) {
             icon = IconManager.MBEANSERVERDELEGATE;
         } else {
             icon = IconManager.MBEAN;
         }
-        this.broadcaster = isBroadcaster(objectName);
-        this.mbeanInfo = getMBeanInfo(objectName);
     }
 
     MBeanServerConnection getMBeanServerConnection() {
         return mbeansTab.getMBeanServerConnection();
     }
 
-    public boolean isBroadcaster() {
-        return broadcaster;
-    }
-
-    private boolean isBroadcaster(ObjectName name) {
-        try {
-            return getMBeanServerConnection().isInstanceOf(
-                    name, "javax.management.NotificationBroadcaster");
-        } catch (Exception e) {
-            System.out.println("Error calling isBroadcaster: " +
-                    e.getMessage());
+    public Boolean isBroadcaster() {
+        synchronized (broadcasterLock) {
+            if (broadcaster == null) {
+                try {
+                    broadcaster = getMBeanServerConnection().isInstanceOf(
+                            getObjectName(),
+                            "javax.management.NotificationBroadcaster");
+                } catch (Exception e) {
+                    if (JConsole.isDebug()) {
+                        System.err.println("Couldn't check if MBean [" +
+                                objectName + "] is a notification broadcaster");
+                        e.printStackTrace();
+                    }
+                    return false;
+                }
+            }
+            return broadcaster;
         }
-        return false;
     }
 
     public Object invoke(String operationName) throws Exception {
@@ -78,35 +87,35 @@ public class XMBean extends Object {
     }
 
     public Object invoke(String operationName, Object params[], String sig[])
-        throws Exception {
+            throws Exception {
         Object result = getMBeanServerConnection().invoke(
                 getObjectName(), operationName, params, sig);
         return result;
     }
 
     public void setAttribute(Attribute attribute)
-        throws AttributeNotFoundException, InstanceNotFoundException,
+            throws AttributeNotFoundException, InstanceNotFoundException,
             InvalidAttributeValueException, MBeanException,
             ReflectionException, IOException {
         getMBeanServerConnection().setAttribute(getObjectName(), attribute);
     }
 
     public Object getAttribute(String attributeName)
-        throws AttributeNotFoundException, InstanceNotFoundException,
+            throws AttributeNotFoundException, InstanceNotFoundException,
             MBeanException, ReflectionException, IOException {
         return getMBeanServerConnection().getAttribute(
                 getObjectName(), attributeName);
     }
 
     public AttributeList getAttributes(String attributeNames[])
-        throws AttributeNotFoundException, InstanceNotFoundException,
+            throws AttributeNotFoundException, InstanceNotFoundException,
             MBeanException, ReflectionException, IOException {
         return getMBeanServerConnection().getAttributes(
                 getObjectName(), attributeNames);
     }
 
     public AttributeList getAttributes(MBeanAttributeInfo attributeNames[])
-        throws AttributeNotFoundException, InstanceNotFoundException,
+            throws AttributeNotFoundException, InstanceNotFoundException,
             MBeanException, ReflectionException, IOException {
         String attributeString[] = new String[attributeNames.length];
         for (int i = 0; i < attributeNames.length; i++) {
@@ -119,32 +128,34 @@ public class XMBean extends Object {
         return objectName;
     }
 
-    private void setObjectName(ObjectName objectName) {
-        this.objectName = objectName;
-        // generate a readable name now
-        String name = getObjectName().getKeyProperty("name");
-        if (name == null)
-            setText(getObjectName().getDomain());
-        else
-            setText(name);
-    }
-
-    public MBeanInfo getMBeanInfo() {
-        return mbeanInfo;
-    }
-
-    private MBeanInfo getMBeanInfo(ObjectName name)
-        throws InstanceNotFoundException, IntrospectionException,
-            ReflectionException, IOException {
-        return getMBeanServerConnection().getMBeanInfo(name);
-    }
-
-    public boolean equals(Object o) {
-        if (o instanceof XMBean) {
-            XMBean mbean = (XMBean) o;
-            return getObjectName().equals((mbean).getObjectName());
+    public MBeanInfo getMBeanInfo() throws InstanceNotFoundException,
+            IntrospectionException, ReflectionException, IOException {
+        synchronized (mbeanInfoLock) {
+            if (mbeanInfo == null) {
+                mbeanInfo = getMBeanServerConnection().getMBeanInfo(objectName);
+            }
+            return mbeanInfo;
         }
-        return false;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (obj == this) {
+            return true;
+        }
+        if (!(obj instanceof XMBean)) {
+            return false;
+        }
+        XMBean that = (XMBean) obj;
+        return getObjectName().equals(that.getObjectName());
+    }
+
+    @Override
+    public int hashCode() {
+        return (objectName == null ? 0 : objectName.hashCode());
     }
 
     public String getText() {
@@ -163,6 +174,7 @@ public class XMBean extends Object {
         this.icon = icon;
     }
 
+    @Override
     public String toString() {
         return getText();
     }

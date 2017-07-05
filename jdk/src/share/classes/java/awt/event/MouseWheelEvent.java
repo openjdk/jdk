@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,19 @@ import java.awt.Component;
  * methods for conforming to the underlying platform settings.  These
  * platform settings can be changed at any time by the user.  MouseWheelEvents
  * reflect the most recent settings.
+ * <P>
+ * The <code>MouseWheelEvent</code> class includes methods for
+ * getting the number of "clicks" by which the mouse wheel is rotated.
+ * The {@link #getWheelRotation} method returns the integer number
+ * of "clicks" corresponding to the number of notches by which the wheel was
+ * rotated. In addition to this method, the <code>MouseWheelEvent</code>
+ * class provides the {@link #getPreciseWheelRotation} method which returns
+ * a double number of "clicks" in case a partial rotation occurred.
+ * The {@link #getPreciseWheelRotation} method is useful if a mouse supports
+ * a high-resolution wheel, such as a freely rotating wheel with no
+ * notches. Applications can benefit by using this method to process
+ * mouse wheel events more precisely, and thus, making visual perception
+ * smoother.
  *
  * @author Brent Christian
  * @see MouseWheelListener
@@ -131,6 +144,13 @@ public class MouseWheelEvent extends MouseEvent {
      */
     int wheelRotation;
 
+    /**
+     * Indicates how far the mouse wheel was rotated.
+     *
+     * @see #getPreciseWheelRotation
+     */
+    double preciseWheelRotation;
+
     /*
      * serialVersionUID
      */
@@ -165,8 +185,8 @@ public class MouseWheelEvent extends MouseEvent {
      *                       <code>WHEEL_BLOCK_SCROLL</code>
      * @param  scrollAmount  for scrollType <code>WHEEL_UNIT_SCROLL</code>,
      *                       the number of units to be scrolled
-     * @param wheelRotation  the amount that the mouse wheel was rotated (the
-     *                       number of "clicks")
+     * @param wheelRotation  the integer number of "clicks" by which the mouse
+     *                       wheel was rotated
      *
      * @throws IllegalArgumentException if <code>source</code> is null
      * @see MouseEvent#MouseEvent(java.awt.Component, int, long, int, int, int, int, boolean)
@@ -211,8 +231,8 @@ public class MouseWheelEvent extends MouseEvent {
      *                       <code>WHEEL_BLOCK_SCROLL</code>
      * @param  scrollAmount  for scrollType <code>WHEEL_UNIT_SCROLL</code>,
      *                       the number of units to be scrolled
-     * @param wheelRotation  the amount that the mouse wheel was rotated (the
-     *                       number of "clicks")
+     * @param wheelRotation  the integer number of "clicks" by which the mouse
+     *                       wheel was rotated
      *
      * @throws IllegalArgumentException if <code>source</code> is null
      * @see MouseEvent#MouseEvent(java.awt.Component, int, long, int, int, int, int, boolean)
@@ -223,12 +243,68 @@ public class MouseWheelEvent extends MouseEvent {
                             int x, int y, int xAbs, int yAbs, int clickCount, boolean popupTrigger,
                             int scrollType, int scrollAmount, int wheelRotation) {
 
+        this(source, id, when, modifiers, x, y, xAbs, yAbs, clickCount, popupTrigger,
+             scrollType, scrollAmount, wheelRotation, wheelRotation);
+
+    }
+
+
+    /**
+     * Constructs a <code>MouseWheelEvent</code> object with the specified
+     * source component, type, modifiers, coordinates, absolute coordinates,
+     * scroll type, scroll amount, and wheel rotation.
+     * <p>Note that passing in an invalid <code>id</code> parameter results
+     * in unspecified behavior. This method throws an
+     * <code>IllegalArgumentException</code> if <code>source</code> equals
+     * <code>null</code>.
+     * <p>Even if inconsistent values for relative and absolute coordinates
+     * are passed to the constructor, a <code>MouseWheelEvent</code> instance
+     * is still created and no exception is thrown.
+     *
+     * @param source         the <code>Component</code> that originated the event
+     * @param id             the integer value that identifies the event
+     * @param when           a long value that gives the time when the event occurred
+     * @param modifiers      the modifier keys down during event
+     *                       (shift, ctrl, alt, meta)
+     * @param x              the horizontal <code>x</code> coordinate for the
+     *                       mouse location
+     * @param y              the vertical <code>y</code> coordinate for the
+     *                       mouse location
+     * @param xAbs           the absolute horizontal <code>x</code> coordinate for
+     *                       the mouse location
+     * @param yAbs           the absolute vertical <code>y</code> coordinate for
+     *                       the mouse location
+     * @param clickCount     the number of mouse clicks associated with the event
+     * @param popupTrigger   a boolean value, <code>true</code> if this event is a trigger
+     *                       for a popup-menu
+     * @param scrollType     the type of scrolling which should take place in
+     *                       response to this event;  valid values are
+     *                       <code>WHEEL_UNIT_SCROLL</code> and
+     *                       <code>WHEEL_BLOCK_SCROLL</code>
+     * @param  scrollAmount  for scrollType <code>WHEEL_UNIT_SCROLL</code>,
+     *                       the number of units to be scrolled
+     * @param wheelRotation  the integer number of "clicks" by which the mouse wheel
+     *                       was rotated
+     * @param preciseWheelRotation the double number of "clicks" by which the mouse wheel
+     *                       was rotated
+     *
+     * @throws IllegalArgumentException if <code>source</code> is null
+     * @see MouseEvent#MouseEvent(java.awt.Component, int, long, int, int, int, int, boolean)
+     * @see MouseEvent#MouseEvent(java.awt.Component, int, long, int, int, int, int, int, int, boolean, int)
+     * @since 1.7
+     */
+    public MouseWheelEvent (Component source, int id, long when, int modifiers,
+                            int x, int y, int xAbs, int yAbs, int clickCount, boolean popupTrigger,
+                            int scrollType, int scrollAmount, int wheelRotation, double preciseWheelRotation) {
+
         super(source, id, when, modifiers, x, y, xAbs, yAbs, clickCount,
               popupTrigger, MouseEvent.NOBUTTON);
 
         this.scrollType = scrollType;
         this.scrollAmount = scrollAmount;
         this.wheelRotation = wheelRotation;
+        this.preciseWheelRotation = preciseWheelRotation;
+
     }
 
     /**
@@ -267,14 +343,32 @@ public class MouseWheelEvent extends MouseEvent {
     }
 
     /**
-     * Returns the number of "clicks" the mouse wheel was rotated.
+     * Returns the number of "clicks" the mouse wheel was rotated, as an integer.
+     * A partial rotation may occur if the mouse supports a high-resolution wheel.
+     * In this case, the method returns zero until a full "click" has been accumulated.
      *
      * @return negative values if the mouse wheel was rotated up/away from
      * the user, and positive values if the mouse wheel was rotated down/
      * towards the user
+     * @see #getPreciseWheelRotation
      */
     public int getWheelRotation() {
         return wheelRotation;
+    }
+
+    /**
+     * Returns the number of "clicks" the mouse wheel was rotated, as a double.
+     * A partial rotation may occur if the mouse supports a high-resolution wheel.
+     * In this case, the return value will include a fractional "click".
+     *
+     * @return negative values if the mouse wheel was rotated up or away from
+     * the user, and positive values if the mouse wheel was rotated down or
+     * towards the user
+     * @see #getWheelRotation
+     * @since 1.7
+     */
+    public double getPreciseWheelRotation() {
+        return preciseWheelRotation;
     }
 
     /**
@@ -348,6 +442,6 @@ public class MouseWheelEvent extends MouseEvent {
         }
         return super.paramString()+",scrollType="+scrollTypeStr+
          ",scrollAmount="+getScrollAmount()+",wheelRotation="+
-         getWheelRotation();
+         getWheelRotation()+",preciseWheelRotation="+getPreciseWheelRotation();
     }
 }

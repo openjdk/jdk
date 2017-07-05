@@ -304,11 +304,6 @@ class PlainSocketImpl extends AbstractPlainSocketImpl
         return impl.socketGetOption(opt, iaContainerObj);
     }
 
-    int socketGetOption1(int opt, Object iaContainerObj, FileDescriptor fd)
-        throws SocketException {
-        return impl.socketGetOption1(opt, iaContainerObj, fd);
-    }
-
     void socketSendUrgentData(int data) throws IOException {
         impl.socketSendUrgentData(data);
     }

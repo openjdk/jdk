@@ -36,7 +36,7 @@ import java.util.Iterator;
  * Descend the tree of thread groups.
  * @author Robert G. Field
  */
-public class ThreadGroupIterator implements Iterator {
+public class ThreadGroupIterator implements Iterator<ThreadGroupReference> {
     private final Stack<Iterator<ThreadGroupReference>> stack
                         = new Stack<Iterator<ThreadGroupReference>>();
 
@@ -56,8 +56,8 @@ public class ThreadGroupIterator implements Iterator {
     }
 */
 
-    private Iterator top() {
-        return (Iterator)stack.peek();
+    private Iterator<ThreadGroupReference> top() {
+        return stack.peek();
     }
 
     /**
@@ -77,12 +77,12 @@ public class ThreadGroupIterator implements Iterator {
         return !stack.isEmpty();
     }
 
-    public Object next() {
+    public ThreadGroupReference next() {
         return nextThreadGroup();
     }
 
     public ThreadGroupReference nextThreadGroup() {
-        ThreadGroupReference tg = (ThreadGroupReference)top().next();
+        ThreadGroupReference tg = top().next();
         push(tg.threadGroups());
         return tg;
     }

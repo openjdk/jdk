@@ -34,11 +34,11 @@ import java.util.Iterator;
 
 public class MethodBreakpointSpec extends BreakpointSpec {
     String methodId;
-    List methodArgs;
+    List<String> methodArgs;
 
     MethodBreakpointSpec(EventRequestSpecList specs,
                          ReferenceTypeSpec refSpec,
-                         String methodId, List methodArgs) {
+                         String methodId, List<String> methodArgs) {
         super(specs, refSpec);
         this.methodId = methodId;
         this.methodArgs = methodArgs;
@@ -76,7 +76,7 @@ public class MethodBreakpointSpec extends BreakpointSpec {
         return methodId;
     }
 
-    public List methodArgs() {
+    public List<String> methodArgs() {
         return methodArgs;
     }
 
@@ -120,14 +120,13 @@ public class MethodBreakpointSpec extends BreakpointSpec {
         buffer.append('.');
         buffer.append(methodId);
         if (methodArgs != null) {
-            Iterator iter = methodArgs.iterator();
             boolean first = true;
             buffer.append('(');
-            while (iter.hasNext()) {
+            for (String name : methodArgs) {
                 if (!first) {
                     buffer.append(',');
                 }
-                buffer.append((String)iter.next());
+                buffer.append(name);
                 first = false;
             }
             buffer.append(")");
@@ -151,8 +150,8 @@ public class MethodBreakpointSpec extends BreakpointSpec {
      * and if the number of arguments in the method matches the
      * number of names passed
      */
-    private boolean compareArgTypes(Method method, List nameList) {
-        List argTypeNames = method.argumentTypeNames();
+    private boolean compareArgTypes(Method method, List<String> nameList) {
+        List<String> argTypeNames = method.argumentTypeNames();
 
         // If argument counts differ, we can stop here
         if (argTypeNames.size() != nameList.size()) {
@@ -162,8 +161,8 @@ public class MethodBreakpointSpec extends BreakpointSpec {
         // Compare each argument type's name
         int nTypes = argTypeNames.size();
         for (int i = 0; i < nTypes; ++i) {
-            String comp1 = (String)argTypeNames.get(i);
-            String comp2 = (String)nameList.get(i);
+            String comp1 = argTypeNames.get(i);
+            String comp2 = nameList.get(i);
             if (! comp1.equals(comp2)) {
                 /*
                  * We have to handle varargs.  EG, the
@@ -288,22 +287,17 @@ public class MethodBreakpointSpec extends BreakpointSpec {
         List<String> argTypeNames = null;
         if (methodArgs() != null) {
             argTypeNames = new ArrayList<String>(methodArgs().size());
-            Iterator iter = methodArgs().iterator();
-            while (iter.hasNext()) {
-                String name = (String)iter.next();
+            for (String name : methodArgs()) {
                 name = normalizeArgTypeName(name);
                 argTypeNames.add(name);
             }
         }
 
         // Check each method in the class for matches
-        Iterator iter = clazz.methods().iterator();
         Method firstMatch = null;  // first method with matching name
         Method exactMatch = null;  // (only) method with same name & sig
         int matchCount = 0;        // > 1 implies overload
-        while (iter.hasNext()) {
-            Method candidate = (Method)iter.next();
-
+        for (Method candidate : clazz.methods()) {
             if (candidate.name().equals(methodName())) {
                 matchCount++;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,7 +322,7 @@ public final class AccessControlContext {
                     debug.println("access denied " + perm);
                 }
 
-                if (Debug.isOn("failure")) {
+                if (Debug.isOn("failure") && debug != null) {
                     // Want to make sure this is always displayed for failure,
                     // but do not want to display again if already displayed
                     // above.

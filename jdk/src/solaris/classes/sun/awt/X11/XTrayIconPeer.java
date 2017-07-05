@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,11 +31,8 @@ import java.awt.peer.TrayIconPeer;
 import sun.awt.*;
 import java.awt.image.*;
 import java.text.BreakIterator;
-import java.util.Vector;
-import java.lang.reflect.Field;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.AbstractQueue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -629,7 +626,7 @@ public class XTrayIconPeer implements TrayIconPeer {
         final static int TOOLTIP_MAX_LENGTH = 64;
         final static int TOOLTIP_MOUSE_CURSOR_INDENT = 5;
         final static Color TOOLTIP_BACKGROUND_COLOR = new Color(255, 255, 220);
-        final static Font TOOLTIP_TEXT_FONT = XWindow.defaultFont;
+        final static Font TOOLTIP_TEXT_FONT = XWindow.getDefaultFont();
 
         Tooltip(XTrayIconPeer xtiPeer, Frame parent) {
             super(parent, Color.black);

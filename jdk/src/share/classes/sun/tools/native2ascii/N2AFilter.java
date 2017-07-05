@@ -42,7 +42,7 @@ class N2AFilter extends FilterWriter {
 
     public void write(char b) throws IOException {
         char[] buf = new char[1];
-        buf[0] = (char)b;
+        buf[0] = b;
         write(buf, 0, 1);
     }
 

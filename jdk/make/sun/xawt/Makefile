@@ -1,5 +1,5 @@
 #
-# Copyright 2002-2007 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ $(SIZES): $(SIZERS)
 	@if [ "$(DOCOMPARE)$(suffix $@)" = "true.64" ]; then \
 	    $(ECHO) COMPARING $@ and $(STORED_SIZES_TMPL_$(PLATFORM)_$(LIBARCH)); \
 	    $(DIFF) $@ $(STORED_SIZES_TMPL_$(PLATFORM)_$(LIBARCH)); \
-	fi	
+	fi
 
 $(TEMPDIR)/.gen.wrappers: $(SIZES) $(WRAPPER_GENERATOR_CLASS) $(XLIBTYPES)
 	$(BOOT_JAVA_CMD) -cp $(WRAPPER_GENERATOR_TEMPDIR) WrapperGenerator \
@@ -256,10 +256,11 @@ touch.wrappers: $(TEMPDIR)/.gen.wrappers
 	$(MKDIR) -p $(TEMPDIR)
 	$(TOUCH) $(TEMPDIR)/.gen.wrappers
 
-generated.clean:	
+generated.clean:
 	$(RM) -r $(WRAPPER_GENERATOR_TEMPDIR)
 	$(RM) -r $(WRAPPER_GENERATOR_DIR)
 	$(RM) -r $(GEN_DIR)/*.java
+	$(RM) -r $(TEMPDIR)/.gen_icons
 
 ifdef OPENJDK
     ICONS_PATH_PREFIX=$(PLATFORM_SRC)

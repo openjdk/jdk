@@ -41,18 +41,24 @@ import java.io.*;
  * <p>The methods that create processes may not work well for special
  * processes on certain native platforms, such as native windowing
  * processes, daemon processes, Win16/DOS processes on Microsoft
- * Windows, or shell scripts.  The created subprocess does not have
- * its own terminal or console.  All its standard I/O (i.e. stdin,
- * stdout, stderr) operations will be redirected to the parent process
- * through three streams
- * ({@link #getOutputStream()},
- * {@link #getInputStream()},
- * {@link #getErrorStream()}).
+ * Windows, or shell scripts.
+ *
+ * <p>By default, the created subprocess does not have its own terminal
+ * or console.  All its standard I/O (i.e. stdin, stdout, stderr)
+ * operations will be redirected to the parent process, where they can
+ * be accessed via the streams obtained using the methods
+ * {@link #getOutputStream()},
+ * {@link #getInputStream()}, and
+ * {@link #getErrorStream()}.
  * The parent process uses these streams to feed input to and get output
  * from the subprocess.  Because some native platforms only provide
  * limited buffer size for standard input and output streams, failure
  * to promptly write the input stream or read the output stream of
- * the subprocess may cause the subprocess to block, and even deadlock.
+ * the subprocess may cause the subprocess to block, or even deadlock.
+ *
+ * <p>Where desired, <a href="ProcessBuilder.html#redirect-input">
+ * subprocess I/O can also be redirected</a>
+ * using methods of the {@link ProcessBuilder} class.
  *
  * <p>The subprocess is not killed when there are no more references to
  * the {@code Process} object, but rather the subprocess
@@ -62,16 +68,22 @@ import java.io.*;
  * Process} object execute asynchronously or concurrently with respect
  * to the Java process that owns the {@code Process} object.
  *
- * @author  unascribed
- * @see     ProcessBuilder
+ * <p>As of 1.5, {@link ProcessBuilder#start()} is the preferred way
+ * to create a {@code Process}.
+ *
  * @since   JDK1.0
  */
 public abstract class Process {
     /**
      * Returns the output stream connected to the normal input of the
      * subprocess.  Output to the stream is piped into the standard
-     * input stream of the process represented by this {@code Process}
-     * object.
+     * input of the process represented by this {@code Process} object.
+     *
+     * <p>If the standard input of the subprocess has been redirected using
+     * {@link ProcessBuilder#redirectInput(Redirect)
+     * ProcessBuilder.redirectInput}
+     * then this method will return a
+     * <a href="ProcessBuilder.html#redirect-input">null output stream</a>.
      *
      * <p>Implementation note: It is a good idea for the returned
      * output stream to be buffered.
@@ -84,30 +96,47 @@ public abstract class Process {
     /**
      * Returns the input stream connected to the normal output of the
      * subprocess.  The stream obtains data piped from the standard
-     * output stream of the process represented by this {@code
-     * Process} object.
+     * output of the process represented by this {@code Process} object.
+     *
+     * <p>If the standard output of the subprocess has been redirected using
+     * {@link ProcessBuilder#redirectOutput(Redirect)
+     * ProcessBuilder.redirectOutput}
+     * then this method will return a
+     * <a href="ProcessBuilder.html#redirect-output">null input stream</a>.
+     *
+     * <p>Otherwise, if the standard error of the subprocess has been
+     * redirected using
+     * {@link ProcessBuilder#redirectErrorStream(boolean)
+     * ProcessBuilder.redirectErrorStream}
+     * then the input stream returned by this method will receive the
+     * merged standard output and the standard error of the subprocess.
      *
      * <p>Implementation note: It is a good idea for the returned
      * input stream to be buffered.
      *
      * @return the input stream connected to the normal output of the
      *         subprocess
-     * @see ProcessBuilder#redirectErrorStream()
      */
     abstract public InputStream getInputStream();
 
     /**
-     * Returns the input stream connected to the error output stream of
-     * the subprocess.  The stream obtains data piped from the error
-     * output stream of the process represented by this {@code Process}
-     * object.
+     * Returns the input stream connected to the error output of the
+     * subprocess.  The stream obtains data piped from the error output
+     * of the process represented by this {@code Process} object.
+     *
+     * <p>If the standard error of the subprocess has been redirected using
+     * {@link ProcessBuilder#redirectError(Redirect)
+     * ProcessBuilder.redirectError} or
+     * {@link ProcessBuilder#redirectErrorStream(boolean)
+     * ProcessBuilder.redirectErrorStream}
+     * then this method will return a
+     * <a href="ProcessBuilder.html#redirect-output">null input stream</a>.
      *
      * <p>Implementation note: It is a good idea for the returned
      * input stream to be buffered.
      *
-     * @return the input stream connected to the error output stream of
+     * @return the input stream connected to the error output of
      *         the subprocess
-     * @see ProcessBuilder#redirectErrorStream()
      */
     abstract public InputStream getErrorStream();
 

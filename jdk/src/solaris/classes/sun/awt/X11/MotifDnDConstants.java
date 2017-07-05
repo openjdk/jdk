@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ import sun.misc.Unsafe;
  * @since 1.5
  */
 class MotifDnDConstants {
+    // utility class can not be instantiated
+    private MotifDnDConstants() {}
     // Note that offsets in all native structures below do not depend on the
     // architecture.
     private static final Unsafe unsafe = XlibWrapper.unsafe;
@@ -55,8 +57,7 @@ class MotifDnDConstants {
         XAtom.get("XmTRANSFER_SUCCESS");
     static final XAtom XA_XmTRANSFER_FAILURE =
         XAtom.get("XmTRANSFER_FAILURE");
-    static final XSelection MotifDnDSelection =
-        new XSelection(XA_MOTIF_ATOM_0, null);
+    static final XSelection MotifDnDSelection = new XSelection(XA_MOTIF_ATOM_0);
 
     public static final byte MOTIF_DND_PROTOCOL_VERSION = 0;
 
@@ -231,6 +232,9 @@ class MotifDnDConstants {
     }
 
     public static final class Swapper {
+        // utility class can not be instantiated
+        private Swapper() {}
+
         public static short swap(short s) {
             return (short)(((s & 0xFF00) >>> 8) | ((s & 0xFF) << 8));
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2007 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,55 +29,51 @@ import java.awt.event.*;
 import java.lang.reflect.*;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 import javax.management.*;
 import javax.management.openmbean.*;
 import javax.swing.*;
 import javax.swing.text.*;
-import java.util.*;
 
 public class Utils {
 
     private Utils() {
     }
-
     private static Set<Integer> tableNavigationKeys =
-            new HashSet<Integer>(Arrays.asList(new Integer[] {
+            new HashSet<Integer>(Arrays.asList(new Integer[]{
         KeyEvent.VK_TAB, KeyEvent.VK_ENTER,
         KeyEvent.VK_HOME, KeyEvent.VK_END,
         KeyEvent.VK_LEFT, KeyEvent.VK_RIGHT,
         KeyEvent.VK_UP, KeyEvent.VK_DOWN,
-        KeyEvent.VK_PAGE_UP, KeyEvent.VK_PAGE_DOWN}));
-
+        KeyEvent.VK_PAGE_UP, KeyEvent.VK_PAGE_DOWN
+    }));
     private static final Set<Class<?>> primitiveWrappers =
-            new HashSet<Class<?>>(Arrays.asList(new Class<?>[] {
+            new HashSet<Class<?>>(Arrays.asList(new Class<?>[]{
         Byte.class, Short.class, Integer.class, Long.class,
-        Float.class, Double.class, Character.class, Boolean.class}));
-
+        Float.class, Double.class, Character.class, Boolean.class
+    }));
     private static final Set<Class<?>> primitives = new HashSet<Class<?>>();
-
     private static final Map<String, Class<?>> primitiveMap =
             new HashMap<String, Class<?>>();
-
     private static final Map<String, Class<?>> primitiveToWrapper =
             new HashMap<String, Class<?>>();
-
     private static final Set<String> editableTypes = new HashSet<String>();
-
     private static final Set<Class<?>> extraEditableClasses =
-            new HashSet<Class<?>>(Arrays.asList(new Class<?>[] {
+            new HashSet<Class<?>>(Arrays.asList(new Class<?>[]{
         BigDecimal.class, BigInteger.class, Number.class,
-        String.class, ObjectName.class}));
-
+        String.class, ObjectName.class
+    }));
     private static final Set<String> numericalTypes = new HashSet<String>();
-
     private static final Set<String> extraNumericalTypes =
-            new HashSet<String>(Arrays.asList(new String[] {
+            new HashSet<String>(Arrays.asList(new String[]{
         BigDecimal.class.getName(), BigInteger.class.getName(),
-        Number.class.getName()}));
-
+        Number.class.getName()
+    }));
     private static final Set<String> booleanTypes =
-            new HashSet<String>(Arrays.asList(new String[] {
-        Boolean.TYPE.getName(), Boolean.class.getName()}));
+            new HashSet<String>(Arrays.asList(new String[]{
+        Boolean.TYPE.getName(), Boolean.class.getName()
+    }));
 
     static {
         // compute primitives/primitiveMap/primitiveToWrapper
@@ -122,10 +118,11 @@ public class Utils {
      * It's used to cater for the primitive types.
      */
     public static Class<?> getClass(String className)
-    throws ClassNotFoundException {
+            throws ClassNotFoundException {
         Class<?> c;
-        if ((c = primitiveMap.get(className)) != null)
+        if ((c = primitiveMap.get(className)) != null) {
             return c;
+        }
         return Class.forName(className);
     }
 
@@ -155,7 +152,9 @@ public class Utils {
      * structure, i.e. a data structure jconsole can render as an array.
      */
     public static boolean canBeRenderedAsArray(Object elem) {
-        if (isSupportedArray(elem)) return true;
+        if (isSupportedArray(elem)) {
+            return true;
+        }
         if (elem instanceof Collection) {
             Collection<?> c = (Collection<?>) elem;
             if (c.isEmpty()) {
@@ -168,7 +167,7 @@ public class Utils {
                 // - Collections of other Java types are handled as arrays
                 //
                 return !isUniformCollection(c, CompositeData.class) &&
-                       !isUniformCollection(c, TabularData.class);
+                        !isUniformCollection(c, TabularData.class);
             }
         }
         if (elem instanceof Map) {
@@ -239,7 +238,9 @@ public class Utils {
      */
     public static String getReadableClassName(String name) {
         String className = getArrayClassName(name);
-        if (className == null) return name;
+        if (className == null) {
+            return name;
+        }
         int index = name.lastIndexOf("[");
         StringBuilder brackets = new StringBuilder(className);
         for (int i = 0; i <= index; i++) {
@@ -282,7 +283,7 @@ public class Utils {
      * Try to create a Java object using a one-string-param constructor.
      */
     public static Object newStringConstructor(String type, String param)
-    throws Exception {
+            throws Exception {
         Constructor c = Utils.getClass(type).getConstructor(String.class);
         try {
             return c.newInstance(param);
@@ -300,7 +301,7 @@ public class Utils {
      * Try to convert a string value into a numerical value.
      */
     private static Number createNumberFromStringValue(String value)
-    throws NumberFormatException {
+            throws NumberFormatException {
         final String suffix = value.substring(value.length() - 1);
         if ("L".equalsIgnoreCase(suffix)) {
             return Long.valueOf(value.substring(0, value.length() - 1));
@@ -314,17 +315,17 @@ public class Utils {
         try {
             return Integer.valueOf(value);
         } catch (NumberFormatException e) {
-            // OK: Ignore exception...
+        // OK: Ignore exception...
         }
         try {
             return Long.valueOf(value);
         } catch (NumberFormatException e1) {
-            // OK: Ignore exception...
+        // OK: Ignore exception...
         }
         try {
             return Double.valueOf(value);
         } catch (NumberFormatException e2) {
-            // OK: Ignore exception...
+        // OK: Ignore exception...
         }
         throw new NumberFormatException("Cannot convert string value '" +
                 value + "' into a numerical value");
@@ -337,7 +338,7 @@ public class Utils {
      * will return an Integer object initialized to 10.
      */
     public static Object createObjectFromString(String type, String value)
-    throws Exception {
+            throws Exception {
         Object result;
         if (primitiveToWrapper.containsKey(type)) {
             if (type.equals(Character.TYPE.getName())) {
@@ -367,7 +368,7 @@ public class Utils {
      * into a useful object array for passing into a parameter array.
      */
     public static Object[] getParameters(XTextField[] inputs, String[] params)
-    throws Exception {
+            throws Exception {
         Object result[] = new Object[inputs.length];
         Object userInput;
         for (int i = 0; i < inputs.length; i++) {
@@ -388,12 +389,17 @@ public class Utils {
      * If the exception is wrapped, unwrap it.
      */
     public static Throwable getActualException(Throwable e) {
+        if (e instanceof ExecutionException) {
+            e = e.getCause();
+        }
         if (e instanceof MBeanException ||
                 e instanceof RuntimeMBeanException ||
                 e instanceof RuntimeOperationsException ||
                 e instanceof ReflectionException) {
             Throwable t = e.getCause();
-            if (t != null) return t;
+            if (t != null) {
+                return t;
+            }
         }
         return e;
     }
@@ -401,6 +407,7 @@ public class Utils {
     @SuppressWarnings("serial")
     public static class ReadOnlyTableCellEditor
             extends DefaultCellEditor {
+
         public ReadOnlyTableCellEditor(JTextField tf) {
             super(tf);
             tf.addFocusListener(new Utils.EditFocusAdapter(this));
@@ -409,20 +416,25 @@ public class Utils {
     }
 
     public static class EditFocusAdapter extends FocusAdapter {
+
         private CellEditor editor;
+
         public EditFocusAdapter(CellEditor editor) {
             this.editor = editor;
         }
+
+        @Override
         public void focusLost(FocusEvent e) {
             editor.stopCellEditing();
         }
-    };
+    }
 
     public static class CopyKeyAdapter extends KeyAdapter {
         private static final String defaultEditorKitCopyActionName =
                 DefaultEditorKit.copyAction;
         private static final String transferHandlerCopyActionName =
                 (String) TransferHandler.getCopyAction().getValue(Action.NAME);
+        @Override
         public void keyPressed(KeyEvent e) {
             // Accept "copy" key strokes
             KeyStroke ks = KeyStroke.getKeyStroke(
@@ -441,6 +453,8 @@ public class Utils {
                 e.consume();
             }
         }
+
+        @Override
         public void keyTyped(KeyEvent e) {
             e.consume();
         }

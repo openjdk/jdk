@@ -99,8 +99,7 @@ class ClassQuery extends QueryHandler {
         }
 
         out.println("<h2>Instance Data Members:</h2>");
-        JavaField[] ff = clazz.getFields();
-        ff = (JavaField[]) ff.clone();
+        JavaField[] ff = clazz.getFields().clone();
         ArraySorter.sort(ff, new Comparer() {
             public int compare(Object lhs, Object rhs) {
                 JavaField left = (JavaField) lhs;

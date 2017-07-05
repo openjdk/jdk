@@ -218,9 +218,6 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
         return value;
     }
 
-    int socketGetOption1(int opt, Object iaContainerObj, FileDescriptor fd)
-        throws SocketException {return 0;}   // un-implemented REMOVE
-
     void socketSendUrgentData(int data) throws IOException {
         int nativefd = checkAndReturnNativeFD();
         sendOOB(nativefd, data);

@@ -27,13 +27,8 @@ package javax.management.monitor;
 
 import static com.sun.jmx.defaults.JmxProperties.MONITOR_LOGGER;
 import com.sun.jmx.mbeanserver.GetPropertyAction;
-import com.sun.jmx.remote.util.EnvHelp;
-import java.beans.BeanInfo;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
+import com.sun.jmx.mbeanserver.Introspector;
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.lang.reflect.InvocationTargetException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -64,7 +59,6 @@ import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
 import static javax.management.monitor.MonitorNotification.*;
-import javax.management.openmbean.CompositeData;
 
 /**
  * Defines the part common to all monitor MBeans.
@@ -876,41 +870,10 @@ public abstract class Monitor
         if (isComplexTypeAttribute) {
             Object v = value;
             for (String attr : remainingAttributes)
-                v = introspect(object, attr, v);
+                v = Introspector.elementFromComplex(v, attr);
             return (Comparable<?>) v;
         } else {
             return (Comparable<?>) value;
-        }
-    }
-
-    Object introspect(ObjectName object,
-                      String attribute,
-                      Object value)
-        throws AttributeNotFoundException {
-        try {
-            if (value.getClass().isArray() && attribute.equals("length")) {
-                return Array.getLength(value);
-            } else if (value instanceof CompositeData) {
-                return ((CompositeData) value).get(attribute);
-            } else {
-                // Java Beans introspection
-                //
-                BeanInfo bi = Introspector.getBeanInfo(value.getClass());
-                PropertyDescriptor[] pds = bi.getPropertyDescriptors();
-                for (PropertyDescriptor pd : pds)
-                    if (pd.getName().equals(attribute))
-                        return pd.getReadMethod().invoke(value);
-                throw new AttributeNotFoundException(
-                    "Could not find the getter method for the property " +
-                    attribute + " using the Java Beans introspector");
-            }
-        } catch (InvocationTargetException e) {
-            throw new IllegalArgumentException(e);
-        } catch (AttributeNotFoundException e) {
-            throw e;
-        } catch (Exception e) {
-            throw EnvHelp.initCause(
-                new AttributeNotFoundException(e.getMessage()), e);
         }
     }
 
