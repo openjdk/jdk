@@ -98,6 +98,8 @@ import javax.print.attribute.standard.PageRanges;
 import javax.print.attribute.Size2DSyntax;
 import javax.print.StreamPrintService;
 
+import sun.awt.Win32FontManager;
+
 import sun.print.RasterPrinterJob;
 import sun.print.SunAlternateMedia;
 import sun.print.SunPageSelection;
@@ -359,7 +361,7 @@ public class WPrinterJob extends RasterPrinterJob implements DisposerTarget {
 
         initIDs();
 
-        Win32GraphicsEnvironment.registerJREFontsForPrinting();
+        Win32FontManager.registerJREFontsForPrinting();
     }
 
     /* Constructors */

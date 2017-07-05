@@ -38,11 +38,10 @@
 #include "Lookups.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
 
-GlyphIterator::GlyphIterator(LEGlyphStorage &theGlyphStorage,
-    GlyphPositionAdjustments *theGlyphPositionAdjustments,
-    le_bool rightToLeft, le_uint16 theLookupFlags, FeatureMask theFeatureMask,
-    const GlyphDefinitionTableHeader *theGlyphDefinitionTableHeader)
+GlyphIterator::GlyphIterator(LEGlyphStorage &theGlyphStorage, GlyphPositionAdjustments *theGlyphPositionAdjustments, le_bool rightToLeft, le_uint16 theLookupFlags,
+                             FeatureMask theFeatureMask, const GlyphDefinitionTableHeader *theGlyphDefinitionTableHeader)
   : direction(1), position(-1), nextLimit(-1), prevLimit(-1),
     glyphStorage(theGlyphStorage), glyphPositionAdjustments(theGlyphPositionAdjustments),
     srcIndex(-1), destIndex(-1), lookupFlags(theLookupFlags), featureMask(theFeatureMask),
@@ -262,8 +261,8 @@ void GlyphIterator::setCurrGlyphBaseOffset(le_int32 baseOffset)
     glyphPositionAdjustments->setBaseOffset(position, baseOffset);
 }
 
-void GlyphIterator::adjustCurrGlyphPositionAdjustment(float xPlacementAdjust,
-    float yPlacementAdjust, float xAdvanceAdjust, float yAdvanceAdjust)
+void GlyphIterator::adjustCurrGlyphPositionAdjustment(float xPlacementAdjust, float yPlacementAdjust,
+                                                      float xAdvanceAdjust, float yAdvanceAdjust)
 {
     if (direction < 0) {
         if (position <= nextLimit || position >= prevLimit) {
@@ -281,8 +280,8 @@ void GlyphIterator::adjustCurrGlyphPositionAdjustment(float xPlacementAdjust,
     glyphPositionAdjustments->adjustYAdvance(position, yAdvanceAdjust);
 }
 
-void GlyphIterator::setCurrGlyphPositionAdjustment(float xPlacementAdjust,
-    float yPlacementAdjust, float xAdvanceAdjust, float yAdvanceAdjust)
+void GlyphIterator::setCurrGlyphPositionAdjustment(float xPlacementAdjust, float yPlacementAdjust,
+                                                      float xAdvanceAdjust, float yAdvanceAdjust)
 {
     if (direction < 0) {
         if (position <= nextLimit || position >= prevLimit) {
@@ -484,10 +483,11 @@ le_bool GlyphIterator::findMark2Glyph()
 
     do {
         newPosition -= direction;
-    } while (newPosition != prevLimit && glyphStorage[newPosition] != 0xFFFE &&
-        filterGlyph(newPosition));
+    } while (newPosition != prevLimit && glyphStorage[newPosition] != 0xFFFE && filterGlyph(newPosition));
 
     position = newPosition;
 
     return position != prevLimit;
 }
+
+U_NAMESPACE_END

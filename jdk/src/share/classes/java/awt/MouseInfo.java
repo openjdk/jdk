@@ -76,7 +76,7 @@ public class MouseInfo {
 
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.WATCH_MOUSE_PERMISSION);
+            security.checkPermission(SecurityConstants.AWT.WATCH_MOUSE_PERMISSION);
         }
 
         Point point = new Point(0, 0);

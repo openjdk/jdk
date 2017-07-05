@@ -339,7 +339,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
                         indexes[matches++] = j;
                     }
                 }
-                if (item.isArmed()) {
+                if (item.isArmed() || item.isSelected()) {
                     currentIndex = matches - 1;
                 }
             }

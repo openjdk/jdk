@@ -39,6 +39,8 @@
 #include "GlyphIterator.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
 LEGlyphID MarkToLigaturePositioningSubtable::findLigatureGlyph(GlyphIterator *glyphIterator) const
 {
     if (glyphIterator->prev()) {
@@ -117,9 +119,10 @@ le_int32 MarkToLigaturePositioningSubtable::process(GlyphIterator *glyphIterator
         fontInstance->getGlyphAdvance(ligatureGlyph, pixels);
         fontInstance->pixelsToUnits(pixels, ligatureAdvance);
 
-        glyphIterator->setCurrGlyphPositionAdjustment(anchorDiffX - ligatureAdvance.fX,
-            anchorDiffY - ligatureAdvance.fY, -markAdvance.fX, -markAdvance.fY);
+        glyphIterator->setCurrGlyphPositionAdjustment(anchorDiffX - ligatureAdvance.fX, anchorDiffY - ligatureAdvance.fY, -markAdvance.fX, -markAdvance.fY);
     }
 
     return 1;
 }
+
+U_NAMESPACE_END

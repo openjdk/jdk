@@ -32,11 +32,18 @@
 #ifndef __ALTERNATESUBSTITUTIONSUBTABLES_H
 #define __ALTERNATESUBSTITUTIONSUBTABLES_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "LEGlyphFilter.h"
 #include "OpenTypeTables.h"
 #include "GlyphSubstitutionTables.h"
 #include "GlyphIterator.h"
+
+U_NAMESPACE_BEGIN
 
 struct AlternateSetTable
 {
@@ -52,4 +59,5 @@ struct AlternateSubstitutionSubtable : GlyphSubstitutionSubtable
     le_uint32 process(GlyphIterator *glyphIterator, const LEGlyphFilter *filter = NULL) const;
 };
 
+U_NAMESPACE_END
 #endif

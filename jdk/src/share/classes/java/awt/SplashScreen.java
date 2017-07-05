@@ -29,8 +29,7 @@ import java.awt.image.*;
 import java.net.URL;
 import java.net.URLConnection;
 import java.io.File;
-import java.util.logging.Logger;
-import java.util.logging.Level;
+import sun.util.logging.PlatformLogger;
 import sun.awt.image.SunWritableRaster;
 
 /**
@@ -204,8 +203,8 @@ public final class SplashScreen {
                     }
                 }
                 catch(java.net.MalformedURLException e) {
-                    if (log.isLoggable(Level.FINE)) {
-                        log.log(Level.FINE, "MalformedURLException caught in the getImageURL() method", e);
+                    if (log.isLoggable(PlatformLogger.FINE)) {
+                        log.fine("MalformedURLException caught in the getImageURL() method", e);
                     }
                 }
             }
@@ -355,7 +354,7 @@ public final class SplashScreen {
      */
     private static SplashScreen theInstance = null;
 
-    private static final Logger log = Logger.getLogger("java.awt.SplashScreen");
+    private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.SplashScreen");
 
     private native static void _update(long splashPtr, int[] data, int x, int y, int width, int height, int scanlineStride);
     private native static boolean _isVisible(long splashPtr);

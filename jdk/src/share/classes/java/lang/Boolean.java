@@ -255,7 +255,25 @@ public final class Boolean implements java.io.Serializable,
      * @since  1.5
      */
     public int compareTo(Boolean b) {
-        return (b.value == value ? 0 : (value ? 1 : -1));
+        return compare(this.value, b.value);
+    }
+
+    /**
+     * Compares two {@code boolean} values.
+     * The value returned is identical to what would be returned by:
+     * <pre>
+     *    Boolean.valueOf(x).compareTo(Boolean.valueOf(y))
+     * </pre>
+     *
+     * @param  x the first {@code boolean} to compare
+     * @param  y the second {@code boolean} to compare
+     * @return the value {@code 0} if {@code x == y};
+     *         a value less than {@code 0} if {@code !x && y}; and
+     *         a value greater than {@code 0} if {@code x && !y}
+     * @since 1.7
+     */
+    public static int compare(boolean x, boolean y) {
+        return (x == y) ? 0 : (x ? 1 : -1);
     }
 
     private static boolean toBoolean(String name) {

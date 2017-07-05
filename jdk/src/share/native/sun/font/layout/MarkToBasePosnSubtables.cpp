@@ -40,6 +40,8 @@
 #include "GlyphIterator.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
 LEGlyphID MarkToBasePositioningSubtable::findBaseGlyph(GlyphIterator *glyphIterator) const
 {
     if (glyphIterator->prev()) {
@@ -106,7 +108,6 @@ le_int32 MarkToBasePositioningSubtable::process(GlyphIterator *glyphIterator, co
     glyphIterator->setCurrGlyphBaseOffset(baseIterator.getCurrStreamPosition());
 
     if (glyphIterator->isRightToLeft()) {
-        // dlf flip advance to local coordinate system
         glyphIterator->setCurrGlyphPositionAdjustment(anchorDiffX, anchorDiffY, -markAdvance.fX, -markAdvance.fY);
     } else {
         LEPoint baseAdvance;
@@ -114,9 +115,10 @@ le_int32 MarkToBasePositioningSubtable::process(GlyphIterator *glyphIterator, co
         fontInstance->getGlyphAdvance(baseGlyph, pixels);
         fontInstance->pixelsToUnits(pixels, baseAdvance);
 
-        // flip advances to local coordinate system
         glyphIterator->setCurrGlyphPositionAdjustment(anchorDiffX - baseAdvance.fX, anchorDiffY - baseAdvance.fY, -markAdvance.fX, -markAdvance.fY);
     }
 
     return 1;
 }
+
+U_NAMESPACE_END

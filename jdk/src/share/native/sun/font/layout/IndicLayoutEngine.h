@@ -43,6 +43,8 @@
 #include "GlyphDefinitionTables.h"
 #include "GlyphPositioningTables.h"
 
+U_NAMESPACE_BEGIN
+
 class MPreFixups;
 class LEGlyphStorage;
 
@@ -77,9 +79,8 @@ public:
      *
      * @internal
      */
-    IndicOpenTypeLayoutEngine(const LEFontInstance *fontInstance,
-        le_int32 scriptCode, le_int32 languageCode,
-        le_int32 typoFlags, const GlyphSubstitutionTableHeader *gsubTable);
+    IndicOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
+                            le_int32 typoFlags, const GlyphSubstitutionTableHeader *gsubTable);
 
     /**
      * This constructor is used when the font requires a "canned" GSUB table which can't be known
@@ -94,8 +95,8 @@ public:
      *
      * @internal
      */
-    IndicOpenTypeLayoutEngine(const LEFontInstance *fontInstance,
-        le_int32 scriptCode, le_int32 languageCode, le_int32 typoFlags);
+    IndicOpenTypeLayoutEngine(const LEFontInstance *fontInstance, le_int32 scriptCode, le_int32 languageCode,
+                              le_int32 typoFlags);
 
     /**
      * The destructor, virtual for correct polymorphic invocation.
@@ -103,6 +104,20 @@ public:
      * @internal
      */
    virtual ~IndicOpenTypeLayoutEngine();
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for the actual class.
+     *
+     * @stable ICU 2.8
+     */
+    virtual UClassID getDynamicClassID() const;
+
+    /**
+     * ICU "poor man's RTTI", returns a UClassID for this class.
+     *
+     * @stable ICU 2.8
+     */
+    static UClassID getStaticClassID();
 
 protected:
 
@@ -117,10 +132,9 @@ protected:
      * @param offset - the index of the first character to process
      * @param count - the number of characters to process
      * @param max - the number of characters in the input context
-     * @param rightToLeft - <code>TRUE</code> if the characters are in a
-     *    right to left directional run
-     * @param glyphStorage - the glyph storage object. The glyph and character
-     *    index arrays will be set. The auxillary data array will be set to the feature tags.
+     * @param rightToLeft - <code>TRUE</code> if the characters are in a right to left directional run
+     * @param glyphStorage - the glyph storage object. The glyph and character index arrays will be set.
+     *                       the auxillary data array will be set to the feature tags.
      *
      * Output parameters:
      * @param success - set to an error code if the operation fails
@@ -129,9 +143,8 @@ protected:
      *
      * @internal
      */
-    virtual le_int32 characterProcessing(const LEUnicode chars[], le_int32 offset,
-        le_int32 count, le_int32 max, le_bool rightToLeft,
-        LEUnicode *&outChars, LEGlyphStorage &glyphStorage, LEErrorCode &success);
+    virtual le_int32 characterProcessing(const LEUnicode chars[], le_int32 offset, le_int32 count, le_int32 max, le_bool rightToLeft,
+            LEUnicode *&outChars, LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
     /**
      * This method does character to glyph mapping, applies the GSUB table and applies
@@ -147,11 +160,9 @@ protected:
      * @param offset - the index of the first character to process
      * @param count - the number of characters to process
      * @param max - the number of characters in the input context
-     * @param rightToLeft - <code>TRUE</code> if the characters are in a
-     *    right to left directional run
+     * @param rightToLeft - <code>TRUE</code> if the characters are in a right to left directional run
      * @param featureTags - the feature tag array
-     * @param glyphStorage - the glyph storage object. The glyph and char
-     *    index arrays will be set.
+     * @param glyphStorage - the glyph storage object. The glyph and char index arrays will be set.
      *
      * Output parameters:
      * @param success - set to an error code if the operation fails
@@ -163,12 +174,14 @@ protected:
      *
      * @internal
      */
-    virtual le_int32 glyphProcessing(const LEUnicode chars[], le_int32 offset,
-        le_int32 count, le_int32 max, le_bool rightToLeft, LEGlyphStorage &glyphStorage,
-        LEErrorCode &success);
+    virtual le_int32 glyphProcessing(const LEUnicode chars[], le_int32 offset, le_int32 count, le_int32 max, le_bool rightToLeft,
+            LEGlyphStorage &glyphStorage, LEErrorCode &success);
 
 private:
+
     MPreFixups *fMPreFixups;
 };
 
+U_NAMESPACE_END
 #endif
+

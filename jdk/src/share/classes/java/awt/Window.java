@@ -48,8 +48,6 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.Vector;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.accessibility.*;
 import sun.awt.AWTAccessor;
@@ -61,6 +59,7 @@ import sun.java2d.Disposer;
 import sun.java2d.pipe.Region;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.SecurityConstants;
+import sun.util.logging.PlatformLogger;
 
 /**
  * A <code>Window</code> object is a top-level window with no borders and no
@@ -324,7 +323,7 @@ public class Window extends Container implements Accessible {
      */
     private static final long serialVersionUID = 4497834738069338734L;
 
-    private static final Logger log = Logger.getLogger("java.awt.Window");
+    private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.Window");
 
     private static final boolean locationByPlatformProp;
 
@@ -1581,7 +1580,7 @@ public class Window extends Container implements Accessible {
         if (exclusionType == Dialog.ModalExclusionType.TOOLKIT_EXCLUDE) {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                sm.checkPermission(SecurityConstants.TOOLKIT_MODALITY_PERMISSION);
+                sm.checkPermission(SecurityConstants.AWT.TOOLKIT_MODALITY_PERMISSION);
             }
         }
         modalExclusionType = exclusionType;
@@ -2129,7 +2128,7 @@ public class Window extends Container implements Accessible {
     public final void setAlwaysOnTop(boolean alwaysOnTop) throws SecurityException {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-            security.checkPermission(SecurityConstants.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
+            security.checkPermission(SecurityConstants.AWT.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
         }
 
         boolean oldAlwaysOnTop;
@@ -2985,7 +2984,7 @@ public class Window extends Container implements Accessible {
         }
         synchronized (getTreeLock()) {
             super.setGraphicsConfiguration(gc);
-            if (log.isLoggable(Level.FINER)) {
+            if (log.isLoggable(PlatformLogger.FINER)) {
                 log.finer("+ Window.setGraphicsConfiguration(): new GC is \n+ " + getGraphicsConfiguration_NoClientCode() + "\n+ this is " + this);
             }
         }

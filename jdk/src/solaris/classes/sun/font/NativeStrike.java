@@ -112,11 +112,12 @@ import java.awt.geom.NoninvertibleTransformException;
          double scale = Math.abs(desc.devTx.getScaleX());
          pScalerContext = createScalerContext(nameBytes, ptSize, scale);
          if (pScalerContext == 0L) {
-             FontManager.deRegisterBadFont(nativeFont);
+             SunFontManager.getInstance().deRegisterBadFont(nativeFont);
              pScalerContext = createNullScalerContext();
              numGlyphs = 0;
-             if (FontManager.logging) {
-                 FontManager.logger.severe("Could not create native strike " +
+             if (FontUtilities.isLogging()) {
+                 FontUtilities.getLogger()
+                                   .severe("Could not create native strike " +
                                            new String(nameBytes));
              }
              return;
@@ -134,7 +135,7 @@ import java.awt.geom.NoninvertibleTransformException;
      private boolean usingIntGlyphImages() {
          if (intGlyphImages != null) {
             return true;
-        } else if (FontManager.longAddresses) {
+        } else if (longAddresses) {
             return false;
         } else {
             /* We could obtain minGlyphIndex and index relative to that
@@ -153,7 +154,7 @@ import java.awt.geom.NoninvertibleTransformException;
      }
 
      private long[] getLongGlyphImages() {
-        if (longGlyphImages == null && FontManager.longAddresses) {
+        if (longGlyphImages == null && longAddresses) {
 
             /* We could obtain minGlyphIndex and index relative to that
              * if we need to save space.

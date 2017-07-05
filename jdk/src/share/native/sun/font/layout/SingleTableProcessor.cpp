@@ -38,6 +38,10 @@
 #include "LEGlyphStorage.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
+UOBJECT_DEFINE_RTTI_IMPLEMENTATION(SingleTableProcessor)
+
 SingleTableProcessor::SingleTableProcessor()
 {
 }
@@ -68,3 +72,5 @@ void SingleTableProcessor::process(LEGlyphStorage &glyphStorage)
         }
     }
 }
+
+U_NAMESPACE_END

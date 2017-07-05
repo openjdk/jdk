@@ -14824,7 +14824,9 @@
             <background/>
             <cacheSettingsInherited>false</cacheSettingsInherited>
             <cacheMode>NO_CACHING</cacheMode>
-            <uiproperties/>
+            <uiproperties>
+               <uiProperty name="textIconGap" type="INT" value="5"/>
+            </uiproperties>
          </style>
          <backgroundStates>
             <state stateKeys="Disabled">

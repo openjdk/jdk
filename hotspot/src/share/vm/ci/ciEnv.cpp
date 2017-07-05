@@ -257,7 +257,7 @@ ciMethod* ciEnv::get_method_from_handle(jobject method) {
 
 // ------------------------------------------------------------------
 // ciEnv::make_array
-ciArray* ciEnv::make_array(GrowableArray<ciObject*>* objects) {
+ciArray* ciEnv::make_system_array(GrowableArray<ciObject*>* objects) {
   VM_ENTRY_MARK;
   int length = objects->length();
   objArrayOop a = oopFactory::new_system_objArray(length, THREAD);

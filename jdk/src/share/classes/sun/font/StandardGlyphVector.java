@@ -197,7 +197,7 @@ public class StandardGlyphVector extends GlyphVector {
 
             // how do we know its a base glyph
             // for now, it is if the natural advance of the glyph is non-zero
-            Font2D f2d = FontManager.getFont2D(font);
+            Font2D f2d = FontUtilities.getFont2D(font);
             FontStrike strike = f2d.getStrike(font, frc);
 
             float[] deltas = { trackPt.x, trackPt.y };
@@ -1116,7 +1116,7 @@ public class StandardGlyphVector extends GlyphVector {
     }
 
     private void initFontData() {
-        font2D = FontManager.getFont2D(font);
+        font2D = FontUtilities.getFont2D(font);
         float s = font.getSize2D();
         if (font.isTransformed()) {
             ftx = font.getTransform();

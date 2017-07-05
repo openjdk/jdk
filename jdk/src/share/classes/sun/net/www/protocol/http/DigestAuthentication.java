@@ -291,7 +291,7 @@ class DigestAuthentication extends AuthenticationInfo {
             uri = HttpURLConnection.connectRequestURI(conn.getURL());
             method = HTTP_CONNECT;
         } else {
-            uri = conn.getURL().getFile();
+            uri = conn.getRequestURI();
             method = conn.getMethod();
         }
 
@@ -385,7 +385,11 @@ class DigestAuthentication extends AuthenticationInfo {
 
     public void checkResponse (String header, String method, URL url)
                                                         throws IOException {
-        String uri = url.getFile();
+        checkResponse (header, method, url.getFile());
+    }
+
+    public void checkResponse (String header, String method, String uri)
+                                                        throws IOException {
         char[] passwd = pw.getPassword();
         String username = pw.getUserName();
         boolean qop = params.authQop();

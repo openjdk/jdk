@@ -32,12 +32,19 @@
 #ifndef __SUBSTITUTIONLOOKUPS_H
 #define __SUBSTITUTIONLOOKUPS_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "LEFontInstance.h"
 #include "OpenTypeTables.h"
 #include "GlyphSubstitutionTables.h"
 #include "GlyphIterator.h"
 #include "LookupProcessor.h"
+
+U_NAMESPACE_BEGIN
 
 struct SubstitutionLookupRecord
 {
@@ -56,4 +63,6 @@ struct SubstitutionLookup
         le_int32 position);
 };
 
+U_NAMESPACE_END
 #endif
+

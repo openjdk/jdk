@@ -34,3 +34,7 @@ inline bool oopDesc::is_perm() const {
 inline bool oopDesc::is_perm_or_null() const {
   return this == NULL || is_perm();
 }
+
+inline bool oopDesc::is_scavengable() const {
+  return Universe::heap()->is_scavengable(this);
+}

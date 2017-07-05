@@ -34,14 +34,15 @@
 
 #include "LETypes.h"
 
+U_NAMESPACE_BEGIN
+
 /**
  * This is a helper class that is used to
  * recognize a set of glyph indices.
  *
  * @internal
  */
-class LEGlyphFilter
-{
+class LEGlyphFilter /* not : public UObject because this is an interface/mixin class */ {
 public:
     /**
      * Destructor.
@@ -63,4 +64,5 @@ public:
     virtual le_bool accept(LEGlyphID glyph) const = 0;
 };
 
+U_NAMESPACE_END
 #endif

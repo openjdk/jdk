@@ -2612,8 +2612,10 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
     }
 
     /**
-     * Returns a hash code for this <code>Character</code>.
-     * @return  a hash code value for this object.
+     * Returns a hash code for this {@code Character}; equal to the result
+     * of invoking {@code charValue()}.
+     *
+     * @return a hash code value for this {@code Character}
      */
     public int hashCode() {
         return (int)value;
@@ -4962,7 +4964,25 @@ class Character extends Object implements java.io.Serializable, Comparable<Chara
      * @since   1.2
      */
     public int compareTo(Character anotherCharacter) {
-        return this.value - anotherCharacter.value;
+        return compare(this.value, anotherCharacter.value);
+    }
+
+    /**
+     * Compares two {@code char} values numerically.
+     * The value returned is identical to what would be returned by:
+     * <pre>
+     *    Character.valueOf(x).compareTo(Character.valueOf(y))
+     * </pre>
+     *
+     * @param  x the first {@code char} to compare
+     * @param  y the second {@code char} to compare
+     * @return the value {@code 0} if {@code x == y};
+     *         a value less than {@code 0} if {@code x < y}; and
+     *         a value greater than {@code 0} if {@code x > y}
+     * @since 1.7
+     */
+    public static int compare(char x, char y) {
+        return x - y;
     }
 
     /**

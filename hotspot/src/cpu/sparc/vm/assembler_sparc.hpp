@@ -2455,6 +2455,11 @@ public:
   void inc_counter(address counter_addr, Register Rtmp1, Register Rtmp2);
   void inc_counter(int*    counter_addr, Register Rtmp1, Register Rtmp2);
 
+  // Compare char[] arrays aligned to 4 bytes.
+  void char_arrays_equals(Register ary1, Register ary2,
+                          Register limit, Register result,
+                          Register chr1, Register chr2, Label& Ldone);
+
 #undef VIRTUAL
 
 };
