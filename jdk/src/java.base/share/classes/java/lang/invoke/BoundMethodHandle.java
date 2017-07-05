@@ -587,26 +587,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
             return bmhClass;
         }
 
-        /**
-         * @implNote this method is used by GenerateBMHClassesPlugin to enable
-         * ahead-of-time generation of BMH classes at link time. It does
-         * added validation since this string may be user provided.
-         */
-        static Map.Entry<String, byte[]> generateConcreteBMHClassBytes(
-                final String types) {
-            for (char c : types.toCharArray()) {
-                if ("LIJFD".indexOf(c) < 0) {
-                    throw new IllegalArgumentException("All characters must "
-                            + "correspond to a basic field type: LIJFD");
-                }
-            }
-            String shortTypes = LambdaForm.shortenSignature(types);
-            final String className  = speciesInternalClassName(shortTypes);
-            return Map.entry(className,
-                    generateConcreteBMHClassBytes(shortTypes, types, className));
-        }
-
-        private static String speciesInternalClassName(String shortTypes) {
+        static String speciesInternalClassName(String shortTypes) {
             return SPECIES_PREFIX_PATH + shortTypes;
         }
 
@@ -865,7 +846,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
         }
     }
 
-    private static final Lookup LOOKUP = Lookup.IMPL_LOOKUP;
+    static final Lookup LOOKUP = Lookup.IMPL_LOOKUP;
 
     /**
      * All subclasses must provide such a value describing their type signature.

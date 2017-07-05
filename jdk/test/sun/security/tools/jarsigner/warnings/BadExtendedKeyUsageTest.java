@@ -22,7 +22,6 @@
  */
 
 import jdk.testlibrary.OutputAnalyzer;
-import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.JarUtils;
 
 /**
@@ -52,7 +51,7 @@ public class BadExtendedKeyUsageTest extends Test {
 
         // create a certificate whose signer certificate's
         // ExtendedKeyUsage extension doesn't allow code signing
-        ProcessTools.executeCommand(KEYTOOL,
+        keytool(
                 "-genkey",
                 "-alias", KEY_ALIAS,
                 "-keyalg", KEY_ALG,
@@ -65,7 +64,7 @@ public class BadExtendedKeyUsageTest extends Test {
                 "-validity", Integer.toString(VALIDITY)).shouldHaveExitValue(0);
 
         // sign jar
-        OutputAnalyzer analyzer = ProcessTools.executeCommand(JARSIGNER,
+        OutputAnalyzer analyzer = jarsigner(
                 "-verbose",
                 "-keystore", KEYSTORE,
                 "-storepass", PASSWORD,
@@ -77,7 +76,7 @@ public class BadExtendedKeyUsageTest extends Test {
         checkSigning(analyzer, BAD_EXTENDED_KEY_USAGE_SIGNING_WARNING);
 
         // verify signed jar
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-verbose",
                 "-keystore", KEYSTORE,
@@ -88,7 +87,7 @@ public class BadExtendedKeyUsageTest extends Test {
         checkVerifying(analyzer, 0, BAD_EXTENDED_KEY_USAGE_VERIFYING_WARNING);
 
         // verity signed jar in strict mode
-        analyzer = ProcessTools.executeCommand(JARSIGNER,
+        analyzer = jarsigner(
                 "-verify",
                 "-verbose",
                 "-strict",

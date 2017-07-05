@@ -27,7 +27,7 @@
  * @modules jdk.compiler
  * @build UpgradeModulePathTest CompilerUtils jdk.testlibrary.*
  * @run testng UpgradeModulePathTest
- * @summary Basic test for java -upgrademodulepath
+ * @summary Basic test for java --upgrade-module-path
  */
 
 import java.io.File;
@@ -65,19 +65,19 @@ public class UpgradeModulePathTest {
                 MODS_DIR.resolve("java.enterprise"));
         assertTrue(compiled);
 
-        // javac -d upgrademods/java.transaction -mp mods src/java.transaction/**
+        // javac -d upgrademods/java.transaction --module-path mods src/java.transaction/**
         compiled = CompilerUtils.compile(
                 SRC_DIR.resolve("java.transaction"),
                 UPGRADEDMODS_DIR.resolve("java.transaction"),
-                "-mp", MODS_DIR.toString());
+                "--module-path", MODS_DIR.toString());
         assertTrue(compiled);
 
-        // javac -d mods -upgrademodulepath upgrademods -mp mods src/test/**
+        // javac -d mods --upgrade-module-path upgrademods --module-path mods src/test/**
         compiled = CompilerUtils.compile(
                 SRC_DIR.resolve("test"),
                 MODS_DIR.resolve("test"),
-                "-upgrademodulepath", UPGRADEDMODS_DIR.toString(),
-                "-mp", MODS_DIR.toString());
+                "--upgrade-module-path", UPGRADEDMODS_DIR.toString(),
+                "--module-path", MODS_DIR.toString());
         assertTrue(compiled);
 
     }
@@ -92,8 +92,8 @@ public class UpgradeModulePathTest {
 
         int exitValue
             = executeTestJava(
-                "-upgrademodulepath", UPGRADEDMODS_DIR.toString(),
-                "-mp", MODS_DIR.toString(),
+                "--upgrade-module-path", UPGRADEDMODS_DIR.toString(),
+                "--module-path", MODS_DIR.toString(),
                 "-m", mid)
             .outputTo(System.out)
             .errorTo(System.out)
@@ -116,8 +116,8 @@ public class UpgradeModulePathTest {
 
         int exitValue
             = executeTestJava(
-                "-upgrademodulepath", upgrademodulepath,
-                "-mp", MODS_DIR.toString(),
+                "--upgrade-module-path", upgrademodulepath,
+                "--module-path", MODS_DIR.toString(),
                 "-m", mid)
             .outputTo(System.out)
             .errorTo(System.out)

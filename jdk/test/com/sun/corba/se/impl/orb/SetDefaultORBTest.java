@@ -25,8 +25,8 @@
  * @test
  * @bug 8028215
  * @summary SetDefaultORBTest setting ORB impl via properties test
- * @compile -addmods java.corba SetDefaultORBTest.java
- * @run main/othervm -addmods java.corba SetDefaultORBTest
+ * @modules java.corba
+ * @run main SetDefaultORBTest
  *
  */
 

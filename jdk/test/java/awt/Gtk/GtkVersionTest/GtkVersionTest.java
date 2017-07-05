@@ -55,7 +55,7 @@ public class GtkVersionTest {
                 "/bin/java " +
                 (version == null ? "" : "-Djdk.gtk.version=" + version) +
                 " -Djdk.gtk.verbose=true " +
-                "-XaddExports:java.desktop/sun.awt=ALL-UNNAMED " +
+                "--add-exports=java.desktop/sun.awt=ALL-UNNAMED " +
                 "-cp " + System.getProperty("java.class.path", ".") +
                 " GtkVersionTest$LoadGtk");
         p.waitFor();

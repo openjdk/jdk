@@ -24,7 +24,7 @@
 package jdk.internal.module;
 
 /*
- * Test -Xpatch:java.base=jdk/modules/java.base to override
+ * Test --patch-module java.base=jdk/modules/java.base to override
  * java.base with an exploded image
  */
 public final class SystemModules {

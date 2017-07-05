@@ -88,10 +88,10 @@ case "$OS" in
 
         echo
         echo "Running the test..."
-        ${TESTJAVA}${FS}bin${FS}javac -XaddExports:java.base/sun.security.util=ALL-UNNAMED \
+        ${TESTJAVA}${FS}bin${FS}javac --add-exports java.base/sun.security.util=ALL-UNNAMED \
             ${TESTTOOLVMOPTS} ${TESTJAVACOPTS} -d . \
             ${TESTSRC}${FS}ShortRSAKeyWithinTLS.java
-        ${TESTJAVA}${FS}bin${FS}java -XaddExports:java.base/sun.security.util=ALL-UNNAMED \
+        ${TESTJAVA}${FS}bin${FS}java --add-exports java.base/sun.security.util=ALL-UNNAMED \
             ${TESTVMOPTS} ShortRSAKeyWithinTLS 7106773.$BITS $BITS \
             TLSv1.2 TLS_DHE_RSA_WITH_AES_128_CBC_SHA
 
