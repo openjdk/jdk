@@ -84,7 +84,7 @@ public:
 };
 
 class G1CollectorPolicy: public CollectorPolicy {
-protected:
+private:
   // The number of pauses during the execution.
   long _n_pauses;
 
@@ -106,10 +106,7 @@ protected:
     initialize_perm_generation(PermGen::MarkSweepCompact);
   }
 
-  virtual size_t default_init_heap_size() {
-    // Pick some reasonable default.
-    return 8*M;
-  }
+  CollectionSetChooser* _collectionSetChooser;
 
   double _cur_collection_start_sec;
   size_t _cur_collection_pause_used_at_start_bytes;
@@ -316,7 +313,6 @@ private:
                                     double update_rs_processed_buffers,
                                     double goal_ms);
 
-protected:
   double _pause_time_target_ms;
   double _recorded_young_cset_choice_time_ms;
   double _recorded_non_young_cset_choice_time_ms;
@@ -554,7 +550,7 @@ public:
     return _short_lived_surv_rate_group->accum_surv_rate_pred(age);
   }
 
-protected:
+private:
   void print_stats(int level, const char* str, double value);
   void print_stats(int level, const char* str, int value);
 
@@ -587,10 +583,6 @@ protected:
 
   // Statistics kept per GC stoppage, pause or full.
   TruncatedSeq* _recent_prev_end_times_for_all_gcs_sec;
-
-  // We track markings.
-  int _num_markings;
-  double _mark_thread_startup_sec;       // Time at startup of marking thread
 
   // Add a new GC of the given duration and end time to the record.
   void update_recent_gc_times(double end_time_sec, double elapsed_ms);
@@ -664,12 +656,6 @@ protected:
   // young list/collection set).
   size_t _inc_cset_predicted_bytes_to_copy;
 
-  // Info about marking.
-  int _n_marks; // Sticky at 2, so we know when we've done at least 2.
-
-  // The number of collection pauses at the end of the last mark.
-  size_t _n_pauses_at_mark_end;
-
   // Stash a pointer to the g1 heap.
   G1CollectedHeap* _g1;
 
@@ -736,8 +722,6 @@ protected:
 
   // Number of pauses between concurrent marking.
   size_t _pauses_btwn_concurrent_mark;
-
-  size_t _n_marks_since_last_pause;
 
   // At the end of a pause we check the heap occupancy and we decide
   // whether we will start a marking cycle during the next pause. If
@@ -810,6 +794,11 @@ protected:
   bool predict_will_fit(size_t young_length, double base_time_ms,
                         size_t base_free_regions, double target_pause_time_ms);
 
+  // Count the number of bytes used in the CS.
+  void count_CS_bytes_used();
+
+  void update_young_list_size_using_newratio(size_t number_of_heap_regions);
+
 public:
 
   G1CollectorPolicy();
@@ -836,22 +825,9 @@ public:
   // This should be called after the heap is resized.
   void record_new_heap_size(size_t new_number_of_regions);
 
-protected:
-
-  // Count the number of bytes used in the CS.
-  void count_CS_bytes_used();
-
-  // Together these do the base cleanup-recording work.  Subclasses might
-  // want to put something between them.
-  void record_concurrent_mark_cleanup_end_work1(size_t freed_bytes,
-                                                size_t max_live_bytes);
-  void record_concurrent_mark_cleanup_end_work2();
-
-  void update_young_list_size_using_newratio(size_t number_of_heap_regions);
-
 public:
 
-  virtual void init();
+  void init();
 
   // Create jstat counters for the policy.
   virtual void initialize_gc_policy_counters();
@@ -876,10 +852,9 @@ public:
   // start time, where the given number of bytes were used at the start.
   // This may involve changing the desired size of a collection set.
 
-  virtual void record_stop_world_start();
+  void record_stop_world_start();
 
-  virtual void record_collection_pause_start(double start_time_sec,
-                                             size_t start_used);
+  void record_collection_pause_start(double start_time_sec, size_t start_used);
 
   // Must currently be called while the world is stopped.
   void record_concurrent_mark_init_end(double
@@ -887,23 +862,22 @@ public:
 
   void record_mark_closure_time(double mark_closure_time_ms);
 
-  virtual void record_concurrent_mark_remark_start();
-  virtual void record_concurrent_mark_remark_end();
+  void record_concurrent_mark_remark_start();
+  void record_concurrent_mark_remark_end();
 
-  virtual void record_concurrent_mark_cleanup_start();
-  virtual void record_concurrent_mark_cleanup_end(size_t freed_bytes,
-                                                  size_t max_live_bytes);
-  virtual void record_concurrent_mark_cleanup_completed();
+  void record_concurrent_mark_cleanup_start();
+  void record_concurrent_mark_cleanup_end();
+  void record_concurrent_mark_cleanup_completed();
 
-  virtual void record_concurrent_pause();
-  virtual void record_concurrent_pause_end();
+  void record_concurrent_pause();
+  void record_concurrent_pause_end();
 
-  virtual void record_collection_pause_end();
+  void record_collection_pause_end();
   void print_heap_transition();
 
   // Record the fact that a full collection occurred.
-  virtual void record_full_collection_start();
-  virtual void record_full_collection_end();
+  void record_full_collection_start();
+  void record_full_collection_end();
 
   void record_gc_worker_start_time(int worker_i, double ms) {
     _par_last_gc_worker_start_times_ms[worker_i] = ms;
@@ -1022,7 +996,7 @@ public:
   // Choose a new collection set.  Marks the chosen regions as being
   // "in_collection_set", and links them together.  The head and number of
   // the collection set are available via access methods.
-  virtual void choose_collection_set(double target_pause_time_ms) = 0;
+  void choose_collection_set(double target_pause_time_ms);
 
   // The head of the list (via "next_in_collection_set()") representing the
   // current collection set.
@@ -1107,19 +1081,12 @@ public:
 
   // If an expansion would be appropriate, because recent GC overhead had
   // exceeded the desired limit, return an amount to expand by.
-  virtual size_t expansion_amount();
-
-  // note start of mark thread
-  void note_start_of_mark_thread();
-
-  // The marked bytes of the "r" has changed; reclassify it's desirability
-  // for marking.  Also asserts that "r" is eligible for a CS.
-  virtual void note_change_in_marked_bytes(HeapRegion* r) = 0;
+  size_t expansion_amount();
 
 #ifndef PRODUCT
   // Check any appropriate marked bytes info, asserting false if
   // something's wrong, else returning "true".
-  virtual bool assertMarkedBytesDataOK() = 0;
+  bool assertMarkedBytesDataOK();
 #endif
 
   // Print tracing information.
@@ -1182,10 +1149,10 @@ public:
     return ret;
   }
 
+private:
   //
   // Survivor regions policy.
   //
-protected:
 
   // Current tenuring threshold, set to 0 if the collector reaches the
   // maximum amount of suvivors regions.
@@ -1263,51 +1230,6 @@ public:
   // Calculates survivor space parameters.
   void update_survivors_policy();
 
-};
-
-// This encapsulates a particular strategy for a g1 Collector.
-//
-//      Start a concurrent mark when our heap size is n bytes
-//            greater then our heap size was at the last concurrent
-//            mark.  Where n is a function of the CMSTriggerRatio
-//            and the MinHeapFreeRatio.
-//
-//      Start a g1 collection pause when we have allocated the
-//            average number of bytes currently being freed in
-//            a collection, but only if it is at least one region
-//            full
-//
-//      Resize Heap based on desired
-//      allocation space, where desired allocation space is
-//      a function of survival rate and desired future to size.
-//
-//      Choose collection set by first picking all older regions
-//      which have a survival rate which beats our projected young
-//      survival rate.  Then fill out the number of needed regions
-//      with young regions.
-
-class G1CollectorPolicy_BestRegionsFirst: public G1CollectorPolicy {
-  CollectionSetChooser* _collectionSetChooser;
-
-  virtual void choose_collection_set(double target_pause_time_ms);
-  virtual void record_collection_pause_start(double start_time_sec,
-                                             size_t start_used);
-  virtual void record_concurrent_mark_cleanup_end(size_t freed_bytes,
-                                                  size_t max_live_bytes);
-  virtual void record_full_collection_end();
-
-public:
-  G1CollectorPolicy_BestRegionsFirst() {
-    _collectionSetChooser = new CollectionSetChooser();
-  }
-  void record_collection_pause_end();
-  // This is not needed any more, after the CSet choosing code was
-  // changed to use the pause prediction work. But let's leave the
-  // hook in just in case.
-  void note_change_in_marked_bytes(HeapRegion* r) { }
-#ifndef PRODUCT
-  bool assertMarkedBytesDataOK();
-#endif
 };
 
 // This should move to some place more general...
