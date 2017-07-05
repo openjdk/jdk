@@ -58,6 +58,7 @@
 
 // Only bother with this argument setup if dtrace is available
 
+#ifndef USDT2
 HS_DTRACE_PROBE_DECL8(hotspot, method__compile__begin,
   char*, intptr_t, char*, intptr_t, char*, intptr_t, char*, intptr_t);
 HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
@@ -88,6 +89,35 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
       name->bytes(), name->utf8_length(),                                \
       signature->bytes(), signature->utf8_length(), (success));          \
   }
+
+#else /* USDT2 */
+
+#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler, method)              \
+  {                                                                      \
+    char* comp_name = (char*)(compiler)->name();                         \
+    Symbol* klass_name = (method)->klass_name();                         \
+    Symbol* name = (method)->name();                                     \
+    Symbol* signature = (method)->signature();                           \
+    HOTSPOT_METHOD_COMPILE_BEGIN(                                       \
+      comp_name, strlen(comp_name),                                      \
+      (char *) klass_name->bytes(), klass_name->utf8_length(),          \
+      (char *) name->bytes(), name->utf8_length(),                       \
+      (char *) signature->bytes(), signature->utf8_length());            \
+  }
+
+#define DTRACE_METHOD_COMPILE_END_PROBE(compiler, method, success)       \
+  {                                                                      \
+    char* comp_name = (char*)(compiler)->name();                         \
+    Symbol* klass_name = (method)->klass_name();                         \
+    Symbol* name = (method)->name();                                     \
+    Symbol* signature = (method)->signature();                           \
+    HOTSPOT_METHOD_COMPILE_END(                                          \
+      comp_name, strlen(comp_name),                                      \
+      (char *) klass_name->bytes(), klass_name->utf8_length(),           \
+      (char *) name->bytes(), name->utf8_length(),                       \
+      (char *) signature->bytes(), signature->utf8_length(), (success)); \
+  }
+#endif /* USDT2 */
 
 #else //  ndef DTRACE_ENABLED
 

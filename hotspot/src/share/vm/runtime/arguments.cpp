@@ -2602,16 +2602,16 @@ SOLARIS_ONLY(
       FLAG_SET_CMDLINE(bool, DisplayVMOutputToStderr, false);
       FLAG_SET_CMDLINE(bool, DisplayVMOutputToStdout, true);
     } else if (match_option(option, "-XX:+ExtendedDTraceProbes", &tail)) {
-#ifdef SOLARIS
+#if defined(DTRACE_ENABLED)
       FLAG_SET_CMDLINE(bool, ExtendedDTraceProbes, true);
       FLAG_SET_CMDLINE(bool, DTraceMethodProbes, true);
       FLAG_SET_CMDLINE(bool, DTraceAllocProbes, true);
       FLAG_SET_CMDLINE(bool, DTraceMonitorProbes, true);
-#else // ndef SOLARIS
+#else // defined(DTRACE_ENABLED)
       jio_fprintf(defaultStream::error_stream(),
-                  "ExtendedDTraceProbes flag is only applicable on Solaris\n");
+                  "ExtendedDTraceProbes flag is not applicable for this configuration\n");
       return JNI_EINVAL;
-#endif // ndef SOLARIS
+#endif // defined(DTRACE_ENABLED)
 #ifdef ASSERT
     } else if (match_option(option, "-XX:+FullGCALot", &tail)) {
       FLAG_SET_CMDLINE(bool, FullGCALot, true);

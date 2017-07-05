@@ -36,6 +36,8 @@
 
 // Only bother with this argument setup if dtrace is available
 
+#ifndef USDT2
+
 HS_DTRACE_PROBE_DECL4(hotspot, class__loaded, char*, int, oop, bool);
 HS_DTRACE_PROBE_DECL4(hotspot, class__unloaded, char*, int, oop, bool);
 
@@ -52,6 +54,24 @@ HS_DTRACE_PROBE_DECL4(hotspot, class__unloaded, char*, int, oop, bool);
       data, len, (clss)->class_loader(), (shared)); \
   }
 
+#else /* USDT2 */
+
+#define HOTSPOT_CLASS_unloaded HOTSPOT_CLASS_UNLOADED
+#define HOTSPOT_CLASS_loaded HOTSPOT_CLASS_LOADED
+#define DTRACE_CLASSLOAD_PROBE(type, clss, shared)  \
+  {                                                 \
+    char* data = NULL;                              \
+    int len = 0;                                    \
+    Symbol* name = (clss)->name();                  \
+    if (name != NULL) {                             \
+      data = (char*)name->bytes();                  \
+      len = name->utf8_length();                    \
+    }                                               \
+    HOTSPOT_CLASS_##type( /* type = unloaded, loaded */ \
+      data, len, (clss)->class_loader(), (shared)); \
+  }
+
+#endif /* USDT2 */
 #else //  ndef DTRACE_ENABLED
 
 #define DTRACE_CLASSLOAD_PROBE(type, clss, shared)
