@@ -165,7 +165,7 @@ $(DTRACE).d: $(DTRACE_SRCDIR)/hotspot.d $(DTRACE_SRCDIR)/hotspot_jni.d \
 $(DTRACE.o): $(DTRACE).d $(JVMOFFS).h $(JVMOFFS)Index.h $(DTraced_Files)
 	@echo Compiling $(DTRACE).d
 
-	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -G -o $@ -s $(DTRACE).d \
+	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -G -xlazyload -o $@ -s $(DTRACE).d \
      $(DTraced_Files) ||\
   STATUS=$$?;\
 	if [ x"$$STATUS" = x"1" -a \

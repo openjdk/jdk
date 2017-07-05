@@ -62,10 +62,9 @@ class EPollSelectorImpl
      */
     EPollSelectorImpl(SelectorProvider sp) {
         super(sp);
-        int[] fdes = new int[2];
-        IOUtil.initPipe(fdes, false);
-        fd0 = fdes[0];
-        fd1 = fdes[1];
+        long pipeFds = IOUtil.makePipe(false);
+        fd0 = (int) (pipeFds >>> 32);
+        fd1 = (int) pipeFds;
         pollWrapper = new EPollArrayWrapper();
         pollWrapper.initInterrupt(fd0, fd1);
         fdToKey = new HashMap<Integer,SelectionKeyImpl>();
@@ -144,7 +143,7 @@ class EPollSelectorImpl
         selectedKeys = null;
 
         // Deregister channels
-        Iterator i = keys.iterator();
+        Iterator<SelectionKey> i = keys.iterator();
         while (i.hasNext()) {
             SelectionKeyImpl ski = (SelectionKeyImpl)i.next();
             deregister(ski);

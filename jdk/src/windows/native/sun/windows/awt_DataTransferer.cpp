@@ -201,6 +201,7 @@ AwtDataTransferer::LCIDToTextEncoding(JNIEnv *env, LCID lcid) {
         throw std::bad_alloc();
     }
     env->SetByteArrayRegion(retval, 0, length, (jbyte *)encoding);
+    free((void *)encoding);
     return retval;
 }
 

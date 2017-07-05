@@ -831,10 +831,29 @@ class TypeInstPtr : public TypeOopPtr {
 //------------------------------TypeAryPtr-------------------------------------
 // Class of Java array pointers
 class TypeAryPtr : public TypeOopPtr {
-  TypeAryPtr( PTR ptr, ciObject* o, const TypeAry *ary, ciKlass* k, bool xk, int offset, int instance_id ) : TypeOopPtr(AryPtr,ptr,k,xk,o,offset, instance_id), _ary(ary) {};
+  TypeAryPtr( PTR ptr, ciObject* o, const TypeAry *ary, ciKlass* k, bool xk, int offset, int instance_id ) : TypeOopPtr(AryPtr,ptr,k,xk,o,offset, instance_id), _ary(ary) {
+#ifdef ASSERT
+    if (k != NULL) {
+      // Verify that specified klass and TypeAryPtr::klass() follow the same rules.
+      ciKlass* ck = compute_klass(true);
+      if (k != ck) {
+        this->dump(); tty->cr();
+        tty->print(" k: ");
+        k->print(); tty->cr();
+        tty->print("ck: ");
+        if (ck != NULL) ck->print();
+        else tty->print("<NULL>");
+        tty->cr();
+        assert(false, "unexpected TypeAryPtr::_klass");
+      }
+    }
+#endif
+  }
   virtual bool eq( const Type *t ) const;
   virtual int hash() const;     // Type specific hashing
   const TypeAry *_ary;          // Array we point into
+
+  ciKlass* compute_klass(DEBUG_ONLY(bool verify = false)) const;
 
 public:
   // Accessors

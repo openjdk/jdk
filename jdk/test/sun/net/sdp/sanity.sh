@@ -33,14 +33,15 @@ if [ "$OS" != "SunOS" ]; then
     echo "This is a Solaris-only test"
     exit 0
 fi
-SDPADM=/usr/sbin/sdpadm
-if [ ! -f ${SDPADM} ]; then
-    echo "SDP not available"
-    exit 0
-fi
-${SDPADM} status|grep Enabled
-if [ $? != 0 ]; then 
-    echo "SDP not enabled"
+
+IB_LINKS=ib.links
+IB_ADDRS=ib.addrs
+
+# Display IB partition link information
+# (requires Solaris 11, will fail on Solaris 10)
+/usr/sbin/dladm show-part -o LINK -p > ${IB_LINKS}
+if [ $? != 0 ]; then
+    echo "Unable to get IB parition link information"
     exit 0
 fi
 
@@ -56,13 +57,13 @@ CLASSPATH=${TESTCLASSES}:${TESTSRC}
 export CLASSPATH
 
 # Probe for IP addresses plumbed to IB interfaces
-$JAVA -Djava.net.preferIPv4Stack=true ProbeIB > ib_addrs
+$JAVA -Djava.net.preferIPv4Stack=true ProbeIB ${IB_LINKS} > ${IB_ADDRS}
 
 # Create sdp.conf
 SDPCONF=sdp.conf
 rm ${SDPCONF}
 touch ${SDPCONF}
-cat ib_addrs | while read ADDR
+cat ${IB_ADDRS} | while read ADDR
 do
    echo "bind ${ADDR} *" > ${SDPCONF}
    echo "connect ${ADDR} *" >> ${SDPCONF}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,11 +283,17 @@ void ReceiverTypeData::print_receiver_data_on(outputStream* st) {
     if (receiver(row) != NULL)  entries++;
   }
   st->print_cr("count(%u) entries(%u)", count(), entries);
+  int total = count();
+  for (row = 0; row < row_limit(); row++) {
+    if (receiver(row) != NULL) {
+      total += receiver_count(row);
+    }
+  }
   for (row = 0; row < row_limit(); row++) {
     if (receiver(row) != NULL) {
       tab(st);
       receiver(row)->print_value_on(st);
-      st->print_cr("(%u)", receiver_count(row));
+      st->print_cr("(%u %4.2f)", receiver_count(row), (float) receiver_count(row) / (float) total);
     }
   }
 }
@@ -743,9 +749,18 @@ void methodDataOopDesc::post_initialize(BytecodeStream* stream) {
 // Initialize the methodDataOop corresponding to a given method.
 void methodDataOopDesc::initialize(methodHandle method) {
   ResourceMark rm;
-
   // Set the method back-pointer.
   _method = method();
+
+  if (TieredCompilation) {
+    _invocation_counter.init();
+    _backedge_counter.init();
+    _num_loops = 0;
+    _num_blocks = 0;
+    _highest_comp_level = 0;
+    _highest_osr_comp_level = 0;
+    _would_profile = false;
+  }
   set_creation_mileage(mileage_of(method()));
 
   // Initialize flags and trap history.
@@ -798,32 +813,25 @@ void methodDataOopDesc::initialize(methodHandle method) {
 // Get a measure of how much mileage the method has on it.
 int methodDataOopDesc::mileage_of(methodOop method) {
   int mileage = 0;
-  int iic = method->interpreter_invocation_count();
-  if (mileage < iic)  mileage = iic;
-
-  InvocationCounter* ic = method->invocation_counter();
-  InvocationCounter* bc = method->backedge_counter();
-
-  int icval = ic->count();
-  if (ic->carry()) icval += CompileThreshold;
-  if (mileage < icval)  mileage = icval;
-  int bcval = bc->count();
-  if (bc->carry()) bcval += CompileThreshold;
-  if (mileage < bcval)  mileage = bcval;
+  if (TieredCompilation) {
+    mileage = MAX2(method->invocation_count(), method->backedge_count());
+  } else {
+    int iic = method->interpreter_invocation_count();
+    if (mileage < iic)  mileage = iic;
+    InvocationCounter* ic = method->invocation_counter();
+    InvocationCounter* bc = method->backedge_counter();
+    int icval = ic->count();
+    if (ic->carry()) icval += CompileThreshold;
+    if (mileage < icval)  mileage = icval;
+    int bcval = bc->count();
+    if (bc->carry()) bcval += CompileThreshold;
+    if (mileage < bcval)  mileage = bcval;
+  }
   return mileage;
 }
 
 bool methodDataOopDesc::is_mature() const {
-  uint current = mileage_of(_method);
-  uint initial = creation_mileage();
-  if (current < initial)
-    return true;  // some sort of overflow
-  uint target;
-  if (ProfileMaturityPercentage <= 0)
-    target = (uint) -ProfileMaturityPercentage;  // absolute value
-  else
-    target = (uint)( (ProfileMaturityPercentage * CompileThreshold) / 100 );
-  return (current >= initial + target);
+  return CompilationPolicy::policy()->is_mature(_method);
 }
 
 // Translate a bci to its corresponding data index (di).

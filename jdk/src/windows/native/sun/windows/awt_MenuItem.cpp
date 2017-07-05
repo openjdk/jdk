@@ -794,6 +794,11 @@ BOOL AwtMenuItem::IsSeparator() {
     jobject jitem = GetTarget(env);
     jstring label  =
         (jstring)(env)->GetObjectField(jitem, AwtMenuItem::labelID);
+    if (label == NULL) {
+        env->DeleteLocalRef(label);
+        env->DeleteLocalRef(jitem);
+        return FALSE; //separator must has '-' as label.
+    }
     LPCWSTR labelW = JNU_GetStringPlatformChars(env, label, NULL);
     BOOL isSeparator = (labelW && (wcscmp(labelW, L"-") == 0));
     JNU_ReleaseStringPlatformChars(env, label, labelW);

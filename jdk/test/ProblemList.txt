@@ -201,9 +201,6 @@ java/lang/ThreadLocal/MemoryLeak.java			 	solaris-all
 # Windows X64, RuntimeException: MyThread expected to have RUNNABLE but got WAITING
 java/lang/Thread/ThreadStateTest.java				generic-all
 
-# Timeout on windows 64bit 
-java/lang/ClassLoader/deadlock/TestCrossDelegate.sh		generic-all
-
 ############################################################################
 
 # jdk_management

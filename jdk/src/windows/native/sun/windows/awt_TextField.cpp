@@ -41,7 +41,9 @@ struct SetEchoCharStruct {
  * AwtTextField methods
  */
 
-AwtTextField::AwtTextField() {
+AwtTextField::AwtTextField()
+    : m_initialRescrollFlag( true )
+{
 }
 
 /* Create a new AwtTextField object and window.   */
@@ -116,10 +118,6 @@ void AwtTextField::EditSetSel(CHARRANGE &cr) {
     SendMessage(EM_SETSEL, cr.cpMin, cr.cpMax);
 }
 
-void AwtTextField::EditGetSel(CHARRANGE &cr) {
-    SendMessage(EM_SETSEL, reinterpret_cast<WPARAM>(&cr.cpMin), reinterpret_cast<LPARAM>(&cr.cpMax));
-}
-
 LONG AwtTextField::EditGetCharFromPos(POINT& pt) {
     return static_cast<LONG>(SendMessage(EM_CHARFROMPOS, 0, MAKELPARAM(pt.x, pt.y)));
 }
@@ -153,11 +151,9 @@ AwtTextField::HandleEvent(MSG *msg, BOOL synthetic)
      * The workaround also allows us to implement synthetic focus mechanism.
      */
     if (IsFocusingMouseMessage(msg)) {
-        CHARRANGE cr;
 
         LONG lCurPos = EditGetCharFromPos(msg->pt);
 
-        EditGetSel(cr);
         /*
          * NOTE: Plain EDIT control always clears selection on mouse
          * button press. We are clearing the current selection only if
@@ -174,6 +170,7 @@ AwtTextField::HandleEvent(MSG *msg, BOOL synthetic)
             SetStartSelectionPos(lCurPos);
             SetEndSelectionPos(lCurPos);
         }
+        CHARRANGE cr;
         cr.cpMin = GetStartSelectionPos();
         cr.cpMax = GetEndSelectionPos();
         EditSetSel(cr);
@@ -309,6 +306,47 @@ ret:
 
     delete secs;
 }
+
+void AwtTextField::Reshape(int x, int y, int w, int h)
+{
+    AwtTextComponent::Reshape( x, y, w, h );
+
+    // Another option would be to call this
+    // after WM_SIZE notification is handled
+    initialRescroll();
+}
+
+
+// Windows' Edit control features:
+// (i) if text selection is set while control's width or height is 0,
+//   text is scrolled oddly.
+// (ii) if control's size is changed, text seems never be automatically
+//   rescrolled.
+//
+// This method is designed for the following scenario: AWT spawns Edit
+// control with 0x0 dimensions, then sets text selection, then resizes the
+// control (couple of times). This might cause text appear undesirably scrolled.
+// So we reset/set selection again to rescroll text. (see also CR 6480547)
+void AwtTextField::initialRescroll()
+{
+    if( ! m_initialRescrollFlag ) {
+        return;
+    }
+
+    ::RECT r;
+    BOOL ok = ::GetClientRect( GetHWnd(), &r );
+    if( ! ok || r.right==0 || r.bottom==0 ) {
+        return;
+    }
+
+    m_initialRescrollFlag = false;
+
+    DWORD start, end;
+    SendMessage( EM_GETSEL, (WPARAM)&start, (LPARAM)&end );
+    SendMessage( EM_SETSEL, (WPARAM)0, (LPARAM)0 );
+    SendMessage( EM_SETSEL, (WPARAM)start, (LPARAM)end );
+}
+
 
 /************************************************************************
  * WTextFieldPeer native methods

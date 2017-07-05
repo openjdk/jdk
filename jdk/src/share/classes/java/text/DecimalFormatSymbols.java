@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,10 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.util.Currency;
-import java.util.Hashtable;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.spi.LocaleServiceProvider;
+import java.util.concurrent.ConcurrentHashMap;
+
 import sun.util.LocaleServiceProviderPool;
 import sun.util.resources.LocaleData;
 
@@ -76,7 +76,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * {@link #getInstance(Locale) getInstance} method.
      */
     public DecimalFormatSymbols() {
-        initialize( Locale.getDefault() );
+        initialize( Locale.getDefault(Locale.Category.FORMAT) );
     }
 
     /**
@@ -125,7 +125,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * @since 1.6
      */
     public static final DecimalFormatSymbols getInstance() {
-        return getInstance(Locale.getDefault());
+        return getInstance(Locale.getDefault(Locale.Category.FORMAT));
     }
 
     /**
@@ -527,10 +527,17 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
 
         // get resource bundle data - try the cache first
         boolean needCacheUpdate = false;
-        Object[] data = (Object[]) cachedLocaleData.get(locale);
+        Object[] data = cachedLocaleData.get(locale);
         if (data == null) {  /* cache miss */
+            // When numbering system is thai (Locale's extension contains u-nu-thai),
+            // we read the data from th_TH_TH.
+            Locale lookupLocale = locale;
+            String numberType = locale.getUnicodeLocaleType("nu");
+            if (numberType != null && numberType.equals("thai")) {
+                lookupLocale = new Locale("th", "TH", "TH");
+            }
             data = new Object[3];
-            ResourceBundle rb = LocaleData.getNumberFormatData(locale);
+            ResourceBundle rb = LocaleData.getNumberFormatData(lookupLocale);
             data[0] = rb.getStringArray("NumberElements");
             needCacheUpdate = true;
         }
@@ -586,7 +593,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
         monetarySeparator = decimalSeparator;
 
         if (needCacheUpdate) {
-            cachedLocaleData.put(locale, data);
+            cachedLocaleData.putIfAbsent(locale, data);
         }
     }
 
@@ -806,7 +813,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * cache to hold the NumberElements and the Currency
      * of a Locale.
      */
-    private static final Hashtable cachedLocaleData = new Hashtable(3);
+    private static final ConcurrentHashMap<Locale, Object[]> cachedLocaleData = new ConcurrentHashMap<Locale, Object[]>(3);
 
     /**
      * Obtains a DecimalFormatSymbols instance from a DecimalFormatSymbolsProvider

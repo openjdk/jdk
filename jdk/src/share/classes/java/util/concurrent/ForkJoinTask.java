@@ -91,10 +91,7 @@ import java.util.WeakHashMap;
  * results of a task is {@link #join}, but there are several variants:
  * The {@link Future#get} methods support interruptible and/or timed
  * waits for completion and report results using {@code Future}
- * conventions. Method {@link #helpJoin} enables callers to actively
- * execute other tasks while awaiting joins, which is sometimes more
- * efficient but only applies when all subtasks are known to be
- * strictly tree-structured. Method {@link #invoke} is semantically
+ * conventions. Method {@link #invoke} is semantically
  * equivalent to {@code fork(); join()} but always attempts to begin
  * execution in the current thread. The "<em>quiet</em>" forms of
  * these methods do not extract results or report exceptions. These
@@ -130,7 +127,7 @@ import java.util.WeakHashMap;
  * ForkJoinTasks (as may be determined using method {@link
  * #inForkJoinPool}).  Attempts to invoke them in other contexts
  * result in exceptions or errors, possibly including
- * ClassCastException.
+ * {@code ClassCastException}.
  *
  * <p>Most base support methods are {@code final}, to prevent
  * overriding of implementations that are intrinsically tied to the
@@ -152,9 +149,8 @@ import java.util.WeakHashMap;
  *
  * <p>This class provides {@code adapt} methods for {@link Runnable}
  * and {@link Callable}, that may be of use when mixing execution of
- * {@code ForkJoinTasks} with other kinds of tasks. When all tasks
- * are of this form, consider using a pool in
- * {@linkplain ForkJoinPool#setAsyncMode async mode}.
+ * {@code ForkJoinTasks} with other kinds of tasks. When all tasks are
+ * of this form, consider using a pool constructed in <em>asyncMode</em>.
  *
  * <p>ForkJoinTasks are {@code Serializable}, which enables them to be
  * used in extensions such as remote execution frameworks. It is
@@ -166,33 +162,43 @@ import java.util.WeakHashMap;
  */
 public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
 
-    /**
-     * Run control status bits packed into a single int to minimize
-     * footprint and to ensure atomicity (via CAS).  Status is
-     * initially zero, and takes on nonnegative values until
-     * completed, upon which status holds COMPLETED. CANCELLED, or
-     * EXCEPTIONAL, which use the top 3 bits.  Tasks undergoing
-     * blocking waits by other threads have SIGNAL_MASK bits set --
-     * bit 15 for external (nonFJ) waits, and the rest a count of
-     * waiting FJ threads.  (This representation relies on
-     * ForkJoinPool max thread limits). Completion of a stolen task
-     * with SIGNAL_MASK bits set awakens waiter via notifyAll. Even
-     * though suboptimal for some purposes, we use basic builtin
-     * wait/notify to take advantage of "monitor inflation" in JVMs
-     * that we would otherwise need to emulate to avoid adding further
-     * per-task bookkeeping overhead. Note that bits 16-28 are
-     * currently unused. Also value 0x80000000 is available as spare
-     * completion value.
+    /*
+     * See the internal documentation of class ForkJoinPool for a
+     * general implementation overview.  ForkJoinTasks are mainly
+     * responsible for maintaining their "status" field amidst relays
+     * to methods in ForkJoinWorkerThread and ForkJoinPool. The
+     * methods of this class are more-or-less layered into (1) basic
+     * status maintenance (2) execution and awaiting completion (3)
+     * user-level methods that additionally report results. This is
+     * sometimes hard to see because this file orders exported methods
+     * in a way that flows well in javadocs. In particular, most
+     * join mechanics are in method quietlyJoin, below.
      */
+
+    /*
+     * The status field holds run control status bits packed into a
+     * single int to minimize footprint and to ensure atomicity (via
+     * CAS).  Status is initially zero, and takes on nonnegative
+     * values until completed, upon which status holds value
+     * NORMAL, CANCELLED, or EXCEPTIONAL. Tasks undergoing blocking
+     * waits by other threads have the SIGNAL bit set.  Completion of
+     * a stolen task with SIGNAL set awakens any waiters via
+     * notifyAll. Even though suboptimal for some purposes, we use
+     * basic builtin wait/notify to take advantage of "monitor
+     * inflation" in JVMs that we would otherwise need to emulate to
+     * avoid adding further per-task bookkeeping overhead.  We want
+     * these monitors to be "fat", i.e., not use biasing or thin-lock
+     * techniques, so use some odd coding idioms that tend to avoid
+     * them.
+     */
+
+    /** The run status of this task */
     volatile int status; // accessed directly by pool and workers
 
-    static final int COMPLETION_MASK      = 0xe0000000;
-    static final int NORMAL               = 0xe0000000; // == mask
-    static final int CANCELLED            = 0xc0000000;
-    static final int EXCEPTIONAL          = 0xa0000000;
-    static final int SIGNAL_MASK          = 0x0000ffff;
-    static final int INTERNAL_SIGNAL_MASK = 0x00007fff;
-    static final int EXTERNAL_SIGNAL      = 0x00008000; // top bit of low word
+    private static final int NORMAL      = -1;
+    private static final int CANCELLED   = -2;
+    private static final int EXCEPTIONAL = -3;
+    private static final int SIGNAL      =  1;
 
     /**
      * Table of exceptions thrown by tasks, to enable reporting by
@@ -206,176 +212,94 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         Collections.synchronizedMap
         (new WeakHashMap<ForkJoinTask<?>, Throwable>());
 
-    // within-package utilities
+    // Maintaining completion status
 
     /**
-     * Gets current worker thread, or null if not a worker thread.
-     */
-    static ForkJoinWorkerThread getWorker() {
-        Thread t = Thread.currentThread();
-        return ((t instanceof ForkJoinWorkerThread) ?
-                (ForkJoinWorkerThread) t : null);
-    }
-
-    final boolean casStatus(int cmp, int val) {
-        return UNSAFE.compareAndSwapInt(this, statusOffset, cmp, val);
-    }
-
-    /**
-     * Workaround for not being able to rethrow unchecked exceptions.
-     */
-    static void rethrowException(Throwable ex) {
-        if (ex != null)
-            UNSAFE.throwException(ex);
-    }
-
-    // Setting completion status
-
-    /**
-     * Marks completion and wakes up threads waiting to join this task.
+     * Marks completion and wakes up threads waiting to join this task,
+     * also clearing signal request bits.
      *
      * @param completion one of NORMAL, CANCELLED, EXCEPTIONAL
      */
-    final void setCompletion(int completion) {
-        ForkJoinPool pool = getPool();
-        if (pool != null) {
-            int s; // Clear signal bits while setting completion status
-            do {} while ((s = status) >= 0 && !casStatus(s, completion));
-
-            if ((s & SIGNAL_MASK) != 0) {
-                if ((s &= INTERNAL_SIGNAL_MASK) != 0)
-                    pool.updateRunningCount(s);
-                synchronized (this) { notifyAll(); }
+    private void setCompletion(int completion) {
+        int s;
+        while ((s = status) >= 0) {
+            if (UNSAFE.compareAndSwapInt(this, statusOffset, s, completion)) {
+                if (s != 0)
+                    synchronized (this) { notifyAll(); }
+                break;
             }
         }
-        else
-            externallySetCompletion(completion);
     }
 
     /**
-     * Version of setCompletion for non-FJ threads.  Leaves signal
-     * bits for unblocked threads to adjust, and always notifies.
+     * Records exception and sets exceptional completion.
+     *
+     * @return status on exit
      */
-    private void externallySetCompletion(int completion) {
-        int s;
-        do {} while ((s = status) >= 0 &&
-                     !casStatus(s, (s & SIGNAL_MASK) | completion));
-        synchronized (this) { notifyAll(); }
+    private void setExceptionalCompletion(Throwable rex) {
+        exceptionMap.put(this, rex);
+        setCompletion(EXCEPTIONAL);
     }
 
     /**
-     * Sets status to indicate normal completion.
+     * Blocks a worker thread until completion. Called only by
+     * pool. Currently unused -- pool-based waits use timeout
+     * version below.
      */
-    final void setNormalCompletion() {
-        // Try typical fast case -- single CAS, no signal, not already done.
-        // Manually expand casStatus to improve chances of inlining it
-        if (!UNSAFE.compareAndSwapInt(this, statusOffset, 0, NORMAL))
-            setCompletion(NORMAL);
-    }
-
-    // internal waiting and notification
-
-    /**
-     * Performs the actual monitor wait for awaitDone.
-     */
-    private void doAwaitDone() {
-        // Minimize lock bias and in/de-flation effects by maximizing
-        // chances of waiting inside sync
-        try {
-            while (status >= 0)
-                synchronized (this) { if (status >= 0) wait(); }
-        } catch (InterruptedException ie) {
-            onInterruptedWait();
-        }
-    }
-
-    /**
-     * Performs the actual timed monitor wait for awaitDone.
-     */
-    private void doAwaitDone(long startTime, long nanos) {
-        synchronized (this) {
+    final void internalAwaitDone() {
+        int s;         // the odd construction reduces lock bias effects
+        while ((s = status) >= 0) {
             try {
-                while (status >= 0) {
-                    long nt = nanos - (System.nanoTime() - startTime);
-                    if (nt <= 0)
-                        break;
-                    wait(nt / 1000000, (int) (nt % 1000000));
+                synchronized(this) {
+                    if (UNSAFE.compareAndSwapInt(this, statusOffset, s,SIGNAL))
+                        wait();
                 }
             } catch (InterruptedException ie) {
-                onInterruptedWait();
+                cancelIfTerminating();
             }
         }
     }
 
-    // Awaiting completion
-
     /**
-     * Sets status to indicate there is joiner, then waits for join,
-     * surrounded with pool notifications.
+     * Blocks a worker thread until completed or timed out.  Called
+     * only by pool.
      *
-     * @return status upon exit
+     * @return status on exit
      */
-    private int awaitDone(ForkJoinWorkerThread w,
-                          boolean maintainParallelism) {
-        ForkJoinPool pool = (w == null) ? null : w.pool;
+    final int internalAwaitDone(long millis) {
         int s;
-        while ((s = status) >= 0) {
-            if (casStatus(s, (pool == null) ? s|EXTERNAL_SIGNAL : s+1)) {
-                if (pool == null || !pool.preJoin(this, maintainParallelism))
-                    doAwaitDone();
-                if (((s = status) & INTERNAL_SIGNAL_MASK) != 0)
-                    adjustPoolCountsOnUnblock(pool);
-                break;
-            }
-        }
-        return s;
-    }
-
-    /**
-     * Timed version of awaitDone
-     *
-     * @return status upon exit
-     */
-    private int awaitDone(ForkJoinWorkerThread w, long nanos) {
-        ForkJoinPool pool = (w == null) ? null : w.pool;
-        int s;
-        while ((s = status) >= 0) {
-            if (casStatus(s, (pool == null) ? s|EXTERNAL_SIGNAL : s+1)) {
-                long startTime = System.nanoTime();
-                if (pool == null || !pool.preJoin(this, false))
-                    doAwaitDone(startTime, nanos);
-                if ((s = status) >= 0) {
-                    adjustPoolCountsOnCancelledWait(pool);
-                    s = status;
+        if ((s = status) >= 0) {
+            try {
+                synchronized(this) {
+                    if (UNSAFE.compareAndSwapInt(this, statusOffset, s,SIGNAL))
+                        wait(millis, 0);
                 }
-                if (s < 0 && (s & INTERNAL_SIGNAL_MASK) != 0)
-                    adjustPoolCountsOnUnblock(pool);
-                break;
+            } catch (InterruptedException ie) {
+                cancelIfTerminating();
             }
+            s = status;
         }
         return s;
     }
 
     /**
-     * Notifies pool that thread is unblocked. Called by signalled
-     * threads when woken by non-FJ threads (which is atypical).
+     * Blocks a non-worker-thread until completion.
      */
-    private void adjustPoolCountsOnUnblock(ForkJoinPool pool) {
+    private void externalAwaitDone() {
         int s;
-        do {} while ((s = status) < 0 && !casStatus(s, s & COMPLETION_MASK));
-        if (pool != null && (s &= INTERNAL_SIGNAL_MASK) != 0)
-            pool.updateRunningCount(s);
-    }
-
-    /**
-     * Notifies pool to adjust counts on cancelled or timed out wait.
-     */
-    private void adjustPoolCountsOnCancelledWait(ForkJoinPool pool) {
-        if (pool != null) {
-            int s;
-            while ((s = status) >= 0 && (s & INTERNAL_SIGNAL_MASK) != 0) {
-                if (casStatus(s, s - 1)) {
-                    pool.updateRunningCount(1);
+        while ((s = status) >= 0) {
+            synchronized(this) {
+                if (UNSAFE.compareAndSwapInt(this, statusOffset, s, SIGNAL)){
+                    boolean interrupted = false;
+                    while (status >= 0) {
+                        try {
+                            wait();
+                        } catch (InterruptedException ie) {
+                            interrupted = true;
+                        }
+                    }
+                    if (interrupted)
+                        Thread.currentThread().interrupt();
                     break;
                 }
             }
@@ -383,153 +307,19 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * Handles interruptions during waits.
-     */
-    private void onInterruptedWait() {
-        ForkJoinWorkerThread w = getWorker();
-        if (w == null)
-            Thread.currentThread().interrupt(); // re-interrupt
-        else if (w.isTerminating())
-            cancelIgnoringExceptions();
-        // else if FJworker, ignore interrupt
-    }
-
-    // Recording and reporting exceptions
-
-    private void setDoneExceptionally(Throwable rex) {
-        exceptionMap.put(this, rex);
-        setCompletion(EXCEPTIONAL);
-    }
-
-    /**
-     * Throws the exception associated with status s.
-     *
-     * @throws the exception
-     */
-    private void reportException(int s) {
-        if ((s &= COMPLETION_MASK) < NORMAL) {
-            if (s == CANCELLED)
-                throw new CancellationException();
-            else
-                rethrowException(exceptionMap.get(this));
-        }
-    }
-
-    /**
-     * Returns result or throws exception using j.u.c.Future conventions.
-     * Only call when {@code isDone} known to be true or thread known
-     * to be interrupted.
-     */
-    private V reportFutureResult()
-        throws InterruptedException, ExecutionException {
-        if (Thread.interrupted())
-            throw new InterruptedException();
-        int s = status & COMPLETION_MASK;
-        if (s < NORMAL) {
-            Throwable ex;
-            if (s == CANCELLED)
-                throw new CancellationException();
-            if (s == EXCEPTIONAL && (ex = exceptionMap.get(this)) != null)
-                throw new ExecutionException(ex);
-        }
-        return getRawResult();
-    }
-
-    /**
-     * Returns result or throws exception using j.u.c.Future conventions
-     * with timeouts.
-     */
-    private V reportTimedFutureResult()
-        throws InterruptedException, ExecutionException, TimeoutException {
-        if (Thread.interrupted())
-            throw new InterruptedException();
-        Throwable ex;
-        int s = status & COMPLETION_MASK;
-        if (s == NORMAL)
-            return getRawResult();
-        else if (s == CANCELLED)
-            throw new CancellationException();
-        else if (s == EXCEPTIONAL && (ex = exceptionMap.get(this)) != null)
-            throw new ExecutionException(ex);
-        else
-            throw new TimeoutException();
-    }
-
-    // internal execution methods
-
-    /**
-     * Calls exec, recording completion, and rethrowing exception if
-     * encountered. Caller should normally check status before calling.
-     *
-     * @return true if completed normally
-     */
-    private boolean tryExec() {
-        try { // try block must contain only call to exec
-            if (!exec())
-                return false;
-        } catch (Throwable rex) {
-            setDoneExceptionally(rex);
-            rethrowException(rex);
-            return false; // not reached
-        }
-        setNormalCompletion();
-        return true;
-    }
-
-    /**
-     * Main execution method used by worker threads. Invokes
-     * base computation unless already complete.
+     * Unless done, calls exec and records status if completed, but
+     * doesn't wait for completion otherwise. Primary execution method
+     * for ForkJoinWorkerThread.
      */
     final void quietlyExec() {
-        if (status >= 0) {
-            try {
-                if (!exec())
-                    return;
-            } catch (Throwable rex) {
-                setDoneExceptionally(rex);
+        try {
+            if (status < 0 || !exec())
                 return;
-            }
-            setNormalCompletion();
-        }
-    }
-
-    /**
-     * Calls exec(), recording but not rethrowing exception.
-     * Caller should normally check status before calling.
-     *
-     * @return true if completed normally
-     */
-    private boolean tryQuietlyInvoke() {
-        try {
-            if (!exec())
-                return false;
         } catch (Throwable rex) {
-            setDoneExceptionally(rex);
-            return false;
+            setExceptionalCompletion(rex);
+            return;
         }
-        setNormalCompletion();
-        return true;
-    }
-
-    /**
-     * Cancels, ignoring any exceptions it throws.
-     */
-    final void cancelIgnoringExceptions() {
-        try {
-            cancel(false);
-        } catch (Throwable ignore) {
-        }
-    }
-
-    /**
-     * Main implementation of helpJoin
-     */
-    private int busyJoin(ForkJoinWorkerThread w) {
-        int s;
-        ForkJoinTask<?> t;
-        while ((s = status) >= 0 && (t = w.scanWhileJoining(this)) != null)
-            t.quietlyExec();
-        return (s >= 0) ? awaitDone(w, false) : s; // block if no work
+        setCompletion(NORMAL); // must be outside try block
     }
 
     // public methods
@@ -567,34 +357,41 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @return the computed result
      */
     public final V join() {
-        ForkJoinWorkerThread w = getWorker();
-        if (w == null || status < 0 || !w.unpushTask(this) || !tryExec())
-            reportException(awaitDone(w, true));
+        quietlyJoin();
+        Throwable ex;
+        if (status < NORMAL && (ex = getException()) != null)
+            UNSAFE.throwException(ex);
         return getRawResult();
     }
 
     /**
      * Commences performing this task, awaits its completion if
-     * necessary, and return its result, or throws an (unchecked)
-     * exception if the underlying computation did so.
+     * necessary, and returns its result, or throws an (unchecked)
+     * {@code RuntimeException} or {@code Error} if the underlying
+     * computation did so.
      *
      * @return the computed result
      */
     public final V invoke() {
-        if (status >= 0 && tryExec())
-            return getRawResult();
-        else
-            return join();
+        quietlyInvoke();
+        Throwable ex;
+        if (status < NORMAL && (ex = getException()) != null)
+            UNSAFE.throwException(ex);
+        return getRawResult();
     }
 
     /**
      * Forks the given tasks, returning when {@code isDone} holds for
      * each task or an (unchecked) exception is encountered, in which
-     * case the exception is rethrown.  If either task encounters an
-     * exception, the other one may be, but is not guaranteed to be,
-     * cancelled.  If both tasks throw an exception, then this method
-     * throws one of them.  The individual status of each task may be
-     * checked using {@link #getException()} and related methods.
+     * case the exception is rethrown. If more than one task
+     * encounters an exception, then this method throws any one of
+     * these exceptions. If any task encounters an exception, the
+     * other may be cancelled. However, the execution status of
+     * individual tasks is not guaranteed upon exceptional return. The
+     * status of each task may be obtained using {@link
+     * #getException()} and related methods to check if they have been
+     * cancelled, completed normally or exceptionally, or left
+     * unprocessed.
      *
      * <p>This method may be invoked only from within {@code
      * ForkJoinTask} computations (as may be determined using method
@@ -615,12 +412,14 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     /**
      * Forks the given tasks, returning when {@code isDone} holds for
      * each task or an (unchecked) exception is encountered, in which
-     * case the exception is rethrown. If any task encounters an
-     * exception, others may be, but are not guaranteed to be,
-     * cancelled.  If more than one task encounters an exception, then
-     * this method throws any one of these exceptions.  The individual
-     * status of each task may be checked using {@link #getException()}
-     * and related methods.
+     * case the exception is rethrown. If more than one task
+     * encounters an exception, then this method throws any one of
+     * these exceptions. If any task encounters an exception, others
+     * may be cancelled. However, the execution status of individual
+     * tasks is not guaranteed upon exceptional return. The status of
+     * each task may be obtained using {@link #getException()} and
+     * related methods to check if they have been cancelled, completed
+     * normally or exceptionally, or left unprocessed.
      *
      * <p>This method may be invoked only from within {@code
      * ForkJoinTask} computations (as may be determined using method
@@ -644,7 +443,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                 t.fork();
             else {
                 t.quietlyInvoke();
-                if (ex == null)
+                if (ex == null && t.status < NORMAL)
                     ex = t.getException();
             }
         }
@@ -655,26 +454,27 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                     t.cancel(false);
                 else {
                     t.quietlyJoin();
-                    if (ex == null)
+                    if (ex == null && t.status < NORMAL)
                         ex = t.getException();
                 }
             }
         }
         if (ex != null)
-            rethrowException(ex);
+            UNSAFE.throwException(ex);
     }
 
     /**
      * Forks all tasks in the specified collection, returning when
      * {@code isDone} holds for each task or an (unchecked) exception
-     * is encountered.  If any task encounters an exception, others
-     * may be, but are not guaranteed to be, cancelled.  If more than
-     * one task encounters an exception, then this method throws any
-     * one of these exceptions.  The individual status of each task
-     * may be checked using {@link #getException()} and related
-     * methods.  The behavior of this operation is undefined if the
-     * specified collection is modified while the operation is in
-     * progress.
+     * is encountered, in which case the exception is rethrown. If
+     * more than one task encounters an exception, then this method
+     * throws any one of these exceptions. If any task encounters an
+     * exception, others may be cancelled. However, the execution
+     * status of individual tasks is not guaranteed upon exceptional
+     * return. The status of each task may be obtained using {@link
+     * #getException()} and related methods to check if they have been
+     * cancelled, completed normally or exceptionally, or left
+     * unprocessed.
      *
      * <p>This method may be invoked only from within {@code
      * ForkJoinTask} computations (as may be determined using method
@@ -706,7 +506,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                 t.fork();
             else {
                 t.quietlyInvoke();
-                if (ex == null)
+                if (ex == null && t.status < NORMAL)
                     ex = t.getException();
             }
         }
@@ -717,13 +517,13 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
                     t.cancel(false);
                 else {
                     t.quietlyJoin();
-                    if (ex == null)
+                    if (ex == null && t.status < NORMAL)
                         ex = t.getException();
                 }
             }
         }
         if (ex != null)
-            rethrowException(ex);
+            UNSAFE.throwException(ex);
         return tasks;
     }
 
@@ -753,7 +553,35 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      */
     public boolean cancel(boolean mayInterruptIfRunning) {
         setCompletion(CANCELLED);
-        return (status & COMPLETION_MASK) == CANCELLED;
+        return status == CANCELLED;
+    }
+
+    /**
+     * Cancels, ignoring any exceptions thrown by cancel. Used during
+     * worker and pool shutdown. Cancel is spec'ed not to throw any
+     * exceptions, but if it does anyway, we have no recourse during
+     * shutdown, so guard against this case.
+     */
+    final void cancelIgnoringExceptions() {
+        try {
+            cancel(false);
+        } catch (Throwable ignore) {
+        }
+    }
+
+    /**
+     * Cancels if current thread is a terminating worker thread,
+     * ignoring any exceptions thrown by cancel.
+     */
+    final void cancelIfTerminating() {
+        Thread t = Thread.currentThread();
+        if ((t instanceof ForkJoinWorkerThread) &&
+            ((ForkJoinWorkerThread) t).isTerminating()) {
+            try {
+                cancel(false);
+            } catch (Throwable ignore) {
+            }
+        }
     }
 
     public final boolean isDone() {
@@ -761,7 +589,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     public final boolean isCancelled() {
-        return (status & COMPLETION_MASK) == CANCELLED;
+        return status == CANCELLED;
     }
 
     /**
@@ -770,7 +598,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @return {@code true} if this task threw an exception or was cancelled
      */
     public final boolean isCompletedAbnormally() {
-        return (status & COMPLETION_MASK) < NORMAL;
+        return status < NORMAL;
     }
 
     /**
@@ -781,7 +609,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * exception and was not cancelled
      */
     public final boolean isCompletedNormally() {
-        return (status & COMPLETION_MASK) == NORMAL;
+        return status == NORMAL;
     }
 
     /**
@@ -792,7 +620,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * @return the exception, or {@code null} if none
      */
     public final Throwable getException() {
-        int s = status & COMPLETION_MASK;
+        int s = status;
         return ((s >= NORMAL)    ? null :
                 (s == CANCELLED) ? new CancellationException() :
                 exceptionMap.get(this));
@@ -813,20 +641,21 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * thrown will be a {@code RuntimeException} with cause {@code ex}.
      */
     public void completeExceptionally(Throwable ex) {
-        setDoneExceptionally((ex instanceof RuntimeException) ||
-                             (ex instanceof Error) ? ex :
-                             new RuntimeException(ex));
+        setExceptionalCompletion((ex instanceof RuntimeException) ||
+                                 (ex instanceof Error) ? ex :
+                                 new RuntimeException(ex));
     }
 
     /**
      * Completes this task, and if not already aborted or cancelled,
-     * returning a {@code null} result upon {@code join} and related
-     * operations. This method may be used to provide results for
-     * asynchronous tasks, or to provide alternative handling for
-     * tasks that would not otherwise complete normally. Its use in
-     * other situations is discouraged. This method is
-     * overridable, but overridden versions must invoke {@code super}
-     * implementation to maintain guarantees.
+     * returning the given value as the result of subsequent
+     * invocations of {@code join} and related operations. This method
+     * may be used to provide results for asynchronous tasks, or to
+     * provide alternative handling for tasks that would not otherwise
+     * complete normally. Its use in other situations is
+     * discouraged. This method is overridable, but overridden
+     * versions must invoke {@code super} implementation to maintain
+     * guarantees.
      *
      * @param value the result value for this task
      */
@@ -834,97 +663,151 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
         try {
             setRawResult(value);
         } catch (Throwable rex) {
-            setDoneExceptionally(rex);
+            setExceptionalCompletion(rex);
             return;
         }
-        setNormalCompletion();
+        setCompletion(NORMAL);
     }
 
     public final V get() throws InterruptedException, ExecutionException {
-        ForkJoinWorkerThread w = getWorker();
-        if (w == null || status < 0 || !w.unpushTask(this) || !tryQuietlyInvoke())
-            awaitDone(w, true);
-        return reportFutureResult();
+        quietlyJoin();
+        if (Thread.interrupted())
+            throw new InterruptedException();
+        int s = status;
+        if (s < NORMAL) {
+            Throwable ex;
+            if (s == CANCELLED)
+                throw new CancellationException();
+            if (s == EXCEPTIONAL && (ex = exceptionMap.get(this)) != null)
+                throw new ExecutionException(ex);
+        }
+        return getRawResult();
     }
 
     public final V get(long timeout, TimeUnit unit)
         throws InterruptedException, ExecutionException, TimeoutException {
+        Thread t = Thread.currentThread();
+        ForkJoinPool pool;
+        if (t instanceof ForkJoinWorkerThread) {
+            ForkJoinWorkerThread w = (ForkJoinWorkerThread) t;
+            if (status >= 0 && w.unpushTask(this))
+                quietlyExec();
+            pool = w.pool;
+        }
+        else
+            pool = null;
+        /*
+         * Timed wait loop intermixes cases for FJ (pool != null) and
+         * non FJ threads. For FJ, decrement pool count but don't try
+         * for replacement; increment count on completion. For non-FJ,
+         * deal with interrupts. This is messy, but a little less so
+         * than is splitting the FJ and nonFJ cases.
+         */
+        boolean interrupted = false;
+        boolean dec = false; // true if pool count decremented
         long nanos = unit.toNanos(timeout);
-        ForkJoinWorkerThread w = getWorker();
-        if (w == null || status < 0 || !w.unpushTask(this) || !tryQuietlyInvoke())
-            awaitDone(w, nanos);
-        return reportTimedFutureResult();
-    }
-
-    /**
-     * Possibly executes other tasks until this task {@link #isDone is
-     * done}, then returns the result of the computation.  This method
-     * may be more efficient than {@code join}, but is only applicable
-     * when there are no potential dependencies between continuation
-     * of the current task and that of any other task that might be
-     * executed while helping. (This usually holds for pure
-     * divide-and-conquer tasks).
-     *
-     * <p>This method may be invoked only from within {@code
-     * ForkJoinTask} computations (as may be determined using method
-     * {@link #inForkJoinPool}).  Attempts to invoke in other contexts
-     * result in exceptions or errors, possibly including {@code
-     * ClassCastException}.
-     *
-     * @return the computed result
-     */
-    public final V helpJoin() {
-        ForkJoinWorkerThread w = (ForkJoinWorkerThread) Thread.currentThread();
-        if (status < 0 || !w.unpushTask(this) || !tryExec())
-            reportException(busyJoin(w));
+        for (;;) {
+            if (pool == null && Thread.interrupted()) {
+                interrupted = true;
+                break;
+            }
+            int s = status;
+            if (s < 0)
+                break;
+            if (UNSAFE.compareAndSwapInt(this, statusOffset, s, SIGNAL)) {
+                long startTime = System.nanoTime();
+                long nt; // wait time
+                while (status >= 0 &&
+                       (nt = nanos - (System.nanoTime() - startTime)) > 0) {
+                    if (pool != null && !dec)
+                        dec = pool.tryDecrementRunningCount();
+                    else {
+                        long ms = nt / 1000000;
+                        int ns = (int) (nt % 1000000);
+                        try {
+                            synchronized(this) {
+                                if (status >= 0)
+                                    wait(ms, ns);
+                            }
+                        } catch (InterruptedException ie) {
+                            if (pool != null)
+                                cancelIfTerminating();
+                            else {
+                                interrupted = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                break;
+            }
+        }
+        if (pool != null && dec)
+            pool.incrementRunningCount();
+        if (interrupted)
+            throw new InterruptedException();
+        int es = status;
+        if (es != NORMAL) {
+            Throwable ex;
+            if (es == CANCELLED)
+                throw new CancellationException();
+            if (es == EXCEPTIONAL && (ex = exceptionMap.get(this)) != null)
+                throw new ExecutionException(ex);
+            throw new TimeoutException();
+        }
         return getRawResult();
     }
 
     /**
-     * Possibly executes other tasks until this task {@link #isDone is
-     * done}.  This method may be useful when processing collections
-     * of tasks when some have been cancelled or otherwise known to
-     * have aborted.
-     *
-     * <p>This method may be invoked only from within {@code
-     * ForkJoinTask} computations (as may be determined using method
-     * {@link #inForkJoinPool}).  Attempts to invoke in other contexts
-     * result in exceptions or errors, possibly including {@code
-     * ClassCastException}.
-     */
-    public final void quietlyHelpJoin() {
-        if (status >= 0) {
-            ForkJoinWorkerThread w =
-                (ForkJoinWorkerThread) Thread.currentThread();
-            if (!w.unpushTask(this) || !tryQuietlyInvoke())
-                busyJoin(w);
-        }
-    }
-
-    /**
-     * Joins this task, without returning its result or throwing an
+     * Joins this task, without returning its result or throwing its
      * exception. This method may be useful when processing
      * collections of tasks when some have been cancelled or otherwise
      * known to have aborted.
      */
     public final void quietlyJoin() {
-        if (status >= 0) {
-            ForkJoinWorkerThread w = getWorker();
-            if (w == null || !w.unpushTask(this) || !tryQuietlyInvoke())
-                awaitDone(w, true);
+        Thread t;
+        if ((t = Thread.currentThread()) instanceof ForkJoinWorkerThread) {
+            ForkJoinWorkerThread w = (ForkJoinWorkerThread) t;
+            if (status >= 0) {
+                if (w.unpushTask(this)) {
+                    boolean completed;
+                    try {
+                        completed = exec();
+                    } catch (Throwable rex) {
+                        setExceptionalCompletion(rex);
+                        return;
+                    }
+                    if (completed) {
+                        setCompletion(NORMAL);
+                        return;
+                    }
+                }
+                w.joinTask(this);
+            }
         }
+        else
+            externalAwaitDone();
     }
 
     /**
      * Commences performing this task and awaits its completion if
-     * necessary, without returning its result or throwing an
-     * exception. This method may be useful when processing
-     * collections of tasks when some have been cancelled or otherwise
-     * known to have aborted.
+     * necessary, without returning its result or throwing its
+     * exception.
      */
     public final void quietlyInvoke() {
-        if (status >= 0 && !tryQuietlyInvoke())
-            quietlyJoin();
+        if (status >= 0) {
+            boolean completed;
+            try {
+                completed = exec();
+            } catch (Throwable rex) {
+                setExceptionalCompletion(rex);
+                return;
+            }
+            if (completed)
+                setCompletion(NORMAL);
+            else
+                quietlyJoin();
+        }
     }
 
     /**
@@ -956,7 +839,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * pre-constructed trees of subtasks in loops.
      */
     public void reinitialize() {
-        if ((status & COMPLETION_MASK) == EXCEPTIONAL)
+        if (status == EXCEPTIONAL)
             exceptionMap.remove(this);
         status = 0;
     }
@@ -1246,7 +1129,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     private static final long serialVersionUID = -7721805057305804111L;
 
     /**
-     * Saves the state to a stream.
+     * Saves the state to a stream (that is, serializes it).
      *
      * @serialData the current run status and the exception thrown
      * during execution, or {@code null} if none
@@ -1259,18 +1142,16 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
     }
 
     /**
-     * Reconstitutes the instance from a stream.
+     * Reconstitutes the instance from a stream (that is, deserializes it).
      *
      * @param s the stream
      */
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
         s.defaultReadObject();
-        status &= ~INTERNAL_SIGNAL_MASK; // clear internal signal counts
-        status |= EXTERNAL_SIGNAL; // conservatively set external signal
         Object ex = s.readObject();
         if (ex != null)
-            setDoneExceptionally((Throwable) ex);
+            setExceptionalCompletion((Throwable) ex);
     }
 
     // Unsafe mechanics

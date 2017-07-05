@@ -1048,6 +1048,7 @@ class java_dyn_MethodTypeForm: AllStatic {
  private:
   static int _vmslots_offset;           // number of argument slots needed
   static int _erasedType_offset;        // erasedType = canonical MethodType
+  static int _genericInvoker_offset;    // genericInvoker = adapter for invokeGeneric
 
   static void compute_offsets();
 
@@ -1055,10 +1056,12 @@ class java_dyn_MethodTypeForm: AllStatic {
   // Accessors
   static int            vmslots(oop mtform);
   static oop            erasedType(oop mtform);
+  static oop            genericInvoker(oop mtform);
 
   // Accessors for code generation:
   static int vmslots_offset_in_bytes()          { return _vmslots_offset; }
   static int erasedType_offset_in_bytes()       { return _erasedType_offset; }
+  static int genericInvoker_offset_in_bytes()   { return _genericInvoker_offset; }
 };
 
 
