@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,7 @@
  * @key      randomness
  *
  * @modules  java.desktop/sun.awt
- * @library  /lib/testlibrary/
- * @build    jdk.testlibrary.*
+ * @library  /test/lib
  *
  * @run      main/timeout=300 bug7123767
  */
@@ -55,7 +54,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 
 public class bug7123767 extends JFrame {

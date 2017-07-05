@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
  * @test
  * @bug 6450200
  * @summary Test proper handling of pool state changes
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.RandomFactory
+ * @library /test/lib
  * @run main/othervm ConfigChanges
  * @key randomness
  * @author Martin Buchholz
@@ -45,7 +44,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Supplier;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 public class ConfigChanges {
     static final ThreadGroup tg = new ThreadGroup("pool");
