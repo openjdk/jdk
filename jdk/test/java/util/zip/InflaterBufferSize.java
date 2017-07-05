@@ -26,6 +26,7 @@
  * @bug 6571338
  * @summary Inflater should not require a buffer to the inflate() methods
  * larger than 1 byte.
+ * @key randomness
  */
 
 import java.io.*;

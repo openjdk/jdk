@@ -27,6 +27,7 @@
  * @library ..
  * @build TestUtil
  * @run main NonBlockingAccept
+ * @key randomness
  */
 
 import java.io.*;

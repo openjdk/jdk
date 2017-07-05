@@ -28,7 +28,7 @@ package com.sun.security.auth;
 import java.security.Principal;
 
 /**
- * <p> This class implements the <code>Principal</code> interface
+ * This class implements the {@code Principal} interface
  * and represents information about a Windows NT user, group or realm.
  *
  * <p> Windows NT chooses to represent users, groups and realms (or domains)
@@ -37,12 +37,12 @@ import java.security.Principal;
  * also provides services that render these SIDs into string forms.
  * This class represents these string forms.
  *
- * <p> Principals such as this <code>NTSid</code>
- * may be associated with a particular <code>Subject</code>
- * to augment that <code>Subject</code> with an additional
- * identity.  Refer to the <code>Subject</code> class for more information
+ * <p> Principals such as this {@code NTSid}
+ * may be associated with a particular {@code Subject}
+ * to augment that {@code Subject} with an additional
+ * identity.  Refer to the {@code Subject} class for more information
  * on how to achieve this.  Authorization decisions can then be based upon
- * the Principals associated with a <code>Subject</code>.
+ * the Principals associated with a {@code Subject}.
  *
  * @see java.security.Principal
  * @see javax.security.auth.Subject
@@ -58,16 +58,14 @@ public class NTSid implements Principal, java.io.Serializable {
     private String sid;
 
     /**
-     * Create an <code>NTSid</code> with a Windows NT SID.
+     * Create an {@code NTSid} with a Windows NT SID.
      *
-     * <p>
+     * @param stringSid the Windows NT SID.
      *
-     * @param stringSid the Windows NT SID. <p>
+     * @exception NullPointerException if the {@code String}
+     *                  is {@code null}.
      *
-     * @exception NullPointerException if the <code>String</code>
-     *                  is <code>null</code>.
-     *
-     * @exception IllegalArgumentException if the <code>String</code>
+     * @exception IllegalArgumentException if the {@code String}
      *                  has zero length.
      */
     public NTSid (String stringSid) {
@@ -89,22 +87,18 @@ public class NTSid implements Principal, java.io.Serializable {
     }
 
     /**
-     * Return a string version of this <code>NTSid</code>.
+     * Return a string version of this {@code NTSid}.
      *
-     * <p>
-     *
-     * @return a string version of this <code>NTSid</code>
+     * @return a string version of this {@code NTSid}
      */
     public String getName() {
         return sid;
     }
 
     /**
-     * Return a string representation of this <code>NTSid</code>.
+     * Return a string representation of this {@code NTSid}.
      *
-     * <p>
-     *
-     * @return a string representation of this <code>NTSid</code>.
+     * @return a string representation of this {@code NTSid}.
      */
     public String toString() {
         java.text.MessageFormat form = new java.text.MessageFormat
@@ -116,18 +110,16 @@ public class NTSid implements Principal, java.io.Serializable {
     }
 
     /**
-     * Compares the specified Object with this <code>NTSid</code>
+     * Compares the specified Object with this {@code NTSid}
      * for equality.  Returns true if the given object is also a
-     * <code>NTSid</code> and the two NTSids have the same String
+     * {@code NTSid} and the two NTSids have the same String
      * representation.
      *
-     * <p>
-     *
      * @param o Object to be compared for equality with this
-     *          <code>NTSid</code>.
+     *          {@code NTSid}.
      *
      * @return true if the specified Object is equal to this
-     *          <code>NTSid</code>.
+     *          {@code NTSid}.
      */
     public boolean equals(Object o) {
         if (o == null)
@@ -147,11 +139,9 @@ public class NTSid implements Principal, java.io.Serializable {
     }
 
     /**
-     * Return a hash code for this <code>NTSid</code>.
+     * Return a hash code for this {@code NTSid}.
      *
-     * <p>
-     *
-     * @return a hash code for this <code>NTSid</code>.
+     * @return a hash code for this {@code NTSid}.
      */
     public int hashCode() {
         return sid.hashCode();

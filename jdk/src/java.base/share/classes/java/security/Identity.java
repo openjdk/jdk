@@ -185,7 +185,7 @@ public abstract class Identity implements Principal, Serializable {
 
         check("setIdentityPublicKey");
         this.publicKey = key;
-        certificates = new Vector<Certificate>();
+        certificates = new Vector<>();
     }
 
     /**
@@ -248,7 +248,7 @@ public abstract class Identity implements Principal, Serializable {
         check("addIdentityCertificate");
 
         if (certificates == null) {
-            certificates = new Vector<Certificate>();
+            certificates = new Vector<>();
         }
         if (publicKey != null) {
             if (!keyEquals(publicKey, certificate.getPublicKey())) {

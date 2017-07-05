@@ -60,17 +60,6 @@ public final class FunctionInitializer implements Serializable {
     }
 
     /**
-     * Copy constructor.
-     *
-     * @param init original initializer
-     */
-    FunctionInitializer(final FunctionInitializer init) {
-        this.className = init.getClassName();
-        this.methodType = init.getMethodType();
-        this.flags = init.getFlags();
-    }
-
-    /**
      * Constructor.
      *
      * @param functionNode the function node
@@ -130,7 +119,7 @@ public final class FunctionInitializer implements Serializable {
      * Set the class implementing the function
      * @param code the class
      */
-    public void setCode(final Class<?> code) {
+    void setCode(final Class<?> code) {
         // Make sure code has not been set and has expected class name
         if (this.code != null) {
             throw new IllegalStateException("code already set");

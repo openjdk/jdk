@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,14 @@
 
 /*
  * @test
- * @bug 4826774
- * @summary Numerical tests for hexadecimal inputs to parseDouble, parseFloat
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.*
+ * @run main ParseHexFloatingPoint
+ * @bug 4826774 8078672
+ * @summary Numerical tests for hexadecimal inputs to parse{Double, Float} (use -Dseed=X to set PRNG seed)
  * @author Joseph D. Darcy
+ * @key randomness
  */
-
-
-import java.util.regex.*;
 
 public class ParseHexFloatingPoint {
     private ParseHexFloatingPoint(){}
@@ -255,7 +256,7 @@ public class ParseHexFloatingPoint {
         failures += significandAlignmentTests();
 
         {
-            java.util.Random rand = new java.util.Random();
+            java.util.Random rand = RandomFactory.getRandom();
             // Consistency check; double => hexadecimal => double
             // preserves the original value.
             for(int i = 0; i < 1000; i++) {

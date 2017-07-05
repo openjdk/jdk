@@ -27,6 +27,7 @@
  * @summary Ensure the cloning functionality works.
  * @author Valerie Peng
  * @library ..
+ * @key randomness
  */
 
 import java.util.*;

@@ -616,7 +616,7 @@ public class SecureRandom extends java.util.Random {
             throws NoSuchAlgorithmException {
 
         String property = AccessController.doPrivileged(
-            new PrivilegedAction<String>() {
+            new PrivilegedAction<>() {
                 @Override
                 public String run() {
                     return Security.getProperty(

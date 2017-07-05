@@ -26,6 +26,7 @@
  *   6984545
  * @summary Test FileChannel.transferFrom and transferTo
  * @library ..
+ * @key randomness
  */
 
 import java.io.*;

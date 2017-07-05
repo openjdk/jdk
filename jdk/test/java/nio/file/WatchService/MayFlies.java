@@ -27,6 +27,7 @@
  *     short lived files
  * @library ..
  * @run main MayFlies
+ * @key randomness
  */
 
 import java.nio.file.*;

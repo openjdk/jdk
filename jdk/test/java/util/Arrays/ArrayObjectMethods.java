@@ -26,6 +26,7 @@
  * @bug     4906359 6239296
  * @summary Basic test for content-based array object methods
  * @author  Josh Bloch, Martin Buchholz
+ * @key randomness
  */
 
 import java.util.*;

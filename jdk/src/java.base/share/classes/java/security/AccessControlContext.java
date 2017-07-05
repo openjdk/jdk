@@ -458,7 +458,7 @@ public final class AccessControlContext {
                     Thread.dumpStack();
                     final ProtectionDomain pd = context[i];
                     final Debug db = debug;
-                    AccessController.doPrivileged (new PrivilegedAction<Void>() {
+                    AccessController.doPrivileged (new PrivilegedAction<>() {
                         public Void run() {
                             db.println("domain that failed "+pd);
                             return null;

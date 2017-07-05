@@ -49,6 +49,7 @@ import java.util.logging.LogManager;
  * @run main/othervm FileHandlerPatternExceptions UNSECURE
  * @run main/othervm FileHandlerPatternExceptions SECURE
  * @author danielfuchs
+ * @key randomness
  */
 public class FileHandlerPatternExceptions {
 

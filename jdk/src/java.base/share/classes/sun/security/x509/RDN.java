@@ -102,7 +102,7 @@ public class RDN {
         int quoteCount = 0;
         int searchOffset = 0;
         int avaOffset = 0;
-        List<AVA> avaVec = new ArrayList<AVA>(3);
+        List<AVA> avaVec = new ArrayList<>(3);
         int nextPlus = name.indexOf('+');
         while (nextPlus >= 0) {
             quoteCount += X500Name.countQuotes(name, searchOffset, nextPlus);
@@ -182,7 +182,7 @@ public class RDN {
         }
         int searchOffset = 0;
         int avaOffset = 0;
-        List<AVA> avaVec = new ArrayList<AVA>(3);
+        List<AVA> avaVec = new ArrayList<>(3);
         int nextPlus = name.indexOf('+');
         while (nextPlus >= 0) {
             /*
@@ -453,7 +453,7 @@ public class RDN {
         } else {
             // order the string type AVA's alphabetically,
             // followed by the oid type AVA's numerically
-            List<AVA> avaList = new ArrayList<AVA>(assertion.length);
+            List<AVA> avaList = new ArrayList<>(assertion.length);
             for (int i = 0; i < assertion.length; i++) {
                 avaList.add(assertion[i]);
             }

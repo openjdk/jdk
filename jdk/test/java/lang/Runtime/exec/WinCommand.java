@@ -25,6 +25,7 @@
  * @bug 5006520
  * @summary Check many different ways to run Windows programs
  * @author Martin Buchholz
+ * @key randomness
  */
 
 import java.io.*;

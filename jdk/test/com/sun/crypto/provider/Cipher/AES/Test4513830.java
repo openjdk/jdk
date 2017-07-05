@@ -27,6 +27,7 @@
  * @summary Verify the output size returned by AES cipher.getOutputSize
  *      method in DECRYPT mode does not add extra bytes for padding
  * @author Valerie Peng
+ * @key randomness
  */
 import java.io.PrintStream;
 import java.security.*;

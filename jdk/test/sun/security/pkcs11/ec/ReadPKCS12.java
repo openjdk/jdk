@@ -28,6 +28,7 @@
  * @author Andreas Sterbenz
  * @library ..
  * @library ../../../../java/security/testlibrary
+ * @key randomness
  */
 
 import java.io.*;

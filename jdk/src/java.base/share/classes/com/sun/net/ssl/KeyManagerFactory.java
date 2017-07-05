@@ -63,7 +63,7 @@ public class KeyManagerFactory {
      */
     public final static String getDefaultAlgorithm() {
         String type;
-        type = AccessController.doPrivileged(new PrivilegedAction<String>() {
+        type = AccessController.doPrivileged(new PrivilegedAction<>() {
             public String run() {
                 return Security.getProperty("sun.ssl.keymanager.type");
             }

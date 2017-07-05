@@ -29,6 +29,7 @@
  *
  * if the test returns, then it passed.
  * if the test never returns (hangs forever), then it failed.
+ * @key randomness
  */
 
 import java.security.SecureRandom;

@@ -25,7 +25,7 @@
  * @test
  * @bug 4120694
  * @summary Test new methods in StringBuffer
- *
+ * @key randomness
  */
 
 import java.lang.*;

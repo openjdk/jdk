@@ -24,6 +24,7 @@
 /* @test
  * @summary Basic sanity check to test if default (de)serialization is
  *          transmitting values properly.
+ * @key randomness
  */
 
 import java.io.*;
