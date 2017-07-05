@@ -1695,13 +1695,10 @@ public class TransferHandler implements Serializable {
             super(name);
         }
 
-        public boolean isEnabled(Object sender) {
-            if (sender instanceof JComponent
-                && ((JComponent)sender).getTransferHandler() == null) {
-                    return false;
-            }
-
-            return true;
+        @Override
+        public boolean accept(Object sender) {
+            return !(sender instanceof JComponent
+                    && ((JComponent)sender).getTransferHandler() == null);
         }
 
         private static final JavaSecurityAccess javaSecurityAccess =

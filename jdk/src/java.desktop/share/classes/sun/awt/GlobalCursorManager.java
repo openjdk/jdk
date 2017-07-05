@@ -153,7 +153,7 @@ public abstract class GlobalCursorManager {
      * updates:<p>
      *
      * (1) InputEvent updates which are outdated are discarded by
-     * <code>updateCursorImmediately(InputEvent)</code>.<p>
+     * {@code updateCursorImmediately(InputEvent)}.<p>
      *
      * (2) If 'useCache' is true, the native code is free to use a cached
      * value to determine the most specific, visible, enabled heavyweight

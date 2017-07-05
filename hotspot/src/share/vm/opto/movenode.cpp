@@ -121,7 +121,7 @@ Node *CMoveNode::is_cmove_id( PhaseTransform *phase, Node *cmp, Node *t, Node *f
 //------------------------------Identity---------------------------------------
 // Conditional-move is an identity if both inputs are the same, or the test
 // true or false.
-Node *CMoveNode::Identity( PhaseTransform *phase ) {
+Node* CMoveNode::Identity(PhaseGVN* phase) {
   if( phase->eqv(in(IfFalse),in(IfTrue)) ) // C-moving identical inputs?
   return in(IfFalse);         // Then it doesn't matter
   if( phase->type(in(Condition)) == TypeInt::ZERO )
@@ -149,7 +149,7 @@ Node *CMoveNode::Identity( PhaseTransform *phase ) {
 
 //------------------------------Value------------------------------------------
 // Result is the meet of inputs
-const Type *CMoveNode::Value( PhaseTransform *phase ) const {
+const Type* CMoveNode::Value(PhaseGVN* phase) const {
   if( phase->type(in(Condition)) == Type::TOP )
   return Type::TOP;
   return phase->type(in(IfFalse))->meet_speculative(phase->type(in(IfTrue)));
@@ -351,7 +351,7 @@ Node *CMoveDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------Value------------------------------------------
-const Type *MoveL2DNode::Value( PhaseTransform *phase ) const {
+const Type* MoveL2DNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
   const TypeLong *tl = t->is_long();
@@ -362,7 +362,7 @@ const Type *MoveL2DNode::Value( PhaseTransform *phase ) const {
 }
 
 //------------------------------Value------------------------------------------
-const Type *MoveI2FNode::Value( PhaseTransform *phase ) const {
+const Type* MoveI2FNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
   const TypeInt *ti = t->is_int();
@@ -373,7 +373,7 @@ const Type *MoveI2FNode::Value( PhaseTransform *phase ) const {
 }
 
 //------------------------------Value------------------------------------------
-const Type *MoveF2INode::Value( PhaseTransform *phase ) const {
+const Type* MoveF2INode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP )       return Type::TOP;
   if( t == Type::FLOAT ) return TypeInt::INT;
@@ -384,7 +384,7 @@ const Type *MoveF2INode::Value( PhaseTransform *phase ) const {
 }
 
 //------------------------------Value------------------------------------------
-const Type *MoveD2LNode::Value( PhaseTransform *phase ) const {
+const Type* MoveD2LNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
   if( t == Type::TOP ) return Type::TOP;
   if( t == Type::DOUBLE ) return TypeLong::LONG;

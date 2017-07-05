@@ -630,4 +630,8 @@ void CollectedHeap::test_is_in() {
   assert(!heap->is_in(after_heap),
          "after_heap: " PTR_FORMAT " is unexpectedly in the heap", p2i(after_heap));
 }
+
+void CollectedHeap_test() {
+  CollectedHeap::test_is_in();
+}
 #endif

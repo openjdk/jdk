@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test
+ * @bug 8148250
+ */
+
 package org.openjdk.tests.java.util.stream;
 
 import org.testng.annotations.Test;
@@ -339,6 +345,15 @@ public class SliceOpTest extends OpTestCase {
         }
         else {
             return Arrays.asList(0, 1, size / 2, size - 1, size, size + 1, 2 * size);
+        }
+    }
+
+    public void testLimitParallelHugeInput() {
+        for (int n : new int[] {10, 100, 1000, 10000}) {
+            long[] actual = LongStream.range(0, Long.MAX_VALUE)
+                                  .parallel().filter(x -> true) // remove SIZED
+                                  .limit(n).toArray();
+            assertEquals(LongStream.range(0, n).toArray(), actual);
         }
     }
 }

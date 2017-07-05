@@ -45,7 +45,7 @@ import javax.print.attribute.PrintJobAttribute;
  * states, the JobImpressionsCompleted value is the final value for the job.
  * <P>
  * <B>IPP Compatibility:</B> The integer value gives the IPP integer value. The
- * category name returned by <CODE>getName()</CODE> gives the IPP attribute
+ * category name returned by {@code getName()} gives the IPP attribute
  * name.
  *
  * @see JobImpressions
@@ -67,7 +67,7 @@ public final class JobImpressionsCompleted extends IntegerSyntax
      * @param  value  Integer value.
      *
      * @exception  IllegalArgumentException
-     *  (Unchecked exception) Thrown if <CODE>value</CODE> is less than 0.
+     *  (Unchecked exception) Thrown if {@code value} is less than 0.
      */
     public JobImpressionsCompleted(int value) {
         super (value, 0, Integer.MAX_VALUE);
@@ -79,17 +79,17 @@ public final class JobImpressionsCompleted extends IntegerSyntax
      * conditions must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class JobImpressionsCompleted.
+     * {@code object} is an instance of class JobImpressionsCompleted.
      * <LI>
      * This job impressions completed attribute's value and
-     * <CODE>object</CODE>'s value are equal.
+     * {@code object}'s value are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this job
+     * @return  True if {@code object} is equivalent to this job
      *          impressions completed attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -116,7 +116,7 @@ public final class JobImpressionsCompleted extends IntegerSyntax
      * instance.
      * <P>
      * For class JobImpressionsCompleted, the category name is
-     * <CODE>"job-impressions-completed"</CODE>.
+     * {@code "job-impressions-completed"}.
      *
      * @return  Attribute category name.
      */

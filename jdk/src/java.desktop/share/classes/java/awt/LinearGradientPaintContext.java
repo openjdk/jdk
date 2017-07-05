@@ -56,7 +56,7 @@ final class LinearGradientPaintContext extends MultipleGradientPaintContext {
      * @param paint the {@code LinearGradientPaint} from which this context
      *              is created
      * @param cm {@code ColorModel} that receives
-     *           the <code>Paint</code> data. This is used only as a hint.
+     *           the {@code Paint} data. This is used only as a hint.
      * @param deviceBounds the device space bounding box of the
      *                     graphics primitive being rendered
      * @param userBounds the user space bounding box of the

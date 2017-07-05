@@ -41,9 +41,9 @@ import java.awt.AWTEvent;
  * The class that is interested in monitoring AWT events
  * implements this interface, and the object created with that
  * class is registered with the Toolkit, using the Toolkit's
- * <code>addAWTEventListener</code> method.  When an event is
+ * {@code addAWTEventListener} method.  When an event is
  * dispatched anywhere in the AWT, that object's
- * <code>eventDispatched</code> method is invoked.
+ * {@code eventDispatched} method is invoked.
  *
  * @see java.awt.AWTEvent
  * @see java.awt.Toolkit#addAWTEventListener

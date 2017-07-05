@@ -41,7 +41,7 @@ import javax.print.attribute.SupportedValuesAttribute;
  * in an IPP "job-k-octets-supported" attribute. See class {@link
  * javax.print.attribute.SetOfIntegerSyntax SetOfIntegerSyntax} for an
  * explanation of canonical array form. The category name returned by
- * <CODE>getName()</CODE> gives the IPP attribute name.
+ * {@code getName()} gives the IPP attribute name.
  *
  * @author  Alan Kaminsky
  */
@@ -60,7 +60,7 @@ public final class JobKOctetsSupported extends SetOfIntegerSyntax
      *
      * @exception  IllegalArgumentException
      *  (Unchecked exception) Thrown if a null range is specified or if a
-     *  non-null range is specified with <CODE>lowerBound</CODE> less than
+     *  non-null range is specified with {@code lowerBound} less than
      *   0.
      */
     public JobKOctetsSupported(int lowerBound, int upperBound) {
@@ -79,17 +79,17 @@ public final class JobKOctetsSupported extends SetOfIntegerSyntax
      * must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class JobKOctetsSupported.
+     * {@code object} is an instance of class JobKOctetsSupported.
      * <LI>
      * This job K octets supported attribute's members and
-     * <CODE>object</CODE>'s members are the same.
+     * {@code object}'s members are the same.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this job K
+     * @return  True if {@code object} is equivalent to this job K
      *          octets supported attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -116,7 +116,7 @@ public final class JobKOctetsSupported extends SetOfIntegerSyntax
      * instance.
      * <P>
      * For class JobKOctetsSupported, the category name is
-     * <CODE>"job-k-octets-supported"</CODE>.
+     * {@code "job-k-octets-supported"}.
      *
      * @return  Attribute category name.
      */

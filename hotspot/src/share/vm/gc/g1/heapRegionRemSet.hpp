@@ -34,7 +34,7 @@
 // abstractly, in terms of what the "BlockOffsetTable" in use can parse.
 
 class G1CollectedHeap;
-class G1BlockOffsetSharedArray;
+class G1BlockOffsetTable;
 class HeapRegion;
 class HeapRegionRemSetIterator;
 class PerRegionTable;
@@ -174,7 +174,7 @@ class HeapRegionRemSet : public CHeapObj<mtGC> {
   friend class HeapRegionRemSetIterator;
 
 private:
-  G1BlockOffsetSharedArray* _bosa;
+  G1BlockOffsetTable* _bot;
 
   // A set of code blobs (nmethods) whose code contains pointers into
   // the region that owns this RSet.
@@ -189,7 +189,7 @@ private:
   volatile size_t _iter_claimed;
 
 public:
-  HeapRegionRemSet(G1BlockOffsetSharedArray* bosa, HeapRegion* hr);
+  HeapRegionRemSet(G1BlockOffsetTable* bot, HeapRegion* hr);
 
   static void setup_remset_size();
 
@@ -350,7 +350,7 @@ class HeapRegionRemSetIterator : public StackObj {
   // Local caching of HRRS fields.
   const BitMap*             _coarse_map;
 
-  G1BlockOffsetSharedArray* _bosa;
+  G1BlockOffsetTable*       _bot;
   G1CollectedHeap*          _g1h;
 
   // The number of cards yielded since initialization.

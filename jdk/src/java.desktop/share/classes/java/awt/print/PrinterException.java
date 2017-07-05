@@ -26,7 +26,7 @@
 package java.awt.print;
 
 /**
- * The <code>PrinterException</code> class and its subclasses are used
+ * The {@code PrinterException} class and its subclasses are used
  * to indicate that an exceptional condition has occurred in the print
  * system.
  */
@@ -35,7 +35,7 @@ public class PrinterException extends Exception {
     private static final long serialVersionUID = -3757589981158265819L;
 
     /**
-     * Constructs a new <code>PrinterException</code> object
+     * Constructs a new {@code PrinterException} object
      * without a detail message.
      */
     public PrinterException() {
@@ -43,10 +43,10 @@ public class PrinterException extends Exception {
     }
 
     /**
-     * Constructs a new <code>PrinterException</code> object
+     * Constructs a new {@code PrinterException} object
      * with the specified detail message.
      * @param msg the message to generate when a
-     * <code>PrinterException</code> is thrown
+     * {@code PrinterException} is thrown
      */
     public PrinterException(String msg) {
         super(msg);

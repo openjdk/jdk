@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/fieldStreams.hpp"
 #include "oops/verifyOopClosure.hpp"
@@ -296,7 +297,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // Ensure that no safepoint is taken after pointers have been stored
   // in fields of rematerialized objects.  If a safepoint occurs from here on
   // out the java state residing in the vframeArray will be missed.
-  No_Safepoint_Verifier no_safepoint;
+  NoSafepointVerifier no_safepoint;
 
   vframeArray* array = create_vframeArray(thread, deoptee, &map, chunk, realloc_failures);
 #if defined(COMPILER2) || INCLUDE_JVMCI

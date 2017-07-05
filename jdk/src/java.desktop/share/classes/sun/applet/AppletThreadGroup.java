@@ -51,7 +51,7 @@ public class AppletThreadGroup extends ThreadGroup {
      * @param     parent   the parent thread group.
      * @param     name     the name of the new thread group.
      * @exception  NullPointerException  if the thread group argument is
-     *               <code>null</code>.
+     *               {@code null}.
      * @exception  SecurityException  if the current thread cannot create a
      *               thread in the specified thread group.
      * @see     java.lang.SecurityException

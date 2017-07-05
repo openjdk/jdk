@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -80,8 +80,9 @@ AC_DEFUN([FLAGS_SETUP_SYSROOT_FLAGS],
       if test "x$OPENJDK_TARGET_OS" = xsolaris; then
         # Solaris Studio does not have a concept of sysroot. Instead we must
         # make sure the default include and lib dirs are appended to each
-        # compile and link command line.
-        $1SYSROOT_CFLAGS="-I[$]$1SYSROOT/usr/include"
+        # compile and link command line. Must also add -I-xbuiltin to enable
+        # inlining of system functions and intrinsics.
+        $1SYSROOT_CFLAGS="-I-xbuiltin -I[$]$1SYSROOT/usr/include"
         $1SYSROOT_LDFLAGS="-L[$]$1SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L[$]$1SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L[$]$1SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
@@ -425,7 +426,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
       # Add runtime stack smashing and undefined behavior checks.
       # Not all versions of gcc support -fstack-protector
       STACK_PROTECTOR_CFLAG="-fstack-protector-all"
-      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$STACK_PROTECTOR_CFLAG], IF_FALSE: [STACK_PROTECTOR_CFLAG=""])
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$STACK_PROTECTOR_CFLAG -Werror], IF_FALSE: [STACK_PROTECTOR_CFLAG=""])
 
       CFLAGS_DEBUG_OPTIONS="$STACK_PROTECTOR_CFLAG --param ssp-buffer-size=1"
       CXXFLAGS_DEBUG_OPTIONS="$STACK_PROTECTOR_CFLAG --param ssp-buffer-size=1"
@@ -601,22 +602,22 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
     esac
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
-	    if test "x$OPENJDK_TARGET_CPU" = xx86; then
-	      # Force compatibility with i586 on 32 bit intel platforms.
-	      COMMON_CCXXFLAGS="${COMMON_CCXXFLAGS} -march=i586"
-	    fi
-	    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
-	        -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
-	    case $OPENJDK_TARGET_CPU_ARCH in
-	      ppc )
-	        # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
-	        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
-	        ;;
-	      * )
-	        COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer"
-	        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
-	        ;;
-	    esac
+      if test "x$OPENJDK_TARGET_CPU" = xx86; then
+        # Force compatibility with i586 on 32 bit intel platforms.
+        COMMON_CCXXFLAGS="${COMMON_CCXXFLAGS} -march=i586"
+      fi
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
+          -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
+      case $OPENJDK_TARGET_CPU_ARCH in
+        ppc )
+          # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
+          CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
+          ;;
+        * )
+          COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer"
+          CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
+          ;;
+      esac
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -DTRACING -DMACRO_MEMSYS_OPS -DBREAKPTS"

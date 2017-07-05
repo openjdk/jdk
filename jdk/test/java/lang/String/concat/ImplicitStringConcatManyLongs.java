@@ -26,70 +26,70 @@
  * @summary Test implicit String concatenations with lots of arguments (two-slot version)
  *
  * @compile ImplicitStringConcatManyLongs.java
- * @run main/othervm ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all ImplicitStringConcatManyLongs
  *
  * @compile -XDstringConcat=inline ImplicitStringConcatManyLongs.java
- * @run main/othervm ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all ImplicitStringConcatManyLongs
  *
  * @compile -XDstringConcat=indy -source 1.9 -target 1.9 ImplicitStringConcatManyLongs.java
  *
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB                                                              ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB_SIZED                                                        ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_SB_SIZED                                                        ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT                                                  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT                                                  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT                                              ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                                                              ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED                                                        ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED                                                        ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT                                                  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT                                                  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT                                              ImplicitStringConcatManyLongs
  *
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB                  -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB_SIZED            -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_SB_SIZED            -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT  -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                  -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED            -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED            -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT  -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
  *
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB                                                              -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB_SIZED                                                        -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_SB_SIZED                                                        -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT                                                  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT                                                  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT                                              -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                                                              -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED                                                        -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED                                                        -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT                                                  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT                                                  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT                                              -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
 
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB                  -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB_SIZED            -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_SB_SIZED            -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT  -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                  -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED            -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED            -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT  -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
  *
  * @compile -XDstringConcat=indyWithConstants -source 1.9 -target 1.9 ImplicitStringConcatManyLongs.java
  *
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB                                                              ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB_SIZED                                                        ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_SB_SIZED                                                        ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT                                                  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT                                                  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT                                              ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                                                              ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED                                                        ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED                                                        ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT                                                  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT                                                  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT                                              ImplicitStringConcatManyLongs
  *
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB                  -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB_SIZED            -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_SB_SIZED            -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT  -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                  -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED            -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED            -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT  -Djava.lang.invoke.stringConcat.debug=true  ImplicitStringConcatManyLongs
  *
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB                                                              -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB_SIZED                                                        -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_SB_SIZED                                                        -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT                                                  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT                                                  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT                                              -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                                                              -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED                                                        -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED                                                        -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT                                                  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT                                                  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT                                              -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
  *
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB                  -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB_SIZED            -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_SB_SIZED            -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
- * @run main/othervm -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT  -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB                  -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED            -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED            -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=BC_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_SB_SIZED_EXACT      -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
+ * @run main/othervm -Xverify:all -Djava.lang.invoke.stringConcat=MH_INLINE_SIZED_EXACT  -Djava.lang.invoke.stringConcat.debug=true  -Djava.lang.invoke.stringConcat.cache=true  ImplicitStringConcatManyLongs
 */
 
 import java.lang.reflect.Field;

@@ -147,7 +147,7 @@ void ProjNode::check_con() const {
 }
 
 //------------------------------Value------------------------------------------
-const Type *ProjNode::Value( PhaseTransform *phase ) const {
+const Type* ProjNode::Value(PhaseGVN* phase) const {
   if (in(0) == NULL) return Type::TOP;
   return proj_type(phase->type(in(0)));
 }

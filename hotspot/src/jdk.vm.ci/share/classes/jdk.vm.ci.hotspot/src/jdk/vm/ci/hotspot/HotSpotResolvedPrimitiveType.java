@@ -110,16 +110,6 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     }
 
     @Override
-    public JavaConstant getObjectHub() {
-        throw JVMCIError.unimplemented();
-    }
-
-    @Override
-    public JavaConstant getJavaClass() {
-        throw JVMCIError.unimplemented();
-    }
-
-    @Override
     public AssumptionResult<Boolean> hasFinalizableSubclass() {
         return new AssumptionResult<>(false);
     }

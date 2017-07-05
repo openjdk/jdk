@@ -28,6 +28,7 @@
  * @summary Test that C2 flag UseCountedLoopSafepoints ensures a safepoint is kept in a CountedLoop
  * @library /testlibrary
  * @modules java.base
+ * @ignore 8146096
  * @run main UseCountedLoopSafepoints
  */
 

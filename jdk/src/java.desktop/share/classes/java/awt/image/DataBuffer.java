@@ -114,7 +114,7 @@ public abstract class DataBuffer {
     /** Returns the size (in bits) of the data type, given a datatype tag.
       * @param type the value of one of the defined datatype tags
       * @return the size of the data type
-      * @throws IllegalArgumentException if <code>type</code> is less than
+      * @throws IllegalArgumentException if {@code type} is less than
       *         zero or greater than {@link #TYPE_DOUBLE}
       */
     public static int getDataTypeSize(int type) {
@@ -128,7 +128,7 @@ public abstract class DataBuffer {
      *  Constructs a DataBuffer containing one bank of the specified
      *  data type and size.
      *
-     *  @param dataType the data type of this <code>DataBuffer</code>
+     *  @param dataType the data type of this {@code DataBuffer}
      *  @param size the size of the banks
      */
     protected DataBuffer(int dataType, int size) {
@@ -140,7 +140,7 @@ public abstract class DataBuffer {
      *  data type and size with the indicated initial {@link State State}.
      *
      *  @param initialState the initial {@link State State} state of the data
-     *  @param dataType the data type of this <code>DataBuffer</code>
+     *  @param dataType the data type of this {@code DataBuffer}
      *  @param size the size of the banks
      *  @since 1.7
      */
@@ -159,10 +159,10 @@ public abstract class DataBuffer {
      *  Constructs a DataBuffer containing the specified number of
      *  banks.  Each bank has the specified size and an offset of 0.
      *
-     *  @param dataType the data type of this <code>DataBuffer</code>
+     *  @param dataType the data type of this {@code DataBuffer}
      *  @param size the size of the banks
      *  @param numBanks the number of banks in this
-     *         <code>DataBuffer</code>
+     *         {@code DataBuffer}
      */
     protected DataBuffer(int dataType, int size, int numBanks) {
         this(UNTRACKABLE, dataType, size, numBanks);
@@ -174,10 +174,10 @@ public abstract class DataBuffer {
      *  Each bank has the specified size and an offset of 0.
      *
      *  @param initialState the initial {@link State State} state of the data
-     *  @param dataType the data type of this <code>DataBuffer</code>
+     *  @param dataType the data type of this {@code DataBuffer}
      *  @param size the size of the banks
      *  @param numBanks the number of banks in this
-     *         <code>DataBuffer</code>
+     *         {@code DataBuffer}
      *  @since 1.7
      */
     DataBuffer(State initialState,
@@ -195,10 +195,10 @@ public abstract class DataBuffer {
      *  Constructs a DataBuffer that contains the specified number
      *  of banks.  Each bank has the specified datatype, size and offset.
      *
-     *  @param dataType the data type of this <code>DataBuffer</code>
+     *  @param dataType the data type of this {@code DataBuffer}
      *  @param size the size of the banks
      *  @param numBanks the number of banks in this
-     *         <code>DataBuffer</code>
+     *         {@code DataBuffer}
      *  @param offset the offset for each bank
      */
     protected DataBuffer(int dataType, int size, int numBanks, int offset) {
@@ -211,10 +211,10 @@ public abstract class DataBuffer {
      *  Each bank has the specified datatype, size and offset.
      *
      *  @param initialState the initial {@link State State} state of the data
-     *  @param dataType the data type of this <code>DataBuffer</code>
+     *  @param dataType the data type of this {@code DataBuffer}
      *  @param size the size of the banks
      *  @param numBanks the number of banks in this
-     *         <code>DataBuffer</code>
+     *         {@code DataBuffer}
      *  @param offset the offset for each bank
      *  @since 1.7
      */
@@ -238,13 +238,13 @@ public abstract class DataBuffer {
      *  offset for each bank is specified by its respective entry in
      *  the offsets array.
      *
-     *  @param dataType the data type of this <code>DataBuffer</code>
+     *  @param dataType the data type of this {@code DataBuffer}
      *  @param size the size of the banks
      *  @param numBanks the number of banks in this
-     *         <code>DataBuffer</code>
+     *         {@code DataBuffer}
      *  @param offsets an array containing an offset for each bank.
-     *  @throws ArrayIndexOutOfBoundsException if <code>numBanks</code>
-     *          does not equal the length of <code>offsets</code>
+     *  @throws ArrayIndexOutOfBoundsException if {@code numBanks}
+     *          does not equal the length of {@code offsets}
      */
     protected DataBuffer(int dataType, int size, int numBanks, int offsets[]) {
         this(UNTRACKABLE, dataType, size, numBanks, offsets);
@@ -258,13 +258,13 @@ public abstract class DataBuffer {
      *  the offsets array.
      *
      *  @param initialState the initial {@link State State} state of the data
-     *  @param dataType the data type of this <code>DataBuffer</code>
+     *  @param dataType the data type of this {@code DataBuffer}
      *  @param size the size of the banks
      *  @param numBanks the number of banks in this
-     *         <code>DataBuffer</code>
+     *         {@code DataBuffer}
      *  @param offsets an array containing an offset for each bank.
-     *  @throws ArrayIndexOutOfBoundsException if <code>numBanks</code>
-     *          does not equal the length of <code>offsets</code>
+     *  @throws ArrayIndexOutOfBoundsException if {@code numBanks}
+     *          does not equal the length of {@code offsets}
      *  @since 1.7
      */
     DataBuffer(State initialState,
@@ -283,7 +283,7 @@ public abstract class DataBuffer {
     }
 
     /**  Returns the data type of this DataBuffer.
-     *   @return the data type of this <code>DataBuffer</code>.
+     *   @return the data type of this {@code DataBuffer}.
      */
     public int getDataType() {
         return dataType;

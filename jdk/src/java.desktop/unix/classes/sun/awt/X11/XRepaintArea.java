@@ -33,7 +33,7 @@ import sun.awt.AWTAccessor;
 import sun.awt.RepaintArea;
 
 /**
- * The <code>RepaintArea</code> is a geometric construct created for the
+ * The {@code RepaintArea} is a geometric construct created for the
  * purpose of holding the geometry of several coalesced paint events.
  * This geometry is accessed synchronously, although it is written such
  * that painting may still be executed asynchronously.
@@ -43,7 +43,7 @@ import sun.awt.RepaintArea;
 final class XRepaintArea extends RepaintArea {
 
     /**
-     * Calls <code>Component.update(Graphics)</code> with given Graphics.
+     * Calls {@code Component.update(Graphics)} with given Graphics.
      */
     protected void updateComponent(Component comp, Graphics g) {
         if (comp != null) {
@@ -54,7 +54,7 @@ final class XRepaintArea extends RepaintArea {
     }
 
     /**
-     * Calls <code>Component.paint(Graphics)</code> with given Graphics.
+     * Calls {@code Component.paint(Graphics)} with given Graphics.
      */
     protected void paintComponent(Component comp, Graphics g) {
         if (comp != null) {

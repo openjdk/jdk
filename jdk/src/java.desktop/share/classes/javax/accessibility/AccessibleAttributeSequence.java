@@ -43,8 +43,8 @@ import javax.swing.text.AttributeSet;
 /**
  * This class collects together the span of text that share the same
  * contiguous set of attributes, along with that set of attributes.  It
- * is used by implementors of the class <code>AccessibleContext</code> in
- * order to generate <code>ACCESSIBLE_TEXT_ATTRIBUTES_CHANGED</code> events.
+ * is used by implementors of the class {@code AccessibleContext} in
+ * order to generate {@code ACCESSIBLE_TEXT_ATTRIBUTES_CHANGED} events.
  *
  * @see javax.accessibility.AccessibleContext
  * @see javax.accessibility.AccessibleContext#ACCESSIBLE_TEXT_ATTRIBUTES_CHANGED
@@ -60,12 +60,12 @@ public class AccessibleAttributeSequence {
     public AttributeSet attributes;
 
     /**
-     * Constructs an <code>AccessibleAttributeSequence</code> with the given
+     * Constructs an {@code AccessibleAttributeSequence} with the given
      * parameters.
      *
      * @param start the beginning index of the span of text
      * @param end the ending index of the span of text
-     * @param attr the <code>AttributeSet</code> shared by this text span
+     * @param attr the {@code AttributeSet} shared by this text span
      *
      * @since 1.6
      */

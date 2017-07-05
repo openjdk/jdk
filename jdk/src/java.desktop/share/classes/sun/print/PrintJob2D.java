@@ -928,23 +928,23 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
     /**
      * Prints the page at the specified index into the specified
      * {@link Graphics} context in the specified
-     * format.  A <code>PrinterJob</code> calls the
-     * <code>Printable</code> interface to request that a page be
+     * format.  A {@code PrinterJob} calls the
+     * {@code Printable} interface to request that a page be
      * rendered into the context specified by
-     * <code>graphics</code>.  The format of the page to be drawn is
-     * specified by <code>pageFormat</code>.  The zero based index
-     * of the requested page is specified by <code>pageIndex</code>.
+     * {@code graphics}.  The format of the page to be drawn is
+     * specified by {@code pageFormat}.  The zero based index
+     * of the requested page is specified by {@code pageIndex}.
      * If the requested page does not exist then this method returns
      * NO_SUCH_PAGE; otherwise PAGE_EXISTS is returned.
-     * The <code>Graphics</code> class or subclass implements the
+     * The {@code Graphics} class or subclass implements the
      * {@link java.awt.PrintGraphics} interface to provide additional
-     * information.  If the <code>Printable</code> object
+     * information.  If the {@code Printable} object
      * aborts the print job then it throws a {@link PrinterException}.
      * @param graphics the context into which the page is drawn
      * @param pageFormat the size and orientation of the page being drawn
      * @param pageIndex the zero based index of the page to be drawn
      * @return PAGE_EXISTS if the page is rendered successfully
-     *         or NO_SUCH_PAGE if <code>pageIndex</code> specifies a
+     *         or NO_SUCH_PAGE if {@code pageIndex} specifies a
      *         non-existent page.
      * @exception java.awt.print.PrinterException
      *         thrown when the print job is terminated.

@@ -45,7 +45,7 @@ import javax.print.attribute.PrintJobAttribute;
  * states, the JobMediaSheetsCompleted value is the final value for the job.
  * <P>
  * <B>IPP Compatibility:</B> The integer value gives the IPP integer value. The
- * category name returned by <CODE>getName()</CODE> gives the IPP attribute
+ * category name returned by {@code getName()} gives the IPP attribute
  * name.
  *
  * @see JobMediaSheets
@@ -68,7 +68,7 @@ public final class JobMediaSheetsCompleted extends IntegerSyntax
      * @param  value  Integer value.
      *
      * @exception  IllegalArgumentException
-     *   (Unchecked exception) Thrown if <CODE>value</CODE> is less than 0.
+     *   (Unchecked exception) Thrown if {@code value} is less than 0.
      */
     public JobMediaSheetsCompleted(int value) {
         super (value, 0, Integer.MAX_VALUE);
@@ -80,17 +80,17 @@ public final class JobMediaSheetsCompleted extends IntegerSyntax
      * conditions must be true:
      * <OL TYPE=1>
      * <LI>
-     * <CODE>object</CODE> is not null.
+     * {@code object} is not null.
      * <LI>
-     * <CODE>object</CODE> is an instance of class JobMediaSheetsCompleted.
+     * {@code object} is an instance of class JobMediaSheetsCompleted.
      * <LI>
      * This job media sheets completed attribute's value and
-     * <CODE>object</CODE>'s value are equal.
+     * {@code object}'s value are equal.
      * </OL>
      *
      * @param  object  Object to compare to.
      *
-     * @return  True if <CODE>object</CODE> is equivalent to this job media
+     * @return  True if {@code object} is equivalent to this job media
      *          sheets completed attribute, false otherwise.
      */
     public boolean equals(Object object) {
@@ -117,7 +117,7 @@ public final class JobMediaSheetsCompleted extends IntegerSyntax
      * instance.
      * <P>
      * For class JobMediaSheetsCompleted, the category name is
-     * <CODE>"job-media-sheets-completed"</CODE>.
+     * {@code "job-media-sheets-completed"}.
      *
      * @return  Attribute category name.
      */

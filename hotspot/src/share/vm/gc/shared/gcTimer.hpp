@@ -185,16 +185,4 @@ class TimePartitionPhasesIterator {
   virtual GCPhase* next();
 };
 
-
-/////////////// Unit tests ///////////////
-
-#ifndef PRODUCT
-
-class GCTimerAllTest {
- public:
-  static void all();
-};
-
-#endif
-
 #endif // SHARE_VM_GC_SHARED_GCTIMER_HPP

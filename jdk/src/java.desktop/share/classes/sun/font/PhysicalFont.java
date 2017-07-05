@@ -52,7 +52,7 @@ public abstract class PhysicalFont extends Font2D {
     /**
      * Opens the file (temporarily) and does basic verification.
      * Initializes the CMAP
-     * @throws FontFormatException - if the font can't be opened
+     * @throws FontFormatException if the font can't be opened
      * or fails verification,  or there's no usable cmap
      */
     PhysicalFont(String platname, Object nativeNames)

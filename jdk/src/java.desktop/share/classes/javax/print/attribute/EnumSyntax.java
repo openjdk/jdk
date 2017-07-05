@@ -68,7 +68,7 @@ import java.io.Serializable;
  *         }
  *     }
  * </PRE>
- * You can then write code that uses the <CODE>==</CODE> and <CODE>!=</CODE>
+ * You can then write code that uses the {@code ==} and {@code !=}
  * operators to test enumeration values; for example:
  * <PRE>
  *     Bach theComposer;
@@ -77,8 +77,8 @@ import java.io.Serializable;
  *         System.out.println ("The greatest composer of all time!");
  *     }
  * </PRE>
- * The <CODE>equals()</CODE> method for an enumeration class just does a test
- * for identical objects (<CODE>==</CODE>).
+ * The {@code equals()} method for an enumeration class just does a test
+ * for identical objects ({@code ==}).
  * <P>
  * You can convert an enumeration value to a string by calling {@link
  * #toString() toString()}. The string is obtained from a table
@@ -97,8 +97,8 @@ import java.io.Serializable;
  * You can define a subclass of an enumeration class that extends it with
  * additional enumeration values. The subclass's enumeration values' integer
  * values need not be distinct from the superclass's enumeration values' integer
- * values; the <CODE>==</CODE>, <CODE>!=</CODE>, <CODE>equals()</CODE>, and
- * <CODE>toString()</CODE> methods will still work properly even if the subclass
+ * values; the {@code ==}, {@code !=}, {@code equals()}, and
+ * {@code toString()} methods will still work properly even if the subclass
  * uses some of the same integer values as the superclass. However, the
  * application in which the enumeration class and subclass are used may need to
  * have distinct integer values in the superclass and subclass.
@@ -182,7 +182,7 @@ public abstract class EnumSyntax implements Serializable, Cloneable {
      *     enumeration value table is null. (Note: {@link
      *     java.io.InvalidObjectException InvalidObjectException} is a subclass
      *     of {@link java.io.ObjectStreamException ObjectStreamException}, which
-     *     <CODE>readResolve()</CODE> is declared to throw.)
+     *     {@code readResolve()} is declared to throw.)
      */
     protected Object readResolve() throws ObjectStreamException {
 

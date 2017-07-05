@@ -23,13 +23,8 @@
 
 package pool.subpack;
 
-import jdk.test.lib.Pair;
 import pool.MethodHolder;
-
-import java.lang.reflect.Executable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Callable;
+import pool.SubMethodHolder;
 
 /**
  * This is a clone of the pool.sub.Klass used to test pattern matching
@@ -54,7 +49,7 @@ public class KlassDup extends MethodHolder {
     }
 
     // Internal class and constructor
-    public static class Internal extends MethodHolder {
+    public static class Internal extends SubMethodHolder {
         public Internal() { }
 
         public Double method(Float fl) { return Double.valueOf(fl); }
@@ -66,28 +61,6 @@ public class KlassDup extends MethodHolder {
         public static Integer smethod(Integer arg) {
             Integer var = 1024;
             return arg + var;
-        }
-
-        @Override
-        public List<Pair<Executable, Callable<?>>> getAllMethods() {
-            List<Pair<Executable, Callable<?>>> pairs = new ArrayList<>();
-            Pair<Executable, Callable<?>> pair = new Pair<>
-                    (getMethod(this, "method", Float.class),
-                            () -> this.method(3.141592f));
-            pairs.add(pair);
-            pair = new Pair<>(getMethod(this, "methodDup"), this::methodDup);
-            pairs.add(pair);
-            pair = new Pair<>(getMethod(this, "smethod", Integer.class),
-                    () -> smethod(1024));
-            pairs.add(pair);
-            try {
-                pair = new Pair<>(this.getClass().getConstructor(),
-                        Internal::new);
-                pairs.add(pair);
-            } catch (NoSuchMethodException e) {
-                throw new Error("TESTBUG: unable to get constructor");
-            }
-            return pairs;
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/**
+ * @test
+ * @bug 8148115
+ */
+
 package org.openjdk.tests.java.util.stream;
 
 import java.util.*;
@@ -59,15 +65,19 @@ public class FindFirstOpTest extends OpTestCase {
     }
 
     void exerciseStream(TestData.OfRef<Integer> data, Function<Stream<Integer>, Stream<Integer>> fs) {
-        Optional<Integer> r = exerciseTerminalOps(data, fs, s -> s.findFirst());
-        if (r.isPresent()) {
-            Iterator<Integer> i = fs.apply(data.stream()).iterator();
-            assertTrue(i.hasNext());
-            assertEquals(i.next(), r.get());
-        }
-        else {
-            assertFalse(fs.apply(data.stream()).iterator().hasNext());
-        }
+        Iterator<Integer> i = fs.apply(data.stream()).iterator();
+        Optional<Integer> expected = i.hasNext() ? Optional.of(i.next()) : Optional.empty();
+        withData(data).terminal(fs, s -> s.findFirst())
+                      .expectedResult(expected)
+                      .resultAsserter((act, exp, ord, par) -> {
+                          if (par & !ord) {
+                              assertContains(act, fs.apply(data.stream()).iterator());
+                          }
+                          else {
+                              assertEquals(act, exp);
+                          }
+                      })
+                      .exercise();
     }
 
     @Test(dataProvider = "IntStreamTestData", dataProviderClass = IntStreamTestDataProvider.class)

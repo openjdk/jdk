@@ -32,13 +32,13 @@ import java.awt.peer.ComponentPeer;
  * of child Components in a Container. From a particular focus cycle root, the
  * policy makes a pre-order traversal of the Component hierarchy, and traverses
  * a Container's children according to the ordering of the array returned by
- * <code>Container.getComponents()</code>. Portions of the hierarchy that are
+ * {@code Container.getComponents()}. Portions of the hierarchy that are
  * not visible and displayable will not be searched.
  * <p>
  * If client code has explicitly set the focusability of a Component by either
- * overriding <code>Component.isFocusTraversable()</code> or
- * <code>Component.isFocusable()</code>, or by calling
- * <code>Component.setFocusable()</code>, then a DefaultFocusTraversalPolicy
+ * overriding {@code Component.isFocusTraversable()} or
+ * {@code Component.isFocusable()}, or by calling
+ * {@code Component.setFocusable()}, then a DefaultFocusTraversalPolicy
  * behaves exactly like a ContainerOrderFocusTraversalPolicy. If, however, the
  * Component is relying on default focusability, then a
  * DefaultFocusTraversalPolicy will reject all Components with non-focusable
@@ -80,9 +80,9 @@ public class DefaultFocusTraversalPolicy
      * focus owner. The Component must be visible, displayable, and enabled
      * to be accepted. If client code has explicitly set the focusability
      * of the Component by either overriding
-     * <code>Component.isFocusTraversable()</code> or
-     * <code>Component.isFocusable()</code>, or by calling
-     * <code>Component.setFocusable()</code>, then the Component will be
+     * {@code Component.isFocusTraversable()} or
+     * {@code Component.isFocusable()}, or by calling
+     * {@code Component.setFocusable()}, then the Component will be
      * accepted if and only if it is focusable. If, however, the Component is
      * relying on default focusability, then all Canvases, Labels, Panels,
      * Scrollbars, ScrollPanes, Windows, and lightweight Components will be
@@ -90,8 +90,8 @@ public class DefaultFocusTraversalPolicy
      *
      * @param aComponent the Component whose fitness as a focus owner is to
      *        be tested
-     * @return <code>true</code> if aComponent meets the above requirements;
-     *         <code>false</code> otherwise
+     * @return {@code true} if aComponent meets the above requirements;
+     *         {@code false} otherwise
      */
     protected boolean accept(Component aComponent) {
         if (!(aComponent.isVisible() && aComponent.isDisplayable() &&

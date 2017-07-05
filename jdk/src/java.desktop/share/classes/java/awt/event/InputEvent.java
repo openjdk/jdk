@@ -315,8 +315,8 @@ public abstract class InputEvent extends ComponentEvent {
      * Constructs an InputEvent object with the specified source component,
      * modifiers, and type.
      * <p> This method throws an
-     * <code>IllegalArgumentException</code> if <code>source</code>
-     * is <code>null</code>.
+     * {@code IllegalArgumentException} if {@code source}
+     * is {@code null}.
      *
      * @param source the object where the event originated
      * @param id           the integer that identifies the event type.
@@ -336,7 +336,7 @@ public abstract class InputEvent extends ComponentEvent {
      *                     Passing negative parameter
      *                     is not recommended.
      *                     Zero value means that no modifiers were passed
-     * @throws IllegalArgumentException if <code>source</code> is null
+     * @throws IllegalArgumentException if {@code source} is null
      * @see #getSource()
      * @see #getID()
      * @see #getWhen()
@@ -442,16 +442,16 @@ public abstract class InputEvent extends ComponentEvent {
      * <b>button 2</b>, and then releases them in the same order,
      * the following sequence of events is generated:
      * <PRE>
-     *    <code>MOUSE_PRESSED</code>:  <code>BUTTON1_DOWN_MASK</code>
-     *    <code>MOUSE_PRESSED</code>:  <code>BUTTON1_DOWN_MASK | BUTTON2_DOWN_MASK</code>
-     *    <code>MOUSE_RELEASED</code>: <code>BUTTON2_DOWN_MASK</code>
-     *    <code>MOUSE_CLICKED</code>:  <code>BUTTON2_DOWN_MASK</code>
-     *    <code>MOUSE_RELEASED</code>:
-     *    <code>MOUSE_CLICKED</code>:
+     *    {@code MOUSE_PRESSED}:  {@code BUTTON1_DOWN_MASK}
+     *    {@code MOUSE_PRESSED}:  {@code BUTTON1_DOWN_MASK | BUTTON2_DOWN_MASK}
+     *    {@code MOUSE_RELEASED}: {@code BUTTON2_DOWN_MASK}
+     *    {@code MOUSE_CLICKED}:  {@code BUTTON2_DOWN_MASK}
+     *    {@code MOUSE_RELEASED}:
+     *    {@code MOUSE_CLICKED}:
      * </PRE>
      * <P>
      * It is not recommended to compare the return value of this method
-     * using <code>==</code> because new modifiers can be added in the future.
+     * using {@code ==} because new modifiers can be added in the future.
      * For example, the appropriate way to check that SHIFT and BUTTON1 are
      * down, but CTRL is up is demonstrated by the following code:
      * <PRE>
@@ -494,7 +494,7 @@ public abstract class InputEvent extends ComponentEvent {
      * Returns a String describing the extended modifier keys and
      * mouse buttons, such as "Shift", "Button1", or "Ctrl+Shift".
      * These strings can be localized by changing the
-     * <code>awt.properties</code> file.
+     * {@code awt.properties} file.
      * <p>
      * Note that passing negative parameter is incorrect,
      * and will cause the returning an unspecified string.
