@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -983,9 +983,7 @@ void PSParallelCompact::pre_compact(PreGCValues* pre_gc_values)
   // We need to track unique mark sweep invocations as well.
   _total_invocations++;
 
-  if (PrintHeapAtGC) {
-    Universe::print_heap_before_gc();
-  }
+  heap->print_heap_before_gc();
 
   // Fill in TLABs
   heap->accumulate_statistics_all_tlabs();
@@ -1838,7 +1836,6 @@ void PSParallelCompact::summary_phase_msg(SpaceId dst_space_id,
 void PSParallelCompact::summary_phase(ParCompactionManager* cm,
                                       bool maximum_compaction)
 {
-  EventMark m("2 summarize");
   TraceTime tm("summary phase", print_phases(), true, gclog_or_tty);
   // trace("2");
 
@@ -2237,9 +2234,7 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
 
   collection_exit.update();
 
-  if (PrintHeapAtGC) {
-    Universe::print_heap_after_gc();
-  }
+  heap->print_heap_after_gc();
   if (PrintGCTaskTimeStamps) {
     gclog_or_tty->print_cr("VM-Thread " INT64_FORMAT " " INT64_FORMAT " "
                            INT64_FORMAT,
@@ -2352,7 +2347,6 @@ GCTaskManager* const PSParallelCompact::gc_task_manager() {
 void PSParallelCompact::marking_phase(ParCompactionManager* cm,
                                       bool maximum_heap_compaction) {
   // Recursively traverse all live objects and mark them
-  EventMark m("1 mark object");
   TraceTime tm("marking phase", print_phases(), true, gclog_or_tty);
 
   ParallelScavengeHeap* heap = gc_heap();
@@ -2438,7 +2432,6 @@ static PSAlwaysTrueClosure always_true;
 
 void PSParallelCompact::adjust_roots() {
   // Adjust the pointers to reflect the new locations
-  EventMark m("3 adjust roots");
   TraceTime tm("adjust roots", print_phases(), true, gclog_or_tty);
 
   // General strong roots.
@@ -2469,7 +2462,6 @@ void PSParallelCompact::adjust_roots() {
 }
 
 void PSParallelCompact::compact_perm(ParCompactionManager* cm) {
-  EventMark m("4 compact perm");
   TraceTime tm("compact perm gen", print_phases(), true, gclog_or_tty);
   // trace("4");
 
@@ -2647,7 +2639,6 @@ void PSParallelCompact::enqueue_region_stealing_tasks(
 }
 
 void PSParallelCompact::compact() {
-  EventMark m("5 compact");
   // trace("5");
   TraceTime tm("compaction phase", print_phases(), true, gclog_or_tty);
 
@@ -3502,4 +3493,3 @@ void PSParallelCompact::compact_prologue() {
   _updated_int_array_klass_obj = (klassOop)
     summary_data().calc_new_pointer(Universe::intArrayKlassObj());
 }
-
