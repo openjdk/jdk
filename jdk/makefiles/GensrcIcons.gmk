@@ -29,7 +29,7 @@ GENSRC_ICONS_TMP := $(JDK_OUTPUTDIR)/gensrc_icons
 GENSRC_ICONS_DST := $(GENSRC_ICONS_TMP)/sun/awt/X11
 
 ifdef OPENJDK
-	ICONS_PATH_PREFIX := $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)
+	ICONS_PATH_PREFIX := $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)
 else
 	ICONS_PATH_PREFIX := $(JDK_TOPDIR)/src/closed/solaris
 endif
@@ -41,7 +41,7 @@ GENSRC_ICONS_SRC += \
     $(ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon48.png
 
 
-ICONPATH := $(JDK_TOPDIR)/src/$(LEGACY_HOST_OS_API)/classes/sun/awt/X11
+ICONPATH := $(JDK_TOPDIR)/src/$(LEGACY_OPENJDK_TARGET_OS_API)/classes/sun/awt/X11
 
 GENSRC_ICONS_SRC += \
    $(ICONPATH)/security-icon-bw16.png \
@@ -86,7 +86,7 @@ $$($1_TARGET32) : $2/$1 $(GENSRC_ICONS_TMP)/_the.dir
 	$(ECHO) "public class $$($1_NAME32) {" >> $$@.tmp
 	$(ECHO) "public static int[] $$($1_SHORTNAME) = { " >> $$@.tmp
 # TODO FIX FIX FIX
-ifneq ($(PLATFORM),macosx)
+ifneq ($(OPENJDK_TARGET_OS),macosx)
 	$(CAT) $$< | $(TOOL_TOBIN) >> $$@.tmp
 endif
 	$(ECHO) "}; }" >> $$@.tmp
@@ -100,7 +100,7 @@ $$($1_TARGET64) : $2/$1 $(GENSRC_ICONS_TMP)/_the.dir
 	$(ECHO) "public class $$($1_NAME64) {" >> $$@.tmp
 	$(ECHO) "public static long[] $$($1_SHORTNAME) = { " >> $$@.tmp
 # TODO FIX FIX FIX
-ifneq ($(PLATFORM),macosx)
+ifneq ($(OPENJDK_TARGET_OS),macosx)
 	$(CAT) $$< | $(TOOL_TOBIN) >> $$@.tmp
 endif
 	$(ECHO) "}; }" >> $$@.tmp

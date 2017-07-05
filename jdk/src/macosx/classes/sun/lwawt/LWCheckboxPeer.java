@@ -61,8 +61,8 @@ final class LWCheckboxPeer
     }
 
     @Override
-    public void initialize() {
-        super.initialize();
+    void initializeImpl() {
+        super.initializeImpl();
         setLabel(getTarget().getLabel());
         setState(getTarget().getState());
         setCheckboxGroup(getTarget().getCheckboxGroup());

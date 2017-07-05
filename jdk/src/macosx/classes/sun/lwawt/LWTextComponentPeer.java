@@ -63,8 +63,8 @@ abstract class LWTextComponentPeer<T extends TextComponent, D extends JComponent
     }
 
     @Override
-    public void initialize() {
-        super.initialize();
+    void initializeImpl() {
+        super.initializeImpl();
         synchronized (getDelegateLock()) {
             // This listener should be added before setText().
             getTextComponent().getDocument().addDocumentListener(this);
