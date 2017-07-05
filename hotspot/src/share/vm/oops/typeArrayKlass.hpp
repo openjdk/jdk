@@ -72,16 +72,46 @@ class TypeArrayKlass : public ArrayKlass {
   // Copying
   void  copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS);
 
-  // Iteration
-  int oop_oop_iterate(oop obj, ExtendedOopClosure* blk);
-  int oop_oop_iterate_m(oop obj, ExtendedOopClosure* blk, MemRegion mr);
+  // GC specific object visitors
+  //
+  // Mark Sweep
+  void oop_ms_follow_contents(oop obj);
+  int  oop_ms_adjust_pointers(oop obj);
+#if INCLUDE_ALL_GCS
+  // Parallel Scavenge
+  void oop_ps_push_contents(  oop obj, PSPromotionManager* pm);
+  // Parallel Compact
+  void oop_pc_follow_contents(oop obj, ParCompactionManager* cm);
+  void oop_pc_update_pointers(oop obj);
+#endif
 
-  // Garbage collection
-  void oop_follow_contents(oop obj);
-  int  oop_adjust_pointers(oop obj);
+  // Oop iterators. Since there are no oops in TypeArrayKlasses,
+  // these functions only return the size of the object.
 
-  // Parallel Scavenge and Parallel Old
-  PARALLEL_GC_DECLS
+ private:
+  // The implementation used by all oop_oop_iterate functions in TypeArrayKlasses.
+  inline int oop_oop_iterate_impl(oop obj, ExtendedOopClosure* closure);
+
+ public:
+
+#define TypeArrayKlass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)    \
+  int oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure);       \
+  int oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* closure,    \
+                                     MemRegion mr);                       \
+  int oop_oop_iterate_range##nv_suffix(oop obj, OopClosureType* closure,  \
+                                     int start, int end);
+
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(TypeArrayKlass_OOP_OOP_ITERATE_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(TypeArrayKlass_OOP_OOP_ITERATE_DECL)
+
+#if INCLUDE_ALL_GCS
+#define TypeArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)  \
+  int  oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure);
+
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(TypeArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(TypeArrayKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
+#endif // INCLUDE_ALL_GCS
+
 
  protected:
   // Find n'th dimensional array

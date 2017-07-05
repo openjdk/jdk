@@ -582,13 +582,14 @@ name_for_methodPtr(jvm_agent_t* J, uint64_t methodPtr, char * result, size_t siz
   CHECK_FAIL(err);
 
   result[0] = '\0';
-  strncat(result, klassString, size);
-  size -= strlen(klassString);
-  strncat(result, ".", size);
-  size -= 1;
-  strncat(result, nameString, size);
-  size -= strlen(nameString);
-  strncat(result, signatureString, size);
+  if (snprintf(result, size,
+    "%s.%s%s",
+    klassString,
+    nameString,
+    signatureString) >= size) {
+    // truncation
+    goto fail;
+  }
 
   if (nameString != NULL) free(nameString);
   if (klassString != NULL) free(klassString);
@@ -1095,9 +1096,9 @@ name_for_nmethod(jvm_agent_t* J,
       CHECK_FAIL(err);
   }
   if (deoptimized) {
-    strncat(result + 1, " [deoptimized frame]; ", size-1);
+    strncat(result, " [deoptimized frame]; ", size - strlen(result) - 1);
   } else {
-    strncat(result + 1, " [compiled] ", size-1);
+    strncat(result, " [compiled] ", size - strlen(result) - 1);
   }
   if (debug)
       fprintf(stderr, "name_for_nmethod: END: method name: %s, vf_cnt: %d\n\n",

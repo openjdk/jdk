@@ -130,8 +130,9 @@ endif
 $(XLIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
 	@echo $(LOG_INFO) Making $@
 	$(QUIETLY) mkdir -p $(XLIBJVM_DIR) ; \
-	$(CC) $(SYMFLAG) $(ARCHFLAG/$(ISA)) -D$(TYPE) -I. \
-		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c -lc -lthread -ldoor
+	$(CC) $(SYMFLAG) $(ARCHFLAG/$(ISA)) -D$(TYPE) -I. $(EXTRA_CFLAGS) \
+	    $(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c \
+	    $(EXTRA_LDFLAGS) -lc -lthread -ldoor
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(XLIBJVM_DTRACE_DEBUGINFO)
 # Do this part in the $(XLIBJVM_DIR) subdir so $(XLIBJVM_DIR) is not
@@ -216,8 +217,9 @@ endif
 
 $(LIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(XLIBJVM_DTRACE) $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
 	@echo $(LOG_INFO) Making $@
-	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I.  \
-		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c -lc -lthread -ldoor
+	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I. $(EXTRA_CFLAGS) \
+	    $(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c \
+	    $(EXTRA_LDFLAGS) -lc -lthread -ldoor
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 	$(QUIETLY) $(OBJCOPY) --only-keep-debug $@ $(LIBJVM_DTRACE_DEBUGINFO)
 	$(QUIETLY) $(OBJCOPY) --add-gnu-debuglink=$(LIBJVM_DTRACE_DEBUGINFO) $@

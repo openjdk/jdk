@@ -152,6 +152,7 @@ void ProfileData::tab(outputStream* st, bool first) const {
 
 void BitData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "BitData", extra);
+  st->cr();
 }
 
 // ==================================================================

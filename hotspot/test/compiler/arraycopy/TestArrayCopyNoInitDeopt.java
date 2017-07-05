@@ -116,44 +116,46 @@ public class TestArrayCopyNoInitDeopt {
                 throw new RuntimeException("m1 deoptimized again");
             }
 
-            // Same test as above but with speculative types
+            if (WHITE_BOX.getUintxVMFlag("TypeProfileLevel") == 20) {
+                // Same test as above but with speculative types
 
-            // Warm up & make sure we collect type profiling
-            for (int i = 0; i < 20000; i++) {
-                m2(src);
-            }
+                // Warm up & make sure we collect type profiling
+                for (int i = 0; i < 20000; i++) {
+                    m2(src);
+                }
 
-            // And make sure m2 is compiled by C2
-            WHITE_BOX.enqueueMethodForCompilation(method_m2, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
+                // And make sure m2 is compiled by C2
+                WHITE_BOX.enqueueMethodForCompilation(method_m2, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
 
-            if (!WHITE_BOX.isMethodCompiled(method_m2)) {
-                throw new RuntimeException("m2 not compiled");
-            }
+                if (!WHITE_BOX.isMethodCompiled(method_m2)) {
+                    throw new RuntimeException("m2 not compiled");
+                }
 
-            // should deoptimize for speculative type check
-            if (!deoptimize(method_m2, src_obj)) {
-                throw new RuntimeException("m2 not deoptimized");
-            }
+                // should deoptimize for speculative type check
+                if (!deoptimize(method_m2, src_obj)) {
+                    throw new RuntimeException("m2 not deoptimized");
+                }
 
-            WHITE_BOX.enqueueMethodForCompilation(method_m2, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
+                WHITE_BOX.enqueueMethodForCompilation(method_m2, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
 
-            if (!WHITE_BOX.isMethodCompiled(method_m2)) {
-                throw new RuntimeException("m2 not recompiled");
-            }
+                if (!WHITE_BOX.isMethodCompiled(method_m2)) {
+                    throw new RuntimeException("m2 not recompiled");
+                }
 
-            // should deoptimize for actual type check
-            if (!deoptimize(method_m2, src_obj)) {
-                throw new RuntimeException("m2 not deoptimized");
-            }
+                // should deoptimize for actual type check
+                if (!deoptimize(method_m2, src_obj)) {
+                    throw new RuntimeException("m2 not deoptimized");
+                }
 
-            WHITE_BOX.enqueueMethodForCompilation(method_m2, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
+                WHITE_BOX.enqueueMethodForCompilation(method_m2, CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION);
 
-            if (!WHITE_BOX.isMethodCompiled(method_m2)) {
-                throw new RuntimeException("m2 not recompiled");
-            }
+                if (!WHITE_BOX.isMethodCompiled(method_m2)) {
+                    throw new RuntimeException("m2 not recompiled");
+                }
 
-            if (deoptimize(method_m2, src_obj)) {
-                throw new RuntimeException("m2 deoptimized again");
+                if (deoptimize(method_m2, src_obj)) {
+                    throw new RuntimeException("m2 deoptimized again");
+                }
             }
         }
     }

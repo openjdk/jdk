@@ -908,7 +908,7 @@ char *ArchDesc::stack_or_reg_mask(OperandForm  &opForm) {
 void ArchDesc::set_stack_or_reg(const char *reg_class_name) {
   if( _register ) {
     RegClass *reg_class  = _register->getRegClass(reg_class_name);
-    reg_class->_stack_or_reg = true;
+    reg_class->set_stack_version(true);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @bug 7162400
  * @key regression
  * @summary Regression test for attach issue where stale pid files in /tmp lead to connection issues
- * @ignore 8024055
  * @library /testlibrary
  * @build com.oracle.java.testlibrary.* AttachWithStalePidFileTarget
  * @run main AttachWithStalePidFile
@@ -79,9 +78,7 @@ public class AttachWithStalePidFile {
       // wait for vm.paused file to be created and delete it once we find it.
       waitForAndResumeVM(pid);
 
-      // unfortunately there's no reliable way to know the VM is ready to receive the
-      // attach request so we have to do an arbitrary sleep.
-      Thread.sleep(5000);
+      waitForTargetReady(target);
 
       HotSpotVirtualMachine vm = (HotSpotVirtualMachine)VirtualMachine.attach(((Integer)pid).toString());
       BufferedReader remoteDataReader = new BufferedReader(new InputStreamReader(vm.remoteDataDump()));
@@ -101,6 +98,16 @@ public class AttachWithStalePidFile {
     }
   }
 
+  private static void waitForTargetReady(Process target) throws IOException {
+    BufferedReader br = new BufferedReader(new InputStreamReader(target.getInputStream()));
+    String line = br.readLine();
+    // wait for the ready message having been printed or EOF (line == null)
+    while (line != null && !line.equals(AttachWithStalePidFileTarget.READY_MSG)) {
+        line = br.readLine();
+    }
+    // target VM ready
+  }
+
   private static Path createJavaPidFile(int pid) throws Exception {
     Path pidFile = Paths.get("/tmp/.java_pid" + pid);
     if(Files.exists(pidFile)) {
@@ -108,8 +115,10 @@ public class AttachWithStalePidFile {
         Files.delete(pidFile);
       }
       catch(FileSystemException e) {
-        if(e.getReason().equals("Operation not permitted")) {
+        if(e.getReason().matches("Operation not permitted|Not owner")) {
           System.out.println("Unable to remove exisiting stale PID file" + pidFile);
+          System.out.println("===================================================");
+          e.printStackTrace(System.out);
           return null;
         }
         throw e;
