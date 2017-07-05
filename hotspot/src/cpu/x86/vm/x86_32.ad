@@ -1367,22 +1367,6 @@ int emit_deopt_handler(CodeBuffer& cbuf) {
   return offset;
 }
 
-
-const bool Matcher::match_rule_supported(int opcode) {
-  if (!has_match_rule(opcode))
-    return false;
-
-  switch (opcode) {
-    case Op_PopCountI:
-    case Op_PopCountL:
-      if (!UsePopCountInstruction)
-        return false;
-    break;
-  }
-  
-  return true;  // Per default match rules are supported.
-}
-
 int Matcher::regnum_to_fpu_offset(int regnum) {
   return regnum - 32; // The FP registers are in the second chunk
 }

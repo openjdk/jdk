@@ -1773,6 +1773,8 @@ void IdealLoopTree::dump_head( ) const {
     if (stride_con > 0) tty->print("+");
     tty->print("%d", stride_con);
 
+    tty->print(" (%d iters) ", (int)cl->profile_trip_cnt());
+
     if (cl->is_pre_loop ()) tty->print(" pre" );
     if (cl->is_main_loop()) tty->print(" main");
     if (cl->is_post_loop()) tty->print(" post");
