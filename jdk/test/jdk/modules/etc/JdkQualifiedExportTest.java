@@ -40,7 +40,6 @@ import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
-import java.lang.reflect.Module;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;

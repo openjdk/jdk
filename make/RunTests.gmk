@@ -160,6 +160,7 @@ endef
 ifeq ($(TEST), )
   $(info No test selection given in TEST!)
   $(info Please use e.g. 'run-test TEST=tier1' or 'run-test-tier1')
+  $(info See common/doc/testing.[md|html] for help)
   $(error Cannot continue)
 endif
 
@@ -182,6 +183,7 @@ $(foreach test, $(TEST), \
 
 ifneq ($(UNKNOWN_TEST), )
   $(info Unknown test selection: '$(UNKNOWN_TEST)')
+  $(info See common/doc/testing.[md|html] for help)
   $(error Cannot continue)
 endif
 

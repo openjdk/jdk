@@ -443,18 +443,25 @@ Link Africa/Nairobi Indian/Mayotte
 # See Africa/Johannesburg.
 
 # Liberia
-# From Paul Eggert (2006-03-22):
-# In 1972 Liberia was the last country to switch
-# from a UTC offset that was not a multiple of 15 or 20 minutes.
-# Howse reports that it was in honor of their president's birthday.
-# Shank & Pottenger report the date as May 1, whereas Howse reports Jan;
-# go with Shanks & Pottenger.
-# For Liberia before 1972, Shanks & Pottenger report -0:44, whereas Howse and
-# Whitman each report -0:44:30; go with the more precise figure.
+#
+# From Paul Eggert (2017-03-02):
+#
+# The Nautical Almanac for the Year 1970, p 264, is the source for -0:44:30.
+#
+# In 1972 Liberia was the last country to switch from a UTC offset
+# that was not a multiple of 15 or 20 minutes.  The 1972 change was on
+# 1972-01-07, according to an entry dated 1972-01-04 on p 330 of:
+# Presidential Papers: First year of the administration of
+# President William R. Tolbert, Jr., July 23, 1971-July 31, 1972.
+# Monrovia: Executive Mansion.
+#
+# Use the abbreviation "MMT" before 1972, as the more-accurate numeric
+# abbreviation "-004430" would be one byte over the POSIX limit.
+#
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Africa/Monrovia	-0:43:08 -	LMT	1882
 			-0:43:08 -	MMT	1919 Mar # Monrovia Mean Time
-			-0:44:30 -	-004430	1972 May
+			-0:44:30 -	MMT	1972 Jan 7 # approximately MMT
 			 0:00	-	GMT
 
 ###############################################################################

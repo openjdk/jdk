@@ -22,13 +22,21 @@
  */
 package jdk.vm.ci.hotspot;
 
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
+import java.lang.reflect.Array;
+
+import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.Constant;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaKind;
 import jdk.vm.ci.meta.MemoryAccessProvider;
+import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.PrimitiveConstant;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
  * HotSpot implementation of {@link MemoryAccessProvider}.
@@ -41,12 +49,93 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
         this.runtime = runtime;
     }
 
-    private static Object asObject(Constant base) {
+    /**
+     * Gets the object boxed by {@code base} that is about to have a value of kind {@code kind} read
+     * from it at the offset {@code displacement}.
+     *
+     * @param base constant value containing the base address for a pending read
+     * @return {@code null} if {@code base} does not box an object otherwise the object boxed in
+     *         {@code base}
+     */
+    private Object asObject(Constant base, JavaKind kind, long displacement) {
         if (base instanceof HotSpotObjectConstantImpl) {
-            return ((HotSpotObjectConstantImpl) base).object();
-        } else {
-            return null;
+            HotSpotObjectConstantImpl constant = (HotSpotObjectConstantImpl) base;
+            HotSpotResolvedObjectType type = constant.getType();
+            Object object = constant.object();
+            checkRead(kind, displacement, type, object);
+            return object;
         }
+        return null;
+    }
+
+    /**
+     * Offset of injected {@code java.lang.Class::oop_size} field. No need to make {@code volatile}
+     * as initialization is idempotent.
+     */
+    private long oopSizeOffset;
+
+    private static int computeOopSizeOffset(HotSpotJVMCIRuntimeProvider runtime) {
+        MetaAccessProvider metaAccess = runtime.getHostJVMCIBackend().getMetaAccess();
+        ResolvedJavaType staticType = metaAccess.lookupJavaType(Class.class);
+        for (ResolvedJavaField f : staticType.getInstanceFields(false)) {
+            if (f.getName().equals("oop_size")) {
+                int offset = ((HotSpotResolvedJavaField) f).offset();
+                assert offset != 0 : "not expecting offset of java.lang.Class::oop_size to be 0";
+                return offset;
+            }
+        }
+        throw new JVMCIError("Could not find injected java.lang.Class::oop_size field");
+    }
+
+    private boolean checkRead(JavaKind kind, long displacement, HotSpotResolvedObjectType type, Object object) {
+        if (type.isArray()) {
+            ResolvedJavaType componentType = type.getComponentType();
+            JavaKind componentKind = componentType.getJavaKind();
+            final int headerSize = getArrayBaseOffset(componentKind);
+            int sizeOfElement = getArrayIndexScale(componentKind);
+            int length = Array.getLength(object);
+            long arrayEnd = headerSize + (sizeOfElement * length);
+            boolean aligned = ((displacement - headerSize) % sizeOfElement) == 0;
+            if (displacement < 0 || displacement > (arrayEnd - sizeOfElement) || (kind == JavaKind.Object && !aligned)) {
+                int index = (int) ((displacement - headerSize) / sizeOfElement);
+                throw new AssertionError("Unsafe array access: reading element of kind " + kind +
+                                " at offset " + displacement + " (index ~ " + index + ") in " +
+                                type.toJavaName() + " object of length " + length);
+            }
+        } else if (kind != JavaKind.Object) {
+            long size;
+            if (object instanceof Class) {
+                if (oopSizeOffset == 0) {
+                    oopSizeOffset = computeOopSizeOffset(runtime);
+                }
+                int wordSize = runtime.getHostJVMCIBackend().getCodeCache().getTarget().wordSize;
+                size = UNSAFE.getInt(object, oopSizeOffset) * wordSize;
+            } else {
+                size = Math.abs(type.instanceSize());
+            }
+            int bytesToRead = kind.getByteCount();
+            if (displacement + bytesToRead > size || displacement < 0) {
+                throw new IllegalArgumentException("Unsafe access: reading " + bytesToRead + " bytes at offset " + displacement + " in " +
+                                type.toJavaName() + " object of size " + size);
+            }
+        } else {
+            ResolvedJavaField field = type.findInstanceFieldWithOffset(displacement, JavaKind.Object);
+            if (field == null && object instanceof Class) {
+                // Read of a static field
+                MetaAccessProvider metaAccess = runtime.getHostJVMCIBackend().getMetaAccess();
+                HotSpotResolvedObjectTypeImpl staticFieldsHolder = (HotSpotResolvedObjectTypeImpl) metaAccess.lookupJavaType((Class<?>) object);
+                field = staticFieldsHolder.findStaticFieldWithOffset(displacement, JavaKind.Object);
+            }
+            if (field == null) {
+                throw new IllegalArgumentException("Unsafe object access: field not found for read of kind Object" +
+                                " at offset " + displacement + " in " + type.toJavaName() + " object");
+            }
+            if (field.getJavaKind() != JavaKind.Object) {
+                throw new IllegalArgumentException("Unsafe object access: field " + field.format("%H.%n:%T") + " not of expected kind Object" +
+                                " at offset " + displacement + " in " + type.toJavaName() + " object");
+            }
+        }
+        return true;
     }
 
     private boolean isValidObjectFieldDisplacement(Constant base, long displacement) {
@@ -77,8 +166,8 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
         throw new IllegalArgumentException(String.valueOf(base));
     }
 
-    private static long readRawValue(Constant baseConstant, long displacement, int bits) {
-        Object base = asObject(baseConstant);
+    private long readRawValue(Constant baseConstant, long displacement, JavaKind kind, int bits) {
+        Object base = asObject(baseConstant, kind, displacement);
         if (base != null) {
             switch (bits) {
                 case Byte.SIZE:
@@ -123,9 +212,8 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
 
     private Object readRawObject(Constant baseConstant, long initialDisplacement, boolean compressed) {
         long displacement = initialDisplacement;
-
         Object ret;
-        Object base = asObject(baseConstant);
+        Object base = asObject(baseConstant, JavaKind.Object, displacement);
         if (base == null) {
             assert !compressed;
             displacement += asRawPointer(baseConstant);
@@ -138,34 +226,43 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
         return ret;
     }
 
-    /**
-     * Reads a value of this kind using a base address and a displacement. No bounds checking or
-     * type checking is performed. Returns {@code null} if the value is not available at this point.
-     *
-     * @param baseConstant the base address from which the value is read.
-     * @param displacement the displacement within the object in bytes
-     * @return the read value encapsulated in a {@link JavaConstant} object, or {@code null} if the
-     *         value cannot be read.
-     * @throws IllegalArgumentException if {@code kind} is {@code null}, {@link JavaKind#Void}, not
-     *             {@link JavaKind#Object} or not {@linkplain JavaKind#isPrimitive() primitive} kind
-     */
-    JavaConstant readUnsafeConstant(JavaKind kind, JavaConstant baseConstant, long displacement) {
-        if (kind == null) {
-            throw new IllegalArgumentException("null JavaKind");
-        }
-        if (kind == JavaKind.Object) {
-            Object o = readRawObject(baseConstant, displacement, runtime.getConfig().useCompressedOops);
+    JavaConstant readFieldValue(HotSpotResolvedJavaField field, Object obj) {
+        assert obj != null;
+        assert !field.isStatic() || obj instanceof Class;
+        long displacement = field.offset();
+        assert checkRead(field.getJavaKind(), displacement, (HotSpotResolvedObjectType) runtime.getHostJVMCIBackend().getMetaAccess().lookupJavaType(obj.getClass()), obj);
+        if (field.getJavaKind() == JavaKind.Object) {
+            Object o = UNSAFE.getObject(obj, displacement);
             return HotSpotObjectConstantImpl.forObject(o);
         } else {
-            int bits = kind.getByteCount() * Byte.SIZE;
-            return readPrimitiveConstant(kind, baseConstant, displacement, bits);
+            JavaKind kind = field.getJavaKind();
+            switch (kind) {
+                case Boolean:
+                    return JavaConstant.forBoolean(UNSAFE.getBoolean(obj, displacement));
+                case Byte:
+                    return JavaConstant.forByte(UNSAFE.getByte(obj, displacement));
+                case Char:
+                    return JavaConstant.forChar(UNSAFE.getChar(obj, displacement));
+                case Short:
+                    return JavaConstant.forShort(UNSAFE.getShort(obj, displacement));
+                case Int:
+                    return JavaConstant.forInt(UNSAFE.getInt(obj, displacement));
+                case Long:
+                    return JavaConstant.forLong(UNSAFE.getLong(obj, displacement));
+                case Float:
+                    return JavaConstant.forFloat(UNSAFE.getFloat(obj, displacement));
+                case Double:
+                    return JavaConstant.forDouble(UNSAFE.getDouble(obj, displacement));
+                default:
+                    throw new IllegalArgumentException("Unsupported kind: " + kind);
+            }
         }
     }
 
     @Override
     public JavaConstant readPrimitiveConstant(JavaKind kind, Constant baseConstant, long initialDisplacement, int bits) {
         try {
-            long rawValue = readRawValue(baseConstant, initialDisplacement, bits);
+            long rawValue = readRawValue(baseConstant, initialDisplacement, kind, bits);
             switch (kind) {
                 case Boolean:
                     return JavaConstant.forBoolean(rawValue != 0);
@@ -193,6 +290,10 @@ class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider {
 
     @Override
     public JavaConstant readObjectConstant(Constant base, long displacement) {
+        if (base instanceof HotSpotObjectConstantImpl) {
+            Object o = readRawObject(base, displacement, runtime.getConfig().useCompressedOops);
+            return HotSpotObjectConstantImpl.forObject(o);
+        }
         if (!isValidObjectFieldDisplacement(base, displacement)) {
             return null;
         }

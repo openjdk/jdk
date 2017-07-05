@@ -37,7 +37,6 @@ import java.util.Collections;
 import java.util.Spliterator;
 
 import junit.framework.Test;
-import junit.framework.TestSuite;
 
 public class ArrayDeque8Test extends JSR166TestCase {
     public static void main(String[] args) {

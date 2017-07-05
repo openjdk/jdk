@@ -66,6 +66,7 @@ import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoUnit.FOREVER;
 import static java.time.temporal.ChronoUnit.NANOS;
 
+import java.io.Serializable;
 import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalTime;
@@ -137,7 +138,13 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
      * @see #isEqual
      */
     static Comparator<ChronoZonedDateTime<?>> timeLineOrder() {
-        return AbstractChronology.INSTANT_ORDER;
+        return (Comparator<ChronoZonedDateTime<?>> & Serializable) (dateTime1, dateTime2) -> {
+                int cmp = Long.compare(dateTime1.toEpochSecond(), dateTime2.toEpochSecond());
+                if (cmp == 0) {
+                    cmp = Long.compare(dateTime1.toLocalTime().getNano(), dateTime2.toLocalTime().getNano());
+                }
+                return cmp;
+            };
     }
 
     //-----------------------------------------------------------------------

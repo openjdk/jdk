@@ -33,7 +33,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Module;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -149,7 +148,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
                 Object[] typeInfo = (Object[]) type;
                 Class<?>[] ptypes = (Class<?>[]) typeInfo[1];
                 Class<?> rtype = (Class<?>) typeInfo[0];
-                MethodType res = MethodType.methodType(rtype, ptypes);
+                MethodType res = MethodType.makeImpl(rtype, ptypes, true);
                 type = res;
             }
             // Make sure type is a MethodType for racing threads.

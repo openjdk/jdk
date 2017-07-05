@@ -33,8 +33,6 @@ import jdk.internal.module.ModuleReferenceImpl;
 import java.lang.module.ModuleDescriptor.Version;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
@@ -191,7 +189,7 @@ public final class StackTraceElement implements java.io.Serializable {
      *         if the module name is not available.
      * @since 9
      * @spec JPMS
-     * @see java.lang.reflect.Module#getName()
+     * @see Module#getName()
      */
     public String getModuleName() {
         return moduleName;
@@ -480,7 +478,7 @@ public final class StackTraceElement implements java.io.Serializable {
         if (!VM.isModuleSystemInited())
             return true;
 
-        return Layer.boot() == m.getLayer() && HashedModules.contains(m);
+        return ModuleLayer.boot() == m.getLayer() && HashedModules.contains(m);
     }
 
     /*
@@ -492,7 +490,7 @@ public final class StackTraceElement implements java.io.Serializable {
 
         static Set<String> hashedModules() {
 
-            Optional<ResolvedModule> resolvedModule = Layer.boot()
+            Optional<ResolvedModule> resolvedModule = ModuleLayer.boot()
                     .configuration()
                     .findModule("java.base");
             assert resolvedModule.isPresent();
