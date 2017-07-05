@@ -68,7 +68,7 @@ public class Shell {
     /**
      * Shell message bundle.
      */
-    private static final ResourceBundle bundle = ResourceBundle.getBundle(MESSAGE_RESOURCE, Locale.getDefault());
+    protected static final ResourceBundle bundle = ResourceBundle.getBundle(MESSAGE_RESOURCE, Locale.getDefault());
 
     /**
      * Exit code for command line tool - successful
@@ -403,7 +403,7 @@ public class Shell {
      * @param global  global scope object to use
      * @return return code
      */
-    private static int readEvalPrint(final Context context, final Global global) {
+    protected int readEvalPrint(final Context context, final Global global) {
         final String prompt = bundle.getString("shell.prompt");
         final BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
         final PrintWriter err = context.getErr();

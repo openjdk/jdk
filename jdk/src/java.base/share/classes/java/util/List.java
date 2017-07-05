@@ -34,50 +34,50 @@ import java.util.function.UnaryOperator;
  * the list), and search for elements in the list.<p>
  *
  * Unlike sets, lists typically allow duplicate elements.  More formally,
- * lists typically allow pairs of elements <tt>e1</tt> and <tt>e2</tt>
- * such that <tt>e1.equals(e2)</tt>, and they typically allow multiple
+ * lists typically allow pairs of elements {@code e1} and {@code e2}
+ * such that {@code e1.equals(e2)}, and they typically allow multiple
  * null elements if they allow null elements at all.  It is not inconceivable
  * that someone might wish to implement a list that prohibits duplicates, by
  * throwing runtime exceptions when the user attempts to insert them, but we
  * expect this usage to be rare.<p>
  *
- * The <tt>List</tt> interface places additional stipulations, beyond those
- * specified in the <tt>Collection</tt> interface, on the contracts of the
- * <tt>iterator</tt>, <tt>add</tt>, <tt>remove</tt>, <tt>equals</tt>, and
- * <tt>hashCode</tt> methods.  Declarations for other inherited methods are
+ * The {@code List} interface places additional stipulations, beyond those
+ * specified in the {@code Collection} interface, on the contracts of the
+ * {@code iterator}, {@code add}, {@code remove}, {@code equals}, and
+ * {@code hashCode} methods.  Declarations for other inherited methods are
  * also included here for convenience.<p>
  *
- * The <tt>List</tt> interface provides four methods for positional (indexed)
+ * The {@code List} interface provides four methods for positional (indexed)
  * access to list elements.  Lists (like Java arrays) are zero based.  Note
  * that these operations may execute in time proportional to the index value
- * for some implementations (the <tt>LinkedList</tt> class, for
+ * for some implementations (the {@code LinkedList} class, for
  * example). Thus, iterating over the elements in a list is typically
  * preferable to indexing through it if the caller does not know the
  * implementation.<p>
  *
- * The <tt>List</tt> interface provides a special iterator, called a
- * <tt>ListIterator</tt>, that allows element insertion and replacement, and
+ * The {@code List} interface provides a special iterator, called a
+ * {@code ListIterator}, that allows element insertion and replacement, and
  * bidirectional access in addition to the normal operations that the
- * <tt>Iterator</tt> interface provides.  A method is provided to obtain a
+ * {@code Iterator} interface provides.  A method is provided to obtain a
  * list iterator that starts at a specified position in the list.<p>
  *
- * The <tt>List</tt> interface provides two methods to search for a specified
+ * The {@code List} interface provides two methods to search for a specified
  * object.  From a performance standpoint, these methods should be used with
  * caution.  In many implementations they will perform costly linear
  * searches.<p>
  *
- * The <tt>List</tt> interface provides two methods to efficiently insert and
+ * The {@code List} interface provides two methods to efficiently insert and
  * remove multiple elements at an arbitrary point in the list.<p>
  *
  * Note: While it is permissible for lists to contain themselves as elements,
- * extreme caution is advised: the <tt>equals</tt> and <tt>hashCode</tt>
+ * extreme caution is advised: the {@code equals} and {@code hashCode}
  * methods are no longer well defined on such a list.
  *
  * <p>Some list implementations have restrictions on the elements that
  * they may contain.  For example, some implementations prohibit null elements,
  * and some have restrictions on the types of their elements.  Attempting to
  * add an ineligible element throws an unchecked exception, typically
- * <tt>NullPointerException</tt> or <tt>ClassCastException</tt>.  Attempting
+ * {@code NullPointerException} or {@code ClassCastException}.  Attempting
  * to query the presence of an ineligible element may throw an exception,
  * or it may simply return false; some implementations will exhibit the former
  * behavior and some will exhibit the latter.  More generally, attempting an
@@ -113,28 +113,28 @@ public interface List<E> extends Collection<E> {
 
     /**
      * Returns the number of elements in this list.  If this list contains
-     * more than <tt>Integer.MAX_VALUE</tt> elements, returns
-     * <tt>Integer.MAX_VALUE</tt>.
+     * more than {@code Integer.MAX_VALUE} elements, returns
+     * {@code Integer.MAX_VALUE}.
      *
      * @return the number of elements in this list
      */
     int size();
 
     /**
-     * Returns <tt>true</tt> if this list contains no elements.
+     * Returns {@code true} if this list contains no elements.
      *
-     * @return <tt>true</tt> if this list contains no elements
+     * @return {@code true} if this list contains no elements
      */
     boolean isEmpty();
 
     /**
-     * Returns <tt>true</tt> if this list contains the specified element.
-     * More formally, returns <tt>true</tt> if and only if this list contains
-     * at least one element <tt>e</tt> such that
-     * <tt>(o==null&nbsp;?&nbsp;e==null&nbsp;:&nbsp;o.equals(e))</tt>.
+     * Returns {@code true} if this list contains the specified element.
+     * More formally, returns {@code true} if and only if this list contains
+     * at least one element {@code e} such that
+     * {@code Objects.equals(o, e)}.
      *
      * @param o element whose presence in this list is to be tested
-     * @return <tt>true</tt> if this list contains the specified element
+     * @return {@code true} if this list contains the specified element
      * @throws ClassCastException if the type of the specified element
      *         is incompatible with this list
      * (<a href="Collection.html#optional-restrictions">optional</a>)
@@ -179,7 +179,7 @@ public interface List<E> extends Collection<E> {
      *
      * <p>If the list fits in the specified array with room to spare (i.e.,
      * the array has more elements than the list), the element in the array
-     * immediately following the end of the list is set to <tt>null</tt>.
+     * immediately following the end of the list is set to {@code null}.
      * (This is useful in determining the length of the list <i>only</i> if
      * the caller knows that the list does not contain any null elements.)
      *
@@ -188,16 +188,16 @@ public interface List<E> extends Collection<E> {
      * precise control over the runtime type of the output array, and may,
      * under certain circumstances, be used to save allocation costs.
      *
-     * <p>Suppose <tt>x</tt> is a list known to contain only strings.
+     * <p>Suppose {@code x} is a list known to contain only strings.
      * The following code can be used to dump the list into a newly
-     * allocated array of <tt>String</tt>:
+     * allocated array of {@code String}:
      *
      * <pre>{@code
      *     String[] y = x.toArray(new String[0]);
      * }</pre>
      *
-     * Note that <tt>toArray(new Object[0])</tt> is identical in function to
-     * <tt>toArray()</tt>.
+     * Note that {@code toArray(new Object[0])} is identical in function to
+     * {@code toArray()}.
      *
      * @param a the array into which the elements of this list are to
      *          be stored, if it is big enough; otherwise, a new array of the
@@ -225,8 +225,8 @@ public interface List<E> extends Collection<E> {
      * on what elements may be added.
      *
      * @param e element to be appended to this list
-     * @return <tt>true</tt> (as specified by {@link Collection#add})
-     * @throws UnsupportedOperationException if the <tt>add</tt> operation
+     * @return {@code true} (as specified by {@link Collection#add})
+     * @throws UnsupportedOperationException if the {@code add} operation
      *         is not supported by this list
      * @throws ClassCastException if the class of the specified element
      *         prevents it from being added to this list
@@ -241,21 +241,21 @@ public interface List<E> extends Collection<E> {
      * Removes the first occurrence of the specified element from this list,
      * if it is present (optional operation).  If this list does not contain
      * the element, it is unchanged.  More formally, removes the element with
-     * the lowest index <tt>i</tt> such that
-     * <tt>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i)))</tt>
-     * (if such an element exists).  Returns <tt>true</tt> if this list
+     * the lowest index {@code i} such that
+     * {@code Objects.equals(o, get(i))}
+     * (if such an element exists).  Returns {@code true} if this list
      * contained the specified element (or equivalently, if this list changed
      * as a result of the call).
      *
      * @param o element to be removed from this list, if present
-     * @return <tt>true</tt> if this list contained the specified element
+     * @return {@code true} if this list contained the specified element
      * @throws ClassCastException if the type of the specified element
      *         is incompatible with this list
      * (<a href="Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified element is null and this
      *         list does not permit null elements
      * (<a href="Collection.html#optional-restrictions">optional</a>)
-     * @throws UnsupportedOperationException if the <tt>remove</tt> operation
+     * @throws UnsupportedOperationException if the {@code remove} operation
      *         is not supported by this list
      */
     boolean remove(Object o);
@@ -264,11 +264,11 @@ public interface List<E> extends Collection<E> {
     // Bulk Modification Operations
 
     /**
-     * Returns <tt>true</tt> if this list contains all of the elements of the
+     * Returns {@code true} if this list contains all of the elements of the
      * specified collection.
      *
      * @param  c collection to be checked for containment in this list
-     * @return <tt>true</tt> if this list contains all of the elements of the
+     * @return {@code true} if this list contains all of the elements of the
      *         specified collection
      * @throws ClassCastException if the types of one or more elements
      *         in the specified collection are incompatible with this
@@ -292,8 +292,8 @@ public interface List<E> extends Collection<E> {
      * specified collection is this list, and it's nonempty.)
      *
      * @param c collection containing elements to be added to this list
-     * @return <tt>true</tt> if this list changed as a result of the call
-     * @throws UnsupportedOperationException if the <tt>addAll</tt> operation
+     * @return {@code true} if this list changed as a result of the call
+     * @throws UnsupportedOperationException if the {@code addAll} operation
      *         is not supported by this list
      * @throws ClassCastException if the class of an element of the specified
      *         collection prevents it from being added to this list
@@ -320,8 +320,8 @@ public interface List<E> extends Collection<E> {
      * @param index index at which to insert the first element from the
      *              specified collection
      * @param c collection containing elements to be added to this list
-     * @return <tt>true</tt> if this list changed as a result of the call
-     * @throws UnsupportedOperationException if the <tt>addAll</tt> operation
+     * @return {@code true} if this list changed as a result of the call
+     * @throws UnsupportedOperationException if the {@code addAll} operation
      *         is not supported by this list
      * @throws ClassCastException if the class of an element of the specified
      *         collection prevents it from being added to this list
@@ -331,7 +331,7 @@ public interface List<E> extends Collection<E> {
      * @throws IllegalArgumentException if some property of an element of the
      *         specified collection prevents it from being added to this list
      * @throws IndexOutOfBoundsException if the index is out of range
-     *         (<tt>index &lt; 0 || index &gt; size()</tt>)
+     *         ({@code index < 0 || index > size()})
      */
     boolean addAll(int index, Collection<? extends E> c);
 
@@ -340,8 +340,8 @@ public interface List<E> extends Collection<E> {
      * specified collection (optional operation).
      *
      * @param c collection containing elements to be removed from this list
-     * @return <tt>true</tt> if this list changed as a result of the call
-     * @throws UnsupportedOperationException if the <tt>removeAll</tt> operation
+     * @return {@code true} if this list changed as a result of the call
+     * @throws UnsupportedOperationException if the {@code removeAll} operation
      *         is not supported by this list
      * @throws ClassCastException if the class of an element of this list
      *         is incompatible with the specified collection
@@ -362,8 +362,8 @@ public interface List<E> extends Collection<E> {
      * specified collection.
      *
      * @param c collection containing elements to be retained in this list
-     * @return <tt>true</tt> if this list changed as a result of the call
-     * @throws UnsupportedOperationException if the <tt>retainAll</tt> operation
+     * @return {@code true} if this list changed as a result of the call
+     * @throws UnsupportedOperationException if the {@code retainAll} operation
      *         is not supported by this list
      * @throws ClassCastException if the class of an element of this list
      *         is incompatible with the specified collection
@@ -487,7 +487,7 @@ public interface List<E> extends Collection<E> {
      * Removes all of the elements from this list (optional operation).
      * The list will be empty after this call returns.
      *
-     * @throws UnsupportedOperationException if the <tt>clear</tt> operation
+     * @throws UnsupportedOperationException if the {@code clear} operation
      *         is not supported by this list
      */
     void clear();
@@ -497,17 +497,17 @@ public interface List<E> extends Collection<E> {
 
     /**
      * Compares the specified object with this list for equality.  Returns
-     * <tt>true</tt> if and only if the specified object is also a list, both
+     * {@code true} if and only if the specified object is also a list, both
      * lists have the same size, and all corresponding pairs of elements in
-     * the two lists are <i>equal</i>.  (Two elements <tt>e1</tt> and
-     * <tt>e2</tt> are <i>equal</i> if <tt>(e1==null ? e2==null :
-     * e1.equals(e2))</tt>.)  In other words, two lists are defined to be
+     * the two lists are <i>equal</i>.  (Two elements {@code e1} and
+     * {@code e2} are <i>equal</i> if {@code Objects.equals(e1, e2)}.)
+     * In other words, two lists are defined to be
      * equal if they contain the same elements in the same order.  This
      * definition ensures that the equals method works properly across
-     * different implementations of the <tt>List</tt> interface.
+     * different implementations of the {@code List} interface.
      *
      * @param o the object to be compared for equality with this list
-     * @return <tt>true</tt> if the specified object is equal to this list
+     * @return {@code true} if the specified object is equal to this list
      */
     boolean equals(Object o);
 
@@ -519,9 +519,9 @@ public interface List<E> extends Collection<E> {
      *     for (E e : list)
      *         hashCode = 31*hashCode + (e==null ? 0 : e.hashCode());
      * }</pre>
-     * This ensures that <tt>list1.equals(list2)</tt> implies that
-     * <tt>list1.hashCode()==list2.hashCode()</tt> for any two lists,
-     * <tt>list1</tt> and <tt>list2</tt>, as required by the general
+     * This ensures that {@code list1.equals(list2)} implies that
+     * {@code list1.hashCode()==list2.hashCode()} for any two lists,
+     * {@code list1} and {@code list2}, as required by the general
      * contract of {@link Object#hashCode}.
      *
      * @return the hash code value for this list
@@ -539,7 +539,7 @@ public interface List<E> extends Collection<E> {
      * @param index index of the element to return
      * @return the element at the specified position in this list
      * @throws IndexOutOfBoundsException if the index is out of range
-     *         (<tt>index &lt; 0 || index &gt;= size()</tt>)
+     *         ({@code index < 0 || index >= size()})
      */
     E get(int index);
 
@@ -550,7 +550,7 @@ public interface List<E> extends Collection<E> {
      * @param index index of the element to replace
      * @param element element to be stored at the specified position
      * @return the element previously at the specified position
-     * @throws UnsupportedOperationException if the <tt>set</tt> operation
+     * @throws UnsupportedOperationException if the {@code set} operation
      *         is not supported by this list
      * @throws ClassCastException if the class of the specified element
      *         prevents it from being added to this list
@@ -559,7 +559,7 @@ public interface List<E> extends Collection<E> {
      * @throws IllegalArgumentException if some property of the specified
      *         element prevents it from being added to this list
      * @throws IndexOutOfBoundsException if the index is out of range
-     *         (<tt>index &lt; 0 || index &gt;= size()</tt>)
+     *         ({@code index < 0 || index >= size()})
      */
     E set(int index, E element);
 
@@ -571,7 +571,7 @@ public interface List<E> extends Collection<E> {
      *
      * @param index index at which the specified element is to be inserted
      * @param element element to be inserted
-     * @throws UnsupportedOperationException if the <tt>add</tt> operation
+     * @throws UnsupportedOperationException if the {@code add} operation
      *         is not supported by this list
      * @throws ClassCastException if the class of the specified element
      *         prevents it from being added to this list
@@ -580,7 +580,7 @@ public interface List<E> extends Collection<E> {
      * @throws IllegalArgumentException if some property of the specified
      *         element prevents it from being added to this list
      * @throws IndexOutOfBoundsException if the index is out of range
-     *         (<tt>index &lt; 0 || index &gt; size()</tt>)
+     *         ({@code index < 0 || index > size()})
      */
     void add(int index, E element);
 
@@ -592,10 +592,10 @@ public interface List<E> extends Collection<E> {
      *
      * @param index the index of the element to be removed
      * @return the element previously at the specified position
-     * @throws UnsupportedOperationException if the <tt>remove</tt> operation
+     * @throws UnsupportedOperationException if the {@code remove} operation
      *         is not supported by this list
      * @throws IndexOutOfBoundsException if the index is out of range
-     *         (<tt>index &lt; 0 || index &gt;= size()</tt>)
+     *         ({@code index < 0 || index >= size()})
      */
     E remove(int index);
 
@@ -605,8 +605,8 @@ public interface List<E> extends Collection<E> {
     /**
      * Returns the index of the first occurrence of the specified element
      * in this list, or -1 if this list does not contain the element.
-     * More formally, returns the lowest index <tt>i</tt> such that
-     * <tt>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i)))</tt>,
+     * More formally, returns the lowest index {@code i} such that
+     * {@code Objects.equals(o, get(i))},
      * or -1 if there is no such index.
      *
      * @param o element to search for
@@ -624,8 +624,8 @@ public interface List<E> extends Collection<E> {
     /**
      * Returns the index of the last occurrence of the specified element
      * in this list, or -1 if this list does not contain the element.
-     * More formally, returns the highest index <tt>i</tt> such that
-     * <tt>(o==null&nbsp;?&nbsp;get(i)==null&nbsp;:&nbsp;o.equals(get(i)))</tt>,
+     * More formally, returns the highest index {@code i} such that
+     * {@code Objects.equals(o, get(i))},
      * or -1 if there is no such index.
      *
      * @param o element to search for
@@ -673,8 +673,8 @@ public interface List<E> extends Collection<E> {
 
     /**
      * Returns a view of the portion of this list between the specified
-     * <tt>fromIndex</tt>, inclusive, and <tt>toIndex</tt>, exclusive.  (If
-     * <tt>fromIndex</tt> and <tt>toIndex</tt> are equal, the returned list is
+     * {@code fromIndex}, inclusive, and {@code toIndex}, exclusive.  (If
+     * {@code fromIndex} and {@code toIndex} are equal, the returned list is
      * empty.)  The returned list is backed by this list, so non-structural
      * changes in the returned list are reflected in this list, and vice-versa.
      * The returned list supports all of the optional list operations supported
@@ -688,9 +688,9 @@ public interface List<E> extends Collection<E> {
      * <pre>{@code
      *      list.subList(from, to).clear();
      * }</pre>
-     * Similar idioms may be constructed for <tt>indexOf</tt> and
-     * <tt>lastIndexOf</tt>, and all of the algorithms in the
-     * <tt>Collections</tt> class can be applied to a subList.<p>
+     * Similar idioms may be constructed for {@code indexOf} and
+     * {@code lastIndexOf}, and all of the algorithms in the
+     * {@code Collections} class can be applied to a subList.<p>
      *
      * The semantics of the list returned by this method become undefined if
      * the backing list (i.e., this list) is <i>structurally modified</i> in
@@ -702,8 +702,8 @@ public interface List<E> extends Collection<E> {
      * @param toIndex high endpoint (exclusive) of the subList
      * @return a view of the specified range within this list
      * @throws IndexOutOfBoundsException for an illegal endpoint index value
-     *         (<tt>fromIndex &lt; 0 || toIndex &gt; size ||
-     *         fromIndex &gt; toIndex</tt>)
+     *         ({@code fromIndex < 0 || toIndex > size ||
+     *         fromIndex > toIndex})
      */
     List<E> subList(int fromIndex, int toIndex);
 

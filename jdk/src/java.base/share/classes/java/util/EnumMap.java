@@ -50,7 +50,7 @@ import sun.misc.SharedSecrets;
  * presence of a null key or to remove one will, however, function properly.
  * Null values are permitted.
 
- * <P>Like most collection implementations <tt>EnumMap</tt> is not
+ * <P>Like most collection implementations {@code EnumMap} is not
  * synchronized. If multiple threads access an enum map concurrently, and at
  * least one of the threads modifies the map, it should be synchronized
  * externally.  This is typically accomplished by synchronizing on some
@@ -80,7 +80,7 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
     implements java.io.Serializable, Cloneable
 {
     /**
-     * The <tt>Class</tt> object for the enum type of all the keys of this map.
+     * The {@code Class} object for the enum type of all the keys of this map.
      *
      * @serial
      */
@@ -131,7 +131,7 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
      * Creates an empty enum map with the specified key type.
      *
      * @param keyType the class object of the key type for this enum map
-     * @throws NullPointerException if <tt>keyType</tt> is null
+     * @throws NullPointerException if {@code keyType} is null
      */
     public EnumMap(Class<K> keyType) {
         this.keyType = keyType;
@@ -144,7 +144,7 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
      * map, initially containing the same mappings (if any).
      *
      * @param m the enum map from which to initialize this enum map
-     * @throws NullPointerException if <tt>m</tt> is null
+     * @throws NullPointerException if {@code m} is null
      */
     public EnumMap(EnumMap<K, ? extends V> m) {
         keyType = m.keyType;
@@ -155,15 +155,15 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
 
     /**
      * Creates an enum map initialized from the specified map.  If the
-     * specified map is an <tt>EnumMap</tt> instance, this constructor behaves
+     * specified map is an {@code EnumMap} instance, this constructor behaves
      * identically to {@link #EnumMap(EnumMap)}.  Otherwise, the specified map
      * must contain at least one mapping (in order to determine the new
      * enum map's key type).
      *
      * @param m the map from which to initialize this enum map
-     * @throws IllegalArgumentException if <tt>m</tt> is not an
-     *     <tt>EnumMap</tt> instance and contains no mappings
-     * @throws NullPointerException if <tt>m</tt> is null
+     * @throws IllegalArgumentException if {@code m} is not an
+     *     {@code EnumMap} instance and contains no mappings
+     * @throws NullPointerException if {@code m} is null
      */
     public EnumMap(Map<K, ? extends V> m) {
         if (m instanceof EnumMap) {
@@ -194,11 +194,11 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Returns <tt>true</tt> if this map maps one or more keys to the
+     * Returns {@code true} if this map maps one or more keys to the
      * specified value.
      *
      * @param value the value whose presence in this map is to be tested
-     * @return <tt>true</tt> if this map maps one or more keys to this value
+     * @return {@code true} if this map maps one or more keys to this value
      */
     public boolean containsValue(Object value) {
         value = maskNull(value);
@@ -211,11 +211,11 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Returns <tt>true</tt> if this map contains a mapping for the specified
+     * Returns {@code true} if this map contains a mapping for the specified
      * key.
      *
      * @param key the key whose presence in this map is to be tested
-     * @return <tt>true</tt> if this map contains a mapping for the specified
+     * @return {@code true} if this map contains a mapping for the specified
      *            key
      */
     public boolean containsKey(Object key) {
@@ -258,9 +258,9 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
      * @param value the value to be associated with the specified key
      *
      * @return the previous value associated with specified key, or
-     *     <tt>null</tt> if there was no mapping for key.  (A <tt>null</tt>
+     *     {@code null} if there was no mapping for key.  (A {@code null}
      *     return can also indicate that the map previously associated
-     *     <tt>null</tt> with the specified key.)
+     *     {@code null} with the specified key.)
      * @throws NullPointerException if the specified key is null
      */
     public V put(K key, V value) {
@@ -279,9 +279,9 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
      *
      * @param key the key whose mapping is to be removed from the map
      * @return the previous value associated with specified key, or
-     *     <tt>null</tt> if there was no entry for key.  (A <tt>null</tt>
+     *     {@code null} if there was no entry for key.  (A {@code null}
      *     return can also indicate that the map previously associated
-     *     <tt>null</tt> with the specified key.)
+     *     {@code null} with the specified key.)
      */
     public V remove(Object key) {
         if (!isValidKey(key))
@@ -644,12 +644,12 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
 
     /**
      * Compares the specified object with this map for equality.  Returns
-     * <tt>true</tt> if the given object is also a map and the two maps
+     * {@code true} if the given object is also a map and the two maps
      * represent the same mappings, as specified in the {@link
      * Map#equals(Object)} contract.
      *
      * @param o the object to be compared for equality with this map
-     * @return <tt>true</tt> if the specified object is equal to this map
+     * @return {@code true} if the specified object is equal to this map
      */
     public boolean equals(Object o) {
         if (this == o)
@@ -758,7 +758,7 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
     private static final long serialVersionUID = 458661240069192865L;
 
     /**
-     * Save the state of the <tt>EnumMap</tt> instance to a stream (i.e.,
+     * Save the state of the {@code EnumMap} instance to a stream (i.e.,
      * serialize it).
      *
      * @serialData The <i>size</i> of the enum map (the number of key-value
@@ -787,7 +787,7 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Reconstitute the <tt>EnumMap</tt> instance from a stream (i.e.,
+     * Reconstitute the {@code EnumMap} instance from a stream (i.e.,
      * deserialize it).
      */
     @SuppressWarnings("unchecked")

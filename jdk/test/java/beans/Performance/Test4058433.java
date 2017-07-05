@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,14 @@ import java.beans.ParameterDescriptor;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Enumeration;
@@ -40,19 +48,13 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /*
  * @test
  * @bug 4058433
  * @summary Generates BeanInfo for public classes in AWT, Accessibility, and Swing
  * @author Sergey Malenkov
- * @run main/manual Test4058433
  */
-
 public class Test4058433 implements Comparator<Object> {
     @Override
     public int compare(Object one, Object two) {
@@ -76,31 +78,41 @@ public class Test4058433 implements Comparator<Object> {
     }
 
     public static void main(String[] args) throws Exception {
-        String resource = ClassLoader.getSystemResource("java/lang/Object.class").toString();
-
-        Pattern pattern = Pattern.compile("jar:file:(.*)!.*");
-        Matcher matcher = pattern.matcher(resource);
-        matcher.matches();
-        resource = matcher.group(1);
+        FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
+        fs.getFileStores();
 
         TreeSet<Class<?>> types = new TreeSet<>(new Test4058433());
-        try (JarFile jarFile = new JarFile(resource.replaceAll("%20", " "))) {
-            Enumeration<JarEntry> entries = jarFile.entries();
-            while (entries.hasMoreElements()) {
-                String name = entries.nextElement().getName();
-                if (name.startsWith("java/awt/") || name.startsWith("javax/accessibility/") || name.startsWith("javax/swing/")) {
+        Files.walkFileTree(fs.getPath("/modules/java.desktop"), new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file,
+                                             BasicFileAttributes attrs) {
+                file = file.subpath(2, file.getNameCount());
+                if (file.startsWith("java/awt/")
+                        || file.startsWith("javax/accessibility/")
+                        || file.startsWith("javax/swing/")) {
+                    String name =file.toString();
                     if (name.endsWith(".class")) {
                         name = name.substring(0, name.indexOf(".")).replace('/', '.');
-                        Class<?> type = Class.forName(name);
-                        if (!type.isInterface() && !type.isEnum() && !type.isAnnotation() && !type.isAnonymousClass()) {
+
+                        final Class<?> type;
+                        try {
+                            type = Class.forName(name);
+                        } catch (ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                        if (!BeanInfo.class.isAssignableFrom(type) && !type.isInterface()
+                            && !type.isEnum() && !type.isAnnotation()
+                            && !type.isAnonymousClass()) {
                             if (null == type.getDeclaringClass()) {
                                 types.add(type);
                             }
                         }
                     }
                 }
+                return FileVisitResult.CONTINUE;
             }
-        }
+        });
+
         System.out.println("found " + types.size() + " classes");
         long time = -System.currentTimeMillis();
         for (Class<?> type : types) {

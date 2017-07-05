@@ -230,7 +230,7 @@ public abstract class Selector implements Closeable {
     /**
      * Tells whether or not this selector is open.
      *
-     * @return <tt>true</tt> if, and only if, this selector is open
+     * @return {@code true} if, and only if, this selector is open
      */
     public abstract boolean isOpen();
 
@@ -309,7 +309,7 @@ public abstract class Selector implements Closeable {
      * <p> This method does not offer real-time guarantees: It schedules the
      * timeout as if by invoking the {@link Object#wait(long)} method. </p>
      *
-     * @param  timeout  If positive, block for up to <tt>timeout</tt>
+     * @param  timeout  If positive, block for up to {@code timeout}
      *                  milliseconds, more or less, while waiting for a
      *                  channel to become ready; if zero, block indefinitely;
      *                  must not be negative

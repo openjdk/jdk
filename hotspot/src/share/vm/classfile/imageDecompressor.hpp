@@ -26,7 +26,6 @@
 #define SHARE_VM_CLASSFILE_IMAGEDECOMPRESSOR_HPP
 
 #include "runtime/thread.inline.hpp"
-#include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/imageFile.hpp"
 #include "classfile/symbolTable.hpp"

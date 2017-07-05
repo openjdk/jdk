@@ -63,7 +63,7 @@ import java.util.Collections;
  *
  *   <li><p> A region of a file may be {@link #map <i>mapped</i>}
  *   directly into memory; for large files this is often much more efficient
- *   than invoking the usual <tt>read</tt> or <tt>write</tt> methods.
+ *   than invoking the usual {@code read} or {@code write} methods.
  *   </p></li>
  *
  *   <li><p> Updates made to a file may be {@link #force <i>forced
@@ -107,10 +107,10 @@ import java.util.Collections;
  * existing {@link java.io.FileInputStream#getChannel FileInputStream}, {@link
  * java.io.FileOutputStream#getChannel FileOutputStream}, or {@link
  * java.io.RandomAccessFile#getChannel RandomAccessFile} object by invoking
- * that object's <tt>getChannel</tt> method, which returns a file channel that
+ * that object's {@code getChannel} method, which returns a file channel that
  * is connected to the same underlying file. Where the file channel is obtained
  * from an existing stream or random access file then the state of the file
- * channel is intimately connected to that of the object whose <tt>getChannel</tt>
+ * channel is intimately connected to that of the object whose {@code getChannel}
  * method returned the channel.  Changing the channel's position, whether
  * explicitly or by reading or writing bytes, will change the file position of
  * the originating object, and vice versa. Changing the file's length via the
@@ -128,14 +128,14 @@ import java.util.Collections;
  * writing.  Finally, a channel obtained via the {@link
  * java.io.RandomAccessFile#getChannel getChannel} method of a {@link
  * java.io.RandomAccessFile} instance will be open for reading if the instance
- * was created with mode <tt>"r"</tt> and will be open for reading and writing
- * if the instance was created with mode <tt>"rw"</tt>.
+ * was created with mode {@code "r"} and will be open for reading and writing
+ * if the instance was created with mode {@code "rw"}.
  *
  * <a name="append-mode"></a><p> A file channel that is open for writing may be in
  * <i>append mode</i>, for example if it was obtained from a file-output stream
  * that was created by invoking the {@link
  * java.io.FileOutputStream#FileOutputStream(java.io.File,boolean)
- * FileOutputStream(File,boolean)} constructor and passing <tt>true</tt> for
+ * FileOutputStream(File,boolean)} constructor and passing {@code true} for
  * the second parameter.  In this mode each invocation of a relative write
  * operation first advances the position to the end of the file and then writes
  * the requested data.  Whether the advancement of the position and the writing
@@ -516,10 +516,10 @@ public abstract class FileChannel
      * <p> If the file does not reside on a local device then no such guarantee
      * is made.
      *
-     * <p> The <tt>metaData</tt> parameter can be used to limit the number of
+     * <p> The {@code metaData} parameter can be used to limit the number of
      * I/O operations that this method is required to perform.  Passing
-     * <tt>false</tt> for this parameter indicates that only updates to the
-     * file's content need be written to storage; passing <tt>true</tt>
+     * {@code false} for this parameter indicates that only updates to the
+     * file's content need be written to storage; passing {@code true}
      * indicates that updates to both the file's content and metadata must be
      * written, which generally requires at least one more I/O operation.
      * Whether this parameter actually has any effect is dependent upon the
@@ -540,7 +540,7 @@ public abstract class FileChannel
      * force changes made to the buffer's content to be written.  </p>
      *
      * @param   metaData
-     *          If <tt>true</tt> then this method is required to force changes
+     *          If {@code true} then this method is required to force changes
      *          to both the file's content and metadata to be written to
      *          storage; otherwise, it need only force content changes to be
      *          written
@@ -557,14 +557,14 @@ public abstract class FileChannel
      * Transfers bytes from this channel's file to the given writable byte
      * channel.
      *
-     * <p> An attempt is made to read up to <tt>count</tt> bytes starting at
-     * the given <tt>position</tt> in this channel's file and write them to the
+     * <p> An attempt is made to read up to {@code count} bytes starting at
+     * the given {@code position} in this channel's file and write them to the
      * target channel.  An invocation of this method may or may not transfer
      * all of the requested bytes; whether or not it does so depends upon the
      * natures and states of the channels.  Fewer than the requested number of
      * bytes are transferred if this channel's file contains fewer than
-     * <tt>count</tt> bytes starting at the given <tt>position</tt>, or if the
-     * target channel is non-blocking and it has fewer than <tt>count</tt>
+     * {@code count} bytes starting at the given {@code position}, or if the
+     * target channel is non-blocking and it has fewer than {@code count}
      * bytes free in its output buffer.
      *
      * <p> This method does not modify this channel's position.  If the given
@@ -624,14 +624,14 @@ public abstract class FileChannel
      * Transfers bytes into this channel's file from the given readable byte
      * channel.
      *
-     * <p> An attempt is made to read up to <tt>count</tt> bytes from the
+     * <p> An attempt is made to read up to {@code count} bytes from the
      * source channel and write them to this channel's file starting at the
-     * given <tt>position</tt>.  An invocation of this method may or may not
+     * given {@code position}.  An invocation of this method may or may not
      * transfer all of the requested bytes; whether or not it does so depends
      * upon the natures and states of the channels.  Fewer than the requested
      * number of bytes will be transferred if the source channel has fewer than
-     * <tt>count</tt> bytes remaining, or if the source channel is non-blocking
-     * and has fewer than <tt>count</tt> bytes immediately available in its
+     * {@code count} bytes remaining, or if the source channel is non-blocking
+     * and has fewer than {@code count} bytes immediately available in its
      * input buffer.
      *
      * <p> This method does not modify this channel's position.  If the given
@@ -704,7 +704,7 @@ public abstract class FileChannel
      *         The file position at which the transfer is to begin;
      *         must be non-negative
      *
-     * @return  The number of bytes read, possibly zero, or <tt>-1</tt> if the
+     * @return  The number of bytes read, possibly zero, or {@code -1} if the
      *          given position is greater than or equal to the file's current
      *          size
      *
@@ -855,7 +855,7 @@ public abstract class FileChannel
      *
      * <p> The {@link MappedByteBuffer <i>mapped byte buffer</i>}
      * returned by this method will have a position of zero and a limit and
-     * capacity of <tt>size</tt>; its mark will be undefined.  The buffer and
+     * capacity of {@code size}; its mark will be undefined.  The buffer and
      * the mapping that it represents will remain valid until the buffer itself
      * is garbage-collected.
      *
@@ -895,11 +895,11 @@ public abstract class FileChannel
      * @return  The mapped byte buffer
      *
      * @throws NonReadableChannelException
-     *         If the <tt>mode</tt> is {@link MapMode#READ_ONLY READ_ONLY} but
+     *         If the {@code mode} is {@link MapMode#READ_ONLY READ_ONLY} but
      *         this channel was not opened for reading
      *
      * @throws NonWritableChannelException
-     *         If the <tt>mode</tt> is {@link MapMode#READ_WRITE READ_WRITE} or
+     *         If the {@code mode} is {@link MapMode#READ_WRITE READ_WRITE} or
      *         {@link MapMode#PRIVATE PRIVATE} but this channel was not opened
      *         for both reading and writing
      *
@@ -936,7 +936,7 @@ public abstract class FileChannel
      * will be thrown immediately; the thread's interrupt status will not be
      * changed.
      *
-     * <p> The region specified by the <tt>position</tt> and <tt>size</tt>
+     * <p> The region specified by the {@code position} and {@code size}
      * parameters need not be contained within, or even overlap, the actual
      * underlying file.  Lock regions are fixed in size; if a locked region
      * initially contains the end of the file and the file grows beyond the
@@ -963,12 +963,12 @@ public abstract class FileChannel
      *
      * @param  size
      *         The size of the locked region; must be non-negative, and the sum
-     *         <tt>position</tt>&nbsp;+&nbsp;<tt>size</tt> must be non-negative
+     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
      *
      * @param  shared
-     *         <tt>true</tt> to request a shared lock, in which case this
+     *         {@code true} to request a shared lock, in which case this
      *         channel must be open for reading (and possibly writing);
-     *         <tt>false</tt> to request an exclusive lock, in which case this
+     *         {@code false} to request an exclusive lock, in which case this
      *         channel must be open for writing (and possibly reading)
      *
      * @return  A lock object representing the newly-acquired lock
@@ -994,11 +994,11 @@ public abstract class FileChannel
      *          region
      *
      * @throws  NonReadableChannelException
-     *          If <tt>shared</tt> is <tt>true</tt> this channel was not
+     *          If {@code shared} is {@code true} this channel was not
      *          opened for reading
      *
      * @throws  NonWritableChannelException
-     *          If <tt>shared</tt> is <tt>false</tt> but this channel was not
+     *          If {@code shared} is {@code false} but this channel was not
      *          opened for writing
      *
      * @throws  IOException
@@ -1014,7 +1014,7 @@ public abstract class FileChannel
     /**
      * Acquires an exclusive lock on this channel's file.
      *
-     * <p> An invocation of this method of the form <tt>fc.lock()</tt> behaves
+     * <p> An invocation of this method of the form {@code fc.lock()} behaves
      * in exactly the same way as the invocation
      *
      * <pre>
@@ -1060,10 +1060,10 @@ public abstract class FileChannel
      * immediately, either having acquired a lock on the requested region or
      * having failed to do so.  If it fails to acquire a lock because an
      * overlapping lock is held by another program then it returns
-     * <tt>null</tt>.  If it fails to acquire a lock for any other reason then
+     * {@code null}.  If it fails to acquire a lock for any other reason then
      * an appropriate exception is thrown.
      *
-     * <p> The region specified by the <tt>position</tt> and <tt>size</tt>
+     * <p> The region specified by the {@code position} and {@code size}
      * parameters need not be contained within, or even overlap, the actual
      * underlying file.  Lock regions are fixed in size; if a locked region
      * initially contains the end of the file and the file grows beyond the
@@ -1090,14 +1090,14 @@ public abstract class FileChannel
      *
      * @param  size
      *         The size of the locked region; must be non-negative, and the sum
-     *         <tt>position</tt>&nbsp;+&nbsp;<tt>size</tt> must be non-negative
+     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
      *
      * @param  shared
-     *         <tt>true</tt> to request a shared lock,
-     *         <tt>false</tt> to request an exclusive lock
+     *         {@code true} to request a shared lock,
+     *         {@code false} to request an exclusive lock
      *
      * @return  A lock object representing the newly-acquired lock,
-     *          or <tt>null</tt> if the lock could not be acquired
+     *          or {@code null} if the lock could not be acquired
      *          because another program holds an overlapping lock
      *
      * @throws  IllegalArgumentException
@@ -1125,14 +1125,14 @@ public abstract class FileChannel
     /**
      * Attempts to acquire an exclusive lock on this channel's file.
      *
-     * <p> An invocation of this method of the form <tt>fc.tryLock()</tt>
+     * <p> An invocation of this method of the form {@code fc.tryLock()}
      * behaves in exactly the same way as the invocation
      *
      * <pre>
      *     fc.{@link #tryLock(long,long,boolean) tryLock}(0L, Long.MAX_VALUE, false) </pre>
      *
      * @return  A lock object representing the newly-acquired lock,
-     *          or <tt>null</tt> if the lock could not be acquired
+     *          or {@code null} if the lock could not be acquired
      *          because another program holds an overlapping lock
      *
      * @throws  ClosedChannelException

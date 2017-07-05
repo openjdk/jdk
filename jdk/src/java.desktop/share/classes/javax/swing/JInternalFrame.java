@@ -1247,6 +1247,7 @@ public class JInternalFrame extends JComponent implements
      *
      * @param layer  an <code>Integer</code> object specifying this
      *          frame's desktop layer
+     * @throws NullPointerException if {@code layer} is {@code null}
      * @see JLayeredPane
      * @beaninfo
      *     expert: true

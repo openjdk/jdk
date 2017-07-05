@@ -23,6 +23,14 @@ grant codeBase "jrt:/jdk.scripting.nashorn" {
         permission java.security.AllPermission;
 };
 
+grant codeBase "jrt:/jdk.scripting.nashorn.shell" {
+        permission java.security.AllPermission;
+};
+
+grant codeBase "jrt:/jdk.internal.le" {
+        permission java.security.AllPermission;
+};
+
 grant codeBase "jrt:/jdk.crypto.ucrypto" {
         permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
         permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
