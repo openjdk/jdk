@@ -1,8 +1,8 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<!doctype html>
 <html>
 <head>
 <!--
-Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@ or visit www.oracle.com if you need additional information or have any
 questions. 
 -->
 </head>
-<body bgcolor="white">
+<body>
 
 This package provides an <em>object-model neutral</em> API for the
 evaluation of XPath expressions and access to the evaluation
@@ -36,7 +36,7 @@ environment.
 The XPath API supports <a href="http://www.w3.org/TR/xpath">
     XML Path Language (XPath) Version 1.0</a>
 
-<hr />
+<hr>
 
 <ul>
     <li><a href='#XPath.Overview'>1. XPath Overview</a></li>
@@ -52,7 +52,7 @@ The XPath API supports <a href="http://www.w3.org/TR/xpath">
     <li><a href='#XPath.Use'>5. Using the XPath API</a></li>
 </ul>
 <p>
-<a name="XPath.Overview"></a>
+<a id="XPath.Overview"></a>
 <h3>1. XPath Overview</h3>
 
 <p>The XPath language provides a simple, concise syntax for selecting
@@ -69,7 +69,7 @@ stand-alone language, as a single XPath expression can be used to
 replace many lines of DOM API code.
 </p>
 
-<a name="XPath.Expressions"></a>
+<a id="XPath.Expressions"></a>
 <h3>2. XPath Expressions</h3>
 
 <p>An XPath <em>expression</em> is composed of a <em>location
@@ -139,11 +139,15 @@ attribute nodes, text nodes, comment nodes, and processing instruction
 nodes. The following table gives examples of location paths for each
 of these node types:</p>
 
-<table border="1">
+<table class="striped">
+<caption>Examples of Location Path</caption>
+<thead>
 <tr>
-<td>Location Path</td>
-<td>Description</td>
+<th>Location Path</th>
+<th>Description</th>
 </tr>
+</thead>
+<tbody>
 <tr>
 <td>
 <code>/foo/bar/<strong>@id</strong></code>
@@ -171,6 +175,7 @@ distinction is made between escaped and non-escaped character data.
 <code>&lt;bar&gt;</code> element.
 </td>
 </tr>
+</tbody>
 </table>
 
 <p>Predicates allow for refining the nodes selected by an XPath
@@ -194,7 +199,7 @@ expression, such as:</p>
 </pre>
 </blockquote>
 
-<a name="XPath.Datatypes"></a>
+<a id="XPath.Datatypes"></a>
 <h3>3. XPath Data Types</h3>
 
 <p>While XPath expressions select nodes in the XML document, the XPath
@@ -207,7 +212,7 @@ following data types:</p>
 <li><code>String</code></li>
 </ul>
 
-<a name="XPath.Datatypes.QName"></a>
+<a id="XPath.Datatypes.QName"></a>
 <h3>3.1 QName types</h3>
 The XPath API defines the following {@link javax.xml.namespace.QName} types to 
 represent return types of an XPath evaluation:
@@ -236,7 +241,7 @@ of the child text nodes is returned.
 <p>The <code>Number</code> return type attempts to coalesce the text
 of a node to a <code>double</code> data type.
 
-<a name="XPath.Datatypes.Class"></a>
+<a id="XPath.Datatypes.Class"></a>
 <h3>3.2 Class types</h3>
 In addition to the QName types, the XPath API supports the use of Class types
 through the <code>XPathExpression.evaluteExpression(...)</code> or 
@@ -254,14 +259,14 @@ The XPath data types are mapped to Class types as follows:
 <p>
 Of the subtypes of Number, only Double, Integer and Long are supported.
          
-<a name="XPath.Datatypes.Enum"></a>
+<a id="XPath.Datatypes.Enum"></a>
 <h3>3.3 Enum types</h3>
 Enum types are defined in {@link javax.xml.xpath.XPathEvaluationResult.XPathResultType} 
 that provide mappings between the QName and Class types above. The result of 
 evaluating an expression using the <code>XPathExpression.evaluteExpression(...)</code> 
 or <code>XPath.evaluateExpression(...)</code> methods will be of one of these types.
 
-<a name="XPath.Context"></a>
+<a id="XPath.Context"></a>
 <h3>4. XPath Context</h3>
 
 <p>XPath location paths may be relative to a particular node in the
@@ -278,7 +283,7 @@ document, known as the <code>context</code>. A context consists of:
 It is an XML document tree represented as a hierarchy of nodes, a 
 {@link org.w3c.dom.Node} for example, in the JDK implementation.
 
-<a name="XPath.Use"></a>
+<a id="XPath.Use"></a>
 <h3>5. Using the XPath API</h3>
 
 Consider the following XML document:

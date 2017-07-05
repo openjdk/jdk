@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ final class ResponseHeaders implements HttpHeaders {
 
     static final class InputStreamWrapper extends InputStream {
         final HttpConnection connection;
-        final ByteBuffer buffer;
+        ByteBuffer buffer;
         int lastRead = -1; // last byte read from the buffer
         int consumed = 0; // number of bytes consumed.
         InputStreamWrapper(HttpConnection connection, ByteBuffer buffer) {
@@ -83,9 +83,8 @@ final class ResponseHeaders implements HttpHeaders {
         @Override
         public int read() throws IOException {
             if (!buffer.hasRemaining()) {
-                buffer.clear();
-                int n = connection.read(buffer);
-                if (n == -1) {
+                buffer = connection.read();
+                if (buffer == null) {
                     return lastRead = -1;
                 }
             }
@@ -95,6 +94,16 @@ final class ResponseHeaders implements HttpHeaders {
             if (consumed >= 0) consumed++;
             return lastRead = buffer.get();
         }
+    }
+
+    private static void display(Map<String, List<String>> map) {
+        map.forEach((k,v) -> {
+            System.out.print (k + ": ");
+            for (String val : v) {
+                System.out.print(val + ", ");
+            }
+            System.out.println("");
+        });
     }
 
     private Map<String, List<String>> parse(InputStreamWrapper input)
@@ -114,7 +123,6 @@ final class ResponseHeaders implements HttpHeaders {
             // finds is CR. This only happens if there are no headers, and
             // only one byte will be consumed from the buffer. In this case
             // the next byte MUST be LF
-            //System.err.println("Last character read is: " + (byte)lastRead);
             if (input.read() != LF) {
                 throw new IOException("Unexpected byte sequence when no headers: "
                      + ((int)CR) + " " + input.lastRead

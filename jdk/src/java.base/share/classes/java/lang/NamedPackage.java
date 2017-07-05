@@ -26,7 +26,6 @@ package java.lang;
 
 import java.lang.module.Configuration;
 import java.lang.module.ModuleReference;
-import java.lang.reflect.Module;
 import java.net.URI;
 
 /**

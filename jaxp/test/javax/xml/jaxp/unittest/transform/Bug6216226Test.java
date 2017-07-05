@@ -23,6 +23,7 @@
 
 package transform;
 
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
 import static jaxp.library.JAXPTestUtilities.runWithTmpPermission;
 
 import java.io.File;
@@ -52,7 +53,7 @@ public class Bug6216226Test {
     @Test
     public final void test() {
         try {
-            File test = new File("bug6216226.txt");
+            File test = new File(USER_DIR + "bug6216226.txt");
             TransformerFactory tf = TransformerFactory.newInstance();
             Transformer xformer = tf.newTransformer();
             StringReader st = new StringReader("<?xml version=\"1.0\" encoding=\"UTF-8\"?><doc></doc>");

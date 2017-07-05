@@ -28,6 +28,9 @@
  * <P>
  * The modules defining CORBA and Java EE APIs are not required by
  * this module, but they are required by {@code java.se.ee}.
+ *
+ * @moduleGraph
+ * @since 9
  */
 module java.se {
     requires transitive java.compiler;

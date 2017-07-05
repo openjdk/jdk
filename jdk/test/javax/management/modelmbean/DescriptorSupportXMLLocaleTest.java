@@ -26,7 +26,7 @@
  * @bug 7065236
  * @summary Test for locale insensitive strings in DescriptorSupport class
  * @author Harsha Wardhana B
- * @modules java.management
+ *
  * @run clean DescriptorSupportXMLLocaleTest
  * @run build DescriptorSupportXMLLocaleTest
  * @run main DescriptorSupportXMLLocaleTest
