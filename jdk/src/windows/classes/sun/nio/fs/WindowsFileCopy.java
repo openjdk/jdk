@@ -158,7 +158,7 @@ class WindowsFileCopy {
                     if (x.lastError() == ERROR_DIR_NOT_EMPTY ||
                         x.lastError() == ERROR_ALREADY_EXISTS)
                     {
-                        throw new FileAlreadyExistsException(
+                        throw new DirectoryNotEmptyException(
                             target.getPathForExceptionMessage());
                     }
                 }
@@ -369,7 +369,7 @@ class WindowsFileCopy {
                     if (x.lastError() == ERROR_DIR_NOT_EMPTY ||
                         x.lastError() == ERROR_ALREADY_EXISTS)
                     {
-                        throw new FileAlreadyExistsException(
+                        throw new DirectoryNotEmptyException(
                             target.getPathForExceptionMessage());
                     }
                 }

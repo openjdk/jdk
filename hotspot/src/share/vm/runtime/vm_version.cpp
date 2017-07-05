@@ -35,6 +35,12 @@
 #ifdef TARGET_ARCH_zero
 # include "vm_version_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "vm_version_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "vm_version_ppc.hpp"
+#endif
 
 const char* Abstract_VM_Version::_s_vm_release = Abstract_VM_Version::vm_release();
 const char* Abstract_VM_Version::_s_internal_vm_info_string = Abstract_VM_Version::internal_vm_info_string();
@@ -220,10 +226,27 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
     #endif
   #endif
 
+  #ifndef FLOAT_ARCH
+    #if defined(__SOFTFP__)
+      #define FLOAT_ARCH "-sflt"
+    #elif defined(E500V2)
+      #define FLOAT_ARCH "-e500v2"
+    #elif defined(ARM)
+      #define FLOAT_ARCH "-vfp"
+    #elif defined(PPC)
+      #define FLOAT_ARCH "-hflt"
+    #else
+      #define FLOAT_ARCH ""
+    #endif
+  #endif
 
-  return VMNAME " (" VM_RELEASE ") for " OS "-" CPU
+  return VMNAME " (" VM_RELEASE ") for " OS "-" CPU FLOAT_ARCH
          " JRE (" JRE_RELEASE_VERSION "), built on " __DATE__ " " __TIME__
          " by " XSTR(HOTSPOT_BUILD_USER) " with " HOTSPOT_BUILD_COMPILER;
+}
+
+const char *Abstract_VM_Version::vm_build_user() {
+  return HOTSPOT_BUILD_USER;
 }
 
 unsigned int Abstract_VM_Version::jvm_version() {

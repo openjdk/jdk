@@ -51,11 +51,9 @@
  *
  *********************************************************************** */
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  */
-
-#pragma ident   "%Z%%M% %I%     %E% SMI"
 
 #include "mplogic.h"
 #include "ec.h"
@@ -67,6 +65,7 @@
 #include <string.h>
 
 #ifndef _WIN32
+#include <stdio.h>
 #include <strings.h>
 #endif /* _WIN32 */
 
@@ -116,7 +115,7 @@ ec_points_mul(const ECParams *params, const mp_int *k1, const mp_int *k2,
     ECGroup *group = NULL;
     SECStatus rv = SECFailure;
     mp_err err = MP_OKAY;
-    int len;
+    unsigned int len;
 
 #if EC_DEBUG
     int i;
@@ -278,10 +277,6 @@ ec_NewKey(ECParams *ecParams, ECPrivateKey **privKey,
     printf("ec_NewKey called\n");
 #endif
 
-#ifndef _WIN32
-int printf();
-#endif /* _WIN32 */
-
     if (!ecParams || !privKey || !privKeyBytes || (privKeyLen < 0)) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return SECFailure;
@@ -361,8 +356,9 @@ int printf();
 
 cleanup:
     mp_clear(&k);
-    if (rv)
+    if (rv) {
         PORT_FreeArena(arena, PR_TRUE);
+    }
 
 #if EC_DEBUG
     printf("ec_NewKey returning %s\n",
@@ -504,7 +500,7 @@ EC_ValidatePublicKey(ECParams *ecParams, SECItem *publicValue, int kmflag)
     ECGroup *group = NULL;
     SECStatus rv = SECFailure;
     mp_err err = MP_OKAY;
-    int len;
+    unsigned int len;
 
     if (!ecParams || !publicValue) {
         PORT_SetError(SEC_ERROR_INVALID_ARGS);
@@ -778,7 +774,7 @@ ECDSA_SignDigestWithSeed(ECPrivateKey *key, SECItem *signature,
     /* In the definition of EC signing, digests are truncated
      * to the length of n in bits.
      * (see SEC 1 "Elliptic Curve Digit Signature Algorithm" section 4.1.*/
-    if (digest->len*8 > ecParams->fieldID.size) {
+    if (digest->len*8 > (unsigned int)ecParams->fieldID.size) {
         mpl_rsh(&s,&s,digest->len*8 - ecParams->fieldID.size);
     }
 
@@ -993,7 +989,8 @@ ECDSA_VerifyDigest(ECPublicKey *key, const SECItem *signature,
     /* In the definition of EC signing, digests are truncated
      * to the length of n in bits.
      * (see SEC 1 "Elliptic Curve Digit Signature Algorithm" section 4.1.*/
-    if (digest->len*8 > ecParams->fieldID.size) {  /* u1 = HASH(M')     */
+    /* u1 = HASH(M')     */
+    if (digest->len*8 > (unsigned int)ecParams->fieldID.size) {
         mpl_rsh(&u1,&u1,digest->len*8- ecParams->fieldID.size);
     }
 

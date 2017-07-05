@@ -328,6 +328,12 @@ extern int LogMinObjAlignmentInBytes;
 #ifdef TARGET_ARCH_zero
 # include "globalDefinitions_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "globalDefinitions_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "globalDefinitions_ppc.hpp"
+#endif
 
 
 // The byte alignment to be used by Arena::Amalloc.  See bugid 4169348.

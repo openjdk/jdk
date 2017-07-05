@@ -55,8 +55,6 @@
  * Use is subject to license terms.
  */
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 #include "mp_gf2m.h"
 #include "mp_gf2m-priv.h"
 #include "mplogic.h"

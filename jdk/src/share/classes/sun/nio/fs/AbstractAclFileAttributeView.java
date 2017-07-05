@@ -45,15 +45,6 @@ abstract class AbstractAclFileAttributeView
     }
 
     @Override
-    public final Object getAttribute(String attribute) throws IOException {
-        if (attribute.equals(OWNER_NAME))
-            return getOwner();
-        if (attribute.equals(ACL_NAME))
-            return getAcl();
-        return null;
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
     public final void setAttribute(String attribute, Object value)
         throws IOException
@@ -71,7 +62,7 @@ abstract class AbstractAclFileAttributeView
     }
 
     @Override
-    public final Map<String,?> readAttributes(String[] attributes)
+    public final Map<String,Object> readAttributes(String[] attributes)
         throws IOException
     {
         boolean acl = false;
@@ -91,7 +82,7 @@ abstract class AbstractAclFileAttributeView
                 continue;
             }
         }
-        Map<String,Object> result = new HashMap<String,Object>(2);
+        Map<String,Object> result = new HashMap<>(2);
         if (acl)
             result.put(ACL_NAME, getAcl());
         if (owner)

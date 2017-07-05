@@ -430,6 +430,12 @@ class relocInfo VALUE_OBJ_CLASS_SPEC {
 #ifdef TARGET_ARCH_zero
 # include "relocInfo_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "relocInfo_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "relocInfo_ppc.hpp"
+#endif
 
 
  protected:

@@ -88,6 +88,10 @@ public class StrokeBorder extends AbstractBorder {
     /**
      * Paints the border for the specified component
      * with the specified position and size.
+     * If the border was not specified with a {@link Paint} object,
+     * the component's foreground color will be used to render the border.
+     * If the component's foreground color is not available,
+     * the default color of the {@link Graphics} object will be used.
      *
      * @param c       the component for which this border is being painted
      * @param g       the paint graphics
@@ -96,7 +100,7 @@ public class StrokeBorder extends AbstractBorder {
      * @param width   the width of the painted border
      * @param height  the height of the painted border
      *
-     * @throws NullPointerException if the specified {@code c} or {@code g} are {@code null}
+     * @throws NullPointerException if the specified {@code g} is {@code null}
      */
     @Override
     public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
@@ -106,7 +110,7 @@ public class StrokeBorder extends AbstractBorder {
             if (g instanceof Graphics2D) {
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setStroke(this.stroke);
-                g2d.setPaint(this.paint != null ? this.paint : c.getForeground());
+                g2d.setPaint(this.paint != null ? this.paint : c == null ? null : c.getForeground());
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                                      RenderingHints.VALUE_ANTIALIAS_ON);
                 g2d.draw(new Rectangle2D.Float(x + size / 2, y + size / 2, width - size, height - size));
@@ -118,13 +122,17 @@ public class StrokeBorder extends AbstractBorder {
     /**
      * Reinitializes the {@code insets} parameter
      * with this border's current insets.
-     * All insets are equal to the line width of the stroke.
+     * Every inset is the smallest (closest to negative infinity) integer value
+     * that is greater than or equal to the line width of the stroke
+     * that is used to paint the border.
      *
      * @param c       the component for which this border insets value applies
      * @param insets  the {@code Insets} object to be reinitialized
      * @return the reinitialized {@code insets} parameter
      *
      * @throws NullPointerException if the specified {@code insets} is {@code null}
+     *
+     * @see Math#ceil
      */
     @Override
     public Insets getBorderInsets(Component c, Insets insets) {

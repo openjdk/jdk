@@ -192,6 +192,12 @@ class TemplateInterpreter: public AbstractInterpreter {
 #ifdef TARGET_ARCH_zero
 # include "templateInterpreter_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "templateInterpreter_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "templateInterpreter_ppc.hpp"
+#endif
 
 
 };

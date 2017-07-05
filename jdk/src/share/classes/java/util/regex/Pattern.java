@@ -101,6 +101,11 @@ import java.util.Arrays;
  *     <td headers="matches">The character with hexadecimal&nbsp;value&nbsp;<tt>0x</tt><i>hh</i></td></tr>
  * <tr><td valign="top" headers="construct characters"><tt>&#92;u</tt><i>hhhh</i></td>
  *     <td headers="matches">The character with hexadecimal&nbsp;value&nbsp;<tt>0x</tt><i>hhhh</i></td></tr>
+ * <tr><td valign="top" headers="construct characters"><tt>&#92;x</tt><i>{h...h}</i></td>
+ *     <td headers="matches">The character with hexadecimal&nbsp;value&nbsp;<tt>0x</tt><i>h...h</i>
+ *         ({@link java.lang.Character#MIN_CODE_POINT Character.MIN_CODE_POINT}
+ *         &nbsp;&lt;=&nbsp;<tt>0x</tt><i>h...h</i>&nbsp;&lt;=&nbsp
+ *          {@link java.lang.Character#MAX_CODE_POINT Character.MAX_CODE_POINT})</td></tr>
  * <tr><td valign="top" headers="matches"><tt>\t</tt></td>
  *     <td headers="matches">The tab character (<tt>'&#92;u0009'</tt>)</td></tr>
  * <tr><td valign="top" headers="construct characters"><tt>\n</tt></td>
@@ -528,6 +533,13 @@ import java.util.Arrays;
  * keyboard.  Thus the strings <tt>"&#92;u2014"</tt> and <tt>"\\u2014"</tt>,
  * while not equal, compile into the same pattern, which matches the character
  * with hexadecimal value <tt>0x2014</tt>.
+ *
+ * <p> A Unicode character can also be represented in a regular-expression by
+ * using its hexadecimal code point value directly as described in construct
+ * <tt>&#92;x{...}</tt>, for example a supplementary character U+2011F
+ * can be specified as <tt>&#92;x{2011F}</tt>, instead of two consecutive
+ * Unicode escape sequences of the surrogate pair
+ * <tt>&#92;uD840</tt><tt>&#92;uDD1F</tt>.
  *
  * <a name="ubc">
  * <p>Unicode scripts, blocks and categories are written with the <tt>\p</tt> and
@@ -2993,6 +3005,16 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             if (ASCII.isHexDigit(m)) {
                 return ASCII.toDigit(n) * 16 + ASCII.toDigit(m);
             }
+        } else if (n == '{' && ASCII.isHexDigit(peek())) {
+            int ch = 0;
+            while (ASCII.isHexDigit(n = read())) {
+                ch = (ch << 4) + ASCII.toDigit(n);
+                if (ch > Character.MAX_CODE_POINT)
+                    throw error("Hexadecimal codepoint is too big");
+            }
+            if (n != '}')
+                throw error("Unclosed hexadecimal escape sequence");
+            return ch;
         }
         throw error("Illegal hexadecimal escape sequence");
     }

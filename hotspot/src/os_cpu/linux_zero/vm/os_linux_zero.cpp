@@ -116,7 +116,7 @@ frame os::fetch_frame_from_context(void* ucVoid) {
   ShouldNotCallThis();
 }
 
-extern "C" int
+extern "C" JNIEXPORT int
 JVM_handle_linux_signal(int sig,
                         siginfo_t* info,
                         void* ucVoid,

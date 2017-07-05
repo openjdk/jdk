@@ -868,21 +868,6 @@ class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * Notifies the group that the thread {@code t} is about to be
-     * started and adds the thread to this thread group.
-     *
-     * The thread is now a fully fledged member of the group, even though
-     * it hasn't been started yet. It will prevent the group from being
-     * destroyed so the unstarted Threads count is decremented.
-     */
-    void threadStarting(Thread t) {
-        synchronized (this) {
-            add(t);
-            nUnstartedThreads--;
-        }
-    }
-
-    /**
      * Adds the specified thread to this thread group.
      *
      * <p> Note: This method is called from both library code
@@ -910,6 +895,12 @@ class ThreadGroup implements Thread.UncaughtExceptionHandler {
             // This is done last so it doesn't matter in case the
             // thread is killed
             nthreads++;
+
+            // The thread is now a fully fledged member of the group, even
+            // though it may, or may not, have been started yet. It will prevent
+            // the group from being destroyed so the unstarted Threads count is
+            // decremented.
+            nUnstartedThreads--;
         }
     }
 
