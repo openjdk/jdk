@@ -68,7 +68,7 @@ static const char* split_attrs(const char* &kind, char* buffer) {
     return attrs;
   } else {
     // park it in the buffer, so we can put a null on the end
-    assert(!(kind >= buffer && kind < buffer+100), "not obviously in buffer")
+    assert(!(kind >= buffer && kind < buffer+100), "not obviously in buffer");
     int klen = attrs - kind;
     strncpy(buffer, kind, klen);
     buffer[klen] = 0;

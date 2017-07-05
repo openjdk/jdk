@@ -1567,7 +1567,8 @@ int os::allocate_thread_local_storage() {
   //           treat %g2 as a caller-save register, preserving it in a %lN.
   thread_key_t tk;
   if (thr_keycreate( &tk, NULL ) )
-    fatal1("os::allocate_thread_local_storage: thr_keycreate failed (%s)", strerror(errno));
+    fatal(err_msg("os::allocate_thread_local_storage: thr_keycreate failed "
+                  "(%s)", strerror(errno)));
   return int(tk);
 }
 
@@ -1585,7 +1586,8 @@ void os::thread_local_storage_at_put(int index, void* value) {
     if (errno == ENOMEM) {
        vm_exit_out_of_memory(SMALLINT, "thr_setspecific: out of swap space");
     } else {
-      fatal1("os::thread_local_storage_at_put: thr_setspecific failed (%s)", strerror(errno));
+      fatal(err_msg("os::thread_local_storage_at_put: thr_setspecific failed "
+                    "(%s)", strerror(errno)));
     }
   } else {
       ThreadLocalStorage::set_thread_in_slot ((Thread *) value) ;
@@ -1738,7 +1740,7 @@ jlong getTimeMillis() {
 jlong os::javaTimeMillis() {
   timeval t;
   if (gettimeofday( &t, NULL) == -1)
-    fatal1("os::javaTimeMillis: gettimeofday (%s)", strerror(errno));
+    fatal(err_msg("os::javaTimeMillis: gettimeofday (%s)", strerror(errno)));
   return jlong(t.tv_sec) * 1000  +  jlong(t.tv_usec) / 1000;
 }
 
@@ -4233,7 +4235,8 @@ void os::Solaris::set_signal_handler(int sig, bool set_installed, bool oktochain
       // libjsig also interposes the sigaction() call below and saves the
       // old sigaction on it own.
     } else {
-      fatal2("Encountered unexpected pre-existing sigaction handler %#lx for signal %d.", (long)oldhand, sig);
+      fatal(err_msg("Encountered unexpected pre-existing sigaction handler "
+                    "%#lx for signal %d.", (long)oldhand, sig));
     }
   }
 
@@ -4764,7 +4767,8 @@ void os::init(void) {
 
   page_size = sysconf(_SC_PAGESIZE);
   if (page_size == -1)
-    fatal1("os_solaris.cpp: os::init: sysconf failed (%s)", strerror(errno));
+    fatal(err_msg("os_solaris.cpp: os::init: sysconf failed (%s)",
+                  strerror(errno)));
   init_page_sizes((size_t) page_size);
 
   Solaris::initialize_system_info();
@@ -4775,7 +4779,7 @@ void os::init(void) {
 
   int fd = open("/dev/zero", O_RDWR);
   if (fd < 0) {
-    fatal1("os::init: cannot open /dev/zero (%s)", strerror(errno));
+    fatal(err_msg("os::init: cannot open /dev/zero (%s)", strerror(errno)));
   } else {
     Solaris::set_dev_zero_fd(fd);
 

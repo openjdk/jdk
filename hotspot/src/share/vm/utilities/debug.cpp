@@ -72,7 +72,7 @@ static int         last_line_no   = -1;
 // assert/guarantee/... may happen very early during VM initialization.
 // Don't rely on anything that is initialized by Threads::create_vm(). For
 // example, don't use tty.
-bool assert_is_suppressed(const char* file_name, int line_no) {
+bool error_is_suppressed(const char* file_name, int line_no) {
   // The following 1-element cache requires that passed-in
   // file names are always only constant literals.
   if (file_name == last_file_name && line_no == last_line_no)  return true;
@@ -163,38 +163,30 @@ bool assert_is_suppressed(const char* file_name, int line_no) {
 #else
 
 // Place-holder for non-existent suppression check:
-#define assert_is_suppressed(file_name, line_no) (false)
+#define error_is_suppressed(file_name, line_no) (false)
 
 #endif //PRODUCT
 
-void report_assertion_failure(const char* file_name, int line_no, const char* message) {
-  if (Debugging || assert_is_suppressed(file_name, line_no))  return;
-  VMError err(ThreadLocalStorage::get_thread_slow(), message, file_name, line_no);
+void report_vm_error(const char* file, int line, const char* error_msg,
+                     const char* detail_msg)
+{
+  if (Debugging || error_is_suppressed(file, line)) return;
+  Thread* const thread = ThreadLocalStorage::get_thread_slow();
+  VMError err(thread, file, line, error_msg, detail_msg);
   err.report_and_die();
 }
 
-void report_fatal(const char* file_name, int line_no, const char* message) {
-  if (Debugging || assert_is_suppressed(file_name, line_no))  return;
-  VMError err(ThreadLocalStorage::get_thread_slow(), message, file_name, line_no);
-  err.report_and_die();
+void report_fatal(const char* file, int line, const char* message)
+{
+  report_vm_error(file, line, "fatal error", message);
 }
-
-void report_fatal_vararg(const char* file_name, int line_no, const char* format, ...) {
-  char buffer[256];
-  va_list ap;
-  va_start(ap, format);
-  jio_vsnprintf(buffer, sizeof(buffer), format, ap);
-  va_end(ap);
-  report_fatal(file_name, line_no, buffer);
-}
-
 
 // Used by report_vm_out_of_memory to detect recursion.
 static jint _exiting_out_of_mem = 0;
 
-// Just passing the flow to VMError to handle error
-void report_vm_out_of_memory(const char* file_name, int line_no, size_t size, const char* message) {
-  if (Debugging || assert_is_suppressed(file_name, line_no))  return;
+void report_vm_out_of_memory(const char* file, int line, size_t size,
+                             const char* message) {
+  if (Debugging || error_is_suppressed(file, line)) return;
 
   // We try to gather additional information for the first out of memory
   // error only; gathering additional data might cause an allocation and a
@@ -206,46 +198,28 @@ void report_vm_out_of_memory(const char* file_name, int line_no, size_t size, co
 
   if (first_time_here) {
     Thread* thread = ThreadLocalStorage::get_thread_slow();
-    VMError(thread, size, message, file_name, line_no).report_and_die();
+    VMError(thread, file, line, size, message).report_and_die();
   }
 
   // Dump core and abort
   vm_abort(true);
 }
 
-void report_vm_out_of_memory_vararg(const char* file_name, int line_no, size_t size, const char* format, ...) {
-  char buffer[256];
-  va_list ap;
-  va_start(ap, format);
-  jio_vsnprintf(buffer, sizeof(buffer), format, ap);
-  va_end(ap);
-  report_vm_out_of_memory(file_name, line_no, size, buffer);
+void report_should_not_call(const char* file, int line) {
+  report_vm_error(file, line, "ShouldNotCall()");
 }
 
-void report_should_not_call(const char* file_name, int line_no) {
-  if (Debugging || assert_is_suppressed(file_name, line_no))  return;
-  VMError err(ThreadLocalStorage::get_thread_slow(), "ShouldNotCall()", file_name, line_no);
-  err.report_and_die();
+void report_should_not_reach_here(const char* file, int line) {
+  report_vm_error(file, line, "ShouldNotReachHere()");
 }
 
-
-void report_should_not_reach_here(const char* file_name, int line_no) {
-  if (Debugging || assert_is_suppressed(file_name, line_no))  return;
-  VMError err(ThreadLocalStorage::get_thread_slow(), "ShouldNotReachHere()", file_name, line_no);
-  err.report_and_die();
+void report_unimplemented(const char* file, int line) {
+  report_vm_error(file, line, "Unimplemented()");
 }
 
-
-void report_unimplemented(const char* file_name, int line_no) {
-  if (Debugging || assert_is_suppressed(file_name, line_no))  return;
-  VMError err(ThreadLocalStorage::get_thread_slow(), "Unimplemented()", file_name, line_no);
-  err.report_and_die();
-}
-
-
-void report_untested(const char* file_name, int line_no, const char* msg) {
+void report_untested(const char* file, int line, const char* message) {
 #ifndef PRODUCT
-  warning("Untested: %s in %s: %d\n", msg, file_name, line_no);
+  warning("Untested: %s in %s: %d\n", message, file, line);
 #endif // PRODUCT
 }
 
@@ -283,6 +257,51 @@ void set_error_reported() {
 bool is_error_reported() {
     return error_reported;
 }
+
+#ifndef PRODUCT
+#include <signal.h>
+
+void test_error_handler(size_t test_num)
+{
+  if (test_num == 0) return;
+
+  // If asserts are disabled, use the corresponding guarantee instead.
+  size_t n = test_num;
+  NOT_DEBUG(if (n <= 2) n += 2);
+
+  const char* const str = "hello";
+  const size_t      num = (size_t)os::vm_page_size();
+
+  const char* const eol = os::line_separator();
+  const char* const msg = "this message should be truncated during formatting";
+
+  // Keep this in sync with test/runtime/6888954/vmerrors.sh.
+  switch (n) {
+    case  1: assert(str == NULL, "expected null");
+    case  2: assert(num == 1023 && *str == 'X',
+                    err_msg("num=" SIZE_FORMAT " str=\"%s\"", num, str));
+    case  3: guarantee(str == NULL, "expected null");
+    case  4: guarantee(num == 1023 && *str == 'X',
+                       err_msg("num=" SIZE_FORMAT " str=\"%s\"", num, str));
+    case  5: fatal("expected null");
+    case  6: fatal(err_msg("num=" SIZE_FORMAT " str=\"%s\"", num, str));
+    case  7: fatal(err_msg("%s%s#    %s%s#    %s%s#    %s%s#    %s%s#    "
+                           "%s%s#    %s%s#    %s%s#    %s%s#    %s%s#    "
+                           "%s%s#    %s%s#    %s%s#    %s%s#    %s",
+                           msg, eol, msg, eol, msg, eol, msg, eol, msg, eol,
+                           msg, eol, msg, eol, msg, eol, msg, eol, msg, eol,
+                           msg, eol, msg, eol, msg, eol, msg, eol, msg));
+    case  8: vm_exit_out_of_memory(num, "ChunkPool::allocate");
+    case  9: ShouldNotCallThis();
+    case 10: ShouldNotReachHere();
+    case 11: Unimplemented();
+    // This is last because it does not generate an hs_err* file on Windows.
+    case 12: os::signal_raise(SIGSEGV);
+
+    default: ShouldNotReachHere();
+  }
+}
+#endif // #ifndef PRODUCT
 
 // ------ helper functions for debugging go here ------------
 

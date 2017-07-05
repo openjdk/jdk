@@ -315,7 +315,7 @@ class FindInstanceClosure : public ObjectClosure {
 
 void HeapInspection::find_instances_at_safepoint(klassOop k, GrowableArray<oop>* result) {
   assert(SafepointSynchronize::is_at_safepoint(), "all threads are stopped");
-  assert(Heap_lock->is_locked(), "should have the Heap_lock")
+  assert(Heap_lock->is_locked(), "should have the Heap_lock");
 
   // Ensure that the heap is parsable
   Universe::heap()->ensure_parsability(false);  // no need to retire TALBs

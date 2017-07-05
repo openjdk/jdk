@@ -724,7 +724,7 @@ jlong offset() {
   java_origin.wMilliseconds  = 0;
   FILETIME jot;
   if (!SystemTimeToFileTime(&java_origin, &jot)) {
-    fatal1("Error = %d\nWindows error", GetLastError());
+    fatal(err_msg("Error = %d\nWindows error", GetLastError()));
   }
   _calculated_offset = jlong_from(jot.dwHighDateTime, jot.dwLowDateTime);
   _has_calculated_offset = 1;
@@ -4095,7 +4095,7 @@ bool os::check_heap(bool force) {
       }
       int err = GetLastError();
       if (err != ERROR_NO_MORE_ITEMS && err != ERROR_CALL_NOT_IMPLEMENTED) {
-        fatal1("heap walk aborted with error %d", err);
+        fatal(err_msg("heap walk aborted with error %d", err));
       }
       HeapUnlock(heap);
     }
