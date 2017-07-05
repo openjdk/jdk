@@ -118,7 +118,7 @@ public final class X500Principal implements Principal, java.io.Serializable {
      *                  is improperly specified
      */
     public X500Principal(String name) {
-        this(name, (Map<String, String>) Collections.EMPTY_MAP);
+        this(name, Collections.<String, String>emptyMap());
     }
 
     /**

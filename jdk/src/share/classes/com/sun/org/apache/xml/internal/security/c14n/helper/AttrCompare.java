@@ -41,7 +41,7 @@ import java.util.Comparator;
  *
  * @author Christian Geuer-Pollmann
  */
-public class AttrCompare implements Comparator, Serializable {
+public class AttrCompare implements Comparator<Attr>, Serializable {
 
     private final static long serialVersionUID = -7113259629930576230L;
     private final static int ATTR0_BEFORE_ATTR1 = -1;
@@ -62,16 +62,14 @@ public class AttrCompare implements Comparator, Serializable {
      *   key (an empty namespace URI is lexicographically least).
      * </UL>
      *
-     * @param obj0 casted Attr
-     * @param obj1 casted Attr
+     * @param attr0
+     * @param attr1
      * @return returns a negative integer, zero, or a positive integer as
      *   obj0 is less than, equal to, or greater than obj1
      *
      */
-    public int compare(Object obj0, Object obj1) {
+    public int compare(Attr attr0, Attr attr1) {
 
-        Attr attr0 = (Attr) obj0;
-        Attr attr1 = (Attr) obj1;
         String namespaceURI0 = attr0.getNamespaceURI();
         String namespaceURI1 = attr1.getNamespaceURI();
 

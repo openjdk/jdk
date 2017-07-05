@@ -899,6 +899,7 @@ public abstract class Signature extends SignatureSpi {
      * and its original parent (Object).
      */
 
+    @SuppressWarnings("deprecation")
     private static class Delegate extends Signature {
 
         // The provider implementation (delegate)
@@ -1203,6 +1204,7 @@ public abstract class Signature extends SignatureSpi {
     }
 
     // adapter for RSA/ECB/PKCS1Padding ciphers
+    @SuppressWarnings("deprecation")
     private static class CipherAdapter extends SignatureSpi {
 
         private final Cipher cipher;
