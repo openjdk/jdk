@@ -91,6 +91,7 @@ import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.StringTokenizer;
 import java.util.WeakHashMap;
 import jdk.internal.dynalink.CallSiteDescriptor;
@@ -123,9 +124,9 @@ public class CallSiteDescriptorFactory {
      * in fact return a weakly-referenced canonical instance.
      */
     public static CallSiteDescriptor create(final Lookup lookup, final String name, final MethodType methodType) {
-        name.getClass(); // NPE check
-        methodType.getClass(); // NPE check
-        lookup.getClass(); // NPE check
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(methodType);
+        Objects.requireNonNull(lookup);
         final String[] tokenizedName = tokenizeName(name);
         if(isPublicLookup(lookup)) {
             return getCanonicalPublicDescriptor(createPublicCallSiteDescriptor(tokenizedName, methodType));
