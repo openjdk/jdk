@@ -930,6 +930,10 @@ public class KeyEvent extends InputEvent {
                                                long extendedKeyCode) {
                     ev.extendedKeyCode = extendedKeyCode;
                 }
+
+                public Component getOriginalSource( KeyEvent ev ) {
+                    return ev.originalSource;
+                }
             });
     }
 
@@ -938,6 +942,14 @@ public class KeyEvent extends InputEvent {
      * accessed from C.
      */
     private static native void initIDs();
+
+    /**
+     * The original event source.
+     *
+     * Event source can be changed during processing, but in some cases
+     * we need to be able to obtain original source.
+     */
+    private Component originalSource;
 
     private KeyEvent(Component source, int id, long when, int modifiers,
                     int keyCode, char keyChar, int keyLocation, boolean isProxyActive) {
@@ -1023,6 +1035,7 @@ public class KeyEvent extends InputEvent {
         } else if ((getModifiers() == 0) && (getModifiersEx() != 0)) {
             setOldModifiers();
         }
+        originalSource = source;
     }
 
     /**

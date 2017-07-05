@@ -350,9 +350,9 @@ public class KerberosTime implements Cloneable {
     public static int getDefaultSkew() {
         int tdiff = Krb5.DEFAULT_ALLOWABLE_CLOCKSKEW;
         try {
-            Config c = Config.getInstance();
-            if ((tdiff = c.getDefaultIntValue("clockskew",
-                                              "libdefaults")) == Integer.MIN_VALUE) {   //value is not defined
+            if ((tdiff = Config.getInstance().getIntValue(
+                    "libdefaults", "clockskew"))
+                        == Integer.MIN_VALUE) {   //value is not defined
                 tdiff = Krb5.DEFAULT_ALLOWABLE_CLOCKSKEW;
             }
         } catch (KrbException e) {

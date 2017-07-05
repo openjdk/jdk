@@ -38,11 +38,14 @@ import java.util.ArrayList;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
-import java.util.Enumeration;
 import java.util.StringTokenizer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import sun.net.dns.ResolverConfiguration;
 import sun.security.krb5.internal.crypto.EType;
 import sun.security.krb5.internal.Krb5;
@@ -62,7 +65,7 @@ public class Config {
     /*
      * Hashtable used to store configuration infomation.
      */
-    private Hashtable<String,Object> stanzaTable;
+    private Hashtable<String,Object> stanzaTable = new Hashtable<>();
 
     private static boolean DEBUG = sun.security.krb5.internal.Krb5.DEBUG;
 
@@ -100,7 +103,9 @@ public class Config {
     /**
      * Refresh and reload the Configuration. This could involve,
      * for example reading the Configuration file again or getting
-     * the java.security.krb5.* system properties again.
+     * the java.security.krb5.* system properties again. This method
+     * also tries its best to update static fields in other classes
+     * that depend on the configuration.
      *
      * @exception KrbException if error occurs when constructing a Config
      * instance. Possible causes would be either of java.security.krb5.realm or
@@ -110,6 +115,8 @@ public class Config {
     public static synchronized void refresh() throws KrbException {
         singleton = new Config();
         KdcComm.initStatic();
+        EType.initStatic();
+        Checksum.initStatic();
     }
 
 
@@ -163,7 +170,7 @@ public class Config {
 
         // Always read the Kerberos configuration file
         try {
-            Vector<String> configFile;
+            List<String> configFile;
             String fileName = getJavaFileName();
             if (fileName != null) {
                 configFile = loadConfigFile(fileName);
@@ -194,216 +201,111 @@ public class Config {
                 }
             }
         } catch (IOException ioe) {
-            // No krb5.conf, no problem. We'll use DNS or system property etc.
+            // I/O error, mostly like krb5.conf missing.
+            // No problem. We'll use DNS or system property etc.
         }
     }
 
     /**
-     * Gets the default int value for the specified name.
-     * @param name the name.
-     * @return the default Integer, null is returned if no such name and
-     * value are found in configuration file, or error occurs when parsing
-     * string to integer.
+     * Gets the last-defined string value for the specified keys.
+     * @param keys the keys, as an array from section name, sub-section names
+     * (if any), to value name.
+     * @return the value. When there are multiple values for the same key,
+     * returns the last one. {@code null} is returned if not all the keys are
+     * defined. For example, {@code get("libdefaults", "forwardable")} will
+     * return null if "forwardable" is not defined in [libdefaults], and
+     * {@code get("realms", "R", "kdc")} will return null if "R" is not
+     * defined in [realms] or "kdc" is not defined for "R".
+     * @throws IllegalArgumentException if any of the keys is illegal, either
+     * because a key not the last one is not a (sub)section name or the last
+     * key is still a section name. For example, {@code get("libdefaults")}
+     * throws this exception because [libdefaults] is a section name instead of
+     * a value name, and {@code get("libdefaults", "forwardable", "tail")}
+     * also throws this exception because "forwardable" is already a value name
+     * and has no sub-key at all (given "forwardable" is defined, otherwise,
+     * this method has no knowledge if it's a value name or a section name),
      */
-    public int getDefaultIntValue(String name) {
-        String result = null;
-        int value = Integer.MIN_VALUE;
-        result = getDefault(name);
-        if (result != null) {
-            try {
-                value = parseIntValue(result);
-            } catch (NumberFormatException e) {
-                if (DEBUG) {
-                    System.out.println("Exception in getting value of " +
-                                       name + " " +
-                                       e.getMessage());
-                    System.out.println("Setting " + name +
-                                       " to minimum value");
-                }
-                value = Integer.MIN_VALUE;
-            }
-        }
-        return value;
-    }
-
-    /**
-     * Gets the default int value for the specified name in the specified
-     * section. <br>This method is quicker by using section name as the
-     * search key.
-     * @param name the name.
-     * @param sectio the name string of the section.
-     * @return the default Integer, null is returned if no such name and
-     * value are found in configuration file, or error occurs when parsing
-     * string to integer.
-     */
-    public int getDefaultIntValue(String name, String section) {
-        String result = null;
-        int value = Integer.MIN_VALUE;
-        result = getDefault(name, section);
-        if (result != null) {
-            try {
-                value = parseIntValue(result);
-            } catch (NumberFormatException e) {
-                if (DEBUG) {
-                    System.out.println("Exception in getting value of " +
-                                       name +" in section " +
-                                       section + " "  + e.getMessage());
-                    System.out.println("Setting " + name +
-                                       " to minimum value");
-                }
-                value = Integer.MIN_VALUE;
-            }
-        }
-        return value;
-    }
-
-    /**
-     * Gets the default string value for the specified name.
-     * @param name the name.
-     * @return the default value, null is returned if it cannot be found.
-     */
-    public String getDefault(String name) {
-        if (stanzaTable == null) {
-            return null;
-        } else {
-            return getDefault(name, stanzaTable);
-        }
-    }
-
-    /**
-     * This method does the real job to recursively search through the
-     * stanzaTable.
-     * @param k the key string.
-     * @param t stanzaTable or sub hashtable within it.
-     * @return the value found in config file, returns null if no value
-     * matched with the key is found.
-     */
-    private String getDefault(String k, Hashtable<String, Object> t) {
-        String result = null;
-        String key;
-        if (stanzaTable != null) {
-            for (Enumeration<String> e = t.keys(); e.hasMoreElements(); ) {
-                key = e.nextElement();
-                Object ob = t.get(key);
-                if (ob instanceof Hashtable) {
-                    @SuppressWarnings("unchecked") // Checked with an instanceof check
-                    Hashtable<String, Object> table =
-                            (Hashtable<String, Object>)ob;
-                    result = getDefault(k, table);
-                    if (result != null) {
-                        return result;
-                    }
-                } else if (key.equalsIgnoreCase(k)) {
-                    if (ob instanceof String) {
-                        return (String)(t.get(key));
-                    } else if (ob instanceof Vector) {
-                        result = "";
-                        int length = ((Vector)ob).size();
-                        for (int i = 0; i < length; i++) {
-                            if (i == length -1) {
-                                result +=
-                                    (String)(((Vector)ob).elementAt(i));
-                            } else {
-                                result +=
-                                    (String)(((Vector)ob).elementAt(i)) + " ";
-                            }
-                        }
-                        return result;
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Gets the default string value for the specified name in the
-     * specified section.
-     * <br>This method is quicker by using the section name as the search key.
-     * @param name the name.
-     * @param section the name of the section.
-     * @return the default value, null is returned if it cannot be found.
-     */
-    // stanzaTable leads to a lot of unchecked casts since its value type is
-    // STANZATABLE = String | Hashtable<String, STANZATABLE>
     @SuppressWarnings("unchecked")
-    public String getDefault(String name, String section) {
-        String stanzaName;
-        String result = null;
-        Hashtable<String, Object> subTable;
+    public String get(String... keys) {
+        Vector<String> v = get0(keys);
+        if (v == null) return null;
+        return v.lastElement();
+    }
 
-        if (stanzaTable != null) {
-            for (Enumeration<String> e = stanzaTable.keys();
-                 e.hasMoreElements(); ) {
-                stanzaName = e.nextElement();
-                subTable = (Hashtable<String, Object>)
-                        stanzaTable.get(stanzaName);
-                if (stanzaName.equalsIgnoreCase(section)) {
-                    if (subTable.containsKey(name)) {
-                        return (String)(subTable.get(name));
-                    }
-                } else if (subTable.containsKey(section)) {
-                    Object ob = subTable.get(section);
-                    if (ob instanceof Hashtable) {
-                        Hashtable<String, Object> temp =
-                                (Hashtable<String, Object>)ob;
-                        if (temp.containsKey(name)) {
-                            Object object = temp.get(name);
-                            if (object instanceof Vector) {
-                                result = "";
-                                int length = ((Vector)object).size();
-                                for (int i = 0; i < length; i++) {
-                                    if (i == length - 1)  {
-                                        result +=
-                                        (String)(((Vector)object).elementAt(i));
-                                    } else {
-                                        result +=
-                                        (String)(((Vector)object).elementAt(i))
-                                                + " ";
-                                    }
-                                }
-                            } else {
-                                result = (String)object;
-                            }
-                        }
-                    }
-                }
+    /**
+     * Gets all values for the specified keys.
+     * @see #get(java.lang.String[])
+     */
+    public String getAll(String... keys) {
+        Vector<String> v = get0(keys);
+        if (v == null) return null;
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        for (String s: v) {
+            if (first) {
+                sb.append(s);
+                first = false;
+            } else {
+                sb.append(' ').append(s);
             }
         }
-        return result;
+        return sb.toString();
     }
 
-    /**
-     * Gets the default boolean value for the specified name.
-     * @param name the name.
-     * @return the default boolean value, false is returned if it cannot be
-     * found.
-     */
-    public boolean getDefaultBooleanValue(String name) {
-        String val = null;
-        if (stanzaTable == null) {
-            val = null;
-        } else {
-            val = getDefault(name, stanzaTable);
-        }
-        if (val != null && val.equalsIgnoreCase("true")) {
-            return true;
-        } else {
-            return false;
+    // Internal method. Returns the vector of strings for keys.
+    // The only method (except for toString) that reads stanzaTable directly.
+    @SuppressWarnings("unchecked")
+    private Vector<String> get0(String... keys) {
+        Object current = stanzaTable;
+        try {
+            for (String key: keys) {
+                current = ((Hashtable<String,Object>)current).get(key);
+                if (current == null) return null;
+            }
+            return (Vector<String>)current;
+        } catch (ClassCastException cce) {
+            throw new IllegalArgumentException(cce);
         }
     }
 
     /**
-     * Gets the default boolean value for the specified name in the
-     * specified section.
-     * <br>This method is quicker by using the section name as the search key.
-     * @param name the name.
-     * @param section the name of the section.
-     * @return the default boolean value, false is returned if it cannot be
-     * found.
+     * Gets the int value for the specified keys.
+     * @param keys the keys
+     * @return the int value, Integer.MIN_VALUE is returned if it cannot be
+     * found or the value is not a legal integer.
+     * @throw IllegalArgumentException if any of the keys is illegal
+     * @see #get(java.lang.String[])
      */
-    public boolean getDefaultBooleanValue(String name, String section) {
-        String val = getDefault(name, section);
+    public int getIntValue(String... keys) {
+        String result = get(keys);
+        int value = Integer.MIN_VALUE;
+        if (result != null) {
+            try {
+                value = parseIntValue(result);
+            } catch (NumberFormatException e) {
+                if (DEBUG) {
+                    System.out.println("Exception in getting value of " +
+                                       Arrays.toString(keys) + " " +
+                                       e.getMessage());
+                    System.out.println("Setting " + Arrays.toString(keys) +
+                                       " to minimum value");
+                }
+                value = Integer.MIN_VALUE;
+            }
+        }
+        return value;
+    }
+
+    /**
+     * Gets the boolean value for the specified keys.
+     * @param keys the keys
+     * @return the boolean value, false is returned if it cannot be
+     * found or the value is not "true" (case insensitive).
+     * @throw IllegalArgumentException if any of the keys is illegal
+     * @see #get(java.lang.String[])
+     */
+    public boolean getBooleanValue(String... keys) {
+        String val = get(keys);
         if (val != null && val.equalsIgnoreCase("true")) {
             return true;
         } else {
@@ -528,29 +430,14 @@ public class Config {
     }
 
     /**
-     * Finds the matching value in the hashtable.
-     */
-    private String find(String key1, String key2) {
-        String result;
-        if ((stanzaTable != null) &&
-            ((result = (String)
-                (((Hashtable)(stanzaTable.get(key1))).get(key2))) != null)) {
-            return result;
-        } else {
-            return "";
-        }
-    }
-
-    /**
-     * Reads name/value pairs to the memory from the configuration
-     * file. The default location of the configuration file is in java home
-     * directory.
+     * Reads lines to the memory from the configuration file.
      *
      * Configuration file contains information about the default realm,
      * ticket parameters, location of the KDC and the admin server for
      * known realms, etc. The file is divided into sections. Each section
      * contains one or more name/value pairs with one pair per line. A
      * typical file would be:
+     * <pre>
      * [libdefaults]
      *          default_realm = EXAMPLE.COM
      *          default_tgs_enctypes = des-cbc-md5
@@ -568,128 +455,178 @@ public class Config {
      * [domain_realm]
      *          blue.sample.com = TEST.SAMPLE.COM
      *          .backup.com     = EXAMPLE.COM
-     *
-     * @params fileName the conf file, cannot be null
-     * @return the content, null if fileName is empty
-     * @throws IOException if there is an I/O or format error
+     * </pre>
+     * @return an ordered list of strings representing the config file after
+     * some initial processing, including:<ol>
+     * <li> Comment lines and empty lines are removed
+     * <li> "{" not at the end of a line is appended to the previous line
+     * <li> The content of a section is also placed between "{" and "}".
+     * <li> Lines are trimmed</ol>
+     * @throws IOException if there is an I/O error
+     * @throws KrbException if there is a file format error
      */
-    private Vector<String> loadConfigFile(final String fileName) throws IOException {
+    private List<String> loadConfigFile(final String fileName)
+            throws IOException, KrbException {
         try {
-            if (!fileName.equals("")) {
-                BufferedReader br = new BufferedReader(new InputStreamReader(
-                java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedExceptionAction<FileInputStream> () {
-                public FileInputStream run() throws IOException {
-                    return new FileInputStream(fileName);
-                }
-                })));
-                String Line;
-                Vector<String> v = new Vector<>();
-                String previous = null;
-                while ((Line = br.readLine()) != null) {
-                    // ignore comments and blank line in the configuration file.
-                    // Comments start with #.
-                    if (!(Line.startsWith("#") || Line.trim().isEmpty())) {
-                        String current = Line.trim();
-                        // In practice, a subsection might look like:
-                        //      EXAMPLE.COM =
-                        //      {
-                        //              kdc = kerberos.example.com
-                        //              ...
-                        //      }
-                        // Before parsed into stanza table, it needs to be
-                        // converted into formal style:
-                        //      EXAMPLE.COM = {
-                        //              kdc = kerberos.example.com
-                        //              ...
-                        //      }
-                        //
-                        // So, if a line is "{", adhere to the previous line.
-                        if (current.equals("{")) {
-                            if (previous == null) {
-                                throw new IOException(
-                                    "Config file should not start with \"{\"");
-                            }
-                            previous += " " + current;
-                        } else {
-                            if (previous != null) {
-                                v.addElement(previous);
-                            }
-                            previous = current;
+            List<String> v = new ArrayList<>();
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(
+                AccessController.doPrivileged(
+                    new PrivilegedExceptionAction<FileInputStream> () {
+                        public FileInputStream run() throws IOException {
+                            return new FileInputStream(fileName);
                         }
+                    })))) {
+                String line;
+                String previous = null;
+                while ((line = br.readLine()) != null) {
+                    line = line.trim();
+                    if (line.startsWith("#") || line.isEmpty()) {
+                        // ignore comments and blank line
+                        // Comments start with #.
+                        continue;
+                    }
+                    // In practice, a subsection might look like:
+                    //      [realms]
+                    //      EXAMPLE.COM =
+                    //      {
+                    //          kdc = kerberos.example.com
+                    //          ...
+                    //      }
+                    // Before parsed into stanza table, it needs to be
+                    // converted into a canonicalized style (no indent):
+                    //      realms = {
+                    //          EXAMPLE.COM = {
+                    //              kdc = kerberos.example.com
+                    //              ...
+                    //          }
+                    //      }
+                    //
+                    if (line.startsWith("[")) {
+                        if (!line.endsWith("]")) {
+                            throw new KrbException("Illegal config content:"
+                                    + line);
+                        }
+                        if (previous != null) {
+                            v.add(previous);
+                            v.add("}");
+                        }
+                        String title = line.substring(
+                                1, line.length()-1).trim();
+                        if (title.isEmpty()) {
+                            throw new KrbException("Illegal config content:"
+                                    + line);
+                        }
+                        previous = title + " = {";
+                    } else if (line.startsWith("{")) {
+                        if (previous == null) {
+                            throw new KrbException(
+                                "Config file should not start with \"{\"");
+                        }
+                        previous += " {";
+                        if (line.length() > 1) {
+                            // { and content on the same line
+                            v.add(previous);
+                            previous = line.substring(1).trim();
+                        }
+                    } else {
+                        if (previous == null) {
+                            throw new KrbException(
+                                "Config file must starts with a section");
+                        }
+                        v.add(previous);
+                        previous = line;
                     }
                 }
                 if (previous != null) {
-                    v.addElement(previous);
+                    v.add(previous);
+                    v.add("}");
                 }
-
-                br.close();
-                return v;
             }
-            return null;
+            return v;
         } catch (java.security.PrivilegedActionException pe) {
             throw (IOException)pe.getException();
         }
     }
-
 
     /**
      * Parses stanza names and values from configuration file to
      * stanzaTable (Hashtable). Hashtable key would be stanza names,
      * (libdefaults, realms, domain_realms, etc), and the hashtable value
      * would be another hashtable which contains the key-value pairs under
-     * a stanza name.
+     * a stanza name. The value of this sub-hashtable can be another hashtable
+     * containing another sub-sub-section or a vector of strings for
+     * final values (even if there is only one value defined).
+     * <p>
+     * For duplicates section names, the latter overwrites the former. For
+     * duplicate value names, the values are in a vector in its appearing order.
+     * </ol>
+     * Please note that this behavior is Java traditional. and it is
+     * not the same as the MIT krb5 behavior, where:<ol>
+     * <li>Duplicated root sections will be merged
+     * <li>For duplicated sub-sections, the former overwrites the latter
+     * <li>Duplicate keys for values are always saved in a vector
+     * </ol>
+     * @param v the strings in the file, never null, might be empty
+     * @throws KrbException if there is a file format error
      */
-    private Hashtable<String,Object> parseStanzaTable(Vector<String> v) throws KrbException {
-        if (v == null) {
-            throw new KrbException("I/O error while reading" +
-                        " configuration file.");
-        }
-        Hashtable<String,Object> table = new Hashtable<>();
-        for (int i = 0; i < v.size(); i++) {
-            String line = v.elementAt(i).trim();
-            if (line.equalsIgnoreCase("[realms]")) {
-                for (int count = i + 1; count < v.size() + 1; count++) {
-                    // find the next stanza name
-                    if ((count == v.size()) ||
-                        (v.elementAt(count).startsWith("["))) {
-                        Hashtable<String,Hashtable<String,Vector<String>>> temp =
-                            new Hashtable<>();
-                        temp = parseRealmField(v, i + 1, count);
-                        table.put("realms", temp);
-                        i = count - 1;
-                        break;
-                    }
+    @SuppressWarnings("unchecked")
+    private Hashtable<String,Object> parseStanzaTable(List<String> v)
+            throws KrbException {
+        Hashtable<String,Object> current = stanzaTable;
+        for (String line: v) {
+            // There are 3 kinds of lines
+            // 1. a = b
+            // 2. a = {
+            // 3. }
+            if (line.equals("}")) {
+                // Go back to parent, see below
+                current = (Hashtable<String,Object>)current.remove(" PARENT ");
+                if (current == null) {
+                    throw new KrbException("Unmatched close brace");
                 }
-            } else if (line.equalsIgnoreCase("[capaths]")) {
-                for (int count = i + 1; count < v.size() + 1; count++) {
-                    // find the next stanza name
-                    if ((count == v.size()) ||
-                        (v.elementAt(count).startsWith("["))) {
-                        Hashtable<String,Hashtable<String,Vector<String>>> temp =
-                            new Hashtable<>();
-                        temp = parseRealmField(v, i + 1, count);
-                        table.put("capaths", temp);
-                        i = count - 1;
-                        break;
-                    }
+            } else {
+                int pos = line.indexOf('=');
+                if (pos < 0) {
+                    throw new KrbException("Illegal config content:" + line);
                 }
-            } else if (line.startsWith("[") && line.endsWith("]")) {
-                String key = line.substring(1, line.length() - 1);
-                for (int count = i + 1; count < v.size() + 1; count++) {
-                    // find the next stanza name
-                    if ((count == v.size()) ||
-                        (v.elementAt(count).startsWith("["))) {
-                        Hashtable<String,String> temp =
-                            parseField(v, i + 1, count);
-                        table.put(key, temp);
-                        i = count - 1;
-                        break;
+                String key = line.substring(0, pos).trim();
+                String value = trimmed(line.substring(pos+1));
+                if (value.equals("{")) {
+                    Hashtable<String,Object> subTable;
+                    if (current == stanzaTable) {
+                        key = key.toLowerCase(Locale.US);
                     }
+                    subTable = new Hashtable<>();
+                    current.put(key, subTable);
+                    // A special entry for its parent. Put whitespaces around,
+                    // so will never be confused with a normal key
+                    subTable.put(" PARENT ", current);
+                    current = subTable;
+                } else {
+                    Vector<String> values;
+                    if (current.containsKey(key)) {
+                        Object obj = current.get(key);
+                        // If a key first shows as a section and then a value,
+                        // this is illegal. However, we haven't really forbid
+                        // first value then section, which the final result
+                        // is a section.
+                        if (!(obj instanceof Vector)) {
+                            throw new KrbException("Key " + key
+                                    + "used for both value and section");
+                        }
+                        values = (Vector<String>)current.get(key);
+                    } else {
+                        values = new Vector<String>();
+                        current.put(key, values);
+                    }
+                    values.add(value);
                 }
             }
         }
-        return table;
+        if (current != stanzaTable) {
+            throw new KrbException("Not closed");
+        }
+        return current;
     }
 
     /**
@@ -807,115 +744,12 @@ public class Config {
 
     private static String trimmed(String s) {
         s = s.trim();
+        if (s.isEmpty()) return s;
         if (s.charAt(0) == '"' && s.charAt(s.length()-1) == '"' ||
                 s.charAt(0) == '\'' && s.charAt(s.length()-1) == '\'') {
             s = s.substring(1, s.length()-1).trim();
         }
         return s;
-    }
-    /**
-     * Parses key-value pairs under a stanza name.
-     */
-    private Hashtable<String,String>  parseField(Vector<String> v, int start, int end) {
-        Hashtable<String,String> table = new Hashtable<>();
-        String line;
-        for (int i = start; i < end; i++) {
-            line = v.elementAt(i);
-            for (int j = 0; j < line.length(); j++) {
-                if (line.charAt(j) == '=') {
-                    String key = (line.substring(0, j)).trim();
-                    String value = trimmed(line.substring(j + 1));
-                    table.put(key, value);
-                    break;
-                }
-            }
-        }
-        return table;
-    }
-
-    /**
-     * Parses key-value pairs under [realms].  The key would be the realm
-     * name, the value would be another hashtable which contains
-     * information for the realm given within a pair of braces.
-     */
-    private Hashtable<String,Hashtable<String,Vector<String>>> parseRealmField(Vector<String> v, int start, int end) {
-        Hashtable<String,Hashtable<String,Vector<String>>> table = new Hashtable<>();
-        String line;
-        for (int i = start; i < end; i++) {
-            line = v.elementAt(i).trim();
-            if (line.endsWith("{")) {
-                String key = "";
-                for (int j = 0; j < line.length(); j++) {
-                    if (line.charAt(j) == '=') {
-                        key = line.substring(0, j).trim();
-                        // get the key
-                        break;
-                    }
-                }
-                for (int k = i + 1; k < end; k++) {
-                    boolean found = false;
-                    line = v.elementAt(k).trim();
-                    for (int l = 0; l < line.length(); l++) {
-                        if (line.charAt(l) == '}') {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (found == true) {
-                        Hashtable<String,Vector<String>> temp = parseRealmFieldEx(v, i + 1, k);
-                        table.put(key, temp);
-                        i = k;
-                        found = false;
-                        break;
-                    }
-
-                }
-            }
-        }
-        return table;
-    }
-
-    /**
-     * Parses key-value pairs within each braces under [realms].
-     */
-    private Hashtable<String,Vector<String>> parseRealmFieldEx(Vector<String> v, int start, int end) {
-        Hashtable<String,Vector<String>> table = new Hashtable<>();
-        Vector<String> keyVector = new Vector<>();
-        Vector<String> nameVector = new Vector<>();
-        String line = "";
-        String key;
-        for (int i = start; i < end; i++) {
-            line = v.elementAt(i);
-            for (int j = 0; j < line.length(); j++) {
-                if (line.charAt(j) == '=') {
-                    int index;
-                    key = line.substring(0, j).trim();
-                    if (! exists(key, keyVector)) {
-                        keyVector.addElement(key);
-                        nameVector = new Vector<String> ();
-                    } else {
-                        nameVector = table.get(key);
-                    }
-                    nameVector.addElement(trimmed(line.substring(j + 1)));
-                    table.put(key, nameVector);
-                    break;
-                }
-            }
-        }
-        return table;
-    }
-
-    /**
-     * Compares the key with the known keys to see if it exists.
-     */
-    private boolean exists(String key, Vector<String> v) {
-        boolean exists = false;
-        for (int i = 0; i < v.size(); i++) {
-            if (v.elementAt(i).equals(key)) {
-                exists = true;
-            }
-        }
-        return exists;
     }
 
     /**
@@ -923,42 +757,7 @@ public class Config {
      * the configuration file to the hashtable.
      */
     public void listTable() {
-        listTable(stanzaTable);
-    }
-
-    // stanzaTable leads to a lot of unchecked casts since its value type is
-    // STANZATABLE = String | Hashtable<String, STANZATABLE>
-    @SuppressWarnings("unchecked")
-    private void listTable(Hashtable<String, Object> table) {
-        Vector<String> v = new Vector<String>();
-        String key;
-        if (stanzaTable != null) {
-            for (Enumeration<String> e = table.keys(); e.hasMoreElements(); ) {
-                key = e.nextElement();
-                Object object = table.get(key);
-                if (table == stanzaTable) {
-                    System.out.println("[" + key + "]");
-                }
-                if (object instanceof Hashtable) {
-                    if (table != stanzaTable)
-                        System.out.println("\t" + key + " = {");
-                    listTable((Hashtable<String, Object>)object);
-                    if (table != stanzaTable)
-                        System.out.println("\t}");
-
-                } else if (object instanceof String) {
-                    System.out.println("\t" + key + " = " +
-                                (String)table.get(key));
-                } else if (object instanceof Vector) {
-                    v = (Vector<String>)object;
-                    for (int i = 0; i < v.size(); i++) {
-                        System.out.println("\t" + key + " = " + v.elementAt(i));
-                    }
-                }
-            }
-        } else {
-            System.out.println("Configuration file not found.");
-        }
+        System.out.println(this);
     }
 
     /**
@@ -967,7 +766,7 @@ public class Config {
      */
     public int[] defaultEtype(String enctypes) {
         String default_enctypes;
-        default_enctypes = getDefault(enctypes, "libdefaults");
+        default_enctypes = get("libdefaults", enctypes);
         String delim = " ";
         StringTokenizer st;
         int[] etype;
@@ -991,7 +790,7 @@ public class Config {
             ArrayList<Integer> ls = new ArrayList<>(len);
             int type;
             for (int i = 0; i < len; i++) {
-                type = getType(st.nextToken());
+                type = Config.getType(st.nextToken());
                 if ((type != -1) &&
                     (EType.isSupported(type))) {
                     ls.add(type);
@@ -1032,7 +831,7 @@ public class Config {
      * checksum type to int value that can be later used by EType and
      * Checksum classes.
      */
-    public int getType(String input) {
+    public static int getType(String input) {
         int result = -1;
         if (input == null) {
             return result;
@@ -1114,11 +913,11 @@ public class Config {
     public boolean useAddresses() {
         boolean useAddr = false;
         // use addresses if "no_addresses" is set to false
-        String value = getDefault("no_addresses", "libdefaults");
+        String value = get("libdefaults", "no_addresses");
         useAddr = (value != null && value.equalsIgnoreCase("false"));
         if (useAddr == false) {
             // use addresses if "noaddresses" is set to false
-            value = getDefault("noaddresses", "libdefaults");
+            value = get("libdefaults", "noaddresses");
             useAddr = (value != null && value.equalsIgnoreCase("false"));
         }
         return useAddr;
@@ -1127,10 +926,10 @@ public class Config {
     /**
      * Check if need to use DNS to locate Kerberos services
      */
-    public boolean useDNS(String name) {
-        String value = getDefault(name, "libdefaults");
+    private boolean useDNS(String name) {
+        String value = get("libdefaults", name);
         if (value == null) {
-            value = getDefault("dns_fallback", "libdefaults");
+            value = get("libdefaults", "dns_fallback");
             if ("false".equalsIgnoreCase(value)) {
                 return false;
             } else {
@@ -1144,14 +943,14 @@ public class Config {
     /**
      * Check if need to use DNS to locate the KDC
      */
-    public boolean useDNS_KDC() {
+    private boolean useDNS_KDC() {
         return useDNS("dns_lookup_kdc");
     }
 
     /*
      * Check if need to use DNS to locate the Realm
      */
-    public boolean useDNS_Realm() {
+    private boolean useDNS_Realm() {
         return useDNS("dns_lookup_realm");
     }
 
@@ -1165,7 +964,7 @@ public class Config {
             return defaultRealm;
         }
         Exception cause = null;
-        String realm = getDefault("default_realm", "libdefaults");
+        String realm = get("libdefaults", "default_realm");
         if ((realm == null) && useDNS_Realm()) {
             // use DNS to locate Kerberos realm
             try {
@@ -1212,7 +1011,7 @@ public class Config {
             return defaultKDC;
         }
         Exception cause = null;
-        String kdcs = getDefault("kdc", realm);
+        String kdcs = getAll("realms", realm, "kdc");
         if ((kdcs == null) && useDNS_KDC()) {
             // use DNS to locate KDC
             try {

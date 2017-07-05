@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2012 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -117,7 +117,7 @@ cmsBool GrowMLUpool(cmsMLU* mlu)
 }
 
 
-// Grows a ntry table for a MLU. Each time this function is called, table size is multiplied times two.
+// Grows a entry table for a MLU. Each time this function is called, table size is multiplied times two.
 static
 cmsBool GrowMLUtable(cmsMLU* mlu)
 {
@@ -130,7 +130,7 @@ cmsBool GrowMLUtable(cmsMLU* mlu)
     AllocatedEntries = mlu ->AllocatedEntries * 2;
 
     // Check for overflow
-    if (AllocatedEntries < mlu ->AllocatedEntries) return FALSE;
+    if (AllocatedEntries / 2 != mlu ->AllocatedEntries) return FALSE;
 
     // Reallocate the memory
     NewPtr = (_cmsMLUentry*)_cmsRealloc(mlu ->ContextID, mlu ->Entries, AllocatedEntries*sizeof(_cmsMLUentry));
@@ -359,9 +359,9 @@ const wchar_t* _cmsMLUgetWide(const cmsMLU* mlu,
     if (Best == -1)
         Best = 0;
 
-    v = mlu ->Entries + Best;
+     v = mlu ->Entries + Best;
 
-    if (UsedLanguageCode != NULL) *UsedLanguageCode = v ->Language;
+     if (UsedLanguageCode != NULL) *UsedLanguageCode = v ->Language;
     if (UsedCountryCode  != NULL) *UsedCountryCode = v ->Country;
 
     if (len != NULL) *len   = v ->Len;
@@ -372,8 +372,8 @@ const wchar_t* _cmsMLUgetWide(const cmsMLU* mlu,
 
 // Obtain an ASCII representation of the wide string. Setting buffer to NULL returns the len
 cmsUInt32Number CMSEXPORT cmsMLUgetASCII(const cmsMLU* mlu,
-                                         const char LanguageCode[3], const char CountryCode[3],
-                                         char* Buffer, cmsUInt32Number BufferSize)
+                                       const char LanguageCode[3], const char CountryCode[3],
+                                       char* Buffer, cmsUInt32Number BufferSize)
 {
     const wchar_t *Wide;
     cmsUInt32Number  StrLen = 0;
@@ -417,8 +417,8 @@ cmsUInt32Number CMSEXPORT cmsMLUgetASCII(const cmsMLU* mlu,
 
 // Obtain a wide representation of the MLU, on depending on current locale settings
 cmsUInt32Number CMSEXPORT cmsMLUgetWide(const cmsMLU* mlu,
-                                        const char LanguageCode[3], const char CountryCode[3],
-                                        wchar_t* Buffer, cmsUInt32Number BufferSize)
+                                      const char LanguageCode[3], const char CountryCode[3],
+                                      wchar_t* Buffer, cmsUInt32Number BufferSize)
 {
     const wchar_t *Wide;
     cmsUInt32Number  StrLen = 0;
@@ -491,6 +491,9 @@ cmsBool  GrowNamedColorList(cmsNAMEDCOLORLIST* v)
     else
         size = v ->Allocated * 2;
 
+    // Keep a maximum color lists can grow, 100K entries seems reasonable
+    if (size > 1024*100) return FALSE;
+
     NewPtr = (_cmsNAMEDCOLOR*) _cmsRealloc(v ->ContextID, v ->List, size * sizeof(_cmsNAMEDCOLOR));
     if (NewPtr == NULL)
         return FALSE;
@@ -516,6 +519,8 @@ cmsNAMEDCOLORLIST* CMSEXPORT cmsAllocNamedColorList(cmsContext ContextID, cmsUIn
 
     strncpy(v ->Prefix, Prefix, sizeof(v ->Prefix));
     strncpy(v ->Suffix, Suffix, sizeof(v ->Suffix));
+    v->Prefix[32] = v->Suffix[32] = 0;
+
     v -> ColorantCount = ColorantCount;
 
     return v;
@@ -569,9 +574,14 @@ cmsBool  CMSEXPORT cmsAppendNamedColor(cmsNAMEDCOLORLIST* NamedColorList,
     for (i=0; i < 3; i++)
         NamedColorList ->List[NamedColorList ->nColors].PCS[i] = PCS == NULL ? 0 : PCS[i];
 
-    if (Name != NULL)
+    if (Name != NULL) {
+
         strncpy(NamedColorList ->List[NamedColorList ->nColors].Name, Name,
                     sizeof(NamedColorList ->List[NamedColorList ->nColors].Name));
+
+        NamedColorList ->List[NamedColorList ->nColors].Name[cmsMAX_PATH-1] = 0;
+
+    }
     else
         NamedColorList ->List[NamedColorList ->nColors].Name[0] = 0;
 
@@ -645,6 +655,24 @@ void* DupNamedColorList(cmsStage* mpe)
 }
 
 static
+void EvalNamedColorPCS(const cmsFloat32Number In[], cmsFloat32Number Out[], const cmsStage *mpe)
+{
+    cmsNAMEDCOLORLIST* NamedColorList = (cmsNAMEDCOLORLIST*) mpe ->Data;
+    cmsUInt16Number index = (cmsUInt16Number) _cmsQuickSaturateWord(In[0] * 65535.0);
+
+    if (index >= NamedColorList-> nColors) {
+        cmsSignalError(NamedColorList ->ContextID, cmsERROR_RANGE, "Color %d out of range; ignored", index);
+    }
+    else {
+
+            // Named color always uses Lab
+            Out[0] = (cmsFloat32Number) (NamedColorList->List[index].PCS[0] / 65535.0);
+            Out[1] = (cmsFloat32Number) (NamedColorList->List[index].PCS[1] / 65535.0);
+            Out[2] = (cmsFloat32Number) (NamedColorList->List[index].PCS[2] / 65535.0);
+    }
+}
+
+static
 void EvalNamedColor(const cmsFloat32Number In[], cmsFloat32Number Out[], const cmsStage *mpe)
 {
     cmsNAMEDCOLORLIST* NamedColorList = (cmsNAMEDCOLORLIST*) mpe ->Data;
@@ -662,15 +690,15 @@ void EvalNamedColor(const cmsFloat32Number In[], cmsFloat32Number Out[], const c
 
 
 // Named color lookup element
-cmsStage* _cmsStageAllocNamedColor(cmsNAMEDCOLORLIST* NamedColorList)
+cmsStage* _cmsStageAllocNamedColor(cmsNAMEDCOLORLIST* NamedColorList, cmsBool UsePCS)
 {
     return _cmsStageAllocPlaceholder(NamedColorList ->ContextID,
-                                     cmsSigNamedColorElemType,
-                                     1, 3,
-                                     EvalNamedColor,
-                                     DupNamedColorList,
-                                     FreeNamedColorList,
-                                     cmsDupNamedColorList(NamedColorList));
+                                   cmsSigNamedColorElemType,
+                                   1, UsePCS ? 3 : NamedColorList ->ColorantCount,
+                                   UsePCS ? EvalNamedColorPCS : EvalNamedColor,
+                                   DupNamedColorList,
+                                   FreeNamedColorList,
+                                   cmsDupNamedColorList(NamedColorList));
 
 }
 
@@ -771,3 +799,131 @@ Error:
     return NULL;
 }
 
+// Dictionaries --------------------------------------------------------------------------------------------------------
+
+// Dictionaries are just very simple linked lists
+
+
+typedef struct _cmsDICT_struct {
+    cmsDICTentry* head;
+    cmsContext ContextID;
+} _cmsDICT;
+
+
+// Allocate an empty dictionary
+cmsHANDLE CMSEXPORT cmsDictAlloc(cmsContext ContextID)
+{
+    _cmsDICT* dict = (_cmsDICT*) _cmsMallocZero(ContextID, sizeof(_cmsDICT));
+    if (dict == NULL) return NULL;
+
+    dict ->ContextID = ContextID;
+    return (cmsHANDLE) dict;
+
+}
+
+// Dispose resources
+void CMSEXPORT cmsDictFree(cmsHANDLE hDict)
+{
+    _cmsDICT* dict = (_cmsDICT*) hDict;
+    cmsDICTentry *entry, *next;
+
+    _cmsAssert(dict != NULL);
+
+    // Walk the list freeing all nodes
+    entry = dict ->head;
+    while (entry != NULL) {
+
+            if (entry ->DisplayName  != NULL) cmsMLUfree(entry ->DisplayName);
+            if (entry ->DisplayValue != NULL) cmsMLUfree(entry ->DisplayValue);
+            if (entry ->Name != NULL) _cmsFree(dict ->ContextID, entry -> Name);
+            if (entry ->Value != NULL) _cmsFree(dict ->ContextID, entry -> Value);
+
+            // Don't fall in the habitual trap...
+            next = entry ->Next;
+            _cmsFree(dict ->ContextID, entry);
+
+            entry = next;
+    }
+
+    _cmsFree(dict ->ContextID, dict);
+}
+
+
+// Duplicate a wide char string
+static
+wchar_t* DupWcs(cmsContext ContextID, const wchar_t* ptr)
+{
+    if (ptr == NULL) return NULL;
+    return (wchar_t*) _cmsDupMem(ContextID, ptr, (mywcslen(ptr) + 1) * sizeof(wchar_t));
+}
+
+// Add a new entry to the linked list
+cmsBool CMSEXPORT cmsDictAddEntry(cmsHANDLE hDict, const wchar_t* Name, const wchar_t* Value, const cmsMLU *DisplayName, const cmsMLU *DisplayValue)
+{
+    _cmsDICT* dict = (_cmsDICT*) hDict;
+    cmsDICTentry *entry;
+
+    _cmsAssert(dict != NULL);
+    _cmsAssert(Name != NULL);
+
+    entry = (cmsDICTentry*) _cmsMallocZero(dict ->ContextID, sizeof(cmsDICTentry));
+    if (entry == NULL) return FALSE;
+
+    entry ->DisplayName  = cmsMLUdup(DisplayName);
+    entry ->DisplayValue = cmsMLUdup(DisplayValue);
+    entry ->Name         = DupWcs(dict ->ContextID, Name);
+    entry ->Value        = DupWcs(dict ->ContextID, Value);
+
+    entry ->Next = dict ->head;
+    dict ->head = entry;
+
+    return TRUE;
+}
+
+
+// Duplicates an existing dictionary
+cmsHANDLE CMSEXPORT cmsDictDup(cmsHANDLE hDict)
+{
+    _cmsDICT* old_dict = (_cmsDICT*) hDict;
+    cmsHANDLE hNew;
+    _cmsDICT* new_dict;
+    cmsDICTentry *entry;
+
+    _cmsAssert(old_dict != NULL);
+
+    hNew  = cmsDictAlloc(old_dict ->ContextID);
+    if (hNew == NULL) return NULL;
+
+    new_dict = (_cmsDICT*) hNew;
+
+    // Walk the list freeing all nodes
+    entry = old_dict ->head;
+    while (entry != NULL) {
+
+        if (!cmsDictAddEntry(hNew, entry ->Name, entry ->Value, entry ->DisplayName, entry ->DisplayValue)) {
+
+            cmsDictFree(hNew);
+            return NULL;
+        }
+
+        entry = entry -> Next;
+    }
+
+    return hNew;
+}
+
+// Get a pointer to the linked list
+const cmsDICTentry* CMSEXPORT cmsDictGetEntryList(cmsHANDLE hDict)
+{
+    _cmsDICT* dict = (_cmsDICT*) hDict;
+
+    if (dict == NULL) return NULL;
+    return dict ->head;
+}
+
+// Helper For external languages
+const cmsDICTentry* CMSEXPORT cmsDictNextEntry(const cmsDICTentry* e)
+{
+     if (e == NULL) return NULL;
+     return e ->Next;
+}

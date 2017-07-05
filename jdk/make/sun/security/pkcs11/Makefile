@@ -225,9 +225,9 @@ build-jar: $(UNSIGNED_DIR)/sunpkcs11.jar
 #
 # Build sunpkcs11.jar.
 #
-$(UNSIGNED_DIR)/sunpkcs11.jar: build
+$(UNSIGNED_DIR)/sunpkcs11.jar: build $(JCE_MANIFEST_FILE)
 	$(prep-target)
-	$(BOOT_JAR_CMD) cf $@ $(JAR_DIRS) \
+	$(BOOT_JAR_CMD) cmf $(JCE_MANIFEST_FILE) $@ $(JAR_DIRS) \
 	    $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 

@@ -175,9 +175,6 @@ bool os::register_code_area(char *low, char *high) {
   PRUNTIME_FUNCTION prt;
   PUNWIND_INFO_EH_ONLY punwind;
 
-  // If we are using Vectored Exceptions we don't need this registration
-  if (UseVectoredExceptions) return true;
-
   BufferBlob* blob = BufferBlob::create("CodeCache Exception Handler", sizeof(DynamicCodeData));
   CodeBuffer cb(blob);
   MacroAssembler* masm = new MacroAssembler(&cb);

@@ -26,7 +26,6 @@
 package sun.lwawt.macosx;
 
 import java.awt.*;
-import java.awt.event.*;
 import java.awt.image.VolatileImage;
 
 import sun.awt.CGraphicsConfig;
@@ -202,12 +201,11 @@ public class CPlatformView extends CFRetainedResource {
                                  event.getCharactersIgnoringModifiers(), event.getKeyCode(), true);
     }
 
+    /**
+     * Called by the native delegate in layer backed view mode or in the simple
+     * NSView mode. See NSView.drawRect().
+     */
     private void deliverWindowDidExposeEvent() {
-        Rectangle r = peer.getBounds();
-        peer.notifyExpose(0, 0, r.width, r.height);
-    }
-
-    private void deliverWindowDidExposeEvent(float x, float y, float w, float h) {
-        peer.notifyExpose((int)x, (int)y, (int)w, (int)h);
+        peer.notifyExpose(peer.getSize());
     }
 }

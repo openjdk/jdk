@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ public class MaxRetries {
             if (line.startsWith(">>> KDCCommunication")) {
                 System.out.println(line);
                 if (line.indexOf(timeoutTag) < 0) {
-                    throw new Exception("Wrong timeout value");
+                    throw new Exception("Wrong timeout value" + timeoutTag);
                 }
                 count--;
             }

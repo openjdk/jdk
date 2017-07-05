@@ -76,7 +76,7 @@ JNF_COCOA_ENTER(env);
     NSEvent *currEvent = [[NSApplication sharedApplication] currentEvent];
     if ([currEvent type] == NSKeyDown) {
         NSString *menuKey = [sender keyEquivalent];
-        NSString *eventKey = [currEvent characters];
+        NSString *eventKey = [currEvent charactersIgnoringModifiers];
         if ([menuKey isEqualToString:eventKey]) {
             return;
         }

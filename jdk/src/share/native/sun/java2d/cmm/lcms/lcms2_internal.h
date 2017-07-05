@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2010 Marti Maria Saguer
+//  Copyright (c) 1998-2011 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -75,16 +75,18 @@
 #       define M_LOG10E    0.434294481903251827651
 #endif
 
-// BorlandC 5.5 is broken on that
-#ifdef __BORLANDC__
+// BorlandC 5.5, VC2003 are broken on that
+#if defined(__BORLANDC__) || (_MSC_VER < 1400) // 1400 == VC++ 8.0
 #define sinf(x) (float)sin((float)x)
 #define sqrtf(x) (float)sqrt((float)x)
 #endif
 
 
 // Alignment of ICC file format uses 4 bytes (cmsUInt32Number)
-#define _cmsSIZEOFLONGMINUS1    (sizeof(cmsUInt32Number)-1)
-#define _cmsALIGNLONG(x) (((x)+_cmsSIZEOFLONGMINUS1) & ~(_cmsSIZEOFLONGMINUS1))
+#define _cmsALIGNLONG(x) (((x)+(sizeof(cmsUInt32Number)-1)) & ~(sizeof(cmsUInt32Number)-1))
+
+// Alignment to memory pointer
+#define _cmsALIGNMEM(x)  (((x)+(sizeof(void *) - 1)) & ~(sizeof(void *) - 1))
 
 // Maximum encodeable values in floating point
 #define MAX_ENCODEABLE_XYZ  (1.0 + 32767.0/32768.0)
@@ -94,7 +96,7 @@
 #define MAX_ENCODEABLE_ab4  (127.0)
 
 // Maximum of channels for internal pipeline evaluation
-#define MAX_STAGE_CHANNELS      128
+#define MAX_STAGE_CHANNELS  128
 
 // Unused parameter warning supression
 #define cmsUNUSED_PARAMETER(x) ((void)x)
@@ -117,36 +119,6 @@
 # endif
 #endif
 
-// Pthreads. In windows we use the native WIN32 API instead
-#ifdef CMS_DONT_USE_PTHREADS
-typedef int LCMS_RWLOCK_T;
-#   define LCMS_CREATE_LOCK(x)
-#   define LCMS_FREE_LOCK(x)
-#   define LCMS_READ_LOCK(x)
-#   define LCMS_WRITE_LOCK(x)
-#   define LCMS_UNLOCK(x)
-#else
-#ifdef CMS_IS_WINDOWS_
-#   ifndef WIN32_LEAN_AND_MEAN
-#       define WIN32_LEAN_AND_MEAN
-#   endif
-#   include <windows.h>
-    typedef CRITICAL_SECTION LCMS_RWLOCK_T;
-#   define LCMS_CREATE_LOCK(x)       InitializeCriticalSection((x))
-#   define LCMS_FREE_LOCK(x)         DeleteCriticalSection((x))
-#   define LCMS_READ_LOCK(x)         EnterCriticalSection((x))
-#   define LCMS_WRITE_LOCK(x)        EnterCriticalSection((x))
-#   define LCMS_UNLOCK(x)            LeaveCriticalSection((x))
-#else
-#   include <pthread.h>
-    typedef    pthread_rwlock_t      LCMS_RWLOCK_T;
-#   define LCMS_CREATE_LOCK(x)       pthread_rwlock_init((x), NULL)
-#   define LCMS_FREE_LOCK(x)         pthread_rwlock_destroy((x))
-#   define LCMS_READ_LOCK(x)         pthread_rwlock_rdlock((x))
-#   define LCMS_WRITE_LOCK(x)        pthread_rwlock_wrlock((x))
-#   define LCMS_UNLOCK(x)            pthread_rwlock_unlock((x))
-#endif
-#endif
 
 // A fast way to convert from/to 16 <-> 8 bits
 #define FROM_8_TO_16(rgb) (cmsUInt16Number) ((((cmsUInt16Number) (rgb)) << 8)|(rgb))
@@ -253,6 +225,8 @@ cmsBool  _cmsRegisterMultiProcessElementPlugin(cmsPluginBase* Plugin);
 // Optimization
 cmsBool  _cmsRegisterOptimizationPlugin(cmsPluginBase* Plugin);
 
+// Transform
+cmsBool  _cmsRegisterTransformPlugin(cmsPluginBase* Plugin);
 
 // ---------------------------------------------------------------------------------------------------------
 
@@ -396,6 +370,7 @@ void                 _cmsTagSignature2String(char String[5], cmsTagSignature sig
 cmsInterpParams*     _cmsComputeInterpParams(cmsContext ContextID, int nSamples, int InputChan, int OutputChan, const void* Table, cmsUInt32Number dwFlags);
 cmsInterpParams*     _cmsComputeInterpParamsEx(cmsContext ContextID, const cmsUInt32Number nSamples[], int InputChan, int OutputChan, const void* Table, cmsUInt32Number dwFlags);
 void                 _cmsFreeInterpParams(cmsInterpParams* p);
+cmsBool              _cmsSetInterpolationRoutine(cmsInterpParams* p);
 
 // Curves ----------------------------------------------------------------------------------------------------------------
 
@@ -443,37 +418,6 @@ struct _cmsStage_struct {
     struct _cmsStage_struct* Next;
 };
 
-// Data kept in "Element" member of cmsStage
-
-// Curves
-typedef struct {
-    cmsUInt32Number nCurves;
-    cmsToneCurve**  TheCurves;
-
-} _cmsStageToneCurvesData;
-
-// Matrix
-typedef struct {
-    cmsFloat64Number*  Double;          // floating point for the matrix
-    cmsFloat64Number*  Offset;          // The offset
-
-} _cmsStageMatrixData;
-
-// CLUT
-typedef struct {
-
-    union {                       // Can have only one of both representations at same time
-        cmsUInt16Number*  T;      // Points to the table 16 bits table
-        cmsFloat32Number* TFloat; // Points to the cmsFloat32Number table
-
-    } Tab;
-
-    cmsInterpParams* Params;
-    cmsUInt32Number  nEntries;
-    cmsBool          HasFloatValues;
-
-} _cmsStageCLutData;
-
 
 // Special Stages (cannot be saved)
 cmsStage*        _cmsStageAllocLab2XYZ(cmsContext ContextID);
@@ -482,9 +426,13 @@ cmsStage*        _cmsStageAllocLabPrelin(cmsContext ContextID);
 cmsStage*        _cmsStageAllocLabV2ToV4(cmsContext ContextID);
 cmsStage*        _cmsStageAllocLabV2ToV4curves(cmsContext ContextID);
 cmsStage*        _cmsStageAllocLabV4ToV2(cmsContext ContextID);
-cmsStage*        _cmsStageAllocNamedColor(cmsNAMEDCOLORLIST* NamedColorList);
+cmsStage*        _cmsStageAllocNamedColor(cmsNAMEDCOLORLIST* NamedColorList, cmsBool UsePCS);
 cmsStage*        _cmsStageAllocIdentityCurves(cmsContext ContextID, int nChannels);
 cmsStage*        _cmsStageAllocIdentityCLut(cmsContext ContextID, int nChan);
+cmsStage*        _cmsStageNormalizeFromLabFloat(cmsContext ContextID);
+cmsStage*        _cmsStageNormalizeFromXyzFloat(cmsContext ContextID);
+cmsStage*        _cmsStageNormalizeToLabFloat(cmsContext ContextID);
+cmsStage*        _cmsStageNormalizeToXyzFloat(cmsContext ContextID);
 
 // For curve set only
 cmsToneCurve**     _cmsStageGetPtrToCurveSet(const cmsStage* mpe);
@@ -505,12 +453,12 @@ struct _cmsPipeline_struct {
 
    _cmsOPTeval16Fn         Eval16Fn;
    _cmsPipelineEvalFloatFn EvalFloatFn;
-   _cmsOPTfreeDataFn       FreeDataFn;
-   _cmsOPTdupDataFn        DupDataFn;
+   _cmsFreeUserDataFn      FreeDataFn;
+   _cmsDupUserDataFn       DupDataFn;
 
     cmsContext ContextID;            // Environment
 
-    cmsBool  SaveAs8Bits;            // Implemntation-specific: save as 8 bits if possible
+    cmsBool  SaveAs8Bits;            // Implementation-specific: save as 8 bits if possible
 };
 
 // LUT reading & creation -------------------------------------------------------------------------------------------
@@ -573,6 +521,8 @@ cmsPipeline*     _cmsCreateGamutCheckPipeline(cmsContext ContextID,
 
 // Formatters ------------------------------------------------------------------------------------------------------------
 
+#define cmsFLAGS_CAN_CHANGE_FORMATTER     0x02000000   // Allow change buffer format
+
 cmsBool         _cmsFormatterIsFloat(cmsUInt32Number Type);
 cmsBool         _cmsFormatterIs8bit(cmsUInt32Number Type);
 
@@ -581,21 +531,27 @@ cmsFormatter    _cmsGetFormatter(cmsUInt32Number Type,          // Specific type
                                  cmsUInt32Number dwFlags);
 
 
+#ifndef CMS_NO_HALF_SUPPORT
+
+// Half float
+cmsFloat32Number _cmsHalf2Float(cmsUInt16Number h);
+cmsUInt16Number  _cmsFloat2Half(cmsFloat32Number flt);
+
+#endif
+
 // Transform logic ------------------------------------------------------------------------------------------------------
 
 struct _cmstransform_struct;
 
-// Full xform
-typedef void (* _cmsTransformFn)(struct _cmstransform_struct *Transform,
-                                 const void* InputBuffer,
-                                 void* OutputBuffer, cmsUInt32Number Size);
-
 typedef struct {
 
-    cmsUInt32Number InputFormat, OutputFormat; // Keep formats for further reference
-    cmsUInt32Number StrideIn, StrideOut;       // Planar support
+    // 1-pixel cache (16 bits only)
+    cmsUInt16Number CacheIn[cmsMAXCHANNELS];
+    cmsUInt16Number CacheOut[cmsMAXCHANNELS];
 
-} cmsFormatterInfo;
+} _cmsCACHE;
+
+
 
 // Transformation
 typedef struct _cmstransform_struct {
@@ -612,17 +568,13 @@ typedef struct _cmstransform_struct {
     cmsFormatterFloat FromInputFloat;
     cmsFormatterFloat ToOutputFloat;
 
-    // 1-pixel cache (16 bits only)
-    cmsUInt16Number CacheIn[cmsMAXCHANNELS];
-    cmsUInt16Number CacheOut[cmsMAXCHANNELS];
+    // 1-pixel cache seed for zero as input (16 bits, read only)
+    _cmsCACHE Cache;
 
-    // Semaphor for cache
-    LCMS_RWLOCK_T rwlock;
-
-    // A MPE LUT holding the full (optimized) transform
+    // A Pipeline holding the full (optimized) transform
     cmsPipeline* Lut;
 
-    // A MPE LUT holding the gamut check. It goes from the input space to bilevel
+    // A Pipeline holding the gamut check. It goes from the input space to bilevel
     cmsPipeline* GamutCheck;
 
     // Colorant tables
@@ -644,6 +596,10 @@ typedef struct _cmstransform_struct {
 
     // An id that uniquely identifies the running context. May be null.
     cmsContext ContextID;
+
+    // A user-defined pointer that can be used to store data for transform plug-ins
+    void* UserData;
+    _cmsFreeUserDataFn FreeUserData;
 
 } _cmsTRANSFORM;
 

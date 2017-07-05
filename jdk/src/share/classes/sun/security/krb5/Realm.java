@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,7 +350,7 @@ public class Realm implements Cloneable {
             return null;
         }
 
-        String intermediaries = cfg.getDefault(sRealm, cRealm);
+        String intermediaries = cfg.getAll("capaths", cRealm, sRealm);
 
         if (intermediaries == null) {
             if (DEBUG) {
@@ -459,7 +459,7 @@ public class Realm implements Cloneable {
                                    tempTarget);
             }
 
-            intermediaries = cfg.getDefault(tempTarget, cRealm);
+            intermediaries = cfg.getAll("capaths", cRealm, tempTarget);
 
         } while (true);
 

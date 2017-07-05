@@ -218,7 +218,7 @@ final class CPlatformResponder {
         }
     }
 
-    void handleWindowFocusEvent(boolean gained) {
-        peer.notifyActivation(gained);
+    void handleWindowFocusEvent(boolean gained, LWWindowPeer opposite) {
+        peer.notifyActivation(gained, opposite);
     }
 }
