@@ -199,7 +199,8 @@ PointsToNode::EscapeState ConnectionGraph::escape_state(Node *n, PhaseTransform 
   es = ptnode_adr(idx)->escape_state();
 
   // if we have already computed a value, return it
-  if (es != PointsToNode::UnknownEscape)
+  if (es != PointsToNode::UnknownEscape &&
+      ptnode_adr(idx)->node_type() == PointsToNode::JavaObject)
     return es;
 
   // PointsTo() calls n->uncast() which can return a new ideal node.
