@@ -70,7 +70,7 @@ public final class NativeJavaImporter extends ScriptObject {
     }
 
     private NativeJavaImporter(final Object[] args, final Global global) {
-        this(args, global.getJavaImporterPrototype(), global.getJavaImporterMap());
+        this(args, global.getJavaImporterPrototype(), getInitialMap());
     }
 
     private NativeJavaImporter(final Object[] args) {

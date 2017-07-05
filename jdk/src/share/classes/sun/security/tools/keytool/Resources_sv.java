@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,10 +65,16 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Generates.certificate.from.a.certificate.request",
                 "Genererar certifikat fr\u00E5n certifikatbeg\u00E4ran"}, //-gencert
         {"Generates.CRL", "Genererar CRL"}, //-gencrl
+        {"Generated.keyAlgName.secret.key",
+                "Genererade {0} hemlig nyckel"}, //-genseckey
+        {"Generated.keysize.bit.keyAlgName.secret.key",
+                "Genererade {0}-bitars {1} hemlig nyckel"}, //-genseckey
         {"Imports.entries.from.a.JDK.1.1.x.style.identity.database",
                 "Importerar poster fr\u00E5n identitetsdatabas i JDK 1.1.x-format"}, //-identitydb
         {"Imports.a.certificate.or.a.certificate.chain",
                 "Importerar ett certifikat eller en certifikatkedja"}, //-importcert
+        {"Imports.a.password",
+                "Importerar ett l\u00F6senord"}, //-importpass
         {"Imports.one.or.all.entries.from.another.keystore",
                 "Importerar en eller alla poster fr\u00E5n annat nyckellager"}, //-importkeystore
         {"Clones.a.key.entry",
@@ -220,6 +226,8 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"Must.specify.alias", "Du m\u00E5ste ange alias"},
         {"Keystore.password.must.be.at.least.6.characters",
                 "Nyckellagerl\u00F6senordet m\u00E5ste inneh\u00E5lla minst 6 tecken"},
+        {"Enter.the.password.to.be.stored.",
+                "Ange det l\u00F6senord som ska lagras:  "},
         {"Enter.keystore.password.", "Ange nyckellagerl\u00F6senord:  "},
         {"Enter.source.keystore.password.", "Ange l\u00F6senord f\u00F6r k\u00E4llnyckellagret:  "},
         {"Enter.destination.keystore.password.", "Ange nyckellagerl\u00F6senord f\u00F6r destination:  "},
@@ -328,6 +336,7 @@ public class Resources_sv extends java.util.ListResourceBundle {
         {"New.prompt.", "Nytt {0}: "},
         {"Passwords.must.differ", "L\u00F6senorden m\u00E5ste vara olika"},
         {"Re.enter.new.prompt.", "Ange nytt {0} igen: "},
+        {"Re.enter.passpword.", "Ange l\u00F6senord igen: "},
         {"Re.enter.new.password.", "Ange det nya l\u00F6senordet igen: "},
         {"They.don.t.match.Try.again", "De matchar inte. F\u00F6rs\u00F6k igen"},
         {"Enter.prompt.alias.name.", "Ange aliasnamn f\u00F6r {0}:  "},

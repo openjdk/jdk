@@ -25,7 +25,6 @@
  * @bug 4313887 6993267
  * @summary Unit test for Sun-specific ExtendedCopyOption.INTERRUPTIBLE option
  * @library ..
- * @run main/othervm -XX:-UseVMInterruptibleIO InterruptCopy
  */
 
 import java.nio.file.*;

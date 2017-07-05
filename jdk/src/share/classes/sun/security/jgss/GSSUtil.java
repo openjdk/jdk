@@ -25,7 +25,6 @@
 
 package sun.security.jgss;
 
-import com.sun.security.auth.callback.TextCallbackHandler;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
@@ -48,6 +47,7 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import sun.security.action.GetBooleanAction;
+import sun.security.util.ConsoleCallbackHandler;
 
 /**
  * The GSSUtilImplementation that knows how to work with the internals of
@@ -243,7 +243,7 @@ public class GSSUtil {
             if ((defaultHandler != null) && (defaultHandler.length() != 0)) {
                 cb = null;
             } else {
-                cb = new TextCallbackHandler();
+                cb = new ConsoleCallbackHandler();
             }
         }
 

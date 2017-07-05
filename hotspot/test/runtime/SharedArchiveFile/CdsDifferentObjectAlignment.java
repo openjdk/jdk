@@ -22,6 +22,7 @@
  */
 
 /*
+ * @ignore 8025642
  * @test CdsDifferentObjectAlignment
  * @summary Testing CDS (class data sharing) using varying object alignment.
  *          Using different object alignment for each dump/load pair.
@@ -29,6 +30,7 @@
  *          is different from object alignment for creating a CDS file
  *          should fail when loading.
  * @library /testlibrary
+ * @bug 8025642
  */
 
 import com.oracle.java.testlibrary.*;

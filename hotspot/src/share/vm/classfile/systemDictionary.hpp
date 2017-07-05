@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -374,10 +374,6 @@ public:
 #ifdef ASSERT
   static bool is_internal_format(Symbol* class_name);
 #endif
-
-  // Verify class is in dictionary
-  static void verify_obj_klass_present(Symbol* class_name,
-                                       ClassLoaderData* loader_data);
 
   // Initialization
   static void initialize(TRAPS);

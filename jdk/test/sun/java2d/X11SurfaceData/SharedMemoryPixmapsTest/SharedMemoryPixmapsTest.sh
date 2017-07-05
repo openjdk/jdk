@@ -41,7 +41,7 @@ NO_J2D_DGA=true
 J2D_PIXMAPS=shared
 export NO_J2D_DGA J2D_PIXMAPS
 
-${TESTJAVA}/bin/java SharedMemoryPixmapsTest
+${TESTJAVA}/bin/java ${TESTVMOPTS} SharedMemoryPixmapsTest
 
 if [ $? -ne 0 ]; then
   echo "Test failed!"

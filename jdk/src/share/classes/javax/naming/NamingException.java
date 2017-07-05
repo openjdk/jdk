@@ -201,7 +201,7 @@ public class NamingException extends Exception {
      * invoke this method using the resulting composite name.
      *<p>
      * A copy of <code>name</code> is made and stored.
-     * Subsequent changes to <code>name</code> does not
+     * Subsequent changes to <code>name</code> do not
      * affect the copy in this NamingException and vice versa.
      *
      * @param name The possibly null name to set resolved name to.
@@ -225,7 +225,7 @@ public class NamingException extends Exception {
      * invoke this method using the resulting composite name.
      *<p>
      * A copy of <code>name</code> is made and stored.
-     * Subsequent changes to <code>name</code> does not
+     * Subsequent changes to <code>name</code> do not
      * affect the copy in this NamingException and vice versa.
      * @param name The possibly null name to set remaining name to.
      *          If null, it sets the remaining name field to null.
@@ -279,7 +279,7 @@ public class NamingException extends Exception {
       * a compound name, you should "stringify" the compound name
       * then invoke the overloaded form that accepts a String parameter.
       *<p>
-      * Subsequent changes to <code>name</code> does not
+      * Subsequent changes to <code>name</code> do not
       * affect the remaining name field in this NamingException and vice versa.
       * @param name The possibly null name containing ordered components to add.
       *                 If name is null, this method does not do anything.

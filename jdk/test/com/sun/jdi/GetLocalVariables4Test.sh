@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2014 Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,12 +39,12 @@ createJavaFile()
 public class GetLocalVariables4Targ {
     public static void main(String[] args) {
         System.out.println("Howdy!");
-	int i = 0;
-	try {
-	    i = 16 / i;
-	} catch(Exception e) {
-	    System.out.println("e should be visible");    // @1 breakpoint
-	}
+        int i = 0;
+        try {
+            i = 16 / i;
+        } catch(Exception e) {
+            System.out.println("e should be visible");    // @1 breakpoint
+        }
         System.out.println("Goodbye from GetLocalVariables4Targ!");
     }
 }
@@ -57,7 +57,7 @@ dojdbCmds()
    setBkpts @1
    runToBkpt @1
    cmd locals
-   cmd cont
+   cmd allowExit cont
 }
 
 mysetup()

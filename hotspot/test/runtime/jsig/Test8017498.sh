@@ -30,8 +30,9 @@
 ## @bug 8020791
 ## @bug 8021296
 ## @bug 8022301
+## @bug 8025519
 ## @summary sigaction(sig) results in process hang/timed-out if sig is much greater than SIGRTMAX
-## @run shell/timeout=30 Test8017498.sh
+## @run shell/timeout=60 Test8017498.sh
 ##
 
 if [ "${TESTSRC}" = "" ]
@@ -55,12 +56,9 @@ case "$OS" in
         echo "WARNING: gcc not found. Cannot execute test." 2>&1
         exit 0;
     fi
-    if [ "$VM_BITS" = "64" ]
-    then
-        MY_LD_PRELOAD=${TESTJAVA}${FS}jre${FS}lib${FS}amd64${FS}libjsig.so
-    else
-        MY_LD_PRELOAD=${TESTJAVA}${FS}jre${FS}lib${FS}i386${FS}libjsig.so
-        EXTRA_CFLAG=-m32
+    MY_LD_PRELOAD=${TESTJAVA}${FS}jre${FS}lib${FS}${VM_CPU}${FS}libjsig.so
+    if [ "$VM_BITS" == "32" ] && [ "$VM_CPU" != "arm" ] && [ "$VM_CPU" != "ppc" ]; then
+            EXTRA_CFLAG=-m32
     fi
     echo MY_LD_PRELOAD = ${MY_LD_PRELOAD}
     ;;
@@ -73,13 +71,13 @@ esac
 THIS_DIR=.
 
 cp ${TESTSRC}${FS}*.java ${THIS_DIR}
-${TESTJAVA}${FS}bin${FS}javac *.java
+${COMPILEJAVA}${FS}bin${FS}javac *.java
 
 $gcc_cmd -DLINUX -fPIC -shared \
     ${EXTRA_CFLAG} -z noexecstack \
     -o ${TESTSRC}${FS}libTestJNI.so \
-    -I${TESTJAVA}${FS}include \
-    -I${TESTJAVA}${FS}include${FS}linux \
+    -I${COMPILEJAVA}${FS}include \
+    -I${COMPILEJAVA}${FS}include${FS}linux \
     ${TESTSRC}${FS}TestJNI.c
 
 # run the java test in the background

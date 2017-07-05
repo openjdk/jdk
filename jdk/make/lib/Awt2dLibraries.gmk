@@ -23,6 +23,9 @@
 # questions.
 #
 
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, jdk, lib/Awt2dLibraries.gmk))
+
 # Openwin is defined on Solaris.
 OPENWIN_LIB := $(OPENWIN_HOME)/lib
 
@@ -550,10 +553,6 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
     endif
 
     ifeq ($(OPENJDK_TARGET_OS), linux)
-      ifndef OPENJDK
-        include $(JDK_TOPDIR)/make/closed/xawt.gmk
-      endif
-
       ifeq ($(DISABLE_XRENDER), true)
         LIBAWT_XAWT_CFLAGS += -DDISABLE_XRENDER_BY_DEFAULT=true
       endif

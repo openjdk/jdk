@@ -2161,6 +2161,15 @@ void JvmtiExport::cleanup_thread(JavaThread* thread) {
   }
 }
 
+void JvmtiExport::clear_detected_exception(JavaThread* thread) {
+  assert(JavaThread::current() == thread, "thread is not current");
+
+  JvmtiThreadState* state = thread->jvmti_thread_state();
+  if (state != NULL) {
+    state->clear_exception_detected();
+  }
+}
+
 void JvmtiExport::oops_do(OopClosure* f) {
   JvmtiCurrentBreakpoints::oops_do(f);
   JvmtiVMObjectAllocEventCollector::oops_do_for_all_threads(f);

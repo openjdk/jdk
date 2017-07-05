@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,10 +65,16 @@ public class Resources_fr extends java.util.ListResourceBundle {
         {"Generates.certificate.from.a.certificate.request",
                 "G\u00E9n\u00E8re le certificat \u00E0 partir d'une demande de certificat"}, //-gencert
         {"Generates.CRL", "G\u00E9n\u00E8re la liste des certificats r\u00E9voqu\u00E9s (CRL)"}, //-gencrl
+        {"Generated.keyAlgName.secret.key",
+                "Cl\u00E9 secr\u00E8te {0} g\u00E9n\u00E9r\u00E9e"}, //-genseckey
+        {"Generated.keysize.bit.keyAlgName.secret.key",
+                "Cl\u00E9 secr\u00E8te {0} bits {1} g\u00E9n\u00E9r\u00E9e"}, //-genseckey
         {"Imports.entries.from.a.JDK.1.1.x.style.identity.database",
                 "Importe les entr\u00E9es \u00E0 partir d'une base de donn\u00E9es d'identit\u00E9s de type JDK 1.1.x"}, //-identitydb
         {"Imports.a.certificate.or.a.certificate.chain",
                 "Importe un certificat ou une cha\u00EEne de certificat"}, //-importcert
+        {"Imports.a.password",
+                "Importe un mot de passe"}, //-importpass
         {"Imports.one.or.all.entries.from.another.keystore",
                 "Importe une entr\u00E9e ou la totalit\u00E9 des entr\u00E9es depuis un autre fichier de cl\u00E9s"}, //-importkeystore
         {"Clones.a.key.entry",
@@ -220,6 +226,8 @@ public class Resources_fr extends java.util.ListResourceBundle {
         {"Must.specify.alias", "L'alias doit \u00EAtre sp\u00E9cifi\u00E9"},
         {"Keystore.password.must.be.at.least.6.characters",
                 "Un mot de passe de fichier de cl\u00E9s doit comporter au moins 6 caract\u00E8res"},
+        {"Enter.the.password.to.be.stored.",
+                "Saisissez le mot de passe \u00E0 stocker :  "},
         {"Enter.keystore.password.", "Entrez le mot de passe du fichier de cl\u00E9s :  "},
         {"Enter.source.keystore.password.", "Entrez le mot de passe du fichier de cl\u00E9s source\u00A0:  "},
         {"Enter.destination.keystore.password.", "Entrez le mot de passe du fichier de cl\u00E9s de destination\u00A0:  "},
@@ -328,6 +336,7 @@ public class Resources_fr extends java.util.ListResourceBundle {
         {"New.prompt.", "Nouveau {0} : "},
         {"Passwords.must.differ", "Les mots de passe doivent diff\u00E9rer"},
         {"Re.enter.new.prompt.", "Indiquez encore le nouveau {0} : "},
+        {"Re.enter.passpword.", "R\u00E9p\u00E9tez le mot de passe : "},
         {"Re.enter.new.password.", "Ressaisissez le nouveau mot de passe : "},
         {"They.don.t.match.Try.again", "Ils sont diff\u00E9rents. R\u00E9essayez."},
         {"Enter.prompt.alias.name.", "Indiquez le nom d''alias {0} :  "},

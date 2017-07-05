@@ -83,7 +83,7 @@ chmod -fR 777 bug
 
 ${TESTJAVA}${FS}bin${FS}javac -d . bug${FS}*.java
 
-${TESTJAVA}${FS}bin${FS}java -cp . bug/JavaBug > test.out 2>&1 
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -cp . bug/JavaBug > test.out 2>&1 
 
 grep "NullPointerException" test.out
 

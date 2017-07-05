@@ -35,6 +35,9 @@
 #ifdef TARGET_OS_FAMILY_windows
 # include "os_windows.inline.hpp"
 #endif
+#ifdef TARGET_OS_FAMILY_aix
+# include "os_aix.inline.hpp"
+#endif
 #ifdef TARGET_OS_FAMILY_bsd
 # include "os_bsd.inline.hpp"
 #endif
@@ -107,7 +110,7 @@ void BitMap::par_put_range_within_word(idx_t beg, idx_t end, bool value) {
     while (true) {
       intptr_t res = Atomic::cmpxchg_ptr(nw, pw, w);
       if (res == w) break;
-      w  = *pw;
+      w  = res;
       nw = value ? (w | ~mr) : (w & mr);
     }
   }

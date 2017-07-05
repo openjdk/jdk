@@ -63,6 +63,8 @@ public class ReadZip {
         Files.copy(Paths.get(System.getProperty("test.src", ""), "input.zip"),
                    newZip.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
+        newZip.setWritable(true);
+
         // pad some bytes
         try (OutputStream os = Files.newOutputStream(newZip.toPath(),
                                                      StandardOpenOption.APPEND)) {

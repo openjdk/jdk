@@ -65,7 +65,7 @@ public final class NativeBoolean extends ScriptObject {
     }
 
     NativeBoolean(final boolean flag, final Global global) {
-        this(flag, global.getBooleanPrototype(), global.getBooleanMap());
+        this(flag, global.getBooleanPrototype(), getInitialMap());
     }
 
     NativeBoolean(final boolean flag) {

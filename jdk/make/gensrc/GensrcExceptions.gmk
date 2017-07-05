@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,13 +43,13 @@ $(GENSRC_EXCEPTIONS_DST)/_the.exceptions.dir:
 
 ###
 
-$(GENSRC_EXCEPTIONS_DST)/_the.%: $(GENSRC_EXCEPTIONS_SRC)/%/exceptions \
+$(GENSRC_EXCEPTIONS_DST)/_the.%.marker: $(GENSRC_EXCEPTIONS_SRC)/%/exceptions \
     $(GENSRC_EXCEPTIONS_CMD) \
     $(GENSRC_EXCEPTIONS_DST)/_the.exceptions.dir
 	$(MKDIR) -p $(@D)/$*
 	SCRIPTS="$(JDK_TOPDIR)/make/scripts" NAWK="$(NAWK)" SH="$(SH)" $(SH) $(GENSRC_EXCEPTIONS_CMD) $< $(@D)/$* $(LOG_INFO)
 	$(TOUCH) $@
 
-GENSRC_EXCEPTIONS += $(foreach D,$(GENSRC_EXCEPTIONS_SRC_DIRS),$(GENSRC_EXCEPTIONS_DST)/_the.$(D))
+GENSRC_EXCEPTIONS += $(foreach D,$(GENSRC_EXCEPTIONS_SRC_DIRS),$(GENSRC_EXCEPTIONS_DST)/_the.$(D).marker)
 
 $(GENSRC_EXCEPTIONS): $(BUILD_TOOLS)
