@@ -93,8 +93,8 @@ public final class NativeInt8Array extends ArrayBufferView {
      * @return new typed array
      */
     @Constructor(arity = 1)
-    public static Object constructor(final boolean newObj, final Object self, final Object... args) {
-        return constructorImpl(args, FACTORY);
+    public static NativeInt8Array constructor(final boolean newObj, final Object self, final Object... args) {
+        return (NativeInt8Array)constructorImpl(args, FACTORY);
     }
 
     NativeInt8Array(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
@@ -144,8 +144,8 @@ public final class NativeInt8Array extends ArrayBufferView {
      * @return sub array
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    protected static Object subarray(final Object self, final Object begin, final Object end) {
-        return ArrayBufferView.subarrayImpl(self, begin, end);
+    protected static NativeInt8Array subarray(final Object self, final Object begin, final Object end) {
+        return (NativeInt8Array)ArrayBufferView.subarrayImpl(self, begin, end);
     }
 
     @Override

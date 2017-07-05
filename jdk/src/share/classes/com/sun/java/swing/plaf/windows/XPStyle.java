@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,6 +305,7 @@ class XPStyle {
         return border;
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class XPFillBorder extends LineBorder implements UIResource {
         XPFillBorder(Color color, int thickness) {
             super(color, thickness);
@@ -333,6 +334,7 @@ class XPStyle {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class XPStatefulFillBorder extends XPFillBorder {
         private final Part part;
         private final Prop prop;
@@ -360,6 +362,7 @@ class XPStyle {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class XPImageBorder extends AbstractBorder implements UIResource {
         Skin skin;
 
@@ -399,6 +402,7 @@ class XPStyle {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class XPEmptyBorder extends EmptyBorder implements UIResource {
         XPEmptyBorder(Insets m) {
             super(m.top+2, m.left+2, m.bottom+2, m.right+2);
@@ -674,6 +678,7 @@ class XPStyle {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class GlyphButton extends JButton {
         private Skin skin;
 

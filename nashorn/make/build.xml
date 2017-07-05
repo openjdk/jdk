@@ -42,6 +42,9 @@
     <condition property="hg.executable" value="/usr/local/bin/hg" else="hg">
       <available file="/usr/local/bin/hg"/>
     </condition>
+    <condition property="git.executable" value="/usr/local/bin/git" else="git">
+      <available file="/usr/local/bin/git"/>
+    </condition>
     <!-- check if JDK already has ASM classes -->
     <available property="asm.available" classname="jdk.internal.org.objectweb.asm.Type"/>
     <!-- check if testng.jar is avaiable -->
@@ -503,18 +506,17 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
 
   <!-- test262 test suite -->
   <target name="get-test262" depends="init" unless="${test-sys-prop.external.test262}">
-    <!-- clone test262 mercurial repo -->
-    <exec executable="${hg.executable}">
+    <!-- clone test262 git repo -->
+    <exec executable="${git.executable}">
        <arg value="clone"/>
-       <arg value="http://hg.ecmascript.org/tests/test262"/>
+       <arg value="https://github.com/tc39/test262"/>
        <arg value="${test.external.dir}/test262"/>
     </exec>
   </target>
   <target name="update-test262" depends="init" if="${test-sys-prop.external.test262}">
-    <!-- update test262 mercurial repo -->
-    <exec executable="${hg.executable}" dir="${test.external.dir}/test262">
+    <!-- update test262 git repo -->
+    <exec executable="${git.executable}" dir="${test.external.dir}/test262">
        <arg value="pull"/>
-       <arg value="-u"/>
     </exec>
   </target>
 

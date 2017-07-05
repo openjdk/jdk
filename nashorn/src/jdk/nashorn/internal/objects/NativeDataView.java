@@ -131,7 +131,7 @@ public class NativeDataView extends ScriptObject {
      * @return newly constructed DataView object
      */
     @Constructor(arity = 1)
-    public static Object constructor(final boolean newObj, final Object self, final Object... args) {
+    public static NativeDataView constructor(final boolean newObj, final Object self, final Object... args) {
         if (args.length == 0 || !(args[0] instanceof NativeArrayBuffer)) {
             throw typeError("not.an.arraybuffer.in.dataview");
         }
@@ -157,7 +157,7 @@ public class NativeDataView extends ScriptObject {
      * @return newly constructed DataView object
      */
     @SpecializedConstructor
-    public static Object constructor(final boolean newObj, final Object self, final Object arrBuf, final int offset) {
+    public static NativeDataView constructor(final boolean newObj, final Object self, final Object arrBuf, final int offset) {
         if (!(arrBuf instanceof NativeArrayBuffer)) {
             throw typeError("not.an.arraybuffer.in.dataview");
         }
@@ -175,7 +175,7 @@ public class NativeDataView extends ScriptObject {
      * @return newly constructed DataView object
      */
     @SpecializedConstructor
-    public static Object constructor(final boolean newObj, final Object self, final Object arrBuf, final int offset, final int length) {
+    public static NativeDataView constructor(final boolean newObj, final Object self, final Object arrBuf, final int offset, final int length) {
         if (!(arrBuf instanceof NativeArrayBuffer)) {
             throw typeError("not.an.arraybuffer.in.dataview");
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import javax.swing.*;
 import javax.swing.plaf.basic.*;
 import javax.swing.border.*;
 import javax.swing.text.DefaultEditorKit;
+import static javax.swing.UIDefaults.LazyValue;
 
 import java.awt.Font;
 import java.awt.Color;
@@ -67,9 +68,10 @@ import sun.security.action.GetPropertyAction;
 
 import sun.swing.DefaultLayoutStyle;
 import sun.swing.ImageIconUIResource;
-import sun.swing.SwingLazyValue;
+import sun.swing.icon.SortArrowIcon;
 import sun.swing.SwingUtilities2;
 import sun.swing.StringUIClientPropertyKey;
+import sun.swing.plaf.windows.ClassicSortArrowIcon;
 
 import static com.sun.java.swing.plaf.windows.TMSchema.*;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
@@ -90,6 +92,7 @@ import com.sun.java.swing.plaf.windows.WindowsIconFactory.VistaMenuItemCheckIcon
  *
  * @author unattributed
  */
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 public class WindowsLookAndFeel extends BasicLookAndFeel
 {
     /**
@@ -296,27 +299,11 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         initResourceBundle(table);
 
         // *** Shared Fonts
-        Integer twelve = Integer.valueOf(12);
-        Integer fontPlain = Integer.valueOf(Font.PLAIN);
-        Integer fontBold = Integer.valueOf(Font.BOLD);
+        LazyValue dialogPlain12 = t -> new FontUIResource(Font.DIALOG, Font.PLAIN, 12);
 
-        Object dialogPlain12 = new SwingLazyValue(
-                               "javax.swing.plaf.FontUIResource",
-                               null,
-                               new Object[] {Font.DIALOG, fontPlain, twelve});
-
-        Object sansSerifPlain12 =  new SwingLazyValue(
-                          "javax.swing.plaf.FontUIResource",
-                          null,
-                          new Object[] {Font.SANS_SERIF, fontPlain, twelve});
-        Object monospacedPlain12 = new SwingLazyValue(
-                          "javax.swing.plaf.FontUIResource",
-                          null,
-                          new Object[] {Font.MONOSPACED, fontPlain, twelve});
-        Object dialogBold12 = new SwingLazyValue(
-                          "javax.swing.plaf.FontUIResource",
-                          null,
-                          new Object[] {Font.DIALOG, fontBold, twelve});
+        LazyValue sansSerifPlain12 =  t -> new FontUIResource(Font.SANS_SERIF, Font.PLAIN, 12);
+        LazyValue monospacedPlain12 = t -> new FontUIResource(Font.MONOSPACED, Font.PLAIN, 12);
+        LazyValue dialogBold12 = t -> new FontUIResource(Font.DIALOG, Font.BOLD, 12);
 
         // *** Colors
         // XXX - some of these doens't seem to be used
@@ -757,9 +744,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "FileChooser.listViewBackground", new XPColorValue(Part.LVP_LISTVIEW, null, Prop.FILLCOLOR,
                                                                WindowBackgroundColor),
             "FileChooser.listViewBorder", new XPBorderValue(Part.LVP_LISTVIEW,
-                                                  new SwingLazyValue(
-                                                        "javax.swing.plaf.BorderUIResource",
-                                                        "getLoweredBevelBorderUIResource")),
+               (LazyValue) t -> BorderUIResource.getLoweredBevelBorderUIResource()),
             "FileChooser.listViewIcon",    new LazyWindowsIcon("fileChooserIcon ListView",
                                                                "icons/ListView.gif"),
             "FileChooser.listViewWindowsStyle", Boolean.TRUE,
@@ -849,15 +834,12 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "InternalFrame.closeIcon",
                 WindowsIconFactory.createFrameCloseIcon(),
             "InternalFrame.icon",
-                new SwingLazyValue(
-        "com.sun.java.swing.plaf.windows.WindowsInternalFrameTitlePane$ScalableIconUIResource",
+               (LazyValue) t -> new Object[]{
                     // The constructor takes one arg: an array of UIDefaults.LazyValue
                     // representing the icons
-                    new Object[][] { {
                         SwingUtilities2.makeIcon(getClass(), BasicLookAndFeel.class, "icons/JavaCup16.png"),
                         SwingUtilities2.makeIcon(getClass(), WindowsLookAndFeel.class, "icons/JavaCup32.png")
-                    } }),
-
+                },
             // Internal Frame Auditory Cue Mappings
             "InternalFrame.closeSound", "win.sound.close",
             "InternalFrame.maximizeSound", "win.sound.maximize",
@@ -1715,9 +1697,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         String POPUP_MENU_BORDER = "PopupMenu.border";
 
         Object popupMenuBorder = new XPBorderValue(Part.MENU,
-                new SwingLazyValue(
-                  "javax.swing.plaf.basic.BasicBorders",
-                  "getInternalFrameBorder"),
+            (LazyValue) t -> BasicBorders.getInternalFrameBorder(),
                   BorderFactory.createEmptyBorder(2, 2, 2, 2));
         table.put(POPUP_MENU_BORDER, popupMenuBorder);
         /* END handling menus for Vista */
@@ -1725,14 +1705,10 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         /* START table handling for Vista */
         table.put("Table.ascendingSortIcon", new XPValue(
             new SkinIcon(Part.HP_HEADERSORTARROW, State.SORTEDDOWN),
-            new SwingLazyValue(
-                "sun.swing.plaf.windows.ClassicSortArrowIcon",
-                null, new Object[] { Boolean.TRUE })));
+               (LazyValue) t -> new ClassicSortArrowIcon(true)));
         table.put("Table.descendingSortIcon", new XPValue(
             new SkinIcon(Part.HP_HEADERSORTARROW, State.SORTEDUP),
-            new SwingLazyValue(
-                "sun.swing.plaf.windows.ClassicSortArrowIcon",
-                null, new Object[] { Boolean.FALSE })));
+               (LazyValue) t -> new ClassicSortArrowIcon(false)));
         /* END table handling for Vista */
     }
 
@@ -1757,15 +1733,11 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
         Object buttonBorder =
             new XPBorderValue(Part.BP_PUSHBUTTON,
-                              new SwingLazyValue(
-                               "javax.swing.plaf.basic.BasicBorders",
-                               "getButtonBorder"));
+               (LazyValue) t -> BasicBorders.getButtonBorder());
 
         Object textFieldBorder =
             new XPBorderValue(Part.EP_EDIT,
-                              new SwingLazyValue(
-                               "javax.swing.plaf.basic.BasicBorders",
-                               "getTextFieldBorder"));
+               (LazyValue) t -> BasicBorders.getTextFieldBorder());
 
         Object textFieldMargin =
             new XPValue(new InsetsUIResource(2, 2, 2, 2),
@@ -1782,44 +1754,27 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         Object comboBoxBorder = new XPBorderValue(Part.CP_COMBOBOX, textFieldBorder);
 
         // For focus rectangle for cells and trees.
-        Object focusCellHighlightBorder = new SwingLazyValue(
-                          "com.sun.java.swing.plaf.windows.WindowsBorders",
-                          "getFocusCellHighlightBorder");
+        LazyValue focusCellHighlightBorder = t -> WindowsBorders.getFocusCellHighlightBorder();
 
-        Object etchedBorder = new SwingLazyValue(
-                          "javax.swing.plaf.BorderUIResource",
-                          "getEtchedBorderUIResource");
+        LazyValue etchedBorder = t -> BorderUIResource.getEtchedBorderUIResource();
 
-        Object internalFrameBorder = new SwingLazyValue(
-                "com.sun.java.swing.plaf.windows.WindowsBorders",
-                "getInternalFrameBorder");
+        LazyValue internalFrameBorder = t -> WindowsBorders.getInternalFrameBorder();
 
-        Object loweredBevelBorder = new SwingLazyValue(
-                          "javax.swing.plaf.BorderUIResource",
-                          "getLoweredBevelBorderUIResource");
+        LazyValue loweredBevelBorder = t -> BorderUIResource.getLoweredBevelBorderUIResource();
 
 
-        Object marginBorder = new SwingLazyValue(
-                            "javax.swing.plaf.basic.BasicBorders$MarginBorder");
+        LazyValue marginBorder = t -> new BasicBorders.MarginBorder();
 
-        Object menuBarBorder = new SwingLazyValue(
-                "javax.swing.plaf.basic.BasicBorders",
-                "getMenuBarBorder");
+        LazyValue menuBarBorder = t -> BasicBorders.getMenuBarBorder();
 
 
         Object popupMenuBorder = new XPBorderValue(Part.MENU,
-                        new SwingLazyValue(
-                          "javax.swing.plaf.basic.BasicBorders",
-                          "getInternalFrameBorder"));
+            (LazyValue) t -> BasicBorders.getInternalFrameBorder());
 
         // *** ProgressBar
-        Object progressBarBorder = new SwingLazyValue(
-                              "com.sun.java.swing.plaf.windows.WindowsBorders",
-                              "getProgressBarBorder");
+        LazyValue progressBarBorder = t -> WindowsBorders.getProgressBarBorder();
 
-        Object radioButtonBorder = new SwingLazyValue(
-                               "javax.swing.plaf.basic.BasicBorders",
-                               "getRadioButtonBorder");
+        LazyValue radioButtonBorder = t -> BasicBorders.getRadioButtonBorder();
 
         Object scrollPaneBorder =
             new XPBorderValue(Part.LBP_LISTBOX, textFieldBorder);
@@ -1827,45 +1782,27 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         Object tableScrollPaneBorder =
             new XPBorderValue(Part.LBP_LISTBOX, loweredBevelBorder);
 
-        Object tableHeaderBorder = new SwingLazyValue(
-                          "com.sun.java.swing.plaf.windows.WindowsBorders",
-                          "getTableHeaderBorder");
+        LazyValue tableHeaderBorder = t -> WindowsBorders.getTableHeaderBorder();
 
         // *** ToolBar
-        Object toolBarBorder = new SwingLazyValue(
-                              "com.sun.java.swing.plaf.windows.WindowsBorders",
-                              "getToolBarBorder");
+        LazyValue toolBarBorder = t -> WindowsBorders.getToolBarBorder();
 
         // *** ToolTips
-        Object toolTipBorder = new SwingLazyValue(
-                              "javax.swing.plaf.BorderUIResource",
-                              "getBlackLineBorderUIResource");
+        LazyValue toolTipBorder = t -> BorderUIResource.getBlackLineBorderUIResource();
 
 
 
-        Object checkBoxIcon = new SwingLazyValue(
-                     "com.sun.java.swing.plaf.windows.WindowsIconFactory",
-                     "getCheckBoxIcon");
+        LazyValue checkBoxIcon = t -> WindowsIconFactory.getCheckBoxIcon();
 
-        Object radioButtonIcon = new SwingLazyValue(
-                     "com.sun.java.swing.plaf.windows.WindowsIconFactory",
-                     "getRadioButtonIcon");
+        LazyValue radioButtonIcon = t -> WindowsIconFactory.getRadioButtonIcon();
 
-        Object radioButtonMenuItemIcon = new SwingLazyValue(
-                     "com.sun.java.swing.plaf.windows.WindowsIconFactory",
-                     "getRadioButtonMenuItemIcon");
+        LazyValue radioButtonMenuItemIcon = t -> WindowsIconFactory.getRadioButtonMenuItemIcon();
 
-        Object menuItemCheckIcon = new SwingLazyValue(
-                     "com.sun.java.swing.plaf.windows.WindowsIconFactory",
-                     "getMenuItemCheckIcon");
+        LazyValue menuItemCheckIcon = t -> WindowsIconFactory.getMenuItemCheckIcon();
 
-        Object menuItemArrowIcon = new SwingLazyValue(
-                     "com.sun.java.swing.plaf.windows.WindowsIconFactory",
-                     "getMenuItemArrowIcon");
+        LazyValue menuItemArrowIcon = t -> WindowsIconFactory.getMenuItemArrowIcon();
 
-        Object menuArrowIcon = new SwingLazyValue(
-                     "com.sun.java.swing.plaf.windows.WindowsIconFactory",
-                     "getMenuArrowIcon");
+        LazyValue menuArrowIcon = t -> WindowsIconFactory.getMenuArrowIcon();
 
 
         Object[] lazyDefaults = {
@@ -1910,21 +1847,11 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "InternalFrame.layoutTitlePaneAtOrigin",
                         new XPValue(Boolean.TRUE, Boolean.FALSE),
             "Table.ascendingSortIcon", new XPValue(
-                  new SwingLazyValue(
-                     "sun.swing.icon.SortArrowIcon",
-                     null, new Object[] { Boolean.TRUE,
-                                          "Table.sortIconColor" }),
-                  new SwingLazyValue(
-                      "sun.swing.plaf.windows.ClassicSortArrowIcon",
-                      null, new Object[] { Boolean.TRUE })),
+               (LazyValue) t -> new SortArrowIcon(true,"Table.sortIconColor"),
+                  (LazyValue) t -> new ClassicSortArrowIcon(true)),
             "Table.descendingSortIcon", new XPValue(
-                  new SwingLazyValue(
-                     "sun.swing.icon.SortArrowIcon",
-                     null, new Object[] { Boolean.FALSE,
-                                          "Table.sortIconColor" }),
-                  new SwingLazyValue(
-                     "sun.swing.plaf.windows.ClassicSortArrowIcon",
-                     null, new Object[] { Boolean.FALSE })),
+               (LazyValue) t -> new SortArrowIcon(false,"Table.sortIconColor"),
+                  (LazyValue) t -> new ClassicSortArrowIcon(false)),
         };
 
         return lazyDefaults;
@@ -2092,6 +2019,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
      *
      * @since 1.4
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private static class AudioAction extends AbstractAction {
         private Runnable audioRunnable;
         private String audioResource;

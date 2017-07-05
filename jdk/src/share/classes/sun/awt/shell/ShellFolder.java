@@ -33,6 +33,8 @@ import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.concurrent.Callable;
 
+import sun.reflect.misc.ReflectUtil;
+
 /**
  * @author Michael Martak
  * @since 1.4
@@ -208,10 +210,11 @@ public abstract class ShellFolder extends File {
                                       getDesktopProperty("Shell.shellFolderManager");
         Class managerClass = null;
         try {
-            managerClass = Class.forName(managerClassName);
+            managerClass = ReflectUtil.forName(managerClassName);
         // swallow the exceptions below and use default shell folder
         } catch(ClassNotFoundException e) {
         } catch(NullPointerException e) {
+        } catch(SecurityException e) {
         }
 
         if (managerClass == null) {

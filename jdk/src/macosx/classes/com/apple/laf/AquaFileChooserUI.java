@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -857,6 +857,7 @@ public class AquaFileChooserUI extends FileChooserUI {
 
     // Action to attach to the file list so we can override the default action
     // of the table for the return key, which is to select the next line.
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class DefaultButtonAction extends AbstractAction {
         public void actionPerformed(final ActionEvent e) {
             final JRootPane root = AquaFileChooserUI.this.getFileChooser().getRootPane();
@@ -883,6 +884,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     /**
      * Creates a new folder.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class NewFolderAction extends AbstractAction {
         protected NewFolderAction() {
             super(newFolderAccessibleName);
@@ -944,6 +946,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     /**
      * Responds to an Open, Save, or Choose request
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class ApproveSelectionAction extends AbstractAction {
         public void actionPerformed(final ActionEvent e) {
             fSubPanel.approveSelection(getFileChooser());
@@ -953,6 +956,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     /**
      * Responds to an OpenDirectory request
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class OpenSelectionAction extends AbstractAction {
         public void actionPerformed(final ActionEvent e) {
             final int index = fFileList.getSelectedRow();
@@ -966,6 +970,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     /**
      * Responds to a cancel request.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class CancelSelectionAction extends AbstractAction {
         public void actionPerformed(final ActionEvent e) {
             getFileChooser().cancelSelection();
@@ -979,6 +984,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     /**
      * Rescans the files in the current directory
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class UpdateAction extends AbstractAction {
         public void actionPerformed(final ActionEvent e) {
             final JFileChooser fc = getFileChooser();
@@ -1004,6 +1010,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     }
 
     // Penultimate superclass is JLabel
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class MacFCTableCellRenderer extends DefaultTableCellRenderer {
         boolean fIsSelected = false;
 
@@ -1084,6 +1091,7 @@ public class AquaFileChooserUI extends FileChooserUI {
 
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class FileRenderer extends MacFCTableCellRenderer {
         public FileRenderer(final Font f) {
             super(f);
@@ -1100,6 +1108,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         }
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class DateRenderer extends MacFCTableCellRenderer {
         public DateRenderer(final Font f) {
             super(f);
@@ -1134,6 +1143,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         return new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
     }
 
+    @SuppressWarnings("serial") // anonymous class
     protected ListCellRenderer createDirectoryComboBoxRenderer(final JFileChooser fc) {
         return new AquaComboBoxRendererInternal(directoryComboBox) {
             public Component getListCellRendererComponent(final JList list, final Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
@@ -1162,6 +1172,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     /**
      * Data model for a type-face selection combo-box.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class DirectoryComboBoxModel extends AbstractListModel implements ComboBoxModel {
         Vector<File> fDirectories = new Vector<File>();
         int topIndex = -1;
@@ -1245,6 +1256,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     //
     // Renderer for Types ComboBox
     //
+    @SuppressWarnings("serial") // anonymous class
     protected ListCellRenderer createFilterComboBoxRenderer() {
         return new AquaComboBoxRendererInternal(filterComboBox) {
             public Component getListCellRendererComponent(final JList list, final Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
@@ -1266,6 +1278,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     /**
      * Data model for a type-face selection combo-box.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class FilterComboBoxModel extends AbstractListModel<FileFilter> implements ComboBoxModel<FileFilter>,
             PropertyChangeListener {
         protected FileFilter[] filters;
@@ -1336,6 +1349,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     /**
      * Acts when FilterComboBox has changed the selected item.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class FilterComboBoxAction extends AbstractAction {
         protected FilterComboBoxAction() {
             super("FilterComboBoxAction");
@@ -1349,6 +1363,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     /**
      * Acts when DirectoryComboBox has changed the selected item.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class DirectoryComboBoxAction extends AbstractAction {
         protected DirectoryComboBoxAction() {
             super("DirectoryComboBoxAction");
@@ -1360,6 +1375,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     }
 
     // Sorting Table operations
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     class JSortingTableHeader extends JTableHeader {
         public JSortingTableHeader(final TableColumnModel cm) {
             super(cm);
@@ -1396,6 +1412,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             return label;
         }
 
+        @SuppressWarnings("serial") // Superclass is not serializable across versions
         class AquaTableCellRenderer extends DefaultTableCellRenderer implements UIResource {
             public Component getTableCellRendererComponent(final JTable localTable, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
                 if (localTable != null) {
@@ -1474,6 +1491,7 @@ public class AquaFileChooserUI extends FileChooserUI {
 
         tPanel.add(labelArea);
         // separator line
+        @SuppressWarnings("serial") // anonymous class
         final JSeparator sep = new JSeparator(){
             public Dimension getPreferredSize() {
                 return new Dimension(((JComponent)getParent()).getWidth(), 3);
@@ -1761,6 +1779,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         return p;
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class ScrollPaneCornerPanel extends JPanel {
         final Border border = UIManager.getBorder("TableHeader.cellBorder");
 
@@ -2225,6 +2244,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     }
 
     // See FileRenderer - documents in Save dialogs draw disabled, so they shouldn't be selected
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     class MacListSelectionModel extends DefaultListSelectionModel {
         AquaFileSystemModel fModel;
 
@@ -2315,6 +2335,7 @@ public class AquaFileChooserUI extends FileChooserUI {
 
     // Convenience, to translate from the JList directory view to the Mac-style JTable
     //   & minimize diffs between this and BasicFileChooserUI
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     class JTableExtension extends JTable {
         public void setSelectedIndex(final int index) {
             getSelectionModel().setSelectionInterval(index, index);

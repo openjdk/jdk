@@ -446,6 +446,7 @@ Arena::Arena(size_t init_size) {
   _first = _chunk = new (AllocFailStrategy::EXIT_OOM, init_size) Chunk(init_size);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
+  _size_in_bytes = 0;
   set_size_in_bytes(init_size);
   NOT_PRODUCT(Atomic::inc(&_instance_count);)
 }
@@ -454,6 +455,7 @@ Arena::Arena() {
   _first = _chunk = new (AllocFailStrategy::EXIT_OOM, Chunk::init_size) Chunk(Chunk::init_size);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
+  _size_in_bytes = 0;
   set_size_in_bytes(Chunk::init_size);
   NOT_PRODUCT(Atomic::inc(&_instance_count);)
 }

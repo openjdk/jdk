@@ -396,7 +396,7 @@ utf8mToUtf8s(struct UtfInst *ui, jbyte *string, int length, jbyte *newString, in
 
 /* ================================================================= */
 
-#if 1  /* Test program */
+#ifdef COMPILE_WITH_UTF_TEST  /* Test program */
 
 /*
  * Convert any byte array into a printable string.

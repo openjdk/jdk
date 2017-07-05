@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,68 +27,61 @@
 
 #include "oops/oop.hpp"
 
-// An ConstMethod* represents portions of a Java method which
-// do not vary.
+// An ConstMethod represents portions of a Java method which are not written to after
+// the classfile is parsed(*see below).  This part of the method can be shared across
+// processes in a read-only section with Class Data Sharing (CDS).  It's important
+// that this class doesn't have virtual functions because the vptr cannot be shared
+// with CDS.
+//   (*)RewriteByteCodes and RewriteFrequentPairs is an exception but turned off in CDS
 //
-// Memory layout (each line represents a word). Note that most
-// applications load thousands of methods, so keeping the size of this
+// Note that most applications load thousands of methods, so keeping the size of this
 // structure small has a big impact on footprint.
+
+// The actual bytecodes are inlined after the end of the ConstMethod struct.
 //
-// |------------------------------------------------------|
-// | header                                               |
-// | klass                                                |
-// |------------------------------------------------------|
-// | fingerprint 1                                        |
-// | fingerprint 2                                        |
-// | constants                      (oop)                 |
-// | stackmap_data                  (oop)                 |
-// | constMethod_size                                     |
-// | interp_kind  | flags    | code_size                  |
-// | name index              | signature index            |
-// | method_idnum            | max_stack                  |
-// | max_locals              | size_of_parameters         |
-// |------------------------------------------------------|
-// |                                                      |
-// | byte codes                                           |
-// |                                                      |
-// |------------------------------------------------------|
-// | compressed linenumber table                          |
-// |  (see class CompressedLineNumberReadStream)          |
-// |  (note that length is unknown until decompressed)    |
-// |  (access flags bit tells whether table is present)   |
-// |  (indexed from start of ConstMethod*)                |
-// |  (elements not necessarily sorted!)                  |
-// |------------------------------------------------------|
-// | localvariable table elements + length (length last)  |
-// |  (length is u2, elements are 6-tuples of u2)         |
-// |  (see class LocalVariableTableElement)               |
-// |  (access flags bit tells whether table is present)   |
-// |  (indexed from end of ConstMethod*)                  |
-// |------------------------------------------------------|
-// | exception table + length (length last)               |
-// |  (length is u2, elements are 4-tuples of u2)         |
-// |  (see class ExceptionTableElement)                   |
-// |  (access flags bit tells whether table is present)   |
-// |  (indexed from end of ConstMethod*)                  |
-// |------------------------------------------------------|
-// | checked exceptions elements + length (length last)   |
-// |  (length is u2, elements are u2)                     |
-// |  (see class CheckedExceptionElement)                 |
-// |  (access flags bit tells whether table is present)   |
-// |  (indexed from end of ConstMethod*)                  |
-// |------------------------------------------------------|
-// | method parameters elements + length (length last)    |
-// |  (length is u2, elements are u2, u4 structures)      |
-// |  (see class MethodParametersElement)                 |
-// |  (access flags bit tells whether table is present)   |
-// |  (indexed from end of ConstMethod*)                  |
-// |------------------------------------------------------|
-// | generic signature index (u2)                         |
-// |  (indexed from start of constMethodOop)              |
-// |------------------------------------------------------|
-// | annotations arrays - method, parameter, type, default|
-// | pointer to Array<u1> if annotation is present        |
-// |------------------------------------------------------|
+// The line number table is compressed and inlined following the byte codes. It is
+// found as the first byte following the byte codes.  Note that accessing the line
+// number and local variable tables is not performance critical at all.
+//
+// The checked exceptions table and the local variable table are inlined after the
+// line number table, and indexed from the end of the method. We do not compress the
+// checked exceptions table since the average length is less than 2, and it is used
+// by reflection so access should be fast.  We do not bother to compress the local
+// variable table either since it is mostly absent.
+//
+//
+//  ConstMethod embedded field layout (after declared fields):
+//    [EMBEDDED byte codes]
+//    [EMBEDDED compressed linenumber table]
+//     (see class CompressedLineNumberReadStream)
+//     (note that length is unknown until decompressed)
+//     (access flags bit tells whether table is present)
+//     (indexed from start of ConstMethod)
+//     (elements not necessarily sorted!)
+//    [EMBEDDED localvariable table elements + length (length last)]
+//     (length is u2, elements are 6-tuples of u2)
+//     (see class LocalVariableTableElement)
+//     (access flags bit tells whether table is present)
+//     (indexed from end of ConstMethod*)
+//    [EMBEDDED exception table + length (length last)]
+//     (length is u2, elements are 4-tuples of u2)
+//     (see class ExceptionTableElement)
+//     (access flags bit tells whether table is present)
+//     (indexed from end of ConstMethod*)
+//    [EMBEDDED checked exceptions elements + length (length last)]
+//     (length is u2, elements are u2)
+//     (see class CheckedExceptionElement)
+//     (access flags bit tells whether table is present)
+//     (indexed from end of ConstMethod*)
+//    [EMBEDDED method parameters elements + length (length last)]
+//     (length is u2, elements are u2, u4 structures)
+//     (see class MethodParametersElement)
+//     (access flags bit tells whether table is present)
+//     (indexed from end of ConstMethod*)
+//    [EMBEDDED generic signature index (u2)]
+//     (indexed from end of constMethodOop)
+//    [EMBEDDED annotations arrays - method, parameter, type, default]
+//      pointer to Array<u1> if annotation is present
 //
 // IMPORTANT: If anything gets added here, there need to be changes to
 // ensure that ServicabilityAgent doesn't get broken as a result!

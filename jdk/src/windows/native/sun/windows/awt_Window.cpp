@@ -483,6 +483,8 @@ void AwtWindow::CreateHWnd(JNIEnv *env, LPCWSTR title,
     env->DeleteLocalRef(target);
 
     InitType(env, peer);
+    JNU_CHECK_EXCEPTION(env);
+
     TweakStyle(windowStyle, windowExStyle);
 
     AwtCanvas::CreateHWnd(env, title,
@@ -684,15 +686,27 @@ void AwtWindow::CalculateWarningWindowBounds(JNIEnv *env, LPRECT rect)
 
     if (point2DClassID == NULL) {
         jclass point2DClassIDLocal = env->FindClass("java/awt/geom/Point2D");
+        if (point2DClassIDLocal == NULL) {
+            env->DeleteLocalRef(point2D);
+            return;
+        }
         point2DClassID = (jclass)env->NewGlobalRef(point2DClassIDLocal);
         env->DeleteLocalRef(point2DClassIDLocal);
     }
 
     if (point2DGetXMID == NULL) {
         point2DGetXMID = env->GetMethodID(point2DClassID, "getX", "()D");
+        if (point2DGetXMID == NULL) {
+            env->DeleteLocalRef(point2D);
+            return;
+        }
     }
     if (point2DGetYMID == NULL) {
         point2DGetYMID = env->GetMethodID(point2DClassID, "getY", "()D");
+        if (point2DGetYMID == NULL) {
+            env->DeleteLocalRef(point2D);
+            return;
+        }
     }
 
 
@@ -1071,6 +1085,7 @@ AwtWindow* AwtWindow::Create(jobject self, jobject parent)
             if (JNU_IsInstanceOfByName(env, target, "javax/swing/Popup$HeavyWeightWindow") > 0) {
                 window->m_isRetainingHierarchyZOrder = TRUE;
             }
+            if (env->ExceptionCheck()) goto done;
             DWORD style = WS_CLIPCHILDREN | WS_POPUP;
             DWORD exStyle = WS_EX_NOACTIVATE;
             if (GetRTL()) {
@@ -1378,6 +1393,10 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
             ((AwtFrame*)this)->GetMenuBar()) {
             m_insets.top += ::GetSystemMetrics(SM_CYMENU);
         }
+        if (env->ExceptionCheck()) {
+            env->DeleteLocalRef(target);
+            return FALSE;
+        }
         m_insets.bottom += extraBottomInsets;
         env->DeleteLocalRef(target);
     }
@@ -1445,14 +1464,13 @@ void AwtWindow::SendComponentEvent(jint eventId)
             classEvent = (jclass)env->NewGlobalRef(classEvent);
         }
         env->PopLocalFrame(0);
+        CHECK_NULL(classEvent);
     }
     static jmethodID eventInitMID = NULL;
     if (eventInitMID == NULL) {
         eventInitMID = env->GetMethodID(classEvent, "<init>",
                                         "(Ljava/awt/Component;I)V");
-        if (eventInitMID == NULL) {
-            return;
-        }
+        CHECK_NULL(eventInitMID);
     }
     if (env->EnsureLocalCapacity(2) < 0) {
         return;
@@ -1462,6 +1480,10 @@ void AwtWindow::SendComponentEvent(jint eventId)
                                    target, eventId);
     DASSERT(!safe_ExceptionOccurred(env));
     DASSERT(event != NULL);
+    if (event == NULL) {
+        env->DeleteLocalRef(target);
+        return;
+    }
     SendEvent(event);
 
     env->DeleteLocalRef(target);
@@ -1503,10 +1525,7 @@ void AwtWindow::SendWindowEvent(jint id, HWND opposite,
         jclass sequencedEventClsLocal
             = env->FindClass("java/awt/SequencedEvent");
         DASSERT(sequencedEventClsLocal);
-        if (sequencedEventClsLocal == NULL) {
-            /* exception already thrown */
-            return;
-        }
+        CHECK_NULL(sequencedEventClsLocal);
         sequencedEventCls =
             (jclass)env->NewGlobalRef(sequencedEventClsLocal);
         env->DeleteLocalRef(sequencedEventClsLocal);
@@ -1517,6 +1536,7 @@ void AwtWindow::SendWindowEvent(jint id, HWND opposite,
         sequencedEventConst =
             env->GetMethodID(sequencedEventCls, "<init>",
                              "(Ljava/awt/AWTEvent;)V");
+        CHECK_NULL(sequencedEventConst);
     }
 
     if (env->EnsureLocalCapacity(3) < 0) {
@@ -1539,6 +1559,7 @@ void AwtWindow::SendWindowEvent(jint id, HWND opposite,
         env->DeleteLocalRef(jOpposite); jOpposite = NULL;
     }
     env->DeleteLocalRef(target); target = NULL;
+    CHECK_NULL(event);
 
     if (id == java_awt_event_WindowEvent_WINDOW_GAINED_FOCUS ||
         id == java_awt_event_WindowEvent_WINDOW_LOST_FOCUS)
@@ -2024,10 +2045,15 @@ void AwtWindow::CheckIfOnNewScreen() {
 
         jclass peerCls = env->GetObjectClass(m_peerObject);
         DASSERT(peerCls);
+        CHECK_NULL(peerCls);
 
         jmethodID draggedID = env->GetMethodID(peerCls, "draggedToNewScreen",
                                                "()V");
         DASSERT(draggedID);
+        if (draggedID == NULL) {
+            env->DeleteLocalRef(peerCls);
+            return;
+        }
 
         env->CallVoidMethod(m_peerObject, draggedID);
         m_screenNum = curScrn;
@@ -2505,6 +2531,7 @@ void AwtWindow::SetIconData(JNIEnv* env, jintArray iconRaster, jint w, jint h,
     }
     m_hIconSm = NULL;
     m_hIcon = CreateIconFromRaster(env, iconRaster, w, h);
+    JNU_CHECK_EXCEPTION(env);
     m_hIconSm = CreateIconFromRaster(env, smallIconRaster, smw, smh);
 
     m_iconInherited = (m_hIcon == NULL);
@@ -3057,22 +3084,23 @@ Java_java_awt_Window_initIDs(JNIEnv *env, jclass cls)
 {
     TRY;
 
-    AwtWindow::warningStringID =
-        env->GetFieldID(cls, "warningString", "Ljava/lang/String;");
-    AwtWindow::locationByPlatformID =
-        env->GetFieldID(cls, "locationByPlatform", "Z");
-    AwtWindow::securityWarningWidthID =
-        env->GetFieldID(cls, "securityWarningWidth", "I");
-    AwtWindow::securityWarningHeightID =
-        env->GetFieldID(cls, "securityWarningHeight", "I");
-    AwtWindow::getWarningStringMID =
-        env->GetMethodID(cls, "getWarningString", "()Ljava/lang/String;");
-    AwtWindow::autoRequestFocusID =
-        env->GetFieldID(cls, "autoRequestFocus", "Z");
-    AwtWindow::calculateSecurityWarningPositionMID =
-        env->GetMethodID(cls, "calculateSecurityWarningPosition", "(DDDD)Ljava/awt/geom/Point2D;");
+    CHECK_NULL(AwtWindow::warningStringID =
+        env->GetFieldID(cls, "warningString", "Ljava/lang/String;"));
+    CHECK_NULL(AwtWindow::locationByPlatformID =
+        env->GetFieldID(cls, "locationByPlatform", "Z"));
+    CHECK_NULL(AwtWindow::securityWarningWidthID =
+        env->GetFieldID(cls, "securityWarningWidth", "I"));
+    CHECK_NULL(AwtWindow::securityWarningHeightID =
+        env->GetFieldID(cls, "securityWarningHeight", "I"));
+    CHECK_NULL(AwtWindow::getWarningStringMID =
+        env->GetMethodID(cls, "getWarningString", "()Ljava/lang/String;"));
+    CHECK_NULL(AwtWindow::autoRequestFocusID =
+        env->GetFieldID(cls, "autoRequestFocus", "Z"));
+    CHECK_NULL(AwtWindow::calculateSecurityWarningPositionMID =
+        env->GetMethodID(cls, "calculateSecurityWarningPosition", "(DDDD)Ljava/awt/geom/Point2D;"));
 
     jclass windowTypeClass = env->FindClass("java/awt/Window$Type");
+    CHECK_NULL(windowTypeClass);
     AwtWindow::windowTypeNameMID =
         env->GetMethodID(windowTypeClass, "name", "()Ljava/lang/String;");
     env->DeleteLocalRef(windowTypeClass);
@@ -3099,10 +3127,10 @@ Java_sun_awt_windows_WWindowPeer_initIDs(JNIEnv *env, jclass cls)
 {
     TRY;
 
-    AwtWindow::sysXID = env->GetFieldID(cls, "sysX", "I");
-    AwtWindow::sysYID = env->GetFieldID(cls, "sysY", "I");
-    AwtWindow::sysWID = env->GetFieldID(cls, "sysW", "I");
-    AwtWindow::sysHID = env->GetFieldID(cls, "sysH", "I");
+    CHECK_NULL(AwtWindow::sysXID = env->GetFieldID(cls, "sysX", "I"));
+    CHECK_NULL(AwtWindow::sysYID = env->GetFieldID(cls, "sysY", "I"));
+    CHECK_NULL(AwtWindow::sysWID = env->GetFieldID(cls, "sysW", "I"));
+    CHECK_NULL(AwtWindow::sysHID = env->GetFieldID(cls, "sysH", "I"));
 
     AwtWindow::windowTypeID = env->GetFieldID(cls, "windowType",
             "Ljava/awt/Window$Type;");

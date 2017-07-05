@@ -373,6 +373,21 @@ const uint64_t KlassEncodingMetaspaceMax = (uint64_t(max_juint) + 1) << LogKlass
 
 // Machine dependent stuff
 
+#if defined(X86) && defined(COMPILER2) && !defined(JAVASE_EMBEDDED)
+// Include Restricted Transactional Memory lock eliding optimization
+#define INCLUDE_RTM_OPT 1
+#define RTM_OPT_ONLY(code) code
+#else
+#define INCLUDE_RTM_OPT 0
+#define RTM_OPT_ONLY(code)
+#endif
+// States of Restricted Transactional Memory usage.
+enum RTMState {
+  NoRTM      = 0x2, // Don't use RTM
+  UseRTM     = 0x1, // Use RTM
+  ProfileRTM = 0x0  // Use RTM with abort ratio calculation
+};
+
 #ifdef TARGET_ARCH_x86
 # include "globalDefinitions_x86.hpp"
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,9 +97,9 @@ static jfieldID s_JsrcLUTtransIndexID;
 
 JNIEXPORT void JNICALL
 Java_sun_awt_image_ImageRepresentation_initIDs(JNIEnv *env, jclass cls) {
-    s_JnumSrcLUTID = (*env)->GetFieldID(env, cls, "numSrcLUT", "I");
-    s_JsrcLUTtransIndexID = (*env)->GetFieldID(env, cls, "srcLUTtransIndex",
-                                               "I");
+    CHECK_NULL(s_JnumSrcLUTID = (*env)->GetFieldID(env, cls, "numSrcLUT", "I"));
+    CHECK_NULL(s_JsrcLUTtransIndexID = (*env)->GetFieldID(env, cls,
+                                                          "srcLUTtransIndex", "I"));
 }
 
 /*
@@ -166,6 +166,7 @@ Java_sun_awt_image_ImageRepresentation_setICMpixels(JNIEnv *env, jclass cls,
 
     cOffs = (int *) (*env)->GetPrimitiveArrayCritical(env, joffs, NULL);
     if (cOffs == NULL) {
+        (*env)->ExceptionClear(env);
         JNU_ThrowNullPointerException(env, "Null channel offset array");
         return JNI_FALSE;
     }
@@ -190,6 +191,7 @@ Java_sun_awt_image_ImageRepresentation_setICMpixels(JNIEnv *env, jclass cls,
 
     srcLUT = (int *) (*env)->GetPrimitiveArrayCritical(env, jlut, NULL);
     if (srcLUT == NULL) {
+        (*env)->ExceptionClear(env);
         JNU_ThrowNullPointerException(env, "Null IndexColorModel LUT");
         return JNI_FALSE;
     }
@@ -198,6 +200,7 @@ Java_sun_awt_image_ImageRepresentation_setICMpixels(JNIEnv *env, jclass cls,
                                                                   NULL);
     if (srcData == NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, jlut, srcLUT, JNI_ABORT);
+        (*env)->ExceptionClear(env);
         JNU_ThrowNullPointerException(env, "Null data array");
         return JNI_FALSE;
     }
@@ -206,6 +209,7 @@ Java_sun_awt_image_ImageRepresentation_setICMpixels(JNIEnv *env, jclass cls,
     if (dstData == NULL) {
         (*env)->ReleasePrimitiveArrayCritical(env, jlut, srcLUT, JNI_ABORT);
         (*env)->ReleasePrimitiveArrayCritical(env, jpix, srcData, JNI_ABORT);
+        (*env)->ExceptionClear(env);
         JNU_ThrowNullPointerException(env, "Null tile data array");
         return JNI_FALSE;
     }

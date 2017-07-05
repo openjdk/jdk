@@ -33,6 +33,11 @@ SLASH_JAVA ?= /java
 # ARCH can be set explicitly in spec.gmk
 ifndef ARCH
   ARCH := $(shell uname -m)
+  # Fold little endian PowerPC64 into big-endian (if ARCH is set in
+  # hotspot-spec.gmk, this will be done by the configure script).
+  ifeq ($(ARCH),ppc64le)
+    ARCH := ppc64
+  endif
 endif
 
 PATH_SEP ?= :

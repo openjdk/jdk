@@ -33,6 +33,7 @@ import java.util.Hashtable;
  *
  * @author Jim Graham
  */
+@SuppressWarnings("serial") // JDK-implementation class
 final class WFontMetrics extends FontMetrics {
 
     static {

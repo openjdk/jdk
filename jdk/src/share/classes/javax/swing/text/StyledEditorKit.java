@@ -44,6 +44,7 @@ import javax.swing.UIManager;
  *
  * @author  Timothy Prinzing
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class StyledEditorKit extends DefaultEditorKit {
 
     /**
@@ -170,6 +171,7 @@ public class StyledEditorKit extends DefaultEditorKit {
     /**
      * Creates the AttributeSet used for the selection.
      */
+    @SuppressWarnings("serial") // anonymous class
     private void createInputAttributes() {
         inputAttributes = new SimpleAttributeSet() {
             public AttributeSet getResolveParent() {
@@ -218,6 +220,7 @@ public class StyledEditorKit extends DefaultEditorKit {
      * input attributes when the Document changes, as if the Document
      * changes the attributes will almost certainly change.
      */
+    @SuppressWarnings("serial") // JDK-implementation class
     class AttributeTracker implements CaretListener, PropertyChangeListener, Serializable {
 
         /**
@@ -854,6 +857,7 @@ public class StyledEditorKit extends DefaultEditorKit {
      * is inserted. Beyond that, this will reset the input attributes to
      * what they were before the newline was inserted.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     static class StyledInsertBreakAction extends StyledTextAction {
         private SimpleAttributeSet tempSet;
 

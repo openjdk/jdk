@@ -33,6 +33,7 @@
 #include "opto/compile.hpp"
 #include "opto/escape.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/movenode.hpp"
 #include "opto/rootnode.hpp"
 
 ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn) :

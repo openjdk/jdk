@@ -259,7 +259,7 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  *             "Choose one", "Input",
  *             JOptionPane.INFORMATION_MESSAGE, null,
  *             possibleValues, possibleValues[0]);
- * </pre><p>
+ * </pre>
  * </dl>
  * <b>Direct Use:</b><br>
  * To create and use an <code>JOptionPane</code> directly, the

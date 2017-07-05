@@ -359,24 +359,28 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
             const jchar *penvBlock = (envBlock != NULL)
                 ? (*env)->GetStringChars(env, envBlock, NULL)
                 : NULL;
-            const jchar *pdir = (dir != NULL)
-                ? (*env)->GetStringChars(env, dir, NULL)
-                : NULL;
-            jlong *handles = (*env)->GetLongArrayElements(env, stdHandles, NULL);
-            if (handles != NULL) {
-                ret = processCreate(
-                    env,
-                    pcmd,
-                    penvBlock,
-                    pdir,
-                    handles,
-                    redirectErrorStream);
-                (*env)->ReleaseLongArrayElements(env, stdHandles, handles, 0);
+            if (!(*env)->ExceptionCheck(env)) {
+                const jchar *pdir = (dir != NULL)
+                    ? (*env)->GetStringChars(env, dir, NULL)
+                    : NULL;
+                if (!(*env)->ExceptionCheck(env)) {
+                    jlong *handles = (*env)->GetLongArrayElements(env, stdHandles, NULL);
+                    if (handles != NULL) {
+                        ret = processCreate(
+                            env,
+                            pcmd,
+                            penvBlock,
+                            pdir,
+                            handles,
+                            redirectErrorStream);
+                        (*env)->ReleaseLongArrayElements(env, stdHandles, handles, 0);
+                    }
+                    if (pdir != NULL)
+                        (*env)->ReleaseStringChars(env, dir, pdir);
+                }
+                if (penvBlock != NULL)
+                    (*env)->ReleaseStringChars(env, envBlock, penvBlock);
             }
-            if (pdir != NULL)
-                (*env)->ReleaseStringChars(env, dir, pdir);
-            if (penvBlock != NULL)
-                (*env)->ReleaseStringChars(env, envBlock, penvBlock);
             (*env)->ReleaseStringChars(env, cmd, pcmd);
         }
     }
@@ -448,7 +452,7 @@ Java_java_lang_ProcessImpl_isProcessAlive(JNIEnv *env, jclass ignored, jlong han
 JNIEXPORT jboolean JNICALL
 Java_java_lang_ProcessImpl_closeHandle(JNIEnv *env, jclass ignored, jlong handle)
 {
-    return CloseHandle((HANDLE) handle);
+    return (jboolean) CloseHandle((HANDLE) handle);
 }
 
 /**

@@ -29,6 +29,7 @@ package sun.lwawt.macosx;
 import java.awt.*;
 import java.awt.print.*;
 
+@SuppressWarnings("serial") // JDK implementation class
 final class CPrinterJobDialog extends CPrinterDialog {
     private Pageable fPageable;
     private boolean fAllowPrintToFile;

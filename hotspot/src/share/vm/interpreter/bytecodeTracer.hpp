@@ -34,8 +34,7 @@
 // By specialising the BytecodeClosure, all kinds of bytecode traces can
 // be done.
 
-#ifndef PRODUCT
-// class BytecodeTracer is only used by TraceBytecodes option
+// class BytecodeTracer is used by TraceBytecodes option and PrintMethodData
 
 class BytecodeClosure;
 class BytecodeTracer: AllStatic {
@@ -59,7 +58,5 @@ class BytecodeClosure {
   virtual void trace(methodHandle method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) = 0;
   virtual void trace(methodHandle method, address bcp, outputStream* st) = 0;
 };
-
-#endif // !PRODUCT
 
 #endif // SHARE_VM_INTERPRETER_BYTECODETRACER_HPP

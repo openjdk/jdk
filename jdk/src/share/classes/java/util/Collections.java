@@ -1466,9 +1466,9 @@ public class Collections {
             throw new UnsupportedOperationException();
         }
 
-        private transient Set<K> keySet = null;
-        private transient Set<Map.Entry<K,V>> entrySet = null;
-        private transient Collection<V> values = null;
+        private transient Set<K> keySet;
+        private transient Set<Map.Entry<K,V>> entrySet;
+        private transient Collection<V> values;
 
         public Set<K> keySet() {
             if (keySet==null)
@@ -2597,9 +2597,9 @@ public class Collections {
             synchronized (mutex) {m.clear();}
         }
 
-        private transient Set<K> keySet = null;
-        private transient Set<Map.Entry<K,V>> entrySet = null;
-        private transient Collection<V> values = null;
+        private transient Set<K> keySet;
+        private transient Set<Map.Entry<K,V>> entrySet;
+        private transient Collection<V> values;
 
         public Set<K> keySet() {
             synchronized (mutex) {
@@ -3082,7 +3082,7 @@ public class Collections {
             return c.add(e);
         }
 
-        private E[] zeroLengthElementArray = null; // Lazily initialized
+        private E[] zeroLengthElementArray; // Lazily initialized
 
         private E[] zeroLengthElementArray() {
             return zeroLengthElementArray != null ? zeroLengthElementArray :
@@ -3643,7 +3643,7 @@ public class Collections {
                 m.put(e.getKey(), e.getValue());
         }
 
-        private transient Set<Map.Entry<K,V>> entrySet = null;
+        private transient Set<Map.Entry<K,V>> entrySet;
 
         public Set<Map.Entry<K,V>> entrySet() {
             if (entrySet==null)
@@ -4877,9 +4877,9 @@ public class Collections {
         public boolean containsValue(Object value)       {return eq(value, v);}
         public V get(Object key)              {return (eq(key, k) ? v : null);}
 
-        private transient Set<K> keySet = null;
-        private transient Set<Map.Entry<K,V>> entrySet = null;
-        private transient Collection<V> values = null;
+        private transient Set<K> keySet;
+        private transient Set<Map.Entry<K,V>> entrySet;
+        private transient Collection<V> values;
 
         public Set<K> keySet() {
             if (keySet==null)

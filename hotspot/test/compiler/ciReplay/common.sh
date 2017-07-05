@@ -218,7 +218,7 @@ generate_replay() {
             -XX:VMThreadStackSize=512 \
             -XX:CompilerThreadStackSize=512 \
             -XX:ParallelGCThreads=1 \
-            -XX:CICompilerCount=1 \
+            -XX:CICompilerCount=2 \
             -Xcomp \
             -XX:CICrashAt=1 \
             -XX:+CreateMinidumpOnCrash \
