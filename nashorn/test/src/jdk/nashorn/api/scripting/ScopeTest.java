@@ -407,6 +407,75 @@ public class ScopeTest {
         Assert.assertEquals(e.eval(sharedScript, newCtxt), "newer context");
     }
 
+
+    /**
+     * Test multi-threaded access to prototype user accessor properties for shared script classes with multiple globals.
+     */
+    @Test
+    public static void multiThreadedAccessorTest() throws ScriptException, InterruptedException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final Bindings b = e.createBindings();
+        final ScriptContext origContext = e.getContext();
+        final ScriptContext newCtxt = new SimpleScriptContext();
+        newCtxt.setBindings(b, ScriptContext.ENGINE_SCOPE);
+
+        e.eval("Object.defineProperty(Object.prototype, 'foo', { get: function() 'original context' })", origContext);
+        e.eval("Object.defineProperty(Object.prototype, 'foo', { get: function() 'new context', configurable: true })", newCtxt);
+        final String sharedScript = "({}).foo";
+
+        final Thread t1 = new Thread(new ScriptRunner(e, origContext, sharedScript, "original context", 1000));
+        final Thread t2 = new Thread(new ScriptRunner(e, newCtxt, sharedScript, "new context", 1000));
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+
+        final Object obj3 = e.eval("delete Object.prototype.foo; Object.prototype.foo = 'newer context';", newCtxt);
+        assertEquals(obj3, "newer context");
+        final Thread t3 = new Thread(new ScriptRunner(e, origContext, sharedScript, "original context", 1000));
+        final Thread t4 = new Thread(new ScriptRunner(e, newCtxt, sharedScript, "newer context", 1000));
+
+        t3.start();
+        t4.start();
+        t3.join();
+        t4.join();
+    }
+
+    /**
+     * Test multi-threaded access to primitive prototype user accessor properties for shared script classes with multiple globals.
+     */
+    @Test
+    public static void multiThreadedPrimitiveAccessorTest() throws ScriptException, InterruptedException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final Bindings b = e.createBindings();
+        final ScriptContext origContext = e.getContext();
+        final ScriptContext newCtxt = new SimpleScriptContext();
+        newCtxt.setBindings(b, ScriptContext.ENGINE_SCOPE);
+
+        e.eval("Object.defineProperty(String.prototype, 'foo', { get: function() 'original context' })", origContext);
+        e.eval("Object.defineProperty(String.prototype, 'foo', { get: function() 'new context' })", newCtxt);
+        final String sharedScript = "''.foo";
+
+        final Thread t1 = new Thread(new ScriptRunner(e, origContext, sharedScript, "original context", 1000));
+        final Thread t2 = new Thread(new ScriptRunner(e, newCtxt, sharedScript, "new context", 1000));
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+
+        final Object obj3 = e.eval("delete String.prototype.foo; Object.prototype.foo = 'newer context';", newCtxt);
+        assertEquals(obj3, "newer context");
+        final Thread t3 = new Thread(new ScriptRunner(e, origContext, sharedScript, "original context", 1000));
+        final Thread t4 = new Thread(new ScriptRunner(e, newCtxt, sharedScript, "newer context", 1000));
+
+        t3.start();
+        t4.start();
+        t3.join();
+        t4.join();
+    }
+
     /**
      * Test multi-threaded scope function invocation for shared script classes with multiple globals.
      */

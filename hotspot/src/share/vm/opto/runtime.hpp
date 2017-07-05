@@ -310,6 +310,8 @@ private:
   static const TypeFunc* sha_implCompress_Type();
   static const TypeFunc* digestBase_implCompressMB_Type();
 
+  static const TypeFunc* multiplyToLen_Type();
+
   static const TypeFunc* updateBytesCRC32_Type();
 
   // leaf on stack replacement interpreter accessor types

@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,15 +23,18 @@
  * questions.
  */
 
-/**
- * JDK-8048079: Persistent code store is broken after optimistic types merge
- *
- * @test
- * @run
- * @option -pcc
- * @option -Dnashorn.persistent.code.cache=build/nashorn_code_cache
- * @fork
- */
+package jdk.nashorn.internal.ir;
 
-load(__DIR__ + 'prototype.js');
-load(__DIR__ + 'yui.js');
+import jdk.nashorn.internal.codegen.CompileUnit;
+
+/**
+ * Marker interface for things in the IR that can hold compile units.
+ * {@link CompileUnit}
+ */
+public interface CompileUnitHolder {
+    /**
+     * Return the compile unit held by this instance
+     * @return compile unit
+     */
+    public CompileUnit getCompileUnit();
+}

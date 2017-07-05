@@ -351,8 +351,7 @@ public class LexicalContext {
     }
 
     /**
-     * Get the function for this block. If the block is itself a function
-     * this returns identity
+     * Get the function for this block.
      * @param block block for which to get function
      * @return function for block
      */

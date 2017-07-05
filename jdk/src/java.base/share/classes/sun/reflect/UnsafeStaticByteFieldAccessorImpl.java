@@ -33,7 +33,7 @@ class UnsafeStaticByteFieldAccessorImpl extends UnsafeStaticFieldAccessorImpl {
     }
 
     public Object get(Object obj) throws IllegalArgumentException {
-        return new Byte(getByte(obj));
+        return Byte.valueOf(getByte(obj));
     }
 
     public boolean getBoolean(Object obj) throws IllegalArgumentException {

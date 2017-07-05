@@ -35,7 +35,7 @@ class UnsafeQualifiedIntegerFieldAccessorImpl
     }
 
     public Object get(Object obj) throws IllegalArgumentException {
-        return new Integer(getInt(obj));
+        return Integer.valueOf(getInt(obj));
     }
 
     public boolean getBoolean(Object obj) throws IllegalArgumentException {
