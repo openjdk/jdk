@@ -22,40 +22,62 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package jdk.nashorn.internal.tools.nasgen;
 
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.OBJECT_ARRAY_DESC;
 import static jdk.nashorn.internal.tools.nasgen.StringConstants.OBJECT_DESC;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.SCRIPTOBJECT_DESC;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.STRING_DESC;
 
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.nashorn.internal.objects.annotations.Where;
+import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
  * Details about a Java method or field annotated with any of the field/method
  * annotations from the jdk.nashorn.internal.objects.annotations package.
  */
 public final class MemberInfo implements Cloneable {
+    // class loader of this class
+    private static ClassLoader myLoader = MemberInfo.class.getClassLoader();
+
     /**
      * The different kinds of available class annotations
      */
     public static enum Kind {
-        /** This is a script class */
+
+        /**
+         * This is a script class
+         */
         SCRIPT_CLASS,
-        /** This is a constructor */
+        /**
+         * This is a constructor
+         */
         CONSTRUCTOR,
-        /** This is a function */
+        /**
+         * This is a function
+         */
         FUNCTION,
-        /** This is a getter */
+        /**
+         * This is a getter
+         */
         GETTER,
-        /** This is a setter */
+        /**
+         * This is a setter
+         */
         SETTER,
-        /** This is a property */
+        /**
+         * This is a property
+         */
         PROPERTY,
-        /** This is a specialized version of a function */
+        /**
+         * This is a specialized version of a function
+         */
         SPECIALIZED_FUNCTION,
-        /** This is a specialized version of a constructor */
+        /**
+         * This is a specialized version of a constructor
+         */
         SPECIALIZED_CONSTRUCTOR
     }
 
@@ -194,6 +216,7 @@ public final class MemberInfo implements Cloneable {
 
     /**
      * Check whether this MemberInfo is a getter that resides in the instance
+     *
      * @return true if instance setter
      */
     boolean isInstanceSetter() {
@@ -245,92 +268,201 @@ public final class MemberInfo implements Cloneable {
     }
 
     void verify() {
-        if (kind == Kind.CONSTRUCTOR) {
-            final Type returnType = Type.getReturnType(javaDesc);
-            if (! returnType.toString().equals(OBJECT_DESC)) {
-                error("return value should be of Object type, found" + returnType);
-            }
-            final Type[] argTypes = Type.getArgumentTypes(javaDesc);
-            if (argTypes.length < 2) {
-                error("constructor methods should have at least 2 args");
-            }
-            if (! argTypes[0].equals(Type.BOOLEAN_TYPE)) {
-                error("first argument should be of boolean type, found" + argTypes[0]);
-            }
-            if (! argTypes[1].toString().equals(OBJECT_DESC)) {
-                error("second argument should be of Object type, found" + argTypes[0]);
-            }
+        switch (kind) {
+            case CONSTRUCTOR: {
+                final Type returnType = Type.getReturnType(javaDesc);
+                if (!isJSObjectType(returnType)) {
+                    error("return value of a @Constructor method should be of Object type, found " + returnType);
+                }
+                final Type[] argTypes = Type.getArgumentTypes(javaDesc);
+                if (argTypes.length < 2) {
+                    error("@Constructor methods should have at least 2 args");
+                }
+                if (!argTypes[0].equals(Type.BOOLEAN_TYPE)) {
+                    error("first argument of a @Constructor method should be of boolean type, found " + argTypes[0]);
+                }
+                if (!isJavaLangObject(argTypes[1])) {
+                    error("second argument of a @Constructor method should be of Object type, found " + argTypes[0]);
+                }
 
-            if (argTypes.length > 2) {
-                for (int i = 2; i < argTypes.length - 1; i++) {
-                    if (! argTypes[i].toString().equals(OBJECT_DESC)) {
-                        error(i + "'th argument should be of Object type, found " + argTypes[i]);
+                if (argTypes.length > 2) {
+                    for (int i = 2; i < argTypes.length - 1; i++) {
+                        if (!isJavaLangObject(argTypes[i])) {
+                            error(i + "'th argument of a @Constructor method should be of Object type, found " + argTypes[i]);
+                        }
+                    }
+
+                    final String lastArgTypeDesc = argTypes[argTypes.length - 1].getDescriptor();
+                    final boolean isVarArg = lastArgTypeDesc.equals(OBJECT_ARRAY_DESC);
+                    if (!lastArgTypeDesc.equals(OBJECT_DESC) && !isVarArg) {
+                        error("last argument of a @Constructor method is neither Object nor Object[] type: " + lastArgTypeDesc);
+                    }
+
+                    if (isVarArg && argTypes.length > 3) {
+                        error("vararg of a @Constructor method has more than 3 arguments");
                     }
                 }
-
-                final String lastArgType = argTypes[argTypes.length - 1].toString();
-                final boolean isVarArg = lastArgType.equals(OBJECT_ARRAY_DESC);
-                if (!lastArgType.equals(OBJECT_DESC) && !isVarArg) {
-                    error("last argument is neither Object nor Object[] type: " + lastArgType);
+            }
+            break;
+            case SPECIALIZED_CONSTRUCTOR: {
+                final Type returnType = Type.getReturnType(javaDesc);
+                if (!isJSObjectType(returnType)) {
+                    error("return value of a @SpecializedConstructor method should be a valid JS type, found " + returnType);
                 }
-
-                if (isVarArg && argTypes.length > 3) {
-                    error("vararg constructor has more than 3 arguments");
-                }
-            }
-        } else if (kind == Kind.FUNCTION) {
-            final Type[] argTypes = Type.getArgumentTypes(javaDesc);
-            if (argTypes.length < 1) {
-                error("function methods should have at least 1 arg");
-            }
-            if (! argTypes[0].toString().equals(OBJECT_DESC)) {
-                error("first argument should be of Object type, found" + argTypes[0]);
-            }
-
-            if (argTypes.length > 1) {
-                for (int i = 1; i < argTypes.length - 1; i++) {
-                    if (! argTypes[i].toString().equals(OBJECT_DESC)) {
-                        error(i + "'th argument should be of Object type, found " + argTypes[i]);
+                final Type[] argTypes = Type.getArgumentTypes(javaDesc);
+                for (int i = 0; i < argTypes.length; i++) {
+                    if (!isValidJSType(argTypes[i])) {
+                        error(i + "'th argument of a @SpecializedConstructor method is not valid JS type, found " + argTypes[i]);
                     }
                 }
-
-                final String lastArgType = argTypes[argTypes.length - 1].toString();
-                final boolean isVarArg = lastArgType.equals(OBJECT_ARRAY_DESC);
-                if (!lastArgType.equals(OBJECT_DESC) && !isVarArg) {
-                    error("last argument is neither Object nor Object[] type: " + lastArgType);
+            }
+            break;
+            case FUNCTION: {
+                final Type returnType = Type.getReturnType(javaDesc);
+                if (!isValidJSType(returnType)) {
+                    error("return value of a @Function method should be a valid JS type, found " + returnType);
+                }
+                final Type[] argTypes = Type.getArgumentTypes(javaDesc);
+                if (argTypes.length < 1) {
+                    error("@Function methods should have at least 1 arg");
+                }
+                if (!isJavaLangObject(argTypes[0])) {
+                    error("first argument of a @Function method should be of Object type, found " + argTypes[0]);
                 }
 
-                if (isVarArg && argTypes.length > 2) {
-                    error("vararg function has more than 2 arguments");
+                if (argTypes.length > 1) {
+                    for (int i = 1; i < argTypes.length - 1; i++) {
+                        if (!isJavaLangObject(argTypes[i])) {
+                            error(i + "'th argument of a @Function method should be of Object type, found " + argTypes[i]);
+                        }
+                    }
+
+                    final String lastArgTypeDesc = argTypes[argTypes.length - 1].getDescriptor();
+                    final boolean isVarArg = lastArgTypeDesc.equals(OBJECT_ARRAY_DESC);
+                    if (!lastArgTypeDesc.equals(OBJECT_DESC) && !isVarArg) {
+                        error("last argument of a @Function method is neither Object nor Object[] type: " + lastArgTypeDesc);
+                    }
+
+                    if (isVarArg && argTypes.length > 2) {
+                        error("vararg @Function method has more than 2 arguments");
+                    }
                 }
             }
-        } else if (kind == Kind.GETTER) {
-            final Type[] argTypes = Type.getArgumentTypes(javaDesc);
-            if (argTypes.length != 1) {
-                error("getter methods should have one argument");
+            break;
+            case SPECIALIZED_FUNCTION: {
+                final Type returnType = Type.getReturnType(javaDesc);
+                if (!isValidJSType(returnType)) {
+                    error("return value of a @SpecializedFunction method should be a valid JS type, found " + returnType);
+                }
+                final Type[] argTypes = Type.getArgumentTypes(javaDesc);
+                for (int i = 0; i < argTypes.length; i++) {
+                    if (!isValidJSType(argTypes[i])) {
+                        error(i + "'th argument of a @SpecializedFunction method is not valid JS type, found " + argTypes[i]);
+                    }
+                }
             }
-            if (! argTypes[0].toString().equals(OBJECT_DESC)) {
-                error("first argument of getter should be of Object type, found: " + argTypes[0]);
+            break;
+            case GETTER: {
+                final Type[] argTypes = Type.getArgumentTypes(javaDesc);
+                if (argTypes.length != 1) {
+                    error("@Getter methods should have one argument");
+                }
+                if (!isJavaLangObject(argTypes[0])) {
+                    error("first argument of a @Getter method should be of Object type, found: " + argTypes[0]);
+                }
+
+                final Type returnType = Type.getReturnType(javaDesc);
+                if (!isJavaLangObject(returnType)) {
+                    error("return type of a @Getter method should be Object, found: " + javaDesc);
+                }
             }
-            if (Type.getReturnType(javaDesc).equals(Type.VOID_TYPE)) {
-                error("return type of getter should not be void");
+            break;
+            case SETTER: {
+                final Type[] argTypes = Type.getArgumentTypes(javaDesc);
+                if (argTypes.length != 2) {
+                    error("@Setter methods should have two arguments");
+                }
+                if (!isJavaLangObject(argTypes[0])) {
+                    error("first argument of a @Setter method should be of Object type, found: " + argTypes[0]);
+                }
+                if (!Type.getReturnType(javaDesc).toString().equals("V")) {
+                    error("return type of of a @Setter method should be void, found: " + Type.getReturnType(javaDesc));
+                }
             }
-        } else if (kind == Kind.SETTER) {
-            final Type[] argTypes = Type.getArgumentTypes(javaDesc);
-            if (argTypes.length != 2) {
-                error("setter methods should have two arguments");
-            }
-            if (! argTypes[0].toString().equals(OBJECT_DESC)) {
-                error("first argument of setter should be of Object type, found: " + argTypes[0]);
-            }
-            if (!Type.getReturnType(javaDesc).toString().equals("V")) {
-                error("return type of setter should be void, found: " + Type.getReturnType(javaDesc));
+            break;
+            case PROPERTY: {
+                if (where == Where.CONSTRUCTOR) {
+                    if (isStatic()) {
+                        if (!isFinal()) {
+                            error("static Where.CONSTRUCTOR @Property should be final");
+                        }
+
+                        if (!isJSPrimitiveType(Type.getType(javaDesc))) {
+                            error("static Where.CONSTRUCTOR @Property should be a JS primitive");
+                        }
+                    }
+                } else if (where == Where.PROTOTYPE) {
+                    if (isStatic()) {
+                        if (!isFinal()) {
+                            error("static Where.PROTOTYPE @Property should be final");
+                        }
+
+                        if (!isJSPrimitiveType(Type.getType(javaDesc))) {
+                            error("static Where.PROTOTYPE @Property should be a JS primitive");
+                        }
+                    }
+                }
             }
         }
     }
 
+    private static boolean isValidJSType(final Type type) {
+        return isJSPrimitiveType(type) || isJSObjectType(type);
+    }
+
+    private static boolean isJSPrimitiveType(final Type type) {
+        switch (type.getSort()) {
+            case Type.BOOLEAN:
+            case Type.INT:
+            case Type.LONG:
+            case Type.DOUBLE:
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    private static boolean isJSObjectType(final Type type) {
+        return isJavaLangObject(type) || isJavaLangString(type) || isScriptObject(type);
+    }
+
+    private static boolean isJavaLangObject(final Type type) {
+        return type.getDescriptor().equals(OBJECT_DESC);
+    }
+
+    private static boolean isJavaLangString(final Type type) {
+        return type.getDescriptor().equals(STRING_DESC);
+    }
+
+    private static boolean isScriptObject(final Type type) {
+        if (type.getDescriptor().equals(SCRIPTOBJECT_DESC)) {
+            return true;
+        }
+
+        if (type.getSort() == Type.OBJECT) {
+            try {
+                final Class clazz = Class.forName(type.getClassName(), false, myLoader);
+                return ScriptObject.class.isAssignableFrom(clazz);
+            } catch (final ClassNotFoundException cnfe) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
     private void error(final String msg) {
-        throw new RuntimeException(javaName + javaDesc + " : " + msg);
+        throw new RuntimeException(javaName + " of type " + javaDesc + " : " + msg);
     }
 
     /**

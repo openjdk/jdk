@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+<wsdl:definitions targetNamespace="urn:Organization_List" xmlns:s0="urn:Organization_List" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+ <wsdl:types>
+  <xsd:schema elementFormDefault="qualified" targetNamespace="urn:Organization_List">
+   <xsd:element name="OpGetList" type="s0:GetListInputMap"/>
+   <xsd:complexType name="GetListInputMap">
+    <xsd:sequence>
+     <xsd:element name="Qualification" type="xsd:string"/>
+    </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="OpGetListResponse" type="s0:GetListOutputMap"/>
+   <xsd:complexType name="GetListOutputMap">
+    <xsd:sequence>
+     <xsd:element maxOccurs="unbounded" name="getListValues">
+      <xsd:complexType>
+       <xsd:sequence>
+        <xsd:element name="Organization_Name" type="xsd:string"/>
+       </xsd:sequence>
+      </xsd:complexType>
+     </xsd:element>
+    </xsd:sequence>
+   </xsd:complexType>
+   <xsd:element name="AuthenticationInfo" type="s0:AuthenticationInfo"/>
+   <xsd:complexType name="AuthenticationInfo">
+    <xsd:sequence>
+     <xsd:element name="userName" type="xsd:string"/>
+     <xsd:element name="password" type="xsd:string"/>
+     <xsd:element minOccurs="0" name="authentication" type="xsd:string"/>
+     <xsd:element minOccurs="0" name="locale" type="xsd:string"/>
+     <xsd:element minOccurs="0" name="timeZone" type="xsd:string"/>
+    </xsd:sequence>
+   </xsd:complexType>
+  </xsd:schema>
+ </wsdl:types>
+
+   <wsdl:message name="ARAuthenticate">
+      <wsdl:part element="s0:AuthenticationInfo" name="param"/>
+   </wsdl:message>
+
+   <wsdl:message name="OpGetListSoapIn">
+      <wsdl:part element="s0:OpGetList" name="param"/>
+   </wsdl:message>
+
+   <wsdl:message name="OpGetListSoapOut">
+      <wsdl:part element="s0:OpGetListResponse" name="param"/>
+   </wsdl:message>
+
+   <wsdl:portType name="Organization_ListPortType">
+      <wsdl:operation name="OpGetList">
+         <wsdl:input message="s0:OpGetListSoapIn"/>
+         <wsdl:output message="s0:OpGetListSoapOut"/>
+      </wsdl:operation>
+   </wsdl:portType>
+
+   <wsdl:binding name="Organization_ListSoapBinding" type="s0:Organization_ListPortType">
+      <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+      <wsdl:operation name="OpGetList">
+         <soap:operation soapAction="urn:Organization_List/OpGetList" style="document"/>
+         <wsdl:input>
+            <soap:header message="s0:ARAuthenticate" part="param" use="literal">
+            </soap:header>
+            <soap:body use="literal"/>
+         </wsdl:input>
+         <wsdl:output>
+            <soap:body use="literal"/>
+         </wsdl:output>
+      </wsdl:operation>
+   </wsdl:binding>
+
+   <wsdl:service name="Organization_ListService">
+      <wsdl:port binding="s0:Organization_ListSoapBinding" name="Organization_ListSoap">
+         <soap:address location="http://bogus:9080/URL"/>
+      </wsdl:port>
+   </wsdl:service>
+
+</wsdl:definitions>
+

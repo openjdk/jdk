@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
  */
 package java.awt.peer;
 
-import java.awt.*;
+import java.awt.Checkbox;
+import java.awt.CheckboxGroup;
 
 /**
  * The peer interface for {@link Checkbox}.
@@ -38,8 +39,8 @@ import java.awt.*;
 public interface CheckboxPeer extends ComponentPeer {
 
     /**
-     * Sets the state of the checkbox to be checked ({@code true}) or
-     * unchecked ({@code false}).
+     * Sets the state of the checkbox to be checked {@code true} or
+     * unchecked {@code false}.
      *
      * @param state the state to set on the checkbox
      *
@@ -60,7 +61,7 @@ public interface CheckboxPeer extends ComponentPeer {
     void setCheckboxGroup(CheckboxGroup g);
 
     /**
-     * Sets the label that should be displayed on the ckeckbox. A value of
+     * Sets the label that should be displayed on the checkbox. A value of
      * {@code null} means that no label should be displayed.
      *
      * @param label the label to be displayed on the checkbox, or

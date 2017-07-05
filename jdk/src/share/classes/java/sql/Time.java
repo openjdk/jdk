@@ -253,7 +253,8 @@ public class Time extends java.util.Date {
     /**
      * Obtains an instance of {@code Time} from a {@link LocalTime} object
      * with the same hour, minute and second time value as the given
-     * {@code LocalTime}.
+     * {@code LocalTime}. The nanosecond field from {@code LocalTime} is
+     * not part of the newly created {@code Time} object.
      *
      * @param time a {@code LocalTime} to convert
      * @return a {@code Time} object
@@ -269,7 +270,8 @@ public class Time extends java.util.Date {
      * Converts this {@code Time} object to a {@code LocalTime}.
      * <p>
      * The conversion creates a {@code LocalTime} that represents the same
-     * hour, minute, and second time value as this {@code Time}.
+     * hour, minute, and second time value as this {@code Time}. The
+     * nanosecond {@code LocalTime} field will be set to zero.
      *
      * @return a {@code LocalTime} object representing the same time value
      * @since 1.8

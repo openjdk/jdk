@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import javax.accessibility.*;
  * @author Terry Kellerman
  * @since 1.4
  */
+@SuppressWarnings("serial") // Superclass is not serializable across versions
 class MetalTitlePane extends JComponent {
     private static final Border handyEmptyBorder = new EmptyBorder(0,0,0,0);
     private static final int IMAGE_HEIGHT = 16;
@@ -781,6 +782,7 @@ class MetalTitlePane extends JComponent {
     /**
      * Actions used to <code>close</code> the <code>Window</code>.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class CloseAction extends AbstractAction {
         public CloseAction() {
             super(UIManager.getString("MetalTitlePane.closeTitle",
@@ -796,6 +798,7 @@ class MetalTitlePane extends JComponent {
     /**
      * Actions used to <code>iconfiy</code> the <code>Frame</code>.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class IconifyAction extends AbstractAction {
         public IconifyAction() {
             super(UIManager.getString("MetalTitlePane.iconifyTitle",
@@ -811,6 +814,7 @@ class MetalTitlePane extends JComponent {
     /**
      * Actions used to <code>restore</code> the <code>Frame</code>.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class RestoreAction extends AbstractAction {
         public RestoreAction() {
             super(UIManager.getString
@@ -826,6 +830,7 @@ class MetalTitlePane extends JComponent {
     /**
      * Actions used to <code>restore</code> the <code>Frame</code>.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class MaximizeAction extends AbstractAction {
         public MaximizeAction() {
             super(UIManager.getString("MetalTitlePane.maximizeTitle",
@@ -843,6 +848,7 @@ class MetalTitlePane extends JComponent {
      * image to draw from the Frame associated with the
      * <code>JRootPane</code>.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class SystemMenuBar extends JMenuBar {
         public void paint(Graphics g) {
             if (isOpaque()) {

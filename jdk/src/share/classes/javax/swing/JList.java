@@ -260,7 +260,7 @@ import static sun.swing.SwingUtilities2.Section.*;
  * See <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/list.html">How to Use Lists</a>
  * in <a href="http://docs.oracle.com/javase/tutorial/"><em>The Java Tutorial</em></a>
  * for further documentation.
- * <p>
+ *
  * @see ListModel
  * @see AbstractListModel
  * @see DefaultListModel

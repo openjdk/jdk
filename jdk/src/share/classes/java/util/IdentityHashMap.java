@@ -842,7 +842,7 @@ public class IdentityHashMap<K,V>
     private class EntryIterator
         extends IdentityHashMapIterator<Map.Entry<K,V>>
     {
-        private Entry lastReturnedEntry = null;
+        private Entry lastReturnedEntry;
 
         public Map.Entry<K,V> next() {
             lastReturnedEntry = new Entry(nextIndex());
@@ -928,7 +928,7 @@ public class IdentityHashMap<K,V>
      * view the first time this view is requested.  The view is stateless,
      * so there's no reason to create more than one.
      */
-    private transient Set<Map.Entry<K,V>> entrySet = null;
+    private transient Set<Map.Entry<K,V>> entrySet;
 
     /**
      * Returns an identity-based set view of the keys contained in this map.

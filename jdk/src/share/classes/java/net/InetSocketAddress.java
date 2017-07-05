@@ -157,7 +157,7 @@ public class InetSocketAddress
      * A valid port value is between 0 and 65535.
      * A port number of {@code zero} will let the system pick up an
      * ephemeral port in a {@code bind} operation.
-     * <p>
+     *
      * @param   port    The port number
      * @throws IllegalArgumentException if the port parameter is outside the specified
      * range of valid port values.
@@ -175,7 +175,7 @@ public class InetSocketAddress
      * ephemeral port in a {@code bind} operation.
      * <P>
      * A {@code null} address will assign the <i>wildcard</i> address.
-     * <p>
+     *
      * @param   addr    The IP address
      * @param   port    The port number
      * @throws IllegalArgumentException if the port parameter is outside the specified
@@ -202,7 +202,7 @@ public class InetSocketAddress
      * A valid port value is between 0 and 65535.
      * A port number of {@code zero} will let the system pick up an
      * ephemeral port in a {@code bind} operation.
-     * <P>
+     *
      * @param   hostname the Host name
      * @param   port    The port number
      * @throws IllegalArgumentException if the port parameter is outside the range
@@ -239,7 +239,7 @@ public class InetSocketAddress
      * A valid port value is between 0 and 65535.
      * A port number of {@code zero} will let the system pick up an
      * ephemeral port in a {@code bind} operation.
-     * <P>
+     *
      * @param   host    the Host name
      * @param   port    The port number
      * @throws IllegalArgumentException if the port parameter is outside

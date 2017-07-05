@@ -118,8 +118,8 @@ public final class NativeUint32Array extends ArrayBufferView {
      * @return new typed array
      */
     @Constructor(arity = 1)
-    public static Object constructor(final boolean newObj, final Object self, final Object... args) {
-        return constructorImpl(args, FACTORY);
+    public static NativeUint32Array constructor(final boolean newObj, final Object self, final Object... args) {
+        return (NativeUint32Array)constructorImpl(args, FACTORY);
     }
 
     NativeUint32Array(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
@@ -169,8 +169,8 @@ public final class NativeUint32Array extends ArrayBufferView {
      * @return sub array
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
-    protected static Object subarray(final Object self, final Object begin, final Object end) {
-        return ArrayBufferView.subarrayImpl(self, begin, end);
+    protected static NativeUint32Array subarray(final Object self, final Object begin, final Object end) {
+        return (NativeUint32Array)ArrayBufferView.subarrayImpl(self, begin, end);
     }
 
     @Override

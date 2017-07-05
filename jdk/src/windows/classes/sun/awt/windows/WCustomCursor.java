@@ -38,6 +38,7 @@ import sun.awt.image.ToolkitImage;
  * @see Component#setCursor
  * @author      ThomasBall
  */
+@SuppressWarnings("serial") // JDK-implementation class
 final class WCustomCursor extends CustomCursor {
 
     WCustomCursor(Image cursor, Point hotSpot, String name)

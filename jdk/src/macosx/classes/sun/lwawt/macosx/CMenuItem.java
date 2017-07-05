@@ -150,8 +150,6 @@ public class CMenuItem extends CMenuComponent implements MenuItemPeer {
 
     // native callbacks
     void handleAction(final long when, final int modifiers) {
-        assert CThreading.assertAppKit();
-
         SunToolkit.executeOnEventHandlerThread(getTarget(), new Runnable() {
             public void run() {
                 final String cmd = ((MenuItem)getTarget()).getActionCommand();

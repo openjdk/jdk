@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,6 +111,7 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI {
         tableColumn.setHeaderRenderer(renderer);
     }
 
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     class AquaTableCellRenderer extends DefaultTableCellRenderer implements UIResource {
         public Component getTableCellRendererComponent(final JTable localTable, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column) {
             if (localTable != null) {

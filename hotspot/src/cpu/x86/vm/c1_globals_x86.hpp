@@ -65,6 +65,4 @@ define_pd_global(bool, OptimizeSinglePrecision,      true );
 define_pd_global(bool, CSEArrayLength,               false);
 define_pd_global(bool, TwoOperandLIRForm,            true );
 
-define_pd_global(intx, SafepointPollOffset,          256  );
-
 #endif // CPU_X86_VM_C1_GLOBALS_X86_HPP

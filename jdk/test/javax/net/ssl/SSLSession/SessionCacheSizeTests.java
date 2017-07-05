@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 
 /*
  * @test
- * @bug   4366807
+ * @bug 4366807
  * @summary Need new APIs to get/set session timeout and session cache size.
  * @run main/othervm SessionCacheSizeTests
  */
@@ -110,6 +110,7 @@ public class SessionCacheSizeTests {
 
         SSLServerSocket sslServerSocket =
             (SSLServerSocket) sslssf.createServerSocket(serverPort);
+        sslServerSocket.setSoTimeout(45000); // timeout to accept a connection
         serverPorts[createdPorts++] = sslServerSocket.getLocalPort();
 
         /*
@@ -128,16 +129,22 @@ public class SessionCacheSizeTests {
         SSLSession sessions [] = new SSLSession [serverConns];
         SSLSessionContext sessCtx = sslctx.getServerSessionContext();
 
-        while (nConnections < serverConns) {
-            SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
-            InputStream sslIS = sslSocket.getInputStream();
-            OutputStream sslOS = sslSocket.getOutputStream();
-            read = sslIS.read();
-            sessions[nConnections] = sslSocket.getSession();
-            sslOS.write(85);
-            sslOS.flush();
-            sslSocket.close();
-            nConnections++;
+        try {
+            while (nConnections < serverConns) {
+                try (SSLSocket sslSocket =
+                        (SSLSocket)sslServerSocket.accept()) {
+                    sslSocket.setSoTimeout(90000);      // timeout to read
+                    InputStream sslIS = sslSocket.getInputStream();
+                    OutputStream sslOS = sslSocket.getOutputStream();
+                    read = sslIS.read();
+                    sessions[nConnections] = sslSocket.getSession();
+                    sslOS.write(85);
+                    sslOS.flush();
+                    nConnections++;
+                }
+            }
+        } finally {
+            sslServerSocket.close();
         }
     }
 

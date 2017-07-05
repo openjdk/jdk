@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.beans.*;
  *
  * @author Arnaud Weber
  */
+@SuppressWarnings("serial") // Same-version serialization only
 public class MotifComboBoxUI extends BasicComboBoxUI implements Serializable {
     Icon arrowIcon;
     static final int HORIZ_MARGIN = 3;
@@ -93,6 +94,7 @@ public class MotifComboBoxUI extends BasicComboBoxUI implements Serializable {
     /**
      * Overriden to empty the MouseMotionListener.
      */
+    @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class MotifComboPopup extends BasicComboPopup {
 
         public MotifComboPopup( JComboBox comboBox ) {
@@ -279,6 +281,7 @@ public class MotifComboBoxUI extends BasicComboBoxUI implements Serializable {
         }
     }
 
+    @SuppressWarnings("serial") // Same-version serialization only
     static class MotifComboBoxArrowIcon implements Icon, Serializable {
         private Color lightShadow;
         private Color darkShadow;

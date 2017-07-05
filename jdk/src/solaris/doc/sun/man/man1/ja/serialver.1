@@ -1,97 +1,144 @@
-." Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH serialver 1 "07 May 2011"
-
-.LP
-.SH "名前"
-serialver \- シリアルバージョンコマンド
-.LP
-.LP
-\f3serialver\fP コマンドは \f2serialVersionUID\fP を返します。
-.LP
-.SH "形式"
-.LP
+'\" t
+.\" Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+.\" Title: serialver
+.\" Language: English
+.\" Date: 2013年11月21日
+.\" SectDesc: Remote Method Invocation (RMI)ツール
+.\" Software: JDK 8
+.\" Arch: 汎用
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.pl 99999
+.TH "serialver" "1" "2013年11月21日" "JDK 8" "Remote Method Invocation (RMI)"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
+.SH "NAME"
+serialver \- 指定したクラスのシリアル・バージョンUIDを戻します。
+.SH "概要"
+.sp
+.if n \{\
+.RS 4
+.\}
 .nf
-\f3
-.fl
-\fP\f3serialver\fP [ options ] [ classnames ]
-.fl
+\fIserialver\fR [ \fIoptions\fR ] [ \fIclassnames\fR ]
 .fi
-
-.LP
-.RS 3
-.TP 3
-options 
-このドキュメントで説明されているコマンド行オプションです。 
-.TP 3
-classnames 
-1 つ以上のクラス名です。 
+.if n \{\
 .RE
-
-.LP
+.\}
+.PP
+\fIoptions\fR
+.RS 4
+コマンドライン・オプション。オプションを参照してください。
+.RE
+.PP
+\fIclassnames\fR
+.RS 4
+\fIserialVersionUID\fRを戻すクラスです。
+.RE
 .SH "説明"
-.LP
-.LP
-\f3serialver\fP は、1 つ以上のクラスの \f2serialVersionUID\fP を、展開しているクラスへコピーするのに適した形式で返します。引数を指定しないで呼び出すと、使用方法が表示されます。
-.LP
+.PP
+\fIserialver\fRコマンドは、1つ以上のクラスの\fIserialVersionUID\fRを、展開しているクラスへコピーするのに適した形式で返します。引数なしで呼び出された場合、\fIserialver\fRコマンドは使用率行を出力します。
 .SH "オプション"
-.LP
-.RS 3
-.TP 3
-\-classpath <: で区切られたディレクトリと zip や jar ファイル> 
-アプリケーションのクラスおよびリソースの検索パスを設定します。 
+.PP
+\-classpath \fIpath\-files\fR
+.RS 4
+アプリケーションのクラスおよびリソースの検索パスを設定します。クラスとリソースをコロン(:)で区切ります。
 .RE
-
-.LP
-.RS 3
-.TP 3
-\-show 
-簡単なユーザーインタフェースを表示します。完全指定のクラス名を入力して、Enter キーか「Show」ボタンを押し、シリアルバージョン UID を表示します。 
-.TP 3
-\-Joption 
-Java 仮想マシンに \f2option\fP を渡します。\f2option\fP には、java(1)のリファレンスページに記載されているオプションを 1 つ指定します。たとえば、\f3\-J\-Xms48m\fP と指定すると、スタートアップメモリーは 48M バイトに設定されます。 
+.PP
+\-show
+.RS 4
+簡単なユーザー・インタフェースを表示します。完全指定のクラス名を入力して、Enterキーか「表示」ボタンを押し、\fIserialVersionUID\fRを表示します。
 .RE
-
-.LP
-.SH "注"
-.LP
-.LP
-\f3serialver\fP コマンドは、指定されたクラスをその仮想マシン内に読み込んで初期化しますが、デフォルトではセキュリティーマネージャーの設定は行いません。信頼できないクラスとともに \f3serialver\fP を実行する場合には、次のオプションを使ってセキュリティーマネージャーを設定できます。
-.LP
-.LP
-\f2\-J\-Djava.security.manager\fP
-.LP
-.LP
-また、必要であれば、次のオプションを使ってセキュリティーポリシーを指定できます。
-.LP
-.LP
-\f2\-J\-Djava.security.policy=<policy file>\fP
-.LP
-.SH "関連項目"
-.LP
-.LP
-.na
-\f2java.io.ObjectStreamClass\fP @
+.PP
+\-J\fIoption\fR
+.RS 4
+Java仮想マシンに\fIoption\fRを渡します。optionには、Javaアプリケーション起動ツールのリファレンス・ページに記載されているオプションを1つ指定します。たとえば、\fI\-J\-Xms48m\fRと指定すると、スタートアップ・メモリーは48MBに設定されます。java(1)を参照してください。
+.RE
+.SH "注意"
+.PP
+\fIserialver\fRコマンドは、指定されたクラスをその仮想マシン内に読み込んで初期化しますが、デフォルトではセキュリティ・マネージャの設定は行いません。信頼できないクラスとともに\fIserialver\fRコマンドを実行する場合には、次のオプションを使用してセキュリティ・マネージャを設定できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-J\-Djava\&.security\&.manager
 .fi
-http://java.sun.com/javase/6/docs/api/java/io/ObjectStreamClass.html
-.LP
- 
+.if n \{\
+.RE
+.\}
+.PP
+必要であれば、次のオプションを使用してセキュリティ・ポリシーを指定できます。
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\-J\-Djava\&.security\&.policy=<policy file>
+.fi
+.if n \{\
+.RE
+.\}
+.SH "関連項目"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+policytool(1)
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
+http://docs\&.oracle\&.com/javase/8/docs/api/java/io/ObjectStreamClass\&.htmlにある
+\fIjava\&.io\&.ObjectStream\fRクラス記述
+.RE
+.br
+'pl 8.5i
+'bp

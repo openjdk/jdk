@@ -113,6 +113,8 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
             // explicit property is beneficial for them.
             // REVISIT: is it maybe a code smell that "dyn:getLength" is not needed?
             setPropertyGetter("length", GET_ARRAY_LENGTH, ValidationType.IS_ARRAY);
+        } else if(List.class.isAssignableFrom(clazz)) {
+            setPropertyGetter("length", GET_COLLECTION_LENGTH, ValidationType.INSTANCE_OF);
         }
     }
 

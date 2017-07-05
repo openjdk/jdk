@@ -27,8 +27,10 @@
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/connode.hpp"
+#include "opto/convertnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/opaquenode.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 

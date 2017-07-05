@@ -98,7 +98,7 @@ public final class NativeRangeError extends ScriptObject {
      * @return new RangeError
      */
     @Constructor(name = "RangeError")
-    public static Object constructor(final boolean newObj, final Object self, final Object msg) {
+    public static NativeRangeError constructor(final boolean newObj, final Object self, final Object msg) {
         return new NativeRangeError(msg);
     }
 }

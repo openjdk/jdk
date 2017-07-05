@@ -29,11 +29,22 @@ public abstract class AsyncCloseTest {
 
     public abstract String description();
 
-    public abstract boolean go() throws Exception;
+    public abstract AsyncCloseTest go();
 
+    public synchronized boolean hasPassed() {
+        return passed;
+    }
 
-    protected synchronized void failed(String reason) {
-        this.reason = reason;
+    protected synchronized AsyncCloseTest passed() {
+        if (reason == null)
+            passed = true;
+        return this;
+    }
+
+    protected synchronized AsyncCloseTest failed(String r) {
+        passed = false;
+        reason = r;
+        return this;
     }
 
     public synchronized String failureReason() {
@@ -48,7 +59,7 @@ public abstract class AsyncCloseTest {
         return closed;
     }
 
+    private boolean passed;
     private String reason;
     private boolean closed;
-
 }

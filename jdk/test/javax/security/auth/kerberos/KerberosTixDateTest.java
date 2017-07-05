@@ -25,7 +25,6 @@
  * @test
  * @bug 6659990
  * @summary test the immutability of the Date fields in KerberosTicket class.
- * @run main/manual KerberosTixDateTest
  */
 
 /*
@@ -64,8 +63,8 @@ public class KerberosTixDateTest {
 
     public static void main(String[] args) throws Exception {
         byte[] asn1Bytes = "asn1".getBytes();
-        KerberosPrincipal client = new KerberosPrincipal("client");
-        KerberosPrincipal server = new KerberosPrincipal("server");
+        KerberosPrincipal client = new KerberosPrincipal("client@JLABS.SFBAY.SUN.COM");
+        KerberosPrincipal server = new KerberosPrincipal("server@JLABS.SFBAY.SUN.COM");
         byte[] keyBytes = "sessionKey".getBytes();
         long originalTime = 12345678L;
         Date inDate = new Date(originalTime);

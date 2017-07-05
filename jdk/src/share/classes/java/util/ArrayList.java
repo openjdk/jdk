@@ -609,11 +609,14 @@ public class ArrayList<E> extends AbstractList<E>
      * @throws IndexOutOfBoundsException if {@code fromIndex} or
      *         {@code toIndex} is out of range
      *         ({@code fromIndex < 0 ||
-     *          fromIndex >= size() ||
      *          toIndex > size() ||
      *          toIndex < fromIndex})
      */
     protected void removeRange(int fromIndex, int toIndex) {
+        if (fromIndex > toIndex) {
+            throw new IndexOutOfBoundsException(
+                    outOfBoundsMsg(fromIndex, toIndex));
+        }
         modCount++;
         int numMoved = size - toIndex;
         System.arraycopy(elementData, toIndex, elementData, fromIndex,
@@ -653,6 +656,13 @@ public class ArrayList<E> extends AbstractList<E>
      */
     private String outOfBoundsMsg(int index) {
         return "Index: "+index+", Size: "+size;
+    }
+
+    /**
+     * A version used in checking (fromIndex > toIndex) condition
+     */
+    private static String outOfBoundsMsg(int fromIndex, int toIndex) {
+        return "From Index: " + fromIndex + " > To Index: " + toIndex;
     }
 
     /**
