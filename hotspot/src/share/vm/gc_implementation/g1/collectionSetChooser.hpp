@@ -100,8 +100,6 @@ public:
 
   CollectionSetChooser();
 
-  void printSortedHeapRegions();
-
   void sortMarkedHeapRegions();
   void fillCache();
   bool addRegionToCache(void);
