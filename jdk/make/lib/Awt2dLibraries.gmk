@@ -476,7 +476,7 @@ endif
 ifeq ($(USE_EXTERNAL_LIBJPEG), true)
   LIBJPEG_LIBS := -ljpeg
   BUILD_LIBJAVAJPEG_INCLUDE_FILES := \
-      imageIOJPEG.c \
+      imageioJPEG.c \
       jpegdecoder.c
   BUILD_LIBJAVAJPEG_HEADERS :=
 else

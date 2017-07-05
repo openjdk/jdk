@@ -25,7 +25,7 @@
 
 package sun.java2d.pipe;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 
 /**

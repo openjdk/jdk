@@ -33,7 +33,7 @@ import java.awt.event.MouseEvent;
 
 import java.io.IOException;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * XDropTargetProtocol implementation for Motif DnD protocol.

@@ -69,7 +69,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
                                  Register obj_reg, SystemDictionary::WKID klass_id,
                                  Register temp_reg, Register temp2_reg,
                                  const char* error_message) {
-  Klass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
+  InstanceKlass** klass_addr = SystemDictionary::well_known_klass_addr(klass_id);
   KlassHandle klass = SystemDictionary::well_known_klass(klass_id);
   bool did_save = false;
   if (temp_reg == noreg || temp2_reg == noreg) {

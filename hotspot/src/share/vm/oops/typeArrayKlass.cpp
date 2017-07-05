@@ -43,7 +43,7 @@
 #include "utilities/macros.hpp"
 
 bool TypeArrayKlass::compute_is_subtype_of(Klass* k) {
-  if (!k->oop_is_typeArray()) {
+  if (!k->is_typeArray_klass()) {
     return ArrayKlass::compute_is_subtype_of(k);
   }
 
@@ -86,8 +86,8 @@ TypeArrayKlass* TypeArrayKlass::allocate(ClassLoaderData* loader_data, BasicType
 
 TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name) : ArrayKlass(name) {
   set_layout_helper(array_layout_helper(type));
-  assert(oop_is_array(), "sanity");
-  assert(oop_is_typeArray(), "sanity");
+  assert(is_array_klass(), "sanity");
+  assert(is_typeArray_klass(), "sanity");
 
   set_max_length(arrayOopDesc::max_array_length(type));
   assert(size() >= TypeArrayKlass::header_size(), "bad size");
@@ -181,7 +181,7 @@ Klass* TypeArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
         h_ak->set_lower_dimension(this);
         OrderAccess::storestore();
         set_higher_dimension(h_ak);
-        assert(h_ak->oop_is_objArray(), "incorrect initialization of ObjArrayKlass");
+        assert(h_ak->is_objArray_klass(), "incorrect initialization of ObjArrayKlass");
       }
     }
   } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,7 +222,7 @@ void RetTableEntry::add_delta(int bci, int delta) {
   }
 }
 
-void RetTable::compute_ret_table(methodHandle method) {
+void RetTable::compute_ret_table(const methodHandle& method) {
   BytecodeStream i(method);
   Bytecodes::Code bytecode;
 
@@ -2039,7 +2039,7 @@ void GenerateOopMap::print_time() {
 //
 //  ============ Main Entry Point ===========
 //
-GenerateOopMap::GenerateOopMap(methodHandle method) {
+GenerateOopMap::GenerateOopMap(const methodHandle& method) {
   // We have to initialize all variables here, that can be queried directly
   _method = method;
   _max_locals=0;

@@ -29,7 +29,7 @@ import java.nio.file.ProviderMismatchException;
 import java.nio.file.attribute.*;
 import java.util.*;
 import java.io.IOException;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import static sun.nio.fs.WindowsNativeDispatcher.*;
 import static sun.nio.fs.WindowsConstants.*;

@@ -25,7 +25,7 @@
 
 package sun.awt.X11;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import sun.util.logging.PlatformLogger;
 

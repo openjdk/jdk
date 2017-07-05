@@ -25,7 +25,7 @@
 
 package sun.nio.fs;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import sun.misc.Cleaner;
 
 /**

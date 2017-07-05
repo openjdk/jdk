@@ -41,7 +41,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
 
@@ -53,7 +53,7 @@ public class GetStackTraceElementTest {
     }
 
     private static void runSanityTest(Executable aMethod, int[] bcis) {
-        HotSpotResolvedJavaMethodImpl method = CTVMUtilities
+        HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
         String className = aMethod.getDeclaringClass().getName();
         int lastDot = className.lastIndexOf('.');

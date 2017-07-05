@@ -30,14 +30,22 @@
 
 package jdk.vm.ci.runtime.test;
 
-import static jdk.vm.ci.meta.MetaUtil.*;
-import static org.junit.Assert.*;
+import static jdk.vm.ci.meta.MetaUtil.toInternalName;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
-import org.junit.*;
+import org.junit.Test;
 
 /**
  * Tests for {@link MetaAccessProvider}.

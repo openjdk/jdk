@@ -220,7 +220,7 @@ class PlaceholderEntry : public HashtableEntry<Symbol*, mtClass> {
   }
 
   SeenThread* actionToQueue(PlaceholderTable::classloadAction action) {
-    SeenThread* queuehead;
+    SeenThread* queuehead = NULL;
     switch (action) {
       case PlaceholderTable::LOAD_INSTANCE:
          queuehead = _loadInstanceThreadQ;
