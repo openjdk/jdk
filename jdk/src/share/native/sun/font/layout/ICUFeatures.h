@@ -54,16 +54,21 @@ struct FeatureTable
     le_uint16   lookupCount;
     le_uint16   lookupListIndexArray[ANY_NUMBER];
 };
+LE_VAR_ARRAY(FeatureTable, lookupListIndexArray)
 
 struct FeatureListTable
 {
     le_uint16           featureCount;
     FeatureRecord       featureRecordArray[ANY_NUMBER];
 
-    const FeatureTable  *getFeatureTable(le_uint16 featureIndex, LETag *featureTag) const;
+  LEReferenceTo<FeatureTable>  getFeatureTable(const LETableReference &base, le_uint16 featureIndex, LETag *featureTag, LEErrorCode &success) const;
 
-    const FeatureTable *getFeatureTable(LETag featureTag) const;
+#if 0
+  const LEReferenceTo<FeatureTable>  getFeatureTable(const LETableReference &base, LETag featureTag, LEErrorCode &success) const;
+#endif
 };
+
+LE_VAR_ARRAY(FeatureListTable, featureRecordArray)
 
 U_NAMESPACE_END
 #endif

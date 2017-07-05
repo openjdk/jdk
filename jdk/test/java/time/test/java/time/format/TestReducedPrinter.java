@@ -59,24 +59,23 @@
  */
 package test.java.time.format;
 
-import java.time.format.*;
-
 import static java.time.temporal.ChronoField.YEAR;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
 import java.time.DateTimeException;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalField;
-import test.java.time.temporal.MockFieldValue;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import test.java.time.temporal.MockFieldValue;
 
 /**
  * Test ReducedPrinterParser.
  */
-@Test(groups={"implementation"})
+@Test
 public class TestReducedPrinter extends AbstractTestPrinterParser {
 
     private DateTimeFormatter getFormatter0(TemporalField field, int width, int baseValue) {

@@ -57,16 +57,20 @@
 
 package test.java.time.chrono;
 
+import static org.testng.Assert.assertEquals;
+
 import java.time.LocalTime;
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.ChronoLocalDateTime;
+import java.time.chrono.Chronology;
 import java.time.chrono.HijrahDate;
 import java.time.chrono.ThaiBuddhistDate;
-import java.time.chrono.ChronoLocalDateTime;
-import java.time.chrono.ChronoLocalDate;
-import java.time.chrono.Chronology;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
+import java.util.Locale;
 import java.util.Set;
 
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 /**
@@ -102,6 +106,30 @@ public class TestExampleCode {
                 .minus(1, ChronoUnit.DAYS);
         System.out.printf("  %s: 1st of year: %s; end of year: %s%n", last.getChronology().getId(),
                 first, last);
+    }
+
+    //-----------------------------------------------------------------------
+    // Data provider for Hijrah Variant names
+    //-----------------------------------------------------------------------
+    @DataProvider(name = "HijrahVariantNames")
+    Object[][] data_of_ummalqura() {
+        return new Object[][]{
+            { "Hijrah-umalqura", "islamic", "umalqura"},
+        };
+    }
+
+    @Test(dataProvider= "HijrahVariantNames")
+    public void test_HijrahVariantViaLocale(String calendarId, String calendarType, String variant) {
+        Locale.Builder builder = new Locale.Builder();
+        builder.setLanguage("en").setRegion("US");
+        builder.setUnicodeLocaleKeyword("ca", calendarType);
+        builder.setUnicodeLocaleKeyword("cv", variant);
+        Locale locale = builder.build();
+        Chronology chrono = Chronology.ofLocale(locale);
+        System.out.printf(" Locale language tag: %s, Chronology ID: %s, type: %s%n",
+                locale.toLanguageTag(), chrono, chrono.getCalendarType());
+        Chronology expected = Chronology.of(calendarId);
+        assertEquals(chrono, expected, "Expected chronology not found");
     }
 
     @Test

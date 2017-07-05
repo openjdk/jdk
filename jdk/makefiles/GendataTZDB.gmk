@@ -29,16 +29,13 @@ GENDATA_TZDB :=
 # Time zone data file creation
 #
 TZDATA_DIR := $(JDK_TOPDIR)/make/sun/javazic/tzdata
-TZDATA_VER := $(subst tzdata,,$(shell $(GREP) '^tzdata' $(TZDATA_DIR)/VERSION))
 TZDATA_TZFILE := africa antarctica asia australasia europe northamerica pacificnew southamerica backward etcetera gmt jdk11_backward
 TZDATA_TZFILES := $(addprefix $(TZDATA_DIR)/,$(TZDATA_TZFILE))
 
-GENDATA_TZDB_DST := $(JDK_OUTPUTDIR)/lib
-GENDATA_TZDB_JAR := tzdb.jar
+GENDATA_TZDB_DAT := $(JDK_OUTPUTDIR)/lib/tzdb.dat
 
-$(GENDATA_TZDB_DST)/$(GENDATA_TZDB_JAR) : $(TZDATA_TZFILES)
-	$(RM) $(GENDATA_TZDB_DST)/$(GENDATA_TZDB_JAR)
-	echo building tzdb from version $(TZDATA_VER)
-	$(TOOL_TZDB) -version $(TZDATA_VER) -srcdir $(TZDATA_DIR) -dstdir $(GENDATA_TZDB_DST) $(TZDATA_TZFILE)
+$(GENDATA_TZDB_DAT) : $(TZDATA_TZFILES)
+	$(RM) $(GENDATA_TZDB_DAT)
+	$(TOOL_TZDB) -srcdir $(TZDATA_DIR) -dstfile $(GENDATA_TZDB_DAT) $(TZDATA_TZFILE)
 
-GENDATA_TZDB += $(GENDATA_TZDB_DST)/$(GENDATA_TZDB_JAR)
+GENDATA_TZDB += $(GENDATA_TZDB_DAT)

@@ -61,8 +61,8 @@
  */
 package java.time.zone;
 
-import static java.time.temporal.Adjusters.nextOrSame;
-import static java.time.temporal.Adjusters.previousOrSame;
+import static java.time.temporal.TemporalAdjuster.nextOrSame;
+import static java.time.temporal.TemporalAdjuster.previousOrSame;
 
 import java.io.DataInput;
 import java.io.DataOutput;

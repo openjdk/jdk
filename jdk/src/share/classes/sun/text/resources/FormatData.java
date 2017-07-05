@@ -79,9 +79,9 @@
 
 package sun.text.resources;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData extends ListResourceBundle {
+public class FormatData extends ParallelListResourceBundle {
     /**
      * Overrides ListResourceBundle
      */
@@ -117,12 +117,6 @@ public class FormatData extends ListResourceBundle {
             "Heisei",
         };
 
-        // Minguo era strings
-        final String[] rocEras ={
-            "Before R.O.C.",
-            "R.O.C.",
-        };
-
         return new Object[][] {
             { "MonthNames",
                 new String[] {
@@ -156,6 +150,23 @@ public class FormatData extends ListResourceBundle {
                     "Nov", // abb november
                     "Dec", // abb december
                     "" // abb month 13 if applicable
+                }
+            },
+            { "MonthNarrows",
+                new String[] {
+                    "J",
+                    "F",
+                    "M",
+                    "A",
+                    "M",
+                    "J",
+                    "J",
+                    "A",
+                    "S",
+                    "O",
+                    "N",
+                    "D",
+                    "",
                 }
             },
             { "DayNames",
@@ -205,13 +216,7 @@ public class FormatData extends ListResourceBundle {
             },
             { "Eras",
                 julianEras },
-            { "cldr.long.Eras",
-                new String[] {
-                    "Before Christ",
-                    "Anno Domini"
-                }
-            },
-            { "cldr.short.Eras",
+            { "short.Eras",
                 julianEras },
             { "narrow.Eras",
                 new String[] {
@@ -229,10 +234,6 @@ public class FormatData extends ListResourceBundle {
               buddhistEras
             },
             { "japanese.Eras",
-                japaneseEras },
-            { "cldr.japanese.long.Eras",
-                japaneseEras },
-            { "cldr.japanese.short.Eras",
                 japaneseEras },
             { "japanese.short.Eras",
                 japaneseEraAbbrs
@@ -822,14 +823,6 @@ public class FormatData extends ListResourceBundle {
                     "H:mm",               // short time pattern
                 }
             },
-            { "cldr.buddhist.DatePatterns",
-                new String[] {
-                    "EEEE, G y MMMM dd",
-                    "G y MMMM d",
-                    "G y MMM d",
-                    "GGGGG yyyy-MM-dd",
-                }
-            },
             { "buddhist.DatePatterns",
                 new String[] {
                     "EEEE d MMMM G yyyy", // full date pattern
@@ -851,14 +844,6 @@ public class FormatData extends ListResourceBundle {
                     "h:mm a",                  // short time pattern
                 }
             },
-            { "cldr.japanese.DatePatterns",
-                new String[] {
-                    "EEEE, G y MMMM dd",
-                    "G y MMMM d",
-                    "G y MMM d",
-                    "GGGGG yy-MM-dd",
-                }
-            },
             { "japanese.DatePatterns",
                 new String[] {
                     "GGGG yyyy MMMM d (EEEE)", // full date pattern
@@ -872,99 +857,7 @@ public class FormatData extends ListResourceBundle {
                     "{1} {0}"                  // date-time pattern
                 }
             },
-            { "roc.Eras", rocEras },
-            { "roc.short.Eras", rocEras },
-            { "cldr.roc.DatePatterns",
-                new String[] {
-                    "EEEE, G y MMMM dd",
-                    "G y MMMM d",
-                    "G y MMM d",
-                    "GGGGG yyy-MM-dd",
-                }
-            },
-            { "roc.DatePatterns",
-                new String[] {
-                    "EEEE, GGGG y MMMM dd",
-                    "GGGG y MMMM d",
-                    "GGGG y MMM d",
-                    "G yyy-MM-dd",
-                }
-            },
-            { "islamic.MonthNames",
-                new String[] {
-                    "Muharram",
-                    "Safar",
-                    "Rabi\u02bb I",
-                    "Rabi\u02bb II",
-                    "Jumada I",
-                    "Jumada II",
-                    "Rajab",
-                    "Sha\u02bbban",
-                    "Ramadan",
-                    "Shawwal",
-                    "Dhu\u02bbl-Qi\u02bbdah",
-                    "Dhu\u02bbl-Hijjah",
-                    "",
-                }
-            },
-            { "islamic.MonthAbbreviations",
-                new String[] {
-                    "Muh.",
-                    "Saf.",
-                    "Rab. I",
-                    "Rab. II",
-                    "Jum. I",
-                    "Jum. II",
-                    "Raj.",
-                    "Sha.",
-                    "Ram.",
-                    "Shaw.",
-                    "Dhu\u02bbl-Q.",
-                    "Dhu\u02bbl-H.",
-                    "",
-                }
-            },
-            { "islamic.Eras",
-                new String[] {
-                    "",
-                    "AH",
-                }
-            },
-            { "cldr.islamic.DatePatterns",
-                new String[] {
-                    "EEEE, MMMM d, y G",
-                    "MMMM d, y G",
-                    "MMM d, y G",
-                    "M/d/yy G",
-                }
-            },
-            { "islamic.DatePatterns",
-                new String[] {
-                    "EEEE, MMMM d, y GGGG",
-                    "MMMM d, y GGGG",
-                    "MMM d, y GGGG",
-                    "M/d/yy GGGG",
-                }
-            },
             { "DateTimePatternChars", "GyMdkHmsSEDFwWahKzZ" },
-            { "calendarname.islamic-civil", "Islamic-Civil Calendar" },
-            { "calendarname.islamicc", "Islamic-Civil Calendar" },
-            { "calendarname.islamic", "Islamic Calendar" },
-            { "calendarname.japanese", "Japanese Calendar" },
-            { "calendarname.gregorian", "Gregorian Calendar" },
-            { "calendarname.gregory", "Gregorian Calendar" },
-            { "calendarname.roc", "Minguo Calendar" },
-            { "calendarname.buddhist", "Buddhist Calendar" },
-            { "field.era", "Era" },
-            { "field.year", "Year" },
-            { "field.month", "Month" },
-            { "field.week", "Week" },
-            { "field.weekday", "Day of the Week" },
-            { "field.dayperiod", "Dayperiod" },
-            { "field.hour", "Hour" },
-            { "field.minute", "Minute" },
-            { "field.second", "Second" },
-            { "field.zone", "Zone" },
         };
     }
 }

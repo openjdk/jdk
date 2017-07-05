@@ -87,51 +87,51 @@ public class TestLocalTime extends AbstractTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck","implementation"})
+    @Test
     public void constant_MIDNIGHT() {
         check(LocalTime.MIDNIGHT, 0, 0, 0, 0);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void constant_MIDNIGHT_same() {
         assertSame(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT);
         assertSame(LocalTime.MIDNIGHT, LocalTime.of(0, 0));
     }
 
-    @Test(groups={"tck","implementation"})
+    @Test
     public void constant_MIDDAY() {
         check(LocalTime.NOON, 12, 0, 0, 0);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void constant_MIDDAY_same() {
         assertSame(LocalTime.NOON, LocalTime.NOON);
         assertSame(LocalTime.NOON, LocalTime.of(12, 0));
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck","implementation"})
+    @Test
     public void constant_MIN_TIME() {
         check(LocalTime.MIN, 0, 0, 0, 0);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void constant_MIN_TIME_same() {
         assertSame(LocalTime.MIN, LocalTime.of(0, 0));
     }
 
-    @Test(groups={"tck","implementation"})
+    @Test
     public void constant_MAX_TIME() {
         check(LocalTime.MAX, 23, 59, 59, 999999999);
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void constant_MAX_TIME_same() {
         assertSame(LocalTime.NOON, LocalTime.NOON);
         assertSame(LocalTime.NOON, LocalTime.of(12, 0));
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void factory_time_2ints_singletons() {
         for (int i = 0; i < 24; i++) {
             LocalTime test1 = LocalTime.of(i, 0);
@@ -140,7 +140,7 @@ public class TestLocalTime extends AbstractTest {
         }
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void factory_time_3ints_singletons() {
         for (int i = 0; i < 24; i++) {
             LocalTime test1 = LocalTime.of(i, 0, 0);
@@ -149,7 +149,7 @@ public class TestLocalTime extends AbstractTest {
         }
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void factory_time_4ints_singletons() {
         for (int i = 0; i < 24; i++) {
             LocalTime test1 = LocalTime.of(i, 0, 0, 0);
@@ -158,7 +158,7 @@ public class TestLocalTime extends AbstractTest {
         }
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void factory_ofSecondOfDay_singletons() {
         for (int i = 0; i < 24; i++) {
             LocalTime test1 = LocalTime.ofSecondOfDay(i * 60L * 60L);
@@ -167,7 +167,7 @@ public class TestLocalTime extends AbstractTest {
         }
     }
 
-    @Test(groups={"implementation"})
+    @Test
     public void factory_ofNanoOfDay_singletons() {
         for (int i = 0; i < 24; i++) {
             LocalTime test1 = LocalTime.ofNanoOfDay(i * 1000000000L * 60L * 60L);

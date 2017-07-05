@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,12 +212,6 @@ public class TlsKeyMaterialParameterSpec implements AlgorithmParameterSpec {
      *     generated.
      */
     public int getIvLength() {
-        // TLS v1.1 or later uses an explicit IV to protect against
-        // the CBC attacks.
-        if (majorVersion >= 0x03 && minorVersion >= 0x02) {
-            return 0;
-        }
-
         return ivLength;
     }
 

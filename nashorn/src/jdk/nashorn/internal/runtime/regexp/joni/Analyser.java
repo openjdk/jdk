@@ -156,9 +156,6 @@ final class Analyser extends Parser {
 
         env.memNodes = null;
 
-        new ArrayCompiler(this).compile();
-        //new AsmCompiler(this).compile();
-
         if (regex.numRepeat != 0 || regex.btMemEnd != 0) {
             regex.stackPopLevel = StackPopLevel.ALL;
         } else {

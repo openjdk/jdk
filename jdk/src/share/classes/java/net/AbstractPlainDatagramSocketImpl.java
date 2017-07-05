@@ -122,7 +122,7 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
      * not connected already.
      */
     protected void disconnect() {
-        disconnect0(connectedAddress.family);
+        disconnect0(connectedAddress.holder().getFamily());
         connected = false;
         connectedAddress = null;
         connectedPort = -1;

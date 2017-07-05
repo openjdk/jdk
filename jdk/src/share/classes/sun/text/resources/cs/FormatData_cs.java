@@ -79,11 +79,11 @@
 
 package sun.text.resources.cs;
 
-import java.util.ListResourceBundle;
+import sun.util.resources.ParallelListResourceBundle;
 
-public class FormatData_cs extends ListResourceBundle {
+public class FormatData_cs extends ParallelListResourceBundle {
     /**
-     * Overrides ListResourceBundle
+     * Overrides ParallelListResourceBundle
      */
     protected final Object[][] getContents() {
         return new Object[][] {
@@ -155,6 +155,40 @@ public class FormatData_cs extends ListResourceBundle {
                     "" // abb month 13 if applicable
                 }
             },
+            { "MonthNarrows",
+                new String[] {
+                    "l",
+                    "\u00fa",
+                    "b",
+                    "d",
+                    "k",
+                    "\u010d",
+                    "\u010d",
+                    "s",
+                    "z",
+                    "\u0159",
+                    "l",
+                    "p",
+                    "",
+                }
+            },
+            { "standalone.MonthNarrows",
+                new String[] {
+                    "l",
+                    "\u00fa",
+                    "b",
+                    "d",
+                    "k",
+                    "\u010d",
+                    "\u010d",
+                    "s",
+                    "z",
+                    "\u0159",
+                    "l",
+                    "p",
+                    "",
+                }
+            },
             { "DayNames",
                 new String[] {
                     "Ned\u011ble", // Sunday
@@ -164,6 +198,17 @@ public class FormatData_cs extends ListResourceBundle {
                     "\u010ctvrtek", // Thursday
                     "P\u00e1tek", // Friday
                     "Sobota" // Saturday
+                }
+            },
+            { "standalone.DayNames",
+                new String[] {
+                    "ned\u011ble",
+                    "pond\u011bl\u00ed",
+                    "\u00fater\u00fd",
+                    "st\u0159eda",
+                    "\u010dtvrtek",
+                    "p\u00e1tek",
+                    "sobota",
                 }
             },
             { "DayAbbreviations",
@@ -177,7 +222,29 @@ public class FormatData_cs extends ListResourceBundle {
                     "So" // abb Saturday
                 }
             },
+            { "standalone.DayAbbreviations",
+                new String[] {
+                    "ne",
+                    "po",
+                    "\u00fat",
+                    "st",
+                    "\u010dt",
+                    "p\u00e1",
+                    "so",
+                }
+            },
             { "DayNarrows",
+                new String[] {
+                    "N",
+                    "P",
+                    "\u00da",
+                    "S",
+                    "\u010c",
+                    "P",
+                    "S",
+                }
+            },
+            { "standalone.DayNarrows",
                 new String[] {
                     "N",
                     "P",
@@ -198,6 +265,18 @@ public class FormatData_cs extends ListResourceBundle {
                 new String[] { // era strings
                     "p\u0159.Kr.",
                     "po Kr."
+                }
+            },
+            { "short.Eras",
+                new String[] {
+                    "p\u0159. n. l.",
+                    "n. l.",
+                }
+            },
+            { "narrow.Eras",
+                new String[] {
+                    "p\u0159.n.l.",
+                    "n. l.",
                 }
             },
             { "NumberElements",
@@ -237,22 +316,6 @@ public class FormatData_cs extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GuMtkHmsSEDFwWahKzZ" },
-            { "calendarname.islamic-civil", "Muslimsk\u00fd ob\u010dansk\u00fd kalend\u00e1\u0159" },
-            { "calendarname.islamicc", "Muslimsk\u00fd ob\u010dansk\u00fd kalend\u00e1\u0159" },
-            { "calendarname.islamic", "Muslimsk\u00fd kalend\u00e1\u0159" },
-            { "calendarname.buddhist", "Buddhistick\u00fd kalend\u00e1\u0159" },
-            { "calendarname.japanese", "Japonsk\u00fd kalend\u00e1\u0159" },
-            { "calendarname.gregorian", "Gregori\u00e1nsk\u00fd kalend\u00e1\u0159" },
-            { "calendarname.gregory", "Gregori\u00e1nsk\u00fd kalend\u00e1\u0159" },
-            { "field.year", "Rok" },
-            { "field.month", "M\u011bs\u00edc" },
-            { "field.week", "T\u00fdden" },
-            { "field.weekday", "Den v t\u00fddnu" },
-            { "field.dayperiod", "AM/PM" },
-            { "field.hour", "Hodina" },
-            { "field.minute", "Minuta" },
-            { "field.second", "Sekunda" },
-            { "field.zone", "\u010casov\u00e9 p\u00e1smo" },
         };
     }
 }

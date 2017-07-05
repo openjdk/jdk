@@ -80,6 +80,7 @@ public class TestPeriod extends AbstractTest {
     //-----------------------------------------------------------------------
     // factories
     //-----------------------------------------------------------------------
+    @Test
     public void factory_zeroSingleton() {
         assertSame(Period.ZERO, Period.ZERO);
         assertSame(Period.ofYears(0), Period.ZERO);
@@ -91,6 +92,7 @@ public class TestPeriod extends AbstractTest {
     //-----------------------------------------------------------------------
     // hashCode()
     //-----------------------------------------------------------------------
+    @Test
     public void test_hashCode() {
         Period test5 = Period.ofDays(5);
         Period test6 = Period.ofDays(6);

@@ -61,37 +61,56 @@
  */
 package java.time.chrono;
 
+import static java.time.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH;
+import static java.time.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR;
+import static java.time.temporal.ChronoField.ALIGNED_WEEK_OF_MONTH;
+import static java.time.temporal.ChronoField.ALIGNED_WEEK_OF_YEAR;
+import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.DAY_OF_WEEK;
+import static java.time.temporal.ChronoField.DAY_OF_YEAR;
+import static java.time.temporal.ChronoField.EPOCH_DAY;
+import static java.time.temporal.ChronoField.ERA;
+import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.PROLEPTIC_MONTH;
+import static java.time.temporal.ChronoField.YEAR;
+import static java.time.temporal.ChronoField.YEAR_OF_ERA;
+import static java.time.temporal.TemporalAdjuster.nextOrSame;
+
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
+import java.io.Serializable;
 import java.time.Clock;
 import java.time.DateTimeException;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
-import java.time.chrono.HijrahChronology;
-import java.time.chrono.JapaneseChronology;
-import java.time.chrono.MinguoChronology;
-import java.time.chrono.ThaiBuddhistChronology;
 import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.ResolverStyle;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
-import java.time.temporal.Queries;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import sun.util.logging.PlatformLogger;
 
 /**
  * A calendar system, used to organize and identify dates.
@@ -106,7 +125,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * for use by any {@code Chronology} implementation:
  * <pre>
  *   LocalDate isoDate = ...
- *   ChronoLocalDate&lt;ThaiBuddhistChronology&gt; thaiDate = ...
+ *   ThaiBuddhistDate thaiDate = ...
  *   int isoYear = isoDate.get(ChronoField.YEAR);
  *   int thaiYear = thaiDate.get(ChronoField.YEAR);
  * </pre>
@@ -154,8 +173,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>
  * Each chronology must define a chronology ID that is unique within the system.
  * If the chronology represents a calendar system defined by the
- * <em>Unicode Locale Data Markup Language (LDML)</em> specification then that
- * calendar type should also be specified.
+ * CLDR specification then the calendar type is the concatenation of the
+ * CLDR type and, if applicable, the CLDR variant,
  *
  * <h3>Specification for implementors</h3>
  * This class must be implemented with care to ensure other classes operate correctly.
@@ -167,6 +186,36 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class Chronology implements Comparable<Chronology> {
 
     /**
+     * ChronoLocalDate order constant.
+     */
+    static final Comparator<ChronoLocalDate<?>> DATE_ORDER =
+        (Comparator<ChronoLocalDate<?>> & Serializable) (date1, date2) -> {
+            return Long.compare(date1.toEpochDay(), date2.toEpochDay());
+        };
+    /**
+     * ChronoLocalDateTime order constant.
+     */
+    static final Comparator<ChronoLocalDateTime<?>> DATE_TIME_ORDER =
+        (Comparator<ChronoLocalDateTime<?>> & Serializable) (dateTime1, dateTime2) -> {
+            int cmp = Long.compare(dateTime1.toLocalDate().toEpochDay(), dateTime2.toLocalDate().toEpochDay());
+            if (cmp == 0) {
+                cmp = Long.compare(dateTime1.toLocalTime().toNanoOfDay(), dateTime2.toLocalTime().toNanoOfDay());
+            }
+            return cmp;
+        };
+    /**
+     * ChronoZonedDateTime order constant.
+     */
+    static final Comparator<ChronoZonedDateTime<?>> INSTANT_ORDER =
+            (Comparator<ChronoZonedDateTime<?>> & Serializable) (dateTime1, dateTime2) -> {
+                int cmp = Long.compare(dateTime1.toEpochSecond(), dateTime2.toEpochSecond());
+                if (cmp == 0) {
+                    cmp = Long.compare(dateTime1.toLocalTime().getNano(), dateTime2.toLocalTime().getNano());
+                }
+                return cmp;
+            };
+
+    /**
      * Map of available calendars by ID.
      */
     private static final ConcurrentHashMap<String, Chronology> CHRONOS_BY_ID = new ConcurrentHashMap<>();
@@ -176,19 +225,35 @@ public abstract class Chronology implements Comparable<Chronology> {
     private static final ConcurrentHashMap<String, Chronology> CHRONOS_BY_TYPE = new ConcurrentHashMap<>();
 
     /**
+     * Register a Chronology by its ID and type for lookup by {@link #of(java.lang.String)}.
+     * Chronologies must not be registered until they are completely constructed.
+     * Specifically, not in the constructor of Chronology.
+     *
+     * @param chrono the chronology to register; not null
+     * @return the already registered Chronology if any, may be null
+     */
+    static Chronology registerChrono(Chronology chrono) {
+        return registerChrono(chrono, chrono.getId());
+    }
+
+    /**
      * Register a Chronology by ID and type for lookup by {@link #of(java.lang.String)}.
      * Chronos must not be registered until they are completely constructed.
      * Specifically, not in the constructor of Chronology.
+     *
      * @param chrono the chronology to register; not null
+     * @param id the ID to register the chronology; not null
+     * @return the already registered Chronology if any, may be null
      */
-    private static void registerChrono(Chronology chrono) {
-        Chronology prev = CHRONOS_BY_ID.putIfAbsent(chrono.getId(), chrono);
+    static Chronology registerChrono(Chronology chrono, String id) {
+        Chronology prev = CHRONOS_BY_ID.putIfAbsent(id, chrono);
         if (prev == null) {
             String type = chrono.getCalendarType();
             if (type != null) {
                 CHRONOS_BY_TYPE.putIfAbsent(type, chrono);
             }
         }
+        return prev;
     }
 
     /**
@@ -209,17 +274,24 @@ public abstract class Chronology implements Comparable<Chronology> {
     private static boolean initCache() {
         if (CHRONOS_BY_ID.get("ISO") == null) {
             // Initialization is incomplete
-            @SuppressWarnings("rawtypes")
-            ServiceLoader<Chronology> loader =  ServiceLoader.load(Chronology.class, null);
-            for (Chronology chrono : loader) {
-                registerChrono(chrono);
-            }
 
-            // Register these calendars; the ServiceLoader configuration is not used
+            // Register built-in Chronologies
             registerChrono(HijrahChronology.INSTANCE);
             registerChrono(JapaneseChronology.INSTANCE);
             registerChrono(MinguoChronology.INSTANCE);
             registerChrono(ThaiBuddhistChronology.INSTANCE);
+
+            // Register Chronologies from the ServiceLoader
+            @SuppressWarnings("rawtypes")
+            ServiceLoader<Chronology> loader =  ServiceLoader.load(Chronology.class, null);
+            for (Chronology chrono : loader) {
+                String id = chrono.getId();
+                if (id.equals("ISO") || registerChrono(chrono) != null) {
+                    // Log the attempt to replace an existing Chronology
+                    PlatformLogger logger = PlatformLogger.getLogger("java.time.chrono");
+                    logger.warning("Ignoring duplicate Chronology, from ServiceLoader configuration "  + id);
+                }
+            }
 
             // finally, register IsoChronology to mark initialization is complete
             registerChrono(IsoChronology.INSTANCE);
@@ -236,7 +308,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
      * which this factory converts to an instance of {@code Chronology}.
      * <p>
-     * The conversion will obtain the chronology using {@link Queries#chronology()}.
+     * The conversion will obtain the chronology using {@link TemporalQuery#chronology()}.
      * If the specified temporal object does not have a chronology, {@link IsoChronology} is returned.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
@@ -248,7 +320,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      */
     public static Chronology from(TemporalAccessor temporal) {
         Objects.requireNonNull(temporal, "temporal");
-        Chronology obj = temporal.query(Queries.chronology());
+        Chronology obj = temporal.query(TemporalQuery.chronology());
         return (obj != null ? obj : IsoChronology.INSTANCE);
     }
 
@@ -266,13 +338,16 @@ public abstract class Chronology implements Comparable<Chronology> {
      * <p>
      * The {@code Locale} class also supports an extension mechanism that
      * can be used to identify a calendar system. The mechanism is a form
-     * of key-value pairs, where the calendar system has the key "ca".
+     * of key-value pairs, where the calendar system has the key "ca"
+     * and an optional variant key "cv".
      * For example, the locale "en-JP-u-ca-japanese" represents the English
      * language as used in Japan with the Japanese calendar system.
      * <p>
      * This method finds the desired calendar system by in a manner equivalent
      * to passing "ca" to {@link Locale#getUnicodeLocaleType(String)}.
      * If the "ca" key is not present, then {@code IsoChronology} is returned.
+     * The variant, if present, is appended to the "ca" value separated by  "-"
+     * and the concatenated value is used to find the calendar system by type.
      * <p>
      * Note that the behavior of this method differs from the older
      * {@link java.util.Calendar#getInstance(Locale)} method.
@@ -299,6 +374,10 @@ public abstract class Chronology implements Comparable<Chronology> {
         if (type == null || "iso".equals(type) || "iso8601".equals(type)) {
             return IsoChronology.INSTANCE;
         }
+        String variant = locale.getUnicodeLocaleType("cv");
+        if (variant != null && !variant.isEmpty()) {
+            type = type + '-' + variant;
+        }
         // Not pre-defined; lookup by the type
         do {
             Chronology chrono = CHRONOS_BY_TYPE.get(type);
@@ -307,6 +386,16 @@ public abstract class Chronology implements Comparable<Chronology> {
             }
             // If not found, do the initialization (once) and repeat the lookup
         } while (initCache());
+
+        // Look for a Chronology using ServiceLoader of the Thread's ContextClassLoader
+        // Application provided Chronologies must not be cached
+        @SuppressWarnings("rawtypes")
+        ServiceLoader<Chronology> loader = ServiceLoader.load(Chronology.class);
+        for (Chronology chrono : loader) {
+            if (type.equals(chrono.getCalendarType())) {
+                return chrono;
+            }
+        }
         throw new DateTimeException("Unknown calendar system: " + type);
     }
 
@@ -317,7 +406,8 @@ public abstract class Chronology implements Comparable<Chronology> {
      * <p>
      * This returns a chronology based on either the ID or the type.
      * The {@link #getId() chronology ID} uniquely identifies the chronology.
-     * The {@link #getCalendarType() calendar system type} is defined by the LDML specification.
+     * The {@link #getCalendarType() calendar system type} is defined by the
+     * CLDR specification.
      * <p>
      * The chronology may be a system chronology or a chronology
      * provided by the application via ServiceLoader configuration.
@@ -379,7 +469,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      */
     public static Set<Chronology> getAvailableChronologies() {
         initCache();       // force initialization
-        HashSet<Chronology> chronos = new HashSet(CHRONOS_BY_ID.values());
+        HashSet<Chronology> chronos = new HashSet<>(CHRONOS_BY_ID.values());
 
         /// Add in Chronologies from the ServiceLoader configuration
         @SuppressWarnings("rawtypes")
@@ -406,9 +496,9 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @throws ClassCastException if the date-time cannot be cast to ChronoLocalDate
      *  or the chronology is not equal this Chronology
      */
-    ChronoLocalDate ensureChronoLocalDate(Temporal temporal) {
+    ChronoLocalDate<?> ensureChronoLocalDate(Temporal temporal) {
         @SuppressWarnings("unchecked")
-        ChronoLocalDate other = (ChronoLocalDate) temporal;
+        ChronoLocalDate<?> other = (ChronoLocalDate<?>) temporal;
         if (this.equals(other.getChronology()) == false) {
             throw new ClassCastException("Chronology mismatch, expected: " + getId() + ", actual: " + other.getChronology().getId());
         }
@@ -464,15 +554,16 @@ public abstract class Chronology implements Comparable<Chronology> {
     public abstract String getId();
 
     /**
-     * Gets the calendar type of the underlying calendar system.
+     * Gets the calendar type of the calendar system.
      * <p>
-     * The calendar type is an identifier defined by the
-     * <em>Unicode Locale Data Markup Language (LDML)</em> specification.
-     * It can be used to lookup the {@code Chronology} using {@link #of(String)}.
-     * It can also be used as part of a locale, accessible via
-     * {@link Locale#getUnicodeLocaleType(String)} with the key 'ca'.
+     * The calendar type is an identifier defined by the CLDR and
+     * <em>Unicode Locale Data Markup Language (LDML)</em> specifications
+     * to uniquely identification a calendar.
+     * The {@code getCalendarType} is the concatenation of the CLDR calendar type
+     * and the variant, if applicable, is appended separated by "-".
+     * The calendar type is used to lookup the {@code Chronology} using {@link #of(String)}.
      *
-     * @return the calendar system type, null if the calendar is not defined by LDML
+     * @return the calendar system type, null if the calendar is not defined
      * @see #getId()
      */
     public abstract String getCalendarType();
@@ -488,8 +579,9 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @param dayOfMonth  the chronology day-of-month
      * @return the local date in this chronology, not null
      * @throws DateTimeException if unable to create the date
+     * @throws ClassCastException if the {@code era} is not of the correct type for the chronology
      */
-    public ChronoLocalDate date(Era era, int yearOfEra, int month, int dayOfMonth) {
+    public ChronoLocalDate<?> date(Era era, int yearOfEra, int month, int dayOfMonth) {
         return date(prolepticYear(era, yearOfEra), month, dayOfMonth);
     }
 
@@ -503,7 +595,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @return the local date in this chronology, not null
      * @throws DateTimeException if unable to create the date
      */
-    public abstract ChronoLocalDate date(int prolepticYear, int month, int dayOfMonth);
+    public abstract ChronoLocalDate<?> date(int prolepticYear, int month, int dayOfMonth);
 
     /**
      * Obtains a local date in this chronology from the era, year-of-era and
@@ -514,8 +606,9 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @param dayOfYear  the chronology day-of-year
      * @return the local date in this chronology, not null
      * @throws DateTimeException if unable to create the date
+     * @throws ClassCastException if the {@code era} is not of the correct type for the chronology
      */
-    public ChronoLocalDate dateYearDay(Era era, int yearOfEra, int dayOfYear) {
+    public ChronoLocalDate<?> dateYearDay(Era era, int yearOfEra, int dayOfYear) {
         return dateYearDay(prolepticYear(era, yearOfEra), dayOfYear);
     }
 
@@ -528,7 +621,19 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @return the local date in this chronology, not null
      * @throws DateTimeException if unable to create the date
      */
-    public abstract ChronoLocalDate dateYearDay(int prolepticYear, int dayOfYear);
+    public abstract ChronoLocalDate<?> dateYearDay(int prolepticYear, int dayOfYear);
+
+    /**
+     * Obtains a local date in this chronology from the epoch-day.
+     * <p>
+     * The definition of {@link ChronoField#EPOCH_DAY EPOCH_DAY} is the same
+     * for all calendar systems, thus it can be used for conversion.
+     *
+     * @param epochDay  the epoch day
+     * @return the local date in this chronology, not null
+     * @throws DateTimeException if unable to create the date
+     */
+    public abstract ChronoLocalDate<?> dateEpochDay(long epochDay);
 
     //-----------------------------------------------------------------------
     /**
@@ -545,7 +650,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @return the current local date using the system clock and default time-zone, not null
      * @throws DateTimeException if unable to create the date
      */
-    public ChronoLocalDate dateNow() {
+    public ChronoLocalDate<?> dateNow() {
         return dateNow(Clock.systemDefaultZone());
     }
 
@@ -562,7 +667,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @return the current local date using the system clock, not null
      * @throws DateTimeException if unable to create the date
      */
-    public ChronoLocalDate dateNow(ZoneId zone) {
+    public ChronoLocalDate<?> dateNow(ZoneId zone) {
         return dateNow(Clock.system(zone));
     }
 
@@ -577,7 +682,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @return the current local date, not null
      * @throws DateTimeException if unable to create the date
      */
-    public ChronoLocalDate dateNow(Clock clock) {
+    public ChronoLocalDate<?> dateNow(Clock clock) {
         Objects.requireNonNull(clock, "clock");
         return date(LocalDate.now(clock));
     }
@@ -586,7 +691,7 @@ public abstract class Chronology implements Comparable<Chronology> {
     /**
      * Obtains a local date in this chronology from another temporal object.
      * <p>
-     * This creates a date in this chronology based on the specified temporal.
+     * This obtains a date in this chronology based on the specified temporal.
      * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
      * which this factory converts to an instance of {@code ChronoLocalDate}.
      * <p>
@@ -599,13 +704,14 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @param temporal  the temporal object to convert, not null
      * @return the local date in this chronology, not null
      * @throws DateTimeException if unable to create the date
+     * @see ChronoLocalDate#from(TemporalAccessor)
      */
-    public abstract ChronoLocalDate date(TemporalAccessor temporal);
+    public abstract ChronoLocalDate<?> date(TemporalAccessor temporal);
 
     /**
      * Obtains a local date-time in this chronology from another temporal object.
      * <p>
-     * This creates a date-time in this chronology based on the specified temporal.
+     * This obtains a date-time in this chronology based on the specified temporal.
      * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
      * which this factory converts to an instance of {@code ChronoLocalDateTime}.
      * <p>
@@ -621,6 +727,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @param temporal  the temporal object to convert, not null
      * @return the local date-time in this chronology, not null
      * @throws DateTimeException if unable to create the date-time
+     * @see ChronoLocalDateTime#from(TemporalAccessor)
      */
     public ChronoLocalDateTime<?> localDateTime(TemporalAccessor temporal) {
         try {
@@ -633,7 +740,7 @@ public abstract class Chronology implements Comparable<Chronology> {
     /**
      * Obtains a {@code ChronoZonedDateTime} in this chronology from another temporal object.
      * <p>
-     * This creates a zoned date-time in this chronology based on the specified temporal.
+     * This obtains a zoned date-time in this chronology based on the specified temporal.
      * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
      * which this factory converts to an instance of {@code ChronoZonedDateTime}.
      * <p>
@@ -652,6 +759,7 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @param temporal  the temporal object to convert, not null
      * @return the zoned date-time in this chronology, not null
      * @throws DateTimeException if unable to create the date-time
+     * @see ChronoZonedDateTime#from(TemporalAccessor)
      */
     public ChronoZonedDateTime<?> zonedDateTime(TemporalAccessor temporal) {
         try {
@@ -661,6 +769,7 @@ public abstract class Chronology implements Comparable<Chronology> {
                 return zonedDateTime(instant, zone);
 
             } catch (DateTimeException ex1) {
+                @SuppressWarnings("rawtypes")
                 ChronoLocalDateTimeImpl cldt = ensureChronoLocalDateTime(localDateTime(temporal));
                 return ChronoZonedDateTimeImpl.ofBest(cldt, zone, null);
             }
@@ -672,7 +781,7 @@ public abstract class Chronology implements Comparable<Chronology> {
     /**
      * Obtains a {@code ChronoZonedDateTime} in this chronology from an {@code Instant}.
      * <p>
-     * This creates a zoned date-time with the same instant as that specified.
+     * This obtains a zoned date-time with the same instant as that specified.
      *
      * @param instant  the instant to create the date-time from, not null
      * @param zone  the time-zone, not null
@@ -703,11 +812,17 @@ public abstract class Chronology implements Comparable<Chronology> {
      * Calculates the proleptic-year given the era and year-of-era.
      * <p>
      * This combines the era and year-of-era into the single proleptic-year field.
+     * <p>
+     * If the chronology makes active use of eras, such as {@code JapaneseChronology}
+     * then the year-of-era will be validated against the era.
+     * For other chronologies, validation is optional.
      *
      * @param era  the era of the correct type for the chronology, not null
      * @param yearOfEra  the chronology year-of-era
      * @return the proleptic-year
-     * @throws DateTimeException if unable to convert
+     * @throws DateTimeException if unable to convert to a proleptic-year,
+     *  such as if the year is invalid for the era
+     * @throws ClassCastException if the {@code era} is not of the correct type for the chronology
      */
     public abstract int prolepticYear(Era era, int yearOfEra);
 
@@ -775,24 +890,175 @@ public abstract class Chronology implements Comparable<Chronology> {
      * @return the text value of the chronology, not null
      */
     public String getDisplayName(TextStyle style, Locale locale) {
-        return new DateTimeFormatterBuilder().appendChronologyText(style).toFormatter(locale).format(new TemporalAccessor() {
+        return new DateTimeFormatterBuilder().appendChronologyText(style).toFormatter(locale).format(toTemporal());
+    }
+
+    /**
+     * Converts this chronology to a {@code TemporalAccessor}.
+     * <p>
+     * A {@code Chronology} can be fully represented as a {@code TemporalAccessor}.
+     * However, the interface is not implemented by this class as most of the
+     * methods on the interface have no meaning to {@code Chronology}.
+     * <p>
+     * The returned temporal has no supported fields, with the query method
+     * supporting the return of the chronology using {@link TemporalQuery#chronology()}.
+     *
+     * @return a temporal equivalent to this chronology, not null
+     */
+    private TemporalAccessor toTemporal() {
+        return new TemporalAccessor() {
             @Override
             public boolean isSupported(TemporalField field) {
                 return false;
             }
             @Override
             public long getLong(TemporalField field) {
-                throw new DateTimeException("Unsupported field: " + field);
+                throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
             }
             @SuppressWarnings("unchecked")
             @Override
             public <R> R query(TemporalQuery<R> query) {
-                if (query == Queries.chronology()) {
+                if (query == TemporalQuery.chronology()) {
                     return (R) Chronology.this;
                 }
                 return TemporalAccessor.super.query(query);
             }
-        });
+        };
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * Resolves parsed {@code ChronoField} values into a date during parsing.
+     * <p>
+     * Most {@code TemporalField} implementations are resolved using the
+     * resolve method on the field. By contrast, the {@code ChronoField} class
+     * defines fields that only have meaning relative to the chronology.
+     * As such, {@code ChronoField} date fields are resolved here in the
+     * context of a specific chronology.
+     * <p>
+     * The default implementation is suitable for most calendar systems.
+     * If {@link ChronoField#YEAR_OF_ERA} is found without an {@link ChronoField#ERA}
+     * then the last era in {@link #eras()} is used.
+     * The implementation assumes a 7 day week, that the first day-of-month
+     * has the value 1, and that first day-of-year has the value 1.
+     *
+     * @param fieldValues  the map of fields to values, which can be updated, not null
+     * @param resolverStyle  the requested type of resolve, not null
+     * @return the resolved date, null if insufficient information to create a date
+     * @throws DateTimeException if the date cannot be resolved, typically
+     *  because of a conflict in the input data
+     */
+    public ChronoLocalDate<?> resolveDate(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        // check epoch-day before inventing era
+        if (fieldValues.containsKey(EPOCH_DAY)) {
+            return dateEpochDay(fieldValues.remove(EPOCH_DAY));
+        }
+
+        // fix proleptic month before inventing era
+        Long pMonth = fieldValues.remove(PROLEPTIC_MONTH);
+        if (pMonth != null) {
+            // first day-of-month is likely to be safest for setting proleptic-month
+            // cannot add to year zero, as not all chronologies have a year zero
+            ChronoLocalDate<?> chronoDate = dateNow()
+                    .with(DAY_OF_MONTH, 1).with(PROLEPTIC_MONTH, pMonth);
+            addFieldValue(fieldValues, MONTH_OF_YEAR, chronoDate.get(MONTH_OF_YEAR));
+            addFieldValue(fieldValues, YEAR, chronoDate.get(YEAR));
+        }
+
+        // invent era if necessary to resolve year-of-era
+        Long yoeLong = fieldValues.remove(YEAR_OF_ERA);
+        if (yoeLong != null) {
+            Long eraLong = fieldValues.remove(ERA);
+            int yoe = range(YEAR_OF_ERA).checkValidIntValue(yoeLong, YEAR_OF_ERA);
+            if (eraLong != null) {
+                Era eraObj = eraOf(Math.toIntExact(eraLong));
+                addFieldValue(fieldValues, YEAR, prolepticYear(eraObj, yoe));
+            } else if (fieldValues.containsKey(YEAR)) {
+                int year = range(YEAR).checkValidIntValue(fieldValues.get(YEAR), YEAR);
+                ChronoLocalDate<?> chronoDate = dateYearDay(year, 1);
+                addFieldValue(fieldValues, YEAR, prolepticYear(chronoDate.getEra(), yoe));
+            } else {
+                List<Era> eras = eras();
+                if (eras.isEmpty()) {
+                    addFieldValue(fieldValues, YEAR, yoe);
+                } else {
+                    Era eraObj = eras.get(eras.size() - 1);
+                    addFieldValue(fieldValues, YEAR, prolepticYear(eraObj, yoe));
+                }
+            }
+        }
+
+        // build date
+        if (fieldValues.containsKey(YEAR)) {
+            if (fieldValues.containsKey(MONTH_OF_YEAR)) {
+                if (fieldValues.containsKey(DAY_OF_MONTH)) {
+                    int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
+                    int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
+                    int dom = range(DAY_OF_MONTH).checkValidIntValue(fieldValues.remove(DAY_OF_MONTH), DAY_OF_MONTH);
+                    return date(y, moy, dom);
+                }
+                if (fieldValues.containsKey(ALIGNED_WEEK_OF_MONTH)) {
+                    if (fieldValues.containsKey(ALIGNED_DAY_OF_WEEK_IN_MONTH)) {
+                        int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
+                        int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
+                        int aw = range(ALIGNED_WEEK_OF_MONTH).checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), ALIGNED_WEEK_OF_MONTH);
+                        int ad = range(ALIGNED_DAY_OF_WEEK_IN_MONTH).checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH), ALIGNED_DAY_OF_WEEK_IN_MONTH);
+                        ChronoLocalDate<?> chronoDate = date(y, moy, 1);
+                        return chronoDate.plus((aw - 1) * 7 + (ad - 1), ChronoUnit.DAYS);
+                    }
+                    if (fieldValues.containsKey(DAY_OF_WEEK)) {
+                        int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
+                        int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
+                        int aw = range(ALIGNED_WEEK_OF_MONTH).checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), ALIGNED_WEEK_OF_MONTH);
+                        int dow = range(DAY_OF_WEEK).checkValidIntValue(fieldValues.remove(DAY_OF_WEEK), DAY_OF_WEEK);
+                        ChronoLocalDate<?> chronoDate = date(y, moy, 1);
+                        return chronoDate.plus((aw - 1) * 7, ChronoUnit.DAYS).with(nextOrSame(DayOfWeek.of(dow)));
+                    }
+                }
+            }
+            if (fieldValues.containsKey(DAY_OF_YEAR)) {
+                int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
+                int doy = range(DAY_OF_YEAR).checkValidIntValue(fieldValues.remove(DAY_OF_YEAR), DAY_OF_YEAR);
+                return dateYearDay(y, doy);
+            }
+            if (fieldValues.containsKey(ALIGNED_WEEK_OF_YEAR)) {
+                if (fieldValues.containsKey(ALIGNED_DAY_OF_WEEK_IN_YEAR)) {
+                    int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
+                    int aw = range(ALIGNED_WEEK_OF_YEAR).checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), ALIGNED_WEEK_OF_YEAR);
+                    int ad = range(ALIGNED_DAY_OF_WEEK_IN_YEAR).checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR), ALIGNED_DAY_OF_WEEK_IN_YEAR);
+                    ChronoLocalDate<?> chronoDate = dateYearDay(y, 1);
+                    return chronoDate.plus((aw - 1) * 7 + (ad - 1), ChronoUnit.DAYS);
+                }
+                if (fieldValues.containsKey(DAY_OF_WEEK)) {
+                    int y = range(YEAR).checkValidIntValue(fieldValues.remove(YEAR), YEAR);
+                    int aw = range(ALIGNED_WEEK_OF_YEAR).checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), ALIGNED_WEEK_OF_YEAR);
+                    int dow = range(DAY_OF_WEEK).checkValidIntValue(fieldValues.remove(DAY_OF_WEEK), DAY_OF_WEEK);
+                    ChronoLocalDate<?> chronoDate = dateYearDay(y, 1);
+                    return chronoDate.plus((aw - 1) * 7, ChronoUnit.DAYS).with(nextOrSame(DayOfWeek.of(dow)));
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Adds a field-value pair to the map, checking for conflicts.
+     * <p>
+     * If the field is not already present, then the field-value pair is added to the map.
+     * If the field is already present and it has the same value as that specified, no action occurs.
+     * If the field is already present and it has a different value to that specified, then
+     * an exception is thrown.
+     *
+     * @param field  the field to add, not null
+     * @param value  the value to add, not null
+     * @throws DateTimeException if the field is already present with a different value
+     */
+    void addFieldValue(Map<TemporalField, Long> fieldValues, ChronoField field, long value) {
+        Long old = fieldValues.get(field);  // check first for better error message
+        if (old != null && old.longValue() != value) {
+            throw new DateTimeException("Conflict found: " + field + " " + old + " differs from " + field + " " + value);
+        }
+        fieldValues.put(field, value);
     }
 
     //-----------------------------------------------------------------------
@@ -861,16 +1127,16 @@ public abstract class Chronology implements Comparable<Chronology> {
 
     //-----------------------------------------------------------------------
     /**
-     * Writes the object using a
-     * <a href="../../../serialized-form.html#java.time.temporal.Ser">dedicated serialized form</a>.
+     * Writes the Chronology using a
+     * <a href="../../../serialized-form.html#java.time.chrono.Ser">dedicated serialized form</a>.
      * <pre>
-     *  out.writeByte(7);  // identifies this as a Chronology
-     * out.writeUTF(chronoId);
+     *  out.writeByte(1);  // identifies this as a Chronology
+     *  out.writeUTF(getId());
      * </pre>
      *
      * @return the instance of {@code Ser}, not null
      */
-    private Object writeReplace() {
+    protected Object writeReplace() {
         return new Ser(Ser.CHRONO_TYPE, this);
     }
 
