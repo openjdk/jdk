@@ -1847,7 +1847,7 @@ public class TCKLocalDateTime extends AbstractDateTimeTest {
             LocalDateTime dt = base.plusMinutes(i);
             t = t.plusMinutes(1);
 
-            if (t == LocalTime.MIDNIGHT) {
+            if (t.equals(LocalTime.MIDNIGHT)) {
                 d = d.plusDays(1);
             }
 
@@ -2539,7 +2539,7 @@ public class TCKLocalDateTime extends AbstractDateTimeTest {
             LocalDateTime dt = base.minusMinutes(i);
             t = t.plusMinutes(1);
 
-            if (t == LocalTime.MIDNIGHT) {
+            if (t.equals(LocalTime.MIDNIGHT)) {
                 d = d.plusDays(1);
             }
 

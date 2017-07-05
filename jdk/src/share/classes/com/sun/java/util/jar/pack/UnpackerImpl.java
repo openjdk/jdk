@@ -25,7 +25,6 @@
 
 package com.sun.java.util.jar.pack;
 
-import java.beans.PropertyChangeListener;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -54,24 +53,6 @@ import java.util.zip.ZipEntry;
 
 
 public class UnpackerImpl extends TLGlobals implements Pack200.Unpacker {
-
-
-    /**
-     * Register a listener for changes to options.
-     * @param listener  An object to be invoked when a property is changed.
-     */
-    public void addPropertyChangeListener(PropertyChangeListener listener) {
-        props.addListener(listener);
-    }
-
-
-    /**
-     * Remove a listener for the PropertyChange event.
-     * @param listener  The PropertyChange listener to be removed.
-     */
-    public void removePropertyChangeListener(PropertyChangeListener listener) {
-        props.removeListener(listener);
-    }
 
     public UnpackerImpl() {}
 

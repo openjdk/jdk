@@ -65,6 +65,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.time.DateTimeException;
@@ -374,10 +375,10 @@ final class ChronoPeriodImpl
 
     /**
      * Defend against malicious streams.
-     * @return never
+     *
      * @throws InvalidObjectException always
      */
-    private Object readResolve() throws ObjectStreamException {
+    private void readObject(ObjectInputStream s) throws ObjectStreamException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
 

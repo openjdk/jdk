@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 6374379
+ * @library ../../../../lib/testlibrary
  * @summary Verify that we can read zip file names > 255 chars long
  */
 
@@ -31,6 +32,7 @@ import java.io.*;
 import java.util.jar.*;
 import java.util.zip.*;
 import java.util.Stack;
+import jdk.testlibrary.FileUtils;
 
 public class ReadLongZipFileName {
     private static String entryName = "testFile.txt";;
@@ -101,7 +103,12 @@ public class ReadLongZipFileName {
 
         while (! directories.empty()) {
             File f = directories.pop();
-            check(f.delete());
+            try {
+                FileUtils.deleteFileWithRetry(f.toPath());
+            } catch (IOException e) {
+                unexpected(e, "Fail to clean up directory, " + f);
+                break;
+            }
         }
     }
 

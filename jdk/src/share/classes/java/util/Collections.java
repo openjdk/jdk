@@ -165,9 +165,9 @@ public class Collections {
         Object[] a = list.toArray();
         Arrays.sort(a);
         ListIterator<T> i = list.listIterator();
-        for (int j=0; j<a.length; j++) {
+        for (Object e : a) {
             i.next();
-            i.set((T)a[j]);
+            i.set((T) e);
         }
     }
 
@@ -229,9 +229,9 @@ public class Collections {
         Object[] a = list.toArray();
         Arrays.sort(a, (Comparator)c);
         ListIterator<T> i = list.listIterator();
-        for (int j=0; j<a.length; j++) {
+        for (Object e : a) {
             i.next();
-            i.set((T)a[j]);
+            i.set((T) e);
         }
     }
 
@@ -528,9 +528,9 @@ public class Collections {
             // the wildcard but it will require a call to a supplementary
             // private method
             ListIterator it = list.listIterator();
-            for (int i=0; i<arr.length; i++) {
+            for (Object e : arr) {
                 it.next();
-                it.set(arr[i]);
+                it.set(e);
             }
         }
     }
@@ -1283,7 +1283,7 @@ public class Collections {
             private static final long serialVersionUID = -6291252904449939134L;
 
             public EmptyNavigableSet() {
-                super(new TreeSet<E>());
+                super(new TreeSet<>());
             }
 
             private Object readResolve()        { return EMPTY_NAVIGABLE_SET; }
@@ -1910,7 +1910,7 @@ public class Collections {
 
             private static final long serialVersionUID = -2239321462712562324L;
 
-            EmptyNavigableMap()                       { super(new TreeMap<K,V>()); }
+            EmptyNavigableMap()                       { super(new TreeMap<>()); }
 
             @Override
             public NavigableSet<K> navigableKeySet()
