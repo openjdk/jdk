@@ -132,6 +132,10 @@ class ReflectAccess implements jdk.internal.reflect.LangReflectAccess {
         return ex.getTypeAnnotationBytes();
     }
 
+    public Class<?>[] getExecutableSharedParameterTypes(Executable ex) {
+        return ex.getSharedParameterTypes();
+    }
+
     //
     // Copying routines, needed to quickly fabricate new Field,
     // Method, and Constructor objects from templates
