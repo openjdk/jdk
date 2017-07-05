@@ -2081,7 +2081,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
 
 #ifdef _LP64
   case Op_CastPP:
-    if (n->in(1)->is_DecodeN() && UseImplicitNullCheckForNarrowOop) {
+    if (n->in(1)->is_DecodeN() && Universe::narrow_oop_use_implicit_null_checks()) {
       Compile* C = Compile::current();
       Node* in1 = n->in(1);
       const Type* t = n->bottom_type();
@@ -2136,7 +2136,7 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
         new_in2 = in2->in(1);
       } else if (in2->Opcode() == Op_ConP) {
         const Type* t = in2->bottom_type();
-        if (t == TypePtr::NULL_PTR && UseImplicitNullCheckForNarrowOop) {
+        if (t == TypePtr::NULL_PTR && Universe::narrow_oop_use_implicit_null_checks()) {
           new_in2 = ConNode::make(C, TypeNarrowOop::NULL_PTR);
           //
           // This transformation together with CastPP transformation above

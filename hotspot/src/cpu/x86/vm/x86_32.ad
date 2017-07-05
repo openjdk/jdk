@@ -1483,16 +1483,20 @@ encode %{
   // main source block for now.  In future, we can generalize this by
   // adding a syntax that specifies the sizes of fields in an order,
   // so that the adlc can build the emit functions automagically
-  enc_class OpcP %{             // Emit opcode
-    emit_opcode(cbuf,$primary);
+
+  // Emit primary opcode
+  enc_class OpcP %{
+    emit_opcode(cbuf, $primary);
   %}
 
-  enc_class OpcS %{             // Emit opcode
-    emit_opcode(cbuf,$secondary);
+  // Emit secondary opcode
+  enc_class OpcS %{
+    emit_opcode(cbuf, $secondary);
   %}
 
-  enc_class Opcode(immI d8 ) %{ // Emit opcode
-    emit_opcode(cbuf,$d8$$constant);
+  // Emit opcode directly
+  enc_class Opcode(immI d8) %{
+    emit_opcode(cbuf, $d8$$constant);
   %}
 
   enc_class SizePrefix %{
@@ -1688,26 +1692,15 @@ encode %{
     Register Reax = as_Register(EAX_enc); // super class
     Register Recx = as_Register(ECX_enc); // killed
     Register Resi = as_Register(ESI_enc); // sub class
-    Label hit, miss;
+    Label miss;
 
     MacroAssembler _masm(&cbuf);
-    // Compare super with sub directly, since super is not in its own SSA.
-    // The compiler used to emit this test, but we fold it in here,
-    // to allow platform-specific tweaking on sparc.
-    __ cmpptr(Reax, Resi);
-    __ jcc(Assembler::equal, hit);
-#ifndef PRODUCT
-    __ incrementl(ExternalAddress((address)&SharedRuntime::_partial_subtype_ctr));
-#endif //PRODUCT
-    __ movptr(Redi,Address(Resi,sizeof(oopDesc) + Klass::secondary_supers_offset_in_bytes()));
-    __ movl(Recx,Address(Redi,arrayOopDesc::length_offset_in_bytes()));
-    __ addptr(Redi,arrayOopDesc::base_offset_in_bytes(T_OBJECT));
-    __ repne_scan();
-    __ jcc(Assembler::notEqual, miss);
-    __ movptr(Address(Resi,sizeof(oopDesc) + Klass::secondary_super_cache_offset_in_bytes()),Reax);
-    __ bind(hit);
-    if( $primary )
-      __ xorptr(Redi,Redi);
+    __ check_klass_subtype_slow_path(Resi, Reax, Recx, Redi,
+                                     NULL, &miss,
+                                     /*set_cond_codes:*/ true);
+    if ($primary) {
+      __ xorptr(Redi, Redi);
+    }
     __ bind(miss);
   %}
 
@@ -6384,6 +6377,67 @@ instruct bytes_reverse_long(eRegL dst) %{
   ins_cost(125);
   ins_encode( bswap_long_bytes(dst) );
   ins_pipe( ialu_reg_reg);
+%}
+
+
+//---------- Population Count Instructions -------------------------------------
+
+instruct popCountI(eRegI dst, eRegI src) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountI src));
+
+  format %{ "POPCNT $dst, $src" %}
+  ins_encode %{
+    __ popcntl($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct popCountI_mem(eRegI dst, memory mem) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountI (LoadI mem)));
+
+  format %{ "POPCNT $dst, $mem" %}
+  ins_encode %{
+    __ popcntl($dst$$Register, $mem$$Address);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Note: Long.bitCount(long) returns an int.
+instruct popCountL(eRegI dst, eRegL src, eRegI tmp, eFlagsReg cr) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountL src));
+  effect(KILL cr, TEMP tmp, TEMP dst);
+
+  format %{ "POPCNT $dst, $src.lo\n\t"
+            "POPCNT $tmp, $src.hi\n\t"
+            "ADD    $dst, $tmp" %}
+  ins_encode %{
+    __ popcntl($dst$$Register, $src$$Register);
+    __ popcntl($tmp$$Register, HIGH_FROM_LOW($src$$Register));
+    __ addl($dst$$Register, $tmp$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Note: Long.bitCount(long) returns an int.
+instruct popCountL_mem(eRegI dst, memory mem, eRegI tmp, eFlagsReg cr) %{
+  predicate(UsePopCountInstruction);
+  match(Set dst (PopCountL (LoadL mem)));
+  effect(KILL cr, TEMP tmp, TEMP dst);
+
+  format %{ "POPCNT $dst, $mem\n\t"
+            "POPCNT $tmp, $mem+4\n\t"
+            "ADD    $dst, $tmp" %}
+  ins_encode %{
+    //__ popcntl($dst$$Register, $mem$$Address$$first);
+    //__ popcntl($tmp$$Register, $mem$$Address$$second);
+    __ popcntl($dst$$Register, Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp, false));
+    __ popcntl($tmp$$Register, Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp + 4, false));
+    __ addl($dst$$Register, $tmp$$Register);
+  %}
+  ins_pipe(ialu_reg);
 %}
 
 
@@ -12501,15 +12555,12 @@ instruct partialSubtypeCheck( eDIRegP result, eSIRegP sub, eAXRegP super, eCXReg
   effect( KILL rcx, KILL cr );
 
   ins_cost(1100);  // slightly larger than the next version
-  format %{ "CMPL   EAX,ESI\n\t"
-            "JEQ,s  hit\n\t"
-            "MOV    EDI,[$sub+Klass::secondary_supers]\n\t"
+  format %{ "MOV    EDI,[$sub+Klass::secondary_supers]\n\t"
             "MOV    ECX,[EDI+arrayKlass::length]\t# length to scan\n\t"
             "ADD    EDI,arrayKlass::base_offset\t# Skip to start of data; set NZ in case count is zero\n\t"
             "REPNE SCASD\t# Scan *EDI++ for a match with EAX while CX-- != 0\n\t"
             "JNE,s  miss\t\t# Missed: EDI not-zero\n\t"
             "MOV    [$sub+Klass::secondary_super_cache],$super\t# Hit: update cache\n\t"
-     "hit:\n\t"
             "XOR    $result,$result\t\t Hit: EDI zero\n\t"
      "miss:\t" %}
 
@@ -12523,9 +12574,7 @@ instruct partialSubtypeCheck_vs_Zero( eFlagsReg cr, eSIRegP sub, eAXRegP super, 
   effect( KILL rcx, KILL result );
 
   ins_cost(1000);
-  format %{ "CMPL   EAX,ESI\n\t"
-            "JEQ,s  miss\t# Actually a hit; we are done.\n\t"
-            "MOV    EDI,[$sub+Klass::secondary_supers]\n\t"
+  format %{ "MOV    EDI,[$sub+Klass::secondary_supers]\n\t"
             "MOV    ECX,[EDI+arrayKlass::length]\t# length to scan\n\t"
             "ADD    EDI,arrayKlass::base_offset\t# Skip to start of data; set NZ in case count is zero\n\t"
             "REPNE SCASD\t# Scan *EDI++ for a match with EAX while CX-- != 0\n\t"

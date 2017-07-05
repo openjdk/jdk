@@ -85,9 +85,9 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
       jlongSize    = remoteDebugger.getJLongSize();
       jshortSize   = remoteDebugger.getJShortSize();
       javaPrimitiveTypesConfigured = true;
-      heapBase     = remoteDebugger.getHeapBase();
+      narrowOopBase  = remoteDebugger.getNarrowOopBase();
+      narrowOopShift = remoteDebugger.getNarrowOopShift();
       heapOopSize  = remoteDebugger.getHeapOopSize();
-      logMinObjAlignmentInBytes  = remoteDebugger.getLogMinObjAlignmentInBytes();
     }
     catch (RemoteException e) {
       throw new DebuggerException(e);
