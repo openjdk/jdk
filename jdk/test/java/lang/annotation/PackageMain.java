@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.lang.annotation.Documented;
-
 public class PackageMain {
     public static void main(String[] args) throws Exception {
         Class<?> c = Class.forName("foo.bar.Baz");
@@ -30,7 +28,7 @@ public class PackageMain {
         System.out.println("cl=" + c.getClassLoader());
         Package p = c.getPackage();
         System.out.println("p=" + p);
-        Documented d = p.getAnnotation(Documented.class);
+        Deprecated d = p.getAnnotation(Deprecated.class);
         if (d == null) throw new Error();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -486,8 +486,8 @@ class PassThroughFileSystem extends FileSystem {
         }
 
         @Override
-        public Path toRealPath(boolean resolveLinks) throws IOException {
-            return wrap(delegate.toRealPath(resolveLinks));
+        public Path toRealPath(LinkOption... options) throws IOException {
+            return wrap(delegate.toRealPath(options));
         }
 
         @Override

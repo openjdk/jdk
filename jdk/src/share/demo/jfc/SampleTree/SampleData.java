@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,32 +29,27 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
 import java.awt.Color;
 import java.awt.Font;
 
+
 /**
-  * @author Scott Violet
-  */
+ * @author Scott Violet
+ */
+public class SampleData extends Object {
 
-public class SampleData extends Object
-{
     /** Font used for drawing. */
-    protected Font          font;
-
+    protected Font font;
     /** Color used for text. */
-    protected Color         color;
-
+    protected Color color;
     /** Value to display. */
-    protected String        string;
-
+    protected String string;
 
     /**
-      * Constructs a new instance of SampleData with the passed in
-      * arguments.
-      */
+     * Constructs a new instance of SampleData with the passed in
+     * arguments.
+     */
     public SampleData(Font newFont, Color newColor, String newString) {
         font = newFont;
         color = newColor;
@@ -62,47 +57,48 @@ public class SampleData extends Object
     }
 
     /**
-      * Sets the font that is used to represent this object.
-      */
+     * Sets the font that is used to represent this object.
+     */
     public void setFont(Font newFont) {
         font = newFont;
     }
 
     /**
-      * Returns the Font used to represent this object.
-      */
+     * Returns the Font used to represent this object.
+     */
     public Font getFont() {
         return font;
     }
 
     /**
-      * Sets the color used to draw the text.
-      */
+     * Sets the color used to draw the text.
+     */
     public void setColor(Color newColor) {
         color = newColor;
     }
 
     /**
-      * Returns the color used to draw the text.
-      */
+     * Returns the color used to draw the text.
+     */
     public Color getColor() {
         return color;
     }
 
     /**
-      * Sets the string to display for this object.
-      */
+     * Sets the string to display for this object.
+     */
     public void setString(String newString) {
         string = newString;
     }
 
     /**
-      * Returnes the string to display for this object.
-      */
+     * Returnes the string to display for this object.
+     */
     public String string() {
         return string;
     }
 
+    @Override
     public String toString() {
         return string;
     }
