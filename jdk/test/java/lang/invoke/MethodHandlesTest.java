@@ -505,8 +505,15 @@ public class MethodHandlesTest {
             System.out.print(':');
     }
 
+    static final boolean DEBUG_METHOD_HANDLE_NAMES = Boolean.getBoolean("java.lang.invoke.MethodHandle.DEBUG_NAMES");
+
     // rough check of name string
-    static void assertNameStringContains(Object x, String s) {
+    static void assertNameStringContains(MethodHandle x, String s) {
+        if (!DEBUG_METHOD_HANDLE_NAMES) {
+            // ignore s
+            assertEquals("MethodHandle"+x.type(), x.toString());
+            return;
+        }
         if (x.toString().contains(s))  return;
         assertEquals(s, x);
     }
