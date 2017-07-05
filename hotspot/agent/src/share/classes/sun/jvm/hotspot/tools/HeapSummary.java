@@ -46,8 +46,7 @@ public class HeapSummary extends Tool {
 
    public static void main(String[] args) {
       HeapSummary hs = new HeapSummary();
-      hs.start(args);
-      hs.stop();
+      hs.execute(args);
    }
 
    public void run() {

@@ -500,6 +500,8 @@ public:
   ProjNode* create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry,
                                         Deoptimization::DeoptReason reason);
 
+  void remove_speculative_types();
+
 #ifndef PRODUCT
 protected:
   // Sub-quadratic implementation of VerifyIterativeGVN.

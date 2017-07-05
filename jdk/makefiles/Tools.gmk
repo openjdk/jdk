@@ -32,7 +32,7 @@ TOOLS_SRC := $(JDK_TOPDIR)/make/tools/src \
     $(JDK_TOPDIR)/makefiles/sun/osxapp \
     $(JDK_TOPDIR)/make/tools/swing-beans
 
-ifneq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
   TOOLS_SRC += $(JDK_TOPDIR)/src/solaris/classes/sun/awt/X11/generator
 endif
 
