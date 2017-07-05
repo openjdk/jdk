@@ -106,7 +106,10 @@ public class DoubleByte {
         Arrays.fill(B2C_UNMAPPABLE, (char)UNMAPPABLE_DECODING);
     }
 
-    public static class Decoder extends CharsetDecoder {
+    public static class Decoder extends CharsetDecoder
+                                implements DelegatableDecoder
+    {
+
         final char[][] b2c;
         final char[] b2cSB;
         final int b2Min;
@@ -174,6 +177,7 @@ public class DoubleByte {
         protected CoderResult decodeBufferLoop(ByteBuffer src, CharBuffer dst) {
             int mark = src.position();
             try {
+
                 while (src.hasRemaining() && dst.hasRemaining()) {
                     int b1 = src.get() & 0xff;
                     char c = b2cSB[b1];
@@ -197,11 +201,20 @@ public class DoubleByte {
             }
         }
 
-        protected CoderResult decodeLoop(ByteBuffer src, CharBuffer dst) {
+        // Make some protected methods public for use by JISAutoDetect
+        public CoderResult decodeLoop(ByteBuffer src, CharBuffer dst) {
             if (src.hasArray() && dst.hasArray())
                 return decodeArrayLoop(src, dst);
             else
                 return decodeBufferLoop(src, dst);
+        }
+
+        public void implReset() {
+            super.implReset();
+        }
+
+        public CoderResult implFlush(CharBuffer out) {
+            return super.implFlush(out);
         }
 
         // decode loops are not using decodeSingle/Double() for performance
@@ -230,7 +243,7 @@ public class DoubleByte {
             super(cs, b2c, b2cSB, b2Min, b2Max);
         }
 
-        protected void implReset() {
+        public void implReset() {
             currentState = SBCS;
         }
 
@@ -400,7 +413,7 @@ public class DoubleByte {
         private final char[] c2bIndex;
         Surrogate.Parser sgp;
 
-        Encoder(Charset cs, char[] c2b, char[] c2bIndex) {
+        protected Encoder(Charset cs, char[] c2b, char[] c2bIndex) {
             super(cs, 2.0f, 2.0f);
             this.c2b = c2b;
             this.c2bIndex = c2bIndex;

@@ -25,8 +25,15 @@
 
 package sun.misc;
 
-import java.nio.BufferPoolMXBean;
-
 public interface JavaNioAccess {
-    BufferPoolMXBean getDirectBufferPoolMXBean();
+    /**
+     * Provides access to information on buffer usage.
+     */
+    interface BufferPool {
+        String getName();
+        long getCount();
+        long getTotalCapacity();
+        long getMemoryUsed();
+    }
+    BufferPool getDirectBufferPool();
 }

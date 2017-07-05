@@ -151,6 +151,16 @@ public class Shutdown {
             } catch (IOException ioe) {
                 unexpected(ioe);
             }
+
+            /* TEST 6: getRemoteAddresses */
+            debug("Test 6: getRemoteAddresses");
+            try {
+                java.util.Set<SocketAddress> remoteAddrs = channel.getRemoteAddresses();
+                check(remoteAddrs.isEmpty(),
+                         "A shutdown channel should not have remote addresses");
+            } catch (IOException ioe) {
+                unexpected(ioe);
+            }
         } catch (IOException ioe) {
             unexpected(ioe);
         } catch (InterruptedException ie) {

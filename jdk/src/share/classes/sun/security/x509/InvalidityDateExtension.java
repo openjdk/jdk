@@ -140,7 +140,11 @@ public class InvalidityDateExtension extends Extension
      */
     public Object get(String name) throws IOException {
         if (name.equalsIgnoreCase(DATE)) {
-            return date;
+            if (date == null) {
+                return null;
+            } else {
+                return (new Date(date.getTime()));    // clone
+            }
         } else {
             throw new IOException
                 ("Name not supported by InvalidityDateExtension");

@@ -53,4 +53,15 @@ class UnixFileKey {
         UnixFileKey other = (UnixFileKey)obj;
         return (this.st_dev == other.st_dev) && (this.st_ino == other.st_ino);
     }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("(dev=")
+          .append(Long.toHexString(st_dev))
+          .append(",ino=")
+          .append(st_ino)
+          .append(')');
+        return sb.toString();
+    }
 }

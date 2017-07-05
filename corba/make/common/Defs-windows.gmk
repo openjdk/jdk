@@ -365,10 +365,10 @@ ifndef COPYRIGHT_YEAR
     COPYRIGHT_YEAR = 2007 
 endif
 
-RC_FLAGS += -d "J2SE_BUILD_ID=$(FULL_VERSION)" \
-            -d "J2SE_COMPANY=$(COMPANY_NAME)" \
-            -d "J2SE_COMPONENT=$(PRODUCT_NAME) Platform SE binary" \
-            -d "J2SE_VER=$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION).$(J2SE_UPDATE_VER).$(COOKED_BUILD_NUMBER)" \
-            -d "J2SE_COPYRIGHT=Copyright \xA9 $(COPYRIGHT_YEAR)" \
-            -d "J2SE_NAME=$(PRODUCT_NAME) Platform SE $(JDK_MINOR_VERSION) $(J2SE_UPDATE_META_TAG)" \
-            -d "J2SE_FVER=$(JDK_VERSION)"
+RC_FLAGS += -d "JDK_BUILD_ID=$(FULL_VERSION)" \
+            -d "JDK_COMPANY=$(COMPANY_NAME)" \
+            -d "JDK_COMPONENT=$(PRODUCT_NAME) Platform SE binary" \
+            -d "JDK_VER=$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION).$(JDK_UPDATE_VER).$(COOKED_BUILD_NUMBER)" \
+            -d "JDK_COPYRIGHT=Copyright \xA9 $(COPYRIGHT_YEAR)" \
+            -d "JDK_NAME=$(PRODUCT_NAME) Platform SE $(JDK_MINOR_VERSION) $(JDK_UPDATE_META_TAG)" \
+            -d "JDK_FVER=$(JDK_VERSION)"

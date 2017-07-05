@@ -444,11 +444,10 @@ public class SortingFocusTraversalPolicy
         for (Component comp : cycle) {
             if (accept(comp)) {
                 return comp;
-            } else if (comp instanceof Container && comp != aContainer) {
-                Container cont = (Container)comp;
-                if (cont.isFocusTraversalPolicyProvider()) {
-                    return cont.getFocusTraversalPolicy().getDefaultComponent(cont);
-                }
+            } else if (comp != aContainer &&
+                       (comp = getComponentDownCycle(comp, FORWARD_TRAVERSAL)) != null)
+            {
+                return comp;
             }
         }
         return null;

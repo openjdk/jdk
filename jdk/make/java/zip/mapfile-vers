@@ -51,6 +51,7 @@ SUNWprivate_1.1 {
 		Java_java_util_zip_Inflater_reset;
 		Java_java_util_zip_Inflater_setDictionary;
 		Java_java_util_zip_ZipFile_close;
+		Java_java_util_zip_ZipFile_getCommentBytes;
 		Java_java_util_zip_ZipFile_freeEntry;
 		Java_java_util_zip_ZipFile_getEntry;
 		Java_java_util_zip_ZipFile_getEntryBytes;

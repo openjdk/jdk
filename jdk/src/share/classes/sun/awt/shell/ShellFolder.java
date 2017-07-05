@@ -202,8 +202,16 @@ public abstract class ShellFolder extends File {
     private static ShellFolderManager shellFolderManager;
 
     static {
-        Class managerClass = (Class)Toolkit.getDefaultToolkit().
-            getDesktopProperty("Shell.shellFolderManager");
+        String managerClassName = (String)Toolkit.getDefaultToolkit().
+                                      getDesktopProperty("Shell.shellFolderManager");
+        Class managerClass = null;
+        try {
+            managerClass = Class.forName(managerClassName);
+        // swallow the exceptions below and use default shell folder
+        } catch(ClassNotFoundException e) {
+        } catch(NullPointerException e) {
+        }
+
         if (managerClass == null) {
             managerClass = ShellFolderManager.class;
         }

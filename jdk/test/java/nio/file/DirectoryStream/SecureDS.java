@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 6838333
  * @summary Unit test for java.nio.file.SecureDirectoryStream
  * @library ..
  */
@@ -41,7 +41,7 @@ public class SecureDS {
     public static void main(String[] args) throws IOException {
         Path dir = TestUtil.createTemporaryDirectory();
         try {
-            DirectoryStream stream = dir.newDirectoryStream();
+            DirectoryStream<Path> stream = dir.newDirectoryStream();
             stream.close();
             if (!(stream instanceof SecureDirectoryStream)) {
                 System.out.println("SecureDirectoryStream not supported.");
@@ -81,8 +81,8 @@ public class SecureDS {
 
         // open directory and then move it so that it is no longer accessible
         // via its original path.
-        SecureDirectoryStream stream =
-            (SecureDirectoryStream)dir1.newDirectoryStream();
+        SecureDirectoryStream<Path> stream =
+            (SecureDirectoryStream<Path>)dir1.newDirectoryStream();
         dir1.moveTo(dir2);
 
         // Test: iterate over all entries
@@ -95,18 +95,6 @@ public class SecureDS {
             .getFileAttributeView(BasicFileAttributeView.class)
                 .readAttributes()
                     .isDirectory());
-
-        // Test: dynamic access to directory's attributes
-        BasicFileAttributeView view = stream.
-            getFileAttributeView(BasicFileAttributeView.class);
-        Map<String,?> attrs = view.readAttributes("*");
-        assertTrue((Boolean)attrs.get("isDirectory"));
-        attrs = view.readAttributes("isRegularFile", "size");
-        assertTrue(!(Boolean)attrs.get("isRegularFile"));
-        assertTrue((Long)attrs.get("size") >= 0);
-        int linkCount = (Integer)view.getAttribute("linkCount");
-        assertTrue(linkCount > 0);
-        view.setAttribute("lastModifiedTime", 0L);
 
         // Test: getFileAttributeView to access attributes of entries
         assertTrue(stream
@@ -144,17 +132,6 @@ public class SecureDS {
                         .isSymbolicLink());
         }
 
-        // Test: dynamic access to entry attributes
-        view = stream
-             .getFileAttributeView(fileEntry, PosixFileAttributeView.class, NOFOLLOW_LINKS);
-        if (view != null) {
-            attrs = view.readAttributes("owner", "size");
-            UserPrincipal owner = (UserPrincipal)attrs.get("owner");
-            assertTrue(owner != null);
-            assertTrue((Long)attrs.get("size") >= 0L);
-            view.setAttribute("lastAccessTime", 0L);
-        }
-
         // Test: newByteChannel
         Set<StandardOpenOption> opts = Collections.emptySet();
         stream.newByteChannel(fileEntry, opts).close();
@@ -170,12 +147,13 @@ public class SecureDS {
         }
 
         // Test: newDirectoryStream
-        stream.newDirectoryStream(dirEntry, true, null).close();
-        stream.newDirectoryStream(dirEntry, false, null).close();
+        stream.newDirectoryStream(dirEntry).close();
+        stream.newDirectoryStream(dirEntry, LinkOption.NOFOLLOW_LINKS).close();
         if (supportsLinks) {
-            stream.newDirectoryStream(link2Entry, true, null).close();
+            stream.newDirectoryStream(link2Entry).close();
             try {
-                stream.newDirectoryStream(link2Entry, false, null).close();
+                stream.newDirectoryStream(link2Entry, LinkOption.NOFOLLOW_LINKS)
+                    .close();
                 shouldNotGetHere();
             } catch (IOException x) { }
         }
@@ -193,7 +171,7 @@ public class SecureDS {
         stream.close();
         dir2.moveTo(dir1);
         dir1.resolve(fileEntry).createFile();
-        stream = (SecureDirectoryStream)dir1.newDirectoryStream();
+        stream = (SecureDirectoryStream<Path>)dir1.newDirectoryStream();
         dir1.moveTo(dir2);
         Iterator<Path> iter = stream.iterator();
         int removed = 0;
@@ -227,10 +205,10 @@ public class SecureDS {
         Path target = Paths.get("newfile");
 
         // open stream to both directories
-        SecureDirectoryStream stream1 =
-            (SecureDirectoryStream)dir1.newDirectoryStream();
-        SecureDirectoryStream stream2 =
-            (SecureDirectoryStream)dir2.newDirectoryStream();
+        SecureDirectoryStream<Path> stream1 =
+            (SecureDirectoryStream<Path>)dir1.newDirectoryStream();
+        SecureDirectoryStream<Path> stream2 =
+            (SecureDirectoryStream<Path>)dir2.newDirectoryStream();
 
         // Test: move dir1/myfile -> dir2/newfile
         stream1.move(fileEntry, stream2, target);
@@ -259,8 +237,8 @@ public class SecureDS {
         if (testDirAsString != null) {
             Path testDir = Paths.get(testDirAsString);
             if (!dir1.getFileStore().equals(testDir.getFileStore())) {
-                SecureDirectoryStream ts =
-                    (SecureDirectoryStream)testDir.newDirectoryStream();
+                SecureDirectoryStream<Path> ts =
+                    (SecureDirectoryStream<Path>)testDir.newDirectoryStream();
                 dir1.resolve(fileEntry).createFile();
                 try {
                     stream1.move(fileEntry, ts, target);
@@ -281,8 +259,8 @@ public class SecureDS {
         Path file = Paths.get("file");
         dir.resolve(file).createFile();
 
-        SecureDirectoryStream stream =
-            (SecureDirectoryStream)dir.newDirectoryStream();
+        SecureDirectoryStream<Path> stream =
+            (SecureDirectoryStream<Path>)dir.newDirectoryStream();
 
         // NullPointerException
         try {
@@ -322,7 +300,7 @@ public class SecureDS {
             shouldNotGetHere();
         } catch (NullPointerException x) { }
         try {
-            stream.newDirectoryStream(null, true, null);
+            stream.newDirectoryStream(null);
             shouldNotGetHere();
         } catch (NullPointerException x) { }
         try {
@@ -340,7 +318,7 @@ public class SecureDS {
 
         // ClosedDirectoryStreamException
         try {
-            stream.newDirectoryStream(file, true, null);
+            stream.newDirectoryStream(file);
             shouldNotGetHere();
         } catch (ClosedDirectoryStreamException x) { }
         try {

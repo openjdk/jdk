@@ -56,7 +56,7 @@ class Main {
     Set<File> entries = new LinkedHashSet<File>();
 
     // Directories specified by "-C" operation.
-    List<String> paths = new ArrayList<String>();
+    Set<String> paths = new HashSet<String>();
 
     CRC32 crc32 = new CRC32();
     /*
