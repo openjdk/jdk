@@ -372,8 +372,7 @@ static bool attachToProcess(JNIEnv* env, jobject obj, jint pid) {
 
      We are attaching to a process in 'read-only' mode. i.e., we do not want to
      put breakpoints, suspend/resume threads etc. For read-only JDI and HSDB kind of
-     usage this should suffice. We are not intending to use this for full-fledged
-     ProcessControl implementation to be used with BugSpotAgent.
+     usage this should suffice.
 
      Please refer to DEBUG_ATTACH_NONINVASIVE mode source comments from dbgeng.h.
      In this mode, debug engine does not call DebugActiveProrcess. i.e., we are not

@@ -58,10 +58,6 @@ public class PMap extends Tool {
       }
    }
 
-   protected boolean requiresVM() {
-      return false;
-   }
-
    public static void main(String[] args) throws Exception {
       PMap t = new PMap();
       t.start(args);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -597,10 +597,6 @@ ciConstant ciEnv::get_constant_by_index_impl(constantPoolHandle cpool,
     assert (klass->is_instance_klass() || klass->is_array_klass(),
             "must be an instance or array klass ");
     return ciConstant(T_OBJECT, klass->java_mirror());
-  } else if (tag.is_object()) {
-    oop obj = cpool->object_at(index);
-    ciObject* ciobj = get_object(obj);
-    return ciConstant(T_OBJECT, ciobj);
   } else if (tag.is_method_type()) {
     // must execute Java code to link this CP entry into cache[i].f1
     ciSymbol* signature = get_symbol(cpool->method_type_signature_at(index));
