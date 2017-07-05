@@ -129,8 +129,8 @@ class ParallelScavengeHeap : public CollectedHeap {
     return perm_gen()->is_in(p);
   }
 
-  static bool is_in_young(oop *p);        // reserved part
-  static bool is_in_old_or_perm(oop *p);  // reserved part
+  inline bool is_in_young(oop p);        // reserved part
+  inline bool is_in_old_or_perm(oop p);  // reserved part
 
   // Memory allocation.   "gc_time_limit_was_exceeded" will
   // be set to true if the adaptive size policy determine that
@@ -190,6 +190,10 @@ class ParallelScavengeHeap : public CollectedHeap {
   virtual bool can_elide_tlab_store_barriers() const {
     return true;
   }
+
+  // Return true if we don't we need a store barrier for
+  // initializing stores to an object at this address.
+  virtual bool can_elide_initializing_store_barrier(oop new_obj);
 
   // Can a compiler elide a store barrier when it writes
   // a permanent oop into the heap?  Applies when the compiler

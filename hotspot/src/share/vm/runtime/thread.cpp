@@ -1213,6 +1213,7 @@ JavaThread::JavaThread(bool is_attaching) :
 {
   initialize();
   _is_attaching = is_attaching;
+  assert(_deferred_card_mark.is_empty(), "Default MemRegion ctor");
 }
 
 bool JavaThread::reguard_stack(address cur_sp) {
@@ -2318,6 +2319,10 @@ void JavaThread::gc_prologue() {
 
 
 void JavaThread::oops_do(OopClosure* f, CodeBlobClosure* cf) {
+  // Flush deferred store-barriers, if any, associated with
+  // initializing stores done by this JavaThread in the current epoch.
+  Universe::heap()->flush_deferred_store_barrier(this);
+
   // The ThreadProfiler oops_do is done from FlatProfiler::oops_do
   // since there may be more than one thread using each ThreadProfiler.
 

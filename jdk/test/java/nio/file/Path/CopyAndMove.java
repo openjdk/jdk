@@ -92,7 +92,6 @@ public class CopyAndMove {
     {
         assertTrue(attrs1.isReadOnly() == attrs2.isReadOnly());
         assertTrue(attrs1.isHidden() == attrs2.isHidden());
-        assertTrue(attrs1.isArchive() == attrs2.isArchive());
         assertTrue(attrs1.isSystem() == attrs2.isSystem());
     }
 
