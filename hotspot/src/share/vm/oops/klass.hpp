@@ -583,20 +583,20 @@ protected:
 
   // Iterators specialized to particular subtypes
   // of ExtendedOopClosure, to avoid closure virtual calls.
-#define Klass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)                                      \
-  virtual int oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) = 0;                    \
-  /* Iterates "closure" over all the oops in "obj" (of type "this") within "mr". */                \
-  virtual int oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* closure, MemRegion mr) = 0;
+#define Klass_OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)                                          \
+  virtual int oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) = 0;                        \
+  /* Iterates "closure" over all the oops in "obj" (of type "this") within "mr". */                    \
+  virtual int oop_oop_iterate_bounded##nv_suffix(oop obj, OopClosureType* closure, MemRegion mr) = 0;
 
   ALL_OOP_OOP_ITERATE_CLOSURES_1(Klass_OOP_OOP_ITERATE_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(Klass_OOP_OOP_ITERATE_DECL)
 
 #if INCLUDE_ALL_GCS
-#define Klass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)                    \
+#define Klass_OOP_OOP_ITERATE_DECL_BACKWARDS(OopClosureType, nv_suffix)                    \
   virtual int oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) = 0;
 
-  ALL_OOP_OOP_ITERATE_CLOSURES_1(Klass_OOP_OOP_ITERATE_BACKWARDS_DECL)
-  ALL_OOP_OOP_ITERATE_CLOSURES_2(Klass_OOP_OOP_ITERATE_BACKWARDS_DECL)
+  ALL_OOP_OOP_ITERATE_CLOSURES_1(Klass_OOP_OOP_ITERATE_DECL_BACKWARDS)
+  ALL_OOP_OOP_ITERATE_CLOSURES_2(Klass_OOP_OOP_ITERATE_DECL_BACKWARDS)
 #endif // INCLUDE_ALL_GCS
 
   virtual void array_klasses_do(void f(Klass* k)) {}
@@ -650,5 +650,45 @@ protected:
   void klass_update_barrier_set(oop v);
   void klass_update_barrier_set_pre(oop* p, oop v);
 };
+
+// Helper to convert the oop iterate macro suffixes into bool values that can be used by template functions.
+#define nvs_nv_to_bool true
+#define nvs_v_to_bool  false
+#define nvs_to_bool(nv_suffix) nvs##nv_suffix##_to_bool
+
+// Oop iteration macros for declarations.
+// Used to generate declarations in the *Klass header files.
+
+#define OOP_OOP_ITERATE_DECL(OopClosureType, nv_suffix)                                    \
+  int oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure);                        \
+  int oop_oop_iterate_bounded##nv_suffix(oop obj, OopClosureType* closure, MemRegion mr);
+
+#if INCLUDE_ALL_GCS
+#define OOP_OOP_ITERATE_DECL_BACKWARDS(OopClosureType, nv_suffix)              \
+  int oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure);
+#endif // INCLUDE_ALL_GCS
+
+
+// Oop iteration macros for definitions.
+// Used to generate definitions in the *Klass.inline.hpp files.
+
+#define OOP_OOP_ITERATE_DEFN(KlassType, OopClosureType, nv_suffix)             \
+int KlassType::oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {  \
+  return oop_oop_iterate<nvs_to_bool(nv_suffix)>(obj, closure);                \
+}
+
+#if INCLUDE_ALL_GCS
+#define OOP_OOP_ITERATE_DEFN_BACKWARDS(KlassType, OopClosureType, nv_suffix)             \
+int KlassType::oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {  \
+  return oop_oop_iterate_reverse<nvs_to_bool(nv_suffix)>(obj, closure);                  \
+}
+#else
+#define OOP_OOP_ITERATE_DEFN_BACKWARDS(KlassType, OopClosureType, nv_suffix)
+#endif
+
+#define OOP_OOP_ITERATE_DEFN_BOUNDED(KlassType, OopClosureType, nv_suffix)                           \
+int KlassType::oop_oop_iterate_bounded##nv_suffix(oop obj, OopClosureType* closure, MemRegion mr) {  \
+  return oop_oop_iterate_bounded<nvs_to_bool(nv_suffix)>(obj, closure, mr);                          \
+}
 
 #endif // SHARE_VM_OOPS_KLASS_HPP

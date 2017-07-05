@@ -253,9 +253,6 @@ public class ObjectInputStream
     /** flag set when at end of field value block with no TC_ENDBLOCKDATA */
     private boolean defaultDataEnd = false;
 
-    /** buffer for reading primitive field values */
-    private byte[] primVals;
-
     /** if true, invoke readObjectOverride() instead of readObject() */
     private final boolean enableOverride;
     /** if true, invoke resolveObject() */
@@ -500,7 +497,11 @@ public class ObjectInputStream
         Object curObj = ctx.getObj();
         ObjectStreamClass curDesc = ctx.getDesc();
         bin.setBlockDataMode(false);
-        defaultReadFields(curObj, curDesc);
+        FieldValues vals = defaultReadFields(curObj, curDesc);
+        if (curObj != null) {
+            defaultCheckFieldValues(curObj, curDesc, vals);
+            defaultSetFieldValues(curObj, curDesc, vals);
+        }
         bin.setBlockDataMode(true);
         if (!curDesc.hasWriteObjectData()) {
             /*
@@ -1881,6 +1882,26 @@ public class ObjectInputStream
         throws IOException
     {
         ObjectStreamClass.ClassDataSlot[] slots = desc.getClassDataLayout();
+        // Best effort Failure Atomicity; slotValues will be non-null if field
+        // values can be set after reading all field data in the hierarchy.
+        // Field values can only be set after reading all data if there are no
+        // user observable methods in the hierarchy, readObject(NoData). The
+        // top most Serializable class in the hierarchy can be skipped.
+        FieldValues[] slotValues = null;
+
+        boolean hasSpecialReadMethod = false;
+        for (int i = 1; i < slots.length; i++) {
+            ObjectStreamClass slotDesc = slots[i].desc;
+            if (slotDesc.hasReadObjectMethod()
+                  || slotDesc.hasReadObjectNoDataMethod()) {
+                hasSpecialReadMethod = true;
+                break;
+            }
+        }
+        // No special read methods, can store values and defer setting.
+        if (!hasSpecialReadMethod)
+            slotValues = new FieldValues[slots.length];
+
         for (int i = 0; i < slots.length; i++) {
             ObjectStreamClass slotDesc = slots[i].desc;
 
@@ -1917,7 +1938,13 @@ public class ObjectInputStream
                      */
                     defaultDataEnd = false;
                 } else {
-                    defaultReadFields(obj, slotDesc);
+                    FieldValues vals = defaultReadFields(obj, slotDesc);
+                    if (slotValues != null) {
+                        slotValues[i] = vals;
+                    } else if (obj != null) {
+                        defaultCheckFieldValues(obj, slotDesc, vals);
+                        defaultSetFieldValues(obj, slotDesc, vals);
+                    }
                 }
                 if (slotDesc.hasWriteObjectData()) {
                     skipCustomData();
@@ -1931,6 +1958,19 @@ public class ObjectInputStream
                 {
                     slotDesc.invokeReadObjectNoData(obj);
                 }
+            }
+        }
+
+        if (obj != null && slotValues != null) {
+            // Check that the non-primitive types are assignable for all slots
+            // before assigning.
+            for (int i = 0; i < slots.length; i++) {
+                if (slotValues[i] != null)
+                    defaultCheckFieldValues(obj, slots[i].desc, slotValues[i]);
+            }
+            for (int i = 0; i < slots.length; i++) {
+                if (slotValues[i] != null)
+                    defaultSetFieldValues(obj, slots[i].desc, slotValues[i]);
             }
         }
     }
@@ -1964,12 +2004,22 @@ public class ObjectInputStream
         }
     }
 
+    private class FieldValues {
+        final byte[] primValues;
+        final Object[] objValues;
+
+        FieldValues(byte[] primValues, Object[] objValues) {
+            this.primValues = primValues;
+            this.objValues = objValues;
+        }
+    }
+
     /**
      * Reads in values of serializable fields declared by given class
-     * descriptor.  If obj is non-null, sets field values in obj.  Expects that
-     * passHandle is set to obj's handle before this method is called.
+     * descriptor. Expects that passHandle is set to obj's handle before this
+     * method is called.
      */
-    private void defaultReadFields(Object obj, ObjectStreamClass desc)
+    private FieldValues defaultReadFields(Object obj, ObjectStreamClass desc)
         throws IOException
     {
         Class<?> cl = desc.forClass();
@@ -1977,22 +2027,19 @@ public class ObjectInputStream
             throw new ClassCastException();
         }
 
+        byte[] primVals = null;
         int primDataSize = desc.getPrimDataSize();
         if (primDataSize > 0) {
-            if (primVals == null || primVals.length < primDataSize) {
-                primVals = new byte[primDataSize];
-            }
+            primVals = new byte[primDataSize];
             bin.readFully(primVals, 0, primDataSize, false);
-            if (obj != null) {
-                desc.setPrimFieldValues(obj, primVals);
-            }
         }
 
+        Object[] objVals = null;
         int numObjFields = desc.getNumObjFields();
         if (numObjFields > 0) {
             int objHandle = passHandle;
             ObjectStreamField[] fields = desc.getFields(false);
-            Object[] objVals = new Object[numObjFields];
+            objVals = new Object[numObjFields];
             int numPrimFields = fields.length - objVals.length;
             for (int i = 0; i < objVals.length; i++) {
                 ObjectStreamField f = fields[numPrimFields + i];
@@ -2001,11 +2048,30 @@ public class ObjectInputStream
                     handles.markDependency(objHandle, passHandle);
                 }
             }
-            if (obj != null) {
-                desc.setObjFieldValues(obj, objVals);
-            }
             passHandle = objHandle;
         }
+
+        return new FieldValues(primVals, objVals);
+    }
+
+    /** Throws ClassCastException if any value is not assignable. */
+    private void defaultCheckFieldValues(Object obj, ObjectStreamClass desc,
+                                         FieldValues values) {
+        Object[] objectValues = values.objValues;
+        if (objectValues != null)
+            desc.checkObjFieldValueTypes(obj, objectValues);
+    }
+
+    /** Sets field values in obj. */
+    private void defaultSetFieldValues(Object obj, ObjectStreamClass desc,
+                                       FieldValues values) {
+        byte[] primValues = values.primValues;
+        Object[] objectValues = values.objValues;
+
+        if (primValues != null)
+            desc.setPrimFieldValues(obj, primValues);
+        if (objectValues != null)
+            desc.setObjFieldValues(obj, objectValues);
     }
 
     /**

@@ -27,6 +27,7 @@
 
 #include "memory/iterator.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -187,29 +188,9 @@ INLINE int InstanceKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closu
 
 #undef INLINE
 
-
-#define InstanceKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)              \
-int InstanceKlass::oop_oop_iterate##nv_suffix(oop obj, OopClosureType* closure) {  \
-  return oop_oop_iterate<nvs_to_bool(nv_suffix)>(obj, closure);                    \
-}
-
-#if INCLUDE_ALL_GCS
-#define InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)              \
-int InstanceKlass::oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* closure) {  \
-  return oop_oop_iterate_reverse<nvs_to_bool(nv_suffix)>(obj, closure);                      \
-}
-#else
-#define InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
-#endif
-
-#define InstanceKlass_OOP_OOP_ITERATE_DEFN_m(OopClosureType, nv_suffix)                              \
-int InstanceKlass::oop_oop_iterate##nv_suffix##_m(oop obj, OopClosureType* closure, MemRegion mr) {  \
-  return oop_oop_iterate_bounded<nvs_to_bool(nv_suffix)>(obj, closure, mr);                          \
-}
-
 #define ALL_INSTANCE_KLASS_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)  \
-  InstanceKlass_OOP_OOP_ITERATE_DEFN(          OopClosureType, nv_suffix)   \
-  InstanceKlass_OOP_OOP_ITERATE_DEFN_m(        OopClosureType, nv_suffix)   \
-  InstanceKlass_OOP_OOP_ITERATE_BACKWARDS_DEFN(OopClosureType, nv_suffix)
+  OOP_OOP_ITERATE_DEFN(          InstanceKlass, OopClosureType, nv_suffix)  \
+  OOP_OOP_ITERATE_DEFN_BOUNDED(  InstanceKlass, OopClosureType, nv_suffix)  \
+  OOP_OOP_ITERATE_DEFN_BACKWARDS(InstanceKlass, OopClosureType, nv_suffix)
 
 #endif // SHARE_VM_OOPS_INSTANCEKLASS_INLINE_HPP

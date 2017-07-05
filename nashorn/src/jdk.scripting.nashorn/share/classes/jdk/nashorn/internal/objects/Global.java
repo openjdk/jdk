@@ -928,9 +928,11 @@ public final class Global extends ScriptObject implements Scope {
     private final Context context;
 
     // current ScriptContext to use - can be null.
-    private ScriptContext scontext;
+    private ThreadLocal<ScriptContext> scontext;
     // current ScriptEngine associated - can be null.
     private ScriptEngine engine;
+    // initial ScriptContext - can be null
+    private volatile ScriptContext initscontext;
 
     // ES6 global lexical scope.
     private final LexicalScope lexicalScope;
@@ -940,10 +942,25 @@ public final class Global extends ScriptObject implements Scope {
 
     /**
      * Set the current script context
-     * @param scontext script context
+     * @param ctxt script context
      */
-    public void setScriptContext(final ScriptContext scontext) {
-        this.scontext = scontext;
+    public void setScriptContext(final ScriptContext ctxt) {
+        assert scontext != null;
+        scontext.set(ctxt);
+    }
+
+    /**
+     * Get the current script context
+     * @return current script context
+     */
+    public ScriptContext getScriptContext() {
+        assert scontext != null;
+        return scontext.get();
+    }
+
+    private ScriptContext currentContext() {
+        final ScriptContext sc = scontext != null? scontext.get() : null;
+        return sc == null? initscontext : sc;
     }
 
     @Override
@@ -1056,14 +1073,19 @@ public final class Global extends ScriptObject implements Scope {
      * of the global scope object.
      *
      * @param eng ScriptEngine to initialize
+     * @param ctxt ScriptContext to initialize
      */
-    public void initBuiltinObjects(final ScriptEngine eng) {
+    public void initBuiltinObjects(final ScriptEngine eng, final ScriptContext ctxt) {
         if (this.builtinObject != null) {
             // already initialized, just return
             return;
         }
 
         this.engine = eng;
+        this.initscontext = ctxt;
+        if (this.engine != null) {
+            this.scontext = new ThreadLocal<>();
+        }
         init(eng);
     }
 
@@ -1392,7 +1414,7 @@ public final class Global extends ScriptObject implements Scope {
      */
     public static Object __noSuchProperty__(final Object self, final Object name) {
         final Global global = Global.instance();
-        final ScriptContext sctxt = global.scontext;
+        final ScriptContext sctxt = global.currentContext();
         final String nameStr = name.toString();
 
         if (sctxt != null) {
@@ -2737,8 +2759,9 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     private Object printImpl(final boolean newLine, final Object... objects) {
+        final ScriptContext sc = currentContext();
         @SuppressWarnings("resource")
-        final PrintWriter out = scontext != null? new PrintWriter(scontext.getWriter()) : getContext().getEnv().getOut();
+        final PrintWriter out = sc != null? new PrintWriter(sc.getWriter()) : getContext().getEnv().getOut();
         final StringBuilder sb = new StringBuilder();
 
         for (final Object obj : objects) {

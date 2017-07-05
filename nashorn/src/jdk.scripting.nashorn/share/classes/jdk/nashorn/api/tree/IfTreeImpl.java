@@ -63,7 +63,7 @@ final class IfTreeImpl extends StatementTreeImpl implements IfTree {
     }
 
     @Override
-    public <R,D> R accept(TreeVisitor<R,D> visitor, D data) {
+    public <R,D> R accept(final TreeVisitor<R,D> visitor, final D data) {
         return visitor.visitIf(this, data);
     }
 }

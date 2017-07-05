@@ -252,7 +252,7 @@ public class ShortComponentRaster extends SunWritableRaster {
      * and references anything other than an array of transferType.
      * @param x        The X coordinate of the pixel location.
      * @param y        The Y coordinate of the pixel location.
-     * @param outData  An object reference to an array of type defined by
+     * @param obj      An object reference to an array of type defined by
      *                 getTransferType() and length getNumDataElements().
      *                 If null an array of appropriate type and size will be
      *                 allocated.
@@ -298,9 +298,9 @@ public class ShortComponentRaster extends SunWritableRaster {
      * </pre>
      * @param x        The X coordinate of the upper left pixel location.
      * @param y        The Y coordinate of the upper left pixel location.
-     * @param width    Width of the pixel rectangle.
-     * @param height   Height of the pixel rectangle.
-     * @param outData  An object reference to an array of type defined by
+     * @param w        Width of the pixel rectangle.
+     * @param h        Height of the pixel rectangle.
+     * @param obj      An object reference to an array of type defined by
      *                 getTransferType() and length w*h*getNumDataElements().
      *                 If null an array of appropriate type and size will be
      *                 allocated.
@@ -351,8 +351,8 @@ public class ShortComponentRaster extends SunWritableRaster {
      * </pre>
      * @param x        The X coordinate of the upper left pixel location.
      * @param y        The Y coordinate of the upper left pixel location.
-     * @param width    Width of the sample rectangle.
-     * @param height   Height of the sample rectangle.
+     * @param w        Width of the sample rectangle.
+     * @param h        Height of the sample rectangle.
      * @param band     The band to return.
      * @param outData  If non-null, data elements for all bands
      *                 at the specified location are returned in this array.
@@ -414,8 +414,8 @@ public class ShortComponentRaster extends SunWritableRaster {
      * </pre>
      * @param x        The X coordinate of the upper left pixel location.
      * @param y        The Y coordinate of the upper left pixel location.
-     * @param width    Width of the pixel rectangle.
-     * @param height   Height of the pixel rectangle.
+     * @param w        Width of the pixel rectangle.
+     * @param h        Height of the pixel rectangle.
      * @param outData  If non-null, data elements for all bands
      *                 at the specified location are returned in this array.
      * @return         Data array with data elements for all bands.
@@ -456,7 +456,7 @@ public class ShortComponentRaster extends SunWritableRaster {
      * and references anything other than an array of transferType.
      * @param x        The X coordinate of the pixel location.
      * @param y        The Y coordinate of the pixel location.
-     * @param inData   An object reference to an array of type defined by
+     * @param obj      An object reference to an array of type defined by
      *                 getTransferType() and length getNumDataElements()
      *                 containing the pixel data to place at x,y.
      */
@@ -553,7 +553,7 @@ public class ShortComponentRaster extends SunWritableRaster {
      * @param y        The Y coordinate of the upper left pixel location.
      * @param w        Width of the pixel rectangle.
      * @param h        Height of the pixel rectangle.
-     * @param inData   An object reference to an array of type defined by
+     * @param obj      An object reference to an array of type defined by
      *                 getTransferType() and length w*h*getNumDataElements()
      *                 containing the pixel data to place between x,y and
      *                 x+h, y+h.

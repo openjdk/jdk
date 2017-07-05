@@ -160,8 +160,7 @@ void CollectedHeap::trace_heap_after_gc(const GCTracer* gc_tracer) {
 // Memory state functions.
 
 
-CollectedHeap::CollectedHeap() : _n_par_threads(0)
-{
+CollectedHeap::CollectedHeap() {
   const size_t max_len = size_t(arrayOopDesc::max_array_length(T_INT));
   const size_t elements_per_word = HeapWordSize / sizeof(jint);
   _filler_array_max_size = align_object_size(filler_array_hdr_size() +

@@ -137,7 +137,7 @@ public class AccelDeviceEventNotifier {
      *
      * @param screen a screen number with which the device which is a source of
      * the event is associated with
-     * @param eventType a type of the event
+     * @param deviceEventType a type of the event
      * @see #DEVICE_DISPOSED
      * @see #DEVICE_RESET
      */

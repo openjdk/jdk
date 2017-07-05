@@ -939,7 +939,7 @@ public abstract class SurfaceData
      * In most cases, the returned Raster might contain more pixels
      * than requested.
      *
-     * @see useTightBBoxes
+     * @see #useTightBBoxes
      */
     public abstract Raster getRaster(int x, int y, int w, int h);
 
@@ -952,7 +952,7 @@ public abstract class SurfaceData
      * the pixels has to be made when doing a getRaster.  The
      * fewer pixels copied, the faster the operation will go.
      *
-     * @see getRaster
+     * @see #getRaster
      */
     public boolean useTightBBoxes() {
         // Note: The native equivalent would trigger on VISIBLE_TO_NATIVE
