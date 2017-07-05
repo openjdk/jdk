@@ -1739,6 +1739,7 @@ void GraphKit::replace_call(CallNode* call, Node* result) {
   C->gvn_replace_by(callprojs.fallthrough_catchproj, final_state->in(TypeFunc::Control));
   C->gvn_replace_by(callprojs.fallthrough_memproj,   final_state->in(TypeFunc::Memory));
   C->gvn_replace_by(callprojs.fallthrough_ioproj,    final_state->in(TypeFunc::I_O));
+  Node* final_mem = final_state->in(TypeFunc::Memory);
 
   // Replace the result with the new result if it exists and is used
   if (callprojs.resproj != NULL && result != NULL) {
@@ -1776,6 +1777,21 @@ void GraphKit::replace_call(CallNode* call, Node* result) {
   // Disconnect the call from the graph
   call->disconnect_inputs(NULL);
   C->gvn_replace_by(call, C->top());
+
+  // Clean up any MergeMems that feed other MergeMems since the
+  // optimizer doesn't like that.
+  if (final_mem->is_MergeMem()) {
+    Node_List wl;
+    for (SimpleDUIterator i(final_mem); i.has_next(); i.next()) {
+      Node* m = i.get();
+      if (m->is_MergeMem() && !wl.contains(m)) {
+        wl.push(m);
+      }
+    }
+    while (wl.size()  > 0) {
+      _gvn.transform(wl.pop());
+    }
+  }
 }
 
 
@@ -1891,7 +1907,7 @@ void GraphKit::uncommon_trap(int trap_request,
   kill_dead_locals();
 
   // Now insert the uncommon trap subroutine call
-  address call_addr = SharedRuntime::uncommon_trap_blob()->instructions_begin();
+  address call_addr = SharedRuntime::uncommon_trap_blob()->entry_point();
   const TypePtr* no_memory_effects = NULL;
   // Pass the index of the class to be loaded
   Node* call = make_runtime_call(RC_NO_LEAF | RC_UNCOMMON |
@@ -2451,11 +2467,79 @@ Node* GraphKit::type_check_receiver(Node* receiver, ciKlass* klass,
 }
 
 
+//------------------------------seems_never_null-------------------------------
+// Use null_seen information if it is available from the profile.
+// If we see an unexpected null at a type check we record it and force a
+// recompile; the offending check will be recompiled to handle NULLs.
+// If we see several offending BCIs, then all checks in the
+// method will be recompiled.
+bool GraphKit::seems_never_null(Node* obj, ciProfileData* data) {
+  if (UncommonNullCast               // Cutout for this technique
+      && obj != null()               // And not the -Xcomp stupid case?
+      && !too_many_traps(Deoptimization::Reason_null_check)
+      ) {
+    if (data == NULL)
+      // Edge case:  no mature data.  Be optimistic here.
+      return true;
+    // If the profile has not seen a null, assume it won't happen.
+    assert(java_bc() == Bytecodes::_checkcast ||
+           java_bc() == Bytecodes::_instanceof ||
+           java_bc() == Bytecodes::_aastore, "MDO must collect null_seen bit here");
+    return !data->as_BitData()->null_seen();
+  }
+  return false;
+}
+
+//------------------------maybe_cast_profiled_receiver-------------------------
+// If the profile has seen exactly one type, narrow to exactly that type.
+// Subsequent type checks will always fold up.
+Node* GraphKit::maybe_cast_profiled_receiver(Node* not_null_obj,
+                                             ciProfileData* data,
+                                             ciKlass* require_klass) {
+  if (!UseTypeProfile || !TypeProfileCasts) return NULL;
+  if (data == NULL)  return NULL;
+
+  // Make sure we haven't already deoptimized from this tactic.
+  if (too_many_traps(Deoptimization::Reason_class_check))
+    return NULL;
+
+  // (No, this isn't a call, but it's enough like a virtual call
+  // to use the same ciMethod accessor to get the profile info...)
+  ciCallProfile profile = method()->call_profile_at_bci(bci());
+  if (profile.count() >= 0 &&         // no cast failures here
+      profile.has_receiver(0) &&
+      profile.morphism() == 1) {
+    ciKlass* exact_kls = profile.receiver(0);
+    if (require_klass == NULL ||
+        static_subtype_check(require_klass, exact_kls) == SSC_always_true) {
+      // If we narrow the type to match what the type profile sees,
+      // we can then remove the rest of the cast.
+      // This is a win, even if the exact_kls is very specific,
+      // because downstream operations, such as method calls,
+      // will often benefit from the sharper type.
+      Node* exact_obj = not_null_obj; // will get updated in place...
+      Node* slow_ctl  = type_check_receiver(exact_obj, exact_kls, 1.0,
+                                            &exact_obj);
+      { PreserveJVMState pjvms(this);
+        set_control(slow_ctl);
+        uncommon_trap(Deoptimization::Reason_class_check,
+                      Deoptimization::Action_maybe_recompile);
+      }
+      replace_in_map(not_null_obj, exact_obj);
+      return exact_obj;
+    }
+    // assert(ssc == SSC_always_true)... except maybe the profile lied to us.
+  }
+
+  return NULL;
+}
+
+
 //-------------------------------gen_instanceof--------------------------------
 // Generate an instance-of idiom.  Used by both the instance-of bytecode
 // and the reflective instance-of call.
-Node* GraphKit::gen_instanceof( Node *subobj, Node* superklass ) {
-  C->set_has_split_ifs(true); // Has chance for split-if optimization
+Node* GraphKit::gen_instanceof(Node* obj, Node* superklass) {
+  kill_dead_locals();           // Benefit all the uncommon traps
   assert( !stopped(), "dead parse path should be checked in callers" );
   assert(!TypePtr::NULL_PTR->higher_equal(_gvn.type(superklass)->is_klassptr()),
          "must check for not-null not-dead klass in callers");
@@ -2466,9 +2550,16 @@ Node* GraphKit::gen_instanceof( Node *subobj, Node* superklass ) {
   Node*       phi    = new(C, PATH_LIMIT) PhiNode(region, TypeInt::BOOL);
   C->set_has_split_ifs(true); // Has chance for split-if optimization
 
+  ciProfileData* data = NULL;
+  if (java_bc() == Bytecodes::_instanceof) {  // Only for the bytecode
+    data = method()->method_data()->bci_to_data(bci());
+  }
+  bool never_see_null = (ProfileDynamicTypes  // aggressive use of profile
+                         && seems_never_null(obj, data));
+
   // Null check; get casted pointer; set region slot 3
   Node* null_ctl = top();
-  Node* not_null_obj = null_check_oop(subobj, &null_ctl);
+  Node* not_null_obj = null_check_oop(obj, &null_ctl, never_see_null);
 
   // If not_null_obj is dead, only null-path is taken
   if (stopped()) {              // Doing instance-of on a NULL?
@@ -2477,6 +2568,23 @@ Node* GraphKit::gen_instanceof( Node *subobj, Node* superklass ) {
   }
   region->init_req(_null_path, null_ctl);
   phi   ->init_req(_null_path, intcon(0)); // Set null path value
+  if (null_ctl == top()) {
+    // Do this eagerly, so that pattern matches like is_diamond_phi
+    // will work even during parsing.
+    assert(_null_path == PATH_LIMIT-1, "delete last");
+    region->del_req(_null_path);
+    phi   ->del_req(_null_path);
+  }
+
+  if (ProfileDynamicTypes && data != NULL) {
+    Node* cast_obj = maybe_cast_profiled_receiver(not_null_obj, data, NULL);
+    if (stopped()) {            // Profile disagrees with this path.
+      set_control(null_ctl);    // Null is the only remaining possibility.
+      return intcon(0);
+    }
+    if (cast_obj != NULL)
+      not_null_obj = cast_obj;
+  }
 
   // Load the object's klass
   Node* obj_klass = load_object_klass(not_null_obj);
@@ -2546,20 +2654,8 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
   C->set_has_split_ifs(true); // Has chance for split-if optimization
 
   // Use null-cast information if it is available
-  bool never_see_null = false;
-  // If we see an unexpected null at a check-cast we record it and force a
-  // recompile; the offending check-cast will be compiled to handle NULLs.
-  // If we see several offending BCIs, then all checkcasts in the
-  // method will be compiled to handle NULLs.
-  if (UncommonNullCast            // Cutout for this technique
-      && failure_control == NULL  // regular case
-      && obj != null()            // And not the -Xcomp stupid case?
-      && !too_many_traps(Deoptimization::Reason_null_check)) {
-    // Finally, check the "null_seen" bit from the interpreter.
-    if (data == NULL || !data->as_BitData()->null_seen()) {
-      never_see_null = true;
-    }
-  }
+  bool never_see_null = ((failure_control == NULL)  // regular case only
+                         && seems_never_null(obj, data));
 
   // Null check; get casted pointer; set region slot 3
   Node* null_ctl = top();
@@ -2572,47 +2668,26 @@ Node* GraphKit::gen_checkcast(Node *obj, Node* superklass,
   }
   region->init_req(_null_path, null_ctl);
   phi   ->init_req(_null_path, null());  // Set null path value
+  if (null_ctl == top()) {
+    // Do this eagerly, so that pattern matches like is_diamond_phi
+    // will work even during parsing.
+    assert(_null_path == PATH_LIMIT-1, "delete last");
+    region->del_req(_null_path);
+    phi   ->del_req(_null_path);
+  }
 
-  Node* cast_obj = NULL;        // the casted version of the object
-
-  // If the profile has seen exactly one type, narrow to that type.
-  // (The subsequent subtype check will always fold up.)
-  if (UseTypeProfile && TypeProfileCasts && data != NULL &&
+  Node* cast_obj = NULL;
+  if (data != NULL &&
       // Counter has never been decremented (due to cast failure).
       // ...This is a reasonable thing to expect.  It is true of
       // all casts inserted by javac to implement generic types.
-      data->as_CounterData()->count() >= 0 &&
-      !too_many_traps(Deoptimization::Reason_class_check)) {
-    // (No, this isn't a call, but it's enough like a virtual call
-    // to use the same ciMethod accessor to get the profile info...)
-    ciCallProfile profile = method()->call_profile_at_bci(bci());
-    if (profile.count() >= 0 &&         // no cast failures here
-        profile.has_receiver(0) &&
-        profile.morphism() == 1) {
-      ciKlass* exact_kls = profile.receiver(0);
-      int ssc = static_subtype_check(tk->klass(), exact_kls);
-      if (ssc == SSC_always_true) {
-        // If we narrow the type to match what the type profile sees,
-        // we can then remove the rest of the cast.
-        // This is a win, even if the exact_kls is very specific,
-        // because downstream operations, such as method calls,
-        // will often benefit from the sharper type.
-        Node* exact_obj = not_null_obj; // will get updated in place...
-        Node* slow_ctl  = type_check_receiver(exact_obj, exact_kls, 1.0,
-                                              &exact_obj);
-        { PreserveJVMState pjvms(this);
-          set_control(slow_ctl);
-          uncommon_trap(Deoptimization::Reason_class_check,
-                        Deoptimization::Action_maybe_recompile);
-        }
-        if (failure_control != NULL) // failure is now impossible
-          (*failure_control) = top();
-        replace_in_map(not_null_obj, exact_obj);
-        // adjust the type of the phi to the exact klass:
-        phi->raise_bottom_type(_gvn.type(exact_obj)->meet(TypePtr::NULL_PTR));
-        cast_obj = exact_obj;
-      }
-      // assert(cast_obj != NULL)... except maybe the profile lied to us.
+      data->as_CounterData()->count() >= 0) {
+    cast_obj = maybe_cast_profiled_receiver(not_null_obj, data, tk->klass());
+    if (cast_obj != NULL) {
+      if (failure_control != NULL) // failure is now impossible
+        (*failure_control) = top();
+      // adjust the type of the phi to the exact klass:
+      phi->raise_bottom_type(_gvn.type(cast_obj)->meet(TypePtr::NULL_PTR));
     }
   }
 

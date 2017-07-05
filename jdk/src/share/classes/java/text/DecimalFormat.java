@@ -392,7 +392,7 @@ public class DecimalFormat extends NumberFormat {
      * @see java.text.NumberFormat#getPercentInstance
      */
     public DecimalFormat() {
-        Locale def = Locale.getDefault();
+        Locale def = Locale.getDefault(Locale.Category.FORMAT);
         // try to get the pattern from the cache
         String pattern = (String) cachedLocaleData.get(def);
         if (pattern == null) {  /* cache miss */
@@ -430,7 +430,7 @@ public class DecimalFormat extends NumberFormat {
      */
     public DecimalFormat(String pattern) {
         // Always applyPattern after the symbols are set
-        this.symbols = new DecimalFormatSymbols(Locale.getDefault());
+        this.symbols = new DecimalFormatSymbols(Locale.getDefault(Locale.Category.FORMAT));
         applyPattern(pattern, false);
     }
 

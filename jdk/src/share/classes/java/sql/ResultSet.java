@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ import java.io.InputStream;
  * @see ResultSetMetaData
  */
 
-public interface ResultSet extends Wrapper {
+public interface ResultSet extends Wrapper, AutoCloseable {
 
     /**
      * Moves the cursor froward one row from its current position.
@@ -1187,6 +1187,9 @@ public interface ResultSet extends Wrapper {
      * cursor on the last row; calling the method <code>absolute(-2)</code>
      * moves the cursor to the next-to-last row, and so on.
      *
+     * <p>If the row number specified is zero, the cursor is moved to
+     * before the first row.
+     *
      * <p>An attempt to position the cursor beyond the first/last row in
      * the result set leaves the cursor before the first row or after
      * the last row.
@@ -1196,9 +1199,10 @@ public interface ResultSet extends Wrapper {
      * is the same as calling <code>last()</code>.
      *
      * @param row the number of the row to which the cursor should move.
-     *        A positive number indicates the row number counting from the
-     *        beginning of the result set; a negative number indicates the
-     *        row number counting from the end of the result set
+     *        A value of zero indicates that the cursor will be positioned
+     *        before the first row; a positive number indicates the row number
+     *        counting from the beginning of the result set; a negative number
+     *        indicates the row number counting from the end of the result set
      * @return <code>true</code> if the cursor is moved to a position in this
      * <code>ResultSet</code> object;
      * <code>false</code> if the cursor is before the first row or after the
@@ -2529,7 +2533,7 @@ public interface ResultSet extends Wrapper {
      * @exception SQLException if the columnLabel is not valid;
      * if a database access error occurs
      * or this method is called on a closed result set
-      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
+     * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
      * @since 1.2
      */
@@ -4071,5 +4075,65 @@ public interface ResultSet extends Wrapper {
      * @since 1.6
      */
     void updateNClob(String columnLabel,  Reader reader) throws SQLException;
+
+    //------------------------- JDBC 4.1 -----------------------------------
+
+
+    /**
+     *<p>Retrieves the value of the designated column in the current row
+     * of this <code>ResultSet</code> object and will convert from the
+     * SQL type of the column to the requested Java data type, if the
+     * conversion is supported. If the conversion is not
+     * supported  or null is specified for the type, a
+     * <code>SQLException</code> is thrown.
+     *<p>
+     * At a minimum, an implementation must support the conversions defined in
+     * Appendix B, Table B-3 and conversion of appropriate user defined SQL
+     * types to a Java type which implements {@code SQLData}, or {@code Struct}.
+     * Additional conversions may be supported and are vendor defined.
+     *
+     * @param columnIndex the first column is 1, the second is 2, ...
+     * @param type Class representing the Java data type to convert the designated
+     * column to.
+     * @return an instance of {@code type} holding the column value
+     * @throws SQLException if conversion is not supported, type is null or
+     *         another error occurs. The getCause() method of the
+     * exception may provide a more detailed exception, for example, if
+     * a conversion error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
+     * this method
+     * @since 1.7
+     */
+     public <T> T getObject(int columnIndex, Class<T> type) throws SQLException;
+
+
+    /**
+     *<p>Retrieves the value of the designated column in the current row
+     * of this <code>ResultSet</code> object and will convert from the
+     * SQL type of the column to the requested Java data type, if the
+     * conversion is supported. If the conversion is not
+     * supported  or null is specified for the type, a
+     * <code>SQLException</code> is thrown.
+     *<p>
+     * At a minimum, an implementation must support the conversions defined in
+     * Appendix B, Table B-3 and conversion of appropriate user defined SQL
+     * types to a Java type which implements {@code SQLData}, or {@code Struct}.
+     * Additional conversions may be supported and are vendor defined.
+     *
+     * @param columnLabel the label for the column specified with the SQL AS clause.
+     * If the SQL AS clause was not specified, then the label is the name
+     * of the column
+     * @param type Class representing the Java data type to convert the designated
+     * column to.
+     * @return an instance of {@code type} holding the column value
+     * @throws SQLException if conversion is not supported, type is null or
+     *         another error occurs. The getCause() method of the
+     * exception may provide a more detailed exception, for example, if
+     * a conversion error occurs
+     * @throws SQLFeatureNotSupportedException if the JDBC driver does not support
+     * this method
+     * @since 1.7
+     */
+     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException;
 
 }

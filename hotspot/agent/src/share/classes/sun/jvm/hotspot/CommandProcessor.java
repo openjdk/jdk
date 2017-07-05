@@ -1037,7 +1037,7 @@ public class CommandProcessor {
                             public void prologue(Address start, Address end) {
                             }
                             public void visit(CodeBlob blob) {
-                                fout.println(gen.genHTML(blob.instructionsBegin()));
+                                fout.println(gen.genHTML(blob.contentBegin()));
                             }
                             public void epilogue() {
                             }

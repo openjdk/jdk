@@ -1292,7 +1292,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
           // Iterate over all methods in class
           for (int n = 0; n < k->methods()->length(); n++) {
             methodHandle m (THREAD, methodOop(k->methods()->obj_at(n)));
-            if (CompilationPolicy::canBeCompiled(m)) {
+            if (CompilationPolicy::can_be_compiled(m)) {
 
               if (++_codecache_sweep_counter == CompileTheWorldSafepointInterval) {
                 // Give sweeper a chance to keep up with CTW
@@ -1301,7 +1301,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
                 _codecache_sweep_counter = 0;
               }
               // Force compilation
-              CompileBroker::compile_method(m, InvocationEntryBci,
+              CompileBroker::compile_method(m, InvocationEntryBci, CompLevel_initial_compile,
                                             methodHandle(), 0, "CTW", THREAD);
               if (HAS_PENDING_EXCEPTION) {
                 CLEAR_PENDING_EXCEPTION;
@@ -1315,7 +1315,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
                   nm->make_not_entrant();
                   m->clear_code();
                 }
-                CompileBroker::compile_method(m, InvocationEntryBci,
+                CompileBroker::compile_method(m, InvocationEntryBci, CompLevel_full_optimization,
                                               methodHandle(), 0, "CTW", THREAD);
                 if (HAS_PENDING_EXCEPTION) {
                   CLEAR_PENDING_EXCEPTION;

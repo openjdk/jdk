@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,10 @@ public interface PreparedStatement extends Statement {
      * @exception SQLException if a database access error occurs;
      * this method is called on a closed  <code>PreparedStatement</code> or the SQL
      *            statement does not return a <code>ResultSet</code> object
+     * @throws SQLTimeoutException when the driver has determined that the
+     * timeout value that was specified by the {@code setQueryTimeout}
+     * method has been exceeded and has at least attempted to cancel
+     * the currently running {@code Statement}
      */
     ResultSet executeQuery() throws SQLException;
 
@@ -82,8 +86,11 @@ public interface PreparedStatement extends Statement {
      *         or (2) 0 for SQL statements that return nothing
      * @exception SQLException if a database access error occurs;
      * this method is called on a closed  <code>PreparedStatement</code>
-     * or the SQL
-     *            statement returns a <code>ResultSet</code> object
+     * or the SQL statement returns a <code>ResultSet</code> object
+     * @throws SQLTimeoutException when the driver has determined that the
+     * timeout value that was specified by the {@code setQueryTimeout}
+     * method has been exceeded and has at least attempted to cancel
+     * the currently running {@code Statement}
      */
     int executeUpdate() throws SQLException;
 
@@ -463,6 +470,10 @@ public interface PreparedStatement extends Statement {
      * @exception SQLException if a database access error occurs;
      * this method is called on a closed <code>PreparedStatement</code>
      * or an argument is supplied to this method
+     * @throws SQLTimeoutException when the driver has determined that the
+     * timeout value that was specified by the {@code setQueryTimeout}
+     * method has been exceeded and has at least attempted to cancel
+     * the currently running {@code Statement}
      * @see Statement#execute
      * @see Statement#getResultSet
      * @see Statement#getUpdateCount
@@ -1207,5 +1218,6 @@ public interface PreparedStatement extends Statement {
      */
      void setNClob(int parameterIndex, Reader reader)
        throws SQLException;
+
 
 }

@@ -363,7 +363,7 @@ public class MessageFormat extends Format {
      * @exception IllegalArgumentException if the pattern is invalid
      */
     public MessageFormat(String pattern) {
-        this.locale = Locale.getDefault();
+        this.locale = Locale.getDefault(Locale.Category.FORMAT);
         applyPattern(pattern);
     }
 

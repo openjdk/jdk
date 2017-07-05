@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class Runtime1 {
 
   /** FIXME: consider making argument "type-safe" in Java port */
   public Address entryFor(int id) {
-    return blobFor(id).instructionsBegin();
+    return blobFor(id).codeBegin();
   }
 
   /** FIXME: consider making argument "type-safe" in Java port */

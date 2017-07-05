@@ -55,9 +55,14 @@ public:
     static void _SetEchoChar(void *param);
 
   protected:
-    void EditSetSel(CHARRANGE &cr);
-    void EditGetSel(CHARRANGE &cr);
     LONG EditGetCharFromPos(POINT& pt);
+    virtual void Reshape(int x, int y, int w, int h);
+
+private:
+    void EditSetSel(CHARRANGE &cr);
+    void initialRescroll();
+
+    bool m_initialRescrollFlag;
 };
 
 #endif /* AWT_TEXTFIELD_H */

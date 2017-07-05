@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
   print_value_on(st);
   // decode offsets
   if (WizardMode) {
-    st->print("ScopeDesc[%d]@" PTR_FORMAT " ", _decode_offset, _code->instructions_begin());
+    st->print("ScopeDesc[%d]@" PTR_FORMAT " ", _decode_offset, _code->content_begin());
     st->print_cr(" offset:     %d",    _decode_offset);
     st->print_cr(" bci:        %d",    bci());
     st->print_cr(" reexecute:  %s",    should_reexecute() ? "true" : "false");

@@ -296,7 +296,9 @@ JNIEXPORT jobject JNICALL Java_sun_awt_windows_WInputMethod_getNativeLocale
         // so we can reset this flag.
         g_bUserHasChangedInputLang = FALSE;
 
-        return CreateLocaleObject(env, javaLocaleName);
+        jobject ret = CreateLocaleObject(env, javaLocaleName);
+        free((void *)javaLocaleName);
+        return ret;
     } else {
         return NULL;
     }
@@ -323,6 +325,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WInputMethod_setNativeLocale
     const char * requested = env->GetStringUTFChars(localeString, &isCopy);
     if ((current != NULL) && (strcmp(current, requested) == 0)) {
         env->ReleaseStringUTFChars(localeString, requested);
+        free((void *)current);
         return JNI_TRUE;
     }
 
@@ -352,6 +355,7 @@ JNIEXPORT jboolean JNICALL Java_sun_awt_windows_WInputMethod_setNativeLocale
 
     env->ReleaseStringUTFChars(localeString, requested);
     free(hKLList);
+    free((void *)current);
     return retValue;
 
     CATCH_BAD_ALLOC_RET(JNI_FALSE);
@@ -480,6 +484,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_awt_windows_WInputMethodDescriptor_getNa
         env->SetObjectArrayElement(locales,
                                    current,
                                    CreateLocaleObject(env, javaLocaleNames[current]));
+        free((void *)javaLocaleNames[current]);
     }
     DASSERT(!safe_ExceptionOccurred(env));
 

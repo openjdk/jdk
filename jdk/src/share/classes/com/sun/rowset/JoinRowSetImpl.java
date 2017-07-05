@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,6 +127,11 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
         strMatchKey = null;
         supportedJOINs =
               new boolean[] {false, true, false, false, false};
+       try {
+           resBundle = JdbcRowSetResourceBundle.getJdbcRowSetResourceBundle();
+        } catch(IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
 
     }
 
@@ -4306,5 +4311,22 @@ public class JoinRowSetImpl extends WebRowSetImpl implements JoinRowSet {
          return crsInternal.createCopySchema();
      }
 
-        static final long serialVersionUID = -5590501621560008453L;
+    /**
+     * This method re populates the resBundle
+     * during the deserialization process
+     *
+     */
+     private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        // Default state initialization happens here
+        ois.defaultReadObject();
+        // Initialization of transient Res Bundle happens here .
+        try {
+           resBundle = JdbcRowSetResourceBundle.getJdbcRowSetResourceBundle();
+        } catch(IOException ioe) {
+            throw new RuntimeException(ioe);
+        }
+
+     }
+
+     static final long serialVersionUID = -5590501621560008453L;
 }

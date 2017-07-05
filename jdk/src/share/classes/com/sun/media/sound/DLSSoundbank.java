@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -781,7 +781,7 @@ public class DLSSoundbank implements Soundbank {
                     }
                     if (sampleformat == 3) {
                         audioformat = new AudioFormat(
-                                AudioFloatConverter.PCM_FLOAT, samplerate, bits,
+                                Encoding.PCM_FLOAT, samplerate, bits,
                                 channels, framesize, samplerate, false);
                     }
 
@@ -965,7 +965,7 @@ public class DLSSoundbank implements Soundbank {
             sampleformat = 1;
         else if (audioformat.getEncoding().equals(Encoding.PCM_SIGNED))
             sampleformat = 1;
-        else if (audioformat.getEncoding().equals(AudioFloatConverter.PCM_FLOAT))
+        else if (audioformat.getEncoding().equals(Encoding.PCM_FLOAT))
             sampleformat = 3;
 
         fmt_chunk.writeUnsignedShort(sampleformat);

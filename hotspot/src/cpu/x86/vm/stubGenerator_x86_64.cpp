@@ -1625,6 +1625,26 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_fill(BasicType t, bool aligned, const char *name) {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", name);
+    address start = __ pc();
+
+    BLOCK_COMMENT("Entry:");
+
+    const Register to       = c_rarg0;  // source array address
+    const Register value    = c_rarg1;  // value
+    const Register count    = c_rarg2;  // elements count
+
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    __ generate_fill(t, aligned, to, value, count, rax, xmm0);
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+    return start;
+  }
+
   // Arguments:
   //   aligned - true => Input and output aligned on a HeapWord == 8-byte boundary
   //             ignored
@@ -2711,6 +2731,13 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_checkcast_arraycopy = generate_checkcast_copy("checkcast_arraycopy");
     StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy("unsafe_arraycopy");
     StubRoutines::_generic_arraycopy   = generate_generic_copy("generic_arraycopy");
+
+    StubRoutines::_jbyte_fill = generate_fill(T_BYTE, false, "jbyte_fill");
+    StubRoutines::_jshort_fill = generate_fill(T_SHORT, false, "jshort_fill");
+    StubRoutines::_jint_fill = generate_fill(T_INT, false, "jint_fill");
+    StubRoutines::_arrayof_jbyte_fill = generate_fill(T_BYTE, true, "arrayof_jbyte_fill");
+    StubRoutines::_arrayof_jshort_fill = generate_fill(T_SHORT, true, "arrayof_jshort_fill");
+    StubRoutines::_arrayof_jint_fill = generate_fill(T_INT, true, "arrayof_jint_fill");
 
     // We don't generate specialized code for HeapWord-aligned source
     // arrays, so just use the code we've already generated

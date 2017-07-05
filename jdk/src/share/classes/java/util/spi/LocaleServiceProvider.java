@@ -86,18 +86,19 @@ import java.util.Locale;
  * Otherwise, they call the <code>getAvailableLocales()</code> methods of
  * installed providers for the appropriate interface to find one that
  * supports the requested locale. If such a provider is found, its other
- * methods are called to obtain the requested object or name. If neither
- * the Java runtime environment itself nor an installed provider supports
- * the requested locale, a fallback locale is constructed by replacing the
- * first of the variant, country, or language strings of the locale that's
- * not an empty string with an empty string, and the lookup process is
- * restarted. In the case that the variant contains one or more '_'s, the
- * fallback locale is constructed by replacing the variant with a new variant
- * which eliminates the last '_' and the part following it.  Even if a
- * fallback occurs, methods that return requested objects or name are
- * invoked with the original locale before the fallback.The Java runtime
- * environment must support the root locale for all locale sensitive services
- * in order to guarantee that this process terminates.
+ * methods are called to obtain the requested object or name.  When checking
+ * whether a locale is supported, the locale's extensions are ignored.
+ * If neither the Java runtime environment itself nor an installed provider
+ * supports the requested locale, the methods go through a list of candidate
+ * locales and repeat the availability check for each until a match is found.
+ * The algorithm used for creating a list of candidate locales is same as
+ * the one used by <code>ResourceBunlde</code> by default (see
+ * {@link java.util.ResourceBundle.Control#getCandidateLocales getCandidateLocales}
+ * for the details).  Even if a locale is resolved from the candidate list,
+ * methods that return requested objects or names are invoked with the original
+ * requested locale including extensions.  The Java runtime environment must
+ * support the root locale for all locale sensitive services in order to
+ * guarantee that this process terminates.
  * <p>
  * Providers of names (but not providers of other objects) are allowed to
  * return null for some name requests even for locales that they claim to
@@ -124,6 +125,11 @@ public abstract class LocaleServiceProvider {
     /**
      * Returns an array of all locales for which this locale service provider
      * can provide localized objects or names.
+     * <p>
+     * <b>Note:</b> Extensions in a <code>Locale</code> are ignored during
+     * service provider lookup.  So the array returned by this method should
+     * not include two or more <code>Locale</code> objects only differing in
+     * their extensions.
      *
      * @return An array of all locales for which this locale service provider
      * can provide localized objects or names.
