@@ -88,7 +88,7 @@ JvmtiAgentThread::call_start_function() {
 void GrowableCache::recache() {
   int len = _elements->length();
 
-  FREE_C_HEAP_ARRAY(address, _cache, mtInternal);
+  FREE_C_HEAP_ARRAY(address, _cache);
   _cache = NEW_C_HEAP_ARRAY(address,len+1, mtInternal);
 
   for (int i=0; i<len; i++) {
@@ -132,7 +132,7 @@ GrowableCache::GrowableCache() {
 GrowableCache::~GrowableCache() {
   clear();
   delete _elements;
-  FREE_C_HEAP_ARRAY(address, _cache, mtInternal);
+  FREE_C_HEAP_ARRAY(address, _cache);
 }
 
 void GrowableCache::initialize(void *this_obj, void listener_fun(void *, address*) ) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,9 +72,6 @@
 #define CFG_ERROR8      "Error: missing `%s' JVM at `%s'.\nPlease install or use the JRE or JDK that contains these missing components."
 #define CFG_ERROR9      "Error: could not determine JVM type."
 
-
-#define SPC_ERROR1      "Error: Syntax error in version specification \"%s\""
-
 #define JRE_ERROR1      "Error: Could not find Java SE Runtime Environment."
 #define JRE_ERROR2      "Error: This Java instance does not support a %d-bit JVM.\nPlease install the desired version."
 #define JRE_ERROR3      "Error: Improper value at line %d."
@@ -88,6 +85,9 @@
 #define JRE_ERROR11     "Error: Path length exceeds maximum length (PATH_MAX)"
 #define JRE_ERROR12     "Error: Exec of %s failed"
 #define JRE_ERROR13     "Error: String processing operation failed"
+
+#define SPC_ERROR1      "Error: Specifying an alternate JDK/JRE version is no longer supported.\n  The use of the flag '-version:' is no longer valid.\n  Please download and execute the appropriate version."
+#define SPC_ERROR2      "Error: Specifying an alternate JDK/JRE is no longer supported.\n  The related flags -jre-restrict-search | -jre-no-restrict-search are also no longer valid."
 
 #define DLL_ERROR1      "Error: dl failure on line %d"
 #define DLL_ERROR2      "Error: failed %s, because %s"

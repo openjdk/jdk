@@ -527,4 +527,23 @@ public class Credentials {
         return sb.toString();
     }
 
+    public sun.security.krb5.internal.ccache.Credentials toCCacheCreds() {
+        return new sun.security.krb5.internal.ccache.Credentials(
+                getClient(), getServer(),
+                getSessionKey(),
+                date2kt(getAuthTime()),
+                date2kt(getStartTime()),
+                date2kt(getEndTime()),
+                date2kt(getRenewTill()),
+                false,
+                flags,
+                new HostAddresses(getClientAddresses()),
+                getAuthzData(),
+                getTicket(),
+                null);
+    }
+
+    private static KerberosTime date2kt(Date d) {
+        return d == null ? null : new KerberosTime(d);
+    }
 }

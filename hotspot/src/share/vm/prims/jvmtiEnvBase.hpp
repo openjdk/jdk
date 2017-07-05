@@ -192,7 +192,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
 
   jvmtiError deallocate(unsigned char* mem) {
     if (mem != NULL) {
-      os::free(mem, mtInternal);
+      os::free(mem);
     }
     return JVMTI_ERROR_NONE;
   }

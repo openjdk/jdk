@@ -1478,7 +1478,7 @@ class CertificateRequest extends HandshakeMessage
                 boolean opened = false;
                 for (SignatureAndHashAlgorithm signAlg : algorithms) {
                     if (opened) {
-                        sb.append(", " + signAlg.getAlgorithmName());
+                        sb.append(", ").append(signAlg.getAlgorithmName());
                     } else {
                         sb.append(signAlg.getAlgorithmName());
                         opened = true;

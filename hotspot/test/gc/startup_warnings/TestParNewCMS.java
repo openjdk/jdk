@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 /*
 * @test TestParNewCMS
 * @key gc
-* @bug 8006398
-* @summary Test that the combination ParNew+CMS does not print a warning message
+* @bug 8065972
+* @summary Test that specifying -XX:+UseParNewGC on the command line logs a warning message
 * @library /testlibrary
 */
 
@@ -38,7 +38,7 @@ public class TestParNewCMS {
   public static void main(String args[]) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseParNewGC", "-XX:+UseConcMarkSweepGC", "-version");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("deprecated");
+    output.shouldContain("warning: The UseParNewGC flag is deprecated and will likely be removed in a future release");
     output.shouldNotContain("error");
     output.shouldHaveExitValue(0);
   }

@@ -68,7 +68,7 @@ public class RemoteHostImpl implements RemoteHost, HostListener {
 
         sb.append("local://").append(lvmid).append("@localhost");
         if (mode != null) {
-            sb.append("?mode=" + mode);
+            sb.append("?mode=").append(mode);
         }
 
         String vmidStr = sb.toString();
