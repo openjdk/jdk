@@ -25,7 +25,11 @@ import java.io.File;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -35,12 +39,13 @@ import jdk.testlibrary.ProcessTools;
  * @test
  * @bug 6434402 8004926
  * @library /lib/testlibrary
+ * @build jdk.testlibrary.ProcessTools
  * @build TestManager TestApplication CustomLauncherTest
- * @run main CustomLauncherTest
+ * @run main/othervm CustomLauncherTest
  * @author Jaroslav Bachorik
  */
 public class CustomLauncherTest {
-    private static final  String TEST_CLASSES = System.getProperty("test.classes");
+    private static final  String TEST_CLASSPATH = System.getProperty("test.class.path");
     private static final  String TEST_JDK = System.getProperty("test.jdk");
 
     private static final  String TEST_SRC = System.getProperty("test.src");
@@ -67,6 +72,9 @@ public class CustomLauncherTest {
                 ARCH = "amd64";
                 break;
             }
+            case "sparc":
+                ARCH = "sparcv9";
+                break;
             default: {
                 ARCH = osarch;
             }
@@ -75,7 +83,7 @@ public class CustomLauncherTest {
     }
 
     public static void main(String[] args) throws Exception {
-        if (TEST_CLASSES == null || TEST_CLASSES.isEmpty()) {
+        if (TEST_CLASSPATH == null || TEST_CLASSPATH.isEmpty()) {
             System.out.println("Test is designed to be run from jtreg only");
             return;
         }
@@ -101,7 +109,10 @@ public class CustomLauncherTest {
                           File.separator + "launcher";
 
         final FileSystem FS = FileSystems.getDefault();
-        final boolean hasLauncher = Files.isExecutable(FS.getPath(LAUNCHER));
+        Path launcherPath = FS.getPath(LAUNCHER);
+
+        final boolean hasLauncher = Files.isRegularFile(launcherPath, LinkOption.NOFOLLOW_LINKS)&&
+                                    Files.isReadable(launcherPath);
         if (!hasLauncher) {
             System.out.println("Launcher [" + LAUNCHER + "] does not exist. Skipping the test.");
             return;
@@ -114,13 +125,23 @@ public class CustomLauncherTest {
 
         Process serverPrc = null, clientPrc = null;
 
+        final Set<PosixFilePermission> launcherOrigPerms =
+            Files.getPosixFilePermissions(launcherPath, LinkOption.NOFOLLOW_LINKS);
         try {
+            // It is impossible to store an executable file in the source control
+            // We need to set the executable flag here
+            if (!Files.isExecutable(launcherPath)) {
+                Set<PosixFilePermission> perms = new HashSet<>(launcherOrigPerms);
+                perms.add(PosixFilePermission.OWNER_EXECUTE);
+                Files.setPosixFilePermissions(launcherPath, perms);
+            }
+
             System.out.println("Starting custom launcher:");
             System.out.println("=========================");
             System.out.println("  launcher  : " + LAUNCHER);
             System.out.println("  libjvm    : " + libjvmPath.toString());
-            System.out.println("  classpath : " + TEST_CLASSES);
-            ProcessBuilder server = new ProcessBuilder(LAUNCHER, libjvmPath.toString(), TEST_CLASSES, "TestApplication");
+            System.out.println("  classpath : " + TEST_CLASSPATH);
+            ProcessBuilder server = new ProcessBuilder(LAUNCHER, libjvmPath.toString(), TEST_CLASSPATH, "TestApplication");
 
             final AtomicReference<String> port = new AtomicReference<>();
             final AtomicReference<String> pid = new AtomicReference<>();
@@ -149,7 +170,7 @@ public class CustomLauncherTest {
 
             ProcessBuilder client = ProcessTools.createJavaProcessBuilder(
                 "-cp",
-                TEST_CLASSES +
+                TEST_CLASSPATH +
                     File.pathSeparator +
                     TEST_JDK +
                     File.separator +
@@ -177,6 +198,8 @@ public class CustomLauncherTest {
                 throw new Error("Test failed");
             }
         } finally {
+            // Let's restore the original launcher permissions
+            Files.setPosixFilePermissions(launcherPath, launcherOrigPerms);
             if (clientPrc != null) {
                 clientPrc.destroy();
                 clientPrc.waitFor();

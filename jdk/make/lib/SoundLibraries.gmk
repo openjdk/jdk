@@ -1,0 +1,237 @@
+#
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+LIBJSOUND_SRC_DIRS := \
+    $(JDK_TOPDIR)/src/share/native/com/sun/media/sound \
+    $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/com/sun/media/sound
+
+LIBJSOUND_SRC_FILES := Utilities.c Platform.c
+
+LIBJSOUND_LANG := C
+LIBJSOUND_CFLAGS := $(foreach dir, $(LIBJSOUND_SRC_DIRS), -I$(dir))
+
+EXTRA_SOUND_JNI_LIBS :=
+
+LIBJSOUND_MIDIFILES := \
+    MidiInDevice.c \
+    MidiInDeviceProvider.c \
+    MidiOutDevice.c \
+    MidiOutDeviceProvider.c \
+    PlatformMidi.c
+
+# files needed for ports
+LIBJSOUND_PORTFILES := \
+    PortMixerProvider.c \
+    PortMixer.c
+
+# files needed for direct audio
+LIBJSOUND_DAUDIOFILES := \
+    DirectAudioDeviceProvider.c \
+    DirectAudioDevice.c
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  EXTRA_SOUND_JNI_LIBS += jsoundds
+  LIBJSOUND_CFLAGS += -DX_PLATFORM=X_WINDOWS \
+      -DUSE_PLATFORM_MIDI_OUT=TRUE \
+      -DUSE_PLATFORM_MIDI_IN=TRUE \
+      -DUSE_PORTS=TRUE
+  LIBJSOUND_SRC_FILES += \
+      PLATFORM_API_WinOS_MidiIn.cpp \
+      PLATFORM_API_WinOS_MidiOut.c \
+      PLATFORM_API_WinOS_Util.c \
+      PLATFORM_API_WinOS_Ports.c
+  LIBJSOUND_SRC_FILES += $(LIBJSOUND_MIDIFILES)
+  LIBJSOUND_SRC_FILES += $(LIBJSOUND_PORTFILES)
+endif # OPENJDK_TARGET_OS windows
+
+ifeq ($(OPENJDK_TARGET_OS), linux)
+  EXTRA_SOUND_JNI_LIBS += jsoundalsa
+  LIBJSOUND_CFLAGS += -DX_PLATFORM=X_LINUX
+endif # OPENJDK_TARGET_OS linux
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  LIBJSOUND_LANG := C++
+  LIBJSOUND_CFLAGS += -DX_PLATFORM=X_MACOSX \
+      -DUSE_PORTS=TRUE \
+      -DUSE_DAUDIO=TRUE \
+      -DUSE_PLATFORM_MIDI_OUT=TRUE \
+      -DUSE_PLATFORM_MIDI_IN=TRUE
+  LIBJSOUND_SRC_DIRS += $(JDK_TOPDIR)/src/macosx/native/com/sun/media/sound
+  LIBJSOUND_SRC_FILES += \
+      PLATFORM_API_MacOSX_Utils.cpp \
+      PLATFORM_API_MacOSX_PCM.cpp \
+      PLATFORM_API_MacOSX_Ports.cpp \
+      PLATFORM_API_MacOSX_MidiIn.c \
+      PLATFORM_API_MacOSX_MidiOut.c \
+      PLATFORM_API_MacOSX_MidiUtils.c
+  LIBJSOUND_SRC_FILES += $(LIBJSOUND_MIDIFILES)
+  LIBJSOUND_SRC_FILES += $(LIBJSOUND_PORTFILES)
+  LIBJSOUND_SRC_FILES += $(LIBJSOUND_DAUDIOFILES)
+endif # OPENJDK_TARGET_OS macosx
+
+ifeq ($(OPENJDK_TARGET_OS), solaris)
+  LIBJSOUND_CFLAGS += -DX_PLATFORM=X_SOLARIS \
+      -DUSE_PORTS=TRUE \
+      -DUSE_DAUDIO=TRUE
+  LIBJSOUND_SRC_FILES += \
+      PLATFORM_API_SolarisOS_Utils.c \
+      PLATFORM_API_SolarisOS_Ports.c \
+      PLATFORM_API_SolarisOS_PCM.c
+  LIBJSOUND_SRC_FILES += $(LIBJSOUND_MIDIFILES)
+  LIBJSOUND_SRC_FILES += $(LIBJSOUND_PORTFILES)
+  LIBJSOUND_SRC_FILES += $(LIBJSOUND_DAUDIOFILES)
+endif # OPENJDK_TARGET_OS solaris
+
+
+ifeq ($(JVM_VARIANT_ZERO), true)
+  LIBJSOUND_CFLAGS += -DX_ARCH=X_ZERO
+else
+  ifeq ($(OPENJDK_TARGET_CPU), x86)
+    LIBJSOUND_CFLAGS += -DX_ARCH=X_I586
+  endif
+
+  ifeq ($(OPENJDK_TARGET_CPU), sparc)
+    LIBJSOUND_CFLAGS += -DX_ARCH=X_SPARC
+  endif
+
+  ifeq ($(OPENJDK_TARGET_CPU), sparcv9)
+    LIBJSOUND_CFLAGS += -DX_ARCH=X_SPARCV9
+  endif
+
+  ifeq ($(OPENJDK_TARGET_CPU), x86_64)
+    LIBJSOUND_CFLAGS += -DX_ARCH=X_AMD64
+  endif
+
+  ifeq ($(OPENJDK_TARGET_CPU), arm)
+    LIBJSOUND_CFLAGS += -DX_ARCH=X_ARM
+  endif
+
+  ifeq ($(OPENJDK_TARGET_CPU), ppc)
+    LIBJSOUND_CFLAGS += -DX_ARCH=X_PPC
+  endif
+endif
+
+LIBJSOUND_CFLAGS += -DEXTRA_SOUND_JNI_LIBS='"$(EXTRA_SOUND_JNI_LIBS)"'
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND, \
+    LIBRARY := jsound, \
+    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+    SRC := $(LIBJSOUND_SRC_DIRS), \
+    INCLUDE_FILES := $(LIBJSOUND_SRC_FILES), \
+    LANG := $(LIBJSOUND_LANG), \
+    OPTIMIZATION := LOW, \
+    CFLAGS := $(CFLAGS_JDKLIB) \
+        $(LIBJSOUND_CFLAGS), \
+    CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBJSOUND_CFLAGS), \
+    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjsound/mapfile-vers, \
+    LDFLAGS := $(LDFLAGS_JDKLIB) \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LDFLAGS_macosx := -framework CoreAudio -framework CoreFoundation \
+        -framework CoreServices -framework AudioUnit $(LIBCXX) \
+        -framework CoreMIDI -framework AudioToolbox, \
+    LDFLAGS_windows := $(WIN_JAVA_LIB) advapi32.lib winmm.lib, \
+    LDFLAGS_SUFFIX_posix := -ljava -ljvm, \
+    LDFLAGS_SUFFIX_solaris := -lc, \
+    VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
+    RC_FLAGS := $(RC_FLAGS) \
+        -D "JDK_FNAME=jsound.dll" \
+        -D "JDK_INTERNAL_NAME=jsound" \
+        -D "JDK_FTYPE=0x2L", \
+    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjsound, \
+    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+
+$(BUILD_LIBJSOUND): $(BUILD_LIBJAVA)
+
+BUILD_LIBRARIES += $(BUILD_LIBJSOUND)
+
+##########################################################################################
+
+ifneq ($(filter jsoundalsa, $(EXTRA_SOUND_JNI_LIBS)), )
+
+  $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUNDALSA, \
+      LIBRARY := jsoundalsa, \
+      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+      SRC := $(LIBJSOUND_SRC_DIRS), \
+      INCLUDE_FILES := Utilities.c $(LIBJSOUND_MIDIFILES) $(LIBJSOUND_PORTFILES) \
+          $(LIBJSOUND_DAUDIOFILES) \
+          PLATFORM_API_LinuxOS_ALSA_CommonUtils.c \
+          PLATFORM_API_LinuxOS_ALSA_PCM.c \
+          PLATFORM_API_LinuxOS_ALSA_PCMUtils.c \
+          PLATFORM_API_LinuxOS_ALSA_MidiIn.c \
+          PLATFORM_API_LinuxOS_ALSA_MidiOut.c \
+          PLATFORM_API_LinuxOS_ALSA_MidiUtils.c \
+          PLATFORM_API_LinuxOS_ALSA_Ports.c, \
+      LANG := C, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CFLAGS_JDKLIB) $(ALSA_CFLAGS) \
+          $(LIBJSOUND_CFLAGS) \
+          -DUSE_DAUDIO=TRUE \
+          -DUSE_PORTS=TRUE \
+          -DUSE_PLATFORM_MIDI_OUT=TRUE \
+          -DUSE_PLATFORM_MIDI_IN=TRUE, \
+      MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjsoundalsa/mapfile-vers, \
+      LDFLAGS := $(LDFLAGS_JDKLIB) \
+          $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LDFLAGS_SUFFIX := $(ALSA_LIBS) -ljava -ljvm, \
+      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjsoundalsa, \
+      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+
+  $(BUILD_LIBJSOUNDALSA): $(BUILD_LIBJAVA)
+
+  BUILD_LIBRARIES += $(BUILD_LIBJSOUNDALSA)
+
+endif
+
+##########################################################################################
+
+ifneq ($(filter jsoundds, $(EXTRA_SOUND_JNI_LIBS)), )
+
+  $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUNDDS, \
+      LIBRARY := jsoundds, \
+      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+      SRC := $(LIBJSOUND_SRC_DIRS), \
+      INCLUDE_FILES := Utilities.c $(LIBJSOUND_DAUDIOFILES) \
+          PLATFORM_API_WinOS_DirectSound.cpp, \
+      LANG := C++, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CFLAGS_JDKLIB) \
+          $(LIBJSOUND_CFLAGS) \
+          -DUSE_DAUDIO=TRUE, \
+      LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
+          $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LDFLAGS_SUFFIX := $(LDFLAGS_JDKLIB_SUFFIX) dsound.lib winmm.lib user32.lib ole32.lib, \
+      VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
+      RC_FLAGS := $(RC_FLAGS) \
+          -D "JDK_FNAME=jsoundds.dll" \
+          -D "JDK_INTERNAL_NAME=jsoundds" \
+          -D "JDK_FTYPE=0x2L", \
+      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libjsoundds, \
+      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+
+  $(BUILD_LIBJSOUNDDS): $(BUILD_LIBJAVA)
+
+  BUILD_LIBRARIES += $(BUILD_LIBJSOUNDDS)
+
+endif

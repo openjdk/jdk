@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,6 +125,33 @@ public class TestLibrary {
     }
     public static void bomb(Exception e) {
         bomb(null, e);
+    }
+
+    /**
+     * Helper method to determine if registry has started
+     *
+     * @param port The port number to check
+     * @param msTimeout The amount of milliseconds to spend checking
+     */
+
+    public static boolean checkIfRegistryRunning(int port, int msTimeout) {
+        long stopTime = System.currentTimeMillis() + msTimeout;
+        do {
+            try {
+                Registry r = LocateRegistry.getRegistry(port);
+                String[] s = r.list();
+                // no exception. We're now happy that registry is running
+                return true;
+            } catch (RemoteException e) {
+                // problem - not ready ? Try again
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException ie) {
+                    // not expected
+                }
+            }
+        } while (stopTime > System.currentTimeMillis());
+        return false;
     }
 
     public static String getProperty(String property, String defaultVal) {

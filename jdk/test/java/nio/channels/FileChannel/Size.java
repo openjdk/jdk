@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,67 +39,57 @@ import java.util.Random;
 
 public class Size {
 
-    private static Random generator = new Random();
-
-    private static File blah;
-
     public static void main(String[] args) throws Exception {
-        test1();
-        test2();
+        testSmallFile();
+        testLargeFile();
     }
 
-    private static void test1() throws Exception {
-        blah = File.createTempFile("blah", null);
-        blah.deleteOnExit();
+    private static void testSmallFile() throws Exception {
+        File smallFile = new File("smallFileTest");
+        Random generator = new Random();
         for(int i=0; i<100; i++) {
             long testSize = generator.nextInt(1000);
-            initTestFile(blah, testSize);
-            FileInputStream fis = new FileInputStream(blah);
-            FileChannel c = fis.getChannel();
-            if (c.size() != testSize)
-                throw new RuntimeException("Size failed");
-            c.close();
-            fis.close();
+            initTestFile(smallFile, testSize);
+            try (FileChannel c = new FileInputStream(smallFile).getChannel()) {
+                if (c.size() != testSize) {
+                    throw new RuntimeException("Size failed in testSmallFile. "
+                                             + "Expect size " + testSize
+                                             + ", actual size " + c.size());
+                }
+            }
         }
-        blah.delete();
+        smallFile.deleteOnExit();
     }
 
     // Test for bug 4563125
-    private static void test2() throws Exception {
-        // Windows and Linux can't handle the really large file sizes for a truncate
-        // or a positional write required by the test for 4563125
-        String osName = System.getProperty("os.name");
-        if (osName.startsWith("SunOS") || osName.contains("OS X")) {
-            blah = File.createTempFile("blah", null);
-            long testSize = ((long)Integer.MAX_VALUE) * 2;
-            initTestFile(blah, 10);
-            RandomAccessFile raf = new RandomAccessFile(blah, "rw");
-            FileChannel fc = raf.getChannel();
+    private static void testLargeFile() throws Exception {
+        File largeFile = new File("largeFileTest");
+        long testSize = ((long)Integer.MAX_VALUE) * 2;
+        initTestFile(largeFile, 10);
+        try (FileChannel fc = new RandomAccessFile(largeFile, "rw").getChannel())
+        {
             fc.size();
             fc.map(FileChannel.MapMode.READ_WRITE, testSize, 10);
-            if (fc.size() != testSize + 10)
-                throw new RuntimeException("Size failed " + fc.size());
-            fc.close();
-            raf.close();
-            blah.delete();
+            if (fc.size() != testSize + 10) {
+                throw new RuntimeException("Size failed in testLargeFile. "
+                                         + "Expect size " + (testSize + 10)
+                                         + ", actual size " + fc.size());
+            }
         }
+        largeFile.deleteOnExit();
     }
 
     /**
-     * Creates file blah of specified size in bytes.
+     * Create a file with the specified size in bytes.
      *
      */
-    private static void initTestFile(File blah, long size) throws Exception {
-        if (blah.exists())
-            blah.delete();
-        FileOutputStream fos = new FileOutputStream(blah);
-        BufferedWriter awriter
-            = new BufferedWriter(new OutputStreamWriter(fos, "8859_1"));
-
-        for(int i=0; i<size; i++) {
-            awriter.write("e");
+    private static void initTestFile(File f, long size) throws Exception {
+        try (BufferedWriter awriter = new BufferedWriter(
+                new OutputStreamWriter(new FileOutputStream(f), "8859_1")))
+        {
+            for(int i=0; i<size; i++) {
+                awriter.write("e");
+            }
         }
-        awriter.flush();
-        awriter.close();
     }
 }

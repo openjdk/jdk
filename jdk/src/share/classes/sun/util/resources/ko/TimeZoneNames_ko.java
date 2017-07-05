@@ -45,6 +45,8 @@ import sun.util.resources.TimeZoneNamesBundle;
 public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
 
     protected final Object[][] getContents() {
+        String ACT[] = new String[] {"\uc5d0\uc774\ucee4 \uc2dc\uac04", "ACT",
+                                     "\uc5d0\uc774\ucee4 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "ACST"};
         String ADELAIDE[] = new String[] {"\uC911\uBD80 \uD45C\uC900\uC2DC(\uB0A8\uBD80 \uC624\uC2A4\uD2B8\uB808\uC77C\uB9AC\uC544)", "CST",
                                           "\uC911\uBD80 \uC77C\uAD11 \uC808\uC57D \uC2DC\uAC04(\uB0A8\uBD80 \uC624\uC2A4\uD2B8\uB808\uC77C\uB9AC\uC544)", "CST"};
         String AGT[] = new String[] {"\uc544\ub974\ud5e8\ud2f0\ub098 \uc2dc\uac04", "ART",
@@ -287,7 +289,7 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
             {"Africa/Porto-Novo", WAT},
             {"Africa/Sao_Tome", GMT},
             {"Africa/Timbuktu", GMT},
-            {"Africa/Tripoli", CET},
+            {"Africa/Tripoli", EET},
             {"Africa/Tunis", CET},
             {"Africa/Windhoek", WAT},
             {"America/Adak", HAST},
@@ -345,7 +347,7 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
             {"America/Detroit", EST},
             {"America/Dominica", AST},
             {"America/Edmonton", MST},
-            {"America/Eirunepe", AMT},
+            {"America/Eirunepe", ACT},
             {"America/El_Salvador", CST},
             {"America/Ensenada", PST},
             {"America/Fort_Wayne", EST},
@@ -422,7 +424,7 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
                                                  "\uc218\ub9ac\ub0a8 \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "SRST"}},
             {"America/Port-au-Prince", EST},
             {"America/Port_of_Spain", AST},
-            {"America/Porto_Acre", AMT},
+            {"America/Porto_Acre", ACT},
             {"America/Porto_Velho", AMT},
             {"America/Puerto_Rico", AST},
             {"America/Rainy_River", CST},
@@ -430,7 +432,7 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
             {"America/Recife", BRT},
             {"America/Regina", CST},
             {"America/Resolute", CST},
-            {"America/Rio_Branco", AMT},
+            {"America/Rio_Branco", ACT},
             {"America/Rosario", AGT},
             {"America/Santa_Isabel", PST},
             {"America/Santarem", BRT},
@@ -635,7 +637,7 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
             {"Australia/Yancowinna", BROKEN_HILL},
             {"BET", BRT},
             {"BST", BDT},
-            {"Brazil/Acre", AMT},
+            {"Brazil/Acre", ACT},
             {"Brazil/DeNoronha", NORONHA},
             {"Brazil/East", BRT},
             {"Brazil/West", AMT},
@@ -753,7 +755,7 @@ public final class TimeZoneNames_ko extends TimeZoneNamesBundle {
             {"Jamaica", EST},
             {"Japan", JST},
             {"Kwajalein", MHT},
-            {"Libya", CET},
+            {"Libya", EET},
             {"MET", new String[] {"\uc911\ubd80 \uc720\ub7fd \uc2dc\uac04", "MET",
                                   "\uc911\ubd80 \uc720\ub7fd \uc77c\uad11\uc808\uc57d\uc2dc\uac04", "MEST"}},
             {"Mexico/BajaNorte", PST},

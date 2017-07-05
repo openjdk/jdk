@@ -178,7 +178,7 @@ public abstract class AsynchronousFileChannel
      *   written synchronously to the underlying storage device. (see <a
      *   href="../file/package-summary.html#integrity"> Synchronized I/O file
      *   integrity</a>). </td>
-     * <tr>
+     * </tr>
      * <tr>
      *   <td> {@link StandardOpenOption#DSYNC DSYNC} </td>
      *   <td> Requires that every update to the file's content be written

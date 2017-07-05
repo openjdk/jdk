@@ -24,11 +24,12 @@
  */
 package com.sun.beans.finder;
 
-import com.sun.beans.WeakCache;
+import com.sun.beans.util.Cache;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 
+import static com.sun.beans.util.Cache.Kind.SOFT;
 import static sun.reflect.misc.ReflectUtil.isPackageAccessible;
 
 /**
@@ -41,7 +42,18 @@ import static sun.reflect.misc.ReflectUtil.isPackageAccessible;
  * @author Sergey A. Malenkov
  */
 public final class ConstructorFinder extends AbstractFinder<Constructor<?>> {
-    private static final WeakCache<Signature, Constructor<?>> CACHE = new WeakCache<Signature, Constructor<?>>();
+    private static final Cache<Signature, Constructor<?>> CACHE = new Cache<Signature, Constructor<?>>(SOFT, SOFT) {
+        @Override
+        public Constructor create(Signature signature) {
+            try {
+                ConstructorFinder finder = new ConstructorFinder(signature.getArgs());
+                return finder.find(signature.getType().getConstructors());
+            }
+            catch (Exception exception) {
+                throw new SignatureException(exception);
+            }
+        }
+    };
 
     /**
      * Finds public constructor
@@ -69,13 +81,12 @@ public final class ConstructorFinder extends AbstractFinder<Constructor<?>> {
         PrimitiveWrapperMap.replacePrimitivesWithWrappers(args);
         Signature signature = new Signature(type, args);
 
-        Constructor<?> constructor = CACHE.get(signature);
-        if (constructor != null) {
-            return constructor;
+        try {
+            return CACHE.get(signature);
         }
-        constructor = new ConstructorFinder(args).find(type.getConstructors());
-        CACHE.put(signature, constructor);
-        return constructor;
+        catch (SignatureException exception) {
+            throw exception.toNoSuchMethodException("Constructor is not found");
+        }
     }
 
     /**

@@ -249,13 +249,13 @@ Now we can use the content + data type in declaring event fields.
     <primary_type symbol="NANOS" datatype="LONG" contenttype="NANOS"
                   type="s8" sizeop="sizeof(s8)"/>
 
-    <!-- 64-bit signed integer, SEMANTIC value ABSOLUTE TICKS -->
+    <!-- 64-bit signed integer, SEMANTIC value TICKS -->
     <primary_type symbol="TICKS" datatype="LONG" contenttype="TICKS"
-                  type="s8" sizeop="sizeof(s8)"/>
+                  type="Ticks" sizeop="sizeof(s8)"/>
 
-    <!-- 64-bit signed integer, SEMANTIC value RELATIVE TICKS -->
-    <primary_type symbol="RELATIVE_TICKS" datatype="LONG" contenttype="TICKS"
-                  type="s8" sizeop="sizeof(s8)"/>
+    <!-- 64-bit signed integer, SEMANTIC value TICKS duration -->
+    <primary_type symbol="TICKSPAN" datatype="LONG" contenttype="TICKS"
+                  type="Tickspan" sizeop="sizeof(s8)"/>
 
     <!-- 64-bit unsigned integer, SEMANTIC value ADDRESS (mem loc) -->
     <primary_type symbol="ADDRESS" datatype="U8" contenttype="ADDRESS"

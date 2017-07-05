@@ -1,0 +1,466 @@
+
+#
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include JavaCompilation.gmk
+include NativeCompilation.gmk
+
+# Setup the java compilers for the JDK build.
+include Setup.gmk
+
+# Prepare the find cache. Only used if running on windows.
+$(eval $(call FillCacheFind, $(JDK_TOPDIR)/src))
+
+# Append demo goals to this variable.
+BUILD_DEMOS =
+
+# The demo structure and contents should really be cleaned up.
+# Now every other demo has its own quirks where to put the
+# READMEs and other files.
+
+##################################################################################################
+
+define SetupAppletDemo
+  $$(eval $$(call SetupJavaCompilation,BUILD_DEMO_APPLET_$1, \
+      SETUP := GENERATE_USINGJDKBYTECODE, \
+      SRC := $(JDK_TOPDIR)/src/$3share/demo/applets/$1, \
+      BIN := $(JDK_OUTPUTDIR)/demo/applets/$1, \
+      COPY := .html .java .xyz .obj .au .gif, \
+      DISABLE_SJAVAC := $2))
+      BUILD_DEMOS += $$(BUILD_DEMO_APPLET_$1)
+endef
+
+ifneq ($(OPENJDK_TARGET_OS), solaris)
+  $(eval $(call SetupAppletDemo,ArcTest))
+  $(eval $(call SetupAppletDemo,BarChart))
+  $(eval $(call SetupAppletDemo,Blink))
+  $(eval $(call SetupAppletDemo,CardTest))
+  $(eval $(call SetupAppletDemo,Clock))
+  $(eval $(call SetupAppletDemo,DitherTest))
+  $(eval $(call SetupAppletDemo,DrawTest))
+  $(eval $(call SetupAppletDemo,Fractal))
+  $(eval $(call SetupAppletDemo,GraphicsTest))
+  $(eval $(call SetupAppletDemo,NervousText))
+  $(eval $(call SetupAppletDemo,SimpleGraph))
+  $(eval $(call SetupAppletDemo,SortDemo))
+  $(eval $(call SetupAppletDemo,SpreadSheet))
+
+  ifndef OPENJDK
+    $(eval $(call SetupAppletDemo,Animator,,closed/))
+    $(eval $(call SetupAppletDemo,GraphLayout,true,closed/))
+    $(eval $(call SetupAppletDemo,JumpingBox,,closed/))
+    $(eval $(call SetupAppletDemo,TicTacToe,,closed/))
+  endif
+endif
+
+##################################################################################################
+
+PATTERNS_TO_COPY = .html .txt .properties .js .gif .jpg .theme .data .opt README .c .h .png .ttf .xyz .obj
+
+define SetupDemo
+  # Param 1 = Name of the demo
+  # Param 2 = Subdirectory of the demo below the demo directory.
+  # Param 3 = Additional javac flags.
+  # Param 4 = The main class for the jar.
+  # Param 5 = Additional source directory.
+  # Param 6 = Extra dir below $(JDK_TOPDIR)/src (closed)
+  # Param 7 = List of files to copy
+  # Param 8 = Base name of jar file. Defaults to $1
+  # Param 9 = Exclude list
+  # Param 10 = Extra copy patterns
+  # Param 11 = Extra manifest attribute
+  # Param 12 = Suffix for compiler setup name
+
+  # In some demos the source is found in a subdir called src.
+  $1_MAIN_SRC := $$(wildcard $(JDK_TOPDIR)/src/$6share/demo/$2/$1/src)
+  ifeq ($$($1_MAIN_SRC), )
+    $1_MAIN_SRC := $(JDK_TOPDIR)/src/$6share/demo/$2/$1
+  endif
+
+  ifneq ($8, )
+    $1_JARFILE := $8.jar
+  else
+    $1_JARFILE := $1.jar
+  endif
+
+  ifeq ($(findstring $1,Laffy SwingSet3), )
+    $$(eval $$(call SetupJavaCompilation,BUILD_DEMO_$1, \
+        SETUP := GENERATE_USINGJDKBYTECODE, \
+        ADD_JAVAC_FLAGS := $3, \
+        SRC := $$($1_MAIN_SRC) $5, \
+        BIN := $(JDK_OUTPUTDIR)/democlasses/$2/$1, \
+        COPY := $(PATTERNS_TO_COPY) $(10), \
+        JAR := $(JDK_OUTPUTDIR)/demo/$2/$1/$$($1_JARFILE), \
+        JARMAIN := $4, \
+        MANIFEST := $(JDK_TOPDIR)/make/data/mainmanifest/manifest.mf, \
+        EXTRA_MANIFEST_ATTR := $(11), \
+        SRCZIP := $(JDK_OUTPUTDIR)/demo/$2/$1/src.zip, \
+        EXCLUDE_FILES := $9, \
+        DISABLE_SJAVAC := $(12)))
+
+    BUILD_DEMOS += $$(BUILD_DEMO_$1) \
+        $(JDK_OUTPUTDIR)/demo/$2/$1/$$($1_JARFILE) \
+        $(JDK_OUTPUTDIR)/demo/$2/$1/src.zip
+  endif
+
+  # Copy files.
+  $1_COPY_TARGETS := $$(patsubst $(JDK_TOPDIR)/src/$6share/demo/$2/$1/%, \
+      $(JDK_OUTPUTDIR)/demo/$2/$1/%, \
+      $$(wildcard $$(addprefix $(JDK_TOPDIR)/src/$6share/demo/$2/$1/, $7)))
+  ifneq ($7, )
+    $(JDK_OUTPUTDIR)/demo/$2/$1/%: $(JDK_TOPDIR)/src/$6share/demo/$2/$1/%
+	$$(call install-file)
+	$(CHMOD) -f ug+w $$@
+
+    BUILD_DEMOS += $$($1_COPY_TARGETS)
+  endif
+
+endef
+
+$(eval $(call SetupDemo,CodePointIM,jfc,,CodePointIM,,,*.html))
+$(JDK_OUTPUTDIR)/demo/jfc/CodePointIM/_the.services: \
+    $(JDK_OUTPUTDIR)/demo/jfc/CodePointIM/CodePointIM.jar \
+    $(JDK_TOPDIR)/src/share/demo/jfc/CodePointIM/java.awt.im.spi.InputMethodDescriptor
+	(cd $(JDK_OUTPUTDIR)/demo/jfc/CodePointIM && \
+	$(MKDIR) -p _the.tmp/META-INF/services && \
+	$(CP) $(JDK_TOPDIR)/src/share/demo/jfc/CodePointIM/java.awt.im.spi.InputMethodDescriptor _the.tmp/META-INF/services && \
+	cd _the.tmp && \
+	$(JAR) uf $(JDK_OUTPUTDIR)/demo/jfc/CodePointIM/CodePointIM.jar META-INF/services/java.awt.im.spi.InputMethodDescriptor && \
+	cd META-INF/services && \
+	$(JAR) uf $(JDK_OUTPUTDIR)/demo/jfc/CodePointIM/CodePointIM.jar java.awt.im.spi.InputMethodDescriptor)
+	$(RM) -r $(JDK_OUTPUTDIR)/demo/jfc/CodePointIM/_the.tmp
+	$(TOUCH) $@
+
+BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/jfc/CodePointIM/_the.services
+
+ifneq ($(OPENJDK_TARGET_OS), solaris)
+  $(eval $(call SetupDemo,MoleculeViewer,applets,,XYZChemModel,,,example*.html *.java))
+  $(eval $(call SetupDemo,WireFrame,applets,,ThreeD,,,example*.html *.java))
+  $(eval $(call SetupDemo,SwingApplet,jfc,,SwingApplet,,,README* *.html))
+endif
+$(eval $(call SetupDemo,FileChooserDemo,jfc,,FileChooserDemo,,,README*))
+$(eval $(call SetupDemo,Font2DTest,jfc,,Font2DTest,,,*.html *.txt))
+$(eval $(call SetupDemo,Metalworks,jfc,,Metalworks,,,README*))
+$(eval $(call SetupDemo,Notepad,jfc,,Notepad,,,README*))
+$(eval $(call SetupDemo,SampleTree,jfc,,SampleTree,,,README*))
+$(eval $(call SetupDemo,TableExample,jfc,,TableExample,,,README*))
+$(eval $(call SetupDemo,TransparentRuler,jfc,,transparentruler.Ruler,,,README*))
+$(eval $(call SetupDemo,jconsole-plugin,scripting,,,,,*.xml *.txt,,,,Main-Class: \n))
+$(eval $(call SetupDemo,FullThreadDump,management,,FullThreadDump,,,README*))
+$(eval $(call SetupDemo,JTop,management,,JTop,,,README*))
+$(eval $(call SetupDemo,MemoryMonitor,management,,MemoryMonitor,,,README*))
+$(eval $(call SetupDemo,VerboseGC,management,,VerboseGC,,,README*))
+$(eval $(call SetupDemo,zipfs,nio,,,,,README* *.java,,,,Main-Class: \n))
+
+ifndef OPENJDK
+  $(eval $(call SetupDemo,Laffy,jfc,,,,closed/,*))
+  $(eval $(call SetupDemo,SwingSet3,jfc,,,,closed/,*))
+
+  $(eval $(call SetupDemo,Java2D,jfc,,java2d.Java2Demo,,closed/,*.html README*,Java2Demo))
+  $(eval $(call SetupDemo,Stylepad,jfc,,Stylepad, \
+  $(JDK_TOPDIR)/src/share/demo/jfc/Notepad,closed/,*.txt,,$(JDK_TOPDIR)/src/share/demo/jfc/Notepad/README.txt))
+  $(eval $(call SetupDemo,SwingSet2,jfc,,SwingSet2,,closed/,README* *.html,,,.java COPYRIGHT, \
+      SplashScreen-Image: resources/images/splash.png,true))
+
+  BUILD_DEMOS += $(patsubst $(JDK_TOPDIR)/src/closed/share/demo/nbproject/%, \
+      $(JDK_OUTPUTDIR)/demo/nbproject/%, \
+      $(call CacheFind, $(JDK_TOPDIR)/src/closed/share/demo/nbproject))
+
+  $(JDK_OUTPUTDIR)/demo/nbproject/%: $(JDK_TOPDIR)/src/closed/share/demo/nbproject/%
+	$(call install-file)
+	$(CHMOD) -f ug+w $@
+    ifeq ($(OPENJDK_TARGET_OS), solaris)
+	  $(RM) -r $(JDK_OUTPUTDIR)/demo/nbproject/jfc/SwingApplet
+    endif
+endif
+
+##################################################################################################
+
+# In the old makefiles, j2dbench was not compiled.
+#$(eval $(call SetupDemo,J2DBench, java2d, /src, , j2dbench/J2DBench))
+
+# JVMTI demos are a bit strange and share some files, but be careful the
+# shared files are just the *.c and *.h files, not the README or sample
+# makefiles. So we always exclude the README.txt and sample.makefile.txt
+# from the extra sources.
+define SetupJVMTIDemo
+  # Param 1 = Name of the demo
+  # Param 2 = add these directories to the includes, default is agent_util
+  # Param 3 = extra CFLAGS
+  # Param 4 = C or C++ (defaults to C)
+  # Param 5 = libs for posix
+  # Param 6 = libs for windows
+  # Param 7 = libs for solaris
+  BUILD_DEMO_JVMTI_$1_EXTRA_SRC := \
+      $$(wildcard $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/demo/jvmti/$1) \
+      $$(wildcard $$(addprefix $(JDK_TOPDIR)/src/share/demo/jvmti/, $2))
+  BUILD_DEMO_JVMTI_$1_EXTRA_SRC_EXCLUDE := \
+      $$(wildcard $$(addprefix $(JDK_TOPDIR)/src/share/demo/jvmti/, $2)/README.txt) \
+      $$(wildcard $$(addprefix $(JDK_TOPDIR)/src/share/demo/jvmti/, $2)/sample.makefile.txt)
+  BUILD_DEMO_JVMTI_$1_EXTRA_INC := $$(addprefix -I, $$(BUILD_DEMO_JVMTI_$1_EXTRA_SRC))
+  BUILD_DEMO_JVMTI_$1_LANG := C
+  ifneq (, $4)
+    BUILD_DEMO_JVMTI_$1_LANG := $4
+  endif
+  ifeq (C++, $4)
+    $1_EXTRA_CXX := $(LDFLAGS_CXX_JDK) $(LIBCXX)
+  endif
+
+  $1_CXXFLAGS := $(CXXFLAGS_JDKLIB) -I$(JDK_TOPDIR)/src/share/demo/jvmti/$1 \
+      $$(BUILD_DEMO_JVMTI_$1_EXTRA_INC) $3 \
+      $(CXXFLAGS_DEBUG_SYMBOLS)
+  ifeq ($1-$(OPENJDK_TARGET_CPU_ARCH), waiters-sparc)
+    $1_FILTER := -xregs=no%appl
+    $1_CXXFLAGS := $$(filter-out $$($1_FILTER), $$($1_CXXFLAGS))
+  endif
+
+  # Workaround for CFLAGS_JDKLIB containing ',' on solaris. If this is added as 'CFLAGS' to the
+  # eval call below, the comma gets expanded too early.
+  BUILD_DEMO_JVMTI_$1_CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_DEBUG_SYMBOLS) \
+      -I$(JDK_TOPDIR)/src/share/demo/jvmti/$1 $$(BUILD_DEMO_JVMTI_$1_EXTRA_INC) $3
+
+  # Remove the -incremental:no setting to get .ilk-files like in the old build.
+  $$(eval $$(call SetupNativeCompilation,BUILD_DEMO_JVMTI_$1, \
+      SRC := $(JDK_TOPDIR)/src/share/demo/jvmti/$1 $$(BUILD_DEMO_JVMTI_$1_EXTRA_SRC), \
+      LANG := $$(BUILD_DEMO_JVMTI_$1_LANG), \
+      OPTIMIZATION := LOW, \
+      CXXFLAGS := $$($1_CXXFLAGS), \
+      LDFLAGS := $(filter-out -incremental:no -opt:ref, $(LDFLAGS_JDKLIB)), \
+      LDFLAGS_macosx := $(call SET_EXECUTABLE_ORIGIN), \
+      LDFLAGS_SUFFIX := $$($1_EXTRA_CXX), \
+      LDFLAGS_SUFFIX_posix := $5, \
+      LDFLAGS_SUFFIX_windows := $6, \
+      LDFLAGS_SUFFIX_solaris := $7 -lc, \
+      LDFLAGS_SUFFIX_linux := $8, \
+      VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
+      RC_FLAGS := $$(RC_FLAGS) \
+          -D "JDK_FNAME=$1.dll" \
+          -D "JDK_INTERNAL_NAME=$1" \
+          -D "JDK_FTYPE=0x2L", \
+      OBJECT_DIR := $(JDK_OUTPUTDIR)/demoobjs/jvmti/$1, \
+      OUTPUT_DIR := $(JDK_OUTPUTDIR)/demo/jvmti/$1/lib, \
+      LIBRARY := $1))
+
+  $$(eval $$(call SetupZipArchive,BUILD_DEMO_JVMTI_SRC_$1, \
+      SRC := $(JDK_TOPDIR)/src/share/demo/jvmti/$1 $$(BUILD_DEMO_JVMTI_$1_EXTRA_SRC), \
+      EXCLUDE_FILES := $$(BUILD_DEMO_JVMTI_$1_EXTRA_SRC_EXCLUDE), \
+      ZIP := $(JDK_OUTPUTDIR)/demo/jvmti/$1/src.zip))
+
+  $(JDK_OUTPUTDIR)/demo/jvmti/$1/README.txt: $(JDK_TOPDIR)/src/share/demo/jvmti/$1/README.txt
+	$$(call install-file)
+	$(CHMOD) -f ug+w $$@
+
+  ifneq (, $$(wildcard $(JDK_TOPDIR)/src/share/demo/jvmti/$1/*.java))
+    $$(eval $$(call SetupJavaCompilation,BUILD_DEMO_JVMTI_$1_JAVA, \
+        SETUP := GENERATE_USINGJDKBYTECODE, \
+        SRC := $(JDK_TOPDIR)/src/share/demo/jvmti/$1, \
+        BIN := $(JDK_OUTPUTDIR)/democlasses/jvmti/$1, \
+        COPY := $(PATTERNS_TO_COPY), \
+        JAR := $(JDK_OUTPUTDIR)/demo/jvmti/$1/$1.jar, \
+        EXTRA_MANIFEST_ATTR := Main-Class: \n, \
+        MANIFEST := $(JDK_TOPDIR)/make/data/mainmanifest/manifest.mf))
+
+    BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/jvmti/$1/$1.jar
+  endif
+
+  BUILD_DEMOS += $$(BUILD_DEMO_JVMTI_$1) \
+      $(JDK_OUTPUTDIR)/demo/jvmti/$1/src.zip \
+      $(JDK_OUTPUTDIR)/demo/jvmti/$1/README.txt
+
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    # These files normally end up in OBJECT_DIR but for demos they
+    # are supposed to be included in the distro.
+    $(JDK_OUTPUTDIR)/demo/jvmti/$1/lib/$1.lib: $$(BUILD_DEMO_JVMTI_$1)
+	$(CP) $(JDK_OUTPUTDIR)/demoobjs/jvmti/$1/$1.lib $$@
+
+    $(JDK_OUTPUTDIR)/demo/jvmti/$1/lib/$1.exp: $$(BUILD_DEMO_JVMTI_$1)
+	$(CP) $(JDK_OUTPUTDIR)/demoobjs/jvmti/$1/$1.exp $$@
+
+    BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/jvmti/$1/lib/$1.lib \
+        $(JDK_OUTPUTDIR)/demo/jvmti/$1/lib/$1.exp
+  endif
+endef
+
+$(eval $(call SetupJVMTIDemo,compiledMethodLoad, agent_util))
+$(eval $(call SetupJVMTIDemo,gctest, agent_util))
+$(eval $(call SetupJVMTIDemo,heapTracker, agent_util java_crw_demo))
+$(eval $(call SetupJVMTIDemo,heapViewer, agent_util))
+$(eval $(call SetupJVMTIDemo,hprof, java_crw_demo, \
+    -I$(JDK_TOPDIR)/src/share/npt -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/npt, C, \
+    -ldl, ws2_32.lib winmm.lib, -lsocket -lnsl, -lpthread))
+
+$(eval $(call SetupJVMTIDemo,minst, agent_util java_crw_demo))
+$(eval $(call SetupJVMTIDemo,mtrace, agent_util java_crw_demo))
+$(eval $(call SetupJVMTIDemo,waiters, agent_util, , C++))
+$(eval $(call SetupJVMTIDemo,versionCheck, agent_util))
+
+##################################################################################################
+
+# The jpda demo (com/sun/tools/example) is oddly enough stored in src/share/classes.
+# At least, we do not need to compile the jpda demo, just jar/zip up the sources.
+JPDA_SOURCES := $(call CacheFind, $(JDK_TOPDIR)/src/share/classes/com/sun/tools/example)
+# The number of files are few enough so that we can use echo safely below to list them.
+JPDA_FILES := $(subst $(JDK_TOPDIR)/src/share/classes/,,$(JPDA_SOURCES))
+
+$(JDK_OUTPUTDIR)/demo/jpda/src.zip: $(JPDA_SOURCES)
+	$(MKDIR) -p $(@D)
+	(cd $(JDK_TOPDIR)/src/share/classes && $(ZIP) -qru $@ com -i "com/sun/tools/example/*")
+
+$(JDK_OUTPUTDIR)/demo/jpda/examples.jar: $(JPDA_SOURCES)
+	$(MKDIR) -p $(@D)
+	$(RM) $(@D)/_the.sources
+	$(call ListPathsSafely,JPDA_FILES,\n, >> $(@D)/_the.sources)
+	$(SED) -e "s#@@RELEASE@@#$(RELEASE)#" \
+	    -e "s#@@COMPANY_NAME@@#$(COMPANY_NAME)#" $(JDK_TOPDIR)/make/data/mainmanifest/manifest.mf > $(@D)/_the.manifest
+	$(ECHO) "Main-Class: " >> $(@D)/_the.manifest
+	(cd $(JDK_TOPDIR)/src/share/classes && $(JAR) cfm $@ $(@D)/_the.manifest @$(@D)/_the.sources)
+	(cd $(JDK_TOPDIR)/src/share/classes/com/sun/tools/example && $(JAR) uf $@ README)
+
+$(JDK_OUTPUTDIR)/demo/jpda/com/sun/tools/example/README: $(JDK_TOPDIR)/src/share/classes/com/sun/tools/example/README
+	$(call install-file)
+	$(CHMOD) -f ug+w $@
+
+BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/jpda/src.zip $(JDK_OUTPUTDIR)/demo/jpda/examples.jar \
+    $(JDK_OUTPUTDIR)/demo/jpda/com/sun/tools/example/README
+
+##################################################################################################
+
+$(JDK_OUTPUTDIR)/demo/management/index.html: $(JDK_TOPDIR)/src/share/demo/management/index.html
+	$(call install-file)
+	$(CHMOD) -f ug+w $@
+
+$(JDK_OUTPUTDIR)/demo/jvmti/index.html: $(JDK_TOPDIR)/src/share/demo/jvmti/index.html
+	$(call install-file)
+	$(CHMOD) -f ug+w $@
+
+BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/management/index.html \
+    $(JDK_OUTPUTDIR)/demo/jvmti/index.html
+
+##################################################################################################
+
+# The netbeans project files are copied into the demo directory.
+BUILD_DEMOS += $(patsubst $(JDK_TOPDIR)/src/share/demo/nbproject/%, \
+    $(JDK_OUTPUTDIR)/demo/nbproject/%, \
+    $(call CacheFind, $(JDK_TOPDIR)/src/share/demo/nbproject))
+
+$(JDK_OUTPUTDIR)/demo/nbproject/%: $(JDK_TOPDIR)/src/share/demo/nbproject/%
+	$(call install-file)
+	$(CHMOD) -f ug+w $@
+
+##################################################################################################
+
+$(JDK_OUTPUTDIR)/demo/README: $(JDK_TOPDIR)/src/share/demo/README
+	$(call install-file)
+
+BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/README
+
+##################################################################################################
+
+ifeq ($(OPENJDK_TARGET_OS), solaris)
+
+  $(JDK_OUTPUTDIR)/democlasses/jni/Poller/%: $(JDK_TOPDIR)/src/solaris/demo/jni/Poller/%
+	$(call install-file)
+	$(CHMOD) -f ug+w $@
+
+  $(JDK_OUTPUTDIR)/demo/jni/Poller/README.txt: $(JDK_TOPDIR)/src/solaris/demo/jni/Poller/README.txt
+	$(call install-file)
+	$(CHMOD) -f ug+w $@
+
+  $(JDK_OUTPUTDIR)/demo/jni/Poller/Poller.jar: \
+      $(JDK_OUTPUTDIR)/democlasses/jni/Poller/README.txt $(JDK_OUTPUTDIR)/democlasses/jni/Poller/Poller.c
+
+  $(eval $(call SetupJavaCompilation,BUILD_DEMO_POLLER_JAR, \
+      SETUP := GENERATE_USINGJDKBYTECODE, \
+      SRC := $(JDK_TOPDIR)/src/solaris/demo/jni/Poller, \
+      BIN := $(JDK_OUTPUTDIR)/democlasses/jni/Poller, \
+      HEADERS := $(JDK_OUTPUTDIR)/democlasses/jni/Poller, \
+      JAR := $(JDK_OUTPUTDIR)/demo/jni/Poller/Poller.jar, \
+      MANIFEST := $(JDK_TOPDIR)/make/data/mainmanifest/manifest.mf, \
+      SRCZIP := $(JDK_OUTPUTDIR)/demo/jni/Poller/src.zip, \
+      COPY := README.txt Poller.c, \
+      JARMAIN := Client))
+
+
+
+  BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/jni/Poller/Poller.jar $(JDK_OUTPUTDIR)/demo/jni/Poller/src.zip \
+      $(JDK_OUTPUTDIR)/demo/jni/Poller/README.txt
+
+  $(eval $(call SetupNativeCompilation,BUILD_LIBPOLLER, \
+      SRC := $(JDK_TOPDIR)/src/solaris/demo/jni/Poller, \
+      LANG := C, \
+      OPTIMIZATION := LOW, \
+      CFLAGS := $(CFLAGS_JDKLIB) $(SHARED_LIBRARY_FLAGS) \
+          -I$(JDK_OUTPUTDIR)/democlasses/jni/Poller, \
+      LDFLAGS := $(LDFLAGS_JDKLIB), \
+      LDFLAGS_SUFFIX_solaris := -lc, \
+      OBJECT_DIR := $(JDK_OUTPUTDIR)/demoobjs/jni/Poller, \
+      OUTPUT_DIR := $(JDK_OUTPUTDIR)/demoobjs, \
+      LIBRARY := Poller))
+
+  #
+  # We can only compile native code after jar has been build (since we depend on generated .h files)
+  #
+  $(JDK_OUTPUTDIR)/demoobjs/jni/Poller/Poller.o: $(JDK_OUTPUTDIR)/demo/jni/Poller/Poller.jar
+
+  $(JDK_OUTPUTDIR)/demo/jni/Poller/lib/$(LIBRARY_PREFIX)Poller$(SHARED_LIBRARY_SUFFIX): \
+      $(JDK_OUTPUTDIR)/demoobjs/$(LIBRARY_PREFIX)Poller$(SHARED_LIBRARY_SUFFIX)
+	$(call install-file)
+
+  BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/jni/Poller/lib/$(LIBRARY_PREFIX)Poller$(SHARED_LIBRARY_SUFFIX)
+
+endif
+
+##################################################################################################
+
+ifndef OPENJDK
+  DB_DEMO_ZIPFILE := $(wildcard $(JDK_TOPDIR)/src/closed/share/db/*.zip)
+
+  $(JDK_OUTPUTDIR)/demo/_the.db.unzipped: $(DB_DEMO_ZIPFILE)
+	$(MKDIR) -p $(@D)
+	$(RM) -r $(JDK_OUTPUTDIR)/demo/db $(JDK_OUTPUTDIR)/demo/demo
+	$(CD) $(JDK_OUTPUTDIR)/demo && $(UNZIP) -q -o $<
+	$(MV) $(JDK_OUTPUTDIR)/demo/db-derby-*-bin/demo $(JDK_OUTPUTDIR)/demo/db
+	$(CD) $(JDK_OUTPUTDIR)/demo && $(RM) -r db-derby-*-bin
+	$(TOUCH) $@
+
+  # Copy this after the unzip above to avoid race with directory creation and mv command.
+  $(JDK_OUTPUTDIR)/demo/db/README-JDK-DEMOS.html: \
+      $(JDK_TOPDIR)/src/closed/share/db/README-JDK-DEMOS.html \
+      | $(JDK_OUTPUTDIR)/demo/_the.db.unzipped
+	$(MKDIR) -p $(@D)
+	$(CAT) $< | $(SED) "s/XXXX/$(shell cat $(JDK_TOPDIR)/src/closed/share/db/COPYRIGHTYEAR)/" > $@
+
+  BUILD_DEMOS += $(JDK_OUTPUTDIR)/demo/_the.db.unzipped $(JDK_OUTPUTDIR)/demo/db/README-JDK-DEMOS.html
+endif
+
+##################################################################################################
+
+all: $(BUILD_DEMOS)
+
+.PHONY: all
