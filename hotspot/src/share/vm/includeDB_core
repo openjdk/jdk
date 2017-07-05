@@ -2026,6 +2026,7 @@ init.hpp                                top.hpp
 
 instanceKlass.cpp                       collectedHeap.inline.hpp
 instanceKlass.cpp                       compileBroker.hpp
+instanceKlass.cpp                       dtrace.hpp
 instanceKlass.cpp                       fieldDescriptor.hpp
 instanceKlass.cpp                       genOopClosures.inline.hpp
 instanceKlass.cpp                       handles.inline.hpp
@@ -2485,6 +2486,7 @@ jvm.cpp                                 classLoader.hpp
 jvm.cpp                                 collectedHeap.inline.hpp
 jvm.cpp                                 copy.hpp
 jvm.cpp                                 defaultStream.hpp
+jvm.cpp                                 dtrace.hpp
 jvm.cpp                                 dtraceJSDT.hpp
 jvm.cpp                                 events.hpp
 jvm.cpp                                 handles.inline.hpp
@@ -2726,8 +2728,10 @@ markOop.inline.hpp                      markOop.hpp
 
 markSweep.cpp                           compileBroker.hpp
 markSweep.cpp                           methodDataOop.hpp
+markSweep.cpp				objArrayKlass.inline.hpp
 
 markSweep.hpp                           collectedHeap.hpp
+markSweep.hpp				taskqueue.hpp
 
 memRegion.cpp                           globals.hpp
 memRegion.cpp                           memRegion.hpp
@@ -3057,8 +3061,10 @@ objArrayKlass.cpp                       copy.hpp
 objArrayKlass.cpp                       genOopClosures.inline.hpp
 objArrayKlass.cpp                       handles.inline.hpp
 objArrayKlass.cpp                       instanceKlass.hpp
+objArrayKlass.cpp                       markSweep.inline.hpp
 objArrayKlass.cpp                       mutexLocker.hpp
 objArrayKlass.cpp                       objArrayKlass.hpp
+objArrayKlass.cpp                       objArrayKlass.inline.hpp
 objArrayKlass.cpp                       objArrayKlassKlass.hpp
 objArrayKlass.cpp                       objArrayOop.hpp
 objArrayKlass.cpp                       oop.inline.hpp
@@ -3069,10 +3075,11 @@ objArrayKlass.cpp                       systemDictionary.hpp
 objArrayKlass.cpp                       universe.inline.hpp
 objArrayKlass.cpp                       vmSymbols.hpp
 
-
 objArrayKlass.hpp                       arrayKlass.hpp
 objArrayKlass.hpp                       instanceKlass.hpp
 objArrayKlass.hpp                       specialized_oop_closures.hpp
+
+objArrayKlass.inline.hpp		objArrayKlass.hpp
 
 objArrayKlassKlass.cpp                  collectedHeap.inline.hpp
 objArrayKlassKlass.cpp                  instanceKlass.hpp
@@ -4099,6 +4106,7 @@ task.cpp                                timer.hpp
 task.hpp                                top.hpp
 
 taskqueue.cpp                           debug.hpp
+taskqueue.cpp				oop.inline.hpp
 taskqueue.cpp                           os.hpp
 taskqueue.cpp                           taskqueue.hpp
 taskqueue.cpp                           thread_<os_family>.inline.hpp
@@ -4452,6 +4460,7 @@ universe.inline.hpp                     universe.hpp
 
 unsafe.cpp                              allocation.inline.hpp
 unsafe.cpp                              copy.hpp
+unsafe.cpp                              dtrace.hpp
 unsafe.cpp                              globals.hpp
 unsafe.cpp                              interfaceSupport.hpp
 unsafe.cpp                              jni.h
@@ -4623,6 +4632,7 @@ vmSymbols.hpp                           symbolOop.hpp
 
 vmThread.cpp                            collectedHeap.hpp
 vmThread.cpp                            compileBroker.hpp
+vmThread.cpp                            dtrace.hpp
 vmThread.cpp                            events.hpp
 vmThread.cpp                            interfaceSupport.hpp
 vmThread.cpp                            methodOop.hpp

@@ -785,7 +785,7 @@ PSParallelCompact::AdjustPointerClosure PSParallelCompact::_adjust_pointer_closu
 void PSParallelCompact::AdjustPointerClosure::do_oop(oop* p)       { adjust_pointer(p, _is_root); }
 void PSParallelCompact::AdjustPointerClosure::do_oop(narrowOop* p) { adjust_pointer(p, _is_root); }
 
-void PSParallelCompact::FollowStackClosure::do_void() { follow_stack(_compaction_manager); }
+void PSParallelCompact::FollowStackClosure::do_void() { _compaction_manager->follow_marking_stacks(); }
 
 void PSParallelCompact::MarkAndPushClosure::do_oop(oop* p)       { mark_and_push(_compaction_manager, p); }
 void PSParallelCompact::MarkAndPushClosure::do_oop(narrowOop* p) { mark_and_push(_compaction_manager, p); }
@@ -2376,7 +2376,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   // Follow code cache roots.
   CodeCache::do_unloading(is_alive_closure(), &mark_and_push_closure,
                           purged_class);
-  follow_stack(cm); // Flush marking stack.
+  cm->follow_marking_stacks(); // Flush marking stack.
 
   // Update subklass/sibling/implementor links of live klasses
   // revisit_klass_stack is used in follow_weak_klass_links().
@@ -2389,8 +2389,7 @@ void PSParallelCompact::marking_phase(ParCompactionManager* cm,
   SymbolTable::unlink(is_alive_closure());
   StringTable::unlink(is_alive_closure());
 
-  assert(cm->marking_stack()->size() == 0, "stack should be empty by now");
-  assert(cm->overflow_stack()->is_empty(), "stack should be empty by now");
+  assert(cm->marking_stacks_empty(), "marking stacks should be empty");
 }
 
 // This should be moved to the shared markSweep code!
@@ -2709,22 +2708,6 @@ void PSParallelCompact::compact_serial(ParCompactionManager* cm) {
   young_gen->move_and_update(cm);
 }
 
-
-void PSParallelCompact::follow_stack(ParCompactionManager* cm) {
-  while(!cm->overflow_stack()->is_empty()) {
-    oop obj = cm->overflow_stack()->pop();
-    obj->follow_contents(cm);
-  }
-
-  oop obj;
-  // obj is a reference!!!
-  while (cm->marking_stack()->pop_local(obj)) {
-    // It would be nice to assert about the type of objects we might
-    // pop, but they can come from anywhere, unfortunately.
-    obj->follow_contents(cm);
-  }
-}
-
 void
 PSParallelCompact::follow_weak_klass_links() {
   // All klasses on the revisit stack are marked at this point.
@@ -2745,7 +2728,7 @@ PSParallelCompact::follow_weak_klass_links() {
         &keep_alive_closure);
     }
     // revisit_klass_stack is cleared in reset()
-    follow_stack(cm);
+    cm->follow_marking_stacks();
   }
 }
 
@@ -2776,7 +2759,7 @@ void PSParallelCompact::follow_mdo_weak_refs() {
       rms->at(j)->follow_weak_refs(is_alive_closure());
     }
     // revisit_mdo_stack is cleared in reset()
-    follow_stack(cm);
+    cm->follow_marking_stacks();
   }
 }
 
