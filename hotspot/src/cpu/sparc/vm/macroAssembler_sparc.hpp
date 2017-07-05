@@ -26,6 +26,7 @@
 #define CPU_SPARC_VM_MACROASSEMBLER_SPARC_HPP
 
 #include "asm/assembler.hpp"
+#include "utilities/macros.hpp"
 
 // <sys/trap.h> promises that the system will not use traps 16-31
 #define ST_RESERVED_FOR_USER_0 0x10
@@ -1181,13 +1182,13 @@ public:
 
   void card_write_barrier_post(Register store_addr, Register new_val, Register tmp);
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
   // General G1 pre-barrier generator.
   void g1_write_barrier_pre(Register obj, Register index, int offset, Register pre_val, Register tmp, bool preserve_o_regs);
 
   // General G1 post-barrier generator
   void g1_write_barrier_post(Register store_addr, Register new_val, Register tmp);
-#endif // SERIALGC
+#endif // INCLUDE_ALL_GCS
 
   // pushes double TOS element of FPU stack on CPU stack; pops from FPU stack
   void push_fTOS();

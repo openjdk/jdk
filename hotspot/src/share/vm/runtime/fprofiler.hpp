@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_RUNTIME_FPROFILER_HPP
 #define SHARE_VM_RUNTIME_FPROFILER_HPP
 
+#include "utilities/macros.hpp"
 #include "runtime/timer.hpp"
 
 // a simple flat profiler for Java

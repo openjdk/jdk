@@ -27,8 +27,11 @@
  * @summary Test URLConnection Request Proterties
  */
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Part1:
@@ -45,28 +48,29 @@ public class RequestPropertyValues {
     }
 
     public static void part1() throws Exception {
-        URL[] urls = { new URL("http://localhost:8088"),
-                        new URL("file:/etc/passwd"),
-                        new URL("ftp://foo:bar@foobar.com/etc/passwd"),
-                        new URL("jar:http://foo.com/bar.html!/foo/bar")
-                    };
+        List<URL> urls = new ArrayList<>();
+        urls.add(new URL("http://localhost:8088"));
+        urls.add(new URL("file:/etc/passwd"));
+        urls.add(new URL("jar:http://foo.com/bar.html!/foo/bar"));
+        if (hasFtp())
+            urls.add(new URL("ftp://foo:bar@foobar.com/etc/passwd"));
 
         boolean failed = false;
 
-        for (int proto = 0; proto < urls.length; proto++) {
-            URLConnection uc = (URLConnection) urls[proto].openConnection();
+        for (URL url : urls) {
+            URLConnection uc = url.openConnection();
             try {
                 uc.setRequestProperty("TestHeader", null);
             } catch (NullPointerException npe) {
                 System.out.println("setRequestProperty is throwing NPE" +
-                                " for url: " + urls[proto]);
+                                " for url: " + url);
                 failed = true;
             }
             try {
                 uc.addRequestProperty("TestHeader", null);
             } catch (NullPointerException npe) {
                 System.out.println("addRequestProperty is throwing NPE" +
-                                " for url: " + urls[proto]);
+                                " for url: " + url);
                 failed = true;
             }
         }
@@ -110,4 +114,12 @@ public class RequestPropertyValues {
         }
     }
 
+    private static boolean hasFtp() {
+        try {
+            return new java.net.URL("ftp://") != null;
+        } catch (java.net.MalformedURLException x) {
+            System.out.println("FTP not supported by this runtime.");
+            return false;
+        }
+    }
 }

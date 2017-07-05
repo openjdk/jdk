@@ -1,7 +1,7 @@
 /*
  * @(#)FreeList.java
  *
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public class FreeList extends VMObject {
    }
 
    private static synchronized void initialize(TypeDataBase db) {
-      Type type = db.lookupType("FreeList");
+      Type type = db.lookupType("FreeList<FreeChunk>");
       sizeField = type.getCIntegerField("_size");
       countField = type.getCIntegerField("_count");
       headerSize = type.getSize();

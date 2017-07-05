@@ -26,6 +26,7 @@
 #define SHARE_VM_OOPS_INSTANCECLASSLOADERKLASS_HPP
 
 #include "oops/instanceKlass.hpp"
+#include "utilities/macros.hpp"
 
 // An InstanceClassLoaderKlass is a specialization of the InstanceKlass. It does
 // not add any field.  It is added to walk the dependencies for the class loader
@@ -61,13 +62,13 @@ public:
   ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceClassLoaderKlass_OOP_OOP_ITERATE_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceClassLoaderKlass_OOP_OOP_ITERATE_DECL)
 
-#ifndef SERIALGC
+#if INCLUDE_ALL_GCS
 #define InstanceClassLoaderKlass_OOP_OOP_ITERATE_BACKWARDS_DECL(OopClosureType, nv_suffix)      \
   int oop_oop_iterate_backwards##nv_suffix(oop obj, OopClosureType* blk);
 
   ALL_OOP_OOP_ITERATE_CLOSURES_1(InstanceClassLoaderKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
   ALL_OOP_OOP_ITERATE_CLOSURES_2(InstanceClassLoaderKlass_OOP_OOP_ITERATE_BACKWARDS_DECL)
-#endif // !SERIALGC
+#endif // INCLUDE_ALL_GCS
 
     // Garbage collection
   void oop_follow_contents(oop obj);

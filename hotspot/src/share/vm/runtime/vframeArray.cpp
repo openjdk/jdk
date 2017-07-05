@@ -233,8 +233,6 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
       // Force early return from top frame after deoptimization
 #ifndef CC_INTERP
       pc = Interpreter::remove_activation_early_entry(state->earlyret_tos());
-#else
-     // TBD: Need to implement ForceEarlyReturn for CC_INTERP (ia64)
 #endif
     } else {
       // Possibly override the previous pc computation of the top (youngest) frame

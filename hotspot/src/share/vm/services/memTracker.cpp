@@ -29,6 +29,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/threadCritical.hpp"
+#include "runtime/vm_operations.hpp"
 #include "services/memPtr.hpp"
 #include "services/memReporter.hpp"
 #include "services/memTracker.hpp"
@@ -65,6 +66,8 @@ volatile MemTracker::NMTStates  MemTracker::_state = NMT_uninited;
 MemTracker::ShutdownReason      MemTracker::_reason = NMT_shutdown_none;
 int                             MemTracker::_thread_count = 255;
 volatile jint                   MemTracker::_pooled_recorder_count = 0;
+volatile unsigned long          MemTracker::_processing_generation = 0;
+volatile bool                   MemTracker::_worker_thread_idle = false;
 debug_only(intx                 MemTracker::_main_thread_tid = 0;)
 NOT_PRODUCT(volatile jint       MemTracker::_pending_recorder_count = 0;)
 
@@ -279,7 +282,7 @@ MemRecorder* MemTracker::get_new_or_pooled_instance() {
      }
      cur_head->set_next(NULL);
      Atomic::dec(&_pooled_recorder_count);
-     debug_only(cur_head->set_generation();)
+     cur_head->set_generation();
      return cur_head;
   }
 }
@@ -567,6 +570,51 @@ bool MemTracker::print_memory_usage(BaselineOutputer& out, size_t unit, bool sum
     reporter.report_baseline(baseline, summary_only);
     return true;
   }
+  return false;
+}
+
+// Whitebox API for blocking until the current generation of NMT data has been merged
+bool MemTracker::wbtest_wait_for_data_merge() {
+  // NMT can't be shutdown while we're holding _query_lock
+  MutexLockerEx lock(_query_lock, true);
+  assert(_worker_thread != NULL, "Invalid query");
+  // the generation at query time, so NMT will spin till this generation is processed
+  unsigned long generation_at_query_time = SequenceGenerator::current_generation();
+  unsigned long current_processing_generation = _processing_generation;
+  // if generation counter overflown
+  bool generation_overflown = (generation_at_query_time < current_processing_generation);
+  long generations_to_wrap = MAX_UNSIGNED_LONG - current_processing_generation;
+  // spin
+  while (!shutdown_in_progress()) {
+    if (!generation_overflown) {
+      if (current_processing_generation > generation_at_query_time) {
+        return true;
+      }
+    } else {
+      assert(generations_to_wrap >= 0, "Sanity check");
+      long current_generations_to_wrap = MAX_UNSIGNED_LONG - current_processing_generation;
+      assert(current_generations_to_wrap >= 0, "Sanity check");
+      // to overflow an unsigned long should take long time, so to_wrap check should be sufficient
+      if (current_generations_to_wrap > generations_to_wrap &&
+          current_processing_generation > generation_at_query_time) {
+        return true;
+      }
+    }
+
+    // if worker thread is idle, but generation is not advancing, that means
+    // there is not safepoint to let NMT advance generation, force one.
+    if (_worker_thread_idle) {
+      VM_ForceSafepoint vfs;
+      VMThread::execute(&vfs);
+    }
+    MemSnapshot* snapshot = get_snapshot();
+    if (snapshot == NULL) {
+      return false;
+    }
+    snapshot->wait(1000);
+    current_processing_generation = _processing_generation;
+  }
+  // We end up here if NMT is shutting down before our data has been merged
   return false;
 }
 

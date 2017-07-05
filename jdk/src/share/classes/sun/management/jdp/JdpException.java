@@ -1,6 +1,5 @@
 /*
- * @(#)BinaryTreeDictionary.java
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,40 +19,22 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package sun.management.jdp;
 
-package sun.jvm.hotspot.memory;
+/**
+ * An Exception thrown if a JDP implementation encounters a problem.
+ */
+public final class JdpException extends Exception {
 
-import java.util.*;
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.types.*;
-import sun.jvm.hotspot.runtime.*;
+    private static final long serialVersionUID = 1L;
 
-public class BinaryTreeDictionary extends VMObject {
-   static {
-      VM.registerVMInitializedObserver(new Observer() {
-         public void update(Observable o, Object data) {
-            initialize(VM.getVM().getTypeDataBase());
-         }
-      });
-   }
-
-   private static synchronized void initialize(TypeDataBase db) {
-      Type type = db.lookupType("BinaryTreeDictionary");
-      totalSizeField = type.getCIntegerField("_totalSize");
-   }
-
-   // Fields
-   private static CIntegerField totalSizeField;
-
-   // Accessors
-   public long size() {
-      return totalSizeField.getValue(addr);
-   }
-
-   // Constructor
-   public BinaryTreeDictionary(Address addr) {
-      super(addr);
-   }
+    /**
+     * Construct a new JDP exception with a meaningful message
+     *
+     * @param msg - message
+     */
+    public JdpException(String msg) {
+        super(msg);
+    }
 }
