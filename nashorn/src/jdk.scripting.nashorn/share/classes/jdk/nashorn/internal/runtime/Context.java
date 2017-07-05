@@ -1132,7 +1132,7 @@ public final class Context {
         if (storedScript == null) {
             functionNode = new Parser(env, source, errMan, strict, getLogger(Parser.class)).parse();
 
-            if (errors.hasErrors()) {
+            if (errMan.hasErrors()) {
                 return null;
             }
 
@@ -1162,9 +1162,13 @@ public final class Context {
                     env,
                     installer,
                     source,
+                    errMan,
                     strict | functionNode.isStrict());
 
             final FunctionNode compiledFunction = compiler.compile(functionNode, phases);
+            if (errMan.hasErrors()) {
+                return null;
+            }
             script = compiledFunction.getRootClass();
             compiler.persistClassInfo(cacheKey, compiledFunction);
         } else {

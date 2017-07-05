@@ -135,11 +135,6 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
       if (ForceTimeHighResolution)
         timeEndPeriod(1L);
 
-      // Workaround for issue when a custom launcher doesn't call
-      // DestroyJavaVM and NMT is trying to track memory when free is
-      // called from a static destructor
-      MemTracker::shutdown();
-
       break;
     default:
       break;
@@ -414,6 +409,8 @@ struct tm* os::localtime_pd(const time_t* clock, struct tm* res) {
 
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
+extern jint volatile vm_getting_terminated;
+
 // Thread start routine for all new Java threads
 static unsigned __stdcall java_start(Thread* thread) {
   // Try to randomize the cache line index of hot stack frames.
@@ -435,9 +432,17 @@ static unsigned __stdcall java_start(Thread* thread) {
     }
   }
 
+  // Diagnostic code to investigate JDK-6573254 (Part I)
+  unsigned res = 90115;  // non-java thread
+  if (thread->is_Java_thread()) {
+    JavaThread* java_thread = (JavaThread*)thread;
+    res = java_lang_Thread::is_daemon(java_thread->threadObj())
+          ? 70115        // java daemon thread
+          : 80115;       // java non-daemon thread
+  }
 
   // Install a win32 structured exception handler around every thread created
-  // by VM, so VM can genrate error dump when an exception occurred in non-
+  // by VM, so VM can generate error dump when an exception occurred in non-
   // Java thread (e.g. VM thread).
   __try {
      thread->run();
@@ -451,6 +456,11 @@ static unsigned __stdcall java_start(Thread* thread) {
   // which frees the CodeHeap containing the Atomic::add code
   if (thread != VMThread::vm_thread() && VMThread::vm_thread() != NULL) {
     Atomic::dec_ptr((intptr_t*)&os::win32::_os_thread_count);
+  }
+
+  // Diagnostic code to investigate JDK-6573254 (Part II)
+  if (OrderAccess::load_acquire(&vm_getting_terminated)) {
+    return res;
   }
 
   return 0;
