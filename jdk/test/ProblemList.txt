@@ -164,9 +164,6 @@ javax/management/remote/mandatory/notif/NotifReconnectDeadlockTest.java			generi
 # 6988950
 demo/jvmti/compiledMethodLoad/CompiledMethodLoadTest.java	generic-all
 
-# 8071968
-javax/xml/ws/8046817/GenerateEnumSchema.java                windows-all
-
 ############################################################################
 
 # jdk_net

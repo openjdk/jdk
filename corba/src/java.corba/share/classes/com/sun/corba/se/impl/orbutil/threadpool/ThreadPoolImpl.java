@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,7 @@ import com.sun.corba.se.spi.monitoring.LongMonitoredAttributeBase;
 import com.sun.corba.se.impl.logging.ORBUtilSystemException;
 import com.sun.corba.se.impl.orbutil.ORBConstants;
 import com.sun.corba.se.spi.logging.CORBALogDomains;
+import com.sun.corba.se.impl.transport.ManagedLocalsThread;
 
 public class ThreadPoolImpl implements ThreadPool
 {
@@ -459,7 +460,7 @@ public class ThreadPoolImpl implements ThreadPool
     }
 
 
-    private class WorkerThread extends Thread implements Closeable
+    private class WorkerThread extends ManagedLocalsThread implements Closeable
     {
         private Work currentWork;
         private int threadId = 0; // unique id for the thread
