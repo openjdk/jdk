@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -16,9 +16,9 @@
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
- * CA 95054 USA or visit www.sun.com if you need additional information or
- * have any questions.
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
  *
  */
 
@@ -1014,9 +1014,7 @@ void nmethod::clear_inline_caches() {
 
 void nmethod::cleanup_inline_caches() {
 
-  assert(SafepointSynchronize::is_at_safepoint() &&
-        !CompiledIC_lock->is_locked() &&
-        !Patching_lock->is_locked(), "no threads must be updating the inline caches by them selfs");
+  assert_locked_or_safepoint(CompiledIC_lock);
 
   // If the method is not entrant or zombie then a JMP is plastered over the
   // first few bytes.  If an oop in the old code was there, that oop
@@ -1071,7 +1069,6 @@ void nmethod::mark_as_seen_on_stack() {
 // Tell if a non-entrant method can be converted to a zombie (i.e., there is no activations on the stack)
 bool nmethod::can_not_entrant_be_converted() {
   assert(is_not_entrant(), "must be a non-entrant method");
-  assert(SafepointSynchronize::is_at_safepoint(), "must be called during a safepoint");
 
   // Since the nmethod sweeper only does partial sweep the sweeper's traversal
   // count can be greater than the stack traversal count before it hits the
@@ -1127,7 +1124,7 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
     _method = NULL;            // Clear the method of this dead nmethod
   }
   // Make the class unloaded - i.e., change state and notify sweeper
-  check_safepoint();
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
   if (is_in_use()) {
     // Transitioning directly from live to unloaded -- so
     // we need to force a cache clean-up; remember this
@@ -1220,17 +1217,6 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
       assert (NativeJump::instruction_size == nmethod::_zombie_instruction_size, "");
     }
 
-    // When the nmethod becomes zombie it is no longer alive so the
-    // dependencies must be flushed.  nmethods in the not_entrant
-    // state will be flushed later when the transition to zombie
-    // happens or they get unloaded.
-    if (state == zombie) {
-      assert(SafepointSynchronize::is_at_safepoint(), "must be done at safepoint");
-      flush_dependencies(NULL);
-    } else {
-      assert(state == not_entrant, "other cases may need to be handled differently");
-    }
-
     was_alive = is_in_use(); // Read state under lock
 
     // Change state
@@ -1240,6 +1226,17 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
     log_state_change();
 
   } // leave critical region under Patching_lock
+
+  // When the nmethod becomes zombie it is no longer alive so the
+  // dependencies must be flushed.  nmethods in the not_entrant
+  // state will be flushed later when the transition to zombie
+  // happens or they get unloaded.
+  if (state == zombie) {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    flush_dependencies(NULL);
+  } else {
+    assert(state == not_entrant, "other cases may need to be handled differently");
+  }
 
   if (state == not_entrant) {
     Events::log("Make nmethod not entrant " INTPTR_FORMAT, this);
@@ -1310,21 +1307,13 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   return true;
 }
 
-
-#ifndef PRODUCT
-void nmethod::check_safepoint() {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
-}
-#endif
-
-
 void nmethod::flush() {
   // Note that there are no valid oops in the nmethod anymore.
   assert(is_zombie() || (is_osr_method() && is_unloaded()), "must be a zombie method");
   assert(is_marked_for_reclamation() || (is_osr_method() && is_unloaded()), "must be marked for reclamation");
 
   assert (!is_locked_by_vm(), "locked methods shouldn't be flushed");
-  check_safepoint();
+  assert_locked_or_safepoint(CodeCache_lock);
 
   // completely deallocate this method
   EventMark m("flushing nmethod " INTPTR_FORMAT " %s", this, "");
@@ -1373,7 +1362,7 @@ void nmethod::flush() {
 // notifies instanceKlasses that are reachable
 
 void nmethod::flush_dependencies(BoolObjectClosure* is_alive) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be done at safepoint");
+  assert_locked_or_safepoint(CodeCache_lock);
   assert(Universe::heap()->is_gc_active() == (is_alive != NULL),
   "is_alive is non-NULL if and only if we are called during GC");
   if (!has_flushed_dependencies()) {
@@ -2266,7 +2255,6 @@ void nmethod::print() const {
     tty->print(" for method " INTPTR_FORMAT , (address)method());
     tty->print(" { ");
     if (version())        tty->print("v%d ", version());
-    if (level())          tty->print("l%d ", level());
     if (is_in_use())      tty->print("in_use ");
     if (is_not_entrant()) tty->print("not_entrant ");
     if (is_zombie())      tty->print("zombie ");
