@@ -2465,16 +2465,40 @@ bool os::commit_memory(char* addr, size_t size, bool exec) {
   return res != (uintptr_t) MAP_FAILED;
 }
 
+// Define MAP_HUGETLB here so we can build HotSpot on old systems.
+#ifndef MAP_HUGETLB
+#define MAP_HUGETLB 0x40000
+#endif
+
+// Define MADV_HUGEPAGE here so we can build HotSpot on old systems.
+#ifndef MADV_HUGEPAGE
+#define MADV_HUGEPAGE 14
+#endif
+
 bool os::commit_memory(char* addr, size_t size, size_t alignment_hint,
                        bool exec) {
+  if (UseHugeTLBFS && alignment_hint > (size_t)vm_page_size()) {
+    int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
+    uintptr_t res =
+      (uintptr_t) ::mmap(addr, size, prot,
+                         MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS|MAP_HUGETLB,
+                         -1, 0);
+    return res != (uintptr_t) MAP_FAILED;
+  }
+
   return commit_memory(addr, size, exec);
 }
 
-void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) { }
+void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
+  if (UseHugeTLBFS && alignment_hint > (size_t)vm_page_size()) {
+    // We don't check the return value: madvise(MADV_HUGEPAGE) may not
+    // be supported or the memory may already be backed by huge pages.
+    ::madvise(addr, bytes, MADV_HUGEPAGE);
+  }
+}
 
 void os::free_memory(char *addr, size_t bytes) {
-  ::mmap(addr, bytes, PROT_READ | PROT_WRITE,
-         MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
+  ::madvise(addr, bytes, MADV_DONTNEED);
 }
 
 void os::numa_make_global(char *addr, size_t bytes) {
@@ -2812,6 +2836,43 @@ bool os::unguard_memory(char* addr, size_t size) {
   return linux_mprotect(addr, size, PROT_READ|PROT_WRITE);
 }
 
+bool os::Linux::hugetlbfs_sanity_check(bool warn, size_t page_size) {
+  bool result = false;
+  void *p = mmap (NULL, page_size, PROT_READ|PROT_WRITE,
+                  MAP_ANONYMOUS|MAP_PRIVATE|MAP_HUGETLB,
+                  -1, 0);
+
+  if (p != (void *) -1) {
+    // We don't know if this really is a huge page or not.
+    FILE *fp = fopen("/proc/self/maps", "r");
+    if (fp) {
+      while (!feof(fp)) {
+        char chars[257];
+        long x = 0;
+        if (fgets(chars, sizeof(chars), fp)) {
+          if (sscanf(chars, "%lx-%*lx", &x) == 1
+              && x == (long)p) {
+            if (strstr (chars, "hugepage")) {
+              result = true;
+              break;
+            }
+          }
+        }
+      }
+      fclose(fp);
+    }
+    munmap (p, page_size);
+    if (result)
+      return true;
+  }
+
+  if (warn) {
+    warning("HugeTLBFS is not supported by the operating system.");
+  }
+
+  return result;
+}
+
 /*
 * Set the coredump_filter bits to include largepages in core dump (bit 6)
 *
@@ -2854,7 +2915,16 @@ static void set_coredump_filter(void) {
 static size_t _large_page_size = 0;
 
 bool os::large_page_init() {
-  if (!UseLargePages) return false;
+  if (!UseLargePages) {
+    UseHugeTLBFS = false;
+    UseSHM = false;
+    return false;
+  }
+
+  if (FLAG_IS_DEFAULT(UseHugeTLBFS) && FLAG_IS_DEFAULT(UseSHM)) {
+    // Our user has not expressed a preference, so we'll try both.
+    UseHugeTLBFS = UseSHM = true;
+  }
 
   if (LargePageSizeInBytes) {
     _large_page_size = LargePageSizeInBytes;
@@ -2899,12 +2969,23 @@ bool os::large_page_init() {
     }
   }
 
+  // print a warning if any large page related flag is specified on command line
+  bool warn_on_failure = !FLAG_IS_DEFAULT(UseHugeTLBFS);
+
   const size_t default_page_size = (size_t)Linux::page_size();
   if (_large_page_size > default_page_size) {
     _page_sizes[0] = _large_page_size;
     _page_sizes[1] = default_page_size;
     _page_sizes[2] = 0;
   }
+
+  UseHugeTLBFS = UseHugeTLBFS &&
+                 Linux::hugetlbfs_sanity_check(warn_on_failure, _large_page_size);
+
+  if (UseHugeTLBFS)
+    UseSHM = false;
+
+  UseLargePages = UseHugeTLBFS || UseSHM;
 
   set_coredump_filter();
 
@@ -2922,7 +3003,7 @@ bool os::large_page_init() {
 char* os::reserve_memory_special(size_t bytes, char* req_addr, bool exec) {
   // "exec" is passed in but not used.  Creating the shared image for
   // the code cache doesn't have an SHM_X executable permission to check.
-  assert(UseLargePages, "only for large pages");
+  assert(UseLargePages && UseSHM, "only for SHM large pages");
 
   key_t key = IPC_PRIVATE;
   char *addr;
@@ -2989,16 +3070,15 @@ size_t os::large_page_size() {
   return _large_page_size;
 }
 
-// Linux does not support anonymous mmap with large page memory. The only way
-// to reserve large page memory without file backing is through SysV shared
-// memory API. The entire memory region is committed and pinned upfront.
-// Hopefully this will change in the future...
+// HugeTLBFS allows application to commit large page memory on demand;
+// with SysV SHM the entire memory region must be allocated as shared
+// memory.
 bool os::can_commit_large_page_memory() {
-  return false;
+  return UseHugeTLBFS;
 }
 
 bool os::can_execute_large_page_memory() {
-  return false;
+  return UseHugeTLBFS;
 }
 
 // Reserve memory at an arbitrary address, only if that area is
@@ -4087,6 +4167,23 @@ jint os::init_2(void)
     } else {
       if ((Linux::numa_max_node() < 1)) {
         // There's only one node(they start from 0), disable NUMA.
+        UseNUMA = false;
+      }
+    }
+    // With SHM large pages we cannot uncommit a page, so there's not way
+    // we can make the adaptive lgrp chunk resizing work. If the user specified
+    // both UseNUMA and UseLargePages (or UseSHM) on the command line - warn and
+    // disable adaptive resizing.
+    if (UseNUMA && UseLargePages && UseSHM) {
+      if (!FLAG_IS_DEFAULT(UseNUMA)) {
+        if (FLAG_IS_DEFAULT(UseLargePages) && FLAG_IS_DEFAULT(UseSHM)) {
+          UseLargePages = false;
+        } else {
+          warning("UseNUMA is not fully compatible with SHM large pages, disabling adaptive resizing");
+          UseAdaptiveSizePolicy = false;
+          UseAdaptiveNUMAChunkSizing = false;
+        }
+      } else {
         UseNUMA = false;
       }
     }

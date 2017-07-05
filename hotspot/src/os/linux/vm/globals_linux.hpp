@@ -29,13 +29,19 @@
 // Defines Linux specific flags. They are not available on other platforms.
 //
 #define RUNTIME_OS_FLAGS(develop, develop_pd, product, product_pd, diagnostic, notproduct) \
-  product(bool, UseOprofile, false,                                 \
-        "enable support for Oprofile profiler")                     \
-                                                                    \
-  product(bool, UseLinuxPosixThreadCPUClocks, true,                 \
-          "enable fast Linux Posix clocks where available")
-// NB: The default value of UseLinuxPosixThreadCPUClocks may be
-// overridden in Arguments::parse_each_vm_init_arg.
+  product(bool, UseOprofile, false,                                     \
+        "enable support for Oprofile profiler")                         \
+                                                                        \
+  product(bool, UseLinuxPosixThreadCPUClocks, true,                     \
+          "enable fast Linux Posix clocks where available")             \
+/*  NB: The default value of UseLinuxPosixThreadCPUClocks may be        \
+    overridden in Arguments::parse_each_vm_init_arg.  */                \
+                                                                        \
+  product(bool, UseHugeTLBFS, false,                                    \
+          "Use MAP_HUGETLB for large pages")                            \
+                                                                        \
+  product(bool, UseSHM, false,                                          \
+          "Use SYSV shared memory for large pages")
 
 //
 // Defines Linux-specific default values. The flags are available on all
