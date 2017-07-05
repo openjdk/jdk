@@ -31,7 +31,6 @@ import java.lang.reflect.Module;
 import java.net.URI;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Set;
 
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.ClassLoaders;
@@ -39,10 +38,10 @@ import jdk.internal.misc.JavaLangReflectModuleAccess;
 import jdk.internal.misc.SharedSecrets;
 
 /**
- * A helper class to allow JDK classes create dynamic modules and to update
- * modules, exports and the readability graph. It is also invoked by the VM
- * to add read edges when agents are instrumenting code that need to link
- * to supporting classes.
+ * A helper class for creating and updating modules. This class is intended to
+ * support command-line options, tests, and the instrumentation API. It is also
+ * used by the VM to add read edges when agents are instrumenting code that
+ * need to link to supporting classes.
  *
  * The parameters that are package names in this API are the fully-qualified
  * names of the packages as defined in section 6.5.3 of <cite>The Java&trade;
@@ -72,25 +71,7 @@ public class Modules {
     }
 
     /**
-     * Define a new module to the VM. The module has the given set of
-     * packages and is defined to the given class loader.
-     *
-     * The resulting Module is in a larval state in that it does not not read
-     * any other module and does not have any exports.
-     */
-    public static Module defineModule(ClassLoader loader,
-                                      String name,
-                                      Set<String> packages)
-    {
-        ModuleDescriptor descriptor = ModuleDescriptor.newModule(name)
-                .packages(packages)
-                .build();
-
-        return JLRMA.defineModule(loader, descriptor, null);
-    }
-
-    /**
-     * Adds a read-edge so that module {@code m1} reads module {@code m1}.
+     * Updates m1 to read m2.
      * Same as m1.addReads(m2) but without a caller check.
      */
     public static void addReads(Module m1, Module m2) {
@@ -98,18 +79,43 @@ public class Modules {
     }
 
     /**
-     * Update module {@code m} to read all unnamed modules.
+     * Update module m to read all unnamed modules.
      */
     public static void addReadsAllUnnamed(Module m) {
         JLRMA.addReadsAllUnnamed(m);
     }
 
     /**
+     * Update module m to export a package to all modules.
+     *
+     * This method is for intended for use by tests only.
+     */
+    public static void addExports(Module m, String pn) {
+        JLRMA.addExports(m, pn);
+    }
+
+    /**
      * Updates module m1 to export a package to module m2.
-     * Same as m1.addExports(pn, m2) but without a caller check.
+     * Same as m1.addExports(pn, m2) but without a caller check
      */
     public static void addExports(Module m1, String pn, Module m2) {
         JLRMA.addExports(m1, pn, m2);
+    }
+
+    /**
+     * Updates module m to export a package to all unnamed modules.
+     */
+    public static void addExportsToAllUnnamed(Module m, String pn) {
+        JLRMA.addExportsToAllUnnamed(m, pn);
+    }
+
+    /**
+     * Update module m to open a package to all modules.
+     *
+     * This method is for intended for use by tests only.
+     */
+    public static void addOpens(Module m, String pn) {
+        JLRMA.addOpens(m, pn);
     }
 
     /**
@@ -121,27 +127,6 @@ public class Modules {
     }
 
     /**
-     * Updates a module m to export a package to all modules.
-     */
-    public static void addExportsToAll(Module m, String pn) {
-        JLRMA.addExportsToAll(m, pn);
-    }
-
-    /**
-     * Updates a module m to open a package to all modules.
-     */
-    public static void addOpensToAll(Module m, String pn) {
-        JLRMA.addOpensToAll(m, pn);
-    }
-
-    /**
-     * Updates module m to export a package to all unnamed modules.
-     */
-    public static void addExportsToAllUnnamed(Module m, String pn) {
-        JLRMA.addExportsToAllUnnamed(m, pn);
-    }
-
-    /**
      * Updates module m to open a package to all unnamed modules.
      */
     public static void addOpensToAllUnnamed(Module m, String pn) {
@@ -149,7 +134,8 @@ public class Modules {
     }
 
     /**
-     * Updates module m to use a service
+     * Updates module m to use a service.
+     * Same as m2.addUses(service) but without a caller check.
      */
     public static void addUses(Module m, Class<?> service) {
         JLRMA.addUses(m, service);
@@ -180,16 +166,6 @@ public class Modules {
                     .getServicesCatalog(layer)
                     .addProvider(m, service, impl);
         }
-    }
-
-    /**
-     * Adds a package to a module's content.
-     *
-     * This method is a no-op if the module already contains the package or the
-     * module is an unnamed module.
-     */
-    public static void addPackage(Module m, String pn) {
-        JLRMA.addPackage(m, pn);
     }
 
     /**

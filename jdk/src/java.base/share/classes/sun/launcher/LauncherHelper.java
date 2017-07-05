@@ -428,7 +428,7 @@ public final class LauncherHelper {
                 abort(null, "java.launcher.jar.error3", jarname);
             }
 
-            // Add-Exports and Add-Opens to break encapsulation
+            // Add-Exports and Add-Opens
             String exports = mainAttrs.getValue(ADD_EXPORTS);
             if (exports != null) {
                 addExportsOrOpens(exports, false);
@@ -466,6 +466,7 @@ public final class LauncherHelper {
             if (s.length == 2) {
                 String mn = s[0];
                 String pn = s[1];
+
                 Layer.boot().findModule(mn).ifPresent(m -> {
                     if (m.getDescriptor().packages().contains(pn)) {
                         if (open) {

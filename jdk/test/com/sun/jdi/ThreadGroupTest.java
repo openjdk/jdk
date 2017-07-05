@@ -22,16 +22,15 @@
  */
 
 /**
- *  @test
- *  @bug 4893530
- *  @summary If JDI is initially started from a thread group that is subsequently
- *           destroyed this should not impact subsequent thread creation by
- *           the virtual machine manager.
+ * @test
+ * @bug 4893530
+ * @summary If JDI is initially started from a thread group that is subsequently
+ *          destroyed this should not impact subsequent thread creation by
+ *          the virtual machine manager.
  *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile ThreadGroupTest.java
- *  @run driver ThreadGroupTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile ThreadGroupTest.java
+ * @run driver ThreadGroupTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.connect.*;

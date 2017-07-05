@@ -598,8 +598,8 @@ krb5.kdc.bad.policy = tryLast
 #   jdk.certpath.disabledAlgorithms=MD2, DSA, RSA keySize < 2048
 #
 #
-jdk.certpath.disabledAlgorithms=MD2, MD5, RSA keySize < 1024, \
-    DSA keySize < 1024, EC keySize < 224
+jdk.certpath.disabledAlgorithms=MD2, MD5, SHA1 jdkCA & usage TLSServer, \
+    RSA keySize < 1024, DSA keySize < 1024, EC keySize < 224
 
 #
 # Algorithm restrictions for signed JAR files
