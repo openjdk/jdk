@@ -1478,8 +1478,10 @@ void Parse::do_one_bytecode() {
       }
       assert(constant.basic_type() != T_OBJECT || constant.as_object()->is_instance(),
              "must be java_mirror of klass");
-      bool pushed = push_constant(constant, true);
-      guarantee(pushed, "must be possible to push this constant");
+      const Type* con_type = Type::make_from_constant(constant);
+      if (con_type != NULL) {
+        push_node(con_type->basic_type(), makecon(con_type));
+      }
     }
 
     break;

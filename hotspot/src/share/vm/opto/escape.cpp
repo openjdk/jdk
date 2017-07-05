@@ -526,7 +526,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
         if (adr->is_BoxLock())
           break;
         // Stored value escapes in unsafe access.
-        if ((opcode == Op_StoreP) && (adr_type == TypeRawPtr::BOTTOM)) {
+        if ((opcode == Op_StoreP) && adr_type->isa_rawptr()) {
           // Pointer stores in G1 barriers looks like unsafe access.
           // Ignore such stores to be able scalar replace non-escaping
           // allocations.
@@ -540,11 +540,11 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
                 int offs = (int)igvn->find_intptr_t_con(adr->in(AddPNode::Offset), Type::OffsetBot);
                 if (offs == in_bytes(JavaThread::satb_mark_queue_offset() +
                                      PtrQueue::byte_offset_of_buf())) {
-                  break; // G1 pre barier previous oop value store.
+                  break; // G1 pre barrier previous oop value store.
                 }
                 if (offs == in_bytes(JavaThread::dirty_card_queue_offset() +
                                      PtrQueue::byte_offset_of_buf())) {
-                  break; // G1 post barier card address store.
+                  break; // G1 post barrier card address store.
                 }
               }
             }
@@ -725,7 +725,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
         assert(ptn != NULL, "node should be registered");
         add_edge(adr_ptn, ptn);
         break;
-      } else if ((opcode == Op_StoreP) && (adr_type == TypeRawPtr::BOTTOM)) {
+      } else if ((opcode == Op_StoreP) && adr_type->isa_rawptr()) {
         // Stored value escapes in unsafe access.
         Node *val = n->in(MemNode::ValueIn);
         PointsToNode* ptn = ptnode_adr(val->_idx);
