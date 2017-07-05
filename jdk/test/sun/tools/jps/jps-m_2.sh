@@ -50,3 +50,9 @@ ${JAVA} -cp ${TESTCLASSES} Sleeper &
 SLEEPER_PID=$!
 
 ${JPS} -m | awk -f ${TESTSRC}/jps-m_Output2.awk
+RC=$?
+
+cleanup
+
+exit ${RC}
+

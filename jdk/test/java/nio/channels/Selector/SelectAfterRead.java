@@ -37,14 +37,14 @@ public class SelectAfterRead {
     final static int TIMEOUT = 1000;
 
     public static void main(String[] argv) throws Exception {
+        InetAddress lh = InetAddress.getByName(ByteServer.LOCALHOST);
+
         // server: accept connection and write one byte
         ByteServer server = new ByteServer(1);
         server.start();
-        InetSocketAddress isa = new InetSocketAddress(
-                InetAddress.getByName(ByteServer.LOCALHOST), ByteServer.PORT);
         Selector sel = Selector.open();
         SocketChannel sc = SocketChannel.open();
-        sc.connect(isa);
+        sc.connect(new InetSocketAddress(lh, server.port()));
         sc.read(ByteBuffer.allocate(1));
         sc.configureBlocking(false);
         sc.register(sel, SelectionKey.OP_READ);
@@ -61,7 +61,7 @@ public class SelectAfterRead {
         server = new ByteServer(2);
         server.start();
         sc = SocketChannel.open();
-        sc.connect(isa);
+        sc.connect(new InetSocketAddress(lh, server.port()));
         sc.configureBlocking(false);
         sel = Selector.open();
         sc.register(sel, SelectionKey.OP_READ);

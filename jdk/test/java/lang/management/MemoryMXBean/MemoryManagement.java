@@ -31,7 +31,7 @@
  * @author  Mandy Chung
  *
  * @build MemoryManagement MemoryUtil
- * @run main/timeout=600 MemoryManagement
+ * @run main/othervm/timeout=600 MemoryManagement
  */
 
 import java.lang.management.*;

@@ -38,9 +38,13 @@ public class Read {
     public static void main(String[] args) throws Exception {
         ObjectInputStream oin =
             new ObjectInputStream(new FileInputStream("tmp.ser"));
-        Object[] array = (Object[]) oin.readObject();
-        if (! (array[0].equals("before") && array[2].equals("after"))) {
-            throw new Error();
+        try {
+            Object[] array = (Object[]) oin.readObject();
+            if (! (array[0].equals("before") && array[2].equals("after"))) {
+                throw new Error();
+            }
+        } finally {
+            oin.close();
         }
     }
 }

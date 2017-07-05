@@ -42,10 +42,15 @@ public class Read {
              * descriptor.
              */
             File f = new File(System.getProperty("test.src", "."), "Foo.ser");
-            new ObjectInputStream(new FileInputStream(f)).readObject();
-            throw new Error(
-                "read succeeded for object whose class descriptor has " +
-                "both SC_SERIALIZABLE and SC_EXTERNALIZABLE flags set");
+            FileInputStream in = new FileInputStream(f);
+            try {
+                new ObjectInputStream(in).readObject();
+                throw new Error(
+                    "read succeeded for object whose class descriptor has " +
+                    "both SC_SERIALIZABLE and SC_EXTERNALIZABLE flags set");
+            } finally {
+                in.close();
+            }
         } catch (InvalidClassException e) {
         }
     }

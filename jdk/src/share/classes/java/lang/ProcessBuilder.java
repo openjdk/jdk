@@ -418,6 +418,8 @@ public final class ProcessBuilder
      * Implements a <a href="#redirect-output">null input stream</a>.
      */
     static class NullInputStream extends InputStream {
+        static final NullInputStream INSTANCE = new NullInputStream();
+        private NullInputStream() {}
         public int read()      { return -1; }
         public int available() { return 0; }
     }
@@ -426,6 +428,8 @@ public final class ProcessBuilder
      * Implements a <a href="#redirect-input">null output stream</a>.
      */
     static class NullOutputStream extends OutputStream {
+        static final NullOutputStream INSTANCE = new NullOutputStream();
+        private NullOutputStream() {}
         public void write(int b) throws IOException {
             throw new IOException("Stream closed");
         }

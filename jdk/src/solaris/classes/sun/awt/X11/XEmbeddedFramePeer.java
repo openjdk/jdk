@@ -275,7 +275,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
         Point absoluteLoc = XlibUtil.translateCoordinates(getWindow(),
                                                           XToolkit.getDefaultRootWindow(),
                                                           new Point(0, 0));
-        return absoluteLoc.x;
+        return absoluteLoc != null ? absoluteLoc.x : 0;
     }
 
     public int getAbsoluteY()
@@ -283,7 +283,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
         Point absoluteLoc = XlibUtil.translateCoordinates(getWindow(),
                                                           XToolkit.getDefaultRootWindow(),
                                                           new Point(0, 0));
-        return absoluteLoc.y;
+        return absoluteLoc != null ? absoluteLoc.y : 0;
     }
 
     public int getWidth() {

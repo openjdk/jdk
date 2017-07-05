@@ -47,6 +47,7 @@ public class Arguments {
 
     private static final String JVMSTAT_USERDIR = ".jvmstat";
     private static final String OPTIONS_FILENAME = "jstat_options";
+    private static final String UNSUPPORTED_OPTIONS_FILENAME = "jstat_unsupported_options";
     private static final String ALL_NAMES = "\\w*";
 
     private Comparator<Monitor> comparator;
@@ -411,8 +412,8 @@ public class Arguments {
         return optionFormat;
     }
 
-    public URL[] optionsSources() {
-        URL[] sources = new URL[2];
+    public List<URL> optionsSources() {
+        List<URL> sources = new ArrayList<URL>();
         int i = 0;
 
         String filename = OPTIONS_FILENAME;
@@ -421,7 +422,7 @@ public class Arguments {
             String userHome = System.getProperty("user.home");
             String userDir = userHome + "/" + JVMSTAT_USERDIR;
             File home = new File(userDir + "/" + filename);
-            sources[i++] = home.toURL();
+            sources.add(home.toURI().toURL());
         } catch (Exception e) {
             if (debug) {
                 System.err.println(e.getMessage());
@@ -430,8 +431,15 @@ public class Arguments {
             throw new IllegalArgumentException("Internal Error: Bad URL: "
                                                + e.getMessage());
         }
-        sources[i] = this.getClass().getResource("resources/" + filename);
-        assert sources[i] != null;
+        URL u = this.getClass().getResource("resources/" + filename);
+        assert u != null;
+        sources.add(u);
+
+        if (showUnsupported) {
+            u = this.getClass().getResource("resources/" +  UNSUPPORTED_OPTIONS_FILENAME);
+            assert u != null;
+            sources.add(u);
+        }
         return sources;
     }
 }

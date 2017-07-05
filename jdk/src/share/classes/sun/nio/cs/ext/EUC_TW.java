@@ -423,7 +423,7 @@ public class EUC_TW extends Charset implements HistoricallyNamedCharset
                     if (dst.remaining() < outSize)
                         return CoderResult.OVERFLOW;
                     for (int i = 0; i < outSize; i++)
-                        dst.put((byte)bb[i]);
+                        dst.put(bb[i]);
                     mark += inSize;
                 }
                 return CoderResult.UNDERFLOW;
