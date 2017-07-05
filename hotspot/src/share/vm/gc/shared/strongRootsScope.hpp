@@ -29,18 +29,21 @@
 
 class MarkScope : public StackObj {
  protected:
-  bool _active;
- public:
-  MarkScope(bool activate = true);
+  MarkScope();
   ~MarkScope();
 };
 
 // Sets up and tears down the required state for parallel root processing.
 
 class StrongRootsScope : public MarkScope {
+  // Number of threads participating in the roots processing.
+  const uint _n_threads;
+
  public:
-  StrongRootsScope(bool activate = true);
+  StrongRootsScope(uint n_threads);
   ~StrongRootsScope();
+
+  uint n_threads() const { return _n_threads; }
 };
 
 #endif // SHARE_VM_GC_SHARED_STRONGROOTSSCOPE_HPP

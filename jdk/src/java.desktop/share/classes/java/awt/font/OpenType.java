@@ -331,7 +331,7 @@ public interface OpenType {
    * Optical bounds.  Table tag "opbd" in the Open
    * Type Specification.
    */
-  public final static int       TAG_OPBD        = 0x6d6f7274;
+  public final static int       TAG_OPBD        = 0x6F706264;
 
   /**
    * Glyph properties.  Table tag "prop" in the Open

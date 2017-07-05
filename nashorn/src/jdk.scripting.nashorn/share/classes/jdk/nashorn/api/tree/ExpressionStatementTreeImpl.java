@@ -46,7 +46,7 @@ final class ExpressionStatementTreeImpl extends StatementTreeImpl implements Exp
     }
 
     @Override
-    public <R,D> R accept(TreeVisitor<R,D> visitor, D data) {
+    public <R,D> R accept(final TreeVisitor<R,D> visitor, final D data) {
         return visitor.visitExpressionStatement(this, data);
     }
 }

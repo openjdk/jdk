@@ -77,7 +77,7 @@ public final class StreamPumper implements Runnable {
     private final Set<LinePump> linePumps = new HashSet<>();
 
     private final AtomicBoolean processing = new AtomicBoolean(false);
-    private final FutureTask<Void> processingTask = new FutureTask(this, null);
+    private final FutureTask<Void> processingTask = new FutureTask<>(this, null);
 
     public StreamPumper(InputStream in) {
         this.in = in;
