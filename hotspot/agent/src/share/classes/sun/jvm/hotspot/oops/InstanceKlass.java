@@ -50,7 +50,6 @@ public class InstanceKlass extends Klass {
   private static int INITVAL_INDEX_OFFSET;
   private static int LOW_OFFSET;
   private static int HIGH_OFFSET;
-  private static int GENERIC_SIGNATURE_INDEX_OFFSET;
   private static int FIELD_SLOTS;
 
   // ClassState constants
@@ -99,7 +98,6 @@ public class InstanceKlass extends Klass {
     INITVAL_INDEX_OFFSET           = db.lookupIntConstant("FieldInfo::initval_index_offset").intValue();
     LOW_OFFSET                     = db.lookupIntConstant("FieldInfo::low_offset").intValue();
     HIGH_OFFSET                    = db.lookupIntConstant("FieldInfo::high_offset").intValue();
-    GENERIC_SIGNATURE_INDEX_OFFSET = db.lookupIntConstant("FieldInfo::generic_signature_offset").intValue();
     FIELD_SLOTS                    = db.lookupIntConstant("FieldInfo::field_slots").intValue();
     // read ClassState constants
     CLASS_STATE_UNPARSABLE_BY_GC = db.lookupIntConstant("instanceKlass::unparsable_by_gc").intValue();
@@ -279,7 +277,25 @@ public class InstanceKlass extends Klass {
   }
 
   public short getFieldGenericSignatureIndex(int index) {
-    return getFields().getShortAt(index * FIELD_SLOTS + GENERIC_SIGNATURE_INDEX_OFFSET);
+    int len = (int)getFields().getLength();
+    int allFieldsCount = getAllFieldsCount();
+    int generic_signature_slot = allFieldsCount * FIELD_SLOTS;
+    for (int i = 0; i < allFieldsCount; i++) {
+      short flags = getFieldAccessFlags(i);
+      AccessFlags access = new AccessFlags(flags);
+      if (i == index) {
+        if (access.fieldHasGenericSignature()) {
+          return getFields().getShortAt(generic_signature_slot);
+        } else {
+          return 0;
+        }
+      } else {
+        if (access.fieldHasGenericSignature()) {
+          generic_signature_slot ++;
+        }
+      }
+    }
+    return 0;
   }
 
   public Symbol getFieldGenericSignature(int index) {
@@ -309,7 +325,18 @@ public class InstanceKlass extends Klass {
   public ObjArray  getTransitiveInterfaces() { return (ObjArray)     transitiveInterfaces.getValue(this); }
   public TypeArray getFields()              { return (TypeArray)    fields.getValue(this); }
   public int       getJavaFieldsCount()     { return                (int) javaFieldsCount.getValue(this); }
-  public int       getAllFieldsCount()      { return                (int)getFields().getLength() / FIELD_SLOTS; }
+  public int       getAllFieldsCount()      {
+    int len = (int)getFields().getLength();
+    int allFieldsCount = 0;
+    for (; allFieldsCount*FIELD_SLOTS < len; allFieldsCount++) {
+      short flags = getFieldAccessFlags(allFieldsCount);
+      AccessFlags access = new AccessFlags(flags);
+      if (access.fieldHasGenericSignature()) {
+        len --;
+      }
+    }
+    return allFieldsCount;
+  }
   public ConstantPool getConstants()        { return (ConstantPool) constants.getValue(this); }
   public Oop       getClassLoader()         { return                classLoader.getValue(this); }
   public Oop       getProtectionDomain()    { return                protectionDomain.getValue(this); }
