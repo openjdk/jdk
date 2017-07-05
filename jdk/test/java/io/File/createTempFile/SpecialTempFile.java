@@ -23,9 +23,8 @@
 
 /*
  * @test
- * @bug 8013827 8011950
+ * @bug 8013827 8011950 8017212
  * @summary Check whether File.createTempFile can handle special parameters
- *          on Windows platforms
  * @author Dan Xu
  */
 
@@ -64,6 +63,17 @@ public class SpecialTempFile {
     }
 
     public static void main(String[] args) throws Exception {
+        // Common test
+        final String name = "SpecialTempFile";
+        File f = new File(System.getProperty("java.io.tmpdir"), name);
+        if (!f.exists()) {
+            f.createNewFile();
+        }
+        String[] nulPre = { name + "\u0000" };
+        String[] nulSuf = { ".test" };
+        test("NulName", nulPre, nulSuf);
+
+        // Windows tests
         if (!System.getProperty("os.name").startsWith("Windows"))
             return;
 

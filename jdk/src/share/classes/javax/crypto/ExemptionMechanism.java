@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ public class ExemptionMechanism {
      * mechanism.
      * See the ExemptionMechanism section in the
      * <a href=
-     *   "{docRoot}/../technotes/guides/security/StandardNames.html#Exemption">
+     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Exemption">
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard exemption mechanism names.
      *
@@ -155,7 +155,7 @@ public class ExemptionMechanism {
      * @param algorithm the standard name of the requested exemption mechanism.
      * See the ExemptionMechanism section in the
      * <a href=
-     *   "{docRoot}/../technotes/guides/security/StandardNames.html#Exemption">
+     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Exemption">
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard exemption mechanism names.
      *
@@ -199,7 +199,7 @@ public class ExemptionMechanism {
      * @param algorithm the standard name of the requested exemption mechanism.
      * See the ExemptionMechanism section in the
      * <a href=
-     *   "{docRoot}/../technotes/guides/security/StandardNames.html#Exemption">
+     *   "{@docRoot}/../technotes/guides/security/StandardNames.html#Exemption">
      * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard exemption mechanism names.
      *

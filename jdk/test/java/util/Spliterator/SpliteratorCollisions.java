@@ -48,7 +48,6 @@ import java.util.Spliterator;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.LongConsumer;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
@@ -677,11 +676,11 @@ public class SpliteratorCollisions {
 
     private static <T> Map<T, HashableInteger> toBoxedMultiset(Iterable<T> c) {
         Map<T, HashableInteger> result = new HashMap<>();
-        c.forEach((Consumer) e -> {
-            if (result.containsKey((T)e)) {
-                result.put((T)e, new HashableInteger(((HashableInteger)result.get(e)).value + 1, 10));
+        c.forEach(e -> {
+            if (result.containsKey(e)) {
+                result.put(e, new HashableInteger(result.get(e).value + 1, 10));
             } else {
-                result.put((T)e, new HashableInteger(1, 10));
+                result.put(e, new HashableInteger(1, 10));
             }
         });
         return result;

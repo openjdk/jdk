@@ -27,6 +27,7 @@
  * @summary Basic Test for HotSpotDiagnosticMXBean.setVMOption()
  *          and getDiagnosticOptions().
  * @author  Mandy Chung
+ * @author  Jaroslav Bachorik
  *
  * @run main/othervm -XX:+PrintGCDetails SetVMOption
  */
@@ -36,7 +37,6 @@ import java.util.*;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.VMOption;
 import com.sun.management.VMOption.Origin;
-import sun.misc.Version;
 
 public class SetVMOption {
     private static String PRINT_GC_DETAILS = "PrintGCDetails";
@@ -47,17 +47,8 @@ public class SetVMOption {
     private static HotSpotDiagnosticMXBean mbean;
 
     public static void main(String[] args) throws Exception {
-        List<HotSpotDiagnosticMXBean> list =
-            ManagementFactory.getPlatformMXBeans(HotSpotDiagnosticMXBean.class);
-
-        // The following test is transitional only and should be removed
-        // once build 52 is promoted.
-        int build = Version.jvmBuildNumber();
-        if (build > 0 && build < 52) {
-             // JVM support is integrated in build 52
-             // this test is skipped if running with VM earlier than 52
-             return;
-        }
+        mbean =
+            ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
 
         VMOption option = findPrintGCDetailsOption();
         if (!option.getValue().equalsIgnoreCase(EXPECTED_VALUE)) {

@@ -2,21 +2,23 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright  1999-2004 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.sun.org.apache.xml.internal.security.keys.content.x509;
 
@@ -30,65 +32,57 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 /**
- *
- * @author $Author: mullan $
+ * @author $Author: coheigea $
  */
-public class XMLX509SubjectName extends SignatureElementProxy
-        implements XMLX509DataContent {
+public class XMLX509SubjectName extends SignatureElementProxy implements XMLX509DataContent {
 
-   /**
-    * Constructor X509SubjectName
-    *
-    * @param element
-    * @param BaseURI
-    * @throws XMLSecurityException
-    */
-   public XMLX509SubjectName(Element element, String BaseURI)
-           throws XMLSecurityException {
-      super(element, BaseURI);
-   }
+    /**
+     * Constructor X509SubjectName
+     *
+     * @param element
+     * @param BaseURI
+     * @throws XMLSecurityException
+     */
+    public XMLX509SubjectName(Element element, String BaseURI)
+        throws XMLSecurityException {
+        super(element, BaseURI);
+    }
 
-   /**
-    * Constructor X509SubjectName
-    *
-    * @param doc
-    * @param X509SubjectNameString
-    */
-   public XMLX509SubjectName(Document doc, String X509SubjectNameString) {
+    /**
+     * Constructor X509SubjectName
+     *
+     * @param doc
+     * @param X509SubjectNameString
+     */
+    public XMLX509SubjectName(Document doc, String X509SubjectNameString) {
+        super(doc);
 
-      super(doc);
+        this.addText(X509SubjectNameString);
+    }
 
-      this.addText(X509SubjectNameString);
-   }
+    /**
+     * Constructor XMLX509SubjectName
+     *
+     * @param doc
+     * @param x509certificate
+     */
+    public XMLX509SubjectName(Document doc, X509Certificate x509certificate) {
+        this(doc, x509certificate.getSubjectX500Principal().getName());
+    }
 
-   /**
-    * Constructor XMLX509SubjectName
-    *
-    * @param doc
-    * @param x509certificate
-    */
-   public XMLX509SubjectName(Document doc, X509Certificate x509certificate) {
-      this(doc,
-           RFC2253Parser.normalize(x509certificate.getSubjectDN().getName()));
-   }
-
-   /**
-    * Method getSubjectName
-    *
-    *
-    * @return the subject name
-    */
-   public String getSubjectName() {
-      return RFC2253Parser.normalize(this.getTextFromTextChild());
-   }
+    /**
+     * Method getSubjectName
+     *
+     *
+     * @return the subject name
+     */
+    public String getSubjectName() {
+        return RFC2253Parser.normalize(this.getTextFromTextChild());
+    }
 
     /** @inheritDoc */
     public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-
-        if (!this.getClass().getName().equals(obj.getClass().getName())) {
+        if (!(obj instanceof XMLX509SubjectName)) {
             return false;
         }
 
@@ -97,10 +91,16 @@ public class XMLX509SubjectName extends SignatureElementProxy
         String thisSubject = this.getSubjectName();
 
         return thisSubject.equals(otherSubject);
-   }
+    }
 
-   /** @inheritDoc */
-   public String getBaseLocalName() {
-      return Constants._TAG_X509SUBJECTNAME;
-   }
+    public int hashCode() {
+        int result = 17;
+        result = 31 * result + this.getSubjectName().hashCode();
+        return result;
+    }
+
+    /** @inheritDoc */
+    public String getBaseLocalName() {
+        return Constants._TAG_X509SUBJECTNAME;
+    }
 }

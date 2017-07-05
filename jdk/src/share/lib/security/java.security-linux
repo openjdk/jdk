@@ -177,7 +177,6 @@ keystore.type=jks
 # corresponding RuntimePermission ("accessClassInPackage."+package) has
 # been granted.
 package.access=sun.,\
-               com.sun.corba.se.impl.,\
                com.sun.xml.internal.,\
                com.sun.imageio.,\
                com.sun.istack.internal.,\
@@ -222,7 +221,6 @@ package.access=sun.,\
 # checkPackageDefinition.
 #
 package.definition=sun.,\
-                   com.sun.corba.se.impl.,\
                    com.sun.xml.internal.,\
                    com.sun.imageio.,\
                    com.sun.istack.internal.,\

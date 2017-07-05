@@ -652,11 +652,12 @@ public class Introspector {
                     }
                 } else {
                     if (pd.getReadMethod() != null) {
+                        String pdName = pd.getReadMethod().getName();
                         if (gpd != null) {
                             // Don't replace the existing read
                             // method if it starts with "is"
-                            Method method = gpd.getReadMethod();
-                            if (!method.getName().startsWith(IS_PREFIX)) {
+                            String gpdName = gpd.getReadMethod().getName();
+                            if (gpdName.equals(pdName) || !gpdName.startsWith(IS_PREFIX)) {
                                 gpd = new PropertyDescriptor(gpd, pd);
                             }
                         } else {

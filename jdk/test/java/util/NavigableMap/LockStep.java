@@ -55,11 +55,19 @@ public class LockStep {
 
         lockSteps(new TreeMap(),
                   new ConcurrentSkipListMap());
+        lockSteps(new TreeMap(),
+                  Collections.checkedNavigableMap(new TreeMap(), Integer.class, Integer.class));
+        lockSteps(new TreeMap(),
+                  Collections.synchronizedNavigableMap(new TreeMap()));
         lockSteps(new TreeMap(reverseOrder()),
                   new ConcurrentSkipListMap(reverseOrder()));
 
         lockSteps(new TreeSet(),
                   new ConcurrentSkipListSet());
+        lockSteps(new TreeSet(),
+                  Collections.checkedNavigableSet(new TreeSet(), Integer.class));
+        lockSteps(new TreeSet(),
+                  Collections.synchronizedNavigableSet(new TreeSet()));
         lockSteps(new TreeSet(reverseOrder()),
                   new ConcurrentSkipListSet(reverseOrder()));
     }
@@ -181,7 +189,15 @@ public class LockStep {
         testEmptyCollection(m.values());
     }
 
-    static final Random rnd = new Random();
+    static final Random rnd;
+
+    static {
+        // sufficiently random for this test
+        long seed = System.nanoTime();
+        System.out.println(LockStep.class.getCanonicalName() + ": Trial random seed: " + seed );
+
+        rnd = new Random(seed);
+    }
 
     static void equalNext(final Iterator<?> it, Object expected) {
         if (maybe(2))
@@ -208,8 +224,15 @@ public class LockStep {
             check(s.descendingSet().descendingSet().comparator() == null);
         equal(s.isEmpty(), s.size() == 0);
         equal2(s, s.descendingSet());
-        if (maybe(4) && s instanceof Serializable)
-            equal2(s, serialClone(s));
+        if (maybe(4) && s instanceof Serializable) {
+            try {
+                equal2(s, serialClone(s));
+            } catch(RuntimeException uhoh) {
+                if(!(uhoh.getCause() instanceof NotSerializableException)) {
+                    throw uhoh;
+                }
+            }
+        }
         Comparator cmp = comparator(s);
         if (s.isEmpty()) {
             THROWS(NoSuchElementException.class,
@@ -274,6 +297,15 @@ public class LockStep {
             equal(it1.next(), it2.next());
         }
         check(! it2.hasNext());
+    }
+
+    static void equalSetsLeaf(final Set s1, final Set s2) {
+        equal2(s1,            s2);
+        equal( s1.size(),     s2.size());
+        equal( s1.isEmpty(),  s2.isEmpty());
+        equal( s1.hashCode(), s2.hashCode());
+        equal( s1.toString(), s2.toString());
+        equal( s1.containsAll(s2), s2.containsAll(s1));
     }
 
     static void equalNavigableSetsLeaf(final NavigableSet s1,
@@ -448,8 +480,7 @@ public class LockStep {
     static void equalNavigableMaps(NavigableMap m1,
                                    NavigableMap m2) {
         equalNavigableMapsLeaf(m1, m2);
-        equalNavigableSetsLeaf((NavigableSet) m1.keySet(),
-                               (NavigableSet) m2.keySet());
+        equalSetsLeaf(m1.keySet(), m2.keySet());
         equalNavigableSets(m1.navigableKeySet(),
                            m2.navigableKeySet());
         equalNavigableSets(m1.descendingKeySet(),
@@ -836,5 +867,7 @@ public class LockStep {
     @SuppressWarnings("unchecked")
     static <T> T serialClone(T obj) {
         try { return (T) readObject(serializedForm(obj)); }
-        catch (Exception e) { throw new RuntimeException(e); }}
+        catch (Error|RuntimeException e) { throw e; }
+        catch (Throwable e) { throw new RuntimeException(e); }
+    }
 }

@@ -162,19 +162,23 @@ public class FutureTask<V> implements RunnableFuture<V> {
     }
 
     public boolean cancel(boolean mayInterruptIfRunning) {
-        if (state != NEW)
+        if (!(state == NEW &&
+              UNSAFE.compareAndSwapInt(this, stateOffset, NEW,
+                  mayInterruptIfRunning ? INTERRUPTING : CANCELLED)))
             return false;
-        if (mayInterruptIfRunning) {
-            if (!UNSAFE.compareAndSwapInt(this, stateOffset, NEW, INTERRUPTING))
-                return false;
-            Thread t = runner;
-            if (t != null)
-                t.interrupt();
-            UNSAFE.putOrderedInt(this, stateOffset, INTERRUPTED); // final state
+        try {    // in case call to interrupt throws exception
+            if (mayInterruptIfRunning) {
+                try {
+                    Thread t = runner;
+                    if (t != null)
+                        t.interrupt();
+                } finally { // final state
+                    UNSAFE.putOrderedInt(this, stateOffset, INTERRUPTED);
+                }
+            }
+        } finally {
+            finishCompletion();
         }
-        else if (!UNSAFE.compareAndSwapInt(this, stateOffset, NEW, CANCELLED))
-            return false;
-        finishCompletion();
         return true;
     }
 
@@ -288,7 +292,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
      * designed for use with tasks that intrinsically execute more
      * than once.
      *
-     * @return true if successfully run and reset
+     * @return {@code true} if successfully run and reset
      */
     protected boolean runAndReset() {
         if (state != NEW ||

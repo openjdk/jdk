@@ -27,6 +27,7 @@ package java.util;
 import java.io.Serializable;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.lang.reflect.Array;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -34,6 +35,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * This class consists exclusively of static methods that operate on or return
@@ -136,7 +139,7 @@ public class Collections {
      *
      * <p>The implementation was adapted from Tim Peters's list sort for Python
      * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
-     * TimSort</a>).  It uses techiques from Peter McIlroy's "Optimistic
+     * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
      * Sorting and Information Theoretic Complexity", in Proceedings of the
      * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
      * January 1993.
@@ -147,6 +150,7 @@ public class Collections {
      * n<sup>2</sup> log(n) performance that would result from attempting
      * to sort a linked list in place.
      *
+     * @param  <T> the class of the objects in the list
      * @param  list the list to be sorted.
      * @throws ClassCastException if the list contains elements that are not
      *         <i>mutually comparable</i> (for example, strings and integers).
@@ -197,7 +201,7 @@ public class Collections {
      *
      * <p>The implementation was adapted from Tim Peters's list sort for Python
      * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
-     * TimSort</a>).  It uses techiques from Peter McIlroy's "Optimistic
+     * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
      * Sorting and Information Theoretic Complexity", in Proceedings of the
      * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
      * January 1993.
@@ -208,6 +212,7 @@ public class Collections {
      * n<sup>2</sup> log(n) performance that would result from attempting
      * to sort a linked list in place.
      *
+     * @param  <T> the class of the objects in the list
      * @param  list the list to be sorted.
      * @param  c the comparator to determine the order of the list.  A
      *        {@code null} value indicates that the elements' <i>natural
@@ -246,6 +251,7 @@ public class Collections {
      * this method will do an iterator-based binary search that performs
      * O(n) link traversals and O(log n) element comparisons.
      *
+     * @param  <T> the class of the objects in the list
      * @param  list the list to be searched.
      * @param  key the key to be searched for.
      * @return the index of the search key, if it is contained in the list;
@@ -346,6 +352,7 @@ public class Collections {
      * this method will do an iterator-based binary search that performs
      * O(n) link traversals and O(log n) element comparisons.
      *
+     * @param  <T> the class of the objects in the list
      * @param  list the list to be searched.
      * @param  key the key to be searched for.
      * @param  c the comparator by which the list is ordered.
@@ -565,6 +572,7 @@ public class Collections {
      *
      * This method runs in linear time.
      *
+     * @param  <T> the class of the objects in the list
      * @param  list the list to be filled with the specified element.
      * @param  obj The element with which to fill the specified list.
      * @throws UnsupportedOperationException if the specified list or its
@@ -594,6 +602,7 @@ public class Collections {
      *
      * This method runs in linear time.
      *
+     * @param  <T> the class of the objects in the lists
      * @param  dest The destination list.
      * @param  src The source list.
      * @throws IndexOutOfBoundsException if the destination list is too small
@@ -632,6 +641,7 @@ public class Collections {
      * This method iterates over the entire collection, hence it requires
      * time proportional to the size of the collection.
      *
+     * @param  <T> the class of the objects in the collection
      * @param  coll the collection whose minimum element is to be determined.
      * @return the minimum element of the given collection, according
      *         to the <i>natural ordering</i> of its elements.
@@ -664,6 +674,7 @@ public class Collections {
      * This method iterates over the entire collection, hence it requires
      * time proportional to the size of the collection.
      *
+     * @param  <T> the class of the objects in the collection
      * @param  coll the collection whose minimum element is to be determined.
      * @param  comp the comparator with which to determine the minimum element.
      *         A <tt>null</tt> value indicates that the elements' <i>natural
@@ -703,6 +714,7 @@ public class Collections {
      * This method iterates over the entire collection, hence it requires
      * time proportional to the size of the collection.
      *
+     * @param  <T> the class of the objects in the collection
      * @param  coll the collection whose maximum element is to be determined.
      * @return the maximum element of the given collection, according
      *         to the <i>natural ordering</i> of its elements.
@@ -735,6 +747,7 @@ public class Collections {
      * This method iterates over the entire collection, hence it requires
      * time proportional to the size of the collection.
      *
+     * @param  <T> the class of the objects in the collection
      * @param  coll the collection whose maximum element is to be determined.
      * @param  comp the comparator with which to determine the maximum element.
      *         A <tt>null</tt> value indicates that the elements' <i>natural
@@ -869,6 +882,7 @@ public class Collections {
      * <tt>(oldVal==null ? e==null : oldVal.equals(e))</tt>.
      * (This method has no effect on the size of the list.)
      *
+     * @param  <T> the class of the objects in the list
      * @param list the list in which replacement is to occur.
      * @param oldVal the old value to be replaced.
      * @param newVal the new value with which <tt>oldVal</tt> is to be
@@ -1050,6 +1064,7 @@ public class Collections {
      * The returned collection will be serializable if the specified collection
      * is serializable.
      *
+     * @param  <T> the class of the objects in the collection
      * @param  c the collection for which an unmodifiable view is to be
      *         returned.
      * @return an unmodifiable view of the specified collection.
@@ -1145,6 +1160,7 @@ public class Collections {
      * The returned set will be serializable if the specified set
      * is serializable.
      *
+     * @param  <T> the class of the objects in the set
      * @param  s the set for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified set.
      */
@@ -1176,6 +1192,7 @@ public class Collections {
      * The returned sorted set will be serializable if the specified sorted set
      * is serializable.
      *
+     * @param  <T> the class of the objects in the set
      * @param s the sorted set for which an unmodifiable view is to be
      *        returned.
      * @return an unmodifiable view of the specified sorted set.
@@ -1212,6 +1229,95 @@ public class Collections {
     }
 
     /**
+     * Returns an unmodifiable view of the specified navigable set.  This method
+     * allows modules to provide users with "read-only" access to internal
+     * navigable sets.  Query operations on the returned navigable set "read
+     * through" to the specified navigable set.  Attempts to modify the returned
+     * navigable set, whether direct, via its iterator, or via its
+     * {@code subSet}, {@code headSet}, or {@code tailSet} views, result in
+     * an {@code UnsupportedOperationException}.<p>
+     *
+     * The returned navigable set will be serializable if the specified
+     * navigable set is serializable.
+     *
+     * @param  <T> the class of the objects in the set
+     * @param s the navigable set for which an unmodifiable view is to be
+     *        returned
+     * @return an unmodifiable view of the specified navigable set
+     * @since 1.8
+     */
+    public static <T> NavigableSet<T> unmodifiableNavigableSet(NavigableSet<T> s) {
+        return new UnmodifiableNavigableSet<>(s);
+    }
+
+    /**
+     * Wraps a navigable set and disables all of the mutative operations.
+     *
+     * @param <E> type of elements
+     * @serial include
+     */
+    static class UnmodifiableNavigableSet<E>
+                             extends UnmodifiableSortedSet<E>
+                             implements NavigableSet<E>, Serializable {
+
+        private static final long serialVersionUID = -6027448201786391929L;
+
+        /**
+         * A singleton empty unmodifiable navigable set used for
+         * {@link #emptyNavigableSet()}.
+         *
+         * @param <E> type of elements, if there were any, and bounds
+         */
+        private static class EmptyNavigableSet<E> extends UnmodifiableNavigableSet<E>
+            implements Serializable {
+            private static final long serialVersionUID = -6291252904449939134L;
+
+            public EmptyNavigableSet() {
+                super(new TreeSet<E>());
+            }
+
+            private Object readResolve()        { return EMPTY_NAVIGABLE_SET; }
+        }
+
+        @SuppressWarnings("rawtypes")
+        private static final NavigableSet<?> EMPTY_NAVIGABLE_SET =
+                new EmptyNavigableSet<>();
+
+        /**
+         * The instance we are protecting.
+         */
+        private final NavigableSet<E> ns;
+
+        UnmodifiableNavigableSet(NavigableSet<E> s)         {super(s); ns = s;}
+
+        public E lower(E e)                             { return ns.lower(e); }
+        public E floor(E e)                             { return ns.floor(e); }
+        public E ceiling(E e)                         { return ns.ceiling(e); }
+        public E higher(E e)                           { return ns.higher(e); }
+        public E pollFirst()     { throw new UnsupportedOperationException(); }
+        public E pollLast()      { throw new UnsupportedOperationException(); }
+        public NavigableSet<E> descendingSet()
+                 { return new UnmodifiableNavigableSet<>(ns.descendingSet()); }
+        public Iterator<E> descendingIterator()
+                                         { return descendingSet().iterator(); }
+
+        public NavigableSet<E> subSet(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+            return new UnmodifiableNavigableSet<>(
+                ns.subSet(fromElement, fromInclusive, toElement, toInclusive));
+        }
+
+        public NavigableSet<E> headSet(E toElement, boolean inclusive) {
+            return new UnmodifiableNavigableSet<>(
+                ns.headSet(toElement, inclusive));
+        }
+
+        public NavigableSet<E> tailSet(E fromElement, boolean inclusive) {
+            return new UnmodifiableNavigableSet<>(
+                ns.tailSet(fromElement, inclusive));
+        }
+    }
+
+    /**
      * Returns an unmodifiable view of the specified list.  This method allows
      * modules to provide users with "read-only" access to internal
      * lists.  Query operations on the returned list "read through" to the
@@ -1223,6 +1329,7 @@ public class Collections {
      * is serializable. Similarly, the returned list will implement
      * {@link RandomAccess} if the specified list does.
      *
+     * @param  <T> the class of the objects in the list
      * @param  list the list for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified list.
      */
@@ -1238,6 +1345,7 @@ public class Collections {
     static class UnmodifiableList<E> extends UnmodifiableCollection<E>
                                   implements List<E> {
         private static final long serialVersionUID = -283967356065247728L;
+
         final List<? extends E> list;
 
         UnmodifiableList(List<? extends E> list) {
@@ -1366,6 +1474,8 @@ public class Collections {
      * The returned map will be serializable if the specified map
      * is serializable.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @param  m the map for which an unmodifiable view is to be returned.
      * @return an unmodifiable view of the specified map.
      */
@@ -1510,6 +1620,86 @@ public class Collections {
                 // Need to cast to raw in order to work around a limitation in the type system
                 super((Set)s);
             }
+
+            static <K, V> Consumer<Map.Entry<K, V>> entryConsumer(Consumer<? super Entry<K, V>> action) {
+                return e -> action.accept(new UnmodifiableEntry<>(e));
+            }
+
+            public void forEach(Consumer<? super Entry<K, V>> action) {
+                Objects.requireNonNull(action);
+                c.forEach(entryConsumer(action));
+            }
+
+            static final class UnmodifiableEntrySetSpliterator<K, V>
+                    implements Spliterator<Entry<K,V>> {
+                final Spliterator<Map.Entry<K, V>> s;
+
+                UnmodifiableEntrySetSpliterator(Spliterator<Entry<K, V>> s) {
+                    this.s = s;
+                }
+
+                @Override
+                public boolean tryAdvance(Consumer<? super Entry<K, V>> action) {
+                    Objects.requireNonNull(action);
+                    return s.tryAdvance(entryConsumer(action));
+                }
+
+                @Override
+                public void forEachRemaining(Consumer<? super Entry<K, V>> action) {
+                    Objects.requireNonNull(action);
+                    s.forEachRemaining(entryConsumer(action));
+                }
+
+                @Override
+                public Spliterator<Entry<K, V>> trySplit() {
+                    Spliterator<Entry<K, V>> split = s.trySplit();
+                    return split == null
+                           ? null
+                           : new UnmodifiableEntrySetSpliterator<>(split);
+                }
+
+                @Override
+                public long estimateSize() {
+                    return s.estimateSize();
+                }
+
+                @Override
+                public long getExactSizeIfKnown() {
+                    return s.getExactSizeIfKnown();
+                }
+
+                @Override
+                public int characteristics() {
+                    return s.characteristics();
+                }
+
+                @Override
+                public boolean hasCharacteristics(int characteristics) {
+                    return s.hasCharacteristics(characteristics);
+                }
+
+                @Override
+                public Comparator<? super Entry<K, V>> getComparator() {
+                    return s.getComparator();
+                }
+            }
+
+            @SuppressWarnings("unchecked")
+            public Spliterator<Entry<K,V>> spliterator() {
+                return new UnmodifiableEntrySetSpliterator<>(
+                        (Spliterator<Map.Entry<K, V>>) c.spliterator());
+            }
+
+            @Override
+            public Stream<Entry<K,V>> stream() {
+                return StreamSupport.stream(spliterator(), false);
+            }
+
+            @Override
+            public Stream<Entry<K,V>> parallelStream() {
+                return StreamSupport.stream(spliterator(), true);
+            }
+
             public Iterator<Map.Entry<K,V>> iterator() {
                 return new Iterator<Map.Entry<K,V>>() {
                     private final Iterator<? extends Map.Entry<? extends K, ? extends V>> i = c.iterator();
@@ -1600,7 +1790,8 @@ public class Collections {
             private static class UnmodifiableEntry<K,V> implements Map.Entry<K,V> {
                 private Map.Entry<? extends K, ? extends V> e;
 
-                UnmodifiableEntry(Map.Entry<? extends K, ? extends V> e) {this.e = e;}
+                UnmodifiableEntry(Map.Entry<? extends K, ? extends V> e)
+                        {this.e = Objects.requireNonNull(e);}
 
                 public K getKey()        {return e.getKey();}
                 public V getValue()      {return e.getValue();}
@@ -1634,6 +1825,8 @@ public class Collections {
      * The returned sorted map will be serializable if the specified sorted map
      * is serializable.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @param m the sorted map for which an unmodifiable view is to be
      *        returned.
      * @return an unmodifiable view of the specified sorted map.
@@ -1652,24 +1845,153 @@ public class Collections {
 
         private final SortedMap<K, ? extends V> sm;
 
-        UnmodifiableSortedMap(SortedMap<K, ? extends V> m) {super(m); sm = m;}
-
-        public Comparator<? super K> comparator() {return sm.comparator();}
-
-        public SortedMap<K,V> subMap(K fromKey, K toKey) {
-            return new UnmodifiableSortedMap<>(sm.subMap(fromKey, toKey));
-        }
-        public SortedMap<K,V> headMap(K toKey) {
-            return new UnmodifiableSortedMap<>(sm.headMap(toKey));
-        }
-        public SortedMap<K,V> tailMap(K fromKey) {
-            return new UnmodifiableSortedMap<>(sm.tailMap(fromKey));
-        }
-
-        public K firstKey()           {return sm.firstKey();}
-        public K lastKey()            {return sm.lastKey();}
+        UnmodifiableSortedMap(SortedMap<K, ? extends V> m) {super(m); sm = m; }
+        public Comparator<? super K> comparator()   { return sm.comparator(); }
+        public SortedMap<K,V> subMap(K fromKey, K toKey)
+             { return new UnmodifiableSortedMap<>(sm.subMap(fromKey, toKey)); }
+        public SortedMap<K,V> headMap(K toKey)
+                     { return new UnmodifiableSortedMap<>(sm.headMap(toKey)); }
+        public SortedMap<K,V> tailMap(K fromKey)
+                   { return new UnmodifiableSortedMap<>(sm.tailMap(fromKey)); }
+        public K firstKey()                           { return sm.firstKey(); }
+        public K lastKey()                             { return sm.lastKey(); }
     }
 
+    /**
+     * Returns an unmodifiable view of the specified navigable map.  This method
+     * allows modules to provide users with "read-only" access to internal
+     * navigable maps.  Query operations on the returned navigable map "read
+     * through" to the specified navigable map.  Attempts to modify the returned
+     * navigable map, whether direct, via its collection views, or via its
+     * {@code subMap}, {@code headMap}, or {@code tailMap} views, result in
+     * an {@code UnsupportedOperationException}.<p>
+     *
+     * The returned navigable map will be serializable if the specified
+     * navigable map is serializable.
+     *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
+     * @param m the navigable map for which an unmodifiable view is to be
+     *        returned
+     * @return an unmodifiable view of the specified navigable map
+     * @since 1.8
+     */
+    public static <K,V> NavigableMap<K,V> unmodifiableNavigableMap(NavigableMap<K, ? extends V> m) {
+        return new UnmodifiableNavigableMap<>(m);
+    }
+
+    /**
+     * @serial include
+     */
+    static class UnmodifiableNavigableMap<K,V>
+          extends UnmodifiableSortedMap<K,V>
+          implements NavigableMap<K,V>, Serializable {
+        private static final long serialVersionUID = -4858195264774772197L;
+
+        /**
+         * A class for the {@link EMPTY_NAVIGABLE_MAP} which needs readResolve
+         * to preserve singleton property.
+         *
+         * @param <K> type of keys, if there were any, and of bounds
+         * @param <V> type of values, if there were any
+         */
+        private static class EmptyNavigableMap<K,V> extends UnmodifiableNavigableMap<K,V>
+            implements Serializable {
+
+            private static final long serialVersionUID = -2239321462712562324L;
+
+            EmptyNavigableMap()                       { super(new TreeMap()); }
+
+            @Override
+            public NavigableSet<K> navigableKeySet()
+                                                { return emptyNavigableSet(); }
+
+            private Object readResolve()        { return EMPTY_NAVIGABLE_MAP; }
+        }
+
+        /**
+         * Singleton for {@link emptyNavigableMap()} which is also immutable.
+         */
+        private static final EmptyNavigableMap<?,?> EMPTY_NAVIGABLE_MAP =
+            new EmptyNavigableMap<>();
+
+        /**
+         * The instance we wrap and protect.
+         */
+        private final NavigableMap<K, ? extends V> nm;
+
+        UnmodifiableNavigableMap(NavigableMap<K, ? extends V> m)
+                                                            {super(m); nm = m;}
+
+        public K lowerKey(K key)                   { return nm.lowerKey(key); }
+        public K floorKey(K key)                   { return nm.floorKey(key); }
+        public K ceilingKey(K key)               { return nm.ceilingKey(key); }
+        public K higherKey(K key)                 { return nm.higherKey(key); }
+
+        public Entry<K, V> lowerEntry(K key) {
+            Entry<K,V> lower = (Entry<K, V>) nm.lowerEntry(key);
+            return (null != lower)
+                ? new UnmodifiableEntrySet.UnmodifiableEntry(lower)
+                : null;
+        }
+
+        public Entry<K, V> floorEntry(K key) {
+            Entry<K,V> floor = (Entry<K, V>) nm.floorEntry(key);
+            return (null != floor)
+                ? new UnmodifiableEntrySet.UnmodifiableEntry(floor)
+                : null;
+        }
+
+        public Entry<K, V> ceilingEntry(K key) {
+            Entry<K,V> ceiling = (Entry<K, V>) nm.ceilingEntry(key);
+            return (null != ceiling)
+                ? new UnmodifiableEntrySet.UnmodifiableEntry(ceiling)
+                : null;
+        }
+
+
+        public Entry<K, V> higherEntry(K key) {
+            Entry<K,V> higher = (Entry<K, V>) nm.higherEntry(key);
+            return (null != higher)
+                ? new UnmodifiableEntrySet.UnmodifiableEntry(higher)
+                : null;
+        }
+
+        public Entry<K, V> firstEntry() {
+            Entry<K,V> first = (Entry<K, V>) nm.firstEntry();
+            return (null != first)
+                ? new UnmodifiableEntrySet.UnmodifiableEntry(first)
+                : null;
+        }
+
+        public Entry<K, V> lastEntry() {
+            Entry<K,V> last = (Entry<K, V>) nm.lastEntry();
+            return (null != last)
+                ? new UnmodifiableEntrySet.UnmodifiableEntry(last)
+                : null;
+        }
+
+        public Entry<K, V> pollFirstEntry()
+                                 { throw new UnsupportedOperationException(); }
+        public Entry<K, V> pollLastEntry()
+                                 { throw new UnsupportedOperationException(); }
+        public NavigableMap<K, V> descendingMap()
+                       { return unmodifiableNavigableMap(nm.descendingMap()); }
+        public NavigableSet<K> navigableKeySet()
+                     { return unmodifiableNavigableSet(nm.navigableKeySet()); }
+        public NavigableSet<K> descendingKeySet()
+                    { return unmodifiableNavigableSet(nm.descendingKeySet()); }
+
+        public NavigableMap<K, V> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+            return unmodifiableNavigableMap(
+                nm.subMap(fromKey, fromInclusive, toKey, toInclusive));
+        }
+
+        public NavigableMap<K, V> headMap(K toKey, boolean inclusive)
+             { return unmodifiableNavigableMap(nm.headMap(toKey, inclusive)); }
+        public NavigableMap<K, V> tailMap(K fromKey, boolean inclusive)
+           { return unmodifiableNavigableMap(nm.tailMap(fromKey, inclusive)); }
+    }
 
     // Synch Wrappers
 
@@ -1702,6 +2024,7 @@ public class Collections {
      * The returned collection will be serializable if the specified collection
      * is serializable.
      *
+     * @param  <T> the class of the objects in the collection
      * @param  c the collection to be "wrapped" in a synchronized collection.
      * @return a synchronized view of the specified collection.
      */
@@ -1723,14 +2046,13 @@ public class Collections {
         final Object mutex;     // Object on which to synchronize
 
         SynchronizedCollection(Collection<E> c) {
-            if (c==null)
-                throw new NullPointerException();
-            this.c = c;
+            this.c = Objects.requireNonNull(c);
             mutex = this;
         }
+
         SynchronizedCollection(Collection<E> c, Object mutex) {
-            this.c = c;
-            this.mutex = mutex;
+            this.c = Objects.requireNonNull(c);
+            this.mutex = Objects.requireNonNull(mutex);
         }
 
         public int size() {
@@ -1818,6 +2140,7 @@ public class Collections {
      * <p>The returned set will be serializable if the specified set is
      * serializable.
      *
+     * @param  <T> the class of the objects in the set
      * @param  s the set to be "wrapped" in a synchronized set.
      * @return a synchronized view of the specified set.
      */
@@ -1888,6 +2211,7 @@ public class Collections {
      * <p>The returned sorted set will be serializable if the specified
      * sorted set is serializable.
      *
+     * @param  <T> the class of the objects in the set
      * @param  s the sorted set to be "wrapped" in a synchronized sorted set.
      * @return a synchronized view of the specified sorted set.
      */
@@ -1945,6 +2269,121 @@ public class Collections {
     }
 
     /**
+     * Returns a synchronized (thread-safe) navigable set backed by the
+     * specified navigable set.  In order to guarantee serial access, it is
+     * critical that <strong>all</strong> access to the backing navigable set is
+     * accomplished through the returned navigable set (or its views).<p>
+     *
+     * It is imperative that the user manually synchronize on the returned
+     * navigable set when iterating over it or any of its {@code subSet},
+     * {@code headSet}, or {@code tailSet} views.
+     * <pre>
+     *  NavigableSet s = Collections.synchronizedNavigableSet(new TreeSet());
+     *      ...
+     *  synchronized (s) {
+     *      Iterator i = s.iterator(); // Must be in the synchronized block
+     *      while (i.hasNext())
+     *          foo(i.next());
+     *  }
+     * </pre>
+     * or:
+     * <pre>
+     *  NavigableSet s = Collections.synchronizedNavigableSet(new TreeSet());
+     *  NavigableSet s2 = s.headSet(foo, true);
+     *      ...
+     *  synchronized (s) {  // Note: s, not s2!!!
+     *      Iterator i = s2.iterator(); // Must be in the synchronized block
+     *      while (i.hasNext())
+     *          foo(i.next());
+     *  }
+     * </pre>
+     * Failure to follow this advice may result in non-deterministic behavior.
+     *
+     * <p>The returned navigable set will be serializable if the specified
+     * navigable set is serializable.
+     *
+     * @param  <T> the class of the objects in the set
+     * @param  s the navigable set to be "wrapped" in a synchronized navigable
+     * set
+     * @return a synchronized view of the specified navigable set
+     * @since 1.8
+     */
+    public static <T> NavigableSet<T> synchronizedNavigableSet(NavigableSet<T> s) {
+        return new SynchronizedNavigableSet<>(s);
+    }
+
+    /**
+     * @serial include
+     */
+    static class SynchronizedNavigableSet<E>
+        extends SynchronizedSortedSet<E>
+        implements NavigableSet<E>
+    {
+        private static final long serialVersionUID = -5505529816273629798L;
+
+        private final NavigableSet<E> ns;
+
+        SynchronizedNavigableSet(NavigableSet<E> s) {
+            super(s);
+            ns = s;
+        }
+
+        SynchronizedNavigableSet(NavigableSet<E> s, Object mutex) {
+            super(s, mutex);
+            ns = s;
+        }
+        public E lower(E e)      { synchronized (mutex) {return ns.lower(e);} }
+        public E floor(E e)      { synchronized (mutex) {return ns.floor(e);} }
+        public E ceiling(E e)  { synchronized (mutex) {return ns.ceiling(e);} }
+        public E higher(E e)    { synchronized (mutex) {return ns.higher(e);} }
+        public E pollFirst()  { synchronized (mutex) {return ns.pollFirst();} }
+        public E pollLast()    { synchronized (mutex) {return ns.pollLast();} }
+
+        public NavigableSet<E> descendingSet() {
+            synchronized (mutex) {
+                return new SynchronizedNavigableSet<>(ns.descendingSet(), mutex);
+            }
+        }
+
+        public Iterator<E> descendingIterator()
+                 { synchronized (mutex) { return descendingSet().iterator(); } }
+
+        public NavigableSet<E> subSet(E fromElement, E toElement) {
+            synchronized (mutex) {
+                return new SynchronizedNavigableSet<>(ns.subSet(fromElement, true, toElement, false), mutex);
+            }
+        }
+        public NavigableSet<E> headSet(E toElement) {
+            synchronized (mutex) {
+                return new SynchronizedNavigableSet<>(ns.headSet(toElement, false), mutex);
+            }
+        }
+        public NavigableSet<E> tailSet(E fromElement) {
+            synchronized (mutex) {
+                return new SynchronizedNavigableSet(ns.tailSet(fromElement, true), mutex);
+            }
+        }
+
+        public NavigableSet<E> subSet(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+            synchronized (mutex) {
+                return new SynchronizedNavigableSet<>(ns.subSet(fromElement, fromInclusive, toElement, toInclusive), mutex);
+            }
+        }
+
+        public NavigableSet<E> headSet(E toElement, boolean inclusive) {
+            synchronized (mutex) {
+                return new SynchronizedNavigableSet<>(ns.headSet(toElement, inclusive), mutex);
+            }
+        }
+
+        public NavigableSet<E> tailSet(E fromElement, boolean inclusive) {
+            synchronized (mutex) {
+                return new SynchronizedNavigableSet<>(ns.tailSet(fromElement, inclusive));
+            }
+        }
+    }
+
+    /**
      * Returns a synchronized (thread-safe) list backed by the specified
      * list.  In order to guarantee serial access, it is critical that
      * <strong>all</strong> access to the backing list is accomplished
@@ -1966,6 +2405,7 @@ public class Collections {
      * <p>The returned list will be serializable if the specified list is
      * serializable.
      *
+     * @param  <T> the class of the objects in the list
      * @param  list the list to be "wrapped" in a synchronized list.
      * @return a synchronized view of the specified list.
      */
@@ -2135,6 +2575,8 @@ public class Collections {
      * <p>The returned map will be serializable if the specified map is
      * serializable.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @param  m the map to be "wrapped" in a synchronized map.
      * @return a synchronized view of the specified map.
      */
@@ -2153,9 +2595,7 @@ public class Collections {
         final Object      mutex;        // Object on which to synchronize
 
         SynchronizedMap(Map<K,V> m) {
-            if (m==null)
-                throw new NullPointerException();
-            this.m = m;
+            this.m = Objects.requireNonNull(m);
             mutex = this;
         }
 
@@ -2327,13 +2767,14 @@ public class Collections {
      * <p>The returned sorted map will be serializable if the specified
      * sorted map is serializable.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @param  m the sorted map to be "wrapped" in a synchronized sorted map.
      * @return a synchronized view of the specified sorted map.
      */
     public static <K,V> SortedMap<K,V> synchronizedSortedMap(SortedMap<K,V> m) {
         return new SynchronizedSortedMap<>(m);
     }
-
 
     /**
      * @serial include
@@ -2384,6 +2825,166 @@ public class Collections {
         }
     }
 
+    /**
+     * Returns a synchronized (thread-safe) navigable map backed by the
+     * specified navigable map.  In order to guarantee serial access, it is
+     * critical that <strong>all</strong> access to the backing navigable map is
+     * accomplished through the returned navigable map (or its views).<p>
+     *
+     * It is imperative that the user manually synchronize on the returned
+     * navigable map when iterating over any of its collection views, or the
+     * collections views of any of its {@code subMap}, {@code headMap} or
+     * {@code tailMap} views.
+     * <pre>
+     *  NavigableMap m = Collections.synchronizedNavigableMap(new TreeMap());
+     *      ...
+     *  Set s = m.keySet();  // Needn't be in synchronized block
+     *      ...
+     *  synchronized (m) {  // Synchronizing on m, not s!
+     *      Iterator i = s.iterator(); // Must be in synchronized block
+     *      while (i.hasNext())
+     *          foo(i.next());
+     *  }
+     * </pre>
+     * or:
+     * <pre>
+     *  NavigableMap m = Collections.synchronizedNavigableMap(new TreeMap());
+     *  NavigableMap m2 = m.subMap(foo, true, bar, false);
+     *      ...
+     *  Set s2 = m2.keySet();  // Needn't be in synchronized block
+     *      ...
+     *  synchronized (m) {  // Synchronizing on m, not m2 or s2!
+     *      Iterator i = s.iterator(); // Must be in synchronized block
+     *      while (i.hasNext())
+     *          foo(i.next());
+     *  }
+     * </pre>
+     * Failure to follow this advice may result in non-deterministic behavior.
+     *
+     * <p>The returned navigable map will be serializable if the specified
+     * navigable map is serializable.
+     *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
+     * @param  m the navigable map to be "wrapped" in a synchronized navigable
+     *              map
+     * @return a synchronized view of the specified navigable map.
+     * @since 1.8
+     */
+    public static <K,V> NavigableMap<K,V> synchronizedNavigableMap(NavigableMap<K,V> m) {
+        return new SynchronizedNavigableMap<>(m);
+    }
+
+    /**
+     * A synchronized NavigableMap.
+     *
+     * @serial include
+     */
+    static class SynchronizedNavigableMap<K,V>
+        extends SynchronizedSortedMap<K,V>
+        implements NavigableMap<K,V>
+    {
+        private static final long serialVersionUID = 699392247599746807L;
+
+        private final NavigableMap<K,V> nm;
+
+        SynchronizedNavigableMap(NavigableMap<K,V> m) {
+            super(m);
+            nm = m;
+        }
+        SynchronizedNavigableMap(NavigableMap<K,V> m, Object mutex) {
+            super(m, mutex);
+            nm = m;
+        }
+
+        public Entry<K, V> lowerEntry(K key)
+                        { synchronized (mutex) { return nm.lowerEntry(key); } }
+        public K lowerKey(K key)
+                          { synchronized (mutex) { return nm.lowerKey(key); } }
+        public Entry<K, V> floorEntry(K key)
+                        { synchronized (mutex) { return nm.floorEntry(key); } }
+        public K floorKey(K key)
+                          { synchronized (mutex) { return nm.floorKey(key); } }
+        public Entry<K, V> ceilingEntry(K key)
+                      { synchronized (mutex) { return nm.ceilingEntry(key); } }
+        public K ceilingKey(K key)
+                        { synchronized (mutex) { return nm.ceilingKey(key); } }
+        public Entry<K, V> higherEntry(K key)
+                       { synchronized (mutex) { return nm.higherEntry(key); } }
+        public K higherKey(K key)
+                         { synchronized (mutex) { return nm.higherKey(key); } }
+        public Entry<K, V> firstEntry()
+                           { synchronized (mutex) { return nm.firstEntry(); } }
+        public Entry<K, V> lastEntry()
+                            { synchronized (mutex) { return nm.lastEntry(); } }
+        public Entry<K, V> pollFirstEntry()
+                       { synchronized (mutex) { return nm.pollFirstEntry(); } }
+        public Entry<K, V> pollLastEntry()
+                        { synchronized (mutex) { return nm.pollLastEntry(); } }
+
+        public NavigableMap<K, V> descendingMap() {
+            synchronized (mutex) {
+                return
+                    new SynchronizedNavigableMap(nm.descendingMap(), mutex);
+            }
+        }
+
+        public NavigableSet<K> keySet() {
+            return navigableKeySet();
+        }
+
+        public NavigableSet<K> navigableKeySet() {
+            synchronized (mutex) {
+                return new SynchronizedNavigableSet(nm.navigableKeySet(), mutex);
+            }
+        }
+
+        public NavigableSet<K> descendingKeySet() {
+            synchronized (mutex) {
+                return new SynchronizedNavigableSet(nm.descendingKeySet(), mutex);
+            }
+        }
+
+
+        public SortedMap<K,V> subMap(K fromKey, K toKey) {
+            synchronized (mutex) {
+                return new SynchronizedNavigableMap<>(
+                    nm.subMap(fromKey, true, toKey, false), mutex);
+            }
+        }
+        public SortedMap<K,V> headMap(K toKey) {
+            synchronized (mutex) {
+                return new SynchronizedNavigableMap<>(nm.headMap(toKey, false), mutex);
+            }
+        }
+        public SortedMap<K,V> tailMap(K fromKey) {
+            synchronized (mutex) {
+               return new SynchronizedNavigableMap<>(nm.tailMap(fromKey, true),mutex);
+            }
+        }
+
+        public NavigableMap<K, V> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+            synchronized (mutex) {
+                return new SynchronizedNavigableMap(
+                    nm.subMap(fromKey, fromInclusive, toKey, toInclusive), mutex);
+            }
+        }
+
+        public NavigableMap<K, V> headMap(K toKey, boolean inclusive) {
+            synchronized (mutex) {
+                return new SynchronizedNavigableMap(
+                        nm.headMap(toKey, inclusive), mutex);
+            }
+        }
+
+        public NavigableMap<K, V> tailMap(K fromKey, boolean inclusive) {
+            synchronized (mutex) {
+                return new SynchronizedNavigableMap(
+                    nm.tailMap(fromKey, inclusive), mutex);
+            }
+        }
+    }
+
     // Dynamically typesafe collection wrappers
 
     /**
@@ -2415,12 +3016,12 @@ public class Collections {
      * program to wrap the collection with a dynamically typesafe view.
      * For example, this declaration:
      *  <pre> {@code
-     *     Collection<String> c = new HashSet<String>();
+     *     Collection<String> c = new HashSet<>();
      * }</pre>
      * may be replaced temporarily by this one:
      *  <pre> {@code
      *     Collection<String> c = Collections.checkedCollection(
-     *         new HashSet<String>(), String.class);
+     *         new HashSet<>(), String.class);
      * }</pre>
      * Running the program again will cause it to fail at the point where
      * an incorrectly typed element is inserted into the collection, clearly
@@ -2440,6 +3041,7 @@ public class Collections {
      * type, the returned collection permits insertion of null elements
      * whenever the backing collection does.
      *
+     * @param <E> the class of the objects in the collection
      * @param c the collection for which a dynamically typesafe view is to be
      *          returned
      * @param type the type of element that {@code c} is permitted to hold
@@ -2585,6 +3187,7 @@ public class Collections {
      * type, the returned queue permits insertion of {@code null} elements
      * whenever the backing queue does.
      *
+     * @param <E> the class of the objects in the queue
      * @param queue the queue for which a dynamically typesafe view is to be
      *             returned
      * @param type the type of element that {@code queue} is permitted to hold
@@ -2643,6 +3246,7 @@ public class Collections {
      * type, the returned set permits insertion of null elements whenever
      * the backing set does.
      *
+     * @param <E> the class of the objects in the set
      * @param s the set for which a dynamically typesafe view is to be
      *          returned
      * @param type the type of element that {@code s} is permitted to hold
@@ -2688,6 +3292,7 @@ public class Collections {
      * type, the returned sorted set permits insertion of null elements
      * whenever the backing sorted set does.
      *
+     * @param <E> the class of the objects in the set
      * @param s the sorted set for which a dynamically typesafe view is to be
      *          returned
      * @param type the type of element that {@code s} is permitted to hold
@@ -2706,6 +3311,7 @@ public class Collections {
         implements SortedSet<E>, Serializable
     {
         private static final long serialVersionUID = 1599911165492914959L;
+
         private final SortedSet<E> ss;
 
         CheckedSortedSet(SortedSet<E> s, Class<E> type) {
@@ -2725,6 +3331,88 @@ public class Collections {
         }
         public SortedSet<E> tailSet(E fromElement) {
             return checkedSortedSet(ss.tailSet(fromElement), type);
+        }
+    }
+
+/**
+     * Returns a dynamically typesafe view of the specified navigable set.
+     * Any attempt to insert an element of the wrong type will result in an
+     * immediate {@link ClassCastException}.  Assuming a navigable set
+     * contains no incorrectly typed elements prior to the time a
+     * dynamically typesafe view is generated, and that all subsequent
+     * access to the navigable set takes place through the view, it is
+     * <em>guaranteed</em> that the navigable set cannot contain an incorrectly
+     * typed element.
+     *
+     * <p>A discussion of the use of dynamically typesafe views may be
+     * found in the documentation for the {@link #checkedCollection
+     * checkedCollection} method.
+     *
+     * <p>The returned navigable set will be serializable if the specified
+     * navigable set is serializable.
+     *
+     * <p>Since {@code null} is considered to be a value of any reference
+     * type, the returned navigable set permits insertion of null elements
+     * whenever the backing sorted set does.
+     *
+     * @param <E> the class of the objects in the set
+     * @param s the navigable set for which a dynamically typesafe view is to be
+     *          returned
+     * @param type the type of element that {@code s} is permitted to hold
+     * @return a dynamically typesafe view of the specified navigable set
+     * @since 1.8
+     */
+    public static <E> NavigableSet<E> checkedNavigableSet(NavigableSet<E> s,
+                                                    Class<E> type) {
+        return new CheckedNavigableSet<>(s, type);
+    }
+
+    /**
+     * @serial include
+     */
+    static class CheckedNavigableSet<E> extends CheckedSortedSet<E>
+        implements NavigableSet<E>, Serializable
+    {
+        private static final long serialVersionUID = -5429120189805438922L;
+
+        private final NavigableSet<E> ns;
+
+        CheckedNavigableSet(NavigableSet<E> s, Class<E> type) {
+            super(s, type);
+            ns = s;
+        }
+
+        public E lower(E e)                             { return ns.lower(e); }
+        public E floor(E e)                             { return ns.floor(e); }
+        public E ceiling(E e)                         { return ns.ceiling(e); }
+        public E higher(E e)                           { return ns.higher(e); }
+        public E pollFirst()                         { return ns.pollFirst(); }
+        public E pollLast()                            {return ns.pollLast(); }
+        public NavigableSet<E> descendingSet()
+                      { return checkedNavigableSet(ns.descendingSet(), type); }
+        public Iterator<E> descendingIterator()
+            {return checkedNavigableSet(ns.descendingSet(), type).iterator(); }
+
+        public NavigableSet<E> subSet(E fromElement, E toElement) {
+            return checkedNavigableSet(ns.subSet(fromElement, true, toElement, false), type);
+        }
+        public NavigableSet<E> headSet(E toElement) {
+            return checkedNavigableSet(ns.headSet(toElement, false), type);
+        }
+        public NavigableSet<E> tailSet(E fromElement) {
+            return checkedNavigableSet(ns.tailSet(fromElement, true), type);
+        }
+
+        public NavigableSet<E> subSet(E fromElement, boolean fromInclusive, E toElement, boolean toInclusive) {
+            return checkedNavigableSet(ns.subSet(fromElement, fromInclusive, toElement, toInclusive), type);
+        }
+
+        public NavigableSet<E> headSet(E toElement, boolean inclusive) {
+            return checkedNavigableSet(ns.headSet(toElement, inclusive), type);
+        }
+
+        public NavigableSet<E> tailSet(E fromElement, boolean inclusive) {
+            return checkedNavigableSet(ns.tailSet(fromElement, inclusive), type);
         }
     }
 
@@ -2748,6 +3436,7 @@ public class Collections {
      * type, the returned list permits insertion of null elements whenever
      * the backing list does.
      *
+     * @param <E> the class of the objects in the list
      * @param list the list for which a dynamically typesafe view is to be
      *             returned
      * @param type the type of element that {@code list} is permitted to hold
@@ -2885,6 +3574,8 @@ public class Collections {
      * type, the returned map permits insertion of null keys or values
      * whenever the backing map does.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @param m the map for which a dynamically typesafe view is to be
      *          returned
      * @param keyType the type of key that {@code m} is permitted to hold
@@ -2940,11 +3631,9 @@ public class Collections {
         }
 
         CheckedMap(Map<K, V> m, Class<K> keyType, Class<V> valueType) {
-            if (m == null || keyType == null || valueType == null)
-                throw new NullPointerException();
-            this.m = m;
-            this.keyType = keyType;
-            this.valueType = valueType;
+            this.m = Objects.requireNonNull(m);
+            this.keyType = Objects.requireNonNull(keyType);
+            this.valueType = Objects.requireNonNull(valueType);
         }
 
         public int size()                      { return m.size(); }
@@ -3221,8 +3910,8 @@ public class Collections {
                 private final Class<T> valueType;
 
                 CheckedEntry(Map.Entry<K, V> e, Class<T> valueType) {
-                    this.e = e;
-                    this.valueType = valueType;
+                    this.e = Objects.requireNonNull(e);
+                    this.valueType = Objects.requireNonNull(valueType);
                 }
 
                 public K getKey()        { return e.getKey(); }
@@ -3280,6 +3969,8 @@ public class Collections {
      * type, the returned map permits insertion of null keys or values
      * whenever the backing map does.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @param m the map for which a dynamically typesafe view is to be
      *          returned
      * @param keyType the type of key that {@code m} is permitted to hold
@@ -3325,27 +4016,195 @@ public class Collections {
         }
     }
 
+    /**
+     * Returns a dynamically typesafe view of the specified navigable map.
+     * Any attempt to insert a mapping whose key or value have the wrong
+     * type will result in an immediate {@link ClassCastException}.
+     * Similarly, any attempt to modify the value currently associated with
+     * a key will result in an immediate {@link ClassCastException},
+     * whether the modification is attempted directly through the map
+     * itself, or through a {@link Map.Entry} instance obtained from the
+     * map's {@link Map#entrySet() entry set} view.
+     *
+     * <p>Assuming a map contains no incorrectly typed keys or values
+     * prior to the time a dynamically typesafe view is generated, and
+     * that all subsequent access to the map takes place through the view
+     * (or one of its collection views), it is <em>guaranteed</em> that the
+     * map cannot contain an incorrectly typed key or value.
+     *
+     * <p>A discussion of the use of dynamically typesafe views may be
+     * found in the documentation for the {@link #checkedCollection
+     * checkedCollection} method.
+     *
+     * <p>The returned map will be serializable if the specified map is
+     * serializable.
+     *
+     * <p>Since {@code null} is considered to be a value of any reference
+     * type, the returned map permits insertion of null keys or values
+     * whenever the backing map does.
+     *
+     * @param <K> type of map keys
+     * @param <V> type of map values
+     * @param m the map for which a dynamically typesafe view is to be
+     *          returned
+     * @param keyType the type of key that {@code m} is permitted to hold
+     * @param valueType the type of value that {@code m} is permitted to hold
+     * @return a dynamically typesafe view of the specified map
+     * @since 1.8
+     */
+    public static <K,V> NavigableMap<K,V> checkedNavigableMap(NavigableMap<K, V> m,
+                                                        Class<K> keyType,
+                                                        Class<V> valueType) {
+        return new CheckedNavigableMap<>(m, keyType, valueType);
+    }
+
+    /**
+     * @serial include
+     */
+    static class CheckedNavigableMap<K,V> extends CheckedSortedMap<K,V>
+        implements NavigableMap<K,V>, Serializable
+    {
+        private static final long serialVersionUID = -4852462692372534096L;
+
+        private final NavigableMap<K, V> nm;
+
+        CheckedNavigableMap(NavigableMap<K, V> m,
+                         Class<K> keyType, Class<V> valueType) {
+            super(m, keyType, valueType);
+            nm = m;
+        }
+
+        public Comparator<? super K> comparator()   { return nm.comparator(); }
+        public K firstKey()                           { return nm.firstKey(); }
+        public K lastKey()                             { return nm.lastKey(); }
+
+        public Entry<K, V> lowerEntry(K key) {
+            Entry<K,V> lower = nm.lowerEntry(key);
+            return (null != lower)
+                ? new CheckedMap.CheckedEntrySet.CheckedEntry(lower, valueType)
+                : null;
+        }
+
+        public K lowerKey(K key)                   { return nm.lowerKey(key); }
+
+        public Entry<K, V> floorEntry(K key) {
+            Entry<K,V> floor = nm.floorEntry(key);
+            return (null != floor)
+                ? new CheckedMap.CheckedEntrySet.CheckedEntry(floor, valueType)
+                : null;
+        }
+
+        public K floorKey(K key)                   { return nm.floorKey(key); }
+
+        public Entry<K, V> ceilingEntry(K key) {
+            Entry<K,V> ceiling = nm.ceilingEntry(key);
+            return (null != ceiling)
+                ? new CheckedMap.CheckedEntrySet.CheckedEntry(ceiling, valueType)
+                : null;
+        }
+
+        public K ceilingKey(K key)               { return nm.ceilingKey(key); }
+
+        public Entry<K, V> higherEntry(K key) {
+            Entry<K,V> higher = nm.higherEntry(key);
+            return (null != higher)
+                ? new CheckedMap.CheckedEntrySet.CheckedEntry(higher, valueType)
+                : null;
+        }
+
+        public K higherKey(K key)                 { return nm.higherKey(key); }
+
+        public Entry<K, V> firstEntry() {
+            Entry<K,V> first = nm.firstEntry();
+            return (null != first)
+                ? new CheckedMap.CheckedEntrySet.CheckedEntry(first, valueType)
+                : null;
+        }
+
+        public Entry<K, V> lastEntry() {
+            Entry<K,V> last = nm.lastEntry();
+            return (null != last)
+                ? new CheckedMap.CheckedEntrySet.CheckedEntry(last, valueType)
+                : null;
+        }
+
+        public Entry<K, V> pollFirstEntry() {
+            Entry<K,V> entry = nm.pollFirstEntry();
+            return (null == entry)
+                ? null
+                : new CheckedMap.CheckedEntrySet.CheckedEntry(entry, valueType);
+        }
+
+        public Entry<K, V> pollLastEntry() {
+            Entry<K,V> entry = nm.pollLastEntry();
+            return (null == entry)
+                ? null
+                : new CheckedMap.CheckedEntrySet.CheckedEntry(entry, valueType);
+        }
+
+        public NavigableMap<K, V> descendingMap() {
+            return checkedNavigableMap(nm.descendingMap(), keyType, valueType);
+        }
+
+        public NavigableSet<K> keySet() {
+            return navigableKeySet();
+        }
+
+        public NavigableSet<K> navigableKeySet() {
+            return checkedNavigableSet(nm.navigableKeySet(), keyType);
+        }
+
+        public NavigableSet<K> descendingKeySet() {
+            return checkedNavigableSet(nm.descendingKeySet(), keyType);
+        }
+
+        @Override
+        public NavigableMap<K,V> subMap(K fromKey, K toKey) {
+            return checkedNavigableMap(nm.subMap(fromKey, true, toKey, false),
+                                    keyType, valueType);
+        }
+
+        @Override
+        public NavigableMap<K,V> headMap(K toKey) {
+            return checkedNavigableMap(nm.headMap(toKey, false), keyType, valueType);
+        }
+
+        @Override
+        public NavigableMap<K,V> tailMap(K fromKey) {
+            return checkedNavigableMap(nm.tailMap(fromKey, true), keyType, valueType);
+        }
+
+        public NavigableMap<K, V> subMap(K fromKey, boolean fromInclusive, K toKey, boolean toInclusive) {
+            return checkedNavigableMap(nm.subMap(fromKey, fromInclusive, toKey, toInclusive), keyType, valueType);
+        }
+
+        public NavigableMap<K, V> headMap(K toKey, boolean inclusive) {
+            return checkedNavigableMap(nm.headMap(toKey, inclusive), keyType, valueType);
+        }
+
+        public NavigableMap<K, V> tailMap(K fromKey, boolean inclusive) {
+            return checkedNavigableMap(nm.tailMap(fromKey, inclusive), keyType, valueType);
+        }
+    }
+
     // Empty collections
 
     /**
      * Returns an iterator that has no elements.  More precisely,
      *
-     * <ul compact>
-     *
+     * <ul>
      * <li>{@link Iterator#hasNext hasNext} always returns {@code
-     * false}.
-     *
+     * false}.</li>
      * <li>{@link Iterator#next next} always throws {@link
-     * NoSuchElementException}.
-     *
+     * NoSuchElementException}.</li>
      * <li>{@link Iterator#remove remove} always throws {@link
-     * IllegalStateException}.
-     *
+     * IllegalStateException}.</li>
      * </ul>
      *
      * <p>Implementations of this method are permitted, but not
      * required, to return the same object from multiple invocations.
      *
+     * @param <T> type of elements, if there were any, in the iterator
      * @return an empty iterator
      * @since 1.7
      */
@@ -3370,32 +4229,26 @@ public class Collections {
     /**
      * Returns a list iterator that has no elements.  More precisely,
      *
-     * <ul compact>
-     *
+     * <ul>
      * <li>{@link Iterator#hasNext hasNext} and {@link
      * ListIterator#hasPrevious hasPrevious} always return {@code
-     * false}.
-     *
+     * false}.</li>
      * <li>{@link Iterator#next next} and {@link ListIterator#previous
-     * previous} always throw {@link NoSuchElementException}.
-     *
+     * previous} always throw {@link NoSuchElementException}.</li>
      * <li>{@link Iterator#remove remove} and {@link ListIterator#set
-     * set} always throw {@link IllegalStateException}.
-     *
+     * set} always throw {@link IllegalStateException}.</li>
      * <li>{@link ListIterator#add add} always throws {@link
-     * UnsupportedOperationException}.
-     *
+     * UnsupportedOperationException}.</li>
      * <li>{@link ListIterator#nextIndex nextIndex} always returns
-     * {@code 0} .
-     *
+     * {@code 0}.</li>
      * <li>{@link ListIterator#previousIndex previousIndex} always
-     * returns {@code -1}.
-     *
+     * returns {@code -1}.</li>
      * </ul>
      *
      * <p>Implementations of this method are permitted, but not
      * required, to return the same object from multiple invocations.
      *
+     * @param <T> type of elements, if there were any, in the iterator
      * @return an empty list iterator
      * @since 1.7
      */
@@ -3422,19 +4275,17 @@ public class Collections {
     /**
      * Returns an enumeration that has no elements.  More precisely,
      *
-     * <ul compact>
-     *
+     * <ul>
      * <li>{@link Enumeration#hasMoreElements hasMoreElements} always
-     * returns {@code false}.
-     *
+     * returns {@code false}.</li>
      * <li> {@link Enumeration#nextElement nextElement} always throws
-     * {@link NoSuchElementException}.
-     *
+     * {@link NoSuchElementException}.</li>
      * </ul>
      *
      * <p>Implementations of this method are permitted, but not
      * required, to return the same object from multiple invocations.
      *
+     * @param  <T> the class of the objects in the enumeration
      * @return an empty enumeration
      * @since 1.7
      */
@@ -3460,17 +4311,20 @@ public class Collections {
     public static final Set EMPTY_SET = new EmptySet<>();
 
     /**
-     * Returns the empty set (immutable).  This set is serializable.
+     * Returns an empty set (immutable).  This set is serializable.
      * Unlike the like-named field, this method is parameterized.
      *
      * <p>This example illustrates the type-safe way to obtain an empty set:
      * <pre>
      *     Set&lt;String&gt; s = Collections.emptySet();
      * </pre>
-     * Implementation note:  Implementations of this method need not
-     * create a separate <tt>Set</tt> object for each call.   Using this
-     * method is likely to have comparable cost to using the like-named
-     * field.  (Unlike this method, the field does not provide type safety.)
+     * @implNote Implementations of this method need not create a separate
+     * {@code Set} object for each call.  Using this method is likely to have
+     * comparable cost to using the like-named field.  (Unlike this method, the
+     * field does not provide type safety.)
+     *
+     * @param  <T> the class of the objects in the set
+     * @return the empty set
      *
      * @see #EMPTY_SET
      * @since 1.5
@@ -3525,121 +4379,45 @@ public class Collections {
     }
 
     /**
-     * Returns the empty sorted set (immutable).  This set is serializable.
+     * Returns an empty sorted set (immutable).  This set is serializable.
      *
-     * <p>This example illustrates the type-safe way to obtain an empty sorted
-     * set:
-     * <pre>
-     *     SortedSet&lt;String&gt; s = Collections.emptySortedSet();
-     * </pre>
-     * Implementation note:  Implementations of this method need not
-     * create a separate <tt>SortedSet</tt> object for each call.
+     * <p>This example illustrates the type-safe way to obtain an empty
+     * sorted set:
+     * <pre> {@code
+     *     SortedSet<String> s = Collections.emptySortedSet();
+     * }</pre>
      *
+     * @implNote Implementations of this method need not create a separate
+     * {@code SortedSet} object for each call.
+     *
+     * @param <E> type of elements, if there were any, in the set
+     * @return the empty sorted set
      * @since 1.8
      */
     @SuppressWarnings("unchecked")
-    public static final <E> SortedSet<E> emptySortedSet() {
-        return (SortedSet<E>) new EmptySortedSet<>();
+    public static <E> SortedSet<E> emptySortedSet() {
+        return (SortedSet<E>) UnmodifiableNavigableSet.EMPTY_NAVIGABLE_SET;
     }
 
     /**
-     * @serial include
+     * Returns an empty navigable set (immutable).  This set is serializable.
+     *
+     * <p>This example illustrates the type-safe way to obtain an empty
+     * navigable set:
+     * <pre> {@code
+     *     NavigableSet<String> s = Collections.emptyNavigableSet();
+     * }</pre>
+     *
+     * @implNote Implementations of this method need not
+     * create a separate {@code NavigableSet} object for each call.
+     *
+     * @param <E> type of elements, if there were any, in the set
+     * @return the empty navigable set
+     * @since 1.8
      */
-    private static class EmptySortedSet<E>
-        extends AbstractSet<E>
-        implements SortedSet<E>, Serializable
-    {
-        private static final long serialVersionUID = 6316515401502265487L;
-        public Iterator<E> iterator() { return emptyIterator(); }
-        public int size() {return 0;}
-        public boolean isEmpty() {return true;}
-        public boolean contains(Object obj) {return false;}
-        public boolean containsAll(Collection<?> c) { return c.isEmpty(); }
-        public Object[] toArray() { return new Object[0]; }
-
-        public <E> E[] toArray(E[] a) {
-            if (a.length > 0)
-                a[0] = null;
-            return a;
-        }
-
-        // Preserves singleton property
-        private Object readResolve() {
-            return new EmptySortedSet<>();
-        }
-
-        @Override
-        public Comparator<? super E> comparator() {
-            return null;
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public SortedSet<E> subSet(Object fromElement, Object toElement) {
-            Objects.requireNonNull(fromElement);
-            Objects.requireNonNull(toElement);
-
-            if (!(fromElement instanceof Comparable) ||
-                    !(toElement instanceof Comparable))
-            {
-                throw new ClassCastException();
-            }
-
-            if ((((Comparable)fromElement).compareTo(toElement) >= 0) ||
-                    (((Comparable)toElement).compareTo(fromElement) < 0))
-            {
-                throw new IllegalArgumentException();
-            }
-
-            return emptySortedSet();
-        }
-
-        @Override
-        public SortedSet<E> headSet(Object toElement) {
-            Objects.requireNonNull(toElement);
-
-            if (!(toElement instanceof Comparable)) {
-                throw new ClassCastException();
-            }
-
-            return emptySortedSet();
-        }
-
-        @Override
-        public SortedSet<E> tailSet(Object fromElement) {
-            Objects.requireNonNull(fromElement);
-
-            if (!(fromElement instanceof Comparable)) {
-                throw new ClassCastException();
-            }
-
-            return emptySortedSet();
-        }
-
-        @Override
-        public E first() {
-            throw new NoSuchElementException();
-        }
-
-        @Override
-        public E last() {
-            throw new NoSuchElementException();
-        }
-
-        // Override default methods in Collection
-        @Override
-        public void forEach(Consumer<? super E> action) {
-            Objects.requireNonNull(action);
-        }
-
-        @Override
-        public boolean removeIf(Predicate<? super E> filter) {
-            Objects.requireNonNull(filter);
-            return false;
-        }
-
-        @Override
-        public Spliterator<E> spliterator() { return Spliterators.emptySpliterator(); }
+    @SuppressWarnings("unchecked")
+    public static <E> NavigableSet<E> emptyNavigableSet() {
+        return (NavigableSet<E>) UnmodifiableNavigableSet.EMPTY_NAVIGABLE_SET;
     }
 
     /**
@@ -3651,7 +4429,7 @@ public class Collections {
     public static final List EMPTY_LIST = new EmptyList<>();
 
     /**
-     * Returns the empty list (immutable).  This list is serializable.
+     * Returns an empty list (immutable).  This list is serializable.
      *
      * <p>This example illustrates the type-safe way to obtain an empty list:
      * <pre>
@@ -3661,6 +4439,9 @@ public class Collections {
      * create a separate <tt>List</tt> object for each call.   Using this
      * method is likely to have comparable cost to using the like-named
      * field.  (Unlike this method, the field does not provide type safety.)
+     *
+     * @param <T> type of elements, if there were any, in the list
+     * @return an empty immutable list
      *
      * @see #EMPTY_LIST
      * @since 1.5
@@ -3748,23 +4529,68 @@ public class Collections {
     public static final Map EMPTY_MAP = new EmptyMap<>();
 
     /**
-     * Returns the empty map (immutable).  This map is serializable.
+     * Returns an empty map (immutable).  This map is serializable.
      *
-     * <p>This example illustrates the type-safe way to obtain an empty set:
+     * <p>This example illustrates the type-safe way to obtain an empty map:
      * <pre>
      *     Map&lt;String, Date&gt; s = Collections.emptyMap();
      * </pre>
-     * Implementation note:  Implementations of this method need not
-     * create a separate <tt>Map</tt> object for each call.   Using this
-     * method is likely to have comparable cost to using the like-named
-     * field.  (Unlike this method, the field does not provide type safety.)
+     * @implNote Implementations of this method need not create a separate
+     * {@code Map} object for each call.  Using this method is likely to have
+     * comparable cost to using the like-named field.  (Unlike this method, the
+     * field does not provide type safety.)
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
+     * @return an empty map
      * @see #EMPTY_MAP
      * @since 1.5
      */
     @SuppressWarnings("unchecked")
     public static final <K,V> Map<K,V> emptyMap() {
         return (Map<K,V>) EMPTY_MAP;
+    }
+
+    /**
+     * Returns an empty sorted map (immutable).  This map is serializable.
+     *
+     * <p>This example illustrates the type-safe way to obtain an empty map:
+     * <pre> {@code
+     *     SortedMap<String, Date> s = Collections.emptySortedMap();
+     * }</pre>
+     *
+     * @implNote Implementations of this method need not create a separate
+     * {@code SortedMap} object for each call.
+     *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
+     * @return an empty sorted map
+     * @since 1.8
+     */
+    @SuppressWarnings("unchecked")
+    public static final <K,V> SortedMap<K,V> emptySortedMap() {
+        return (SortedMap<K,V>) UnmodifiableNavigableMap.EMPTY_NAVIGABLE_MAP;
+    }
+
+    /**
+     * Returns an empty navigable map (immutable).  This map is serializable.
+     *
+     * <p>This example illustrates the type-safe way to obtain an empty map:
+     * <pre> {@code
+     *     NavigableMap<String, Date> s = Collections.emptyNavigableMap();
+     * }</pre>
+     *
+     * @implNote Implementations of this method need not create a separate
+     * {@code NavigableMap} object for each call.
+     *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
+     * @return an empty navigable map
+     * @since 1.8
+     */
+    @SuppressWarnings("unchecked")
+    public static final <K,V> NavigableMap<K,V> emptyNavigableMap() {
+        return (NavigableMap<K,V>) UnmodifiableNavigableMap.EMPTY_NAVIGABLE_MAP;
     }
 
     /**
@@ -3864,6 +4690,7 @@ public class Collections {
      * Returns an immutable set containing only the specified object.
      * The returned set is serializable.
      *
+     * @param  <T> the class of the objects in the set
      * @param o the sole object to be stored in the returned set.
      * @return an immutable set containing only the specified object.
      */
@@ -3984,6 +4811,7 @@ public class Collections {
      * Returns an immutable list containing only the specified object.
      * The returned list is serializable.
      *
+     * @param  <T> the class of the objects in the list
      * @param o the sole object to be stored in the returned list.
      * @return an immutable list containing only the specified object.
      * @since 1.3
@@ -4045,6 +4873,8 @@ public class Collections {
      * Returns an immutable map, mapping only the specified key to the
      * specified value.  The returned map is serializable.
      *
+     * @param <K> the class of the map keys
+     * @param <V> the class of the map values
      * @param key the sole key to be stored in the returned map.
      * @param value the value to which the returned map maps <tt>key</tt>.
      * @return an immutable map containing only the specified key-value
@@ -4071,15 +4901,11 @@ public class Collections {
             v = value;
         }
 
-        public int size()                          {return 1;}
-
-        public boolean isEmpty()                   {return false;}
-
-        public boolean containsKey(Object key)     {return eq(key, k);}
-
-        public boolean containsValue(Object value) {return eq(value, v);}
-
-        public V get(Object key)                   {return (eq(key, k) ? v : null);}
+        public int size()                                           {return 1;}
+        public boolean isEmpty()                                {return false;}
+        public boolean containsKey(Object key)             {return eq(key, k);}
+        public boolean containsValue(Object value)       {return eq(value, v);}
+        public V get(Object key)              {return (eq(key, k) ? v : null);}
 
         private transient Set<K> keySet = null;
         private transient Set<Map.Entry<K,V>> entrySet = null;
@@ -4174,6 +5000,8 @@ public class Collections {
      * combination with the <tt>List.addAll</tt> method to grow lists.
      * The returned list is serializable.
      *
+     * @param  <T> the class of the object to copy and of the objects
+     *         in the returned list.
      * @param  n the number of elements in the returned list.
      * @param  o the element to appear repeatedly in the returned list.
      * @return an immutable list consisting of <tt>n</tt> copies of the
@@ -4278,6 +5106,7 @@ public class Collections {
      *
      * The returned comparator is serializable.
      *
+     * @param  <T> the class of the objects compared by the comparator
      * @return A comparator that imposes the reverse of the <i>natural
      *         ordering</i> on a collection of objects that implement
      *         the <tt>Comparable</tt> interface.
@@ -4321,6 +5150,7 @@ public class Collections {
      * <p>The returned comparator is serializable (assuming the specified
      * comparator is also serializable or {@code null}).
      *
+     * @param <T> the class of the objects compared by the comparator
      * @param cmp a comparator who's ordering is to be reversed by the returned
      * comparator or {@code null}
      * @return A comparator that imposes the reverse ordering of the
@@ -4384,6 +5214,7 @@ public class Collections {
      * interoperability with legacy APIs that require an enumeration
      * as input.
      *
+     * @param  <T> the class of the objects in the collection
      * @param c the collection for which an enumeration is to be returned.
      * @return an enumeration over the specified collection.
      * @see Enumeration
@@ -4409,6 +5240,7 @@ public class Collections {
      * legacy APIs that return enumerations and new APIs that require
      * collections.
      *
+     * @param <T> the class of the objects returned by the enumeration
      * @param e enumeration providing elements for the returned
      *          array list
      * @return an array list containing the elements returned
@@ -4426,6 +5258,8 @@ public class Collections {
 
     /**
      * Returns true if the specified arguments are equal, or both null.
+     *
+     * NB: Do not replace with Object.equals until JDK-8015417 is resolved.
      */
     static boolean eq(Object o1, Object o2) {
         return o1==null ? o2==null : o1.equals(o2);
@@ -4440,6 +5274,7 @@ public class Collections {
      * @param c the collection in which to determine the frequency
      *     of <tt>o</tt>
      * @param o the object whose frequency is to be determined
+     * @return the number of elements in {@code c} equal to {@code o}
      * @throws NullPointerException if <tt>c</tt> is null
      * @since 1.5
      */
@@ -4560,6 +5395,7 @@ public class Collections {
      *     Collections.addAll(flavors, "Peaches 'n Plutonium", "Rocky Racoon");
      * </pre>
      *
+     * @param  <T> the class of the elements to add and of the collection
      * @param c the collection into which <tt>elements</tt> are to be inserted
      * @param elements the elements to insert into <tt>c</tt>
      * @return <tt>true</tt> if the collection changed as a result of the call
@@ -4605,6 +5441,8 @@ public class Collections {
      *        new WeakHashMap&lt;Object, Boolean&gt;());
      * </pre>
      *
+     * @param <E> the class of the map keys and of the objects in the
+     *        returned set
      * @param map the backing map
      * @return the set backed by the map
      * @throws IllegalArgumentException if <tt>map</tt> is not empty
@@ -4683,6 +5521,7 @@ public class Collections {
      * implemented as a sequence of {@link Deque#addFirst addFirst}
      * invocations on the backing deque.
      *
+     * @param  <T> the class of the objects in the deque
      * @param deque the deque
      * @return the queue
      * @since  1.6

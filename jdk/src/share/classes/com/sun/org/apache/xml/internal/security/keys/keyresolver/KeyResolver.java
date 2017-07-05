@@ -31,10 +31,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.crypto.SecretKey;
 
+import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.DEREncodedKeyValueResolver;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.DSAKeyValueResolver;
+import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.KeyInfoReferenceResolver;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.RSAKeyValueResolver;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.RetrievalMethodResolver;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.X509CertificateResolver;
+import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.X509DigestResolver;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.X509IssuerSerialResolver;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.X509SKIResolver;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.X509SubjectNameResolver;
@@ -277,6 +280,9 @@ public class KeyResolver {
         keyResolverList.add(new KeyResolver(new RetrievalMethodResolver()));
         keyResolverList.add(new KeyResolver(new X509SubjectNameResolver()));
         keyResolverList.add(new KeyResolver(new X509IssuerSerialResolver()));
+        keyResolverList.add(new KeyResolver(new DEREncodedKeyValueResolver()));
+        keyResolverList.add(new KeyResolver(new KeyInfoReferenceResolver()));
+        keyResolverList.add(new KeyResolver(new X509DigestResolver()));
 
         resolverVector.addAll(keyResolverList);
     }

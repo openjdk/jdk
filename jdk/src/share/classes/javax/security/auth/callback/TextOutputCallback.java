@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package javax.security.auth.callback;
 
 /**
  * <p> Underlying security services instantiate and pass a
- * <code>TextOutputCallback</code> to the <code>handle</code>
- * method of a <code>CallbackHandler</code> to display information messages,
+ * {@code TextOutputCallback} to the {@code handle}
+ * method of a {@code CallbackHandler} to display information messages,
  * warning messages and error messages.
  *
  * @see javax.security.auth.callback.CallbackHandler
@@ -61,16 +61,16 @@ public class TextOutputCallback implements Callback, java.io.Serializable {
      *
      * <p>
      *
-     * @param messageType the message type (<code>INFORMATION</code>,
-     *                  <code>WARNING</code> or <code>ERROR</code>). <p>
+     * @param messageType the message type ({@code INFORMATION},
+     *                  {@code WARNING} or {@code ERROR}). <p>
      *
      * @param message the message to be displayed. <p>
      *
-     * @exception IllegalArgumentException if <code>messageType</code>
-     *                  is not either <code>INFORMATION</code>,
-     *                  <code>WARNING</code> or <code>ERROR</code>,
-     *                  if <code>message</code> is null,
-     *                  or if <code>message</code> has a length of 0.
+     * @exception IllegalArgumentException if {@code messageType}
+     *                  is not either {@code INFORMATION},
+     *                  {@code WARNING} or {@code ERROR},
+     *                  if {@code message} is null,
+     *                  or if {@code message} has a length of 0.
      */
     public TextOutputCallback(int messageType, String message) {
         if ((messageType != INFORMATION &&
@@ -87,8 +87,8 @@ public class TextOutputCallback implements Callback, java.io.Serializable {
      *
      * <p>
      *
-     * @return the message type (<code>INFORMATION</code>,
-     *                  <code>WARNING</code> or <code>ERROR</code>).
+     * @return the message type ({@code INFORMATION},
+     *                  {@code WARNING} or {@code ERROR}).
      */
     public int getMessageType() {
         return messageType;

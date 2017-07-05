@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,13 +61,13 @@ import java.lang.NullPointerException;  // for javadoc
  * and relativizing URI instances.  Instances of this class are immutable.
  *
  *
- * <h4> URI syntax and components </h4>
+ * <h3> URI syntax and components </h3>
  *
  * At the highest level a URI reference (hereinafter simply "URI") in string
  * form has the syntax
  *
  * <blockquote>
- * [<i>scheme</i><tt><b>:</b></tt><i></i>]<i>scheme-specific-part</i>[<tt><b>#</b></tt><i>fragment</i>]
+ * [<i>scheme</i><tt><b>:</b></tt>]<i>scheme-specific-part</i>[<tt><b>#</b></tt><i>fragment</i>]
  * </blockquote>
  *
  * where square brackets [...] delineate optional components and the characters
@@ -334,14 +334,14 @@ import java.lang.NullPointerException;  // for javadoc
  *
  * <ul>
  *
- *   <li><p> The {@link #URI(java.lang.String) <code>single-argument
- *   constructor</code>} requires any illegal characters in its argument to be
+ *   <li><p> The {@linkplain #URI(java.lang.String) single-argument
+ *   constructor} requires any illegal characters in its argument to be
  *   quoted and preserves any escaped octets and <i>other</i> characters that
  *   are present.  </p></li>
  *
- *   <li><p> The {@link
+ *   <li><p> The {@linkplain
  *   #URI(java.lang.String,java.lang.String,java.lang.String,int,java.lang.String,java.lang.String,java.lang.String)
- *   <code>multi-argument constructors</code>} quote illegal characters as
+ *   multi-argument constructors} quote illegal characters as
  *   required by the components in which they appear.  The percent character
  *   (<tt>'%'</tt>) is always quoted by these constructors.  Any <i>other</i>
  *   characters are preserved.  </p></li>

@@ -81,13 +81,13 @@ void MemTracker::init_tracking_options(const char* option_line) {
   } else if (strcmp(option_line, "=detail") == 0) {
     // detail relies on a stack-walking ability that may not
     // be available depending on platform and/or compiler flags
-    if (PLATFORM_NMT_DETAIL_SUPPORTED) {
+#if PLATFORM_NATIVE_STACK_WALKING_SUPPORTED
       _tracking_level = NMT_detail;
-    } else {
+#else
       jio_fprintf(defaultStream::error_stream(),
-        "NMT detail is not supported on this platform.  Using NMT summary instead.");
+        "NMT detail is not supported on this platform.  Using NMT summary instead.\n");
       _tracking_level = NMT_summary;
-    }
+#endif
   } else if (strcmp(option_line, "=off") != 0) {
     vm_exit_during_initialization("Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", NULL);
   }

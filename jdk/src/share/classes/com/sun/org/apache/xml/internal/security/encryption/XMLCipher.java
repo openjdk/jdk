@@ -2,57 +2,62 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright  2003-2004 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.sun.org.apache.xml.internal.security.encryption;
 
-
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.io.IOException;
-import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.SecureRandom;
+import java.security.spec.MGF1ParameterSpec;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
-import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
+import javax.crypto.spec.OAEPParameterSpec;
+import javax.crypto.spec.PSource;
 
 import com.sun.org.apache.xml.internal.security.algorithms.JCEMapper;
 import com.sun.org.apache.xml.internal.security.algorithms.MessageDigestAlgorithm;
 import com.sun.org.apache.xml.internal.security.c14n.Canonicalizer;
 import com.sun.org.apache.xml.internal.security.c14n.InvalidCanonicalizerException;
+import com.sun.org.apache.xml.internal.security.exceptions.Base64DecodingException;
 import com.sun.org.apache.xml.internal.security.exceptions.XMLSecurityException;
 import com.sun.org.apache.xml.internal.security.keys.KeyInfo;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.KeyResolverException;
+import com.sun.org.apache.xml.internal.security.keys.keyresolver.KeyResolverSpi;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.EncryptedKeyResolver;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureException;
 import com.sun.org.apache.xml.internal.security.transforms.InvalidTransformException;
@@ -62,17 +67,11 @@ import com.sun.org.apache.xml.internal.security.utils.Constants;
 import com.sun.org.apache.xml.internal.security.utils.ElementProxy;
 import com.sun.org.apache.xml.internal.security.utils.EncryptionConstants;
 import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
-import com.sun.org.apache.xml.internal.utils.URI;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
-import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
 
 /**
  * <code>XMLCipher</code> encrypts and decrypts the contents of
@@ -85,133 +84,245 @@ import org.xml.sax.SAXException;
  */
 public class XMLCipher {
 
-    private static java.util.logging.Logger logger =
+    private static java.util.logging.Logger log =
         java.util.logging.Logger.getLogger(XMLCipher.class.getName());
 
-        //J-
-        /** Triple DES EDE (192 bit key) in CBC mode */
+    /** Triple DES EDE (192 bit key) in CBC mode */
     public static final String TRIPLEDES =
         EncryptionConstants.ALGO_ID_BLOCKCIPHER_TRIPLEDES;
+
     /** AES 128 Cipher */
     public static final String AES_128 =
         EncryptionConstants.ALGO_ID_BLOCKCIPHER_AES128;
+
     /** AES 256 Cipher */
     public static final String AES_256 =
         EncryptionConstants.ALGO_ID_BLOCKCIPHER_AES256;
+
     /** AES 192 Cipher */
     public static final String AES_192 =
         EncryptionConstants.ALGO_ID_BLOCKCIPHER_AES192;
+
+    /** AES 128 GCM Cipher */
+    public static final String AES_128_GCM =
+        EncryptionConstants.ALGO_ID_BLOCKCIPHER_AES128_GCM;
+
+    /** AES 192 GCM Cipher */
+    public static final String AES_192_GCM =
+        EncryptionConstants.ALGO_ID_BLOCKCIPHER_AES192_GCM;
+
+    /** AES 256 GCM Cipher */
+    public static final String AES_256_GCM =
+        EncryptionConstants.ALGO_ID_BLOCKCIPHER_AES256_GCM;
+
     /** RSA 1.5 Cipher */
     public static final String RSA_v1dot5 =
         EncryptionConstants.ALGO_ID_KEYTRANSPORT_RSA15;
+
     /** RSA OAEP Cipher */
     public static final String RSA_OAEP =
         EncryptionConstants.ALGO_ID_KEYTRANSPORT_RSAOAEP;
+
+    /** RSA OAEP Cipher */
+    public static final String RSA_OAEP_11 =
+        EncryptionConstants.ALGO_ID_KEYTRANSPORT_RSAOAEP_11;
+
     /** DIFFIE_HELLMAN Cipher */
     public static final String DIFFIE_HELLMAN =
         EncryptionConstants.ALGO_ID_KEYAGREEMENT_DH;
+
     /** Triple DES EDE (192 bit key) in CBC mode KEYWRAP*/
     public static final String TRIPLEDES_KeyWrap =
         EncryptionConstants.ALGO_ID_KEYWRAP_TRIPLEDES;
+
     /** AES 128 Cipher KeyWrap */
     public static final String AES_128_KeyWrap =
         EncryptionConstants.ALGO_ID_KEYWRAP_AES128;
+
     /** AES 256 Cipher KeyWrap */
     public static final String AES_256_KeyWrap =
         EncryptionConstants.ALGO_ID_KEYWRAP_AES256;
+
     /** AES 192 Cipher KeyWrap */
     public static final String AES_192_KeyWrap =
         EncryptionConstants.ALGO_ID_KEYWRAP_AES192;
+
     /** SHA1 Cipher */
     public static final String SHA1 =
         Constants.ALGO_ID_DIGEST_SHA1;
+
     /** SHA256 Cipher */
     public static final String SHA256 =
         MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA256;
+
     /** SHA512 Cipher */
     public static final String SHA512 =
         MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA512;
+
     /** RIPEMD Cipher */
     public static final String RIPEMD_160 =
         MessageDigestAlgorithm.ALGO_ID_DIGEST_RIPEMD160;
+
     /** XML Signature NS */
     public static final String XML_DSIG =
         Constants.SignatureSpecNS;
+
     /** N14C_XML */
     public static final String N14C_XML =
         Canonicalizer.ALGO_ID_C14N_OMIT_COMMENTS;
+
     /** N14C_XML with comments*/
     public static final String N14C_XML_WITH_COMMENTS =
         Canonicalizer.ALGO_ID_C14N_WITH_COMMENTS;
-    /** N14C_XML excluisve */
+
+    /** N14C_XML exclusive */
     public static final String EXCL_XML_N14C =
         Canonicalizer.ALGO_ID_C14N_EXCL_OMIT_COMMENTS;
-    /** N14C_XML exclusive with commetns*/
+
+    /** N14C_XML exclusive with comments*/
     public static final String EXCL_XML_N14C_WITH_COMMENTS =
         Canonicalizer.ALGO_ID_C14N_EXCL_WITH_COMMENTS;
+
+    /** N14C_PHYSICAL preserve the physical representation*/
+    public static final String PHYSICAL_XML_N14C =
+        Canonicalizer.ALGO_ID_C14N_PHYSICAL;
+
     /** Base64 encoding */
     public static final String BASE64_ENCODING =
         com.sun.org.apache.xml.internal.security.transforms.Transforms.TRANSFORM_BASE64_DECODE;
-        //J+
 
     /** ENCRYPT Mode */
     public static final int ENCRYPT_MODE = Cipher.ENCRYPT_MODE;
+
     /** DECRYPT Mode */
     public static final int DECRYPT_MODE = Cipher.DECRYPT_MODE;
+
     /** UNWRAP Mode */
     public static final int UNWRAP_MODE  = Cipher.UNWRAP_MODE;
+
     /** WRAP Mode */
     public static final int WRAP_MODE    = Cipher.WRAP_MODE;
 
     private static final String ENC_ALGORITHMS = TRIPLEDES + "\n" +
-        AES_128 + "\n" + AES_256 + "\n" + AES_192 + "\n" + RSA_v1dot5 + "\n" +
-        RSA_OAEP + "\n" + TRIPLEDES_KeyWrap + "\n" + AES_128_KeyWrap + "\n" +
-        AES_256_KeyWrap + "\n" + AES_192_KeyWrap+ "\n";
+    AES_128 + "\n" + AES_256 + "\n" + AES_192 + "\n" + RSA_v1dot5 + "\n" +
+    RSA_OAEP + "\n" + RSA_OAEP_11 + "\n" + TRIPLEDES_KeyWrap + "\n" +
+    AES_128_KeyWrap + "\n" + AES_256_KeyWrap + "\n" + AES_192_KeyWrap + "\n" +
+    AES_128_GCM + "\n" + AES_192_GCM + "\n" + AES_256_GCM + "\n";
 
-        /** Cipher created during initialisation that is used for encryption */
-    private Cipher _contextCipher;
-        /** Mode that the XMLCipher object is operating in */
-    private int _cipherMode = Integer.MIN_VALUE;
-        /** URI of algorithm that is being used for cryptographic operation */
-    private String _algorithm = null;
-        /** Cryptographic provider requested by caller */
-        private String _requestedJCEProvider = null;
-        /** Holds c14n to serialize, if initialized then _always_ use this c14n to serialize */
-        private Canonicalizer _canon;
-        /** Used for creation of DOM nodes in WRAP and ENCRYPT modes */
-    private Document _contextDocument;
-        /** Instance of factory used to create XML Encryption objects */
-    private Factory _factory;
-        /** Internal serializer class for going to/from UTF-8 */
-    private Serializer _serializer;
+    /** Cipher created during initialisation that is used for encryption */
+    private Cipher contextCipher;
 
-        /** Local copy of user's key */
-        private Key _key;
-        /** Local copy of the kek (used to decrypt EncryptedKeys during a
+    /** Mode that the XMLCipher object is operating in */
+    private int cipherMode = Integer.MIN_VALUE;
+
+    /** URI of algorithm that is being used for cryptographic operation */
+    private String algorithm = null;
+
+    /** Cryptographic provider requested by caller */
+    private String requestedJCEProvider = null;
+
+    /** Holds c14n to serialize, if initialized then _always_ use this c14n to serialize */
+    private Canonicalizer canon;
+
+    /** Used for creation of DOM nodes in WRAP and ENCRYPT modes */
+    private Document contextDocument;
+
+    /** Instance of factory used to create XML Encryption objects */
+    private Factory factory;
+
+    /** Serializer class for going to/from UTF-8 */
+    private Serializer serializer;
+
+    /** Local copy of user's key */
+    private Key key;
+
+    /** Local copy of the kek (used to decrypt EncryptedKeys during a
      *  DECRYPT_MODE operation */
-        private Key _kek;
+    private Key kek;
 
-        // The EncryptedKey being built (part of a WRAP operation) or read
-        // (part of an UNWRAP operation)
+    // The EncryptedKey being built (part of a WRAP operation) or read
+    // (part of an UNWRAP operation)
+    private EncryptedKey ek;
 
-        private EncryptedKey _ek;
+    // The EncryptedData being built (part of a WRAP operation) or read
+    // (part of an UNWRAP operation)
+    private EncryptedData ed;
 
-        // The EncryptedData being built (part of a WRAP operation) or read
-        // (part of an UNWRAP operation)
+    private SecureRandom random;
 
-        private EncryptedData _ed;
+    private boolean secureValidation;
+
+    private String digestAlg;
+
+    /** List of internal KeyResolvers for DECRYPT and UNWRAP modes. */
+    private List<KeyResolverSpi> internalKeyResolvers;
+
+    /**
+     * Set the Serializer algorithm to use
+     */
+    public void setSerializer(Serializer serializer) {
+        this.serializer = serializer;
+        serializer.setCanonicalizer(this.canon);
+    }
+
+    /**
+     * Get the Serializer algorithm to use
+     */
+    public Serializer getSerializer() {
+        return serializer;
+    }
 
     /**
      * Creates a new <code>XMLCipher</code>.
      *
-     * @since 1.0.
+     * @param transformation    the name of the transformation, e.g.,
+     *                          <code>XMLCipher.TRIPLEDES</code>. If null the XMLCipher can only
+     *                          be used for decrypt or unwrap operations where the encryption method
+     *                          is defined in the <code>EncryptionMethod</code> element.
+     * @param provider          the JCE provider that supplies the transformation,
+     *                          if null use the default provider.
+     * @param canon             the name of the c14n algorithm, if
+     *                          <code>null</code> use standard serializer
+     * @param digestMethod      An optional digestMethod to use.
      */
-    private XMLCipher() {
-        logger.log(java.util.logging.Level.FINE, "Constructing XMLCipher...");
+    private XMLCipher(
+        String transformation,
+        String provider,
+        String canonAlg,
+        String digestMethod
+    ) throws XMLEncryptionException {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Constructing XMLCipher...");
+        }
 
-        _factory = new Factory();
-        _serializer = new Serializer();
+        factory = new Factory();
 
+        algorithm = transformation;
+        requestedJCEProvider = provider;
+        digestAlg = digestMethod;
+
+        // Create a canonicalizer - used when serializing DOM to octets
+        // prior to encryption (and for the reverse)
+
+        try {
+            if (canonAlg == null) {
+                // The default is to preserve the physical representation.
+                this.canon = Canonicalizer.getInstance(Canonicalizer.ALGO_ID_C14N_PHYSICAL);
+            } else {
+                this.canon = Canonicalizer.getInstance(canonAlg);
+            }
+        } catch (InvalidCanonicalizerException ice) {
+            throw new XMLEncryptionException("empty", ice);
+        }
+
+        if (serializer == null) {
+            serializer = new DocumentSerializer();
+        }
+        serializer.setCanonicalizer(this.canon);
+
+        if (transformation != null) {
+            contextCipher = constructCipher(transformation, digestMethod);
+        }
     }
 
     /**
@@ -222,20 +333,38 @@ public class XMLCipher {
      * @since 1.0.
      */
     private static boolean isValidEncryptionAlgorithm(String algorithm) {
-        boolean result = (
+        return (
             algorithm.equals(TRIPLEDES) ||
             algorithm.equals(AES_128) ||
             algorithm.equals(AES_256) ||
             algorithm.equals(AES_192) ||
+            algorithm.equals(AES_128_GCM) ||
+            algorithm.equals(AES_192_GCM) ||
+            algorithm.equals(AES_256_GCM) ||
             algorithm.equals(RSA_v1dot5) ||
             algorithm.equals(RSA_OAEP) ||
+            algorithm.equals(RSA_OAEP_11) ||
             algorithm.equals(TRIPLEDES_KeyWrap) ||
             algorithm.equals(AES_128_KeyWrap) ||
             algorithm.equals(AES_256_KeyWrap) ||
             algorithm.equals(AES_192_KeyWrap)
         );
+    }
 
-        return (result);
+    /**
+     * Validate the transformation argument of getInstance or getProviderInstance
+     *
+     * @param transformation the name of the transformation, e.g.,
+     *   <code>XMLCipher.TRIPLEDES</code> which is shorthand for
+     *   &quot;http://www.w3.org/2001/04/xmlenc#tripledes-cbc&quot;
+     */
+    private static void validateTransformation(String transformation) {
+        if (null == transformation) {
+            throw new NullPointerException("Transformation unexpectedly null...");
+        }
+        if (!isValidEncryptionAlgorithm(transformation)) {
+            log.log(java.util.logging.Level.WARNING, "Algorithm non-standard, expected one of " + ENC_ALGORITHMS);
+        }
     }
 
     /**
@@ -248,7 +377,7 @@ public class XMLCipher {
      * the default provider package, other provider packages are searched.
      * <p>
      * <b>NOTE<sub>1</sub>:</b> The transformation name does not follow the same
-     * pattern as that oulined in the Java Cryptography Extension Reference
+     * pattern as that outlined in the Java Cryptography Extension Reference
      * Guide but rather that specified by the XML Encryption Syntax and
      * Processing document. The rational behind this is to make it easier for a
      * novice at writing Java Encryption software to use the library.
@@ -257,7 +386,7 @@ public class XMLCipher {
      * same pattern regarding exceptional conditions as that used in
      * <code>javax.crypto.Cipher</code>. Instead, it only throws an
      * <code>XMLEncryptionException</code> which wraps an underlying exception.
-     * The stack trace from the exception should be self explanitory.
+     * The stack trace from the exception should be self explanatory.
      *
      * @param transformation the name of the transformation, e.g.,
      *   <code>XMLCipher.TRIPLEDES</code> which is shorthand for
@@ -266,293 +395,169 @@ public class XMLCipher {
      * @return the XMLCipher
      * @see javax.crypto.Cipher#getInstance(java.lang.String)
      */
-    public static XMLCipher getInstance(String transformation) throws
-            XMLEncryptionException {
-        // sanity checks
-        logger.log(java.util.logging.Level.FINE, "Getting XMLCipher...");
-        if (null == transformation)
-            logger.log(java.util.logging.Level.SEVERE, "Transformation unexpectedly null...");
-        if(!isValidEncryptionAlgorithm(transformation))
-            logger.log(java.util.logging.Level.WARNING, "Algorithm non-standard, expected one of " + ENC_ALGORITHMS);
-
-                XMLCipher instance = new XMLCipher();
-
-        instance._algorithm = transformation;
-                instance._key = null;
-                instance._kek = null;
-
-
-                /* Create a canonicaliser - used when serialising DOM to octets
-                 * prior to encryption (and for the reverse) */
-
-                try {
-                        instance._canon = Canonicalizer.getInstance
-                                (Canonicalizer.ALGO_ID_C14N_WITH_COMMENTS);
-
-                } catch (InvalidCanonicalizerException ice) {
-                        throw new XMLEncryptionException("empty", ice);
-                }
-
-                String jceAlgorithm = JCEMapper.translateURItoJCEID(transformation);
-
-                try {
-            instance._contextCipher = Cipher.getInstance(jceAlgorithm);
-            logger.log(java.util.logging.Level.FINE, "cihper.algoritm = " +
-                instance._contextCipher.getAlgorithm());
-        } catch (NoSuchAlgorithmException nsae) {
-            throw new XMLEncryptionException("empty", nsae);
-        } catch (NoSuchPaddingException nspe) {
-            throw new XMLEncryptionException("empty", nspe);
+    public static XMLCipher getInstance(String transformation) throws XMLEncryptionException {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Getting XMLCipher with transformation");
         }
-
-        return (instance);
+        validateTransformation(transformation);
+        return new XMLCipher(transformation, null, null, null);
     }
 
-        /**
-         * Returns an <code>XMLCipher</code> that implements the specified
-         * transformation, operates on the specified context document and serializes
-         * the document with the specified canonicalization algorithm before it
-         * encrypts the document.
-         * <p>
-         *
-         * @param transformation        the name of the transformation, e.g.,
-         *                                              <code>XMLCipher.TRIPLEDES</code> which is
-         *                                                      shorthand for
-         *                              &quot;http://www.w3.org/2001/04/xmlenc#tripledes-cbc&quot;
-         * @param canon                         the name of the c14n algorithm, if
-         *                                                      <code>null</code> use standard serializer
-         * @return
-         * @throws XMLEncryptionException
-         */
-
-        public static XMLCipher getInstance(String transformation, String canon)
-                throws XMLEncryptionException {
-                XMLCipher instance = XMLCipher.getInstance(transformation);
-
-                if (canon != null) {
-                        try {
-                                instance._canon = Canonicalizer.getInstance(canon);
-                        } catch (InvalidCanonicalizerException ice) {
-                                throw new XMLEncryptionException("empty", ice);
-                        }
-                }
-
-                return instance;
+    /**
+     * Returns an <code>XMLCipher</code> that implements the specified
+     * transformation, operates on the specified context document and serializes
+     * the document with the specified canonicalization algorithm before it
+     * encrypts the document.
+     * <p>
+     *
+     * @param transformation    the name of the transformation
+     * @param canon             the name of the c14n algorithm, if <code>null</code> use
+     *                          standard serializer
+     * @return the XMLCipher
+     * @throws XMLEncryptionException
+     */
+    public static XMLCipher getInstance(String transformation, String canon)
+        throws XMLEncryptionException {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Getting XMLCipher with transformation and c14n algorithm");
         }
+        validateTransformation(transformation);
+        return new XMLCipher(transformation, null, canon, null);
+    }
 
-    public static XMLCipher getInstance(String transformation,Cipher cipher) throws XMLEncryptionException {
-        // sanity checks
-        logger.log(java.util.logging.Level.FINE, "Getting XMLCipher...");
-        if (null == transformation)
-            logger.log(java.util.logging.Level.SEVERE, "Transformation unexpectedly null...");
-        if(!isValidEncryptionAlgorithm(transformation))
-            logger.log(java.util.logging.Level.WARNING, "Algorithm non-standard, expected one of " + ENC_ALGORITHMS);
-
-        XMLCipher instance = new XMLCipher();
-
-        instance._algorithm = transformation;
-        instance._key = null;
-        instance._kek = null;
-
-
-        /* Create a canonicaliser - used when serialising DOM to octets
-         * prior to encryption (and for the reverse) */
-
-        try {
-            instance._canon = Canonicalizer.getInstance
-                    (Canonicalizer.ALGO_ID_C14N_WITH_COMMENTS);
-
-        } catch (InvalidCanonicalizerException ice) {
-            throw new XMLEncryptionException("empty", ice);
+    /**
+     * Returns an <code>XMLCipher</code> that implements the specified
+     * transformation, operates on the specified context document and serializes
+     * the document with the specified canonicalization algorithm before it
+     * encrypts the document.
+     * <p>
+     *
+     * @param transformation    the name of the transformation
+     * @param canon             the name of the c14n algorithm, if <code>null</code> use
+     *                          standard serializer
+     * @param digestMethod      An optional digestMethod to use
+     * @return the XMLCipher
+     * @throws XMLEncryptionException
+     */
+    public static XMLCipher getInstance(String transformation, String canon, String digestMethod)
+        throws XMLEncryptionException {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Getting XMLCipher with transformation and c14n algorithm");
         }
-
-        String jceAlgorithm = JCEMapper.translateURItoJCEID(transformation);
-
-        try {
-            instance._contextCipher = cipher;
-            //Cipher.getInstance(jceAlgorithm);
-            logger.log(java.util.logging.Level.FINE, "cihper.algoritm = " +
-                    instance._contextCipher.getAlgorithm());
-        }catch(Exception ex) {
-            throw new XMLEncryptionException("empty", ex);
-        }
-
-        return (instance);
+        validateTransformation(transformation);
+        return new XMLCipher(transformation, null, canon, digestMethod);
     }
 
     /**
      * Returns an <code>XMLCipher</code> that implements the specified
      * transformation and operates on the specified context document.
      *
-     * @param transformation the name of the transformation, e.g.,
-     *   <code>XMLCipher.TRIPLEDES</code> which is shorthand for
-     *   &quot;http://www.w3.org/2001/04/xmlenc#tripledes-cbc&quot;
-     * @param provider the JCE provider that supplies the transformation
+     * @param transformation    the name of the transformation
+     * @param provider          the JCE provider that supplies the transformation
      * @return the XMLCipher
      * @throws XMLEncryptionException
      */
-
     public static XMLCipher getProviderInstance(String transformation, String provider)
-            throws XMLEncryptionException {
-        // sanity checks
-        logger.log(java.util.logging.Level.FINE, "Getting XMLCipher...");
-        if (null == transformation)
-            logger.log(java.util.logging.Level.SEVERE, "Transformation unexpectedly null...");
-        if(null == provider)
-            logger.log(java.util.logging.Level.SEVERE, "Provider unexpectedly null..");
-        if("" == provider)
-            logger.log(java.util.logging.Level.SEVERE, "Provider's value unexpectedly not specified...");
-        if(!isValidEncryptionAlgorithm(transformation))
-            logger.log(java.util.logging.Level.WARNING, "Algorithm non-standard, expected one of " + ENC_ALGORITHMS);
-
-                XMLCipher instance = new XMLCipher();
-
-        instance._algorithm = transformation;
-                instance._requestedJCEProvider = provider;
-                instance._key = null;
-                instance._kek = null;
-
-                /* Create a canonicaliser - used when serialising DOM to octets
-                 * prior to encryption (and for the reverse) */
-
-                try {
-                        instance._canon = Canonicalizer.getInstance
-                                (Canonicalizer.ALGO_ID_C14N_WITH_COMMENTS);
-                } catch (InvalidCanonicalizerException ice) {
-                        throw new XMLEncryptionException("empty", ice);
-                }
-
-        try {
-                        String jceAlgorithm =
-                                JCEMapper.translateURItoJCEID(transformation);
-
-            instance._contextCipher = Cipher.getInstance(jceAlgorithm, provider);
-
-            logger.log(java.util.logging.Level.FINE, "cipher._algorithm = " +
-                instance._contextCipher.getAlgorithm());
-            logger.log(java.util.logging.Level.FINE, "provider.name = " + provider);
-        } catch (NoSuchAlgorithmException nsae) {
-            throw new XMLEncryptionException("empty", nsae);
-        } catch (NoSuchProviderException nspre) {
-            throw new XMLEncryptionException("empty", nspre);
-        } catch (NoSuchPaddingException nspe) {
-            throw new XMLEncryptionException("empty", nspe);
+        throws XMLEncryptionException {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Getting XMLCipher with transformation and provider");
         }
-
-        return (instance);
+        if (null == provider) {
+            throw new NullPointerException("Provider unexpectedly null..");
+        }
+        validateTransformation(transformation);
+        return new XMLCipher(transformation, provider, null, null);
     }
 
-        /**
-         * Returns an <code>XMLCipher</code> that implements the specified
+    /**
+     * Returns an <code>XMLCipher</code> that implements the specified
      * transformation, operates on the specified context document and serializes
      * the document with the specified canonicalization algorithm before it
      * encrypts the document.
      * <p>
-         *
-         * @param transformation        the name of the transformation, e.g.,
-     *                                                  <code>XMLCipher.TRIPLEDES</code> which is
-     *                                                  shorthand for
-     *                                  &quot;http://www.w3.org/2001/04/xmlenc#tripledes-cbc&quot;
-         * @param provider              the JCE provider that supplies the transformation
-         * @param canon                         the name of the c14n algorithm, if
-         *                                                      <code>null</code> use standard serializer
-         * @return
-         * @throws XMLEncryptionException
-         */
-        public static XMLCipher getProviderInstance(
-                String transformation,
-                String provider,
-                String canon)
-                throws XMLEncryptionException {
-
-                XMLCipher instance = XMLCipher.getProviderInstance(transformation, provider);
-                if (canon != null) {
-                        try {
-                                instance._canon = Canonicalizer.getInstance(canon);
-                        } catch (InvalidCanonicalizerException ice) {
-                                throw new XMLEncryptionException("empty", ice);
-                        }
-                }
-                return instance;
-        }
-
-    /**
-     * Returns an <code>XMLCipher</code> that implements no specific
-         * transformation, and can therefore only be used for decrypt or
-         * unwrap operations where the encryption method is defined in the
-         * <code>EncryptionMethod</code> element.
-         *
-     * @return The XMLCipher
+     *
+     * @param transformation    the name of the transformation
+     * @param provider          the JCE provider that supplies the transformation
+     * @param canon             the name of the c14n algorithm, if <code>null</code> use standard
+     *                          serializer
+     * @return the XMLCipher
      * @throws XMLEncryptionException
      */
+    public static XMLCipher getProviderInstance(
+        String transformation, String provider, String canon
+    ) throws XMLEncryptionException {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Getting XMLCipher with transformation, provider and c14n algorithm");
+        }
+        if (null == provider) {
+            throw new NullPointerException("Provider unexpectedly null..");
+        }
+        validateTransformation(transformation);
+        return new XMLCipher(transformation, provider, canon, null);
+    }
 
-    public static XMLCipher getInstance()
-            throws XMLEncryptionException {
-        // sanity checks
-        logger.log(java.util.logging.Level.FINE, "Getting XMLCipher for no transformation...");
-
-                XMLCipher instance = new XMLCipher();
-
-        instance._algorithm = null;
-                instance._requestedJCEProvider = null;
-                instance._key = null;
-                instance._kek = null;
-                instance._contextCipher = null;
-
-                /* Create a canonicaliser - used when serialising DOM to octets
-                 * prior to encryption (and for the reverse) */
-
-                try {
-                        instance._canon = Canonicalizer.getInstance
-                                (Canonicalizer.ALGO_ID_C14N_WITH_COMMENTS);
-                } catch (InvalidCanonicalizerException ice) {
-                        throw new XMLEncryptionException("empty", ice);
-                }
-
-        return (instance);
+    /**
+     * Returns an <code>XMLCipher</code> that implements the specified
+     * transformation, operates on the specified context document and serializes
+     * the document with the specified canonicalization algorithm before it
+     * encrypts the document.
+     * <p>
+     *
+     * @param transformation    the name of the transformation
+     * @param provider          the JCE provider that supplies the transformation
+     * @param canon             the name of the c14n algorithm, if <code>null</code> use standard
+     *                          serializer
+     * @param digestMethod      An optional digestMethod to use
+     * @return the XMLCipher
+     * @throws XMLEncryptionException
+     */
+    public static XMLCipher getProviderInstance(
+        String transformation, String provider, String canon, String digestMethod
+    ) throws XMLEncryptionException {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Getting XMLCipher with transformation, provider and c14n algorithm");
+        }
+        if (null == provider) {
+            throw new NullPointerException("Provider unexpectedly null..");
+        }
+        validateTransformation(transformation);
+        return new XMLCipher(transformation, provider, canon, digestMethod);
     }
 
     /**
      * Returns an <code>XMLCipher</code> that implements no specific
-         * transformation, and can therefore only be used for decrypt or
-         * unwrap operations where the encryption method is defined in the
-         * <code>EncryptionMethod</code> element.
-         *
-         * Allows the caller to specify a provider that will be used for
-         * cryptographic operations.
+     * transformation, and can therefore only be used for decrypt or
+     * unwrap operations where the encryption method is defined in the
+     * <code>EncryptionMethod</code> element.
      *
-     * @param provider the JCE provider that supplies the cryptographic
-         * needs.
+     * @return The XMLCipher
+     * @throws XMLEncryptionException
+     */
+    public static XMLCipher getInstance() throws XMLEncryptionException {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Getting XMLCipher with no arguments");
+        }
+        return new XMLCipher(null, null, null, null);
+    }
+
+    /**
+     * Returns an <code>XMLCipher</code> that implements no specific
+     * transformation, and can therefore only be used for decrypt or
+     * unwrap operations where the encryption method is defined in the
+     * <code>EncryptionMethod</code> element.
+     *
+     * Allows the caller to specify a provider that will be used for
+     * cryptographic operations.
+     *
+     * @param provider          the JCE provider that supplies the transformation
      * @return the XMLCipher
      * @throws XMLEncryptionException
      */
-
-    public static XMLCipher getProviderInstance(String provider)
-            throws XMLEncryptionException {
-        // sanity checks
-
-        logger.log(java.util.logging.Level.FINE, "Getting XMLCipher, provider but no transformation");
-        if(null == provider)
-            logger.log(java.util.logging.Level.SEVERE, "Provider unexpectedly null..");
-        if("" == provider)
-            logger.log(java.util.logging.Level.SEVERE, "Provider's value unexpectedly not specified...");
-
-                XMLCipher instance = new XMLCipher();
-
-        instance._algorithm = null;
-                instance._requestedJCEProvider = provider;
-                instance._key = null;
-                instance._kek = null;
-                instance._contextCipher = null;
-
-                try {
-                        instance._canon = Canonicalizer.getInstance
-                                (Canonicalizer.ALGO_ID_C14N_WITH_COMMENTS);
-                } catch (InvalidCanonicalizerException ice) {
-                        throw new XMLEncryptionException("empty", ice);
-                }
-
-        return (instance);
+    public static XMLCipher getProviderInstance(String provider) throws XMLEncryptionException {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Getting XMLCipher with provider");
+        }
+        return new XMLCipher(null, provider, null, null);
     }
 
     /**
@@ -561,13 +566,13 @@ public class XMLCipher {
      * The cipher is initialized for one of the following four operations:
      * encryption, decryption, key wrapping or key unwrapping, depending on the
      * value of opmode.
-         *
-         * For WRAP and ENCRYPT modes, this also initialises the internal
-         * EncryptedKey or EncryptedData (with a CipherValue)
-         * structure that will be used during the ensuing operations.  This
-         * can be obtained (in order to modify KeyInfo elements etc. prior to
-         * finalising the encryption) by calling
-         * {@link #getEncryptedData} or {@link #getEncryptedKey}.
+     *
+     * For WRAP and ENCRYPT modes, this also initialises the internal
+     * EncryptedKey or EncryptedData (with a CipherValue)
+     * structure that will be used during the ensuing operations.  This
+     * can be obtained (in order to modify KeyInfo elements etc. prior to
+     * finalising the encryption) by calling
+     * {@link #getEncryptedData} or {@link #getEncryptedKey}.
      *
      * @param opmode the operation mode of this cipher (this is one of the
      *   following: ENCRYPT_MODE, DECRYPT_MODE, WRAP_MODE or UNWRAP_MODE)
@@ -577,164 +582,216 @@ public class XMLCipher {
      */
     public void init(int opmode, Key key) throws XMLEncryptionException {
         // sanity checks
-        logger.log(java.util.logging.Level.FINE, "Initializing XMLCipher...");
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Initializing XMLCipher...");
+        }
 
-                _ek = null;
-                _ed = null;
+        ek = null;
+        ed = null;
 
-                switch (opmode) {
+        switch (opmode) {
 
-                case ENCRYPT_MODE :
-                        logger.log(java.util.logging.Level.FINE, "opmode = ENCRYPT_MODE");
-                        _ed = createEncryptedData(CipherData.VALUE_TYPE, "NO VALUE YET");
-                        break;
-                case DECRYPT_MODE :
-                        logger.log(java.util.logging.Level.FINE, "opmode = DECRYPT_MODE");
-                        break;
-                case WRAP_MODE :
-                        logger.log(java.util.logging.Level.FINE, "opmode = WRAP_MODE");
-                        _ek = createEncryptedKey(CipherData.VALUE_TYPE, "NO VALUE YET");
-                        break;
-                case UNWRAP_MODE :
-                        logger.log(java.util.logging.Level.FINE, "opmode = UNWRAP_MODE");
-                        break;
-                default :
-                        logger.log(java.util.logging.Level.SEVERE, "Mode unexpectedly invalid");
-                        throw new XMLEncryptionException("Invalid mode in init");
-                }
+        case ENCRYPT_MODE :
+            if (log.isLoggable(java.util.logging.Level.FINE)) {
+                log.log(java.util.logging.Level.FINE, "opmode = ENCRYPT_MODE");
+            }
+            ed = createEncryptedData(CipherData.VALUE_TYPE, "NO VALUE YET");
+            break;
+        case DECRYPT_MODE :
+            if (log.isLoggable(java.util.logging.Level.FINE)) {
+                log.log(java.util.logging.Level.FINE, "opmode = DECRYPT_MODE");
+            }
+            break;
+        case WRAP_MODE :
+            if (log.isLoggable(java.util.logging.Level.FINE)) {
+                log.log(java.util.logging.Level.FINE, "opmode = WRAP_MODE");
+            }
+            ek = createEncryptedKey(CipherData.VALUE_TYPE, "NO VALUE YET");
+            break;
+        case UNWRAP_MODE :
+            if (log.isLoggable(java.util.logging.Level.FINE)) {
+                log.log(java.util.logging.Level.FINE, "opmode = UNWRAP_MODE");
+            }
+            break;
+        default :
+            log.log(java.util.logging.Level.SEVERE, "Mode unexpectedly invalid");
+            throw new XMLEncryptionException("Invalid mode in init");
+        }
 
-        _cipherMode = opmode;
-                _key = key;
-
+        cipherMode = opmode;
+        this.key = key;
     }
 
-        /**
-         * Get the EncryptedData being build
-         *
-         * Returns the EncryptedData being built during an ENCRYPT operation.
-         * This can then be used by applications to add KeyInfo elements and
-         * set other parameters.
-         *
-         * @return The EncryptedData being built
-         */
+    /**
+     * Set whether secure validation is enabled or not. The default is false.
+     */
+    public void setSecureValidation(boolean secureValidation) {
+        this.secureValidation = secureValidation;
+    }
 
-        public EncryptedData getEncryptedData() {
-
-                // Sanity checks
-                logger.log(java.util.logging.Level.FINE, "Returning EncryptedData");
-                return _ed;
-
+    /**
+     * This method is used to add a custom {@link KeyResolverSpi} to an XMLCipher.
+     * These KeyResolvers are used in KeyInfo objects in DECRYPT and
+     * UNWRAP modes.
+     *
+     * @param keyResolver
+     */
+    public void registerInternalKeyResolver(KeyResolverSpi keyResolver) {
+        if (internalKeyResolvers == null) {
+            internalKeyResolvers = new ArrayList<KeyResolverSpi>();
         }
+        internalKeyResolvers.add(keyResolver);
+    }
 
-        /**
-         * Get the EncryptedData being build
-         *
-         * Returns the EncryptedData being built during an ENCRYPT operation.
-         * This can then be used by applications to add KeyInfo elements and
-         * set other parameters.
-         *
-         * @return The EncryptedData being built
-         */
-
-        public EncryptedKey getEncryptedKey() {
-
-                // Sanity checks
-                logger.log(java.util.logging.Level.FINE, "Returning EncryptedKey");
-                return _ek;
+    /**
+     * Get the EncryptedData being built
+     * <p>
+     * Returns the EncryptedData being built during an ENCRYPT operation.
+     * This can then be used by applications to add KeyInfo elements and
+     * set other parameters.
+     *
+     * @return The EncryptedData being built
+     */
+    public EncryptedData getEncryptedData() {
+        // Sanity checks
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Returning EncryptedData");
         }
+        return ed;
+    }
 
-        /**
-         * Set a Key Encryption Key.
-         * <p>
-         * The Key Encryption Key (KEK) is used for encrypting/decrypting
-         * EncryptedKey elements.  By setting this separately, the XMLCipher
-         * class can know whether a key applies to the data part or wrapped key
-         * part of an encrypted object.
-         *
-         * @param kek The key to use for de/encrypting key data
-         */
-
-        public void setKEK(Key kek) {
-
-                _kek = kek;
-
+    /**
+     * Get the EncryptedData being build
+     *
+     * Returns the EncryptedData being built during an ENCRYPT operation.
+     * This can then be used by applications to add KeyInfo elements and
+     * set other parameters.
+     *
+     * @return The EncryptedData being built
+     */
+    public EncryptedKey getEncryptedKey() {
+        // Sanity checks
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Returning EncryptedKey");
         }
+        return ek;
+    }
 
-        /**
-         * Martial an EncryptedData
-         *
-         * Takes an EncryptedData object and returns a DOM Element that
-         * represents the appropriate <code>EncryptedData</code>
-         * <p>
-         * <b>Note:</b> This should only be used in cases where the context
-         * document has been passed in via a call to doFinal.
-         *
-         * @param encryptedData EncryptedData object to martial
-         * @return the DOM <code>Element</code> representing the passed in
-         * object
+    /**
+     * Set a Key Encryption Key.
+     * <p>
+     * The Key Encryption Key (KEK) is used for encrypting/decrypting
+     * EncryptedKey elements.  By setting this separately, the XMLCipher
+     * class can know whether a key applies to the data part or wrapped key
+     * part of an encrypted object.
+     *
+     * @param kek The key to use for de/encrypting key data
      */
 
-        public Element martial(EncryptedData encryptedData) {
+    public void setKEK(Key kek) {
+        this.kek = kek;
+    }
 
-                return (_factory.toElement (encryptedData));
+    /**
+     * Martial an EncryptedData
+     *
+     * Takes an EncryptedData object and returns a DOM Element that
+     * represents the appropriate <code>EncryptedData</code>
+     * <p>
+     * <b>Note:</b> This should only be used in cases where the context
+     * document has been passed in via a call to doFinal.
+     *
+     * @param encryptedData EncryptedData object to martial
+     * @return the DOM <code>Element</code> representing the passed in
+     * object
+     */
+    public Element martial(EncryptedData encryptedData) {
+        return factory.toElement(encryptedData);
+    }
 
-        }
+    /**
+     * Martial an EncryptedData
+     *
+     * Takes an EncryptedData object and returns a DOM Element that
+     * represents the appropriate <code>EncryptedData</code>
+     *
+     * @param context The document that will own the returned nodes
+     * @param encryptedData EncryptedData object to martial
+     * @return the DOM <code>Element</code> representing the passed in
+     * object
+     */
+    public Element martial(Document context, EncryptedData encryptedData) {
+        contextDocument = context;
+        return factory.toElement(encryptedData);
+    }
 
-        /**
-         * Martial an EncryptedKey
-         *
-         * Takes an EncryptedKey object and returns a DOM Element that
-         * represents the appropriate <code>EncryptedKey</code>
-         *
-         * <p>
-         * <b>Note:</b> This should only be used in cases where the context
-         * document has been passed in via a call to doFinal.
-         *
-         * @param encryptedKey EncryptedKey object to martial
-         * @return the DOM <code>Element</code> representing the passed in
-         * object */
+    /**
+     * Martial an EncryptedKey
+     *
+     * Takes an EncryptedKey object and returns a DOM Element that
+     * represents the appropriate <code>EncryptedKey</code>
+     *
+     * <p>
+     * <b>Note:</b> This should only be used in cases where the context
+     * document has been passed in via a call to doFinal.
+     *
+     * @param encryptedKey EncryptedKey object to martial
+     * @return the DOM <code>Element</code> representing the passed in
+     * object
+     */
+    public Element martial(EncryptedKey encryptedKey) {
+        return factory.toElement(encryptedKey);
+    }
 
-        public Element martial(EncryptedKey encryptedKey) {
+    /**
+     * Martial an EncryptedKey
+     *
+     * Takes an EncryptedKey object and returns a DOM Element that
+     * represents the appropriate <code>EncryptedKey</code>
+     *
+     * @param context The document that will own the created nodes
+     * @param encryptedKey EncryptedKey object to martial
+     * @return the DOM <code>Element</code> representing the passed in
+     * object
+     */
+    public Element martial(Document context, EncryptedKey encryptedKey) {
+        contextDocument = context;
+        return factory.toElement(encryptedKey);
+    }
 
-                return (_factory.toElement (encryptedKey));
+    /**
+     * Martial a ReferenceList
+     *
+     * Takes a ReferenceList object and returns a DOM Element that
+     * represents the appropriate <code>ReferenceList</code>
+     *
+     * <p>
+     * <b>Note:</b> This should only be used in cases where the context
+     * document has been passed in via a call to doFinal.
+     *
+     * @param referenceList ReferenceList object to martial
+     * @return the DOM <code>Element</code> representing the passed in
+     * object
+     */
+    public Element martial(ReferenceList referenceList) {
+        return factory.toElement(referenceList);
+    }
 
-        }
-
-        /**
-         * Martial an EncryptedData
-         *
-         * Takes an EncryptedData object and returns a DOM Element that
-         * represents the appropriate <code>EncryptedData</code>
-         *
-         * @param context The document that will own the returned nodes
-         * @param encryptedData EncryptedData object to martial
-         * @return the DOM <code>Element</code> representing the passed in
-         * object */
-
-        public Element martial(Document context, EncryptedData encryptedData) {
-
-                _contextDocument = context;
-                return (_factory.toElement (encryptedData));
-
-        }
-
-        /**
-         * Martial an EncryptedKey
-         *
-         * Takes an EncryptedKey object and returns a DOM Element that
-         * represents the appropriate <code>EncryptedKey</code>
-         *
-         * @param context The document that will own the created nodes
-         * @param encryptedKey EncryptedKey object to martial
-         * @return the DOM <code>Element</code> representing the passed in
-         * object */
-
-        public Element martial(Document context, EncryptedKey encryptedKey) {
-
-                _contextDocument = context;
-                return (_factory.toElement (encryptedKey));
-
-        }
+    /**
+     * Martial a ReferenceList
+     *
+     * Takes a ReferenceList object and returns a DOM Element that
+     * represents the appropriate <code>ReferenceList</code>
+     *
+     * @param context The document that will own the created nodes
+     * @param referenceList ReferenceList object to martial
+     * @return the DOM <code>Element</code> representing the passed in
+     * object
+     */
+    public Element martial(Document context, ReferenceList referenceList) {
+        contextDocument = context;
+        return factory.toElement(referenceList);
+    }
 
     /**
      * Encrypts an <code>Element</code> and replaces it with its encrypted
@@ -747,25 +804,28 @@ public class XMLCipher {
      *   <code>Element</code> having replaced the source <code>Element</code>.
      *  @throws Exception
      */
-
     private Document encryptElement(Element element) throws Exception{
-        logger.log(java.util.logging.Level.FINE, "Encrypting element...");
-        if(null == element)
-            logger.log(java.util.logging.Level.SEVERE, "Element unexpectedly null...");
-        if(_cipherMode != ENCRYPT_MODE)
-            logger.log(java.util.logging.Level.FINE, "XMLCipher unexpectedly not in ENCRYPT_MODE...");
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Encrypting element...");
+        }
+        if (null == element) {
+            log.log(java.util.logging.Level.SEVERE, "Element unexpectedly null...");
+        }
+        if (cipherMode != ENCRYPT_MODE && log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "XMLCipher unexpectedly not in ENCRYPT_MODE...");
+        }
 
-                if (_algorithm == null) {
-                throw new XMLEncryptionException("XMLCipher instance without transformation specified");
-                }
-                encryptData(_contextDocument, element, false);
+        if (algorithm == null) {
+            throw new XMLEncryptionException("XMLCipher instance without transformation specified");
+        }
+        encryptData(contextDocument, element, false);
 
-        Element encryptedElement = _factory.toElement(_ed);
+        Element encryptedElement = factory.toElement(ed);
 
         Node sourceParent = element.getParentNode();
         sourceParent.replaceChild(encryptedElement, element);
 
-        return (_contextDocument);
+        return contextDocument;
     }
 
     /**
@@ -782,25 +842,28 @@ public class XMLCipher {
      *   <code>Element</code>.
      * @throws Exception
      */
-    private Document encryptElementContent(Element element) throws
-            /* XMLEncryption */Exception {
-        logger.log(java.util.logging.Level.FINE, "Encrypting element content...");
-        if(null == element)
-            logger.log(java.util.logging.Level.SEVERE, "Element unexpectedly null...");
-        if(_cipherMode != ENCRYPT_MODE)
-            logger.log(java.util.logging.Level.FINE, "XMLCipher unexpectedly not in ENCRYPT_MODE...");
+    private Document encryptElementContent(Element element) throws /* XMLEncryption */Exception {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Encrypting element content...");
+        }
+        if (null == element) {
+            log.log(java.util.logging.Level.SEVERE, "Element unexpectedly null...");
+        }
+        if (cipherMode != ENCRYPT_MODE && log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "XMLCipher unexpectedly not in ENCRYPT_MODE...");
+        }
 
-                if (_algorithm == null) {
-                throw new XMLEncryptionException("XMLCipher instance without transformation specified");
-                }
-                encryptData(_contextDocument, element, true);
+        if (algorithm == null) {
+            throw new XMLEncryptionException("XMLCipher instance without transformation specified");
+        }
+        encryptData(contextDocument, element, true);
 
-        Element encryptedElement = _factory.toElement(_ed);
+        Element encryptedElement = factory.toElement(ed);
 
         removeContent(element);
         element.appendChild(encryptedElement);
 
-        return (_contextDocument);
+        return contextDocument;
     }
 
     /**
@@ -812,19 +875,22 @@ public class XMLCipher {
      * @return the processed <code>Document</code>.
      * @throws Exception to indicate any exceptional conditions.
      */
-    public Document doFinal(Document context, Document source) throws
-            /* XMLEncryption */Exception {
-        logger.log(java.util.logging.Level.FINE, "Processing source document...");
-        if(null == context)
-            logger.log(java.util.logging.Level.SEVERE, "Context document unexpectedly null...");
-        if(null == source)
-            logger.log(java.util.logging.Level.SEVERE, "Source document unexpectedly null...");
+    public Document doFinal(Document context, Document source) throws /* XMLEncryption */Exception {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Processing source document...");
+        }
+        if (null == context) {
+            log.log(java.util.logging.Level.SEVERE, "Context document unexpectedly null...");
+        }
+        if (null == source) {
+            log.log(java.util.logging.Level.SEVERE, "Source document unexpectedly null...");
+        }
 
-        _contextDocument = context;
+        contextDocument = context;
 
         Document result = null;
 
-        switch (_cipherMode) {
+        switch (cipherMode) {
         case DECRYPT_MODE:
             result = decryptElement(source.getDocumentElement());
             break;
@@ -832,15 +898,13 @@ public class XMLCipher {
             result = encryptElement(source.getDocumentElement());
             break;
         case UNWRAP_MODE:
-            break;
         case WRAP_MODE:
             break;
         default:
-            throw new XMLEncryptionException(
-                "empty", new IllegalStateException());
+            throw new XMLEncryptionException("empty", new IllegalStateException());
         }
 
-        return (result);
+        return result;
     }
 
     /**
@@ -852,19 +916,22 @@ public class XMLCipher {
      * @return the processed <code>Document</code>.
      * @throws Exception to indicate any exceptional conditions.
      */
-    public Document doFinal(Document context, Element element) throws
-            /* XMLEncryption */Exception {
-        logger.log(java.util.logging.Level.FINE, "Processing source element...");
-        if(null == context)
-            logger.log(java.util.logging.Level.SEVERE, "Context document unexpectedly null...");
-        if(null == element)
-            logger.log(java.util.logging.Level.SEVERE, "Source element unexpectedly null...");
+    public Document doFinal(Document context, Element element) throws /* XMLEncryption */Exception {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Processing source element...");
+        }
+        if (null == context) {
+            log.log(java.util.logging.Level.SEVERE, "Context document unexpectedly null...");
+        }
+        if (null == element) {
+            log.log(java.util.logging.Level.SEVERE, "Source element unexpectedly null...");
+        }
 
-        _contextDocument = context;
+        contextDocument = context;
 
         Document result = null;
 
-        switch (_cipherMode) {
+        switch (cipherMode) {
         case DECRYPT_MODE:
             result = decryptElement(element);
             break;
@@ -872,15 +939,13 @@ public class XMLCipher {
             result = encryptElement(element);
             break;
         case UNWRAP_MODE:
-            break;
         case WRAP_MODE:
             break;
         default:
-            throw new XMLEncryptionException(
-                "empty", new IllegalStateException());
+            throw new XMLEncryptionException("empty", new IllegalStateException());
         }
 
-        return (result);
+        return result;
     }
 
     /**
@@ -896,18 +961,22 @@ public class XMLCipher {
      * @throws Exception to indicate any exceptional conditions.
      */
     public Document doFinal(Document context, Element element, boolean content)
-            throws /* XMLEncryption*/ Exception {
-        logger.log(java.util.logging.Level.FINE, "Processing source element...");
-        if(null == context)
-            logger.log(java.util.logging.Level.SEVERE, "Context document unexpectedly null...");
-        if(null == element)
-            logger.log(java.util.logging.Level.SEVERE, "Source element unexpectedly null...");
+        throws /* XMLEncryption*/ Exception {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Processing source element...");
+        }
+        if (null == context) {
+            log.log(java.util.logging.Level.SEVERE, "Context document unexpectedly null...");
+        }
+        if (null == element) {
+            log.log(java.util.logging.Level.SEVERE, "Source element unexpectedly null...");
+        }
 
-        _contextDocument = context;
+        contextDocument = context;
 
         Document result = null;
 
-        switch (_cipherMode) {
+        switch (cipherMode) {
         case DECRYPT_MODE:
             if (content) {
                 result = decryptElementContent(element);
@@ -923,15 +992,13 @@ public class XMLCipher {
             }
             break;
         case UNWRAP_MODE:
-            break;
         case WRAP_MODE:
             break;
         default:
-            throw new XMLEncryptionException(
-                "empty", new IllegalStateException());
+            throw new XMLEncryptionException("empty", new IllegalStateException());
         }
 
-        return (result);
+        return result;
     }
 
     /**
@@ -939,7 +1006,7 @@ public class XMLCipher {
      * you want to have full control over the contents of the
      * <code>EncryptedData</code> structure.
      *
-     * this does not change the source document in any way.
+     * This does not change the source document in any way.
      *
      * @param context the context <code>Document</code>.
      * @param element the <code>Element</code> that will be encrypted.
@@ -947,7 +1014,7 @@ public class XMLCipher {
      * @throws Exception
      */
     public EncryptedData encryptData(Document context, Element element) throws
-            /* XMLEncryption */Exception {
+        /* XMLEncryption */Exception {
         return encryptData(context, element, false);
     }
 
@@ -965,16 +1032,21 @@ public class XMLCipher {
      * @return the <code>EncryptedData</code>
      * @throws Exception
      */
-    public EncryptedData encryptData(Document context, String type,
-        InputStream serializedData) throws Exception {
-
-        logger.log(java.util.logging.Level.FINE, "Encrypting element...");
-        if (null == context)
-            logger.log(java.util.logging.Level.SEVERE, "Context document unexpectedly null...");
-        if (null == serializedData)
-            logger.log(java.util.logging.Level.SEVERE, "Serialized data unexpectedly null...");
-        if (_cipherMode != ENCRYPT_MODE)
-            logger.log(java.util.logging.Level.FINE, "XMLCipher unexpectedly not in ENCRYPT_MODE...");
+    public EncryptedData encryptData(
+        Document context, String type, InputStream serializedData
+    ) throws Exception {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Encrypting element...");
+        }
+        if (null == context) {
+            log.log(java.util.logging.Level.SEVERE, "Context document unexpectedly null...");
+        }
+        if (null == serializedData) {
+            log.log(java.util.logging.Level.SEVERE, "Serialized data unexpectedly null...");
+        }
+        if (cipherMode != ENCRYPT_MODE && log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "XMLCipher unexpectedly not in ENCRYPT_MODE...");
+        }
 
         return encryptData(context, null, type, serializedData);
     }
@@ -984,7 +1056,7 @@ public class XMLCipher {
      * you want to have full control over the contents of the
      * <code>EncryptedData</code> structure.
      *
-     * this does not change the source document in any way.
+     * This does not change the source document in any way.
      *
      * @param context the context <code>Document</code>.
      * @param element the <code>Element</code> that will be encrypted.
@@ -994,84 +1066,84 @@ public class XMLCipher {
      * @throws Exception
      */
     public EncryptedData encryptData(
-        Document context, Element element, boolean contentMode)
-        throws /* XMLEncryption */ Exception {
-
-        logger.log(java.util.logging.Level.FINE, "Encrypting element...");
-        if (null == context)
-            logger.log(java.util.logging.Level.SEVERE, "Context document unexpectedly null...");
-        if (null == element)
-            logger.log(java.util.logging.Level.SEVERE, "Element unexpectedly null...");
-        if (_cipherMode != ENCRYPT_MODE)
-            logger.log(java.util.logging.Level.FINE, "XMLCipher unexpectedly not in ENCRYPT_MODE...");
+        Document context, Element element, boolean contentMode
+    ) throws /* XMLEncryption */ Exception {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Encrypting element...");
+        }
+        if (null == context) {
+            log.log(java.util.logging.Level.SEVERE, "Context document unexpectedly null...");
+        }
+        if (null == element) {
+            log.log(java.util.logging.Level.SEVERE, "Element unexpectedly null...");
+        }
+        if (cipherMode != ENCRYPT_MODE && log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "XMLCipher unexpectedly not in ENCRYPT_MODE...");
+        }
 
         if (contentMode) {
-            return encryptData
-                (context, element, EncryptionConstants.TYPE_CONTENT, null);
+            return encryptData(context, element, EncryptionConstants.TYPE_CONTENT, null);
         } else {
-            return encryptData
-                (context, element, EncryptionConstants.TYPE_ELEMENT, null);
+            return encryptData(context, element, EncryptionConstants.TYPE_ELEMENT, null);
         }
     }
 
     private EncryptedData encryptData(
-        Document context, Element element, String type,
-        InputStream serializedData) throws /* XMLEncryption */ Exception {
+        Document context, Element element, String type, InputStream serializedData
+    ) throws /* XMLEncryption */ Exception {
+        contextDocument = context;
 
-        _contextDocument = context;
-
-        if (_algorithm == null) {
-            throw new XMLEncryptionException
-                ("XMLCipher instance without transformation specified");
+        if (algorithm == null) {
+            throw new XMLEncryptionException("XMLCipher instance without transformation specified");
         }
 
-        String serializedOctets = null;
+        byte[] serializedOctets = null;
         if (serializedData == null) {
-            if (type == EncryptionConstants.TYPE_CONTENT) {
+            if (type.equals(EncryptionConstants.TYPE_CONTENT)) {
                 NodeList children = element.getChildNodes();
                 if (null != children) {
-                    serializedOctets = _serializer.serialize(children);
+                    serializedOctets = serializer.serializeToByteArray(children);
                 } else {
                     Object exArgs[] = { "Element has no content." };
                     throw new XMLEncryptionException("empty", exArgs);
                 }
             } else {
-                serializedOctets = _serializer.serialize(element);
+                serializedOctets = serializer.serializeToByteArray(element);
             }
-            logger.log(java.util.logging.Level.FINE, "Serialized octets:\n" + serializedOctets);
+            if (log.isLoggable(java.util.logging.Level.FINE)) {
+                log.log(java.util.logging.Level.FINE, "Serialized octets:\n" + new String(serializedOctets, "UTF-8"));
+            }
         }
 
         byte[] encryptedBytes = null;
 
         // Now create the working cipher if none was created already
         Cipher c;
-        if (_contextCipher == null) {
-            String jceAlgorithm = JCEMapper.translateURItoJCEID(_algorithm);
-            logger.log(java.util.logging.Level.FINE, "alg = " + jceAlgorithm);
-
-            try {
-                if (_requestedJCEProvider == null)
-                    c = Cipher.getInstance(jceAlgorithm);
-                else
-                    c = Cipher.getInstance(jceAlgorithm, _requestedJCEProvider);
-            } catch (NoSuchAlgorithmException nsae) {
-                throw new XMLEncryptionException("empty", nsae);
-            } catch (NoSuchProviderException nspre) {
-                throw new XMLEncryptionException("empty", nspre);
-            } catch (NoSuchPaddingException nspae) {
-                throw new XMLEncryptionException("empty", nspae);
-            }
+        if (contextCipher == null) {
+            c = constructCipher(algorithm, null);
         } else {
-            c = _contextCipher;
+            c = contextCipher;
         }
         // Now perform the encryption
 
         try {
-            // Should internally generate an IV
-            // todo - allow user to set an IV
-            c.init(_cipherMode, _key);
+            // The Spec mandates a 96-bit IV for GCM algorithms
+            if (AES_128_GCM.equals(algorithm) || AES_192_GCM.equals(algorithm)
+                || AES_256_GCM.equals(algorithm)) {
+                if (random == null) {
+                    random = SecureRandom.getInstance("SHA1PRNG");
+                }
+                byte[] temp = new byte[12];
+                random.nextBytes(temp);
+                IvParameterSpec paramSpec = new IvParameterSpec(temp);
+                c.init(cipherMode, key, paramSpec);
+            } else {
+                c.init(cipherMode, key);
+            }
         } catch (InvalidKeyException ike) {
             throw new XMLEncryptionException("empty", ike);
+        } catch (NoSuchAlgorithmException ex) {
+            throw new XMLEncryptionException("empty", ex);
         }
 
         try {
@@ -1086,13 +1158,16 @@ public class XMLCipher {
                 baos.write(c.doFinal());
                 encryptedBytes = baos.toByteArray();
             } else {
-                encryptedBytes = c.doFinal(serializedOctets.getBytes("UTF-8"));
-                logger.log(java.util.logging.Level.FINE, "Expected cipher.outputSize = " +
-                    Integer.toString(c.getOutputSize(
-                        serializedOctets.getBytes().length)));
+                encryptedBytes = c.doFinal(serializedOctets);
+                if (log.isLoggable(java.util.logging.Level.FINE)) {
+                    log.log(java.util.logging.Level.FINE, "Expected cipher.outputSize = " +
+                        Integer.toString(c.getOutputSize(serializedOctets.length)));
+                }
             }
-            logger.log(java.util.logging.Level.FINE, "Actual cipher.outputSize = " +
-                Integer.toString(encryptedBytes.length));
+            if (log.isLoggable(java.util.logging.Level.FINE)) {
+                log.log(java.util.logging.Level.FINE, "Actual cipher.outputSize = "
+                             + Integer.toString(encryptedBytes.length));
+            }
         } catch (IllegalStateException ise) {
             throw new XMLEncryptionException("empty", ise);
         } catch (IllegalBlockSizeException ibse) {
@@ -1106,300 +1181,410 @@ public class XMLCipher {
         // Now build up to a properly XML Encryption encoded octet stream
         // IvParameterSpec iv;
         byte[] iv = c.getIV();
-        byte[] finalEncryptedBytes =
-                new byte[iv.length + encryptedBytes.length];
+        byte[] finalEncryptedBytes = new byte[iv.length + encryptedBytes.length];
         System.arraycopy(iv, 0, finalEncryptedBytes, 0, iv.length);
-        System.arraycopy(encryptedBytes, 0, finalEncryptedBytes, iv.length,
-                         encryptedBytes.length);
+        System.arraycopy(encryptedBytes, 0, finalEncryptedBytes, iv.length, encryptedBytes.length);
         String base64EncodedEncryptedOctets = Base64.encode(finalEncryptedBytes);
 
-        logger.log(java.util.logging.Level.FINE, "Encrypted octets:\n" + base64EncodedEncryptedOctets);
-        logger.log(java.util.logging.Level.FINE, "Encrypted octets length = " +
-            base64EncodedEncryptedOctets.length());
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Encrypted octets:\n" + base64EncodedEncryptedOctets);
+            log.log(java.util.logging.Level.FINE, "Encrypted octets length = " + base64EncodedEncryptedOctets.length());
+        }
 
         try {
-            CipherData cd = _ed.getCipherData();
+            CipherData cd = ed.getCipherData();
             CipherValue cv = cd.getCipherValue();
             // cv.setValue(base64EncodedEncryptedOctets.getBytes());
             cv.setValue(base64EncodedEncryptedOctets);
 
             if (type != null) {
-                _ed.setType(new URI(type).toString());
+                ed.setType(new URI(type).toString());
             }
             EncryptionMethod method =
-                _factory.newEncryptionMethod(new URI(_algorithm).toString());
-            _ed.setEncryptionMethod(method);
-        } catch (URI.MalformedURIException mfue) {
-            throw new XMLEncryptionException("empty", mfue);
+                factory.newEncryptionMethod(new URI(algorithm).toString());
+            method.setDigestAlgorithm(digestAlg);
+            ed.setEncryptionMethod(method);
+        } catch (URISyntaxException ex) {
+            throw new XMLEncryptionException("empty", ex);
         }
-        return (_ed);
+        return ed;
     }
 
     /**
      * Returns an <code>EncryptedData</code> interface. Use this operation if
      * you want to load an <code>EncryptedData</code> structure from a DOM
-         * structure and manipulate the contents
+     * structure and manipulate the contents.
      *
      * @param context the context <code>Document</code>.
      * @param element the <code>Element</code> that will be loaded
      * @throws XMLEncryptionException
-     * @return
+     * @return the <code>EncryptedData</code>
      */
     public EncryptedData loadEncryptedData(Document context, Element element)
-                throws XMLEncryptionException {
-        logger.log(java.util.logging.Level.FINE, "Loading encrypted element...");
-        if(null == context)
-            logger.log(java.util.logging.Level.SEVERE, "Context document unexpectedly null...");
-        if(null == element)
-            logger.log(java.util.logging.Level.SEVERE, "Element unexpectedly null...");
-        if(_cipherMode != DECRYPT_MODE)
-            logger.log(java.util.logging.Level.SEVERE, "XMLCipher unexpectedly not in DECRYPT_MODE...");
+        throws XMLEncryptionException {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Loading encrypted element...");
+        }
+        if (null == context) {
+            throw new NullPointerException("Context document unexpectedly null...");
+        }
+        if (null == element) {
+            throw new NullPointerException("Element unexpectedly null...");
+        }
+        if (cipherMode != DECRYPT_MODE) {
+            throw new XMLEncryptionException("XMLCipher unexpectedly not in DECRYPT_MODE...");
+        }
 
-        _contextDocument = context;
-        _ed = _factory.newEncryptedData(element);
+        contextDocument = context;
+        ed = factory.newEncryptedData(element);
 
-                return (_ed);
+        return ed;
     }
 
     /**
      * Returns an <code>EncryptedKey</code> interface. Use this operation if
      * you want to load an <code>EncryptedKey</code> structure from a DOM
-         * structure and manipulate the contents.
+     * structure and manipulate the contents.
      *
      * @param context the context <code>Document</code>.
      * @param element the <code>Element</code> that will be loaded
-     * @return
+     * @return the <code>EncryptedKey</code>
      * @throws XMLEncryptionException
      */
-
     public EncryptedKey loadEncryptedKey(Document context, Element element)
-                throws XMLEncryptionException {
-        logger.log(java.util.logging.Level.FINE, "Loading encrypted key...");
-        if(null == context)
-            logger.log(java.util.logging.Level.SEVERE, "Context document unexpectedly null...");
-        if(null == element)
-            logger.log(java.util.logging.Level.SEVERE, "Element unexpectedly null...");
-        if(_cipherMode != UNWRAP_MODE && _cipherMode != DECRYPT_MODE)
-            logger.log(java.util.logging.Level.FINE, "XMLCipher unexpectedly not in UNWRAP_MODE or DECRYPT_MODE...");
+        throws XMLEncryptionException {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Loading encrypted key...");
+        }
+        if (null == context) {
+            throw new NullPointerException("Context document unexpectedly null...");
+        }
+        if (null == element) {
+            throw new NullPointerException("Element unexpectedly null...");
+        }
+        if (cipherMode != UNWRAP_MODE && cipherMode != DECRYPT_MODE) {
+            throw new XMLEncryptionException(
+                "XMLCipher unexpectedly not in UNWRAP_MODE or DECRYPT_MODE..."
+            );
+        }
 
-        _contextDocument = context;
-        _ek = _factory.newEncryptedKey(element);
-                return (_ek);
+        contextDocument = context;
+        ek = factory.newEncryptedKey(element);
+        return ek;
     }
 
     /**
      * Returns an <code>EncryptedKey</code> interface. Use this operation if
      * you want to load an <code>EncryptedKey</code> structure from a DOM
-         * structure and manipulate the contents.
-         *
-         * Assumes that the context document is the document that owns the element
+     * structure and manipulate the contents.
+     *
+     * Assumes that the context document is the document that owns the element
      *
      * @param element the <code>Element</code> that will be loaded
-     * @return
+     * @return the <code>EncryptedKey</code>
      * @throws XMLEncryptionException
      */
-
-    public EncryptedKey loadEncryptedKey(Element element)
-                throws XMLEncryptionException {
-
-                return (loadEncryptedKey(element.getOwnerDocument(), element));
+    public EncryptedKey loadEncryptedKey(Element element) throws XMLEncryptionException {
+        return loadEncryptedKey(element.getOwnerDocument(), element);
     }
 
     /**
      * Encrypts a key to an EncryptedKey structure
-         *
-         * @param doc the Context document that will be used to general DOM
-         * @param key Key to encrypt (will use previously set KEK to
-         * perform encryption
-     * @return
+     *
+     * @param doc the Context document that will be used to general DOM
+     * @param key Key to encrypt (will use previously set KEK to
+     * perform encryption
+     * @return the <code>EncryptedKey</code>
      * @throws XMLEncryptionException
      */
+    public EncryptedKey encryptKey(Document doc, Key key) throws XMLEncryptionException {
+        return encryptKey(doc, key, null, null);
+    }
 
-    public EncryptedKey encryptKey(Document doc, Key key) throws
-            XMLEncryptionException {
+    /**
+     * Encrypts a key to an EncryptedKey structure
+     *
+     * @param doc the Context document that will be used to general DOM
+     * @param key Key to encrypt (will use previously set KEK to
+     * perform encryption
+     * @param mgfAlgorithm The xenc11 MGF Algorithm to use
+     * @param oaepParams The OAEPParams to use
+     * @return the <code>EncryptedKey</code>
+     * @throws XMLEncryptionException
+     */
+    public EncryptedKey encryptKey(
+        Document doc,
+        Key key,
+        String mgfAlgorithm,
+        byte[] oaepParams
+    ) throws XMLEncryptionException {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Encrypting key ...");
+        }
 
-        logger.log(java.util.logging.Level.FINE, "Encrypting key ...");
+        if (null == key) {
+            log.log(java.util.logging.Level.SEVERE, "Key unexpectedly null...");
+        }
+        if (cipherMode != WRAP_MODE) {
+            log.log(java.util.logging.Level.FINE, "XMLCipher unexpectedly not in WRAP_MODE...");
+        }
+        if (algorithm == null) {
+            throw new XMLEncryptionException("XMLCipher instance without transformation specified");
+        }
 
-        if(null == key)
-            logger.log(java.util.logging.Level.SEVERE, "Key unexpectedly null...");
-        if(_cipherMode != WRAP_MODE)
-            logger.log(java.util.logging.Level.FINE, "XMLCipher unexpectedly not in WRAP_MODE...");
+        contextDocument = doc;
 
-                if (_algorithm == null) {
+        byte[] encryptedBytes = null;
+        Cipher c;
 
-                        throw new XMLEncryptionException("XMLCipher instance without transformation specified");
-                }
-
-                _contextDocument = doc;
-
-                byte[] encryptedBytes = null;
-                Cipher c;
-
-                if (_contextCipher == null) {
-                        // Now create the working cipher
-
-                        String jceAlgorithm =
-                                JCEMapper.translateURItoJCEID(_algorithm);
-
-                        logger.log(java.util.logging.Level.FINE, "alg = " + jceAlgorithm);
-
-                        try {
-                            if (_requestedJCEProvider == null)
-                                c = Cipher.getInstance(jceAlgorithm);
-                            else
-                                c = Cipher.getInstance(jceAlgorithm, _requestedJCEProvider);
-                        } catch (NoSuchAlgorithmException nsae) {
-                                throw new XMLEncryptionException("empty", nsae);
-                        } catch (NoSuchProviderException nspre) {
-                                throw new XMLEncryptionException("empty", nspre);
-                        } catch (NoSuchPaddingException nspae) {
-                                throw new XMLEncryptionException("empty", nspae);
-                        }
-                } else {
-                        c = _contextCipher;
-                }
-                // Now perform the encryption
-
-                try {
-                        // Should internally generate an IV
-                        // todo - allow user to set an IV
-                        c.init(Cipher.WRAP_MODE, _key);
-                        encryptedBytes = c.wrap(key);
-                } catch (InvalidKeyException ike) {
-                        throw new XMLEncryptionException("empty", ike);
-                } catch (IllegalBlockSizeException ibse) {
-                        throw new XMLEncryptionException("empty", ibse);
-                }
-
-        String base64EncodedEncryptedOctets = Base64.encode(encryptedBytes);
-
-        logger.log(java.util.logging.Level.FINE, "Encrypted key octets:\n" + base64EncodedEncryptedOctets);
-        logger.log(java.util.logging.Level.FINE, "Encrypted key octets length = " +
-            base64EncodedEncryptedOctets.length());
-
-                CipherValue cv = _ek.getCipherData().getCipherValue();
-                cv.setValue(base64EncodedEncryptedOctets);
+        if (contextCipher == null) {
+            // Now create the working cipher
+            c = constructCipher(algorithm, null);
+        } else {
+            c = contextCipher;
+        }
+        // Now perform the encryption
 
         try {
-            EncryptionMethod method = _factory.newEncryptionMethod(
-                new URI(_algorithm).toString());
-            _ek.setEncryptionMethod(method);
-        } catch (URI.MalformedURIException mfue) {
-            throw new XMLEncryptionException("empty", mfue);
+            // Should internally generate an IV
+            // todo - allow user to set an IV
+            OAEPParameterSpec oaepParameters =
+                constructOAEPParameters(
+                    algorithm, digestAlg, mgfAlgorithm, oaepParams
+                );
+            if (oaepParameters == null) {
+                c.init(Cipher.WRAP_MODE, this.key);
+            } else {
+                c.init(Cipher.WRAP_MODE, this.key, oaepParameters);
+            }
+            encryptedBytes = c.wrap(key);
+        } catch (InvalidKeyException ike) {
+            throw new XMLEncryptionException("empty", ike);
+        } catch (IllegalBlockSizeException ibse) {
+            throw new XMLEncryptionException("empty", ibse);
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new XMLEncryptionException("empty", e);
         }
-                return _ek;
 
+        String base64EncodedEncryptedOctets = Base64.encode(encryptedBytes);
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Encrypted key octets:\n" + base64EncodedEncryptedOctets);
+            log.log(java.util.logging.Level.FINE, "Encrypted key octets length = " + base64EncodedEncryptedOctets.length());
+        }
+
+        CipherValue cv = ek.getCipherData().getCipherValue();
+        cv.setValue(base64EncodedEncryptedOctets);
+
+        try {
+            EncryptionMethod method = factory.newEncryptionMethod(new URI(algorithm).toString());
+            method.setDigestAlgorithm(digestAlg);
+            method.setMGFAlgorithm(mgfAlgorithm);
+            method.setOAEPparams(oaepParams);
+            ek.setEncryptionMethod(method);
+        } catch (URISyntaxException ex) {
+            throw new XMLEncryptionException("empty", ex);
+        }
+        return ek;
     }
 
-        /**
-         * Decrypt a key from a passed in EncryptedKey structure
-         *
-         * @param encryptedKey Previously loaded EncryptedKey that needs
-         * to be decrypted.
-         * @param algorithm Algorithm for the decryption
-         * @return a key corresponding to the give type
+    /**
+     * Decrypt a key from a passed in EncryptedKey structure
+     *
+     * @param encryptedKey Previously loaded EncryptedKey that needs
+     * to be decrypted.
+     * @param algorithm Algorithm for the decryption
+     * @return a key corresponding to the given type
      * @throws XMLEncryptionException
-         */
+     */
+    public Key decryptKey(EncryptedKey encryptedKey, String algorithm)
+        throws XMLEncryptionException {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Decrypting key from previously loaded EncryptedKey...");
+        }
 
-        public Key decryptKey(EncryptedKey encryptedKey, String algorithm) throws
-                    XMLEncryptionException {
+        if (cipherMode != UNWRAP_MODE && log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "XMLCipher unexpectedly not in UNWRAP_MODE...");
+        }
 
-        logger.log(java.util.logging.Level.FINE, "Decrypting key from previously loaded EncryptedKey...");
+        if (algorithm == null) {
+            throw new XMLEncryptionException("Cannot decrypt a key without knowing the algorithm");
+        }
 
-        if(_cipherMode != UNWRAP_MODE)
-            logger.log(java.util.logging.Level.FINE, "XMLCipher unexpectedly not in UNWRAP_MODE...");
+        if (key == null) {
+            if (log.isLoggable(java.util.logging.Level.FINE)) {
+                log.log(java.util.logging.Level.FINE, "Trying to find a KEK via key resolvers");
+            }
 
-                if (algorithm == null) {
-                        throw new XMLEncryptionException("Cannot decrypt a key without knowing the algorithm");
-                }
-
-                if (_key == null) {
-
-                        logger.log(java.util.logging.Level.FINE, "Trying to find a KEK via key resolvers");
-
-                        KeyInfo ki = encryptedKey.getKeyInfo();
-                        if (ki != null) {
-                                try {
-                                        _key = ki.getSecretKey();
-                                }
-                                catch (Exception e) {
-                                }
-                        }
-                        if (_key == null) {
-                                logger.log(java.util.logging.Level.SEVERE, "XMLCipher::decryptKey called without a KEK and cannot resolve");
-                                throw new XMLEncryptionException("Unable to decrypt without a KEK");
-                        }
-                }
-
-                // Obtain the encrypted octets
-                XMLCipherInput cipherInput = new XMLCipherInput(encryptedKey);
-                byte [] encryptedBytes = cipherInput.getBytes();
-
-                String jceKeyAlgorithm =
-                        JCEMapper.getJCEKeyAlgorithmFromURI(algorithm);
-
-                Cipher c;
-                if (_contextCipher == null) {
-                        // Now create the working cipher
-
-                        String jceAlgorithm =
-                                JCEMapper.translateURItoJCEID(
-                                        encryptedKey.getEncryptionMethod().getAlgorithm());
-
-                        logger.log(java.util.logging.Level.FINE, "JCE Algorithm = " + jceAlgorithm);
-
-                        try {
-                            if (_requestedJCEProvider == null)
-                                c = Cipher.getInstance(jceAlgorithm);
-                            else
-                                c = Cipher.getInstance(jceAlgorithm, _requestedJCEProvider);
-                        } catch (NoSuchAlgorithmException nsae) {
-                                throw new XMLEncryptionException("empty", nsae);
-                        } catch (NoSuchProviderException nspre) {
-                                throw new XMLEncryptionException("empty", nspre);
-                        } catch (NoSuchPaddingException nspae) {
-                                throw new XMLEncryptionException("empty", nspae);
-                        }
-                } else {
-                        c = _contextCipher;
-                }
-
-                Key ret;
-
+            KeyInfo ki = encryptedKey.getKeyInfo();
+            if (ki != null) {
+                ki.setSecureValidation(secureValidation);
                 try {
-                        c.init(Cipher.UNWRAP_MODE, _key);
-                        ret = c.unwrap(encryptedBytes, jceKeyAlgorithm, Cipher.SECRET_KEY);
-
-                } catch (InvalidKeyException ike) {
-                        throw new XMLEncryptionException("empty", ike);
-                } catch (NoSuchAlgorithmException nsae) {
-                        throw new XMLEncryptionException("empty", nsae);
+                    String keyWrapAlg = encryptedKey.getEncryptionMethod().getAlgorithm();
+                    String keyType = JCEMapper.getJCEKeyAlgorithmFromURI(keyWrapAlg);
+                    if ("RSA".equals(keyType)) {
+                        key = ki.getPrivateKey();
+                    } else {
+                        key = ki.getSecretKey();
+                    }
                 }
+                catch (Exception e) {
+                    if (log.isLoggable(java.util.logging.Level.FINE)) {
+                        log.log(java.util.logging.Level.FINE, e.getMessage(), e);
+                    }
+                }
+            }
+            if (key == null) {
+                log.log(java.util.logging.Level.SEVERE, "XMLCipher::decryptKey called without a KEK and cannot resolve");
+                throw new XMLEncryptionException("Unable to decrypt without a KEK");
+            }
+        }
 
-                logger.log(java.util.logging.Level.FINE, "Decryption of key type " + algorithm + " OK");
+        // Obtain the encrypted octets
+        XMLCipherInput cipherInput = new XMLCipherInput(encryptedKey);
+        cipherInput.setSecureValidation(secureValidation);
+        byte[] encryptedBytes = cipherInput.getBytes();
 
-                return ret;
+        String jceKeyAlgorithm = JCEMapper.getJCEKeyAlgorithmFromURI(algorithm);
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "JCE Key Algorithm: " + jceKeyAlgorithm);
+        }
 
+        Cipher c;
+        if (contextCipher == null) {
+            // Now create the working cipher
+            c =
+                constructCipher(
+                    encryptedKey.getEncryptionMethod().getAlgorithm(),
+                    encryptedKey.getEncryptionMethod().getDigestAlgorithm()
+                );
+        } else {
+            c = contextCipher;
+        }
+
+        Key ret;
+
+        try {
+            EncryptionMethod encMethod = encryptedKey.getEncryptionMethod();
+            OAEPParameterSpec oaepParameters =
+                constructOAEPParameters(
+                    encMethod.getAlgorithm(), encMethod.getDigestAlgorithm(),
+                    encMethod.getMGFAlgorithm(), encMethod.getOAEPparams()
+                );
+            if (oaepParameters == null) {
+                c.init(Cipher.UNWRAP_MODE, key);
+            } else {
+                c.init(Cipher.UNWRAP_MODE, key, oaepParameters);
+            }
+            ret = c.unwrap(encryptedBytes, jceKeyAlgorithm, Cipher.SECRET_KEY);
+        } catch (InvalidKeyException ike) {
+            throw new XMLEncryptionException("empty", ike);
+        } catch (NoSuchAlgorithmException nsae) {
+            throw new XMLEncryptionException("empty", nsae);
+        } catch (InvalidAlgorithmParameterException e) {
+            throw new XMLEncryptionException("empty", e);
+        }
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Decryption of key type " + algorithm + " OK");
+        }
+
+        return ret;
     }
 
-        /**
-         * Decrypt a key from a passed in EncryptedKey structure.  This version
-         * is used mainly internally, when  the cipher already has an
-         * EncryptedData loaded.  The algorithm URI will be read from the
-         * EncryptedData
-         *
-         * @param encryptedKey Previously loaded EncryptedKey that needs
-         * to be decrypted.
-         * @return a key corresponding to the give type
-     * @throws XMLEncryptionException
-         */
+    /**
+     * Construct an OAEPParameterSpec object from the given parameters
+     */
+    private OAEPParameterSpec constructOAEPParameters(
+        String encryptionAlgorithm,
+        String digestAlgorithm,
+        String mgfAlgorithm,
+        byte[] oaepParams
+    ) {
+        if (XMLCipher.RSA_OAEP.equals(encryptionAlgorithm)
+            || XMLCipher.RSA_OAEP_11.equals(encryptionAlgorithm)) {
 
-        public Key decryptKey(EncryptedKey encryptedKey) throws
-                    XMLEncryptionException {
+            String jceDigestAlgorithm = "SHA-1";
+            if (digestAlgorithm != null) {
+                jceDigestAlgorithm = JCEMapper.translateURItoJCEID(digestAlgorithm);
+            }
 
-                return decryptKey(encryptedKey, _ed.getEncryptionMethod().getAlgorithm());
+            PSource.PSpecified pSource = PSource.PSpecified.DEFAULT;
+            if (oaepParams != null) {
+                pSource = new PSource.PSpecified(oaepParams);
+            }
 
+            MGF1ParameterSpec mgfParameterSpec = new MGF1ParameterSpec("SHA-1");
+            if (XMLCipher.RSA_OAEP_11.equals(encryptionAlgorithm)) {
+                if (EncryptionConstants.MGF1_SHA256.equals(mgfAlgorithm)) {
+                    mgfParameterSpec = new MGF1ParameterSpec("SHA-256");
+                } else if (EncryptionConstants.MGF1_SHA384.equals(mgfAlgorithm)) {
+                    mgfParameterSpec = new MGF1ParameterSpec("SHA-384");
+                } else if (EncryptionConstants.MGF1_SHA512.equals(mgfAlgorithm)) {
+                    mgfParameterSpec = new MGF1ParameterSpec("SHA-512");
+                }
+            }
+            return new OAEPParameterSpec(jceDigestAlgorithm, "MGF1", mgfParameterSpec, pSource);
         }
+
+        return null;
+    }
+
+    /**
+     * Construct a Cipher object
+     */
+    private Cipher constructCipher(String algorithm, String digestAlgorithm) throws XMLEncryptionException {
+        String jceAlgorithm = JCEMapper.translateURItoJCEID(algorithm);
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "JCE Algorithm = " + jceAlgorithm);
+        }
+
+        Cipher c;
+        try {
+            if (requestedJCEProvider == null) {
+                c = Cipher.getInstance(jceAlgorithm);
+            } else {
+                c = Cipher.getInstance(jceAlgorithm, requestedJCEProvider);
+            }
+        } catch (NoSuchAlgorithmException nsae) {
+            // Check to see if an RSA OAEP MGF-1 with SHA-1 algorithm was requested
+            // Some JDKs don't support RSA/ECB/OAEPPadding
+            if (XMLCipher.RSA_OAEP.equals(algorithm)
+                && (digestAlgorithm == null
+                    || MessageDigestAlgorithm.ALGO_ID_DIGEST_SHA1.equals(digestAlgorithm))) {
+                try {
+                    if (requestedJCEProvider == null) {
+                        c = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding");
+                    } else {
+                        c = Cipher.getInstance("RSA/ECB/OAEPWithSHA1AndMGF1Padding", requestedJCEProvider);
+                    }
+                } catch (Exception ex) {
+                    throw new XMLEncryptionException("empty", ex);
+                }
+            } else {
+                throw new XMLEncryptionException("empty", nsae);
+            }
+        } catch (NoSuchProviderException nspre) {
+            throw new XMLEncryptionException("empty", nspre);
+        } catch (NoSuchPaddingException nspae) {
+            throw new XMLEncryptionException("empty", nspae);
+        }
+
+        return c;
+    }
+
+    /**
+     * Decrypt a key from a passed in EncryptedKey structure.  This version
+     * is used mainly internally, when  the cipher already has an
+     * EncryptedData loaded.  The algorithm URI will be read from the
+     * EncryptedData
+     *
+     * @param encryptedKey Previously loaded EncryptedKey that needs
+     * to be decrypted.
+     * @return a key corresponding to the given type
+     * @throws XMLEncryptionException
+     */
+    public Key decryptKey(EncryptedKey encryptedKey) throws XMLEncryptionException {
+        return decryptKey(encryptedKey, ed.getEncryptionMethod().getAlgorithm());
+    }
 
     /**
      * Removes the contents of a <code>Node</code>.
@@ -1407,7 +1592,7 @@ public class XMLCipher {
      * @param node the <code>Node</code> to clear.
      */
     private static void removeContent(Node node) {
-       while (node.hasChildNodes()) {
+        while (node.hasChildNodes()) {
             node.removeChild(node.getFirstChild());
         }
     }
@@ -1419,196 +1604,191 @@ public class XMLCipher {
      * @return the <code>Node</code> as a result of the decrypt operation.
      * @throws XMLEncryptionException
      */
-    private Document decryptElement(Element element) throws
-            XMLEncryptionException {
-
-        logger.log(java.util.logging.Level.FINE, "Decrypting element...");
-
-        if(_cipherMode != DECRYPT_MODE)
-            logger.log(java.util.logging.Level.SEVERE, "XMLCipher unexpectedly not in DECRYPT_MODE...");
-
-                String octets;
-                try {
-                        octets = new String(decryptToByteArray(element), "UTF-8");
-                } catch (UnsupportedEncodingException uee) {
-                        throw new XMLEncryptionException("empty", uee);
-                }
-
-
-        logger.log(java.util.logging.Level.FINE, "Decrypted octets:\n" + octets);
-
-        Node sourceParent =  element.getParentNode();
-
-        DocumentFragment decryptedFragment =
-                        _serializer.deserialize(octets, sourceParent);
-
-
-                // The de-serialiser returns a fragment whose children we need to
-                // take on.
-
-                if (sourceParent != null && sourceParent.getNodeType() == Node.DOCUMENT_NODE) {
-
-                    // If this is a content decryption, this may have problems
-
-                    _contextDocument.removeChild(_contextDocument.getDocumentElement());
-                    _contextDocument.appendChild(decryptedFragment);
-                }
-                else {
-                    sourceParent.replaceChild(decryptedFragment, element);
-
-                }
-
-        return (_contextDocument);
-    }
-
-
-        /**
-         *
-         * @param element
-     * @return
-     * @throws XMLEncryptionException
-         */
-    private Document decryptElementContent(Element element) throws
-                XMLEncryptionException {
-        Element e = (Element) element.getElementsByTagNameNS(
-                EncryptionConstants.EncryptionSpecNS,
-                EncryptionConstants._TAG_ENCRYPTEDDATA).item(0);
-
-        if (null == e) {
-                throw new XMLEncryptionException("No EncryptedData child element.");
+    private Document decryptElement(Element element) throws XMLEncryptionException {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Decrypting element...");
         }
 
-        return (decryptElement(e));
+        if (cipherMode != DECRYPT_MODE) {
+            log.log(java.util.logging.Level.SEVERE, "XMLCipher unexpectedly not in DECRYPT_MODE...");
+        }
+
+        byte[] octets = decryptToByteArray(element);
+
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Decrypted octets:\n" + new String(octets));
+        }
+
+        Node sourceParent = element.getParentNode();
+        Node decryptedNode = serializer.deserialize(octets, sourceParent);
+
+        // The de-serialiser returns a node whose children we need to take on.
+        if (sourceParent != null && Node.DOCUMENT_NODE == sourceParent.getNodeType()) {
+            // If this is a content decryption, this may have problems
+            contextDocument.removeChild(contextDocument.getDocumentElement());
+            contextDocument.appendChild(decryptedNode);
+        } else if (sourceParent != null) {
+            sourceParent.replaceChild(decryptedNode, element);
+        }
+
+        return contextDocument;
     }
 
-        /**
-         * Decrypt an EncryptedData element to a byte array
-         *
-         * When passed in an EncryptedData node, returns the decryption
-         * as a byte array.
-         *
-         * Does not modify the source document
+    /**
+     *
      * @param element
-     * @return
+     * @return the <code>Node</code> as a result of the decrypt operation.
      * @throws XMLEncryptionException
-         */
+     */
+    private Document decryptElementContent(Element element) throws XMLEncryptionException {
+        Element e =
+            (Element) element.getElementsByTagNameNS(
+                EncryptionConstants.EncryptionSpecNS,
+                EncryptionConstants._TAG_ENCRYPTEDDATA
+            ).item(0);
 
-        public byte[] decryptToByteArray(Element element)
-                throws XMLEncryptionException {
+        if (null == e) {
+            throw new XMLEncryptionException("No EncryptedData child element.");
+        }
 
-        logger.log(java.util.logging.Level.FINE, "Decrypting to ByteArray...");
+        return decryptElement(e);
+    }
 
-        if(_cipherMode != DECRYPT_MODE)
-            logger.log(java.util.logging.Level.SEVERE, "XMLCipher unexpectedly not in DECRYPT_MODE...");
+    /**
+     * Decrypt an EncryptedData element to a byte array.
+     *
+     * When passed in an EncryptedData node, returns the decryption
+     * as a byte array.
+     *
+     * Does not modify the source document.
+     * @param element
+     * @return the bytes resulting from the decryption
+     * @throws XMLEncryptionException
+     */
+    public byte[] decryptToByteArray(Element element) throws XMLEncryptionException {
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "Decrypting to ByteArray...");
+        }
 
-        EncryptedData encryptedData = _factory.newEncryptedData(element);
+        if (cipherMode != DECRYPT_MODE) {
+            log.log(java.util.logging.Level.SEVERE, "XMLCipher unexpectedly not in DECRYPT_MODE...");
+        }
 
-                if (_key == null) {
+        EncryptedData encryptedData = factory.newEncryptedData(element);
 
-                        KeyInfo ki = encryptedData.getKeyInfo();
-
-                        if (ki != null) {
-                                try {
-                                        // Add a EncryptedKey resolver
-                                        ki.registerInternalKeyResolver(
-                                     new EncryptedKeyResolver(encryptedData.
-                                                                                                  getEncryptionMethod().
-                                                                                                  getAlgorithm(),
-                                                                                                  _kek));
-                                        _key = ki.getSecretKey();
-                                } catch (KeyResolverException kre) {
-                                        // We will throw in a second...
-                                }
-                        }
-
-                        if (_key == null) {
-                                logger.log(java.util.logging.Level.SEVERE, "XMLCipher::decryptElement called without a key and unable to resolve");
-
-                                throw new XMLEncryptionException("encryption.nokey");
-                        }
-                }
-
-                // Obtain the encrypted octets
-                XMLCipherInput cipherInput = new XMLCipherInput(encryptedData);
-                byte [] encryptedBytes = cipherInput.getBytes();
-
-                // Now create the working cipher
-
-                String jceAlgorithm =
-                        JCEMapper.translateURItoJCEID(encryptedData.getEncryptionMethod().getAlgorithm());
-
-                Cipher c;
+        if (key == null) {
+            KeyInfo ki = encryptedData.getKeyInfo();
+            if (ki != null) {
                 try {
-                    if (_requestedJCEProvider == null)
-                        c = Cipher.getInstance(jceAlgorithm);
-                    else
-                        c = Cipher.getInstance(jceAlgorithm, _requestedJCEProvider);
-                } catch (NoSuchAlgorithmException nsae) {
-                        throw new XMLEncryptionException("empty", nsae);
-                } catch (NoSuchProviderException nspre) {
-                        throw new XMLEncryptionException("empty", nspre);
-                } catch (NoSuchPaddingException nspae) {
-                        throw new XMLEncryptionException("empty", nspae);
+                    // Add an EncryptedKey resolver
+                    String encMethodAlgorithm = encryptedData.getEncryptionMethod().getAlgorithm();
+                    EncryptedKeyResolver resolver = new EncryptedKeyResolver(encMethodAlgorithm, kek);
+                    if (internalKeyResolvers != null) {
+                        int size = internalKeyResolvers.size();
+                        for (int i = 0; i < size; i++) {
+                            resolver.registerInternalKeyResolver(internalKeyResolvers.get(i));
+                        }
+                    }
+                    ki.registerInternalKeyResolver(resolver);
+                    ki.setSecureValidation(secureValidation);
+                    key = ki.getSecretKey();
+                } catch (KeyResolverException kre) {
+                    if (log.isLoggable(java.util.logging.Level.FINE)) {
+                        log.log(java.util.logging.Level.FINE, kre.getMessage(), kre);
+                    }
                 }
+            }
 
-                // Calculate the IV length and copy out
+            if (key == null) {
+                log.log(java.util.logging.Level.SEVERE,
+                    "XMLCipher::decryptElement called without a key and unable to resolve"
+                );
+                throw new XMLEncryptionException("encryption.nokey");
+            }
+        }
 
-                // For now, we only work with Block ciphers, so this will work.
-                // This should probably be put into the JCE mapper.
+        // Obtain the encrypted octets
+        XMLCipherInput cipherInput = new XMLCipherInput(encryptedData);
+        cipherInput.setSecureValidation(secureValidation);
+        byte[] encryptedBytes = cipherInput.getBytes();
 
-                int ivLen = c.getBlockSize();
-                byte[] ivBytes = new byte[ivLen];
+        // Now create the working cipher
+        String jceAlgorithm =
+            JCEMapper.translateURItoJCEID(encryptedData.getEncryptionMethod().getAlgorithm());
+        if (log.isLoggable(java.util.logging.Level.FINE)) {
+            log.log(java.util.logging.Level.FINE, "JCE Algorithm = " + jceAlgorithm);
+        }
 
-                // You may be able to pass the entire piece in to IvParameterSpec
-                // and it will only take the first x bytes, but no way to be certain
-                // that this will work for every JCE provider, so lets copy the
-                // necessary bytes into a dedicated array.
+        Cipher c;
+        try {
+            if (requestedJCEProvider == null) {
+                c = Cipher.getInstance(jceAlgorithm);
+            } else {
+                c = Cipher.getInstance(jceAlgorithm, requestedJCEProvider);
+            }
+        } catch (NoSuchAlgorithmException nsae) {
+            throw new XMLEncryptionException("empty", nsae);
+        } catch (NoSuchProviderException nspre) {
+            throw new XMLEncryptionException("empty", nspre);
+        } catch (NoSuchPaddingException nspae) {
+            throw new XMLEncryptionException("empty", nspae);
+        }
 
-                System.arraycopy(encryptedBytes, 0, ivBytes, 0, ivLen);
-                IvParameterSpec iv = new IvParameterSpec(ivBytes);
+        // Calculate the IV length and copy out
 
-                try {
-                        c.init(_cipherMode, _key, iv);
-                } catch (InvalidKeyException ike) {
-                        throw new XMLEncryptionException("empty", ike);
-                } catch (InvalidAlgorithmParameterException iape) {
-                        throw new XMLEncryptionException("empty", iape);
-                }
+        // For now, we only work with Block ciphers, so this will work.
+        // This should probably be put into the JCE mapper.
 
-                byte[] plainBytes;
+        int ivLen = c.getBlockSize();
+        String alg = encryptedData.getEncryptionMethod().getAlgorithm();
+        if (AES_128_GCM.equals(alg) || AES_192_GCM.equals(alg) || AES_256_GCM.equals(alg)) {
+            ivLen = 12;
+        }
+        byte[] ivBytes = new byte[ivLen];
+
+        // You may be able to pass the entire piece in to IvParameterSpec
+        // and it will only take the first x bytes, but no way to be certain
+        // that this will work for every JCE provider, so lets copy the
+        // necessary bytes into a dedicated array.
+
+        System.arraycopy(encryptedBytes, 0, ivBytes, 0, ivLen);
+        IvParameterSpec iv = new IvParameterSpec(ivBytes);
 
         try {
-            plainBytes = c.doFinal(encryptedBytes,
-                                                                   ivLen,
-                                                                   encryptedBytes.length - ivLen);
+            c.init(cipherMode, key, iv);
+        } catch (InvalidKeyException ike) {
+            throw new XMLEncryptionException("empty", ike);
+        } catch (InvalidAlgorithmParameterException iape) {
+            throw new XMLEncryptionException("empty", iape);
+        }
 
+        try {
+            return c.doFinal(encryptedBytes, ivLen, encryptedBytes.length - ivLen);
         } catch (IllegalBlockSizeException ibse) {
             throw new XMLEncryptionException("empty", ibse);
         } catch (BadPaddingException bpe) {
             throw new XMLEncryptionException("empty", bpe);
         }
-
-        return (plainBytes);
     }
 
-        /*
-         * Expose the interface for creating XML Encryption objects
-         */
+    /*
+     * Expose the interface for creating XML Encryption objects
+     */
 
     /**
      * Creates an <code>EncryptedData</code> <code>Element</code>.
      *
-         * The newEncryptedData and newEncryptedKey methods create fairly complete
-         * elements that are immediately useable.  All the other create* methods
-         * return bare elements that still need to be built upon.
-         *<p>
-         * An EncryptionMethod will still need to be added however
-         *
-         * @param type Either REFERENCE_TYPE or VALUE_TYPE - defines what kind of
-         * CipherData this EncryptedData will contain.
+     * The newEncryptedData and newEncryptedKey methods create fairly complete
+     * elements that are immediately useable.  All the other create* methods
+     * return bare elements that still need to be built upon.
+     *<p>
+     * An EncryptionMethod will still need to be added however
+     *
+     * @param type Either REFERENCE_TYPE or VALUE_TYPE - defines what kind of
+     * CipherData this EncryptedData will contain.
      * @param value the Base 64 encoded, encrypted text to wrap in the
      *   <code>EncryptedData</code> or the URI to set in the CipherReference
-         * (usage will depend on the <code>type</code>
+     * (usage will depend on the <code>type</code>
      * @return the <code>EncryptedData</code> <code>Element</code>.
      *
      * <!--
@@ -1629,44 +1809,41 @@ public class XMLCipher {
      * -->
      * @throws XMLEncryptionException
      */
-
-    public EncryptedData createEncryptedData(int type, String value) throws
-            XMLEncryptionException {
+    public EncryptedData createEncryptedData(int type, String value) throws XMLEncryptionException {
         EncryptedData result = null;
         CipherData data = null;
 
         switch (type) {
-            case CipherData.REFERENCE_TYPE:
-                CipherReference cipherReference = _factory.newCipherReference(
-                    value);
-                data = _factory.newCipherData(type);
-                data.setCipherReference(cipherReference);
-                result = _factory.newEncryptedData(data);
-                                break;
-            case CipherData.VALUE_TYPE:
-                CipherValue cipherValue = _factory.newCipherValue(value);
-                data = _factory.newCipherData(type);
-                data.setCipherValue(cipherValue);
-                result = _factory.newEncryptedData(data);
+        case CipherData.REFERENCE_TYPE:
+            CipherReference cipherReference = factory.newCipherReference(value);
+            data = factory.newCipherData(type);
+            data.setCipherReference(cipherReference);
+            result = factory.newEncryptedData(data);
+            break;
+        case CipherData.VALUE_TYPE:
+            CipherValue cipherValue = factory.newCipherValue(value);
+            data = factory.newCipherData(type);
+            data.setCipherValue(cipherValue);
+            result = factory.newEncryptedData(data);
         }
 
-        return (result);
+        return result;
     }
 
     /**
      * Creates an <code>EncryptedKey</code> <code>Element</code>.
      *
-         * The newEncryptedData and newEncryptedKey methods create fairly complete
-         * elements that are immediately useable.  All the other create* methods
-         * return bare elements that still need to be built upon.
-         *<p>
-         * An EncryptionMethod will still need to be added however
-         *
-         * @param type Either REFERENCE_TYPE or VALUE_TYPE - defines what kind of
-         * CipherData this EncryptedData will contain.
+     * The newEncryptedData and newEncryptedKey methods create fairly complete
+     * elements that are immediately useable.  All the other create* methods
+     * return bare elements that still need to be built upon.
+     *<p>
+     * An EncryptionMethod will still need to be added however
+     *
+     * @param type Either REFERENCE_TYPE or VALUE_TYPE - defines what kind of
+     * CipherData this EncryptedData will contain.
      * @param value the Base 64 encoded, encrypted text to wrap in the
      *   <code>EncryptedKey</code> or the URI to set in the CipherReference
-         * (usage will depend on the <code>type</code>
+     * (usage will depend on the <code>type</code>
      * @return the <code>EncryptedKey</code> <code>Element</code>.
      *
      * <!--
@@ -1687,331 +1864,128 @@ public class XMLCipher {
      * -->
      * @throws XMLEncryptionException
      */
-
-    public EncryptedKey createEncryptedKey(int type, String value) throws
-            XMLEncryptionException {
+    public EncryptedKey createEncryptedKey(int type, String value) throws XMLEncryptionException {
         EncryptedKey result = null;
         CipherData data = null;
 
         switch (type) {
-            case CipherData.REFERENCE_TYPE:
-                CipherReference cipherReference = _factory.newCipherReference(
-                    value);
-                data = _factory.newCipherData(type);
-                data.setCipherReference(cipherReference);
-                result = _factory.newEncryptedKey(data);
-                                break;
-            case CipherData.VALUE_TYPE:
-                CipherValue cipherValue = _factory.newCipherValue(value);
-                data = _factory.newCipherData(type);
-                data.setCipherValue(cipherValue);
-                result = _factory.newEncryptedKey(data);
+        case CipherData.REFERENCE_TYPE:
+            CipherReference cipherReference = factory.newCipherReference(value);
+            data = factory.newCipherData(type);
+            data.setCipherReference(cipherReference);
+            result = factory.newEncryptedKey(data);
+            break;
+        case CipherData.VALUE_TYPE:
+            CipherValue cipherValue = factory.newCipherValue(value);
+            data = factory.newCipherData(type);
+            data.setCipherValue(cipherValue);
+            result = factory.newEncryptedKey(data);
         }
 
-        return (result);
+        return result;
     }
-
-        /**
-         * Create an AgreementMethod object
-         *
-         * @param algorithm Algorithm of the agreement method
-     * @return
-         */
-
-        public AgreementMethod createAgreementMethod(String algorithm) {
-                return (_factory.newAgreementMethod(algorithm));
-        }
-
-        /**
-         * Create a CipherData object
-         *
-         * @param type Type of this CipherData (either VALUE_TUPE or
-         * REFERENCE_TYPE)
-         * @return
-         */
-
-        public CipherData createCipherData(int type) {
-                return (_factory.newCipherData(type));
-        }
-
-        /**
-         * Create a CipherReference object
-         *
-     * @return
-         * @param uri The URI that the reference will refer
-         */
-
-        public CipherReference createCipherReference(String uri) {
-                return (_factory.newCipherReference(uri));
-        }
-
-        /**
-         * Create a CipherValue element
-         *
-         * @param value The value to set the ciphertext to
-     * @return
-         */
-
-        public CipherValue createCipherValue(String value) {
-                return (_factory.newCipherValue(value));
-        }
-
-        /**
-         * Create an EncryptedMethod object
-         *
-         * @param algorithm Algorithm for the encryption
-     * @return
-         */
-        public EncryptionMethod createEncryptionMethod(String algorithm) {
-                return (_factory.newEncryptionMethod(algorithm));
-        }
-
-        /**
-         * Create an EncryptedProperties element
-         * @return
-         */
-        public EncryptionProperties createEncryptionProperties() {
-                return (_factory.newEncryptionProperties());
-        }
-
-        /**
-         * Create a new EncryptionProperty element
-     * @return
-         */
-        public EncryptionProperty createEncryptionProperty() {
-                return (_factory.newEncryptionProperty());
-        }
-
-        /**
-         * Create a new ReferenceList object
-     * @return
-     * @param type
-         */
-        public ReferenceList createReferenceList(int type) {
-                return (_factory.newReferenceList(type));
-        }
-
-        /**
-         * Create a new Transforms object
-         * <p>
-         * <b>Note</b>: A context document <i>must</i> have been set
-         * elsewhere (possibly via a call to doFinal).  If not, use the
-         * createTransforms(Document) method.
-     * @return
-         */
-
-        public Transforms createTransforms() {
-                return (_factory.newTransforms());
-        }
-
-        /**
-         * Create a new Transforms object
-         *
-         * Because the handling of Transforms is currently done in the signature
-         * code, the creation of a Transforms object <b>requires</b> a
-         * context document.
-         *
-         * @param doc Document that will own the created Transforms node
-     * @return
-         */
-        public Transforms createTransforms(Document doc) {
-                return (_factory.newTransforms(doc));
-        }
 
     /**
-     * Converts <code>String</code>s into <code>Node</code>s and visa versa.
-     * <p>
-     * <b>NOTE:</b> For internal use only.
+     * Create an AgreementMethod object
      *
-     * @author  Axl Mattheus
+     * @param algorithm Algorithm of the agreement method
+     * @return a new <code>AgreementMethod</code>
      */
-
-    private class Serializer {
-        /**
-         * Initialize the <code>XMLSerializer</code> with the specified context
-         * <code>Document</code>.
-         * <p/>
-         * Setup OutputFormat in a way that the serialization does <b>not</b>
-         * modifiy the contents, that is it shall not do any pretty printing
-         * and so on. This would destroy the original content before
-         * encryption. If that content was signed before encryption and the
-         * serialization modifies the content the signature verification will
-         * fail.
-         */
-        Serializer() {
-        }
-
-        /**
-         * Returns a <code>String</code> representation of the specified
-         * <code>Document</code>.
-         * <p/>
-         * Refer also to comments about setup of format.
-         *
-         * @param document the <code>Document</code> to serialize.
-         * @return the <code>String</code> representation of the serilaized
-         *   <code>Document</code>.
-         * @throws Exception
-         */
-        String serialize(Document document) throws Exception {
-            return canonSerialize(document);
-        }
-
-        /**
-         * Returns a <code>String</code> representation of the specified
-         * <code>Element</code>.
-         * <p/>
-         * Refer also to comments about setup of format.
-         *
-         * @param element the <code>Element</code> to serialize.
-         * @return the <code>String</code> representation of the serilaized
-         *   <code>Element</code>.
-         * @throws Exception
-         */
-                String serialize(Element element) throws Exception {
-            return canonSerialize(element);
-                }
-
-        /**
-         * Returns a <code>String</code> representation of the specified
-         * <code>NodeList</code>.
-         * <p/>
-         * This is a special case because the NodeList may represent a
-         * <code>DocumentFragment</code>. A document fragement may be a
-         * non-valid XML document (refer to appropriate description of
-         * W3C) because it my start with a non-element node, e.g. a text
-         * node.
-         * <p/>
-         * The methods first converts the node list into a document fragment.
-         * Special care is taken to not destroy the current document, thus
-         * the method clones the nodes (deep cloning) before it appends
-         * them to the document fragment.
-         * <p/>
-         * Refer also to comments about setup of format.
-         *
-         * @param content the <code>NodeList</code> to serialize.
-         * @return the <code>String</code> representation of the serilaized
-         *   <code>NodeList</code>.
-         * @throws Exception
-         */
-        String serialize(NodeList content) throws Exception { //XMLEncryptionException {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            _canon.setWriter(baos);
-            _canon.notReset();
-            for (int i = 0; i < content.getLength(); i++) {
-                _canon.canonicalizeSubtree(content.item(i));
-            }
-            baos.close();
-            return baos.toString("UTF-8");
-        }
-
-        /**
-         * Use the Canoncializer to serialize the node
-         * @param node
-         * @return
-         * @throws Exception
-         */
-                String canonSerialize(Node node) throws Exception {
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        _canon.setWriter(baos);
-            _canon.notReset();
-                        _canon.canonicalizeSubtree(node);
-                        baos.close();
-                        return baos.toString("UTF-8");
-                }
-        /**
-         * @param source
-         * @param ctx
-         * @return
-         * @throws XMLEncryptionException
-         *
-         */
-        DocumentFragment deserialize(String source, Node ctx) throws XMLEncryptionException {
-                        DocumentFragment result;
-            final String tagname = "fragment";
-
-                        // Create the context to parse the document against
-                        StringBuffer sb;
-
-                        sb = new StringBuffer();
-                        sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?><"+tagname);
-
-                        // Run through each node up to the document node and find any
-                        // xmlns: nodes
-
-                        Node wk = ctx;
-
-                        while (wk != null) {
-
-                                NamedNodeMap atts = wk.getAttributes();
-                                int length;
-                                if (atts != null)
-                                        length = atts.getLength();
-                                else
-                                        length = 0;
-
-                                for (int i = 0 ; i < length ; ++i) {
-                                        Node att = atts.item(i);
-                                        if (att.getNodeName().startsWith("xmlns:") ||
-                                                att.getNodeName().equals("xmlns")) {
-
-                                                // Check to see if this node has already been found
-                                                Node p = ctx;
-                                                boolean found = false;
-                                                while (p != wk) {
-                                                        NamedNodeMap tstAtts = p.getAttributes();
-                                                        if (tstAtts != null &&
-                                                                tstAtts.getNamedItem(att.getNodeName()) != null) {
-                                                                found = true;
-                                                                break;
-                                                        }
-                                                        p = p.getParentNode();
-                                                }
-                                                if (found == false) {
-
-                                                        // This is an attribute node
-                                                        sb.append(" " + att.getNodeName() + "=\"" +
-                                                                          att.getNodeValue() + "\"");
-                                                }
-                                        }
-                                }
-                                wk = wk.getParentNode();
-                        }
-                        sb.append(">" + source + "</" + tagname + ">");
-                        String fragment = sb.toString();
-
-            try {
-                DocumentBuilderFactory dbf =
-                    DocumentBuilderFactory.newInstance();
-                dbf.setNamespaceAware(true);
-                dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, Boolean.TRUE);
-                dbf.setAttribute("http://xml.org/sax/features/namespaces", Boolean.TRUE);
-                DocumentBuilder db = dbf.newDocumentBuilder();
-                Document d = db.parse(
-                    new InputSource(new StringReader(fragment)));
-
-                Element fragElt = (Element) _contextDocument.importNode(
-                                                 d.getDocumentElement(), true);
-                result = _contextDocument.createDocumentFragment();
-                Node child = fragElt.getFirstChild();
-                while (child != null) {
-                    fragElt.removeChild(child);
-                    result.appendChild(child);
-                    child = fragElt.getFirstChild();
-                }
-                // String outp = serialize(d);
-
-            } catch (SAXException se) {
-                throw new XMLEncryptionException("empty", se);
-            } catch (ParserConfigurationException pce) {
-                throw new XMLEncryptionException("empty", pce);
-            } catch (IOException ioe) {
-                throw new XMLEncryptionException("empty", ioe);
-            }
-
-            return (result);
-        }
+    public AgreementMethod createAgreementMethod(String algorithm) {
+        return factory.newAgreementMethod(algorithm);
     }
 
+    /**
+     * Create a CipherData object
+     *
+     * @param type Type of this CipherData (either VALUE_TUPE or
+     * REFERENCE_TYPE)
+     * @return a new <code>CipherData</code>
+     */
+    public CipherData createCipherData(int type) {
+        return factory.newCipherData(type);
+    }
+
+    /**
+     * Create a CipherReference object
+     *
+     * @param uri The URI that the reference will refer
+     * @return a new <code>CipherReference</code>
+     */
+    public CipherReference createCipherReference(String uri) {
+        return factory.newCipherReference(uri);
+    }
+
+    /**
+     * Create a CipherValue element
+     *
+     * @param value The value to set the ciphertext to
+     * @return a new <code>CipherValue</code>
+     */
+    public CipherValue createCipherValue(String value) {
+        return factory.newCipherValue(value);
+    }
+
+    /**
+     * Create an EncryptionMethod object
+     *
+     * @param algorithm Algorithm for the encryption
+     * @return a new <code>EncryptionMethod</code>
+     */
+    public EncryptionMethod createEncryptionMethod(String algorithm) {
+        return factory.newEncryptionMethod(algorithm);
+    }
+
+    /**
+     * Create an EncryptionProperties element
+     * @return a new <code>EncryptionProperties</code>
+     */
+    public EncryptionProperties createEncryptionProperties() {
+        return factory.newEncryptionProperties();
+    }
+
+    /**
+     * Create a new EncryptionProperty element
+     * @return a new <code>EncryptionProperty</code>
+     */
+    public EncryptionProperty createEncryptionProperty() {
+        return factory.newEncryptionProperty();
+    }
+
+    /**
+     * Create a new ReferenceList object
+     * @param type ReferenceList.DATA_REFERENCE or ReferenceList.KEY_REFERENCE
+     * @return a new <code>ReferenceList</code>
+     */
+    public ReferenceList createReferenceList(int type) {
+        return factory.newReferenceList(type);
+    }
+
+    /**
+     * Create a new Transforms object
+     * <p>
+     * <b>Note</b>: A context document <i>must</i> have been set
+     * elsewhere (possibly via a call to doFinal).  If not, use the
+     * createTransforms(Document) method.
+     * @return a new <code>Transforms</code>
+     */
+    public Transforms createTransforms() {
+        return factory.newTransforms();
+    }
+
+    /**
+     * Create a new Transforms object
+     *
+     * Because the handling of Transforms is currently done in the signature
+     * code, the creation of a Transforms object <b>requires</b> a
+     * context document.
+     *
+     * @param doc Document that will own the created Transforms node
+     * @return a new <code>Transforms</code>
+     */
+    public Transforms createTransforms(Document doc) {
+        return factory.newTransforms(doc);
+    }
 
     /**
      *
@@ -2020,201 +1994,110 @@ public class XMLCipher {
     private class Factory {
         /**
          * @param algorithm
-         * @return
-         *
+         * @return a new AgreementMethod
          */
         AgreementMethod newAgreementMethod(String algorithm)  {
-            return (new AgreementMethodImpl(algorithm));
+            return new AgreementMethodImpl(algorithm);
         }
 
         /**
          * @param type
-         * @return
+         * @return a new CipherData
          *
          */
         CipherData newCipherData(int type) {
-            return (new CipherDataImpl(type));
+            return new CipherDataImpl(type);
         }
 
         /**
          * @param uri
-         * @return
-         *
+         * @return a new CipherReference
          */
         CipherReference newCipherReference(String uri)  {
-            return (new CipherReferenceImpl(uri));
+            return new CipherReferenceImpl(uri);
         }
 
         /**
          * @param value
-         * @return
-         *
+         * @return a new CipherValue
          */
         CipherValue newCipherValue(String value) {
-            return (new CipherValueImpl(value));
+            return new CipherValueImpl(value);
         }
 
-        /**
-         *
-
+        /*
         CipherValue newCipherValue(byte[] value) {
-            return (new CipherValueImpl(value));
+            return new CipherValueImpl(value);
         }
-                */
+         */
+
         /**
          * @param data
-         * @return
-         *
+         * @return a new EncryptedData
          */
         EncryptedData newEncryptedData(CipherData data) {
-            return (new EncryptedDataImpl(data));
+            return new EncryptedDataImpl(data);
         }
 
         /**
          * @param data
-         * @return
-         *
+         * @return a new EncryptedKey
          */
         EncryptedKey newEncryptedKey(CipherData data) {
-            return (new EncryptedKeyImpl(data));
+            return new EncryptedKeyImpl(data);
         }
 
         /**
          * @param algorithm
-         * @return
-         *
+         * @return a new EncryptionMethod
          */
         EncryptionMethod newEncryptionMethod(String algorithm) {
-            return (new EncryptionMethodImpl(algorithm));
+            return new EncryptionMethodImpl(algorithm);
         }
 
         /**
-         * @return
-         *
+         * @return a new EncryptionProperties
          */
         EncryptionProperties newEncryptionProperties() {
-            return (new EncryptionPropertiesImpl());
+            return new EncryptionPropertiesImpl();
         }
 
         /**
-         * @return
-         *
+         * @return a new EncryptionProperty
          */
         EncryptionProperty newEncryptionProperty() {
-            return (new EncryptionPropertyImpl());
+            return new EncryptionPropertyImpl();
         }
 
         /**
-         * @param type
-         * @return
-         *
+         * @param type ReferenceList.DATA_REFERENCE or ReferenceList.KEY_REFERENCE
+         * @return a new ReferenceList
          */
         ReferenceList newReferenceList(int type) {
-            return (new ReferenceListImpl(type));
+            return new ReferenceListImpl(type);
         }
 
         /**
-         * @return
-         *
+         * @return a new Transforms
          */
         Transforms newTransforms() {
-            return (new TransformsImpl());
+            return new TransformsImpl();
         }
 
         /**
          * @param doc
-         * @return
-         *
+         * @return a new Transforms
          */
         Transforms newTransforms(Document doc) {
-            return (new TransformsImpl(doc));
+            return new TransformsImpl(doc);
         }
 
         /**
          * @param element
-         * @return
+         * @return a new CipherData
          * @throws XMLEncryptionException
-         *
          */
-        // <element name="AgreementMethod" type="xenc:AgreementMethodType"/>
-        // <complexType name="AgreementMethodType" mixed="true">
-        //     <sequence>
-        //         <element name="KA-Nonce" minOccurs="0" type="base64Binary"/>
-        //         <!-- <element ref="ds:DigestMethod" minOccurs="0"/> -->
-        //         <any namespace="##other" minOccurs="0" maxOccurs="unbounded"/>
-        //         <element name="OriginatorKeyInfo" minOccurs="0" type="ds:KeyInfoType"/>
-        //         <element name="RecipientKeyInfo" minOccurs="0" type="ds:KeyInfoType"/>
-        //     </sequence>
-        //     <attribute name="Algorithm" type="anyURI" use="required"/>
-        // </complexType>
-        AgreementMethod newAgreementMethod(Element element) throws
-                XMLEncryptionException {
-            if (null == element) {
-                throw new NullPointerException("element is null");
-            }
-
-            String algorithm = element.getAttributeNS(null,
-                EncryptionConstants._ATT_ALGORITHM);
-            AgreementMethod result = newAgreementMethod(algorithm);
-
-            Element kaNonceElement = (Element) element.getElementsByTagNameNS(
-                EncryptionConstants.EncryptionSpecNS,
-                EncryptionConstants._TAG_KA_NONCE).item(0);
-            if (null != kaNonceElement) {
-                result.setKANonce(kaNonceElement.getNodeValue().getBytes());
-            }
-            // TODO: ///////////////////////////////////////////////////////////
-            // Figure out how to make this pesky line work..
-            // <any namespace="##other" minOccurs="0" maxOccurs="unbounded"/>
-
-            // TODO: Work out how to handle relative URI
-
-            Element originatorKeyInfoElement =
-                (Element) element.getElementsByTagNameNS(
-                    EncryptionConstants.EncryptionSpecNS,
-                    EncryptionConstants._TAG_ORIGINATORKEYINFO).item(0);
-            if (null != originatorKeyInfoElement) {
-                try {
-                    result.setOriginatorKeyInfo(
-                        new KeyInfo(originatorKeyInfoElement, null));
-                } catch (XMLSecurityException xse) {
-                    throw new XMLEncryptionException("empty", xse);
-                }
-            }
-
-            // TODO: Work out how to handle relative URI
-
-            Element recipientKeyInfoElement =
-                (Element) element.getElementsByTagNameNS(
-                    EncryptionConstants.EncryptionSpecNS,
-                    EncryptionConstants._TAG_RECIPIENTKEYINFO).item(0);
-            if (null != recipientKeyInfoElement) {
-                try {
-                    result.setRecipientKeyInfo(
-                        new KeyInfo(recipientKeyInfoElement, null));
-                } catch (XMLSecurityException xse) {
-                    throw new XMLEncryptionException("empty", xse);
-                }
-            }
-
-            return (result);
-        }
-
-        /**
-         * @param element
-         * @return
-         * @throws XMLEncryptionException
-         *
-         */
-        // <element name='CipherData' type='xenc:CipherDataType'/>
-        // <complexType name='CipherDataType'>
-        //     <choice>
-        //         <element name='CipherValue' type='base64Binary'/>
-        //         <element ref='xenc:CipherReference'/>
-        //     </choice>
-        // </complexType>
-        CipherData newCipherData(Element element) throws
-                XMLEncryptionException {
+        CipherData newCipherData(Element element) throws XMLEncryptionException {
             if (null == element) {
                 throw new NullPointerException("element is null");
             }
@@ -2223,7 +2106,8 @@ public class XMLCipher {
             Element e = null;
             if (element.getElementsByTagNameNS(
                 EncryptionConstants.EncryptionSpecNS,
-                EncryptionConstants._TAG_CIPHERVALUE).getLength() > 0) {
+                EncryptionConstants._TAG_CIPHERVALUE).getLength() > 0
+            ) {
                 type = CipherData.VALUE_TYPE;
                 e = (Element) element.getElementsByTagNameNS(
                     EncryptionConstants.EncryptionSpecNS,
@@ -2244,100 +2128,67 @@ public class XMLCipher {
                 result.setCipherReference(newCipherReference(e));
             }
 
-            return (result);
+            return result;
         }
 
         /**
          * @param element
-         * @return
+         * @return a new CipherReference
          * @throws XMLEncryptionException
          *
          */
-        // <element name='CipherReference' type='xenc:CipherReferenceType'/>
-        // <complexType name='CipherReferenceType'>
-        //     <sequence>
-        //         <element name='Transforms' type='xenc:TransformsType' minOccurs='0'/>
-        //     </sequence>
-        //     <attribute name='URI' type='anyURI' use='required'/>
-        // </complexType>
-        CipherReference newCipherReference(Element element) throws
-                XMLEncryptionException {
+        CipherReference newCipherReference(Element element) throws XMLEncryptionException {
 
-                        Attr URIAttr =
-                                element.getAttributeNodeNS(null, EncryptionConstants._ATT_URI);
-                        CipherReference result = new CipherReferenceImpl(URIAttr);
+            Attr uriAttr =
+                element.getAttributeNodeNS(null, EncryptionConstants._ATT_URI);
+            CipherReference result = new CipherReferenceImpl(uriAttr);
 
-                        // Find any Transforms
+            // Find any Transforms
+            NodeList transformsElements =
+                element.getElementsByTagNameNS(
+                    EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_TRANSFORMS);
+            Element transformsElement = (Element) transformsElements.item(0);
 
-                        NodeList transformsElements = element.getElementsByTagNameNS(
-                    EncryptionConstants.EncryptionSpecNS,
-                    EncryptionConstants._TAG_TRANSFORMS);
-            Element transformsElement =
-                                (Element) transformsElements.item(0);
+            if (transformsElement != null) {
+                if (log.isLoggable(java.util.logging.Level.FINE)) {
+                    log.log(java.util.logging.Level.FINE, "Creating a DSIG based Transforms element");
+                }
+                try {
+                    result.setTransforms(new TransformsImpl(transformsElement));
+                } catch (XMLSignatureException xse) {
+                    throw new XMLEncryptionException("empty", xse);
+                } catch (InvalidTransformException ite) {
+                    throw new XMLEncryptionException("empty", ite);
+                } catch (XMLSecurityException xse) {
+                    throw new XMLEncryptionException("empty", xse);
+                }
+            }
 
-                        if (transformsElement != null) {
-                                logger.log(java.util.logging.Level.FINE, "Creating a DSIG based Transforms element");
-                                try {
-                                        result.setTransforms(new TransformsImpl(transformsElement));
-                                }
-                                catch (XMLSignatureException xse) {
-                                        throw new XMLEncryptionException("empty", xse);
-                                } catch (InvalidTransformException ite) {
-                                        throw new XMLEncryptionException("empty", ite);
-                                } catch (XMLSecurityException xse) {
-                                        throw new XMLEncryptionException("empty", xse);
-                                }
-
-                        }
-
-                        return result;
+            return result;
         }
 
         /**
          * @param element
-         * @return
-         *
+         * @return a new CipherValue
          */
         CipherValue newCipherValue(Element element) {
             String value = XMLUtils.getFullTextChildrenFromElement(element);
 
-            CipherValue result = newCipherValue(value);
-
-            return (result);
+            return newCipherValue(value);
         }
 
         /**
          * @param element
-         * @return
+         * @return a new EncryptedData
          * @throws XMLEncryptionException
          *
          */
-        // <complexType name='EncryptedType' abstract='true'>
-        //     <sequence>
-        //         <element name='EncryptionMethod' type='xenc:EncryptionMethodType'
-        //             minOccurs='0'/>
-        //         <element ref='ds:KeyInfo' minOccurs='0'/>
-        //         <element ref='xenc:CipherData'/>
-        //         <element ref='xenc:EncryptionProperties' minOccurs='0'/>
-        //     </sequence>
-        //     <attribute name='Id' type='ID' use='optional'/>
-        //     <attribute name='Type' type='anyURI' use='optional'/>
-        //     <attribute name='MimeType' type='string' use='optional'/>
-        //     <attribute name='Encoding' type='anyURI' use='optional'/>
-        // </complexType>
-        // <element name='EncryptedData' type='xenc:EncryptedDataType'/>
-        // <complexType name='EncryptedDataType'>
-        //     <complexContent>
-        //         <extension base='xenc:EncryptedType'/>
-        //     </complexContent>
-        // </complexType>
-        EncryptedData newEncryptedData(Element element) throws
-                        XMLEncryptionException {
+        EncryptedData newEncryptedData(Element element) throws XMLEncryptionException {
             EncryptedData result = null;
 
-            NodeList dataElements = element.getElementsByTagNameNS(
-                EncryptionConstants.EncryptionSpecNS,
-                EncryptionConstants._TAG_CIPHERDATA);
+            NodeList dataElements =
+                element.getElementsByTagNameNS(
+                    EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_CIPHERDATA);
 
             // Need to get the last CipherData found, as earlier ones will
             // be for elements in the KeyInfo lists
@@ -2349,22 +2200,17 @@ public class XMLCipher {
 
             result = newEncryptedData(data);
 
-            result.setId(element.getAttributeNS(
-                null, EncryptionConstants._ATT_ID));
-            result.setType(
-                element.getAttributeNS(null, EncryptionConstants._ATT_TYPE));
-            result.setMimeType(element.getAttributeNS(
-                null, EncryptionConstants._ATT_MIMETYPE));
-            result.setEncoding(
-                element.getAttributeNS(null, Constants._ATT_ENCODING));
+            result.setId(element.getAttributeNS(null, EncryptionConstants._ATT_ID));
+            result.setType(element.getAttributeNS(null, EncryptionConstants._ATT_TYPE));
+            result.setMimeType(element.getAttributeNS(null, EncryptionConstants._ATT_MIMETYPE));
+            result.setEncoding( element.getAttributeNS(null, Constants._ATT_ENCODING));
 
             Element encryptionMethodElement =
                 (Element) element.getElementsByTagNameNS(
                     EncryptionConstants.EncryptionSpecNS,
                     EncryptionConstants._TAG_ENCRYPTIONMETHOD).item(0);
             if (null != encryptionMethodElement) {
-                result.setEncryptionMethod(newEncryptionMethod(
-                    encryptionMethodElement));
+                result.setEncryptionMethod(newEncryptionMethod(encryptionMethodElement));
             }
 
             // BFL 16/7/03 - simple implementation
@@ -2374,12 +2220,8 @@ public class XMLCipher {
                 (Element) element.getElementsByTagNameNS(
                     Constants.SignatureSpecNS, Constants._TAG_KEYINFO).item(0);
             if (null != keyInfoElement) {
-                try {
-                    result.setKeyInfo(new KeyInfo(keyInfoElement, null));
-                } catch (XMLSecurityException xse) {
-                    throw new XMLEncryptionException("Error loading Key Info",
-                                                     xse);
-                }
+                KeyInfo ki = newKeyInfo(keyInfoElement);
+                result.setKeyInfo(ki);
             }
 
             // TODO: Implement
@@ -2389,85 +2231,49 @@ public class XMLCipher {
                     EncryptionConstants._TAG_ENCRYPTIONPROPERTIES).item(0);
             if (null != encryptionPropertiesElement) {
                 result.setEncryptionProperties(
-                    newEncryptionProperties(encryptionPropertiesElement));
+                    newEncryptionProperties(encryptionPropertiesElement)
+                );
             }
 
-            return (result);
+            return result;
         }
 
         /**
          * @param element
-         * @return
+         * @return a new EncryptedKey
          * @throws XMLEncryptionException
-         *
          */
-        // <complexType name='EncryptedType' abstract='true'>
-        //     <sequence>
-        //         <element name='EncryptionMethod' type='xenc:EncryptionMethodType'
-        //             minOccurs='0'/>
-        //         <element ref='ds:KeyInfo' minOccurs='0'/>
-        //         <element ref='xenc:CipherData'/>
-        //         <element ref='xenc:EncryptionProperties' minOccurs='0'/>
-        //     </sequence>
-        //     <attribute name='Id' type='ID' use='optional'/>
-        //     <attribute name='Type' type='anyURI' use='optional'/>
-        //     <attribute name='MimeType' type='string' use='optional'/>
-        //     <attribute name='Encoding' type='anyURI' use='optional'/>
-        // </complexType>
-        // <element name='EncryptedKey' type='xenc:EncryptedKeyType'/>
-        // <complexType name='EncryptedKeyType'>
-        //     <complexContent>
-        //         <extension base='xenc:EncryptedType'>
-        //             <sequence>
-        //                 <element ref='xenc:ReferenceList' minOccurs='0'/>
-        //                 <element name='CarriedKeyName' type='string' minOccurs='0'/>
-        //             </sequence>
-        //             <attribute name='Recipient' type='string' use='optional'/>
-        //         </extension>
-        //     </complexContent>
-        // </complexType>
-        EncryptedKey newEncryptedKey(Element element) throws
-                XMLEncryptionException {
+        EncryptedKey newEncryptedKey(Element element) throws XMLEncryptionException {
             EncryptedKey result = null;
-            NodeList dataElements = element.getElementsByTagNameNS(
-                EncryptionConstants.EncryptionSpecNS,
-                EncryptionConstants._TAG_CIPHERDATA);
+            NodeList dataElements =
+                element.getElementsByTagNameNS(
+                    EncryptionConstants.EncryptionSpecNS, EncryptionConstants._TAG_CIPHERDATA);
             Element dataElement =
                 (Element) dataElements.item(dataElements.getLength() - 1);
 
             CipherData data = newCipherData(dataElement);
             result = newEncryptedKey(data);
 
-            result.setId(element.getAttributeNS(
-                null, EncryptionConstants._ATT_ID));
-            result.setType(
-                element.getAttributeNS(null, EncryptionConstants._ATT_TYPE));
-            result.setMimeType(element.getAttributeNS(
-                null, EncryptionConstants._ATT_MIMETYPE));
-            result.setEncoding(
-                element.getAttributeNS(null, Constants._ATT_ENCODING));
-            result.setRecipient(element.getAttributeNS(
-                null, EncryptionConstants._ATT_RECIPIENT));
+            result.setId(element.getAttributeNS(null, EncryptionConstants._ATT_ID));
+            result.setType(element.getAttributeNS(null, EncryptionConstants._ATT_TYPE));
+            result.setMimeType(element.getAttributeNS(null, EncryptionConstants._ATT_MIMETYPE));
+            result.setEncoding(element.getAttributeNS(null, Constants._ATT_ENCODING));
+            result.setRecipient(element.getAttributeNS(null, EncryptionConstants._ATT_RECIPIENT));
 
             Element encryptionMethodElement =
                 (Element) element.getElementsByTagNameNS(
                     EncryptionConstants.EncryptionSpecNS,
                     EncryptionConstants._TAG_ENCRYPTIONMETHOD).item(0);
             if (null != encryptionMethodElement) {
-                result.setEncryptionMethod(newEncryptionMethod(
-                    encryptionMethodElement));
+                result.setEncryptionMethod(newEncryptionMethod(encryptionMethodElement));
             }
 
             Element keyInfoElement =
                 (Element) element.getElementsByTagNameNS(
                     Constants.SignatureSpecNS, Constants._TAG_KEYINFO).item(0);
             if (null != keyInfoElement) {
-                try {
-                    result.setKeyInfo(new KeyInfo(keyInfoElement, null));
-                } catch (XMLSecurityException xse) {
-                    throw new XMLEncryptionException
-                        ("Error loading Key Info", xse);
-                }
+                KeyInfo ki = newKeyInfo(keyInfoElement);
+                result.setKeyInfo(ki);
             }
 
             // TODO: Implement
@@ -2477,7 +2283,8 @@ public class XMLCipher {
                     EncryptionConstants._TAG_ENCRYPTIONPROPERTIES).item(0);
             if (null != encryptionPropertiesElement) {
                 result.setEncryptionProperties(
-                    newEncryptionProperties(encryptionPropertiesElement));
+                    newEncryptionProperties(encryptionPropertiesElement)
+                );
             }
 
             Element referenceListElement =
@@ -2493,30 +2300,40 @@ public class XMLCipher {
                     EncryptionConstants.EncryptionSpecNS,
                     EncryptionConstants._TAG_CARRIEDKEYNAME).item(0);
             if (null != carriedNameElement) {
-                result.setCarriedName
-                    (carriedNameElement.getFirstChild().getNodeValue());
+                result.setCarriedName(carriedNameElement.getFirstChild().getNodeValue());
             }
 
-            return (result);
+            return result;
         }
 
         /**
          * @param element
-         * @return
-         *
+         * @return a new KeyInfo
+         * @throws XMLEncryptionException
          */
-        // <complexType name='EncryptionMethodType' mixed='true'>
-        //     <sequence>
-        //         <element name='KeySize' minOccurs='0' type='xenc:KeySizeType'/>
-        //         <element name='OAEPparams' minOccurs='0' type='base64Binary'/>
-        //         <any namespace='##other' minOccurs='0' maxOccurs='unbounded'/>
-        //     </sequence>
-        //     <attribute name='Algorithm' type='anyURI' use='required'/>
-        // </complexType>
+        KeyInfo newKeyInfo(Element element) throws XMLEncryptionException {
+            try {
+                KeyInfo ki = new KeyInfo(element, null);
+                ki.setSecureValidation(secureValidation);
+                if (internalKeyResolvers != null) {
+                    int size = internalKeyResolvers.size();
+                    for (int i = 0; i < size; i++) {
+                        ki.registerInternalKeyResolver(internalKeyResolvers.get(i));
+                    }
+                }
+                return ki;
+            } catch (XMLSecurityException xse) {
+                throw new XMLEncryptionException("Error loading Key Info", xse);
+            }
+        }
+
+        /**
+         * @param element
+         * @return a new EncryptionMethod
+         */
         EncryptionMethod newEncryptionMethod(Element element) {
-            String algorithm = element.getAttributeNS(
-                null, EncryptionConstants._ATT_ALGORITHM);
-            EncryptionMethod result = newEncryptionMethod(algorithm);
+            String encAlgorithm = element.getAttributeNS(null, EncryptionConstants._ATT_ALGORITHM);
+            EncryptionMethod result = newEncryptionMethod(encAlgorithm);
 
             Element keySizeElement =
                 (Element) element.getElementsByTagNameNS(
@@ -2533,92 +2350,83 @@ public class XMLCipher {
                     EncryptionConstants.EncryptionSpecNS,
                     EncryptionConstants._TAG_OAEPPARAMS).item(0);
             if (null != oaepParamsElement) {
-                result.setOAEPparams(
-                    oaepParamsElement.getNodeValue().getBytes());
+                try {
+                    String oaepParams = oaepParamsElement.getFirstChild().getNodeValue();
+                    result.setOAEPparams(Base64.decode(oaepParams.getBytes("UTF-8")));
+                } catch(UnsupportedEncodingException e) {
+                    throw new RuntimeException("UTF-8 not supported", e);
+                } catch (Base64DecodingException e) {
+                    throw new RuntimeException("BASE-64 decoding error", e);
+                }
+            }
+
+            Element digestElement =
+                (Element) element.getElementsByTagNameNS(
+                    Constants.SignatureSpecNS, Constants._TAG_DIGESTMETHOD).item(0);
+            if (digestElement != null) {
+                String digestAlgorithm = digestElement.getAttributeNS(null, "Algorithm");
+                result.setDigestAlgorithm(digestAlgorithm);
+            }
+
+            Element mgfElement =
+                (Element) element.getElementsByTagNameNS(
+                    EncryptionConstants.EncryptionSpec11NS, EncryptionConstants._TAG_MGF).item(0);
+            if (mgfElement != null && !XMLCipher.RSA_OAEP.equals(algorithm)) {
+                String mgfAlgorithm = mgfElement.getAttributeNS(null, "Algorithm");
+                result.setMGFAlgorithm(mgfAlgorithm);
             }
 
             // TODO: Make this mess work
             // <any namespace='##other' minOccurs='0' maxOccurs='unbounded'/>
 
-            return (result);
+            return result;
         }
 
         /**
          * @param element
-         * @return
-         *
+         * @return a new EncryptionProperties
          */
-        // <element name='EncryptionProperties' type='xenc:EncryptionPropertiesType'/>
-        // <complexType name='EncryptionPropertiesType'>
-        //     <sequence>
-        //         <element ref='xenc:EncryptionProperty' maxOccurs='unbounded'/>
-        //     </sequence>
-        //     <attribute name='Id' type='ID' use='optional'/>
-        // </complexType>
         EncryptionProperties newEncryptionProperties(Element element) {
             EncryptionProperties result = newEncryptionProperties();
 
-            result.setId(element.getAttributeNS(
-                null, EncryptionConstants._ATT_ID));
+            result.setId(element.getAttributeNS(null, EncryptionConstants._ATT_ID));
 
             NodeList encryptionPropertyList =
                 element.getElementsByTagNameNS(
                     EncryptionConstants.EncryptionSpecNS,
                     EncryptionConstants._TAG_ENCRYPTIONPROPERTY);
-            for(int i = 0; i < encryptionPropertyList.getLength(); i++) {
+            for (int i = 0; i < encryptionPropertyList.getLength(); i++) {
                 Node n = encryptionPropertyList.item(i);
                 if (null != n) {
-                    result.addEncryptionProperty(
-                        newEncryptionProperty((Element) n));
+                    result.addEncryptionProperty(newEncryptionProperty((Element) n));
                 }
             }
 
-            return (result);
+            return result;
         }
 
         /**
          * @param element
-         * @return
-         *
+         * @return a new EncryptionProperty
          */
-        // <element name='EncryptionProperty' type='xenc:EncryptionPropertyType'/>
-        // <complexType name='EncryptionPropertyType' mixed='true'>
-        //     <choice maxOccurs='unbounded'>
-        //         <any namespace='##other' processContents='lax'/>
-        //     </choice>
-        //     <attribute name='Target' type='anyURI' use='optional'/>
-        //     <attribute name='Id' type='ID' use='optional'/>
-        //     <anyAttribute namespace="http://www.w3.org/XML/1998/namespace"/>
-        // </complexType>
         EncryptionProperty newEncryptionProperty(Element element) {
             EncryptionProperty result = newEncryptionProperty();
 
-            result.setTarget(
-                element.getAttributeNS(null, EncryptionConstants._ATT_TARGET));
-            result.setId(element.getAttributeNS(
-                null, EncryptionConstants._ATT_ID));
+            result.setTarget(element.getAttributeNS(null, EncryptionConstants._ATT_TARGET));
+            result.setId(element.getAttributeNS(null, EncryptionConstants._ATT_ID));
             // TODO: Make this lot work...
             // <anyAttribute namespace="http://www.w3.org/XML/1998/namespace"/>
 
             // TODO: Make this work...
             // <any namespace='##other' processContents='lax'/>
 
-            return (result);
+            return result;
         }
 
         /**
          * @param element
-         * @return
-         *
+         * @return a new ReferenceList
          */
-        // <element name='ReferenceList'>
-        //     <complexType>
-        //         <choice minOccurs='1' maxOccurs='unbounded'>
-        //             <element name='DataReference' type='xenc:ReferenceType'/>
-        //             <element name='KeyReference' type='xenc:ReferenceType'/>
-        //         </choice>
-        //     </complexType>
-        // </element>
         ReferenceList newReferenceList(Element element) {
             int type = 0;
             if (null != element.getElementsByTagNameNS(
@@ -2629,84 +2437,38 @@ public class XMLCipher {
                 EncryptionConstants.EncryptionSpecNS,
                 EncryptionConstants._TAG_KEYREFERENCE).item(0)) {
                 type = ReferenceList.KEY_REFERENCE;
-            } else {
-                // complain
             }
 
             ReferenceList result = new ReferenceListImpl(type);
             NodeList list = null;
             switch (type) {
             case ReferenceList.DATA_REFERENCE:
-                list = element.getElementsByTagNameNS(
-                    EncryptionConstants.EncryptionSpecNS,
-                    EncryptionConstants._TAG_DATAREFERENCE);
+                list =
+                    element.getElementsByTagNameNS(
+                        EncryptionConstants.EncryptionSpecNS,
+                        EncryptionConstants._TAG_DATAREFERENCE);
                 for (int i = 0; i < list.getLength() ; i++) {
                     String uri = ((Element) list.item(i)).getAttribute("URI");
                     result.add(result.newDataReference(uri));
                 }
                 break;
             case ReferenceList.KEY_REFERENCE:
-                list = element.getElementsByTagNameNS(
-                    EncryptionConstants.EncryptionSpecNS,
-                    EncryptionConstants._TAG_KEYREFERENCE);
+                list =
+                    element.getElementsByTagNameNS(
+                        EncryptionConstants.EncryptionSpecNS,
+                        EncryptionConstants._TAG_KEYREFERENCE);
                 for (int i = 0; i < list.getLength() ; i++) {
                     String uri = ((Element) list.item(i)).getAttribute("URI");
                     result.add(result.newKeyReference(uri));
                 }
             }
 
-            return (result);
-        }
-
-        /**
-         * @param element
-         * @return
-         *
-         */
-        Transforms newTransforms(Element element) {
-            return (null);
-        }
-
-        /**
-         * @param agreementMethod
-         * @return
-         *
-         */
-        Element toElement(AgreementMethod agreementMethod) {
-            return ((AgreementMethodImpl) agreementMethod).toElement();
-        }
-
-        /**
-         * @param cipherData
-         * @return
-         *
-         */
-        Element toElement(CipherData cipherData) {
-            return ((CipherDataImpl) cipherData).toElement();
-        }
-
-        /**
-         * @param cipherReference
-         * @return
-         *
-         */
-        Element toElement(CipherReference cipherReference) {
-            return ((CipherReferenceImpl) cipherReference).toElement();
-        }
-
-        /**
-         * @param cipherValue
-         * @return
-         *
-         */
-        Element toElement(CipherValue cipherValue) {
-            return ((CipherValueImpl) cipherValue).toElement();
+            return result;
         }
 
         /**
          * @param encryptedData
-         * @return
-         *
+         * @return the XML Element form of that EncryptedData
          */
         Element toElement(EncryptedData encryptedData) {
             return ((EncryptedDataImpl) encryptedData).toElement();
@@ -2714,64 +2476,20 @@ public class XMLCipher {
 
         /**
          * @param encryptedKey
-         * @return
-         *
+         * @return the XML Element form of that EncryptedKey
          */
         Element toElement(EncryptedKey encryptedKey) {
             return ((EncryptedKeyImpl) encryptedKey).toElement();
         }
 
         /**
-         * @param encryptionMethod
-         * @return
-         *
+         * @param referenceList
+         * @return the XML Element form of that ReferenceList
          */
-        Element toElement(EncryptionMethod encryptionMethod) {
-            return ((EncryptionMethodImpl) encryptionMethod).toElement();
-        }
-
-        /**
-         * @param encryptionProperties
-         * @return
-         *
-         */
-        Element toElement(EncryptionProperties encryptionProperties) {
-            return ((EncryptionPropertiesImpl) encryptionProperties).toElement();
-        }
-
-        /**
-         * @param encryptionProperty
-         * @return
-         *
-         */
-        Element toElement(EncryptionProperty encryptionProperty) {
-            return ((EncryptionPropertyImpl) encryptionProperty).toElement();
-        }
-
         Element toElement(ReferenceList referenceList) {
             return ((ReferenceListImpl) referenceList).toElement();
         }
 
-        /**
-         * @param transforms
-         * @return
-         *
-         */
-        Element toElement(Transforms transforms) {
-            return ((TransformsImpl) transforms).toElement();
-        }
-
-        // <element name="AgreementMethod" type="xenc:AgreementMethodType"/>
-        // <complexType name="AgreementMethodType" mixed="true">
-        //     <sequence>
-        //         <element name="KA-Nonce" minOccurs="0" type="base64Binary"/>
-        //         <!-- <element ref="ds:DigestMethod" minOccurs="0"/> -->
-        //         <any namespace="##other" minOccurs="0" maxOccurs="unbounded"/>
-        //         <element name="OriginatorKeyInfo" minOccurs="0" type="ds:KeyInfoType"/>
-        //         <element name="RecipientKeyInfo" minOccurs="0" type="ds:KeyInfoType"/>
-        //     </sequence>
-        //     <attribute name="Algorithm" type="anyURI" use="required"/>
-        // </complexType>
         private class AgreementMethodImpl implements AgreementMethod {
             private byte[] kaNonce = null;
             private List<Element> agreementMethodInformation = null;
@@ -2787,15 +2505,16 @@ public class XMLCipher {
                 URI tmpAlgorithm = null;
                 try {
                     tmpAlgorithm = new URI(algorithm);
-                } catch (URI.MalformedURIException fmue) {
-                    //complain?
+                } catch (URISyntaxException ex) {
+                    throw (IllegalArgumentException)
+                    new IllegalArgumentException().initCause(ex);
                 }
                 algorithmURI = tmpAlgorithm.toString();
             }
 
             /** @inheritDoc */
             public byte[] getKANonce() {
-                return (kaNonce);
+                return kaNonce;
             }
 
             /** @inheritDoc */
@@ -2805,7 +2524,7 @@ public class XMLCipher {
 
             /** @inheritDoc */
             public Iterator<Element> getAgreementMethodInformation() {
-                return (agreementMethodInformation.iterator());
+                return agreementMethodInformation.iterator();
             }
 
             /** @inheritDoc */
@@ -2820,7 +2539,7 @@ public class XMLCipher {
 
             /** @inheritDoc */
             public KeyInfo getOriginatorKeyInfo() {
-                return (originatorKeyInfo);
+                return originatorKeyInfo;
             }
 
             /** @inheritDoc */
@@ -2830,7 +2549,7 @@ public class XMLCipher {
 
             /** @inheritDoc */
             public KeyInfo getRecipientKeyInfo() {
-                return (recipientKeyInfo);
+                return recipientKeyInfo;
             }
 
             /** @inheritDoc */
@@ -2840,70 +2559,10 @@ public class XMLCipher {
 
             /** @inheritDoc */
             public String getAlgorithm() {
-                return (algorithmURI);
-            }
-
-            /** @param algorithm*/
-            public void setAlgorithm(String algorithm) {
-                URI tmpAlgorithm = null;
-                try {
-                    tmpAlgorithm = new URI(algorithm);
-                } catch (URI.MalformedURIException mfue) {
-                    //complain
-                }
-                algorithmURI = tmpAlgorithm.toString();
-            }
-
-            // <element name="AgreementMethod" type="xenc:AgreementMethodType"/>
-            // <complexType name="AgreementMethodType" mixed="true">
-            //     <sequence>
-            //         <element name="KA-Nonce" minOccurs="0" type="base64Binary"/>
-            //         <!-- <element ref="ds:DigestMethod" minOccurs="0"/> -->
-            //         <any namespace="##other" minOccurs="0" maxOccurs="unbounded"/>
-            //         <element name="OriginatorKeyInfo" minOccurs="0" type="ds:KeyInfoType"/>
-            //         <element name="RecipientKeyInfo" minOccurs="0" type="ds:KeyInfoType"/>
-            //     </sequence>
-            //     <attribute name="Algorithm" type="anyURI" use="required"/>
-            // </complexType>
-            Element toElement() {
-                Element result = ElementProxy.createElementForFamily(
-                    _contextDocument,
-                    EncryptionConstants.EncryptionSpecNS,
-                    EncryptionConstants._TAG_AGREEMENTMETHOD);
-                result.setAttributeNS(
-                    null, EncryptionConstants._ATT_ALGORITHM, algorithmURI);
-                if (null != kaNonce) {
-                    result.appendChild(
-                        ElementProxy.createElementForFamily(
-                            _contextDocument,
-                            EncryptionConstants.EncryptionSpecNS,
-                            EncryptionConstants._TAG_KA_NONCE)).appendChild(
-                            _contextDocument.createTextNode(new String(kaNonce)));
-                }
-                if (!agreementMethodInformation.isEmpty()) {
-                    Iterator<Element> itr = agreementMethodInformation.iterator();
-                    while (itr.hasNext()) {
-                        result.appendChild(itr.next());
-                    }
-                }
-                if (null != originatorKeyInfo) {
-                    result.appendChild(originatorKeyInfo.getElement());
-                }
-                if (null != recipientKeyInfo) {
-                    result.appendChild(recipientKeyInfo.getElement());
-                }
-
-                return (result);
+                return algorithmURI;
             }
         }
 
-        // <element name='CipherData' type='xenc:CipherDataType'/>
-        // <complexType name='CipherDataType'>
-        //     <choice>
-        //         <element name='CipherValue' type='base64Binary'/>
-        //         <element ref='xenc:CipherReference'/>
-        //     </choice>
-        // </complexType>
         private class CipherDataImpl implements CipherData {
             private static final String valueMessage =
                 "Data type is reference type.";
@@ -2922,16 +2581,16 @@ public class XMLCipher {
 
             /** @inheritDoc */
             public CipherValue getCipherValue() {
-                return (cipherValue);
+                return cipherValue;
             }
 
             /** @inheritDoc */
-            public void setCipherValue(CipherValue value) throws
-                    XMLEncryptionException {
+            public void setCipherValue(CipherValue value) throws XMLEncryptionException {
 
                 if (cipherType == REFERENCE_TYPE) {
-                    throw new XMLEncryptionException("empty",
-                        new UnsupportedOperationException(valueMessage));
+                    throw new XMLEncryptionException(
+                        "empty", new UnsupportedOperationException(valueMessage)
+                    );
                 }
 
                 cipherValue = value;
@@ -2939,15 +2598,16 @@ public class XMLCipher {
 
             /** @inheritDoc */
             public CipherReference getCipherReference() {
-                return (cipherReference);
+                return cipherReference;
             }
 
             /** @inheritDoc */
             public void setCipherReference(CipherReference reference) throws
-                    XMLEncryptionException {
+            XMLEncryptionException {
                 if (cipherType == VALUE_TYPE) {
-                    throw new XMLEncryptionException("empty",
-                        new UnsupportedOperationException(referenceMessage));
+                    throw new XMLEncryptionException(
+                        "empty", new UnsupportedOperationException(referenceMessage)
+                    );
                 }
 
                 cipherReference = reference;
@@ -2955,77 +2615,59 @@ public class XMLCipher {
 
             /** @inheritDoc */
             public int getDataType() {
-                return (cipherType);
+                return cipherType;
             }
 
-            // <element name='CipherData' type='xenc:CipherDataType'/>
-            // <complexType name='CipherDataType'>
-            //     <choice>
-            //         <element name='CipherValue' type='base64Binary'/>
-            //         <element ref='xenc:CipherReference'/>
-            //     </choice>
-            // </complexType>
             Element toElement() {
-                Element result = ElementProxy.createElementForFamily(
-                    _contextDocument,
-                    EncryptionConstants.EncryptionSpecNS,
-                    EncryptionConstants._TAG_CIPHERDATA);
+                Element result =
+                    XMLUtils.createElementInEncryptionSpace(
+                        contextDocument, EncryptionConstants._TAG_CIPHERDATA
+                    );
                 if (cipherType == VALUE_TYPE) {
-                    result.appendChild(
-                        ((CipherValueImpl) cipherValue).toElement());
+                    result.appendChild(((CipherValueImpl) cipherValue).toElement());
                 } else if (cipherType == REFERENCE_TYPE) {
-                    result.appendChild(
-                        ((CipherReferenceImpl) cipherReference).toElement());
-                } else {
-                    // complain
+                    result.appendChild(((CipherReferenceImpl) cipherReference).toElement());
                 }
 
-                return (result);
+                return result;
             }
         }
 
-        // <element name='CipherReference' type='xenc:CipherReferenceType'/>
-        // <complexType name='CipherReferenceType'>
-        //     <sequence>
-        //         <element name='Transforms' type='xenc:TransformsType' minOccurs='0'/>
-        //     </sequence>
-        //     <attribute name='URI' type='anyURI' use='required'/>
-        // </complexType>
         private class CipherReferenceImpl implements CipherReference {
             private String referenceURI = null;
             private Transforms referenceTransforms = null;
-                        private Attr referenceNode = null;
+            private Attr referenceNode = null;
 
             /**
              * @param uri
              */
             public CipherReferenceImpl(String uri) {
-                                /* Don't check validity of URI as may be "" */
+                /* Don't check validity of URI as may be "" */
                 referenceURI = uri;
-                                referenceNode = null;
+                referenceNode = null;
             }
 
-                        /**
-                         * @param uri
-                         */
-                        public CipherReferenceImpl(Attr uri) {
-                                referenceURI = uri.getNodeValue();
-                                referenceNode = uri;
-                        }
+            /**
+             * @param uri
+             */
+            public CipherReferenceImpl(Attr uri) {
+                referenceURI = uri.getNodeValue();
+                referenceNode = uri;
+            }
 
             /** @inheritDoc */
             public String getURI() {
-                return (referenceURI);
+                return referenceURI;
             }
 
             /** @inheritDoc */
-                        public Attr getURIAsAttr() {
-                                return (referenceNode);
-                        }
+            public Attr getURIAsAttr() {
+                return referenceNode;
+            }
 
             /** @inheritDoc */
             public Transforms getTransforms() {
-                return (referenceTransforms);
+                return referenceTransforms;
             }
 
             /** @inheritDoc */
@@ -3033,91 +2675,53 @@ public class XMLCipher {
                 referenceTransforms = transforms;
             }
 
-            // <element name='CipherReference' type='xenc:CipherReferenceType'/>
-            // <complexType name='CipherReferenceType'>
-            //     <sequence>
-            //         <element name='Transforms' type='xenc:TransformsType' minOccurs='0'/>
-            //     </sequence>
-            //     <attribute name='URI' type='anyURI' use='required'/>
-            // </complexType>
             Element toElement() {
-                Element result = ElementProxy.createElementForFamily(
-                    _contextDocument,
-                    EncryptionConstants.EncryptionSpecNS,
-                    EncryptionConstants._TAG_CIPHERREFERENCE);
-                result.setAttributeNS(
-                    null, EncryptionConstants._ATT_URI, referenceURI);
+                Element result =
+                    XMLUtils.createElementInEncryptionSpace(
+                        contextDocument, EncryptionConstants._TAG_CIPHERREFERENCE
+                    );
+                result.setAttributeNS(null, EncryptionConstants._ATT_URI, referenceURI);
                 if (null != referenceTransforms) {
-                    result.appendChild(
-                        ((TransformsImpl) referenceTransforms).toElement());
+                    result.appendChild(((TransformsImpl) referenceTransforms).toElement());
                 }
 
-                return (result);
+                return result;
             }
         }
 
         private class CipherValueImpl implements CipherValue {
-                        private String cipherValue = null;
-
-            // public CipherValueImpl(byte[] value) {
-               // cipherValue = value;
-            // }
+            private String cipherValue = null;
 
             /**
              * @param value
              */
             public CipherValueImpl(String value) {
-                                // cipherValue = value.getBytes();
-                                cipherValue = value;
+                cipherValue = value;
             }
 
             /** @inheritDoc */
-                        public String getValue() {
-                return (cipherValue);
+            public String getValue() {
+                return cipherValue;
             }
 
-                        // public void setValue(byte[] value) {
-                        // public void setValue(String value) {
-               // cipherValue = value;
-            // }
-                        /** @inheritDoc */
+            /** @inheritDoc */
             public void setValue(String value) {
-                // cipherValue = value.getBytes();
-                                cipherValue = value;
+                cipherValue = value;
             }
 
             Element toElement() {
-                Element result = ElementProxy.createElementForFamily(
-                    _contextDocument, EncryptionConstants.EncryptionSpecNS,
-                    EncryptionConstants._TAG_CIPHERVALUE);
-                result.appendChild(_contextDocument.createTextNode(
-                    cipherValue));
+                Element result =
+                    XMLUtils.createElementInEncryptionSpace(
+                        contextDocument, EncryptionConstants._TAG_CIPHERVALUE
+                    );
+                result.appendChild(contextDocument.createTextNode(cipherValue));
 
-                return (result);
+                return result;
             }
         }
 
-        // <complexType name='EncryptedType' abstract='true'>
-        //     <sequence>
-        //         <element name='EncryptionMethod' type='xenc:EncryptionMethodType'
-        //             minOccurs='0'/>
-        //         <element ref='ds:KeyInfo' minOccurs='0'/>
-        //         <element ref='xenc:CipherData'/>
-        //         <element ref='xenc:EncryptionProperties' minOccurs='0'/>
-        //     </sequence>
-        //     <attribute name='Id' type='ID' use='optional'/>
-        //     <attribute name='Type' type='anyURI' use='optional'/>
-        //     <attribute name='MimeType' type='string' use='optional'/>
-        //     <attribute name='Encoding' type='anyURI' use='optional'/>
-        // </complexType>
-        // <element name='EncryptedData' type='xenc:EncryptedDataType'/>
-        // <complexType name='EncryptedDataType'>
-        //     <complexContent>
-        //         <extension base='xenc:EncryptedType'/>
-        //     </complexContent>
-        // </complexType>
-        private class EncryptedDataImpl extends EncryptedTypeImpl implements
-                EncryptedData {
+        private class EncryptedDataImpl extends EncryptedTypeImpl implements EncryptedData {
+
             /**
              * @param data
              */
@@ -3125,94 +2729,49 @@ public class XMLCipher {
                 super(data);
             }
 
-            // <complexType name='EncryptedType' abstract='true'>
-            //     <sequence>
-            //         <element name='EncryptionMethod' type='xenc:EncryptionMethodType'
-            //             minOccurs='0'/>
-            //         <element ref='ds:KeyInfo' minOccurs='0'/>
-            //         <element ref='xenc:CipherData'/>
-            //         <element ref='xenc:EncryptionProperties' minOccurs='0'/>
-            //     </sequence>
-            //     <attribute name='Id' type='ID' use='optional'/>
-            //     <attribute name='Type' type='anyURI' use='optional'/>
-            //     <attribute name='MimeType' type='string' use='optional'/>
-            //     <attribute name='Encoding' type='anyURI' use='optional'/>
-            // </complexType>
-            // <element name='EncryptedData' type='xenc:EncryptedDataType'/>
-            // <complexType name='EncryptedDataType'>
-            //     <complexContent>
-            //         <extension base='xenc:EncryptedType'/>
-            //     </complexContent>
-            // </complexType>
             Element toElement() {
-                Element result = ElementProxy.createElementForFamily(
-                    _contextDocument, EncryptionConstants.EncryptionSpecNS,
-                    EncryptionConstants._TAG_ENCRYPTEDDATA);
+                Element result =
+                    ElementProxy.createElementForFamily(
+                        contextDocument, EncryptionConstants.EncryptionSpecNS,
+                        EncryptionConstants._TAG_ENCRYPTEDDATA
+                    );
 
                 if (null != super.getId()) {
-                    result.setAttributeNS(
-                        null, EncryptionConstants._ATT_ID, super.getId());
+                    result.setAttributeNS(null, EncryptionConstants._ATT_ID, super.getId());
                 }
                 if (null != super.getType()) {
-                    result.setAttributeNS(
-                        null, EncryptionConstants._ATT_TYPE, super.getType());
+                    result.setAttributeNS(null, EncryptionConstants._ATT_TYPE, super.getType());
                 }
                 if (null != super.getMimeType()) {
                     result.setAttributeNS(
-                        null, EncryptionConstants._ATT_MIMETYPE,
-                        super.getMimeType());
+                        null, EncryptionConstants._ATT_MIMETYPE, super.getMimeType()
+                    );
                 }
                 if (null != super.getEncoding()) {
                     result.setAttributeNS(
-                        null, EncryptionConstants._ATT_ENCODING,
-                        super.getEncoding());
+                        null, EncryptionConstants._ATT_ENCODING, super.getEncoding()
+                    );
                 }
                 if (null != super.getEncryptionMethod()) {
-                    result.appendChild(((EncryptionMethodImpl)
-                        super.getEncryptionMethod()).toElement());
+                    result.appendChild(
+                        ((EncryptionMethodImpl)super.getEncryptionMethod()).toElement()
+                    );
                 }
                 if (null != super.getKeyInfo()) {
-                    result.appendChild(super.getKeyInfo().getElement());
+                    result.appendChild(super.getKeyInfo().getElement().cloneNode(true));
                 }
 
-                result.appendChild(
-                    ((CipherDataImpl) super.getCipherData()).toElement());
+                result.appendChild(((CipherDataImpl) super.getCipherData()).toElement());
                 if (null != super.getEncryptionProperties()) {
                     result.appendChild(((EncryptionPropertiesImpl)
                         super.getEncryptionProperties()).toElement());
                 }
 
-                return (result);
+                return result;
             }
         }
 
-        // <complexType name='EncryptedType' abstract='true'>
-        //     <sequence>
-        //         <element name='EncryptionMethod' type='xenc:EncryptionMethodType'
-        //             minOccurs='0'/>
-        //         <element ref='ds:KeyInfo' minOccurs='0'/>
-        //         <element ref='xenc:CipherData'/>
-        //         <element ref='xenc:EncryptionProperties' minOccurs='0'/>
-        //     </sequence>
-        //     <attribute name='Id' type='ID' use='optional'/>
-        //     <attribute name='Type' type='anyURI' use='optional'/>
-        //     <attribute name='MimeType' type='string' use='optional'/>
-        //     <attribute name='Encoding' type='anyURI' use='optional'/>
-        // </complexType>
-        // <element name='EncryptedKey' type='xenc:EncryptedKeyType'/>
-        // <complexType name='EncryptedKeyType'>
-        //     <complexContent>
-        //         <extension base='xenc:EncryptedType'>
-        //             <sequence>
-        //                 <element ref='xenc:ReferenceList' minOccurs='0'/>
-        //                 <element name='CarriedKeyName' type='string' minOccurs='0'/>
-        //             </sequence>
-        //             <attribute name='Recipient' type='string' use='optional'/>
-        //         </extension>
-        //     </complexContent>
-        // </complexType>
-        private class EncryptedKeyImpl extends EncryptedTypeImpl implements
-                EncryptedKey {
+        private class EncryptedKeyImpl extends EncryptedTypeImpl implements EncryptedKey {
             private String keyRecipient = null;
             private ReferenceList referenceList = null;
             private String carriedName = null;
@@ -3226,7 +2785,7 @@ public class XMLCipher {
 
             /** @inheritDoc */
             public String getRecipient() {
-                return (keyRecipient);
+                return keyRecipient;
             }
 
             /** @inheritDoc */
@@ -3236,7 +2795,7 @@ public class XMLCipher {
 
             /** @inheritDoc */
             public ReferenceList getReferenceList() {
-                return (referenceList);
+                return referenceList;
             }
 
             /** @inheritDoc */
@@ -3246,7 +2805,7 @@ public class XMLCipher {
 
             /** @inheritDoc */
             public String getCarriedName() {
-                return (carriedName);
+                return carriedName;
             }
 
             /** @inheritDoc */
@@ -3254,84 +2813,60 @@ public class XMLCipher {
                 carriedName = name;
             }
 
-            // <complexType name='EncryptedType' abstract='true'>
-            //     <sequence>
-            //         <element name='EncryptionMethod' type='xenc:EncryptionMethodType'
-            //             minOccurs='0'/>
-            //         <element ref='ds:KeyInfo' minOccurs='0'/>
-            //         <element ref='xenc:CipherData'/>
-            //         <element ref='xenc:EncryptionProperties' minOccurs='0'/>
-            //     </sequence>
-            //     <attribute name='Id' type='ID' use='optional'/>
-            //     <attribute name='Type' type='anyURI' use='optional'/>
-            //     <attribute name='MimeType' type='string' use='optional'/>
-            //     <attribute name='Encoding' type='anyURI' use='optional'/>
-            // </complexType>
-            // <element name='EncryptedKey' type='xenc:EncryptedKeyType'/>
-            // <complexType name='EncryptedKeyType'>
-            //     <complexContent>
-            //         <extension base='xenc:EncryptedType'>
-            //             <sequence>
-            //                 <element ref='xenc:ReferenceList' minOccurs='0'/>
-            //                 <element name='CarriedKeyName' type='string' minOccurs='0'/>
-            //             </sequence>
-            //             <attribute name='Recipient' type='string' use='optional'/>
-            //         </extension>
-            //     </complexContent>
-            // </complexType>
             Element toElement() {
-                Element result = ElementProxy.createElementForFamily(
-                    _contextDocument, EncryptionConstants.EncryptionSpecNS,
-                    EncryptionConstants._TAG_ENCRYPTEDKEY);
+                Element result =
+                    ElementProxy.createElementForFamily(
+                        contextDocument, EncryptionConstants.EncryptionSpecNS,
+                        EncryptionConstants._TAG_ENCRYPTEDKEY
+                    );
 
                 if (null != super.getId()) {
-                    result.setAttributeNS(
-                        null, EncryptionConstants._ATT_ID, super.getId());
+                    result.setAttributeNS(null, EncryptionConstants._ATT_ID, super.getId());
                 }
                 if (null != super.getType()) {
-                    result.setAttributeNS(
-                        null, EncryptionConstants._ATT_TYPE, super.getType());
+                    result.setAttributeNS(null, EncryptionConstants._ATT_TYPE, super.getType());
                 }
                 if (null != super.getMimeType()) {
-                    result.setAttributeNS(null,
-                        EncryptionConstants._ATT_MIMETYPE, super.getMimeType());
+                    result.setAttributeNS(
+                        null, EncryptionConstants._ATT_MIMETYPE, super.getMimeType()
+                    );
                 }
                 if (null != super.getEncoding()) {
-                    result.setAttributeNS(null, Constants._ATT_ENCODING,
-                        super.getEncoding());
+                    result.setAttributeNS(null, Constants._ATT_ENCODING, super.getEncoding());
                 }
                 if (null != getRecipient()) {
-                    result.setAttributeNS(null,
-                        EncryptionConstants._ATT_RECIPIENT, getRecipient());
+                    result.setAttributeNS(
+                        null, EncryptionConstants._ATT_RECIPIENT, getRecipient()
+                    );
                 }
                 if (null != super.getEncryptionMethod()) {
                     result.appendChild(((EncryptionMethodImpl)
                         super.getEncryptionMethod()).toElement());
                 }
                 if (null != super.getKeyInfo()) {
-                    result.appendChild(super.getKeyInfo().getElement());
+                    result.appendChild(super.getKeyInfo().getElement().cloneNode(true));
                 }
-                result.appendChild(
-                    ((CipherDataImpl) super.getCipherData()).toElement());
+                result.appendChild(((CipherDataImpl) super.getCipherData()).toElement());
                 if (null != super.getEncryptionProperties()) {
                     result.appendChild(((EncryptionPropertiesImpl)
                         super.getEncryptionProperties()).toElement());
                 }
                 if (referenceList != null && !referenceList.isEmpty()) {
-                    result.appendChild(((ReferenceListImpl)
-                        getReferenceList()).toElement());
+                    result.appendChild(((ReferenceListImpl)getReferenceList()).toElement());
                 }
                 if (null != carriedName) {
-                    Element element = ElementProxy.createElementForFamily(
-                        _contextDocument,
-                        EncryptionConstants.EncryptionSpecNS,
-                        EncryptionConstants._TAG_CARRIEDKEYNAME);
-                    Node node = _contextDocument.createTextNode(carriedName);
+                    Element element =
+                        ElementProxy.createElementForFamily(
+                            contextDocument,
+                            EncryptionConstants.EncryptionSpecNS,
+                            EncryptionConstants._TAG_CARRIEDKEYNAME
+                        );
+                    Node node = contextDocument.createTextNode(carriedName);
                     element.appendChild(node);
                     result.appendChild(element);
                 }
 
-                return (result);
+                return result;
             }
         }
 
@@ -3345,16 +2880,22 @@ public class XMLCipher {
             private CipherData cipherData = null;
             private EncryptionProperties encryptionProperties = null;
 
+            /**
+             * Constructor.
+             * @param data
+             */
             protected EncryptedTypeImpl(CipherData data) {
                 cipherData = data;
             }
+
             /**
              *
-             * @return
+             * @return the Id
              */
             public String getId() {
-                return (id);
+                return id;
             }
+
             /**
              *
              * @param id
@@ -3362,13 +2903,15 @@ public class XMLCipher {
             public void setId(String id) {
                 this.id = id;
             }
+
             /**
              *
-             * @return
+             * @return the type
              */
             public String getType() {
-                return (type);
+                return type;
             }
+
             /**
              *
              * @param type
@@ -3380,18 +2923,20 @@ public class XMLCipher {
                     URI tmpType = null;
                     try {
                         tmpType = new URI(type);
-                    } catch (URI.MalformedURIException mfue) {
-                        // complain
+                    } catch (URISyntaxException ex) {
+                        throw (IllegalArgumentException)
+                        new IllegalArgumentException().initCause(ex);
                     }
                     this.type = tmpType.toString();
                 }
             }
+
             /**
              *
-             * @return
+             * @return the MimeType
              */
             public String getMimeType() {
-                return (mimeType);
+                return mimeType;
             }
             /**
              *
@@ -3400,13 +2945,15 @@ public class XMLCipher {
             public void setMimeType(String type) {
                 mimeType = type;
             }
+
             /**
              *
-             * @return
+             * @return the encoding
              */
             public String getEncoding() {
-                return (encoding);
+                return encoding;
             }
+
             /**
              *
              * @param encoding
@@ -3418,19 +2965,22 @@ public class XMLCipher {
                     URI tmpEncoding = null;
                     try {
                         tmpEncoding = new URI(encoding);
-                    } catch (URI.MalformedURIException mfue) {
-                        // complain
+                    } catch (URISyntaxException ex) {
+                        throw (IllegalArgumentException)
+                        new IllegalArgumentException().initCause(ex);
                     }
                     this.encoding = tmpEncoding.toString();
                 }
             }
+
             /**
              *
-             * @return
+             * @return the EncryptionMethod
              */
             public EncryptionMethod getEncryptionMethod() {
-                return (encryptionMethod);
+                return encryptionMethod;
             }
+
             /**
              *
              * @param method
@@ -3438,13 +2988,15 @@ public class XMLCipher {
             public void setEncryptionMethod(EncryptionMethod method) {
                 encryptionMethod = method;
             }
+
             /**
              *
-             * @return
+             * @return the KeyInfo
              */
             public KeyInfo getKeyInfo() {
-                return (keyInfo);
+                return keyInfo;
             }
+
             /**
              *
              * @param info
@@ -3452,217 +3004,235 @@ public class XMLCipher {
             public void setKeyInfo(KeyInfo info) {
                 keyInfo = info;
             }
+
             /**
              *
-             * @return
+             * @return the CipherData
              */
             public CipherData getCipherData() {
-                return (cipherData);
+                return cipherData;
             }
+
             /**
              *
-             * @return
+             * @return the EncryptionProperties
              */
             public EncryptionProperties getEncryptionProperties() {
-                return (encryptionProperties);
+                return encryptionProperties;
             }
+
             /**
              *
              * @param properties
              */
-            public void setEncryptionProperties(
-                    EncryptionProperties properties) {
+            public void setEncryptionProperties(EncryptionProperties properties) {
                 encryptionProperties = properties;
             }
         }
 
-        // <complexType name='EncryptionMethodType' mixed='true'>
-        //     <sequence>
-        //         <element name='KeySize' minOccurs='0' type='xenc:KeySizeType'/>
-        //         <element name='OAEPparams' minOccurs='0' type='base64Binary'/>
-        //         <any namespace='##other' minOccurs='0' maxOccurs='unbounded'/>
-        //     </sequence>
-        //     <attribute name='Algorithm' type='anyURI' use='required'/>
-        // </complexType>
         private class EncryptionMethodImpl implements EncryptionMethod {
             private String algorithm = null;
             private int keySize = Integer.MIN_VALUE;
             private byte[] oaepParams = null;
             private List<Element> encryptionMethodInformation = null;
+            private String digestAlgorithm = null;
+            private String mgfAlgorithm = null;
+
             /**
-             *
+             * Constructor.
              * @param algorithm
              */
             public EncryptionMethodImpl(String algorithm) {
                 URI tmpAlgorithm = null;
                 try {
                     tmpAlgorithm = new URI(algorithm);
-                } catch (URI.MalformedURIException mfue) {
-                    // complain
+                } catch (URISyntaxException ex) {
+                    throw (IllegalArgumentException)
+                    new IllegalArgumentException().initCause(ex);
                 }
                 this.algorithm = tmpAlgorithm.toString();
                 encryptionMethodInformation = new LinkedList<Element>();
             }
+
             /** @inheritDoc */
             public String getAlgorithm() {
-                return (algorithm);
+                return algorithm;
             }
+
             /** @inheritDoc */
             public int getKeySize() {
-                return (keySize);
+                return keySize;
             }
+
             /** @inheritDoc */
             public void setKeySize(int size) {
                 keySize = size;
             }
+
             /** @inheritDoc */
             public byte[] getOAEPparams() {
-                return (oaepParams);
+                return oaepParams;
             }
+
             /** @inheritDoc */
             public void setOAEPparams(byte[] params) {
                 oaepParams = params;
             }
+
+            /** @inheritDoc */
+            public void setDigestAlgorithm(String digestAlgorithm) {
+                this.digestAlgorithm = digestAlgorithm;
+            }
+
+            /** @inheritDoc */
+            public String getDigestAlgorithm() {
+                return digestAlgorithm;
+            }
+
+            /** @inheritDoc */
+            public void setMGFAlgorithm(String mgfAlgorithm) {
+                this.mgfAlgorithm = mgfAlgorithm;
+            }
+
+            /** @inheritDoc */
+            public String getMGFAlgorithm() {
+                return mgfAlgorithm;
+            }
+
             /** @inheritDoc */
             public Iterator<Element> getEncryptionMethodInformation() {
-                return (encryptionMethodInformation.iterator());
+                return encryptionMethodInformation.iterator();
             }
+
             /** @inheritDoc */
             public void addEncryptionMethodInformation(Element info) {
                 encryptionMethodInformation.add(info);
             }
+
             /** @inheritDoc */
             public void removeEncryptionMethodInformation(Element info) {
                 encryptionMethodInformation.remove(info);
             }
 
-            // <complexType name='EncryptionMethodType' mixed='true'>
-            //     <sequence>
-            //         <element name='KeySize' minOccurs='0' type='xenc:KeySizeType'/>
-            //         <element name='OAEPparams' minOccurs='0' type='base64Binary'/>
-            //         <any namespace='##other' minOccurs='0' maxOccurs='unbounded'/>
-            //     </sequence>
-            //     <attribute name='Algorithm' type='anyURI' use='required'/>
-            // </complexType>
             Element toElement() {
-                Element result = ElementProxy.createElementForFamily(
-                    _contextDocument, EncryptionConstants.EncryptionSpecNS,
-                    EncryptionConstants._TAG_ENCRYPTIONMETHOD);
-                result.setAttributeNS(null, EncryptionConstants._ATT_ALGORITHM,
-                    algorithm);
+                Element result =
+                    XMLUtils.createElementInEncryptionSpace(
+                        contextDocument, EncryptionConstants._TAG_ENCRYPTIONMETHOD
+                    );
+                result.setAttributeNS(null, EncryptionConstants._ATT_ALGORITHM, algorithm);
                 if (keySize > 0) {
                     result.appendChild(
-                        ElementProxy.createElementForFamily(_contextDocument,
-                            EncryptionConstants.EncryptionSpecNS,
-                            EncryptionConstants._TAG_KEYSIZE).appendChild(
-                            _contextDocument.createTextNode(
-                                String.valueOf(keySize))));
+                        XMLUtils.createElementInEncryptionSpace(
+                            contextDocument, EncryptionConstants._TAG_KEYSIZE
+                    ).appendChild(contextDocument.createTextNode(String.valueOf(keySize))));
                 }
                 if (null != oaepParams) {
-                    result.appendChild(
-                        ElementProxy.createElementForFamily(_contextDocument,
-                            EncryptionConstants.EncryptionSpecNS,
-                            EncryptionConstants._TAG_OAEPPARAMS).appendChild(
-                            _contextDocument.createTextNode(
-                                new String(oaepParams))));
+                    Element oaepElement =
+                        XMLUtils.createElementInEncryptionSpace(
+                            contextDocument, EncryptionConstants._TAG_OAEPPARAMS
+                        );
+                    oaepElement.appendChild(contextDocument.createTextNode(Base64.encode(oaepParams)));
+                    result.appendChild(oaepElement);
                 }
-                if (!encryptionMethodInformation.isEmpty()) {
-                    Iterator<Element> itr = encryptionMethodInformation.iterator();
+                if (digestAlgorithm != null) {
+                    Element digestElement =
+                        XMLUtils.createElementInSignatureSpace(contextDocument, Constants._TAG_DIGESTMETHOD);
+                    digestElement.setAttributeNS(null, "Algorithm", digestAlgorithm);
+                    result.appendChild(digestElement);
+                }
+                if (mgfAlgorithm != null) {
+                    Element mgfElement =
+                        XMLUtils.createElementInEncryption11Space(
+                            contextDocument, EncryptionConstants._TAG_MGF
+                        );
+                    mgfElement.setAttributeNS(null, "Algorithm", mgfAlgorithm);
+                    mgfElement.setAttributeNS(
+                        Constants.NamespaceSpecNS,
+                        "xmlns:" + ElementProxy.getDefaultPrefix(EncryptionConstants.EncryptionSpec11NS),
+                        EncryptionConstants.EncryptionSpec11NS
+                    );
+                    result.appendChild(mgfElement);
+                }
+                Iterator<Element> itr = encryptionMethodInformation.iterator();
+                while (itr.hasNext()) {
                     result.appendChild(itr.next());
                 }
 
-                return (result);
+                return result;
             }
         }
 
-        // <element name='EncryptionProperties' type='xenc:EncryptionPropertiesType'/>
-        // <complexType name='EncryptionPropertiesType'>
-        //     <sequence>
-        //         <element ref='xenc:EncryptionProperty' maxOccurs='unbounded'/>
-        //     </sequence>
-        //     <attribute name='Id' type='ID' use='optional'/>
-        // </complexType>
         private class EncryptionPropertiesImpl implements EncryptionProperties {
             private String id = null;
             private List<EncryptionProperty> encryptionProperties = null;
+
             /**
-             *
-             *
+             * Constructor.
              */
             public EncryptionPropertiesImpl() {
                 encryptionProperties = new LinkedList<EncryptionProperty>();
             }
+
             /** @inheritDoc */
             public String getId() {
-                return (id);
+                return id;
             }
+
             /** @inheritDoc */
             public void setId(String id) {
                 this.id = id;
             }
+
             /** @inheritDoc */
             public Iterator<EncryptionProperty> getEncryptionProperties() {
-                return (encryptionProperties.iterator());
+                return encryptionProperties.iterator();
             }
+
             /** @inheritDoc */
             public void addEncryptionProperty(EncryptionProperty property) {
                 encryptionProperties.add(property);
             }
+
             /** @inheritDoc */
             public void removeEncryptionProperty(EncryptionProperty property) {
                 encryptionProperties.remove(property);
             }
 
-            // <element name='EncryptionProperties' type='xenc:EncryptionPropertiesType'/>
-            // <complexType name='EncryptionPropertiesType'>
-            //     <sequence>
-            //         <element ref='xenc:EncryptionProperty' maxOccurs='unbounded'/>
-            //     </sequence>
-            //     <attribute name='Id' type='ID' use='optional'/>
-            // </complexType>
             Element toElement() {
-                Element result = ElementProxy.createElementForFamily(
-                    _contextDocument, EncryptionConstants.EncryptionSpecNS,
-                    EncryptionConstants._TAG_ENCRYPTIONPROPERTIES);
+                Element result =
+                    XMLUtils.createElementInEncryptionSpace(
+                        contextDocument, EncryptionConstants._TAG_ENCRYPTIONPROPERTIES
+                    );
                 if (null != id) {
                     result.setAttributeNS(null, EncryptionConstants._ATT_ID, id);
                 }
                 Iterator<EncryptionProperty> itr = getEncryptionProperties();
                 while (itr.hasNext()) {
-                    result.appendChild(((EncryptionPropertyImpl)
-                        itr.next()).toElement());
+                    result.appendChild(((EncryptionPropertyImpl)itr.next()).toElement());
                 }
 
-                return (result);
+                return result;
             }
         }
 
-        // <element name='EncryptionProperty' type='xenc:EncryptionPropertyType'/>
-        // <complexType name='EncryptionPropertyType' mixed='true'>
-        //     <choice maxOccurs='unbounded'>
-        //         <any namespace='##other' processContents='lax'/>
-        //     </choice>
-        //     <attribute name='Target' type='anyURI' use='optional'/>
-        //     <attribute name='Id' type='ID' use='optional'/>
-        //     <anyAttribute namespace="http://www.w3.org/XML/1998/namespace"/>
-        // </complexType>
         private class EncryptionPropertyImpl implements EncryptionProperty {
             private String target = null;
             private String id = null;
-            private HashMap<String,String> attributeMap = new HashMap<String,String>();
+            private Map<String, String> attributeMap = new HashMap<String, String>();
             private List<Element> encryptionInformation = null;
 
             /**
-             *
-             *
+             * Constructor.
              */
             public EncryptionPropertyImpl() {
                 encryptionInformation = new LinkedList<Element>();
             }
+
             /** @inheritDoc */
             public String getTarget() {
-                return (target);
+                return target;
             }
+
             /** @inheritDoc */
             public void setTarget(String target) {
                 if (target == null || target.length() == 0) {
@@ -3670,163 +3240,144 @@ public class XMLCipher {
                 } else if (target.startsWith("#")) {
                     /*
                      * This is a same document URI reference. Do not parse,
-                     * because com.sun.org.apache.xml.internal.utils.URI considers this an
-                     * illegal URI because it has no scheme.
+                     * because it has no scheme.
                      */
                     this.target = target;
                 } else {
                     URI tmpTarget = null;
                     try {
                         tmpTarget = new URI(target);
-                    } catch (URI.MalformedURIException mfue) {
-                        // complain
+                    } catch (URISyntaxException ex) {
+                        throw (IllegalArgumentException)
+                        new IllegalArgumentException().initCause(ex);
                     }
                     this.target = tmpTarget.toString();
                 }
             }
+
             /** @inheritDoc */
             public String getId() {
-                return (id);
+                return id;
             }
+
             /** @inheritDoc */
             public void setId(String id) {
                 this.id = id;
             }
+
             /** @inheritDoc */
             public String getAttribute(String attribute) {
                 return attributeMap.get(attribute);
             }
+
             /** @inheritDoc */
             public void setAttribute(String attribute, String value) {
                 attributeMap.put(attribute, value);
             }
+
             /** @inheritDoc */
             public Iterator<Element> getEncryptionInformation() {
-                return (encryptionInformation.iterator());
+                return encryptionInformation.iterator();
             }
+
             /** @inheritDoc */
             public void addEncryptionInformation(Element info) {
                 encryptionInformation.add(info);
             }
+
             /** @inheritDoc */
             public void removeEncryptionInformation(Element info) {
                 encryptionInformation.remove(info);
             }
 
-            // <element name='EncryptionProperty' type='xenc:EncryptionPropertyType'/>
-            // <complexType name='EncryptionPropertyType' mixed='true'>
-            //     <choice maxOccurs='unbounded'>
-            //         <any namespace='##other' processContents='lax'/>
-            //     </choice>
-            //     <attribute name='Target' type='anyURI' use='optional'/>
-            //     <attribute name='Id' type='ID' use='optional'/>
-            //     <anyAttribute namespace="http://www.w3.org/XML/1998/namespace"/>
-            // </complexType>
             Element toElement() {
-                Element result = ElementProxy.createElementForFamily(
-                    _contextDocument, EncryptionConstants.EncryptionSpecNS,
-                    EncryptionConstants._TAG_ENCRYPTIONPROPERTY);
+                Element result =
+                    XMLUtils.createElementInEncryptionSpace(
+                        contextDocument, EncryptionConstants._TAG_ENCRYPTIONPROPERTY
+                    );
                 if (null != target) {
-                    result.setAttributeNS(null, EncryptionConstants._ATT_TARGET,
-                        target);
+                    result.setAttributeNS(null, EncryptionConstants._ATT_TARGET, target);
                 }
                 if (null != id) {
-                    result.setAttributeNS(null, EncryptionConstants._ATT_ID,
-                        id);
+                    result.setAttributeNS(null, EncryptionConstants._ATT_ID, id);
                 }
                 // TODO: figure out the anyAttribyte stuff...
                 // TODO: figure out the any stuff...
 
-                return (result);
+                return result;
             }
         }
 
-        // <complexType name='TransformsType'>
-        //     <sequence>
-        //         <element ref='ds:Transform' maxOccurs='unbounded'/>
-        //     </sequence>
-        // </complexType>
-        private class TransformsImpl extends
-                       com.sun.org.apache.xml.internal.security.transforms.Transforms
-                       implements Transforms {
+        private class TransformsImpl extends com.sun.org.apache.xml.internal.security.transforms.Transforms
+            implements Transforms {
 
-                        /**
-                         * Construct Transforms
-                         */
-
-                        public TransformsImpl() {
-                                super(_contextDocument);
-                        }
-                        /**
-             *
-                         * @param doc
-                         */
-                        public TransformsImpl(Document doc) {
-                                if (doc == null) {
-                                 throw new RuntimeException("Document is null");
-                              }
-
-                              this._doc = doc;
-                              this._constructionElement =  createElementForFamilyLocal(this._doc,
-                                          this.getBaseNamespace(), this.getBaseLocalName());
-                        }
-                        /**
-             *
-                         * @param element
-                         * @throws XMLSignatureException
-                         * @throws InvalidTransformException
-                         * @throws XMLSecurityException
-                         * @throws TransformationException
-                         */
-                        public TransformsImpl(Element element)
-                                throws XMLSignatureException,
-                                   InvalidTransformException,
-                                       XMLSecurityException,
-                                       TransformationException {
-
-                                super(element, "");
-
-                        }
+            /**
+             * Construct Transforms
+             */
+            public TransformsImpl() {
+                super(contextDocument);
+            }
 
             /**
              *
-             * @return
+             * @param doc
              */
-                        public Element toElement() {
+            public TransformsImpl(Document doc) {
+                if (doc == null) {
+                    throw new RuntimeException("Document is null");
+                }
 
-                                if (_doc == null)
-                                        _doc = _contextDocument;
+                this.doc = doc;
+                this.constructionElement =
+                    createElementForFamilyLocal(
+                        this.doc, this.getBaseNamespace(), this.getBaseLocalName()
+                    );
+            }
 
-                                return getElement();
-                        }
+            /**
+             *
+             * @param element
+             * @throws XMLSignatureException
+             * @throws InvalidTransformException
+             * @throws XMLSecurityException
+             * @throws TransformationException
+             */
+            public TransformsImpl(Element element)
+                throws XMLSignatureException, InvalidTransformException,
+                    XMLSecurityException, TransformationException {
+                super(element, "");
+            }
+
+            /**
+             *
+             * @return the XML Element form of that Transforms
+             */
+            public Element toElement() {
+                if (doc == null) {
+                    doc = contextDocument;
+                }
+
+                return getElement();
+            }
 
             /** @inheritDoc */
-                        public com.sun.org.apache.xml.internal.security.transforms.Transforms getDSTransforms() {
-                                return (this);
-                        }
+            public com.sun.org.apache.xml.internal.security.transforms.Transforms getDSTransforms() {
+                return this;
+            }
 
-
-                        // Over-ride the namespace
+            // Over-ride the namespace
             /** @inheritDoc */
-                        public String getBaseNamespace() {
-                                return EncryptionConstants.EncryptionSpecNS;
-                        }
-
+            public String getBaseNamespace() {
+                return EncryptionConstants.EncryptionSpecNS;
+            }
         }
 
-        //<element name='ReferenceList'>
-        //    <complexType>
-        //        <choice minOccurs='1' maxOccurs='unbounded'>
-        //            <element name='DataReference' type='xenc:ReferenceType'/>
-        //            <element name='KeyReference' type='xenc:ReferenceType'/>
-        //        </choice>
-        //    </complexType>
-        //</element>
         private class ReferenceListImpl implements ReferenceList {
             private Class<?> sentry;
             private List<Reference> references;
+
             /**
-             *
+             * Constructor.
              * @param type
              */
             public ReferenceListImpl(int type) {
@@ -3839,13 +3390,15 @@ public class XMLCipher {
                 }
                 references = new LinkedList<Reference>();
             }
+
             /** @inheritDoc */
             public void add(Reference reference) {
                 if (!reference.getClass().equals(sentry)) {
                     throw new IllegalArgumentException();
                 }
-                 references.add(reference);
+                references.add(reference);
             }
+
             /** @inheritDoc */
             public void remove(Reference reference) {
                 if (!reference.getClass().equals(sentry)) {
@@ -3853,39 +3406,45 @@ public class XMLCipher {
                 }
                 references.remove(reference);
             }
+
             /** @inheritDoc */
             public int size() {
-                return (references.size());
+                return references.size();
             }
+
             /** @inheritDoc */
             public boolean isEmpty() {
-                return (references.isEmpty());
+                return references.isEmpty();
             }
+
             /** @inheritDoc */
             public Iterator<Reference> getReferences() {
-                return (references.iterator());
+                return references.iterator();
             }
 
             Element toElement() {
-                Element result = ElementProxy.createElementForFamily(
-                    _contextDocument,
-                    EncryptionConstants.EncryptionSpecNS,
-                    EncryptionConstants._TAG_REFERENCELIST);
+                Element result =
+                    ElementProxy.createElementForFamily(
+                        contextDocument,
+                        EncryptionConstants.EncryptionSpecNS,
+                        EncryptionConstants._TAG_REFERENCELIST
+                    );
                 Iterator<Reference> eachReference = references.iterator();
                 while (eachReference.hasNext()) {
                     Reference reference = eachReference.next();
-                    result.appendChild(
-                        ((ReferenceImpl) reference).toElement());
+                    result.appendChild(((ReferenceImpl) reference).toElement());
                 }
-                return (result);
+                return result;
             }
+
             /** @inheritDoc */
             public Reference newDataReference(String uri) {
-                return (new DataReference(uri));
+                return new DataReference(uri);
             }
+
             /** @inheritDoc */
             public Reference newKeyReference(String uri) {
-                return (new KeyReference(uri));
+                return new KeyReference(uri);
             }
 
             /**
@@ -3898,68 +3457,81 @@ public class XMLCipher {
                 private String uri;
                 private List<Element> referenceInformation;
 
-                ReferenceImpl(String _uri) {
-                    this.uri = _uri;
+                ReferenceImpl(String uri) {
+                    this.uri = uri;
                     referenceInformation = new LinkedList<Element>();
                 }
+
+                /** @inheritDoc */
+                public abstract String getType();
+
                 /** @inheritDoc */
                 public String getURI() {
-                    return (uri);
+                    return uri;
                 }
+
                 /** @inheritDoc */
                 public Iterator<Element> getElementRetrievalInformation() {
-                    return (referenceInformation.iterator());
+                    return referenceInformation.iterator();
                 }
+
                 /** @inheritDoc */
-                public void setURI(String _uri) {
-                        this.uri = _uri;
+                public void setURI(String uri) {
+                    this.uri = uri;
                 }
+
                 /** @inheritDoc */
                 public void removeElementRetrievalInformation(Element node) {
                     referenceInformation.remove(node);
                 }
+
                 /** @inheritDoc */
                 public void addElementRetrievalInformation(Element node) {
                     referenceInformation.add(node);
                 }
-                /**
-                 *
-                 * @return
-                 */
-                public abstract Element toElement();
 
-                Element toElement(String tagName) {
-                    Element result = ElementProxy.createElementForFamily(
-                        _contextDocument,
-                        EncryptionConstants.EncryptionSpecNS,
-                        tagName);
+                /**
+                 * @return the XML Element form of that Reference
+                 */
+                public Element toElement() {
+                    String tagName = getType();
+                    Element result =
+                        ElementProxy.createElementForFamily(
+                            contextDocument,
+                            EncryptionConstants.EncryptionSpecNS,
+                            tagName
+                        );
                     result.setAttribute(EncryptionConstants._ATT_URI, uri);
 
                     // TODO: Need to martial referenceInformation
                     // Figure out how to make this work..
                     // <any namespace="##other" minOccurs="0" maxOccurs="unbounded"/>
 
-                    return (result);
+                    return result;
                 }
             }
 
             private class DataReference extends ReferenceImpl {
+
                 DataReference(String uri) {
                     super(uri);
                 }
+
                 /** @inheritDoc */
-                public Element toElement() {
-                    return super.toElement(EncryptionConstants._TAG_DATAREFERENCE);
+                public String getType() {
+                    return EncryptionConstants._TAG_DATAREFERENCE;
                 }
             }
 
             private class KeyReference extends ReferenceImpl {
+
                 KeyReference(String uri) {
-                    super (uri);
+                    super(uri);
                 }
+
                 /** @inheritDoc */
-                public Element toElement() {
-                    return super.toElement(EncryptionConstants._TAG_KEYREFERENCE);
+                public String getType() {
+                    return EncryptionConstants._TAG_KEYREFERENCE;
                 }
             }
         }

@@ -92,21 +92,50 @@ abstract class AbstractShortCircuitTask<P_IN, P_OUT, R,
      */
     protected abstract R getEmptyResult();
 
+    /**
+     * Overrides AbstractTask version to include checks for early
+     * exits while splitting or computing.
+     */
     @Override
-    protected boolean canCompute() {
-        // Have we already found an answer?
-        if (sharedResult.get() != null) {
-            tryComplete();
-            return false;
-        } else if (taskCanceled()) {
-            setLocalResult(getEmptyResult());
-            tryComplete();
-            return false;
+    public void compute() {
+        Spliterator<P_IN> rs = spliterator, ls;
+        long sizeEstimate = rs.estimateSize();
+        long sizeThreshold = getTargetSize(sizeEstimate);
+        boolean forkRight = false;
+        @SuppressWarnings("unchecked") K task = (K) this;
+        AtomicReference<R> sr = sharedResult;
+        R result;
+        while ((result = sr.get()) == null) {
+            if (task.taskCanceled()) {
+                result = task.getEmptyResult();
+                break;
+            }
+            if (sizeEstimate <= sizeThreshold || (ls = rs.trySplit()) == null) {
+                result = task.doLeaf();
+                break;
+            }
+            K leftChild, rightChild, taskToFork;
+            task.leftChild  = leftChild = task.makeChild(ls);
+            task.rightChild = rightChild = task.makeChild(rs);
+            task.setPendingCount(1);
+            if (forkRight) {
+                forkRight = false;
+                rs = ls;
+                task = leftChild;
+                taskToFork = rightChild;
+            }
+            else {
+                forkRight = true;
+                task = rightChild;
+                taskToFork = leftChild;
+            }
+            taskToFork.fork();
+            sizeEstimate = rs.estimateSize();
         }
-        else {
-            return true;
-        }
+        task.setLocalResult(result);
+        task.tryComplete();
     }
+
 
     /**
      * Declares that a globally valid result has been found.  If another task has
