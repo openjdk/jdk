@@ -12586,7 +12586,7 @@ public class GB18030
         }
 
         public boolean canEncode(char c) {
-            return ! Surrogate.is(c);
+            return ! Character.isSurrogate(c);
         }
 
         private final Surrogate.Parser sgp = new Surrogate.Parser();
@@ -12625,7 +12625,7 @@ public class GB18030
                     int inputSize = 1;
                     char c = sa[sp];
 
-                    if (Surrogate.is(c)) {
+                    if (Character.isSurrogate(c)) {
                         if ((condensedKey=sgp.parse(c, sa, sp, sl)) < 0)
                             return sgp.error();
                         // Surogate.toUCS4 looks like
@@ -12719,7 +12719,7 @@ public class GB18030
                 while (src.hasRemaining()) {
                     char c = src.get();
                     int inputSize = 1;
-                    if (Surrogate.is(c)) {
+                    if (Character.isSurrogate(c)) {
                         if ((condensedKey = sgp.parse(c, src))<0)
                            return sgp.error();
                         condensedKey += 0x1e248;

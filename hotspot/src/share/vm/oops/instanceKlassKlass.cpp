@@ -402,9 +402,14 @@ int instanceKlassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
 }
 #endif // SERIALGC
 
-klassOop instanceKlassKlass::allocate_instance_klass(int vtable_len, int itable_len, int static_field_size,
-                                                     int nonstatic_oop_map_size, ReferenceType rt, TRAPS) {
+klassOop
+instanceKlassKlass::allocate_instance_klass(int vtable_len, int itable_len,
+                                            int static_field_size,
+                                            unsigned nonstatic_oop_map_count,
+                                            ReferenceType rt, TRAPS) {
 
+  const int nonstatic_oop_map_size =
+    instanceKlass::nonstatic_oop_map_size(nonstatic_oop_map_count);
   int size = instanceKlass::object_size(align_object_offset(vtable_len) + align_object_offset(itable_len) + static_field_size + nonstatic_oop_map_size);
 
   // Allocation
@@ -615,9 +620,9 @@ void instanceKlassKlass::oop_print_on(oop obj, outputStream* st) {
 
   st->print(BULLET"non-static oop maps: ");
   OopMapBlock* map     = ik->start_of_nonstatic_oop_maps();
-  OopMapBlock* end_map = map + ik->nonstatic_oop_map_size();
+  OopMapBlock* end_map = map + ik->nonstatic_oop_map_count();
   while (map < end_map) {
-    st->print("%d-%d ", map->offset(), map->offset() + heapOopSize*(map->length() - 1));
+    st->print("%d-%d ", map->offset(), map->offset() + heapOopSize*(map->count() - 1));
     map++;
   }
   st->cr();

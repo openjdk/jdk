@@ -1,0 +1,16 @@
+(1)renamed
+   adler32.c -> zadler32.c
+   zcrc32c -> zcrc32.c
+
+(2)added _LP64 to make uLong a 32-bit int on 64-bit platform
+   zconf.h:
+   uLong -> 32-bit int
+
+(3)updated crc32.c/crc32()
+   unsigned long      -> uLong
+
+(4)updated zlib.h (to support > 4G zipfile):
+   total_in/out: uLong -> long long
+
+(5)updated upinflate.c/inflateSync()
+   unsigned long in, out; -->  long long in, out;

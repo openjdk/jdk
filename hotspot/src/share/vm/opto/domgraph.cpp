@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -396,7 +396,7 @@ struct NTarjan {
 // nodes (using the is_CFG() call) and places them in a dominator tree.  Thus,
 // it needs a count of the CFG nodes for the mapping table. This is the
 // Lengauer & Tarjan O(E-alpha(E,V)) algorithm.
-void PhaseIdealLoop::Dominators( ) {
+void PhaseIdealLoop::Dominators() {
   ResourceMark rm;
   // Setup mappings from my Graph to Tarjan's stuff and back
   // Note: Tarjan uses 1-based arrays
@@ -454,7 +454,7 @@ void PhaseIdealLoop::Dominators( ) {
     // flow into the main graph (and hence into ROOT) but are not reachable
     // from above.  Such code is dead, but requires a global pass to detect
     // it; this global pass was the 'build_loop_tree' pass run just prior.
-    if( whead->is_Region() ) {
+    if( !_verify_only && whead->is_Region() ) {
       for( uint i = 1; i < whead->req(); i++ ) {
         if (!has_node(whead->in(i))) {
           // Kill dead input path

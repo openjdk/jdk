@@ -39,7 +39,6 @@ ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *nex
   _next(next),
   _cg1r(cg1r),
   _vtime_accum(0.0),
-  _co_tracker(G1CRGroup),
   _interval_ms(5.0)
 {
   create_and_start();
@@ -75,9 +74,6 @@ void ConcurrentG1RefineThread::run() {
   initialize_in_thread();
   _vtime_start = os::elapsedVTime();
   wait_for_universe_init();
-
-  _co_tracker.enable();
-  _co_tracker.start();
 
   while (!_should_terminate) {
     DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
@@ -147,7 +143,6 @@ void ConcurrentG1RefineThread::run() {
         }
         break;
       }
-      _co_tracker.update(false);
 
       // Check if we need to activate the next thread.
       if (curr_buffer_num > next_threshold && _next != NULL && !_next->is_active()) {
@@ -168,7 +163,6 @@ void ConcurrentG1RefineThread::run() {
       }
       n_logs++;
     }
-    _co_tracker.update(false);
     _sts.leave();
 
     if (os::supports_vtime()) {
@@ -177,9 +171,6 @@ void ConcurrentG1RefineThread::run() {
       _vtime_accum = 0.0;
     }
   }
-  _sts.join();
-  _co_tracker.update(true);
-  _sts.leave();
   assert(_should_terminate, "just checking");
 
   terminate();

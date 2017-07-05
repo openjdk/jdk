@@ -29,15 +29,16 @@ FILES_c = \
 	Deflater.c \
 	Inflater.c \
 	ZipFile.c \
+	zip_util.c \
+	compress.c \
+	deflate.c \
+	gzio.c \
+	infback.c \
+	inffast.c \
+	inflate.c \
+	inftrees.c \
+	trees.c \
+	uncompr.c \
 	zadler32.c \
 	zcrc32.c \
-	deflate.c \
-	trees.c \
-	zutil.c \
-	inflate.c \
-	infblock.c \
-	inftrees.c \
-	infcodes.c \
-	infutil.c \
-	inffast.c \
-	zip_util.c
+	zutil.c 

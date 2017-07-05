@@ -660,6 +660,29 @@ void CardTableModRefBS::verify_clean_region(MemRegion mr) {
   GuaranteeNotModClosure blk(this);
   non_clean_card_iterate_work(mr, &blk, false);
 }
+
+// To verify a MemRegion is entirely dirty this closure is passed to
+// dirty_card_iterate. If the region is dirty do_MemRegion will be
+// invoked only once with a MemRegion equal to the one being
+// verified.
+class GuaranteeDirtyClosure: public MemRegionClosure {
+  CardTableModRefBS* _ct;
+  MemRegion _mr;
+  bool _result;
+public:
+  GuaranteeDirtyClosure(CardTableModRefBS* ct, MemRegion mr)
+    : _ct(ct), _mr(mr), _result(false) {}
+  void do_MemRegion(MemRegion mr) {
+    _result = _mr.equals(mr);
+  }
+  bool result() const { return _result; }
+};
+
+void CardTableModRefBS::verify_dirty_region(MemRegion mr) {
+  GuaranteeDirtyClosure blk(this, mr);
+  dirty_card_iterate(mr, &blk);
+  guarantee(blk.result(), "Non-dirty cards in region that should be dirty");
+}
 #endif
 
 bool CardTableModRefBSForCTRS::card_will_be_scanned(jbyte cv) {

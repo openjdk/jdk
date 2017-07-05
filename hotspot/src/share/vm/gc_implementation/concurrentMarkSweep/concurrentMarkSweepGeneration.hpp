@@ -1790,12 +1790,13 @@ class CMSParDrainMarkingStackClosure: public VoidClosure {
  public:
   CMSParDrainMarkingStackClosure(CMSCollector* collector,
                                  MemRegion span, CMSBitMap* bit_map,
+                                 CMSMarkStack* revisit_stack,
                                  OopTaskQueue* work_queue):
     _collector(collector),
     _span(span),
     _bit_map(bit_map),
     _work_queue(work_queue),
-    _mark_and_push(collector, span, bit_map, work_queue) { }
+    _mark_and_push(collector, span, bit_map, revisit_stack, work_queue) { }
 
  public:
   void trim_queue(uint max);

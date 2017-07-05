@@ -649,7 +649,7 @@ SOFTWARE.
 0x0000 #define    XK_ISO_Last_Group                0xFE0E
 0x0000 #define    XK_ISO_Last_Group_Lock                0xFE0F
 
-0x0000 #define    XK_ISO_Left_Tab                    0xFE20
+0x0009 #define    XK_ISO_Left_Tab                    0xFE20
 0x0000 #define    XK_ISO_Move_Line_Up                0xFE21
 0x0000 #define    XK_ISO_Move_Line_Down                0xFE22
 0x0000 #define    XK_ISO_Partial_Line_Up                0xFE23

@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1541,10 +1541,8 @@ public class MetalLookAndFeel extends BasicLookAndFeel
         table.putDefaults(defaults);
 
         if (isWindows() && useSystemFonts() && theme.isSystemTheme()) {
-            Toolkit kit = Toolkit.getDefaultToolkit();
             Object messageFont = new MetalFontDesktopProperty(
-                              "win.messagebox.font.height", kit, MetalTheme.
-                              CONTROL_TEXT_FONT);
+                "win.messagebox.font.height", MetalTheme.CONTROL_TEXT_FONT);
 
             defaults = new Object[] {
                 "OptionPane.messageFont", messageFont,
