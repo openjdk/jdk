@@ -284,13 +284,13 @@ class Block : public CFGElement {
   // helper function that adds caller save registers to MachProjNode
   void add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_policy, bool exclude_soe);
   // Schedule a call next in the block
-  uint sched_call(Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_List &worklist, int *ready_cnt, MachCallNode *mcall, VectorSet &next_call);
+  uint sched_call(Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_List &worklist, GrowableArray<int> &ready_cnt, MachCallNode *mcall, VectorSet &next_call);
 
   // Perform basic-block local scheduling
-  Node *select(PhaseCFG *cfg, Node_List &worklist, int *ready_cnt, VectorSet &next_call, uint sched_slot);
+  Node *select(PhaseCFG *cfg, Node_List &worklist, GrowableArray<int> &ready_cnt, VectorSet &next_call, uint sched_slot);
   void set_next_call( Node *n, VectorSet &next_call, Block_Array &bbs );
   void needed_for_next_call(Node *this_call, VectorSet &next_call, Block_Array &bbs);
-  bool schedule_local(PhaseCFG *cfg, Matcher &m, int *ready_cnt, VectorSet &next_call);
+  bool schedule_local(PhaseCFG *cfg, Matcher &m, GrowableArray<int> &ready_cnt, VectorSet &next_call);
   // Cleanup if any code lands between a Call and his Catch
   void call_catch_cleanup(Block_Array &bbs);
   // Detect implicit-null-check opportunities.  Basically, find NULL checks

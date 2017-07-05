@@ -333,7 +333,7 @@ class CompileBroker: AllStatic {
                                   methodHandle hot_method,
                                   int hot_count,
                                   const char* comment,
-                                  TRAPS);
+                                  Thread* thread);
   static CompileQueue* compile_queue(int comp_level) {
     if (is_c2_compile(comp_level)) return _c2_method_queue;
     if (is_c1_compile(comp_level)) return _c1_method_queue;
@@ -363,7 +363,7 @@ class CompileBroker: AllStatic {
                                  int comp_level,
                                  methodHandle hot_method,
                                  int hot_count,
-                                 const char* comment, TRAPS);
+                                 const char* comment, Thread* thread);
 
   static void compiler_thread_loop();
 
