@@ -336,6 +336,7 @@ public:
         _has_sfpt:1,            // True if has non-call safepoint
         _rce_candidate:1;       // True if candidate for range check elimination
 
+  Node_List* _safepts;          // List of safepoints in this loop
   Node_List* _required_safept;  // A inner loop cannot delete these safepts;
   bool  _allow_optimizations;   // Allow loop optimizations
 
@@ -343,6 +344,7 @@ public:
     : _parent(0), _next(0), _child(0),
       _head(head), _tail(tail),
       _phase(phase),
+      _safepts(NULL),
       _required_safept(NULL),
       _allow_optimizations(true),
       _nest(0), _irreducible(0), _has_call(0), _has_sfpt(0), _rce_candidate(0)

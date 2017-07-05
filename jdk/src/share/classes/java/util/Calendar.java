@@ -53,9 +53,11 @@ import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.spi.CalendarDataProvider;
 import sun.util.BuddhistCalendar;
+import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.calendar.ZoneInfo;
-import sun.util.resources.LocaleData;
+import sun.util.locale.provider.CalendarDataUtility;
 
 /**
  * The <code>Calendar</code> class is an abstract class that provides methods
@@ -707,17 +709,24 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * getDisplayNames} indicating names in all styles, such as
      * "January" and "Jan".
      *
+     * @see #SHORT_FORMAT
+     * @see #LONG_FORMAT
+     * @see #SHORT_STANDALONE
+     * @see #LONG_STANDALONE
      * @see #SHORT
      * @see #LONG
      * @since 1.6
      */
     public static final int ALL_STYLES = 0;
 
+    static final int STANDALONE_MASK = 0x8000;
+
     /**
      * A style specifier for {@link #getDisplayName(int, int, Locale)
      * getDisplayName} and {@link #getDisplayNames(int, int, Locale)
-     * getDisplayNames} indicating a short name, such as "Jan".
+     * getDisplayNames} equivalent to {@link #SHORT_FORMAT}.
      *
+     * @see #SHORT_STANDALONE
      * @see #LONG
      * @since 1.6
      */
@@ -726,12 +735,63 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     /**
      * A style specifier for {@link #getDisplayName(int, int, Locale)
      * getDisplayName} and {@link #getDisplayNames(int, int, Locale)
-     * getDisplayNames} indicating a long name, such as "January".
+     * getDisplayNames} equivalent to {@link #LONG_FORMAT}.
      *
+     * @see #LONG_STANDALONE
      * @see #SHORT
      * @since 1.6
      */
     public static final int LONG = 2;
+
+    /**
+     * A style specifier for {@link #getDisplayName(int, int, Locale)
+     * getDisplayName} and {@link #getDisplayNames(int, int, Locale)
+     * getDisplayNames} indicating a short name used for format.
+     *
+     * @see #SHORT_STANDALONE
+     * @see #LONG_FORMAT
+     * @see #LONG_STANDALONE
+     * @since 1.8
+     */
+    public static final int SHORT_FORMAT = 1;
+
+    /**
+     * A style specifier for {@link #getDisplayName(int, int, Locale)
+     * getDisplayName} and {@link #getDisplayNames(int, int, Locale)
+     * getDisplayNames} indicating a long name used for format.
+     *
+     * @see #LONG_STANDALONE
+     * @see #SHORT_FORMAT
+     * @see #SHORT_STANDALONE
+     * @since 1.8
+     */
+    public static final int LONG_FORMAT = 2;
+
+    /**
+     * A style specifier for {@link #getDisplayName(int, int, Locale)
+     * getDisplayName} and {@link #getDisplayNames(int, int, Locale)
+     * getDisplayNames} indicating a short name used independently,
+     * such as a month abbreviation as calendar headers.
+     *
+     * @see #SHORT_FORMAT
+     * @see #LONG_FORMAT
+     * @see #LONG_STANDALONE
+     * @since 1.8
+     */
+    public static final int SHORT_STANDALONE = SHORT | STANDALONE_MASK;
+
+    /**
+     * A style specifier for {@link #getDisplayName(int, int, Locale)
+     * getDisplayName} and {@link #getDisplayNames(int, int, Locale)
+     * getDisplayNames} indicating a long name used independently,
+     * such as a month name as calendar headers.
+     *
+     * @see #LONG_FORMAT
+     * @see #SHORT_FORMAT
+     * @see #SHORT_STANDALONE
+     * @since 1.8
+     */
+    public static final int LONG_STANDALONE = LONG | STANDALONE_MASK;
 
     // Internal notes:
     // Calendar contains two kinds of time representations: current "time" in
@@ -750,6 +810,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * <code>ERA</code> through <code>DST_OFFSET</code>.
      * @serial
      */
+    @SuppressWarnings("ProtectedField")
     protected int           fields[];
 
     /**
@@ -760,6 +821,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * <code>ERA</code> through <code>DST_OFFSET</code>.
      * @serial
      */
+    @SuppressWarnings("ProtectedField")
     protected boolean       isSet[];
 
     /**
@@ -775,6 +837,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @see #isTimeSet
      * @serial
      */
+    @SuppressWarnings("ProtectedField")
     protected long          time;
 
     /**
@@ -783,6 +846,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @see #time
      * @serial
      */
+    @SuppressWarnings("ProtectedField")
     protected boolean       isTimeSet;
 
     /**
@@ -792,6 +856,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * <code>time</code>.
      * @serial
      */
+    @SuppressWarnings("ProtectedField")
     protected boolean       areFieldsSet;
 
     /**
@@ -910,6 +975,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     static final long       serialVersionUID = -1807547505821590642L;
 
     // Mask values for calendar fields
+    @SuppressWarnings("PointlessBitwiseExpression")
     final static int ERA_MASK           = (1 << ERA);
     final static int YEAR_MASK          = (1 << YEAR);
     final static int MONTH_MASK         = (1 << MONTH);
@@ -1018,27 +1084,38 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     {
         Calendar cal = null;
 
+        if (aLocale.hasExtensions()) {
         String caltype = aLocale.getUnicodeLocaleType("ca");
-        if (caltype == null) {
-            // Calendar type is not specified.
-            // If the specified locale is a Thai locale,
-            // returns a BuddhistCalendar instance.
-            if ("th".equals(aLocale.getLanguage())
-                    && ("TH".equals(aLocale.getCountry()))) {
+            if (caltype != null) {
+                switch (caltype) {
+                case "buddhist":
                 cal = new BuddhistCalendar(zone, aLocale);
+                    break;
+                case "japanese":
+                    cal = new JapaneseImperialCalendar(zone, aLocale);
+                    break;
+                case "gregory":
+                    cal = new GregorianCalendar(zone, aLocale);
+                    break;
+                }
+            }
+        }
+        if (cal == null) {
+            // If no known calendar type is explicitly specified,
+            // perform the traditional way to create a Calendar:
+            // create a BuddhistCalendar for th_TH locale,
+            // a JapaneseImperialCalendar for ja_JP_JP locale, or
+            // a GregorianCalendar for any other locales.
+            // NOTE: The language, country and variant strings are interned.
+            if (aLocale.getLanguage() == "th" && aLocale.getCountry() == "TH") {
+                cal = new BuddhistCalendar(zone, aLocale);
+            } else if (aLocale.getVariant() == "JP" && aLocale.getLanguage() == "ja"
+                       && aLocale.getCountry() == "JP") {
+                cal = new JapaneseImperialCalendar(zone, aLocale);
             } else {
                 cal = new GregorianCalendar(zone, aLocale);
             }
-        } else if (caltype.equals("japanese")) {
-            cal = new JapaneseImperialCalendar(zone, aLocale);
-        } else if (caltype.equals("buddhist")) {
-            cal = new BuddhistCalendar(zone, aLocale);
-        } else {
-            // Unsupported calendar type.
-            // Use Gregorian calendar as a fallback.
-            cal = new GregorianCalendar(zone, aLocale);
         }
-
         return cal;
     }
 
@@ -1393,10 +1470,12 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *        the calendar field for which the string representation
      *        is returned
      * @param style
-     *        the style applied to the string representation; one of
-     *        {@link #SHORT} or {@link #LONG}.
+     *        the style applied to the string representation; one of {@link
+     *        #SHORT_FORMAT} ({@link #SHORT}), {@link #SHORT_STANDALONE},
+     *        {@link #LONG_FORMAT} ({@link #LONG}) or {@link #LONG_STANDALONE}.
      * @param locale
      *        the locale for the string representation
+     *        (any calendar types specified by {@code locale} are ignored)
      * @return the string representation of the given
      *        <code>field</code> in the given <code>style</code>, or
      *        <code>null</code> if no string representation is
@@ -1410,9 +1489,16 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @since 1.6
      */
     public String getDisplayName(int field, int style, Locale locale) {
-        if (!checkDisplayNameParams(field, style, ALL_STYLES, LONG, locale,
-                                    ERA_MASK|MONTH_MASK|DAY_OF_WEEK_MASK|AM_PM_MASK)) {
+        if (!checkDisplayNameParams(field, style, SHORT, LONG, locale,
+                            ERA_MASK|MONTH_MASK|DAY_OF_WEEK_MASK|AM_PM_MASK)) {
             return null;
+        }
+
+        // the standalone styles are supported only through CalendarDataProviders.
+        if (isStandaloneStyle(style)) {
+            return CalendarDataUtility.retrieveFieldValueName(getCalendarType(),
+                                                              field, get(field),
+                                                              style, locale);
         }
 
         DateFormatSymbols symbols = DateFormatSymbols.getInstance(locale);
@@ -1453,8 +1539,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @param field
      *        the calendar field for which the display names are returned
      * @param style
-     *        the style applied to the display names; one of {@link
-     *        #SHORT}, {@link #LONG}, or {@link #ALL_STYLES}.
+     *        the style applied to the string representation; one of {@link
+     *        #SHORT_FORMAT} ({@link #SHORT}), {@link #SHORT_STANDALONE},
+     *        {@link #LONG_FORMAT} ({@link #LONG}) or {@link #LONG_STANDALONE}.
      * @param locale
      *        the locale for the display names
      * @return a <code>Map</code> containing all display names in
@@ -1474,23 +1561,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
                                     ERA_MASK|MONTH_MASK|DAY_OF_WEEK_MASK|AM_PM_MASK)) {
             return null;
         }
-
-        // ALL_STYLES
-        if (style == ALL_STYLES) {
-            Map<String,Integer> shortNames = getDisplayNamesImpl(field, SHORT, locale);
-            if (field == ERA || field == AM_PM) {
-                return shortNames;
-            }
-            Map<String,Integer> longNames = getDisplayNamesImpl(field, LONG, locale);
-            if (shortNames == null) {
-                return longNames;
-            }
-            if (longNames != null) {
-                shortNames.putAll(longNames);
-            }
-            return shortNames;
+        if (style == ALL_STYLES || isStandaloneStyle(style)) {
+            return CalendarDataUtility.retrieveFieldValueNames(getCalendarType(), field, style, locale);
         }
-
         // SHORT or LONG
         return getDisplayNamesImpl(field, style, locale);
     }
@@ -1513,8 +1586,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     boolean checkDisplayNameParams(int field, int style, int minStyle, int maxStyle,
                                    Locale locale, int fieldMask) {
+        int baseStyle = getBaseStyle(style); // Ignore the standalone mask
         if (field < 0 || field >= fields.length ||
-            style < minStyle || style > maxStyle) {
+            baseStyle < minStyle || baseStyle > maxStyle) {
             throw new IllegalArgumentException();
         }
         if (locale == null) {
@@ -1524,6 +1598,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
     }
 
     private String[] getFieldStrings(int field, int style, DateFormatSymbols symbols) {
+        int baseStyle = getBaseStyle(style); // ignore the standalone mask
         String[] strings = null;
         switch (field) {
         case ERA:
@@ -1531,11 +1606,11 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
             break;
 
         case MONTH:
-            strings = (style == LONG) ? symbols.getMonths() : symbols.getShortMonths();
+            strings = (baseStyle == LONG) ? symbols.getMonths() : symbols.getShortMonths();
             break;
 
         case DAY_OF_WEEK:
-            strings = (style == LONG) ? symbols.getWeekdays() : symbols.getShortWeekdays();
+            strings = (baseStyle == LONG) ? symbols.getWeekdays() : symbols.getShortWeekdays();
             break;
 
         case AM_PM:
@@ -1554,8 +1629,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      */
     protected void complete()
     {
-        if (!isTimeSet)
+        if (!isTimeSet) {
             updateTime();
+        }
         if (!areFieldsSet || !areAllFieldsSet) {
             computeFields(); // fills in unset fields
             areAllFieldsSet = areFieldsSet = true;
@@ -1689,7 +1765,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * Returns whether the specified <code>field</code> is on in the
      * <code>fieldMask</code>.
      */
-    static final boolean isFieldSet(int fieldMask, int field) {
+    static boolean isFieldSet(int fieldMask, int field) {
         return (fieldMask & (1 << field)) != 0;
     }
 
@@ -1865,17 +1941,46 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         return fieldMask;
     }
 
+    int getBaseStyle(int style) {
+        return style & ~STANDALONE_MASK;
+    }
+
+    boolean isStandaloneStyle(int style) {
+        return (style & STANDALONE_MASK) != 0;
+    }
+
     /**
      * Returns the pseudo-time-stamp for two fields, given their
      * individual pseudo-time-stamps.  If either of the fields
      * is unset, then the aggregate is unset.  Otherwise, the
      * aggregate is the later of the two stamps.
      */
-    private static final int aggregateStamp(int stamp_a, int stamp_b) {
+    private static int aggregateStamp(int stamp_a, int stamp_b) {
         if (stamp_a == UNSET || stamp_b == UNSET) {
             return UNSET;
         }
         return (stamp_a > stamp_b) ? stamp_a : stamp_b;
+    }
+
+    /**
+     * Returns the calendar type of this {@code Calendar}. Calendar types are
+     * defined by the <em>Unicode Locale Data Markup Language (LDML)</em>
+     * specification.
+     *
+     * <p>The default implementation of this method returns the class name of
+     * this {@code Calendar} instance. Any subclasses that implement
+     * LDML-defined calendar systems should override this method to return
+     * appropriate calendar types.
+     *
+     * @return the LDML-defined calendar type or the class name of this
+     *         {@code Calendar} instance
+     * @since 1.8
+     * @see <a href="Locale.html#def_extensions">Locale extensions</a>
+     * @see Locale.Builder#setLocale(Locale)
+     * @see Locale.Builder#setUnicodeLocaleKeyword(String, String)
+     */
+    public String getCalendarType() {
+        return this.getClass().getName();
     }
 
     /**
@@ -1900,9 +2005,12 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @return <code>true</code> if this object is equal to <code>obj</code>;
      * <code>false</code> otherwise.
      */
+    @SuppressWarnings("EqualsWhichDoesntCheckParameterClass")
+    @Override
     public boolean equals(Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
+        }
         try {
             Calendar that = (Calendar)obj;
             return compareTo(getMillisOf(that)) == 0 &&
@@ -1924,6 +2032,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @return a hash code value for this object.
      * @since 1.2
      */
+    @Override
     public int hashCode() {
         // 'otheritems' represents the hash code for the previous versions.
         int otheritems = (lenient ? 1 : 0)
@@ -1995,6 +2104,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * any invalid calendar values.
      * @since   1.5
      */
+    @Override
     public int compareTo(Calendar anotherCalendar) {
         return compareTo(getMillisOf(anotherCalendar));
     }
@@ -2468,8 +2578,9 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
         // if we're counting weeks, set the day of the week to Sunday.  We know the
         // last week of a month or year will contain the first day of the week.
-        if (field == WEEK_OF_YEAR || field == WEEK_OF_MONTH)
+        if (field == WEEK_OF_YEAR || field == WEEK_OF_MONTH) {
             work.set(DAY_OF_WEEK, firstDayOfWeek);
+        }
 
         // now try each value from getLeastMaximum() to getMaximum() one by one until
         // we get a value that normalizes to another value.  The last value that
@@ -2494,6 +2605,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @return a copy of this object.
      */
+    @Override
     public Object clone()
     {
         try {
@@ -2531,7 +2643,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * @exception IndexOutOfBoundsException if <code>field</code> is negative,
      * equal to or greater then <code>FIELD_COUNT</code>.
      */
-    static final String getFieldName(int field) {
+    static String getFieldName(int field) {
         return FIELD_NAME[field];
     }
 
@@ -2543,6 +2655,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @return  a string representation of this calendar.
      */
+    @Override
     public String toString() {
         // NOTE: BuddhistCalendar.toString() interprets the string
         // produced by this method so that the Gregorian year number
@@ -2567,7 +2680,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
 
     // =======================privates===============================
 
-    private static final void appendValue(StringBuilder sb, String item, boolean valid, long value) {
+    private static void appendValue(StringBuilder sb, String item, boolean valid, long value) {
         sb.append(item).append('=');
         if (valid) {
             sb.append(value);
@@ -2587,10 +2700,12 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         /* try to get the Locale data from the cache */
         int[] data = cachedLocaleData.get(desiredLocale);
         if (data == null) {  /* cache miss */
-            ResourceBundle bundle = LocaleData.getCalendarData(desiredLocale);
+            LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(CalendarDataProvider.class, desiredLocale);
+            CalendarDataProvider provider = adapter.getCalendarDataProvider();
             data = new int[2];
-            data[0] = Integer.parseInt(bundle.getString("firstDayOfWeek"));
-            data[1] = Integer.parseInt(bundle.getString("minimalDaysInFirstWeek"));
+            data[0] = provider.getFirstDayOfWeek(desiredLocale);
+            data[1] = provider.getMinimalDaysInFirstWeek(desiredLocale);
+            assert data[0] != 0 && data[1] != 0;
             cachedLocaleData.putIfAbsent(desiredLocale, data);
         }
         firstDayOfWeek = data[0];
@@ -2614,7 +2729,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         return (thisTime > t) ? 1 : (thisTime == t) ? 0 : -1;
     }
 
-    private static final long getMillisOf(Calendar calendar) {
+    private static long getMillisOf(Calendar calendar) {
         if (calendar.isTimeSet) {
             return calendar.time;
         }
@@ -2627,7 +2742,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * Adjusts the stamp[] values before nextStamp overflow. nextStamp
      * is set to the next stamp value upon the return.
      */
-    private final void adjustStamp() {
+    private void adjustStamp() {
         int max = MINIMUM_USER_STAMP;
         int newStamp = MINIMUM_USER_STAMP;
 
@@ -2752,6 +2867,8 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
                                                     new ProtectionDomain(null, perms)
                                                 });
         }
+        private CalendarAccessControlContext() {
+        }
     }
 
     /**
@@ -2771,13 +2888,18 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         if (serialVersionOnStream >= 2)
         {
             isTimeSet = true;
-            if (fields == null) fields = new int[FIELD_COUNT];
-            if (isSet == null) isSet = new boolean[FIELD_COUNT];
+            if (fields == null) {
+                fields = new int[FIELD_COUNT];
+            }
+            if (isSet == null) {
+                isSet = new boolean[FIELD_COUNT];
+            }
         }
         else if (serialVersionOnStream >= 0)
         {
-            for (int i=0; i<FIELD_COUNT; ++i)
+            for (int i=0; i<FIELD_COUNT; ++i) {
                 stamp[i] = isSet[i] ? COMPUTED : UNSET;
+            }
         }
 
         serialVersionOnStream = currentSerialVersion;
@@ -2787,6 +2909,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
         try {
             zi = AccessController.doPrivileged(
                     new PrivilegedExceptionAction<ZoneInfo>() {
+                        @Override
                         public ZoneInfo run() throws Exception {
                             return (ZoneInfo) input.readObject();
                         }

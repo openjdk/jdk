@@ -27,10 +27,9 @@ package sun.awt.X11;
 import java.awt.*;
 import java.awt.peer.*;
 
-import java.lang.reflect.Field;
 import java.util.Vector;
 import sun.util.logging.PlatformLogger;
-import sun.awt.SunToolkit;
+import sun.awt.AWTAccessor;
 
 public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
 
@@ -45,16 +44,6 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
      * Window that correspond to this menu
      */
     XMenuWindow menuWindow;
-
-
-    /*
-     * Menu's fields & methods
-     */
-    private final static Field f_items;
-
-    static {
-        f_items = SunToolkit.getField(Menu.class, "items");
-    }
 
     /************************************************
      *
@@ -153,12 +142,7 @@ public class XMenuPeer extends XMenuItemPeer implements MenuPeer {
      *
      ************************************************/
     Vector getTargetItems() {
-        try {
-            return (Vector)f_items.get(getTarget());
-        } catch (IllegalAccessException iae) {
-            iae.printStackTrace();
-            return null;
-        }
+        return AWTAccessor.getMenuAccessor().getItems((Menu)getTarget());
     }
 
     /************************************************

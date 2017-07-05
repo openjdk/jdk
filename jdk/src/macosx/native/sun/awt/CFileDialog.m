@@ -43,6 +43,7 @@
                 mode:(jint)inMode
         multipleMode:(BOOL)inMultipleMode
       shouldNavigate:(BOOL)inNavigateApps
+canChooseDirectories:(BOOL)inChooseDirectories
              withEnv:(JNIEnv*)env;
 {
     if (self == [super init]) {
@@ -57,6 +58,7 @@
         fMode = inMode;
         fMultipleMode = inMultipleMode;
         fNavigateApps = inNavigateApps;
+        fChooseDirectories = inChooseDirectories;
         fPanelResult = NSCancelButton;
     }
 
@@ -109,7 +111,7 @@
             NSOpenPanel *openPanel = (NSOpenPanel *)thePanel;
             [openPanel setAllowsMultipleSelection:fMultipleMode];
             [openPanel setCanChooseFiles:YES];
-            [openPanel setCanChooseDirectories:NO];
+            [openPanel setCanChooseDirectories:fChooseDirectories];
             [openPanel setCanCreateDirectories:YES];
         }
 
@@ -182,7 +184,8 @@
 JNIEXPORT jobjectArray JNICALL
 Java_sun_lwawt_macosx_CFileDialog_nativeRunFileDialog
 (JNIEnv *env, jobject peer, jstring title, jint mode, jboolean multipleMode,
- jboolean navigateApps, jboolean hasFilter, jstring directory, jstring file)
+ jboolean navigateApps, jboolean chooseDirectories, jboolean hasFilter,
+ jstring directory, jstring file)
 {
     jobjectArray returnValue = NULL;
 
@@ -200,6 +203,7 @@ JNF_COCOA_ENTER(env);
                                                                  mode:mode
                                                          multipleMode:multipleMode
                                                        shouldNavigate:navigateApps
+                                                 canChooseDirectories:chooseDirectories
                                                               withEnv:env];
 
     [JNFRunLoop performOnMainThread:@selector(safeSaveOrLoad)

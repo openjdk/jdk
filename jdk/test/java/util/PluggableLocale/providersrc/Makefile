@@ -19,7 +19,8 @@ FOOSERVICES = \
 BARSERVICES = \
 	java.util.spi.CurrencyNameProvider \
 	java.util.spi.TimeZoneNameProvider \
-	java.util.spi.LocaleNameProvider 
+	java.util.spi.LocaleNameProvider \
+	java.util.spi.CalendarDataProvider
 
 FOOFILES_JAVA = \
     BreakIteratorProviderImpl.java \
@@ -36,6 +37,7 @@ BARFILES_JAVA = \
     CurrencyNameProviderImpl.java \
     TimeZoneNameProviderImpl.java \
     LocaleNameProviderImpl.java \
+    CalendarDataProviderImpl.java \
     Utils.java
 
 BARFILES_PROPERTIES = \

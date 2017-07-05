@@ -184,7 +184,6 @@ class KQueueSelectorImpl
             FileDispatcherImpl.closeIntFD(fd0);
             FileDispatcherImpl.closeIntFD(fd1);
             if (kqueueWrapper != null) {
-                kqueueWrapper.release(fd0);
                 kqueueWrapper.close();
                 kqueueWrapper = null;
                 selectedKeys = null;
@@ -220,7 +219,7 @@ class KQueueSelectorImpl
     protected void implDereg(SelectionKeyImpl ski) throws IOException {
         int fd = ski.channel.getFDVal();
         fdMap.remove(Integer.valueOf(fd));
-        kqueueWrapper.release(fd);
+        kqueueWrapper.release(ski.channel);
         totalChannels--;
         keys.remove(ski);
         selectedKeys.remove(ski);
@@ -234,8 +233,7 @@ class KQueueSelectorImpl
     public void putEventOps(SelectionKeyImpl ski, int ops) {
         if (closed)
             throw new ClosedSelectorException();
-        int fd = IOUtil.fdVal(ski.channel.getFD());
-        kqueueWrapper.setInterest(fd, ops);
+        kqueueWrapper.setInterest(ski.channel, ops);
     }
 
 
@@ -254,4 +252,3 @@ class KQueueSelectorImpl
         Util.load();
     }
 }
-

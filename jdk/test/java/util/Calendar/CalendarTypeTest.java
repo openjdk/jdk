@@ -1,0 +1,119 @@
+/*
+ * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @bug 7151414
+ * @summary Unit test for calendar types
+ */
+
+import java.util.*;
+
+public class CalendarTypeTest {
+    // Calendar types supported in JRE
+    static Locale[] locales = new Locale[] {
+        Locale.US,
+        Locale.forLanguageTag("th-TH-u-ca-gregory"),
+        new Locale("th", "TH"),
+        Locale.forLanguageTag("en-US-u-ca-buddhist"),
+        new Locale("ja", "JP", "JP"),
+        Locale.forLanguageTag("en-US-u-ca-japanese"),
+    };
+    static String[] types = new String[] {
+        "gregory",
+        "gregory",
+        "buddhist",
+        "buddhist",
+        "japanese",
+        "japanese",
+    };
+
+    public static void main(String[] args) {
+        for (int i = 0; i < locales.length; i++) {
+            Calendar cal = Calendar.getInstance(locales[i]);
+            String type = cal.getCalendarType();
+            checkValue("bad calendar type", type, types[i]);
+        }
+
+        GregorianCalendar gcal = new GregorianCalendar();
+        checkValue("bad GregorianCalendar type", gcal.getCalendarType(), "gregory");
+
+        Gregorian g = new Gregorian();
+        checkValue("bad GregorianCalendar subclass type", g.getCalendarType(), "gregory");
+
+        Calendar k = new Koyomi();
+        checkValue("bad class name", k.getCalendarType(), k.getClass().getName());
+    }
+
+    private static void checkValue(String msg, String got, String expected) {
+        if (!expected.equals(got)) {
+            String str = String.format("%s: got '%s', expected '%s'", msg, got, expected);
+            throw new RuntimeException(str);
+        }
+    }
+
+    private static class Gregorian extends GregorianCalendar {
+    }
+
+    private static class Koyomi extends Calendar {
+        @Override
+        protected void computeTime() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        protected void computeFields() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void add(int field, int amount) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void roll(int field, boolean up) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public int getMinimum(int field) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public int getMaximum(int field) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public int getGreatestMinimum(int field) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public int getLeastMaximum(int field) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+    }
+}

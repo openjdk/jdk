@@ -338,6 +338,18 @@ public class LWWindowPeer
             h = MINIMUM_HEIGHT;
         }
 
+        if (graphicsConfig instanceof TextureSizeConstraining) {
+            final int maxW = ((TextureSizeConstraining)graphicsConfig).getMaxTextureWidth();
+            final int maxH = ((TextureSizeConstraining)graphicsConfig).getMaxTextureHeight();
+
+            if (w > maxW) {
+                w = maxW;
+            }
+            if (h > maxH) {
+                h = maxH;
+            }
+        }
+
         // Don't post ComponentMoved/Resized and Paint events
         // until we've got a notification from the delegate
         setBounds(x, y, w, h, op, false, false);
@@ -405,14 +417,33 @@ public class LWWindowPeer
 
     @Override
     public void updateMinimumSize() {
-        Dimension d = null;
+        final Dimension min;
         if (getTarget().isMinimumSizeSet()) {
-            d = getTarget().getMinimumSize();
+            min = getTarget().getMinimumSize();
+            min.width = Math.max(min.width, MINIMUM_WIDTH);
+            min.height = Math.max(min.height, MINIMUM_HEIGHT);
+        } else {
+            min = new Dimension(MINIMUM_WIDTH, MINIMUM_HEIGHT);
         }
-        if (d == null) {
-            d = new Dimension(MINIMUM_WIDTH, MINIMUM_HEIGHT);
+
+        final int maxW, maxH;
+        if (graphicsConfig instanceof TextureSizeConstraining) {
+            maxW = ((TextureSizeConstraining)graphicsConfig).getMaxTextureWidth();
+            maxH = ((TextureSizeConstraining)graphicsConfig).getMaxTextureHeight();
+        } else {
+            maxW = maxH = Integer.MAX_VALUE;
         }
-        platformWindow.setMinimumSize(d.width, d.height);
+
+        final Dimension max;
+        if (getTarget().isMaximumSizeSet()) {
+            max = getTarget().getMaximumSize();
+            max.width = Math.min(max.width, maxW);
+            max.height = Math.min(max.height, maxH);
+        } else {
+            max = new Dimension(maxW, maxH);
+        }
+
+        platformWindow.setSizeConstraints(min.width, min.height, max.width, max.height);
     }
 
     @Override

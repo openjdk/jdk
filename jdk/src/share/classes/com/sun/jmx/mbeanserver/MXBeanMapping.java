@@ -169,7 +169,7 @@ public abstract class MXBeanMapping {
             return (Class<?>) javaType;
         try {
             String className = openType.getClassName();
-            return Class.forName(className, false, null);
+            return Class.forName(className, false, MXBeanMapping.class.getClassLoader());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);  // should not happen
         }

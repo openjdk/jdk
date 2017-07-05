@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6546 $"/>
+		<generation date="$Date: 2012-02-08 03:32:35 +0900 (Wed, 08 Feb 2012) $"/>
+		<language type="haw"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ar">ʻAlapia</language>
+			<language type="cy">Wale</language>
+			<language type="da">Kenemaka</language>
+			<language type="de">Kelemānia</language>
+			<language type="el">Helene</language>
+			<language type="en">Pelekānia</language>
+			<language type="en_AU">Pelekāne Nū Hōlani</language>
+			<language type="en_CA">Pelekāne Kanakā</language>
+			<language type="en_GB">Pelekānia Pekekāne</language>
+			<language type="en_US">Pelekānia ʻAmelika</language>
+			<language type="es">Paniolo</language>
+			<language type="fj">Pīkī</language>
+			<language type="fr">Palani</language>
+			<language type="fr_CA">Palani Kanakā</language>
+			<language type="fr_CH">Kuikilani</language>
+			<language type="ga">ʻAiliki</language>
+			<language type="gsw">Kuikilani Kelemānia</language>
+			<language type="haw">ʻŌlelo Hawaiʻi</language>
+			<language type="he">Hebera</language>
+			<language type="it">ʻĪkālia</language>
+			<language type="ja">Kepanī</language>
+			<language type="ko">Kōlea</language>
+			<language type="la">Lākina</language>
+			<language type="mi">Māori</language>
+			<language type="nl">Hōlani</language>
+			<language type="pt">Pukikī</language>
+			<language type="pt_BR">Pukikī Palakila</language>
+			<language type="ru">Lūkia</language>
+			<language type="sm">Kāmoa</language>
+			<language type="sv">Kuekene</language>
+			<language type="to">Tonga</language>
+			<language type="ty">Polapola</language>
+			<language type="und">ʻIke ʻole ‘ia a kūpono ʻole paha ka ʻōlelo</language>
+			<language type="vi">Wiekanama</language>
+			<language type="zh">Pākē</language>
+			<language type="zh_Hans">Pākē Hoʻomaʻalahi ʻia</language>
+			<language type="zh_Hant">Pākē Kuʻuna</language>
+		</languages>
+		<territories>
+			<territory type="AU">Nūhōlani</territory>
+			<territory type="CA">Kanakā</territory>
+			<territory type="CN">Kina</territory>
+			<territory type="DE">Kelemānia</territory>
+			<territory type="DK">Kenemaka</territory>
+			<territory type="ES">Kepania</territory>
+			<territory type="FR">Palani</territory>
+			<territory type="GB">Aupuni Mōʻī Hui Pū ʻIa</territory>
+			<territory type="GR">Helene</territory>
+			<territory type="IE">ʻIlelani</territory>
+			<territory type="IL">ʻIseraʻela</territory>
+			<territory type="IN">ʻĪnia</territory>
+			<territory type="IT">ʻĪkālia</territory>
+			<territory type="JP">Iāpana</territory>
+			<territory type="MX">Mekiko</territory>
+			<territory type="NL">Hōlani</territory>
+			<territory type="NZ">Aotearoa</territory>
+			<territory type="PH">ʻĀina Pilipino</territory>
+			<territory type="RU">Lūkia</territory>
+			<territory type="US">ʻAmelika Hui Pū ʻIa</territory>
+		</territories>
+		<measurementSystemNames>
+			<measurementSystemName type="metric">Mekalika</measurementSystemName>
+			<measurementSystemName type="US">ʻAmelika Hui Pū ʻIa</measurementSystemName>
+		</measurementSystemNames>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a ā e ē i ī o ō u ū h k l m n p w ʻ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[b c d f g j q r s t v x y z]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[A E I O U H K L M N P W ʻ B C D F G J Q R S T V X Y Z]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">Ian.</month>
+							<month type="2">Pep.</month>
+							<month type="3">Mal.</month>
+							<month type="4">ʻAp.</month>
+							<month type="5">Mei</month>
+							<month type="6">Iun.</month>
+							<month type="7">Iul.</month>
+							<month type="8">ʻAu.</month>
+							<month type="9">Kep.</month>
+							<month type="10">ʻOk.</month>
+							<month type="11">Now.</month>
+							<month type="12">Kek.</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Ianuali</month>
+							<month type="2">Pepeluali</month>
+							<month type="3">Malaki</month>
+							<month type="4">ʻApelila</month>
+							<month type="5">Mei</month>
+							<month type="6">Iune</month>
+							<month type="7">Iulai</month>
+							<month type="8">ʻAukake</month>
+							<month type="9">Kepakemapa</month>
+							<month type="10">ʻOkakopa</month>
+							<month type="11">Nowemapa</month>
+							<month type="12">Kekemapa</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun">LP</day>
+							<day type="mon">P1</day>
+							<day type="tue">P2</day>
+							<day type="wed">P3</day>
+							<day type="thu">P4</day>
+							<day type="fri">P5</day>
+							<day type="sat">P6</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun">Lāpule</day>
+							<day type="mon">Poʻakahi</day>
+							<day type="tue">Poʻalua</day>
+							<day type="wed">Poʻakolu</day>
+							<day type="thu">Poʻahā</day>
+							<day type="fri">Poʻalima</day>
+							<day type="sat">Poʻaono</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">d MMM y</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">d/M/yy</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm:ss a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">h:mm a</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<currencyFormats numberSystem="latn">
+			<currencyFormatLength>
+				<currencyFormat>
+					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+	</numbers>
+	<units>
+		<unit type="day">
+			<unitPattern count="other">{0} lā</unitPattern>
+		</unit>
+		<unit type="hour">
+			<unitPattern count="other">{0} hola</unitPattern>
+		</unit>
+		<unit type="minute">
+			<unitPattern count="other">{0} minuke</unitPattern>
+		</unit>
+		<unit type="month">
+			<unitPattern count="other">{0} mahina</unitPattern>
+		</unit>
+		<unit type="second">
+			<unitPattern count="other">{0} kekona</unitPattern>
+		</unit>
+		<unit type="week">
+			<unitPattern count="other">{0} pule</unitPattern>
+		</unit>
+		<unit type="year">
+			<unitPattern count="other">{0} makahiki</unitPattern>
+		</unit>
+	</units>
+</ldml>

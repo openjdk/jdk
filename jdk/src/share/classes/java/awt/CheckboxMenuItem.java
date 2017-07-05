@@ -31,6 +31,7 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.IOException;
 import javax.accessibility.*;
+import sun.awt.AWTAccessor;
 
 
 /**
@@ -68,6 +69,13 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
         if (!GraphicsEnvironment.isHeadless()) {
             initIDs();
         }
+
+        AWTAccessor.setCheckboxMenuItemAccessor(
+            new AWTAccessor.CheckboxMenuItemAccessor() {
+                public boolean getState(CheckboxMenuItem cmi) {
+                    return cmi.state;
+                }
+            });
     }
 
    /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,13 @@
 
 package java.text;
 
-import java.io.InvalidObjectException;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.text.spi.NumberFormatProvider;
 import java.util.ArrayList;
 import java.util.Currency;
 import java.util.Locale;
@@ -52,7 +53,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import sun.util.resources.LocaleData;
+import sun.util.locale.provider.LocaleProviderAdapter;
 
 /**
  * <code>DecimalFormat</code> is a concrete subclass of
@@ -398,7 +399,14 @@ public class DecimalFormat extends NumberFormat {
         String pattern = cachedLocaleData.get(def);
         if (pattern == null) {  /* cache miss */
             // Get the pattern for the default locale.
-            ResourceBundle rb = LocaleData.getNumberFormatData(def);
+            LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(NumberFormatProvider.class, def);
+            switch (adapter.getAdapterType()) {
+            case HOST:
+            case SPI:
+                adapter = LocaleProviderAdapter.getResourceBundleBased();
+                break;
+            }
+            ResourceBundle rb = adapter.getLocaleData().getNumberFormatData(def);
             String[] all = rb.getStringArray("NumberPatterns");
             pattern = all[0];
             /* update cache */
@@ -406,7 +414,7 @@ public class DecimalFormat extends NumberFormat {
         }
 
         // Always applyPattern after the symbols are set
-        this.symbols = new DecimalFormatSymbols(def);
+        this.symbols = DecimalFormatSymbols.getInstance(def);
         applyPattern(pattern, false);
     }
 
@@ -431,7 +439,7 @@ public class DecimalFormat extends NumberFormat {
      */
     public DecimalFormat(String pattern) {
         // Always applyPattern after the symbols are set
-        this.symbols = new DecimalFormatSymbols(Locale.getDefault(Locale.Category.FORMAT));
+        this.symbols = DecimalFormatSymbols.getInstance(Locale.getDefault(Locale.Category.FORMAT));
         applyPattern(pattern, false);
     }
 
@@ -485,6 +493,7 @@ public class DecimalFormat extends NumberFormat {
      *                   mode being set to RoundingMode.UNNECESSARY
      * @see              java.text.FieldPosition
      */
+    @Override
     public final StringBuffer format(Object number,
                                      StringBuffer toAppendTo,
                                      FieldPosition pos) {
@@ -517,6 +526,7 @@ public class DecimalFormat extends NumberFormat {
      * @return The formatted number string
      * @see java.text.FieldPosition
      */
+    @Override
     public StringBuffer format(double number, StringBuffer result,
                                FieldPosition fieldPosition) {
         fieldPosition.setBeginIndex(0);
@@ -618,6 +628,7 @@ public class DecimalFormat extends NumberFormat {
      * @return The formatted number string
      * @see java.text.FieldPosition
      */
+    @Override
     public StringBuffer format(long number, StringBuffer result,
                                FieldPosition fieldPosition) {
         fieldPosition.setBeginIndex(0);
@@ -832,6 +843,7 @@ public class DecimalFormat extends NumberFormat {
      * @return AttributedCharacterIterator describing the formatted value.
      * @since 1.4
      */
+    @Override
     public AttributedCharacterIterator formatToCharacterIterator(Object obj) {
         CharacterIteratorFieldDelegate delegate =
                          new CharacterIteratorFieldDelegate();
@@ -1257,6 +1269,7 @@ public class DecimalFormat extends NumberFormat {
      * @exception  NullPointerException if <code>text</code> or
      *             <code>pos</code> is null.
      */
+    @Override
     public Number parse(String text, ParsePosition pos) {
         // special case NaN
         if (text.regionMatches(pos.index, symbols.getNaN(), 0, symbols.getNaN().length())) {
@@ -1890,6 +1903,7 @@ public class DecimalFormat extends NumberFormat {
     /**
      * Standard override; no change in semantics.
      */
+    @Override
     public Object clone() {
         DecimalFormat other = (DecimalFormat) super.clone();
         other.symbols = (DecimalFormatSymbols) symbols.clone();
@@ -1900,6 +1914,7 @@ public class DecimalFormat extends NumberFormat {
     /**
      * Overrides equals
      */
+    @Override
     public boolean equals(Object obj)
     {
         if (obj == null) return false;
@@ -1939,6 +1954,7 @@ public class DecimalFormat extends NumberFormat {
     /**
      * Overrides hashCode
      */
+    @Override
     public int hashCode() {
         return super.hashCode() * 37 + positivePrefix.hashCode();
         // just enough fields for a reasonable distribution
@@ -2668,6 +2684,7 @@ public class DecimalFormat extends NumberFormat {
      * 309 is used. Negative input values are replaced with 0.
      * @see NumberFormat#setMaximumIntegerDigits
      */
+    @Override
     public void setMaximumIntegerDigits(int newValue) {
         maximumIntegerDigits = Math.min(Math.max(0, newValue), MAXIMUM_INTEGER_DIGITS);
         super.setMaximumIntegerDigits((maximumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
@@ -2687,6 +2704,7 @@ public class DecimalFormat extends NumberFormat {
      * 309 is used. Negative input values are replaced with 0.
      * @see NumberFormat#setMinimumIntegerDigits
      */
+    @Override
     public void setMinimumIntegerDigits(int newValue) {
         minimumIntegerDigits = Math.min(Math.max(0, newValue), MAXIMUM_INTEGER_DIGITS);
         super.setMinimumIntegerDigits((minimumIntegerDigits > DOUBLE_INTEGER_DIGITS) ?
@@ -2706,6 +2724,7 @@ public class DecimalFormat extends NumberFormat {
      * 340 is used. Negative input values are replaced with 0.
      * @see NumberFormat#setMaximumFractionDigits
      */
+    @Override
     public void setMaximumFractionDigits(int newValue) {
         maximumFractionDigits = Math.min(Math.max(0, newValue), MAXIMUM_FRACTION_DIGITS);
         super.setMaximumFractionDigits((maximumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
@@ -2725,6 +2744,7 @@ public class DecimalFormat extends NumberFormat {
      * 340 is used. Negative input values are replaced with 0.
      * @see NumberFormat#setMinimumFractionDigits
      */
+    @Override
     public void setMinimumFractionDigits(int newValue) {
         minimumFractionDigits = Math.min(Math.max(0, newValue), MAXIMUM_FRACTION_DIGITS);
         super.setMinimumFractionDigits((minimumFractionDigits > DOUBLE_FRACTION_DIGITS) ?
@@ -2744,6 +2764,7 @@ public class DecimalFormat extends NumberFormat {
      * 309 is used.
      * @see #setMaximumIntegerDigits
      */
+    @Override
     public int getMaximumIntegerDigits() {
         return maximumIntegerDigits;
     }
@@ -2756,6 +2777,7 @@ public class DecimalFormat extends NumberFormat {
      * 309 is used.
      * @see #setMinimumIntegerDigits
      */
+    @Override
     public int getMinimumIntegerDigits() {
         return minimumIntegerDigits;
     }
@@ -2768,6 +2790,7 @@ public class DecimalFormat extends NumberFormat {
      * 340 is used.
      * @see #setMaximumFractionDigits
      */
+    @Override
     public int getMaximumFractionDigits() {
         return maximumFractionDigits;
     }
@@ -2780,6 +2803,7 @@ public class DecimalFormat extends NumberFormat {
      * 340 is used.
      * @see #setMinimumFractionDigits
      */
+    @Override
     public int getMinimumFractionDigits() {
         return minimumFractionDigits;
     }
@@ -2794,6 +2818,7 @@ public class DecimalFormat extends NumberFormat {
      * @return the currency used by this decimal format, or <code>null</code>
      * @since 1.4
      */
+    @Override
     public Currency getCurrency() {
         return symbols.getCurrency();
     }
@@ -2810,6 +2835,7 @@ public class DecimalFormat extends NumberFormat {
      * @exception NullPointerException if <code>currency</code> is null
      * @since 1.4
      */
+    @Override
     public void setCurrency(Currency currency) {
         if (currency != symbols.getCurrency()) {
             symbols.setCurrency(currency);
@@ -2826,6 +2852,7 @@ public class DecimalFormat extends NumberFormat {
      * @see #setRoundingMode(RoundingMode)
      * @since 1.6
      */
+    @Override
     public RoundingMode getRoundingMode() {
         return roundingMode;
     }
@@ -2838,6 +2865,7 @@ public class DecimalFormat extends NumberFormat {
      * @exception NullPointerException if <code>roundingMode</code> is null.
      * @since 1.6
      */
+    @Override
     public void setRoundingMode(RoundingMode roundingMode) {
         if (roundingMode == null) {
             throw new NullPointerException();
@@ -2845,35 +2873,6 @@ public class DecimalFormat extends NumberFormat {
 
         this.roundingMode = roundingMode;
         digitList.setRoundingMode(roundingMode);
-    }
-
-    /**
-     * Adjusts the minimum and maximum fraction digits to values that
-     * are reasonable for the currency's default fraction digits.
-     */
-    void adjustForCurrencyDefaultFractionDigits() {
-        Currency currency = symbols.getCurrency();
-        if (currency == null) {
-            try {
-                currency = Currency.getInstance(symbols.getInternationalCurrencySymbol());
-            } catch (IllegalArgumentException e) {
-            }
-        }
-        if (currency != null) {
-            int digits = currency.getDefaultFractionDigits();
-            if (digits != -1) {
-                int oldMinDigits = getMinimumFractionDigits();
-                // Common patterns are "#.##", "#.00", "#".
-                // Try to adjust all of them in a reasonable way.
-                if (oldMinDigits == getMaximumFractionDigits()) {
-                    setMinimumFractionDigits(digits);
-                    setMaximumFractionDigits(digits);
-                } else {
-                    setMinimumFractionDigits(Math.min(digits, oldMinDigits));
-                    setMaximumFractionDigits(digits);
-                }
-            }
-        }
     }
 
     /**
@@ -3270,5 +3269,5 @@ public class DecimalFormat extends NumberFormat {
      * Cache to hold the NumberPattern of a Locale.
      */
     private static final ConcurrentMap<Locale, String> cachedLocaleData
-        = new ConcurrentHashMap<Locale, String>(3);
+        = new ConcurrentHashMap<>(3);
 }

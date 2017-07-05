@@ -167,17 +167,23 @@ public abstract class PKCS11Test {
         }
         String osid = osName + "-"
                 + props.getProperty("os.arch") + "-" + props.getProperty("sun.arch.data.model");
-        String nssLibDir = osMap.get(osid);
-        if (nssLibDir == null) {
+        String[] nssLibDirs = osMap.get(osid);
+        if (nssLibDirs == null) {
             System.out.println("Unsupported OS, skipping: " + osid);
             return null;
-//          throw new Exception("Unsupported OS " + osName);
         }
-        if (nssLibDir.length() == 0) {
+        if (nssLibDirs.length == 0) {
             System.out.println("NSS not supported on this platform, skipping test");
             return null;
         }
-        System.setProperty("pkcs11test.nss.libdir", nssLibDir);
+        String nssLibDir = null;
+        for (String dir : nssLibDirs) {
+            if (new File(dir).exists()) {
+                nssLibDir = dir;
+                System.setProperty("pkcs11test.nss.libdir", nssLibDir);
+                break;
+            }
+        }
         return nssLibDir;
     }
 
@@ -234,21 +240,23 @@ public abstract class PKCS11Test {
     }
 
 
-    private static final Map<String,String> osMap;
+    private static final Map<String,String[]> osMap;
 
     // Location of the NSS libraries on each supported platform
     static {
-        osMap = new HashMap<String,String>();
-        osMap.put("SunOS-sparc-32", "/usr/lib/mps/");
-        osMap.put("SunOS-sparcv9-64", "/usr/lib/mps/64/");
-        osMap.put("SunOS-x86-32", "/usr/lib/mps/");
-        osMap.put("SunOS-amd64-64", "/usr/lib/mps/64/");
-        osMap.put("Linux-i386-32", "/usr/lib/");
-        osMap.put("Linux-amd64-64", "/usr/lib64/");
-        osMap.put("Windows-x86-32",
-            PKCS11_BASE + "/nss/lib/windows-i586/".replace('/', SEP));
-        osMap.put("Windows-amd64-64",
-            PKCS11_BASE + "/nss/lib/windows-amd64/".replace('/', SEP));
+        osMap = new HashMap<String,String[]>();
+        osMap.put("SunOS-sparc-32", new String[]{"/usr/lib/mps/"});
+        osMap.put("SunOS-sparcv9-64", new String[]{"/usr/lib/mps/64/"});
+        osMap.put("SunOS-x86-32", new String[]{"/usr/lib/mps/"});
+        osMap.put("SunOS-amd64-64", new String[]{"/usr/lib/mps/64/"});
+        osMap.put("Linux-i386-32", new String[]{
+            "/usr/lib/i386-linux-gnu/", "/usr/lib/"});
+        osMap.put("Linux-amd64-64", new String[]{
+            "/usr/lib/x86_64-linux-gnu/", "/usr/lib64/"});
+        osMap.put("Windows-x86-32", new String[]{
+            PKCS11_BASE + "/nss/lib/windows-i586/".replace('/', SEP)});
+        osMap.put("Windows-amd64-64", new String[]{
+            PKCS11_BASE + "/nss/lib/windows-amd64/".replace('/', SEP)});
     }
 
     private final static char[] hexDigits = "0123456789abcdef".toCharArray();

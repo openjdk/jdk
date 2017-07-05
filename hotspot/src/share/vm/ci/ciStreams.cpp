@@ -355,11 +355,23 @@ int ciBytecodeStream::get_method_index() {
 // ciBytecodeStream::get_method
 //
 // If this is a method invocation bytecode, get the invoked method.
-ciMethod* ciBytecodeStream::get_method(bool& will_link) {
+// Additionally return the declared signature to get more concrete
+// type information if required (Cf. invokedynamic and invokehandle).
+ciMethod* ciBytecodeStream::get_method(bool& will_link, ciSignature* *declared_signature_result) {
   VM_ENTRY_MARK;
+  ciEnv* env = CURRENT_ENV;
   constantPoolHandle cpool(_method->get_methodOop()->constants());
-  ciMethod* m = CURRENT_ENV->get_method_by_index(cpool, get_method_index(), cur_bc(), _holder);
+  ciMethod* m = env->get_method_by_index(cpool, get_method_index(), cur_bc(), _holder);
   will_link = m->is_loaded();
+  // Get declared method signature and return it.
+  if (has_optional_appendix()) {
+    const int sig_index = get_method_signature_index();
+    Symbol* sig_sym = cpool->symbol_at(sig_index);
+    ciKlass* pool_holder = env->get_object(cpool->pool_holder())->as_klass();
+    (*declared_signature_result) = new (env->arena()) ciSignature(pool_holder, cpool, env->get_symbol(sig_sym));
+  } else {
+    (*declared_signature_result) = m->signature();
+  }
   return m;
 }
 
@@ -419,35 +431,18 @@ int ciBytecodeStream::get_method_holder_index() {
 }
 
 // ------------------------------------------------------------------
-// ciBytecodeStream::get_declared_method_signature
-//
-// Get the declared signature of the currently referenced method.
-//
-// This is always the same as the signature of the resolved method
-// itself, except for _invokehandle and _invokedynamic calls.
-//
-ciSignature* ciBytecodeStream::get_declared_method_signature() {
-  int sig_index = get_method_signature_index();
-  VM_ENTRY_MARK;
-  ciEnv* env = CURRENT_ENV;
-  constantPoolHandle cpool(_method->get_methodOop()->constants());
-  Symbol* sig_sym = cpool->symbol_at(sig_index);
-  ciKlass* pool_holder = env->get_object(cpool->pool_holder())->as_klass();
-  return new (env->arena()) ciSignature(pool_holder, cpool, env->get_symbol(sig_sym));
-}
-
-// ------------------------------------------------------------------
 // ciBytecodeStream::get_method_signature_index
 //
 // Get the constant pool index of the signature of the method
 // referenced by the current bytecode.  Used for generating
 // deoptimization information.
 int ciBytecodeStream::get_method_signature_index() {
-  VM_ENTRY_MARK;
-  constantPoolOop cpool = _holder->get_instanceKlass()->constants();
-  int method_index = get_method_index();
-  int name_and_type_index = cpool->name_and_type_ref_index_at(method_index);
-  return cpool->signature_ref_index_at(name_and_type_index);
+  GUARDED_VM_ENTRY(
+    constantPoolOop cpool = _holder->get_instanceKlass()->constants();
+    const int method_index = get_method_index();
+    const int name_and_type_index = cpool->name_and_type_ref_index_at(method_index);
+    return cpool->signature_ref_index_at(name_and_type_index);
+  )
 }
 
 // ------------------------------------------------------------------

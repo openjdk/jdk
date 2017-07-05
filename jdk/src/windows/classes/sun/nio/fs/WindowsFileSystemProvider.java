@@ -352,19 +352,34 @@ public class WindowsFileSystemProvider
         }
     }
 
+    /**
+     * Checks if the given file(or directory) exists and is readable.
+     */
+    private void checkReadAccess(WindowsPath file) throws IOException {
+        try {
+            Set<OpenOption> opts = Collections.emptySet();
+            FileChannel fc = WindowsChannelFactory
+                .newFileChannel(file.getPathForWin32Calls(),
+                                file.getPathForPermissionCheck(),
+                                opts,
+                                0L);
+            fc.close();
+        } catch (WindowsException exc) {
+            // Windows errors are very inconsistent when the file is a directory
+            // (ERROR_PATH_NOT_FOUND returned for root directories for example)
+            // so we retry by attempting to open it as a directory.
+            try {
+                new WindowsDirectoryStream(file, null).close();
+            } catch (IOException ioe) {
+                // translate and throw original exception
+                exc.rethrowAsIOException(file);
+            }
+        }
+    }
+
     @Override
     public void checkAccess(Path obj, AccessMode... modes) throws IOException {
         WindowsPath file = WindowsPath.toWindowsPath(obj);
-        // if no access modes then simply file attributes
-        if (modes.length == 0) {
-            file.checkRead();
-            try {
-                WindowsFileAttributes.get(file, true);
-            } catch (WindowsException exc) {
-                exc.rethrowAsIOException(file);
-            }
-            return;
-        }
 
         boolean r = false;
         boolean w = false;
@@ -376,6 +391,13 @@ public class WindowsFileSystemProvider
                 case EXECUTE : x = true; break;
                 default: throw new AssertionError("Should not get here");
             }
+        }
+
+        // special-case read access to avoid needing to determine effective
+        // access to file; default if modes not specified
+        if (!w && !x) {
+            checkReadAccess(file);
+            return;
         }
 
         int mask = 0;

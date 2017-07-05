@@ -126,7 +126,8 @@ CPPFLAGS += -I$(SHARE_SRC)/native/$(PKGDIR)/image/jpeg
 ifneq ($(SYSTEM_ZLIB),true)
   CPPFLAGS += -I$(SHARE_SRC)/native/java/util/zip/zlib-$(ZLIB_VERSION)
 else
-  OTHER_LDLIBS += -lz
+  OTHER_CFLAGS += $(ZLIB_CFLAGS)
+  OTHER_LDLIBS += $(ZLIB_LIBS)
 endif
 
 # Shun the less than portable MMX assembly code in pnggccrd.c,

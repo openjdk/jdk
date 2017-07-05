@@ -185,11 +185,16 @@ class InvokerBytecodeGenerator {
     }
 
     class CpPatch {
-        int index;
-        Object value;
-        CpPatch(int index, Object value) {
+        final int index;
+        final String placeholder;
+        final Object value;
+        CpPatch(int index, String placeholder, Object value) {
             this.index = index;
+            this.placeholder = placeholder;
             this.value = value;
+        }
+        public String toString() {
+            return "CpPatch/index="+index+",placeholder="+placeholder+",value="+value;
         }
     }
 
@@ -205,7 +210,7 @@ class InvokerBytecodeGenerator {
         }
         // insert placeholder in CP and remember the patch
         int index = cw.newConst((Object) cpPlaceholder);  // TODO check if aready in the constant pool
-        cpPatches.put(cpPlaceholder, new CpPatch(index, arg));
+        cpPatches.put(cpPlaceholder, new CpPatch(index, cpPlaceholder, arg));
         return cpPlaceholder;
     }
 
@@ -213,7 +218,9 @@ class InvokerBytecodeGenerator {
         int size = getConstantPoolSize(classFile);
         Object[] res = new Object[size];
         for (CpPatch p : cpPatches.values()) {
-                res[p.index] = p.value;
+            if (p.index >= size)
+                throw new InternalError("in cpool["+size+"]: "+p+"\n"+Arrays.toString(Arrays.copyOf(classFile, 20)));
+            res[p.index] = p.value;
         }
         return res;
     }
