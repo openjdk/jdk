@@ -40,7 +40,6 @@ import java.util.Calendar;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import sun.misc.IOUtils;
 import sun.security.pkcs.ContentInfo;
 import sun.security.pkcs.PKCS7;
 import sun.security.pkcs.PKCS9Attribute;
@@ -343,7 +342,7 @@ public class TimestampCheck {
         try (JarFile jf = new JarFile(file)) {
             JarEntry je = jf.getJarEntry("META-INF/OLD.RSA");
             try (InputStream is = jf.getInputStream(je)) {
-                byte[] content = IOUtils.readFully(is, -1, true);
+                byte[] content = is.readAllBytes();
                 PKCS7 p7 = new PKCS7(content);
                 SignerInfo[] si = p7.getSignerInfos();
                 if (si == null || si.length == 0) {
