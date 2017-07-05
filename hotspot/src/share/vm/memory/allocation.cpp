@@ -296,7 +296,7 @@ class ChunkPool: public CHeapObj<mtInternal> {
     // to avoid deadlock with NMT
         while(cur != NULL) {
           next = cur->next();
-      os::free(cur, mtChunk);
+      os::free(cur);
           cur = next;
         }
       }
@@ -384,7 +384,7 @@ void Chunk::operator delete(void* p) {
    case Chunk::medium_size: ChunkPool::medium_pool()->free(c); break;
    case Chunk::init_size:   ChunkPool::small_pool()->free(c); break;
    case Chunk::tiny_size:   ChunkPool::tiny_pool()->free(c); break;
-   default:                 os::free(c, mtChunk);
+   default:                 os::free(c);
   }
 }
 

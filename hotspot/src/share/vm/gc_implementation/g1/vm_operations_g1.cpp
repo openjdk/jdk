@@ -92,12 +92,8 @@ bool VM_G1IncCollectionPause::doit_prologue() {
 
 void VM_G1IncCollectionPause::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  assert(!_should_initiate_conc_mark ||
-  ((_gc_cause == GCCause::_gc_locker && GCLockerInvokesConcurrent) ||
-   (_gc_cause == GCCause::_java_lang_system_gc && ExplicitGCInvokesConcurrent) ||
-    _gc_cause == GCCause::_g1_humongous_allocation ||
-    _gc_cause == GCCause::_update_allocation_context_stats_inc),
-      "only a GC locker, a System.gc(), stats update or a hum allocation induced GC should start a cycle");
+  assert(!_should_initiate_conc_mark || g1h->should_do_concurrent_full_gc(_gc_cause),
+      "only a GC locker, a System.gc(), stats update, whitebox, or a hum allocation induced GC should start a cycle");
 
   if (_word_size > 0) {
     // An allocation has been requested. So, try to do that first.
@@ -230,7 +226,6 @@ void VM_CGC_Operation::release_and_notify_pending_list_lock() {
 }
 
 void VM_CGC_Operation::doit() {
-  gclog_or_tty->date_stamp(G1Log::fine() && PrintGCDateStamps);
   TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
   GCTraceTime t(_printGCMessage, G1Log::fine(), true, G1CollectedHeap::heap()->gc_timer_cm(), G1CollectedHeap::heap()->concurrent_mark()->concurrent_gc_id());
   SharedHeap* sh = SharedHeap::heap();

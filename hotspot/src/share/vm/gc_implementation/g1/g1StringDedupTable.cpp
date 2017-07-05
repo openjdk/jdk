@@ -187,7 +187,7 @@ G1StringDedupTable::G1StringDedupTable(size_t size, jint hash_seed) :
 }
 
 G1StringDedupTable::~G1StringDedupTable() {
-  FREE_C_HEAP_ARRAY(G1StringDedupEntry*, _buckets, mtGC);
+  FREE_C_HEAP_ARRAY(G1StringDedupEntry*, _buckets);
 }
 
 void G1StringDedupTable::create() {

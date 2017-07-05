@@ -348,7 +348,7 @@ static jint set_ccstr_flag(const char* name, AttachOperation* op, outputStream* 
   }
   bool res = CommandLineFlags::ccstrAtPut((char*)name, &value, Flag::ATTACH_ON_DEMAND);
   if (res) {
-    FREE_C_HEAP_ARRAY(char, value, mtInternal);
+    FREE_C_HEAP_ARRAY(char, value);
   } else {
     out->print_cr("setting flag %s failed", name);
   }

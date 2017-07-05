@@ -165,7 +165,7 @@ MetaIndex::MetaIndex(char** meta_package_names, int num_meta_package_names) {
 
 
 MetaIndex::~MetaIndex() {
-  FREE_C_HEAP_ARRAY(char*, _meta_package_names, mtClass);
+  FREE_C_HEAP_ARRAY(char*, _meta_package_names);
 }
 
 
@@ -251,7 +251,7 @@ ClassPathZipEntry::~ClassPathZipEntry() {
   if (ZipClose != NULL) {
     (*ZipClose)(_zip);
   }
-  FREE_C_HEAP_ARRAY(char, _zip_name, mtClass);
+  FREE_C_HEAP_ARRAY(char, _zip_name);
 }
 
 u1* ClassPathZipEntry::open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS) {

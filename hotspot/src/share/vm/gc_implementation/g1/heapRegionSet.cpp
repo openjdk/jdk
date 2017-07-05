@@ -449,5 +449,5 @@ void FreeRegionList_test() {
 
   bot_storage->uncommit_regions(0, num_regions_in_test);
   delete bot_storage;
-  FREE_C_HEAP_ARRAY(HeapWord, bot_data, mtGC);
+  FREE_C_HEAP_ARRAY(HeapWord, bot_data);
 }
