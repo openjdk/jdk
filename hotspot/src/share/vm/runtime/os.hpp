@@ -99,6 +99,28 @@ class os: AllStatic {
     _page_sizes[1] = 0; // sentinel
   }
 
+  static char*  pd_reserve_memory(size_t bytes, char* addr = 0,
+                               size_t alignment_hint = 0);
+  static char*  pd_attempt_reserve_memory_at(size_t bytes, char* addr);
+  static void   pd_split_reserved_memory(char *base, size_t size,
+                                      size_t split, bool realloc);
+  static bool   pd_commit_memory(char* addr, size_t bytes, bool executable = false);
+  static bool   pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
+                              bool executable = false);
+  static bool   pd_uncommit_memory(char* addr, size_t bytes);
+  static bool   pd_release_memory(char* addr, size_t bytes);
+
+  static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
+                           char *addr, size_t bytes, bool read_only = false,
+                           bool allow_exec = false);
+  static char*  pd_remap_memory(int fd, const char* file_name, size_t file_offset,
+                             char *addr, size_t bytes, bool read_only,
+                             bool allow_exec);
+  static bool   pd_unmap_memory(char *addr, size_t bytes);
+  static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint);
+  static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
+
+
  public:
   static void init(void);                      // Called before command line parsing
   static jint init_2(void);                    // Called after command line parsing
@@ -236,8 +258,7 @@ class os: AllStatic {
   static char*  attempt_reserve_memory_at(size_t bytes, char* addr);
   static void   split_reserved_memory(char *base, size_t size,
                                       size_t split, bool realloc);
-  static bool   commit_memory(char* addr, size_t bytes,
-                              bool executable = false);
+  static bool   commit_memory(char* addr, size_t bytes, bool executable = false);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
                               bool executable = false);
   static bool   uncommit_memory(char* addr, size_t bytes);
@@ -250,6 +271,7 @@ class os: AllStatic {
   static bool   guard_memory(char* addr, size_t bytes);
   static bool   unguard_memory(char* addr, size_t bytes);
   static bool   create_stack_guard_pages(char* addr, size_t bytes);
+  static bool   pd_create_stack_guard_pages(char* addr, size_t bytes);
   static bool   remove_stack_guard_pages(char* addr, size_t bytes);
 
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
@@ -573,12 +595,15 @@ class os: AllStatic {
   static void* thread_local_storage_at(int index);
   static void  free_thread_local_storage(int index);
 
+  // Stack walk
+  static address get_caller_pc(int n = 0);
+
   // General allocation (must be MT-safe)
-  static void* malloc  (size_t size);
-  static void* realloc (void *memblock, size_t size);
-  static void  free    (void *memblock);
+  static void* malloc  (size_t size, MEMFLAGS flags, address caller_pc = 0);
+  static void* realloc (void *memblock, size_t size, MEMFLAGS flags, address caller_pc = 0);
+  static void  free    (void *memblock, MEMFLAGS flags = mtNone);
   static bool  check_heap(bool force = false);      // verify C heap integrity
-  static char* strdup(const char *);  // Like strdup
+  static char* strdup(const char *, MEMFLAGS flags = mtInternal);  // Like strdup
 
 #ifndef PRODUCT
   static julong num_mallocs;         // # of calls to malloc/realloc
@@ -639,6 +664,10 @@ class os: AllStatic {
 
   // On Windows this will create an actual minidump, on Linux/Solaris it will simply check core dump limits
   static void check_or_create_dump(void* exceptionRecord, void* contextRecord, char* buffer, size_t bufferSize);
+
+  // Get the default path to the core file
+  // Returns the length of the string
+  static int get_core_path(char* buffer, size_t bufferSize);
 
   // JVMTI & JVM monitoring and management support
   // The thread_cpu_time() and current_thread_cpu_time() are only

@@ -33,7 +33,7 @@ class ResolutionErrorEntry;
 // ResolutionError objects are used to record errors encountered during
 // constant pool resolution (JVMS 5.4.3).
 
-class ResolutionErrorTable : public Hashtable<constantPoolOop> {
+class ResolutionErrorTable : public Hashtable<constantPoolOop, mtClass> {
 
 public:
   ResolutionErrorTable(int table_size);
@@ -42,15 +42,16 @@ public:
   void free_entry(ResolutionErrorEntry *entry);
 
   ResolutionErrorEntry* bucket(int i) {
-    return (ResolutionErrorEntry*)Hashtable<constantPoolOop>::bucket(i);
+    return (ResolutionErrorEntry*)Hashtable<constantPoolOop, mtClass>::bucket(i);
   }
 
   ResolutionErrorEntry** bucket_addr(int i) {
-    return (ResolutionErrorEntry**)Hashtable<constantPoolOop>::bucket_addr(i);
+    return (ResolutionErrorEntry**)Hashtable<constantPoolOop, mtClass>::bucket_addr(i);
   }
 
   void add_entry(int index, ResolutionErrorEntry* new_entry) {
-    Hashtable<constantPoolOop>::add_entry(index, (HashtableEntry<constantPoolOop>*)new_entry);
+    Hashtable<constantPoolOop, mtClass>::add_entry(index,
+      (HashtableEntry<constantPoolOop, mtClass>*)new_entry);
   }
 
   void add_entry(int index, unsigned int hash,
@@ -74,7 +75,7 @@ public:
 };
 
 
-class ResolutionErrorEntry : public HashtableEntry<constantPoolOop> {
+class ResolutionErrorEntry : public HashtableEntry<constantPoolOop, mtClass> {
  private:
   int               _cp_index;
   Symbol*           _error;
@@ -90,11 +91,11 @@ class ResolutionErrorEntry : public HashtableEntry<constantPoolOop> {
   void               set_error(Symbol* e);
 
   ResolutionErrorEntry* next() const {
-    return (ResolutionErrorEntry*)HashtableEntry<constantPoolOop>::next();
+    return (ResolutionErrorEntry*)HashtableEntry<constantPoolOop, mtClass>::next();
   }
 
   ResolutionErrorEntry** next_addr() {
-    return (ResolutionErrorEntry**)HashtableEntry<constantPoolOop>::next_addr();
+    return (ResolutionErrorEntry**)HashtableEntry<constantPoolOop, mtClass>::next_addr();
   }
 
   // GC support

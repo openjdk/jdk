@@ -59,7 +59,7 @@ ParScanThreadState::ParScanThreadState(Space* to_space_,
                                        Generation* old_gen_,
                                        int thread_num_,
                                        ObjToScanQueueSet* work_queue_set_,
-                                       Stack<oop>* overflow_stacks_,
+                                       Stack<oop, mtGC>* overflow_stacks_,
                                        size_t desired_plab_sz_,
                                        ParallelTaskTerminator& term_) :
   _to_space(to_space_), _old_gen(old_gen_), _young_gen(gen_), _thread_num(thread_num_),
@@ -184,7 +184,7 @@ bool ParScanThreadState::take_from_overflow_stack() {
   assert(ParGCUseLocalOverflow, "Else should not call");
   assert(young_gen()->overflow_list() == NULL, "Error");
   ObjToScanQueue* queue = work_queue();
-  Stack<oop>* const of_stack = overflow_stack();
+  Stack<oop, mtGC>* const of_stack = overflow_stack();
   const size_t num_overflow_elems = of_stack->size();
   const size_t space_available = queue->max_elems() - queue->size();
   const size_t num_take_elems = MIN3(space_available / 4,
@@ -297,7 +297,7 @@ public:
                         ParNewGeneration&       gen,
                         Generation&             old_gen,
                         ObjToScanQueueSet&      queue_set,
-                        Stack<oop>*             overflow_stacks_,
+                        Stack<oop, mtGC>*       overflow_stacks_,
                         size_t                  desired_plab_sz,
                         ParallelTaskTerminator& term);
 
@@ -331,7 +331,7 @@ private:
 ParScanThreadStateSet::ParScanThreadStateSet(
   int num_threads, Space& to_space, ParNewGeneration& gen,
   Generation& old_gen, ObjToScanQueueSet& queue_set,
-  Stack<oop>* overflow_stacks,
+  Stack<oop, mtGC>* overflow_stacks,
   size_t desired_plab_sz, ParallelTaskTerminator& term)
   : ResourceArray(sizeof(ParScanThreadState), num_threads),
     _gen(gen), _next_gen(old_gen), _term(term)
@@ -649,9 +649,14 @@ ParNewGeneration(ReservedSpace rs, size_t initial_byte_size, int level)
 
   _overflow_stacks = NULL;
   if (ParGCUseLocalOverflow) {
-    _overflow_stacks = NEW_C_HEAP_ARRAY(Stack<oop>, ParallelGCThreads);
+
+    // typedef to workaround NEW_C_HEAP_ARRAY macro, which can not deal
+    // with ','
+    typedef Stack<oop, mtGC> GCOopStack;
+
+    _overflow_stacks = NEW_C_HEAP_ARRAY(GCOopStack, ParallelGCThreads, mtGC);
     for (size_t i = 0; i < ParallelGCThreads; ++i) {
-      new (_overflow_stacks + i) Stack<oop>();
+      new (_overflow_stacks + i) Stack<oop, mtGC>();
     }
   }
 
@@ -1401,7 +1406,7 @@ void ParNewGeneration::push_on_overflow_list(oop from_space_obj, ParScanThreadSt
     assert(_num_par_pushes > 0, "Tautology");
 #endif
     if (from_space_obj->forwardee() == from_space_obj) {
-      oopDesc* listhead = NEW_C_HEAP_ARRAY(oopDesc, 1);
+      oopDesc* listhead = NEW_C_HEAP_ARRAY(oopDesc, 1, mtGC);
       listhead->forward_to(from_space_obj);
       from_space_obj = listhead;
     }
@@ -1553,7 +1558,7 @@ bool ParNewGeneration::take_from_overflow_list_work(ParScanThreadState* par_scan
       // This can become a scaling bottleneck when there is work queue overflow coincident
       // with promotion failure.
       oopDesc* f = cur;
-      FREE_C_HEAP_ARRAY(oopDesc, f);
+      FREE_C_HEAP_ARRAY(oopDesc, f, mtGC);
     } else if (par_scan_state->should_be_partially_scanned(obj_to_push, cur)) {
       assert(arrayOop(cur)->length() == 0, "entire array remaining to be scanned");
       obj_to_push = cur;

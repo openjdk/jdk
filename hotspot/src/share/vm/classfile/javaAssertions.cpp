@@ -58,7 +58,7 @@ void JavaAssertions::addOption(const char* name, bool enable) {
   // it is never freed, so will be leaked (along with other option strings -
   // e.g., bootclasspath) if a process creates/destroys multiple VMs.
   int len = (int)strlen(name);
-  char *name_copy = NEW_C_HEAP_ARRAY(char, len + 1);
+  char *name_copy = NEW_C_HEAP_ARRAY(char, len + 1, mtClass);
   strcpy(name_copy, name);
 
   // Figure out which list the new item should go on.  Names that end in "..."

@@ -38,7 +38,7 @@ Symbol::Symbol(const u1* name, int length, int refcount) : _refcount(refcount), 
 
 void* Symbol::operator new(size_t sz, int len, TRAPS) {
   int alloc_size = object_size(len)*HeapWordSize;
-  address res = (address) AllocateHeap(alloc_size, "symbol");
+  address res = (address) AllocateHeap(alloc_size, mtSymbol);
   DEBUG_ONLY(set_allocation_type(res, ResourceObj::C_HEAP);)
   return res;
 }

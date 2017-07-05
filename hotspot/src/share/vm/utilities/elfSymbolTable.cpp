@@ -40,7 +40,7 @@ ElfSymbolTable::ElfSymbolTable(FILE* file, Elf_Shdr shdr) {
   long cur_offset = ftell(file);
   if (cur_offset != -1) {
     // call malloc so we can back up if memory allocation fails.
-    m_symbols = (Elf_Sym*)os::malloc(shdr.sh_size);
+    m_symbols = (Elf_Sym*)os::malloc(shdr.sh_size, mtInternal);
     if (m_symbols) {
       if (fseek(file, shdr.sh_offset, SEEK_SET) ||
         fread((void*)m_symbols, shdr.sh_size, 1, file) != 1 ||

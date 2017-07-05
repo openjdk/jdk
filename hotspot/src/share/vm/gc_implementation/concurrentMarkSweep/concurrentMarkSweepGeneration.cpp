@@ -174,7 +174,7 @@ NOT_PRODUCT(CompactibleFreeListSpace* debug_cms_space;)
 
 // This struct contains per-thread things necessary to support parallel
 // young-gen collection.
-class CMSParGCThreadState: public CHeapObj {
+class CMSParGCThreadState: public CHeapObj<mtGC> {
  public:
   CFLS_LAB lab;
   PromotionInfo promo;
@@ -229,7 +229,7 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
   if (CollectedHeap::use_parallel_gc_threads()) {
     typedef CMSParGCThreadState* CMSParGCThreadStatePtr;
     _par_gc_thread_states =
-      NEW_C_HEAP_ARRAY(CMSParGCThreadStatePtr, ParallelGCThreads);
+      NEW_C_HEAP_ARRAY(CMSParGCThreadStatePtr, ParallelGCThreads, mtGC);
     if (_par_gc_thread_states == NULL) {
       vm_exit_during_initialization("Could not allocate par gc structs");
     }
@@ -687,7 +687,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
         warning("task_queues allocation failure.");
         return;
       }
-      _hash_seed = NEW_C_HEAP_ARRAY(int, num_queues);
+      _hash_seed = NEW_C_HEAP_ARRAY(int, num_queues, mtGC);
       if (_hash_seed == NULL) {
         warning("_hash_seed array allocation failure");
         return;
@@ -737,7 +737,7 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
     assert(_young_gen != NULL, "no _young_gen");
     _eden_chunk_index = 0;
     _eden_chunk_capacity = (_young_gen->max_capacity()+CMSSamplingGrain)/CMSSamplingGrain;
-    _eden_chunk_array = NEW_C_HEAP_ARRAY(HeapWord*, _eden_chunk_capacity);
+    _eden_chunk_array = NEW_C_HEAP_ARRAY(HeapWord*, _eden_chunk_capacity, mtGC);
     if (_eden_chunk_array == NULL) {
       _eden_chunk_capacity = 0;
       warning("GC/CMS: _eden_chunk_array allocation failure");
@@ -750,35 +750,35 @@ CMSCollector::CMSCollector(ConcurrentMarkSweepGeneration* cmsGen,
     const size_t max_plab_samples =
       ((DefNewGeneration*)_young_gen)->max_survivor_size()/MinTLABSize;
 
-    _survivor_plab_array  = NEW_C_HEAP_ARRAY(ChunkArray, ParallelGCThreads);
-    _survivor_chunk_array = NEW_C_HEAP_ARRAY(HeapWord*, 2*max_plab_samples);
-    _cursor               = NEW_C_HEAP_ARRAY(size_t, ParallelGCThreads);
+    _survivor_plab_array  = NEW_C_HEAP_ARRAY(ChunkArray, ParallelGCThreads, mtGC);
+    _survivor_chunk_array = NEW_C_HEAP_ARRAY(HeapWord*, 2*max_plab_samples, mtGC);
+    _cursor               = NEW_C_HEAP_ARRAY(size_t, ParallelGCThreads, mtGC);
     if (_survivor_plab_array == NULL || _survivor_chunk_array == NULL
         || _cursor == NULL) {
       warning("Failed to allocate survivor plab/chunk array");
       if (_survivor_plab_array  != NULL) {
-        FREE_C_HEAP_ARRAY(ChunkArray, _survivor_plab_array);
+        FREE_C_HEAP_ARRAY(ChunkArray, _survivor_plab_array, mtGC);
         _survivor_plab_array = NULL;
       }
       if (_survivor_chunk_array != NULL) {
-        FREE_C_HEAP_ARRAY(HeapWord*, _survivor_chunk_array);
+        FREE_C_HEAP_ARRAY(HeapWord*, _survivor_chunk_array, mtGC);
         _survivor_chunk_array = NULL;
       }
       if (_cursor != NULL) {
-        FREE_C_HEAP_ARRAY(size_t, _cursor);
+        FREE_C_HEAP_ARRAY(size_t, _cursor, mtGC);
         _cursor = NULL;
       }
     } else {
       _survivor_chunk_capacity = 2*max_plab_samples;
       for (uint i = 0; i < ParallelGCThreads; i++) {
-        HeapWord** vec = NEW_C_HEAP_ARRAY(HeapWord*, max_plab_samples);
+        HeapWord** vec = NEW_C_HEAP_ARRAY(HeapWord*, max_plab_samples, mtGC);
         if (vec == NULL) {
           warning("Failed to allocate survivor plab array");
           for (int j = i; j > 0; j--) {
-            FREE_C_HEAP_ARRAY(HeapWord*, _survivor_plab_array[j-1].array());
+            FREE_C_HEAP_ARRAY(HeapWord*, _survivor_plab_array[j-1].array(), mtGC);
           }
-          FREE_C_HEAP_ARRAY(ChunkArray, _survivor_plab_array);
-          FREE_C_HEAP_ARRAY(HeapWord*, _survivor_chunk_array);
+          FREE_C_HEAP_ARRAY(ChunkArray, _survivor_plab_array, mtGC);
+          FREE_C_HEAP_ARRAY(HeapWord*, _survivor_chunk_array, mtGC);
           _survivor_plab_array = NULL;
           _survivor_chunk_array = NULL;
           _survivor_chunk_capacity = 0;

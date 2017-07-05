@@ -86,6 +86,9 @@ class GenericGrowableArray : public ResourceObj {
                         //   0 means default ResourceArea
                         //   1 means on C heap
                         //   otherwise, allocate in _arena
+
+  MEMFLAGS   _memflags;   // memory type if allocation in C heap
+
 #ifdef ASSERT
   int    _nesting;      // resource area nesting at creation
   void   set_nesting();
@@ -102,9 +105,14 @@ class GenericGrowableArray : public ResourceObj {
 
   // This GA will use the resource stack for storage if c_heap==false,
   // Else it will use the C heap.  Use clear_and_deallocate to avoid leaks.
-  GenericGrowableArray(int initial_size, int initial_len, bool c_heap) {
+  GenericGrowableArray(int initial_size, int initial_len, bool c_heap, MEMFLAGS flags = mtNone) {
     _len = initial_len;
     _max = initial_size;
+    _memflags = flags;
+
+    // memory type has to be specified for C heap allocation
+    assert(!(c_heap && flags == mtNone), "memory type not specified for C heap object");
+
     assert(_len >= 0 && _len <= _max, "initial_len too big");
     _arena = (c_heap ? (Arena*)1 : NULL);
     set_nesting();
@@ -121,6 +129,8 @@ class GenericGrowableArray : public ResourceObj {
     _max = initial_size;
     assert(_len >= 0 && _len <= _max, "initial_len too big");
     _arena = arena;
+    _memflags = mtNone;
+
     assert(on_arena(), "arena has taken on reserved value 0 or 1");
     // Relax next assert to allow object allocation on resource area,
     // on stack or embedded into an other object.
@@ -152,12 +162,14 @@ template<class E> class GrowableArray : public GenericGrowableArray {
     for (int i = 0; i < _max; i++) ::new ((void*)&_data[i]) E();
   }
 
-  GrowableArray(int initial_size, bool C_heap = false) : GenericGrowableArray(initial_size, 0, C_heap) {
+  GrowableArray(int initial_size, bool C_heap = false, MEMFLAGS F = mtInternal)
+    : GenericGrowableArray(initial_size, 0, C_heap, F) {
     _data = (E*)raw_allocate(sizeof(E));
     for (int i = 0; i < _max; i++) ::new ((void*)&_data[i]) E();
   }
 
-  GrowableArray(int initial_size, int initial_len, const E& filler, bool C_heap = false) : GenericGrowableArray(initial_size, initial_len, C_heap) {
+  GrowableArray(int initial_size, int initial_len, const E& filler, bool C_heap = false, MEMFLAGS memflags = mtInternal)
+    : GenericGrowableArray(initial_size, initial_len, C_heap, memflags) {
     _data = (E*)raw_allocate(sizeof(E));
     int i = 0;
     for (; i < _len; i++) ::new ((void*)&_data[i]) E(filler);

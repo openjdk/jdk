@@ -34,7 +34,7 @@
 /***** ALL TIMES ARE IN SECS!!!!!!! *****/
 
 // this is the "interface"
-class G1MMUTracker: public CHeapObj {
+class G1MMUTracker: public CHeapObj<mtGC> {
 protected:
   double          _time_slice;
   double          _max_gc_time; // this is per time slice

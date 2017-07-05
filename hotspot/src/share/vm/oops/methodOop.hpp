@@ -801,7 +801,7 @@ class CompressedLineNumberReadStream: public CompressedReadStream {
 // breakpoints are written only at safepoints, and are read
 // concurrently only outside of safepoints.
 
-class BreakpointInfo : public CHeapObj {
+class BreakpointInfo : public CHeapObj<mtClass> {
   friend class VMStructs;
  private:
   Bytecodes::Code  _orig_bytecode;

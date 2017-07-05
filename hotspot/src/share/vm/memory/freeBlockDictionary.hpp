@@ -34,7 +34,7 @@
 // A FreeBlockDictionary is an abstract superclass that will allow
 // a number of alternative implementations in the future.
 template <class Chunk>
-class FreeBlockDictionary: public CHeapObj {
+class FreeBlockDictionary: public CHeapObj<mtGC> {
  public:
   enum Dither {
     atLeast,

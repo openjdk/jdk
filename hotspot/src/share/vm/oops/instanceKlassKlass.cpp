@@ -421,8 +421,7 @@ instanceKlassKlass::allocate_instance_klass(Symbol* name, int vtable_len, int it
     ik->set_protection_domain(NULL);
     ik->set_signers(NULL);
     ik->set_source_file_name(NULL);
-    ik->set_source_debug_extension(NULL);
-    ik->set_source_debug_extension(NULL);
+    ik->set_source_debug_extension(NULL, 0);
     ik->set_array_name(NULL);
     ik->set_inner_classes(NULL);
     ik->set_static_oop_field_count(0);
@@ -531,7 +530,7 @@ void instanceKlassKlass::oop_print_on(oop obj, outputStream* st) {
   }
   if (ik->source_debug_extension() != NULL) {
     st->print(BULLET"source debug extension:       ");
-    ik->source_debug_extension()->print_value_on(st);
+    st->print_cr("%s", ik->source_debug_extension());
     st->cr();
   }
 
