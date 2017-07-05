@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,20 @@
  * @summary basic test for RSA cipher key wrapping functionality
  * @author Valerie Peng
  * @library ..
+ * @run main/othervm TestRSACipherWrap
+ * @run main/othervm TestRSACipherWrap sm
  */
-import java.io.*;
-import java.util.*;
 
-import java.security.*;
-
-import javax.crypto.*;
+import java.security.GeneralSecurityException;
+import java.security.InvalidParameterException;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.Provider;
+import java.util.Arrays;
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 public class TestRSACipherWrap extends PKCS11Test {
@@ -41,6 +48,7 @@ public class TestRSACipherWrap extends PKCS11Test {
     private static final String[] RSA_ALGOS =
         { "RSA/ECB/PKCS1Padding", "RSA" };
 
+    @Override
     public void main(Provider p) throws Exception {
         try {
             Cipher.getInstance(RSA_ALGOS[0], p);
@@ -104,6 +112,6 @@ public class TestRSACipherWrap extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new TestRSACipherWrap());
+        main(new TestRSACipherWrap(), args);
     }
 }
