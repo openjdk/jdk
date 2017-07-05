@@ -2236,12 +2236,12 @@ TypeOopPtr::TypeOopPtr( TYPES t, PTR ptr, ciKlass* k, bool xk, ciObject* o, int 
 
 //------------------------------make-------------------------------------------
 const TypeOopPtr *TypeOopPtr::make(PTR ptr,
-                                   int offset) {
+                                   int offset, int instance_id) {
   assert(ptr != Constant, "no constant generic pointers");
   ciKlass*  k = ciKlassKlass::make();
   bool      xk = false;
   ciObject* o = NULL;
-  return (TypeOopPtr*)(new TypeOopPtr(OopPtr, ptr, k, xk, o, offset, InstanceBot))->hashcons();
+  return (TypeOopPtr*)(new TypeOopPtr(OopPtr, ptr, k, xk, o, offset, instance_id))->hashcons();
 }
 
 
@@ -2330,7 +2330,8 @@ const Type *TypeOopPtr::xmeet( const Type *t ) const {
 
   case OopPtr: {                 // Meeting to other OopPtrs
     const TypeOopPtr *tp = t->is_oopptr();
-    return make( meet_ptr(tp->ptr()), meet_offset(tp->offset()) );
+    int instance_id = meet_instance_id(tp->instance_id());
+    return make( meet_ptr(tp->ptr()), meet_offset(tp->offset()), instance_id );
   }
 
   case InstPtr:                  // For these, flip the call around to cut down
@@ -2801,7 +2802,7 @@ const Type *TypeInstPtr::xmeet( const Type *t ) const {
 
   case OopPtr: {                // Meeting to OopPtrs
     // Found a OopPtr type vs self-InstPtr type
-    const TypePtr *tp = t->is_oopptr();
+    const TypeOopPtr *tp = t->is_oopptr();
     int offset = meet_offset(tp->offset());
     PTR ptr = meet_ptr(tp->ptr());
     switch (tp->ptr()) {
@@ -2812,8 +2813,10 @@ const Type *TypeInstPtr::xmeet( const Type *t ) const {
                   (ptr == Constant ? const_oop() : NULL), offset, instance_id);
     }
     case NotNull:
-    case BotPTR:
-      return TypeOopPtr::make(ptr, offset);
+    case BotPTR: {
+      int instance_id = meet_instance_id(tp->instance_id());
+      return TypeOopPtr::make(ptr, offset, instance_id);
+    }
     default: typerr(t);
     }
   }
@@ -3259,7 +3262,7 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
 
   case OopPtr: {                // Meeting to OopPtrs
     // Found a OopPtr type vs self-AryPtr type
-    const TypePtr *tp = t->is_oopptr();
+    const TypeOopPtr *tp = t->is_oopptr();
     int offset = meet_offset(tp->offset());
     PTR ptr = meet_ptr(tp->ptr());
     switch (tp->ptr()) {
@@ -3270,8 +3273,10 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
                   _ary, _klass, _klass_is_exact, offset, instance_id);
     }
     case BotPTR:
-    case NotNull:
-      return TypeOopPtr::make(ptr, offset);
+    case NotNull: {
+      int instance_id = meet_instance_id(tp->instance_id());
+      return TypeOopPtr::make(ptr, offset, instance_id);
+    }
     default: ShouldNotReachHere();
     }
   }

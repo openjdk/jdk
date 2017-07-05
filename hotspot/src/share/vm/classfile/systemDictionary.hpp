@@ -259,7 +259,9 @@ public:
                                TRAPS);
 
   // Resolve from stream (called by jni_DefineClass and JVM_DefineClass)
-  static klassOop resolve_from_stream(symbolHandle class_name, Handle class_loader, Handle protection_domain, ClassFileStream* st, TRAPS);
+  static klassOop resolve_from_stream(symbolHandle class_name, Handle class_loader,
+                                      Handle protection_domain,
+                                      ClassFileStream* st, bool verify, TRAPS);
 
   // Lookup an already loaded class. If not found NULL is returned.
   static klassOop find(symbolHandle class_name, Handle class_loader, Handle protection_domain, TRAPS);

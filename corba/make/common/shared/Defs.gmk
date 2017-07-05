@@ -228,12 +228,15 @@ else
 endif
 
 # FULL_VERSION is RELEASE and -BUILD_NUMBER if BUILD_NUMBER is set
-ifdef BUILD_NUMBER
-  FULL_VERSION = $(RELEASE)-$(BUILD_NUMBER)
-else
-  BUILD_NUMBER = b00
-  USER_RELEASE_SUFFIX := $(shell echo $(USER)_`date '+%d_%b_%Y_%H_%M' | tr "A-Z" "a-z"`)
-  FULL_VERSION = $(RELEASE)-$(USER_RELEASE_SUFFIX)-$(BUILD_NUMBER)
+ifndef FULL_VERSION
+  ifdef BUILD_NUMBER
+    FULL_VERSION = $(RELEASE)-$(BUILD_NUMBER)
+  else
+    BUILD_NUMBER = b00
+    USER_RELEASE_SUFFIX := $(shell echo $(USER)_`date '+%d_%b_%Y_%H_%M' | tr "A-Z" "a-z"`)
+    FULL_VERSION = $(RELEASE)-$(USER_RELEASE_SUFFIX)-$(BUILD_NUMBER)
+  endif
+  export FULL_VERSION
 endif
 
 # Promoted build location
