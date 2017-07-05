@@ -74,7 +74,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * produce a TimeZone. The syntax of a custom time zone ID is:
  *
  * <blockquote><pre>
- * <a name="CustomID"><i>CustomID:</i></a>
+ * <a id="CustomID"><i>CustomID:</i></a>
  *         <code>GMT</code> <i>Sign</i> <i>Hours</i> <code>:</code> <i>Minutes</i>
  *         <code>GMT</code> <i>Sign</i> <i>Hours</i> <i>Minutes</i>
  *         <code>GMT</code> <i>Sign</i> <i>Hours</i>
@@ -102,7 +102,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * When creating a <code>TimeZone</code>, the specified custom time
  * zone ID is normalized in the following syntax:
  * <blockquote><pre>
- * <a name="NormalizedCustomID"><i>NormalizedCustomID:</i></a>
+ * <a id="NormalizedCustomID"><i>NormalizedCustomID:</i></a>
  *         <code>GMT</code> <i>Sign</i> <i>TwoDigitHours</i> <code>:</code> <i>Minutes</i>
  * <i>Sign:</i> one of
  *         <code>+ -</code>

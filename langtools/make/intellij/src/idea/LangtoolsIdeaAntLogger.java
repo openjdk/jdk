@@ -263,6 +263,7 @@ public final class LangtoolsIdeaAntLogger extends DefaultLogger {
                 project.addBuildListener(this);
             }
         }
+        logger.setMessageOutputLevel(3);
         tasks.push(Task.ROOT);
     }
 

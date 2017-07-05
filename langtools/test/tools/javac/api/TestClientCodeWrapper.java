@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class TestClientCodeWrapper extends JavacTestingAbstractProcessor {
             defaultFileManager = fm;
 
             for (Method m: getMethodsExcept(JavaFileManager.class,
-                        "close", "getJavaFileForInput", "getLocationForModule", "getServiceLoader")) {
+                        "close", "getJavaFileForInput", "getLocationForModule", "getServiceLoader", "contains")) {
                 test(m);
             }
 
@@ -407,9 +407,9 @@ public class TestClientCodeWrapper extends JavacTestingAbstractProcessor {
         }
 
         @Override
-        public Location getLocationForModule(Location location, JavaFileObject fo, String pkgName) throws IOException {
+        public Location getLocationForModule(Location location, JavaFileObject fo) throws IOException {
             throwUserExceptionIfNeeded(fileManagerMethod, "getLocationForModule");
-            return super.getLocationForModule(location, fo, pkgName);
+            return super.getLocationForModule(location, fo);
         }
 
         @Override
@@ -422,6 +422,12 @@ public class TestClientCodeWrapper extends JavacTestingAbstractProcessor {
         public Iterable<Set<Location>> listLocationsForModules(Location location) throws IOException {
             throwUserExceptionIfNeeded(fileManagerMethod, "listLocationsForModules");
             return super.listLocationsForModules(location);
+        }
+
+        @Override
+        public boolean contains(Location location, FileObject fo) throws IOException {
+            throwUserExceptionIfNeeded(fileManagerMethod, "contains");
+            return super.contains(location, fo);
         }
 
         public FileObject wrap(FileObject fo) {
