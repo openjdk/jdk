@@ -479,8 +479,8 @@ void VMError::report(outputStream* st) {
 
        if (fr.sp()) {
          st->print(",  sp=" PTR_FORMAT, fr.sp());
-         st->print(",  free space=%" INTPTR_FORMAT "k",
-                     ((intptr_t)fr.sp() - (intptr_t)stack_bottom) >> 10);
+         size_t free_stack_size = pointer_delta(fr.sp(), stack_bottom, 1024);
+         st->print(",  free space=" SIZE_FORMAT "k", free_stack_size);
        }
 
        st->cr();
@@ -687,15 +687,12 @@ void VMError::report(outputStream* st) {
 # undef END
 }
 
+VMError* volatile VMError::first_error = NULL;
+volatile jlong VMError::first_error_tid = -1;
 
 void VMError::report_and_die() {
   // Don't allocate large buffer on stack
   static char buffer[O_BUFLEN];
-
-  // First error, and its thread id. We must be able to handle native thread,
-  // so use thread id instead of Thread* to identify thread.
-  static VMError* first_error;
-  static jlong    first_error_tid;
 
   // An error could happen before tty is initialized or after it has been
   // destroyed. Here we use a very simple unbuffered fdStream for printing.

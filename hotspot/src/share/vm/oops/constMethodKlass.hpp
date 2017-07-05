@@ -77,12 +77,9 @@ public:
   int oop_oop_iterate(oop obj, OopClosure* blk);
   int oop_oop_iterate_m(oop obj, OopClosure* blk, MemRegion mr);
 
- public:
   // Printing
   void oop_print_value_on(oop obj, outputStream* st);
-#ifndef PRODUCT
   void oop_print_on      (oop obj, outputStream* st);
-#endif //PRODUCT
 
   // Verify operations
   const char* internal_name() const;

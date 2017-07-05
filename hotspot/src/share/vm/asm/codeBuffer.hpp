@@ -102,7 +102,7 @@ class CodeSection VALUE_OBJ_CLASS_SPEC {
     _locs_point    = NULL;
     _locs_own      = false;
     _frozen        = false;
-    debug_only(_index = -1);
+    debug_only(_index = (char)-1);
     debug_only(_outer = (CodeBuffer*)badAddress);
   }
 
@@ -278,7 +278,7 @@ class CodeBuffer: public StackObj {
   // special case during expansion which is handled internally.  This
   // is done to guarantee proper cleanup of resources.
   void* operator new(size_t size) { return ResourceObj::operator new(size); }
-  void  operator delete(void* p)  {        ResourceObj::operator delete(p); }
+  void  operator delete(void* p)  { ShouldNotCallThis(); }
 
  public:
   typedef int csize_t;  // code size type; would be size_t except for history

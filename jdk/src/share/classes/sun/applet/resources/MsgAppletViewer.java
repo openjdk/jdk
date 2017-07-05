@@ -29,7 +29,7 @@ import java.util.ListResourceBundle;
 public class MsgAppletViewer extends ListResourceBundle {
 
     public Object[][] getContents() {
-        return new Object[][] {
+        Object[][] temp = new Object[][] {
             {"textframe.button.dismiss", "Dismiss"},
             {"appletviewer.tool.title", "Applet Viewer: {0}"},
             {"appletviewer.menu.applet", "Applet"},
@@ -197,5 +197,7 @@ public class MsgAppletViewer extends ListResourceBundle {
             {"appletsecurityexception.checkread.unknown", "unknown class loader type. unable to check for checking read {0}"},
             {"appletsecurityexception.checkconnect.unknown", "unknown class loader type. unable to check for checking connect"},
         };
+
+        return temp;
     }
 }

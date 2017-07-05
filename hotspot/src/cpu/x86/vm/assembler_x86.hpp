@@ -1714,6 +1714,9 @@ class MacroAssembler: public Assembler {
 
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();
+
+  DEBUG_ONLY(void verify_heapbase(const char* msg);)
+
 #endif // _LP64
 
   // Int division/remainder for Java

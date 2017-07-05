@@ -7151,7 +7151,7 @@ void MacroAssembler::tlab_refill(Label& retry,
   subptr(t1, typeArrayOopDesc::header_size(T_INT));
   addptr(t1, (int32_t)ThreadLocalAllocBuffer::alignment_reserve());
   shlptr(t1, log2_intptr(HeapWordSize/sizeof(jint)));
-  movptr(Address(top, arrayOopDesc::length_offset_in_bytes()), t1);
+  movl(Address(top, arrayOopDesc::length_offset_in_bytes()), t1);
   // set klass to intArrayKlass
   // dubious reloc why not an oop reloc?
   movptr(t1, ExternalAddress((address) Universe::intArrayKlassObj_addr()));
@@ -7568,21 +7568,27 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   // Scan RCX words at [RDI] for an occurrence of RAX.
   // Set NZ/Z based on last compare.
+  // Z flag value will not be set by 'repne' if RCX == 0 since 'repne' does
+  // not change flags (only scas instruction which is repeated sets flags).
+  // Set Z = 0 (not equal) before 'repne' to indicate that class was not found.
 #ifdef _LP64
   // This part is tricky, as values in supers array could be 32 or 64 bit wide
   // and we store values in objArrays always encoded, thus we need to encode
   // the value of rax before repne.  Note that rax is dead after the repne.
   if (UseCompressedOops) {
-    encode_heap_oop_not_null(rax);
+    encode_heap_oop_not_null(rax); // Changes flags.
     // The superclass is never null; it would be a basic system error if a null
     // pointer were to sneak in here.  Note that we have already loaded the
     // Klass::super_check_offset from the super_klass in the fast path,
     // so if there is a null in that register, we are already in the afterlife.
+    testl(rax,rax); // Set Z = 0
     repne_scanl();
   } else
 #endif // _LP64
+  {
+    testptr(rax,rax); // Set Z = 0
     repne_scan();
-
+  }
   // Unspill the temp. registers:
   if (pushed_rdi)  pop(rdi);
   if (pushed_rcx)  pop(rcx);
@@ -8257,30 +8263,35 @@ void MacroAssembler::store_heap_oop_null(Address dst) {
   }
 }
 
-// Algorithm must match oop.inline.hpp encode_heap_oop.
-void MacroAssembler::encode_heap_oop(Register r) {
+#ifdef ASSERT
+void MacroAssembler::verify_heapbase(const char* msg) {
   assert (UseCompressedOops, "should be compressed");
   assert (Universe::heap() != NULL, "java heap should be initialized");
+  if (CheckCompressedOops) {
+    Label ok;
+    push(rscratch1); // cmpptr trashes rscratch1
+    cmpptr(r12_heapbase, ExternalAddress((address)Universe::narrow_oop_base_addr()));
+    jcc(Assembler::equal, ok);
+    stop(msg);
+    bind(ok);
+    pop(rscratch1);
+  }
+}
+#endif
+
+// Algorithm must match oop.inline.hpp encode_heap_oop.
+void MacroAssembler::encode_heap_oop(Register r) {
+#ifdef ASSERT
+  verify_heapbase("MacroAssembler::encode_heap_oop: heap base corrupted?");
+#endif
+  verify_oop(r, "broken oop in encode_heap_oop");
   if (Universe::narrow_oop_base() == NULL) {
-    verify_oop(r, "broken oop in encode_heap_oop");
     if (Universe::narrow_oop_shift() != 0) {
       assert (LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
       shrq(r, LogMinObjAlignmentInBytes);
     }
     return;
   }
-#ifdef ASSERT
-  if (CheckCompressedOops) {
-    Label ok;
-    push(rscratch1); // cmpptr trashes rscratch1
-    cmpptr(r12_heapbase, ExternalAddress((address)Universe::narrow_oop_base_addr()));
-    jcc(Assembler::equal, ok);
-    stop("MacroAssembler::encode_heap_oop: heap base corrupted?");
-    bind(ok);
-    pop(rscratch1);
-  }
-#endif
-  verify_oop(r, "broken oop in encode_heap_oop");
   testq(r, r);
   cmovq(Assembler::equal, r, r12_heapbase);
   subq(r, r12_heapbase);
@@ -8288,9 +8299,8 @@ void MacroAssembler::encode_heap_oop(Register r) {
 }
 
 void MacroAssembler::encode_heap_oop_not_null(Register r) {
-  assert (UseCompressedOops, "should be compressed");
-  assert (Universe::heap() != NULL, "java heap should be initialized");
 #ifdef ASSERT
+  verify_heapbase("MacroAssembler::encode_heap_oop_not_null: heap base corrupted?");
   if (CheckCompressedOops) {
     Label ok;
     testq(r, r);
@@ -8310,9 +8320,8 @@ void MacroAssembler::encode_heap_oop_not_null(Register r) {
 }
 
 void MacroAssembler::encode_heap_oop_not_null(Register dst, Register src) {
-  assert (UseCompressedOops, "should be compressed");
-  assert (Universe::heap() != NULL, "java heap should be initialized");
 #ifdef ASSERT
+  verify_heapbase("MacroAssembler::encode_heap_oop_not_null2: heap base corrupted?");
   if (CheckCompressedOops) {
     Label ok;
     testq(src, src);
@@ -8335,40 +8344,21 @@ void MacroAssembler::encode_heap_oop_not_null(Register dst, Register src) {
 }
 
 void  MacroAssembler::decode_heap_oop(Register r) {
-  assert (UseCompressedOops, "should be compressed");
-  assert (Universe::heap() != NULL, "java heap should be initialized");
+#ifdef ASSERT
+  verify_heapbase("MacroAssembler::decode_heap_oop: heap base corrupted?");
+#endif
   if (Universe::narrow_oop_base() == NULL) {
     if (Universe::narrow_oop_shift() != 0) {
       assert (LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
       shlq(r, LogMinObjAlignmentInBytes);
     }
-    verify_oop(r, "broken oop in decode_heap_oop");
-    return;
+  } else {
+    Label done;
+    shlq(r, LogMinObjAlignmentInBytes);
+    jccb(Assembler::equal, done);
+    addq(r, r12_heapbase);
+    bind(done);
   }
-#ifdef ASSERT
-  if (CheckCompressedOops) {
-    Label ok;
-    push(rscratch1);
-    cmpptr(r12_heapbase,
-           ExternalAddress((address)Universe::narrow_oop_base_addr()));
-    jcc(Assembler::equal, ok);
-    stop("MacroAssembler::decode_heap_oop: heap base corrupted?");
-    bind(ok);
-    pop(rscratch1);
-  }
-#endif
-
-  Label done;
-  shlq(r, LogMinObjAlignmentInBytes);
-  jccb(Assembler::equal, done);
-  addq(r, r12_heapbase);
-#if 0
-   // alternate decoding probably a wash.
-   testq(r, r);
-   jccb(Assembler::equal, done);
-   leaq(r, Address(r12_heapbase, r, Address::times_8, 0));
-#endif
-  bind(done);
   verify_oop(r, "broken oop in decode_heap_oop");
 }
 
@@ -8410,9 +8400,11 @@ void  MacroAssembler::decode_heap_oop_not_null(Register dst, Register src) {
         addq(dst, r12_heapbase);
       }
     }
-  } else if (dst != src) {
+  } else {
     assert (Universe::narrow_oop_base() == NULL, "sanity");
-    movq(dst, src);
+    if (dst != src) {
+      movq(dst, src);
+    }
   }
 }
 
