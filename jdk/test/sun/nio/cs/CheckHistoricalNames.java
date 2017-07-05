@@ -196,6 +196,7 @@ public class CheckHistoricalNames {
         checkMappedName("IBM1122", "Cp1122");
         checkMappedName("IBM1123", "Cp1123");
         checkMappedName("IBM1124", "Cp1124");
+        checkMappedName("IBM1166", "Cp1166");
         checkMappedName("IBM01140", "Cp1140");
         checkMappedName("IBM01141", "Cp1141");
         checkMappedName("IBM01142", "Cp1142");

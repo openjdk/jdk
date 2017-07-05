@@ -34,6 +34,7 @@ public class ThreadDump {
 
     public static void printThreadInfo(ThreadInfo ti) {
         StringBuilder sb = new StringBuilder("\"" + ti.getThreadName() + "\"" +
+                                             (ti.isDaemon() ? " daemon" : "") +
                                              " Id=" + ti.getThreadId() +
                                              " in " + ti.getThreadState());
         if (ti.getLockName() != null) {

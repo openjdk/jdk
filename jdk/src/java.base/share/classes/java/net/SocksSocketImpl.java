@@ -388,14 +388,13 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             }
             while (iProxy.hasNext()) {
                 p = iProxy.next();
-                if (p == null || p == Proxy.NO_PROXY) {
+                if (p == null || p.type() != Proxy.Type.SOCKS) {
                     super.connect(epoint, remainingMillis(deadlineMillis));
                     return;
                 }
-                if (p.type() != Proxy.Type.SOCKS)
-                    throw new SocketException("Unknown proxy type : " + p.type());
+
                 if (!(p.address() instanceof InetSocketAddress))
-                    throw new SocketException("Unknow address type for proxy: " + p);
+                    throw new SocketException("Unknown address type for proxy: " + p);
                 // Use getHostString() to avoid reverse lookups
                 server = ((InetSocketAddress) p.address()).getHostString();
                 serverPort = ((InetSocketAddress) p.address()).getPort();
@@ -707,13 +706,12 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             }
             while (iProxy.hasNext()) {
                 p = iProxy.next();
-                if (p == null || p == Proxy.NO_PROXY) {
+                if (p == null || p.type() != Proxy.Type.SOCKS) {
                     return;
                 }
-                if (p.type() != Proxy.Type.SOCKS)
-                    throw new SocketException("Unknown proxy type : " + p.type());
+
                 if (!(p.address() instanceof InetSocketAddress))
-                    throw new SocketException("Unknow address type for proxy: " + p);
+                    throw new SocketException("Unknown address type for proxy: " + p);
                 // Use getHostString() to avoid reverse lookups
                 server = ((InetSocketAddress) p.address()).getHostString();
                 serverPort = ((InetSocketAddress) p.address()).getPort();

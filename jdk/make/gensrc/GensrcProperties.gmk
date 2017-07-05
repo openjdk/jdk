@@ -53,15 +53,21 @@ endef
 # Param 1 - Variable to add targets to, must not contain space
 # Param 2 - Properties files to process
 # Param 3 - The super class for the generated classes
+# Param 4 - Module path root, defaults to $(JDK_TOPDIR)/src
 define SetupCompileProperties
   $1_SRCS := $2
   $1_CLASS := $3
+  $1_MODULE_PATH_ROOT := $4
+
+  ifeq ($$($1_MODULE_PATH_ROOT), )
+    $1_MODULE_PATH_ROOT := $(JDK_TOPDIR)/src
+  endif
 
   # Convert .../src/<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN.properties
   # to .../support/gensrc/<module>/com/sun/tools/javac/resources/javac_zh_CN.java
   # Strip away prefix and suffix, leaving for example only: 
   # "<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN"
-  $1_JAVAS := $$(patsubst $(JDK_TOPDIR)/src/%, \
+  $1_JAVAS := $$(patsubst $$($1_MODULE_PATH_ROOT)/%, \
       $(SUPPORT_OUTPUTDIR)/gensrc/%, \
       $$(patsubst %.properties, %.java, \
       $$(subst /$(OPENJDK_TARGET_OS)/classes,, \

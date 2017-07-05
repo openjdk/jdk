@@ -382,7 +382,7 @@ define DeclareRecipeForModuleMakefile
 	    && $(MAKE) $(MAKE_ARGS) \
 	          -f $$($1_FILE_PREFIX)-$2.gmk \
 	          $$(addprefix -I, $$(wildcard $$(addprefix $3/, $(MAKE_MAKEDIR_LIST)) \
-	          $$(addsuffix /$3, $$(addprefix $3/, $(MAKE_MAKEDIR_LIST))))) \
+	          $$(addsuffix /$$($1_MAKE_SUBDIR), $$(addprefix $3/, $(MAKE_MAKEDIR_LIST))))) \
 	          MODULE=$2)
         endif
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,8 +129,8 @@ class VM_CMS_Final_Remark: public VM_CMS_Operation {
 // GenCollectedHeap heap.
 class VM_GenCollectFullConcurrent: public VM_GC_Operation {
  public:
-  VM_GenCollectFullConcurrent(unsigned int gc_count_before,
-                              unsigned int full_gc_count_before,
+  VM_GenCollectFullConcurrent(uint gc_count_before,
+                              uint full_gc_count_before,
                               GCCause::Cause gc_cause)
     : VM_GC_Operation(gc_count_before, gc_cause, full_gc_count_before, true /* full */)
   {

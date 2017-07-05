@@ -1,4 +1,4 @@
-#  Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -567,7 +567,6 @@ needs_compact3 = \
   javax/smartcardio \
   javax/sql/rowset \
   javax/xml/crypto \
-  sun/security/acl \
   sun/security/jgss \
   sun/security/krb5 \
   java/lang/annotation/AnnotationType/AnnotationTypeDeadlockTest.java \

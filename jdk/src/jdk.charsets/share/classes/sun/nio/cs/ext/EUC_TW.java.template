@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.nio.cs.ext;
+package $PACKAGE$;
 
 import java.io.*;
 import java.nio.CharBuffer;
@@ -79,7 +79,7 @@ public class EUC_TW extends Charset implements HistoricallyNamedCharset
      */
 
     public EUC_TW() {
-        super("x-EUC-TW", ExtendedCharsets.aliasesFor("x-EUC-TW"));
+        super("x-EUC-TW", $ALIASES$);
     }
 
     public String historicalName() {
