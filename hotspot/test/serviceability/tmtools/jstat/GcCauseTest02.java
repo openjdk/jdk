@@ -30,6 +30,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @library ../share
+ * @ignore 8168396
  * @run main/othervm -XX:+UsePerfData -Xmx128M -XX:MaxMetaspaceSize=128M GcCauseTest02
  */
 import utils.*;

@@ -188,6 +188,10 @@ int os::get_fileno(FILE* fp) {
   return NOT_AIX(::)fileno(fp);
 }
 
+struct tm* os::gmtime_pd(const time_t* clock, struct tm*  res) {
+  return gmtime_r(clock, res);
+}
+
 void os::Posix::print_load_average(outputStream* st) {
   st->print("load average:");
   double loadavg[3];

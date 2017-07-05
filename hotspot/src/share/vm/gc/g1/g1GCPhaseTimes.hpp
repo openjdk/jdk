@@ -103,6 +103,8 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _external_accounted_time_ms;
 
+  double _recorded_clear_claimed_marks_time_ms;
+
   double _recorded_young_cset_choice_time_ms;
   double _recorded_non_young_cset_choice_time_ms;
 
@@ -255,6 +257,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void inc_external_accounted_time_ms(double time_ms) {
     _external_accounted_time_ms += time_ms;
+  }
+
+  void record_clear_claimed_marks_time_ms(double recorded_clear_claimed_marks_time_ms) {
+    _recorded_clear_claimed_marks_time_ms = recorded_clear_claimed_marks_time_ms;
   }
 
   double cur_collection_start_sec() {

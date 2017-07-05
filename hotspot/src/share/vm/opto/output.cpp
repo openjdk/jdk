@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1206,13 +1206,19 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
           padding = nop_size;
         }
 
-        if(padding > 0) {
+        if (padding > 0) {
           assert((padding % nop_size) == 0, "padding is not a multiple of NOP size");
           int nops_cnt = padding / nop_size;
           MachNode *nop = new MachNopNode(nops_cnt);
           block->insert_node(nop, j++);
           last_inst++;
           _cfg->map_node_to_block(nop, block);
+          // Ensure enough space.
+          cb->insts()->maybe_expand_to_ensure_remaining(MAX_inst_size);
+          if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
+            C->record_failure("CodeCache is full");
+            return;
+          }
           nop->emit(*cb, _regalloc);
           cb->flush_bundle(true);
           current_offset = cb->insts_size();
