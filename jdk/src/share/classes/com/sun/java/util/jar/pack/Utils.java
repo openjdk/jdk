@@ -28,8 +28,9 @@ package com.sun.java.util.jar.pack;
 import java.util.*;
 import java.util.jar.*;
 import java.util.zip.*;
-import java.util.logging.*;
 import java.io.*;
+
+import sun.util.logging.PlatformLogger;
 
 class Utils {
     static final String COM_PREFIX = "com.sun.java.util.jar.pack.";
@@ -130,30 +131,52 @@ class Utils {
         = Boolean.getBoolean(Utils.COM_PREFIX+"nolog");
 
 
-    static final Logger log
-        = new Logger("java.util.jar.Pack200", null) {
-            public void log(LogRecord record) {
-                int verbose = currentPropMap().getInteger(DEBUG_VERBOSE);
-                if (verbose > 0) {
-                    if (nolog &&
-                        record.getLevel().intValue() < Level.WARNING.intValue()) {
-                        System.out.println(record.getMessage());
-                    } else {
-                        super.log(record);
-                    }
-                }
-            }
+    static class Pack200Logger {
+        private final String name;
+        private PlatformLogger log;
+        Pack200Logger(String name) {
+            this.name = name;
+        }
 
-            public void fine(String msg) {
-                int verbose = currentPropMap().getInteger(DEBUG_VERBOSE);
-                if (verbose > 0) {
-                        System.out.println(msg);
+        private synchronized PlatformLogger getLogger() {
+            if (log == null) {
+                log = PlatformLogger.getLogger(name);
+            }
+            return log;
+        }
+
+        public void warning(String msg, Object param) {
+            int verbose = currentPropMap().getInteger(DEBUG_VERBOSE);
+            if (verbose > 0) {
+                getLogger().warning(msg, param);
+            }
+        }
+
+        public void warning(String msg) {
+            warning(msg, null);
+        }
+
+        public void info(String msg) {
+            int verbose = currentPropMap().getInteger(DEBUG_VERBOSE);
+            if (verbose > 0) {
+                if (nolog) {
+                    System.out.println(msg);
+                } else {
+                    getLogger().info(msg);
                 }
             }
-        };
-    static {
-        LogManager.getLogManager().addLogger(log);
+        }
+
+        public void fine(String msg) {
+            int verbose = currentPropMap().getInteger(DEBUG_VERBOSE);
+            if (verbose > 0) {
+                    System.out.println(msg);
+            }
+        }
     }
+
+    static final Pack200Logger log
+        = new Pack200Logger("java.util.jar.Pack200");
 
     // Returns the Max Version String of this implementation
     static String getVersionString() {

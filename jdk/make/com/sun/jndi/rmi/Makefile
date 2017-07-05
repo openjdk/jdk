@@ -31,6 +31,8 @@ BUILDDIR = ../../../..
 include $(BUILDDIR)/common/Defs.gmk
 
 SUBDIRS = registry
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build clean clobber::
 	$(SUBDIRS-loop)
 

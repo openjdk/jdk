@@ -36,6 +36,8 @@ SUBDIRS = socket
 ifeq ($(PLATFORM), windows)
 SUBDIRS += shmem
 endif # PLATFORM
+
+include $(BUILDDIR)/common/Subdirs.gmk
 all build clean clobber::
 	$(SUBDIRS-loop)
 

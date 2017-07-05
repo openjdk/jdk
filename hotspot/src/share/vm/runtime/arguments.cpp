@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1487,6 +1487,20 @@ bool Arguments::created_by_java_launcher() {
 //===========================================================================================================
 // Parsing of main arguments
 
+bool Arguments::verify_interval(uintx val, uintx min,
+                                uintx max, const char* name) {
+  // Returns true iff value is in the inclusive interval [min..max]
+  // false, otherwise.
+  if (val >= min && val <= max) {
+    return true;
+  }
+  jio_fprintf(defaultStream::error_stream(),
+              "%s of " UINTX_FORMAT " is invalid; must be between " UINTX_FORMAT
+              " and " UINTX_FORMAT "\n",
+              name, val, min, max);
+  return false;
+}
+
 bool Arguments::verify_percentage(uintx value, const char* name) {
   if (value <= 100) {
     return true;
@@ -1722,6 +1736,16 @@ bool Arguments::check_vm_args_consistency() {
                 " with -UseAsyncConcMarkSweepGC");
     status = false;
   }
+
+  status = status && verify_interval(RefDiscoveryPolicy,
+                                     ReferenceProcessor::DiscoveryPolicyMin,
+                                     ReferenceProcessor::DiscoveryPolicyMax,
+                                     "RefDiscoveryPolicy");
+
+  // Limit the lower bound of this flag to 1 as it is used in a division
+  // expression.
+  status = status && verify_interval(TLABWasteTargetPercent,
+                                     1, 100, "TLABWasteTargetPercent");
 
   return status;
 }
@@ -2499,6 +2523,9 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
     SOLARIS_ONLY(FLAG_SET_DEFAULT(UseMPSS, false));
     SOLARIS_ONLY(FLAG_SET_DEFAULT(UseISM, false));
   }
+
+  // Tiered compilation is undefined with C1.
+  TieredCompilation = false;
 
 #else
   if (!FLAG_IS_DEFAULT(OptoLoopAlignment) && FLAG_IS_DEFAULT(MaxLoopPad)) {

@@ -56,6 +56,8 @@ ifndef DISABLE_NIMBUS
   SUBDIRS += generate_nimbus
 endif
 
+include $(BUILDDIR)/common/Subdirs.gmk
+
 all build clean clobber::
 	$(SUBDIRS-loop)
 
