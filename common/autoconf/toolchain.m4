@@ -934,7 +934,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
       AC_MSG_RESULT(yes)
       USING_BROKEN_SUSE_LD=yes
     fi
-    rm -rf version-script.map main.c a.out
+    $RM version-script.map main.c a.out
   fi
   AC_SUBST(USING_BROKEN_SUSE_LD)
 
