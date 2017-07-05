@@ -246,7 +246,7 @@ canonicalize(char *original, char *resolved, int len)
         if (r != NULL) {
             /* Append unresolved subpath to resolved subpath */
             int rn = strlen(r);
-            if (rn + strlen(p) >= len) {
+            if (rn + (int)strlen(p) >= len) {
                 /* Buffer overflow */
                 errno = ENAMETOOLONG;
                 return -1;

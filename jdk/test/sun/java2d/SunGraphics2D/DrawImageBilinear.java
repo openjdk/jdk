@@ -104,7 +104,9 @@ public class DrawImageBilinear extends Canvas {
 
             // second time will be a texture->surface blit
             g2d.drawImage(bimg2, 80, 10, 40, 40, null);
-            g2d.drawImage(bimg2, 80, 10, 40, 40, null);
+            if (!skipOglTextureTest) {
+                g2d.drawImage(bimg2, 80, 10, 40, 40, null);
+            }
 
             // third time will be a pbuffer->surface blit
             if (vimg.validate(getGraphicsConfiguration()) != VolatileImage.IMAGE_OK) {
@@ -150,6 +152,8 @@ public class DrawImageBilinear extends Canvas {
         }
     }
 
+    private static boolean skipOglTextureTest = false;
+
     public static void main(String[] args) {
         boolean show = false;
         for (String arg : args) {
@@ -157,6 +161,11 @@ public class DrawImageBilinear extends Canvas {
                 show = true;
             }
         }
+
+        String arch = System.getProperty("os.arch");
+        boolean isOglEnabled = Boolean.getBoolean("sun.java2d.opengl");
+        skipOglTextureTest = isOglEnabled && ("sparc".equals(arch));
+        System.out.println("Skip OpenGL texture test: " + skipOglTextureTest);
 
         DrawImageBilinear test = new DrawImageBilinear();
         Frame frame = new Frame();

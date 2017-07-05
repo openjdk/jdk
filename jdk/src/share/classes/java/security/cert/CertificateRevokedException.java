@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,8 @@ public class CertificateRevokedException extends CertificateException {
      */
     private final CRLReason reason;
     /**
-     * @serial the name of the authority that signed the certificate's
-     *    revocation status information
+     * @serial the <code>X500Principal</code> that represents the name of the
+     * authority that signed the certificate's revocation status information
      */
     private final X500Principal authority;
 
@@ -79,8 +79,9 @@ public class CertificateRevokedException extends CertificateException {
      * @param extensions a map of X.509 Extensions. Each key is an OID String
      *    that maps to the corresponding Extension. The map is copied to
      *    prevent subsequent modification.
-     * @param authority the name of the authority that signed the certificate's
-     *    revocation status information
+     * @param authority the <code>X500Principal</code> that represents the name
+     *    of the authority that signed the certificate's revocation status
+     *    information
      * @throws NullPointerException if <code>revocationDate</code>,
      *    <code>reason</code>, <code>authority</code>, or
      *    <code>extensions</code> is <code>null</code>
@@ -121,8 +122,8 @@ public class CertificateRevokedException extends CertificateException {
      * Returns the name of the authority that signed the certificate's
      * revocation status information.
      *
-     * @return the name of the authority that signed the certificate's
-     *    revocation status information
+     * @return the <code>X500Principal</code> that represents the name of the
+     *     authority that signed the certificate's revocation status information
      */
     public X500Principal getAuthorityName() {
         return authority;

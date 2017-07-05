@@ -76,7 +76,7 @@ JDK_GetVersionInfo0(jdk_version_info* info, size_t info_size) {
     }
 
 
-    memset(info, 0, sizeof(info_size));
+    memset(info, 0, info_size);
     info->jdk_version = ((jdk_major_version & 0xFF) << 24) |
                         ((jdk_minor_version & 0xFF) << 16) |
                         ((jdk_micro_version & 0xFF) << 8)  |

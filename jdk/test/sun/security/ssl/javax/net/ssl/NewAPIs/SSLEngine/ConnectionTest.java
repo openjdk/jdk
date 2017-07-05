@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
  * @bug 4495742
  * @summary Add non-blocking SSL/TLS functionality, usable with any
  *      I/O abstraction
- * @ignore incompatible with disabled unsafe renegotiation (6898739), please
- *         reenable when safe renegotiation is implemented.
  *
  * This is a bit hacky, meant to test various conditions.  The main
  * thing I wanted to do with this was to do buffer reads/writes

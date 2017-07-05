@@ -112,7 +112,7 @@ jboolean _icon_upcall(JNIEnv *env, jobject this, GdkPixbuf *pixbuf)
         /* Copy the data array into a Java structure so we can pass it back. */
         jbyteArray data = (*env)->NewByteArray(env, (row_stride * height));
         (*env)->SetByteArrayRegion(env, data, 0, (row_stride * height),
-                                   pixbuf_data);
+                                   (jbyte *)pixbuf_data);
 
         /* Release the pixbuf. */
         (*fp_g_object_unref)(pixbuf);

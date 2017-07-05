@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6880672 6896573 6899694
+ * @bug 6880672 6896573 6899694 6976036
  * @summary Exercise Arrays.sort
  * @build Sorting
  * @run main Sorting -shortrun
@@ -50,10 +50,10 @@ public class Sorting {
         1, 2, 3, 21, 55, 1000, 10000 };
 
     // Random initial values used in a long run (default)
-    private static final long[] LONG_RUN_RANDOMS = {666, 0xC0FFEE, 999};
+    private static final long[] LONG_RUN_RANDOMS = { 666, 0xC0FFEE, 999 };
 
     // Random initial values used in a short run
-    private static final long[] SHORT_RUN_RANDOMS = {666};
+    private static final long[] SHORT_RUN_RANDOMS = { 666 };
 
     public static void main(String[] args) {
         boolean shortRun = args.length > 0 && args[0].equals("-shortrun");
@@ -79,6 +79,11 @@ public class Sorting {
         testEmptyAndNullDoubleArray();
 
         for (long random : randoms) {
+            reset(random);
+
+            for (int length : lengths) {
+                testAndCheckWithInsertionSort(length, random);
+            }
             reset(random);
 
             for (int length : lengths) {
@@ -268,9 +273,7 @@ public class Sorting {
                    " length = " + length + ", m = " + m);
                 Object convertedGolden = converter.convert(golden);
                 Object convertedTest = converter.convert(test);
-                // outArray(test);
                 sortSubArray(convertedTest, fromIndex, toIndex);
-                // outArray(test);
                 checkSubArray(convertedTest, fromIndex, toIndex, m);
             }
         }
@@ -311,7 +314,7 @@ public class Sorting {
     private static void checkSorted(Pair[] a) {
         for (int i = 0; i < a.length - 1; i++) {
             if (a[i].getKey() > a[i + 1].getKey()) {
-                failed(i, "" + a[i].getKey(), "" + a[i + 1].getKey());
+                failedSort(i, "" + a[i].getKey(), "" + a[i + 1].getKey());
             }
         }
     }
@@ -328,7 +331,7 @@ public class Sorting {
             int value4 = a[i++].getValue();
 
             if (!(key1 == key2 && key2 == key3 && key3 == key4)) {
-                failed("On position " + i + " must keys are different " +
+                failed("On position " + i + " keys are different " +
                     key1 + ", " + key2 + ", " + key3 + ", " + key4);
             }
             if (!(value1 < value2 && value2 < value3 && value3 < value4)) {
@@ -383,6 +386,35 @@ public class Sorting {
 
         private int myKey;
         private int myValue;
+    }
+
+
+    private static void testAndCheckWithInsertionSort(int length, long random) {
+        if (length > 1000) {
+            return;
+        }
+        ourDescription = "Check sorting with insertion sort";
+        int[] golden = new int[length];
+
+        for (int m = 1; m < 2 * length; m *= 2) {
+            for (UnsortedBuilder builder : UnsortedBuilder.values()) {
+                builder.build(golden, m);
+                int[] test = golden.clone();
+
+                for (TypeConverter converter : TypeConverter.values()) {
+                    out.println("Test 'insertion sort': " + converter + " " +
+                        builder + "random = " +  random + ", length = " +
+                        length + ", m = " + m);
+                    Object convertedGolden = converter.convert(golden);
+                    Object convertedTest1 = converter.convert(test);
+                    Object convertedTest2 = converter.convert(test);
+                    sort(convertedTest1);
+                    sortByInsertionSort(convertedTest2);
+                    compare(convertedTest1, convertedTest2);
+                }
+            }
+        }
+        out.println();
     }
 
     private static void testAndCheckWithCheckSum(int length, long random) {
@@ -460,9 +492,7 @@ public class Sorting {
                                 builder.build(golden, a, g, z, n, p);
                                 float[] test = golden.clone();
                                 scramble(test);
-                                // outArray(test);
                                 sort(test);
-                                // outArray(test);
                                 compare(test, golden, a, n, g);
                             }
                             newLine = true;
@@ -500,9 +530,7 @@ public class Sorting {
                                 builder.build(golden, a, g, z, n, p);
                                 double[] test = golden.clone();
                                 scramble(test);
-                                // outArray(test);
                                 sort(test);
-                                // outArray(test);
                                 compare(test, golden, a, n, g);
                             }
                             newLine = true;
@@ -721,12 +749,12 @@ public class Sorting {
 
         for (int i = numNeg; i < numNeg + numNegZero; i++) {
             if (NEGATIVE_ZERO != Float.floatToIntBits(a[i])) {
-                failed("On position " + i + " must be -0.0f instead of " + a[i]);
+                failed("On position " + i + " must be -0.0 instead of " + a[i]);
             }
         }
         for (int i = 0; i < a.length - numNaN; i++) {
             if (a[i] != b[i]) {
-                failed(i, "" + a[i], "" + b[i]);
+                failedCompare(i, "" + a[i], "" + b[i]);
             }
         }
     }
@@ -747,12 +775,12 @@ public class Sorting {
 
         for (int i = numNeg; i < numNeg + numNegZero; i++) {
             if (NEGATIVE_ZERO != Double.doubleToLongBits(a[i])) {
-                failed("On position " + i + " must be -0.0d instead of " + a[i]);
+                failed("On position " + i + " must be -0.0 instead of " + a[i]);
             }
         }
         for (int i = 0; i < a.length - numNaN; i++) {
             if (a[i] != b[i]) {
-                failed(i, "" + a[i], "" + b[i]);
+                failedCompare(i, "" + a[i], "" + b[i]);
             }
         }
     }
@@ -841,8 +869,8 @@ public class Sorting {
                 int incCount = 1;
                 int decCount = a.length;
                 int i = 0;
-                int period = m;
-                m--;
+                int period = m--;
+
                 while (true) {
                     for (int k = 1; k <= period; k++) {
                         if (i >= a.length) {
@@ -922,6 +950,25 @@ public class Sorting {
         }
     }
 
+    private static void checkWithCheckSum(Object test, Object golden) {
+        checkSorted(test);
+        checkCheckSum(test, golden);
+    }
+
+    private static void failed(String message) {
+        err.format("\n*** TEST FAILED - %s.\n\n%s.\n\n", ourDescription, message);
+        throw new RuntimeException("Test failed - see log file for details");
+    }
+
+    private static void failedSort(int index, String value1, String value2) {
+        failed("Array is not sorted at " + index + "-th position: " +
+            value1 + " and " + value2);
+    }
+
+    private static void failedCompare(int index, String value1, String value2) {
+        failed("On position " + index + " must be " + value2 + " instead of " + value1);
+    }
+
     private static void compare(Object test, Object golden) {
         if (test instanceof int[]) {
             compare((int[]) test, (int[]) golden);
@@ -945,19 +992,68 @@ public class Sorting {
         }
     }
 
-    private static void checkWithCheckSum(Object test, Object golden) {
-        checkSorted(test);
-        checkCheckSum(test, golden);
+    private static void compare(int[] a, int[] b) {
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                failedCompare(i, "" + a[i], "" + b[i]);
+            }
+        }
     }
 
-    private static void failed(String message) {
-        err.format("\n*** TEST FAILED - %s\n\n%s\n\n", ourDescription, message);
-        throw new RuntimeException("Test failed - see log file for details");
+    private static void compare(long[] a, long[] b) {
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                failedCompare(i, "" + a[i], "" + b[i]);
+            }
+        }
     }
 
-    private static void failed(int index, String value1, String value2) {
-        failed("Array is not sorted at " + index + "-th position: " +
-            value1 + " and " + value2);
+    private static void compare(short[] a, short[] b) {
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                failedCompare(i, "" + a[i], "" + b[i]);
+            }
+        }
+    }
+
+    private static void compare(byte[] a, byte[] b) {
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                failedCompare(i, "" + a[i], "" + b[i]);
+            }
+        }
+    }
+
+    private static void compare(char[] a, char[] b) {
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                failedCompare(i, "" + a[i], "" + b[i]);
+            }
+        }
+    }
+
+    private static void compare(float[] a, float[] b) {
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                failedCompare(i, "" + a[i], "" + b[i]);
+            }
+        }
+    }
+
+    private static void compare(double[] a, double[] b) {
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                failedCompare(i, "" + a[i], "" + b[i]);
+            }
+        }
+    }
+
+    private static void compare(Integer[] a, Integer[] b) {
+        for (int i = 0; i < a.length; i++) {
+            if (a[i].compareTo(b[i]) != 0) {
+                failedCompare(i, "" + a[i], "" + b[i]);
+            }
+        }
     }
 
     private static void checkSorted(Object object) {
@@ -983,82 +1079,10 @@ public class Sorting {
         }
     }
 
-    private static void compare(Integer[] a, Integer[] b) {
-        for (int i = 0; i < a.length; i++) {
-            if (a[i].intValue() != b[i].intValue()) {
-                failed(i, "" + a[i], "" + b[i]);
-            }
-        }
-    }
-
-    private static void compare(int[] a, int[] b) {
-        for (int i = 0; i < a.length; i++) {
-            if (a[i] != b[i]) {
-                failed(i, "" + a[i], "" + b[i]);
-            }
-        }
-    }
-
-    private static void compare(long[] a, long[] b) {
-        for (int i = 0; i < a.length; i++) {
-            if (a[i] != b[i]) {
-                failed(i, "" + a[i], "" + b[i]);
-            }
-        }
-    }
-
-    private static void compare(short[] a, short[] b) {
-        for (int i = 0; i < a.length; i++) {
-            if (a[i] != b[i]) {
-                failed(i, "" + a[i], "" + b[i]);
-            }
-        }
-    }
-
-    private static void compare(byte[] a, byte[] b) {
-        for (int i = 0; i < a.length; i++) {
-            if (a[i] != b[i]) {
-                failed(i, "" + a[i], "" + b[i]);
-            }
-        }
-    }
-
-    private static void compare(char[] a, char[] b) {
-        for (int i = 0; i < a.length; i++) {
-            if (a[i] != b[i]) {
-                failed(i, "" + a[i], "" + b[i]);
-            }
-        }
-    }
-
-    private static void compare(float[] a, float[] b) {
-        for (int i = 0; i < a.length; i++) {
-            if (a[i] != b[i]) {
-                failed(i, "" + a[i], "" + b[i]);
-            }
-        }
-    }
-
-    private static void compare(double[] a, double[] b) {
-        for (int i = 0; i < a.length; i++) {
-            if (a[i] != b[i]) {
-                failed(i, "" + a[i], "" + b[i]);
-            }
-        }
-    }
-
-    private static void checkSorted(Integer[] a) {
-        for (int i = 0; i < a.length - 1; i++) {
-            if (a[i].intValue() > a[i + 1].intValue()) {
-                failed(i, "" + a[i], "" + a[i + 1]);
-            }
-        }
-    }
-
     private static void checkSorted(int[] a) {
         for (int i = 0; i < a.length - 1; i++) {
             if (a[i] > a[i + 1]) {
-                failed(i, "" + a[i], "" + a[i + 1]);
+                failedSort(i, "" + a[i], "" + a[i + 1]);
             }
         }
     }
@@ -1066,7 +1090,7 @@ public class Sorting {
     private static void checkSorted(long[] a) {
         for (int i = 0; i < a.length - 1; i++) {
             if (a[i] > a[i + 1]) {
-                failed(i, "" + a[i], "" + a[i + 1]);
+                failedSort(i, "" + a[i], "" + a[i + 1]);
             }
         }
     }
@@ -1074,7 +1098,7 @@ public class Sorting {
     private static void checkSorted(short[] a) {
         for (int i = 0; i < a.length - 1; i++) {
             if (a[i] > a[i + 1]) {
-                failed(i, "" + a[i], "" + a[i + 1]);
+                failedSort(i, "" + a[i], "" + a[i + 1]);
             }
         }
     }
@@ -1082,7 +1106,7 @@ public class Sorting {
     private static void checkSorted(byte[] a) {
         for (int i = 0; i < a.length - 1; i++) {
             if (a[i] > a[i + 1]) {
-                failed(i, "" + a[i], "" + a[i + 1]);
+                failedSort(i, "" + a[i], "" + a[i + 1]);
             }
         }
     }
@@ -1090,7 +1114,7 @@ public class Sorting {
     private static void checkSorted(char[] a) {
         for (int i = 0; i < a.length - 1; i++) {
             if (a[i] > a[i + 1]) {
-                failed(i, "" + a[i], "" + a[i + 1]);
+                failedSort(i, "" + a[i], "" + a[i + 1]);
             }
         }
     }
@@ -1098,7 +1122,7 @@ public class Sorting {
     private static void checkSorted(float[] a) {
         for (int i = 0; i < a.length - 1; i++) {
             if (a[i] > a[i + 1]) {
-                failed(i, "" + a[i], "" + a[i + 1]);
+                failedSort(i, "" + a[i], "" + a[i + 1]);
             }
         }
     }
@@ -1106,34 +1130,45 @@ public class Sorting {
     private static void checkSorted(double[] a) {
         for (int i = 0; i < a.length - 1; i++) {
             if (a[i] > a[i + 1]) {
-                failed(i, "" + a[i], "" + a[i + 1]);
+                failedSort(i, "" + a[i], "" + a[i + 1]);
+            }
+        }
+    }
+
+    private static void checkSorted(Integer[] a) {
+        for (int i = 0; i < a.length - 1; i++) {
+            if (a[i].intValue() > a[i + 1].intValue()) {
+                failedSort(i, "" + a[i], "" + a[i + 1]);
             }
         }
     }
 
     private static void checkCheckSum(Object test, Object golden) {
-        if (checkSum(test) != checkSum(golden)) {
-            failed("It seems that original and sorted arrays are not identical");
+        if (checkSumXor(test) != checkSumXor(golden)) {
+            failed("Original and sorted arrays are not identical [xor]");
+        }
+        if (checkSumPlus(test) != checkSumPlus(golden)) {
+            failed("Original and sorted arrays are not identical [plus]");
         }
     }
 
-    private static int checkSum(Object object) {
+    private static int checkSumXor(Object object) {
         if (object instanceof int[]) {
-            return checkSum((int[]) object);
+            return checkSumXor((int[]) object);
         } else if (object instanceof long[]) {
-            return checkSum((long[]) object);
+            return checkSumXor((long[]) object);
         } else if (object instanceof short[]) {
-            return checkSum((short[]) object);
+            return checkSumXor((short[]) object);
         } else if (object instanceof byte[]) {
-            return checkSum((byte[]) object);
+            return checkSumXor((byte[]) object);
         } else if (object instanceof char[]) {
-            return checkSum((char[]) object);
+            return checkSumXor((char[]) object);
         } else if (object instanceof float[]) {
-            return checkSum((float[]) object);
+            return checkSumXor((float[]) object);
         } else if (object instanceof double[]) {
-            return checkSum((double[]) object);
+            return checkSumXor((double[]) object);
         } else if (object instanceof Integer[]) {
-            return checkSum((Integer[]) object);
+            return checkSumXor((Integer[]) object);
         } else {
             failed("Unknow type of array: " + object + " of class " +
                 object.getClass().getName());
@@ -1141,76 +1176,275 @@ public class Sorting {
         }
     }
 
-    private static int checkSum(Integer[] a) {
-        int checkXorSum = 0;
+    private static int checkSumXor(Integer[] a) {
+        int checkSum = 0;
 
         for (Integer e : a) {
-            checkXorSum ^= e.intValue();
+            checkSum ^= e.intValue();
         }
-        return checkXorSum;
+        return checkSum;
     }
 
-    private static int checkSum(int[] a) {
-        int checkXorSum = 0;
+    private static int checkSumXor(int[] a) {
+        int checkSum = 0;
 
         for (int e : a) {
-            checkXorSum ^= e;
+            checkSum ^= e;
         }
-        return checkXorSum;
+        return checkSum;
     }
 
-    private static int checkSum(long[] a) {
-        long checkXorSum = 0;
+    private static int checkSumXor(long[] a) {
+        long checkSum = 0;
 
         for (long e : a) {
-            checkXorSum ^= e;
+            checkSum ^= e;
         }
-        return (int) checkXorSum;
+        return (int) checkSum;
     }
 
-    private static int checkSum(short[] a) {
-        short checkXorSum = 0;
+    private static int checkSumXor(short[] a) {
+        short checkSum = 0;
 
         for (short e : a) {
-            checkXorSum ^= e;
+            checkSum ^= e;
         }
-        return (int) checkXorSum;
+        return (int) checkSum;
     }
 
-    private static int checkSum(byte[] a) {
-        byte checkXorSum = 0;
+    private static int checkSumXor(byte[] a) {
+        byte checkSum = 0;
 
         for (byte e : a) {
-            checkXorSum ^= e;
+            checkSum ^= e;
         }
-        return (int) checkXorSum;
+        return (int) checkSum;
     }
 
-    private static int checkSum(char[] a) {
-        char checkXorSum = 0;
+    private static int checkSumXor(char[] a) {
+        char checkSum = 0;
 
         for (char e : a) {
-            checkXorSum ^= e;
+            checkSum ^= e;
         }
-        return (int) checkXorSum;
+        return (int) checkSum;
     }
 
-    private static int checkSum(float[] a) {
-        int checkXorSum = 0;
+    private static int checkSumXor(float[] a) {
+        int checkSum = 0;
 
         for (float e : a) {
-            checkXorSum ^= (int) e;
+            checkSum ^= (int) e;
         }
-        return checkXorSum;
+        return checkSum;
     }
 
-    private static int checkSum(double[] a) {
-        int checkXorSum = 0;
+    private static int checkSumXor(double[] a) {
+        int checkSum = 0;
 
         for (double e : a) {
-            checkXorSum ^= (int) e;
+            checkSum ^= (int) e;
         }
-        return checkXorSum;
+        return checkSum;
+    }
+
+    private static int checkSumPlus(Object object) {
+        if (object instanceof int[]) {
+            return checkSumPlus((int[]) object);
+        } else if (object instanceof long[]) {
+            return checkSumPlus((long[]) object);
+        } else if (object instanceof short[]) {
+            return checkSumPlus((short[]) object);
+        } else if (object instanceof byte[]) {
+            return checkSumPlus((byte[]) object);
+        } else if (object instanceof char[]) {
+            return checkSumPlus((char[]) object);
+        } else if (object instanceof float[]) {
+            return checkSumPlus((float[]) object);
+        } else if (object instanceof double[]) {
+            return checkSumPlus((double[]) object);
+        } else if (object instanceof Integer[]) {
+            return checkSumPlus((Integer[]) object);
+        } else {
+            failed("Unknow type of array: " + object + " of class " +
+                object.getClass().getName());
+            return -1;
+        }
+    }
+
+    private static int checkSumPlus(int[] a) {
+        int checkSum = 0;
+
+        for (int e : a) {
+            checkSum += e;
+        }
+        return checkSum;
+    }
+
+    private static int checkSumPlus(long[] a) {
+        long checkSum = 0;
+
+        for (long e : a) {
+            checkSum += e;
+        }
+        return (int) checkSum;
+    }
+
+    private static int checkSumPlus(short[] a) {
+        short checkSum = 0;
+
+        for (short e : a) {
+            checkSum += e;
+        }
+        return (int) checkSum;
+    }
+
+    private static int checkSumPlus(byte[] a) {
+        byte checkSum = 0;
+
+        for (byte e : a) {
+            checkSum += e;
+        }
+        return (int) checkSum;
+    }
+
+    private static int checkSumPlus(char[] a) {
+        char checkSum = 0;
+
+        for (char e : a) {
+            checkSum += e;
+        }
+        return (int) checkSum;
+    }
+
+    private static int checkSumPlus(float[] a) {
+        int checkSum = 0;
+
+        for (float e : a) {
+            checkSum += (int) e;
+        }
+        return checkSum;
+    }
+
+    private static int checkSumPlus(double[] a) {
+        int checkSum = 0;
+
+        for (double e : a) {
+            checkSum += (int) e;
+        }
+        return checkSum;
+    }
+
+    private static int checkSumPlus(Integer[] a) {
+        int checkSum = 0;
+
+        for (Integer e : a) {
+            checkSum += e.intValue();
+        }
+        return checkSum;
+    }
+
+    private static void sortByInsertionSort(Object object) {
+        if (object instanceof int[]) {
+            sortByInsertionSort((int[]) object);
+        } else if (object instanceof long[]) {
+            sortByInsertionSort((long[]) object);
+        } else if (object instanceof short[]) {
+            sortByInsertionSort((short[]) object);
+        } else if (object instanceof byte[]) {
+            sortByInsertionSort((byte[]) object);
+        } else if (object instanceof char[]) {
+            sortByInsertionSort((char[]) object);
+        } else if (object instanceof float[]) {
+            sortByInsertionSort((float[]) object);
+        } else if (object instanceof double[]) {
+            sortByInsertionSort((double[]) object);
+        } else if (object instanceof Integer[]) {
+            sortByInsertionSort((Integer[]) object);
+        } else {
+            failed("Unknow type of array: " + object + " of class " +
+                object.getClass().getName());
+        }
+    }
+
+    private static void sortByInsertionSort(int[] a) {
+        for (int j, i = 1; i < a.length; i++) {
+            int ai = a[i];
+            for (j = i - 1; j >= 0 && ai < a[j]; j--) {
+                a[j + 1] = a[j];
+            }
+            a[j + 1] = ai;
+        }
+    }
+
+    private static void sortByInsertionSort(long[] a) {
+        for (int j, i = 1; i < a.length; i++) {
+            long ai = a[i];
+            for (j = i - 1; j >= 0 && ai < a[j]; j--) {
+                a[j + 1] = a[j];
+            }
+            a[j + 1] = ai;
+        }
+    }
+
+    private static void sortByInsertionSort(short[] a) {
+        for (int j, i = 1; i < a.length; i++) {
+            short ai = a[i];
+            for (j = i - 1; j >= 0 && ai < a[j]; j--) {
+                a[j + 1] = a[j];
+            }
+            a[j + 1] = ai;
+        }
+    }
+
+    private static void sortByInsertionSort(byte[] a) {
+        for (int j, i = 1; i < a.length; i++) {
+            byte ai = a[i];
+            for (j = i - 1; j >= 0 && ai < a[j]; j--) {
+                a[j + 1] = a[j];
+            }
+            a[j + 1] = ai;
+        }
+    }
+
+    private static void sortByInsertionSort(char[] a) {
+        for (int j, i = 1; i < a.length; i++) {
+            char ai = a[i];
+            for (j = i - 1; j >= 0 && ai < a[j]; j--) {
+                a[j + 1] = a[j];
+            }
+            a[j + 1] = ai;
+        }
+    }
+
+    private static void sortByInsertionSort(float[] a) {
+        for (int j, i = 1; i < a.length; i++) {
+            float ai = a[i];
+            for (j = i - 1; j >= 0 && ai < a[j]; j--) {
+                a[j + 1] = a[j];
+            }
+            a[j + 1] = ai;
+        }
+    }
+
+    private static void sortByInsertionSort(double[] a) {
+        for (int j, i = 1; i < a.length; i++) {
+            double ai = a[i];
+            for (j = i - 1; j >= 0 && ai < a[j]; j--) {
+                a[j + 1] = a[j];
+            }
+            a[j + 1] = ai;
+        }
+    }
+
+    private static void sortByInsertionSort(Integer[] a) {
+        for (int j, i = 1; i < a.length; i++) {
+            Integer ai = a[i];
+            for (j = i - 1; j >= 0 && ai < a[j]; j--) {
+                a[j + 1] = a[j];
+            }
+            a[j + 1] = ai;
+        }
     }
 
     private static void sort(Object object) {
@@ -1292,7 +1526,7 @@ public class Sorting {
 
         for (int i = fromIndex; i < toIndex - 1; i++) {
             if (a[i].intValue() > a[i + 1].intValue()) {
-                failed(i, "" + a[i], "" + a[i + 1]);
+                failedSort(i, "" + a[i], "" + a[i + 1]);
             }
         }
 
@@ -1314,7 +1548,7 @@ public class Sorting {
 
         for (int i = fromIndex; i < toIndex - 1; i++) {
             if (a[i] > a[i + 1]) {
-                failed(i, "" + a[i], "" + a[i + 1]);
+                failedSort(i, "" + a[i], "" + a[i + 1]);
             }
         }
 
@@ -1336,7 +1570,7 @@ public class Sorting {
 
         for (int i = fromIndex; i < toIndex - 1; i++) {
             if (a[i] > a[i + 1]) {
-                failed(i, "" + a[i], "" + a[i + 1]);
+                failedSort(i, "" + a[i], "" + a[i + 1]);
             }
         }
 
@@ -1358,7 +1592,7 @@ public class Sorting {
 
         for (int i = fromIndex; i < toIndex - 1; i++) {
             if (a[i] > a[i + 1]) {
-                failed(i, "" + a[i], "" + a[i + 1]);
+                failedSort(i, "" + a[i], "" + a[i + 1]);
             }
         }
 
@@ -1380,7 +1614,7 @@ public class Sorting {
 
         for (int i = fromIndex; i < toIndex - 1; i++) {
             if (a[i] > a[i + 1]) {
-                failed(i, "" + a[i], "" + a[i + 1]);
+                failedSort(i, "" + a[i], "" + a[i + 1]);
             }
         }
 
@@ -1402,7 +1636,7 @@ public class Sorting {
 
         for (int i = fromIndex; i < toIndex - 1; i++) {
             if (a[i] > a[i + 1]) {
-                failed(i, "" + a[i], "" + a[i + 1]);
+                failedSort(i, "" + a[i], "" + a[i + 1]);
             }
         }
 
@@ -1424,7 +1658,7 @@ public class Sorting {
 
         for (int i = fromIndex; i < toIndex - 1; i++) {
             if (a[i] > a[i + 1]) {
-                failed(i, "" + a[i], "" + a[i + 1]);
+                failedSort(i, "" + a[i], "" + a[i + 1]);
             }
         }
 
@@ -1446,7 +1680,7 @@ public class Sorting {
 
         for (int i = fromIndex; i < toIndex - 1; i++) {
             if (a[i] > a[i + 1]) {
-                failed(i, "" + a[i], "" + a[i + 1]);
+                failedSort(i, "" + a[i], "" + a[i + 1]);
             }
         }
 

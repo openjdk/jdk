@@ -73,10 +73,24 @@ public class MimeTable implements FileNameMap {
 
     private static final String filePreamble = "sun.net.www MIME content-types table";
     private static final String fileMagic = "#" + filePreamble;
-    private static MimeTable defaultInstance = null;
 
     MimeTable() {
         load();
+    }
+
+    private static class DefaultInstanceHolder {
+        static final MimeTable defaultInstance = getDefaultInstance();
+
+        static MimeTable getDefaultInstance() {
+            return java.security.AccessController.doPrivileged(
+                new java.security.PrivilegedAction<MimeTable>() {
+                public MimeTable run() {
+                    MimeTable instance = new MimeTable();
+                    URLConnection.setFileNameMap(instance);
+                    return instance;
+                }
+            });
+        }
     }
 
     /**
@@ -84,18 +98,7 @@ public class MimeTable implements FileNameMap {
      * table from a data file.
      */
     public static MimeTable getDefaultTable() {
-        if (defaultInstance == null) {
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<Void>() {
-                    public Void run() {
-                    defaultInstance = new MimeTable();
-                    URLConnection.setFileNameMap(defaultInstance);
-                    return null;
-                }
-            });
-        }
-
-        return defaultInstance;
+        return DefaultInstanceHolder.defaultInstance;
     }
 
     /**

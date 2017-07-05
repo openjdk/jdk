@@ -25,13 +25,18 @@
 package sun.jkernel;
 
 import java.io.*;
+import java.net.URLStreamHandlerFactory;
+import java.net.URL;
+import java.net.MalformedURLException;
 import java.security.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.jar.*;
 import java.util.zip.*;
-import sun.misc.Launcher;
 import sun.misc.BootClassLoaderHook;
+import sun.misc.Launcher;
+import sun.misc.URLClassPath;
+import sun.net.www.ParseUtil;
 
 /**
  * Handles the downloading of additional JRE components.  The bootstrap class
@@ -658,31 +663,61 @@ public class DownloadManager extends BootClassLoaderHook {
         return getAppDataLocalLow() + getKernelJREDir();
     }
 
-    /**
-     * Returns an array of JAR files which have been added to the boot strap
-     * class path since the JVM was first booted.
-     */
-    public static synchronized File[] getAdditionalBootStrapPaths() {
-        return additionalBootStrapPaths != null ? additionalBootStrapPaths :
-                new File[0];
-    }
-
-
+    // To be revisited:
+    // How DownloadManager maintains its bootstrap class path.
+    // sun.misc.Launcher.getBootstrapClassPath() returns
+    // DownloadManager.getBootstrapClassPath() instead.
+    //
+    // So should no longer need to lock the Launcher.class.
+    // In addition, additionalBootStrapPaths is not really needed
+    // if it obtains the initial bootclasspath during DownloadManager's
+    // initialization.
     private static void addEntryToBootClassPath(File path) {
         // Must acquire these locks in this order
         synchronized(Launcher.class) {
-           synchronized(DownloadManager.class) {
+            synchronized(DownloadManager.class) {
                 File[] newBootStrapPaths = new File[
                     additionalBootStrapPaths.length + 1];
                 System.arraycopy(additionalBootStrapPaths, 0, newBootStrapPaths,
                         0, additionalBootStrapPaths.length);
                 newBootStrapPaths[newBootStrapPaths.length - 1] = path;
                 additionalBootStrapPaths = newBootStrapPaths;
-                Launcher.flushBootstrapClassPath();
+                if (bootstrapClassPath != null)
+                    bootstrapClassPath.addURL(getFileURL(path));
            }
        }
     }
 
+    /**
+     * Returns the kernel's bootstrap class path which includes the additional
+     * JARs downloaded
+     */
+    private static URLClassPath bootstrapClassPath = null;
+    private synchronized static
+           URLClassPath getBootClassPath(URLClassPath bcp,
+                                         URLStreamHandlerFactory factory)
+    {
+        if (bootstrapClassPath == null) {
+            bootstrapClassPath = new URLClassPath(bcp.getURLs(), factory);
+            for (File path : additionalBootStrapPaths) {
+                bootstrapClassPath.addURL(getFileURL(path));
+            }
+        }
+        return bootstrapClassPath;
+    }
+
+    private static URL getFileURL(File file) {
+        try {
+            file = file.getCanonicalFile();
+        } catch (IOException e) {}
+
+        try {
+            return ParseUtil.fileToEncodedURL(file);
+        } catch (MalformedURLException e) {
+            // Should never happen since we specify the protocol...
+            throw new InternalError();
+        }
+    }
 
     /**
      * Scan through java.ext.dirs to see if the lib/ext directory is included.
@@ -1680,8 +1715,10 @@ public class DownloadManager extends BootClassLoaderHook {
         }
     }
 
-    public File[] getAdditionalBootstrapPaths() {
-        return DownloadManager.getAdditionalBootStrapPaths();
+    public URLClassPath getBootstrapClassPath(URLClassPath bcp,
+                                              URLStreamHandlerFactory factory)
+    {
+        return DownloadManager.getBootClassPath(bcp, factory);
     }
 
     public boolean isCurrentThreadPrefetching() {

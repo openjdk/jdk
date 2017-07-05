@@ -622,7 +622,7 @@ class Bits {                            // package-private
     // initialization if it is launched with "-XX:MaxDirectMemorySize=<size>".
     private static volatile long maxMemory = VM.maxDirectMemory();
     private static volatile long reservedMemory;
-    private static volatile long usedMemory;
+    private static volatile long totalCapacity;
     private static volatile long count;
     private static boolean memoryLimitSet = false;
 
@@ -630,15 +630,17 @@ class Bits {                            // package-private
     // freed.  They allow the user to control the amount of direct memory
     // which a process may access.  All sizes are specified in bytes.
     static void reserveMemory(long size, int cap) {
-
         synchronized (Bits.class) {
             if (!memoryLimitSet && VM.isBooted()) {
                 maxMemory = VM.maxDirectMemory();
                 memoryLimitSet = true;
             }
-            if (size <= maxMemory - reservedMemory) {
+            // -XX:MaxDirectMemorySize limits the total capacity rather than the
+            // actual memory usage, which will differ when buffers are page
+            // aligned.
+            if (cap <= maxMemory - totalCapacity) {
                 reservedMemory += size;
-                usedMemory += cap;
+                totalCapacity += cap;
                 count++;
                 return;
             }
@@ -652,10 +654,10 @@ class Bits {                            // package-private
             Thread.currentThread().interrupt();
         }
         synchronized (Bits.class) {
-            if (reservedMemory + size > maxMemory)
+            if (totalCapacity + cap > maxMemory)
                 throw new OutOfMemoryError("Direct buffer memory");
             reservedMemory += size;
-            usedMemory += cap;
+            totalCapacity += cap;
             count++;
         }
 
@@ -664,7 +666,7 @@ class Bits {                            // package-private
     static synchronized void unreserveMemory(long size, int cap) {
         if (reservedMemory > 0) {
             reservedMemory -= size;
-            usedMemory -= cap;
+            totalCapacity -= cap;
             count--;
             assert (reservedMemory > -1);
         }
@@ -689,7 +691,7 @@ class Bits {                            // package-private
                         }
                         @Override
                         public long getTotalCapacity() {
-                            return Bits.usedMemory;
+                            return Bits.totalCapacity;
                         }
                         @Override
                         public long getMemoryUsed() {
