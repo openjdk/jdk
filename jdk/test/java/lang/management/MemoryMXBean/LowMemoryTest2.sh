@@ -25,8 +25,9 @@
 # @test
 # @bug     4982128
 # @summary Test low memory detection of non-heap memory pool
+#
 # @requires vm.gc=="null"
-# @modules java.management
+#
 # @run build LowMemoryTest2 MemoryUtil
 # @run shell/timeout=600 LowMemoryTest2.sh
 #
@@ -51,10 +52,10 @@ go() {
 }
 
 # Run test with each GC configuration
-# 
+#
 # Notes: To ensure that metaspace fills up we disable class unloading.
 # Also we set the max metaspace to 8MB - otherwise the test takes too
-# long to run. 
+# long to run.
 
 go -noclassgc -XX:MaxMetaspaceSize=16m -XX:+UseSerialGC LowMemoryTest2
 go -noclassgc -XX:MaxMetaspaceSize=16m -XX:+UseParallelGC LowMemoryTest2

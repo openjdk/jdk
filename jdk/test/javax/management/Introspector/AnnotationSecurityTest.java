@@ -27,7 +27,10 @@
  * @summary Test that having a security manager doesn't trigger a
  *          NotCompliantMBeanException
  * @author Daniel Fuchs, Yves Joan
- * @modules java.management
+ *
+ * @modules java.desktop
+ *          java.management
+ *
  * @run clean AnnotationSecurityTest Described UnDescribed DescribedMBean
  *            UnDescribedMBean SqeDescriptorKey DescribedMX DescribedMXBean
  * @run build AnnotationSecurityTest Described UnDescribed DescribedMBean

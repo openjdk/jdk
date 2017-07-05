@@ -40,7 +40,7 @@ public class ArgsEnvVar extends TestHelper {
     private static File testJar = null;
     private static Map<String, String> env = new HashMap<>();
 
-    private static String JAVA_OPTIONS = "JAVA_OPTIONS";
+    private static String JDK_JAVA_OPTIONS = "JDK_JAVA_OPTIONS";
 
     static void init() throws IOException {
         if  (testJar != null) {
@@ -105,7 +105,7 @@ public class ArgsEnvVar extends TestHelper {
         File argFile2 = createArgFile("argFile2", List.of("-Darg.file2=TWO"));
         File argFile3 = createArgFile("argFile3", List.of("-Darg.file3=THREE"));
 
-        env.put(JAVA_OPTIONS, "@argFile1\n-Xint\r-cp @@escaped\t@argFile2");
+        env.put(JDK_JAVA_OPTIONS, "@argFile1\n-Xint\r-cp @@escaped\t@argFile2");
 
         TestResult tr = doExec(env, javaCmd, "@argFile3", "-cp", "test.jar", "Foo", "uarg1", "@uarg2");
 
@@ -133,13 +133,13 @@ public class ArgsEnvVar extends TestHelper {
     }
 
     private TestResult testInEnv(List<String> options) {
-        env.put(JAVA_OPTIONS, String.join(" ", options));
+        env.put(JDK_JAVA_OPTIONS, String.join(" ", options));
         return doExec(env, javaCmd, "-jar", "test.jar");
     }
 
     private TestResult testInEnvAsArgFile(List<String> options) throws IOException {
         File argFile = createArgFile("argFile", options);
-        env.put(JAVA_OPTIONS, "@argFile");
+        env.put(JDK_JAVA_OPTIONS, "@argFile");
         TestResult tr = doExec(env, javaCmd, "-jar", "test.jar");
         argFile.delete();
         return tr;
@@ -187,7 +187,7 @@ public class ArgsEnvVar extends TestHelper {
         File argFile1 = createArgFile("arg File 1", List.of("-Xint"));
         File argFile2 = createArgFile("arg File 2", List.of("-Dprop='value with spaces'"));
         File argFile3 = createArgFile("arg File 3", List.of("-Xmx32m"));
-        env.put(JAVA_OPTIONS, "'@arg File 1' @\"arg File 2\" @'arg File'\" 3\"");
+        env.put(JDK_JAVA_OPTIONS, "'@arg File 1' @\"arg File 2\" @'arg File'\" 3\"");
 
         TestResult tr = doExec(env, javaCmd, "-jar", "test.jar");
         List<String> options = new ArrayList<>();
@@ -204,7 +204,7 @@ public class ArgsEnvVar extends TestHelper {
 
     @Test
     public void openQuoteShouldFail() {
-        env.put(JAVA_OPTIONS, "-Dprop='value missing close quote");
+        env.put(JDK_JAVA_OPTIONS, "-Dprop='value missing close quote");
         TestResult tr = doExec(env, javaCmd, "-version");
         tr.checkNegative();
         if (!tr.testStatus) {
@@ -215,11 +215,11 @@ public class ArgsEnvVar extends TestHelper {
 
     @Test
     public void noWildcard() {
-        env.put(JAVA_OPTIONS, "-cp *");
+        env.put(JDK_JAVA_OPTIONS, "-cp *");
         TestResult tr = doExec(env, javaCmd, "-jar", "test.jar");
         verifyOptions(List.of("-cp", "*", "-jar", "test.jar"), tr);
 
-        env.put(JAVA_OPTIONS, "-p ?");
+        env.put(JDK_JAVA_OPTIONS, "-p ?");
         tr = doExec(env, javaCmd, "-jar", "test.jar", "one", "two");
         verifyOptions(List.of("-p", "?", "-jar", "test.jar", "one", "two"), tr);
     }
