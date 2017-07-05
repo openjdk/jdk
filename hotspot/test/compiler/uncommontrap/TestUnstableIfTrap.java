@@ -42,7 +42,7 @@ import uncommontrap.Verifier;
  * @bug 8030976 8059226
  * @library /testlibrary /compiler/testlibrary /test/lib
  * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/sun.misc
+ *          java.base/jdk.internal.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor

@@ -27,7 +27,7 @@
  * @key gc
  * @bug 8027756
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestHumongousCodeCacheRoots
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

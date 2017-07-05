@@ -136,7 +136,7 @@ public class AtomicIntegerArray implements java.io.Serializable {
      * @since 1.6
      */
     public final void lazySet(int i, int newValue) {
-        U.putOrderedInt(array, checkedByteOffset(i), newValue);
+        U.putIntRelease(array, checkedByteOffset(i), newValue);
     }
 
     /**

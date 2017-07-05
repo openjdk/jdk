@@ -28,7 +28,7 @@
  * @summary Verify that results of computations are the same w/
  *          and w/o usage of ANDN instruction
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestAndnL BMITestRunner Expr
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

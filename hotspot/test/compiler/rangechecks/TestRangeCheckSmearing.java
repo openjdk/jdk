@@ -26,7 +26,7 @@
  * @bug 8066103
  * @summary C2's range check smearing allows out of bound array accesses
  * @library /testlibrary /test/lib /compiler/whitebox /
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build TestRangeCheckSmearing
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

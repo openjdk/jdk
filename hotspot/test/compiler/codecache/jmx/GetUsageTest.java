@@ -30,7 +30,7 @@ import sun.hotspot.code.BlobType;
 /*
  * @test GetUsageTest
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build GetUsageTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

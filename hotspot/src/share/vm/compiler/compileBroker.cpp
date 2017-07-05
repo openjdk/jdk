@@ -773,7 +773,8 @@ void CompileBroker::init_compiler_sweeper_threads(int c1_compiler_count, int c2_
 #endif // !ZERO && !SHARK
   // Initialize the compilation queue
   if (c2_compiler_count > 0) {
-    _c2_compile_queue  = new CompileQueue("C2 compile queue");
+    const char* name = JVMCI_ONLY(UseJVMCICompiler ? "JVMCI compile queue" :) "C2 compile queue";
+    _c2_compile_queue  = new CompileQueue(name);
     _compilers[1]->set_num_compiler_threads(c2_compiler_count);
   }
   if (c1_compiler_count > 0) {
@@ -1169,7 +1170,8 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
       CompilationPolicy::policy()->delay_compilation(method());
       return NULL;
     }
-    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, comment, !directive->BackgroundCompilationOption, THREAD);
+    bool is_blocking = !directive->BackgroundCompilationOption || CompileTheWorld || ReplayCompiles;
+    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, comment, is_blocking, THREAD);
   }
 
   // return requested nmethod
@@ -1649,6 +1651,10 @@ void CompileBroker::init_compiler_thread_log() {
           tty->print_cr("Opening compilation log %s", file_name);
         }
         CompileLog* log = new(ResourceObj::C_HEAP, mtCompiler) CompileLog(file_name, fp, thread_id);
+        if (log == NULL) {
+          fclose(fp);
+          return;
+        }
         thread->init_log(log);
 
         if (xtty != NULL) {

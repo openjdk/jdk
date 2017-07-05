@@ -49,6 +49,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 import java.util.Objects;
@@ -2025,6 +2026,9 @@ public final class System {
             }
             public ServicesCatalog createOrGetServicesCatalog(ClassLoader cl) {
                 return cl.createOrGetServicesCatalog();
+            }
+            public ConcurrentHashMap<?, ?> createOrGetClassLoaderValueMap(ClassLoader cl) {
+                return cl.createOrGetClassLoaderValueMap();
             }
             public Class<?> findBootstrapClassOrNull(ClassLoader cl, String name) {
                 return cl.findBootstrapClassOrNull(name);

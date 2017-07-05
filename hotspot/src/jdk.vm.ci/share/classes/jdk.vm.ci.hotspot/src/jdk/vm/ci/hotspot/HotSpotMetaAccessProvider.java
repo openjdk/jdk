@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,15 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider, HotSpotPro
 
     public Signature parseMethodDescriptor(String signature) {
         return new HotSpotSignature(runtime, signature);
+    }
+
+    public HotSpotSymbol lookupSymbol(String symbol) {
+        long pointer = runtime.getCompilerToVM().lookupSymbol(symbol);
+        if (pointer == 0) {
+            return null;
+        } else {
+            return new HotSpotSymbol(symbol, pointer);
+        }
     }
 
     /**

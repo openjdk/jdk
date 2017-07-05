@@ -30,8 +30,6 @@
 
 class VirtualSpaceNode;
 
-const size_t metadata_chunk_initialize = 0xf7f7f7f7;
-
 size_t Metachunk::object_alignment() {
   // Must align pointers and sizes to 8,
   // so that 64 bit types get correctly aligned.
@@ -58,12 +56,7 @@ Metachunk::Metachunk(size_t word_size,
   _top = initial_top();
 #ifdef ASSERT
   set_is_tagged_free(false);
-  size_t data_word_size = pointer_delta(end(),
-                                        _top,
-                                        sizeof(MetaWord));
-  Copy::fill_to_words((HeapWord*)_top,
-                      data_word_size,
-                      metadata_chunk_initialize);
+  mangle(uninitMetaWordVal);
 #endif
 }
 
@@ -98,12 +91,12 @@ void Metachunk::print_on(outputStream* st) const {
 }
 
 #ifndef PRODUCT
-void Metachunk::mangle() {
-  // Mangle the payload of the chunk and not the links that
+void Metachunk::mangle(juint word_value) {
+  // Overwrite the payload of the chunk and not the links that
   // maintain list of chunks.
-  HeapWord* start = (HeapWord*)(bottom() + overhead());
+  HeapWord* start = (HeapWord*)initial_top();
   size_t size = word_size() - overhead();
-  Copy::fill_to_words(start, size, metadata_chunk_initialize);
+  Copy::fill_to_words(start, size, word_value);
 }
 #endif // PRODUCT
 

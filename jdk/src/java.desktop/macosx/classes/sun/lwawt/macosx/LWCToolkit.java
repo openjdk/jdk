@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.lwawt.macosx;
 
+import java.awt.peer.TaskbarPeer;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.dnd.*;
@@ -291,6 +292,11 @@ public final class LWCToolkit extends LWToolkit {
     @Override
     public DesktopPeer createDesktopPeer(Desktop target) {
         return new CDesktopPeer();
+    }
+
+    @Override
+    public TaskbarPeer createTaskbarPeer(Taskbar target) {
+        return new CTaskbarPeer();
     }
 
     @Override

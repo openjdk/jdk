@@ -25,7 +25,6 @@
 
 package java.lang.reflect;
 
-import java.lang.ref.WeakReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
@@ -39,10 +38,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -284,6 +281,13 @@ public class Proxy implements java.io.Serializable {
         { InvocationHandler.class };
 
     /**
+     * a cache of proxy constructors with
+     * {@link Constructor#setAccessible(boolean) accessible} flag already set
+     */
+    private static final ClassLoaderValue<Constructor<?>> proxyCache =
+        new ClassLoaderValue<>();
+
+    /**
      * the invocation handler for this proxy instance.
      * @serial
      */
@@ -361,14 +365,55 @@ public class Proxy implements java.io.Serializable {
                                          Class<?>... interfaces)
         throws IllegalArgumentException
     {
-        final List<Class<?>> intfs = List.of(interfaces);  // interfaces cloned
-        final SecurityManager sm = System.getSecurityManager();
-        final Class<?> caller = Reflection.getCallerClass();
-        if (sm != null) {
-            checkProxyAccess(caller, loader, intfs);
-        }
+        Class<?> caller = System.getSecurityManager() == null
+                              ? null
+                              : Reflection.getCallerClass();
 
-        return new ProxyBuilder(loader, intfs).build();
+        return getProxyConstructor(caller, loader, interfaces)
+            .getDeclaringClass();
+    }
+
+    /**
+     * Returns the {@code Constructor} object of a proxy class that takes a
+     * single argument of type {@link InvocationHandler}, given a class loader
+     * and an array of interfaces. The returned constructor will have the
+     * {@link Constructor#setAccessible(boolean) accessible} flag already set.
+     *
+     * @param   caller passed from a public-facing @CallerSensitive method if
+     *                 SecurityManager is set or {@code null} if there's no
+     *                 SecurityManager
+     * @param   loader the class loader to define the proxy class
+     * @param   interfaces the list of interfaces for the proxy class
+     *          to implement
+     * @return  a Constructor of the proxy class taking single
+     *          {@code InvocationHandler} parameter
+     */
+    private static Constructor<?> getProxyConstructor(Class<?> caller,
+                                                      ClassLoader loader,
+                                                      Class<?>... interfaces)
+    {
+        // optimization for single interface
+        if (interfaces.length == 1) {
+            Class<?> intf = interfaces[0];
+            if (caller != null) {
+                checkProxyAccess(caller, loader, intf);
+            }
+            return proxyCache.sub(intf).computeIfAbsent(
+                loader,
+                (ld, clv) -> new ProxyBuilder(ld, clv.key()).build()
+            );
+        } else {
+            // interfaces cloned
+            final Class<?>[] intfsArray = interfaces.clone();
+            if (caller != null) {
+                checkProxyAccess(caller, loader, intfsArray);
+            }
+            final List<Class<?>> intfs = Arrays.asList(intfsArray);
+            return proxyCache.sub(intfs).computeIfAbsent(
+                loader,
+                (ld, clv) -> new ProxyBuilder(ld, clv.key()).build()
+            );
+        }
     }
 
     /*
@@ -391,7 +436,7 @@ public class Proxy implements java.io.Serializable {
      */
     private static void checkProxyAccess(Class<?> caller,
                                          ClassLoader loader,
-                                         List<Class<?>> interfaces)
+                                         Class<?> ... interfaces)
     {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -399,147 +444,18 @@ public class Proxy implements java.io.Serializable {
             if (VM.isSystemDomainLoader(loader) && !VM.isSystemDomainLoader(ccl)) {
                 sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
             }
-            ReflectUtil.checkProxyPackageAccess(ccl, interfaces.toArray(EMPTY_CLASS_ARRAY));
-        }
-    }
-
-    /*
-     * a key used for proxy class with 0 implemented interfaces
-     */
-    private static final Object key0 = new Object();
-
-    /*
-     * Key1 and Key2 are optimized for the common use of dynamic proxies
-     * that implement 1 or 2 interfaces.
-     */
-
-    /*
-     * a key used for proxy class with 1 implemented interface
-     */
-    private static final class Key1 extends WeakReference<Class<?>> {
-        private final int hash;
-
-        Key1(Class<?> intf) {
-            super(intf);
-            this.hash = intf.hashCode();
-        }
-
-        @Override
-        public int hashCode() {
-            return hash;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            Class<?> intf;
-            return this == obj ||
-                   obj != null &&
-                   obj.getClass() == Key1.class &&
-                   (intf = get()) != null &&
-                   intf == ((Key1) obj).get();
-        }
-    }
-
-    /*
-     * a key used for proxy class with 2 implemented interfaces
-     */
-    private static final class Key2 extends WeakReference<Class<?>> {
-        private final int hash;
-        private final WeakReference<Class<?>> ref2;
-
-        Key2(Class<?> intf1, Class<?> intf2) {
-            super(intf1);
-            hash = 31 * intf1.hashCode() + intf2.hashCode();
-            ref2 = new WeakReference<>(intf2);
-        }
-
-        @Override
-        public int hashCode() {
-            return hash;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            Class<?> intf1, intf2;
-            return this == obj ||
-                   obj != null &&
-                   obj.getClass() == Key2.class &&
-                   (intf1 = get()) != null &&
-                   intf1 == ((Key2) obj).get() &&
-                   (intf2 = ref2.get()) != null &&
-                   intf2 == ((Key2) obj).ref2.get();
-        }
-    }
-
-    /*
-     * a key used for proxy class with any number of implemented interfaces
-     * (used here for 3 or more only)
-     */
-    private static final class KeyX {
-        private final int hash;
-        private final WeakReference<Class<?>>[] refs;
-
-        @SuppressWarnings("unchecked")
-        KeyX(List<Class<?>> interfaces) {
-            hash = Arrays.hashCode(interfaces.toArray());
-            refs = (WeakReference<Class<?>>[])new WeakReference<?>[interfaces.size()];
-            int i = 0;
-            for (Class<?> intf : interfaces) {
-                refs[i++] = new WeakReference<>(intf);
-            }
-        }
-
-        @Override
-        public int hashCode() {
-            return hash;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return this == obj ||
-                   obj != null &&
-                   obj.getClass() == KeyX.class &&
-                   equals(refs, ((KeyX) obj).refs);
-        }
-
-        private static boolean equals(WeakReference<Class<?>>[] refs1,
-                                      WeakReference<Class<?>>[] refs2) {
-            if (refs1.length != refs2.length) {
-                return false;
-            }
-            for (int i = 0; i < refs1.length; i++) {
-                Class<?> intf = refs1[i].get();
-                if (intf == null || intf != refs2[i].get()) {
-                    return false;
-                }
-            }
-            return true;
+            ReflectUtil.checkProxyPackageAccess(ccl, interfaces);
         }
     }
 
     /**
-     * A function that maps an array of interfaces to an optimal key where
-     * Class objects representing interfaces are weakly referenced.
+     * Builder for a proxy class.
+     *
+     * If the module is not specified in this ProxyBuilder constructor,
+     * it will map from the given loader and interfaces to the module
+     * in which the proxy class will be defined.
      */
-    private static final class KeyFactory<T>
-        implements BiFunction<T, List<Class<?>>, Object>
-    {
-        @Override
-        public Object apply(T t, List<Class<?>> interfaces) {
-            switch (interfaces.size()) {
-                case 1: return new Key1(interfaces.get(0)); // the most frequent
-                case 2: return new Key2(interfaces.get(0), interfaces.get(1));
-                case 0: return key0;
-                default: return new KeyX(interfaces);
-            }
-        }
-    }
-
-    /**
-     * A factory function that generates, defines and returns the proxy class
-     * given the ClassLoader and array of interfaces.
-     */
-    private static final class ProxyClassFactory {
+    private static final class ProxyBuilder {
         private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
         // prefix for all proxy class names
@@ -547,6 +463,10 @@ public class Proxy implements java.io.Serializable {
 
         // next number to use for generation of unique proxy class names
         private static final AtomicLong nextUniqueNumber = new AtomicLong();
+
+        // a reverse cache of defined proxy classes
+        private static final ClassLoaderValue<Boolean> reverseProxyCache =
+            new ClassLoaderValue<>();
 
         private static Class<?> defineProxyClass(Module m, List<Class<?>> interfaces) {
             String proxyPkg = null;     // package to define proxy class in
@@ -601,8 +521,11 @@ public class Proxy implements java.io.Serializable {
             byte[] proxyClassFile = ProxyGenerator.generateProxyClass(
                     proxyName, interfaces.toArray(EMPTY_CLASS_ARRAY), accessFlags);
             try {
-                return UNSAFE.defineClass(proxyName, proxyClassFile, 0, proxyClassFile.length,
-                                          loader, null);
+                Class<?> pc = UNSAFE.defineClass(proxyName, proxyClassFile,
+                                                 0, proxyClassFile.length,
+                                                 loader, null);
+                reverseProxyCache.sub(pc).putIfAbsent(loader, Boolean.TRUE);
+                return pc;
             } catch (ClassFormatError e) {
                 /*
                  * A ClassFormatError here means that (barring bugs in the
@@ -616,34 +539,13 @@ public class Proxy implements java.io.Serializable {
         }
 
         /**
-         * Test if the given class is a proxy class
+         * Test if given class is a class defined by
+         * {@link #defineProxyClass(Module, List)}
          */
         static boolean isProxyClass(Class<?> c) {
-            return proxyCache.containsValue(c);
+            return Objects.equals(reverseProxyCache.sub(c).get(c.getClassLoader()),
+                                  Boolean.TRUE);
         }
-
-        /**
-         * Returns the proxy class.  It will return the cached proxy class
-         * if exists; otherwise, it will create the proxy class and store in
-         * the cache.
-         */
-        static Class<?> get(Module module, List<Class<?>> interfaces) {
-            return proxyCache.get(module, interfaces);
-        }
-
-        /**
-         * a cache of proxy classes in the named and unnamed module
-         */
-        private static final WeakCache<Module, List<Class<?>>, Class<?>> proxyCache =
-            new WeakCache<>(new KeyFactory<Module>(),
-                new BiFunction<Module, List<Class<?>>, Class<?>>()  {
-                    @Override
-                    public Class<?> apply(Module m, List<Class<?>> interfaces) {
-                        Objects.requireNonNull(m);
-                        return defineProxyClass(m, interfaces);
-                    }
-            });
-
 
         private static boolean isExportedType(Class<?> c) {
             String pn = c.getPackageName();
@@ -685,25 +587,18 @@ public class Proxy implements java.io.Serializable {
                 }
             });
 
-        private static final boolean isDebug() {
+        private static boolean isDebug() {
             return !DEBUG.isEmpty();
         }
-        private static final boolean isDebug(String flag) {
+        private static boolean isDebug(String flag) {
             return DEBUG.equals(flag);
         }
-    }
 
-    /**
-     * Builder for a proxy class.
-     *
-     * If the module is not specified in this ProxyBuilder constructor,
-     * it will map from the given loader and interfaces to the module
-     * in which the proxy class will be defined.
-     */
-    private static final class ProxyBuilder {
-        final ClassLoader loader;
-        final List<Class<?>> interfaces;
-        final Module module;
+        // ProxyBuilder instance members start here....
+
+        private final ClassLoader loader;
+        private final List<Class<?>> interfaces;
+        private final Module module;
         ProxyBuilder(ClassLoader loader, List<Class<?>> interfaces) {
             if (!VM.isModuleSystemInited()) {
                 throw new InternalError("Proxy is not supported until module system is fully initialzed");
@@ -723,16 +618,34 @@ public class Proxy implements java.io.Serializable {
             assert getLoader(module) == loader;
         }
 
+        ProxyBuilder(ClassLoader loader, Class<?> intf) {
+            this(loader, Collections.singletonList(intf));
+        }
+
         /**
-         * Generate a proxy class.  If the target module does not have any
+         * Generate a proxy class and return its proxy Constructor with
+         * accessible flag already set. If the target module does not have access
          * to any interface types, IllegalAccessError will be thrown by the VM
          * at defineClass time.
          *
          * Must call the checkProxyAccess method to perform permission checks
          * before calling this.
          */
-        Class<?> build() {
-            return ProxyClassFactory.get(module, interfaces);
+        Constructor<?> build() {
+            Class<?> proxyClass = defineProxyClass(module, interfaces);
+            final Constructor<?> cons;
+            try {
+                cons = proxyClass.getConstructor(constructorParams);
+            } catch (NoSuchMethodException e) {
+                throw new InternalError(e.toString(), e);
+            }
+            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                public Void run() {
+                    cons.setAccessible(true);
+                    return null;
+                }
+            });
+            return cons;
         }
 
         /**
@@ -742,9 +655,9 @@ public class Proxy implements java.io.Serializable {
          * @throws IllegalArgumentException if it violates the restrictions specified
          *         in {@link Proxy#newProxyInstance}
          */
-        static void validateProxyInterfaces(ClassLoader loader,
-                                            List<Class<?>> interfaces,
-                                            Set<Class<?>> refTypes)
+        private static void validateProxyInterfaces(ClassLoader loader,
+                                                    List<Class<?>> interfaces,
+                                                    Set<Class<?>> refTypes)
         {
             Map<Class<?>, Boolean> interfaceSet = new IdentityHashMap<>(interfaces.size());
             for (Class<?> intf : interfaces) {
@@ -779,10 +692,11 @@ public class Proxy implements java.io.Serializable {
          * Returns all types referenced by all public method signatures of
          * the proxy interfaces
          */
-        static Set<Class<?>> referencedTypes(ClassLoader loader, List<Class<?>> interfaces) {
+        private static Set<Class<?>> referencedTypes(ClassLoader loader,
+                                                     List<Class<?>> interfaces) {
             return interfaces.stream()
                  .flatMap(intf -> Stream.of(intf.getMethods())
-                                        .flatMap(m -> methodRefTypes(m))
+                                        .flatMap(ProxyBuilder::methodRefTypes)
                                         .map(ProxyBuilder::getElementType)
                                         .filter(t -> !t.isPrimitive()))
                  .collect(Collectors.toSet());
@@ -792,11 +706,11 @@ public class Proxy implements java.io.Serializable {
          * Extracts all types referenced on a method signature including
          * its return type, parameter types, and exception types.
          */
-        static Stream<Class<?>> methodRefTypes(Method m) {
+        private static Stream<Class<?>> methodRefTypes(Method m) {
             return Stream.of(new Class<?>[] { m.getReturnType() },
                              m.getParameterTypes(),
                              m.getExceptionTypes())
-                         .flatMap(a -> Stream.of(a));
+                         .flatMap(Stream::of);
         }
 
         /**
@@ -813,7 +727,9 @@ public class Proxy implements java.io.Serializable {
          * package.  Reads edge and qualified exports are added for
          * dynamic module to access.
          */
-        static Module mapToModule(ClassLoader loader, List<Class<?>> interfaces, Set<Class<?>> refTypes) {
+        private static Module mapToModule(ClassLoader loader,
+                                          List<Class<?>> interfaces,
+                                          Set<Class<?>> refTypes) {
             Map<Class<?>, Module> modulePrivateTypes = new HashMap<>();
             Map<Class<?>, Module> packagePrivateTypes = new HashMap<>();
             for (Class<?> intf : interfaces) {
@@ -884,10 +800,9 @@ public class Proxy implements java.io.Serializable {
             Set<Class<?>> visited = new HashSet<>();
             while (!deque.isEmpty()) {
                 Class<?> c = deque.poll();
-                if (visited.contains(c)) {
+                if (!visited.add(c)) {
                     continue;
                 }
-                visited.add(c);
                 ensureAccess(target, c);
 
                 // add all superinterfaces
@@ -906,7 +821,7 @@ public class Proxy implements java.io.Serializable {
         /*
          * Ensure the given module can access the given class.
          */
-        static void ensureAccess(Module target, Class<?> c) {
+        private static void ensureAccess(Module target, Class<?> c) {
             Module m = c.getModule();
             // add read edge and qualified export for the target module to access
             if (!target.canRead(m)) {
@@ -921,7 +836,7 @@ public class Proxy implements java.io.Serializable {
         /*
          * Ensure the given class is visible to the class loader.
          */
-        static void ensureVisible(ClassLoader ld, Class<?> c) {
+        private static void ensureVisible(ClassLoader ld, Class<?> c) {
             Class<?> type = null;
             try {
                 type = Class.forName(c.getName(), false, ld);
@@ -933,7 +848,7 @@ public class Proxy implements java.io.Serializable {
             }
         }
 
-        static Class<?> getElementType(Class<?> type) {
+        private static Class<?> getElementType(Class<?> type) {
             Class<?> e = type;
             while (e.isArray()) {
                 e = e.getComponentType();
@@ -941,7 +856,8 @@ public class Proxy implements java.io.Serializable {
             return e;
         }
 
-        private static final WeakHashMap<ClassLoader, Module> dynProxyModules = new WeakHashMap<>();
+        private static final ClassLoaderValue<Module> dynProxyModules =
+            new ClassLoaderValue<>();
         private static final AtomicInteger counter = new AtomicInteger();
 
         /*
@@ -950,12 +866,12 @@ public class Proxy implements java.io.Serializable {
          *
          * Each class loader will have one dynamic module.
          */
-        static Module getDynamicModule(ClassLoader loader) {
-            return dynProxyModules.computeIfAbsent(loader, ld -> {
+        private static Module getDynamicModule(ClassLoader loader) {
+            return dynProxyModules.computeIfAbsent(loader, (ld, clv) -> {
                 // create a dynamic module and setup module access
                 String mn = "jdk.proxy" + counter.incrementAndGet();
                 String pn = PROXY_PACKAGE_PREFIX + "." + mn;
-                Module m = Modules.defineModule(loader, mn, Collections.singleton(pn));
+                Module m = Modules.defineModule(ld, mn, Collections.singleton(pn));
                 Modules.addReads(m, Proxy.class.getModule());
                 // java.base to create proxy instance
                 Modules.addExports(m, pn, Object.class.getModule());
@@ -1062,40 +978,31 @@ public class Proxy implements java.io.Serializable {
                                           InvocationHandler h) {
         Objects.requireNonNull(h);
 
-        final List<Class<?>> intfs = List.of(interfaces);  // interfaces cloned
-        final SecurityManager sm = System.getSecurityManager();
-        final Class<?> caller = Reflection.getCallerClass();
-        if (sm != null) {
-            checkProxyAccess(caller, loader, intfs);
-        }
+        final Class<?> caller = System.getSecurityManager() == null
+                                    ? null
+                                    : Reflection.getCallerClass();
 
         /*
-         * Look up or generate the designated proxy class.
+         * Look up or generate the designated proxy class and its constructor.
          */
-        Class<?> cl = new ProxyBuilder(loader, intfs).build();
+        Constructor<?> cons = getProxyConstructor(caller, loader, interfaces);
 
-        return newProxyInstance(cl, caller, h);
+        return newProxyInstance(caller, cons, h);
     }
 
-    private static Object newProxyInstance(Class<?> proxyClass, Class<?> caller, InvocationHandler h) {
+    private static Object newProxyInstance(Class<?> caller, // null if no SecurityManager
+                                           Constructor<?> cons,
+                                           InvocationHandler h) {
         /*
          * Invoke its constructor with the designated invocation handler.
          */
         try {
-            final SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                checkNewProxyPermission(caller, proxyClass);
+            if (caller != null) {
+                checkNewProxyPermission(caller, cons.getDeclaringClass());
             }
 
-            final Constructor<?> cons = proxyClass.getConstructor(constructorParams);
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                public Void run() {
-                    cons.setAccessible(true);
-                    return null;
-                }
-            });
             return cons.newInstance(new Object[]{h});
-        } catch (IllegalAccessException | InstantiationException | NoSuchMethodException e) {
+        } catch (IllegalAccessException | InstantiationException e) {
             throw new InternalError(e.toString(), e);
         } catch (InvocationTargetException e) {
             Throwable t = e.getCause();
@@ -1150,7 +1057,7 @@ public class Proxy implements java.io.Serializable {
      * @throws  NullPointerException if {@code cl} is {@code null}
      */
     public static boolean isProxyClass(Class<?> cl) {
-        return Proxy.class.isAssignableFrom(cl) && ProxyClassFactory.isProxyClass(cl);
+        return Proxy.class.isAssignableFrom(cl) && ProxyBuilder.isProxyClass(cl);
     }
 
     /**

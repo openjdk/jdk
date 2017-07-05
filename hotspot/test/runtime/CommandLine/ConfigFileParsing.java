@@ -26,7 +26,7 @@
  * @bug 7158804
  * @summary Improve config file parsing
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

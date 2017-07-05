@@ -68,9 +68,10 @@ public class NoConsoleOutput {
         // (neither on standard output, nor on standard err streams).
         JavaVM vm = new JavaVM(
                 DoRMIStuff.class.getName(),
-                "-XaddExports:java.rmi/sun.rmi.registry=ALL-UNNAMED,"
-                + "java.rmi/sun.rmi.server=ALL-UNNAMED,java.rmi/sun.rmi.transport=ALL-UNNAMED,"
-                + "java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED"
+                "-XaddExports:java.rmi/sun.rmi.registry=ALL-UNNAMED"
+                + " -XaddExports:java.rmi/sun.rmi.server=ALL-UNNAMED"
+                + " -XaddExports:java.rmi/sun.rmi.transport=ALL-UNNAMED"
+                + " -XaddExports:java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED"
                 + " -Djava.util.logging.config.file="
                 + loggingPropertiesFile, "", out, err);
         vm.execute();

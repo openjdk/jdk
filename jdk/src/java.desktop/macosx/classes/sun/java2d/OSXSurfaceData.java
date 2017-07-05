@@ -1094,18 +1094,12 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
     }
 
     /**
-     * Clips the copy area to the heavywieght bounds and returns the cliped rectangle. The tricky part here is the
-     * passed arguments x, y are in the coordinate space of the sg2d/lightweight comp. In order to do the clipping we
-     * translate them to the coordinate space of the surface, and the returned clipped rectangle is in the coordinate
-     * space of the surface.
+     * Clips the copy area to the heavyweight bounds and returns the clipped rectangle.
+     * The returned clipped rectangle is in the coordinate space of the surface.
      */
     protected Rectangle clipCopyArea(SunGraphics2D sg2d, int x, int y, int w, int h, int dx, int dy) {
         // we need to clip against the heavyweight bounds
         copyAreaBounds.setBounds(sg2d.devClip.getLoX(), sg2d.devClip.getLoY(), sg2d.devClip.getWidth(), sg2d.devClip.getHeight());
-
-        // put src rect into surface coordinate space
-        x += sg2d.transX;
-        y += sg2d.transY;
 
         // clip src rect
         srcCopyAreaRect.setBounds(x, y, w, h);

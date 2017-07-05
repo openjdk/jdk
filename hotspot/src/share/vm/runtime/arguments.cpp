@@ -2550,6 +2550,13 @@ bool Arguments::check_vm_args_consistency() {
     warning("Reserved Stack Area not supported on this platform");
   }
 #endif
+
+  if (BackgroundCompilation && (CompileTheWorld || ReplayCompiles)) {
+    if (!FLAG_IS_DEFAULT(BackgroundCompilation)) {
+      warning("BackgroundCompilation disabled due to CompileTheWorld or ReplayCompiles options.");
+    }
+    FLAG_SET_CMDLINE(bool, BackgroundCompilation, false);
+  }
   return status;
 }
 

@@ -27,7 +27,7 @@
  * @bug 8068582
  * @key gc
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @ignore 8148239
  * @run driver TestSelectDefaultGC

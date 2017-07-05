@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8146321
+ * @bug 8146321 8151282
  * @summary verifies JInternalFrame Icon and ImageIcon
  * @library ../../regtesthelpers
  * @build Util
@@ -53,8 +53,9 @@ public class JInternalFrameIconTest {
     private static Icon titleIcon;
     private static BufferedImage imageIconImage;
     private static BufferedImage iconImage;
-
     private static Robot robot;
+    private static volatile String errorString = "";
+
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
@@ -64,6 +65,9 @@ public class JInternalFrameIconTest {
         for (UIManager.LookAndFeelInfo lookAndFeelItem : lookAndFeelArray) {
             executeCase(lookAndFeelItem.getClassName());
         }
+        if (!"".equals(errorString)) {
+            throw new RuntimeException("Error Log:\n" + errorString);
+        }
 
     }
 
@@ -72,17 +76,18 @@ public class JInternalFrameIconTest {
             createImageIconUI(lookAndFeelString);
             robot.delay(1000);
             getImageIconBufferedImage();
-            robot.waitForIdle();
+            robot.delay(1000);
             cleanUp();
             robot.waitForIdle();
 
             createIconUI(lookAndFeelString);
             robot.delay(1000);
             getIconBufferedImage();
-            robot.waitForIdle();
+            robot.delay(1000);
             cleanUp();
             robot.waitForIdle();
-            testIfSame();
+
+            testIfSame(lookAndFeelString);
             robot.waitForIdle();
         }
 
@@ -198,11 +203,16 @@ public class JInternalFrameIconTest {
                 = robot.createScreenCapture(captureRect);
     }
 
-    private static void testIfSame() throws Exception {
+    private static void testIfSame(final String lookAndFeelString)
+            throws Exception {
         if (!bufferedImagesEqual(imageIconImage, iconImage)) {
-            System.err.println("ERROR: icon and imageIcon not same.");
+            String error ="[" + lookAndFeelString
+                    + "] : ERROR: icon and imageIcon not same.";
+            errorString += error;
+            System.err.println(error);
         } else {
-            System.out.println("SUCCESS: icon and imageIcon same.");
+            System.out.println("[" + lookAndFeelString
+                    + "] : SUCCESS: icon and imageIcon same.");
         }
     }
 
@@ -260,6 +270,11 @@ public class JInternalFrameIconTest {
 
     private static boolean tryLookAndFeel(String lookAndFeelString)
             throws Exception {
+        //This test case is not applicable for Motif and gtk LAFs
+        if(lookAndFeelString.contains("motif")
+                || lookAndFeelString.contains("gtk")) {
+            return false;
+        }
         try {
             UIManager.setLookAndFeel(
                     lookAndFeelString);

@@ -29,9 +29,9 @@
  * @build compiler.compilercontrol.commandfile.CompileOnlyTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm compiler.compilercontrol.commandfile.CompileOnlyTest
+ * @run driver compiler.compilercontrol.commandfile.CompileOnlyTest
  */
 
 package compiler.compilercontrol.commandfile;

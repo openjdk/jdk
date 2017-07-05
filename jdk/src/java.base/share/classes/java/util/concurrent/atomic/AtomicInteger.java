@@ -108,7 +108,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @since 1.6
      */
     public final void lazySet(int newValue) {
-        U.putOrderedInt(this, VALUE, newValue);
+        U.putIntRelease(this, VALUE, newValue);
     }
 
     /**

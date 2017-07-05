@@ -1198,8 +1198,9 @@ class DH_ServerKeyExchange extends ServerKeyExchange
             if (!localSupportedSignAlgs.contains(
                     preferableSignatureAlgorithm)) {
                 throw new SSLHandshakeException(
-                        "Unsupported SignatureAndHashAlgorithm in " +
-                        "ServerKeyExchange message");
+                    "Unsupported SignatureAndHashAlgorithm in " +
+                    "ServerKeyExchange message: " +
+                    preferableSignatureAlgorithm);
             }
         } else {
             this.preferableSignatureAlgorithm = null;
@@ -1232,7 +1233,8 @@ class DH_ServerKeyExchange extends ServerKeyExchange
                         sig = RSASignature.getInstance();
                         break;
                     default:
-                        throw new SSLKeyException("neither an RSA or a DSA key");
+                        throw new SSLKeyException(
+                            "neither an RSA or a DSA key: " + algorithm);
                 }
         }
 
@@ -1482,7 +1484,8 @@ class ECDH_ServerKeyExchange extends ServerKeyExchange {
                     preferableSignatureAlgorithm)) {
                 throw new SSLHandshakeException(
                         "Unsupported SignatureAndHashAlgorithm in " +
-                        "ServerKeyExchange message");
+                        "ServerKeyExchange message: " +
+                        preferableSignatureAlgorithm);
             }
         }
 
@@ -1522,7 +1525,8 @@ class ECDH_ServerKeyExchange extends ServerKeyExchange {
                 case "RSA":
                     return RSASignature.getInstance();
                 default:
-                    throw new NoSuchAlgorithmException("neither an RSA or a EC key");
+                    throw new NoSuchAlgorithmException(
+                        "neither an RSA or a EC key : " + keyAlgorithm);
             }
     }
 
@@ -1729,7 +1733,8 @@ class CertificateRequest extends HandshakeMessage
             algorithmsLen = input.getInt16();
             if (algorithmsLen < 2) {
                 throw new SSLProtocolException(
-                        "Invalid supported_signature_algorithms field");
+                    "Invalid supported_signature_algorithms field: " +
+                    algorithmsLen);
             }
 
             algorithms = new ArrayList<SignatureAndHashAlgorithm>();
@@ -1748,7 +1753,8 @@ class CertificateRequest extends HandshakeMessage
 
             if (remains != 0) {
                 throw new SSLProtocolException(
-                        "Invalid supported_signature_algorithms field");
+                    "Invalid supported_signature_algorithms field. remains: " +
+                    remains);
             }
         } else {
             algorithms = new ArrayList<SignatureAndHashAlgorithm>();
@@ -1765,7 +1771,8 @@ class CertificateRequest extends HandshakeMessage
         }
 
         if (len != 0) {
-            throw new SSLProtocolException("Bad CertificateRequest DN length");
+            throw new SSLProtocolException(
+                "Bad CertificateRequest DN length: " + len);
         }
 
         authorities = v.toArray(new DistinguishedName[v.size()]);
@@ -1995,8 +2002,8 @@ static final class CertificateVerify extends HandshakeMessage {
             if (!localSupportedSignAlgs.contains(
                     preferableSignatureAlgorithm)) {
                 throw new SSLHandshakeException(
-                        "Unsupported SignatureAndHashAlgorithm in " +
-                        "CertificateVerify message");
+                    "Unsupported SignatureAndHashAlgorithm in " +
+                    "CertificateVerify message: " + preferableSignatureAlgorithm);
             }
         }
 
@@ -2364,7 +2371,8 @@ static final class Finished extends HandshakeMessage {
                 SecretKey prfKey = kg.generateKey();
                 if ("RAW".equals(prfKey.getFormat()) == false) {
                     throw new ProviderException(
-                        "Invalid PRF output, format must be RAW");
+                        "Invalid PRF output, format must be RAW. " +
+                        "Format received: " + prfKey.getFormat());
                 }
                 byte[] finished = prfKey.getEncoded();
                 return finished;

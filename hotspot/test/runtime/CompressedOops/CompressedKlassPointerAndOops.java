@@ -27,7 +27,7 @@
  * @key regression
  * @summary NPG: UseCompressedClassPointers asserts with ObjectAlignmentInBytes=32
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  */
 

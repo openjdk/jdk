@@ -239,7 +239,7 @@ public class Exchanger<V> {
      * not to be as readily inlined by dynamic compilers when they are
      * hidden behind other methods that would more nicely name and
      * encapsulate the intended effects). This includes the use of
-     * putOrderedX to clear fields of the per-thread Nodes between
+     * putXRelease to clear fields of the per-thread Nodes between
      * uses. Note that field Node.item is not declared as volatile
      * even though it is read by releasing threads, because they only
      * do so after CAS operations that must precede access, and all
@@ -376,7 +376,7 @@ public class Exchanger<V> {
                     for (int h = p.hash, spins = SPINS;;) {
                         Object v = p.match;
                         if (v != null) {
-                            U.putOrderedObject(p, MATCH, null);
+                            U.putObjectRelease(p, MATCH, null);
                             p.item = null;             // clear for next use
                             p.hash = h;
                             return v;
@@ -507,7 +507,7 @@ public class Exchanger<V> {
                 break;
             }
         }
-        U.putOrderedObject(p, MATCH, null);
+        U.putObjectRelease(p, MATCH, null);
         p.item = null;
         p.hash = h;
         return v;

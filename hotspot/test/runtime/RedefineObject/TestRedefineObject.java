@@ -33,7 +33,7 @@ import jdk.test.lib.*;
  * @bug 8005056
  * @bug 8009728
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.instrument
  *          java.management
  * @build Agent
