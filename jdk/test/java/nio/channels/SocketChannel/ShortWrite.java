@@ -24,6 +24,7 @@
 /* @test
  * @bug 7176630 7074436
  * @summary Check for short writes on SocketChannels configured in blocking mode
+ * @key randomness
  */
 
 import java.net.*;

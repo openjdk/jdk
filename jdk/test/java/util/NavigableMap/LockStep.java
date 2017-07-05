@@ -29,6 +29,7 @@
  * @run main/othervm -XX:+AggressiveOpts LockStep
  * @run main/othervm -XX:+AggressiveOpts -Dthorough=true LockStep
  * @author  Martin Buchholz
+ * @key randomness
  */
 
 import java.io.*;

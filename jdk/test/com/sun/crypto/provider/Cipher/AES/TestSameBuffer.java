@@ -42,6 +42,7 @@ import javax.crypto.spec.IvParameterSpec;
  * @summary Test AES ciphers with different modes and padding schemes (ECB mode
  *          doesn't use IV). The test tries 3 different read methods of
  *          CipherInputStream.
+ * @key randomness
  */
 public class TestSameBuffer {
 

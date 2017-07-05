@@ -26,6 +26,7 @@
  * @bug 6738532
  * @summary Check EllipticCurve.equals() does not compare seed value of curve.
  * @author Mike StJohns
+ * @key randomness
  */
 
 import java.security.spec.*;

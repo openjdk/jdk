@@ -23,16 +23,20 @@
 
 /*
  * @test
- * @library ..
- * @bug 4891312 8074460
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.*
+ * @run main ModPow65537
+ * @bug 4891312 8074460 8078672
  * @summary verify that modPow() not broken by the special case for 65537 (use -Dseed=X to set PRNG seed)
  * @author Andreas Sterbenz
+ * @key randomness
  */
 
 import java.math.BigInteger;
 
 import java.security.*;
 import java.security.spec.*;
+import java.util.Random;
 
 public class ModPow65537 {
 
@@ -78,9 +82,8 @@ public class ModPow65537 {
     private static void testSigning(KeyPair kp) throws Exception {
         System.out.println(kp.getPublic());
         byte[] data = new byte[1024];
-        RandomSeed rndSeed = new RandomSeed(false);
-        System.out.println("Random number generator seed = " + rndSeed.getSeed());
-        rndSeed.getRandom().nextBytes(data);
+        Random random = RandomFactory.getRandom();
+        random.nextBytes(data);
 
         Signature sig = Signature.getInstance("SHA1withRSA", "SunRsaSign");
         sig.initSign(kp.getPrivate());

@@ -25,10 +25,13 @@
 
 /*
  * @test
- * @library ..
- * @bug 8026236 8074460
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.*
+ * @run main PrimeTest
+ * @bug 8026236 8074460 8078672
  * @summary test primality verification methods in BigInteger (use -Dseed=X to set PRNG seed)
  * @author bpb
+ * @key randomness
  */
 import java.math.BigInteger;
 import java.util.BitSet;
@@ -178,9 +181,8 @@ public class PrimeTest {
         }
 
         // Create a list of non-prime BigIntegers.
-        RandomSeed rndSeed = new RandomSeed(true);
-        System.out.println("Random number generator seed = " + rndSeed.getSeed());
-        List<BigInteger> nonPrimeBigInts = (rndSeed.getSplittableRandom())
+        SplittableRandom splitRandom = RandomFactory.getSplittableRandom();
+        List<BigInteger> nonPrimeBigInts = (splitRandom)
                 .ints(NUM_NON_PRIMES, 2, maxPrime).mapToObj(BigInteger::valueOf)
                 .filter(b -> !b.isProbablePrime(certainty)).collect(toList());
 

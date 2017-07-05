@@ -976,7 +976,7 @@ public class KeyStore {
      */
     public final static String getDefaultType() {
         String kstype;
-        kstype = AccessController.doPrivileged(new PrivilegedAction<String>() {
+        kstype = AccessController.doPrivileged(new PrivilegedAction<>() {
             public String run() {
                 return Security.getProperty(KEYSTORE_TYPE);
             }

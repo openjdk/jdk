@@ -29,6 +29,7 @@
 # @run shell 3GBZipFiles.sh 9986
 # @ignore runs for hours and eats up 7 Gigabytes of disk space
 # @run shell/timeout=604800 3GBZipFiles.sh 3141592653
+# @key randomness
 
 # Command-line usage:
 # javac FileBuilder.java && sh 3GBZipFiles.sh /path/to/jdk filesize

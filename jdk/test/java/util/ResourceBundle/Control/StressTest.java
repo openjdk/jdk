@@ -25,6 +25,7 @@
  * @bug 5102289
  * @summary Stress test for ResourceBundle.getBundle with ResourceBundle.Control.
  * @run main/othervm -esa StressTest 2 15
+ * @key randomness
  */
 
 import java.util.*;

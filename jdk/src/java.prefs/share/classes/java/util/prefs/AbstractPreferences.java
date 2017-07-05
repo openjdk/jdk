@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,10 +78,9 @@ import java.lang.Double;
  * under which these calls cannot even enqueue the requested operation for
  * later processing.  Even under these circumstances it is generally better to
  * simply ignore the invocation and return, rather than throwing an
- * exception.  Under these circumstances, however, all subsequent invocations
- * of <tt>flush()</tt> and <tt>sync</tt> should return <tt>false</tt>, as
- * returning <tt>true</tt> would imply that all previous operations had
- * successfully been made permanent.
+ * exception.  Under these circumstances, however, subsequently invoking
+ * <tt>flush()</tt> or <tt>sync</tt> would not imply that all previous
+ * operations had successfully been made permanent.
  *
  * <p>There is one circumstance under which <tt>putSpi, removeSpi and
  * childSpi</tt> <i>should</i> throw an exception: if the caller lacks
@@ -122,6 +121,13 @@ import java.lang.Double;
  * @since   1.4
  */
 public abstract class AbstractPreferences extends Preferences {
+    /**
+     * The code point U+0000, assigned to the null control character, is the
+     * only character encoded in Unicode and ISO/IEC 10646 that is always
+     * invalid in any XML 1.0 and 1.1 document.
+     */
+    static final int CODE_POINT_U0000 = '\u0000';
+
     /**
      * Our name relative to parent.
      */
@@ -234,6 +240,8 @@ public abstract class AbstractPreferences extends Preferences {
      * @throws IllegalArgumentException if <tt>key.length()</tt> exceeds
      *       <tt>MAX_KEY_LENGTH</tt> or if <tt>value.length</tt> exceeds
      *       <tt>MAX_VALUE_LENGTH</tt>.
+     * @throws IllegalArgumentException if either key or value contain
+     *         the null control character, code point U+0000.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
      */
@@ -244,6 +252,10 @@ public abstract class AbstractPreferences extends Preferences {
             throw new IllegalArgumentException("Key too long: "+key);
         if (value.length() > MAX_VALUE_LENGTH)
             throw new IllegalArgumentException("Value too long: "+value);
+        if (key.indexOf(CODE_POINT_U0000) != -1)
+            throw new IllegalArgumentException("Key contains code point U+0000");
+        if (value.indexOf(CODE_POINT_U0000) != -1)
+            throw new IllegalArgumentException("Value contains code point U+0000");
 
         synchronized(lock) {
             if (removed)
@@ -275,10 +287,14 @@ public abstract class AbstractPreferences extends Preferences {
      *         removed with the {@link #removeNode()} method.
      * @throws NullPointerException if key is <tt>null</tt>.  (A
      *         <tt>null</tt> default <i>is</i> permitted.)
+     * @throws IllegalArgumentException if key contains the null control
+     *         character, code point U+0000.
      */
     public String get(String key, String def) {
         if (key==null)
             throw new NullPointerException("Null key");
+        if (key.indexOf(CODE_POINT_U0000) != -1)
+            throw new IllegalArgumentException("Key contains code point U+0000");
         synchronized(lock) {
             if (removed)
                 throw new IllegalStateException("Node has been removed.");
@@ -306,10 +322,14 @@ public abstract class AbstractPreferences extends Preferences {
      * @param key key whose mapping is to be removed from the preference node.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
+     * @throws IllegalArgumentException if key contains the null control
+     *         character, code point U+0000.
      * @throws NullPointerException {@inheritDoc}.
      */
     public void remove(String key) {
         Objects.requireNonNull(key, "Specified key cannot be null");
+        if (key.indexOf(CODE_POINT_U0000) != -1)
+            throw new IllegalArgumentException("Key contains code point U+0000");
         synchronized(lock) {
             if (removed)
                 throw new IllegalStateException("Node has been removed.");
@@ -353,6 +373,8 @@ public abstract class AbstractPreferences extends Preferences {
      * @throws NullPointerException if key is <tt>null</tt>.
      * @throws IllegalArgumentException if <tt>key.length()</tt> exceeds
      *         <tt>MAX_KEY_LENGTH</tt>.
+     * @throws IllegalArgumentException if key contains
+     *         the null control character, code point U+0000.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
      */
@@ -381,6 +403,8 @@ public abstract class AbstractPreferences extends Preferences {
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
      * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.
+     * @throws IllegalArgumentException if key contains the null control
+     *         character, code point U+0000.
      */
     public int getInt(String key, int def) {
         int result = def;
@@ -408,6 +432,8 @@ public abstract class AbstractPreferences extends Preferences {
      * @throws NullPointerException if key is <tt>null</tt>.
      * @throws IllegalArgumentException if <tt>key.length()</tt> exceeds
      *         <tt>MAX_KEY_LENGTH</tt>.
+     * @throws IllegalArgumentException if key contains
+     *         the null control character, code point U+0000.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
      */
@@ -436,6 +462,8 @@ public abstract class AbstractPreferences extends Preferences {
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
      * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.
+     * @throws IllegalArgumentException if key contains the null control
+     *         character, code point U+0000.
      */
     public long getLong(String key, long def) {
         long result = def;
@@ -463,6 +491,8 @@ public abstract class AbstractPreferences extends Preferences {
      * @throws NullPointerException if key is <tt>null</tt>.
      * @throws IllegalArgumentException if <tt>key.length()</tt> exceeds
      *         <tt>MAX_KEY_LENGTH</tt>.
+     * @throws IllegalArgumentException if key contains
+     *         the null control character, code point U+0000.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
      */
@@ -494,6 +524,8 @@ public abstract class AbstractPreferences extends Preferences {
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
      * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.
+     * @throws IllegalArgumentException if key contains the null control
+     *         character, code point U+0000.
      */
     public boolean getBoolean(String key, boolean def) {
         boolean result = def;
@@ -521,6 +553,8 @@ public abstract class AbstractPreferences extends Preferences {
      * @throws NullPointerException if key is <tt>null</tt>.
      * @throws IllegalArgumentException if <tt>key.length()</tt> exceeds
      *         <tt>MAX_KEY_LENGTH</tt>.
+     * @throws IllegalArgumentException if key contains
+     *         the null control character, code point U+0000.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
      */
@@ -549,6 +583,8 @@ public abstract class AbstractPreferences extends Preferences {
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
      * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.
+     * @throws IllegalArgumentException if key contains the null control
+     *         character, code point U+0000.
      */
     public float getFloat(String key, float def) {
         float result = def;
@@ -576,6 +612,8 @@ public abstract class AbstractPreferences extends Preferences {
      * @throws NullPointerException if key is <tt>null</tt>.
      * @throws IllegalArgumentException if <tt>key.length()</tt> exceeds
      *         <tt>MAX_KEY_LENGTH</tt>.
+     * @throws IllegalArgumentException if key contains
+     *         the null control character, code point U+0000.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
      */
@@ -604,6 +642,8 @@ public abstract class AbstractPreferences extends Preferences {
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
      * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.
+     * @throws IllegalArgumentException if key contains the null control
+     *         character, code point U+0000.
      */
     public double getDouble(String key, double def) {
         double result = def;
@@ -627,6 +667,8 @@ public abstract class AbstractPreferences extends Preferences {
      * @throws NullPointerException if key or value is <tt>null</tt>.
      * @throws IllegalArgumentException if key.length() exceeds MAX_KEY_LENGTH
      *         or if value.length exceeds MAX_VALUE_LENGTH*3/4.
+     * @throws IllegalArgumentException if key contains
+     *         the null control character, code point U+0000.
      * @throws IllegalStateException if this node (or an ancestor) has been
      *         removed with the {@link #removeNode()} method.
      */
@@ -650,6 +692,8 @@ public abstract class AbstractPreferences extends Preferences {
      *         removed with the {@link #removeNode()} method.
      * @throws NullPointerException if <tt>key</tt> is <tt>null</tt>.  (A
      *         <tt>null</tt> value for <tt>def</tt> <i>is</i> permitted.)
+     * @throws IllegalArgumentException if key contains the null control
+     *         character, code point U+0000.
      */
     public byte[] getByteArray(String key, byte[] def) {
         byte[] result = def;

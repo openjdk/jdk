@@ -45,7 +45,7 @@ public class AtomicMoveNotSupportedException
      * @param   target
      *          a string identifying the target file or {@code null} if not known
      * @param   reason
-     *          a reason message with additional information
+     *          a reason message with additional information or {@code null}
      */
     public AtomicMoveNotSupportedException(String source,
                                            String target,

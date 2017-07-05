@@ -409,7 +409,7 @@ public class CertStore {
      */
     public final static String getDefaultType() {
         String cstype;
-        cstype = AccessController.doPrivileged(new PrivilegedAction<String>() {
+        cstype = AccessController.doPrivileged(new PrivilegedAction<>() {
             public String run() {
                 return Security.getProperty(CERTSTORE_TYPE);
             }

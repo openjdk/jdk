@@ -24,6 +24,7 @@
 /* @test
    @bug 4922813
    @summary Check the new impl of encodePath will not cause regression
+   @key randomness
  */
 
 import java.util.BitSet;

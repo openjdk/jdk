@@ -27,6 +27,7 @@
  * @summary basic test for RSA cipher
  * @author Andreas Sterbenz
  * @library ..
+ * @key randomness
  */
 
 import java.io.*;

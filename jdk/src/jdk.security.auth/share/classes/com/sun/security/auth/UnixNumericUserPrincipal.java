@@ -28,15 +28,15 @@ package com.sun.security.auth;
 import java.security.Principal;
 
 /**
- * <p> This class implements the <code>Principal</code> interface
+ * This class implements the {@code Principal} interface
  * and represents a user's Unix identification number (UID).
  *
- * <p> Principals such as this <code>UnixNumericUserPrincipal</code>
- * may be associated with a particular <code>Subject</code>
- * to augment that <code>Subject</code> with an additional
- * identity.  Refer to the <code>Subject</code> class for more information
+ * <p> Principals such as this {@code UnixNumericUserPrincipal}
+ * may be associated with a particular {@code Subject}
+ * to augment that {@code Subject} with an additional
+ * identity.  Refer to the {@code Subject} class for more information
  * on how to achieve this.  Authorization decisions can then be based upon
- * the Principals associated with a <code>Subject</code>.
+ * the Principals associated with a {@code Subject}.
  *
  * @see java.security.Principal
  * @see javax.security.auth.Subject
@@ -53,16 +53,14 @@ public class UnixNumericUserPrincipal implements
     private String name;
 
     /**
-     * Create a <code>UnixNumericUserPrincipal</code> using a
-     * <code>String</code> representation of the
+     * Create a {@code UnixNumericUserPrincipal} using a
+     * {@code String} representation of the
      * user's identification number (UID).
-     *
-     * <p>
      *
      * @param name the user identification number (UID) for this user.
      *
-     * @exception NullPointerException if the <code>name</code>
-     *                  is <code>null</code>.
+     * @exception NullPointerException if the {@code name}
+     *                  is {@code null}.
      */
     public UnixNumericUserPrincipal(String name) {
         if (name == null) {
@@ -78,10 +76,8 @@ public class UnixNumericUserPrincipal implements
     }
 
     /**
-     * Create a <code>UnixNumericUserPrincipal</code> using a
+     * Create a {@code UnixNumericUserPrincipal} using a
      * long representation of the user's identification number (UID).
-     *
-     * <p>
      *
      * @param name the user identification number (UID) for this user
      *                  represented as a long.
@@ -92,12 +88,10 @@ public class UnixNumericUserPrincipal implements
 
     /**
      * Return the user identification number (UID) for this
-     * <code>UnixNumericUserPrincipal</code>.
-     *
-     * <p>
+     * {@code UnixNumericUserPrincipal}.
      *
      * @return the user identification number (UID) for this
-     *          <code>UnixNumericUserPrincipal</code>
+     *          {@code UnixNumericUserPrincipal}
      */
     public String getName() {
         return name;
@@ -105,12 +99,10 @@ public class UnixNumericUserPrincipal implements
 
     /**
      * Return the user identification number (UID) for this
-     * <code>UnixNumericUserPrincipal</code> as a long.
-     *
-     * <p>
+     * {@code UnixNumericUserPrincipal} as a long.
      *
      * @return the user identification number (UID) for this
-     *          <code>UnixNumericUserPrincipal</code> as a long.
+     *          {@code UnixNumericUserPrincipal} as a long.
      */
     public long longValue() {
         return Long.parseLong(name);
@@ -118,12 +110,10 @@ public class UnixNumericUserPrincipal implements
 
     /**
      * Return a string representation of this
-     * <code>UnixNumericUserPrincipal</code>.
-     *
-     * <p>
+     * {@code UnixNumericUserPrincipal}.
      *
      * @return a string representation of this
-     *          <code>UnixNumericUserPrincipal</code>.
+     *          {@code UnixNumericUserPrincipal}.
      */
     public String toString() {
         java.text.MessageFormat form = new java.text.MessageFormat
@@ -136,19 +126,17 @@ public class UnixNumericUserPrincipal implements
 
     /**
      * Compares the specified Object with this
-     * <code>UnixNumericUserPrincipal</code>
+     * {@code UnixNumericUserPrincipal}
      * for equality.  Returns true if the given object is also a
-     * <code>UnixNumericUserPrincipal</code> and the two
+     * {@code UnixNumericUserPrincipal} and the two
      * UnixNumericUserPrincipals
      * have the same user identification number (UID).
      *
-     * <p>
-     *
      * @param o Object to be compared for equality with this
-     *          <code>UnixNumericUserPrincipal</code>.
+     *          {@code UnixNumericUserPrincipal}.
      *
      * @return true if the specified Object is equal to this
-     *          <code>UnixNumericUserPrincipal</code>.
+     *          {@code UnixNumericUserPrincipal}.
      */
     public boolean equals(Object o) {
         if (o == null)
@@ -167,11 +155,9 @@ public class UnixNumericUserPrincipal implements
     }
 
     /**
-     * Return a hash code for this <code>UnixNumericUserPrincipal</code>.
+     * Return a hash code for this {@code UnixNumericUserPrincipal}.
      *
-     * <p>
-     *
-     * @return a hash code for this <code>UnixNumericUserPrincipal</code>.
+     * @return a hash code for this {@code UnixNumericUserPrincipal}.
      */
     public int hashCode() {
         return name.hashCode();

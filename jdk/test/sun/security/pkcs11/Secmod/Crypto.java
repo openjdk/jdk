@@ -28,6 +28,7 @@
  * @author Andreas Sterbenz
  * @library ..
  * @run main/othervm Crypto
+ * @key randomness
  */
 
 import java.util.*;

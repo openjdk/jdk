@@ -24,6 +24,7 @@
 /* @test
  * @bug 4173528 5068772
  * @summary Unit tests for java.util.UUID
+ * @key randomness
  */
 
 import java.util.*;
