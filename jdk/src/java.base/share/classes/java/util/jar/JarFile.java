@@ -28,7 +28,6 @@ package java.util.jar;
 import java.io.*;
 import java.lang.ref.SoftReference;
 import java.net.URL;
-import java.security.PrivilegedAction;
 import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -38,10 +37,9 @@ import java.security.cert.Certificate;
 import java.security.AccessController;
 import java.security.CodeSource;
 import jdk.internal.misc.SharedSecrets;
+import sun.security.action.GetPropertyAction;
 import sun.security.util.ManifestEntryVerifier;
 import sun.security.util.SignatureFileVerifier;
-
-import static java.util.jar.Attributes.Name.MULTI_RELEASE;
 
 /**
  * The {@code JarFile} class is used to read the contents of a jar file
@@ -144,8 +142,9 @@ class JarFile extends ZipFile {
     private final int version;
     private boolean notVersioned;
     private final boolean runtimeVersioned;
+    private boolean isMultiRelease;    // is jar multi-release?
 
-    // indicates if Class-Path attribute present (only valid if hasCheckedSpecialAttributes true)
+    // indicates if Class-Path attribute present
     private boolean hasClassPathAttribute;
     // true if manifest checked for special attributes
     private volatile boolean hasCheckedSpecialAttributes;
@@ -155,24 +154,18 @@ class JarFile extends ZipFile {
         SharedSecrets.setJavaUtilJarAccess(new JavaUtilJarAccessImpl());
 
         BASE_VERSION = 8;  // one less than lowest version for versioned entries
-        RUNTIME_VERSION = AccessController.doPrivileged(
-                new PrivilegedAction<Integer>() {
-                    public Integer run() {
-                        Integer v = jdk.Version.current().major();
-                        Integer i = Integer.getInteger("jdk.util.jar.version", v);
-                        i = i < 0 ? 0 : i;
-                        return i > v ? v : i;
-                    }
-                }
-        );
-        String multi_release = AccessController.doPrivileged(
-                new PrivilegedAction<String>() {
-                    public String run() {
-                        return System.getProperty("jdk.util.jar.enableMultiRelease", "true");
-                    }
-                }
-        );
-        switch (multi_release) {
+        int runtimeVersion = jdk.Version.current().major();
+        String jarVersion = AccessController.doPrivileged(
+                new GetPropertyAction("jdk.util.jar.version"));
+        if (jarVersion != null) {
+            int jarVer = Integer.parseInt(jarVersion);
+            runtimeVersion = (jarVer > runtimeVersion)
+                    ? runtimeVersion : Math.max(jarVer, 0);
+        }
+        RUNTIME_VERSION = runtimeVersion;
+        String enableMultiRelease = AccessController.doPrivileged(
+                new GetPropertyAction("jdk.util.jar.enableMultiRelease", "true"));
+        switch (enableMultiRelease) {
             case "true":
             default:
                 MULTI_RELEASE_ENABLED = true;
@@ -353,8 +346,14 @@ class JarFile extends ZipFile {
         Objects.requireNonNull(version);
         this.verify = verify;
         // version applies to multi-release jar files, ignored for regular jar files
-        this.version = MULTI_RELEASE_FORCED ? RUNTIME_VERSION : version.value();
+        if (MULTI_RELEASE_FORCED) {
+            this.version = RUNTIME_VERSION;
+            version = Release.RUNTIME;
+        } else {
+            this.version = version.value();
+        }
         this.runtimeVersioned = version == Release.RUNTIME;
+
         assert runtimeVersionExists();
     }
 
@@ -392,35 +391,18 @@ class JarFile extends ZipFile {
      * @since 9
      */
     public final boolean isMultiRelease() {
-        // do not call this code in a constructor because some subclasses use
-        // lazy loading of manifest so it won't be available at construction time
-        if (MULTI_RELEASE_ENABLED) {
-            // Doubled-checked locking pattern
-            Boolean result = isMultiRelease;
-            if (result == null) {
-                synchronized (this) {
-                    result = isMultiRelease;
-                    if (result == null) {
-                        Manifest man = null;
-                        try {
-                            man = getManifest();
-                        } catch (IOException e) {
-                            //Ignored, manifest cannot be read
-                        }
-                        isMultiRelease = result = (man != null)
-                                && man.getMainAttributes().containsKey(MULTI_RELEASE)
-                                ? Boolean.TRUE : Boolean.FALSE;
-                    }
-                }
-            }
-            return result == Boolean.TRUE;
-        } else {
-            return false;
+        if (isMultiRelease) {
+            return true;
         }
+        if (MULTI_RELEASE_ENABLED && version != BASE_VERSION) {
+            try {
+                checkForSpecialAttributes();
+            } catch (IOException io) {
+                isMultiRelease = false;
+            }
+        }
+        return isMultiRelease;
     }
-    // the following field, isMultiRelease, should only be used in the method
-    // isMultiRelease(), like a static local
-    private volatile Boolean isMultiRelease;    // is jar multi-release?
 
     /**
      * Returns the jar file manifest, or {@code null} if none.
@@ -905,26 +887,44 @@ class JarFile extends ZipFile {
     }
 
     // Statics for hand-coded Boyer-Moore search
-    private static final char[] CLASSPATH_CHARS = {'c','l','a','s','s','-','p','a','t','h'};
-    // The bad character shift for "class-path"
-    private static final int[] CLASSPATH_LASTOCC;
-    // The good suffix shift for "class-path"
-    private static final int[] CLASSPATH_OPTOSFT;
+    private static final byte[] CLASSPATH_CHARS =
+            {'C','L','A','S','S','-','P','A','T','H', ':', ' '};
+
+    // The bad character shift for "class-path:"
+    private static final byte[] CLASSPATH_LASTOCC;
+
+    private static final byte[] MULTIRELEASE_CHARS =
+            {'M','U','L','T','I','-','R','E','L','E', 'A', 'S', 'E', ':', ' '};
+
+    // The bad character shift for "multi-release: "
+    private static final byte[] MULTIRELEASE_LASTOCC;
 
     static {
-        CLASSPATH_LASTOCC = new int[128];
-        CLASSPATH_OPTOSFT = new int[10];
-        CLASSPATH_LASTOCC[(int)'c'] = 1;
-        CLASSPATH_LASTOCC[(int)'l'] = 2;
-        CLASSPATH_LASTOCC[(int)'s'] = 5;
-        CLASSPATH_LASTOCC[(int)'-'] = 6;
-        CLASSPATH_LASTOCC[(int)'p'] = 7;
-        CLASSPATH_LASTOCC[(int)'a'] = 8;
-        CLASSPATH_LASTOCC[(int)'t'] = 9;
-        CLASSPATH_LASTOCC[(int)'h'] = 10;
-        for (int i=0; i<9; i++)
-            CLASSPATH_OPTOSFT[i] = 10;
-        CLASSPATH_OPTOSFT[9]=1;
+        CLASSPATH_LASTOCC = new byte[64];
+        CLASSPATH_LASTOCC[(int)'C' - 32] = 1;
+        CLASSPATH_LASTOCC[(int)'L' - 32] = 2;
+        CLASSPATH_LASTOCC[(int)'S' - 32] = 5;
+        CLASSPATH_LASTOCC[(int)'-' - 32] = 6;
+        CLASSPATH_LASTOCC[(int)'P' - 32] = 7;
+        CLASSPATH_LASTOCC[(int)'A' - 32] = 8;
+        CLASSPATH_LASTOCC[(int)'T' - 32] = 9;
+        CLASSPATH_LASTOCC[(int)'H' - 32] = 10;
+        CLASSPATH_LASTOCC[(int)':' - 32] = 11;
+        CLASSPATH_LASTOCC[(int)' ' - 32] = 12;
+
+        MULTIRELEASE_LASTOCC = new byte[64];
+        MULTIRELEASE_LASTOCC[(int)'M' - 32] = 1;
+        MULTIRELEASE_LASTOCC[(int)'U' - 32] = 2;
+        MULTIRELEASE_LASTOCC[(int)'T' - 32] = 4;
+        MULTIRELEASE_LASTOCC[(int)'I' - 32] = 5;
+        MULTIRELEASE_LASTOCC[(int)'-' - 32] = 6;
+        MULTIRELEASE_LASTOCC[(int)'R' - 32] = 7;
+        MULTIRELEASE_LASTOCC[(int)'L' - 32] = 9;
+        MULTIRELEASE_LASTOCC[(int)'A' - 32] = 11;
+        MULTIRELEASE_LASTOCC[(int)'S' - 32] = 12;
+        MULTIRELEASE_LASTOCC[(int)'E' - 32] = 13;
+        MULTIRELEASE_LASTOCC[(int)':' - 32] = 14;
+        MULTIRELEASE_LASTOCC[(int)' ' - 32] = 15;
     }
 
     private JarEntry getManEntry() {
@@ -962,22 +962,33 @@ class JarFile extends ZipFile {
 
     /**
      * Returns true if the pattern {@code src} is found in {@code b}.
-     * The {@code lastOcc} and {@code optoSft} arrays are the precomputed
-     * bad character and good suffix shifts.
+     * The {@code lastOcc} array is the precomputed bad character shifts.
+     * Since there are no repeated substring in our search strings,
+     * the good suffix shifts can be replaced with a comparison.
      */
-    private boolean match(char[] src, byte[] b, int[] lastOcc, int[] optoSft) {
+    private boolean match(byte[] src, byte[] b, byte[] lastOcc) {
         int len = src.length;
         int last = b.length - len;
         int i = 0;
         next:
-        while (i<=last) {
-            for (int j=(len-1); j>=0; j--) {
-                char c = (char) b[i+j];
-                c = (((c-'A')|('Z'-c)) >= 0) ? (char)(c + 32) : c;
-                if (c != src[j]) {
-                    i += Math.max(j + 1 - lastOcc[c&0x7F], optoSft[j]);
+        while (i <= last) {
+            for (int j = (len - 1); j >= 0; j--) {
+                byte c = b[i + j];
+                if (c >= ' ' && c <= 'z') {
+                    if (c >= 'a') c -= 32; // Canonicalize
+
+                    if (c != src[j]) {
+                        // no match
+                        int goodShift = (j < len - 1) ? len : 1;
+                        int badShift = lastOcc[c - 32];
+                        i += Math.max(j + 1 - badShift, goodShift);
+                        continue next;
+                    }
+                } else {
+                    // no match, character not valid for name
+                    i += len;
                     continue next;
-                 }
+                }
             }
             return true;
         }
@@ -986,17 +997,29 @@ class JarFile extends ZipFile {
 
     /**
      * On first invocation, check if the JAR file has the Class-Path
-     * attribute. A no-op on subsequent calls.
+     * and the Multi-Release attribute. A no-op on subsequent calls.
      */
     private void checkForSpecialAttributes() throws IOException {
-        if (hasCheckedSpecialAttributes) return;
-        JarEntry manEntry = getManEntry();
-        if (manEntry != null) {
-            byte[] b = getBytes(manEntry);
-            if (match(CLASSPATH_CHARS, b, CLASSPATH_LASTOCC, CLASSPATH_OPTOSFT))
-                hasClassPathAttribute = true;
+        if (hasCheckedSpecialAttributes) {
+            return;
         }
-        hasCheckedSpecialAttributes = true;
+        synchronized (this) {
+            if (hasCheckedSpecialAttributes) {
+                return;
+            }
+            JarEntry manEntry = getManEntry();
+            if (manEntry != null) {
+                byte[] b = getBytes(manEntry);
+                hasClassPathAttribute = match(CLASSPATH_CHARS, b,
+                        CLASSPATH_LASTOCC);
+                // is this a multi-release jar file
+                if (MULTI_RELEASE_ENABLED && version != BASE_VERSION) {
+                    isMultiRelease = match(MULTIRELEASE_CHARS, b,
+                            MULTIRELEASE_LASTOCC);
+                }
+            }
+            hasCheckedSpecialAttributes = true;
+        }
     }
 
     private synchronized void ensureInitialization() {
