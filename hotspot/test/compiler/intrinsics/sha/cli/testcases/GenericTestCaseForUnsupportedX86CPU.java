@@ -24,7 +24,7 @@
 package compiler.intrinsics.sha.cli.testcases;
 
 import compiler.intrinsics.sha.cli.SHAOptionsBase;
-import jdk.test.lib.ExitCode;
+import jdk.test.lib.process.ExitCode;
 import jdk.test.lib.Platform;
 import jdk.test.lib.cli.CommandLineOptionTest;
 import jdk.test.lib.cli.predicate.AndPredicate;

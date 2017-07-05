@@ -25,11 +25,11 @@
  * @test CheckSegmentedCodeCache
  * @bug 8015774
  * @summary Checks VM options related to the segmented code cache
- * @library /testlibrary /test/lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
- * @build compiler.codecache.CheckSegmentedCodeCache
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
@@ -39,9 +39,9 @@
 
 package compiler.codecache;
 
-import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 import sun.hotspot.WhiteBox;
 
 public class CheckSegmentedCodeCache {

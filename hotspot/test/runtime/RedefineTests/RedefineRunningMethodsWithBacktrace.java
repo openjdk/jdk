@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
  * @test
  * @bug 8087315
  * @summary Get old method's stack trace elements after GC
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler
  *          java.instrument
  *          jdk.jartool/sun.tools.jar
- * @build RedefineClassHelper
  * @run main RedefineClassHelper
  * @run main/othervm -javaagent:redefineagent.jar RedefineRunningMethodsWithBacktrace
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 7051769 8038092
  * @summary verify that Bidi.toString() returns the corect result.
  *     The second run is intended to test lazy SharedSectets init for 8038092
+ * @modules java.desktop
  * @run main Bug7051769
  * @run main/othervm -DpreloadBidi=true Bug7051769
  */

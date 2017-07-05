@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
  * @test
  * @bug 8035968
  * @summary Verify that SHA-512 multi block intrinsic is actually used.
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
- * @build compiler.testlibrary.intrinsics.Verifier
- *        compiler.intrinsics.sha.sanity.TestSHA512MultiBlockIntrinsics
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions

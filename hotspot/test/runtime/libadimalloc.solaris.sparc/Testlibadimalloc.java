@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,7 @@
  * @summary make sure the Solaris Sparc M7 libadimalloc.so library generates SIGSEGV's on buffer overflow
  * @requires (os.family == "solaris" & os.arch == "sparcv9")
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
- * @build jdk.test.lib.*
+ * @library /test/lib
  * @compile SEGVOverflow.java
  * @run driver Testlibadimalloc
  */
@@ -37,7 +36,7 @@
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 
 public class Testlibadimalloc {
 

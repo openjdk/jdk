@@ -274,8 +274,14 @@ bool os::Solaris::get_frame_at_stack_banging_point(JavaThread* thread, ucontext_
       // stack overflow handling
       return false;
     } else {
-      *fr = os::fetch_frame_from_ucontext(thread, uc);
-      *fr = frame(fr->sender_sp(), fr->sp());
+      // Returned frame will be the caller of the method that faults on the stack bang.
+      // Register window not yet rotated (happens at SAVE after stack bang), so there is no new
+      // frame to go with the faulting PC. Using caller SP that is still in SP, and caller PC
+      // that was written to O7 at call.
+      intptr_t* sp = os::Solaris::ucontext_get_sp(uc);
+      address pc = (address)uc->uc_mcontext.gregs[REG_O7];
+      *fr = frame(sp, frame::unpatchable, pc);
+
       if (!fr->is_java_frame()) {
         assert(fr->safe_for_sender(thread), "Safety check");
         *fr = fr->java_sender();

@@ -130,7 +130,7 @@ bool VM_RedefineClasses::doit_prologue() {
     }
 
     oop mirror = JNIHandles::resolve_non_null(_class_defs[i].klass);
-    // classes for primitives and arrays cannot be redefined
+    // classes for primitives and arrays and vm anonymous classes cannot be redefined
     // check here so following code can assume these classes are InstanceKlass
     if (!is_modifiable_class(mirror)) {
       _res = JVMTI_ERROR_UNMODIFIABLE_CLASS;
@@ -250,9 +250,14 @@ bool VM_RedefineClasses::is_modifiable_class(oop klass_mirror) {
   if (java_lang_Class::is_primitive(klass_mirror)) {
     return false;
   }
-  Klass* the_class_oop = java_lang_Class::as_Klass(klass_mirror);
+  Klass* k = java_lang_Class::as_Klass(klass_mirror);
   // classes for arrays cannot be redefined
-  if (the_class_oop == NULL || !the_class_oop->is_instance_klass()) {
+  if (k == NULL || !k->is_instance_klass()) {
+    return false;
+  }
+
+  // Cannot redefine or retransform an anonymous class.
+  if (InstanceKlass::cast(k)->is_anonymous()) {
     return false;
   }
   return true;

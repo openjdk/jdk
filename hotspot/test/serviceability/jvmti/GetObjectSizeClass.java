@@ -21,19 +21,22 @@
  * questions.
  */
 import java.io.PrintWriter;
-import jdk.test.lib.*;
+import jdk.test.lib.JDKToolFinder;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
 
 /*
  * @test
  * @bug 8075030
  * @summary JvmtiEnv::GetObjectSize reports incorrect java.lang.Class instance size
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.instrument
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build ClassFileInstaller jdk.test.lib.* GetObjectSizeClassAgent
+ * @build GetObjectSizeClassAgent
  * @run main ClassFileInstaller GetObjectSizeClassAgent
  * @run main GetObjectSizeClass
  */

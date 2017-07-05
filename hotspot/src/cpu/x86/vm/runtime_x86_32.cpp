@@ -117,7 +117,7 @@ void OptoRuntime::generate_exception_blob() {
   // No registers to map, rbp is known implicitly
   oop_maps->add_gc_map( __ pc() - start,  new OopMap( framesize, 0 ));
   __ get_thread(rcx);
-  __ reset_last_Java_frame(rcx, false, false);
+  __ reset_last_Java_frame(rcx, false);
 
   // Restore callee-saved registers
   __ movptr(rbp, Address(rsp, rbp_off * wordSize));

@@ -70,26 +70,34 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         // Then we attempt to find the socket file again.
         path = findSocketFile(pid);
         if (path == null) {
-            File f = new File(tmpdir, ".attach_pid" + pid);
-            createAttachFile(f.getPath());
+            File f = createAttachFile(pid);
             try {
                 sendQuitTo(pid);
 
                 // give the target VM time to start the attach mechanism
-                int i = 0;
-                long delay = 200;
-                int retries = (int)(attachTimeout() / delay);
+                final int delay_step = 100;
+                final long timeout = attachTimeout();
+                long time_spend = 0;
+                long delay = 0;
                 do {
+                    // Increase timeout on each attempt to reduce polling
+                    delay += delay_step;
                     try {
                         Thread.sleep(delay);
                     } catch (InterruptedException x) { }
                     path = findSocketFile(pid);
-                    i++;
-                } while (i <= retries && path == null);
+
+                    time_spend += delay;
+                    if (time_spend > timeout/2 && path == null) {
+                        // Send QUIT again to give target VM the last chance to react
+                        sendQuitTo(pid);
+                    }
+                } while (time_spend <= timeout && path == null);
                 if (path == null) {
                     throw new AttachNotSupportedException(
-                        "Unable to open socket file: target process not responding " +
-                        "or HotSpot VM not loaded");
+                        String.format("Unable to open socket file %s: " +
+                          "target process %d doesn't respond within %dms " +
+                          "or HotSpot VM not loaded", f.getPath(), pid, time_spend));
                 }
             } finally {
                 f.delete();
@@ -282,6 +290,12 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         write(fd, b, 0, 1);
     }
 
+    private File createAttachFile(int pid) throws IOException {
+        String fn = ".attach_pid" + pid;
+        File f = new File(tmpdir, fn);
+        createAttachFile0(f.getPath());
+        return f;
+    }
 
     //-- native methods
 
@@ -299,7 +313,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     static native void write(int fd, byte buf[], int off, int bufLen) throws IOException;
 
-    static native void createAttachFile(String path);
+    static native void createAttachFile0(String path);
 
     static native String getTempDir();
 

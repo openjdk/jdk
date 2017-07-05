@@ -361,7 +361,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
     private void finishCompletion() {
         // assert state > COMPLETING;
         for (WaitNode q; (q = waiters) != null;) {
-            if (WAITERS.weakCompareAndSetVolatile(this, q, null)) {
+            if (WAITERS.weakCompareAndSet(this, q, null)) {
                 for (;;) {
                     Thread t = q.thread;
                     if (t != null) {
@@ -423,7 +423,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
                 q = new WaitNode();
             }
             else if (!queued)
-                queued = WAITERS.weakCompareAndSetVolatile(this, q.next = waiters, q);
+                queued = WAITERS.weakCompareAndSet(this, q.next = waiters, q);
             else if (timed) {
                 final long parkNanos;
                 if (startTime == 0L) { // first time

@@ -60,7 +60,7 @@
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.hpp"

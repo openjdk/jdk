@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8146416
- * @library /test/lib /testlibrary /
+ * @library /test/lib /
  *
  * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox

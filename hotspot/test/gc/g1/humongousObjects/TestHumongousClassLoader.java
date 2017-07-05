@@ -41,15 +41,10 @@ import java.nio.file.Paths;
  * @requires vm.gc.G1
  * @requires vm.opt.G1HeapRegionSize == "null" | vm.opt.G1HeapRegionSize == "1M"
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management
  * @build sun.hotspot.WhiteBox
- *        gc.testlibrary.Helpers
- *        gc.g1.humongousObjects.G1SampleClass
- *        gc.g1.humongousObjects.ClassLoaderGenerator
- *        gc.g1.humongousObjects.TestHumongousClassLoader
- *
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  *

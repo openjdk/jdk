@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,13 @@
  * @bug 8007270 8006683 8007288 8022832
  * @summary testing of WB::isMethodCompilable()
  * @requires vm.flavor == "server"
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
- * @build jdk.test.lib.*
- *        sun.hotspot.WhiteBox
- * @build compiler.whitebox.IsMethodCompilableTest
+ * @build sun.hotspot.WhiteBox
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- *                                jdk.test.lib.Platform
  * @run main/othervm/timeout=2400 -XX:-TieredCompilation -Xmixed
  *      -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:PerMethodRecompilationCutoff=3 -XX:-UseCounterDecay

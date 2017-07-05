@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib /compiler/whitebox ..
+ * @library /test/lib ..
  * @compile p2/c2.java
  * @compile p1/c1.java
  * @build sun.hotspot.WhiteBox
@@ -34,7 +34,6 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI AccessCheckRead
  */
 
-import jdk.test.lib.*;
 import java.lang.reflect.Module;
 import static jdk.test.lib.Asserts.*;
 

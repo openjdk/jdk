@@ -1461,7 +1461,7 @@ static void check_needs_gc_for_critical_native(MacroAssembler* masm,
   __ mov(rsp, r12); // restore sp
   __ reinit_heapbase();
 
-  __ reset_last_Java_frame(false, true);
+  __ reset_last_Java_frame(false);
 
   save_or_restore_arguments(masm, stack_slots, total_in_args,
                             arg_save_area, NULL, in_regs, in_sig_bt);
@@ -2577,7 +2577,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     restore_native_result(masm, ret_type, stack_slots);
   }
 
-  __ reset_last_Java_frame(false, true);
+  __ reset_last_Java_frame(false);
 
   // Unpack oop result
   if (ret_type == T_OBJECT || ret_type == T_ARRAY) {
@@ -2849,7 +2849,7 @@ void SharedRuntime::generate_deopt_blob() {
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap)));
     oop_maps->add_gc_map( __ pc()-start, map->deep_copy());
 
-    __ reset_last_Java_frame(false, false);
+    __ reset_last_Java_frame(false);
 
     __ jmp(after_fetch_unroll_info_call);
   } // EnableJVMCI
@@ -2939,7 +2939,7 @@ void SharedRuntime::generate_deopt_blob() {
   // find any register it might need.
   oop_maps->add_gc_map(__ pc() - start, map);
 
-  __ reset_last_Java_frame(false, false);
+  __ reset_last_Java_frame(false);
 
 #if INCLUDE_JVMCI
   if (EnableJVMCI) {
@@ -3087,7 +3087,7 @@ void SharedRuntime::generate_deopt_blob() {
                        new OopMap( frame_size_in_words, 0 ));
 
   // Clear fp AND pc
-  __ reset_last_Java_frame(true, true);
+  __ reset_last_Java_frame(true);
 
   // Collect return values
   __ movdbl(xmm0, Address(rsp, RegisterSaver::xmm0_offset_in_bytes()));
@@ -3164,7 +3164,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   oop_maps->add_gc_map(__ pc() - start, map);
 
-  __ reset_last_Java_frame(false, false);
+  __ reset_last_Java_frame(false);
 
   // Load UnrollBlock* into rdi
   __ mov(rdi, rax);
@@ -3281,7 +3281,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   oop_maps->add_gc_map(the_pc - start, new OopMap(SimpleRuntimeFrame::framesize, 0));
 
   // Clear fp AND pc
-  __ reset_last_Java_frame(true, true);
+  __ reset_last_Java_frame(true);
 
   // Pop self-frame.
   __ leave();                 // Epilog
@@ -3364,7 +3364,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   Label noException;
 
-  __ reset_last_Java_frame(false, false);
+  __ reset_last_Java_frame(false);
 
   __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
   __ jcc(Assembler::equal, noException);
@@ -3434,7 +3434,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(address destination, const cha
   // rax contains the address we are going to jump to assuming no exception got installed
 
   // clear last_Java_sp
-  __ reset_last_Java_frame(false, false);
+  __ reset_last_Java_frame(false);
   // check for pending exceptions
   Label pending;
   __ cmpptr(Address(r15_thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
@@ -3809,7 +3809,7 @@ void OptoRuntime::generate_exception_blob() {
 
   oop_maps->add_gc_map(the_pc - start, new OopMap(SimpleRuntimeFrame::framesize, 0));
 
-  __ reset_last_Java_frame(false, true);
+  __ reset_last_Java_frame(false);
 
   // Restore callee-saved registers
 

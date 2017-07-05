@@ -5844,6 +5844,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
                                                     _super_klass,
                                                     _methods,
                                                     _access_flags,
+                                                    _major_version,
                                                     _loader_data->class_loader(),
                                                     _class_name,
                                                     _local_interfaces,

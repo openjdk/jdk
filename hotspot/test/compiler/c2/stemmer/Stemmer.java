@@ -3,7 +3,7 @@
  * @bug 7070134
  * @summary Hotspot crashes with sigsegv from PorterStemmer
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  *
  * @run driver jdk.test.lib.FileInstaller words words
  * @run main/othervm -Xbatch compiler.c2.stemmer.Stemmer words
