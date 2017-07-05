@@ -35,6 +35,8 @@ class WorkerDataArray  : public CHeapObj<mtGC> {
   const char* _print_format;
   bool        _print_sum;
 
+  NOT_PRODUCT(static const T _uninitialized;)
+
   // We are caching the sum and average to only have to calculate them once.
   // This is not done in an MT-safe way. It is intetened to allow single
   // threaded code to call sum() and average() multiple times in any order

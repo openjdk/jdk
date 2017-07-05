@@ -361,14 +361,21 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
       }
       // Otherwise skip it (the call updated 'mem' value).
     } else if (mem->Opcode() == Op_SCMemProj) {
-      assert(mem->in(0)->is_LoadStore(), "sanity");
-      const TypePtr* atype = mem->in(0)->in(MemNode::Address)->bottom_type()->is_ptr();
+      mem = mem->in(0);
+      Node* adr = NULL;
+      if (mem->is_LoadStore()) {
+        adr = mem->in(MemNode::Address);
+      } else {
+        assert(mem->Opcode() == Op_EncodeISOArray, "sanity");
+        adr = mem->in(3); // Destination array
+      }
+      const TypePtr* atype = adr->bottom_type()->is_ptr();
       int adr_idx = Compile::current()->get_alias_index(atype);
       if (adr_idx == alias_idx) {
         assert(false, "Object is not scalar replaceable if a LoadStore node access its field");
         return NULL;
       }
-      mem = mem->in(0)->in(MemNode::Memory);
+      mem = mem->in(MemNode::Memory);
     } else {
       return mem;
     }
@@ -445,7 +452,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         }
         values.at_put(j, val);
       } else if (val->Opcode() == Op_SCMemProj) {
-        assert(val->in(0)->is_LoadStore(), "sanity");
+        assert(val->in(0)->is_LoadStore() || val->in(0)->Opcode() == Op_EncodeISOArray, "sanity");
         assert(false, "Object is not scalar replaceable if a LoadStore node access its field");
         return NULL;
       } else {

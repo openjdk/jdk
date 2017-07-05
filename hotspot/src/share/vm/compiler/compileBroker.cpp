@@ -1218,7 +1218,7 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
   // lock, make sure that the compilation
   // isn't prohibited in a straightforward way.
 
-  if (compiler(comp_level) == NULL || compilation_is_prohibited(method, osr_bci, comp_level)) {
+  if (compiler(comp_level) == NULL || !compiler(comp_level)->can_compile_method(method) || compilation_is_prohibited(method, osr_bci, comp_level)) {
     return NULL;
   }
 
@@ -1714,6 +1714,20 @@ void CompileBroker::maybe_block() {
   }
 }
 
+// wrapper for CodeCache::print_summary()
+static void codecache_print(bool detailed)
+{
+  ResourceMark rm;
+  stringStream s;
+  // Dump code cache  into a buffer before locking the tty,
+  {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    CodeCache::print_summary(&s, detailed);
+  }
+  ttyLocker ttyl;
+  tty->print_cr(s.as_string());
+}
+
 // ------------------------------------------------------------------
 // CompileBroker::invoke_compiler_on_method
 //
@@ -1841,6 +1855,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     tty->print_cr("size: %d time: %d inlined: %d bytes", code_size, (int)time.milliseconds(), task->num_inlined_bytecodes());
   }
 
+  if (PrintCodeCacheOnCompilation)
+    codecache_print(/* detailed= */ false);
+
   // Disable compilation, if required.
   switch (compilable) {
   case ciEnv::MethodCompilable_never:
@@ -1885,6 +1902,7 @@ void CompileBroker::handle_full_code_cache() {
   UseInterpreter = true;
   if (UseCompiler || AlwaysCompileLoopMethods ) {
     if (xtty != NULL) {
+      ResourceMark rm;
       stringStream s;
       // Dump code cache state into a buffer before locking the tty,
       // because log_state() will use locks causing lock conflicts.
@@ -1898,9 +1916,9 @@ void CompileBroker::handle_full_code_cache() {
     }
     warning("CodeCache is full. Compiler has been disabled.");
     warning("Try increasing the code cache size using -XX:ReservedCodeCacheSize=");
-    CodeCache::print_bounds(tty);
 #ifndef PRODUCT
     if (CompileTheWorld || ExitOnFullCodeCache) {
+      codecache_print(/* detailed= */ true);
       before_exit(JavaThread::current());
       exit_globals(); // will delete tty
       vm_direct_exit(CompileTheWorld ? 0 : 1);
@@ -1913,6 +1931,7 @@ void CompileBroker::handle_full_code_cache() {
       AlwaysCompileLoopMethods  = false;
     }
   }
+  codecache_print(/* detailed= */ true);
 }
 
 // ------------------------------------------------------------------

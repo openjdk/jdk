@@ -350,9 +350,15 @@ compare_zip_file() {
     OTHER_DIR=$2
     WORK_DIR=$3
     ZIP_FILE=$4
+    # Optionally provide different name for other zipfile
+    OTHER_ZIP_FILE=$5
 
     THIS_ZIP=$THIS_DIR/$ZIP_FILE
-    OTHER_ZIP=$OTHER_DIR/$ZIP_FILE
+    if [ -n "$OTHER_ZIP_FILE" ]; then
+        OTHER_ZIP=$OTHER_DIR/$OTHER_ZIP_FILE
+    else
+        OTHER_ZIP=$OTHER_DIR/$ZIP_FILE
+    fi
 
     THIS_SUFFIX="${THIS_ZIP##*.}"
     OTHER_SUFFIX="${OTHER_ZIP##*.}"
@@ -962,6 +968,9 @@ if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "-?" ] || [ "$1" = "/h" ] || [ "$1
     echo "[FILTER]            List filenames in the image to compare, works for jars, zips, libs and execs"
     echo "Example:"
     echo "bash ./common/bin/compareimages.sh CodePointIM.jar"
+    echo ""
+    echo "-2zips <file1> <file2> Compare two zip files only"
+    echo ""
     exit 10
 fi
 
@@ -1023,6 +1032,13 @@ while [ -n "$1" ]; do
         -execs)
             CMP_EXECS=true
             ;;
+        -2zips)
+            CMP_2_ZIPS=true
+            THIS_FILE=$2
+            OTHER_FILE=$3
+            shift
+            shift
+            ;;
         *)
             CMP_NAMES=false
             CMP_PERMS=false
@@ -1040,6 +1056,18 @@ while [ -n "$1" ]; do
     esac
     shift
 done
+
+if [ "$CMP_2_ZIPS" = "true" ]; then
+    THIS_DIR="$(dirname $THIS_FILE)"
+    THIS_DIR="$(cd "$THIS_DIR" && pwd )"
+    OTHER_DIR="$(dirname $OTHER_FILE)"
+    OTHER_DIR="$(cd "$OTHER_DIR" && pwd )"
+    THIS_FILE_NAME="$(basename $THIS_FILE)"
+    OTHER_FILE_NAME="$(basename $OTHER_FILE)"
+    echo Comparing $THIS_DIR/$THIS_FILE_NAME and $OTHER_DIR/$OTHER_FILE_NAME
+    compare_zip_file $THIS_DIR $OTHER_DIR $COMPARE_ROOT/2zips $THIS_FILE_NAME $OTHER_FILE_NAME
+    exit
+fi
 
 if [ "$CMP_NAMES" = "false" ] && [ "$CMP_TYPES" = "false" ] && [ "$CMP_PERMS" = "false" ] && [ "$CMP_GENERAL" = "false" ] && [ "$CMP_ZIPS" = "false" ] && [ "$CMP_JARS" = "false" ] && [ "$CMP_LIBS" = "false" ] && [ "$CMP_EXECS" = "false" ]; then
     CMP_NAMES=true
