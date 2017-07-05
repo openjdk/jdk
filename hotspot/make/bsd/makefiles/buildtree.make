@@ -114,10 +114,12 @@ endif
 # Get things from the platform file.
 COMPILER	= $(shell sed -n 's/^compiler[ 	]*=[ 	]*//p' $(PLATFORM_FILE))
 
+# dtracefiles is used on BSD versions that implement Dtrace (like MacOS X)
 SIMPLE_DIRS	= \
 	$(PLATFORM_DIR)/generated/dependencies \
 	$(PLATFORM_DIR)/generated/adfiles \
-	$(PLATFORM_DIR)/generated/jvmtifiles
+	$(PLATFORM_DIR)/generated/jvmtifiles \
+	$(PLATFORM_DIR)/generated/dtracefiles
 
 TARGETS      = debug fastdebug jvmg optimized product profiled
 SUBMAKE_DIRS = $(addprefix $(PLATFORM_DIR)/,$(TARGETS))
@@ -125,7 +127,9 @@ SUBMAKE_DIRS = $(addprefix $(PLATFORM_DIR)/,$(TARGETS))
 # For dependencies and recursive makes.
 BUILDTREE_MAKE	= $(GAMMADIR)/make/$(OS_FAMILY)/makefiles/buildtree.make
 
-BUILDTREE_TARGETS = Makefile flags.make flags_vm.make vm.make adlc.make jvmti.make sa.make \
+# dtrace.make is used on BSD versions that implement Dtrace (like MacOS X)
+BUILDTREE_TARGETS = Makefile flags.make flags_vm.make vm.make adlc.make \
+	jvmti.make sa.make dtrace.make \
         env.sh env.csh jdkpath.sh .dbxrc test_gamma
 
 BUILDTREE_VARS	= GAMMADIR=$(GAMMADIR) OS_FAMILY=$(OS_FAMILY) \
@@ -153,6 +157,13 @@ ifndef HOTSPOT_VM_DISTRO
   else
     include $(GAMMADIR)/make/openjdk_distro
   endif
+endif
+
+# MACOSX FIXME: we should be able to run test_gamma (see MACOSX_PORT-214)
+ifdef ALWAYS_PASS_TEST_GAMMA
+  TEST_GAMMA_STATUS= echo 'exit 0';
+else
+  TEST_GAMMA_STATUS=
 endif
 
 BUILDTREE_VARS += HOTSPOT_RELEASE_VERSION=$(HS_BUILD_VER) HOTSPOT_BUILD_VERSION=  JRE_RELEASE_VERSION=$(JRE_RELEASE_VERSION)
@@ -314,6 +325,16 @@ sa.make: $(BUILDTREE_MAKE)
 	echo "include \$$(GAMMADIR)/make/$(OS_FAMILY)/makefiles/$(@F)"; \
 	) > $@
 
+dtrace.make: $(BUILDTREE_MAKE)
+	@echo Creating $@ ...
+	$(QUIETLY) ( \
+	$(BUILDTREE_COMMENT); \
+	echo; \
+	echo include flags.make; \
+	echo; \
+	echo "include \$$(GAMMADIR)/make/$(OS_FAMILY)/makefiles/$(@F)"; \
+	) > $@
+
 env.sh: $(BUILDTREE_MAKE)
 	@echo Creating $@ ...
 	$(QUIETLY) ( \
@@ -390,7 +411,6 @@ test_gamma:  $(BUILDTREE_MAKE) $(GAMMADIR)/make/test/Queens.java
 	echo '#!/bin/sh'; \
 	$(BUILDTREE_COMMENT); \
 	echo '. ./env.sh'; \
-	echo "exit 0;"; \
 	echo "if [ \"$(CROSS_COMPILE_ARCH)\" != \"\" ]; then { $(CROSS_COMPILING_MSG); exit 0; }; fi"; \
 	echo "if [ -z \$$JAVA_HOME ]; then { $(NO_JAVA_HOME_MSG); exit 0; }; fi"; \
 	echo "if ! \$${JAVA_HOME}/bin/java $(JAVA_FLAG) -fullversion 2>&1 > /dev/null"; \
@@ -401,6 +421,7 @@ test_gamma:  $(BUILDTREE_MAKE) $(GAMMADIR)/make/test/Queens.java
 	echo "\$${JAVA_HOME}/bin/javac -d . $(GAMMADIR)/make/test/Queens.java"; \
 	echo '[ -f gamma_g ] && { gamma=gamma_g; }'; \
 	echo './$${gamma:-gamma} $(TESTFLAGS) Queens < /dev/null'; \
+	$(TEST_GAMMA_STATUS) \
 	) > $@
 	$(QUIETLY) chmod +x $@
 

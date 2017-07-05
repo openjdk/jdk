@@ -30,17 +30,49 @@ OS_VENDOR = $(shell uname -s)
 # When cross-compiling the ALT_COMPILER_PATH points
 # to the cross-compilation toolset
 ifdef CROSS_COMPILE_ARCH
-CXX = $(ALT_COMPILER_PATH)/g++
-CPP = $(ALT_COMPILER_PATH)/g++
-CC  = $(ALT_COMPILER_PATH)/gcc
-HOSTCPP = g++
-HOSTCC  = gcc
-else
-CXX ?= g++
-CPP = $(CXX)
-CC  ?= gcc
-HOSTCPP = $(CPP)
-HOSTCC  = $(CPP)
+ CPP = $(ALT_COMPILER_PATH)/g++
+ CC  = $(ALT_COMPILER_PATH)/gcc
+ HOSTCPP = g++
+ HOSTCC  = gcc
+else ifneq ($(OS_VENDOR), Darwin)
+ CXX = g++
+ CPP = $(CXX)
+ CC  = gcc
+ HOSTCPP = $(CPP)
+ HOSTCC  = $(CC)
+endif
+
+# i486 hotspot requires -mstackrealign on Darwin.
+# llvm-gcc supports this in Xcode 3.2.6 and 4.0.
+# gcc-4.0 supports this on earlier versions.
+# Prefer llvm-gcc where available.
+ifeq ($(OS_VENDOR), Darwin)
+  ifeq ($(origin CXX), default)
+   CXX = llvm-g++
+  endif
+  ifeq ($(origin CC), default)
+   CC  = llvm-gcc
+  endif
+  CPP  = $(CXX)
+
+  ifeq ($(ARCH), i486)
+  LLVM_SUPPORTS_STACKREALIGN := $(shell \
+   [ "0"`llvm-gcc -v 2>&1 | grep LLVM | sed -E "s/.*LLVM build ([0-9]+).*/\1/"` -gt "2333" ] \
+   && echo true || echo false)
+
+  ifeq ($(LLVM_SUPPORTS_STACKREALIGN), true)
+    CXX32 ?= llvm-g++
+    CC32  ?= llvm-gcc
+  else
+    CXX32 ?= g++-4.0
+    CC32  ?= gcc-4.0
+  endif
+  CPP = $(CXX32)
+  CC  = $(CC32)
+  endif
+
+  HOSTCPP = $(CPP)
+  HOSTCC  = $(CC)
 endif
 
 AS   = $(CC) -c -x assembler-with-cpp
@@ -130,7 +162,9 @@ else
 endif
 
 # Compiler warnings are treated as errors
-WARNINGS_ARE_ERRORS = -Werror
+ifneq ($(COMPILER_WARNINGS_FATAL),false)
+  WARNINGS_ARE_ERRORS = -Werror
+endif
 
 # Except for a few acceptable ones
 # Since GCC 4.3, -Wconversion has changed its meanings to warn these implicit
@@ -152,7 +186,13 @@ endif
 
 
 # The flags to use for an Optimized g++ build
-OPT_CFLAGS += -O3
+ifeq ($(OS_VENDOR), Darwin)
+  # use -Os by default, unless -O3 can be proved to be worth the cost, as per policy
+  # <http://wikis.sun.com/display/OpenJDK/Mac+OS+X+Port+Compilers>
+  OPT_CFLAGS += -Os
+else
+  OPT_CFLAGS += -O3
+endif
 
 # Hotspot uses very unstrict aliasing turn this optimization off
 OPT_CFLAGS += -fno-strict-aliasing
@@ -212,7 +252,7 @@ ifeq ($(OS_VENDOR), Darwin)
   SONAMEFLAG =
 
   # Build shared library
-  SHARED_FLAG = -dynamiclib $(VM_PICFLAG)
+  SHARED_FLAG = -Wl,-install_name,@rpath/$(@F) -dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $(VM_PICFLAG)
 
   # Keep symbols even they are not used
   #AOUT_FLAGS += -Xlinker -export-dynamic

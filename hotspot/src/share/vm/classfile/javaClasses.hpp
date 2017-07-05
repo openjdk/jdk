@@ -188,6 +188,7 @@ class java_lang_Class : AllStatic {
   static oop  create_basic_type_mirror(const char* basic_type_name, BasicType type, TRAPS);
   // Conversion
   static klassOop as_klassOop(oop java_class);
+  static void set_klass(oop java_class, klassOop klass);
   static BasicType as_BasicType(oop java_class, klassOop* reference_klass = NULL);
   static BasicType as_BasicType(oop java_class, KlassHandle* reference_klass) {
     klassOop refk_oop = NULL;
