@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,14 @@
 #include "gc_implementation/shared/cSpaceCounters.hpp"
 #include "gc_implementation/shared/generationCounters.hpp"
 #include "gc_implementation/shared/copyFailedInfo.hpp"
+#include "memory/generation.hpp"
 #include "utilities/stack.hpp"
 
 class ContiguousSpace;
 class ScanClosure;
 class STWGCTimer;
+class CSpaceCounters;
+class ScanWeakRefClosure;
 
 // DefNewGeneration is a young generation containing eden, from- and
 // to-space.
@@ -42,7 +45,7 @@ class DefNewGeneration: public Generation {
   friend class VMStructs;
 
 protected:
-  Generation* _next_gen;
+  Generation* _old_gen;
   uint        _tenuring_threshold;   // Tenuring threshold for next collection.
   ageTable    _age_table;
   // Size of object to pretenure in words; command line provides bytes

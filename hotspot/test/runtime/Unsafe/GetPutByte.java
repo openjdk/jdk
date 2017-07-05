@@ -25,6 +25,8 @@
  * @test
  * @summary Verify behaviour of Unsafe.get/putByte
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run main GetPutByte
  */
 

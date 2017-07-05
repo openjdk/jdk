@@ -104,11 +104,11 @@ public final class NativeInt32Array extends ArrayBufferView {
 
         private void setElem(final int index, final int elem) {
             try {
-                nb.put(index, elem);
-               } catch (final IndexOutOfBoundsException e) {
-                   if (index < 0) {
-                      throw new ClassCastException();
-                 }
+                if (index < nb.limit()) {
+                    nb.put(index, elem);
+                }
+            } catch (final IndexOutOfBoundsException e) {
+                throw new ClassCastException();
             }
         }
 

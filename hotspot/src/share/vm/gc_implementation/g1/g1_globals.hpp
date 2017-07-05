@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@
           "If true, enable reference discovery during concurrent "          \
           "marking and reference processing at the end of remark.")         \
                                                                             \
-  product(intx, G1SATBBufferSize, 1*K,                                      \
+  product(size_t, G1SATBBufferSize, 1*K,                                    \
           "Number of entries in an SATB log buffer.")                       \
                                                                             \
   develop(intx, G1SATBProcessCompletedThreshold, 20,                        \
@@ -112,7 +112,7 @@
             "Prints the liveness information for all regions in the heap "  \
             "at the end of a marking cycle.")                               \
                                                                             \
-  product(intx, G1UpdateBufferSize, 256,                                    \
+  product(size_t, G1UpdateBufferSize, 256,                                  \
           "Size of an update buffer")                                       \
                                                                             \
   product(intx, G1ConcRefinementYellowZone, 0,                              \
@@ -148,7 +148,7 @@
           "Select green, yellow and red zones adaptively to meet the "      \
           "the pause requirements.")                                        \
                                                                             \
-  product(uintx, G1ConcRSLogCacheSize, 10,                                  \
+  product(size_t, G1ConcRSLogCacheSize, 10,                                 \
           "Log base 2 of the length of conc RS hot-card cache.")            \
                                                                             \
   product(uintx, G1ConcRSHotCardLimit, 4,                                   \
@@ -210,7 +210,7 @@
           "When set, G1 will fail when it encounters an FP 'error', "       \
           "so as to allow debugging")                                       \
                                                                             \
-  product(uintx, G1HeapRegionSize, 0,                                       \
+  product(size_t, G1HeapRegionSize, 0,                                      \
           "Size of the G1 regions.")                                        \
                                                                             \
   product(uintx, G1ConcRefinementThreads, 0,                                \
@@ -220,7 +220,7 @@
   develop(bool, G1VerifyCTCleanup, false,                                   \
           "Verify card table cleanup.")                                     \
                                                                             \
-  product(uintx, G1RSetScanBlockSize, 64,                                   \
+  product(size_t, G1RSetScanBlockSize, 64,                                  \
           "Size of a work unit of cards claimed by a worker thread"         \
           "during RSet scanning.")                                          \
                                                                             \

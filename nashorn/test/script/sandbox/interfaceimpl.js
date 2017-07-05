@@ -29,8 +29,8 @@
  * @security
  */
 
-var Window = Java.type("jdk.nashorn.api.scripting.Window");
-var WindowEventHandler = Java.type("jdk.nashorn.api.scripting.WindowEventHandler");
+var Window = Java.type("jdk.nashorn.api.scripting.test.Window");
+var WindowEventHandler = Java.type("jdk.nashorn.api.scripting.test.WindowEventHandler");
 
 var w = new Window();
 

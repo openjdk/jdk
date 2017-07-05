@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,52 +111,127 @@ inflate_file(int fd, zentry *entry, int *size_out)
     return (NULL);
 }
 
-static jboolean zip64_present = JNI_FALSE;
+/*
+ * Implementation notes:
+ *
+ * This is a zip format reader for seekable files, that tolerates
+ * leading and trailing garbage, and tolerates having had internal
+ * offsets adjusted for leading garbage (as with Info-Zip's zip -A).
+ *
+ * We find the end header by scanning backwards from the end of the
+ * file for the end signature.  This may fail in the presence of
+ * trailing garbage or a ZIP file comment that contains binary data.
+ * Similarly, the ZIP64 end header may need to be located by scanning
+ * backwards from the end header.  It may be misidentified, but this
+ * is very unlikely to happen in practice without adversarial input.
+ *
+ * The zip file format is documented at:
+ * https://www.pkware.com/documents/casestudies/APPNOTE.TXT
+ *
+ * TODO: more informative error messages
+ */
+
+/** Reads count bytes from fd at position pos into given buffer. */
+static jboolean
+readAt(int fd, jlong pos, unsigned int count, void *buf) {
+    return (pos >= 0
+            && JLI_Lseek(fd, pos, SEEK_SET) == pos
+            && read(fd, buf, count) == (jlong) count);
+}
+
 
 /*
- * Checks to see if we have ZIP64 archive, and save
- * the check for later use
+ * Tells whether given header values (obtained from either ZIP64 or
+ * non-ZIP64 header) appear to be correct, by checking the first LOC
+ * and CEN headers.
+ */
+static jboolean
+is_valid_end_header(int fd, jlong endpos,
+                    jlong censiz, jlong cenoff, jlong entries) {
+    Byte cenhdr[CENHDR];
+    Byte lochdr[LOCHDR];
+    // Expected offset of the first central directory header
+    jlong censtart = endpos - censiz;
+    // Expected position within the file that offsets are relative to
+    jlong base_offset = endpos - (censiz + cenoff);
+    return censtart >= 0 && cenoff >= 0 &&
+        (censiz == 0 ||
+         // Validate first CEN and LOC header signatures.
+         // Central directory must come directly before the end header.
+         (readAt(fd, censtart, CENHDR, cenhdr)
+          && CENSIG_AT(cenhdr)
+          && readAt(fd, base_offset + CENOFF(cenhdr), LOCHDR, lochdr)
+          && LOCSIG_AT(lochdr)
+          && CENNAM(cenhdr) == LOCNAM(lochdr)));
+}
+
+/*
+ * Tells whether p appears to be pointing at a valid ZIP64 end header.
+ * Values censiz, cenoff, and entries are the corresponding values
+ * from the non-ZIP64 end header.  We perform extra checks to avoid
+ * misidentifying data from the last entry as a ZIP64 end header.
+ */
+static jboolean
+is_zip64_endhdr(int fd, const Byte *p, jlong end64pos,
+                jlong censiz, jlong cenoff, jlong entries) {
+    if (ZIP64_ENDSIG_AT(p)) {
+        jlong censiz64 = ZIP64_ENDSIZ(p);
+        jlong cenoff64 = ZIP64_ENDOFF(p);
+        jlong entries64 = ZIP64_ENDTOT(p);
+        return (censiz64 == censiz || censiz == ZIP64_MAGICVAL)
+            && (cenoff64 == cenoff || cenoff == ZIP64_MAGICVAL)
+            && (entries64 == entries || entries == ZIP64_MAGICCOUNT)
+            && is_valid_end_header(fd, end64pos, censiz64, cenoff64, entries64);
+    }
+    return JNI_FALSE;
+}
+
+/*
+ * Given a non-ZIP64 end header located at endhdr and endpos, look for
+ * an adjacent ZIP64 end header, finding the base offset and censtart
+ * from the ZIP64 header if available, else from the non-ZIP64 header.
+ * @return 0 if successful, -1 in case of failure
  */
 static int
-haveZIP64(Byte *p) {
-    jlong cenlen, cenoff, centot;
-    cenlen = ENDSIZ(p);
-    cenoff = ENDOFF(p);
-    centot = ENDTOT(p);
-    zip64_present = (cenlen == ZIP64_MAGICVAL ||
-                     cenoff == ZIP64_MAGICVAL ||
-                     centot == ZIP64_MAGICCOUNT);
-    return zip64_present;
-}
-
-static jlong
-find_end64(int fd, Byte *ep, jlong pos)
+find_positions64(int fd, const Byte * const endhdr, const jlong endpos,
+                 jlong* base_offset, jlong* censtart)
 {
+    jlong censiz = ENDSIZ(endhdr);
+    jlong cenoff = ENDOFF(endhdr);
+    jlong entries = ENDTOT(endhdr);
     jlong end64pos;
-    jlong bytes;
-    if ((end64pos = JLI_Lseek(fd, pos - ZIP64_LOCHDR, SEEK_SET)) < (jlong)0)
-        return -1;
-    if ((bytes = read(fd, ep, ZIP64_LOCHDR)) < 0)
-        return -1;
-    if (ZIP64_LOCSIG_AT(ep))
-       return end64pos;
-    return -1;
+    Byte buf[ZIP64_ENDHDR + ZIP64_LOCHDR];
+    if (censiz + cenoff != endpos
+        && (end64pos = endpos - sizeof(buf)) >= (jlong)0
+        && readAt(fd, end64pos, sizeof(buf), buf)
+        && ZIP64_LOCSIG_AT(buf + ZIP64_ENDHDR)
+        && (jlong) ZIP64_LOCDSK(buf + ZIP64_ENDHDR) == ENDDSK(endhdr)
+        && (is_zip64_endhdr(fd, buf, end64pos, censiz, cenoff, entries)
+            || // A variable sized "zip64 extensible data sector" ?
+            ((end64pos = ZIP64_LOCOFF(buf + ZIP64_ENDHDR)) >= (jlong)0
+             && readAt(fd, end64pos, ZIP64_ENDHDR, buf)
+             && is_zip64_endhdr(fd, buf, end64pos, censiz, cenoff, entries)))
+        ) {
+        *censtart = end64pos - ZIP64_ENDSIZ(buf);
+        *base_offset = *censtart - ZIP64_ENDOFF(buf);
+    } else {
+        if (!is_valid_end_header(fd, endpos, censiz, cenoff, entries))
+            return -1;
+        *censtart = endpos - censiz;
+        *base_offset = *censtart - cenoff;
+    }
+    return 0;
 }
 
 /*
- * A very little used routine to handle the case that zip file has
- * a comment at the end. Believe it or not, the only way to find the
- * END record is to walk backwards, byte by bloody byte looking for
- * the END record signature.
+ * Finds the base offset and censtart of the zip file.
  *
- *      fd:     File descriptor of the jar file.
- *      eb:     Pointer to a buffer to receive a copy of the END header.
- *
- * Returns the offset of the END record in the file on success,
- * -1 on failure.
+ * @param fd file descriptor of the jar file
+ * @param eb scratch buffer
+ * @return 0 if successful, -1 in case of failure
  */
-static jlong
-find_end(int fd, Byte *eb)
+static int
+find_positions(int fd, Byte *eb, jlong* base_offset, jlong* censtart)
 {
     jlong   len;
     jlong   pos;
@@ -174,10 +249,10 @@ find_end(int fd, Byte *eb)
      */
     if ((pos = JLI_Lseek(fd, -ENDHDR, SEEK_END)) < (jlong)0)
         return (-1);
-    if ((bytes = read(fd, eb, ENDHDR)) < 0)
+    if (read(fd, eb, ENDHDR) < 0)
         return (-1);
     if (ENDSIG_AT(eb)) {
-        return haveZIP64(eb) ? find_end64(fd, eb, pos) : pos;
+        return find_positions64(fd, eb, pos, base_offset, censtart);
     }
 
     /*
@@ -193,7 +268,13 @@ find_end(int fd, Byte *eb)
         return (-1);
     if ((buffer = malloc(END_MAXLEN)) == NULL)
         return (-1);
-    if ((bytes = read(fd, buffer, len)) < 0) {
+
+    /*
+     * read() on windows takes an unsigned int for count. Casting len
+     * to an unsigned int here is safe since it is guaranteed to be
+     * less than END_MAXLEN.
+     */
+    if ((bytes = read(fd, buffer, (unsigned int)len)) < 0) {
         free(buffer);
         return (-1);
     }
@@ -208,7 +289,7 @@ find_end(int fd, Byte *eb)
             (void) memcpy(eb, cp, ENDHDR);
             free(buffer);
             pos = flen - (endpos - cp);
-            return haveZIP64(eb) ? find_end64(fd, eb, pos) : pos;
+            return find_positions64(fd, eb, pos, base_offset, censtart);
         }
     free(buffer);
     return (-1);
@@ -216,82 +297,6 @@ find_end(int fd, Byte *eb)
 
 #define BUFSIZE (3 * 65536 + CENHDR + SIGSIZ)
 #define MINREAD 1024
-
-/*
- * Computes and positions at the start of the CEN header, ie. the central
- * directory, this will also return the offset if there is a zip file comment
- * at the end of the archive, for most cases this would be 0.
- */
-static jlong
-compute_cen(int fd, Byte *bp)
-{
-    int bytes;
-    Byte *p;
-    jlong base_offset;
-    jlong offset;
-    char buffer[MINREAD];
-    p = (Byte*) buffer;
-    /*
-     * Read the END Header, which is the starting point for ZIP files.
-     * (Clearly designed to make writing a zip file easier than reading
-     * one. Now isn't that precious...)
-     */
-    if ((base_offset = find_end(fd, bp)) == -1) {
-        return (-1);
-    }
-    p = bp;
-    /*
-     * There is a historical, but undocumented, ability to allow for
-     * additional "stuff" to be prepended to the zip/jar file. It seems
-     * that this has been used to prepend an actual java launcher
-     * executable to the jar on Windows.  Although this is just another
-     * form of statically linking a small piece of the JVM to the
-     * application, we choose to continue to support it.  Note that no
-     * guarantees have been made (or should be made) to the customer that
-     * this will continue to work.
-     *
-     * Therefore, calculate the base offset of the zip file (within the
-     * expanded file) by assuming that the central directory is followed
-     * immediately by the end record.
-     */
-    if (zip64_present) {
-        if ((offset = ZIP64_LOCOFF(p)) < (jlong)0) {
-            return -1;
-        }
-        if (JLI_Lseek(fd, offset, SEEK_SET) < (jlong) 0) {
-            return (-1);
-        }
-        if ((bytes = read(fd, buffer, MINREAD)) < 0) {
-            return (-1);
-        }
-        if (!ZIP64_ENDSIG_AT(buffer)) {
-            return -1;
-        }
-        if ((offset = ZIP64_ENDOFF(buffer)) < (jlong)0) {
-            return -1;
-        }
-        if (JLI_Lseek(fd, offset, SEEK_SET) < (jlong)0) {
-            return (-1);
-        }
-        p = (Byte*) buffer;
-        base_offset = base_offset - ZIP64_ENDSIZ(p) - ZIP64_ENDOFF(p) - ZIP64_ENDHDR;
-    } else {
-        base_offset = base_offset - ENDSIZ(p) - ENDOFF(p);
-        /*
-         * The END Header indicates the start of the Central Directory
-         * Headers. Remember that the desired Central Directory Header (CEN)
-         * will almost always be the second one and the first one is a small
-         * directory entry ("META-INF/"). Keep the code optimized for
-         * that case.
-         *
-         * Seek to the beginning of the Central Directory.
-         */
-        if (JLI_Lseek(fd, base_offset + ENDOFF(p), SEEK_SET) < (jlong) 0) {
-            return (-1);
-        }
-    }
-    return base_offset;
-}
 
 /*
  * Locate the manifest file with the zip/jar file.
@@ -327,7 +332,23 @@ find_file(int fd, zentry *entry, const char *file_name)
     int     res;
     int     entry_size;
     int     read_size;
+
+    /*
+     * The (imaginary) position within the file relative to which
+     * offsets within the zip file refer.  This is usually the
+     * location of the first local header (the start of the zip data)
+     * (which in turn is usually 0), but if the zip file has content
+     * prepended, then it will be either 0 or the length of the
+     * prepended content, depending on whether or not internal offsets
+     * have been adjusted (via e.g. zip -A).  May be negative if
+     * content is prepended, zip -A is run, then the prefix is
+     * detached!
+     */
     jlong   base_offset;
+
+    /** The position within the file of the start of the central directory. */
+    jlong   censtart;
+
     Byte    *p;
     Byte    *bp;
     Byte    *buffer;
@@ -338,9 +359,11 @@ find_file(int fd, zentry *entry, const char *file_name)
     }
 
     bp = buffer;
-    base_offset = compute_cen(fd, bp);
-    if (base_offset == -1) {
-        free(buffer);
+
+    if (find_positions(fd, bp, &base_offset, &censtart) == -1) {
+        return -1;
+    }
+    if (JLI_Lseek(fd, censtart, SEEK_SET) < (jlong) 0) {
         return -1;
     }
 
@@ -574,7 +597,7 @@ JLI_ParseManifest(char *jarfile, manifest_info *info)
     info->jre_version = NULL;
     info->jre_restrict_search = 0;
     info->splashscreen_image_file_name = NULL;
-    if (rc = find_file(fd, &entry, manifest_name) != 0) {
+    if ((rc = find_file(fd, &entry, manifest_name)) != 0) {
         close(fd);
         return (-2);
     }
@@ -675,7 +698,7 @@ JLI_ManifestIterate(const char *jarfile, attribute_closure ac, void *user_data)
         return (-1);
     }
 
-    if (rc = find_file(fd, &entry, manifest_name) != 0) {
+    if ((rc = find_file(fd, &entry, manifest_name)) != 0) {
         close(fd);
         return (-2);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_PARNEW_PARNEWGENERATION_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_PARNEW_PARNEWGENERATION_HPP
 
+#include "gc_implementation/parNew/parOopClosures.hpp"
 #include "gc_implementation/shared/gcTrace.hpp"
 #include "gc_implementation/shared/parGCAllocBuffer.hpp"
 #include "gc_implementation/shared/copyFailedInfo.hpp"
@@ -233,13 +234,13 @@ class ParScanThreadState {
 class ParNewGenTask: public AbstractGangTask {
  private:
   ParNewGeneration*            _gen;
-  Generation*                  _next_gen;
+  Generation*                  _old_gen;
   HeapWord*                    _young_old_boundary;
   class ParScanThreadStateSet* _state_set;
 
 public:
   ParNewGenTask(ParNewGeneration*      gen,
-                Generation*            next_gen,
+                Generation*            old_gen,
                 HeapWord*              young_old_boundary,
                 ParScanThreadStateSet* state_set);
 
@@ -419,8 +420,6 @@ class ParNewGeneration: public DefNewGeneration {
   }
 
   static oop real_forwardee(oop obj);
-
-  DEBUG_ONLY(static bool is_legal_forward_ptr(oop p);)
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_PARNEW_PARNEWGENERATION_HPP

@@ -144,8 +144,6 @@ void JLI_ReportMessage(const char * message, ...);
 void JLI_ReportExceptionDescription(JNIEnv * env);
 void PrintMachineDependentOptions();
 
-const char *jlong_format_specifier();
-
 /*
  * Block current thread and continue execution in new thread
  */

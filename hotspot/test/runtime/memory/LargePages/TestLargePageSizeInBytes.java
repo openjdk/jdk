@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
  * @summary Tests that the flag -XX:LargePageSizeInBytes does not cause warnings on Solaris
  * @bug 8049536
  * @library /testlibrary
+ * @modules java.base/sun.misc
+ *          java.management
  * @run driver TestLargePageSizeInBytes
  */
 

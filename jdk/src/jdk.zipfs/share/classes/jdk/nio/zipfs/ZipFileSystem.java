@@ -1060,7 +1060,7 @@ class ZipFileSystem extends FileSystem {
         int pos = 0;
         int limit = cen.length - ENDHDR;
         while (pos < limit) {
-            if (CENSIG(cen, pos) != CENSIG)
+            if (!cenSigAt(cen, pos))
                 zerror("invalid CEN header (bad signature)");
             int method = CENHOW(cen, pos);
             int nlen   = CENNAM(cen, pos);
@@ -1894,7 +1894,7 @@ class ZipFileSystem extends FileSystem {
             throws IOException
         {
             byte[] cen = zipfs.cen;
-            if (CENSIG(cen, pos) != CENSIG)
+            if (!cenSigAt(cen, pos))
                 zerror("invalid CEN header (bad signature)");
             versionMade = CENVEM(cen, pos);
             version     = CENVER(cen, pos);
@@ -2057,9 +2057,9 @@ class ZipFileSystem extends FileSystem {
             assert (buf.length >= LOCHDR);
             if (zipfs.readFullyAt(buf, 0, LOCHDR , pos) != LOCHDR)
                 throw new ZipException("loc: reading failed");
-            if (LOCSIG(buf) != LOCSIG)
+            if (!locSigAt(buf, 0))
                 throw new ZipException("loc: wrong sig ->"
-                                       + Long.toString(LOCSIG(buf), 16));
+                                       + Long.toString(getSig(buf, 0), 16));
             //startPos = pos;
             version  = LOCVER(buf);
             flag     = LOCFLG(buf);
@@ -2289,9 +2289,9 @@ class ZipFileSystem extends FileSystem {
                     if (zipfs.readFullyAt(buf, 0, buf.length , locoff)
                         != buf.length)
                         throw new ZipException("loc: reading failed");
-                    if (LOCSIG(buf) != LOCSIG)
+                    if (!locSigAt(buf, 0))
                         throw new ZipException("loc: wrong sig ->"
-                                           + Long.toString(LOCSIG(buf), 16));
+                                           + Long.toString(getSig(buf, 0), 16));
 
                     int locElen = LOCEXT(buf);
                     if (locElen < 9)    // EXTT is at lease 9 bytes

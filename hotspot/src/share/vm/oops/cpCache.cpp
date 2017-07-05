@@ -35,9 +35,6 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "utilities/macros.hpp"
-#if INCLUDE_ALL_GCS
-# include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
-#endif // INCLUDE_ALL_GCS
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
