@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6330287 6331386
+ * @bug 6330287 6331386 7044060
  * @summary verify that DHKeyPairGenerator returns keys of the expected size
  * (modulus and exponent)
  * -and-
@@ -57,7 +57,8 @@ public class TestExponentSize {
      * Sizes and values for various lengths.
      */
     private enum Sizes {
-        two56(256), three84(384), five12(512), seven68(768), ten24(1024);
+        two56(256), three84(384), five12(512), seven68(768), ten24(1024),
+        twenty48(2048);
 
         private final int intSize;
         private final BigInteger bigIntValue;
@@ -82,7 +83,8 @@ public class TestExponentSize {
         KeyPair kp;
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("DH", "SunJCE");
 
-        // Sun's default uses a default psize of 1024/lsize of 512
+        // Sun's default uses a default psize of 1024 and
+        // lsize of (pSize / 2) but at least 384 bits
         kp = kpg.generateKeyPair();
         checkKeyPair(kp, Sizes.ten24, Sizes.five12);
 
@@ -113,6 +115,20 @@ public class TestExponentSize {
         kpg.initialize(Sizes.seven68.getIntSize());
         kp = kpg.generateKeyPair();
         checkKeyPair(kp, Sizes.seven68, Sizes.three84);
+
+        // test w/ only pSize
+        kpg.initialize(Sizes.twenty48.getIntSize());
+        kp = kpg.generateKeyPair();
+        checkKeyPair(kp, Sizes.twenty48, Sizes.ten24);
+
+        publicKey = (DHPublicKey)kp.getPublic();
+        p = publicKey.getParams().getP();
+        g = publicKey.getParams().getG();
+
+        // test w/ all values specified
+        kpg.initialize(new DHParameterSpec(p, g, Sizes.five12.getIntSize()));
+        kp = kpg.generateKeyPair();
+        checkKeyPair(kp, Sizes.twenty48, Sizes.five12);
 
         System.out.println("OK");
     }

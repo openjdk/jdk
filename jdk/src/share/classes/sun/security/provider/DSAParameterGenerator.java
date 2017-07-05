@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,12 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.InvalidParameterException;
+import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.DSAParameterSpec;
+import java.security.spec.DSAGenParameterSpec;
 
 /**
  * This class generates parameters for the DSA algorithm. It uses a default
@@ -54,8 +56,14 @@ import java.security.spec.DSAParameterSpec;
 
 public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
 
-    // the modulus length
-    private int modLen = 1024; // default
+    // the default parameters
+    private static final DSAGenParameterSpec DEFAULTS =
+        new DSAGenParameterSpec(1024, 160, 160);
+
+    // the length of prime P, subPrime Q, and seed in bits
+    private int valueL = -1;
+    private int valueN = -1;
+    private int seedLen = -1;
 
     // the source of randomness
     private SecureRandom random;
@@ -65,11 +73,7 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
     private static final BigInteger ONE = BigInteger.valueOf(1);
     private static final BigInteger TWO = BigInteger.valueOf(2);
 
-    // Make a SHA-1 hash function
-    private SHA sha;
-
     public DSAParameterGenerator() {
-        this.sha = new SHA();
     }
 
     /**
@@ -80,19 +84,18 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
      * @param random the source of randomness
      */
     protected void engineInit(int strength, SecureRandom random) {
-        /*
-         * Bruce Schneier, "Applied Cryptography", 2nd Edition,
-         * Description of DSA:
-         * [...] The algorithm uses the following parameter:
-         * p=a prime number L bits long, when L ranges from 512 to 1024 and is
-         * a multiple of 64. [...]
-         */
-        if ((strength < 512) || (strength > 1024) || (strength % 64 != 0)) {
+        if ((strength >= 512) && (strength <= 1024) && (strength % 64 == 0)) {
+            this.valueN = 160;
+        } else if (strength == 2048) {
+            this.valueN = 224;
+//      } else if (strength == 3072) {
+//          this.valueN = 256;
+        } else {
             throw new InvalidParameterException
-                ("Prime size must range from 512 to 1024 "
-                 + "and be a multiple of 64");
+                ("Prime size should be 512 - 1024, or 2048");
         }
-        this.modLen = strength;
+        this.valueL = strength;
+        this.seedLen = valueN;
         this.random = random;
     }
 
@@ -100,7 +103,7 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
      * Initializes this parameter generator with a set of
      * algorithm-specific parameter generation values.
      *
-     * @param params the set of algorithm-specific parameter generation values
+     * @param genParamSpec the set of algorithm-specific parameter generation values
      * @param random the source of randomness
      *
      * @exception InvalidAlgorithmParameterException if the given parameter
@@ -109,7 +112,19 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
     protected void engineInit(AlgorithmParameterSpec genParamSpec,
                               SecureRandom random)
         throws InvalidAlgorithmParameterException {
+        if (!(genParamSpec instanceof DSAGenParameterSpec)) {
             throw new InvalidAlgorithmParameterException("Invalid parameter");
+        }
+        DSAGenParameterSpec dsaGenParams = (DSAGenParameterSpec) genParamSpec;
+        if (dsaGenParams.getPrimePLength() > 2048) {
+            throw new InvalidParameterException
+                ("Prime size should be 512 - 1024, or 2048");
+        }
+        // directly initialize using the already validated values
+        this.valueL = dsaGenParams.getPrimePLength();
+        this.valueN = dsaGenParams.getSubprimeQLength();
+        this.seedLen = dsaGenParams.getSeedLength();
+        this.random = random;
     }
 
     /**
@@ -123,15 +138,21 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
             if (this.random == null) {
                 this.random = new SecureRandom();
             }
-
-            BigInteger[] pAndQ = generatePandQ(this.random, this.modLen);
+            if (valueL == -1) {
+                try {
+                    engineInit(DEFAULTS, this.random);
+                } catch (InvalidAlgorithmParameterException iape) {
+                    // should never happen
+                }
+            }
+            BigInteger[] pAndQ = generatePandQ(this.random, valueL,
+                                               valueN, seedLen);
             BigInteger paramP = pAndQ[0];
             BigInteger paramQ = pAndQ[1];
             BigInteger paramG = generateG(paramP, paramQ);
 
-            DSAParameterSpec dsaParamSpec = new DSAParameterSpec(paramP,
-                                                                 paramQ,
-                                                                 paramG);
+            DSAParameterSpec dsaParamSpec =
+                new DSAParameterSpec(paramP, paramQ, paramG);
             algParams = AlgorithmParameters.getInstance("DSA", "SUN");
             algParams.init(dsaParamSpec);
         } catch (InvalidParameterSpecException e) {
@@ -156,102 +177,98 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
      *
      * @param random the source of randomness to generate the
      * seed
-     * @param L the size of <code>p</code>, in bits.
+     * @param valueL the size of <code>p</code>, in bits.
+     * @param valueN the size of <code>q</code>, in bits.
+     * @param seedLen the length of <code>seed</code>, in bits.
      *
      * @return an array of BigInteger, with <code>p</code> at index 0 and
-     * <code>q</code> at index 1.
-     */
-    BigInteger[] generatePandQ(SecureRandom random, int L) {
-        BigInteger[] result = null;
-        byte[] seed = new byte[20];
-
-        while(result == null) {
-            for (int i = 0; i < 20; i++) {
-                seed[i] = (byte)random.nextInt();
-            }
-            result = generatePandQ(seed, L);
-        }
-        return result;
-    }
-
-    /*
-     * Generates the prime and subprime parameters for DSA.
-     *
-     * <p>The seed parameter corresponds to the <code>SEED</code> parameter
-     * referenced in the FIPS specification of the DSA algorithm,
-     * and L is the size of <code>p</code>, in bits.
-     *
-     * @param seed the seed to generate the parameters
-     * @param L the size of <code>p</code>, in bits.
-     *
-     * @return an array of BigInteger, with <code>p</code> at index 0,
      * <code>q</code> at index 1, the seed at index 2, and the counter value
-     * at index 3, or null if the seed does not yield suitable numbers.
+     * at index 3.
      */
-    BigInteger[] generatePandQ(byte[] seed, int L) {
+    private static BigInteger[] generatePandQ(SecureRandom random, int valueL,
+                                              int valueN, int seedLen) {
+        String hashAlg = null;
+        if (valueN == 160) {
+            hashAlg = "SHA";
+        } else if (valueN == 224) {
+            hashAlg = "SHA-224";
+        } else if (valueN == 256) {
+            hashAlg = "SHA-256";
+        }
+        MessageDigest hashObj = null;
+        try {
+            hashObj = MessageDigest.getInstance(hashAlg);
+        } catch (NoSuchAlgorithmException nsae) {
+            // should never happen
+            nsae.printStackTrace();
+        }
 
-        /* Useful variables */
-        int g = seed.length * 8;
-        int n = (L - 1) / 160;
-        int b = (L - 1) % 160;
+        /* Step 3, 4: Useful variables */
+        int outLen = hashObj.getDigestLength()*8;
+        int n = (valueL - 1) / outLen;
+        int b = (valueL - 1) % outLen;
+        byte[] seedBytes = new byte[seedLen/8];
+        BigInteger twoSl = TWO.pow(seedLen);
+        int primeCertainty = 80; // for 1024-bit prime P
+        if (valueL == 2048) {
+            primeCertainty = 112;
+            //} else if (valueL == 3072) {
+            //    primeCertainty = 128;
+        }
 
-        BigInteger SEED = new BigInteger(1, seed);
-        BigInteger TWOG = TWO.pow(2 * g);
+        BigInteger resultP, resultQ, seed = null;
+        int counter;
+        while (true) {
+            do {
+                /* Step 5 */
+                random.nextBytes(seedBytes);
+                seed = new BigInteger(1, seedBytes);
 
-        /* Step 2 (Step 1 is getting seed). */
-        byte[] U1 = SHA(seed);
-        byte[] U2 = SHA(toByteArray((SEED.add(ONE)).mod(TWOG)));
+                /* Step 6 */
+                BigInteger U = new BigInteger(1, hashObj.digest(seedBytes)).
+                    mod(TWO.pow(valueN - 1));
 
-        xor(U1, U2);
-        byte[] U = U1;
+                /* Step 7 */
+                resultQ = TWO.pow(valueN - 1).add(U).add(ONE). subtract(U.mod(TWO));
+            } while (!resultQ.isProbablePrime(primeCertainty));
 
-        /* Step 3: For q by setting the msb and lsb to 1 */
-        U[0] |= 0x80;
-        U[19] |= 1;
-        BigInteger q = new BigInteger(1, U);
-
-        /* Step 5 */
-         if (!q.isProbablePrime(80)) {
-             return null;
-
-         } else {
-             BigInteger V[] = new BigInteger[n + 1];
-             BigInteger offset = TWO;
-
-             /* Step 6 */
-             for (int counter = 0; counter < 4096; counter++) {
-
-                 /* Step 7 */
-                 for (int k = 0; k <= n; k++) {
-                     BigInteger K = BigInteger.valueOf(k);
-                     BigInteger tmp = (SEED.add(offset).add(K)).mod(TWOG);
-                     V[k] = new BigInteger(1, SHA(toByteArray(tmp)));
-                 }
-
-                 /* Step 8 */
-                 BigInteger W = V[0];
-                 for (int i = 1; i < n; i++) {
-                     W = W.add(V[i].multiply(TWO.pow(i * 160)));
-                 }
-                 W = W.add((V[n].mod(TWO.pow(b))).multiply(TWO.pow(n * 160)));
-
-                 BigInteger TWOLm1 = TWO.pow(L - 1);
-                 BigInteger X = W.add(TWOLm1);
-
-                 /* Step 9 */
-                 BigInteger c = X.mod(q.multiply(TWO));
-                 BigInteger p = X.subtract(c.subtract(ONE));
-
-                 /* Step 10 - 13 */
-                 if (p.compareTo(TWOLm1) > -1 && p.isProbablePrime(80)) {
-                     BigInteger[] result = {p, q, SEED,
-                                            BigInteger.valueOf(counter)};
-                     return result;
-                 }
-                 offset = offset.add(BigInteger.valueOf(n)).add(ONE);
+            /* Step 10 */
+            BigInteger offset = ONE;
+            /* Step 11 */
+            for (counter = 0; counter < 4*valueL; counter++) {
+                BigInteger V[] = new BigInteger[n + 1];
+                /* Step 11.1 */
+                for (int j = 0; j <= n; j++) {
+                    BigInteger J = BigInteger.valueOf(j);
+                    BigInteger tmp = (seed.add(offset).add(J)).mod(twoSl);
+                    byte[] vjBytes = hashObj.digest(toByteArray(tmp));
+                    V[j] = new BigInteger(1, vjBytes);
+                }
+                /* Step 11.2 */
+                BigInteger W = V[0];
+                for (int i = 1; i < n; i++) {
+                    W = W.add(V[i].multiply(TWO.pow(i * outLen)));
+                }
+                W = W.add((V[n].mod(TWO.pow(b))).multiply(TWO.pow(n * outLen)));
+                /* Step 11.3 */
+                BigInteger twoLm1 = TWO.pow(valueL - 1);
+                BigInteger X = W.add(twoLm1);
+                /* Step 11.4, 11.5 */
+                BigInteger c = X.mod(resultQ.multiply(TWO));
+                resultP = X.subtract(c.subtract(ONE));
+                /* Step 11.6, 11.7 */
+                if (resultP.compareTo(twoLm1) > -1
+                    && resultP.isProbablePrime(primeCertainty)) {
+                    /* Step 11.8 */
+                    BigInteger[] result = {resultP, resultQ, seed,
+                                           BigInteger.valueOf(counter)};
+                    return result;
+                }
+                /* Step 11.9 */
+                offset = offset.add(BigInteger.valueOf(n)).add(ONE);
              }
-             return null;
-         }
+        }
+
     }
 
     /*
@@ -262,31 +279,24 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
      *
      * @param the <code>g</code>
      */
-    BigInteger generateG(BigInteger p, BigInteger q) {
+    private static BigInteger generateG(BigInteger p, BigInteger q) {
         BigInteger h = ONE;
+        /* Step 1 */
         BigInteger pMinusOneOverQ = (p.subtract(ONE)).divide(q);
-        BigInteger g = ONE;
-        while (g.compareTo(TWO) < 0) {
-            g = h.modPow(pMinusOneOverQ, p);
+        BigInteger resultG = ONE;
+        while (resultG.compareTo(TWO) < 0) {
+            /* Step 3 */
+            resultG = h.modPow(pMinusOneOverQ, p);
             h = h.add(ONE);
         }
-        return g;
-    }
-
-    /*
-     * Returns the SHA-1 digest of some data
-     */
-    private byte[] SHA(byte[] array) {
-        sha.engineReset();
-        sha.engineUpdate(array, 0, array.length);
-        return sha.engineDigest();
+        return resultG;
     }
 
     /*
      * Converts the result of a BigInteger.toByteArray call to an exact
      * signed magnitude representation for any positive number.
      */
-    private byte[] toByteArray(BigInteger bigInt) {
+    private static byte[] toByteArray(BigInteger bigInt) {
         byte[] result = bigInt.toByteArray();
         if (result[0] == 0) {
             byte[] tmp = new byte[result.length - 1];
@@ -294,14 +304,5 @@ public class DSAParameterGenerator extends AlgorithmParameterGeneratorSpi {
             result = tmp;
         }
         return result;
-    }
-
-    /*
-     * XORs U2 into U1
-     */
-    private void xor(byte[] U1, byte[] U2) {
-        for (int i = 0; i < U1.length; i++) {
-            U1[i] ^= U2[i];
-        }
     }
 }

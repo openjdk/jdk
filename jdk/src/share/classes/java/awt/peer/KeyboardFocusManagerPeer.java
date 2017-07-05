@@ -34,6 +34,14 @@ import java.awt.Window;
 public interface KeyboardFocusManagerPeer {
 
     /**
+     * Sets the window that should become the focused window.
+     *
+     * @param win the window that should become the focused window
+     *
+     */
+    void setCurrentFocusedWindow(Window win);
+
+    /**
      * Returns the currently focused window.
      *
      * @return the currently focused window

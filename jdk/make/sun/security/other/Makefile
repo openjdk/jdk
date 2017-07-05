@@ -53,7 +53,6 @@ AUTO_FILES_JAVA_DIRS = \
 # EC classes used by the packages above
 #
 FILES_java += \
-    sun/security/ec/ECKeyFactory.java \
     sun/security/ec/ECParameters.java \
     sun/security/ec/ECPrivateKeyImpl.java \
     sun/security/ec/ECPublicKeyImpl.java \
