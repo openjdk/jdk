@@ -147,6 +147,9 @@ class GenericGrowableArray : public ResourceObj {
   }
 };
 
+template<class E> class GrowableArrayIterator;
+template<class E, class UnaryPredicate> class GrowableArrayFilterIterator;
+
 template<class E> class GrowableArray : public GenericGrowableArray {
   friend class VMStructs;
 
@@ -241,6 +244,14 @@ template<class E> class GrowableArray : public GenericGrowableArray {
   E top() const {
     assert(_len > 0, "empty list");
     return _data[_len-1];
+  }
+
+  GrowableArrayIterator<E> begin() const {
+    return GrowableArrayIterator<E>(this, 0);
+  }
+
+  GrowableArrayIterator<E> end() const {
+    return GrowableArrayIterator<E>(this, length());
   }
 
   void push(const E& elem) { append(elem); }
@@ -411,5 +422,84 @@ template<class E> void GrowableArray<E>::print() {
     for (int i = 0; i < _len; i++) tty->print(INTPTR_FORMAT " ", *(intptr_t*)&(_data[i]));
     tty->print("}\n");
 }
+
+// Custom STL-style iterator to iterate over GrowableArrays
+// It is constructed by invoking GrowableArray::begin() and GrowableArray::end()
+template<class E> class GrowableArrayIterator : public StackObj {
+  friend class GrowableArray<E>;
+  template<class F, class UnaryPredicate> friend class GrowableArrayFilterIterator;
+
+ private:
+  const GrowableArray<E>* _array; // GrowableArray we iterate over
+  int _position;                  // The current position in the GrowableArray
+
+  // Private constructor used in GrowableArray::begin() and GrowableArray::end()
+  GrowableArrayIterator(const GrowableArray<E>* array, int position) : _array(array), _position(position) {
+    assert(0 <= position && position <= _array->length(), "illegal position");
+  }
+
+ public:
+  GrowableArrayIterator<E>& operator++()  { ++_position; return *this; }
+  E operator*()                           { return _array->at(_position); }
+
+  bool operator==(const GrowableArrayIterator<E>& rhs)  {
+    assert(_array == rhs._array, "iterator belongs to different array");
+    return _position == rhs._position;
+  }
+
+  bool operator!=(const GrowableArrayIterator<E>& rhs)  {
+    assert(_array == rhs._array, "iterator belongs to different array");
+    return _position != rhs._position;
+  }
+};
+
+// Custom STL-style iterator to iterate over elements of a GrowableArray that satisfy a given predicate
+template<class E, class UnaryPredicate> class GrowableArrayFilterIterator : public StackObj {
+  friend class GrowableArray<E>;
+
+ private:
+  const GrowableArray<E>* _array;   // GrowableArray we iterate over
+  int _position;                    // Current position in the GrowableArray
+  UnaryPredicate _predicate;        // Unary predicate the elements of the GrowableArray should satisfy
+
+ public:
+  GrowableArrayFilterIterator(const GrowableArrayIterator<E>& begin, UnaryPredicate filter_predicate)
+   : _array(begin._array), _position(begin._position), _predicate(filter_predicate) {
+    // Advance to first element satisfying the predicate
+    while(_position != _array->length() && !_predicate(_array->at(_position))) {
+      ++_position;
+    }
+  }
+
+  GrowableArrayFilterIterator<E, UnaryPredicate>& operator++() {
+    do {
+      // Advance to next element satisfying the predicate
+      ++_position;
+    } while(_position != _array->length() && !_predicate(_array->at(_position)));
+    return *this;
+  }
+
+  E operator*()   { return _array->at(_position); }
+
+  bool operator==(const GrowableArrayIterator<E>& rhs)  {
+    assert(_array == rhs._array, "iterator belongs to different array");
+    return _position == rhs._position;
+  }
+
+  bool operator!=(const GrowableArrayIterator<E>& rhs)  {
+    assert(_array == rhs._array, "iterator belongs to different array");
+    return _position != rhs._position;
+  }
+
+  bool operator==(const GrowableArrayFilterIterator<E, UnaryPredicate>& rhs)  {
+    assert(_array == rhs._array, "iterator belongs to different array");
+    return _position == rhs._position;
+  }
+
+  bool operator!=(const GrowableArrayFilterIterator<E, UnaryPredicate>& rhs)  {
+    assert(_array == rhs._array, "iterator belongs to different array");
+    return _position != rhs._position;
+  }
+};
 
 #endif // SHARE_VM_UTILITIES_GROWABLEARRAY_HPP

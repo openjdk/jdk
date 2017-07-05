@@ -440,6 +440,8 @@ class Compile : public Phase {
   void print_inlining_push();
   PrintInliningBuffer& print_inlining_current();
 
+  void log_late_inline_failure(CallGenerator* cg, const char* msg);
+
  public:
 
   outputStream* print_inlining_stream() const {
@@ -458,6 +460,10 @@ class Compile : public Phase {
     CompileTask::print_inlining(&ss, method, inline_level, bci, msg);
     print_inlining_stream()->print(ss.as_string());
   }
+
+  void log_late_inline(CallGenerator* cg);
+  void log_inline_id(CallGenerator* cg);
+  void log_inline_failure(const char* msg);
 
   void* replay_inline_data() const { return _replay_inline_data; }
 
@@ -478,6 +484,7 @@ class Compile : public Phase {
   RegMask               _FIRST_STACK_mask;      // All stack slots usable for spills (depends on frame layout)
   Arena*                _indexSet_arena;        // control IndexSet allocation within PhaseChaitin
   void*                 _indexSet_free_block_list; // free list of IndexSet bit blocks
+  int                   _interpreter_frame_size;
 
   uint                  _node_bundling_limit;
   Bundle*               _node_bundling_base;    // Information for instruction bundling
@@ -935,6 +942,7 @@ class Compile : public Phase {
   PhaseRegAlloc*    regalloc()                  { return _regalloc; }
   int               frame_slots() const         { return _frame_slots; }
   int               frame_size_in_words() const; // frame_slots in units of the polymorphic 'words'
+  int               frame_size_in_bytes() const { return _frame_slots << LogBytesPerInt; }
   RegMask&          FIRST_STACK_mask()          { return _FIRST_STACK_mask; }
   Arena*            indexSet_arena()            { return _indexSet_arena; }
   void*             indexSet_free_block_list()  { return _indexSet_free_block_list; }
@@ -945,6 +953,13 @@ class Compile : public Phase {
   bool          starts_bundle(const Node *n) const;
   bool          need_stack_bang(int frame_size_in_bytes) const;
   bool          need_register_stack_bang() const;
+
+  void  update_interpreter_frame_size(int size) {
+    if (_interpreter_frame_size < size) {
+      _interpreter_frame_size = size;
+    }
+  }
+  int           bang_size_in_bytes() const;
 
   void          set_matcher(Matcher* m)                 { _matcher = m; }
 //void          set_regalloc(PhaseRegAlloc* ra)           { _regalloc = ra; }
