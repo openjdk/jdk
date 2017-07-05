@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,20 @@ public class ReadCertificates extends PKCS11Test {
                 System.out.println("Warning: " + e.getMessage() +
                 ". Trying another provider...");
                 cert.verify(key);
+            } catch (InvalidKeyException e) {
+                // The root cause of the exception might be NSS not having
+                // "ECC Extended" support curves.  If so, we can ignore it.
+                Throwable t = e;
+                while (t.getCause() != null) {
+                    t = t.getCause();
+                }
+                if (t instanceof sun.security.pkcs11.wrapper.PKCS11Exception &&
+                        t.getMessage().equals("CKR_DOMAIN_PARAMS_INVALID") &&
+                        isNSS(p) && getNSSECC() == ECCState.Basic) {
+                    System.out.println("Failed as expected. NSS Basic ECC.");
+                    continue;
+                }
+                throw e;
             }
         }
 

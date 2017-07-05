@@ -59,6 +59,8 @@ import javax.print.PrintService;
 import javax.print.StreamPrintService;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.PrintServiceAttributeSet;
+import javax.print.attribute.standard.PrinterName;
 import javax.print.attribute.standard.Chromaticity;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Destination;
@@ -766,8 +768,9 @@ public class PSPrinterJob extends RasterPrinterJob {
             }
         }
         if (mDestType == RasterPrinterJob.PRINTER) {
-            if (getPrintService() != null) {
-                mDestination = getPrintService().getName();
+            PrintService pServ = getPrintService();
+            if (pServ != null) {
+                mDestination = pServ.getName();
             }
             PrinterSpooler spooler = new PrinterSpooler();
             java.security.AccessController.doPrivileged(spooler);

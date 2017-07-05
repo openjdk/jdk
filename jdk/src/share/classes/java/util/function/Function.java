@@ -27,12 +27,13 @@ package java.util.function;
 import java.util.Objects;
 
 /**
- * Apply a function to the input argument, yielding an appropriate result.  A
- * function may variously provide a mapping between types, object instances or
- * keys and values or any other form of transformation upon the input.
+ * Represents a function that accepts one argument and produces a result.
  *
- * @param <T> the type of the input to the {@code apply} operation
- * @param <R> the type of the result of the {@code apply} operation
+ * <p>This is a <a href="package-summary.html">functional interface</a>
+ * whose functional method is {@link #apply(Object)}.
+ *
+ * @param <T> the type of the input to the function
+ * @param <R> the type of the result of the function
  *
  * @since 1.8
  */
@@ -40,25 +41,27 @@ import java.util.Objects;
 public interface Function<T, R> {
 
     /**
-     * Compute the result of applying the function to the input argument
+     * Applies this function to the given argument.
      *
-     * @param t the input object
+     * @param t the function argument
      * @return the function result
      */
     R apply(T t);
 
     /**
-     * Returns a new function which applies the provided function followed by
-     * this function.  If either function throws an exception, it is relayed
-     * to the caller.
+     * Returns a composed function that first applies the {@code before}
+     * function to its input, and then applies this function to the result.
+     * If evaluation of either function throws an exception, it is relayed to
+     * the caller of the composed function.
      *
-     * @param <V> type of input objects to the combined function. May be the
-     * same type as {@code <T>} or {@code <R>}
-     * @param before an additional function to be applied before this function
-     * is applied
-     * @return a function which performs the provided function followed by this
-     * function
+     * @param <V> the type of input to the {@code before} function, and to the
+     *           composed function
+     * @param before the function to apply before this function is applied
+     * @return a composed function that first applies the {@code before}
+     * function and then applies this function
      * @throws NullPointerException if before is null
+     *
+     * @see #andThen(Function)
      */
     default <V> Function<V, R> compose(Function<? super V, ? extends T> before) {
         Objects.requireNonNull(before);
@@ -66,17 +69,19 @@ public interface Function<T, R> {
     }
 
     /**
-     * Returns a new function which applies this function followed by the
-     * provided function.  If either function throws an exception, it is relayed
-     * to the caller.
+     * Returns a composed function that first applies this function to
+     * its input, and then applies the {@code after} function to the result.
+     * If evaluation of either function throws an exception, it is relayed to
+     * the caller of the composed function.
      *
-     * @param <V> type of output objects to the combined function. May be the
-     * same type as {@code <T>} or {@code <R>}
-     * @param after an additional function to be applied after this function is
-     * applied
-     * @return a function which performs this function followed by the provided
-     * function
+     * @param <V> the type of output of the {@code after} function, and of the
+     *           composed function
+     * @param after the function to apply after this function is applied
+     * @return a composed function that first applies this function and then
+     * applies the {@code after} function
      * @throws NullPointerException if after is null
+     *
+     * @see #compose(Function)
      */
     default <V> Function<T, V> andThen(Function<? super R, ? extends V> after) {
         Objects.requireNonNull(after);
@@ -84,10 +89,10 @@ public interface Function<T, R> {
     }
 
     /**
-     * Returns a {@code Function} whose {@code apply} method returns its input.
+     * Returns a function that always returns its input argument.
      *
      * @param <T> the type of the input and output objects to the function
-     * @return a {@code Function} whose {@code apply} method returns its input
+     * @return a function that always returns its input argument
      */
     static <T> Function<T, T> identity() {
         return t -> t;

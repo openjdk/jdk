@@ -91,6 +91,8 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
      * @param tclass the class of the objects holding the field
      * @param vclass the class of the field
      * @param fieldName the name of the field to be updated
+     * @param <U> the type of instances of tclass
+     * @param <W> the type of instances of vclass
      * @return the updater
      * @throws ClassCastException if the field is of the wrong type
      * @throws IllegalArgumentException if the field is not volatile

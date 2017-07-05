@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,13 @@ public class TestECDH2 extends PKCS11Test {
     public void main(Provider provider) throws Exception {
         if (provider.getService("KeyAgreement", "ECDH") == null) {
             System.out.println("ECDH not supported, skipping");
+            return;
+        }
+
+        if (isNSS(provider) && getNSSVersion() >= 3.11 &&
+                getNSSVersion() < 3.12) {
+            System.out.println("NSS 3.11 has a DER issue that recent " +
+                    "version do not.");
             return;
         }
 

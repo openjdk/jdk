@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,14 +76,14 @@ abstract public class HttpURLConnection extends URLConnection {
 
     /**
      * The chunk-length when using chunked encoding streaming mode for output.
-     * A value of <code>-1</code> means chunked encoding is disabled for output.
+     * A value of {@code -1} means chunked encoding is disabled for output.
      * @since 1.5
      */
     protected int chunkLength = -1;
 
     /**
      * The fixed content-length when using fixed-length streaming mode.
-     * A value of <code>-1</code> means fixed-length streaming mode is disabled
+     * A value of {@code -1} means fixed-length streaming mode is disabled
      * for output.
      *
      * <P> <B>NOTE:</B> {@link #fixedContentLengthLong} is recommended instead
@@ -103,15 +103,15 @@ abstract public class HttpURLConnection extends URLConnection {
     protected long fixedContentLengthLong = -1;
 
     /**
-     * Returns the key for the <code>n</code><sup>th</sup> header field.
-     * Some implementations may treat the <code>0</code><sup>th</sup>
+     * Returns the key for the {@code n}<sup>th</sup> header field.
+     * Some implementations may treat the {@code 0}<sup>th</sup>
      * header field as special, i.e. as the status line returned by the HTTP
      * server. In this case, {@link #getHeaderField(int) getHeaderField(0)} returns the status
-     * line, but <code>getHeaderFieldKey(0)</code> returns null.
+     * line, but {@code getHeaderFieldKey(0)} returns null.
      *
      * @param   n   an index, where {@code n >=0}.
-     * @return  the key for the <code>n</code><sup>th</sup> header field,
-     *          or <code>null</code> if the key does not exist.
+     * @return  the key for the {@code n}<sup>th</sup> header field,
+     *          or {@code null} if the key does not exist.
      */
     public String getHeaderFieldKey (int n) {
         return null;
@@ -251,8 +251,8 @@ abstract public class HttpURLConnection extends URLConnection {
     }
 
     /**
-     * Returns the value for the <code>n</code><sup>th</sup> header field.
-     * Some implementations may treat the <code>0</code><sup>th</sup>
+     * Returns the value for the {@code n}<sup>th</sup> header field.
+     * Some implementations may treat the {@code 0}<sup>th</sup>
      * header field as special, i.e. as the status line returned by the HTTP
      * server.
      * <p>
@@ -261,8 +261,8 @@ abstract public class HttpURLConnection extends URLConnection {
      * the headers in the message.
      *
      * @param   n   an index, where {@code n>=0}.
-     * @return  the value of the <code>n</code><sup>th</sup> header field,
-     *          or <code>null</code> if the value does not exist.
+     * @return  the value of the {@code n}<sup>th</sup> header field,
+     *          or {@code null} if the value does not exist.
      * @see     java.net.HttpURLConnection#getHeaderFieldKey(int)
      */
     public String getHeaderField(int n) {
@@ -270,7 +270,7 @@ abstract public class HttpURLConnection extends URLConnection {
     }
 
     /**
-     * An <code>int</code> representing the three digit HTTP Status-Code.
+     * An {@code int} representing the three digit HTTP Status-Code.
      * <ul>
      * <li> 1xx: Informational
      * <li> 2xx: Success
@@ -292,12 +292,12 @@ abstract public class HttpURLConnection extends URLConnection {
     private static boolean followRedirects = true;
 
     /**
-     * If <code>true</code>, the protocol will automatically follow redirects.
-     * If <code>false</code>, the protocol will not automatically follow
+     * If {@code true}, the protocol will automatically follow redirects.
+     * If {@code false}, the protocol will not automatically follow
      * redirects.
      * <p>
-     * This field is set by the <code>setInstanceFollowRedirects</code>
-     * method. Its value is returned by the <code>getInstanceFollowRedirects</code>
+     * This field is set by the {@code setInstanceFollowRedirects}
+     * method. Its value is returned by the {@code getInstanceFollowRedirects}
      * method.
      * <p>
      * Its default value is based on the value of the static followRedirects
@@ -328,14 +328,14 @@ abstract public class HttpURLConnection extends URLConnection {
      * cannot change this variable.
      * <p>
      * If there is a security manager, this method first calls
-     * the security manager's <code>checkSetFactory</code> method
+     * the security manager's {@code checkSetFactory} method
      * to ensure the operation is allowed.
      * This could result in a SecurityException.
      *
-     * @param set a <code>boolean</code> indicating whether or not
+     * @param set a {@code boolean} indicating whether or not
      * to follow HTTP redirects.
      * @exception  SecurityException  if a security manager exists and its
-     *             <code>checkSetFactory</code> method doesn't
+     *             {@code checkSetFactory} method doesn't
      *             allow the operation.
      * @see        SecurityManager#checkSetFactory
      * @see #getFollowRedirects()
@@ -350,12 +350,12 @@ abstract public class HttpURLConnection extends URLConnection {
     }
 
     /**
-     * Returns a <code>boolean</code> indicating
+     * Returns a {@code boolean} indicating
      * whether or not HTTP redirects (3xx) should
      * be automatically followed.
      *
-     * @return <code>true</code> if HTTP redirects should
-     * be automatically followed, <tt>false</tt> if not.
+     * @return {@code true} if HTTP redirects should
+     * be automatically followed, {@code false} if not.
      * @see #setFollowRedirects(boolean)
      */
     public static boolean getFollowRedirects() {
@@ -364,13 +364,13 @@ abstract public class HttpURLConnection extends URLConnection {
 
     /**
      * Sets whether HTTP redirects (requests with response code 3xx) should
-     * be automatically followed by this <code>HttpURLConnection</code>
+     * be automatically followed by this {@code HttpURLConnection}
      * instance.
      * <p>
      * The default value comes from followRedirects, which defaults to
      * true.
      *
-     * @param followRedirects a <code>boolean</code> indicating
+     * @param followRedirects a {@code boolean} indicating
      * whether or not to follow HTTP redirects.
      *
      * @see    java.net.HttpURLConnection#instanceFollowRedirects
@@ -382,11 +382,11 @@ abstract public class HttpURLConnection extends URLConnection {
      }
 
      /**
-     * Returns the value of this <code>HttpURLConnection</code>'s
-     * <code>instanceFollowRedirects</code> field.
+     * Returns the value of this {@code HttpURLConnection}'s
+     * {@code instanceFollowRedirects} field.
      *
-     * @return  the value of this <code>HttpURLConnection</code>'s
-     *          <code>instanceFollowRedirects</code> field.
+     * @return  the value of this {@code HttpURLConnection}'s
+     *          {@code instanceFollowRedirects} field.
      * @see     java.net.HttpURLConnection#instanceFollowRedirects
      * @see #setInstanceFollowRedirects(boolean)
      * @since 1.3
@@ -540,7 +540,7 @@ abstract public class HttpURLConnection extends URLConnection {
      * Returns null if none could be discerned from the responses
      * (the result was not valid HTTP).
      * @throws IOException if an error occurred connecting to the server.
-     * @return the HTTP response message, or <code>null</code>
+     * @return the HTTP response message, or {@code null}
      */
     public String getResponseMessage() throws IOException {
         getResponseCode();
@@ -583,7 +583,7 @@ abstract public class HttpURLConnection extends URLConnection {
      * @exception IOException if an error occurs while computing
      *            the permission.
      *
-     * @return a <code>SocketPermission</code> object representing the
+     * @return a {@code SocketPermission} object representing the
      *         permission necessary to connect to the destination
      *         host and port.
      */

@@ -515,8 +515,9 @@ public final class LocalDateTime
      * Checks if the specified field is supported.
      * <p>
      * This checks if this date-time can be queried for the specified field.
-     * If false, then calling the {@link #range(TemporalField) range} and
-     * {@link #get(TemporalField) get} methods will throw an exception.
+     * If false, then calling the {@link #range(TemporalField) range},
+     * {@link #get(TemporalField) get} and {@link #with(TemporalField, long)}
+     * methods will throw an exception.
      * <p>
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The supported fields are:
@@ -569,6 +570,48 @@ public final class LocalDateTime
         return field != null && field.isSupportedBy(this);
     }
 
+    /**
+     * Checks if the specified unit is supported.
+     * <p>
+     * This checks if the specified unit can be added to, or subtracted from, this date-time.
+     * If false, then calling the {@link #plus(long, TemporalUnit)} and
+     * {@link #minus(long, TemporalUnit) minus} methods will throw an exception.
+     * <p>
+     * If the unit is a {@link ChronoUnit} then the query is implemented here.
+     * The supported units are:
+     * <ul>
+     * <li>{@code NANOS}
+     * <li>{@code MICROS}
+     * <li>{@code MILLIS}
+     * <li>{@code SECONDS}
+     * <li>{@code MINUTES}
+     * <li>{@code HOURS}
+     * <li>{@code HALF_DAYS}
+     * <li>{@code DAYS}
+     * <li>{@code WEEKS}
+     * <li>{@code MONTHS}
+     * <li>{@code YEARS}
+     * <li>{@code DECADES}
+     * <li>{@code CENTURIES}
+     * <li>{@code MILLENNIA}
+     * <li>{@code ERAS}
+     * </ul>
+     * All other {@code ChronoUnit} instances will return false.
+     * <p>
+     * If the unit is not a {@code ChronoUnit}, then the result of this method
+     * is obtained by invoking {@code TemporalUnit.isSupportedBy(Temporal)}
+     * passing {@code this} as the argument.
+     * Whether the unit is supported is determined by the unit.
+     *
+     * @param unit  the unit to check, null returns false
+     * @return true if the unit can be added/subtracted, false if not
+     */
+    @Override  // override for Javadoc
+    public boolean isSupported(TemporalUnit unit) {
+        return ChronoLocalDateTime.super.isSupported(unit);
+    }
+
+    //-----------------------------------------------------------------------
     /**
      * Gets the range of valid values for the specified field.
      * <p>
@@ -1570,7 +1613,7 @@ public final class LocalDateTime
      * The result will be negative if the end is before the start.
      * The {@code Temporal} passed to this method must be a {@code LocalDateTime}.
      * For example, the amount in days between two date-times can be calculated
-     * using {@code startDateTime.periodUntil(endDateTime, DAYS)}.
+     * using {@code startDateTime.until(endDateTime, DAYS)}.
      * <p>
      * The calculation returns a whole number, representing the number of
      * complete units between the two date-times.
@@ -1582,7 +1625,7 @@ public final class LocalDateTime
      * The second is to use {@link TemporalUnit#between(Temporal, Temporal)}:
      * <pre>
      *   // these two lines are equivalent
-     *   amount = start.periodUntil(end, MONTHS);
+     *   amount = start.until(end, MONTHS);
      *   amount = MONTHS.between(start, end);
      * </pre>
      * The choice should be made based on which makes the code more readable.
@@ -1609,18 +1652,17 @@ public final class LocalDateTime
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
-    public long periodUntil(Temporal endDateTime, TemporalUnit unit) {
+    public long until(Temporal endDateTime, TemporalUnit unit) {
         if (endDateTime instanceof LocalDateTime == false) {
             Objects.requireNonNull(endDateTime, "endDateTime");
             throw new DateTimeException("Unable to calculate amount as objects are of two different types");
         }
         LocalDateTime end = (LocalDateTime) endDateTime;
         if (unit instanceof ChronoUnit) {
-            ChronoUnit f = (ChronoUnit) unit;
-            if (f.isTimeUnit()) {
+            if (unit.isTimeBased()) {
                 long amount = date.daysUntil(end.date);
                 if (amount == 0) {
-                    return time.periodUntil(end.time, unit);
+                    return time.until(end.time, unit);
                 }
                 long timePart = end.time.toNanoOfDay() - time.toNanoOfDay();
                 if (amount > 0) {
@@ -1630,7 +1672,7 @@ public final class LocalDateTime
                     amount++;  // safe
                     timePart -= NANOS_PER_DAY;  // safe
                 }
-                switch (f) {
+                switch ((ChronoUnit) unit) {
                     case NANOS:
                         amount = Math.multiplyExact(amount, NANOS_PER_DAY);
                         break;
@@ -1667,7 +1709,7 @@ public final class LocalDateTime
             } else if (endDate.isBefore(date) && end.time.isAfter(time)) {
                 endDate = endDate.plusDays(1);
             }
-            return date.periodUntil(endDate, unit);
+            return date.until(endDate, unit);
         }
         return unit.between(this, endDateTime);
     }

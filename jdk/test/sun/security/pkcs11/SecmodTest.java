@@ -36,6 +36,7 @@ public class SecmodTest extends PKCS11Test {
     static String keyAlias = "mykey";
 
     static boolean initSecmod() throws Exception {
+        useNSS();
         LIBPATH = getNSSLibDir();
         if (LIBPATH == null) {
             return false;

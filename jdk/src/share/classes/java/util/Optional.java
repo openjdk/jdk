@@ -93,6 +93,7 @@ public final class Optional<T> {
     /**
      * Returns an {@code Optional} with the specified present non-null value.
      *
+     * @param <T> the class of the value
      * @param value the value to be present, which must be non-null
      * @return an {@code Optional} with the value present
      */
@@ -104,6 +105,7 @@ public final class Optional<T> {
      * Returns an {@code Optional} describing the specified value, if non-null,
      * otherwise returns an empty {@code Optional}.
      *
+     * @param <T> the class of the value
      * @param value the possibly-null value to describe
      * @return an {@code Optional} with a present value if the specified value
      * is non-null, otherwise an empty {@code Optional}

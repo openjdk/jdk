@@ -25,23 +25,22 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Random;
+import java.util.List;
 
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
-import java.util.stream.DoubleStream;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static org.testng.Assert.*;
 
 /**
  * @test
@@ -147,111 +146,43 @@ public class RandomStreamTest {
     }
 
     @Test
-    public void testThreadLocalIntStream() throws InterruptedException {
-        final ExecutorService e = Executors.newFixedThreadPool(10);
-        final ThreadLocalRandom tlr = ThreadLocalRandom.current();
-
-        final class RandomTask implements Runnable {
-            int[] randoms;
-
-            @Override
-            public void run() {
-                randoms = tlr.ints().limit(SIZE).toArray();
-            }
-        }
-        final RandomTask[] tasks = new RandomTask[10];
-        for (int i=0; i < tasks.length; i++) {
-            tasks[i] = new RandomTask();
-        }
-        for (int i=0; i < tasks.length; i++) {
-            e.submit(tasks[i]);
-        }
-        e.shutdown();
-        e.awaitTermination(3, TimeUnit.SECONDS);
-        for (int i=1; i < tasks.length; i++) {
-            assertFalse(Arrays.equals(tasks[0].randoms, tasks[i].randoms));
-        }
+    public void testThreadLocalIntStream() throws InterruptedException, ExecutionException, TimeoutException {
+        ThreadLocalRandom tlr = ThreadLocalRandom.current();
+        testRandomResultSupplierConcurrently(() -> tlr.ints().limit(SIZE).boxed().collect(toList()));
     }
 
     @Test
-    public void testThreadLocalLongStream() throws InterruptedException {
-        final ExecutorService e = Executors.newFixedThreadPool(10);
-        final ThreadLocalRandom tlr = ThreadLocalRandom.current();
-
-        final class RandomTask implements Runnable {
-            long[] randoms;
-
-            @Override
-            public void run() {
-                randoms = tlr.longs().limit(SIZE).toArray();
-            }
-        }
-        final RandomTask[] tasks = new RandomTask[10];
-        for (int i=0; i < tasks.length; i++) {
-            tasks[i] = new RandomTask();
-        }
-        for (int i=0; i < tasks.length; i++) {
-            e.submit(tasks[i]);
-        }
-        e.shutdown();
-        e.awaitTermination(3, TimeUnit.SECONDS);
-        for (int i=1; i < tasks.length; i++) {
-            assertFalse(Arrays.equals(tasks[0].randoms, tasks[i].randoms));
-        }
+    public void testThreadLocalLongStream() throws InterruptedException, ExecutionException, TimeoutException {
+        ThreadLocalRandom tlr = ThreadLocalRandom.current();
+        testRandomResultSupplierConcurrently(() -> tlr.longs().limit(SIZE).boxed().collect(toList()));
     }
 
     @Test
-    public void testThreadLocalDoubleStream() throws InterruptedException {
-        final ExecutorService e = Executors.newFixedThreadPool(10);
-        final ThreadLocalRandom tlr = ThreadLocalRandom.current();
-
-        final class RandomTask implements Runnable {
-            double[] randoms;
-
-            @Override
-            public void run() {
-                randoms = tlr.doubles().limit(SIZE).toArray();
-            }
-        }
-        final RandomTask[] tasks = new RandomTask[10];
-        for (int i=0; i < tasks.length; i++) {
-            tasks[i] = new RandomTask();
-        }
-        for (int i=0; i < tasks.length; i++) {
-            e.submit(tasks[i]);
-        }
-        e.shutdown();
-        e.awaitTermination(3, TimeUnit.SECONDS);
-        for (int i=1; i < tasks.length; i++) {
-            assertFalse(Arrays.equals(tasks[0].randoms, tasks[i].randoms));
-        }
+    public void testThreadLocalDoubleStream() throws InterruptedException, ExecutionException, TimeoutException {
+        ThreadLocalRandom tlr = ThreadLocalRandom.current();
+        testRandomResultSupplierConcurrently(() -> tlr.doubles().limit(SIZE).boxed().collect(toList()));
     }
 
     @Test
-    public void testThreadLocalGaussianStream() throws InterruptedException {
-        final ExecutorService e = Executors.newFixedThreadPool(10);
-        final ThreadLocalRandom tlr = ThreadLocalRandom.current();
-
-        final class RandomTask implements Runnable {
-            double[] randoms;
-
-            @Override
-            public void run() {
-                randoms = tlr.gaussians().limit(SIZE).toArray();
-            }
-        }
-        final RandomTask[] tasks = new RandomTask[10];
-        for (int i=0; i < tasks.length; i++) {
-            tasks[i] = new RandomTask();
-        }
-        for (int i=0; i < tasks.length; i++) {
-            e.submit(tasks[i]);
-        }
-        e.shutdown();
-        e.awaitTermination(3, TimeUnit.SECONDS);
-        for (int i=1; i < tasks.length; i++) {
-            assertFalse(Arrays.equals(tasks[0].randoms, tasks[i].randoms));
-        }
+    public void testThreadLocalGaussianStream() throws InterruptedException, ExecutionException, TimeoutException {
+        ThreadLocalRandom tlr = ThreadLocalRandom.current();
+        testRandomResultSupplierConcurrently(() -> tlr.gaussians().limit(SIZE).boxed().collect(toList()));
     }
 
+    <T> void testRandomResultSupplierConcurrently(Supplier<T> s) throws InterruptedException, ExecutionException, TimeoutException {
+        // Produce 10 completable future tasks
+        final int tasks = 10;
+        List<CompletableFuture<T>> cfs = Stream.generate(() -> CompletableFuture.supplyAsync(s)).
+                limit(tasks).collect(toList());
+
+        // Wait for all tasks to complete
+        // Timeout is beyond reasonable doubt that completion should
+        // have occurred unless there is an issue
+        CompletableFuture<Void> all = CompletableFuture.allOf(cfs.stream().toArray(CompletableFuture[]::new));
+        all.get(1, TimeUnit.MINUTES);
+
+        // Count the distinct results, which should equal the number of tasks
+        long rc = cfs.stream().map(CompletableFuture::join).distinct().count();
+        assertEquals(rc, tasks);
+    }
 }

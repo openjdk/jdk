@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,11 +68,11 @@ class DatagramPacket {
     int port;
 
     /**
-     * Constructs a <code>DatagramPacket</code> for receiving packets of
-     * length <code>length</code>, specifying an offset into the buffer.
+     * Constructs a {@code DatagramPacket} for receiving packets of
+     * length {@code length}, specifying an offset into the buffer.
      * <p>
-     * The <code>length</code> argument must be less than or equal to
-     * <code>buf.length</code>.
+     * The {@code length} argument must be less than or equal to
+     * {@code buf.length}.
      *
      * @param   buf      buffer for holding the incoming datagram.
      * @param   offset   the offset for the buffer
@@ -87,11 +87,11 @@ class DatagramPacket {
     }
 
     /**
-     * Constructs a <code>DatagramPacket</code> for receiving packets of
-     * length <code>length</code>.
+     * Constructs a {@code DatagramPacket} for receiving packets of
+     * length {@code length}.
      * <p>
-     * The <code>length</code> argument must be less than or equal to
-     * <code>buf.length</code>.
+     * The {@code length} argument must be less than or equal to
+     * {@code buf.length}.
      *
      * @param   buf      buffer for holding the incoming datagram.
      * @param   length   the number of bytes to read.
@@ -102,10 +102,10 @@ class DatagramPacket {
 
     /**
      * Constructs a datagram packet for sending packets of length
-     * <code>length</code> with offset <code>ioffset</code>to the
+     * {@code length} with offset {@code ioffset}to the
      * specified port number on the specified host. The
-     * <code>length</code> argument must be less than or equal to
-     * <code>buf.length</code>.
+     * {@code length} argument must be less than or equal to
+     * {@code buf.length}.
      *
      * @param   buf      the packet data.
      * @param   offset   the packet data offset.
@@ -125,10 +125,10 @@ class DatagramPacket {
 
     /**
      * Constructs a datagram packet for sending packets of length
-     * <code>length</code> with offset <code>ioffset</code>to the
+     * {@code length} with offset {@code ioffset}to the
      * specified port number on the specified host. The
-     * <code>length</code> argument must be less than or equal to
-     * <code>buf.length</code>.
+     * {@code length} argument must be less than or equal to
+     * {@code buf.length}.
      *
      * @param   buf      the packet data.
      * @param   offset   the packet data offset.
@@ -147,9 +147,9 @@ class DatagramPacket {
 
     /**
      * Constructs a datagram packet for sending packets of length
-     * <code>length</code> to the specified port number on the specified
-     * host. The <code>length</code> argument must be less than or equal
-     * to <code>buf.length</code>.
+     * {@code length} to the specified port number on the specified
+     * host. The {@code length} argument must be less than or equal
+     * to {@code buf.length}.
      *
      * @param   buf      the packet data.
      * @param   length   the packet length.
@@ -164,9 +164,9 @@ class DatagramPacket {
 
     /**
      * Constructs a datagram packet for sending packets of length
-     * <code>length</code> to the specified port number on the specified
-     * host. The <code>length</code> argument must be less than or equal
-     * to <code>buf.length</code>.
+     * {@code length} to the specified port number on the specified
+     * host. The {@code length} argument must be less than or equal
+     * to {@code buf.length}.
      *
      * @param   buf      the packet data.
      * @param   length   the packet length.
@@ -207,8 +207,8 @@ class DatagramPacket {
 
     /**
      * Returns the data buffer. The data received or the data to be sent
-     * starts from the <code>offset</code> in the buffer,
-     * and runs for <code>length</code> long.
+     * starts from the {@code offset} in the buffer,
+     * and runs for {@code length} long.
      *
      * @return  the buffer used to receive or  send data
      * @see #setData(byte[], int, int)
@@ -277,7 +277,7 @@ class DatagramPacket {
     /**
      * Sets the IP address of the machine to which this datagram
      * is being sent.
-     * @param iaddr the <code>InetAddress</code>
+     * @param iaddr the {@code InetAddress}
      * @since   JDK1.1
      * @see #getAddress()
      */
@@ -303,7 +303,7 @@ class DatagramPacket {
      * Sets the SocketAddress (usually IP address + port number) of the remote
      * host to which this datagram is being sent.
      *
-     * @param address the <code>SocketAddress</code>
+     * @param address the {@code SocketAddress}
      * @throws  IllegalArgumentException if address is null or is a
      *          SocketAddress subclass not supported by this socket
      *
@@ -324,7 +324,7 @@ class DatagramPacket {
      * Gets the SocketAddress (usually IP address + port number) of the remote
      * host that this packet is being sent to or is coming from.
      *
-     * @return the <code>SocketAddress</code>
+     * @return the {@code SocketAddress}
      * @since 1.4
      * @see #setSocketAddress
      */
@@ -335,7 +335,7 @@ class DatagramPacket {
     /**
      * Set the data buffer for this packet. With the offset of
      * this DatagramPacket set to 0, and the length set to
-     * the length of <code>buf</code>.
+     * the length of {@code buf}.
      *
      * @param buf the buffer to set for this packet.
      *

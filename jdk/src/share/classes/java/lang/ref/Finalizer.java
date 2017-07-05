@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,16 +29,16 @@ import java.security.PrivilegedAction;
 import java.security.AccessController;
 
 
-final class Finalizer extends FinalReference { /* Package-private; must be in
-                                                  same package as the Reference
-                                                  class */
+final class Finalizer extends FinalReference<Object> { /* Package-private; must be in
+                                                          same package as the Reference
+                                                          class */
 
     /* A native method that invokes an arbitrary object's finalize method is
        required since the finalize method is protected
      */
     static native void invokeFinalizeMethod(Object o) throws Throwable;
 
-    private static ReferenceQueue queue = new ReferenceQueue();
+    private static ReferenceQueue<Object> queue = new ReferenceQueue<>();
     private static Finalizer unfinalized = null;
     private static final Object lock = new Object();
 

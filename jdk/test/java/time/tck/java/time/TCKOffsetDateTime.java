@@ -126,6 +126,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -552,6 +553,68 @@ public class TCKOffsetDateTime extends AbstractDateTimeTest {
 
         assertEquals(a.toOffsetTime(), OffsetTime.of(localTime, offset));
         assertEquals(a.toString(), localDateTime.toString() + offset.toString());
+    }
+
+    //-----------------------------------------------------------------------
+    // isSupported(TemporalField)
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_isSupported_TemporalField() {
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported((TemporalField) null), false);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.NANO_OF_SECOND), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.NANO_OF_DAY), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.MICRO_OF_SECOND), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.MICRO_OF_DAY), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.MILLI_OF_SECOND), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.MILLI_OF_DAY), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.SECOND_OF_MINUTE), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.SECOND_OF_DAY), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.MINUTE_OF_HOUR), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.MINUTE_OF_DAY), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.HOUR_OF_AMPM), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.CLOCK_HOUR_OF_AMPM), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.HOUR_OF_DAY), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.CLOCK_HOUR_OF_DAY), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.AMPM_OF_DAY), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.DAY_OF_WEEK), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.DAY_OF_MONTH), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.DAY_OF_YEAR), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.EPOCH_DAY), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.ALIGNED_WEEK_OF_MONTH), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.ALIGNED_WEEK_OF_YEAR), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.MONTH_OF_YEAR), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.PROLEPTIC_MONTH), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.YEAR), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.YEAR_OF_ERA), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.ERA), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.INSTANT_SECONDS), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoField.OFFSET_SECONDS), true);
+    }
+
+    //-----------------------------------------------------------------------
+    // isSupported(TemporalUnit)
+    //-----------------------------------------------------------------------
+    @Test
+    public void test_isSupported_TemporalUnit() {
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported((TemporalUnit) null), false);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoUnit.NANOS), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoUnit.MICROS), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoUnit.MILLIS), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoUnit.SECONDS), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoUnit.MINUTES), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoUnit.HOURS), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoUnit.HALF_DAYS), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoUnit.DAYS), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoUnit.WEEKS), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoUnit.MONTHS), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoUnit.YEARS), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoUnit.DECADES), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoUnit.CENTURIES), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoUnit.MILLENNIA), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoUnit.ERAS), true);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.isSupported(ChronoUnit.FOREVER), false);
     }
 
     //-----------------------------------------------------------------------
@@ -1203,6 +1266,7 @@ public class TCKOffsetDateTime extends AbstractDateTimeTest {
         assertEquals(a.compareTo(a) == 0, true);
         assertEquals(b.compareTo(b) == 0, true);
         assertEquals(a.toInstant().compareTo(b.toInstant()) < 0, true);
+        assertEquals(OffsetDateTime.timeLineOrder().compare(a, b) < 0, true);
     }
 
     @Test
@@ -1214,6 +1278,7 @@ public class TCKOffsetDateTime extends AbstractDateTimeTest {
         assertEquals(a.compareTo(a) == 0, true);
         assertEquals(b.compareTo(b) == 0, true);
         assertEquals(a.toInstant().compareTo(b.toInstant()) < 0, true);
+        assertEquals(OffsetDateTime.timeLineOrder().compare(a, b) < 0, true);
     }
 
     @Test
@@ -1225,6 +1290,7 @@ public class TCKOffsetDateTime extends AbstractDateTimeTest {
         assertEquals(a.compareTo(a) == 0, true);
         assertEquals(b.compareTo(b) == 0, true);
         assertEquals(a.toInstant().compareTo(b.toInstant()) < 0, true);
+        assertEquals(OffsetDateTime.timeLineOrder().compare(a, b) < 0, true);
     }
 
     @Test
@@ -1236,6 +1302,7 @@ public class TCKOffsetDateTime extends AbstractDateTimeTest {
         assertEquals(a.compareTo(a) == 0, true);
         assertEquals(b.compareTo(b) == 0, true);
         assertEquals(a.toInstant().compareTo(b.toInstant()) < 0, true);
+        assertEquals(OffsetDateTime.timeLineOrder().compare(a, b) < 0, true);
     }
 
     @Test
@@ -1247,6 +1314,7 @@ public class TCKOffsetDateTime extends AbstractDateTimeTest {
         assertEquals(a.compareTo(a) == 0, true);
         assertEquals(b.compareTo(b) == 0, true);
         assertEquals(a.toInstant().compareTo(b.toInstant()) < 0, true);
+        assertEquals(OffsetDateTime.timeLineOrder().compare(a, b) < 0, true);
     }
 
     @Test
@@ -1258,6 +1326,7 @@ public class TCKOffsetDateTime extends AbstractDateTimeTest {
         assertEquals(a.compareTo(a) == 0, true);
         assertEquals(b.compareTo(b) == 0, true);
         assertEquals(a.toInstant().compareTo(b.toInstant()) < 0, true);
+        assertEquals(OffsetDateTime.timeLineOrder().compare(a, b) < 0, true);
     }
 
     @Test
@@ -1269,6 +1338,14 @@ public class TCKOffsetDateTime extends AbstractDateTimeTest {
         assertEquals(a.compareTo(a) == 0, true);
         assertEquals(b.compareTo(b) == 0, true);
         assertEquals(a.toInstant().compareTo(b.toInstant()) < 0, true);
+        assertEquals(OffsetDateTime.timeLineOrder().compare(a, b) < 0, true);
+    }
+
+    @Test
+    public void test_compareTo_bothInstantComparator() {
+        OffsetDateTime a = OffsetDateTime.of(2008, 6, 30, 11, 20, 40, 4, OFFSET_PTWO);
+        OffsetDateTime b = OffsetDateTime.of(2008, 6, 30, 10, 20, 40, 5, OFFSET_PONE);
+        assertEquals(a.compareTo(b), OffsetDateTime.timeLineOrder().compare(a,b), "for nano != nano, compareTo and timeLineOrder() should be the same");
     }
 
     @Test
