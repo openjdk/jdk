@@ -418,6 +418,9 @@ class CompileBroker: AllStatic {
   static void print_last_compile();
 
   static void print_compiler_threads_on(outputStream* st);
+
+  // compiler name for debugging
+  static const char* compiler_name(int comp_level);
 };
 
 #endif // SHARE_VM_COMPILER_COMPILEBROKER_HPP

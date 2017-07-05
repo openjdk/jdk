@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,8 @@ class BsdThread implements ThreadProxy {
 
     BsdThread(BsdDebugger debugger, long id) {
         this.debugger = debugger;
-        this.thread_id = (int) id;
+        // use unique_thread_id to identify thread
+        this.unique_thread_id = id;
     }
 
     public boolean equals(Object obj) {
@@ -52,7 +53,7 @@ class BsdThread implements ThreadProxy {
             return false;
         }
 
-        return (((BsdThread) obj).thread_id == thread_id);
+        return (((BsdThread) obj).unique_thread_id == unique_thread_id);
     }
 
     public int hashCode() {
@@ -79,5 +80,10 @@ class BsdThread implements ThreadProxy {
     public void setContext(ThreadContext context)
       throws IllegalThreadStateException, DebuggerException {
         throw new DebuggerException("Unimplemented");
+    }
+
+    /** this is not interface function, used in core file to get unique thread id on Macosx*/
+    public long getUniqueThreadId() {
+        return unique_thread_id;
     }
 }

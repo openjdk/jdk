@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
+import sun.jvm.hotspot.utilities.PlatformInfo;
 
 public class PStack extends Tool {
     // in non-verbose mode, Method*s are not printed in java frames
@@ -54,6 +55,11 @@ public class PStack extends Tool {
    }
 
    public void run(PrintStream out, Debugger dbg) {
+      if (PlatformInfo.getOS().equals("darwin")) {
+        out.println("Not available on Darwin");
+        return;
+      }
+
       CDebugger cdbg = dbg.getCDebugger();
       if (cdbg != null) {
          ConcurrentLocksPrinter concLocksPrinter = null;

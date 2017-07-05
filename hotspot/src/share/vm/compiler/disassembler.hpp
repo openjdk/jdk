@@ -100,7 +100,7 @@ class Disassembler {
   }
   static void decode(CodeBlob *cb,               outputStream* st = NULL);
   static void decode(nmethod* nm,                outputStream* st = NULL);
-  static void decode(address begin, address end, outputStream* st = NULL, CodeComments c = CodeComments());
+  static void decode(address begin, address end, outputStream* st = NULL, CodeStrings c = CodeStrings());
 };
 
 #endif // SHARE_VM_COMPILER_DISASSEMBLER_HPP
