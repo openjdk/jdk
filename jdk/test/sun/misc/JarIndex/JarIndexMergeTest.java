@@ -25,7 +25,7 @@
  * @test
  * @bug 6901992
  * @summary InvalidJarIndexException due to bug in sun.misc.JarIndex.merge()
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.util.jar
  * @compile -XDignore.symbol.file JarIndexMergeTest.java
  * @run main JarIndexMergeTest
  * @author  Diego Belfer
@@ -39,7 +39,7 @@ import java.util.LinkedList;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 // implementation specific API
-import sun.misc.JarIndex;
+import jdk.internal.util.jar.JarIndex;
 
 public class JarIndexMergeTest {
     static final String slash = File.separator;
