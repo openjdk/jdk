@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class UnregisterGroup
     private static boolean done = false;
     private static ActivateMe lastResortExitObj = null;
     private static final int NUM_OBJECTS = 10;
-    private static int PORT = 2006;
+    private static int registryPort = -1;
 
     public UnregisterGroup(ActivationID id, MarshalledObject mobj)
         throws Exception
@@ -116,7 +116,7 @@ public class UnregisterGroup
 
         try {
             CallbackInterface cobj =
-                (CallbackInterface)Naming.lookup("//:" + PORT + "/Callback");
+                (CallbackInterface)Naming.lookup("//:" + registryPort + "/Callback");
             cobj.inc();
         } catch (Exception e) {
             System.err.println("cobj.inc exception");
@@ -235,7 +235,8 @@ public class UnregisterGroup
             try {
 
                 // create reg and export callback object
-                registry = LocateRegistry.createRegistry(PORT);
+                registry = TestLibrary.createRegistryOnUnusedPort();
+                registryPort = TestLibrary.getRegistryPort(registry);
                 Callback robj = new Callback();
                 registry.bind("Callback", robj);
 

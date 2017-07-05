@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,18 +29,19 @@ import java.rmi.server.UnicastRemoteObject;
 public class readTest {
 
     public static void main(String args[]) throws Exception {
-        int port = 7491;
         try {
             testPkg.Server obj = new testPkg.Server();
             testPkg.Hello stub = (testPkg.Hello) UnicastRemoteObject.exportObject(obj, 0);
             // Bind the remote object's stub in the registry
-            Registry registry = LocateRegistry.getRegistry(port);
+            Registry registry =
+                LocateRegistry.getRegistry(TestLibrary.READTEST_REGISTRY_PORT);
             registry.bind("Hello", stub);
 
             System.err.println("Server ready");
 
             // now, let's test client
-            testPkg.Client client = new testPkg.Client(port);
+            testPkg.Client client =
+                new testPkg.Client(TestLibrary.READTEST_REGISTRY_PORT);
             String testStubReturn = client.testStub();
             if(!testStubReturn.equals(obj.hello)) {
                 throw new RuntimeException("Test Fails : unexpected string from stub call");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,19 +59,21 @@
  * @build Apple AppleEvent AppleImpl AppleUserImpl
  * @build Orange OrangeEcho OrangeEchoImpl OrangeImpl
  * @build ApplicationServer
+ * @build TestLibrary
  *
  * @run main/othervm/policy=security.policy AppleUserImpl -seconds 30
  *
  * @author Peter Jones, Nigel Daley
  */
 
-import java.rmi.RemoteException;
 import java.rmi.NoSuchObjectException;
-import java.rmi.server.UnicastRemoteObject;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.Random;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The AppleUserImpl class implements the behavior of the remote
@@ -80,7 +82,7 @@ import java.util.logging.Level;
  * AppleUserThread is created for each apple.
  */
 public class AppleUserImpl extends UnicastRemoteObject implements AppleUser {
-
+    private static int registryPort = -1;
     private static final Logger logger =
         Logger.getLogger("reliability.appleuser");
     private static int threadNum = 0;
@@ -308,8 +310,10 @@ public class AppleUserImpl extends UnicastRemoteObject implements AppleUser {
 
             synchronized (user) {
                 // create new registry and bind new AppleUserImpl in registry
-                LocateRegistry.createRegistry(2006);
-                LocateRegistry.getRegistry(2006).rebind("AppleUser",user);
+                Registry registry = TestLibrary.createRegistryOnUnusedPort();
+                registryPort = TestLibrary.getRegistryPort(registry);
+                LocateRegistry.getRegistry(registryPort).rebind("AppleUser",
+                                                                 user);
 
                 // start the other server if applicable
                 if (othervm) {
@@ -318,7 +322,9 @@ public class AppleUserImpl extends UnicastRemoteObject implements AppleUser {
                         "started in separate process");
                 } else {
                     Class app = Class.forName("ApplicationServer");
-                    server = new Thread((Runnable) app.newInstance());
+                    java.lang.reflect.Constructor appConstructor =
+                            app.getDeclaredConstructor(new Class[] {Integer.TYPE});
+                    server = new Thread((Runnable) appConstructor.newInstance(registryPort));
                     logger.log(Level.INFO, "Starting application server " +
                         "in same process");
                     server.start();

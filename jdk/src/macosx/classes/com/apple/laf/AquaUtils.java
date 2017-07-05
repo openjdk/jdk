@@ -28,18 +28,19 @@ package com.apple.laf;
 import java.awt.*;
 import java.awt.image.*;
 import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.security.PrivilegedAction;
 import java.util.*;
 
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.plaf.UIResource;
 
 import sun.awt.AppContext;
 
 import sun.lwawt.macosx.CImage;
 import sun.lwawt.macosx.CImage.Creator;
+import sun.lwawt.macosx.CPlatformWindow;
 import sun.swing.SwingUtilities2;
 
 import com.apple.laf.AquaImageFactory.SlicedImageControl;
@@ -389,4 +390,51 @@ public class AquaUtils {
             return false;
         }
     }
+
+    protected static boolean isWindowTextured(final Component c) {
+        if (!(c instanceof JComponent)) {
+            return false;
+        }
+        final JRootPane pane = ((JComponent) c).getRootPane();
+        if (pane == null) {
+            return false;
+        }
+        Object prop = pane.getClientProperty(
+                CPlatformWindow.WINDOW_BRUSH_METAL_LOOK);
+        if (prop != null) {
+            return Boolean.parseBoolean(prop.toString());
+        }
+        prop = pane.getClientProperty(CPlatformWindow.WINDOW_STYLE);
+        return prop != null && "textured".equals(prop);
+    }
+
+    private static Color resetAlpha(final Color color) {
+        return new Color(color.getRed(), color.getGreen(), color.getBlue(), 0);
+    }
+
+    protected static void fillRect(final Graphics g, final Component c) {
+        fillRect(g, c, c.getBackground(), 0, 0, c.getWidth(), c.getHeight());
+    }
+
+    protected static void fillRect(final Graphics g, final Component c,
+                                   final Color color, final int x, final int y,
+                                   final int w, final int h) {
+        if (!(g instanceof Graphics2D)) {
+            return;
+        }
+        final Graphics2D cg = (Graphics2D) g.create();
+        try {
+            if (color instanceof UIResource && isWindowTextured(c)
+                    && color.equals(SystemColor.window)) {
+                cg.setComposite(AlphaComposite.Src);
+                cg.setColor(resetAlpha(color));
+            } else {
+                cg.setColor(color);
+            }
+            cg.fillRect(x, y, w, h);
+        } finally {
+            cg.dispose();
+        }
+    }
 }
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,37 +169,10 @@ public class ActivationLibrary {
         return false;
     }
 
-    /**
-     * Check to see if an arry of Strings contains a given string.
-     */
-    private static boolean
-        containsString(String[] strings, String contained)
-    {
-        if (strings == null) {
-            if (contained == null) {
-                return true;
-            }
-            return false;
-        }
-
-        for (int i = 0 ; i < strings.length ; i ++ ) {
-            if ((strings[i] != null) &&
-                (strings[i].indexOf(contained) >= 0))
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
     /** cleanup after rmid */
     public static void rmidCleanup(RMID rmid) {
-        rmidCleanup(rmid, TestLibrary.RMID_PORT);
-    }
-
-    public static void rmidCleanup(RMID rmid, int port) {
         if (rmid != null) {
-            if (!ActivationLibrary.safeDestroy(rmid, port, SAFE_WAIT_TIME)) {
+            if (!ActivationLibrary.safeDestroy(rmid, SAFE_WAIT_TIME)) {
                 TestLibrary.bomb("rmid not destroyed in: " +
                                  SAFE_WAIT_TIME +
                                  " milliseconds");
@@ -215,8 +188,8 @@ public class ActivationLibrary {
      * @return whether or not shutdown completed succesfully in the
      *         timeAllowed
      */
-    private static boolean safeDestroy(RMID rmid, int port, long timeAllowed) {
-        DestroyThread destroyThread = new DestroyThread(rmid, port);
+    private static boolean safeDestroy(RMID rmid, long timeAllowed) {
+        DestroyThread destroyThread = new DestroyThread(rmid);
         destroyThread.start();
 
         try {
@@ -236,9 +209,9 @@ public class ActivationLibrary {
         private final int port;
         private boolean succeeded = false;
 
-        DestroyThread(RMID rmid, int port) {
+        DestroyThread(RMID rmid) {
             this.rmid = rmid;
-            this.port = port;
+            this.port = rmid.getPort();
             this.setDaemon(true);
         }
 

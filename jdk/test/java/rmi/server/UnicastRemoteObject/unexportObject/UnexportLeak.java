@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,10 @@
  *
  * @author Ann Wollrath
  *
+ * @library ../../../testlibrary
  * @build UnexportLeak
  * @build UnexportLeak_Stub
+ * @build TestLibrary
  * @build Ping
  * @run main/othervm UnexportLeak
  */
@@ -40,20 +42,18 @@ import java.rmi.server.*;
 import java.rmi.registry.*;
 
 public class UnexportLeak implements Ping {
-
-    private static int PORT = 2006;
-
     public void ping() {
     }
 
     public static void main(String[] args) {
         try {
             System.err.println("\nRegression test for bug 4331349\n");
-            LocateRegistry.createRegistry(PORT);
+            Registry registry = TestLibrary.createRegistryOnUnusedPort();
+            int registryPort = TestLibrary.getRegistryPort(registry);
             Remote obj = new UnexportLeak();
             WeakReference wr = new WeakReference(obj);
             UnicastRemoteObject.exportObject(obj);
-            LocateRegistry.getRegistry(PORT).rebind("UnexportLeak", obj);
+            LocateRegistry.getRegistry(registryPort).rebind("UnexportLeak", obj);
             UnicastRemoteObject.unexportObject(obj, true);
             obj = null;
             flushRefs();

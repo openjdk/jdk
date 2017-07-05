@@ -179,7 +179,6 @@ public class KrbApReq {
     KrbApReq(APOptions apOptions,
              Ticket ticket,
              EncryptionKey key,
-             Realm crealm,
              PrincipalName cname,
              Checksum cksum,
              KerberosTime ctime,
@@ -189,7 +188,7 @@ public class KrbApReq {
         throws Asn1Exception, IOException,
                KdcErrException, KrbCryptoException {
 
-        init(apOptions, ticket, key, crealm, cname,
+        init(apOptions, ticket, key, cname,
              cksum, ctime, subKey, seqNumber, authorizationData,
             KeyUsage.KU_PA_TGS_REQ_AUTHENTICATOR);
 
@@ -208,7 +207,6 @@ public class KrbApReq {
         init(options,
              tgs_creds.ticket,
              tgs_creds.key,
-             tgs_creds.client.getRealm(),
              tgs_creds.client,
              cksum,
              ctime,
@@ -221,7 +219,6 @@ public class KrbApReq {
     private void init(APOptions apOptions,
                       Ticket ticket,
                       EncryptionKey key,
-                      Realm crealm,
                       PrincipalName cname,
                       Checksum cksum,
                       KerberosTime ctime,
@@ -232,7 +229,7 @@ public class KrbApReq {
         throws Asn1Exception, IOException,
                KdcErrException, KrbCryptoException {
 
-        createMessage(apOptions, ticket, key, crealm, cname,
+        createMessage(apOptions, ticket, key, cname,
                       cksum, ctime, subKey, seqNumber, authorizationData,
             usage);
         obuf = apReqMessg.asn1Encode();
@@ -289,9 +286,6 @@ public class KrbApReq {
         ctime = authenticator.ctime;
         cusec = authenticator.cusec;
         authenticator.ctime.setMicroSeconds(authenticator.cusec);
-        authenticator.cname.setRealm(authenticator.crealm);
-        apReqMessg.ticket.sname.setRealm(apReqMessg.ticket.realm);
-        enc_ticketPart.cname.setRealm(enc_ticketPart.crealm);
 
         if (!authenticator.cname.equals(enc_ticketPart.cname))
             throw new KrbApErrException(Krb5.KRB_AP_ERR_BADMATCH);
@@ -457,7 +451,6 @@ public class KrbApReq {
     private void createMessage(APOptions apOptions,
                                Ticket ticket,
                                EncryptionKey key,
-                               Realm crealm,
                                PrincipalName cname,
                                Checksum cksum,
                                KerberosTime ctime,
@@ -474,8 +467,7 @@ public class KrbApReq {
             seqno = new Integer(seqNumber.current());
 
         authenticator =
-            new Authenticator(crealm,
-                              cname,
+            new Authenticator(cname,
                               cksum,
                               ctime.getMicroSeconds(),
                               ctime,

@@ -119,6 +119,11 @@ public class RepaintManager
     // Whether or not a VolatileImage should be used for double-buffered painting
     static boolean volatileImageBufferEnabled = true;
     /**
+     * Type of VolatileImage which should be used for double-buffered
+     * painting.
+     */
+    private static final int volatileBufferType;
+    /**
      * Value of the system property awt.nativeDoubleBuffering.
      */
     private static boolean nativeDoubleBuffering;
@@ -203,6 +208,13 @@ public class RepaintManager
         if (ge instanceof SunGraphicsEnvironment) {
             ((SunGraphicsEnvironment)ge).addDisplayChangedListener(
                     new DisplayChangedHandler());
+        }
+        Toolkit tk = Toolkit.getDefaultToolkit();
+        if ((tk instanceof SunToolkit)
+                && ((SunToolkit) tk).isSwingBackbufferTranslucencySupported()) {
+            volatileBufferType = Transparency.TRANSLUCENT;
+        } else {
+            volatileBufferType = Transparency.OPAQUE;
         }
     }
 
@@ -989,7 +1001,8 @@ public class RepaintManager
             if (image != null) {
                 image.flush();
             }
-            image = config.createCompatibleVolatileImage(width, height);
+            image = config.createCompatibleVolatileImage(width, height,
+                                                         volatileBufferType);
             volatileMap.put(config, image);
         }
         return image;
@@ -1483,9 +1496,26 @@ public class RepaintManager
                     for(y=clipY, maxy = clipY + clipH; y < maxy ; y += bh) {
                         osg.translate(-x, -y);
                         osg.setClip(x,y,bw,bh);
+                        if (volatileBufferType != Transparency.OPAQUE
+                                && osg instanceof Graphics2D) {
+                            final Graphics2D g2d = (Graphics2D) osg;
+                            final Color oldBg = g2d.getBackground();
+                            g2d.setBackground(c.getBackground());
+                            g2d.clearRect(x, y, bw, bh);
+                            g2d.setBackground(oldBg);
+                        }
                         c.paintToOffscreen(osg, x, y, bw, bh, maxx, maxy);
                         g.setClip(x, y, bw, bh);
-                        g.drawImage(image, x, y, c);
+                        if (volatileBufferType != Transparency.OPAQUE
+                                && g instanceof Graphics2D) {
+                            final Graphics2D g2d = (Graphics2D) g;
+                            final Composite oldComposite = g2d.getComposite();
+                            g2d.setComposite(AlphaComposite.Src);
+                            g2d.drawImage(image, x, y, c);
+                            g2d.setComposite(oldComposite);
+                        } else {
+                            g.drawImage(image, x, y, c);
+                        }
                         osg.translate(x, y);
                     }
                 }

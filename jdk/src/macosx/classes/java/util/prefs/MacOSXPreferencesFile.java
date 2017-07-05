@@ -360,11 +360,11 @@ class MacOSXPreferencesFile {
         }
     }
 
-    void addChildToNode(String path, String child)
+    boolean addChildToNode(String path, String child)
     {
         synchronized(MacOSXPreferencesFile.class) {
             markChanged();
-            addChildToNode(path, child+"/", appName, user, host);
+            return addChildToNode(path, child+"/", appName, user, host);
         }
     }
 
@@ -433,7 +433,7 @@ class MacOSXPreferencesFile {
         addNode(String path, String name, long user, long host);
     private static final native void
         removeNode(String path, String name, long user, long host);
-    private static final native void
+    private static final native boolean
         addChildToNode(String path, String child,
                        String name, long user, long host);
     private static final native void

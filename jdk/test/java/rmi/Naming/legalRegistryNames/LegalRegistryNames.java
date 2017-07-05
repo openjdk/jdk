@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,9 @@ import java.util.Vector;
 
 /**
  * Ensure that all legal forms of Naming URLs operate with the
- * java.rmi.Naming interface
+ * java.rmi.Naming interface.  This test requires using the default RMI Registry
+ * port as it tests all of the RMI naming URL's, including the ones which do not
+ * take a port (and therefore uses the default port).
  */
 public class LegalRegistryNames extends UnicastRemoteObject
     implements Legal

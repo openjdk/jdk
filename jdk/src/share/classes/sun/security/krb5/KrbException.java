@@ -45,6 +45,10 @@ public class KrbException extends Exception {
         super(s);
     }
 
+    public KrbException(Throwable cause) {
+        super(cause);
+    }
+
     public KrbException(int i) {
         returnCode = i;
     }

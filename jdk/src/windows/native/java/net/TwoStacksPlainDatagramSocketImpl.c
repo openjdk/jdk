@@ -243,7 +243,7 @@ jboolean exceedSizeLimit(JNIEnv *env, jint fd, jint addr, jint size)
                                 addrList = curr;
                             }
                             LeaveCriticalSection(&sizeCheckLock);
-                            JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+                            JNU_ThrowOutOfMemoryError(env, "Native heap allocation failed");
                             return JNI_TRUE;
                         }
                         curr->addr = htonl((*addrp)->S_un.S_addr);
@@ -740,7 +740,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_send(JNIEnv *env, jobject this,
          */
         fullPacket = (char *)malloc(packetBufferLen);
         if (!fullPacket) {
-            JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+            JNU_ThrowOutOfMemoryError(env, "Send buf native heap allocation failed");
             return;
         }
     } else {
@@ -1003,7 +1003,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_peekData(JNIEnv *env, jobject thi
          */
         fullPacket = (char *)malloc(packetBufferLen);
         if (!fullPacket) {
-            JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+            JNU_ThrowOutOfMemoryError(env, "Native heap allocation failed");
             return -1;
         }
     } else {
@@ -1287,7 +1287,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_receive0(JNIEnv *env, jobject thi
          */
         fullPacket = (char *)malloc(packetBufferLen);
         if (!fullPacket) {
-            JNU_ThrowOutOfMemoryError(env, "heap allocation failed");
+            JNU_ThrowOutOfMemoryError(env, "Receive buf native heap allocation failed");
             return;
         }
     } else {

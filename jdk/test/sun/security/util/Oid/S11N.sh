@@ -71,7 +71,7 @@ case "$OS" in
       i[3-6]86 )
         PF="linux-i586"
         ;;
-      amd64* )
+      amd64* | x86_64 )
         PF="linux-amd64"
         ;;
       * )
@@ -97,15 +97,29 @@ case "$OS" in
     ;;
 esac
 
+echo "==================================================="
+echo "Try to set ALT_JAVA_RE_JDK if you see timeout error"
+echo "==================================================="
+
 # the test code
 
 ${TESTJAVA}${FS}bin${FS}javac -target 1.4 -source 1.4 \
         -d . ${TESTSRC}${FS}SerialTest.java || exit 10
 
+# You can set ALT_JAVA_RE_JDK to another location that contains the
+# binaries for older JDK releases. You can set it to a non-existent
+# directory to skip the interop tests between different versions.
+
+if [ "$ALT_JAVA_RE_JDK" = "" ]; then
+    JAVA_RE_JDK=/java/re/j2se
+else
+    JAVA_RE_JDK=$ALT_JAVA_RE_JDK
+fi
+
 OLDJAVA="
-    /java/re/j2se/1.6.0/latest/binaries/${PF}
-    /java/re/j2se/1.5.0/latest/binaries/${PF}
-    /java/re/j2se/1.4.2/latest/binaries/${PF}
+    $JAVA_RE_JDK/1.6.0/latest/binaries/${PF}
+    $JAVA_RE_JDK/1.5.0/latest/binaries/${PF}
+    $JAVA_RE_JDK/1.4.2/latest/binaries/${PF}
 "
 
 SMALL="

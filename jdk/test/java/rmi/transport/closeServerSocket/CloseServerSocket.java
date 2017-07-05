@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,8 @@
  * the local port is released).
  * @author Peter Jones
  *
- * @build CloseServerSocket
+ * @library ../../testlibrary
+ * @build CloseServerSocket TestLibrary
  * @run main/othervm CloseServerSocket
  */
 
@@ -44,8 +45,7 @@ import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 
 public class CloseServerSocket implements Remote {
-
-    private static final int PORT = 2020;
+    private static final int PORT = TestLibrary.getUnusedRandomPort();
 
     private CloseServerSocket() { }
 
@@ -88,7 +88,7 @@ public class CloseServerSocket implements Remote {
     }
 
     private static void verifyPortFree(int port) throws IOException {
-        ServerSocket ss = new ServerSocket(PORT);
+        ServerSocket ss = new ServerSocket(port);
         ss.close();
         System.err.println("- port " + port + " is free");
     }
