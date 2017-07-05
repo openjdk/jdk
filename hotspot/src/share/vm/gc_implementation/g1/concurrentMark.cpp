@@ -29,6 +29,7 @@
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/g1ErgoVerbose.hpp"
+#include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
 #include "gc_implementation/g1/heapRegion.inline.hpp"
@@ -402,8 +403,7 @@ uint ConcurrentMark::scale_parallel_threads(uint n_par_threads) {
   return MAX2((n_par_threads + 2) / 4, 1U);
 }
 
-ConcurrentMark::ConcurrentMark(ReservedSpace rs,
-                               int max_regions) :
+ConcurrentMark::ConcurrentMark(ReservedSpace rs, uint max_regions) :
   _markBitMap1(rs, MinObjAlignment - 1),
   _markBitMap2(rs, MinObjAlignment - 1),
 
@@ -414,7 +414,7 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
   _cleanup_sleep_factor(0.0),
   _cleanup_task_overhead(1.0),
   _cleanup_list("Cleanup List"),
-  _region_bm(max_regions, false /* in_resource_area*/),
+  _region_bm((BitMap::idx_t) max_regions, false /* in_resource_area*/),
   _card_bm((rs.size() + CardTableModRefBS::card_size - 1) >>
            CardTableModRefBS::card_shift,
            false /* in_resource_area*/),
@@ -496,7 +496,7 @@ ConcurrentMark::ConcurrentMark(ReservedSpace rs,
     _task_queues->register_queue(i, task_queue);
 
     _count_card_bitmaps[i] = BitMap(card_bm_size, false);
-    _count_marked_bytes[i] = NEW_C_HEAP_ARRAY(size_t, max_regions);
+    _count_marked_bytes[i] = NEW_C_HEAP_ARRAY(size_t, (size_t) max_regions);
 
     _tasks[i] = new CMTask(i, this,
                            _count_marked_bytes[i],
@@ -846,7 +846,7 @@ void ConcurrentMark::enter_first_sync_barrier(int task_num) {
     clear_marking_state(concurrent() /* clear_overflow */);
     force_overflow()->update();
 
-    if (PrintGC) {
+    if (G1Log::fine()) {
       gclog_or_tty->date_stamp(PrintGCDateStamps);
       gclog_or_tty->stamp(PrintGCTimeStamps);
       gclog_or_tty->print_cr("[GC concurrent-mark-reset-for-overflow]");
@@ -1119,8 +1119,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     HandleMark hm;  // handle scope
     gclog_or_tty->print(" VerifyDuringGC:(before)");
     Universe::heap()->prepare_for_verify();
-    Universe::verify(/* allow dirty */ true,
-                     /* silent      */ false,
+    Universe::verify(/* silent      */ false,
                      /* option      */ VerifyOption_G1UsePrevMarking);
   }
 
@@ -1159,8 +1158,7 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
       HandleMark hm;  // handle scope
       gclog_or_tty->print(" VerifyDuringGC:(after)");
       Universe::heap()->prepare_for_verify();
-      Universe::verify(/* allow dirty */ true,
-                       /* silent      */ false,
+      Universe::verify(/* silent      */ false,
                        /* option      */ VerifyOption_G1UseNextMarking);
     }
     assert(!restart_for_overflow(), "sanity");
@@ -1194,11 +1192,6 @@ class CalcLiveObjectsClosure: public HeapRegionClosure {
   BitMap* _region_bm;
   BitMap* _card_bm;
 
-  // Debugging
-  size_t _tot_words_done;
-  size_t _tot_live;
-  size_t _tot_used;
-
   size_t _region_marked_bytes;
 
   intptr_t _bottom_card_num;
@@ -1217,9 +1210,7 @@ public:
   CalcLiveObjectsClosure(CMBitMapRO *bm, ConcurrentMark *cm,
                          BitMap* region_bm, BitMap* card_bm) :
     _bm(bm), _cm(cm), _region_bm(region_bm), _card_bm(card_bm),
-    _region_marked_bytes(0), _tot_words_done(0),
-    _tot_live(0), _tot_used(0),
-    _bottom_card_num(cm->heap_bottom_card_num()) { }
+    _region_marked_bytes(0), _bottom_card_num(cm->heap_bottom_card_num()) { }
 
   // It takes a region that's not empty (i.e., it has at least one
   // live object in it and sets its corresponding bit on the region
@@ -1229,18 +1220,17 @@ public:
   void set_bit_for_region(HeapRegion* hr) {
     assert(!hr->continuesHumongous(), "should have filtered those out");
 
-    size_t index = hr->hrs_index();
+    BitMap::idx_t index = (BitMap::idx_t) hr->hrs_index();
     if (!hr->startsHumongous()) {
       // Normal (non-humongous) case: just set the bit.
-      _region_bm->par_at_put((BitMap::idx_t) index, true);
+      _region_bm->par_at_put(index, true);
     } else {
       // Starts humongous case: calculate how many regions are part of
       // this humongous region and then set the bit range.
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
       HeapRegion *last_hr = g1h->heap_region_containing_raw(hr->end() - 1);
-      size_t end_index = last_hr->hrs_index() + 1;
-      _region_bm->par_at_put_range((BitMap::idx_t) index,
-                                   (BitMap::idx_t) end_index, true);
+      BitMap::idx_t end_index = (BitMap::idx_t) last_hr->hrs_index() + 1;
+      _region_bm->par_at_put_range(index, end_index, true);
     }
   }
 
@@ -1264,9 +1254,6 @@ public:
            err_msg("Preconditions not met - "
                    "start: "PTR_FORMAT", nextTop: "PTR_FORMAT", end: "PTR_FORMAT,
                    start, nextTop, hr->end()));
-
-    // Record the number of word's we'll examine.
-    size_t words_done = (nextTop - start);
 
     // Find the first marked object at or after "start".
     start = _bm->getNextMarkedWordAddress(start, nextTop);
@@ -1346,19 +1333,10 @@ public:
     // it can be queried by a calling verificiation routine
     _region_marked_bytes = marked_bytes;
 
-    _tot_live += hr->next_live_bytes();
-    _tot_used += hr->used();
-    _tot_words_done = words_done;
-
     return false;
   }
 
   size_t region_marked_bytes() const { return _region_marked_bytes; }
-
-  // Debugging
-  size_t tot_words_done() const      { return _tot_words_done; }
-  size_t tot_live() const            { return _tot_live; }
-  size_t tot_used() const            { return _tot_used; }
 };
 
 // Heap region closure used for verifying the counting data
@@ -1419,7 +1397,7 @@ public:
     // Verify that _top_at_conc_count == ntams
     if (hr->top_at_conc_mark_count() != hr->next_top_at_mark_start()) {
       if (_verbose) {
-        gclog_or_tty->print_cr("Region " SIZE_FORMAT ": top at conc count incorrect: "
+        gclog_or_tty->print_cr("Region %u: top at conc count incorrect: "
                                "expected " PTR_FORMAT ", actual: " PTR_FORMAT,
                                hr->hrs_index(), hr->next_top_at_mark_start(),
                                hr->top_at_conc_mark_count());
@@ -1435,7 +1413,7 @@ public:
     // we have missed accounting some objects during the actual marking.
     if (exp_marked_bytes > act_marked_bytes) {
       if (_verbose) {
-        gclog_or_tty->print_cr("Region " SIZE_FORMAT ": marked bytes mismatch: "
+        gclog_or_tty->print_cr("Region %u: marked bytes mismatch: "
                                "expected: " SIZE_FORMAT ", actual: " SIZE_FORMAT,
                                hr->hrs_index(), exp_marked_bytes, act_marked_bytes);
       }
@@ -1446,15 +1424,16 @@ public:
     // (which was just calculated) region bit maps.
     // We're not OK if the bit in the calculated expected region
     // bitmap is set and the bit in the actual region bitmap is not.
-    BitMap::idx_t index = (BitMap::idx_t)hr->hrs_index();
+    BitMap::idx_t index = (BitMap::idx_t) hr->hrs_index();
 
     bool expected = _exp_region_bm->at(index);
     bool actual = _region_bm->at(index);
     if (expected && !actual) {
       if (_verbose) {
-        gclog_or_tty->print_cr("Region " SIZE_FORMAT ": region bitmap mismatch: "
-                               "expected: %d, actual: %d",
-                               hr->hrs_index(), expected, actual);
+        gclog_or_tty->print_cr("Region %u: region bitmap mismatch: "
+                               "expected: %s, actual: %s",
+                               hr->hrs_index(),
+                               BOOL_TO_STR(expected), BOOL_TO_STR(actual));
       }
       failures += 1;
     }
@@ -1472,9 +1451,10 @@ public:
 
       if (expected && !actual) {
         if (_verbose) {
-          gclog_or_tty->print_cr("Region " SIZE_FORMAT ": card bitmap mismatch at " SIZE_FORMAT ": "
-                                 "expected: %d, actual: %d",
-                                 hr->hrs_index(), i, expected, actual);
+          gclog_or_tty->print_cr("Region %u: card bitmap mismatch at " SIZE_FORMAT ": "
+                                 "expected: %s, actual: %s",
+                                 hr->hrs_index(), i,
+                                 BOOL_TO_STR(expected), BOOL_TO_STR(actual));
         }
         failures += 1;
       }
@@ -1575,10 +1555,6 @@ class FinalCountDataUpdateClosure: public HeapRegionClosure {
   BitMap* _region_bm;
   BitMap* _card_bm;
 
-  size_t _total_live_bytes;
-  size_t _total_used_bytes;
-  size_t _total_words_done;
-
   void set_card_bitmap_range(BitMap::idx_t start_idx, BitMap::idx_t last_idx) {
     assert(start_idx <= last_idx, "sanity");
 
@@ -1604,18 +1580,17 @@ class FinalCountDataUpdateClosure: public HeapRegionClosure {
   void set_bit_for_region(HeapRegion* hr) {
     assert(!hr->continuesHumongous(), "should have filtered those out");
 
-    size_t index = hr->hrs_index();
+    BitMap::idx_t index = (BitMap::idx_t) hr->hrs_index();
     if (!hr->startsHumongous()) {
       // Normal (non-humongous) case: just set the bit.
-      _region_bm->par_set_bit((BitMap::idx_t) index);
+      _region_bm->par_set_bit(index);
     } else {
       // Starts humongous case: calculate how many regions are part of
       // this humongous region and then set the bit range.
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
       HeapRegion *last_hr = g1h->heap_region_containing_raw(hr->end() - 1);
-      size_t end_index = last_hr->hrs_index() + 1;
-      _region_bm->par_at_put_range((BitMap::idx_t) index,
-                                   (BitMap::idx_t) end_index, true);
+      BitMap::idx_t end_index = (BitMap::idx_t) last_hr->hrs_index() + 1;
+      _region_bm->par_at_put_range(index, end_index, true);
     }
   }
 
@@ -1623,8 +1598,7 @@ class FinalCountDataUpdateClosure: public HeapRegionClosure {
   FinalCountDataUpdateClosure(ConcurrentMark* cm,
                               BitMap* region_bm,
                               BitMap* card_bm) :
-    _cm(cm), _region_bm(region_bm), _card_bm(card_bm),
-    _total_words_done(0), _total_live_bytes(0), _total_used_bytes(0) { }
+    _cm(cm), _region_bm(region_bm), _card_bm(card_bm) { }
 
   bool doHeapRegion(HeapRegion* hr) {
 
@@ -1645,8 +1619,6 @@ class FinalCountDataUpdateClosure: public HeapRegionClosure {
 
     assert(hr->bottom() <= start && start <= hr->end() &&
            hr->bottom() <= ntams && ntams <= hr->end(), "Preconditions.");
-
-    size_t words_done = ntams - hr->bottom();
 
     if (start < ntams) {
       // Region was changed between remark and cleanup pauses
@@ -1678,16 +1650,8 @@ class FinalCountDataUpdateClosure: public HeapRegionClosure {
       set_bit_for_region(hr);
     }
 
-    _total_words_done += words_done;
-    _total_used_bytes += hr->used();
-    _total_live_bytes += hr->next_marked_bytes();
-
     return false;
   }
-
-  size_t total_words_done() const { return _total_words_done; }
-  size_t total_live_bytes() const { return _total_live_bytes; }
-  size_t total_used_bytes() const { return _total_used_bytes; }
 };
 
 class G1ParFinalCountTask: public AbstractGangTask {
@@ -1699,9 +1663,6 @@ protected:
 
   uint    _n_workers;
 
-  size_t *_live_bytes;
-  size_t *_used_bytes;
-
 public:
   G1ParFinalCountTask(G1CollectedHeap* g1h, BitMap* region_bm, BitMap* card_bm)
     : AbstractGangTask("G1 final counting"),
@@ -1709,8 +1670,7 @@ public:
       _actual_region_bm(region_bm), _actual_card_bm(card_bm),
       _n_workers(0) {
     // Use the value already set as the number of active threads
-    // in the call to run_task().  Needed for the allocation of
-    // _live_bytes and _used_bytes.
+    // in the call to run_task().
     if (G1CollectedHeap::use_parallel_gc_threads()) {
       assert( _g1h->workers()->active_workers() > 0,
         "Should have been previously set");
@@ -1718,14 +1678,6 @@ public:
     } else {
       _n_workers = 1;
     }
-
-    _live_bytes = NEW_C_HEAP_ARRAY(size_t, _n_workers);
-    _used_bytes = NEW_C_HEAP_ARRAY(size_t, _n_workers);
-  }
-
-  ~G1ParFinalCountTask() {
-    FREE_C_HEAP_ARRAY(size_t, _live_bytes);
-    FREE_C_HEAP_ARRAY(size_t, _used_bytes);
   }
 
   void work(uint worker_id) {
@@ -1743,23 +1695,6 @@ public:
     } else {
       _g1h->heap_region_iterate(&final_update_cl);
     }
-
-    _live_bytes[worker_id] = final_update_cl.total_live_bytes();
-    _used_bytes[worker_id] = final_update_cl.total_used_bytes();
-  }
-
-  size_t live_bytes()  {
-    size_t live_bytes = 0;
-    for (uint i = 0; i < _n_workers; ++i)
-      live_bytes += _live_bytes[i];
-    return live_bytes;
-  }
-
-  size_t used_bytes()  {
-    size_t used_bytes = 0;
-    for (uint i = 0; i < _n_workers; ++i)
-      used_bytes += _used_bytes[i];
-    return used_bytes;
   }
 };
 
@@ -1769,7 +1704,7 @@ class G1NoteEndOfConcMarkClosure : public HeapRegionClosure {
   G1CollectedHeap* _g1;
   int _worker_num;
   size_t _max_live_bytes;
-  size_t _regions_claimed;
+  uint _regions_claimed;
   size_t _freed_bytes;
   FreeRegionList* _local_cleanup_list;
   OldRegionSet* _old_proxy_set;
@@ -1822,7 +1757,7 @@ public:
   }
 
   size_t max_live_bytes() { return _max_live_bytes; }
-  size_t regions_claimed() { return _regions_claimed; }
+  uint regions_claimed() { return _regions_claimed; }
   double claimed_region_time_sec() { return _claimed_region_time; }
   double max_region_time_sec() { return _max_region_time; }
 };
@@ -1894,15 +1829,6 @@ public:
 
       HeapRegionRemSet::finish_cleanup_task(&hrrs_cleanup_task);
     }
-    double end = os::elapsedTime();
-    if (G1PrintParCleanupStats) {
-      gclog_or_tty->print("     Worker thread %d [%8.3f..%8.3f = %8.3f ms] "
-                          "claimed %u regions (tot = %8.3f ms, max = %8.3f ms).\n",
-                          worker_id, start, end, (end-start)*1000.0,
-                          g1_note_end.regions_claimed(),
-                          g1_note_end.claimed_region_time_sec()*1000.0,
-                          g1_note_end.max_region_time_sec()*1000.0);
-    }
   }
   size_t max_live_bytes() { return _max_live_bytes; }
   size_t freed_bytes() { return _freed_bytes; }
@@ -1949,8 +1875,7 @@ void ConcurrentMark::cleanup() {
     HandleMark hm;  // handle scope
     gclog_or_tty->print(" VerifyDuringGC:(before)");
     Universe::heap()->prepare_for_verify();
-    Universe::verify(/* allow dirty */ true,
-                     /* silent      */ false,
+    Universe::verify(/* silent      */ false,
                      /* option      */ VerifyOption_G1UsePrevMarking);
   }
 
@@ -2014,29 +1939,11 @@ void ConcurrentMark::cleanup() {
     guarantee(g1_par_verify_task.failures() == 0, "Unexpected accounting failures");
   }
 
-  size_t known_garbage_bytes =
-    g1_par_count_task.used_bytes() - g1_par_count_task.live_bytes();
-  g1p->set_known_garbage_bytes(known_garbage_bytes);
-
   size_t start_used_bytes = g1h->used();
   g1h->set_marking_complete();
 
-  ergo_verbose4(ErgoConcCycles,
-           "finish cleanup",
-           ergo_format_byte("occupancy")
-           ergo_format_byte("capacity")
-           ergo_format_byte_perc("known garbage"),
-           start_used_bytes, g1h->capacity(),
-           known_garbage_bytes,
-           ((double) known_garbage_bytes / (double) g1h->capacity()) * 100.0);
-
   double count_end = os::elapsedTime();
   double this_final_counting_time = (count_end - start);
-  if (G1PrintParCleanupStats) {
-    gclog_or_tty->print_cr("Cleanup:");
-    gclog_or_tty->print_cr("  Finalize counting: %8.3f ms",
-                           this_final_counting_time*1000.0);
-  }
   _total_counting_time += this_final_counting_time;
 
   if (G1PrintRegionLivenessInfo) {
@@ -2050,7 +1957,6 @@ void ConcurrentMark::cleanup() {
   g1h->reset_gc_time_stamp();
 
   // Note end of marking in all heap regions.
-  double note_end_start = os::elapsedTime();
   G1ParNoteEndTask g1_par_note_end_task(g1h, &_cleanup_list);
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     g1h->set_par_threads((int)n_workers);
@@ -2068,11 +1974,6 @@ void ConcurrentMark::cleanup() {
     // concurrently. Notify anyone else that might be wanting free
     // regions that there will be more free regions coming soon.
     g1h->set_free_regions_coming();
-  }
-  double note_end_end = os::elapsedTime();
-  if (G1PrintParCleanupStats) {
-    gclog_or_tty->print_cr("  note end of marking: %8.3f ms.",
-                           (note_end_end - note_end_start)*1000.0);
   }
 
   // call below, since it affects the metric by which we sort the heap
@@ -2105,15 +2006,12 @@ void ConcurrentMark::cleanup() {
   double end = os::elapsedTime();
   _cleanup_times.add((end - start) * 1000.0);
 
-  if (PrintGC || PrintGCDetails) {
+  if (G1Log::fine()) {
     g1h->print_size_transition(gclog_or_tty,
                                start_used_bytes,
                                g1h->used(),
                                g1h->capacity());
   }
-
-  size_t cleaned_up_bytes = start_used_bytes - g1h->used();
-  g1p->decrease_known_garbage_bytes(cleaned_up_bytes);
 
   // Clean up will have freed any regions completely full of garbage.
   // Update the soft reference policy with the new heap occupancy.
@@ -2131,8 +2029,7 @@ void ConcurrentMark::cleanup() {
     HandleMark hm;  // handle scope
     gclog_or_tty->print(" VerifyDuringGC:(after)");
     Universe::heap()->prepare_for_verify();
-    Universe::verify(/* allow dirty */ true,
-                     /* silent      */ false,
+    Universe::verify(/* silent      */ false,
                      /* option      */ VerifyOption_G1UsePrevMarking);
   }
 
@@ -2149,7 +2046,7 @@ void ConcurrentMark::completeCleanup() {
 
   if (G1ConcRegionFreeingVerbose) {
     gclog_or_tty->print_cr("G1ConcRegionFreeing [complete cleanup] : "
-                           "cleanup list has "SIZE_FORMAT" entries",
+                           "cleanup list has %u entries",
                            _cleanup_list.length());
   }
 
@@ -2171,9 +2068,8 @@ void ConcurrentMark::completeCleanup() {
         _cleanup_list.is_empty()) {
       if (G1ConcRegionFreeingVerbose) {
         gclog_or_tty->print_cr("G1ConcRegionFreeing [complete cleanup] : "
-                               "appending "SIZE_FORMAT" entries to the "
-                               "secondary_free_list, clean list still has "
-                               SIZE_FORMAT" entries",
+                               "appending %u entries to the secondary_free_list, "
+                               "cleanup list still has %u entries",
                                tmp_free_list.length(),
                                _cleanup_list.length());
       }
@@ -2446,11 +2342,10 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   // Inner scope to exclude the cleaning of the string and symbol
   // tables from the displayed time.
   {
-    bool verbose = PrintGC && PrintGCDetails;
-    if (verbose) {
+    if (G1Log::finer()) {
       gclog_or_tty->put(' ');
     }
-    TraceTime t("GC ref-proc", verbose, false, gclog_or_tty);
+    TraceTime t("GC ref-proc", G1Log::finer(), false, gclog_or_tty);
 
     ReferenceProcessor* rp = g1h->ref_processor_cm();
 
@@ -3144,7 +3039,7 @@ class AggregateCountDataHRClosure: public HeapRegionClosure {
     assert(limit_idx <= end_idx, "or else use atomics");
 
     // Aggregate the "stripe" in the count data associated with hr.
-    size_t hrs_index = hr->hrs_index();
+    uint hrs_index = hr->hrs_index();
     size_t marked_bytes = 0;
 
     for (int i = 0; (size_t)i < _max_task_num; i += 1) {
@@ -3252,7 +3147,7 @@ void ConcurrentMark::clear_all_count_data() {
   // of the final counting task.
   _region_bm.clear();
 
-  size_t max_regions = _g1h->max_regions();
+  uint max_regions = _g1h->max_regions();
   assert(_max_task_num != 0, "unitialized");
 
   for (int i = 0; (size_t) i < _max_task_num; i += 1) {
@@ -3262,7 +3157,7 @@ void ConcurrentMark::clear_all_count_data() {
     assert(task_card_bm->size() == _card_bm.size(), "size mismatch");
     assert(marked_bytes_array != NULL, "uninitialized");
 
-    memset(marked_bytes_array, 0, (max_regions * sizeof(size_t)));
+    memset(marked_bytes_array, 0, (size_t) max_regions * sizeof(size_t));
     task_card_bm->clear();
   }
 }

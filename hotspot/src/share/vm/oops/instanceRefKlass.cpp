@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -497,36 +497,12 @@ void instanceRefKlass::oop_verify_on(oop obj, outputStream* st) {
 
   if (referent != NULL) {
     guarantee(referent->is_oop(), "referent field heap failed");
-    if (gch != NULL && !gch->is_in_young(obj)) {
-      // We do a specific remembered set check here since the referent
-      // field is not part of the oop mask and therefore skipped by the
-      // regular verify code.
-      if (UseCompressedOops) {
-        narrowOop* referent_addr = (narrowOop*)java_lang_ref_Reference::referent_addr(obj);
-        obj->verify_old_oop(referent_addr, true);
-      } else {
-        oop* referent_addr = (oop*)java_lang_ref_Reference::referent_addr(obj);
-        obj->verify_old_oop(referent_addr, true);
-      }
-    }
   }
   // Verify next field
   oop next = java_lang_ref_Reference::next(obj);
   if (next != NULL) {
     guarantee(next->is_oop(), "next field verify failed");
     guarantee(next->is_instanceRef(), "next field verify failed");
-    if (gch != NULL && !gch->is_in_young(obj)) {
-      // We do a specific remembered set check here since the next field is
-      // not part of the oop mask and therefore skipped by the regular
-      // verify code.
-      if (UseCompressedOops) {
-        narrowOop* next_addr = (narrowOop*)java_lang_ref_Reference::next_addr(obj);
-        obj->verify_old_oop(next_addr, true);
-      } else {
-        oop* next_addr = (oop*)java_lang_ref_Reference::next_addr(obj);
-        obj->verify_old_oop(next_addr, true);
-      }
-    }
   }
 }
 
