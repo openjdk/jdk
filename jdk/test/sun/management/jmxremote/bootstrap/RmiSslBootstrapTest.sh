@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 # @library /lib/testlibrary
 # @build jdk.testlibrary.* TestLogger Utils RmiBootstrapTest
 # @run shell/timeout=300  RmiSslBootstrapTest.sh
+# @ignore 8077924
 
 # Define the Java class test name
 TESTCLASS="RmiBootstrapTest"

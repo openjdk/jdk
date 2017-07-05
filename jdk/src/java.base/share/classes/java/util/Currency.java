@@ -212,7 +212,7 @@ public final class Currency implements Serializable {
     private static final int VALID_FORMAT_VERSION = 2;
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public Void run() {
                 try {
