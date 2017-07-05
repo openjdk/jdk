@@ -23,6 +23,9 @@
 
 import java.io.*;
 import java.net.*;
+import java.nio.file.Files;
+import jdk.testlibrary.FileUtils;
+import static java.nio.file.StandardCopyOption.*;
 
 public class Common {
 
@@ -39,42 +42,16 @@ public class Common {
             if (!src.isFile()) {
                 throw new RuntimeException ("File not found: " + src.toString());
             }
-            dst.delete();
-            dst.createNewFile();
-            FileInputStream i = new FileInputStream (src);
-            FileOutputStream o = new FileOutputStream (dst);
-            byte[] buf = new byte [1024];
-            int count;
-            while ((count=i.read(buf)) >= 0) {
-                o.write (buf, 0, count);
-            }
-            i.close();
-            o.close();
+            Files.copy(src.toPath(), dst.toPath(), REPLACE_EXISTING);
         } catch (IOException e) {
             throw new RuntimeException (e);
         }
     }
 
-    static void rm_minus_rf (File path) {
-        if (!path.exists()) {
+    static void rm_minus_rf (File path) throws IOException, InterruptedException {
+        if (!path.exists())
             return;
-        }
-        if (path.isFile()) {
-            if (!path.delete()) {
-                throw new RuntimeException ("Could not delete " + path);
-            }
-        } else if (path.isDirectory ()) {
-            String[] names = path.list();
-            File[] files = path.listFiles();
-            for (int i=0; i<files.length; i++) {
-                rm_minus_rf (new File(path, names[i]));
-            }
-            if (!path.delete()) {
-                throw new RuntimeException ("Could not delete " + path);
-            }
-        } else {
-            throw new RuntimeException ("Trying to delete something that isn't a file or a directory");
-        }
+        FileUtils.deleteFileTreeWithRetry(path.toPath());
     }
 
     static void copyDir (File src, File dst) {

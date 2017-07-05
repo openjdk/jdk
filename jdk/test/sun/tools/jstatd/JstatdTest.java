@@ -291,6 +291,8 @@ public final class JstatdTest {
         launcher.addVMArg("-XX:+UsePerfData");
         String testSrc = System.getProperty("test.src");
         File policy = new File(testSrc, "all.policy");
+        assertTrue(policy.exists() && policy.isFile(),
+                "Security policy " + policy.getAbsolutePath() + " does not exist or not a file");
         launcher.addVMArg("-Djava.security.policy=" + policy.getAbsolutePath());
         if (port != null) {
             launcher.addToolArg("-p");

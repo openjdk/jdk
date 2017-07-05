@@ -25,6 +25,9 @@
 
 package jdk.nashorn.api.scripting;
 
+import java.util.Map;
+import javax.script.Bindings;
+
 public class Window {
 
     private String location = "http://localhost:8080/window";
@@ -62,5 +65,21 @@ public class Window {
     public int setTimeout(final String code, final int delay) {
         System.out.println("window.setTimeout: " + delay + ", code: " + code);
         return 0;
+    }
+
+    public static Object funcJSObject(final JSObject jsobj) {
+        return jsobj.getMember("foo");
+    }
+
+    public static Object funcScriptObjectMirror(final ScriptObjectMirror sobj) {
+        return sobj.get("foo");
+    }
+
+    public static Object funcMap(final Map<?,?> map) {
+        return map.get("foo");
+    }
+
+    public static Object funcBindings(final Bindings bindings) {
+        return bindings.get("foo");
     }
 }

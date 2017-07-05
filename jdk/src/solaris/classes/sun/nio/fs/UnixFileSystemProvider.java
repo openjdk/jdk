@@ -484,7 +484,7 @@ public abstract class UnixFileSystemProvider
         if (sm != null) {
             FilePermission perm = new FilePermission(link.getPathForPermissionCheck(),
                 SecurityConstants.FILE_READLINK_ACTION);
-            AccessController.checkPermission(perm);
+            sm.checkPermission(perm);
         }
         try {
             byte[] target = readlink(link);

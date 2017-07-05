@@ -2574,8 +2574,25 @@ void LIRGenerator::do_Goto(Goto* x) {
   __ jump(x->default_sux());
 }
 
-
-ciKlass* LIRGenerator::profile_arg_type(ciMethodData* md, int md_base_offset, int md_offset, intptr_t profiled_k, Value arg, LIR_Opr& mdp, bool not_null, ciKlass* signature_k) {
+/**
+ * Emit profiling code if needed for arguments, parameters, return value types
+ *
+ * @param md                    MDO the code will update at runtime
+ * @param md_base_offset        common offset in the MDO for this profile and subsequent ones
+ * @param md_offset             offset in the MDO (on top of md_base_offset) for this profile
+ * @param profiled_k            current profile
+ * @param obj                   IR node for the object to be profiled
+ * @param mdp                   register to hold the pointer inside the MDO (md + md_base_offset).
+ *                              Set once we find an update to make and use for next ones.
+ * @param not_null              true if we know obj cannot be null
+ * @param signature_at_call_k   signature at call for obj
+ * @param callee_signature_k    signature of callee for obj
+ *                              at call and callee signatures differ at method handle call
+ * @return                      the only klass we know will ever be seen at this profile point
+ */
+ciKlass* LIRGenerator::profile_type(ciMethodData* md, int md_base_offset, int md_offset, intptr_t profiled_k,
+                                    Value obj, LIR_Opr& mdp, bool not_null, ciKlass* signature_at_call_k,
+                                    ciKlass* callee_signature_k) {
   ciKlass* result = NULL;
   bool do_null = !not_null && !TypeEntries::was_null_seen(profiled_k);
   bool do_update = !TypeEntries::is_type_unknown(profiled_k);
@@ -2590,9 +2607,9 @@ ciKlass* LIRGenerator::profile_arg_type(ciMethodData* md, int md_base_offset, in
   if (do_update) {
     // try to find exact type, using CHA if possible, so that loading
     // the klass from the object can be avoided
-    ciType* type = arg->exact_type();
+    ciType* type = obj->exact_type();
     if (type == NULL) {
-      type = arg->declared_type();
+      type = obj->declared_type();
       type = comp->cha_exact_type(type);
     }
     assert(type == NULL || type->is_klass(), "type should be class");
@@ -2608,23 +2625,33 @@ ciKlass* LIRGenerator::profile_arg_type(ciMethodData* md, int md_base_offset, in
   ciKlass* exact_signature_k = NULL;
   if (do_update) {
     // Is the type from the signature exact (the only one possible)?
-    exact_signature_k = signature_k->exact_klass();
+    exact_signature_k = signature_at_call_k->exact_klass();
     if (exact_signature_k == NULL) {
-      exact_signature_k = comp->cha_exact_type(signature_k);
+      exact_signature_k = comp->cha_exact_type(signature_at_call_k);
     } else {
       result = exact_signature_k;
-      do_update = false;
       // Known statically. No need to emit any code: prevent
       // LIR_Assembler::emit_profile_type() from emitting useless code
       profiled_k = ciTypeEntries::with_status(result, profiled_k);
     }
     if (exact_signature_k != NULL && exact_klass != exact_signature_k) {
-      assert(exact_klass == NULL, "arg and signature disagree?");
+      assert(exact_klass == NULL, "obj and signature disagree?");
       // sometimes the type of the signature is better than the best type
       // the compiler has
       exact_klass = exact_signature_k;
-      do_update = exact_klass == NULL || ciTypeEntries::valid_ciklass(profiled_k) != exact_klass;
     }
+    if (callee_signature_k != NULL &&
+        callee_signature_k != signature_at_call_k) {
+      ciKlass* improved_klass = callee_signature_k->exact_klass();
+      if (improved_klass == NULL) {
+        improved_klass = comp->cha_exact_type(callee_signature_k);
+      }
+      if (improved_klass != NULL && exact_klass != improved_klass) {
+        assert(exact_klass == NULL, "obj and signature disagree?");
+        exact_klass = exact_signature_k;
+      }
+    }
+    do_update = exact_klass == NULL || ciTypeEntries::valid_ciklass(profiled_k) != exact_klass;
   }
 
   if (!do_null && !do_update) {
@@ -2640,7 +2667,7 @@ ciKlass* LIRGenerator::profile_arg_type(ciMethodData* md, int md_base_offset, in
       __ leal(LIR_OprFact::address(base_type_address), mdp);
     }
   }
-  LIRItem value(arg, this);
+  LIRItem value(obj, this);
   value.load_item();
   __ profile_type(new LIR_Address(mdp, md_offset, T_METADATA),
                   value.result(), exact_klass, profiled_k, new_pointer_register(), not_null, exact_signature_k != NULL);
@@ -2665,9 +2692,9 @@ void LIRGenerator::profile_parameters(Base* x) {
         if (t == T_OBJECT || t == T_ARRAY) {
           intptr_t profiled_k = parameters->type(j);
           Local* local = x->state()->local_at(java_index)->as_Local();
-          ciKlass* exact = profile_arg_type(md, md->byte_offset_of_slot(parameters_type_data, ParametersTypeData::type_offset(0)),
-                                            in_bytes(ParametersTypeData::type_offset(j)) - in_bytes(ParametersTypeData::type_offset(0)),
-                                            profiled_k, local, mdp, false, local->declared_type()->as_klass());
+          ciKlass* exact = profile_type(md, md->byte_offset_of_slot(parameters_type_data, ParametersTypeData::type_offset(0)),
+                                        in_bytes(ParametersTypeData::type_offset(j)) - in_bytes(ParametersTypeData::type_offset(0)),
+                                        profiled_k, local, mdp, false, local->declared_type()->as_klass(), NULL);
           // If the profile is known statically set it once for all and do not emit any code
           if (exact != NULL) {
             md->set_parameter_type(j, exact);
@@ -3129,19 +3156,28 @@ void LIRGenerator::profile_arguments(ProfileCall* x) {
       Bytecodes::Code bc = x->method()->java_code_at_bci(bci);
       int start = 0;
       int stop = data->is_CallTypeData() ? ((ciCallTypeData*)data)->number_of_arguments() : ((ciVirtualCallTypeData*)data)->number_of_arguments();
-      if (x->nb_profiled_args() < stop) {
-        // if called through method handle invoke, some arguments may have been popped
-        stop = x->nb_profiled_args();
+      if (x->inlined() && x->callee()->is_static() && Bytecodes::has_receiver(bc)) {
+        // first argument is not profiled at call (method handle invoke)
+        assert(x->method()->raw_code_at_bci(bci) == Bytecodes::_invokehandle, "invokehandle expected");
+        start = 1;
       }
-      ciSignature* sig = x->callee()->signature();
+      ciSignature* callee_signature = x->callee()->signature();
       // method handle call to virtual method
       bool has_receiver = x->inlined() && !x->callee()->is_static() && !Bytecodes::has_receiver(bc);
-      ciSignatureStream sig_stream(sig, has_receiver ? x->callee()->holder() : NULL);
-      for (int i = 0; i < stop; i++) {
+      ciSignatureStream callee_signature_stream(callee_signature, has_receiver ? x->callee()->holder() : NULL);
+
+      bool ignored_will_link;
+      ciSignature* signature_at_call = NULL;
+      x->method()->get_method_at_bci(bci, ignored_will_link, &signature_at_call);
+      ciSignatureStream signature_at_call_stream(signature_at_call);
+
+      // if called through method handle invoke, some arguments may have been popped
+      for (int i = 0; i < stop && i+start < x->nb_profiled_args(); i++) {
         int off = in_bytes(TypeEntriesAtCall::argument_type_offset(i)) - in_bytes(TypeEntriesAtCall::args_data_offset());
-        ciKlass* exact = profile_arg_type(md, base_offset, off,
-                                          args->type(i), x->profiled_arg_at(i+start), mdp,
-                                          !x->arg_needs_null_check(i+start), sig_stream.next_klass());
+        ciKlass* exact = profile_type(md, base_offset, off,
+                                      args->type(i), x->profiled_arg_at(i+start), mdp,
+                                      !x->arg_needs_null_check(i+start),
+                                      signature_at_call_stream.next_klass(), callee_signature_stream.next_klass());
         if (exact != NULL) {
           md->set_argument_type(bci, i, exact);
         }
@@ -3176,8 +3212,8 @@ void LIRGenerator::profile_parameters_at_call(ProfileCall* x) {
         int bci = x->bci_of_invoke();
         Bytecodes::Code bc = x->method()->java_code_at_bci(bci);
         // The first parameter is the receiver so that's what we start
-        // with if it exists. On exception if method handle call to
-        // virtual method has receiver in the args list
+        // with if it exists. One exception is method handle call to
+        // virtual method: the receiver is in the args list
         if (arg == NULL || !Bytecodes::has_receiver(bc)) {
           i = 1;
           arg = x->profiled_arg_at(0);
@@ -3186,9 +3222,9 @@ void LIRGenerator::profile_parameters_at_call(ProfileCall* x) {
         int k = 0; // to iterate on the profile data
         for (;;) {
           intptr_t profiled_k = parameters->type(k);
-          ciKlass* exact = profile_arg_type(md, md->byte_offset_of_slot(parameters_type_data, ParametersTypeData::type_offset(0)),
-                                            in_bytes(ParametersTypeData::type_offset(k)) - in_bytes(ParametersTypeData::type_offset(0)),
-                                            profiled_k, arg, mdp, not_null, sig_stream.next_klass());
+          ciKlass* exact = profile_type(md, md->byte_offset_of_slot(parameters_type_data, ParametersTypeData::type_offset(0)),
+                                        in_bytes(ParametersTypeData::type_offset(k)) - in_bytes(ParametersTypeData::type_offset(0)),
+                                        profiled_k, arg, mdp, not_null, sig_stream.next_klass(), NULL);
           // If the profile is known statically set it once for all and do not emit any code
           if (exact != NULL) {
             md->set_parameter_type(k, exact);
@@ -3247,9 +3283,16 @@ void LIRGenerator::do_ProfileReturnType(ProfileReturnType* x) {
   assert(data->is_CallTypeData() || data->is_VirtualCallTypeData(), "wrong profile data type");
   ciReturnTypeEntry* ret = data->is_CallTypeData() ? ((ciCallTypeData*)data)->ret() : ((ciVirtualCallTypeData*)data)->ret();
   LIR_Opr mdp = LIR_OprFact::illegalOpr;
-  ciKlass* exact = profile_arg_type(md, 0, md->byte_offset_of_slot(data, ret->type_offset()),
-                                    ret->type(), x->ret(), mdp,
-                                    !x->needs_null_check(), x->callee()->signature()->return_type()->as_klass());
+
+  bool ignored_will_link;
+  ciSignature* signature_at_call = NULL;
+  x->method()->get_method_at_bci(bci, ignored_will_link, &signature_at_call);
+
+  ciKlass* exact = profile_type(md, 0, md->byte_offset_of_slot(data, ret->type_offset()),
+                                ret->type(), x->ret(), mdp,
+                                !x->needs_null_check(),
+                                signature_at_call->return_type()->as_klass(),
+                                x->callee()->signature()->return_type()->as_klass());
   if (exact != NULL) {
     md->set_return_type(bci, exact);
   }

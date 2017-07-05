@@ -179,6 +179,10 @@ class VMManagementImpl implements VMManagement {
         return result;
     }
 
+    public long getUptime() {
+        return getUptime0();
+    }
+
     private List<String> vmArgs = null;
     public synchronized List<String> getVmArguments() {
         if (vmArgs == null) {
@@ -192,6 +196,7 @@ class VMManagementImpl implements VMManagement {
     public native String[] getVmArguments0();
 
     public native long getStartupTime();
+    private native long getUptime0();
     public native int getAvailableProcessors();
 
     // Compilation Subsystem

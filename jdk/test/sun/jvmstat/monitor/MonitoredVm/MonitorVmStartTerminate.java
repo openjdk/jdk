@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.util.concurrent.CountDownLatch;
 import java.util.regex.*;
 import java.util.*;
 import java.net.URISyntaxException;
@@ -33,8 +34,6 @@ public class MonitorVmStartTerminate {
     private static final int SLEEPERS = 10;
     private static final int SLEEPTIME = 5000;     // sleep time for a sleeper
     private static final int EXECINTERVAL = 3000;   // wait time between exec's
-    private static final int JOINTIME = (SLEEPERS * EXECINTERVAL)
-                                        + SLEEPTIME * 2;
 
     public static void main(String args[]) throws Exception {
 
@@ -46,7 +45,8 @@ public class MonitorVmStartTerminate {
         MonitoredHost host = MonitoredHost.getMonitoredHost("localhost");
         host.setInterval(200);
 
-        SleeperListener listener = new SleeperListener(host, sleeperPattern);
+        Matcher matcher = Pattern.compile(sleeperPattern).matcher("");
+        SleeperListener listener = new SleeperListener(host, matcher, SLEEPERS);
         host.addHostListener(listener);
 
         SleeperStarter ss = new SleeperStarter(SLEEPERS, EXECINTERVAL,
@@ -56,212 +56,193 @@ public class MonitorVmStartTerminate {
         System.out.println("Waiting for "
                            + SLEEPERS + " sleepers to terminate");
         try {
-            ss.join(JOINTIME);
+            ss.join();
         } catch (InterruptedException e) {
-            System.err.println("Timed out waiting for sleepers");
+            throw new Exception("Timed out waiting for sleepers");
         }
-
-        if (listener.getStarted() != SLEEPERS) {
-            throw new RuntimeException(
-                    "Too few sleepers started: "
-                    + " started = " + listener.getStarted()
-                    + " SLEEPERS = " + SLEEPERS);
-        }
-
-        if (listener.getStarted() != listener.getTerminated()) {
-            throw new RuntimeException(
-                    "Started count != terminated count: "
-                    + " started = " + listener.getStarted()
-                    + " terminated = " + listener.getTerminated());
-        }
-    }
-}
-
-class SleeperListener implements HostListener {
-    private static final boolean DEBUG = false;
-
-    int started;
-    int terminated;
-    MonitoredHost host;
-    Matcher patternMatcher;
-    ArrayList targets;
-
-    public SleeperListener(MonitoredHost host, String sleeperPattern) {
-        this.host = host;
-        Pattern pattern = Pattern.compile(sleeperPattern);
-        patternMatcher = pattern.matcher("");
-        targets = new ArrayList();
+        listener.waitForSleepersToStart();
+        listener.waitForSleepersToTerminate();
     }
 
-    private void printList(Iterator i, String msg) {
-        System.out.println(msg + ":");
-        while (i.hasNext()) {
-            Integer lvmid = (Integer)i.next();
-            try {
-                VmIdentifier vmid = new VmIdentifier("//" + lvmid.intValue());
-                MonitoredVm target = host.getMonitoredVm(vmid);
+    public static class SleeperListener implements HostListener {
 
-                StringMonitor cmdMonitor =
-                        (StringMonitor)target.findByName("sun.rt.javaCommand");
-                String cmd = cmdMonitor.stringValue();
+        private final List<Integer> targets =  new ArrayList<>();
+        private final CountDownLatch terminateLatch;
+        private final CountDownLatch startLatch;
+        private final MonitoredHost host;
+        private final Matcher patternMatcher;
 
-                System.out.println("\t" + lvmid.intValue() + ": "
-                                   + "\"" + cmd + "\"" + ": ");
-            } catch (URISyntaxException e) {
-                System.err.println("Unexpected URISyntaxException: "
-                                   + e.getMessage());
-            } catch (MonitorException e) {
-                System.out.println("\t" + lvmid.intValue()
-                                   + ": error reading monitoring data: "
-                                   + " target possibly terminated?");
+        public SleeperListener(MonitoredHost host, Matcher matcher, int count) {
+            this.host = host;
+            this.patternMatcher = matcher;
+            this.terminateLatch = new CountDownLatch(count);
+            this.startLatch = new CountDownLatch(count);
+        }
+
+        public void waitForSleepersToTerminate() throws InterruptedException {
+            terminateLatch.await();
+        }
+
+        public void waitForSleepersToStart() throws InterruptedException {
+            startLatch.await();
+        }
+
+        private void printList(Set<Integer> list, String msg) {
+            System.out.println(msg + ":");
+            for (Integer lvmid : list) {
+                try {
+                    VmIdentifier vmid = new VmIdentifier("//" + lvmid.intValue());
+                    MonitoredVm target = host.getMonitoredVm(vmid);
+
+                    StringMonitor cmdMonitor =
+                            (StringMonitor)target.findByName("sun.rt.javaCommand");
+                    String cmd = cmdMonitor.stringValue();
+
+                    System.out.println("\t" + lvmid.intValue() + ": "
+                                       + "\"" + cmd + "\"" + ": ");
+                } catch (URISyntaxException e) {
+                    System.err.println("Unexpected URISyntaxException: "
+                                       + e.getMessage());
+                } catch (MonitorException e) {
+                    System.out.println("\t" + lvmid.intValue()
+                                       + ": error reading monitoring data: "
+                                       + " target possibly terminated?");
+                }
             }
         }
-    }
 
 
-    private int addStarted(Iterator i) {
-        int found = 0;
-        while (i.hasNext()) {
-            try {
-                Integer lvmid = (Integer)i.next();
-                VmIdentifier vmid = new VmIdentifier("//" + lvmid.intValue());
-                MonitoredVm target = host.getMonitoredVm(vmid);
+        private int addStarted(Set<Integer> started) {
+            int found = 0;
+            for (Integer lvmid : started) {
+                try {
+                    VmIdentifier vmid = new VmIdentifier("//" + lvmid.intValue());
+                    MonitoredVm target = host.getMonitoredVm(vmid);
 
-                StringMonitor cmdMonitor =
-                        (StringMonitor)target.findByName("sun.rt.javaCommand");
-                String cmd = cmdMonitor.stringValue();
+                    StringMonitor cmdMonitor =
+                            (StringMonitor)target.findByName("sun.rt.javaCommand");
+                    String cmd = cmdMonitor.stringValue();
 
-                patternMatcher.reset(cmd);
-                System.out.print("Started: " + lvmid.intValue()
-                                 + ": " + "\"" + cmd + "\"" + ": ");
+                    patternMatcher.reset(cmd);
+                    System.out.print("Started: " + lvmid.intValue()
+                                     + ": " + "\"" + cmd + "\"" + ": ");
 
-                if (patternMatcher.matches()) {
-                    System.out.println("matches pattern - recorded");
-                    targets.add(lvmid);
+                    if (patternMatcher.matches()) {
+                        System.out.println("matches pattern - recorded");
+                        targets.add(lvmid);
+                        found++;
+                    }
+                    else {
+                        System.out.println("does not match pattern - ignored");
+                    }
+                } catch (URISyntaxException e) {
+                    System.err.println("Unexpected URISyntaxException: "
+                                       + e.getMessage());
+                } catch (MonitorException e) {
+                    System.err.println("Unexpected MonitorException: "
+                                       + e.getMessage());
+                }
+            }
+            return found;
+        }
+
+        private int removeTerminated(Set<Integer> terminated) {
+            int found = 0;
+            for (Integer lvmid : terminated) {
+                /*
+                 * we don't attempt to attach to the target here as it's
+                 * now dead and has no jvmstat share memory file. Just see
+                 * if the process id is among those that we saved when we
+                 * started the targets (note - duplicated allowed and somewhat
+                 * expected on windows);
+                 */
+                System.out.print("Terminated: " + lvmid.intValue() + ": ");
+                if (targets.contains(lvmid)) {
+                    System.out.println("matches pattern - termination recorded");
+                    targets.remove(lvmid);
                     found++;
                 }
                 else {
                     System.out.println("does not match pattern - ignored");
                 }
-            } catch (URISyntaxException e) {
-                System.err.println("Unexpected URISyntaxException: "
-                                   + e.getMessage());
-            } catch (MonitorException e) {
-                System.err.println("Unexpected MonitorException: "
-                                   + e.getMessage());
+            }
+            return found;
+        }
+
+        @SuppressWarnings("unchecked")
+        public void vmStatusChanged(VmStatusChangeEvent ev) {
+            printList(ev.getActive(), "Active");
+            printList(ev.getStarted(), "Started");
+            printList(ev.getTerminated(), "Terminated");
+
+            int recentlyStarted = addStarted(ev.getStarted());
+            int recentlyTerminated = removeTerminated(ev.getTerminated());
+
+            for (int i = 0; i < recentlyTerminated; i++) {
+                terminateLatch.countDown();
+            }
+            for (int i = 0; i < recentlyStarted; i++) {
+                startLatch.countDown();
             }
         }
-        return found;
+
+        public void disconnected(HostEvent ev) {
+        }
     }
 
-    private int removeTerminated(Iterator i) {
-        int found = 0;
-        while (i.hasNext()) {
-            Integer lvmid = (Integer)i.next();
-            /*
-             * we don't attempt to attach to the target here as it's
-             * now dead and has no jvmstat share memory file. Just see
-             * if the process id is among those that we saved when we
-             * started the targets (note - duplicated allowed and somewhat
-             * expected on windows);
-             */
-            System.out.print("Terminated: " + lvmid.intValue() + ": ");
-            if (targets.contains(lvmid)) {
-                System.out.println("matches pattern - termination recorded");
-                targets.remove(lvmid);
-                found++;
+    public static class SleeperStarter extends Thread {
+
+        private final JavaProcess[] processes;
+        private final int execInterval;
+        private final String args;
+
+        public SleeperStarter(int sleepers, int execInterval, String args) {
+            this.execInterval = execInterval;
+            this.args = args;
+            this.processes = new JavaProcess[sleepers];
+        }
+
+        private synchronized int active() {
+            int active = processes.length;
+            for(JavaProcess jp : processes) {
+                try {
+                    jp.exitValue();
+                    active--;
+                } catch (IllegalThreadStateException e) {
+                    // process hasn't exited yet
+                }
             }
-            else {
-                System.out.println("does not match pattern - ignored");
-            }
-        }
-        return found;
-    }
-
-    public synchronized int getStarted() {
-        return started;
-    }
-
-    public synchronized int getTerminated() {
-        return terminated;
-    }
-
-    public void vmStatusChanged(VmStatusChangeEvent ev) {
-        if (DEBUG) {
-            printList(ev.getActive().iterator(), "Active");
-            printList(ev.getStarted().iterator(), "Started");
-            printList(ev.getTerminated().iterator(), "Terminated");
+            return active;
         }
 
-        int recentlyStarted = addStarted(ev.getStarted().iterator());
-        int recentlyTerminated = removeTerminated(
-                ev.getTerminated().iterator());
+        public void run() {
+           System.out.println("Starting " + processes.length + " sleepers");
 
-        synchronized (this) {
-            started += recentlyStarted;
-            terminated += recentlyTerminated;
-        }
-    }
+           String[] classpath = {
+               "-classpath",
+               System.getProperty("java.class.path")
+           };
 
-    public void disconnected(HostEvent ev) {
-    }
-}
-
-class SleeperStarter extends Thread {
-
-    JavaProcess[] processes;
-    int execInterval;
-    String args;
-
-    public SleeperStarter(int sleepers, int execInterval, String args) {
-        this.execInterval = execInterval;
-        this.args = args;
-        this.processes = new JavaProcess[sleepers];
-    }
-
-    private synchronized int active() {
-        int active = processes.length;
-        for(int i = 0; i < processes.length; i++) {
-            try {
-                int exitValue = processes[i].exitValue();
-                active--;
-            } catch (IllegalThreadStateException e) {
-                // process hasn't exited yet
-            }
-        }
-        return active;
-    }
-
-    public void run() {
-       System.out.println("Starting " + processes.length + " sleepers");
-
-       String[] classpath = {
-           "-classpath",
-           System.getProperty("java.class.path")
-       };
-
-       for (int i = 0; i < processes.length; i++) {
-           try {
-               System.out.println("Starting Sleeper " + i);
-               synchronized(this) {
-                   processes[i] = new JavaProcess("Sleeper", args + " " + i);
-                   processes[i].addOptions(classpath);
+           for (int i = 0; i < processes.length; i++) {
+               try {
+                   System.out.println("Starting Sleeper " + i);
+                   synchronized(this) {
+                       processes[i] = new JavaProcess("Sleeper", args + " " + i);
+                       processes[i].addOptions(classpath);
+                   }
+                   processes[i].start();
+                   Thread.sleep(execInterval);
+               } catch (InterruptedException ignore) {
+               } catch (IOException e) {
+                   System.err.println(
+                           "IOException trying to start Sleeper " + i + ": "
+                           + e.getMessage());
                }
-               processes[i].start();
-               Thread.sleep(execInterval);
-           } catch (InterruptedException ignore) {
-           } catch (IOException e) {
-               System.err.println(
-                       "IOException trying to start Sleeper " + i + ": "
-                       + e.getMessage());
            }
-       }
 
-       // spin waiting for the processes to terminate
-       while (active() > 0) ;
-
-       // give final termination event a change to propogate to
-       // the HostListener
-       try { Thread.sleep(2000); } catch (InterruptedException ignore) { }
+           // spin waiting for the processes to terminate
+           while (active() > 0) ;
+        }
     }
 }
+

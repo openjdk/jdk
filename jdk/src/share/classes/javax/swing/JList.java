@@ -146,7 +146,7 @@ import static sun.swing.SwingUtilities2.Section.*;
  * Responsibility for listening to selection changes in order to keep the list's
  * visual representation up to date lies with the list's {@code ListUI}.
  * <p>
- * <a name="renderer">
+ * <a name="renderer"></a>
  * Painting of cells in a {@code JList} is handled by a delegate called a
  * cell renderer, installed on the list as the {@code cellRenderer} property.
  * The renderer provides a {@code java.awt.Component} that is used
@@ -202,7 +202,7 @@ import static sun.swing.SwingUtilities2.Section.*;
  * To avoid these calculations, you can set a {@code fixedCellWidth} and
  * {@code fixedCellHeight} on the list, or have these values calculated
  * automatically based on a single prototype value:
- * <a name="prototype_example">
+ * <a name="prototype_example"></a>
  * <pre>
  * {@code
  * JList<String> bigDataList = new JList<String>(bigData);
@@ -1512,7 +1512,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * tooltip text on the cell level, by using {@code setToolTipText} on your
      * cell renderer component.
      * <p>
-     * <bold>Note:</bold> For <code>JList</code> to properly display the
+     * <strong>Note:</strong> For <code>JList</code> to properly display the
      * tooltips of its renderers in this manner, <code>JList</code> must be a
      * registered component with the <code>ToolTipManager</code>. This registration
      * is done automatically in the constructor. However, if at a later point
