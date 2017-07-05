@@ -39,7 +39,7 @@ void HeapRegionTracer::send_region_type_change(uint index,
     e.set_to(to);
     e.set_start(start);
     e.set_used(used);
-    e.set_allocContext(allocationContext);
+    e.set_allocationContext(allocationContext);
     e.commit();
   }
 }

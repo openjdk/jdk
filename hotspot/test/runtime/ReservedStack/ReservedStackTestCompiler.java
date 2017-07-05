@@ -25,10 +25,9 @@
  * @test ReservedStackTestCompiler
  * @summary Run ReservedStackTest with dedicated compilers C1 and C2.
  * @requires vm.flavor == "server"
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.vm.annotation
- * @build jdk.test.lib.* ReservedStackTest
  * @run main/othervm -XX:+TieredCompilation -XX:TieredStopAtLevel=1 -XX:-Inline -XX:CompileCommand=exclude,java/util/concurrent/locks/AbstractOwnableSynchronizer.setExclusiveOwnerThread ReservedStackTest
  * @run main/othervm -XX:-TieredCompilation                         -XX:-Inline -XX:CompileCommand=exclude,java/util/concurrent/locks/AbstractOwnableSynchronizer.setExclusiveOwnerThread ReservedStackTest
  */

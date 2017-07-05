@@ -45,7 +45,7 @@
 #include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -5257,75 +5257,6 @@ int os::fork_and_exec(char* cmd) {
     return -1;
   }
 }
-
-//--------------------------------------------------------------------------------------------------
-// Non-product code
-
-static int mallocDebugIntervalCounter = 0;
-static int mallocDebugCounter = 0;
-
-// For debugging possible bugs inside HeapWalk (a ring buffer)
-#define SAVE_COUNT 8
-static PROCESS_HEAP_ENTRY saved_heap_entries[SAVE_COUNT];
-static int saved_heap_entry_index;
-
-bool os::check_heap(bool force) {
-  if (++mallocDebugCounter < MallocVerifyStart && !force) return true;
-  if (++mallocDebugIntervalCounter >= MallocVerifyInterval || force) {
-    // Note: HeapValidate executes two hardware breakpoints when it finds something
-    // wrong; at these points, eax contains the address of the offending block (I think).
-    // To get to the exlicit error message(s) below, just continue twice.
-    //
-    // Note:  we want to check the CRT heap, which is not necessarily located in the
-    // process default heap.
-    HANDLE heap = (HANDLE) _get_heap_handle();
-    if (!heap) {
-      return true;
-    }
-
-    // If we fail to lock the heap, then gflags.exe has been used
-    // or some other special heap flag has been set that prevents
-    // locking. We don't try to walk a heap we can't lock.
-    if (HeapLock(heap) != 0) {
-      PROCESS_HEAP_ENTRY phe;
-      phe.lpData = NULL;
-      memset(saved_heap_entries, 0, sizeof(saved_heap_entries));
-      saved_heap_entry_index = 0;
-      int count = 0;
-
-      while (HeapWalk(heap, &phe) != 0) {
-        count ++;
-        if ((phe.wFlags & PROCESS_HEAP_ENTRY_BUSY) &&
-            !HeapValidate(heap, 0, phe.lpData)) {
-          tty->print_cr("C heap has been corrupted (time: %d allocations)", mallocDebugCounter);
-          tty->print_cr("corrupted block near address %#x, length %d, count %d", phe.lpData, phe.cbData, count);
-          HeapUnlock(heap);
-          fatal("corrupted C heap");
-        } else {
-          // Save previous seen entries in a ring buffer. We have seen strange
-          // heap corruption fatal errors that produced mdmp files, but when we load
-          // these mdmp files in WinDBG, "!heap -triage" shows no error.
-          // We can examine the saved_heap_entries[] array in the mdmp file to
-          // diagnose such seemingly spurious errors reported by HeapWalk.
-          saved_heap_entries[saved_heap_entry_index++] = phe;
-          if (saved_heap_entry_index >= SAVE_COUNT) {
-            saved_heap_entry_index = 0;
-          }
-        }
-      }
-      DWORD err = GetLastError();
-      if (err != ERROR_NO_MORE_ITEMS && err != ERROR_CALL_NOT_IMPLEMENTED &&
-         (err == ERROR_INVALID_FUNCTION && phe.lpData != NULL)) {
-        HeapUnlock(heap);
-        fatal("heap walk aborted with error %d", err);
-      }
-      HeapUnlock(heap);
-    }
-    mallocDebugIntervalCounter = 0;
-  }
-  return true;
-}
-
 
 bool os::find(address addr, outputStream* st) {
   int offset = -1;

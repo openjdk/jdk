@@ -729,7 +729,7 @@ class Compile : public Phase {
     if (event.should_commit()) {
       event.set_starttime(C->_latest_stage_start_counter);
       event.set_phase((u1) cpt);
-      event.set_compileID(C->_compile_id);
+      event.set_compileId(C->_compile_id);
       event.set_phaseLevel(level);
       event.commit();
     }
@@ -748,7 +748,7 @@ class Compile : public Phase {
     if (event.should_commit()) {
       event.set_starttime(C->_latest_stage_start_counter);
       event.set_phase((u1) PHASE_END);
-      event.set_compileID(C->_compile_id);
+      event.set_compileId(C->_compile_id);
       event.set_phaseLevel(level);
       event.commit();
     }

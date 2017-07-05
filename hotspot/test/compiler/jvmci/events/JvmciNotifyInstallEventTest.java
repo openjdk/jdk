@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8136421
  * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
- * @library / /testlibrary
+ * @library / /test/lib
  * @library ../common/patches
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.org.objectweb.asm
@@ -38,7 +38,6 @@
  *
  * @build jdk.vm.ci/jdk.vm.ci.hotspot.CompilerToVMHelper
  * @build compiler.jvmci.common.JVMCIHelpers
- *     compiler.jvmci.events.JvmciNotifyInstallEventTest
  * @run driver jdk.test.lib.FileInstaller ../common/services/ ./META-INF/services/
  * @run driver jdk.test.lib.FileInstaller ./JvmciNotifyInstallEventTest.config
  *     ./META-INF/services/jdk.vm.ci.hotspot.services.HotSpotVMEventListener
@@ -46,12 +45,7 @@
  *      compiler.jvmci.common.JVMCIHelpers$EmptyHotspotCompiler
  *      compiler.jvmci.common.JVMCIHelpers$EmptyCompilerFactory
  *      compiler.jvmci.common.JVMCIHelpers$EmptyCompilationRequestResult
- *       compiler.jvmci.common.JVMCIHelpers$EmptyVMEventListener
- *      compiler.jvmci.events.JvmciNotifyInstallEventTest
- *      compiler.jvmci.common.CTVMUtilities
- *      compiler.jvmci.common.testcases.SimpleClass
- *      jdk.test.lib.Asserts
- *      jdk.test.lib.Utils
+ *      compiler.jvmci.common.JVMCIHelpers$EmptyVMEventListener
  * @run main/othervm -XX:+UnlockExperimentalVMOptions
  *     -Xbootclasspath/a:. -Xmixed
  *     -XX:+UseJVMCICompiler -XX:-BootstrapJVMCI

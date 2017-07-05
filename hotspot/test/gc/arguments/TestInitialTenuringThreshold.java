@@ -27,14 +27,15 @@
  * @bug 8014765
  * @requires vm.gc.Parallel
  * @summary Tests argument processing for initial tenuring threshold
- * @library /testlibrary
+ * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm TestInitialTenuringThreshold
  * @author thomas.schatzl@oracle.com
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class TestInitialTenuringThreshold {
 

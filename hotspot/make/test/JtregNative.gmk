@@ -71,15 +71,15 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
 endif
 
 ifeq ($(TOOLCHAIN_TYPE), solstudio)
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_liboverflow := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libSimpleClassFileLoadHook := -lc
-    BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libGetNamedModuleTest := -lc
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_liboverflow := -lc
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libSimpleClassFileLoadHook := -lc
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libGetNamedModuleTest := -lc
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), linux)
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rw := -z noexecstack
     BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_libtest-rwx := -z execstack
-    BUILD_HOTSPOT_JTREG_EXECUTABLES_LDFLAGS_exeinvoke := -ljvm -lpthread
+    BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeinvoke := -ljvm -lpthread
     BUILD_TEST_invoke_exeinvoke.c_OPTIMIZATION := NONE
 endif
 

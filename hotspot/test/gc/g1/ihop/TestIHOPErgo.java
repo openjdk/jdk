@@ -30,11 +30,9 @@
  * @requires !vm.flightRecorder
  * @requires vm.opt.ExplicitGCInvokesConcurrent != true
  * @requires vm.opt.MaxGCPauseMillis == "null"
- * @library /testlibrary /test/lib /
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management
- * @build gc.g1.ihop.TestIHOPErgo
- *        gc.g1.ihop.lib.IhopUtils
  * @run driver/timeout=480 gc.g1.ihop.TestIHOPErgo
  */
 package gc.g1.ihop;
@@ -44,8 +42,8 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 import gc.g1.ihop.lib.IhopUtils;
 

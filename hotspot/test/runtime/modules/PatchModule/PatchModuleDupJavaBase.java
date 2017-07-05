@@ -25,10 +25,11 @@
  * @test
  * @summary VM exit initialization results if java.base is specificed more than once to --patch-module.
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class PatchModuleDupJavaBase {
   // The VM should exit initialization if java.base is specified

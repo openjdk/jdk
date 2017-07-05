@@ -32,6 +32,7 @@ import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 import sun.jvm.hotspot.utilities.Assert;
+import sun.jvm.hotspot.utilities.CStringUtilities;
 
 import java.io.PrintStream;
 import java.util.Observable;
@@ -115,7 +116,7 @@ public class CodeBlob extends VMObject {
   }
 
   public String getName() {
-    return getName();
+    return CStringUtilities.getString(nameField.getValue(addr));
   }
 
   /** OopMap for frame; can return null if none available */

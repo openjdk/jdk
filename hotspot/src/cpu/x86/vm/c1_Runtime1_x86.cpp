@@ -98,7 +98,7 @@ int StubAssembler::call_RT(Register oop_result1, Register metadata_result, addre
   }
   pop(rax);
 #endif
-  reset_last_Java_frame(thread, true, align_stack);
+  reset_last_Java_frame(thread, true);
 
   // discard thread and arguments
   NOT_LP64(addptr(rsp, num_rt_args()*BytesPerWord));
@@ -872,7 +872,7 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
   }
   __ pop(rax);
 #endif
-  __ reset_last_Java_frame(thread, true, false);
+  __ reset_last_Java_frame(thread, true);
 #ifndef _LP64
   __ pop(rcx); // discard thread arg
   __ pop(rcx); // discard dummy

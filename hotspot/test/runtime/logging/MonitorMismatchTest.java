@@ -26,14 +26,13 @@
  * @test MonitorMismatchTest
  * @bug 8150084
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary
+ * @library /test/lib
  * @compile MonitorMismatchHelper.jasm
- * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools jdk.test.lib.Platform
  * @run driver MonitorMismatchTest
  */
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Platform;
 
 public class MonitorMismatchTest {

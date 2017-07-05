@@ -25,7 +25,6 @@ import java.io.File;
 
 /*
  * @test
- * @build BootClassPathAppendProp
  * @run main/othervm -Xbootclasspath/a:/usr/lib -showversion -Xbootclasspath/a:/i/dont/exist BootClassPathAppendProp
  * @run main/othervm --patch-module=no_module=/not/here -Xbootclasspath/a:/i/may/exist BootClassPathAppendProp
  * @run main/othervm -Djdk.boot.class.path.append=newdir BootClassPathAppendProp
