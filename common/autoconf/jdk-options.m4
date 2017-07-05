@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -382,18 +382,18 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
   AC_ARG_ENABLE([keep-packaged-modules], [AS_HELP_STRING([--disable-keep-packaged-modules],
     [Do not keep packaged modules in jdk image @<:@enable@:>@])])
 
+  AC_MSG_CHECKING([if packaged modules are kept])
   if test "x$enable_keep_packaged_modules" = "xyes"; then
-    AC_MSG_CHECKING([if packaged modules are kept])
     AC_MSG_RESULT([yes])
     JLINK_KEEP_PACKAGED_MODULES=true
   elif test "x$enable_keep_packaged_modules" = "xno"; then
-    AC_MSG_CHECKING([if packaged modules are kept])
     AC_MSG_RESULT([no])
     JLINK_KEEP_PACKAGED_MODULES=false
   elif test "x$enable_keep_packaged_modules" = "x"; then
     AC_MSG_RESULT([yes (default)])
     JLINK_KEEP_PACKAGED_MODULES=true
   else
+    AC_MSG_RESULT([error])
     AC_MSG_ERROR([--enable-keep-packaged-modules accepts no argument])
   fi
 
