@@ -149,18 +149,15 @@ CompactibleFreeListSpace::CompactibleFreeListSpace(BlockOffsetSharedArray* bs,
   check_free_list_consistency();
 
   // Initialize locks for parallel case.
-
-  if (CollectedHeap::use_parallel_gc_threads()) {
-    for (size_t i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
-      _indexedFreeListParLocks[i] = new Mutex(Mutex::leaf - 1, // == ExpandHeap_lock - 1
-                                              "a freelist par lock",
-                                              true);
-      DEBUG_ONLY(
-        _indexedFreeList[i].set_protecting_lock(_indexedFreeListParLocks[i]);
-      )
-    }
-    _dictionary->set_par_lock(&_parDictionaryAllocLock);
+  for (size_t i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
+    _indexedFreeListParLocks[i] = new Mutex(Mutex::leaf - 1, // == ExpandHeap_lock - 1
+                                            "a freelist par lock",
+                                            true);
+    DEBUG_ONLY(
+      _indexedFreeList[i].set_protecting_lock(_indexedFreeListParLocks[i]);
+    )
   }
+  _dictionary->set_par_lock(&_parDictionaryAllocLock);
 }
 
 // Like CompactibleSpace forward() but always calls cross_threshold() to
@@ -622,17 +619,11 @@ void CompactibleFreeListSpace::set_end(HeapWord* value) {
         // Mark the boundary of the new block in BOT
         _bt.mark_block(prevEnd, value);
         // put it all in the linAB
-        if (ParallelGCThreads == 0) {
-          _smallLinearAllocBlock._ptr = prevEnd;
-          _smallLinearAllocBlock._word_size = newFcSize;
-          repairLinearAllocBlock(&_smallLinearAllocBlock);
-        } else { // ParallelGCThreads > 0
-          MutexLockerEx x(parDictionaryAllocLock(),
-                          Mutex::_no_safepoint_check_flag);
-          _smallLinearAllocBlock._ptr = prevEnd;
-          _smallLinearAllocBlock._word_size = newFcSize;
-          repairLinearAllocBlock(&_smallLinearAllocBlock);
-        }
+        MutexLockerEx x(parDictionaryAllocLock(),
+                        Mutex::_no_safepoint_check_flag);
+        _smallLinearAllocBlock._ptr = prevEnd;
+        _smallLinearAllocBlock._word_size = newFcSize;
+        repairLinearAllocBlock(&_smallLinearAllocBlock);
         // Births of chunks put into a LinAB are not recorded.  Births
         // of chunks as they are allocated out of a LinAB are.
       } else {
@@ -1740,10 +1731,7 @@ CompactibleFreeListSpace::addChunkToFreeListsAtEndRecordingStats(
   assert(chunk != NULL && is_in_reserved(chunk), "Not in this space!");
   // One of the parallel gc task threads may be here
   // whilst others are allocating.
-  Mutex* lock = NULL;
-  if (ParallelGCThreads != 0) {
-    lock = &_parDictionaryAllocLock;
-  }
+  Mutex* lock = &_parDictionaryAllocLock;
   FreeChunk* ec;
   {
     MutexLockerEx x(lock, Mutex::_no_safepoint_check_flag);
@@ -1760,7 +1748,7 @@ CompactibleFreeListSpace::addChunkToFreeListsAtEndRecordingStats(
   }
   ec->set_size(size);
   debug_only(ec->mangleFreed(size));
-  if (size < SmallForDictionary && ParallelGCThreads != 0) {
+  if (size < SmallForDictionary) {
     lock = _indexedFreeListParLocks[size];
   }
   MutexLockerEx x(lock, Mutex::_no_safepoint_check_flag);

@@ -71,6 +71,7 @@ class ClassLoaderDataGraph : public AllStatic {
 
   static ClassLoaderData* add(Handle class_loader, bool anonymous, TRAPS);
   static void post_class_unload_events(void);
+  static void clean_metaspaces();
  public:
   static ClassLoaderData* find_or_create(Handle class_loader, TRAPS);
   static void purge();
@@ -90,7 +91,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static void methods_do(void f(Method*));
   static void loaded_classes_do(KlassClosure* klass_closure);
   static void classes_unloading_do(void f(Klass* const));
-  static bool do_unloading(BoolObjectClosure* is_alive);
+  static bool do_unloading(BoolObjectClosure* is_alive, bool clean_alive);
 
   // CMS support.
   static void remember_new_clds(bool remember) { _saved_head = (remember ? _head : NULL); }
@@ -105,6 +106,8 @@ class ClassLoaderDataGraph : public AllStatic {
       set_should_purge(false);
     }
   }
+
+  static void free_deallocate_lists();
 
   static void dump_on(outputStream * const out) PRODUCT_RETURN;
   static void dump() { dump_on(tty); }

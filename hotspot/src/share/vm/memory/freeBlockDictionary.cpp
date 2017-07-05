@@ -43,12 +43,10 @@ template <class Chunk> void FreeBlockDictionary<Chunk>::set_par_lock(Mutex* lock
 
 template <class Chunk> void FreeBlockDictionary<Chunk>::verify_par_locked() const {
 #ifdef ASSERT
-  if (ParallelGCThreads > 0) {
-    Thread* my_thread = Thread::current();
-    if (my_thread->is_GC_task_thread()) {
-      assert(par_lock() != NULL, "Should be using locking?");
-      assert_lock_strong(par_lock());
-    }
+  Thread* my_thread = Thread::current();
+  if (my_thread->is_GC_task_thread()) {
+    assert(par_lock() != NULL, "Should be using locking?");
+    assert_lock_strong(par_lock());
   }
 #endif // ASSERT
 }
