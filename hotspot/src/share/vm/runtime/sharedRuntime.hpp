@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -438,6 +438,7 @@ class SharedRuntime: AllStatic {
   // returns.
   static nmethod *generate_native_wrapper(MacroAssembler* masm,
                                           methodHandle method,
+                                          int compile_id,
                                           int total_args_passed,
                                           int max_arg,
                                           BasicType *sig_bt,
@@ -659,7 +660,7 @@ class AdapterHandlerLibrary: public AllStatic {
 
   static AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint,
                                         address i2c_entry, address c2i_entry, address c2i_unverified_entry);
-  static nmethod* create_native_wrapper(methodHandle method);
+  static nmethod* create_native_wrapper(methodHandle method, int compile_id);
   static AdapterHandlerEntry* get_adapter(methodHandle method);
 
 #ifdef HAVE_DTRACE_H

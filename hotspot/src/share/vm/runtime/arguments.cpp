@@ -2974,21 +2974,28 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
 #endif // PRODUCT
 
-  if (EnableInvokeDynamic && !EnableMethodHandles) {
-    if (!FLAG_IS_DEFAULT(EnableMethodHandles)) {
-      warning("forcing EnableMethodHandles true because EnableInvokeDynamic is true");
+  // Transitional
+  if (EnableMethodHandles || AnonymousClasses) {
+    if (!EnableInvokeDynamic && !FLAG_IS_DEFAULT(EnableInvokeDynamic)) {
+      warning("EnableMethodHandles and AnonymousClasses are obsolete.  Keeping EnableInvokeDynamic disabled.");
+    } else {
+      EnableInvokeDynamic = true;
     }
-    EnableMethodHandles = true;
   }
-  if (EnableMethodHandles && !AnonymousClasses) {
-    if (!FLAG_IS_DEFAULT(AnonymousClasses)) {
-      warning("forcing AnonymousClasses true because EnableMethodHandles is true");
+
+  // JSR 292 is not supported before 1.7
+  if (!JDK_Version::is_gte_jdk17x_version()) {
+    if (EnableInvokeDynamic) {
+      if (!FLAG_IS_DEFAULT(EnableInvokeDynamic)) {
+        warning("JSR 292 is not supported before 1.7.  Disabling support.");
+      }
+      EnableInvokeDynamic = false;
     }
-    AnonymousClasses = true;
   }
-  if ((EnableMethodHandles || AnonymousClasses) && ScavengeRootsInCode == 0) {
+
+  if (EnableInvokeDynamic && ScavengeRootsInCode == 0) {
     if (!FLAG_IS_DEFAULT(ScavengeRootsInCode)) {
-      warning("forcing ScavengeRootsInCode non-zero because EnableMethodHandles or AnonymousClasses is true");
+      warning("forcing ScavengeRootsInCode non-zero because EnableInvokeDynamic is true");
     }
     ScavengeRootsInCode = 1;
   }

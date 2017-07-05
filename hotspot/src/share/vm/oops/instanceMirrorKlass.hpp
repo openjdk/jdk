@@ -36,6 +36,8 @@
 
 
 class instanceMirrorKlass: public instanceKlass {
+  friend class VMStructs;
+
  private:
   static int _offset_of_static_fields;
 

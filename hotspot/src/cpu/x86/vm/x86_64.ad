@@ -574,12 +574,11 @@ int MachCallDynamicJavaNode::ret_addr_offset()
 // In os_cpu .ad file
 // int MachCallRuntimeNode::ret_addr_offset()
 
-// Indicate if the safepoint node needs the polling page as an input.
-// Since amd64 does not have absolute addressing but RIP-relative
-// addressing and the polling page is within 2G, it doesn't.
+// Indicate if the safepoint node needs the polling page as an input,
+// it does if the polling page is more than disp32 away.
 bool SafePointNode::needs_polling_address_input()
 {
-  return false;
+  return Assembler::is_polling_page_far();
 }
 
 //
@@ -992,15 +991,21 @@ void MachEpilogNode::format(PhaseRegAlloc* ra_, outputStream* st) const
   framesize -= 2*wordSize;
 
   if (framesize) {
-    st->print_cr("addq\trsp, %d\t# Destroy frame", framesize);
+    st->print_cr("addq    rsp, %d\t# Destroy frame", framesize);
     st->print("\t");
   }
 
-  st->print_cr("popq\trbp");
+  st->print_cr("popq   rbp");
   if (do_polling() && C->is_method_compilation()) {
-    st->print_cr("\ttestl\trax, [rip + #offset_to_poll_page]\t"
-                  "# Safepoint: poll for GC");
     st->print("\t");
+    if (Assembler::is_polling_page_far()) {
+      st->print_cr("movq   rscratch1, #polling_page_address\n\t"
+                   "testl  rax, [rscratch1]\t"
+                   "# Safepoint: poll for GC");
+    } else {
+      st->print_cr("testl  rax, [rip + #offset_to_poll_page]\t"
+                   "# Safepoint: poll for GC");
+    }
   }
 }
 #endif
@@ -1033,45 +1038,22 @@ void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
   emit_opcode(cbuf, 0x58 | RBP_enc);
 
   if (do_polling() && C->is_method_compilation()) {
-    // testl %rax, off(%rip) // Opcode + ModRM + Disp32 == 6 bytes
-    // XXX reg_mem doesn't support RIP-relative addressing yet
-    cbuf.set_insts_mark();
-    cbuf.relocate(cbuf.insts_mark(), relocInfo::poll_return_type, 0); // XXX
-    emit_opcode(cbuf, 0x85); // testl
-    emit_rm(cbuf, 0x0, RAX_enc, 0x5); // 00 rax 101 == 0x5
-    // cbuf.insts_mark() is beginning of instruction
-    emit_d32_reloc(cbuf, os::get_polling_page());
-//                    relocInfo::poll_return_type,
+    MacroAssembler _masm(&cbuf);
+    AddressLiteral polling_page(os::get_polling_page(), relocInfo::poll_return_type);
+    if (Assembler::is_polling_page_far()) {
+      __ lea(rscratch1, polling_page);
+      __ relocate(relocInfo::poll_return_type);
+      __ testl(rax, Address(rscratch1, 0));
+    } else {
+      __ testl(rax, polling_page);
+    }
   }
 }
 
 uint MachEpilogNode::size(PhaseRegAlloc* ra_) const
 {
-  Compile* C = ra_->C;
-  int framesize = C->frame_slots() << LogBytesPerInt;
-  assert((framesize & (StackAlignmentInBytes-1)) == 0, "frame size not aligned");
-  // Remove word for return adr already pushed
-  // and RBP
-  framesize -= 2*wordSize;
-
-  uint size = 0;
-
-  if (do_polling() && C->is_method_compilation()) {
-    size += 6;
-  }
-
-  // count popq rbp
-  size++;
-
-  if (framesize) {
-    if (framesize < 0x80) {
-      size += 4;
-    } else if (framesize) {
-      size += 7;
-    }
-  }
-
-  return size;
+  return MachNode::size(ra_); // too many variables; just compute it
+                              // the hard way
 }
 
 int MachEpilogNode::reloc() const
@@ -1999,6 +1981,10 @@ const int Matcher::init_array_short_size = 8 * BytesPerLong;
 // to be subsumed into complex addressing expressions or compute them
 // into registers?  True for Intel but false for most RISCs
 const bool Matcher::clone_shift_expressions = true;
+
+// Do we need to mask the count passed to shift instructions or does
+// the cpu only look at the lower 5/6 bits anyway?
+const bool Matcher::need_masked_shift_count = false;
 
 bool Matcher::narrow_oop_use_complex_address() {
   assert(UseCompressedOops, "only for compressed oops code");
@@ -3406,8 +3392,8 @@ encode %{
     }
     if (EmitSync & 1) {
         // Without cast to int32_t a movptr will destroy r10 which is typically obj
-        masm.movptr (Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark())) ; 
-        masm.cmpptr(rsp, (int32_t)NULL_WORD) ; 
+        masm.movptr (Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark())) ;
+        masm.cmpptr(rsp, (int32_t)NULL_WORD) ;
     } else
     if (EmitSync & 2) {
         Label DONE_LABEL;
@@ -3435,10 +3421,10 @@ encode %{
     } else {
         Label DONE_LABEL, IsInflated, Egress;
 
-        masm.movptr(tmpReg, Address(objReg, 0)) ; 
+        masm.movptr(tmpReg, Address(objReg, 0)) ;
         masm.testl (tmpReg, 0x02) ;         // inflated vs stack-locked|neutral|biased
-        masm.jcc   (Assembler::notZero, IsInflated) ; 
-         
+        masm.jcc   (Assembler::notZero, IsInflated) ;
+
         // it's stack-locked, biased or neutral
         // TODO: optimize markword triage order to reduce the number of
         // conditional branches in the most common cases.
@@ -3452,9 +3438,9 @@ encode %{
         }
 
         // was q will it destroy high?
-        masm.orl   (tmpReg, 1) ; 
-        masm.movptr(Address(boxReg, 0), tmpReg) ;  
-        if (os::is_MP()) { masm.lock(); } 
+        masm.orl   (tmpReg, 1) ;
+        masm.movptr(Address(boxReg, 0), tmpReg) ;
+        if (os::is_MP()) { masm.lock(); }
         masm.cmpxchgptr(boxReg, Address(objReg, 0)); // Updates tmpReg
         if (_counters != NULL) {
            masm.cond_inc32(Assembler::equal,
@@ -3481,16 +3467,16 @@ encode %{
         // fetched _owner.  If the CAS is successful we may
         // avoid an RTO->RTS upgrade on the $line.
         // Without cast to int32_t a movptr will destroy r10 which is typically obj
-        masm.movptr(Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark())) ; 
+        masm.movptr(Address(boxReg, 0), (int32_t)intptr_t(markOopDesc::unused_mark())) ;
 
-        masm.mov    (boxReg, tmpReg) ; 
-        masm.movptr (tmpReg, Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2)) ; 
-        masm.testptr(tmpReg, tmpReg) ;   
-        masm.jcc    (Assembler::notZero, DONE_LABEL) ; 
+        masm.mov    (boxReg, tmpReg) ;
+        masm.movptr (tmpReg, Address(tmpReg, ObjectMonitor::owner_offset_in_bytes()-2)) ;
+        masm.testptr(tmpReg, tmpReg) ;
+        masm.jcc    (Assembler::notZero, DONE_LABEL) ;
 
         // It's inflated and appears unlocked
-        if (os::is_MP()) { masm.lock(); } 
-        masm.cmpxchgptr(r15_thread, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2)) ; 
+        if (os::is_MP()) { masm.lock(); }
+        masm.cmpxchgptr(r15_thread, Address(boxReg, ObjectMonitor::owner_offset_in_bytes()-2)) ;
         // Intentional fall-through into DONE_LABEL ...
 
         masm.bind  (DONE_LABEL) ;
@@ -3509,8 +3495,8 @@ encode %{
     Register tmpReg = as_Register($tmp$$reg);
     MacroAssembler masm(&cbuf);
 
-    if (EmitSync & 4) { 
-       masm.cmpptr(rsp, 0) ; 
+    if (EmitSync & 4) {
+       masm.cmpptr(rsp, 0) ;
     } else
     if (EmitSync & 8) {
        Label DONE_LABEL;
@@ -3537,25 +3523,25 @@ encode %{
        if (UseBiasedLocking && !UseOptoBiasInlining) {
          masm.biased_locking_exit(objReg, tmpReg, DONE_LABEL);
        }
-        
-       masm.movptr(tmpReg, Address(objReg, 0)) ; 
-       masm.cmpptr(Address(boxReg, 0), (int32_t)NULL_WORD) ; 
-       masm.jcc   (Assembler::zero, DONE_LABEL) ; 
-       masm.testl (tmpReg, 0x02) ; 
-       masm.jcc   (Assembler::zero, Stacked) ; 
-        
+
+       masm.movptr(tmpReg, Address(objReg, 0)) ;
+       masm.cmpptr(Address(boxReg, 0), (int32_t)NULL_WORD) ;
+       masm.jcc   (Assembler::zero, DONE_LABEL) ;
+       masm.testl (tmpReg, 0x02) ;
+       masm.jcc   (Assembler::zero, Stacked) ;
+
        // It's inflated
-       masm.movptr(boxReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2)) ; 
-       masm.xorptr(boxReg, r15_thread) ; 
-       masm.orptr (boxReg, Address (tmpReg, ObjectMonitor::recursions_offset_in_bytes()-2)) ; 
-       masm.jcc   (Assembler::notZero, DONE_LABEL) ; 
-       masm.movptr(boxReg, Address (tmpReg, ObjectMonitor::cxq_offset_in_bytes()-2)) ; 
-       masm.orptr (boxReg, Address (tmpReg, ObjectMonitor::EntryList_offset_in_bytes()-2)) ; 
-       masm.jcc   (Assembler::notZero, CheckSucc) ; 
-       masm.movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), (int32_t)NULL_WORD) ; 
-       masm.jmp   (DONE_LABEL) ; 
-        
-       if ((EmitSync & 65536) == 0) { 
+       masm.movptr(boxReg, Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2)) ;
+       masm.xorptr(boxReg, r15_thread) ;
+       masm.orptr (boxReg, Address (tmpReg, ObjectMonitor::recursions_offset_in_bytes()-2)) ;
+       masm.jcc   (Assembler::notZero, DONE_LABEL) ;
+       masm.movptr(boxReg, Address (tmpReg, ObjectMonitor::cxq_offset_in_bytes()-2)) ;
+       masm.orptr (boxReg, Address (tmpReg, ObjectMonitor::EntryList_offset_in_bytes()-2)) ;
+       masm.jcc   (Assembler::notZero, CheckSucc) ;
+       masm.movptr(Address (tmpReg, ObjectMonitor::owner_offset_in_bytes()-2), (int32_t)NULL_WORD) ;
+       masm.jmp   (DONE_LABEL) ;
+
+       if ((EmitSync & 65536) == 0) {
          Label LSuccess, LGoSlowPath ;
          masm.bind  (CheckSucc) ;
          masm.cmpptr(Address (tmpReg, ObjectMonitor::succ_offset_in_bytes()-2), (int32_t)NULL_WORD) ;
@@ -3587,9 +3573,9 @@ encode %{
          masm.jmp   (DONE_LABEL) ;
        }
 
-       masm.bind  (Stacked) ; 
+       masm.bind  (Stacked) ;
        masm.movptr(tmpReg, Address (boxReg, 0)) ;      // re-fetch
-       if (os::is_MP()) { masm.lock(); } 
+       if (os::is_MP()) { masm.lock(); }
        masm.cmpxchgptr(tmpReg, Address(objReg, 0)); // Uses RAX which is box
 
        if (EmitSync & 65536) {
@@ -3910,22 +3896,6 @@ encode %{
 
     // done:
   %}
-
-  // Safepoint Poll.  This polls the safepoint page, and causes an
-  // exception if it is not readable. Unfortunately, it kills
-  // RFLAGS in the process.
-  enc_class enc_safepoint_poll
-  %{
-    // testl %rax, off(%rip) // Opcode + ModRM + Disp32 == 6 bytes
-    // XXX reg_mem doesn't support RIP-relative addressing yet
-    cbuf.set_insts_mark();
-    cbuf.relocate(cbuf.insts_mark(), relocInfo::poll_type, 0); // XXX
-    emit_opcode(cbuf, 0x85); // testl
-    emit_rm(cbuf, 0x0, RAX_enc, 0x5); // 00 rax 101 == 0x5
-    // cbuf.insts_mark() is beginning of instruction
-    emit_d32_reloc(cbuf, os::get_polling_page());
-//                    relocInfo::poll_type,
-  %}
 %}
 
 
@@ -4225,6 +4195,15 @@ operand immP0()
   match(ConP);
 
   op_cost(5);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immP_poll() %{
+  predicate(n->get_ptr() != 0 && n->get_ptr() == (intptr_t)os::get_polling_page());
+  match(ConP);
+
+  // formats are generated automatically for constants and base registers
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -4836,7 +4815,7 @@ operand regF()
 %}
 
 // Double register operands
-operand regD() 
+operand regD()
 %{
   constraint(ALLOC_IN_RC(double_reg));
   match(RegD);
@@ -6564,6 +6543,16 @@ instruct loadConP0(rRegP dst, immP0 src, rFlagsReg cr)
   ins_pipe(ialu_reg);
 %}
 
+instruct loadConP_poll(rRegP dst, immP_poll src) %{
+  match(Set dst src);
+  format %{ "movq    $dst, $src\t!ptr" %}
+  ins_encode %{
+    AddressLiteral polling_page(os::get_polling_page(), relocInfo::poll_type);
+    __ lea($dst$$Register, polling_page);
+  %}
+  ins_pipe(ialu_reg_fat);
+%}
+
 instruct loadConP31(rRegP dst, immP31 src, rFlagsReg cr)
 %{
   match(Set dst src);
@@ -7237,11 +7226,11 @@ instruct bytes_reverse_long(rRegL dst) %{
 instruct bytes_reverse_unsigned_short(rRegI dst) %{
   match(Set dst (ReverseBytesUS dst));
 
-  format %{ "bswapl  $dst\n\t" 
+  format %{ "bswapl  $dst\n\t"
             "shrl    $dst,16\n\t" %}
   ins_encode %{
     __ bswapl($dst$$Register);
-    __ shrl($dst$$Register, 16); 
+    __ shrl($dst$$Register, 16);
   %}
   ins_pipe( ialu_reg );
 %}
@@ -7249,11 +7238,11 @@ instruct bytes_reverse_unsigned_short(rRegI dst) %{
 instruct bytes_reverse_short(rRegI dst) %{
   match(Set dst (ReverseBytesS dst));
 
-  format %{ "bswapl  $dst\n\t" 
+  format %{ "bswapl  $dst\n\t"
             "sar     $dst,16\n\t" %}
   ins_encode %{
     __ bswapl($dst$$Register);
-    __ sarl($dst$$Register, 16); 
+    __ sarl($dst$$Register, 16);
   %}
   ins_pipe( ialu_reg );
 %}
@@ -7476,7 +7465,7 @@ instruct membar_volatile(rFlagsReg cr) %{
   effect(KILL cr);
   ins_cost(400);
 
-  format %{ 
+  format %{
     $$template
     if (os::is_MP()) {
       $$emit$$"lock addl [rsp + #0], 0\t! membar_volatile"
@@ -8287,7 +8276,7 @@ instruct storePConditional(memory heap_top_ptr,
                            rFlagsReg cr)
 %{
   match(Set cr (StorePConditional heap_top_ptr (Binary oldval newval)));
- 
+
   format %{ "cmpxchgq $heap_top_ptr, $newval\t# (ptr) "
             "If rax == $heap_top_ptr then store $newval into $heap_top_ptr" %}
   opcode(0x0F, 0xB1);
@@ -9850,9 +9839,9 @@ instruct xorI_rReg(rRegI dst, rRegI src, rFlagsReg cr)
 
 // Xor Register with Immediate -1
 instruct xorI_rReg_im1(rRegI dst, immI_M1 imm) %{
-  match(Set dst (XorI dst imm));  
+  match(Set dst (XorI dst imm));
 
-  format %{ "not    $dst" %}  
+  format %{ "not    $dst" %}
   ins_encode %{
      __ notl($dst$$Register);
   %}
@@ -10093,9 +10082,9 @@ instruct xorL_rReg(rRegL dst, rRegL src, rFlagsReg cr)
 
 // Xor Register with Immediate -1
 instruct xorL_rReg_im1(rRegL dst, immL_M1 imm) %{
-  match(Set dst (XorL dst imm));  
+  match(Set dst (XorL dst imm));
 
-  format %{ "notq   $dst" %}  
+  format %{ "notq   $dst" %}
   ins_encode %{
      __ notq($dst$$Register);
   %}
@@ -12469,14 +12458,33 @@ instruct cmpFastUnlock(rFlagsReg cr,
 // Safepoint Instructions
 instruct safePoint_poll(rFlagsReg cr)
 %{
+  predicate(!Assembler::is_polling_page_far());
   match(SafePoint);
   effect(KILL cr);
 
-  format %{ "testl   rax, [rip + #offset_to_poll_page]\t"
+  format %{ "testl  rax, [rip + #offset_to_poll_page]\t"
             "# Safepoint: poll for GC" %}
-  size(6); // Opcode + ModRM + Disp32 == 6 bytes
   ins_cost(125);
-  ins_encode(enc_safepoint_poll);
+  ins_encode %{
+    AddressLiteral addr(os::get_polling_page(), relocInfo::poll_type);
+    __ testl(rax, addr);
+  %}
+  ins_pipe(ialu_reg_mem);
+%}
+
+instruct safePoint_poll_far(rFlagsReg cr, rRegP poll)
+%{
+  predicate(Assembler::is_polling_page_far());
+  match(SafePoint poll);
+  effect(KILL cr, USE poll);
+
+  format %{ "testl  rax, [$poll]\t"
+            "# Safepoint: poll for GC" %}
+  ins_cost(125);
+  ins_encode %{
+    __ relocate(relocInfo::poll_type);
+    __ testl(rax, Address($poll$$Register, 0));
+  %}
   ins_pipe(ialu_reg_mem);
 %}
 

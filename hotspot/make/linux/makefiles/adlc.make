@@ -102,7 +102,7 @@ all: $(EXEC)
 
 $(EXEC) : $(OBJECTS)
 	@echo Making adlc
-	$(QUIETLY) $(LINK_NOPROF.CC) -o $(EXEC) $(OBJECTS)
+	$(QUIETLY) $(HOST.LINK_NOPROF.CC) -o $(EXEC) $(OBJECTS)
 
 # Random dependencies:
 $(OBJECTS): opcodes.hpp classes.hpp adlc.hpp adlcVMDeps.hpp adlparse.hpp archDesc.hpp arena.hpp dict2.hpp filebuff.hpp forms.hpp formsopt.hpp formssel.hpp
@@ -204,14 +204,14 @@ PROCESS_AD_FILES = awk '{ \
 $(OUTDIR)/%.o: %.cpp
 	@echo Compiling $<
 	$(QUIETLY) $(REMOVE_TARGET)
-	$(QUIETLY) $(COMPILE.CC) -o $@ $< $(COMPILE_DONE)
+	$(QUIETLY) $(HOST.COMPILE.CC) -o $@ $< $(COMPILE_DONE)
 
 # Some object files are given a prefix, to disambiguate
 # them from objects of the same name built for the VM.
 $(OUTDIR)/adlc-%.o: %.cpp
 	@echo Compiling $<
 	$(QUIETLY) $(REMOVE_TARGET)
-	$(QUIETLY) $(COMPILE.CC) -o $@ $< $(COMPILE_DONE)
+	$(QUIETLY) $(HOST.COMPILE.CC) -o $@ $< $(COMPILE_DONE)
 
 # #########################################################################
 
