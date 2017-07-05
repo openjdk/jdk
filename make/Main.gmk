@@ -412,7 +412,7 @@ else
   # Explicitly add dependencies for special targets
   java.base-java: unpack-sec
 
-  jdk.dev-gendata: java rmic
+  jdk.jdeps-gendata: java rmic
 
   zip-security: java.base-java java.security.jgss-java java.security.jgss-libs \
       $(filter jdk.crypto%, $(JAVA_TARGETS))
