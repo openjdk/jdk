@@ -652,23 +652,25 @@ MethodData::MethodData(methodHandle method, int size, TRAPS) {
   // Set the method back-pointer.
   _method = method();
 
-  if (TieredCompilation) {
-    _invocation_counter.init();
-    _backedge_counter.init();
-    _invocation_counter_start = 0;
-    _backedge_counter_start = 0;
-    _num_loops = 0;
-    _num_blocks = 0;
-    _highest_comp_level = 0;
-    _highest_osr_comp_level = 0;
-    _would_profile = true;
-  }
+  _invocation_counter.init();
+  _backedge_counter.init();
+  _invocation_counter_start = 0;
+  _backedge_counter_start = 0;
+  _num_loops = 0;
+  _num_blocks = 0;
+  _highest_comp_level = 0;
+  _highest_osr_comp_level = 0;
+  _would_profile = true;
   set_creation_mileage(mileage_of(method()));
 
   // Initialize flags and trap history.
   _nof_decompiles = 0;
   _nof_overflow_recompiles = 0;
   _nof_overflow_traps = 0;
+  _eflags = 0;
+  _arg_local = 0;
+  _arg_stack = 0;
+  _arg_returned = 0;
   assert(sizeof(_trap_hist) % sizeof(HeapWord) == 0, "align");
   Copy::zero_to_words((HeapWord*) &_trap_hist,
                       sizeof(_trap_hist) / sizeof(HeapWord));
@@ -677,6 +679,7 @@ MethodData::MethodData(methodHandle method, int size, TRAPS) {
   // corresponding data cells.
   int data_size = 0;
   int empty_bc_count = 0;  // number of bytecodes lacking data
+  _data[0] = 0;  // apparently not set below.
   BytecodeStream stream(method);
   Bytecodes::Code c;
   while ((c = stream.next()) >= 0) {
@@ -710,6 +713,7 @@ MethodData::MethodData(methodHandle method, int size, TRAPS) {
   post_initialize(&stream);
 
   set_size(object_size);
+
 }
 
 // Get a measure of how much mileage the method has on it.

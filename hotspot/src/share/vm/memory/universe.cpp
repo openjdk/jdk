@@ -885,6 +885,8 @@ ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   // the actual alignment depends on its size.
   Universe::set_class_metaspace_size(align_size_up(ClassMetaspaceSize, alignment));
   size_t total_reserved = align_size_up(heap_size + Universe::class_metaspace_size(), alignment);
+  assert(!UseCompressedOops || (total_reserved <= (OopEncodingHeapMax - os::vm_page_size())),
+      "heap size is too big for compressed oops");
   char* addr = Universe::preferred_heap_base(total_reserved, Universe::UnscaledNarrowOop);
 
   ReservedHeapSpace total_rs(total_reserved, alignment, UseLargePages, addr);

@@ -1581,7 +1581,8 @@ int AbstractInterpreter::layout_activation(Method* method,
                                            int callee_local_count,
                                            frame* caller,
                                            frame* interpreter_frame,
-                                           bool is_top_frame) {
+                                           bool is_top_frame,
+                                           bool is_bottom_frame) {
   // Note: This calculation must exactly parallel the frame setup
   // in InterpreterGenerator::generate_fixed_frame.
   // If f!=NULL, set up the following variables:
@@ -1664,6 +1665,15 @@ int AbstractInterpreter::layout_activation(Method* method,
       int delta = local_words - parm_words;
       int computed_sp_adjustment = (delta > 0) ? round_to(delta, WordsPerLong) : 0;
       *interpreter_frame->register_addr(I5_savedSP)    = (intptr_t) (fp + computed_sp_adjustment) - STACK_BIAS;
+      if (!is_bottom_frame) {
+        // Llast_SP is set below for the current frame to SP (with the
+        // extra space for the callee's locals). Here we adjust
+        // Llast_SP for the caller's frame, removing the extra space
+        // for the current method's locals.
+        *caller->register_addr(Llast_SP) = *interpreter_frame->register_addr(I5_savedSP);
+      } else {
+        assert(*caller->register_addr(Llast_SP) >= *interpreter_frame->register_addr(I5_savedSP), "strange Llast_SP");
+      }
     } else {
       assert(caller->is_compiled_frame() || caller->is_entry_frame(), "only possible cases");
       // Don't have Lesp available; lay out locals block in the caller
