@@ -36,6 +36,7 @@ static const char* path_separator() { return ";"; }
 
 class win32 {
   friend class os;
+  friend unsigned __stdcall java_start(class Thread*);
 
  protected:
   static int    _vm_page_size;
@@ -47,6 +48,7 @@ class win32 {
   static bool   _is_nt;
   static bool   _is_windows_2003;
   static bool   _is_windows_server;
+  static bool   _has_exit_bug;
   static bool   _has_performance_count;
 
   static void print_windows_version(outputStream* st);
@@ -69,8 +71,12 @@ class win32 {
   // load dll from Windows system directory or Windows directory
   static HINSTANCE load_Windows_dll(const char* name, char *ebuf, int ebuflen);
 
-  private:
-    static void initialize_performance_counter();
+ private:
+  enum Ept { EPT_THREAD, EPT_PROCESS, EPT_PROCESS_DIE };
+  // Wrapper around _endthreadex(), exit() and _exit()
+  static int exit_process_or_thread(Ept what, int exit_code);
+
+  static void initialize_performance_counter();
 
  public:
   // Generic interface:
@@ -87,6 +93,9 @@ class win32 {
 
   // Tells whether the platform is Windows 2003
   static bool is_windows_2003() { return _is_windows_2003; }
+
+  // Tells whether there can be the race bug during process exit on this platform
+  static bool has_exit_bug() { return _has_exit_bug; }
 
   // Returns the byte size of a virtual memory page
   static int vm_page_size() { return _vm_page_size; }

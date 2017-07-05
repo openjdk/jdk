@@ -47,7 +47,7 @@ import sun.font.FontResolver;
  * on a paragraph of styled text.
  * <p>
  * Currently, this class is optimized for a small number of intervals
- * (preferrably 1).
+ * (preferably 1).
  */
 final class StyledParagraph {
 
@@ -262,7 +262,7 @@ final class StyledParagraph {
 
     /**
      * Return the index at which there is a different Font, GraphicAttribute, or
-     * Dcoration than at the given index.
+     * Decoration than at the given index.
      * @param index a valid index in the paragraph
      * @return the first index where there is a change in attributes from
      *      those at index

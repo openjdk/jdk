@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,14 +19,34 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-public class WinGammaPlatformVC9 extends WinGammaPlatformVC8 {
+/*
+ * @test TestRangeCheck
+ * @bug 8054883
+ * @summary Tests that range check is not skipped
+ */
 
-    String projectVersion() {return "9.00";};
+public class TestRangeCheck {
+    public static void main(String args[]) {
+        try {
+            test();
+            throw new AssertionError("Expected ArrayIndexOutOfBoundsException was not thrown");
+        } catch (ArrayIndexOutOfBoundsException e) {
+            System.out.println("Expected ArrayIndexOutOfBoundsException was thrown");
+        }
+    }
 
-}
+    private static void test() {
+        int arr[] = new int[1];
+        int result = 1;
 
-class CompilerInterfaceVC9 extends CompilerInterfaceVC8 {
+        // provoke OSR compilation
+        for (int i = 0; i < Integer.MAX_VALUE; i++) {
+        }
+
+        if (result > 0 && arr[~result] > 0) {
+            arr[~result] = 0;
+        }
+    }
 }

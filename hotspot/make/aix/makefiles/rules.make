@@ -146,12 +146,12 @@ include $(GAMMADIR)/make/altsrc.make
 # The non-PIC object files are only generated for 32 bit platforms.
 ifdef LP64
 %.o: %.cpp
-	@echo Compiling $<
+	@echo $(LOG_INFO) Compiling $<
 	$(QUIETLY) $(REMOVE_TARGET)
 	$(QUIETLY) $(COMPILE.CXX) $(DEPFLAGS) -o $@ $< $(COMPILE_DONE)
 else
 %.o: %.cpp
-	@echo Compiling $<
+	@echo $(LOG_INFO) Compiling $<
 	$(QUIETLY) $(REMOVE_TARGET)
 	$(QUIETLY) $(if $(findstring $@, $(NONPIC_OBJ_FILES)), \
 	   $(subst $(VM_PICFLAG), ,$(COMPILE.CXX)) $(DEPFLAGS) -o $@ $< $(COMPILE_DONE), \
@@ -159,18 +159,18 @@ else
 endif
 
 %.o: %.s
-	@echo Assembling $<
+	@echo $(LOG_INFO) Assembling $<
 	$(QUIETLY) $(REMOVE_TARGET)
 	$(QUIETLY) $(AS.S) $(DEPFLAGS) -o $@ $< $(COMPILE_DONE)
 
 %.s: %.cpp
-	@echo Generating assembly for $<
+	@echo $(LOG_INFO) Generating assembly for $<
 	$(QUIETLY) $(GENASM.CXX) -o $@ $<
 	$(QUIETLY) $(DEMANGLE) $(COMPILE_DONE)
 
 # Intermediate files (for debugging macros)
 %.i: %.cpp
-	@echo Preprocessing $< to $@
+	@echo $(LOG_INFO) Preprocessing $< to $@
 	$(QUIETLY) $(PREPROCESS.CXX) $< > $@ $(COMPILE_DONE)
 
 #  Override gnumake built-in rules which do sccs get operations badly.

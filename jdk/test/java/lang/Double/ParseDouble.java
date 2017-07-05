@@ -512,6 +512,21 @@ public class ParseDouble {
         "2.2250738585072014e-308",    // Double.MIN_NORMAL
 
         "2.2250738585072012e-308",    // near Double.MIN_NORMAL
+
+        "1.7976931348623158e+308",    // near MAX_VALUE + ulp(MAX_VALUE)/2
+        "1.7976931348623159e+308",    // near MAX_VALUE + ulp(MAX_VALUE)
+
+        "2.4703282292062329e-324",    // above MIN_VALUE/2
+        "2.4703282292062327e-324",    // MIN_VALUE/2
+        "2.4703282292062325e-324",    // below MIN_VALUE/2
+
+        // 1e308 with leading zeros
+
+        "0.0000000000001e321",
+        "00.000000000000000001e326",
+        "00000.000000000000000001e326",
+        "000.0000000000000000001e327",
+        "0.00000000000000000001e328",
     };
 
     static String paddedBadStrings[];
