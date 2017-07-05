@@ -108,7 +108,7 @@ class vframeArrayElement : public _ValueObj {
 // but it does make debugging easier even if we can't look
 // at the data in each vframeElement
 
-class vframeArray: public CHeapObj {
+class vframeArray: public CHeapObj<mtCompiler> {
   friend class VMStructs;
 
  private:

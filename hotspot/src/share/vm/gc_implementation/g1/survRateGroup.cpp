@@ -43,7 +43,7 @@ SurvRateGroup::SurvRateGroup(G1CollectorPolicy* g1p,
   reset();
   if (summary_surv_rates_len > 0) {
     size_t length = summary_surv_rates_len;
-    _summary_surv_rates = NEW_C_HEAP_ARRAY(NumberSeq*, length);
+      _summary_surv_rates = NEW_C_HEAP_ARRAY(NumberSeq*, length, mtGC);
     for (size_t i = 0; i < length; ++i) {
       _summary_surv_rates[i] = new NumberSeq();
     }
@@ -90,9 +90,9 @@ SurvRateGroup::stop_adding_regions() {
     double* old_accum_surv_rate_pred = _accum_surv_rate_pred;
     TruncatedSeq** old_surv_rate_pred = _surv_rate_pred;
 
-    _surv_rate = NEW_C_HEAP_ARRAY(double, _region_num);
-    _accum_surv_rate_pred = NEW_C_HEAP_ARRAY(double, _region_num);
-    _surv_rate_pred = NEW_C_HEAP_ARRAY(TruncatedSeq*, _region_num);
+    _surv_rate = NEW_C_HEAP_ARRAY(double, _region_num, mtGC);
+    _accum_surv_rate_pred = NEW_C_HEAP_ARRAY(double, _region_num, mtGC);
+    _surv_rate_pred = NEW_C_HEAP_ARRAY(TruncatedSeq*, _region_num, mtGC);
 
     for (size_t i = 0; i < _stats_arrays_length; ++i) {
       _surv_rate_pred[i] = old_surv_rate_pred[i];
@@ -104,13 +104,13 @@ SurvRateGroup::stop_adding_regions() {
     _stats_arrays_length = _region_num;
 
     if (old_surv_rate != NULL) {
-      FREE_C_HEAP_ARRAY(double, old_surv_rate);
+      FREE_C_HEAP_ARRAY(double, old_surv_rate, mtGC);
     }
     if (old_accum_surv_rate_pred != NULL) {
-      FREE_C_HEAP_ARRAY(double, old_accum_surv_rate_pred);
+      FREE_C_HEAP_ARRAY(double, old_accum_surv_rate_pred, mtGC);
     }
     if (old_surv_rate_pred != NULL) {
-      FREE_C_HEAP_ARRAY(TruncatedSeq*, old_surv_rate_pred);
+      FREE_C_HEAP_ARRAY(TruncatedSeq*, old_surv_rate_pred, mtGC);
     }
   }
 

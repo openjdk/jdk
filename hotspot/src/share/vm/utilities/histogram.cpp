@@ -69,7 +69,7 @@ int Histogram::sort_helper(HistogramElement** e1, HistogramElement** e2) {
 
 Histogram::Histogram(const char* title,int estimatedCount) {
   _title = title;
-  _elements = new (ResourceObj::C_HEAP) GrowableArray<HistogramElement*>(estimatedCount,true);
+  _elements = new (ResourceObj::C_HEAP, mtInternal) GrowableArray<HistogramElement*>(estimatedCount,true);
 }
 
 void Histogram::add_element(HistogramElement* element) {

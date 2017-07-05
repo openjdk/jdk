@@ -41,7 +41,7 @@ class ObjectStartArray;
 class ParallelCompactData;
 class ParMarkBitMap;
 
-class ParCompactionManager : public CHeapObj {
+class ParCompactionManager : public CHeapObj<mtGC> {
   friend class ParallelTaskTerminator;
   friend class ParMarkBitMap;
   friend class PSParallelCompact;
@@ -66,8 +66,8 @@ class ParCompactionManager : public CHeapObj {
  private:
   // 32-bit:  4K * 8 = 32KiB; 64-bit:  8K * 16 = 128KiB
   #define QUEUE_SIZE (1 << NOT_LP64(12) LP64_ONLY(13))
-  typedef OverflowTaskQueue<ObjArrayTask, QUEUE_SIZE> ObjArrayTaskQueue;
-  typedef GenericTaskQueueSet<ObjArrayTaskQueue>      ObjArrayTaskQueueSet;
+  typedef OverflowTaskQueue<ObjArrayTask, mtGC, QUEUE_SIZE> ObjArrayTaskQueue;
+  typedef GenericTaskQueueSet<ObjArrayTaskQueue, mtGC>      ObjArrayTaskQueueSet;
   #undef QUEUE_SIZE
 
   static ParCompactionManager** _manager_array;
@@ -78,7 +78,7 @@ class ParCompactionManager : public CHeapObj {
   static PSOldGen*              _old_gen;
 
 private:
-  OverflowTaskQueue<oop>        _marking_stack;
+  OverflowTaskQueue<oop, mtGC>        _marking_stack;
   ObjArrayTaskQueue             _objarray_stack;
 
   // Is there a way to reuse the _marking_stack for the
@@ -110,8 +110,8 @@ private:
   // popped.  If -1, there has not been any entry popped.
   static int                      _recycled_bottom;
 
-  Stack<Klass*>                 _revisit_klass_stack;
-  Stack<DataLayout*>            _revisit_mdo_stack;
+  Stack<Klass*, mtGC>                 _revisit_klass_stack;
+  Stack<DataLayout*, mtGC>            _revisit_mdo_stack;
 
   static ParMarkBitMap* _mark_bitmap;
 
@@ -126,7 +126,7 @@ private:
  protected:
   // Array of tasks.  Needed by the ParallelTaskTerminator.
   static RegionTaskQueueSet* region_array()      { return _region_array; }
-  OverflowTaskQueue<oop>*  marking_stack()       { return &_marking_stack; }
+  OverflowTaskQueue<oop, mtGC>*  marking_stack()       { return &_marking_stack; }
 
   // Pushes onto the marking stack.  If the marking stack is full,
   // pushes onto the overflow stack.
@@ -175,8 +175,8 @@ private:
   bool should_update();
   bool should_copy();
 
-  Stack<Klass*>* revisit_klass_stack() { return &_revisit_klass_stack; }
-  Stack<DataLayout*>* revisit_mdo_stack() { return &_revisit_mdo_stack; }
+  Stack<Klass*, mtGC>* revisit_klass_stack() { return &_revisit_klass_stack; }
+  Stack<DataLayout*, mtGC>* revisit_mdo_stack() { return &_revisit_mdo_stack; }
 
   // Save for later processing.  Must not fail.
   inline void push(oop obj) { _marking_stack.push(obj); }

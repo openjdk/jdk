@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_UTILITIES_STACK_HPP
 #define SHARE_VM_UTILITIES_STACK_HPP
 
+#include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 
 // Class Stack (below) grows and shrinks by linking together "segments" which
@@ -51,11 +52,11 @@
 // implementation in class Stack assumes that alloc() will terminate the process
 // if the allocation fails.
 
-template <class E> class StackIterator;
+template <class E, MEMFLAGS F> class StackIterator;
 
 // StackBase holds common data/methods that don't depend on the element type,
 // factored out to reduce template code duplication.
-class StackBase
+template <MEMFLAGS F> class StackBase
 {
 public:
   size_t segment_size()   const { return _seg_size; } // Elements per segment.
@@ -89,11 +90,11 @@ protected:
 #define inline
 #endif // __GNUC__
 
-template <class E>
-class Stack:  public StackBase
+template <class E, MEMFLAGS F>
+class Stack:  public StackBase<F>
 {
 public:
-  friend class StackIterator<E>;
+  friend class StackIterator<E, F>;
 
   // segment_size:    number of items per segment
   // max_cache_size:  maxmium number of *segments* to cache
@@ -103,15 +104,15 @@ public:
                size_t max_cache_size = 4, size_t max_size = 0);
   inline ~Stack() { clear(true); }
 
-  inline bool is_empty() const { return _cur_seg == NULL; }
-  inline bool is_full()  const { return _full_seg_size >= max_size(); }
+  inline bool is_empty() const { return this->_cur_seg == NULL; }
+  inline bool is_full()  const { return this->_full_seg_size >= this->max_size(); }
 
   // Performance sensitive code should use is_empty() instead of size() == 0 and
   // is_full() instead of size() == max_size().  Using a conditional here allows
   // just one var to be updated when pushing/popping elements instead of two;
   // _full_seg_size is updated only when pushing/popping segments.
   inline size_t size() const {
-    return is_empty() ? 0 : _full_seg_size + _cur_seg_size;
+    return is_empty() ? 0 : this->_full_seg_size + this->_cur_seg_size;
   }
 
   inline void push(E elem);
@@ -161,18 +162,18 @@ private:
   E* _cache;      // Segment cache to avoid ping-ponging.
 };
 
-template <class E> class ResourceStack:  public Stack<E>, public ResourceObj
+template <class E, MEMFLAGS F> class ResourceStack:  public Stack<E, F>, public ResourceObj
 {
 public:
   // If this class becomes widely used, it may make sense to save the Thread
   // and use it when allocating segments.
-  ResourceStack(size_t segment_size = Stack<E>::default_segment_size()):
-    Stack<E>(segment_size, max_uintx)
+//  ResourceStack(size_t segment_size = Stack<E, F>::default_segment_size()):
+  ResourceStack(size_t segment_size): Stack<E, F>(segment_size, max_uintx)
     { }
 
   // Set the segment pointers to NULL so the parent dtor does not free them;
   // that must be done by the ResourceMark code.
-  ~ResourceStack() { Stack<E>::reset(true); }
+  ~ResourceStack() { Stack<E, F>::reset(true); }
 
 protected:
   virtual E*   alloc(size_t bytes);
@@ -182,13 +183,13 @@ private:
   void clear(bool clear_cache = false);
 };
 
-template <class E>
+template <class E, MEMFLAGS F>
 class StackIterator: public StackObj
 {
 public:
-  StackIterator(Stack<E>& stack): _stack(stack) { sync(); }
+  StackIterator(Stack<E, F>& stack): _stack(stack) { sync(); }
 
-  Stack<E>& stack() const { return _stack; }
+  Stack<E, F>& stack() const { return _stack; }
 
   bool is_empty() const { return _cur_seg == NULL; }
 
@@ -198,7 +199,7 @@ public:
   void sync(); // Sync the iterator's state to the stack's current state.
 
 private:
-  Stack<E>& _stack;
+  Stack<E, F>& _stack;
   size_t    _cur_seg_size;
   E*        _cur_seg;
   size_t    _full_seg_size;

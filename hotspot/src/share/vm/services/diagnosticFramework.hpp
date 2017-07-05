@@ -238,6 +238,16 @@ public:
   static const char* name() { return "No Name";}
   static const char* description() { return "No Help";}
   static const char* disabled_message() { return "Diagnostic command currently disabled"; }
+  // The impact() method returns a description of the intrusiveness of the diagnostic
+  // command on the Java Virtual Machine behavior. The rational for this method is that some
+  // diagnostic commands can seriously disrupt the behavior of the Java Virtual Machine
+  // (for instance a Thread Dump for an application with several tens of thousands of threads,
+  // or a Head Dump with a 40GB+ heap size) and other diagnostic commands have no serious
+  // impact on the JVM (for instance, getting the command line arguments or the JVM version).
+  // The recommended format for the description is <impact level>: [longer description],
+  // where the impact level is selected among this list: {Low, Medium, High}. The optional
+  // longer description can provide more specific details like the fact that Thread Dump
+  // impact depends on the heap size.
   static const char* impact() { return "Low: No impact"; }
   static int num_arguments() { return 0; }
   outputStream* output() { return _output; }
@@ -250,7 +260,7 @@ public:
     bool has_arg = iter.next(CHECK);
     if (has_arg) {
       THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-                "Unknown argument in diagnostic command");
+                "The argument list of this diagnostic command should be empty.");
     }
   }
   virtual void execute(TRAPS) { }
@@ -310,7 +320,7 @@ public:
 // manages the status of the diagnostic command (hidden, enabled). A DCmdFactory
 // has to be registered to make the diagnostic command available (see
 // management.cpp)
-class DCmdFactory: public CHeapObj {
+class DCmdFactory: public CHeapObj<mtInternal> {
 private:
   static Mutex*       _dcmdFactory_lock;
   // Pointer to the next factory in the singly-linked list of registered
@@ -368,7 +378,7 @@ public:
     DCmdFactory(DCmdClass::num_arguments(), enabled, hidden) { }
   // Returns a C-heap allocated instance
   virtual DCmd* create_Cheap_instance(outputStream* output) {
-    return new (ResourceObj::C_HEAP) DCmdClass(output, true);
+    return new (ResourceObj::C_HEAP, mtInternal) DCmdClass(output, true);
   }
   // Returns a resourceArea allocated instance
   virtual DCmd* create_resource_instance(outputStream* output) {

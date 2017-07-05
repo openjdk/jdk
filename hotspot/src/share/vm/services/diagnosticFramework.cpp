@@ -75,11 +75,13 @@ bool DCmdArgIter::next(TRAPS) {
   }
   // extracting first item, argument or option name
   _key_addr = &_buffer[_cursor];
+  bool arg_had_quotes = false;
   while (_cursor <= _len - 1 && _buffer[_cursor] != '=' && _buffer[_cursor] != _delim) {
     // argument can be surrounded by single or double quotes
     if (_buffer[_cursor] == '\"' || _buffer[_cursor] == '\'') {
       _key_addr++;
       char quote = _buffer[_cursor];
+      arg_had_quotes = true;
       while (_cursor < _len - 1) {
         _cursor++;
         if (_buffer[_cursor] == quote && _buffer[_cursor - 1] != '\\') {
@@ -95,16 +97,22 @@ bool DCmdArgIter::next(TRAPS) {
     _cursor++;
   }
   _key_len = &_buffer[_cursor] - _key_addr;
+  if (arg_had_quotes) {
+    // if the argument was quoted, we need to step past the last quote here
+    _cursor++;
+  }
   // check if the argument has the <key>=<value> format
   if (_cursor <= _len -1 && _buffer[_cursor] == '=') {
     _cursor++;
     _value_addr = &_buffer[_cursor];
+    bool value_had_quotes = false;
     // extract the value
     while (_cursor <= _len - 1 && _buffer[_cursor] != _delim) {
       // value can be surrounded by simple or double quotes
       if (_buffer[_cursor] == '\"' || _buffer[_cursor] == '\'') {
         _value_addr++;
         char quote = _buffer[_cursor];
+        value_had_quotes = true;
         while (_cursor < _len - 1) {
           _cursor++;
           if (_buffer[_cursor] == quote && _buffer[_cursor - 1] != '\\') {
@@ -120,6 +128,10 @@ bool DCmdArgIter::next(TRAPS) {
       _cursor++;
     }
     _value_len = &_buffer[_cursor] - _value_addr;
+    if (value_had_quotes) {
+      // if the value was quoted, we need to step past the last quote here
+      _cursor++;
+    }
   } else {
     _value_addr = NULL;
     _value_len = 0;
@@ -185,8 +197,17 @@ void DCmdParser::parse(CmdLine* line, char delim, TRAPS) {
         arg->read_value(iter.key_addr(), iter.key_length(), CHECK);
         next_argument = next_argument->next();
       } else {
-        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-          "Unknown argument in diagnostic command");
+        const size_t buflen    = 120;
+        const size_t argbuflen = 30;
+        char buf[buflen];
+        char argbuf[argbuflen];
+        size_t len = MIN2<size_t>(iter.key_length(), argbuflen - 1);
+
+        strncpy(argbuf, iter.key_addr(), len);
+        argbuf[len] = '\0';
+        jio_snprintf(buf, buflen - 1, "Unknown argument '%s' in diagnostic command.", argbuf);
+
+        THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), buf);
       }
     }
     cont = iter.next(CHECK);
@@ -207,19 +228,21 @@ GenDCmdArgument* DCmdParser::lookup_dcmd_option(const char* name, size_t len) {
 }
 
 void DCmdParser::check(TRAPS) {
+  const size_t buflen = 256;
+  char buf[buflen];
   GenDCmdArgument* arg = _arguments_list;
   while (arg != NULL) {
     if (arg->is_mandatory() && !arg->has_value()) {
-      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Missing argument for diagnostic command");
+      jio_snprintf(buf, buflen - 1, "The argument '%s' is mandatory.", arg->name());
+      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), buf);
     }
     arg = arg->next();
   }
   arg = _options;
   while (arg != NULL) {
     if (arg->is_mandatory() && !arg->has_value()) {
-      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "Missing option for diagnostic command");
+      jio_snprintf(buf, buflen - 1, "The option '%s' is mandatory.", arg->name());
+      THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), buf);
     }
     arg = arg->next();
   }

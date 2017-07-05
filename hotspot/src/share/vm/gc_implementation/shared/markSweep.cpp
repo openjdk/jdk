@@ -30,13 +30,13 @@
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
 
-Stack<oop>              MarkSweep::_marking_stack;
-Stack<DataLayout*>      MarkSweep::_revisit_mdo_stack;
-Stack<Klass*>           MarkSweep::_revisit_klass_stack;
-Stack<ObjArrayTask>     MarkSweep::_objarray_stack;
+Stack<oop, mtGC>              MarkSweep::_marking_stack;
+Stack<DataLayout*, mtGC>      MarkSweep::_revisit_mdo_stack;
+Stack<Klass*, mtGC>           MarkSweep::_revisit_klass_stack;
+Stack<ObjArrayTask, mtGC>     MarkSweep::_objarray_stack;
 
-Stack<oop>              MarkSweep::_preserved_oop_stack;
-Stack<markOop>          MarkSweep::_preserved_mark_stack;
+Stack<oop, mtGC>              MarkSweep::_preserved_oop_stack;
+Stack<markOop, mtGC>          MarkSweep::_preserved_mark_stack;
 size_t                  MarkSweep::_preserved_count = 0;
 size_t                  MarkSweep::_preserved_count_max = 0;
 PreservedMark*          MarkSweep::_preserved_marks = NULL;
@@ -166,7 +166,7 @@ void MarkSweep::adjust_marks() {
   }
 
   // deal with the overflow stack
-  StackIterator<oop> iter(_preserved_oop_stack);
+  StackIterator<oop, mtGC> iter(_preserved_oop_stack);
   while (!iter.is_empty()) {
     oop* p = iter.next_addr();
     adjust_pointer(p);

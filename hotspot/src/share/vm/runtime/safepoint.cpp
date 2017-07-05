@@ -48,6 +48,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/sweeper.hpp"
 #include "runtime/synchronizer.hpp"
+#include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/events.hpp"
 #ifdef TARGET_ARCH_x86
@@ -545,6 +546,10 @@ void SafepointSynchronize::do_cleanup_tasks() {
   // rotate log files?
   if (UseGCLogFileRotation) {
     gclog_or_tty->rotate_log();
+  }
+
+  if (MemTracker::is_on()) {
+    MemTracker::sync();
   }
 }
 
@@ -1157,7 +1162,7 @@ void SafepointSynchronize::deferred_initialize_stat() {
     stats_array_size = PrintSafepointStatisticsCount;
   }
   _safepoint_stats = (SafepointStats*)os::malloc(stats_array_size
-                                                 * sizeof(SafepointStats));
+                                                 * sizeof(SafepointStats), mtInternal);
   guarantee(_safepoint_stats != NULL,
             "not enough memory for safepoint instrumentation data");
 

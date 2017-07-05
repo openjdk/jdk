@@ -41,6 +41,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/threadLocalStorage.hpp"
 #include "runtime/unhandledOops.hpp"
+#include "services/memRecorder.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/top.hpp"
@@ -100,12 +101,16 @@ class Thread: public ThreadShadow {
   //oop       _pending_exception;                // pending exception for current thread
   // const char* _exception_file;                   // file information for exception (debugging only)
   // int         _exception_line;                   // line information for exception (debugging only)
-
+ protected:
   // Support for forcing alignment of thread objects for biased locking
   void*       _real_malloc_address;
  public:
-  void* operator new(size_t size);
+  void* operator new(size_t size) { return allocate(size, true); }
+  void* operator new(size_t size, std::nothrow_t& nothrow_constant) { return allocate(size, false); }
   void  operator delete(void* p);
+
+ protected:
+   static void* allocate(size_t size, bool throw_excpt, MEMFLAGS flags = mtThread);
  private:
 
   // ***************************************************************
@@ -548,7 +553,6 @@ public:
   virtual void print_on_error(outputStream* st, char* buf, int buflen) const;
 
   // Debug-only code
-
 #ifdef ASSERT
  private:
   // Deadlock detection support for Mutex locks. List of locks own by thread.
@@ -1027,9 +1031,15 @@ class JavaThread: public Thread {
   bool do_not_unlock_if_synchronized()             { return _do_not_unlock_if_synchronized; }
   void set_do_not_unlock_if_synchronized(bool val) { _do_not_unlock_if_synchronized = val; }
 
+  // native memory tracking
+  inline MemRecorder* get_recorder() const          { return (MemRecorder*)_recorder; }
+  inline void         set_recorder(MemRecorder* rc) { _recorder = (volatile MemRecorder*)rc; }
+
+ private:
+  // per-thread memory recorder
+  volatile MemRecorder* _recorder;
 
   // Suspend/resume support for JavaThread
-
  private:
   void set_ext_suspended()       { set_suspend_flag (_ext_suspended);  }
   void clear_ext_suspended()     { clear_suspend_flag(_ext_suspended); }
@@ -1452,6 +1462,18 @@ public:
      _thread_profiler = tp;
      return result;
    }
+
+ // NMT (Native memory tracking) support.
+ // This flag helps NMT to determine if this JavaThread will be blocked
+ // at safepoint. If not, ThreadCritical is needed for writing memory records.
+ // JavaThread is only safepoint visible when it is in Threads' thread list,
+ // it is not visible until it is added to the list and becomes invisible
+ // once it is removed from the list.
+ public:
+  bool is_safepoint_visible() const { return _safepoint_visible; }
+  void set_safepoint_visible(bool visible) { _safepoint_visible = visible; }
+ private:
+  bool _safepoint_visible;
 
   // Static operations
  public:
