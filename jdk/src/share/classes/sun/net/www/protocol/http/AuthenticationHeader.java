@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,8 +81,7 @@ public class AuthenticationHeader {
     MessageHeader rsp; // the response to be parsed
     HeaderParser preferred;
     String preferred_r; // raw Strings
-    String host = null; // the hostname for server,
-                        // used in checking the availability of Negotiate
+    private final HttpCallerInfo hci;   // un-schemed, need check
 
     // When set true, do not use Negotiate even if the response
     // headers suggest so.
@@ -115,22 +114,11 @@ public class AuthenticationHeader {
 
     /**
      * parse a set of authentication headers and choose the preferred scheme
-     * that we support
-     */
-    public AuthenticationHeader (String hdrname, MessageHeader response) {
-        rsp = response;
-        this.hdrname = hdrname;
-        schemes = new HashMap();
-        parse();
-    }
-
-    /**
-     * parse a set of authentication headers and choose the preferred scheme
      * that we support for a given host
      */
     public AuthenticationHeader (String hdrname, MessageHeader response,
-            String host, boolean dontUseNegotiate) {
-        this.host = host;
+            HttpCallerInfo hci, boolean dontUseNegotiate) {
+        this.hci = hci;
         this.dontUseNegotiate = dontUseNegotiate;
         rsp = response;
         this.hdrname = hdrname;
@@ -138,6 +126,9 @@ public class AuthenticationHeader {
         parse();
     }
 
+    public HttpCallerInfo getHttpCallerInfo() {
+        return hci;
+    }
     /* we build up a map of scheme names mapped to SchemeMapValue objects */
     static class SchemeMapValue {
         SchemeMapValue (HeaderParser h, String r) {raw=r; parser=h;}
@@ -186,7 +177,7 @@ public class AuthenticationHeader {
             if(v == null && !dontUseNegotiate) {
                 SchemeMapValue tmp = (SchemeMapValue)schemes.get("negotiate");
                 if(tmp != null) {
-                    if(host == null || !NegotiateAuthentication.isSupported(host, "Negotiate")) {
+                    if(hci == null || !NegotiateAuthentication.isSupported(new HttpCallerInfo(hci, "Negotiate"))) {
                         tmp = null;
                     }
                     v = tmp;
@@ -206,7 +197,7 @@ public class AuthenticationHeader {
                     //
                     // The only chance this line get executed is that the server
                     // only suggest the Kerberos scheme.
-                    if(host == null || !NegotiateAuthentication.isSupported(host, "Kerberos")) {
+                    if(hci == null || !NegotiateAuthentication.isSupported(new HttpCallerInfo(hci, "Kerberos"))) {
                         tmp = null;
                     }
                     v = tmp;

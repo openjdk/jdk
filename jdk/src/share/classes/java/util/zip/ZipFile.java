@@ -32,6 +32,8 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.util.Vector;
 import java.util.Enumeration;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.NoSuchElementException;
 import static java.util.zip.ZipConstants64.*;
 
@@ -277,6 +279,9 @@ class ZipFile implements ZipConstants {
     // freeEntry releases the C jzentry struct.
     private static native void freeEntry(long jzfile, long jzentry);
 
+    // the outstanding inputstreams that need to be closed.
+    private Set<ZipFileInputStream> streams = new HashSet<ZipFileInputStream>();
+
     /**
      * Returns an input stream for reading the contents of the specified
      * zip file entry.
@@ -308,6 +313,7 @@ class ZipFile implements ZipConstants {
                 return null;
             }
             in = new ZipFileInputStream(jzentry);
+            streams.add(in);
         }
         final ZipFileInputStream zfin = in;
         switch (getEntryMethod(jzentry)) {
@@ -323,7 +329,7 @@ class ZipFile implements ZipConstants {
 
                 public void close() throws IOException {
                     if (!isClosed) {
-                         releaseInflater(inf);
+                        releaseInflater(inf);
                         this.in.close();
                         isClosed = true;
                     }
@@ -497,6 +503,13 @@ class ZipFile implements ZipConstants {
         synchronized (this) {
             closeRequested = true;
 
+            if (streams.size() !=0) {
+                Set<ZipFileInputStream> copy = streams;
+                streams = new HashSet<ZipFileInputStream>();
+                for (ZipFileInputStream is: copy)
+                    is.close();
+            }
+
             if (jzfile != 0) {
                 // Close the zip file
                 long zf = this.jzfile;
@@ -631,9 +644,9 @@ class ZipFile implements ZipConstants {
                     freeEntry(ZipFile.this.jzfile, jzentry);
                     jzentry = 0;
                 }
+                streams.remove(this);
             }
         }
-
     }
 
 

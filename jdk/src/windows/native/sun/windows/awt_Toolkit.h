@@ -61,6 +61,14 @@ class AwtDropTarget;
 typedef VOID (CALLBACK* IDLEPROC)(VOID);
 typedef BOOL (CALLBACK* PEEKMESSAGEPROC)(MSG&);
 
+// Struct for _WInputMethod_enable|disableNativeIME method
+struct EnableNativeIMEStruct {
+    jobject self;
+    jobject peer;
+    jint context;
+    jboolean useNativeCompWindow;
+};
+
 /*
  * class JNILocalFrame
  * Push/PopLocalFrame helper

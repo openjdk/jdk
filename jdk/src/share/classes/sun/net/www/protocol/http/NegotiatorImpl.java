@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,10 @@ import org.ietf.jgss.Oid;
 
 import sun.security.jgss.GSSManagerImpl;
 import sun.security.jgss.GSSUtil;
+import sun.security.jgss.HttpCaller;
 
 /**
- * This class encapsulates all JAAS and JGSS API calls in a seperate class
+ * This class encapsulates all JAAS and JGSS API calls in a separate class
  * outside NegotiateAuthentication.java so that J2SE build can go smoothly
  * without the presence of it.
  *
@@ -54,21 +55,16 @@ public class NegotiatorImpl extends Negotiator {
 
     /**
      * Initialize the object, which includes:<ul>
-     * <li>Find out what GSS mechanism to use from <code>http.negotiate.mechanism.oid</code>,
-     *     defaults SPNEGO
+     * <li>Find out what GSS mechanism to use from the system property
+     * <code>http.negotiate.mechanism.oid</code>, defaults SPNEGO
      * <li>Creating the GSSName for the target host, "HTTP/"+hostname
      * <li>Creating GSSContext
      * <li>A first call to initSecContext</ul>
-     * @param hostname name of peer server
-     * @param scheme auth scheme requested, Negotiate ot Kerberos
-     * @throws GSSException if any JGSS-API call fails
      */
-    private void init(final String hostname, String scheme) throws GSSException {
-        // "1.2.840.113554.1.2.2" Kerberos
-        // "1.3.6.1.5.5.2" SPNEGO
+    private void init(HttpCallerInfo hci) throws GSSException {
         final Oid oid;
 
-        if (scheme.equalsIgnoreCase("Kerberos")) {
+        if (hci.scheme.equalsIgnoreCase("Kerberos")) {
             // we can only use Kerberos mech when the scheme is kerberos
             oid = GSSUtil.GSS_KRB5_MECH_OID;
         } else {
@@ -89,9 +85,11 @@ public class NegotiatorImpl extends Negotiator {
         }
 
         GSSManagerImpl manager = new GSSManagerImpl(
-                GSSUtil.CALLER_HTTP_NEGOTIATE);
+                new HttpCaller(hci));
 
-        String peerName = "HTTP@" + hostname;
+        // RFC 4559 4.1 uses uppercase service name "HTTP".
+        // RFC 4120 6.2.1 demands the host be lowercase
+        String peerName = "HTTP@" + hci.host.toLowerCase();
 
         GSSName serverName = manager.createName(peerName,
                 GSSName.NT_HOSTBASED_SERVICE);
@@ -114,16 +112,15 @@ public class NegotiatorImpl extends Negotiator {
 
     /**
      * Constructor
-     * @param hostname name of peer server
-     * @param scheme auth scheme requested, Negotiate ot Kerberos
      * @throws java.io.IOException If negotiator cannot be constructed
      */
-    public NegotiatorImpl(String hostname, String scheme) throws IOException {
+    public NegotiatorImpl(HttpCallerInfo hci) throws IOException {
         try {
-            init(hostname, scheme);
+            init(hci);
         } catch (GSSException e) {
             if (DEBUG) {
-                System.out.println("Negotiate support not initiated, will fallback to other scheme if allowed. Reason:");
+                System.out.println("Negotiate support not initiated, will " +
+                        "fallback to other scheme if allowed. Reason:");
                 e.printStackTrace();
             }
             IOException ioe = new IOException("Negotiate support not initiated");

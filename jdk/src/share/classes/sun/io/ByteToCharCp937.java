@@ -23,33 +23,17 @@
  * have any questions.
  */
 package sun.io;
-import sun.nio.cs.ext.IBM937;
 
-/**
-* Tables and data to convert Cp937 to Unicode.
-*
-* @author Malcolm Ayres, assisted by UniMap program
-*/
-public class ByteToCharCp937
-        extends ByteToCharDBCS_EBCDIC
+import sun.nio.cs.ext.*;
 
-{
-        private final static IBM937 nioCoder = new IBM937();
+public class ByteToCharCp937 extends ByteToCharDBCS_EBCDIC {
 
-        // Return the character set id
-        public String getCharacterEncoding()
-        {
-                return "Cp937";
-        }
+    // Return the character set id
+    public String getCharacterEncoding() {
+        return "Cp937";
+    }
 
-
-        public ByteToCharCp937() {
-                super();
-                super.mask1 = 0xFFC0;
-                super.mask2 = 0x003F;
-                super.shift = 6;
-                super.singleByteToChar = nioCoder.getDecoderByteToCharMappings();
-                super.index1 = nioCoder.getDecoderIndex1();
-                super.index2 = nioCoder.getDecoderIndex2();
-        }
+    public ByteToCharCp937() {
+        super((DoubleByte.Decoder)new IBM937().newDecoder());
+    }
 }
