@@ -178,11 +178,6 @@ protected:
   void verify_lookup_length(double load);
 #endif
 
-  enum {
-    rehash_count = 100,
-    rehash_multiple = 60
-  };
-
   void initialize(int table_size, int entry_size, int number_of_entries);
 
   // Accessor
@@ -194,11 +189,11 @@ protected:
   // The following method is not MT-safe and must be done under lock.
   BasicHashtableEntry<F>** bucket_addr(int i) { return _buckets[i].entry_addr(); }
 
+  // Attempt to get an entry from the free list
+  BasicHashtableEntry<F>* new_entry_free_list();
+
   // Table entry management
   BasicHashtableEntry<F>* new_entry(unsigned int hashValue);
-
-  // Check that the table is unbalanced
-  bool check_rehash_table(int count);
 
   // Used when moving the entry to another table
   // Clean up links, but do not add to free_list
@@ -277,8 +272,30 @@ protected:
     return (HashtableEntry<T, F>**)BasicHashtable<F>::bucket_addr(i);
   }
 
+};
+
+template <class T, MEMFLAGS F> class RehashableHashtable : public Hashtable<T, F> {
+ protected:
+
+  enum {
+    rehash_count = 100,
+    rehash_multiple = 60
+  };
+
+  // Check that the table is unbalanced
+  bool check_rehash_table(int count);
+
+ public:
+  RehashableHashtable(int table_size, int entry_size)
+    : Hashtable<T, F>(table_size, entry_size) { }
+
+  RehashableHashtable(int table_size, int entry_size,
+                   HashtableBucket<F>* buckets, int number_of_entries)
+    : Hashtable<T, F>(table_size, entry_size, buckets, number_of_entries) { }
+
+
   // Function to move these elements into the new table.
-  void move_to(Hashtable<T, F>* new_table);
+  void move_to(RehashableHashtable<T, F>* new_table);
   static bool use_alternate_hashcode()  { return _seed != 0; }
   static juint seed()                    { return _seed; }
 
@@ -292,7 +309,6 @@ protected:
   static int literal_size(ConstantPool *cp) {Unimplemented(); return 0;}
   static int literal_size(Klass *k)         {Unimplemented(); return 0;}
 
-public:
   void dump_table(outputStream* st, const char *table_name);
 
  private:
