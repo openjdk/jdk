@@ -35,7 +35,6 @@
 
 jint fdval(JNIEnv *env, jobject fdo);
 jlong handleval(JNIEnv *env, jobject fdo);
-jboolean isNT();
 jint convertReturnVal(JNIEnv *env, jint n, jboolean r);
 jlong convertLongReturnVal(JNIEnv *env, jlong n, jboolean r);
 jboolean purgeOutstandingICMP(JNIEnv *env, jclass clazz, jint fd);

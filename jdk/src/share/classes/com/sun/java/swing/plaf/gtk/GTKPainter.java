@@ -926,9 +926,20 @@ class GTKPainter extends SynthPainter {
                                      int x, int y, int w, int h) {
         // Text is odd in that it uses the TEXT_BACKGROUND vs BACKGROUND.
         JComponent c = context.getComponent();
+        Container container = c.getParent();
+        Container containerParent = null;
         GTKStyle style = (GTKStyle)context.getStyle();
         Region id = context.getRegion();
         int state = context.getComponentState();
+
+        if (c instanceof ListCellRenderer && container != null) {
+            containerParent = container.getParent();
+            if (containerParent instanceof JComboBox
+                    && containerParent.hasFocus()) {
+                state |= SynthConstants.FOCUSED;
+            }
+        }
+
         synchronized (UNIXToolkit.GTK_LOCK) {
             if (ENGINE.paintCachedImage(g, x, y, w, h, id, state)) {
                 return;
@@ -938,9 +949,10 @@ class GTKPainter extends SynthPainter {
             int focusSize = 0;
             boolean interiorFocus = style.getClassSpecificBoolValue(
                     context, "interior-focus", true);
+
+            focusSize = style.getClassSpecificIntValue(context,
+                    "focus-line-width",1);
             if (!interiorFocus && (state & SynthConstants.FOCUSED) != 0) {
-                focusSize = style.getClassSpecificIntValue(context,
-                        "focus-line-width",1);
                 x += focusSize;
                 y += focusSize;
                 w -= 2 * focusSize;
@@ -961,11 +973,25 @@ class GTKPainter extends SynthPainter {
                                 h - (2 * yThickness),
                                 ColorType.TEXT_BACKGROUND);
 
-            if (focusSize > 0) {
-                x -= focusSize;
-                y -= focusSize;
-                w += 2 * focusSize;
-                h += 2 * focusSize;
+            if (focusSize > 0 && (state & SynthConstants.FOCUSED) != 0) {
+                if (!interiorFocus) {
+                    x -=  focusSize;
+                    y -=  focusSize;
+                    w +=  2 * focusSize;
+                    h +=  2 * focusSize;
+                } else {
+                    if (containerParent instanceof JComboBox) {
+                        x += (focusSize + 2);
+                        y += (focusSize + 1);
+                        w -= (2 * focusSize + 1);
+                        h -= (2 * focusSize + 2);
+                    } else {
+                        x += focusSize;
+                        y += focusSize;
+                        w -= 2 * focusSize;
+                        h -= 2 * focusSize;
+                    }
+                }
                 ENGINE.paintFocus(g, context, id, gtkState,
                         "entry", x, y, w, h);
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
 import com.sun.imageio.stream.StreamCloser;
 
 /**
@@ -83,8 +84,11 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
             throw new IllegalArgumentException("Not a directory!");
         }
         this.stream = stream;
-        this.cacheFile =
-            File.createTempFile("imageio", ".tmp", cacheDir);
+        if (cacheDir == null)
+            this.cacheFile = Files.createTempFile("imageio", ".tmp").toFile();
+        else
+            this.cacheFile = Files.createTempFile(cacheDir.toPath(), "imageio", ".tmp")
+                                  .toFile();
         this.cache = new RandomAccessFile(cacheFile, "rw");
 
         this.closeAction = StreamCloser.createCloseAction(this);

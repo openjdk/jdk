@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ public abstract class CORBALogDomains {
     private CORBALogDomains() {}
 
     // Top level log domain for CORBA
-    public static String TOP_LEVEL_DOMAIN  = "javax.enterprise.resource.corba";
+    public static final String TOP_LEVEL_DOMAIN  = "javax.enterprise.resource.corba";
 
     public static final String RPC              = "rpc" ;
 

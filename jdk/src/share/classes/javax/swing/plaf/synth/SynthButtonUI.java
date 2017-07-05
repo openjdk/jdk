@@ -152,8 +152,8 @@ public class SynthButtonUI extends BasicButtonUI implements
         if (!c.isEnabled()) {
             state = DISABLED;
         }
-        if (SynthLookAndFeel.selectedUI == this) {
-            return SynthLookAndFeel.selectedUIState | SynthConstants.ENABLED;
+        if (SynthLookAndFeel.getSelectedUI() == this) {
+            return SynthLookAndFeel.getSelectedUIState() | SynthConstants.ENABLED;
         }
         AbstractButton button = (AbstractButton) c;
         ButtonModel model = button.getModel();
