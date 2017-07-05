@@ -210,13 +210,19 @@
  * collections are unshared, or are accessible only when
  * holding other locks.
  *
- * <p>Most concurrent Collection implementations (including most
- * Queues) also differ from the usual java.util conventions in that
- * their Iterators provide <em>weakly consistent</em> rather than
- * fast-fail traversal.  A weakly consistent iterator is thread-safe,
- * but does not necessarily freeze the collection while iterating, so
- * it may (or may not) reflect any updates since the iterator was
- * created.
+ * <p id="Weakly">Most concurrent Collection implementations
+ * (including most Queues) also differ from the usual {@code java.util}
+ * conventions in that their {@linkplain java.util.Iterator Iterators}
+ * and {@linkplain java.util.Spliterator Spliterators} provide
+ * <em>weakly consistent</em> rather than fast-fail traversal:
+ * <ul>
+ * <li>they may proceed concurrently with other operations
+ * <li>they will never throw {@link java.util.ConcurrentModificationException
+ * ConcurrentModificationException}
+ * <li>they are guaranteed to traverse elements as they existed upon
+ * construction exactly once, and may (but are not guaranteed to)
+ * reflect any modifications subsequent to construction.
+ * </ul>
  *
  * <h2 id="MemoryVisibility">Memory Consistency Properties</h2>
  *

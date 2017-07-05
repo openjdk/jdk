@@ -110,7 +110,7 @@ public class TestNonIsoFormatter {
             // Chronology, Locale, Chronology Name
             { ISO8601,  Locale.ENGLISH, "ISO" },    // No data in CLDR; Use Id.
             { BUDDHIST, Locale.ENGLISH, "Buddhist Calendar" },
-            { HIJRAH,   Locale.ENGLISH, "Hijrah-umalqura" }, // No data in CLDR; Use Id.
+            { HIJRAH,   Locale.ENGLISH, "Islamic Umm al-Qura Calendar" }, // JDK-8015986
             { JAPANESE, Locale.ENGLISH, "Japanese Calendar" },
             { MINGUO,   Locale.ENGLISH, "Minguo Calendar" },
 
@@ -121,6 +121,10 @@ public class TestNonIsoFormatter {
             { ISO8601,  thTH, "ISO" },    // No data in CLDR; Use Id.
             { JAPANESE, thTH, "\u0e1b\u0e0f\u0e34\u0e17\u0e34\u0e19\u0e0d\u0e35\u0e48\u0e1b\u0e38\u0e48\u0e19" },
             { BUDDHIST, thTH, "\u0e1b\u0e0f\u0e34\u0e17\u0e34\u0e19\u0e1e\u0e38\u0e17\u0e18" },
+
+            { HIJRAH,   ARABIC, "\u0644\u062a\u0642\u0648\u064a\u0645 "
+                                + "\u0627\u0644\u0647\u062c\u0631\u064a\u060c "
+                                + "\u0623\u0645 \u0627\u0644\u0642\u0631\u0649" }, // JDK-8015986
         };
     }
 

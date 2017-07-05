@@ -124,7 +124,8 @@ public final class SunJCE extends Provider {
                     put("Cipher.RSA", "com.sun.crypto.provider.RSACipher");
                     put("Cipher.RSA SupportedModes", "ECB");
                     put("Cipher.RSA SupportedPaddings",
-                            "NOPADDING|PKCS1PADDING|OAEPWITHMD5ANDMGF1PADDING"
+                            "NOPADDING|PKCS1PADDING|OAEPPADDING"
+                            + "|OAEPWITHMD5ANDMGF1PADDING"
                             + "|OAEPWITHSHA1ANDMGF1PADDING"
                             + "|OAEPWITHSHA-1ANDMGF1PADDING"
                             + "|OAEPWITHSHA-224ANDMGF1PADDING"

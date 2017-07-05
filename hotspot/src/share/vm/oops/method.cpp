@@ -747,6 +747,7 @@ void Method::set_not_compilable(int comp_level, bool report, const char* reason)
       set_not_c2_compilable();
   }
   CompilationPolicy::policy()->disable_compilation(this);
+  assert(!CompilationPolicy::can_be_compiled(this, comp_level), "sanity check");
 }
 
 bool Method::is_not_osr_compilable(int comp_level) const {
@@ -773,6 +774,7 @@ void Method::set_not_osr_compilable(int comp_level, bool report, const char* rea
       set_not_c2_osr_compilable();
   }
   CompilationPolicy::policy()->disable_compilation(this);
+  assert(!CompilationPolicy::can_be_osr_compiled(this, comp_level), "sanity check");
 }
 
 // Revert to using the interpreter and clear out the nmethod

@@ -245,7 +245,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
                 continue;
             }
             if ((defaultPrintService != null)
-                && printers[p].equals(defaultPrintService.getName())) {
+                && printers[p].equals(getPrinterDestName(defaultPrintService))) {
                 printerList.add(defaultPrintService);
                 defaultIndex = printerList.size() - 1;
             } else {
@@ -270,11 +270,12 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
                 } else {
                     int j;
                     for (j=0; j<printServices.length; j++) {
-                        if ((printServices[j] != null) &&
-                            (printers[p].equals(printServices[j].getName()))) {
-                            printerList.add(printServices[j]);
-                            printServices[j] = null;
-                            break;
+                        if (printServices[j] != null) {
+                            if (printers[p].equals(getPrinterDestName(printServices[j]))) {
+                                printerList.add(printServices[j]);
+                                printServices[j] = null;
+                                break;
+                            }
                         }
                     }
 
@@ -360,6 +361,17 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         return true;
       }
 
+    /*
+     * Gets the printer name compatible with the list of printers returned by
+     * the system when we query default or all the available printers.
+     */
+    private String getPrinterDestName(PrintService ps) {
+        if (isMac()) {
+            return ((IPPPrintService)ps).getDest();
+        }
+        return ps.getName();
+    }
+
     /* On a network with many (hundreds) of network printers, it
      * can save several seconds if you know all you want is a particular
      * printer, to ask for that printer rather than retrieving all printers.
@@ -369,10 +381,12 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         if (name == null || name.equals("") || !checkPrinterName(name)) {
             return null;
         }
-        /* check is all printers are already available */
+        /* check if all printers are already available */
         if (printServices != null) {
             for (PrintService printService : printServices) {
-                if (printService.getName().equals(name)) {
+                PrinterName printerName =
+                    (PrinterName)printService.getAttribute(PrinterName.class);
+                if (printerName.getValue().equals(name)) {
                     return printService;
                 }
             }
@@ -567,7 +581,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         defaultPrintService = null;
         if (printServices != null) {
             for (int j=0; j<printServices.length; j++) {
-                if (defaultPrinter.equals(printServices[j].getName())) {
+                if (defaultPrinter.equals(getPrinterDestName(printServices[j]))) {
                     defaultPrintService = printServices[j];
                     break;
                 }

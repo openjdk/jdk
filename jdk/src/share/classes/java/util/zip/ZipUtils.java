@@ -25,8 +25,12 @@
 
 package java.util.zip;
 
+import java.nio.file.attribute.FileTime;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
+
+import static java.util.zip.ZipConstants.*;
+import static java.util.zip.ZipConstants64.*;
 
 class ZipUtils {
 
@@ -34,33 +38,32 @@ class ZipUtils {
     private static final long WINDOWS_EPOCH_IN_MICROSECONDS = -11644473600000000L;
 
     /**
-     * Converts Windows time (in microseconds, UTC/GMT) time to Java time.
+     * Converts Windows time (in microseconds, UTC/GMT) time to FileTime.
      */
-    public static final long winToJavaTime(long wtime) {
-        return TimeUnit.MILLISECONDS.convert(
-               wtime / 10 + WINDOWS_EPOCH_IN_MICROSECONDS, TimeUnit.MICROSECONDS);
+    public static final FileTime winTimeToFileTime(long wtime) {
+        return FileTime.from(wtime / 10 + WINDOWS_EPOCH_IN_MICROSECONDS,
+                             TimeUnit.MICROSECONDS);
     }
 
     /**
-     * Converts Java time to Windows time.
+     * Converts FileTime to Windows time.
      */
-    public static final long javaToWinTime(long time) {
-        return (TimeUnit.MICROSECONDS.convert(time, TimeUnit.MILLISECONDS)
-               - WINDOWS_EPOCH_IN_MICROSECONDS) * 10;
+    public static final long fileTimeToWinTime(FileTime ftime) {
+        return (ftime.to(TimeUnit.MICROSECONDS) - WINDOWS_EPOCH_IN_MICROSECONDS) * 10;
     }
 
     /**
-     * Converts "standard Unix time"(in seconds, UTC/GMT) to Java time
+     * Converts "standard Unix time"(in seconds, UTC/GMT) to FileTime
      */
-    public static final long unixToJavaTime(long utime) {
-        return TimeUnit.MILLISECONDS.convert(utime, TimeUnit.SECONDS);
+    public static final FileTime unixTimeToFileTime(long utime) {
+        return FileTime.from(utime, TimeUnit.SECONDS);
     }
 
     /**
-     * Converts Java time to "standard Unix time".
+     * Converts FileTime to "standard Unix time".
      */
-    public static final long javaToUnixTime(long time) {
-        return TimeUnit.SECONDS.convert(time, TimeUnit.MILLISECONDS);
+    public static final long fileTimeToUnixTime(FileTime ftime) {
+        return ftime.to(TimeUnit.SECONDS);
     }
 
     /**
@@ -92,7 +95,6 @@ class ZipUtils {
                d.getSeconds() >> 1;
     }
 
-
     /**
      * Fetches unsigned 16-bit value from byte array at specified offset.
      * The bytes are assumed to be in Intel (little-endian) byte order.
@@ -116,5 +118,4 @@ class ZipUtils {
     public static final long get64(byte b[], int off) {
         return get32(b, off) | (get32(b, off+4) << 32);
     }
-
 }

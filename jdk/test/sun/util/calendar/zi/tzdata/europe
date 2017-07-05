@@ -1,22 +1,22 @@
 #
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-#  
+#
 # This code is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License version 2 only, as
 # published by the Free Software Foundation.  Oracle designates this
 # particular file as subject to the "Classpath" exception as provided
 # by Oracle in the LICENSE file that accompanied this code.
-#  
+#
 # This code is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
 # FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 # version 2 for more details (a copy is included in the LICENSE file that
 # accompanied this code).
-#  
+#
 # You should have received a copy of the GNU General Public License version
 # 2 along with this work; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-#  
+#
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
@@ -546,7 +546,7 @@ Rule	C-Eur	1944	only	-	Oct	 2	 2:00s	0	-
 # It seems that Paris, Monaco, Rule France, Rule Belgium all agree on
 # 2:00 standard time, e.g. 3:00 local time.  However there are no
 # countries that use C-Eur rules in September 1945, so the only items
-# affected are apparently these ficticious zones that translates acronyms
+# affected are apparently these fictitious zones that translate acronyms
 # CET and MET:
 #
 # Zone CET  1:00 C-Eur CE%sT
@@ -2802,9 +2802,9 @@ Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 
 # Ukraine
 #
-# From Igor Karpov, who works for the Ukranian Ministry of Justice,
+# From Igor Karpov, who works for the Ukrainian Ministry of Justice,
 # via Garrett Wollman (2003-01-27):
-# BTW, I've found the official document on this matter. It's goverment
+# BTW, I've found the official document on this matter. It's government
 # regulations number 509, May 13, 1996. In my poor translation it says:
 # "Time in Ukraine is set to second timezone (Kiev time). Each last Sunday
 # of March at 3am the time is changing to 4am and each last Sunday of
@@ -2838,7 +2838,7 @@ Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 # time this year after all.
 #
 # From Udo Schwedt (2011-10-18):
-# As far as I understand, the recent change to the Ukranian time zone
+# As far as I understand, the recent change to the Ukrainian time zone
 # (Europe/Kiev) to introduce permanent daylight saving time (similar
 # to Russia) was reverted today:
 #

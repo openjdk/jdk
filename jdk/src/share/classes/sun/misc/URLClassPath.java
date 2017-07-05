@@ -35,7 +35,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.Manifest;
 import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
-import java.util.jar.UnsupportedProfileException;
 import java.net.JarURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -65,12 +64,6 @@ public class URLClassPath {
     final static String JAVA_VERSION;
     private static final boolean DEBUG;
     private static final boolean DISABLE_JAR_CHECKING;
-
-    /**
-     * Used by launcher to indicate that checking of the JAR file "Profile"
-     * attribute has been suppressed.
-     */
-    private static boolean profileCheckSuppressedByLauncher;
 
     static {
         JAVA_VERSION = java.security.AccessController.doPrivileged(
@@ -593,15 +586,6 @@ public class URLClassPath {
         }
     }
 
-    /**
-     * Used by the launcher to suppress further checking of the JAR file Profile
-     * attribute (necessary when the launcher is aborting as the abort involves
-     * a resource lookup that may involve opening additional JAR files)
-     */
-    public static void suppressProfileCheckForLauncher() {
-        profileCheckSuppressedByLauncher = true;
-    }
-
     /*
      * Inner class used to represent a Loader of resources from a JAR URL.
      */
@@ -828,25 +812,6 @@ public class URLClassPath {
             return false;
         }
 
-        /**
-         * If the Profile attribute is present then this method checks that the runtime
-         * supports that profile.
-         */
-        void checkProfileAttribute() throws IOException {
-            Manifest man = jar.getManifest();
-            if (man != null) {
-                Attributes attr = man.getMainAttributes();
-                if (attr != null) {
-                    String value = attr.getValue(Name.PROFILE);
-                    if (value != null && !Version.supportsProfile(value)) {
-                        String prefix = Version.profileName().length() > 0 ?
-                            "This runtime implements " + Version.profileName() + ", " : "";
-                        throw new UnsupportedProfileException(prefix + csu + " requires " + value);
-                    }
-                }
-            }
-        }
-
         /*
          * Returns the URL for a resource with the specified name
          */
@@ -1016,12 +981,6 @@ public class URLClassPath {
 
             ensureOpen();
             parseExtensionsDependencies();
-
-            // check Profile attribute if present
-            if (!profileCheckSuppressedByLauncher &&
-                    SharedSecrets.javaUtilJarAccess().jarFileHasProfileAttribute(jar)) {
-                checkProfileAttribute();
-            }
 
             if (SharedSecrets.javaUtilJarAccess().jarFileHasClassPathAttribute(jar)) { // Only get manifest when necessary
                 Manifest man = jar.getManifest();

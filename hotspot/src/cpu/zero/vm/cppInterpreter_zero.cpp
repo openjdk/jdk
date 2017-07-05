@@ -1008,6 +1008,7 @@ void BytecodeInterpreter::layout_interpreterState(interpreterState istate,
 
 address CppInterpreter::return_entry(TosState state, int length) {
   ShouldNotCallThis();
+  return NULL;
 }
 
 address CppInterpreter::deopt_entry(TosState state, int length) {

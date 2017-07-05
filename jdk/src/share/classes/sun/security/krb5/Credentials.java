@@ -62,7 +62,9 @@ public class Credentials {
     private static CredentialsCache cache;
     static boolean alreadyLoaded = false;
     private static boolean alreadyTried = false;
-    private static native Credentials acquireDefaultNativeCreds();
+
+    // Read native ticket with session key type in the given list
+    private static native Credentials acquireDefaultNativeCreds(int[] eTypes);
 
     public Credentials(Ticket new_ticket,
                        PrincipalName new_client,
@@ -373,6 +375,8 @@ public class Credentials {
     // It assumes that the GSS call has
     // the privilege to access the default cache file.
 
+    // This method is only called on Windows and Mac OS X, the native
+    // acquireDefaultNativeCreds is also available on these platforms.
     public static synchronized Credentials acquireDefaultCreds() {
         Credentials result = null;
 
@@ -416,10 +420,15 @@ public class Credentials {
             }
             if (alreadyLoaded) {
                 // There is some native code
-                if (DEBUG)
-                   System.out.println(">> Acquire default native Credentials");
-                result = acquireDefaultNativeCreds();
-                // only TGT with DES key will be returned by native method
+                if (DEBUG) {
+                    System.out.println(">> Acquire default native Credentials");
+                }
+                try {
+                    result = acquireDefaultNativeCreds(
+                            EType.getDefaults("default_tkt_enctypes"));
+                } catch (KrbException ke) {
+                    // when there is no default_tkt_enctypes.
+                }
             }
         }
         return result;
