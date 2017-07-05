@@ -506,10 +506,10 @@ public class WToolkit extends SunToolkit implements Runnable {
         return true;
     }
 
-    public KeyboardFocusManagerPeer createKeyboardFocusManagerPeer(KeyboardFocusManager manager)
+    public KeyboardFocusManagerPeer getKeyboardFocusManagerPeer()
       throws HeadlessException
     {
-        return new WKeyboardFocusManagerPeer(manager);
+        return WKeyboardFocusManagerPeer.getInstance();
     }
 
     protected native void setDynamicLayoutNative(boolean b);

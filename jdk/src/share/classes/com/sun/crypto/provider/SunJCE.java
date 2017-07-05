@@ -167,16 +167,66 @@ public final class SunJCE extends Provider {
                     put("Cipher.Blowfish SupportedPaddings", BLOCK_PADS);
                     put("Cipher.Blowfish SupportedKeyFormats", "RAW");
 
-                    put("Cipher.AES", "com.sun.crypto.provider.AESCipher");
+                    put("Cipher.AES", "com.sun.crypto.provider.AESCipher$General");
                     put("Alg.Alias.Cipher.Rijndael", "AES");
                     put("Cipher.AES SupportedModes", BLOCK_MODES128);
                     put("Cipher.AES SupportedPaddings", BLOCK_PADS);
                     put("Cipher.AES SupportedKeyFormats", "RAW");
 
-                    put("Cipher.AESWrap", "com.sun.crypto.provider.AESWrapCipher");
+                    put("Cipher.AES_128/ECB/NoPadding", "com.sun.crypto.provider.AESCipher$AES128_ECB_NoPadding");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.1", "AES_128/ECB/NoPadding");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.1", "AES_128/ECB/NoPadding");
+                    put("Cipher.AES_128/CBC/NoPadding", "com.sun.crypto.provider.AESCipher$AES128_CBC_NoPadding");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.2", "AES_128/CBC/NoPadding");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.2", "AES_128/CBC/NoPadding");
+                    put("Cipher.AES_128/OFB/NoPadding", "com.sun.crypto.provider.AESCipher$AES128_OFB_NoPadding");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.3", "AES_128/OFB/NoPadding");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.3", "AES_128/OFB/NoPadding");
+                    put("Cipher.AES_128/CFB/NoPadding", "com.sun.crypto.provider.AESCipher$AES128_CFB_NoPadding");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.4", "AES_128/CFB/NoPadding");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.4", "AES_128/CFB/NoPadding");
+
+                    put("Cipher.AES_192/ECB/NoPadding", "com.sun.crypto.provider.AESCipher$AES192_ECB_NoPadding");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.21", "AES_192/ECB/NoPadding");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.21", "AES_192/ECB/NoPadding");
+                    put("Cipher.AES_192/CBC/NoPadding", "com.sun.crypto.provider.AESCipher$AES192_CBC_NoPadding");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.22", "AES_192/CBC/NoPadding");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.22", "AES_192/CBC/NoPadding");
+                    put("Cipher.AES_192/OFB/NoPadding", "com.sun.crypto.provider.AESCipher$AES192_OFB_NoPadding");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.23", "AES_192/OFB/NoPadding");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.23", "AES_192/OFB/NoPadding");
+                    put("Cipher.AES_192/CFB/NoPadding", "com.sun.crypto.provider.AESCipher$AES192_CFB_NoPadding");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.24", "AES_192/CFB/NoPadding");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.24", "AES_192/CFB/NoPadding");
+
+
+                    put("Cipher.AES_256/ECB/NoPadding", "com.sun.crypto.provider.AESCipher$AES256_ECB_NoPadding");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.41", "AES_256/ECB/NoPadding");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.41", "AES_256/ECB/NoPadding");
+                    put("Cipher.AES_256/CBC/NoPadding", "com.sun.crypto.provider.AESCipher$AES256_CBC_NoPadding");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.42", "AES_256/CBC/NoPadding");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.42", "AES_256/CBC/NoPadding");
+                    put("Cipher.AES_256/OFB/NoPadding", "com.sun.crypto.provider.AESCipher$AES256_OFB_NoPadding");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.43", "AES_256/OFB/NoPadding");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.43", "AES_256/OFB/NoPadding");
+                    put("Cipher.AES_256/CFB/NoPadding", "com.sun.crypto.provider.AESCipher$AES256_CFB_NoPadding");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.44", "AES_256/CFB/NoPadding");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.44", "AES_256/CFB/NoPadding");
+
+                    put("Cipher.AESWrap", "com.sun.crypto.provider.AESWrapCipher$General");
                     put("Cipher.AESWrap SupportedModes", "ECB");
                     put("Cipher.AESWrap SupportedPaddings", "NOPADDING");
                     put("Cipher.AESWrap SupportedKeyFormats", "RAW");
+
+                    put("Cipher.AESWrap_128", "com.sun.crypto.provider.AESWrapCipher$AES128");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.5", "AESWrap_128");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.5", "AESWrap_128");
+                    put("Cipher.AESWrap_192", "com.sun.crypto.provider.AESWrapCipher$AES192");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.25", "AESWrap_192");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.25", "AESWrap_192");
+                    put("Cipher.AESWrap_256", "com.sun.crypto.provider.AESWrapCipher$AES256");
+                    put("Alg.Alias.Cipher.2.16.840.1.101.3.4.1.45", "AESWrap_256");
+                    put("Alg.Alias.Cipher.OID.2.16.840.1.101.3.4.1.45", "AESWrap_256");
 
                     put("Cipher.RC2",
                         "com.sun.crypto.provider.RC2Cipher");
@@ -192,7 +242,7 @@ public final class SunJCE extends Provider {
                     put("Cipher.ARCFOUR SupportedKeyFormats", "RAW");
 
                     /*
-                     *  Key(pair) Generator engines
+                     * Key(pair) Generator engines
                      */
                     put("KeyGenerator.DES",
                         "com.sun.crypto.provider.DESKeyGenerator");
@@ -221,6 +271,8 @@ public final class SunJCE extends Provider {
 
                     put("KeyGenerator.HmacSHA1",
                         "com.sun.crypto.provider.HmacSHA1KeyGenerator");
+                    put("Alg.Alias.KeyGenerator.OID.1.2.840.113549.2.7", "HmacSHA1");
+                    put("Alg.Alias.KeyGenerator.1.2.840.113549.2.7", "HmacSHA1");
 
                     put("KeyGenerator.HmacSHA224",
                         "com.sun.crypto.provider.KeyGeneratorCore$HmacSHA2KG$SHA224");
@@ -326,13 +378,11 @@ public final class SunJCE extends Provider {
                         "com.sun.crypto.provider.AESParameters");
                     put("Alg.Alias.AlgorithmParameters.Rijndael", "AES");
 
-
                     put("AlgorithmParameters.RC2",
                         "com.sun.crypto.provider.RC2Parameters");
 
                     put("AlgorithmParameters.OAEP",
                         "com.sun.crypto.provider.OAEPParameters");
-
 
                     /*
                      * Key factories
@@ -403,6 +453,8 @@ public final class SunJCE extends Provider {
                      */
                     put("Mac.HmacMD5", "com.sun.crypto.provider.HmacMD5");
                     put("Mac.HmacSHA1", "com.sun.crypto.provider.HmacSHA1");
+                    put("Alg.Alias.Mac.OID.1.2.840.113549.2.7", "HmacSHA1");
+                    put("Alg.Alias.Mac.1.2.840.113549.2.7", "HmacSHA1");
                     put("Mac.HmacSHA224",
                         "com.sun.crypto.provider.HmacCore$HmacSHA224");
                     put("Alg.Alias.Mac.OID.1.2.840.113549.2.8", "HmacSHA224");

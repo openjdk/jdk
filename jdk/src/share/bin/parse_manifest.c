@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ inflate_file(int fd, zentry *entry, int *size_out)
 
     if (entry->csize == (size_t) -1 || entry->isize == (size_t) -1 )
         return (NULL);
-    if (lseek(fd, entry->offset, SEEK_SET) < (off_t)0)
+    if (JLI_Lseek(fd, entry->offset, SEEK_SET) < (jlong)0)
         return (NULL);
     if ((in = malloc(entry->csize + 1)) == NULL)
         return (NULL);
@@ -110,6 +110,38 @@ inflate_file(int fd, zentry *entry, int *size_out)
         return (NULL);
 }
 
+static jboolean zip64_present = JNI_FALSE;
+
+/*
+ * Checks to see if we have ZIP64 archive, and save
+ * the check for later use
+ */
+static int
+haveZIP64(Byte *p) {
+    jlong cenlen, cenoff, centot;
+    cenlen = ENDSIZ(p);
+    cenoff = ENDOFF(p);
+    centot = ENDTOT(p);
+    zip64_present = (cenlen == ZIP64_MAGICVAL ||
+                     cenoff == ZIP64_MAGICVAL ||
+                     centot == ZIP64_MAGICCOUNT);
+    return zip64_present;
+}
+
+static jlong
+find_end64(int fd, Byte *ep, jlong pos)
+{
+    jlong end64pos;
+    jlong bytes;
+    if ((end64pos = JLI_Lseek(fd, pos - ZIP64_LOCHDR, SEEK_SET)) < (jlong)0)
+        return -1;
+    if ((bytes = read(fd, ep, ZIP64_LOCHDR)) < 0)
+        return -1;
+    if (GETSIG(ep) == ZIP64_LOCSIG)
+       return end64pos;
+    return -1;
+}
+
 /*
  * A very little used routine to handle the case that zip file has
  * a comment at the end. Believe it or not, the only way to find the
@@ -122,12 +154,12 @@ inflate_file(int fd, zentry *entry, int *size_out)
  * Returns the offset of the END record in the file on success,
  * -1 on failure.
  */
-static off_t
+static jlong
 find_end(int fd, Byte *eb)
 {
-    off_t   len;
-    off_t   pos;
-    off_t   flen;
+    jlong   len;
+    jlong   pos;
+    jlong   flen;
     int     bytes;
     Byte    *cp;
     Byte    *endpos;
@@ -136,14 +168,16 @@ find_end(int fd, Byte *eb)
     /*
      * 99.44% (or more) of the time, there will be no comment at the
      * end of the zip file.  Try reading just enough to read the END
-     * record from the end of the file.
+     * record from the end of the file, at this time we should also
+     * check to see if we have a ZIP64 archive.
      */
-    if ((pos = lseek(fd, -ENDHDR, SEEK_END)) < (off_t)0)
+    if ((pos = JLI_Lseek(fd, -ENDHDR, SEEK_END)) < (jlong)0)
         return (-1);
     if ((bytes = read(fd, eb, ENDHDR)) < 0)
         return (-1);
-    if (GETSIG(eb) == ENDSIG)
-        return (pos);
+    if (GETSIG(eb) == ENDSIG) {
+        return haveZIP64(eb) ? find_end64(fd, eb, pos) : pos;
+    }
 
     /*
      * Shucky-Darn,... There is a comment at the end of the zip file.
@@ -151,10 +185,10 @@ find_end(int fd, Byte *eb)
      * Allocate and fill a buffer with enough of the zip file
      * to meet the specification for a maximal comment length.
      */
-    if ((flen = lseek(fd, 0, SEEK_END)) < (off_t)0)
+    if ((flen = JLI_Lseek(fd, 0, SEEK_END)) < (jlong)0)
         return (-1);
     len = (flen < END_MAXLEN) ? flen : END_MAXLEN;
-    if (lseek(fd, -len, SEEK_END) < (off_t)0)
+    if (JLI_Lseek(fd, -len, SEEK_END) < (jlong)0)
         return (-1);
     if ((buffer = malloc(END_MAXLEN)) == NULL)
         return (-1);
@@ -175,10 +209,90 @@ find_end(int fd, Byte *eb)
           (cp + ENDHDR + ENDCOM(cp) == endpos)) {
             (void) memcpy(eb, cp, ENDHDR);
             free(buffer);
-            return (flen - (endpos - cp));
+            pos = flen - (endpos - cp);
+            return haveZIP64(eb) ? find_end64(fd, eb, pos) : pos;
         }
     free(buffer);
     return (-1);
+}
+
+#define BUFSIZE (3 * 65536 + CENHDR + SIGSIZ)
+#define MINREAD 1024
+
+/*
+ * Computes and positions at the start of the CEN header, ie. the central
+ * directory, this will also return the offset if there is a zip file comment
+ * at the end of the archive, for most cases this would be 0.
+ */
+static jlong
+compute_cen(int fd, Byte *bp)
+{
+    int bytes;
+    Byte *p;
+    jlong base_offset;
+    jlong offset;
+    char buffer[MINREAD];
+    p = buffer;
+    /*
+     * Read the END Header, which is the starting point for ZIP files.
+     * (Clearly designed to make writing a zip file easier than reading
+     * one. Now isn't that precious...)
+     */
+    if ((base_offset = find_end(fd, bp)) == -1) {
+        return (-1);
+    }
+    p = bp;
+    /*
+     * There is a historical, but undocumented, ability to allow for
+     * additional "stuff" to be prepended to the zip/jar file. It seems
+     * that this has been used to prepend an actual java launcher
+     * executable to the jar on Windows.  Although this is just another
+     * form of statically linking a small piece of the JVM to the
+     * application, we choose to continue to support it.  Note that no
+     * guarantees have been made (or should be made) to the customer that
+     * this will continue to work.
+     *
+     * Therefore, calculate the base offset of the zip file (within the
+     * expanded file) by assuming that the central directory is followed
+     * immediately by the end record.
+     */
+    if (zip64_present) {
+        if ((offset = ZIP64_LOCOFF(p)) < (jlong)0) {
+            return -1;
+        }
+        if (JLI_Lseek(fd, offset, SEEK_SET) < (jlong) 0) {
+            return (-1);
+        }
+        if ((bytes = read(fd, buffer, MINREAD)) < 0) {
+            return (-1);
+        }
+        if (GETSIG(buffer) != ZIP64_ENDSIG) {
+            return -1;
+        }
+        if ((offset = ZIP64_ENDOFF(buffer)) < (jlong)0) {
+            return -1;
+        }
+        if (JLI_Lseek(fd, offset, SEEK_SET) < (jlong)0) {
+            return (-1);
+        }
+        p = buffer;
+        base_offset = base_offset - ZIP64_ENDSIZ(p) - ZIP64_ENDOFF(p) - ZIP64_ENDHDR;
+    } else {
+        base_offset = base_offset - ENDSIZ(p) - ENDOFF(p);
+        /*
+         * The END Header indicates the start of the Central Directory
+         * Headers. Remember that the desired Central Directory Header (CEN)
+         * will almost always be the second one and the first one is a small
+         * directory entry ("META-INF/"). Keep the code optimized for
+         * that case.
+         *
+         * Seek to the beginning of the Central Directory.
+         */
+        if (JLI_Lseek(fd, base_offset + ENDOFF(p), SEEK_SET) < (jlong) 0) {
+            return (-1);
+        }
+    }
+    return base_offset;
 }
 
 /*
@@ -208,9 +322,6 @@ find_end(int fd, Byte *eb)
  * a typical jar file (META-INF and META-INF/MANIFEST.MF). Keep this factoid
  * in mind when optimizing this code.
  */
-#define BUFSIZE (3 * 65536 + CENHDR + SIGSIZ)
-#define MINREAD 1024
-
 static int
 find_file(int fd, zentry *entry, const char *file_name)
 {
@@ -218,7 +329,7 @@ find_file(int fd, zentry *entry, const char *file_name)
     int     res;
     int     entry_size;
     int     read_size;
-    int     base_offset;
+    jlong   base_offset;
     Byte    *p;
     Byte    *bp;
     Byte    *buffer;
@@ -228,54 +339,18 @@ find_file(int fd, zentry *entry, const char *file_name)
         return(-1);
     }
 
-    p = buffer;
     bp = buffer;
-
-    /*
-     * Read the END Header, which is the starting point for ZIP files.
-     * (Clearly designed to make writing a zip file easier than reading
-     * one. Now isn't that precious...)
-     */
-    if ((base_offset = find_end(fd, bp)) == -1) {
+    base_offset = compute_cen(fd, bp);
+    if (base_offset == -1) {
         free(buffer);
-        return (-1);
+        return -1;
     }
 
-    /*
-     * There is a historical, but undocumented, ability to allow for
-     * additional "stuff" to be prepended to the zip/jar file. It seems
-     * that this has been used to prepend an actual java launcher
-     * executable to the jar on Windows.  Although this is just another
-     * form of statically linking a small piece of the JVM to the
-     * application, we choose to continue to support it.  Note that no
-     * guarantees have been made (or should be made) to the customer that
-     * this will continue to work.
-     *
-     * Therefore, calculate the base offset of the zip file (within the
-     * expanded file) by assuming that the central directory is followed
-     * immediately by the end record.
-     */
-    base_offset = base_offset - ENDSIZ(p) - ENDOFF(p);
-
-    /*
-     * The END Header indicates the start of the Central Directory
-     * Headers. Remember that the desired Central Directory Header (CEN)
-     * will almost always be the second one and the first one is a small
-     * directory entry ("META-INF/"). Keep the code optimized for
-     * that case.
-     *
-     * Begin by seeking to the beginning of the Central Directory and
-     * reading in the first buffer full of bits.
-     */
-    if (lseek(fd, base_offset + ENDOFF(p), SEEK_SET) < (off_t)0) {
-        free(buffer);
-        return (-1);
-    }
     if ((bytes = read(fd, bp, MINREAD)) < 0) {
         free(buffer);
         return (-1);
     }
-
+    p = bp;
     /*
      * Loop through the Central Directory Headers. Note that a valid zip/jar
      * must have an ENDHDR (with ENDSIG) after the Central Directory.
@@ -319,7 +394,7 @@ find_file(int fd, zentry *entry, const char *file_name)
          */
         if ((size_t)CENNAM(p) == JLI_StrLen(file_name) &&
           memcmp((p + CENHDR), file_name, JLI_StrLen(file_name)) == 0) {
-            if (lseek(fd, base_offset + CENOFF(p), SEEK_SET) < (off_t)0) {
+            if (JLI_Lseek(fd, base_offset + CENOFF(p), SEEK_SET) < (jlong)0) {
                 free(buffer);
                 return (-1);
             }
@@ -487,6 +562,9 @@ JLI_ParseManifest(char *jarfile, manifest_info *info)
     char    *splashscreen_name = NULL;
 
     if ((fd = open(jarfile, O_RDONLY
+#ifdef O_LARGEFILE
+        | O_LARGEFILE /* large file mode on solaris */
+#endif
 #ifdef O_BINARY
         | O_BINARY /* use binary mode on windows */
 #endif

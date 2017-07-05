@@ -41,20 +41,25 @@
 #ifndef HPROF_ERROR_H
 #define HPROF_ERROR_H
 
+/* Use THIS_FILE when it is available. */
+#ifndef THIS_FILE
+    #define THIS_FILE __FILE__
+#endif
+
 /* Macros over assert and error functions so we can capture the source loc. */
 
 #define HPROF_BOOL(x) ((jboolean)((x)==0?JNI_FALSE:JNI_TRUE))
 
 #define HPROF_ERROR(fatal,msg) \
-    error_handler(HPROF_BOOL(fatal), JVMTI_ERROR_NONE, msg, __FILE__, __LINE__)
+    error_handler(HPROF_BOOL(fatal), JVMTI_ERROR_NONE, msg, THIS_FILE, __LINE__)
 
 #define HPROF_JVMTI_ERROR(error,msg) \
     error_handler(HPROF_BOOL(error!=JVMTI_ERROR_NONE), \
-            error, msg, __FILE__, __LINE__)
+            error, msg, THIS_FILE, __LINE__)
 
 #if defined(DEBUG) || !defined(NDEBUG)
     #define HPROF_ASSERT(cond) \
-        (((int)(cond))?(void)0:error_assert(#cond, __FILE__, __LINE__))
+        (((int)(cond))?(void)0:error_assert(#cond, THIS_FILE, __LINE__))
 #else
     #define HPROF_ASSERT(cond)
 #endif
@@ -77,11 +82,11 @@
 #define LOG_FORMAT(format)      "HPROF LOG: " format " [%s:%d]\n"
 
 #define LOG1(str1)              LOG_STDERR((stderr, LOG_FORMAT("%s"), \
-                                    str1, __FILE__, __LINE__ ))
+                                    str1, THIS_FILE, __LINE__ ))
 #define LOG2(str1,str2)         LOG_STDERR((stderr, LOG_FORMAT("%s %s"), \
-                                    str1, str2, __FILE__, __LINE__ ))
+                                    str1, str2, THIS_FILE, __LINE__ ))
 #define LOG3(str1,str2,num)     LOG_STDERR((stderr, LOG_FORMAT("%s %s 0x%x"), \
-                                    str1, str2, num, __FILE__, __LINE__ ))
+                                    str1, str2, num, THIS_FILE, __LINE__ ))
 
 #define LOG(str) LOG1(str)
 

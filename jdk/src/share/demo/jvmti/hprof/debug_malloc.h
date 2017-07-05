@@ -59,6 +59,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Use THIS_FILE when it is available. */
+#ifndef THIS_FILE
+    #define THIS_FILE __FILE__
+#endif
+
 /* The real functions behind the macro curtains. */
 
 void           *debug_malloc(size_t, const char *, int);
@@ -71,10 +76,10 @@ void            debug_free(void *, const char *, int);
 
 void            debug_malloc_verify(const char*, int);
 #undef malloc_verify
-#define malloc_verify()     debug_malloc_verify(__FILE__, __LINE__)
+#define malloc_verify()     debug_malloc_verify(THIS_FILE, __LINE__)
 
 void            debug_malloc_police(const char*, int);
 #undef malloc_police
-#define malloc_police()     debug_malloc_police(__FILE__, __LINE__)
+#define malloc_police()     debug_malloc_police(THIS_FILE, __LINE__)
 
 #endif

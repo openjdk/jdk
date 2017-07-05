@@ -261,6 +261,18 @@ java/nio/channels/AsyncCloseAndInterrupt.java			solaris-all
 # 7146541
 java/rmi/transport/rapidExportUnexport/RapidExportUnexport.java	linux-all
 
+# 7187882
+java/rmi/activation/checkusage/CheckUsage.java                  generic-all
+
+# 7190106
+java/rmi/reliability/benchmark/runRmiBench.sh                   generic-all
+
+# 7191877
+java/rmi/transport/checkLeaseInfoLeak/CheckLeaseLeak.java       generic-all
+
+# 7195095
+sun/rmi/transport/proxy/EagerHttpFallback.java                  linux-all
+
 ############################################################################
 
 # jdk_security
