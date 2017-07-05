@@ -558,7 +558,7 @@ void TemplateTable::aload() {
 
 
 void TemplateTable::locals_index_wide(Register reg) {
-  __ movl(reg, at_bcp(2));
+  __ load_unsigned_short(reg, at_bcp(2));
   __ bswapl(reg);
   __ shrl(reg, 16);
   __ negptr(reg);
@@ -1552,7 +1552,11 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
                               InvocationCounter::counter_offset();
 
   // Load up EDX with the branch displacement
-  __ movl(rdx, at_bcp(1));
+  if (is_wide) {
+    __ movl(rdx, at_bcp(1));
+  } else {
+    __ load_signed_short(rdx, at_bcp(1));
+  }
   __ bswapl(rdx);
   if (!is_wide) __ sarl(rdx, 16);
   LP64_ONLY(__ movslq(rdx, rdx));
