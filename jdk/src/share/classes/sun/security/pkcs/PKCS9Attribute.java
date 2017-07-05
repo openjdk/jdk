@@ -42,12 +42,14 @@ import sun.misc.HexDumpEncoder;
 
 /**
  * Class supporting any PKCS9 attributes.
- * Supports DER decoding and access to attribute values, but not
- * DER encoding or setting of values.
+ * Supports DER decoding/encoding and access to attribute values.
  *
  * <a name="classTable"><h3>Type/Class Table</h3></a>
  * The following table shows the correspondence between
  * PKCS9 attribute types and value component classes.
+ * For types not listed here, its name is the OID
+ * in string form, its value is a (single-valued)
+ * byte array that is the SET's encoding.
  *
  * <P>
  * <TABLE BORDER CELLPADDING=8 ALIGN=CENTER>
@@ -185,6 +187,8 @@ public class PKCS9Attribute implements DerEncoder {
      */
     static final ObjectIdentifier[] PKCS9_OIDS = new ObjectIdentifier[18];
 
+    private final static Class<?> BYTE_ARRAY_CLASS;
+
     static {   // static initializer for PKCS9_OIDS
         for (int i = 1; i < PKCS9_OIDS.length - 2; i++) {
             PKCS9_OIDS[i] =
@@ -196,6 +200,12 @@ public class PKCS9Attribute implements DerEncoder {
             ObjectIdentifier.newInternal(new int[]{1,2,840,113549,1,9,16,2,12});
         PKCS9_OIDS[PKCS9_OIDS.length - 1] =
             ObjectIdentifier.newInternal(new int[]{1,2,840,113549,1,9,16,2,14});
+
+        try {
+            BYTE_ARRAY_CLASS = Class.forName("[B");
+        } catch (ClassNotFoundException e) {
+            throw new ExceptionInInitializerError(e.toString());
+        }
     }
 
     // first element [0] not used
@@ -331,7 +341,7 @@ public class PKCS9Attribute implements DerEncoder {
             VALUE_CLASSES[2] = str;   // UnstructuredName
             VALUE_CLASSES[3] =        // ContentType
                 Class.forName("sun.security.util.ObjectIdentifier");
-            VALUE_CLASSES[4] = Class.forName("[B"); // MessageDigest (byte[])
+            VALUE_CLASSES[4] = BYTE_ARRAY_CLASS; // MessageDigest (byte[])
             VALUE_CLASSES[5] = Class.forName("java.util.Date"); // SigningTime
             VALUE_CLASSES[6] =        // Countersignature
                 Class.forName("[Lsun.security.pkcs.SignerInfo;");
@@ -347,7 +357,7 @@ public class PKCS9Attribute implements DerEncoder {
                 Class.forName("sun.security.x509.CertificateExtensions");
             VALUE_CLASSES[15] = null;  // not supported yet
             VALUE_CLASSES[16] = null;  // not supported yet
-            VALUE_CLASSES[17] = Class.forName("[B");  // SignatureTimestampToken
+            VALUE_CLASSES[17] = BYTE_ARRAY_CLASS;  // SignatureTimestampToken
         } catch (ClassNotFoundException e) {
             throw new ExceptionInInitializerError(e.toString());
         }
@@ -379,13 +389,20 @@ public class PKCS9Attribute implements DerEncoder {
     };
 
     /**
-     * The OID of this attribute is <code>PKCS9_OIDS[index]</code>.
+     * The OID of this attribute.
+     */
+    private ObjectIdentifier oid;
+
+    /**
+     * The index of the OID of this attribute in <code>PKCS9_OIDS</code>,
+     * or -1 if it's unknown.
      */
     private int index;
 
     /**
      * Value set of this attribute.  Its class is given by
-     * <code>VALUE_CLASSES[index]</code>.
+     * <code>VALUE_CLASSES[index]</code>. The SET itself
+     * as byte[] if unknown.
      */
     private Object value;
 
@@ -400,6 +417,8 @@ public class PKCS9Attribute implements DerEncoder {
      * <a href=#classTable>table</a> gives the class that <code>value</code>
      * must have for a given attribute.
      *
+     * @exception IllegalArgumentException
+     * if the <code>value</code> has the wrong type.
      */
     public PKCS9Attribute(ObjectIdentifier oid, Object value)
     throws IllegalArgumentException {
@@ -419,7 +438,7 @@ public class PKCS9Attribute implements DerEncoder {
      * attributes are accepted; in particular, case does not matter.
      *
      * @exception IllegalArgumentException
-     * if the <code>name</code> is not recognized of the
+     * if the <code>name</code> is not recognized or the
      * <code>value</code> has the wrong type.
      */
     public PKCS9Attribute(String name, Object value)
@@ -437,21 +456,17 @@ public class PKCS9Attribute implements DerEncoder {
     private void init(ObjectIdentifier oid, Object value)
         throws IllegalArgumentException {
 
+        this.oid = oid;
         index = indexOf(oid, PKCS9_OIDS, 1);
-
-        if (index == -1)
-            throw new IllegalArgumentException(
-                       "Unsupported OID " + oid +
-                       " constructing PKCS9Attribute.");
-
-        if (!VALUE_CLASSES[index].isInstance(value))
+        Class<?> clazz = index == -1 ? BYTE_ARRAY_CLASS: VALUE_CLASSES[index];
+        if (!clazz.isInstance(value)) {
                 throw new IllegalArgumentException(
                            "Wrong value class " +
                            " for attribute " + oid +
                            " constructing PKCS9Attribute; was " +
                            value.getClass().toString() + ", should be " +
-                           VALUE_CLASSES[index].toString());
-
+                           clazz.toString());
+        }
         this.value = value;
     }
 
@@ -475,16 +490,19 @@ public class PKCS9Attribute implements DerEncoder {
             throw new IOException("PKCS9Attribute doesn't have two components");
 
         // get the oid
-        ObjectIdentifier oid = val[0].getOID();
+        oid = val[0].getOID();
+        byte[] content = val[1].toByteArray();
+        DerValue[] elems = new DerInputStream(content).getSet(1);
+
         index = indexOf(oid, PKCS9_OIDS, 1);
         if (index == -1) {
             if (debug != null) {
-                debug.println("ignoring unsupported signer attribute: " + oid);
+                debug.println("Unsupported signer attribute: " + oid);
             }
-            throw new ParsingException("Unsupported PKCS9 attribute: " + oid);
+            value = content;
+            return;
         }
 
-        DerValue[] elems = new DerInputStream(val[1].toByteArray()).getSet(1);
         // check single valued have only one value
         if (SINGLE_VALUED[index] && elems.length > 1)
             throwSingleValuedException();
@@ -584,8 +602,11 @@ public class PKCS9Attribute implements DerEncoder {
      */
     public void derEncode(OutputStream out) throws IOException {
         DerOutputStream temp = new DerOutputStream();
-        temp.putOID(getOID());
+        temp.putOID(oid);
         switch (index) {
+        case -1:    // Unknown
+            temp.write((byte[])value);
+            break;
         case 1:     // email address
         case 2:     // unstructured name
             { // open scope
@@ -704,6 +725,14 @@ public class PKCS9Attribute implements DerEncoder {
     }
 
     /**
+     * Returns if the attribute is known. Unknown attributes can be created
+     * from DER encoding with unknown OIDs.
+     */
+    public boolean isKnown() {
+        return index != -1;
+    }
+
+    /**
      * Get the value of this attribute.  If the attribute is
      * single-valued, return just the one value.  If the attribute is
      * multi-valued, return an array containing all the values.
@@ -721,21 +750,23 @@ public class PKCS9Attribute implements DerEncoder {
      * Show whether this attribute is single-valued.
      */
     public boolean isSingleValued() {
-        return SINGLE_VALUED[index];
+        return index == -1 || SINGLE_VALUED[index];
     }
 
     /**
      *  Return the OID of this attribute.
      */
     public ObjectIdentifier getOID() {
-        return PKCS9_OIDS[index];
+        return oid;
     }
 
     /**
      *  Return the name of this attribute.
      */
     public String getName() {
-        return OID_NAME_TABLE.get(PKCS9_OIDS[index]);
+        return index == -1 ?
+                oid.toString() :
+                OID_NAME_TABLE.get(PKCS9_OIDS[index]);
     }
 
     /**
@@ -762,10 +793,14 @@ public class PKCS9Attribute implements DerEncoder {
 
         buf.append("[");
 
-        buf.append(OID_NAME_TABLE.get(PKCS9_OIDS[index]));
+        if (index == -1) {
+            buf.append(oid.toString());
+        } else {
+            buf.append(OID_NAME_TABLE.get(PKCS9_OIDS[index]));
+        }
         buf.append(": ");
 
-        if (SINGLE_VALUED[index]) {
+        if (index == -1 || SINGLE_VALUED[index]) {
             if (value instanceof byte[]) { // special case for octet string
                 HexDumpEncoder hexDump = new HexDumpEncoder();
                 buf.append(hexDump.encodeBuffer((byte[]) value));
@@ -809,20 +844,21 @@ public class PKCS9Attribute implements DerEncoder {
      */
     private void throwSingleValuedException() throws IOException {
         throw new IOException("Single-value attribute " +
-                              getOID() + " (" + getName() + ")" +
+                              oid + " (" + getName() + ")" +
                               " has multiple values.");
     }
 
     /**
      * Throw an exception when the tag on a value encoding is
-     * wrong for the attribute whose value it is.
+     * wrong for the attribute whose value it is. This method
+     * will only be called for known tags.
      */
     private void throwTagException(Byte tag)
     throws IOException {
         Byte[] expectedTags = PKCS9_VALUE_TAGS[index];
         StringBuffer msg = new StringBuffer(100);
         msg.append("Value of attribute ");
-        msg.append(getOID().toString());
+        msg.append(oid.toString());
         msg.append(" (");
         msg.append(getName());
         msg.append(") has wrong tag: ");

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -83,20 +83,16 @@ ifeq ($(PLATFORM), macosx)
 				  -framework JavaNativeFoundation
 else ifneq ($(PLATFORM), windows)
   CFLAGS += -DWITH_X11
-  ifeq ($(PLATFORM), macosx))
-    OTHER_LDLIBS += -liconv
-    CPPFLAGS += -I$(OPENWIN_HOME)/include \
-                -I$(OPENWIN_HOME)/include/X11/extensions
-    OTHER_LDLIBS += -L$(OPENWIN_LIB) -lX11 -lXext $(LIBM) -pthread
-  else
-    CPPFLAGS += -I$(OPENWIN_HOME)/include -I$(OPENWIN_HOME)/include/X11/extensions
-    OTHER_LDLIBS += -L$(OPENWIN_LIB) -lX11 -lXext $(LIBM) -lpthread
-  endif
+  CPPFLAGS += -I$(OPENWIN_HOME)/include -I$(OPENWIN_HOME)/include/X11/extensions
+  OTHER_LDLIBS += -L$(OPENWIN_LIB) -lX11 -lXext $(LIBM) -lpthread
 else # PLATFORM
   CFLAGS += -DWITH_WIN32
   OTHER_LDLIBS += kernel32.lib user32.lib gdi32.lib delayimp.lib /DELAYLOAD:user32.dll
 #$(JVMLIB) $(OBJDIR)/../../jpeg/$(OBJDIRNAME)/jpeg$(SUFFIX).lib
 endif # PLATFORM
+
+# Add giflib include path for all platforms
+CPPFLAGS += -I$(SHARE_SRC)/native/sun/awt/giflib
 
 #
 # Add to ambient vpath to get files in a subdirectory

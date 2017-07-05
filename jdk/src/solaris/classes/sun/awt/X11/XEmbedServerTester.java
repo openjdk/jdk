@@ -81,7 +81,9 @@ public class XEmbedServerTester implements XEventDispatcher {
             throw new RuntimeException("Can't create robot");
         }
         initAccel();
-        xembedLog.finer("XEmbed client(tester), embedder window: " + Long.toHexString(parent));
+        if (xembedLog.isLoggable(PlatformLogger.FINER)) {
+            xembedLog.finer("XEmbed client(tester), embedder window: " + Long.toHexString(parent));
+        }
     }
 
     public static XEmbedServerTester getTester(Rectangle serverBounds[], long parent) {
@@ -89,12 +91,14 @@ public class XEmbedServerTester implements XEventDispatcher {
     }
 
     private void dumpReceivedEvents() {
-        xembedLog.finer("Events received so far:");
-        int pos = 0;
-        for (Integer event : events) {
-            xembedLog.finer((pos++) + ":" + XEmbedHelper.msgidToString(event));
+        if (xembedLog.isLoggable(PlatformLogger.FINER)) {
+            xembedLog.finer("Events received so far:");
+            int pos = 0;
+            for (Integer event : events) {
+                xembedLog.finer((pos++) + ":" + XEmbedHelper.msgidToString(event));
+            }
+            xembedLog.finer("End of event dump");
         }
-        xembedLog.finer("End of event dump");
     }
 
     public void test1_1() {
@@ -391,7 +395,9 @@ public class XEmbedServerTester implements XEventDispatcher {
                                                      SubstructureNotifyMask | KeyPressMask)});
             window = new XBaseWindow(params);
 
-            xembedLog.finer("Created tester window: " + window);
+            if (xembedLog.isLoggable(PlatformLogger.FINER)) {
+                xembedLog.finer("Created tester window: " + window);
+            }
 
             XToolkit.addEventDispatcher(window.getWindow(), this);
             updateEmbedInfo();
@@ -529,18 +535,24 @@ public class XEmbedServerTester implements XEventDispatcher {
         synchronized(EVENT_LOCK) {
             // Check for already received events after the request
             if (checkEventList(position, event) != -1) {
-                xembedLog.finer("The event " + XEmbedHelper.msgidToString(event) + " has already been received");
+                if (xembedLog.isLoggable(PlatformLogger.FINER)) {
+                    xembedLog.finer("The event " + XEmbedHelper.msgidToString(event) + " has already been received");
+                }
                 return;
             }
 
             if (eventReceived == event) {
                 // Already received
-                xembedLog.finer("Already received " + XEmbedHelper.msgidToString(event));
+                if (xembedLog.isLoggable(PlatformLogger.FINER)) {
+                    xembedLog.finer("Already received " + XEmbedHelper.msgidToString(event));
+                }
                 return;
             }
             eventReceived = -1;
             eventWaited = event;
-            xembedLog.finer("Waiting for " + XEmbedHelper.msgidToString(event) + " starting from " + position);
+            if (xembedLog.isLoggable(PlatformLogger.FINER)) {
+                xembedLog.finer("Waiting for " + XEmbedHelper.msgidToString(event) + " starting from " + position);
+            }
             try {
                 EVENT_LOCK.wait(3000);
             } catch (InterruptedException ie) {
@@ -551,7 +563,9 @@ public class XEmbedServerTester implements XEventDispatcher {
                 dumpReceivedEvents();
                 throw new RuntimeException("Didn't receive event " + XEmbedHelper.msgidToString(event) + " but recevied " + XEmbedHelper.msgidToString(eventReceived));
             } else {
-                xembedLog.finer("Successfully recevied " + XEmbedHelper.msgidToString(event));
+                if (xembedLog.isLoggable(PlatformLogger.FINER)) {
+                    xembedLog.finer("Successfully recevied " + XEmbedHelper.msgidToString(event));
+                }
             }
         }
     }
@@ -634,7 +648,9 @@ public class XEmbedServerTester implements XEventDispatcher {
         if (ev.get_type() == ClientMessage) {
             XClientMessageEvent msg = ev.get_xclient();
             if (msg.get_message_type() == xembed.XEmbed.getAtom()) {
-                if (xembedLog.isLoggable(PlatformLogger.FINE)) xembedLog.fine("Embedded message: " + XEmbedHelper.msgidToString((int)msg.get_data(1)));
+                if (xembedLog.isLoggable(PlatformLogger.FINE)) {
+                    xembedLog.fine("Embedded message: " + XEmbedHelper.msgidToString((int)msg.get_data(1)));
+                }
                 switch ((int)msg.get_data(1)) {
                   case XEmbedHelper.XEMBED_EMBEDDED_NOTIFY: // Notification about embedding protocol start
                       xembedActive = true;
@@ -659,10 +675,14 @@ public class XEmbedServerTester implements XEventDispatcher {
                 synchronized(EVENT_LOCK) {
                     events.add((int)msg.get_data(1));
 
-                    xembedLog.finer("Tester is waiting for " +  XEmbedHelper.msgidToString(eventWaited));
+                    if (xembedLog.isLoggable(PlatformLogger.FINER)) {
+                        xembedLog.finer("Tester is waiting for " +  XEmbedHelper.msgidToString(eventWaited));
+                    }
                     if ((int)msg.get_data(1) == eventWaited) {
                         eventReceived = (int)msg.get_data(1);
-                        xembedLog.finer("Notifying waiting object for event " + System.identityHashCode(EVENT_LOCK));
+                        if (xembedLog.isLoggable(PlatformLogger.FINER)) {
+                            xembedLog.finer("Notifying waiting object for event " + System.identityHashCode(EVENT_LOCK));
+                        }
                         EVENT_LOCK.notifyAll();
                     }
                 }
@@ -672,10 +692,14 @@ public class XEmbedServerTester implements XEventDispatcher {
                 int eventID = (int)ev.get_type() | SYSTEM_EVENT_MASK;
                 events.add(eventID);
 
-                xembedLog.finer("Tester is waiting for " + XEmbedHelper.msgidToString(eventWaited) + ", but we received " + ev + "(" + XEmbedHelper.msgidToString(eventID) + ")");
+                if (xembedLog.isLoggable(PlatformLogger.FINER)) {
+                    xembedLog.finer("Tester is waiting for " + XEmbedHelper.msgidToString(eventWaited) + ", but we received " + ev + "(" + XEmbedHelper.msgidToString(eventID) + ")");
+                }
                 if (eventID == eventWaited) {
                     eventReceived = eventID;
-                    xembedLog.finer("Notifying waiting object" + System.identityHashCode(EVENT_LOCK));
+                    if (xembedLog.isLoggable(PlatformLogger.FINER)) {
+                        xembedLog.finer("Notifying waiting object" + System.identityHashCode(EVENT_LOCK));
+                    }
                     EVENT_LOCK.notifyAll();
                 }
             }

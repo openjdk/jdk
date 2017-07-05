@@ -58,9 +58,14 @@ struct LookupSubtable
     le_uint16 subtableFormat;
     Offset    coverageTableOffset;
 
-    inline le_int32  getGlyphCoverage(LEGlyphID glyphID) const;
+  inline le_int32  getGlyphCoverage(const LEReferenceTo<LookupSubtable> &base, LEGlyphID glyphID, LEErrorCode &success) const;
 
-    le_int32  getGlyphCoverage(Offset tableOffset, LEGlyphID glyphID) const;
+  le_int32  getGlyphCoverage(const LEReferenceTo<LookupSubtable> &base, Offset tableOffset, LEGlyphID glyphID, LEErrorCode &success) const;
+
+  // convenience
+  inline le_int32  getGlyphCoverage(const LETableReference &base, LEGlyphID glyphID, LEErrorCode &success) const;
+
+  inline le_int32  getGlyphCoverage(const LETableReference &base, Offset tableOffset, LEGlyphID glyphID, LEErrorCode &success) const;
 };
 
 struct LookupTable
@@ -70,20 +75,32 @@ struct LookupTable
     le_uint16       subTableCount;
     Offset          subTableOffsetArray[ANY_NUMBER];
 
-    const LookupSubtable  *getLookupSubtable(le_uint16 subtableIndex) const;
+  const LEReferenceTo<LookupSubtable> getLookupSubtable(const LEReferenceTo<LookupTable> &base, le_uint16 subtableIndex, LEErrorCode &success) const;
 };
+LE_VAR_ARRAY(LookupTable, subTableOffsetArray)
 
 struct LookupListTable
 {
     le_uint16   lookupCount;
     Offset      lookupTableOffsetArray[ANY_NUMBER];
 
-    const LookupTable *getLookupTable(le_uint16 lookupTableIndex) const;
+  const LEReferenceTo<LookupTable> getLookupTable(const LEReferenceTo<LookupListTable> &base, le_uint16 lookupTableIndex, LEErrorCode &success) const;
 };
+LE_VAR_ARRAY(LookupListTable, lookupTableOffsetArray)
 
-inline le_int32 LookupSubtable::getGlyphCoverage(LEGlyphID glyphID) const
+inline le_int32 LookupSubtable::getGlyphCoverage(const LEReferenceTo<LookupSubtable> &base, LEGlyphID glyphID, LEErrorCode &success) const
 {
-    return getGlyphCoverage(coverageTableOffset, glyphID);
+  return getGlyphCoverage(base, coverageTableOffset, glyphID, success);
+}
+
+inline le_int32  LookupSubtable::getGlyphCoverage(const LETableReference &base, LEGlyphID glyphID, LEErrorCode &success) const {
+  LEReferenceTo<LookupSubtable> thisRef(base, success, this);
+  return getGlyphCoverage(thisRef, glyphID, success);
+}
+
+inline le_int32  LookupSubtable::getGlyphCoverage(const LETableReference &base, Offset tableOffset, LEGlyphID glyphID, LEErrorCode &success) const {
+  LEReferenceTo<LookupSubtable> thisRef(base, success, this);
+  return getGlyphCoverage(thisRef, tableOffset, glyphID, success);
 }
 
 U_NAMESPACE_END

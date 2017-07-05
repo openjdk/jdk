@@ -851,6 +851,11 @@ public class EventSetImpl extends ArrayList<Event> implements EventSet {
         }
     }
 
+    @Override
+    public Spliterator<Event> spliterator() {
+        return Spliterators.spliterator(this, Spliterator.DISTINCT);
+    }
+
     /* below make this unmodifiable */
 
     public boolean add(Event o){

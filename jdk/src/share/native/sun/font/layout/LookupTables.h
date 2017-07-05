@@ -39,6 +39,7 @@
 
 #include "LETypes.h"
 #include "LayoutTables.h"
+#include "LETableReference.h"
 
 U_NAMESPACE_BEGIN
 
@@ -79,30 +80,34 @@ struct BinarySearchLookupTable : LookupTable
     le_int16 entrySelector;
     le_int16 rangeShift;
 
-    const LookupSegment *lookupSegment(const LookupSegment *segments, LEGlyphID glyph) const;
+    const LookupSegment *lookupSegment(const LETableReference &base, const LookupSegment *segments, LEGlyphID glyph, LEErrorCode &success) const;
 
-    const LookupSingle *lookupSingle(const LookupSingle *entries, LEGlyphID glyph) const;
+    const LookupSingle *lookupSingle(const LETableReference &base, const LookupSingle *entries, LEGlyphID glyph, LEErrorCode &success) const;
 };
 
 struct SimpleArrayLookupTable : LookupTable
 {
     LookupValue valueArray[ANY_NUMBER];
 };
+LE_VAR_ARRAY(SimpleArrayLookupTable, valueArray)
 
 struct SegmentSingleLookupTable : BinarySearchLookupTable
 {
     LookupSegment segments[ANY_NUMBER];
 };
+LE_VAR_ARRAY(SegmentSingleLookupTable, segments)
 
 struct SegmentArrayLookupTable : BinarySearchLookupTable
 {
     LookupSegment segments[ANY_NUMBER];
 };
+LE_VAR_ARRAY(SegmentArrayLookupTable, segments)
 
 struct SingleTableLookupTable : BinarySearchLookupTable
 {
     LookupSingle entries[ANY_NUMBER];
 };
+LE_VAR_ARRAY(SingleTableLookupTable, entries)
 
 struct TrimmedArrayLookupTable : LookupTable
 {
@@ -110,6 +115,7 @@ struct TrimmedArrayLookupTable : LookupTable
     TTGlyphID   glyphCount;
     LookupValue valueArray[ANY_NUMBER];
 };
+LE_VAR_ARRAY(TrimmedArrayLookupTable, valueArray)
 
 U_NAMESPACE_END
 #endif

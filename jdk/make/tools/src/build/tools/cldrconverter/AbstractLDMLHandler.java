@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package build.tools.cldrconverter;
 
+import build.tools.cldrconverter.CLDRConverter.DraftType;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -88,7 +89,7 @@ abstract class AbstractLDMLHandler<V> extends DefaultHandler {
         }
         String draftValue = attributes.getValue("draft");
         if (draftValue != null) {
-            return CLDRConverter.draftType > CLDRConverter.DRAFT_MAP.get(draftValue);
+            return DraftType.getDefault().ordinal() > DraftType.forKeyword(draftValue).ordinal();
         }
         return false;
     }

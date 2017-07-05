@@ -59,19 +59,16 @@
  */
 package tck.java.time;
 
-import java.time.*;
-
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
+import java.time.DateTimeException;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQuery;
 import java.util.List;
 
-import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalQuery;
-import java.time.temporal.TemporalField;
-
 import org.testng.annotations.Test;
-import test.java.time.AbstractTest;
 import test.java.time.temporal.MockFieldNoValue;
 
 /**
@@ -100,7 +97,7 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // isSupported(TemporalField)
     //-----------------------------------------------------------------------
-    @Test(groups = "tck")
+    @Test()
     public void basicTest_isSupported_TemporalField_supported() {
         for (TemporalAccessor sample : samples()) {
             for (TemporalField field : validFields()) {
@@ -109,7 +106,7 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
         }
     }
 
-    @Test(groups = "tck")
+    @Test()
     public void basicTest_isSupported_TemporalField_unsupported() {
         for (TemporalAccessor sample : samples()) {
             for (TemporalField field : invalidFields()) {
@@ -118,7 +115,7 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
         }
     }
 
-    @Test(groups = "tck")
+    @Test()
     public void basicTest_isSupported_TemporalField_null() {
         for (TemporalAccessor sample : samples()) {
             assertEquals(sample.isSupported(null), false, "Failed on " + sample);
@@ -128,7 +125,7 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // range(TemporalField)
     //-----------------------------------------------------------------------
-    @Test(groups = "tck")
+    @Test()
     public void basicTest_range_TemporalField_supported() {
         for (TemporalAccessor sample : samples()) {
             for (TemporalField field : validFields()) {
@@ -137,7 +134,7 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
         }
     }
 
-    @Test(groups = "tck")
+    @Test()
     public void basicTest_range_TemporalField_unsupported() {
         for (TemporalAccessor sample : samples()) {
             for (TemporalField field : invalidFields()) {
@@ -151,7 +148,7 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
         }
     }
 
-    @Test(groups = "tck")
+    @Test()
     public void basicTest_range_TemporalField_null() {
         for (TemporalAccessor sample : samples()) {
             try {
@@ -166,7 +163,7 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // get(TemporalField)
     //-----------------------------------------------------------------------
-    @Test(groups = "tck")
+    @Test()
     public void basicTest_get_TemporalField_supported() {
         for (TemporalAccessor sample : samples()) {
             for (TemporalField field : validFields()) {
@@ -184,7 +181,7 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
         }
     }
 
-    @Test(groups = "tck")
+    @Test()
     public void basicTest_get_TemporalField_unsupported() {
         for (TemporalAccessor sample : samples()) {
             for (TemporalField field : invalidFields()) {
@@ -205,7 +202,7 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
         }
     }
 
-    @Test(groups = "tck")
+    @Test()
     public void basicTest_get_TemporalField_null() {
         for (TemporalAccessor sample : samples()) {
             try {
@@ -220,7 +217,7 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
     //-----------------------------------------------------------------------
     // getLong(TemporalField)
     //-----------------------------------------------------------------------
-    @Test(groups = "tck")
+    @Test()
     public void basicTest_getLong_TemporalField_supported() {
         for (TemporalAccessor sample : samples()) {
             for (TemporalField field : validFields()) {
@@ -229,7 +226,7 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
         }
     }
 
-    @Test(groups = "tck")
+    @Test()
     public void basicTest_getLong_TemporalField_unsupported() {
         for (TemporalAccessor sample : samples()) {
             for (TemporalField field : invalidFields()) {
@@ -250,7 +247,7 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
         }
     }
 
-    @Test(groups = "tck")
+    @Test()
     public void basicTest_getLong_TemporalField_null() {
         for (TemporalAccessor sample : samples()) {
             try {
@@ -263,7 +260,7 @@ public abstract class AbstractDateTimeTest extends AbstractTCKTest {
     }
 
     //-----------------------------------------------------------------------
-    @Test(groups={"tck"})
+    @Test
     public void basicTest_query() {
         for (TemporalAccessor sample : samples()) {
             assertEquals(sample.query(new TemporalQuery<String>() {

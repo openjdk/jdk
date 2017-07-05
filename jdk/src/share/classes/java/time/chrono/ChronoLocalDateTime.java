@@ -73,7 +73,6 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
-import java.time.temporal.Queries;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
@@ -119,29 +118,57 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate<D>>
         extends Temporal, TemporalAdjuster, Comparable<ChronoLocalDateTime<?>> {
 
     /**
-     * Comparator for two {@code ChronoLocalDateTime} instances ignoring the chronology.
+     * Gets a comparator that compares {@code ChronoLocalDateTime} in
+     * time-line order ignoring the chronology.
      * <p>
-     * This method differs from the comparison in {@link #compareTo} in that it
-     * only compares the underlying date and not the chronology.
+     * This comparator differs from the comparison in {@link #compareTo} in that it
+     * only compares the underlying date-time and not the chronology.
      * This allows dates in different calendar systems to be compared based
-     * on the time-line position.
+     * on the position of the date-time on the local time-line.
+     * The underlying comparison is equivalent to comparing the epoch-day and nano-of-day.
      *
      * @see #isAfter
      * @see #isBefore
      * @see #isEqual
      */
-    Comparator<ChronoLocalDateTime<?>> DATE_TIME_COMPARATOR =
-            new Comparator<ChronoLocalDateTime<?>>() {
-        @Override
-        public int compare(ChronoLocalDateTime<?> datetime1, ChronoLocalDateTime<?> datetime2) {
-            int cmp = Long.compare(datetime1.toLocalDate().toEpochDay(), datetime2.toLocalDate().toEpochDay());
-            if (cmp == 0) {
-                cmp = Long.compare(datetime1.toLocalTime().toNanoOfDay(), datetime2.toLocalTime().toNanoOfDay());
-            }
-            return cmp;
-        }
-    };
+    static Comparator<ChronoLocalDateTime<?>> timeLineOrder() {
+        return Chronology.DATE_TIME_ORDER;
+    }
 
+    //-----------------------------------------------------------------------
+    /**
+     * Obtains an instance of {@code ChronoLocalDateTime} from a temporal object.
+     * <p>
+     * This obtains a local date-time based on the specified temporal.
+     * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
+     * which this factory converts to an instance of {@code ChronoLocalDateTime}.
+     * <p>
+     * The conversion extracts and combines the chronology and the date-time
+     * from the temporal object. The behavior is equivalent to using
+     * {@link Chronology#localDateTime(TemporalAccessor)} with the extracted chronology.
+     * Implementations are permitted to perform optimizations such as accessing
+     * those fields that are equivalent to the relevant objects.
+     * <p>
+     * This method matches the signature of the functional interface {@link TemporalQuery}
+     * allowing it to be used as a query via method reference, {@code ChronoLocalDateTime::from}.
+     *
+     * @param temporal  the temporal object to convert, not null
+     * @return the date-time, not null
+     * @throws DateTimeException if unable to convert to a {@code ChronoLocalDateTime}
+     * @see Chronology#localDateTime(TemporalAccessor)
+     */
+    static ChronoLocalDateTime<?> from(TemporalAccessor temporal) {
+        if (temporal instanceof ChronoLocalDateTime) {
+            return (ChronoLocalDateTime<?>) temporal;
+        }
+        Chronology chrono = temporal.query(TemporalQuery.chronology());
+        if (chrono == null) {
+            throw new DateTimeException("Unable to obtain ChronoLocalDateTime from TemporalAccessor: " + temporal.getClass());
+        }
+        return chrono.localDateTime(temporal);
+    }
+
+    //-----------------------------------------------------------------------
     /**
      * Gets the local date part of this date-time.
      * <p>
@@ -163,7 +190,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate<D>>
     LocalTime toLocalTime();
 
     @Override   // Override to provide javadoc
-    public boolean isSupported(TemporalField field);
+    boolean isSupported(TemporalField field);
 
     //-----------------------------------------------------------------------
     // override for covariant return type
@@ -173,7 +200,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate<D>>
      * @throws ArithmeticException {@inheritDoc}
      */
     @Override
-    public default ChronoLocalDateTime<D> with(TemporalAdjuster adjuster) {
+    default ChronoLocalDateTime<D> with(TemporalAdjuster adjuster) {
         return (ChronoLocalDateTime<D>)(toLocalDate().getChronology().ensureChronoLocalDateTime(Temporal.super.with(adjuster)));
     }
 
@@ -191,7 +218,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate<D>>
      * @throws ArithmeticException {@inheritDoc}
      */
     @Override
-    public default ChronoLocalDateTime<D> plus(TemporalAmount amount) {
+    default ChronoLocalDateTime<D> plus(TemporalAmount amount) {
         return (ChronoLocalDateTime<D>)(toLocalDate().getChronology().ensureChronoLocalDateTime(Temporal.super.plus(amount)));
     }
 
@@ -209,7 +236,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate<D>>
      * @throws ArithmeticException {@inheritDoc}
      */
     @Override
-    public default ChronoLocalDateTime<D> minus(TemporalAmount amount) {
+    default ChronoLocalDateTime<D> minus(TemporalAmount amount) {
         return (ChronoLocalDateTime<D>)(toLocalDate().getChronology().ensureChronoLocalDateTime(Temporal.super.minus(amount)));
     }
 
@@ -219,7 +246,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate<D>>
      * @throws ArithmeticException {@inheritDoc}
      */
     @Override
-    public default ChronoLocalDateTime<D> minus(long amountToSubtract, TemporalUnit unit) {
+    default ChronoLocalDateTime<D> minus(long amountToSubtract, TemporalUnit unit) {
         return (ChronoLocalDateTime<D>)(toLocalDate().getChronology().ensureChronoLocalDateTime(Temporal.super.minus(amountToSubtract, unit)));
     }
 
@@ -244,14 +271,14 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate<D>>
      */
     @SuppressWarnings("unchecked")
     @Override
-    public default <R> R query(TemporalQuery<R> query) {
-        if (query == Queries.zoneId() || query == Queries.zone() || query == Queries.offset()) {
+    default <R> R query(TemporalQuery<R> query) {
+        if (query == TemporalQuery.zoneId() || query == TemporalQuery.zone() || query == TemporalQuery.offset()) {
             return null;
-        } else if (query == Queries.localTime()) {
+        } else if (query == TemporalQuery.localTime()) {
             return (R) toLocalTime();
-        } else if (query == Queries.chronology()) {
+        } else if (query == TemporalQuery.chronology()) {
             return (R) toLocalDate().getChronology();
-        } else if (query == Queries.precision()) {
+        } else if (query == TemporalQuery.precision()) {
             return (R) NANOS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization
@@ -285,10 +312,29 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate<D>>
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
-    public default Temporal adjustInto(Temporal temporal) {
+    default Temporal adjustInto(Temporal temporal) {
         return temporal
                 .with(EPOCH_DAY, toLocalDate().toEpochDay())
                 .with(NANO_OF_DAY, toLocalTime().toNanoOfDay());
+    }
+
+    /**
+     * Formats this date-time using the specified formatter.
+     * <p>
+     * This date-time will be passed to the formatter to produce a string.
+     * <p>
+     * The default implementation must behave as follows:
+     * <pre>
+     *  return formatter.format(this);
+     * </pre>
+     *
+     * @param formatter  the formatter to use, not null
+     * @return the formatted date-time string, not null
+     * @throws DateTimeException if an error occurs during printing
+     */
+    default String format(DateTimeFormatter formatter) {
+        Objects.requireNonNull(formatter, "formatter");
+        return formatter.format(this);
     }
 
     //-----------------------------------------------------------------------
@@ -334,7 +380,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate<D>>
      * @param offset  the offset to use for the conversion, not null
      * @return an {@code Instant} representing the same instant, not null
      */
-    public default Instant toInstant(ZoneOffset offset) {
+    default Instant toInstant(ZoneOffset offset) {
         return Instant.ofEpochSecond(toEpochSecond(offset), toLocalTime().getNano());
     }
 
@@ -352,7 +398,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate<D>>
      * @param offset  the offset to use for the conversion, not null
      * @return the number of seconds from the epoch of 1970-01-01T00:00:00Z
      */
-    public default long toEpochSecond(ZoneOffset offset) {
+    default long toEpochSecond(ZoneOffset offset) {
         Objects.requireNonNull(offset, "offset");
         long epochDay = toLocalDate().toEpochDay();
         long secs = epochDay * 86400 + toLocalTime().toSecondOfDay();
@@ -388,7 +434,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate<D>>
      * @return the comparator value, negative if less, positive if greater
      */
     @Override
-    public default int compareTo(ChronoLocalDateTime<?> other) {
+    default int compareTo(ChronoLocalDateTime<?> other) {
         int cmp = toLocalDate().compareTo(other.toLocalDate());
         if (cmp == 0) {
             cmp = toLocalTime().compareTo(other.toLocalTime());
@@ -413,7 +459,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate<D>>
      * @param other  the other date-time to compare to, not null
      * @return true if this is after the specified date-time
      */
-    public default boolean isAfter(ChronoLocalDateTime<?> other) {
+    default boolean isAfter(ChronoLocalDateTime<?> other) {
         long thisEpDay = this.toLocalDate().toEpochDay();
         long otherEpDay = other.toLocalDate().toEpochDay();
         return thisEpDay > otherEpDay ||
@@ -434,7 +480,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate<D>>
      * @param other  the other date-time to compare to, not null
      * @return true if this is before the specified date-time
      */
-    public default boolean isBefore(ChronoLocalDateTime<?> other) {
+    default boolean isBefore(ChronoLocalDateTime<?> other) {
         long thisEpDay = this.toLocalDate().toEpochDay();
         long otherEpDay = other.toLocalDate().toEpochDay();
         return thisEpDay < otherEpDay ||
@@ -455,7 +501,7 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate<D>>
      * @param other  the other date-time to compare to, not null
      * @return true if the underlying date-time is equal to the specified date-time on the timeline
      */
-    public default boolean isEqual(ChronoLocalDateTime<?> other) {
+    default boolean isEqual(ChronoLocalDateTime<?> other) {
         // Do the time check first, it is cheaper than computing EPOCH day.
         return this.toLocalTime().toNanoOfDay() == other.toLocalTime().toNanoOfDay() &&
                this.toLocalDate().toEpochDay() == other.toLocalDate().toEpochDay();
@@ -484,27 +530,11 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate<D>>
     /**
      * Outputs this date-time as a {@code String}.
      * <p>
-     * The output will include the full local date-time and the chronology ID.
+     * The output will include the full local date-time.
      *
      * @return a string representation of this date-time, not null
      */
     @Override
     String toString();
 
-    /**
-     * Outputs this date-time as a {@code String} using the formatter.
-     * <p>
-     * The default implementation must behave as follows:
-     * <pre>
-     *  return formatter.format(this);
-     * </pre>
-     *
-     * @param formatter  the formatter to use, not null
-     * @return the formatted date-time string, not null
-     * @throws DateTimeException if an error occurs during printing
-     */
-    public default String toString(DateTimeFormatter formatter) {
-        Objects.requireNonNull(formatter, "formatter");
-        return formatter.format(this);
-    }
 }

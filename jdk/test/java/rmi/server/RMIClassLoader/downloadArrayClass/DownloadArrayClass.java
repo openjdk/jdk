@@ -64,6 +64,10 @@ public class DownloadArrayClass
             TestLibrary.bomb(e);
         }
 
+        System.err.println("Setting codebase property to: " + remoteCodebase);
+        System.setProperty("java.rmi.server.codebase",
+            remoteCodebase.toString());
+
         /*
          * Load Foo from a non-RMI class loader so that it won't be already
          * loaded by an RMI class loader in this VM (for whatever that's

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,8 @@ public class TlsKeyMaterialSpec implements KeySpec, SecretKey {
      * <code>new TlsKeymaterialSpec(clientMacKey, serverMacKey,
      * null, null, null, null)</code>.
      *
-     * @param clientMacKey the client MAC key
-     * @param serverMacKey the server MAC key
-     * @throws NullPointerException if clientMacKey or serverMacKey is null
+     * @param clientMacKey the client MAC key (or null)
+     * @param serverMacKey the server MAC key (or null)
      */
     public TlsKeyMaterialSpec(SecretKey clientMacKey, SecretKey serverMacKey) {
         this(clientMacKey, serverMacKey, null, null, null, null);
@@ -73,11 +72,10 @@ public class TlsKeyMaterialSpec implements KeySpec, SecretKey {
      * <code>new TlsKeymaterialSpec(clientMacKey, serverMacKey,
      * clientCipherKey, serverCipherKey, null, null)</code>.
      *
-     * @param clientMacKey the client MAC key
-     * @param serverMacKey the server MAC key
+     * @param clientMacKey the client MAC key (or null)
+     * @param serverMacKey the server MAC key (or null)
      * @param clientCipherKey the client cipher key (or null)
      * @param serverCipherKey the server cipher key (or null)
-     * @throws NullPointerException if clientMacKey or serverMacKey is null
      */
     public TlsKeyMaterialSpec(SecretKey clientMacKey, SecretKey serverMacKey,
             SecretKey clientCipherKey, SecretKey serverCipherKey) {
@@ -90,21 +88,17 @@ public class TlsKeyMaterialSpec implements KeySpec, SecretKey {
      * keys, client and server cipher keys, and client and server
      * initialization vectors.
      *
-     * @param clientMacKey the client MAC key
-     * @param serverMacKey the server MAC key
+     * @param clientMacKey the client MAC key (or null)
+     * @param serverMacKey the server MAC key (or null)
      * @param clientCipherKey the client cipher key (or null)
      * @param clientIv the client initialization vector (or null)
      * @param serverCipherKey the server cipher key (or null)
      * @param serverIv the server initialization vector (or null)
-     *
-     * @throws NullPointerException if clientMacKey or serverMacKey is null
      */
     public TlsKeyMaterialSpec(SecretKey clientMacKey, SecretKey serverMacKey,
             SecretKey clientCipherKey, IvParameterSpec clientIv,
             SecretKey serverCipherKey, IvParameterSpec serverIv) {
-        if ((clientMacKey == null) || (serverMacKey == null)) {
-            throw new NullPointerException("MAC keys must not be null");
-        }
+
         this.clientMacKey = clientMacKey;
         this.serverMacKey = serverMacKey;
         this.clientCipherKey = clientCipherKey;
@@ -143,7 +137,7 @@ public class TlsKeyMaterialSpec implements KeySpec, SecretKey {
     /**
      * Returns the client MAC key.
      *
-     * @return the client MAC key.
+     * @return the client MAC key (or null).
      */
     public SecretKey getClientMacKey() {
         return clientMacKey;
@@ -152,7 +146,7 @@ public class TlsKeyMaterialSpec implements KeySpec, SecretKey {
     /**
      * Return the server MAC key.
      *
-     * @return the server MAC key.
+     * @return the server MAC key (or null).
      */
     public SecretKey getServerMacKey() {
         return serverMacKey;

@@ -56,6 +56,7 @@
  */
 package java.time.chrono;
 
+import static java.time.temporal.ChronoField.PROLEPTIC_MONTH;
 import static java.time.temporal.ChronoField.YEAR;
 
 import java.io.Serializable;
@@ -107,16 +108,6 @@ public final class MinguoChronology extends Chronology implements Serializable {
     public static final MinguoChronology INSTANCE = new MinguoChronology();
 
     /**
-     * The singleton instance for the era ROC.
-     */
-    public static final Era ERA_ROC = MinguoEra.ROC;
-
-    /**
-     * The singleton instance for the era BEFORE_ROC.
-     */
-    public static final Era ERA_BEFORE_ROC = MinguoEra.BEFORE_ROC;
-
-    /**
      * Serialization version.
      */
     private static final long serialVersionUID = 1039765215346859963L;
@@ -129,15 +120,6 @@ public final class MinguoChronology extends Chronology implements Serializable {
      * Restricted constructor.
      */
     private MinguoChronology() {
-    }
-
-    /**
-     * Resolve singleton.
-     *
-     * @return the singleton instance, not null
-     */
-    private Object readResolve() {
-        return INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -173,32 +155,78 @@ public final class MinguoChronology extends Chronology implements Serializable {
     }
 
     //-----------------------------------------------------------------------
+    /**
+     * Obtains a local date in Minguo calendar system from the
+     * era, year-of-era, month-of-year and day-of-month fields.
+     *
+     * @param era  the Minguo era, not null
+     * @param yearOfEra  the year-of-era
+     * @param month  the month-of-year
+     * @param dayOfMonth  the day-of-month
+     * @return the Minguo local date, not null
+     * @throws DateTimeException if unable to create the date
+     * @throws ClassCastException if the {@code era} is not a {@code MinguoEra}
+     */
+    @Override
+    public MinguoDate date(Era era, int yearOfEra, int month, int dayOfMonth) {
+        return date(prolepticYear(era, yearOfEra), month, dayOfMonth);
+    }
+
+    /**
+     * Obtains a local date in Minguo calendar system from the
+     * proleptic-year, month-of-year and day-of-month fields.
+     *
+     * @param prolepticYear  the proleptic-year
+     * @param month  the month-of-year
+     * @param dayOfMonth  the day-of-month
+     * @return the Minguo local date, not null
+     * @throws DateTimeException if unable to create the date
+     */
     @Override
     public MinguoDate date(int prolepticYear, int month, int dayOfMonth) {
         return new MinguoDate(LocalDate.of(prolepticYear + YEARS_DIFFERENCE, month, dayOfMonth));
     }
 
+    /**
+     * Obtains a local date in Minguo calendar system from the
+     * era, year-of-era and day-of-year fields.
+     *
+     * @param era  the Minguo era, not null
+     * @param yearOfEra  the year-of-era
+     * @param dayOfYear  the day-of-year
+     * @return the Minguo local date, not null
+     * @throws DateTimeException if unable to create the date
+     * @throws ClassCastException if the {@code era} is not a {@code MinguoEra}
+     */
+    @Override
+    public MinguoDate dateYearDay(Era era, int yearOfEra, int dayOfYear) {
+        return dateYearDay(prolepticYear(era, yearOfEra), dayOfYear);
+    }
+
+    /**
+     * Obtains a local date in Minguo calendar system from the
+     * proleptic-year and day-of-year fields.
+     *
+     * @param prolepticYear  the proleptic-year
+     * @param dayOfYear  the day-of-year
+     * @return the Minguo local date, not null
+     * @throws DateTimeException if unable to create the date
+     */
     @Override
     public MinguoDate dateYearDay(int prolepticYear, int dayOfYear) {
         return new MinguoDate(LocalDate.ofYearDay(prolepticYear + YEARS_DIFFERENCE, dayOfYear));
     }
 
-    @Override
-    public MinguoDate date(TemporalAccessor temporal) {
-        if (temporal instanceof MinguoDate) {
-            return (MinguoDate) temporal;
-        }
-        return new MinguoDate(LocalDate.from(temporal));
-    }
-    @Override
-    public MinguoDate date(Era era, int yearOfEra, int month, int dayOfMonth) {
-        return date(prolepticYear(era, yearOfEra), month, dayOfMonth);
-
-    }
-
-    @Override
-    public MinguoDate dateYearDay(Era era, int yearOfEra, int dayOfYear) {
-        return dateYearDay(prolepticYear(era, yearOfEra), dayOfYear);
+    /**
+     * Obtains a local date in the Minguo calendar system from the epoch-day.
+     *
+     * @param epochDay  the epoch day
+     * @return the Minguo local date, not null
+     * @throws DateTimeException if unable to create the date
+     */
+    @Override  // override with covariant return type
+    public MinguoDate dateEpochDay(long epochDay) {
+        return new MinguoDate(LocalDate.ofEpochDay(epochDay));
     }
 
     @Override
@@ -214,6 +242,14 @@ public final class MinguoChronology extends Chronology implements Serializable {
     @Override
     public MinguoDate dateNow(Clock clock) {
         return date(LocalDate.now(clock));
+    }
+
+    @Override
+    public MinguoDate date(TemporalAccessor temporal) {
+        if (temporal instanceof MinguoDate) {
+            return (MinguoDate) temporal;
+        }
+        return new MinguoDate(LocalDate.from(temporal));
     }
 
     @Override
@@ -250,7 +286,7 @@ public final class MinguoChronology extends Chronology implements Serializable {
     @Override
     public int prolepticYear(Era era, int yearOfEra) {
         if (era instanceof MinguoEra == false) {
-            throw new DateTimeException("Era must be MinguoEra");
+            throw new ClassCastException("Era must be MinguoEra");
         }
         return (era == MinguoEra.ROC ? yearOfEra : 1 - yearOfEra);
     }
@@ -269,6 +305,10 @@ public final class MinguoChronology extends Chronology implements Serializable {
     @Override
     public ValueRange range(ChronoField field) {
         switch (field) {
+            case PROLEPTIC_MONTH: {
+                ValueRange range = PROLEPTIC_MONTH.range();
+                return ValueRange.of(range.getMinimum() - YEARS_DIFFERENCE * 12L, range.getMaximum() - YEARS_DIFFERENCE * 12L);
+            }
             case YEAR_OF_ERA: {
                 ValueRange range = YEAR.range();
                 return ValueRange.of(1, range.getMaximum() - YEARS_DIFFERENCE, -range.getMinimum() + 1 + YEARS_DIFFERENCE);

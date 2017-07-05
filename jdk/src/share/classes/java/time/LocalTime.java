@@ -80,7 +80,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
-import java.time.temporal.Queries;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
@@ -88,6 +87,7 @@ import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
 import java.util.Objects;
 
@@ -383,7 +383,7 @@ public final class LocalTime
      * A {@code TemporalAccessor} represents an arbitrary set of date and time information,
      * which this factory converts to an instance of {@code LocalTime}.
      * <p>
-     * The conversion uses the {@link Queries#localTime()} query, which relies
+     * The conversion uses the {@link TemporalQuery#localTime()} query, which relies
      * on extracting the {@link ChronoField#NANO_OF_DAY NANO_OF_DAY} field.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
@@ -394,7 +394,7 @@ public final class LocalTime
      * @throws DateTimeException if unable to convert to a {@code LocalTime}
      */
     public static LocalTime from(TemporalAccessor temporal) {
-        LocalTime time = temporal.query(Queries.localTime());
+        LocalTime time = temporal.query(TemporalQuery.localTime());
         if (time == null) {
             throw new DateTimeException("Unable to obtain LocalTime from TemporalAccessor: " + temporal.getClass());
         }
@@ -505,7 +505,7 @@ public final class LocalTime
     @Override
     public boolean isSupported(TemporalField field) {
         if (field instanceof ChronoField) {
-            return ((ChronoField) field).isTimeField();
+            return field.isTimeBased();
         }
         return field != null && field.isSupportedBy(this);
     }
@@ -521,7 +521,7 @@ public final class LocalTime
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@link #isSupported(TemporalField) supported fields} will return
      * appropriate range instances.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.rangeRefinedBy(TemporalAccessor)}
@@ -531,6 +531,7 @@ public final class LocalTime
      * @param field  the field to query the range for, not null
      * @return the range of valid values for the field, not null
      * @throws DateTimeException if the range for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      */
     @Override  // override for Javadoc
     public ValueRange range(TemporalField field) {
@@ -549,7 +550,7 @@ public final class LocalTime
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this time, except {@code NANO_OF_DAY} and {@code MICRO_OF_DAY}
      * which are too large to fit in an {@code int} and throw a {@code DateTimeException}.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
@@ -558,7 +559,10 @@ public final class LocalTime
      *
      * @param field  the field to get, not null
      * @return the value for the field
-     * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws DateTimeException if a value for the field cannot be obtained or
+     *         the value is outside the range of valid values for the field
+     * @throws UnsupportedTemporalTypeException if the field is not supported or
+     *         the range of values exceeds an {@code int}
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override  // override for Javadoc and performance
@@ -579,7 +583,7 @@ public final class LocalTime
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this time.
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.getFrom(TemporalAccessor)}
@@ -589,6 +593,7 @@ public final class LocalTime
      * @param field  the field to get, not null
      * @return the value for the field
      * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -608,9 +613,9 @@ public final class LocalTime
     private int get0(TemporalField field) {
         switch ((ChronoField) field) {
             case NANO_OF_SECOND: return nano;
-            case NANO_OF_DAY: throw new DateTimeException("Field too large for an int: " + field);
+            case NANO_OF_DAY: throw new UnsupportedTemporalTypeException("Invalid field 'NanoOfDay' for get() method, use getLong() instead");
             case MICRO_OF_SECOND: return nano / 1000;
-            case MICRO_OF_DAY: throw new DateTimeException("Field too large for an int: " + field);
+            case MICRO_OF_DAY: throw new UnsupportedTemporalTypeException("Invalid field 'MicroOfDay' for get() method, use getLong() instead");
             case MILLI_OF_SECOND: return nano / 1000_000;
             case MILLI_OF_DAY: return (int) (toNanoOfDay() / 1000_000);
             case SECOND_OF_MINUTE: return second;
@@ -623,7 +628,7 @@ public final class LocalTime
             case CLOCK_HOUR_OF_DAY: return (hour == 0 ? 24 : hour);
             case AMPM_OF_DAY: return hour / 12;
         }
-        throw new DateTimeException("Unsupported field: " + field.getName());
+        throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
     }
 
     //-----------------------------------------------------------------------
@@ -760,7 +765,7 @@ public final class LocalTime
      * In all cases, if the new value is outside the valid range of values for the field
      * then a {@code DateTimeException} will be thrown.
      * <p>
-     * All other {@code ChronoField} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
      * is obtained by invoking {@code TemporalField.adjustInto(Temporal, long)}
@@ -773,6 +778,7 @@ public final class LocalTime
      * @param newValue  the new value of the field in the result
      * @return a {@code LocalTime} based on {@code this} with the specified field set, not null
      * @throws DateTimeException if the field cannot be set
+     * @throws UnsupportedTemporalTypeException if the field is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -797,7 +803,7 @@ public final class LocalTime
                 case CLOCK_HOUR_OF_DAY: return withHour((int) (newValue == 24 ? 0 : newValue));
                 case AMPM_OF_DAY: return plusHours((newValue - (hour / 12)) * 12);
             }
-            throw new DateTimeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
         }
         return field.adjustInto(this, newValue);
     }
@@ -890,6 +896,7 @@ public final class LocalTime
      * @param unit  the unit to truncate to, not null
      * @return a {@code LocalTime} based on this time with the time truncated, not null
      * @throws DateTimeException if unable to truncate
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      */
     public LocalTime truncatedTo(TemporalUnit unit) {
         if (unit == ChronoUnit.NANOS) {
@@ -897,11 +904,11 @@ public final class LocalTime
         }
         Duration unitDur = unit.getDuration();
         if (unitDur.getSeconds() > SECONDS_PER_DAY) {
-            throw new DateTimeException("Unit is too large to be used for truncation");
+            throw new UnsupportedTemporalTypeException("Unit is too large to be used for truncation");
         }
         long dur = unitDur.toNanos();
         if ((NANOS_PER_DAY % dur) != 0) {
-            throw new DateTimeException("Unit must divide into a standard day without remainder");
+            throw new UnsupportedTemporalTypeException("Unit must divide into a standard day without remainder");
         }
         long nod = toNanoOfDay();
         return ofNanoOfDay((nod / dur) * dur);
@@ -972,7 +979,7 @@ public final class LocalTime
      *  This returns {@code this} time.
      * </ul>
      * <p>
-     * All other {@code ChronoUnit} instances will throw a {@code DateTimeException}.
+     * All other {@code ChronoUnit} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoUnit}, then the result of this method
      * is obtained by invoking {@code TemporalUnit.addTo(Temporal, long)}
@@ -985,6 +992,7 @@ public final class LocalTime
      * @param unit  the unit of the amount to add, not null
      * @return a {@code LocalTime} based on this time with the specified amount added, not null
      * @throws DateTimeException if the addition cannot be made
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -1001,7 +1009,7 @@ public final class LocalTime
                 case HALF_DAYS: return plusHours((amountToAdd % 2) * 12);
                 case DAYS: return this;
             }
-            throw new DateTimeException("Unsupported unit: " + unit.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit.getName());
         }
         return unit.addTo(this, amountToAdd);
     }
@@ -1147,6 +1155,7 @@ public final class LocalTime
      * @param unit  the unit of the amount to subtract, not null
      * @return a {@code LocalTime} based on this time with the specified amount subtracted, not null
      * @throws DateTimeException if the subtraction cannot be made
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -1237,13 +1246,14 @@ public final class LocalTime
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TemporalQuery<R> query) {
-        if (query == Queries.chronology() || query == Queries.zoneId() || query == Queries.zone() || query == Queries.offset()) {
+        if (query == TemporalQuery.chronology() || query == TemporalQuery.zoneId() ||
+                query == TemporalQuery.zone() || query == TemporalQuery.offset()) {
             return null;
-        } else if (query == Queries.localTime()) {
+        } else if (query == TemporalQuery.localTime()) {
             return (R) this;
-        } else if (query == Queries.localDate()) {
+        } else if (query == TemporalQuery.localDate()) {
             return null;
-        } else if (query == Queries.precision()) {
+        } else if (query == TemporalQuery.precision()) {
             return (R) NANOS;
         }
         // inline TemporalAccessor.super.query(query) as an optimization
@@ -1322,6 +1332,7 @@ public final class LocalTime
      * @param unit  the unit to measure the period in, not null
      * @return the amount of the period between this time and the end time
      * @throws DateTimeException if the period cannot be calculated
+     * @throws UnsupportedTemporalTypeException if the unit is not supported
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
@@ -1342,9 +1353,23 @@ public final class LocalTime
                 case HOURS: return nanosUntil / NANOS_PER_HOUR;
                 case HALF_DAYS: return nanosUntil / (12 * NANOS_PER_HOUR);
             }
-            throw new DateTimeException("Unsupported unit: " + unit.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit.getName());
         }
         return unit.between(this, endTime);
+    }
+
+    /**
+     * Formats this time using the specified formatter.
+     * <p>
+     * This time will be passed to the formatter to produce a string.
+     *
+     * @param formatter  the formatter to use, not null
+     * @return the formatted time string, not null
+     * @throws DateTimeException if an error occurs during printing
+     */
+    public String format(DateTimeFormatter formatter) {
+        Objects.requireNonNull(formatter, "formatter");
+        return formatter.format(this);
     }
 
     //-----------------------------------------------------------------------
@@ -1362,7 +1387,7 @@ public final class LocalTime
     }
 
     /**
-     * Combines this time with a date to create an {@code OffsetTime}.
+     * Combines this time with an offset to create an {@code OffsetTime}.
      * <p>
      * This returns an {@code OffsetTime} formed from this time at the specified offset.
      * All possible combinations of time and offset are valid.
@@ -1531,21 +1556,6 @@ public final class LocalTime
             }
         }
         return buf.toString();
-    }
-
-    /**
-     * Outputs this time as a {@code String} using the formatter.
-     * <p>
-     * This time will be passed to the formatter
-     * {@link DateTimeFormatter#format(TemporalAccessor) format method}.
-     *
-     * @param formatter  the formatter to use, not null
-     * @return the formatted time string, not null
-     * @throws DateTimeException if an error occurs during printing
-     */
-    public String toString(DateTimeFormatter formatter) {
-        Objects.requireNonNull(formatter, "formatter");
-        return formatter.format(this);
     }
 
     //-----------------------------------------------------------------------

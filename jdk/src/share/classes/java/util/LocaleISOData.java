@@ -404,7 +404,7 @@ class LocaleISOData {
         + "PG" + "PNG"  // Papua New Guinea
         + "PH" + "PHL"  // Philippines, Republic of the
         + "PK" + "PAK"  // Pakistan, Islamic Republic of
-        + "PL" + "POL"  // Poland, Polish People's Republic
+        + "PL" + "POL"  // Poland, Republic of Poland
         + "PM" + "SPM"  // St. Pierre and Miquelon
         + "PN" + "PCN"  // Pitcairn Island
         + "PR" + "PRI"  // Puerto Rico
