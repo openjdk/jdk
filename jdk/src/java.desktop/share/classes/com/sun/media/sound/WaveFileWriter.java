@@ -80,7 +80,6 @@ public final class WaveFileWriter extends SunFileWriter {
         return new AudioFileFormat.Type[0];
     }
 
-
     @Override
     public int write(AudioInputStream stream, AudioFileFormat.Type fileType, OutputStream out) throws IOException {
         Objects.requireNonNull(stream);
@@ -103,7 +102,6 @@ public final class WaveFileWriter extends SunFileWriter {
 
         return writeWaveFile(stream, waveFileFormat, out);
     }
-
 
     @Override
     public int write(AudioInputStream stream, AudioFileFormat.Type fileType, File out) throws IOException {
@@ -257,7 +255,7 @@ public final class WaveFileWriter extends SunFileWriter {
         int sampleRate         = (int) audioFormat.getSampleRate();
         int frameSizeInBytes   = audioFormat.getFrameSize();
         int frameRate              = (int) audioFormat.getFrameRate();
-        int avgBytesPerSec     = channels * sampleSizeInBits * sampleRate / 8;;
+        int avgBytesPerSec     = channels * sampleSizeInBits * sampleRate / 8;
         short blockAlign       = (short) ((sampleSizeInBits / 8) * channels);
         int dataMagic              = WaveFileFormat.DATA_MAGIC;
         int dataLength             = waveFileFormat.getFrameLength() * frameSizeInBytes;
@@ -347,6 +345,6 @@ public final class WaveFileWriter extends SunFileWriter {
         waveStream = new SequenceInputStream(headerStream,
                             new NoCloseInputStream(codedAudioStream));
 
-        return (InputStream)waveStream;
+        return waveStream;
     }
 }

@@ -27,14 +27,27 @@ package com.sun.media.sound;
 
 import java.io.IOException;
 import java.io.InputStream;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import javax.sound.midi.*;
-
+import javax.sound.midi.ControllerEventListener;
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MetaEventListener;
+import javax.sound.midi.MetaMessage;
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.MidiEvent;
+import javax.sound.midi.MidiMessage;
+import javax.sound.midi.MidiSystem;
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Receiver;
+import javax.sound.midi.Sequence;
+import javax.sound.midi.Sequencer;
+import javax.sound.midi.ShortMessage;
+import javax.sound.midi.Synthesizer;
+import javax.sound.midi.Track;
+import javax.sound.midi.Transmitter;
 
 /**
  * A Real Time Sequencer
@@ -47,8 +60,6 @@ import javax.sound.midi.*;
  */
 final class RealTimeSequencer extends AbstractMidiDevice
         implements Sequencer, AutoConnectSequencer {
-
-    // STATIC VARIABLES
 
     /** debugging flags */
     private static final boolean DEBUG_PUMP = false;
@@ -73,7 +84,6 @@ final class RealTimeSequencer extends AbstractMidiDevice
     private static final Sequencer.SyncMode masterSyncMode    = Sequencer.SyncMode.INTERNAL_CLOCK;
     private static final Sequencer.SyncMode slaveSyncMode     = Sequencer.SyncMode.NO_SYNC;
 
-
     /**
      * Sequence on which this sequencer is operating.
      */
@@ -87,13 +97,11 @@ final class RealTimeSequencer extends AbstractMidiDevice
      */
     private double cacheTempoMPQ = -1;
 
-
     /**
      * cache value for tempo factor until sequence is set
      * -1 means not set.
      */
     private float cacheTempoFactor = -1;
-
 
     /** if a particular track is muted */
     private boolean[] trackMuted = null;
@@ -108,47 +116,48 @@ final class RealTimeSequencer extends AbstractMidiDevice
      */
     private volatile boolean running;
 
-
-    /** the thread for pushing out the MIDI messages */
+    /**
+     * the thread for pushing out the MIDI messages.
+     */
     private PlayThread playThread;
 
-
     /**
-     * True if we are recording
+     * True if we are recording.
      */
     private volatile boolean recording;
 
-
     /**
-     * List of tracks to which we're recording
+     * List of tracks to which we're recording.
      */
     private final List<RecordingTrack> recordingTracks = new ArrayList<>();
-
 
     private long loopStart = 0;
     private long loopEnd = -1;
     private int loopCount = 0;
 
-
     /**
-     * Meta event listeners
+     * Meta event listeners.
      */
     private final ArrayList<Object> metaEventListeners = new ArrayList<>();
 
-
     /**
-     * Control change listeners
+     * Control change listeners.
      */
     private final ArrayList<ControllerListElement> controllerEventListeners = new ArrayList<>();
 
-
-    /** automatic connection support */
+    /**
+     * automatic connection support.
+     */
     private boolean autoConnect = false;
 
-    /** if we need to autoconnect at next open */
+    /**
+     * if we need to autoconnect at next open.
+     */
     private boolean doAutoConnectAtNextOpen = false;
 
-    /** the receiver that this device is auto-connected to */
+    /**
+     * the receiver that this device is auto-connected to.
+     */
     Receiver autoConnectedReceiver = null;
 
 
@@ -161,9 +170,9 @@ final class RealTimeSequencer extends AbstractMidiDevice
         if (Printer.trace) Printer.trace("<< RealTimeSequencer CONSTRUCTOR completed");
     }
 
-
     /* ****************************** SEQUENCER METHODS ******************** */
 
+    @Override
     public synchronized void setSequence(Sequence sequence)
         throws InvalidMidiDataException {
 
@@ -211,7 +220,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         if (Printer.trace) Printer.trace("<< RealTimeSequencer: setSequence(" + sequence +") completed");
     }
 
-
+    @Override
     public synchronized void setSequence(InputStream stream) throws IOException, InvalidMidiDataException {
 
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: setSequence(" + stream +")");
@@ -229,12 +238,12 @@ final class RealTimeSequencer extends AbstractMidiDevice
 
     }
 
-
+    @Override
     public Sequence getSequence() {
         return sequence;
     }
 
-
+    @Override
     public synchronized void start() {
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: start()");
 
@@ -259,7 +268,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         if (Printer.trace) Printer.trace("<< RealTimeSequencer: start() completed");
     }
 
-
+    @Override
     public synchronized void stop() {
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: stop()");
 
@@ -280,12 +289,12 @@ final class RealTimeSequencer extends AbstractMidiDevice
         if (Printer.trace) Printer.trace("<< RealTimeSequencer: stop() completed");
     }
 
-
+    @Override
     public boolean isRunning() {
         return running;
     }
 
-
+    @Override
     public void startRecording() {
         if (!isOpen()) {
             throw new IllegalStateException("Sequencer not open");
@@ -295,7 +304,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         recording = true;
     }
 
-
+    @Override
     public void stopRecording() {
         if (!isOpen()) {
             throw new IllegalStateException("Sequencer not open");
@@ -303,12 +312,12 @@ final class RealTimeSequencer extends AbstractMidiDevice
         recording = false;
     }
 
-
+    @Override
     public boolean isRecording() {
         return recording;
     }
 
-
+    @Override
     public void recordEnable(Track track, int channel) {
         if (!findTrack(track)) {
             throw new IllegalArgumentException("Track does not exist in the current sequence");
@@ -325,7 +334,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
 
     }
 
-
+    @Override
     public void recordDisable(Track track) {
         synchronized(recordingTracks) {
             RecordingTrack rc = RecordingTrack.get(recordingTracks, track);
@@ -335,7 +344,6 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
 
     }
-
 
     private boolean findTrack(Track track) {
         boolean found = false;
@@ -351,14 +359,14 @@ final class RealTimeSequencer extends AbstractMidiDevice
         return found;
     }
 
-
+    @Override
     public float getTempoInBPM() {
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: getTempoInBPM() ");
 
         return (float) MidiUtils.convertTempo(getTempoInMPQ());
     }
 
-
+    @Override
     public void setTempoInBPM(float bpm) {
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: setTempoInBPM() ");
         if (bpm <= 0) {
@@ -369,7 +377,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         setTempoInMPQ((float) MidiUtils.convertTempo((double) bpm));
     }
 
-
+    @Override
     public float getTempoInMPQ() {
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: getTempoInMPQ() ");
 
@@ -389,7 +397,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         return getDataPump().getTempoMPQ();
     }
 
-
+    @Override
     public void setTempoInMPQ(float mpq) {
         if (mpq <= 0) {
             // should throw IllegalArgumentException
@@ -410,7 +418,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
     }
 
-
+    @Override
     public void setTempoFactor(float factor) {
         if (factor <= 0) {
             // should throw IllegalArgumentException
@@ -428,7 +436,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
     }
 
-
+    @Override
     public float getTempoFactor() {
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: getTempoFactor() ");
 
@@ -441,7 +449,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         return getDataPump().getTempoFactor();
     }
 
-
+    @Override
     public long getTickLength() {
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: getTickLength() ");
 
@@ -452,7 +460,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         return sequence.getTickLength();
     }
 
-
+    @Override
     public synchronized long getTickPosition() {
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: getTickPosition() ");
 
@@ -463,7 +471,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         return getDataPump().getTickPos();
     }
 
-
+    @Override
     public synchronized void setTickPosition(long tick) {
         if (tick < 0) {
             // should throw IllegalArgumentException
@@ -486,7 +494,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
     }
 
-
+    @Override
     public long getMicrosecondLength() {
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: getMicrosecondLength() ");
 
@@ -497,7 +505,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         return sequence.getMicrosecondLength();
     }
 
-
+    @Override
     public long getMicrosecondPosition() {
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: getMicrosecondPosition() ");
 
@@ -509,7 +517,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
     }
 
-
+    @Override
     public void setMicrosecondPosition(long microseconds) {
         if (microseconds < 0) {
             // should throw IllegalArgumentException
@@ -534,34 +542,34 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
     }
 
-
+    @Override
     public void setMasterSyncMode(Sequencer.SyncMode sync) {
         // not supported
     }
 
-
+    @Override
     public Sequencer.SyncMode getMasterSyncMode() {
         return masterSyncMode;
     }
 
-
+    @Override
     public Sequencer.SyncMode[] getMasterSyncModes() {
         Sequencer.SyncMode[] returnedModes = new Sequencer.SyncMode[masterSyncModes.length];
         System.arraycopy(masterSyncModes, 0, returnedModes, 0, masterSyncModes.length);
         return returnedModes;
     }
 
-
+    @Override
     public void setSlaveSyncMode(Sequencer.SyncMode sync) {
         // not supported
     }
 
-
+    @Override
     public Sequencer.SyncMode getSlaveSyncMode() {
         return slaveSyncMode;
     }
 
-
+    @Override
     public Sequencer.SyncMode[] getSlaveSyncModes() {
         Sequencer.SyncMode[] returnedModes = new Sequencer.SyncMode[slaveSyncModes.length];
         System.arraycopy(slaveSyncModes, 0, returnedModes, 0, slaveSyncModes.length);
@@ -577,8 +585,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         return 0;
     }
 
-
-
+    @Override
     public synchronized void setTrackMute(int track, boolean mute) {
         int trackCount = getTrackCount();
         if (track < 0 || track >= getTrackCount()) return;
@@ -589,14 +596,14 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
     }
 
-
+    @Override
     public synchronized boolean getTrackMute(int track) {
         if (track < 0 || track >= getTrackCount()) return false;
         if (trackMuted == null || trackMuted.length <= track) return false;
         return trackMuted[track];
     }
 
-
+    @Override
     public synchronized void setTrackSolo(int track, boolean solo) {
         int trackCount = getTrackCount();
         if (track < 0 || track >= getTrackCount()) return;
@@ -607,14 +614,14 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
     }
 
-
+    @Override
     public synchronized boolean getTrackSolo(int track) {
         if (track < 0 || track >= getTrackCount()) return false;
         if (trackSolo == null || trackSolo.length <= track) return false;
         return trackSolo[track];
     }
 
-
+    @Override
     public boolean addMetaEventListener(MetaEventListener listener) {
         synchronized(metaEventListeners) {
             if (! metaEventListeners.contains(listener)) {
@@ -625,7 +632,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
     }
 
-
+    @Override
     public void removeMetaEventListener(MetaEventListener listener) {
         synchronized(metaEventListeners) {
             int index = metaEventListeners.indexOf(listener);
@@ -635,7 +642,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
     }
 
-
+    @Override
     public int[] addControllerEventListener(ControllerEventListener listener, int[] controllers) {
         synchronized(controllerEventListeners) {
 
@@ -663,7 +670,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
     }
 
-
+    @Override
     public int[] removeControllerEventListener(ControllerEventListener listener, int[] controllers) {
         synchronized(controllerEventListeners) {
             ControllerListElement cve = null;
@@ -690,9 +697,9 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
     }
 
-
     ////////////////// LOOPING (added in 1.5) ///////////////////////
 
+    @Override
     public void setLoopStartPoint(long tick) {
         if ((tick > getTickLength())
             || ((loopEnd != -1) && (tick > loopEnd))
@@ -702,10 +709,12 @@ final class RealTimeSequencer extends AbstractMidiDevice
         loopStart = tick;
     }
 
+    @Override
     public long getLoopStartPoint() {
         return loopStart;
     }
 
+    @Override
     public void setLoopEndPoint(long tick) {
         if ((tick > getTickLength())
             || ((loopStart > tick) && (tick != -1))
@@ -715,10 +724,12 @@ final class RealTimeSequencer extends AbstractMidiDevice
         loopEnd = tick;
     }
 
+    @Override
     public long getLoopEndPoint() {
         return loopEnd;
     }
 
+    @Override
     public void setLoopCount(int count) {
         if (count != LOOP_CONTINUOUSLY
             && count < 0) {
@@ -730,15 +741,14 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
     }
 
+    @Override
     public int getLoopCount() {
         return loopCount;
     }
 
-
     /* *********************************** play control ************************* */
 
-    /*
-     */
+    @Override
     protected void implOpen() throws MidiUnavailableException {
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: implOpen()");
 
@@ -820,14 +830,15 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
     }
 
-    /** populate the caches with the current values */
+    /**
+     * populate the caches with the current values.
+     */
     private synchronized void setCaches() {
         cacheTempoFactor = getTempoFactor();
         cacheTempoMPQ = getTempoInMPQ();
     }
 
-
-
+    @Override
     protected synchronized void implClose() {
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: implClose() ");
 
@@ -881,7 +892,6 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
         if (Printer.trace) Printer.trace("<< RealTimeSequencer: implStart() completed");
     }
-
 
     void implStop() {
         if (Printer.trace) Printer.trace(">> RealTimeSequencer: implStop()");
@@ -953,8 +963,6 @@ final class RealTimeSequencer extends AbstractMidiDevice
         getEventDispatcher().sendAudioEvents(message, sendToListeners);
     }
 
-
-
     private boolean needCaching() {
         return !isOpen() || (sequence == null) || (playThread == null);
     }
@@ -988,42 +996,39 @@ final class RealTimeSequencer extends AbstractMidiDevice
         return array;
     }
 
-
     // OVERRIDES OF ABSTRACT MIDI DEVICE METHODS
 
+    @Override
     protected boolean hasReceivers() {
         return true;
     }
 
     // for recording
+    @Override
     protected Receiver createReceiver() throws MidiUnavailableException {
         return new SequencerReceiver();
     }
 
-
+    @Override
     protected boolean hasTransmitters() {
         return true;
     }
 
-
+    @Override
     protected Transmitter createTransmitter() throws MidiUnavailableException {
         return new SequencerTransmitter();
     }
 
-
     // interface AutoConnectSequencer
+    @Override
     public void setAutoConnect(Receiver autoConnectedReceiver) {
         this.autoConnect = (autoConnectedReceiver != null);
         this.autoConnectedReceiver = autoConnectedReceiver;
     }
 
-
-
-    // INNER CLASSES
-
     /**
      * An own class to distinguish the class name from
-     * the transmitter of other devices
+     * the transmitter of other devices.
      */
     private class SequencerTransmitter extends BasicTransmitter {
         private SequencerTransmitter() {
@@ -1031,9 +1036,9 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
     }
 
-
     final class SequencerReceiver extends AbstractReceiver {
 
+        @Override
         void implSend(MidiMessage message, long timeStamp) {
             if (recording) {
                 long tickPos = 0;
@@ -1080,7 +1085,6 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
     }
 
-
     private static class RealTimeSequencerInfo extends MidiDevice.Info {
 
         private static final String name = "Real Time Sequencer";
@@ -1092,7 +1096,6 @@ final class RealTimeSequencer extends AbstractMidiDevice
             super(name, vendor, description, version);
         }
     } // class Info
-
 
     private class ControllerListElement {
 
@@ -1202,7 +1205,6 @@ final class RealTimeSequencer extends AbstractMidiDevice
 
     } // class ControllerListElement
 
-
     static class RecordingTrack {
 
         private final Track track;
@@ -1243,7 +1245,6 @@ final class RealTimeSequencer extends AbstractMidiDevice
 
         }
     }
-
 
     final class PlayThread implements Runnable {
         private Thread thread;
@@ -1351,13 +1352,13 @@ final class RealTimeSequencer extends AbstractMidiDevice
             }
         }
 
-
         /**
          * Main process loop driving the media flow.
          *
          * Make sure to NOT synchronize on RealTimeSequencer
          * anywhere here (even implicit). That is a sure deadlock!
          */
+        @Override
         public void run() {
 
             while (!interrupted) {
@@ -1409,10 +1410,9 @@ final class RealTimeSequencer extends AbstractMidiDevice
         }
     }
 
-
     /**
      * class that does the actual dispatching of events,
-     * used to be in native in MMAPI
+     * used to be in native in MMAPI.
      */
     private class DataPump {
         private float currTempo;         // MPQ tempo
@@ -1433,7 +1433,6 @@ final class RealTimeSequencer extends AbstractMidiDevice
 
         //private sun.misc.Perf perf = sun.misc.Perf.getPerf();
         //private long perfFreq = perf.highResFrequency();
-
 
         DataPump() {
             init();
@@ -1516,8 +1515,6 @@ final class RealTimeSequencer extends AbstractMidiDevice
             trackDisabled = newDisabled;
         }
 
-
-
         synchronized void setSequence(Sequence seq) {
             if (seq == null) {
                 init();
@@ -1567,7 +1564,6 @@ final class RealTimeSequencer extends AbstractMidiDevice
             }
             if (DEBUG_PUMP) Printer.println("  noteOff: sent "+done+" messages.");
         }
-
 
         private boolean[] makeDisabledArray() {
             if (tracks == null) {
@@ -1656,11 +1652,10 @@ final class RealTimeSequencer extends AbstractMidiDevice
             if (DEBUG_PUMP) Printer.println("  sendNoteOffIfOn: sent "+done+" messages.");
         }
 
-
         /**
          * Runtime application of mute/solo:
          * if a track is muted that was previously playing, send
-         *    note off events for all currently playing notes
+         *    note off events for all currently playing notes.
          */
         private void applyDisabledTracks(boolean[] oldDisabled, boolean[] newDisabled) {
             byte[][] tempArray = null;
@@ -1781,8 +1776,9 @@ final class RealTimeSequencer extends AbstractMidiDevice
             if (DEBUG_PUMP) Printer.println("  chaseTrackEvents track "+trackNum+": sent "+numControllersSent+" controllers.");
         }
 
-
-        /** chase controllers and program for all tracks */
+        /**
+         * chase controllers and program for all tracks.
+         */
         synchronized void chaseEvents(long startTick, long endTick) {
             if (DEBUG_PUMP) Printer.println(">> chaseEvents from tick "+startTick+".."+(endTick-1));
             byte[][] tempArray = new byte[128][16];
@@ -1796,7 +1792,6 @@ final class RealTimeSequencer extends AbstractMidiDevice
             }
             if (DEBUG_PUMP) Printer.println("<< chaseEvents");
         }
-
 
         // playback related methods (pumping)
 
@@ -1899,7 +1894,6 @@ final class RealTimeSequencer extends AbstractMidiDevice
             }
             return changesPending;
         }
-
 
         /** the main pump method
          * @return true if end of sequence is reached
@@ -2078,7 +2072,5 @@ final class RealTimeSequencer extends AbstractMidiDevice
 
             return EOM;
         }
-
     } // class DataPump
-
 }

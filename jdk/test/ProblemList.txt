@@ -211,6 +211,8 @@ sun/rmi/rmic/newrmic/equivalence/run.sh                         8145980 generic-
 
 java/rmi/transport/dgcDeadLock/DGCDeadLock.java                 8029360 macosx-all
 
+sun/rmi/runtime/Log/6409194/NoConsoleOutput.java                8164124 windows-all
+
 ############################################################################
 
 # jdk_security

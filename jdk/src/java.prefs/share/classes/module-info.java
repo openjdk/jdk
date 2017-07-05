@@ -23,6 +23,9 @@
  * questions.
  */
 
+/**
+ * Defines the Preferences API.
+ */
 module java.prefs {
     requires java.xml;
 

@@ -23,6 +23,9 @@
  * questions.
  */
 
+/**
+ * Defines the Java Logging API.
+ */
 module java.logging {
     exports java.util.logging;
     provides jdk.internal.logger.DefaultLoggerFinder with

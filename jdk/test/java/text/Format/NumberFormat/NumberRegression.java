@@ -32,7 +32,7 @@
  * 4217661 4243011 4243108 4330377 4233840 4241880 4833877 8008577
  * @summary Regression tests for NumberFormat and associated classes
  * @library /java/text/testlib
- * @build IntlTest HexDumpReader
+ * @build IntlTest HexDumpReader TestUtils
  * @modules java.base/sun.util.resources
  * @compile -XDignore.symbol.file NumberRegression.java
  * @run main/othervm -Djava.locale.providers=COMPAT,SPI NumberRegression
@@ -100,6 +100,12 @@ public class NumberRegression extends IntlTest {
      */
 
     public void Test4088161 (){
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesAsciiDigits(locale)) {
+            logln("Skipping this test because locale is " + locale);
+            return;
+        }
+
         DecimalFormat df = new DecimalFormat();
         double d = 100;
         df.setMinimumFractionDigits(0);
@@ -114,8 +120,7 @@ public class NumberRegression extends IntlTest {
         FieldPosition fp2 = new FieldPosition(0);
         logln("maxFractionDigits = " + df.getMaximumFractionDigits());
         df.format(d, sBuf2, fp2);
-        String expected = Locale.getDefault().equals(new Locale("hi", "IN")) ?
-                              "\u0967\u0966\u0966" : "100";
+        String expected = "100";
         if (!sBuf2.toString().equals(expected))
             errln(" format(d) = '" + sBuf2 + "'");
     }

@@ -251,8 +251,6 @@ SUPPORT_HEADLESS:=@SUPPORT_HEADLESS@
 # Legacy support
 USE_NEW_HOTSPOT_BUILD:=@USE_NEW_HOTSPOT_BUILD@
 
-MACOSX_UNIVERSAL=@MACOSX_UNIVERSAL@
-
 # JDK_OUTPUTDIR specifies where a working jvm is built.
 # You can run $(JDK_OUTPUTDIR)/bin/java
 # Though the layout of the contents of $(JDK_OUTPUTDIR) is not

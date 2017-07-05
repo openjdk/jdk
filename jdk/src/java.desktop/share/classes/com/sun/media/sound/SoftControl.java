@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 /**
@@ -32,5 +33,5 @@ package com.sun.media.sound;
  */
 public interface SoftControl {
 
-    public double[] get(int instance, String name);
+    double[] get(int instance, String name);
 }

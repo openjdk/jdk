@@ -38,7 +38,7 @@ public abstract class CompoundControl extends Control {
     /**
      * The set of member controls.
      */
-    private Control[] controls;
+    private final Control[] controls;
 
     /**
      * Constructs a new compound control object with the given parameters.

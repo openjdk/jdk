@@ -43,7 +43,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
  */
 public final class WaveExtensibleFileReader extends SunFileReader {
 
-    private static class GUID {
+    private static final class GUID {
         private long i1;
         private int s1;
         private int s2;
@@ -222,7 +222,7 @@ public final class WaveExtensibleFileReader extends SunFileReader {
         if (!fmt_found || !data_found) {
             throw new UnsupportedAudioFileException();
         }
-        Map<String, Object> p = new HashMap<String, Object>();
+        Map<String, Object> p = new HashMap<>();
         String s_channelmask = decodeChannelMask(channelMask);
         if (s_channelmask != null)
             p.put("channelOrder", s_channelmask);

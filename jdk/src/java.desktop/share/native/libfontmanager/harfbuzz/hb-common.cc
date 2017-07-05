@@ -88,7 +88,7 @@ hb_tag_from_string (const char *str, int len)
 /**
  * hb_tag_to_string:
  * @tag:
- * @buf: (array fixed-size=4):
+ * @buf: (out caller-allocates) (array fixed-size=4) (element-type uint8_t):
  *
  *
  *
@@ -281,12 +281,15 @@ retry:
 
 /**
  * hb_language_from_string:
- * @str: (array length=len) (element-type uint8_t):
- * @len:
+ * @str: (array length=len) (element-type uint8_t): a string representing
+ *       ISO 639 language code
+ * @len: length of the @str, or -1 if it is %NULL-terminated.
  *
- *
+ * Converts @str representing an ISO 639 language code to the corresponding
+ * #hb_language_t.
  *
  * Return value: (transfer none):
+ * The #hb_language_t corresponding to the ISO 639 language code.
  *
  * Since: 0.9.2
  **/
@@ -314,11 +317,13 @@ hb_language_from_string (const char *str, int len)
 
 /**
  * hb_language_to_string:
- * @language:
+ * @language: an #hb_language_t to convert.
  *
- *
+ * See hb_language_from_string().
  *
  * Return value: (transfer none):
+ * A %NULL-terminated string representing the @language. Must not be freed by
+ * the caller.
  *
  * Since: 0.9.2
  **/
@@ -357,11 +362,12 @@ hb_language_get_default (void)
 
 /**
  * hb_script_from_iso15924_tag:
- * @tag:
+ * @tag: an #hb_tag_t representing an ISO 15924 tag.
  *
- *
+ * Converts an ISO 15924 script tag to a corresponding #hb_script_t.
  *
  * Return value:
+ * An #hb_script_t corresponding to the ISO 15924 tag.
  *
  * Since: 0.9.2
  **/
@@ -401,28 +407,33 @@ hb_script_from_iso15924_tag (hb_tag_t tag)
 
 /**
  * hb_script_from_string:
- * @s: (array length=len) (element-type uint8_t):
- * @len:
+ * @str: (array length=len) (element-type uint8_t): a string representing an
+ *       ISO 15924 tag.
+ * @len: length of the @str, or -1 if it is %NULL-terminated.
  *
- *
+ * Converts a string @str representing an ISO 15924 script tag to a
+ * corresponding #hb_script_t. Shorthand for hb_tag_from_string() then
+ * hb_script_from_iso15924_tag().
  *
  * Return value:
+ * An #hb_script_t corresponding to the ISO 15924 tag.
  *
  * Since: 0.9.2
  **/
 hb_script_t
-hb_script_from_string (const char *s, int len)
+hb_script_from_string (const char *str, int len)
 {
-  return hb_script_from_iso15924_tag (hb_tag_from_string (s, len));
+  return hb_script_from_iso15924_tag (hb_tag_from_string (str, len));
 }
 
 /**
  * hb_script_to_iso15924_tag:
- * @script:
+ * @script: an #hb_script_ to convert.
  *
- *
+ * See hb_script_from_iso15924_tag().
  *
  * Return value:
+ * An #hb_tag_t representing an ISO 15924 script tag.
  *
  * Since: 0.9.2
  **/
@@ -496,6 +507,9 @@ hb_script_get_horizontal_direction (hb_script_t script)
     /* Unicode-8.0 additions */
     case HB_SCRIPT_OLD_HUNGARIAN:
 
+    /* Unicode-9.0 additions */
+    case HB_SCRIPT_ADLAM:
+
       return HB_DIRECTION_RTL;
   }
 
@@ -521,7 +535,7 @@ hb_user_data_array_t::set (hb_user_data_key_t *key,
     }
   }
   hb_user_data_item_t item = {key, data, destroy};
-  bool ret = !!items.replace_or_insert (item, lock, replace);
+  bool ret = !!items.replace_or_insert (item, lock, (bool) replace);
 
   return ret;
 }
@@ -529,7 +543,7 @@ hb_user_data_array_t::set (hb_user_data_key_t *key,
 void *
 hb_user_data_array_t::get (hb_user_data_key_t *key)
 {
-  hb_user_data_item_t item = {NULL };
+  hb_user_data_item_t item = {NULL, NULL, NULL};
 
   return items.find (key, &item, lock) ? item.data : NULL;
 }

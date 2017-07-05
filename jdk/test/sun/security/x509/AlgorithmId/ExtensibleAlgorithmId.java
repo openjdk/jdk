@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4162868
+ * @bug 4162868 8130181
  * @modules java.base/sun.security.x509
  * @run main/othervm ExtensibleAlgorithmId
  * @summary Algorithm Name-to-OID mapping needs to be made extensible.
@@ -51,7 +51,7 @@ public class ExtensibleAlgorithmId {
 class TestProvider extends Provider {
 
     public TestProvider() {
-        super("Dummy", 1.0, "XYZ algorithm");
+        super("Dummy", "1.0", "XYZ algorithm");
 
         AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {

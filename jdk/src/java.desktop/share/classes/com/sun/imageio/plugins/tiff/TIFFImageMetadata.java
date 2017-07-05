@@ -132,7 +132,7 @@ public class TIFFImageMetadata extends IIOMetadata {
             if (tag == null) {
                 node = f.getAsNativeNode();
             } else if (tag.isIFDPointer() && f.hasDirectory()) {
-                TIFFIFD subIFD = (TIFFIFD)f.getDirectory();
+                TIFFIFD subIFD = TIFFIFD.getDirectoryAsIFD(f.getDirectory());
 
                 // Recurse
                 node = getIFDAsTree(subIFD, tag.getName(), tag.getNumber());
@@ -1465,8 +1465,14 @@ public class TIFFImageMetadata extends IIOMetadata {
                 String className = st.nextToken();
 
                 Object o = null;
+                Class<?> setClass = null;
                 try {
-                    Class<?> setClass = Class.forName(className);
+                    ClassLoader cl = TIFFImageMetadata.class.getClassLoader();
+                    setClass = Class.forName(className, false, cl);
+                    if (!TIFFTagSet.class.isAssignableFrom(setClass)) {
+                        fatal(node, "TagSets in IFD must be subset of"
+                                + " TIFFTagSet class");
+                    }
                     Method getInstanceMethod =
                         setClass.getMethod("getInstance", (Class[])null);
                     o = getInstanceMethod.invoke(null, (Object[])null);

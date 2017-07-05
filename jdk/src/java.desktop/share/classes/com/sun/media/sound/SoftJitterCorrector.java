@@ -22,13 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
-import javax.sound.sampled.AudioFormat;
-import javax.sound.sampled.AudioInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
 
 /**
  * A jitter corrector to be used with SoftAudioPusher.
@@ -124,6 +126,7 @@ public final class SoftJitterCorrector extends AudioInputStream {
 
             Runnable runnable = new Runnable() {
 
+                @Override
                 public void run() {
                     AudioFormat format = stream.getFormat();
                     int bufflen = buffers[0].length;
@@ -220,6 +223,7 @@ public final class SoftJitterCorrector extends AudioInputStream {
             thread.start();
         }
 
+        @Override
         public void close() throws IOException {
             synchronized (this) {
                 active = false;
@@ -232,6 +236,7 @@ public final class SoftJitterCorrector extends AudioInputStream {
             stream.close();
         }
 
+        @Override
         public int read() throws IOException {
             byte[] b = new byte[1];
             if (read(b) == -1)
@@ -244,6 +249,7 @@ public final class SoftJitterCorrector extends AudioInputStream {
             bbuffer_pos = 0;
         }
 
+        @Override
         public int read(byte[] b, int off, int len) {
             if (bbuffer == null)
                 fillBuffer();
@@ -263,6 +269,7 @@ public final class SoftJitterCorrector extends AudioInputStream {
             return len;
         }
 
+        @Override
         public int available() {
             return bbuffer.length - bbuffer_pos;
         }

@@ -168,7 +168,7 @@ abstract class KeyStore extends KeyStoreSpi {
             }
             certChain = chain;
         }
-    };
+    }
 
     /*
      * An X.509 certificate factory.
@@ -798,7 +798,8 @@ abstract class KeyStore extends KeyStoreSpi {
             }
 
             storeWithUniqueAlias(alias, new KeyEntry(alias,
-                    new RSAPrivateKey(hCryptProv, hCryptKey, keyLength),
+                    new RSAPrivateKey(new Key.NativeHandles(hCryptProv,
+                            hCryptKey), keyLength),
                     certChain));
         }
         catch (Throwable e)
@@ -854,7 +855,6 @@ abstract class KeyStore extends KeyStoreSpi {
      * Load keys and/or certificates from keystore into Collection.
      *
      * @param name Name of keystore.
-     * @param entries Collection of key/certificate.
      */
     private native void loadKeysOrCertificateChains(String name)
             throws KeyStoreException;
