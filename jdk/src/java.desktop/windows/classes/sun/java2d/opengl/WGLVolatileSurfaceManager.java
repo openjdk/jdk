@@ -43,10 +43,9 @@ import static sun.java2d.pipe.hw.AccelSurface.*;
 import sun.java2d.pipe.hw.ExtendedBufferCapabilities;
 import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.*;
 
-public class WGLVolatileSurfaceManager
-    extends VolatileSurfaceManager
-{
-    private boolean accelerationEnabled;
+public class WGLVolatileSurfaceManager extends VolatileSurfaceManager {
+
+    private final boolean accelerationEnabled;
 
     public WGLVolatileSurfaceManager(SunVolatileImage vImg, Object context) {
         super(vImg, context);
@@ -54,18 +53,13 @@ public class WGLVolatileSurfaceManager
         /*
          * We will attempt to accelerate this image only under the
          * following conditions:
-         *   - the image is opaque OR
-         *   - the image is translucent AND
-         *       - the GraphicsConfig supports the FBO extension OR
-         *       - the GraphicsConfig has a stored alpha channel
+         *   - the image is not bitmask AND the GraphicsConfig supports the FBO
+         *     extension
          */
         int transparency = vImg.getTransparency();
-        WGLGraphicsConfig gc = (WGLGraphicsConfig)vImg.getGraphicsConfig();
-        accelerationEnabled =
-            (transparency == Transparency.OPAQUE) ||
-            ((transparency == Transparency.TRANSLUCENT) &&
-             (gc.isCapPresent(CAPS_EXT_FBOBJECT) ||
-              gc.isCapPresent(CAPS_STORED_ALPHA)));
+        WGLGraphicsConfig gc = (WGLGraphicsConfig) vImg.getGraphicsConfig();
+        accelerationEnabled = gc.isCapPresent(CAPS_EXT_FBOBJECT)
+                && transparency != Transparency.BITMASK;
     }
 
     protected boolean isAccelerationEnabled() {
@@ -73,7 +67,7 @@ public class WGLVolatileSurfaceManager
     }
 
     /**
-     * Create a pbuffer-based SurfaceData object (or init the backbuffer
+     * Create a FBO-based SurfaceData object (or init the backbuffer
      * of an existing window if this is a double buffered GraphicsConfig).
      */
     protected SurfaceData initAcceleratedSurface() {
@@ -111,10 +105,9 @@ public class WGLVolatileSurfaceManager
                 ColorModel cm = gc.getColorModel(vImg.getTransparency());
                 int type = vImg.getForcedAccelSurfaceType();
                 // if acceleration type is forced (type != UNDEFINED) then
-                // use the forced type, otherwise choose one based on caps
+                // use the forced type, otherwise choose FBOBJECT
                 if (type == OGLSurfaceData.UNDEFINED) {
-                    type = gc.isCapPresent(CAPS_EXT_FBOBJECT) ?
-                        OGLSurfaceData.FBOBJECT : OGLSurfaceData.PBUFFER;
+                    type = OGLSurfaceData.FBOBJECT;
                 }
                 if (createVSynced) {
                     sData = WGLSurfaceData.createData(peer, vImg, type);

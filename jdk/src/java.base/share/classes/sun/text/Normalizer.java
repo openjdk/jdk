@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package sun.text;
 
 import sun.text.normalizer.NormalizerBase;
-import sun.text.normalizer.NormalizerImpl;
+import sun.text.normalizer.UCharacter;
 
 /**
  * This Normalizer is for Unicode 3.2 support for IDNA only.
@@ -93,6 +93,6 @@ public final class Normalizer {
      * @return combining class of the given character
      */
     public static final int getCombiningClass(int ch) {
-        return NormalizerImpl.getCombiningClass(ch);
+        return UCharacter.getCombiningClass(ch);
     }
 }

@@ -25,6 +25,8 @@
 
 package java.lang.reflect;
 
+import jdk.internal.HotSpotIntrinsicCandidate;
+
 /**
  * The {@code Array} class provides static methods to dynamically create and
  * access Java arrays.
@@ -119,6 +121,7 @@ class Array {
      * @exception IllegalArgumentException if the object argument is not
      * an array
      */
+    @HotSpotIntrinsicCandidate
     public static native int getLength(Object array)
         throws IllegalArgumentException;
 
@@ -477,6 +480,7 @@ class Array {
      * Private
      */
 
+    @HotSpotIntrinsicCandidate
     private static native Object newArray(Class<?> componentType, int length)
         throws NegativeArraySizeException;
 

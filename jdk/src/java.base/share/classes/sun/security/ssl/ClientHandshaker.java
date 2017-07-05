@@ -542,7 +542,7 @@ final class ClientHandshaker extends Handshaker {
                         0, clientVerifyData.length);
                 System.arraycopy(serverVerifyData, 0, verifyData,
                         clientVerifyData.length, serverVerifyData.length);
-                if (!Arrays.equals(verifyData,
+                if (!MessageDigest.isEqual(verifyData,
                                 serverHelloRI.getRenegotiatedConnection())) {
                     fatalSE(Alerts.alert_handshake_failure,
                         "Incorrect verify data in ServerHello " +
@@ -723,6 +723,14 @@ final class ClientHandshaker extends Handshaker {
             // NOTREACHED
         }
         ephemeralServerKey = mesg.getPublicKey();
+
+        // check constraints of RSA PublicKey
+        if (!algorithmConstraints.permits(
+            EnumSet.of(CryptoPrimitive.KEY_AGREEMENT), ephemeralServerKey)) {
+
+            throw new SSLHandshakeException("RSA ServerKeyExchange " +
+                    "does not comply to algorithm constraints");
+        }
     }
 
     /*
@@ -739,6 +747,9 @@ final class ClientHandshaker extends Handshaker {
         dh = new DHCrypt(mesg.getModulus(), mesg.getBase(),
                                             sslContext.getSecureRandom());
         serverDH = mesg.getServerPublicKey();
+
+        // check algorithm constraints
+        dh.checkConstraints(algorithmConstraints, serverDH);
     }
 
     private void serverKeyExchange(ECDH_ServerKeyExchange mesg)
@@ -749,6 +760,14 @@ final class ClientHandshaker extends Handshaker {
         ECPublicKey key = mesg.getPublicKey();
         ecdh = new ECDHCrypt(key.getParams(), sslContext.getSecureRandom());
         ephemeralServerKey = key;
+
+        // check constraints of EC PublicKey
+        if (!algorithmConstraints.permits(
+            EnumSet.of(CryptoPrimitive.KEY_AGREEMENT), ephemeralServerKey)) {
+
+            throw new SSLHandshakeException("ECDH ServerKeyExchange " +
+                    "does not comply to algorithm constraints");
+        }
     }
 
     /*

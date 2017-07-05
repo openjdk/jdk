@@ -35,7 +35,7 @@ import java.security.*;
 import java.util.*;
 
 import sun.awt.*;
-import sun.misc.InnocuousThread;
+import sun.misc.ManagedLocalsThread;
 import sun.print.*;
 import sun.awt.util.ThreadGroupUtils;
 
@@ -77,22 +77,13 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
                 shutdown();
                 waitForRunState(STATE_CLEANUP);
             };
-            Thread shutdown;
-            if (System.getSecurityManager() == null) {
-                shutdown = new Thread(ThreadGroupUtils.getRootThreadGroup(), shutdownRunnable);
-            } else {
-                shutdown = new InnocuousThread(shutdownRunnable);
-            }
+            Thread shutdown = new ManagedLocalsThread(
+                    ThreadGroupUtils.getRootThreadGroup(), shutdownRunnable);
             shutdown.setContextClassLoader(null);
             Runtime.getRuntime().addShutdownHook(shutdown);
-
             String name = "AWT-LW";
-            Thread toolkitThread;
-            if (System.getSecurityManager() == null) {
-                toolkitThread = new Thread(ThreadGroupUtils.getRootThreadGroup(), LWToolkit.this, name);
-            } else {
-                toolkitThread = new InnocuousThread(LWToolkit.this, name);
-            }
+            Thread toolkitThread = new ManagedLocalsThread(
+                    ThreadGroupUtils.getRootThreadGroup(), this, name);
             toolkitThread.setDaemon(true);
             toolkitThread.setPriority(Thread.NORM_PRIORITY + 1);
             toolkitThread.start();

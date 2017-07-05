@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,12 +213,7 @@ public class PrintServiceLookupProvider extends PrintServiceLookup
     public PrintServiceLookupProvider() {
         // start the printer listener thread
         if (pollServices) {
-            Thread thr;
-            if (System.getSecurityManager() == null) {
-                thr = new Thread(new PrinterChangeListener());
-            } else {
-                thr = new ManagedLocalsThread(new PrinterChangeListener());
-            }
+            Thread thr = new ManagedLocalsThread(new PrinterChangeListener());
             thr.setDaemon(true);
             thr.start();
             IPPPrintService.debug_println(debugPrefix+"polling turned on");

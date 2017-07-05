@@ -28,14 +28,12 @@
  * @compile SwingFocusTransitionTest.java
  * @run main/othervm SwingFocusTransitionTest
  */
-import sun.awt.SunToolkit;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 
 public class SwingFocusTransitionTest {
-    private static SunToolkit toolkit;
     private static Robot robot;
 
     private static JFrame frame;
@@ -43,7 +41,6 @@ public class SwingFocusTransitionTest {
     private static JButton button;
 
     public static void main(String[] args) throws Exception {
-        toolkit = (SunToolkit)Toolkit.getDefaultToolkit();
         robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -55,13 +52,13 @@ public class SwingFocusTransitionTest {
                 }
             });
 
-            toolkit.realSync();
+            robot.waitForIdle();
 
             checkFocusOwner(textField);
 
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
-            toolkit.realSync();
+            robot.waitForIdle();
 
             checkFocusOwner(button);
 
@@ -69,7 +66,7 @@ public class SwingFocusTransitionTest {
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_SHIFT);
-            toolkit.realSync();
+            robot.waitForIdle();
 
             checkFocusOwner(textField);
 
@@ -77,7 +74,7 @@ public class SwingFocusTransitionTest {
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_SHIFT);
-            toolkit.realSync();
+            robot.waitForIdle();
 
             checkFocusOwner(button);
         } finally {

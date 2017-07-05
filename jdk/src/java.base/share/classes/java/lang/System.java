@@ -42,6 +42,7 @@ import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 import sun.security.util.SecurityConstants;
 import sun.reflect.annotation.AnnotationType;
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * The <code>System</code> class contains several useful class fields
@@ -349,6 +350,7 @@ public final class System {
      *          the current time and midnight, January 1, 1970 UTC.
      * @see     java.util.Date
      */
+    @HotSpotIntrinsicCandidate
     public static native long currentTimeMillis();
 
     /**
@@ -392,6 +394,7 @@ public final class System {
      *         high-resolution time source, in nanoseconds
      * @since 1.5
      */
+    @HotSpotIntrinsicCandidate
     public static native long nanoTime();
 
     /**
@@ -486,6 +489,7 @@ public final class System {
      * @exception  NullPointerException if either <code>src</code> or
      *               <code>dest</code> is <code>null</code>.
      */
+    @HotSpotIntrinsicCandidate
     public static native void arraycopy(Object src,  int  srcPos,
                                         Object dest, int destPos,
                                         int length);
@@ -501,6 +505,7 @@ public final class System {
      * @return  the hashCode
      * @since   1.1
      */
+    @HotSpotIntrinsicCandidate
     public static native int identityHashCode(Object x);
 
     /**

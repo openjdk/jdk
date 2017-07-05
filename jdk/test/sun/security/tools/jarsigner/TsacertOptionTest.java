@@ -120,6 +120,9 @@ public class TsacertOptionTest {
             // specify -tsadigestalg option because
             // TSA server uses SHA-1 digest algorithm
              OutputAnalyzer analyzer = ProcessTools.executeCommand(JARSIGNER,
+                    "-J-Dhttp.proxyHost=",
+                    "-J-Dhttp.proxyPort=",
+                    "-J-Djava.net.useSystemProxies=",
                     "-verbose",
                     "-keystore", KEYSTORE,
                     "-storepass", PASSWORD,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,8 +134,10 @@ void AbstractInterpreter::print() {
   tty->print_cr("wasted space     = %6dK bytes", (int)_code->available_space()/1024);
   tty->cr();
   tty->print_cr("# of codelets    = %6d"      , _code->number_of_stubs());
-  tty->print_cr("avg codelet size = %6d bytes", _code->used_space() / _code->number_of_stubs());
-  tty->cr();
+  if (_code->number_of_stubs() != 0) {
+    tty->print_cr("avg codelet size = %6d bytes", _code->used_space() / _code->number_of_stubs());
+    tty->cr();
+  }
   _code->print();
   tty->print_cr("----------------------------------------------------------------------");
   tty->cr();

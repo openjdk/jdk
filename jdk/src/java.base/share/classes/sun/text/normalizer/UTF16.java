@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
+/**
  *******************************************************************************
- * (C) Copyright IBM Corp. and others, 1996-2009 - All Rights Reserved         *
- *                                                                             *
- * The original version of this source code and documentation is copyrighted   *
- * and owned by IBM, These materials are provided under terms of a License     *
- * Agreement between IBM and Sun. This technology is protected by multiple     *
- * US and International patents. This notice and attribution to IBM may not    *
- * to removed.                                                                 *
+ * Copyright (C) 1996-2014, International Business Machines Corporation and
+ * others. All Rights Reserved.
  *******************************************************************************
  */
 
@@ -57,21 +52,21 @@ package sun.text.normalizer;
  *
  * // iteration forwards: Changes for UTF-32
  * int ch;
- * for (int i = 0; i < s.length(); i+=UTF16.getCharCount(ch)) {
- *     ch = UTF16.charAt(s,i);
+ * for (int i = 0; i < s.length(); i += UTF16.getCharCount(ch)) {
+ *     ch = UTF16.charAt(s, i);
  *     doSomethingWith(ch);
  * }
  *
  * // iteration backwards: Original
- * for (int i = s.length() -1; i >= 0; --i) {
+ * for (int i = s.length() - 1; i >= 0; --i) {
  *     char ch = s.charAt(i);
  *     doSomethingWith(ch);
  * }
  *
  * // iteration backwards: Changes for UTF-32
  * int ch;
- * for (int i = s.length() -1; i > 0; i-=UTF16.getCharCount(ch)) {
- *     ch = UTF16.charAt(s,i);
+ * for (int i = s.length() - 1; i > 0; i -= UTF16.getCharCount(ch)) {
+ *     ch = UTF16.charAt(s, i);
  *     doSomethingWith(ch);
  * }
  * }</pre>
@@ -93,7 +88,7 @@ package sun.text.normalizer;
  *   back if and only if <code>bounds(string, offset16) != TRAIL</code>.
  *   </li>
  *   <li>
- *    <strong>Exceptions:</strong> The error checking will throw an exception
+ *   <strong>Exceptions:</strong> The error checking will throw an exception
  *   if indices are out of bounds. Other than that, all methods will
  *   behave reasonably, even if unmatched surrogates or out-of-bounds UTF-32
  *   values are present. <code>UCharacter.isLegal()</code> can be used to check
@@ -106,10 +101,10 @@ package sun.text.normalizer;
  *   practice as missing glyphs (see the Unicode Standard Section 5.4, 5.5).
  *   </li>
  *   <li>
- *     <strong>Optimization:</strong> The method implementations may need
- *     optimization if the compiler doesn't fold static final methods. Since
- *     surrogate pairs will form an exceeding small percentage of all the text
- *     in the world, the singleton case should always be optimized for.
+ *   <strong>Optimization:</strong> The method implementations may need
+ *   optimization if the compiler doesn't fold static final methods. Since
+ *   surrogate pairs will form an exceeding small percentage of all the text
+ *   in the world, the singleton case should always be optimized for.
  *   </li>
  * </ul>
  * @author Mark Davis, with help from Markus Scherer
@@ -135,7 +130,7 @@ public final class UTF16
      * The minimum value for Supplementary code points
      * @stable ICU 2.1
      */
-    public static final int SUPPLEMENTARY_MIN_VALUE  = 0x10000;
+    public static final int SUPPLEMENTARY_MIN_VALUE = 0x10000;
     /**
      * Lead surrogate minimum value
      * @stable ICU 2.1
@@ -161,7 +156,41 @@ public final class UTF16
      * @stable ICU 2.1
      */
     public static final int SURROGATE_MIN_VALUE = LEAD_SURROGATE_MIN_VALUE;
+    /**
+     * Lead surrogate bitmask
+     */
+    private static final int LEAD_SURROGATE_BITMASK = 0xFFFFFC00;
+    /**
+     * Trail surrogate bitmask
+     */
+    private static final int TRAIL_SURROGATE_BITMASK = 0xFFFFFC00;
+    /**
+     * Surrogate bitmask
+     */
+    private static final int SURROGATE_BITMASK = 0xFFFFF800;
+    /**
+     * Lead surrogate bits
+     */
+    private static final int LEAD_SURROGATE_BITS = 0xD800;
+    /**
+     * Trail surrogate bits
+     */
+    private static final int TRAIL_SURROGATE_BITS = 0xDC00;
+    /**
+     * Surrogate bits
+     */
+    private static final int SURROGATE_BITS = 0xD800;
 
+    // constructor --------------------------------------------------------
+
+    // /CLOVER:OFF
+    /**
+     * Prevent instance from being created.
+     */
+    private UTF16() {
+    }
+
+    // /CLOVER:ON
     // public method ------------------------------------------------------
 
     /**
@@ -222,7 +251,7 @@ public final class UTF16
     }
 
     /**
-     * Extract a single UTF-32 value from a substring.
+     * Extract a single UTF-32 value from a string.
      * Used when iterating forwards or backwards (with
      * <code>UTF16.getCharCount()</code>, as well as random access. If a
      * validity check is required, use
@@ -232,19 +261,72 @@ public final class UTF16
      * character will be returned. If a complete supplementary character is
      * not found the incomplete character will be returned
      * @param source array of UTF-16 chars
-     * @param start offset to substring in the source array for analyzing
-     * @param limit offset to substring in the source array for analyzing
-     * @param offset16 UTF-16 offset relative to start
+     * @param offset16 UTF-16 offset to the start of the character.
      * @return UTF-32 value for the UTF-32 value that contains the char at
      *         offset16. The boundaries of that codepoint are the same as in
      *         <code>bounds32()</code>.
-     * @exception IndexOutOfBoundsException thrown if offset16 is not within
-     *            the range of start and limit.
+     * @exception IndexOutOfBoundsException thrown if offset16 is out of bounds.
      * @stable ICU 2.1
      */
-    public static int charAt(char source[], int start, int limit,
-                             int offset16)
-    {
+    public static int charAt(CharSequence source, int offset16) {
+        char single = source.charAt(offset16);
+        if (single < UTF16.LEAD_SURROGATE_MIN_VALUE) {
+            return single;
+        }
+        return _charAt(source, offset16, single);
+    }
+
+    private static int _charAt(CharSequence source, int offset16, char single) {
+        if (single > UTF16.TRAIL_SURROGATE_MAX_VALUE) {
+            return single;
+        }
+
+        // Convert the UTF-16 surrogate pair if necessary.
+        // For simplicity in usage, and because the frequency of pairs is
+        // low, look both directions.
+
+        if (single <= UTF16.LEAD_SURROGATE_MAX_VALUE) {
+            ++offset16;
+            if (source.length() != offset16) {
+                char trail = source.charAt(offset16);
+                if (trail >= UTF16.TRAIL_SURROGATE_MIN_VALUE
+                        && trail <= UTF16.TRAIL_SURROGATE_MAX_VALUE) {
+                    return UCharacterProperty.getRawSupplementary(single, trail);
+                }
+            }
+        } else {
+            --offset16;
+            if (offset16 >= 0) {
+                // single is a trail surrogate so
+                char lead = source.charAt(offset16);
+                if (lead >= UTF16.LEAD_SURROGATE_MIN_VALUE
+                        && lead <= UTF16.LEAD_SURROGATE_MAX_VALUE) {
+                    return UCharacterProperty.getRawSupplementary(lead, single);
+                }
+            }
+        }
+        return single; // return unmatched surrogate
+    }
+
+    /**
+     * Extract a single UTF-32 value from a substring. Used when iterating forwards or backwards
+     * (with <code>UTF16.getCharCount()</code>, as well as random access. If a validity check is
+     * required, use <code><a href="../lang/UCharacter.html#isLegal(char)">UCharacter.isLegal()
+     * </a></code>
+     * on the return value. If the char retrieved is part of a surrogate pair, its supplementary
+     * character will be returned. If a complete supplementary character is not found the incomplete
+     * character will be returned
+     *
+     * @param source Array of UTF-16 chars
+     * @param start Offset to substring in the source array for analyzing
+     * @param limit Offset to substring in the source array for analyzing
+     * @param offset16 UTF-16 offset relative to start
+     * @return UTF-32 value for the UTF-32 value that contains the char at offset16. The boundaries
+     *         of that codepoint are the same as in <code>bounds32()</code>.
+     * @exception IndexOutOfBoundsException Thrown if offset16 is not within the range of start and limit.
+     * @stable ICU 2.1
+     */
+    public static int charAt(char source[], int start, int limit, int offset16) {
         offset16 += start;
         if (offset16 < start || offset16 >= limit) {
             throw new ArrayIndexOutOfBoundsException(offset16);
@@ -259,7 +341,7 @@ public final class UTF16
         // For simplicity in usage, and because the frequency of pairs is
         // low, look both directions.
         if (single <= LEAD_SURROGATE_MAX_VALUE) {
-            offset16 ++;
+            offset16++;
             if (offset16 >= limit) {
                 return single;
             }
@@ -272,7 +354,7 @@ public final class UTF16
             if (offset16 == start) {
                 return single;
             }
-            offset16 --;
+            offset16--;
             char lead = source[offset16];
             if (isLeadSurrogate(lead))
                 return UCharacterProperty.getRawSupplementary(lead, single);
@@ -300,37 +382,34 @@ public final class UTF16
     /**
      * Determines whether the code value is a surrogate.
      * @param char16 the input character.
-     * @return true iff the input character is a surrogate.
+     * @return true if the input character is a surrogate.
      * @stable ICU 2.1
      */
     public static boolean isSurrogate(char char16)
     {
-        return LEAD_SURROGATE_MIN_VALUE <= char16 &&
-            char16 <= TRAIL_SURROGATE_MAX_VALUE;
+        return (char16 & SURROGATE_BITMASK) == SURROGATE_BITS;
     }
 
     /**
      * Determines whether the character is a trail surrogate.
      * @param char16 the input character.
-     * @return true iff the input character is a trail surrogate.
+     * @return true if the input character is a trail surrogate.
      * @stable ICU 2.1
      */
     public static boolean isTrailSurrogate(char char16)
     {
-        return (TRAIL_SURROGATE_MIN_VALUE <= char16 &&
-                char16 <= TRAIL_SURROGATE_MAX_VALUE);
+        return (char16 & TRAIL_SURROGATE_BITMASK) == TRAIL_SURROGATE_BITS;
     }
 
     /**
      * Determines whether the character is a lead surrogate.
      * @param char16 the input character.
-     * @return true iff the input character is a lead surrogate
+     * @return true if the input character is a lead surrogate
      * @stable ICU 2.1
      */
     public static boolean isLeadSurrogate(char char16)
     {
-        return LEAD_SURROGATE_MIN_VALUE <= char16 &&
-            char16 <= LEAD_SURROGATE_MAX_VALUE;
+        return (char16 & LEAD_SURROGATE_BITMASK) == LEAD_SURROGATE_BITS;
     }
 
     /**
@@ -359,7 +438,7 @@ public final class UTF16
      * <code><a href="../lang/UCharacter.html#isLegal(char)">isLegal()</a></code>
      * on char32 before calling.
      * @param char32 the input character.
-     * @return the trail surrogate if the getCharCount(ch) is 2; <br>otherwise
+     * @return the trail surrogate if the getCharCount(ch) is 2; <br> otherwise
      *         the character itself
      * @stable ICU 2.1
      */
@@ -370,7 +449,7 @@ public final class UTF16
                           (char32 & TRAIL_SURROGATE_MASK_));
         }
 
-        return (char)char32;
+        return (char) char32;
     }
 
     /**
@@ -415,16 +494,15 @@ public final class UTF16
         // Write the UTF-16 values
         if (char32 >= SUPPLEMENTARY_MIN_VALUE)
             {
-                target.append(getLeadSurrogate(char32));
-                target.append(getTrailSurrogate(char32));
-            }
+            target.append(getLeadSurrogate(char32));
+            target.append(getTrailSurrogate(char32));
+        }
         else {
-            target.append((char)char32);
+            target.append((char) char32);
         }
         return target;
     }
 
-    //// for StringPrep
     /**
      * Shifts offset16 by the argument number of codepoints within a subarray.
      * @param source char array
@@ -441,20 +519,20 @@ public final class UTF16
     public static int moveCodePointOffset(char source[], int start, int limit,
                                           int offset16, int shift32)
     {
-        int         size = source.length;
-        int         count;
-        char        ch;
-        int         result = offset16 + start;
-        if (start<0 || limit<start) {
+        int size = source.length;
+        int count;
+        char ch;
+        int result = offset16 + start;
+        if (start < 0 || limit < start) {
             throw new StringIndexOutOfBoundsException(start);
         }
-        if (limit>size) {
+        if (limit > size) {
             throw new StringIndexOutOfBoundsException(limit);
         }
-        if (offset16<0 || result>limit) {
+        if (offset16 < 0 || result > limit) {
             throw new StringIndexOutOfBoundsException(offset16);
         }
-        if (shift32 > 0 ) {
+        if (shift32 > 0) {
             if (shift32 + result > size) {
                 throw new StringIndexOutOfBoundsException(result);
             }
@@ -462,29 +540,29 @@ public final class UTF16
             while (result < limit && count > 0)
             {
                 ch = source[result];
-                if (isLeadSurrogate(ch) && (result+1 < limit) &&
-                        isTrailSurrogate(source[result+1])) {
-                    result ++;
+                if (isLeadSurrogate(ch) && (result + 1 < limit) &&
+                    isTrailSurrogate(source[result + 1])) {
+                    result++;
                 }
-                count --;
-                result ++;
+                count--;
+                result++;
             }
         } else {
             if (result + shift32 < start) {
                 throw new StringIndexOutOfBoundsException(result);
             }
-            for (count=-shift32; count>0; count--) {
+            for (count = -shift32; count > 0; count--) {
                 result--;
-                if (result<start) {
+                if (result < start) {
                     break;
                 }
                 ch = source[result];
-                if (isTrailSurrogate(ch) && result>start && isLeadSurrogate(source[result-1])) {
+                if (isTrailSurrogate(ch) && result > start && isLeadSurrogate(source[result - 1])) {
                     result--;
                 }
             }
         }
-        if (count != 0)  {
+        if (count != 0) {
             throw new StringIndexOutOfBoundsException(shift32);
         }
         result -= start;
@@ -501,7 +579,7 @@ public final class UTF16
     /**
      * Mask to retrieve the significant value from a trail surrogate.
      */
-    private static final int TRAIL_SURROGATE_MASK_     = 0x3FF;
+    private static final int TRAIL_SURROGATE_MASK_ = 0x3FF;
 
     /**
      * Value that all lead surrogate starts with
@@ -509,7 +587,7 @@ public final class UTF16
     private static final int LEAD_SURROGATE_OFFSET_ =
         LEAD_SURROGATE_MIN_VALUE -
         (SUPPLEMENTARY_MIN_VALUE
-         >> LEAD_SURROGATE_SHIFT_);
+        >> LEAD_SURROGATE_SHIFT_);
 
     // private methods ------------------------------------------------------
 
@@ -527,7 +605,7 @@ public final class UTF16
     private static String toString(int ch)
     {
         if (ch < SUPPLEMENTARY_MIN_VALUE) {
-            return String.valueOf((char)ch);
+            return String.valueOf((char) ch);
         }
 
         StringBuilder result = new StringBuilder();

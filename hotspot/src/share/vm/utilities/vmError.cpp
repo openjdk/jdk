@@ -411,9 +411,10 @@ void VMError::report(outputStream* st) {
            }
            st->cr();
          } else {
-           if (_message != NULL)
+           if (_message != NULL) {
              st->print("# ");
              st->print_cr("%s", _message);
+           }
          }
          // In error file give some solutions
          if (_verbose) {

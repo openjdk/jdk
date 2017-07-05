@@ -210,7 +210,6 @@ public class TreeTest extends ProcessUtil {
             printf(" p1: %s%n", p1.getPid());
 
             List<ProcessHandle> subprocesses = getChildren(self);
-            subprocesses.forEach(ProcessUtil::printProcess);
             long count = subprocesses.size();
             Assert.assertEquals(count, 1, "Wrong number of spawned children");
 
@@ -220,8 +219,6 @@ public class TreeTest extends ProcessUtil {
 
             // Wait for the new processes and save the list
             subprocesses = waitForAllChildren(p1Handle, newChildren);
-            printDeep(p1Handle, "allChildren");
-
             Assert.assertEquals(subprocesses.size(), newChildren, "Wrong number of children");
 
             p1.children().filter(TreeTest::isNotWindowsConsole)
@@ -230,25 +227,17 @@ public class TreeTest extends ProcessUtil {
             self.children().filter(TreeTest::isNotWindowsConsole)
                     .forEach(ProcessHandle::destroyForcibly);
 
-            do {
-                Thread.sleep(500L);      // It will happen but don't burn the cpu
-                Object[] children = self.allChildren()
-                        .filter(TreeTest::isNotWindowsConsole)
-                        .toArray();
-                count = children.length;
-                printf(" waiting for subprocesses of %s to terminate," +
-                                " expected: 0, current: %d, children: %s%n", self, count,
-                        Arrays.toString(children));
-                printDeep(self, "");
-            } while (count > 0);
-
-            boolean ex1 = p1.waitFor(5, TimeUnit.SECONDS);
-            Assert.assertTrue(ex1, "Subprocess should have exited: " + p1);
-
             for (ProcessHandle p : subprocesses) {
-                Assert.assertFalse(p.isAlive(), "Destroyed process.isAlive: " + p +
-                        ", parent: " + p.parent() +
-                        ", info: " + p.info().toString());
+                while (p.isAlive()) {
+                    Thread.sleep(100L);  // It will happen but don't burn the cpu
+                }
+            }
+
+            List<ProcessHandle> remaining = getAllChildren(self);
+            remaining.retainAll(subprocesses);
+            if (remaining.size() > 0) {
+                remaining.forEach(p -> printProcess(p, "     remaining: "));
+                Assert.fail("Subprocess(es) should have exited");
             }
 
         } catch (IOException ioe) {

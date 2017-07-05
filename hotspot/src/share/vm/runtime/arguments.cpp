@@ -27,6 +27,7 @@
 #include "classfile/javaAssertions.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
+#include "code/codeCacheExtensions.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
@@ -275,6 +276,7 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "AdaptiveSizePausePolicy",       JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "ParallelGCRetainPLAB",          JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "ThreadSafetyMargin",            JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "LazyBootClassLoader",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -835,16 +837,19 @@ bool Arguments::process_argument(const char* arg,
     arg_len = equal_sign - argname;
   }
 
-  // Construct a string which consists only of the argument name without '+', '-', or '='.
-  char stripped_argname[256];
-  strncpy(stripped_argname, argname, arg_len);
-  stripped_argname[arg_len] = '\0'; //strncpy doesn't null terminate.
+  // Only make the obsolete check for valid arguments.
+  if (arg_len <= BUFLEN) {
+    // Construct a string which consists only of the argument name without '+', '-', or '='.
+    char stripped_argname[BUFLEN+1];
+    strncpy(stripped_argname, argname, arg_len);
+    stripped_argname[arg_len] = '\0';  // strncpy may not null terminate.
 
-  if (is_newly_obsolete(stripped_argname, &since)) {
-    char version[256];
-    since.to_string(version, sizeof(version));
-    warning("ignoring option %s; support was removed in %s", stripped_argname, version);
-    return true;
+    if (is_newly_obsolete(stripped_argname, &since)) {
+      char version[256];
+      since.to_string(version, sizeof(version));
+      warning("ignoring option %s; support was removed in %s", stripped_argname, version);
+      return true;
+    }
   }
 
   // For locked flags, report a custom error message if available.
@@ -1582,6 +1587,11 @@ void Arguments::set_ergonomics_flags() {
   // in vm_version initialization code.
 #endif // _LP64
 #endif // !ZERO
+
+  // Set up runtime image flags.
+  set_runtime_image_flags();
+
+  CodeCacheExtensions::set_ergonomics_flags();
 }
 
 void Arguments::set_parallel_gc_flags() {
@@ -1835,6 +1845,16 @@ void Arguments::set_heap_size() {
       }
     }
   }
+}
+
+  // Set up runtime image flags
+void Arguments::set_runtime_image_flags() {
+#ifdef _LP64
+  // Memory map image file by default on 64 bit machines.
+  if (FLAG_IS_DEFAULT(MemoryMapImage)) {
+    FLAG_SET_ERGO(bool, MemoryMapImage, true);
+  }
+#endif
 }
 
 // This must be called after ergonomics.
@@ -2558,9 +2578,15 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
                        round_to((int)long_ThreadStackSize, K) / K) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
-    // -Xoss
-    } else if (match_option(option, "-Xoss", &tail)) {
-          // HotSpot does not have separate native and Java stacks, ignore silently for compatibility
+    // -Xoss, -Xsqnopause, -Xoptimize, -Xboundthreads
+    } else if (match_option(option, "-Xoss", &tail) ||
+               match_option(option, "-Xsqnopause") ||
+               match_option(option, "-Xoptimize") ||
+               match_option(option, "-Xboundthreads")) {
+      // All these options are deprecated in JDK 9 and will be removed in a future release
+      char version[256];
+      JDK_Version::jdk(9).to_string(version, sizeof(version));
+      warning("ignoring option %s; support was removed in %s", option->optionString, version);
     } else if (match_option(option, "-XX:CodeCacheExpansionSize=", &tail)) {
       julong long_CodeCacheExpansionSize = 0;
       ArgsRange errcode = parse_memory_size(tail, &long_CodeCacheExpansionSize, os::vm_page_size());
@@ -2633,9 +2659,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // -native
     } else if (match_option(option, "-native")) {
           // HotSpot always uses native threads, ignore silently for compatibility
-    // -Xsqnopause
-    } else if (match_option(option, "-Xsqnopause")) {
-          // EVM option, ignore silently for compatibility
     // -Xrs
     } else if (match_option(option, "-Xrs")) {
           // Classic/EVM option, new functionality
@@ -2647,9 +2670,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       if (FLAG_SET_CMDLINE(bool, UseAltSigs, true) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
-    // -Xoptimize
-    } else if (match_option(option, "-Xoptimize")) {
-          // EVM option, ignore silently for compatibility
     // -Xprof
     } else if (match_option(option, "-Xprof")) {
 #if INCLUDE_FPROF
@@ -2795,8 +2815,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // -Xnoagent
     } else if (match_option(option, "-Xnoagent")) {
       // For compatibility with classic. HotSpot refuses to load the old style agent.dll.
-    } else if (match_option(option, "-Xboundthreads")) {
-      // Ignore silently for compatibility
     } else if (match_option(option, "-Xloggc:", &tail)) {
       // Redirect GC output to the file. -Xloggc:<filename>
       // ostream_init_log(), when called will use this filename

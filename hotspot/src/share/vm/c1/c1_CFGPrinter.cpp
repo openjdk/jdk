@@ -161,7 +161,7 @@ void CFGPrinterOutput::print_compilation() {
 
   print("name \"%s\"", method_name(_compilation->method(), true));
   print("method \"%s\"", method_name(_compilation->method()));
-  print("date "INT64_FORMAT, (int64_t) os::javaTimeMillis());
+  print("date " INT64_FORMAT, (int64_t) os::javaTimeMillis());
 
   print_end("compilation");
 }

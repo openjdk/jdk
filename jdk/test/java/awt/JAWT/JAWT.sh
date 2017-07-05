@@ -129,7 +129,7 @@ case `uname -m` in
 esac
 
 echo "OS-ARCH is" ${SYST}-${ARCH}
-${TESTJAVA}${FS}jre${FS}bin${FS}java -fullversion 2>&1
+${TESTJAVA}${FS}bin${FS}java -fullversion 2>&1
 
 which ${MAKE} >${NULL} 2>&1
 if [ "$?" -ne '0' ]
@@ -156,7 +156,7 @@ esac
 
 cp ${TESTSRC}${FS}${MAKEFILE} .
 
-JAVA=${TESTJAVA}${FS}jre${FS}bin${FS}java
+JAVA=${TESTJAVA}${FS}bin${FS}java
 JAVAC=${TESTJAVA}${FS}bin${FS}javac
 JAVAH=${TESTJAVA}${FS}bin${FS}javah
 
