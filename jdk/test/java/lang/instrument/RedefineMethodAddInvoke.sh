@@ -26,7 +26,6 @@
 # @summary Reflexive invocation of newly added methods broken.
 # @author Daniel D. Daugherty
 #
-# @modules java.instrument
 # @run shell MakeJAR3.sh RedefineMethodAddInvokeAgent 'Can-Redefine-Classes: true'
 # @run build RedefineMethodAddInvokeApp
 # @run shell RedefineMethodAddInvoke.sh

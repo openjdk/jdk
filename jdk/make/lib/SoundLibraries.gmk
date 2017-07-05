@@ -126,12 +126,12 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjsound/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_macosx := -framework CoreAudio -framework CoreFoundation \
+    LIBS_unix := -ljava -ljvm, \
+    LIBS_solaris := -lc, \
+    LIBS_macosx := -framework CoreAudio -framework CoreFoundation \
         -framework CoreServices -framework AudioUnit $(LIBCXX) \
         -framework CoreMIDI -framework AudioToolbox, \
-    LDFLAGS_windows := $(WIN_JAVA_LIB) advapi32.lib winmm.lib, \
-    LDFLAGS_SUFFIX_unix := -ljava -ljvm, \
-    LDFLAGS_SUFFIX_solaris := -lc, \
+    LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib winmm.lib, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=jsound.dll" \
@@ -171,7 +171,7 @@ ifneq ($(filter jsoundalsa, $(EXTRA_SOUND_JNI_LIBS)), )
       MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjsoundalsa/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_SUFFIX := $(ALSA_LIBS) -ljava -ljvm, \
+      LIBS := $(ALSA_LIBS) -ljava -ljvm, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjsoundalsa, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
@@ -197,7 +197,7 @@ ifneq ($(filter jsoundds, $(EXTRA_SOUND_JNI_LIBS)), )
           -DUSE_DAUDIO=TRUE, \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_SUFFIX := $(LDFLAGS_JDKLIB_SUFFIX) dsound.lib winmm.lib user32.lib ole32.lib, \
+      LIBS := $(JDKLIB_LIBS) dsound.lib winmm.lib user32.lib ole32.lib, \
       VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
       RC_FLAGS := $(RC_FLAGS) \
           -D "JDK_FNAME=jsoundds.dll" \

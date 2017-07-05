@@ -27,7 +27,6 @@
 # @author Daniel D. Daugherty
 #
 # @key intermittent
-# @modules java.instrument
 # @run build ManifestTestApp ExampleForBootClassPath
 # @run shell/timeout=900 ManifestTest.sh
 #
