@@ -313,7 +313,7 @@ loop:
         }
 
         // Construct new object literal.
-        return new ObjectNode(source, objectToken, finish, null, elements);
+        return new ObjectNode(source, objectToken, finish, elements);
     }
 
     /**

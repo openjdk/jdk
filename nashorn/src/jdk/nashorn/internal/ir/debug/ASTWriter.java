@@ -27,6 +27,7 @@ package jdk.nashorn.internal.ir.debug;
 
 import java.lang.reflect.Field;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
@@ -36,10 +37,10 @@ import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.annotations.Ignore;
-import jdk.nashorn.internal.ir.annotations.ParentNode;
 import jdk.nashorn.internal.ir.annotations.Reference;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.Debug;
 
 /**
  * AST-as-text visualizer. Sometimes you want tree form and not source
@@ -47,7 +48,6 @@ import jdk.nashorn.internal.runtime.Context;
  *
  * see the flags --print-ast and --print-ast-lower
  */
-
 public final class ASTWriter {
     /** Root node from which to start the traversal */
     private final Node root;
@@ -71,12 +71,22 @@ public final class ASTWriter {
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder();
-        printAST(sb, null, "root", root, 0);
+        printAST(sb, null, null, "root", root, 0);
         return sb.toString();
     }
 
+    /**
+     * Return the visited nodes in an ordered list
+     * @return the list of nodes in order
+     */
+    public Node[] toArray() {
+        final List<Node> preorder = new ArrayList<>();
+        printAST(new StringBuilder(), preorder, null, "root", root, 0);
+        return preorder.toArray(new Node[preorder.size()]);
+    }
+
     @SuppressWarnings("unchecked")
-    private void printAST(final StringBuilder sb, final Field field, final String name, final Node node, final int indent) {
+    private void printAST(final StringBuilder sb, final List<Node> preorder, final Field field, final String name, final Node node, final int indent) {
         ASTWriter.indent(sb, indent);
         if (node == null) {
             sb.append("[Object ");
@@ -85,13 +95,23 @@ public final class ASTWriter {
             return;
         }
 
+        if (preorder != null) {
+            preorder.add(node);
+        }
+
         final boolean isReference = field != null && field.getAnnotation(Reference.class) != null;
 
         Class<?> clazz = node.getClass();
         String   type  = clazz.getName();
 
         type = type.substring(type.lastIndexOf('.') + 1, type.length());
-//        type += "@" + Debug.id(node) + "#" + node.getSymbol();
+        if (isReference) {
+            type = "ref: " + type;
+        }
+        type += "@" + Debug.id(node);
+        if (node.getSymbol() != null) {
+            type += "#" + node.getSymbol();
+        }
 
         final List<Field> children = new LinkedList<>();
 
@@ -153,9 +173,7 @@ public final class ASTWriter {
                 append('\n');
 
             for (final Field child : children) {
-                if (child.getAnnotation(ParentNode.class) != null) {
-                    continue;
-                } else if (child.getAnnotation(Ignore.class) != null) {
+                if (child.getAnnotation(Ignore.class) != null) {
                     continue;
                 }
 
@@ -168,7 +186,7 @@ public final class ASTWriter {
                 }
 
                 if (value instanceof Node) {
-                    printAST(sb, child, child.getName(), (Node)value, indent + 1);
+                    printAST(sb, preorder, child, child.getName(), (Node)value, indent + 1);
                 } else if (value instanceof Collection) {
                     int pos = 0;
                     ASTWriter.indent(sb, indent + 1);
@@ -180,7 +198,7 @@ public final class ASTWriter {
                         append('\n');
 
                     for (final Node member : (Collection<Node>)value) {
-                        printAST(sb, child, child.getName() + "[" + pos++ + "]", member, indent + 2);
+                        printAST(sb, preorder, child, child.getName() + "[" + pos++ + "]", member, indent + 2);
                     }
                 }
             }

@@ -13,6 +13,17 @@ properties described herein are subject to change without notice.
 This documentation of the system property flags assume that the
 default value of the flag is false, unless otherwise specified.
 
+SYSTEM PROPERTY: -Dnashorn.args=<string>
+
+This property takes as its value a space separated list of Nashorn
+command line options that should be passed to Nashorn. This might be useful 
+in environments where it is hard to tell how a nashorn.jar is launched.
+
+Example:
+
+> java -Dnashorn.args="--lazy-complation --log=compiler" large-java-app-with-nashorn.jar 
+> ant -Dnashorn.args="--log=codegen" antjob
+
 SYSTEM PROPERTY: -Dnashorn.unstable.relink.threshold=x
 
 This property controls how many call site misses are allowed before a 

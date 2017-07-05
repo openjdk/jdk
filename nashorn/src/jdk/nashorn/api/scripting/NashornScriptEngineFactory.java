@@ -147,6 +147,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
      * @return newly created script engine.
      */
     public ScriptEngine getScriptEngine(final ClassLoader appLoader) {
+        checkConfigPermission();
         return new NashornScriptEngine(this, appLoader);
     }
 
@@ -157,6 +158,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
      * @return newly created script engine.
      */
     public ScriptEngine getScriptEngine(final String[] args) {
+        checkConfigPermission();
         return new NashornScriptEngine(this, args, getAppClassLoader());
     }
 
@@ -168,10 +170,18 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
      * @return newly created script engine.
      */
     public ScriptEngine getScriptEngine(final String[] args, final ClassLoader appLoader) {
+        checkConfigPermission();
         return new NashornScriptEngine(this, args, appLoader);
     }
 
     // -- Internals only below this point
+
+    private static void checkConfigPermission() {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new RuntimePermission("nashorn.setConfig"));
+        }
+    }
 
     private static final List<String> names;
     private static final List<String> mimeTypes;

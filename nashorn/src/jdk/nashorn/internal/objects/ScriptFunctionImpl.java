@@ -31,6 +31,7 @@ import java.lang.invoke.MethodHandle;
 import jdk.nashorn.internal.runtime.GlobalFunctions;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
+import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -86,8 +87,8 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param builtin is this a built-in function
      * @param isConstructor can the function be used as a constructor (most can; some built-ins are restricted).
      */
-    ScriptFunctionImpl(final String name, final MethodHandle methodHandle, final ScriptObject scope, final MethodHandle[] specs, final boolean strict, final boolean builtin, final boolean isConstructor) {
-        super(name, methodHandle, getMap(strict), scope, specs, strict, builtin, isConstructor);
+    ScriptFunctionImpl(final String name, final MethodHandle methodHandle, final ScriptObject scope, final MethodHandle[] specs, final boolean isStrict, final boolean isBuiltin, final boolean isConstructor) {
+        super(name, methodHandle, getMap(isStrict), scope, specs, isStrict, isBuiltin, isConstructor);
         init();
     }
 
@@ -95,14 +96,10 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * Constructor called by (compiler) generated code for {@link ScriptObject}s.
      *
      * @param data static function data
-     * @param methodHandle handle for invocation
      * @param scope scope object
-     * @param allocator instance constructor for function
      */
-    public ScriptFunctionImpl(final MethodHandle methodHandle, final ScriptFunctionData data, final ScriptObject scope, final MethodHandle allocator) {
+    public ScriptFunctionImpl(final RecompilableScriptFunctionData data, final ScriptObject scope) {
         super(data, getMap(data.isStrict()), scope);
-        // Set method handles in script data
-        data.setMethodHandles(methodHandle, allocator);
         init();
     }
 

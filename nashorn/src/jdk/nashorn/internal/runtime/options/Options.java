@@ -66,6 +66,9 @@ public final class Options {
     /** The options map of enabled options */
     private final TreeMap<String, Option<?>> options;
 
+    /** System property that can be used for command line option propagation */
+    private static final String NASHORN_ARGS_PROPERTY = "nashorn.args";
+
     /**
      * Constructor
      *
@@ -385,6 +388,14 @@ public final class Options {
     public void process(final String[] args) {
         final LinkedList<String> argList = new LinkedList<>();
         Collections.addAll(argList, args);
+
+    final String extra = getStringProperty(NASHORN_ARGS_PROPERTY, null);
+    if (extra != null) {
+        final StringTokenizer st = new StringTokenizer(extra);
+        while (st.hasMoreTokens()) {
+        argList.add(st.nextToken());
+        }
+    }
 
         while (!argList.isEmpty()) {
             final String arg = argList.remove(0);

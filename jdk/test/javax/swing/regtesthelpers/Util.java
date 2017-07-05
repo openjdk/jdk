@@ -146,6 +146,23 @@ public class Util {
     }
 
      /**
+     * Hits mnemonics by robot.
+     */
+    public static void hitMnemonics(Robot robot, int... keys) {
+
+        ArrayList<Integer> mnemonicKeyCodes = getSystemMnemonicKeyCodes();
+        for (Integer mnemonic : mnemonicKeyCodes) {
+            robot.keyPress(mnemonic);
+        }
+
+        hitKeys(robot, keys);
+
+        for (Integer mnemonic : mnemonicKeyCodes) {
+            robot.keyRelease(mnemonic);
+        }
+    }
+
+     /**
      * Hits keys by robot.
      */
     public static void hitKeys(Robot robot, int... keys) {

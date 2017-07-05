@@ -533,9 +533,8 @@ with (SwingGui) {
 <hr>
 <a name="jsarrays" id="jsarrays"></a>
 <h3>Creating, Converting and Using Java Arrays</h3>
-<p>While creating a Java object is the same as in Java, to create
-Java arrays in JavaScript we can use Java reflection
-explicitly. But once created the element access or length access is
+<p>
+Array element access or length access is
 the same as in Java. Also, a script array can be used when a Java
 method expects a Java array (auto conversion). So in most cases we
 don't have to create Java arrays explicitly.</p>
@@ -543,7 +542,8 @@ don't have to create Java arrays explicitly.</p>
 // <a href="source/javaarray.js">javaarray.js</a>
 
 // create Java String array of 5 elements
-var a = java.lang.reflect.Array.newInstance(java.lang.String.class, 5);
+var StringArray = Java.type("java.lang.String[]");
+var a = new StringArray(5);
 
 // Accessing elements and length access is by usual Java syntax
 a[0] = "scripting is great!";

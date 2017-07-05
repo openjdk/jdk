@@ -82,6 +82,9 @@ public final class ScriptEnvironment {
     /** Show full Nashorn version */
     public final boolean _fullversion;
 
+    /** Should lazy compilation take place */
+    public final boolean _lazy_compilation;
+
     /** Create a new class loaded for each compilation */
     public final boolean _loader_per_compile;
 
@@ -155,6 +158,7 @@ public final class ScriptEnvironment {
         _early_lvalue_error   = options.getBoolean("early.lvalue.error");
         _empty_statements     = options.getBoolean("empty.statements");
         _fullversion          = options.getBoolean("fullversion");
+        _lazy_compilation     = options.getBoolean("lazy.compilation");
         _loader_per_compile   = options.getBoolean("loader.per.compile");
         _no_syntax_extensions = options.getBoolean("no.syntax.extensions");
         _package              = options.getString("package");

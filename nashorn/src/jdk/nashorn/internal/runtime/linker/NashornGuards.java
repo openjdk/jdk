@@ -40,8 +40,6 @@ public final class NashornGuards {
     private static final MethodHandle IS_SCRIPTOBJECT          = findOwnMH("isScriptObject", boolean.class, Object.class);
     private static final MethodHandle IS_SCRIPTFUNCTION        = findOwnMH("isScriptFunction", boolean.class, Object.class);
     private static final MethodHandle IS_MAP                   = findOwnMH("isMap", boolean.class, Object.class, PropertyMap.class);
-    private static final MethodHandle IS_FUNCTION_MH           = findOwnMH("isFunctionMH", boolean.class, Object.class, MethodHandle.class);
-    private static final MethodHandle IS_NONSTRICT_FUNCTION    = findOwnMH("isNonStrictFunction", boolean.class, Object.class, Object.class, MethodHandle.class);
     private static final MethodHandle IS_INSTANCEOF_2          = findOwnMH("isInstanceOf2", boolean.class, Object.class, Class.class, Class.class);
 
     // don't create me!
@@ -87,33 +85,6 @@ public final class NashornGuards {
         return MH.insertArguments(IS_INSTANCEOF_2, 1, class1, class2);
     }
 
-    /**
-     * Get the guard that checks if a {@link ScriptFunction} is equal to
-     * a known ScriptFunction, using reference comparison
-     *
-     * @param function The ScriptFunction to check against. This will be bound to the guard method handle
-     *
-     * @return method handle for guard
-     */
-    public static MethodHandle getFunctionGuard(final ScriptFunction function) {
-        assert function.getInvokeHandle() != null;
-        return MH.insertArguments(IS_FUNCTION_MH, 1, function.getInvokeHandle());
-    }
-
-    /**
-     * Get a guard that checks if a {@link ScriptFunction} is equal to
-     * a known ScriptFunction using reference comparison, and whether the type of
-     * the second argument (this-object) is not a JavaScript primitive type.
-     *
-     * @param function The ScriptFunction to check against. This will be bound to the guard method handle
-     *
-     * @return method handle for guard
-     */
-    public static MethodHandle getNonStrictFunctionGuard(final ScriptFunction function) {
-        assert function.getInvokeHandle() != null;
-        return MH.insertArguments(IS_NONSTRICT_FUNCTION, 2, function.getInvokeHandle());
-    }
-
     @SuppressWarnings("unused")
     private static boolean isScriptObject(final Object self) {
         return self instanceof ScriptObject;
@@ -127,16 +98,6 @@ public final class NashornGuards {
     @SuppressWarnings("unused")
     private static boolean isMap(final Object self, final PropertyMap map) {
         return self instanceof ScriptObject && ((ScriptObject)self).getMap() == map;
-    }
-
-    @SuppressWarnings("unused")
-    private static boolean isFunctionMH(final Object self, final MethodHandle mh) {
-        return self instanceof ScriptFunction && ((ScriptFunction)self).getInvokeHandle() == mh;
-    }
-
-    @SuppressWarnings("unused")
-    private static boolean isNonStrictFunction(final Object self, final Object arg, final MethodHandle mh) {
-        return self instanceof ScriptFunction && ((ScriptFunction)self).getInvokeHandle() == mh && arg instanceof ScriptObject;
     }
 
     @SuppressWarnings("unused")

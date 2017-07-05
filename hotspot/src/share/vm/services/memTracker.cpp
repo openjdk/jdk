@@ -68,6 +68,7 @@ int                             MemTracker::_thread_count = 255;
 volatile jint                   MemTracker::_pooled_recorder_count = 0;
 volatile unsigned long          MemTracker::_processing_generation = 0;
 volatile bool                   MemTracker::_worker_thread_idle = false;
+volatile bool                   MemTracker::_slowdown_calling_thread = false;
 debug_only(intx                 MemTracker::_main_thread_tid = 0;)
 NOT_PRODUCT(volatile jint       MemTracker::_pending_recorder_count = 0;)
 
@@ -364,6 +365,12 @@ void MemTracker::create_memory_record(address addr, MEMFLAGS flags,
     }
 
     if (thread != NULL) {
+      // slow down all calling threads except NMT worker thread, so it
+      // can catch up.
+      if (_slowdown_calling_thread && thread != _worker_thread) {
+        os::yield_all();
+      }
+
       if (thread->is_Java_thread() && ((JavaThread*)thread)->is_safepoint_visible()) {
         JavaThread*      java_thread = (JavaThread*)thread;
         JavaThreadState  state = java_thread->thread_state();
@@ -442,6 +449,7 @@ void MemTracker::enqueue_pending_recorder(MemRecorder* rec) {
 #define MAX_SAFEPOINTS_TO_SKIP     128
 #define SAFE_SEQUENCE_THRESHOLD    30
 #define HIGH_GENERATION_THRESHOLD  60
+#define MAX_RECORDER_THREAD_RATIO  30
 
 void MemTracker::sync() {
   assert(_tracking_level > NMT_off, "NMT is not enabled");
@@ -487,6 +495,13 @@ void MemTracker::sync() {
         pending_recorders = _global_recorder;
         _global_recorder = NULL;
       }
+
+      // see if NMT has too many outstanding recorder instances, it usually
+      // means that worker thread is lagging behind in processing them.
+      if (!AutoShutdownNMT) {
+        _slowdown_calling_thread = (MemRecorder::_instance_count > MAX_RECORDER_THREAD_RATIO * _thread_count);
+      }
+
       // check _worker_thread with lock to avoid racing condition
       if (_worker_thread != NULL) {
         _worker_thread->at_sync_point(pending_recorders, InstanceKlass::number_of_instance_classes());
