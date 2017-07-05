@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4811968 6908628 8006564
+ * @bug 4811968 6908628 8006564 8130696
  * @modules java.base/sun.misc
  *          java.base/sun.security.util
  * @run main S11N check
@@ -66,8 +66,11 @@ public class S11N {
 
     public static void main(String[] args) throws Exception {
         if (args[0].equals("check")) {
-            int version = Integer.valueOf(System.getProperty("java.version")
-                    .split("\\.")[1]);
+            String jv = System.getProperty("java.version");
+            // java.version format: $VNUM\-$PRE
+            String [] va = (jv.split("-")[0]).split("\\.");
+            String v = (va.length == 1 || !va[0].equals("1")) ? va[0] : va[1];
+            int version = Integer.valueOf(v);
             System.out.println("version is " + version);
             if (version >= 7) {
                 for (String oid: SMALL) {

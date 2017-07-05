@@ -48,17 +48,14 @@
 #                             Set ALT_BUILD_WIN_SA=1 to enable building SA on
 #                             Windows.
 # Version strings and numbers:
-#  JDK_VERSION                Current JDK version (e.g. 1.6.0)
-#  PREVIOUS_JDK_VERSION       Previous (bootdir) JDK version (e.g. 1.5.0)
-#  FULL_VERSION               Full version string to use (e.g. "1.6.0-ea-b42")
-#
-# Version strings and numbers especially needed on Windows:
-#  COOKED_JDK_UPDATE_VERSION  Just the update release number (e.g. 02)
-#  COOKED_BUILD_NUMBER        Just the build number (e.g. 42)
-#  JDK_MKTG_VERSION           Marketing JDK version (e.g. 6.0)
-#  JDK_MAJOR_VERSION          Major number for version (e.g. 1) always 1?
-#  JDK_MINOR_VERSION          Minor number for version (e.g. 6)
-#  JDK_MICRO_VERSION          Micro number for version (e.g. 0)
+#  VERSION_SHORT      Current JDK version (e.g. 9.0.0)
+#  JDK_PREVIOUS_VERSION Previous (bootdir) JDK version (e.g. 1.5.0) (Only needed
+#  to facilitate standalone build.)
+#  VERSION_STRING     Full version string to use (e.g. "9.0.0-ea-b42")
+#  VERSION_MAJOR Major number for version (e.g. 9)
+#  VERSION_MINOR Minor number for version (e.g. 0)
+#  VERSION_SECURITY Security number for version (e.g. 0)
+#  VERSION_PATCH Patch number for version (e.g. 0)
 #
 
 # Default is build both product fastdebug and create export area
@@ -855,9 +852,9 @@ examples_help:
 	@$(ECHO) \
 "  $(MAKE) world"
 	@$(ECHO) \
-"  $(MAKE) ALT_BOOTDIR=/opt/java/jdk$(PREVIOUS_JDK_VERSION)"
+"  $(MAKE) ALT_BOOTDIR=/opt/java/jdk$(JDK_PREVIOUS_VERSION)"
 	@$(ECHO) \
-"  $(MAKE) ALT_JDK_IMPORT_PATH=/opt/java/jdk$(JDK_VERSION)"
+"  $(MAKE) ALT_JDK_IMPORT_PATH=/opt/java/jdk$(VERSION_STRING)"
 
 # Universal build support
 ifeq ($(OS_VENDOR), Darwin)

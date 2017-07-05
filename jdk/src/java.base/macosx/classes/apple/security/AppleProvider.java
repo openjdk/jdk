@@ -74,7 +74,7 @@ public final class AppleProvider extends Provider {
 
     public AppleProvider() {
         /* We are the Apple provider */
-        super("Apple", 1.9d, info);
+        super("Apple", 9.0d, info);
 
         final Provider p = this;
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
