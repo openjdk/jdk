@@ -969,7 +969,7 @@ public final class PageAttributes implements Cloneable {
             return super.clone();
         } catch (CloneNotSupportedException e) {
             // Since we implement Cloneable, this should never happen
-            throw new InternalError();
+            throw new InternalError(e);
         }
     }
 

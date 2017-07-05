@@ -636,7 +636,7 @@ public final class NormalizerBase implements Cloneable {
             return copy;
         }
         catch (CloneNotSupportedException e) {
-            throw new InternalError(e.toString());
+            throw new InternalError(e.toString(), e);
         }
     }
 

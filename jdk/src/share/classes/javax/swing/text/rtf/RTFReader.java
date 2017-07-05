@@ -528,7 +528,7 @@ public void setCharacterSet(String name)
             try {
                 translationTable = (char[])getCharacterSet("ansi");
             } catch (IOException e) {
-                throw new InternalError("RTFReader: Unable to find character set resources (" + e + ")");
+                throw new InternalError("RTFReader: Unable to find character set resources (" + e + ")", e);
             }
         }
     }
@@ -1614,7 +1614,7 @@ class DocumentDestination
         } catch (BadLocationException ble) {
             /* This shouldn't be able to happen, of course */
             /* TODO is InternalError the correct error to throw? */
-            throw new InternalError(ble.getMessage());
+            throw new InternalError(ble.getMessage(), ble);
         }
     }
 
@@ -1628,7 +1628,7 @@ class DocumentDestination
         } catch (BadLocationException ble) {
             /* This shouldn't be able to happen, of course */
             /* TODO is InternalError the correct error to throw? */
-            throw new InternalError(ble.getMessage());
+            throw new InternalError(ble.getMessage(), ble);
         }
     }
 

@@ -88,7 +88,7 @@ class Invokers {
         try {
             invoker = IMPL_LOOKUP.findVirtual(MethodHandle.class, name, targetType);
         } catch (ReflectiveOperationException ex) {
-            throw new InternalError("JVM cannot find invoker for "+targetType);
+            throw new InternalError("JVM cannot find invoker for "+targetType, ex);
         }
         assert(invokerType(targetType) == invoker.type());
         assert(!invoker.isVarargsCollector());

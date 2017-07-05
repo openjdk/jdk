@@ -461,7 +461,7 @@ class MethodTypeForm {
             // Trigger adapter creation.
             genericInvoker = InvokeGeneric.generalInvokerOf(erasedType);
         } catch (Exception ex) {
-            Error err = new InternalError("Exception while resolving inexact invoke");
+            Error err = new InternalError("Exception while resolving inexact invoke", ex);
             err.initCause(ex);
             throw err;
         }
