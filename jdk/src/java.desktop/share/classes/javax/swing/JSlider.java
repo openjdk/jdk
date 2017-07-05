@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1287,10 +1287,10 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
         return paintTrack;
     }
 
-
     /**
-     * Determines whether the track is painted on the slider.
-     * By default, this property is {@code true}.
+     * Determines whether the track is painted on the slider. By default, this
+     * property is {@code true}. It is up to the look and feel to honor this
+     * property, some may choose to ignore it.
      *
      * @param  b  whether or not to paint the slider track
      * @see #getPaintTrack

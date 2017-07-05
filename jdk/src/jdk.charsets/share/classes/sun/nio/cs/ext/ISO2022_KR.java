@@ -35,7 +35,7 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import sun.nio.cs.HistoricallyNamedCharset;
-import sun.nio.cs.ext.EUC_KR;
+import sun.nio.cs.*;
 
 public class ISO2022_KR extends ISO2022
 implements HistoricallyNamedCharset

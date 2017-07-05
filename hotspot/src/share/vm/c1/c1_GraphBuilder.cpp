@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3497,11 +3497,6 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
     case vmIntrinsics::_putFloat_raw  : return append_unsafe_put_raw(callee, T_FLOAT);
     case vmIntrinsics::_putDouble_raw : return append_unsafe_put_raw(callee, T_DOUBLE);
 
-    case vmIntrinsics::_prefetchRead        : return append_unsafe_prefetch(callee, false, false);
-    case vmIntrinsics::_prefetchWrite       : return append_unsafe_prefetch(callee, false, true);
-    case vmIntrinsics::_prefetchReadStatic  : return append_unsafe_prefetch(callee, true,  false);
-    case vmIntrinsics::_prefetchWriteStatic : return append_unsafe_prefetch(callee, true,  true);
-
     case vmIntrinsics::_checkIndex    :
       if (!InlineNIOCheckIndex) return false;
       preserves_state = true;
@@ -4252,27 +4247,6 @@ bool GraphBuilder::append_unsafe_put_raw(ciMethod* callee, BasicType t) {
     Values* args = state()->pop_arguments(callee->arg_size());
     null_check(args->at(0));
     Instruction* op = append(new UnsafePutRaw(t, args->at(1), args->at(2)));
-    compilation()->set_has_unsafe_access(true);
-  }
-  return InlineUnsafeOps;
-}
-
-
-bool GraphBuilder::append_unsafe_prefetch(ciMethod* callee, bool is_static, bool is_store) {
-  if (InlineUnsafeOps) {
-    Values* args = state()->pop_arguments(callee->arg_size());
-    int obj_arg_index = 1; // Assume non-static case
-    if (is_static) {
-      obj_arg_index = 0;
-    } else {
-      null_check(args->at(0));
-    }
-    Instruction* offset = args->at(obj_arg_index + 1);
-#ifndef _LP64
-    offset = append(new Convert(Bytecodes::_l2i, offset, as_ValueType(T_INT)));
-#endif
-    Instruction* op = is_store ? append(new UnsafePrefetchWrite(args->at(obj_arg_index), offset))
-                               : append(new UnsafePrefetchRead (args->at(obj_arg_index), offset));
     compilation()->set_has_unsafe_access(true);
   }
   return InlineUnsafeOps;

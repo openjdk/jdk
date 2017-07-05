@@ -39,7 +39,7 @@ public class GetPutBoolean {
         Test t = new Test();
         Field field = Test.class.getField("b1");
 
-        int offset = unsafe.fieldOffset(field);
+        long offset = unsafe.objectFieldOffset(field);
         assertEquals(false, unsafe.getBoolean(t, offset));
         unsafe.putBoolean(t, offset, true);
         assertEquals(true, unsafe.getBoolean(t, offset));

@@ -120,12 +120,14 @@ class LambdaForm {
     final int arity;
     final int result;
     final boolean forceInline;
+    final MethodHandle customized;
     @Stable final Name[] names;
     final String debugName;
     MemberName vmentry;   // low-level behavior, or null if not yet prepared
     private boolean isCompiled;
 
-    volatile Object transformCache;  // managed by LambdaFormEditor
+    // Either a LambdaForm cache (managed by LambdaFormEditor) or a link to uncustomized version (for customized LF)
+    volatile Object transformCache;
 
     public static final int VOID_RESULT = -1, LAST_RESULT = -2;
 
@@ -244,16 +246,17 @@ class LambdaForm {
 
     LambdaForm(String debugName,
                int arity, Name[] names, int result) {
-        this(debugName, arity, names, result, true);
+        this(debugName, arity, names, result, /*forceInline=*/true, /*customized=*/null);
     }
     LambdaForm(String debugName,
-               int arity, Name[] names, int result, boolean forceInline) {
+               int arity, Name[] names, int result, boolean forceInline, MethodHandle customized) {
         assert(namesOK(arity, names));
         this.arity = arity;
         this.result = fixResult(result, names);
         this.names = names.clone();
         this.debugName = fixDebugName(debugName);
         this.forceInline = forceInline;
+        this.customized = customized;
         int maxOutArity = normalize();
         if (maxOutArity > MethodType.MAX_MH_INVOKER_ARITY) {
             // Cannot use LF interpreter on very high arity expressions.
@@ -263,21 +266,21 @@ class LambdaForm {
     }
     LambdaForm(String debugName,
                int arity, Name[] names) {
-        this(debugName, arity, names, LAST_RESULT, true);
+        this(debugName, arity, names, LAST_RESULT, /*forceInline=*/true, /*customized=*/null);
     }
     LambdaForm(String debugName,
                int arity, Name[] names, boolean forceInline) {
-        this(debugName, arity, names, LAST_RESULT, forceInline);
+        this(debugName, arity, names, LAST_RESULT, forceInline, /*customized=*/null);
     }
     LambdaForm(String debugName,
                Name[] formals, Name[] temps, Name result) {
         this(debugName,
-             formals.length, buildNames(formals, temps, result), LAST_RESULT, true);
+             formals.length, buildNames(formals, temps, result), LAST_RESULT, /*forceInline=*/true, /*customized=*/null);
     }
     LambdaForm(String debugName,
                Name[] formals, Name[] temps, Name result, boolean forceInline) {
         this(debugName,
-             formals.length, buildNames(formals, temps, result), LAST_RESULT, forceInline);
+             formals.length, buildNames(formals, temps, result), LAST_RESULT, forceInline, /*customized=*/null);
     }
 
     private static Name[] buildNames(Name[] formals, Name[] temps, Name result) {
@@ -291,10 +294,6 @@ class LambdaForm {
     }
 
     private LambdaForm(String sig) {
-        this(sig, true);
-    }
-
-    private LambdaForm(String sig, boolean forceInline) {
         // Make a blank lambda form, which returns a constant zero or null.
         // It is used as a template for managing the invocation of similar forms that are non-empty.
         // Called only from getPreparedForm.
@@ -303,7 +302,8 @@ class LambdaForm {
         this.result = (signatureReturn(sig) == V_TYPE ? -1 : arity);
         this.names = buildEmptyNames(arity, sig);
         this.debugName = "LF.zero";
-        this.forceInline = forceInline;
+        this.forceInline = true;
+        this.customized = null;
         assert(nameRefsAreLegal());
         assert(isEmpty());
         assert(sig.equals(basicTypeSignature())) : sig + " != " + basicTypeSignature();
@@ -375,6 +375,31 @@ class LambdaForm {
         return true;
     }
 
+    /** Customize LambdaForm for a particular MethodHandle */
+    LambdaForm customize(MethodHandle mh) {
+        LambdaForm customForm = new LambdaForm(debugName, arity, names, result, forceInline, mh);
+        if (COMPILE_THRESHOLD > 0 && isCompiled) {
+            // If shared LambdaForm has been compiled, compile customized version as well.
+            customForm.compileToBytecode();
+        }
+        customForm.transformCache = this; // LambdaFormEditor should always use uncustomized form.
+        return customForm;
+    }
+
+    /** Get uncustomized flavor of the LambdaForm */
+    LambdaForm uncustomize() {
+        if (customized == null) {
+            return this;
+        }
+        assert(transformCache != null); // Customized LambdaForm should always has a link to uncustomized version.
+        LambdaForm uncustomizedForm = (LambdaForm)transformCache;
+        if (COMPILE_THRESHOLD > 0 && isCompiled) {
+            // If customized LambdaForm has been compiled, compile uncustomized version as well.
+            uncustomizedForm.compileToBytecode();
+        }
+        return uncustomizedForm;
+    }
+
     /** Renumber and/or replace params so that they are interned and canonically numbered.
      *  @return maximum argument list length among the names (since we have to pass over them anyway)
      */
@@ -417,8 +442,8 @@ class LambdaForm {
             for (int i = arity; i < names.length; i++) {
                 names[i].internArguments();
             }
-            assert(nameRefsAreLegal());
         }
+        assert(nameRefsAreLegal());
         return maxOutArity;
     }
 
