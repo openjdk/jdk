@@ -33,8 +33,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 inline const char* PSOldGen::select_name() {
   return UseParallelOldGC ? "ParOldGen" : "PSOldGen";
 }
@@ -440,9 +438,9 @@ void PSOldGen::print_on(outputStream* st) const {
                 capacity_in_bytes()/K, used_in_bytes()/K);
   }
   st->print_cr(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT ")",
-                virtual_space()->low_boundary(),
-                virtual_space()->high(),
-                virtual_space()->high_boundary());
+                p2i(virtual_space()->low_boundary()),
+                p2i(virtual_space()->high()),
+                p2i(virtual_space()->high_boundary()));
 
   st->print("  object"); object_space()->print_on(st);
 }
