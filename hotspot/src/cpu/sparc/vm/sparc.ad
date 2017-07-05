@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -678,15 +678,23 @@ intptr_t get_offset_from_base_2(const MachNode* n, const TypePtr* atype, int dis
 
 static inline jdouble replicate_immI(int con, int count, int width) {
   // Load a constant replicated "count" times with width "width"
+  assert(count*width == 8 && width <= 4, "sanity");
   int bit_width = width * 8;
-  jlong elt_val = con;
-  elt_val &= (((jlong) 1) << bit_width) - 1;  // mask off sign bits
-  jlong val = elt_val;
+  jlong val = con;
+  val &= (((jlong) 1) << bit_width) - 1;  // mask off sign bits
   for (int i = 0; i < count - 1; i++) {
-    val <<= bit_width;
-    val |= elt_val;
+    val |= (val << bit_width);
   }
   jdouble dval = *((jdouble*) &val);  // coerce to double type
+  return dval;
+}
+
+static inline jdouble replicate_immF(float con) {
+  // Replicate float con 2 times and pack into vector.
+  int val = *((int*)&con);
+  jlong lval = val;
+  lval = (lval << 32) | (lval & 0xFFFFFFFFl);
+  jdouble dval = *((jdouble*) &lval);  // coerce to double type
   return dval;
 }
 
@@ -791,6 +799,7 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, const MachNode* n, int primary, int te
     case Assembler::stdf_op3: st_op = Op_StoreD; break;
 
     case Assembler::ldsb_op3: ld_op = Op_LoadB; break;
+    case Assembler::ldub_op3: ld_op = Op_LoadUB; break;
     case Assembler::lduh_op3: ld_op = Op_LoadUS; break;
     case Assembler::ldsh_op3: ld_op = Op_LoadS; break;
     case Assembler::ldx_op3:  // may become LoadP or stay LoadI
@@ -799,7 +808,6 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, const MachNode* n, int primary, int te
     case Assembler::ldd_op3:  ld_op = Op_LoadL; break;
     case Assembler::ldf_op3:  ld_op = Op_LoadF; break;
     case Assembler::lddf_op3: ld_op = Op_LoadD; break;
-    case Assembler::ldub_op3: ld_op = Op_LoadB; break;
     case Assembler::prefetch_op3: ld_op = Op_LoadI; break;
 
     default: ShouldNotReachHere();
@@ -840,10 +848,7 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, const MachNode* n, int primary, int te
           !(n->ideal_Opcode()==Op_PrefetchRead  && ld_op==Op_LoadI) &&
           !(n->ideal_Opcode()==Op_PrefetchWrite && ld_op==Op_LoadI) &&
           !(n->ideal_Opcode()==Op_PrefetchAllocation && ld_op==Op_LoadI) &&
-          !(n->ideal_Opcode()==Op_Load2I    && ld_op==Op_LoadD) &&
-          !(n->ideal_Opcode()==Op_Load4C    && ld_op==Op_LoadD) &&
-          !(n->ideal_Opcode()==Op_Load4S    && ld_op==Op_LoadD) &&
-          !(n->ideal_Opcode()==Op_Load8B    && ld_op==Op_LoadD) &&
+          !(n->ideal_Opcode()==Op_LoadVector && ld_op==Op_LoadD) &&
           !(n->rule() == loadUB_rule)) {
         verify_oops_warning(n, n->ideal_Opcode(), ld_op);
       }
@@ -855,9 +860,7 @@ void emit_form3_mem_reg(CodeBuffer &cbuf, const MachNode* n, int primary, int te
           !(n->ideal_Opcode()==Op_StoreI && st_op==Op_StoreF) &&
           !(n->ideal_Opcode()==Op_StoreF && st_op==Op_StoreI) &&
           !(n->ideal_Opcode()==Op_StoreL && st_op==Op_StoreI) &&
-          !(n->ideal_Opcode()==Op_Store2I && st_op==Op_StoreD) &&
-          !(n->ideal_Opcode()==Op_Store4C && st_op==Op_StoreD) &&
-          !(n->ideal_Opcode()==Op_Store8B && st_op==Op_StoreD) &&
+          !(n->ideal_Opcode()==Op_StoreVector && st_op==Op_StoreD) &&
           !(n->ideal_Opcode()==Op_StoreD && st_op==Op_StoreI && n->rule() == storeD0_rule)) {
         verify_oops_warning(n, n->ideal_Opcode(), st_op);
       }
@@ -1849,14 +1852,43 @@ int Matcher::regnum_to_fpu_offset(int regnum) {
 address last_rethrow = NULL;  // debugging aid for Rethrow encoding
 #endif
 
+// Map Types to machine register types
+const int Matcher::base2reg[Type::lastype] = {
+  Node::NotAMachineReg,0,0, Op_RegI, Op_RegL, 0, Op_RegN,
+  Node::NotAMachineReg, Node::NotAMachineReg, /* tuple, array */
+  0, Op_RegD, 0, 0, /* Vectors */
+  Op_RegP, Op_RegP, Op_RegP, Op_RegP, Op_RegP, Op_RegP, /* the pointers */
+  0, 0/*abio*/,
+  Op_RegP /* Return address */, 0, /* the memories */
+  Op_RegF, Op_RegF, Op_RegF, Op_RegD, Op_RegD, Op_RegD,
+  0  /*bottom*/
+};
+
 // Vector width in bytes
-const uint Matcher::vector_width_in_bytes(void) {
+const int Matcher::vector_width_in_bytes(BasicType bt) {
+  assert(MaxVectorSize == 8, "");
   return 8;
 }
 
 // Vector ideal reg
-const uint Matcher::vector_ideal_reg(void) {
+const int Matcher::vector_ideal_reg(int size) {
+  assert(MaxVectorSize == 8, "");
   return Op_RegD;
+}
+
+// Limits on vector size (number of elements) loaded into vector.
+const int Matcher::max_vector_size(const BasicType bt) {
+  assert(is_java_primitive(bt), "only primitive type vectors");
+  return vector_width_in_bytes(bt)/type2aelembytes(bt);
+}
+
+const int Matcher::min_vector_size(const BasicType bt) {
+  return max_vector_size(bt); // Same as max.
+}
+
+// SPARC doesn't support misaligned vectors store/load.
+const bool Matcher::misaligned_vectors_ok() {
+  return false;
 }
 
 // USII supports fxtof through the whole range of number, USIII doesn't
@@ -3123,50 +3155,6 @@ enc_class enc_Array_Equals(o0RegP ary1, o1RegP ary2, g3RegP tmp1, notemp_iRegI r
   enc_class enc_membar_volatile %{
     MacroAssembler _masm(&cbuf);
     __ membar( Assembler::Membar_mask_bits(Assembler::StoreLoad) );
-  %}
-
-  enc_class enc_repl8b( iRegI src, iRegL dst ) %{
-    MacroAssembler _masm(&cbuf);
-    Register src_reg = reg_to_register_object($src$$reg);
-    Register dst_reg = reg_to_register_object($dst$$reg);
-    __ sllx(src_reg, 56, dst_reg);
-    __ srlx(dst_reg,  8, O7);
-    __ or3 (dst_reg, O7, dst_reg);
-    __ srlx(dst_reg, 16, O7);
-    __ or3 (dst_reg, O7, dst_reg);
-    __ srlx(dst_reg, 32, O7);
-    __ or3 (dst_reg, O7, dst_reg);
-  %}
-
-  enc_class enc_repl4b( iRegI src, iRegL dst ) %{
-    MacroAssembler _masm(&cbuf);
-    Register src_reg = reg_to_register_object($src$$reg);
-    Register dst_reg = reg_to_register_object($dst$$reg);
-    __ sll(src_reg, 24, dst_reg);
-    __ srl(dst_reg,  8, O7);
-    __ or3(dst_reg, O7, dst_reg);
-    __ srl(dst_reg, 16, O7);
-    __ or3(dst_reg, O7, dst_reg);
-  %}
-
-  enc_class enc_repl4s( iRegI src, iRegL dst ) %{
-    MacroAssembler _masm(&cbuf);
-    Register src_reg = reg_to_register_object($src$$reg);
-    Register dst_reg = reg_to_register_object($dst$$reg);
-    __ sllx(src_reg, 48, dst_reg);
-    __ srlx(dst_reg, 16, O7);
-    __ or3 (dst_reg, O7, dst_reg);
-    __ srlx(dst_reg, 32, O7);
-    __ or3 (dst_reg, O7, dst_reg);
-  %}
-
-  enc_class enc_repl2i( iRegI src, iRegL dst ) %{
-    MacroAssembler _masm(&cbuf);
-    Register src_reg = reg_to_register_object($src$$reg);
-    Register dst_reg = reg_to_register_object($dst$$reg);
-    __ sllx(src_reg, 32, dst_reg);
-    __ srlx(dst_reg, 32, O7);
-    __ or3 (dst_reg, O7, dst_reg);
   %}
 
 %}
@@ -5932,50 +5920,6 @@ instruct loadL_unaligned(iRegL dst, memory mem, o7RegI tmp) %{
   ins_pipe(iload_mem);
 %}
 
-// Load Aligned Packed Byte into a Double Register
-instruct loadA8B(regD dst, memory mem) %{
-  match(Set dst (Load8B mem));
-  ins_cost(MEMORY_REF_COST);
-  size(4);
-  format %{ "LDDF   $mem,$dst\t! packed8B" %}
-  opcode(Assembler::lddf_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
-  ins_pipe(floadD_mem);
-%}
-
-// Load Aligned Packed Char into a Double Register
-instruct loadA4C(regD dst, memory mem) %{
-  match(Set dst (Load4C mem));
-  ins_cost(MEMORY_REF_COST);
-  size(4);
-  format %{ "LDDF   $mem,$dst\t! packed4C" %}
-  opcode(Assembler::lddf_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
-  ins_pipe(floadD_mem);
-%}
-
-// Load Aligned Packed Short into a Double Register
-instruct loadA4S(regD dst, memory mem) %{
-  match(Set dst (Load4S mem));
-  ins_cost(MEMORY_REF_COST);
-  size(4);
-  format %{ "LDDF   $mem,$dst\t! packed4S" %}
-  opcode(Assembler::lddf_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
-  ins_pipe(floadD_mem);
-%}
-
-// Load Aligned Packed Int into a Double Register
-instruct loadA2I(regD dst, memory mem) %{
-  match(Set dst (Load2I mem));
-  ins_cost(MEMORY_REF_COST);
-  size(4);
-  format %{ "LDDF   $mem,$dst\t! packed2I" %}
-  opcode(Assembler::lddf_op3);
-  ins_encode(simple_form3_mem_reg( mem, dst ) );
-  ins_pipe(floadD_mem);
-%}
-
 // Load Range
 instruct loadRange(iRegI dst, memory mem) %{
   match(Set dst (LoadRange mem));
@@ -6599,17 +6543,6 @@ instruct storeF0( memory mem, immF0 src) %{
   ins_pipe(fstoreF_mem_zero);
 %}
 
-// Store Aligned Packed Bytes in Double register to memory
-instruct storeA8B(memory mem, regD src) %{
-  match(Set mem (Store8B mem src));
-  ins_cost(MEMORY_REF_COST);
-  size(4);
-  format %{ "STDF   $src,$mem\t! packed8B" %}
-  opcode(Assembler::stdf_op3);
-  ins_encode(simple_form3_mem_reg( mem, src ) );
-  ins_pipe(fstoreD_mem_reg);
-%}
-
 // Convert oop pointer into compressed form
 instruct encodeHeapOop(iRegN dst, iRegP src) %{
   predicate(n->bottom_type()->make_ptr()->ptr() != TypePtr::NotNull);
@@ -6651,62 +6584,6 @@ instruct decodeHeapOop_not_null(iRegP dst, iRegN src) %{
     __ decode_heap_oop_not_null($src$$Register, $dst$$Register);
   %}
   ins_pipe(ialu_reg);
-%}
-
-
-// Store Zero into Aligned Packed Bytes
-instruct storeA8B0(memory mem, immI0 zero) %{
-  match(Set mem (Store8B mem zero));
-  ins_cost(MEMORY_REF_COST);
-  size(4);
-  format %{ "STX    $zero,$mem\t! packed8B" %}
-  opcode(Assembler::stx_op3);
-  ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
-  ins_pipe(fstoreD_mem_zero);
-%}
-
-// Store Aligned Packed Chars/Shorts in Double register to memory
-instruct storeA4C(memory mem, regD src) %{
-  match(Set mem (Store4C mem src));
-  ins_cost(MEMORY_REF_COST);
-  size(4);
-  format %{ "STDF   $src,$mem\t! packed4C" %}
-  opcode(Assembler::stdf_op3);
-  ins_encode(simple_form3_mem_reg( mem, src ) );
-  ins_pipe(fstoreD_mem_reg);
-%}
-
-// Store Zero into Aligned Packed Chars/Shorts
-instruct storeA4C0(memory mem, immI0 zero) %{
-  match(Set mem (Store4C mem (Replicate4C zero)));
-  ins_cost(MEMORY_REF_COST);
-  size(4);
-  format %{ "STX    $zero,$mem\t! packed4C" %}
-  opcode(Assembler::stx_op3);
-  ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
-  ins_pipe(fstoreD_mem_zero);
-%}
-
-// Store Aligned Packed Ints in Double register to memory
-instruct storeA2I(memory mem, regD src) %{
-  match(Set mem (Store2I mem src));
-  ins_cost(MEMORY_REF_COST);
-  size(4);
-  format %{ "STDF   $src,$mem\t! packed2I" %}
-  opcode(Assembler::stdf_op3);
-  ins_encode(simple_form3_mem_reg( mem, src ) );
-  ins_pipe(fstoreD_mem_reg);
-%}
-
-// Store Zero into Aligned Packed Ints
-instruct storeA2I0(memory mem, immI0 zero) %{
-  match(Set mem (Store2I mem zero));
-  ins_cost(MEMORY_REF_COST);
-  size(4);
-  format %{ "STX    $zero,$mem\t! packed2I" %}
-  opcode(Assembler::stx_op3);
-  ins_encode(simple_form3_mem_reg( mem, R_G0 ) );
-  ins_pipe(fstoreD_mem_zero);
 %}
 
 
@@ -8880,150 +8757,6 @@ instruct shrL_reg_imm6_L2I(iRegI dst, iRegL src, immI_32_63 cnt) %{
   ins_pipe(ialu_reg_imm);
 %}
 
-// Replicate scalar to packed byte values in Double register
-instruct Repl8B_reg_helper(iRegL dst, iRegI src) %{
-  effect(DEF dst, USE src);
-  format %{ "SLLX  $src,56,$dst\n\t"
-            "SRLX  $dst, 8,O7\n\t"
-            "OR    $dst,O7,$dst\n\t"
-            "SRLX  $dst,16,O7\n\t"
-            "OR    $dst,O7,$dst\n\t"
-            "SRLX  $dst,32,O7\n\t"
-            "OR    $dst,O7,$dst\t! replicate8B" %}
-  ins_encode( enc_repl8b(src, dst));
-  ins_pipe(ialu_reg);
-%}
-
-// Replicate scalar to packed byte values in Double register
-instruct Repl8B_reg(stackSlotD dst, iRegI src) %{
-  match(Set dst (Replicate8B src));
-  expand %{
-    iRegL tmp;
-    Repl8B_reg_helper(tmp, src);
-    regL_to_stkD(dst, tmp);
-  %}
-%}
-
-// Replicate scalar constant to packed byte values in Double register
-instruct Repl8B_immI(regD dst, immI13 con, o7RegI tmp) %{
-  match(Set dst (Replicate8B con));
-  effect(KILL tmp);
-  format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: Repl8B($con)" %}
-  ins_encode %{
-    // XXX This is a quick fix for 6833573.
-    //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 8, 1)), $dst$$FloatRegister);
-    RegisterOrConstant con_offset = __ ensure_simm13_or_reg($constantoffset(replicate_immI($con$$constant, 8, 1)), $tmp$$Register);
-    __ ldf(FloatRegisterImpl::D, $constanttablebase, con_offset, as_DoubleFloatRegister($dst$$reg));
-  %}
-  ins_pipe(loadConFD);
-%}
-
-// Replicate scalar to packed char values into stack slot
-instruct Repl4C_reg_helper(iRegL dst, iRegI src) %{
-  effect(DEF dst, USE src);
-  format %{ "SLLX  $src,48,$dst\n\t"
-            "SRLX  $dst,16,O7\n\t"
-            "OR    $dst,O7,$dst\n\t"
-            "SRLX  $dst,32,O7\n\t"
-            "OR    $dst,O7,$dst\t! replicate4C" %}
-  ins_encode( enc_repl4s(src, dst) );
-  ins_pipe(ialu_reg);
-%}
-
-// Replicate scalar to packed char values into stack slot
-instruct Repl4C_reg(stackSlotD dst, iRegI src) %{
-  match(Set dst (Replicate4C src));
-  expand %{
-    iRegL tmp;
-    Repl4C_reg_helper(tmp, src);
-    regL_to_stkD(dst, tmp);
-  %}
-%}
-
-// Replicate scalar constant to packed char values in Double register
-instruct Repl4C_immI(regD dst, immI con, o7RegI tmp) %{
-  match(Set dst (Replicate4C con));
-  effect(KILL tmp);
-  format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: Repl4C($con)" %}
-  ins_encode %{
-    // XXX This is a quick fix for 6833573.
-    //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 4, 2)), $dst$$FloatRegister);
-    RegisterOrConstant con_offset = __ ensure_simm13_or_reg($constantoffset(replicate_immI($con$$constant, 4, 2)), $tmp$$Register);
-    __ ldf(FloatRegisterImpl::D, $constanttablebase, con_offset, as_DoubleFloatRegister($dst$$reg));
-  %}
-  ins_pipe(loadConFD);
-%}
-
-// Replicate scalar to packed short values into stack slot
-instruct Repl4S_reg_helper(iRegL dst, iRegI src) %{
-  effect(DEF dst, USE src);
-  format %{ "SLLX  $src,48,$dst\n\t"
-            "SRLX  $dst,16,O7\n\t"
-            "OR    $dst,O7,$dst\n\t"
-            "SRLX  $dst,32,O7\n\t"
-            "OR    $dst,O7,$dst\t! replicate4S" %}
-  ins_encode( enc_repl4s(src, dst) );
-  ins_pipe(ialu_reg);
-%}
-
-// Replicate scalar to packed short values into stack slot
-instruct Repl4S_reg(stackSlotD dst, iRegI src) %{
-  match(Set dst (Replicate4S src));
-  expand %{
-    iRegL tmp;
-    Repl4S_reg_helper(tmp, src);
-    regL_to_stkD(dst, tmp);
-  %}
-%}
-
-// Replicate scalar constant to packed short values in Double register
-instruct Repl4S_immI(regD dst, immI con, o7RegI tmp) %{
-  match(Set dst (Replicate4S con));
-  effect(KILL tmp);
-  format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: Repl4S($con)" %}
-  ins_encode %{
-    // XXX This is a quick fix for 6833573.
-    //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 4, 2)), $dst$$FloatRegister);
-    RegisterOrConstant con_offset = __ ensure_simm13_or_reg($constantoffset(replicate_immI($con$$constant, 4, 2)), $tmp$$Register);
-    __ ldf(FloatRegisterImpl::D, $constanttablebase, con_offset, as_DoubleFloatRegister($dst$$reg));
-  %}
-  ins_pipe(loadConFD);
-%}
-
-// Replicate scalar to packed int values in Double register
-instruct Repl2I_reg_helper(iRegL dst, iRegI src) %{
-  effect(DEF dst, USE src);
-  format %{ "SLLX  $src,32,$dst\n\t"
-            "SRLX  $dst,32,O7\n\t"
-            "OR    $dst,O7,$dst\t! replicate2I" %}
-  ins_encode( enc_repl2i(src, dst));
-  ins_pipe(ialu_reg);
-%}
-
-// Replicate scalar to packed int values in Double register
-instruct Repl2I_reg(stackSlotD dst, iRegI src) %{
-  match(Set dst (Replicate2I src));
-  expand %{
-    iRegL tmp;
-    Repl2I_reg_helper(tmp, src);
-    regL_to_stkD(dst, tmp);
-  %}
-%}
-
-// Replicate scalar zero constant to packed int values in Double register
-instruct Repl2I_immI(regD dst, immI con, o7RegI tmp) %{
-  match(Set dst (Replicate2I con));
-  effect(KILL tmp);
-  format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: Repl2I($con)" %}
-  ins_encode %{
-    // XXX This is a quick fix for 6833573.
-    //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 2, 4)), $dst$$FloatRegister);
-    RegisterOrConstant con_offset = __ ensure_simm13_or_reg($constantoffset(replicate_immI($con$$constant, 2, 4)), $tmp$$Register);
-    __ ldf(FloatRegisterImpl::D, $constanttablebase, con_offset, as_DoubleFloatRegister($dst$$reg));
-  %}
-  ins_pipe(loadConFD);
-%}
-
 //----------Control Flow Instructions------------------------------------------
 // Compare Instructions
 // Compare Integers
@@ -10740,6 +10473,308 @@ instruct storeS_reversed(indIndexMemory dst, iRegI src) %{
     __ stha($src$$Register, $dst$$base$$Register, $dst$$index$$Register, Assembler::ASI_PRIMARY_LITTLE);
   %}
   ins_pipe(istore_mem_reg);
+%}
+
+// ====================VECTOR INSTRUCTIONS=====================================
+
+// Load Aligned Packed values into a Double Register
+instruct loadV8(regD dst, memory mem) %{
+  predicate(n->as_LoadVector()->memory_size() == 8);
+  match(Set dst (LoadVector mem));
+  ins_cost(MEMORY_REF_COST);
+  size(4);
+  format %{ "LDDF   $mem,$dst\t! load vector (8 bytes)" %}
+  ins_encode %{
+    __ ldf(FloatRegisterImpl::D, $mem$$Address, as_DoubleFloatRegister($dst$$reg));
+  %}
+  ins_pipe(floadD_mem);
+%}
+
+// Store Vector in Double register to memory
+instruct storeV8(memory mem, regD src) %{
+  predicate(n->as_StoreVector()->memory_size() == 8);
+  match(Set mem (StoreVector mem src));
+  ins_cost(MEMORY_REF_COST);
+  size(4);
+  format %{ "STDF   $src,$mem\t! store vector (8 bytes)" %}
+  ins_encode %{
+    __ stf(FloatRegisterImpl::D, as_DoubleFloatRegister($src$$reg), $mem$$Address);
+  %}
+  ins_pipe(fstoreD_mem_reg);
+%}
+
+// Store Zero into vector in memory
+instruct storeV8B_zero(memory mem, immI0 zero) %{
+  predicate(n->as_StoreVector()->memory_size() == 8);
+  match(Set mem (StoreVector mem (ReplicateB zero)));
+  ins_cost(MEMORY_REF_COST);
+  size(4);
+  format %{ "STX    $zero,$mem\t! store zero vector (8 bytes)" %}
+  ins_encode %{
+    __ stx(G0, $mem$$Address);
+  %}
+  ins_pipe(fstoreD_mem_zero);
+%}
+
+instruct storeV4S_zero(memory mem, immI0 zero) %{
+  predicate(n->as_StoreVector()->memory_size() == 8);
+  match(Set mem (StoreVector mem (ReplicateS zero)));
+  ins_cost(MEMORY_REF_COST);
+  size(4);
+  format %{ "STX    $zero,$mem\t! store zero vector (4 shorts)" %}
+  ins_encode %{
+    __ stx(G0, $mem$$Address);
+  %}
+  ins_pipe(fstoreD_mem_zero);
+%}
+
+instruct storeV2I_zero(memory mem, immI0 zero) %{
+  predicate(n->as_StoreVector()->memory_size() == 8);
+  match(Set mem (StoreVector mem (ReplicateI zero)));
+  ins_cost(MEMORY_REF_COST);
+  size(4);
+  format %{ "STX    $zero,$mem\t! store zero vector (2 ints)" %}
+  ins_encode %{
+    __ stx(G0, $mem$$Address);
+  %}
+  ins_pipe(fstoreD_mem_zero);
+%}
+
+instruct storeV2F_zero(memory mem, immF0 zero) %{
+  predicate(n->as_StoreVector()->memory_size() == 8);
+  match(Set mem (StoreVector mem (ReplicateF zero)));
+  ins_cost(MEMORY_REF_COST);
+  size(4);
+  format %{ "STX    $zero,$mem\t! store zero vector (2 floats)" %}
+  ins_encode %{
+    __ stx(G0, $mem$$Address);
+  %}
+  ins_pipe(fstoreD_mem_zero);
+%}
+
+// Replicate scalar to packed byte values into Double register
+instruct Repl8B_reg(regD dst, iRegI src, iRegL tmp, o7RegL tmp2) %{
+  predicate(n->as_Vector()->length() == 8 && UseVIS >= 3);
+  match(Set dst (ReplicateB src));
+  effect(DEF dst, USE src, TEMP tmp, KILL tmp2);
+  format %{ "SLLX  $src,56,$tmp\n\t"
+            "SRLX  $tmp, 8,$tmp2\n\t"
+            "OR    $tmp,$tmp2,$tmp\n\t"
+            "SRLX  $tmp,16,$tmp2\n\t"
+            "OR    $tmp,$tmp2,$tmp\n\t"
+            "SRLX  $tmp,32,$tmp2\n\t"
+            "OR    $tmp,$tmp2,$tmp\t! replicate8B\n\t"
+            "MOVXTOD $tmp,$dst\t! MoveL2D" %}
+  ins_encode %{
+    Register Rsrc = $src$$Register;
+    Register Rtmp = $tmp$$Register;
+    Register Rtmp2 = $tmp2$$Register;
+    __ sllx(Rsrc,    56, Rtmp);
+    __ srlx(Rtmp,     8, Rtmp2);
+    __ or3 (Rtmp, Rtmp2, Rtmp);
+    __ srlx(Rtmp,    16, Rtmp2);
+    __ or3 (Rtmp, Rtmp2, Rtmp);
+    __ srlx(Rtmp,    32, Rtmp2);
+    __ or3 (Rtmp, Rtmp2, Rtmp);
+    __ movxtod(Rtmp, as_DoubleFloatRegister($dst$$reg));
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Replicate scalar to packed byte values into Double stack
+instruct Repl8B_stk(stackSlotD dst, iRegI src, iRegL tmp, o7RegL tmp2) %{
+  predicate(n->as_Vector()->length() == 8 && UseVIS < 3);
+  match(Set dst (ReplicateB src));
+  effect(DEF dst, USE src, TEMP tmp, KILL tmp2);
+  format %{ "SLLX  $src,56,$tmp\n\t"
+            "SRLX  $tmp, 8,$tmp2\n\t"
+            "OR    $tmp,$tmp2,$tmp\n\t"
+            "SRLX  $tmp,16,$tmp2\n\t"
+            "OR    $tmp,$tmp2,$tmp\n\t"
+            "SRLX  $tmp,32,$tmp2\n\t"
+            "OR    $tmp,$tmp2,$tmp\t! replicate8B\n\t"
+            "STX   $tmp,$dst\t! regL to stkD" %}
+  ins_encode %{
+    Register Rsrc = $src$$Register;
+    Register Rtmp = $tmp$$Register;
+    Register Rtmp2 = $tmp2$$Register;
+    __ sllx(Rsrc,    56, Rtmp);
+    __ srlx(Rtmp,     8, Rtmp2);
+    __ or3 (Rtmp, Rtmp2, Rtmp);
+    __ srlx(Rtmp,    16, Rtmp2);
+    __ or3 (Rtmp, Rtmp2, Rtmp);
+    __ srlx(Rtmp,    32, Rtmp2);
+    __ or3 (Rtmp, Rtmp2, Rtmp);
+    __ set ($dst$$disp + STACK_BIAS, Rtmp2);
+    __ stx (Rtmp, Rtmp2, $dst$$base$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Replicate scalar constant to packed byte values in Double register
+instruct Repl8B_immI(regD dst, immI13 con, o7RegI tmp) %{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (ReplicateB con));
+  effect(KILL tmp);
+  format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: Repl8B($con)" %}
+  ins_encode %{
+    // XXX This is a quick fix for 6833573.
+    //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 8, 1)), $dst$$FloatRegister);
+    RegisterOrConstant con_offset = __ ensure_simm13_or_reg($constantoffset(replicate_immI($con$$constant, 8, 1)), $tmp$$Register);
+    __ ldf(FloatRegisterImpl::D, $constanttablebase, con_offset, as_DoubleFloatRegister($dst$$reg));
+  %}
+  ins_pipe(loadConFD);
+%}
+
+// Replicate scalar to packed char/short values into Double register
+instruct Repl4S_reg(regD dst, iRegI src, iRegL tmp, o7RegL tmp2) %{
+  predicate(n->as_Vector()->length() == 4 && UseVIS >= 3);
+  match(Set dst (ReplicateS src));
+  effect(DEF dst, USE src, TEMP tmp, KILL tmp2);
+  format %{ "SLLX  $src,48,$tmp\n\t"
+            "SRLX  $tmp,16,$tmp2\n\t"
+            "OR    $tmp,$tmp2,$tmp\n\t"
+            "SRLX  $tmp,32,$tmp2\n\t"
+            "OR    $tmp,$tmp2,$tmp\t! replicate4S\n\t"
+            "MOVXTOD $tmp,$dst\t! MoveL2D" %}
+  ins_encode %{
+    Register Rsrc = $src$$Register;
+    Register Rtmp = $tmp$$Register;
+    Register Rtmp2 = $tmp2$$Register;
+    __ sllx(Rsrc,    48, Rtmp);
+    __ srlx(Rtmp,    16, Rtmp2);
+    __ or3 (Rtmp, Rtmp2, Rtmp);
+    __ srlx(Rtmp,    32, Rtmp2);
+    __ or3 (Rtmp, Rtmp2, Rtmp);
+    __ movxtod(Rtmp, as_DoubleFloatRegister($dst$$reg));
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Replicate scalar to packed char/short values into Double stack
+instruct Repl4S_stk(stackSlotD dst, iRegI src, iRegL tmp, o7RegL tmp2) %{
+  predicate(n->as_Vector()->length() == 4 && UseVIS < 3);
+  match(Set dst (ReplicateS src));
+  effect(DEF dst, USE src, TEMP tmp, KILL tmp2);
+  format %{ "SLLX  $src,48,$tmp\n\t"
+            "SRLX  $tmp,16,$tmp2\n\t"
+            "OR    $tmp,$tmp2,$tmp\n\t"
+            "SRLX  $tmp,32,$tmp2\n\t"
+            "OR    $tmp,$tmp2,$tmp\t! replicate4S\n\t"
+            "STX   $tmp,$dst\t! regL to stkD" %}
+  ins_encode %{
+    Register Rsrc = $src$$Register;
+    Register Rtmp = $tmp$$Register;
+    Register Rtmp2 = $tmp2$$Register;
+    __ sllx(Rsrc,    48, Rtmp);
+    __ srlx(Rtmp,    16, Rtmp2);
+    __ or3 (Rtmp, Rtmp2, Rtmp);
+    __ srlx(Rtmp,    32, Rtmp2);
+    __ or3 (Rtmp, Rtmp2, Rtmp);
+    __ set ($dst$$disp + STACK_BIAS, Rtmp2);
+    __ stx (Rtmp, Rtmp2, $dst$$base$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Replicate scalar constant to packed char/short values in Double register
+instruct Repl4S_immI(regD dst, immI con, o7RegI tmp) %{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (ReplicateS con));
+  effect(KILL tmp);
+  format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: Repl4S($con)" %}
+  ins_encode %{
+    // XXX This is a quick fix for 6833573.
+    //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 4, 2)), $dst$$FloatRegister);
+    RegisterOrConstant con_offset = __ ensure_simm13_or_reg($constantoffset(replicate_immI($con$$constant, 4, 2)), $tmp$$Register);
+    __ ldf(FloatRegisterImpl::D, $constanttablebase, con_offset, as_DoubleFloatRegister($dst$$reg));
+  %}
+  ins_pipe(loadConFD);
+%}
+
+// Replicate scalar to packed int values into Double register
+instruct Repl2I_reg(regD dst, iRegI src, iRegL tmp, o7RegL tmp2) %{
+  predicate(n->as_Vector()->length() == 2 && UseVIS >= 3);
+  match(Set dst (ReplicateI src));
+  effect(DEF dst, USE src, TEMP tmp, KILL tmp2);
+  format %{ "SLLX  $src,32,$tmp\n\t"
+            "SRLX  $tmp,32,$tmp2\n\t"
+            "OR    $tmp,$tmp2,$tmp\t! replicate2I\n\t"
+            "MOVXTOD $tmp,$dst\t! MoveL2D" %}
+  ins_encode %{
+    Register Rsrc = $src$$Register;
+    Register Rtmp = $tmp$$Register;
+    Register Rtmp2 = $tmp2$$Register;
+    __ sllx(Rsrc,    32, Rtmp);
+    __ srlx(Rtmp,    32, Rtmp2);
+    __ or3 (Rtmp, Rtmp2, Rtmp);
+    __ movxtod(Rtmp, as_DoubleFloatRegister($dst$$reg));
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Replicate scalar to packed int values into Double stack
+instruct Repl2I_stk(stackSlotD dst, iRegI src, iRegL tmp, o7RegL tmp2) %{
+  predicate(n->as_Vector()->length() == 2 && UseVIS < 3);
+  match(Set dst (ReplicateI src));
+  effect(DEF dst, USE src, TEMP tmp, KILL tmp2);
+  format %{ "SLLX  $src,32,$tmp\n\t"
+            "SRLX  $tmp,32,$tmp2\n\t"
+            "OR    $tmp,$tmp2,$tmp\t! replicate2I\n\t"
+            "STX   $tmp,$dst\t! regL to stkD" %}
+  ins_encode %{
+    Register Rsrc = $src$$Register;
+    Register Rtmp = $tmp$$Register;
+    Register Rtmp2 = $tmp2$$Register;
+    __ sllx(Rsrc,    32, Rtmp);
+    __ srlx(Rtmp,    32, Rtmp2);
+    __ or3 (Rtmp, Rtmp2, Rtmp);
+    __ set ($dst$$disp + STACK_BIAS, Rtmp2);
+    __ stx (Rtmp, Rtmp2, $dst$$base$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+// Replicate scalar zero constant to packed int values in Double register
+instruct Repl2I_immI(regD dst, immI con, o7RegI tmp) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateI con));
+  effect(KILL tmp);
+  format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: Repl2I($con)" %}
+  ins_encode %{
+    // XXX This is a quick fix for 6833573.
+    //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immI($con$$constant, 2, 4)), $dst$$FloatRegister);
+    RegisterOrConstant con_offset = __ ensure_simm13_or_reg($constantoffset(replicate_immI($con$$constant, 2, 4)), $tmp$$Register);
+    __ ldf(FloatRegisterImpl::D, $constanttablebase, con_offset, as_DoubleFloatRegister($dst$$reg));
+  %}
+  ins_pipe(loadConFD);
+%}
+
+// Replicate scalar to packed float values into Double stack
+instruct Repl2F_stk(stackSlotD dst, regF src) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateF src));
+  ins_cost(MEMORY_REF_COST*2);
+  format %{ "STF    $src,$dst.hi\t! packed2F\n\t"
+            "STF    $src,$dst.lo" %}
+  opcode(Assembler::stf_op3);
+  ins_encode(simple_form3_mem_reg(dst, src), form3_mem_plus_4_reg(dst, src));
+  ins_pipe(fstoreF_stk_reg);
+%}
+
+// Replicate scalar zero constant to packed float values in Double register
+instruct Repl2F_immF(regD dst, immF con, o7RegI tmp) %{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (ReplicateF con));
+  effect(KILL tmp);
+  format %{ "LDDF   [$constanttablebase + $constantoffset],$dst\t! load from constant table: Repl2F($con)" %}
+  ins_encode %{
+    // XXX This is a quick fix for 6833573.
+    //__ ldf(FloatRegisterImpl::D, $constanttablebase, $constantoffset(replicate_immF($con$$constant)), $dst$$FloatRegister);
+    RegisterOrConstant con_offset = __ ensure_simm13_or_reg($constantoffset(replicate_immF($con$$constant)), $tmp$$Register);
+    __ ldf(FloatRegisterImpl::D, $constanttablebase, con_offset, as_DoubleFloatRegister($dst$$reg));
+  %}
+  ins_pipe(loadConFD);
 %}
 
 //----------PEEPHOLE RULES-----------------------------------------------------
