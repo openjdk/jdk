@@ -29,12 +29,12 @@
 #include "jni_util.h"
 #include "jvm.h"
 
-#include "java_lang_reflect_Module.h"
+#include "java_lang_Module.h"
 
 /*
  * Gets the UTF-8 chars for the string and translates '.' to '/'.  Does no
  * further validation, assumption being that both calling code in
- * java.lang.reflect.Module and VM will do deeper validation.
+ * java.lang.Module and VM will do deeper validation.
  */
 static char*
 GetInternalPackageName(JNIEnv *env, jstring pkg, char* buf, jsize buf_size)
@@ -68,35 +68,37 @@ GetInternalPackageName(JNIEnv *env, jstring pkg, char* buf, jsize buf_size)
 }
 
 JNIEXPORT void JNICALL
-Java_java_lang_reflect_Module_defineModule0(JNIEnv *env, jclass cls, jobject module,
+Java_java_lang_Module_defineModule0(JNIEnv *env, jclass cls, jobject module,
                                             jboolean is_open, jstring version,
                                             jstring location, jobjectArray packages)
 {
     char** pkgs = NULL;
-    jsize idx;
     jsize num_packages = (*env)->GetArrayLength(env, packages);
 
     if (num_packages != 0 && (pkgs = calloc(num_packages, sizeof(char*))) == NULL) {
         JNU_ThrowOutOfMemoryError(env, NULL);
         return;
-    } else {
-        int valid = 1;
+    } else if ((*env)->EnsureLocalCapacity(env, (jint)num_packages) == 0) {
+        jboolean failed = JNI_FALSE;
+        int idx;
         for (idx = 0; idx < num_packages; idx++) {
             jstring pkg = (*env)->GetObjectArrayElement(env, packages, idx);
-            pkgs[idx] = GetInternalPackageName(env, pkg, NULL, 0);
-            if (pkgs[idx] == NULL) {
-                valid = 0;
+            char* name = GetInternalPackageName(env, pkg, NULL, 0);
+            if (name != NULL) {
+                pkgs[idx] = name;
+            } else {
+                failed = JNI_TRUE;
                 break;
             }
         }
-
-        if (valid != 0) {
+        if (!failed) {
             JVM_DefineModule(env, module, is_open, version, location,
-                    (const char* const*)pkgs, num_packages);
+                             (const char* const*)pkgs, num_packages);
         }
     }
 
     if (num_packages > 0) {
+        int idx;
         for (idx = 0; idx < num_packages; idx++) {
             if (pkgs[idx] != NULL) {
                 free(pkgs[idx]);
@@ -107,14 +109,14 @@ Java_java_lang_reflect_Module_defineModule0(JNIEnv *env, jclass cls, jobject mod
 }
 
 JNIEXPORT void JNICALL
-Java_java_lang_reflect_Module_addReads0(JNIEnv *env, jclass cls, jobject from, jobject to)
+Java_java_lang_Module_addReads0(JNIEnv *env, jclass cls, jobject from, jobject to)
 {
     JVM_AddReadsModule(env, from, to);
 }
 
 JNIEXPORT void JNICALL
-Java_java_lang_reflect_Module_addExports0(JNIEnv *env, jclass cls, jobject from,
-                                          jstring pkg, jobject to)
+Java_java_lang_Module_addExports0(JNIEnv *env, jclass cls, jobject from,
+                                  jstring pkg, jobject to)
 {
     char buf[128];
     char* pkg_name;
@@ -134,8 +136,8 @@ Java_java_lang_reflect_Module_addExports0(JNIEnv *env, jclass cls, jobject from,
 }
 
 JNIEXPORT void JNICALL
-Java_java_lang_reflect_Module_addExportsToAll0(JNIEnv *env, jclass cls, jobject from,
-                                               jstring pkg)
+Java_java_lang_Module_addExportsToAll0(JNIEnv *env, jclass cls, jobject from,
+                                       jstring pkg)
 {
     char buf[128];
     char* pkg_name;
@@ -155,8 +157,8 @@ Java_java_lang_reflect_Module_addExportsToAll0(JNIEnv *env, jclass cls, jobject 
 }
 
 JNIEXPORT void JNICALL
-Java_java_lang_reflect_Module_addExportsToAllUnnamed0(JNIEnv *env, jclass cls,
-                                                      jobject from, jstring pkg)
+Java_java_lang_Module_addExportsToAllUnnamed0(JNIEnv *env, jclass cls,
+                                              jobject from, jstring pkg)
 {
     char buf[128];
     char* pkg_name;
@@ -176,7 +178,7 @@ Java_java_lang_reflect_Module_addExportsToAllUnnamed0(JNIEnv *env, jclass cls,
 }
 
 JNIEXPORT void JNICALL
-Java_java_lang_reflect_Module_addPackage0(JNIEnv *env, jclass cls, jobject m, jstring pkg)
+Java_java_lang_Module_addPackage0(JNIEnv *env, jclass cls, jobject m, jstring pkg)
 {
     char buf[128];
     char* pkg_name;

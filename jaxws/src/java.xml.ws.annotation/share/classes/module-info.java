@@ -26,7 +26,11 @@
 /**
  * Defines a subset of the Common Annotations API to support programs running
  * on the Java SE Platform.
+ *
+ * @moduleGraph
+ * @since 9
  */
+@Deprecated(since="9", forRemoval=true)
 module java.xml.ws.annotation {
     exports javax.annotation;
 }

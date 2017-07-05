@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,10 @@
  */
 
 /* @test
- * @summary Test socketchannel vector IO
- * @library ..
+ * @summary Test socketchannel vector IO (use -Dseed=X to set PRNG seed)
+ * @library .. /lib/testlibrary/
+ * @build jdk.testlibrary.RandomFactory
+ * @run main VectorIO
  * @key randomness
  */
 
@@ -32,11 +34,11 @@ import java.net.*;
 import java.nio.*;
 import java.nio.channels.*;
 import java.util.*;
-
+import jdk.testlibrary.RandomFactory;
 
 public class VectorIO {
 
-    static Random generator = new Random();
+    private static Random generator = RandomFactory.getRandom();
 
     static int testSize;
 
@@ -85,8 +87,11 @@ public class VectorIO {
         while (rem > 0L) {
             long bytesWritten = sc.write(bufs);
             if (bytesWritten == 0) {
-                if (sc.isBlocking())
+                if (sc.isBlocking()) {
                     throw new RuntimeException("write did not block");
+                } else {
+                    System.err.println("Non-blocking write() wrote zero bytes");
+                }
                 Thread.sleep(50);
             } else {
                 rem -= bytesWritten;
@@ -100,8 +105,6 @@ public class VectorIO {
     static class Server
         extends TestThread
     {
-        static Random generator = new Random();
-
         final int testSize;
         final ServerSocketChannel ssc;
 
@@ -140,8 +143,10 @@ public class VectorIO {
 
                 for (;;) {
                     sc = ssc.accept();
-                    if (sc != null)
+                    if (sc != null) {
+                        System.err.println("accept() succeeded");
                         break;
+                    }
                     Thread.sleep(50);
                 }
 
@@ -154,8 +159,12 @@ public class VectorIO {
                     if (bytesRead < 0)
                         break;
                     if (bytesRead == 0) {
-                        if (sc.isBlocking())
+                        if (sc.isBlocking()) {
                             throw new RuntimeException("read did not block");
+                        } else {
+                            System.err.println
+                                ("Non-blocking read() read zero bytes");
+                        }
                         Thread.sleep(50);
                     }
                     avail -= bytesRead;

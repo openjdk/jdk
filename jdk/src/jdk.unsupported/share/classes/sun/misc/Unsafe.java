@@ -813,6 +813,7 @@ public final class Unsafe {
     /**
      * Tells the VM to define a class, without security checks.  By default, the
      * class loader and protection domain come from the caller's class.
+     * @see java.lang.invoke.MethodHandles.Lookup#defineClass(byte[])
      */
     @ForceInline
     public Class<?> defineClass(String name, byte[] b, int off, int len,

@@ -94,6 +94,7 @@ public class BasicTest {
         } catch (Throwable tt) {
             System.err.println("tt caught");
             tt.printStackTrace();
+            throw tt;
         } finally {
             httpServer.stop();
             httpsServer.stop();
@@ -223,7 +224,7 @@ public class BasicTest {
         CompletableFuture[] responses = new CompletableFuture[LOOPS];
         final Path source = TestUtil.getAFile(FILESIZE);
         HttpRequest request = HttpRequest.newBuilder(uri)
-                                         .POST(fromFile(tempFile()))
+                                         .POST(fromFile(source))
                                          .build();
         for (int i = 0; i < LOOPS; i++) {
             responses[i] = client.sendAsync(request, asFile(tempFile()))

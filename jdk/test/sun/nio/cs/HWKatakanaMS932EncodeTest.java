@@ -22,8 +22,9 @@
  */
 
 /* @test
-   @bug 4715330
-   @summary Check MS932/windows-31j encoding (char->byte) for halfwidth katakana chars
+ * @bug 4715330
+ * @summary Check MS932/windows-31j encoding (char->byte) for halfwidth katakana chars
+ * @modules jdk.charsets
  */
 
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -999,17 +999,17 @@ public class HTMLDocument extends DefaultStyledDocument {
      * </pre>
      *
      * <p>Invoking <code>setInnerHTML(elem, "&lt;ul&gt;&lt;li&gt;")</code>
-     * results in the following structure (new elements are <font
-     * style="color: red;">in red</font>).</p>
+     * results in the following structure (new elements are <span
+     * style="color: red;">in red</span>).</p>
      *
      * <pre>
      *     &lt;body&gt;
      *       |
      *     <b>&lt;div&gt;</b>
      *         \
-     *         <font style="color: red;">&lt;ul&gt;</font>
+     *         <span style="color: red;">&lt;ul&gt;</span>
      *           \
-     *           <font style="color: red;">&lt;li&gt;</font>
+     *           <span style="color: red;">&lt;li&gt;</span>
      * </pre>
      *
      * <p>Parameter <code>elem</code> must not be a leaf element,
@@ -1083,15 +1083,15 @@ public class HTMLDocument extends DefaultStyledDocument {
      * </pre>
      *
      * <p>Invoking <code>setOuterHTML(elem, "&lt;ul&gt;&lt;li&gt;")</code>
-     * results in the following structure (new elements are <font
-     * style="color: red;">in red</font>).</p>
+     * results in the following structure (new elements are <span
+     * style="color: red;">in red</span>).</p>
      *
      * <pre>
      *    &lt;body&gt;
      *      |
-     *     <font style="color: red;">&lt;ul&gt;</font>
+     *     <span style="color: red;">&lt;ul&gt;</span>
      *       \
-     *       <font style="color: red;">&lt;li&gt;</font>
+     *       <span style="color: red;">&lt;li&gt;</span>
      * </pre>
      *
      * <p>If either <code>elem</code> or <code>htmlText</code>
@@ -1157,16 +1157,16 @@ public class HTMLDocument extends DefaultStyledDocument {
      *
      * <p>Invoking <code>insertAfterStart(elem,
      * "&lt;ul&gt;&lt;li&gt;")</code> results in the following structure
-     * (new elements are <font style="color: red;">in red</font>).</p>
+     * (new elements are <span style="color: red;">in red</span>).</p>
      *
      * <pre>
      *        &lt;body&gt;
      *          |
      *        <b>&lt;div&gt;</b>
      *       /  |  \
-     *    <font style="color: red;">&lt;ul&gt;</font> &lt;p&gt; &lt;p&gt;
+     *    <span style="color: red;">&lt;ul&gt;</span> &lt;p&gt; &lt;p&gt;
      *     /
-     *  <font style="color: red;">&lt;li&gt;</font>
+     *  <span style="color: red;">&lt;li&gt;</span>
      * </pre>
      *
      * <p>Unlike the <code>insertBeforeStart</code> method, new
@@ -1229,17 +1229,17 @@ public class HTMLDocument extends DefaultStyledDocument {
      * </pre>
      *
      * <p>Invoking <code>insertBeforeEnd(elem, "&lt;ul&gt;&lt;li&gt;")</code>
-     * results in the following structure (new elements are <font
-     * style="color: red;">in red</font>).</p>
+     * results in the following structure (new elements are <span
+     * style="color: red;">in red</span>).</p>
      *
      * <pre>
      *        &lt;body&gt;
      *          |
      *        <b>&lt;div&gt;</b>
      *       /  |  \
-     *     &lt;p&gt; &lt;p&gt; <font style="color: red;">&lt;ul&gt;</font>
+     *     &lt;p&gt; &lt;p&gt; <span style="color: red;">&lt;ul&gt;</span>
      *               \
-     *               <font style="color: red;">&lt;li&gt;</font>
+     *               <span style="color: red;">&lt;li&gt;</span>
      * </pre>
      *
      * <p>Unlike the <code>insertAfterEnd</code> method, new elements
@@ -1300,14 +1300,14 @@ public class HTMLDocument extends DefaultStyledDocument {
      *
      * <p>Invoking <code>insertBeforeStart(elem,
      * "&lt;ul&gt;&lt;li&gt;")</code> results in the following structure
-     * (new elements are <font style="color: red;">in red</font>).</p>
+     * (new elements are <span style="color: red;">in red</span>).</p>
      *
      * <pre>
      *        &lt;body&gt;
      *         /  \
-     *      <font style="color: red;">&lt;ul&gt;</font> <b>&lt;div&gt;</b>
+     *      <span style="color: red;">&lt;ul&gt;</span> <b>&lt;div&gt;</b>
      *       /    /  \
-     *     <font style="color: red;">&lt;li&gt;</font> &lt;p&gt;  &lt;p&gt;
+     *     <span style="color: red;">&lt;li&gt;</span> &lt;p&gt;  &lt;p&gt;
      * </pre>
      *
      * <p>Unlike the <code>insertAfterStart</code> method, new
@@ -1360,15 +1360,15 @@ public class HTMLDocument extends DefaultStyledDocument {
      * </pre>
      *
      * <p>Invoking <code>insertAfterEnd(elem, "&lt;ul&gt;&lt;li&gt;")</code>
-     * results in the following structure (new elements are <font
-     * style="color: red;">in red</font>).</p>
+     * results in the following structure (new elements are <span
+     * style="color: red;">in red</span>).</p>
      *
      * <pre>
      *        &lt;body&gt;
      *         /  \
-     *      <b>&lt;div&gt;</b> <font style="color: red;">&lt;ul&gt;</font>
+     *      <b>&lt;div&gt;</b> <span style="color: red;">&lt;ul&gt;</span>
      *       / \    \
-     *     &lt;p&gt; &lt;p&gt;  <font style="color: red;">&lt;li&gt;</font>
+     *     &lt;p&gt; &lt;p&gt;  <span style="color: red;">&lt;li&gt;</span>
      * </pre>
      *
      * <p>Unlike the <code>insertBeforeEnd</code> method, new elements
