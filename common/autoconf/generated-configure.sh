@@ -853,6 +853,7 @@ OS_VERSION_MICRO
 OS_VERSION_MINOR
 OS_VERSION_MAJOR
 PKG_CONFIG
+BASH_ARGS
 CODESIGN
 XATTR
 DSYMUTIL
@@ -3522,6 +3523,9 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
+# Check for support for specific options in bash
+
+
 #
 # Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -4329,7 +4333,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1420811523
+DATE_WHEN_GENERATED=1421247827
 
 ###############################################################################
 #
@@ -19609,6 +19613,32 @@ $as_echo "yes" >&6; }
   fi
 
 
+  # Test if bash supports pipefail.
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if bash supports pipefail" >&5
+$as_echo_n "checking if bash supports pipefail... " >&6; }
+  if ${BASH} -c 'set -o pipefail'; then
+    BASH_ARGS="$BASH_ARGS -o pipefail"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if bash supports errexit (-e)" >&5
+$as_echo_n "checking if bash supports errexit (-e)... " >&6; }
+  if ${BASH} -e -c 'true'; then
+    BASH_ARGS="$BASH_ARGS -e"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  fi
+
+
+
+
 # Check if pkg-config is available.
 
 
@@ -27408,8 +27438,8 @@ $as_echo "$as_me: Trying to extract Visual Studio environment variables" >&6;}
     # The trailing space for everyone except PATH is no typo, but is needed due
     # to trailing \ in the Windows paths. These will be stripped later.
     $ECHO "$WINPATH_BASH -c 'echo VS_PATH="'\"$PATH\" > set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
-    $ECHO "$WINPATH_BASH -c 'echo VS_INCLUDE="'\"$INCLUDE\;$include \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
-    $ECHO "$WINPATH_BASH -c 'echo VS_LIB="'\"$LIB\;$lib \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
+    $ECHO "$WINPATH_BASH -c 'echo VS_INCLUDE="'\"$INCLUDE \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
+    $ECHO "$WINPATH_BASH -c 'echo VS_LIB="'\"$LIB \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
     $ECHO "$WINPATH_BASH -c 'echo VCINSTALLDIR="'\"$VCINSTALLDIR \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
     $ECHO "$WINPATH_BASH -c 'echo WindowsSdkDir="'\"$WindowsSdkDir \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE
     $ECHO "$WINPATH_BASH -c 'echo WINDOWSSDKDIR="'\"$WINDOWSSDKDIR \" >> set-vs-env.sh' >> $EXTRACT_VC_ENV_BAT_FILE

@@ -113,6 +113,7 @@ HELP_SETUP_DEPENDENCY_HELP
 
 # Setup tools that requires more complex handling, or that is not needed by the configure script.
 BASIC_SETUP_COMPLEX_TOOLS
+BASIC_CHECK_BASH_OPTIONS
 
 # Check if pkg-config is available.
 PKG_PROG_PKG_CONFIG

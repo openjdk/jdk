@@ -71,7 +71,7 @@ $(eval $(call SetupCopyFiles,COPY_LAUNCHER_SRC, \
         $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libjli/java_md*)))
 
 # This dir needs to exist before macro is evaluated to avoid warning from find.
-$(eval $(call MakeDir, $(SUPPORT_OUTPUTDIR)/src))
+$(call MakeDir, $(SUPPORT_OUTPUTDIR)/src)
 $(eval $(call SetupZipArchive,BUILD_SRC_ZIP, \
     SRC := $(SRC_ZIP_SRCS) $(SUPPORT_OUTPUTDIR)/src, \
     INCLUDES := $(SRC_ZIP_INCLUDES) launcher, \
