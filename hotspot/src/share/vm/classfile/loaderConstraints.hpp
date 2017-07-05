@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,10 @@ public:
   bool add_entry(symbolHandle name, klassOop klass1, Handle loader1,
                                     klassOop klass2, Handle loader2);
 
-  void check_signature_loaders(symbolHandle signature, Handle loader1,
-                               Handle loader2, bool is_method, TRAPS);
+  // Note:  The main entry point for this module is via SystemDictionary.
+  // SystemDictionary::check_signature_loaders(symbolHandle signature,
+  //                                           Handle loader1, Handle loader2,
+  //                                           bool is_method, TRAPS)
 
   klassOop find_constrained_klass(symbolHandle name, Handle loader);
   klassOop find_constrained_elem_klass(symbolHandle name, symbolHandle elem_name,

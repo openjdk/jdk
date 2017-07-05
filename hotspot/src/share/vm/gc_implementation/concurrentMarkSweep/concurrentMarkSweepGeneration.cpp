@@ -3847,7 +3847,7 @@ bool CMSConcMarkingTask::get_work_from_overflow_stack(CMSMarkStack* ovflw_stk,
   MutexLockerEx ml(ovflw_stk->par_lock(),
                    Mutex::_no_safepoint_check_flag);
   // Grab up to 1/4 the size of the work queue
-  size_t num = MIN2((size_t)work_q->max_elems()/4,
+  size_t num = MIN2((size_t)(work_q->max_elems() - work_q->size())/4,
                     (size_t)ParGCDesiredObjsFromOverflowList);
   num = MIN2(num, ovflw_stk->length());
   for (int i = (int) num; i > 0; i--) {
@@ -5204,13 +5204,12 @@ CMSParRemarkTask::do_work_steal(int i, Par_MarkRefsIntoAndScanClosure* cl,
   NOT_PRODUCT(int num_steals = 0;)
   oop obj_to_scan;
   CMSBitMap* bm = &(_collector->_markBitMap);
-  size_t num_from_overflow_list =
-           MIN2((size_t)work_q->max_elems()/4,
-                (size_t)ParGCDesiredObjsFromOverflowList);
 
   while (true) {
     // Completely finish any left over work from (an) earlier round(s)
     cl->trim_queue(0);
+    size_t num_from_overflow_list = MIN2((size_t)(work_q->max_elems() - work_q->size())/4,
+                                         (size_t)ParGCDesiredObjsFromOverflowList);
     // Now check if there's any work in the overflow list
     if (_collector->par_take_from_overflow_list(num_from_overflow_list,
                                                 work_q)) {
@@ -5622,13 +5621,12 @@ void CMSRefProcTaskProxy::do_work_steal(int i,
   OopTaskQueue* work_q = work_queue(i);
   NOT_PRODUCT(int num_steals = 0;)
   oop obj_to_scan;
-  size_t num_from_overflow_list =
-           MIN2((size_t)work_q->max_elems()/4,
-                (size_t)ParGCDesiredObjsFromOverflowList);
 
   while (true) {
     // Completely finish any left over work from (an) earlier round(s)
     drain->trim_queue(0);
+    size_t num_from_overflow_list = MIN2((size_t)(work_q->max_elems() - work_q->size())/4,
+                                         (size_t)ParGCDesiredObjsFromOverflowList);
     // Now check if there's any work in the overflow list
     if (_collector->par_take_from_overflow_list(num_from_overflow_list,
                                                 work_q)) {
@@ -9021,7 +9019,7 @@ void ASConcurrentMarkSweepGeneration::shrink_by(size_t desired_bytes) {
 // Transfer some number of overflown objects to usual marking
 // stack. Return true if some objects were transferred.
 bool MarkRefsIntoAndScanClosure::take_from_overflow_list() {
-  size_t num = MIN2((size_t)_mark_stack->capacity()/4,
+  size_t num = MIN2((size_t)(_mark_stack->capacity() - _mark_stack->length())/4,
                     (size_t)ParGCDesiredObjsFromOverflowList);
 
   bool res = _collector->take_from_overflow_list(num, _mark_stack);
