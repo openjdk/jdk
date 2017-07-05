@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -698,29 +698,58 @@ err:
 
 // read segments of a shared object
 static bool read_lib_segments(struct ps_prochandle* ph, int lib_fd, ELF_EHDR* lib_ehdr, uintptr_t lib_base) {
-   int i = 0;
-   ELF_PHDR* phbuf;
-   ELF_PHDR* lib_php = NULL;
+  int i = 0;
+  ELF_PHDR* phbuf;
+  ELF_PHDR* lib_php = NULL;
 
-   if ((phbuf = read_program_header_table(lib_fd, lib_ehdr)) == NULL)
-      return false;
+  int page_size=sysconf(_SC_PAGE_SIZE);
 
-   // we want to process only PT_LOAD segments that are not writable.
-   // i.e., text segments. The read/write/exec (data) segments would
-   // have been already added from core file segments.
-   for (lib_php = phbuf, i = 0; i < lib_ehdr->e_phnum; i++) {
-      if ((lib_php->p_type == PT_LOAD) && !(lib_php->p_flags & PF_W) && (lib_php->p_filesz != 0)) {
-         if (add_map_info(ph, lib_fd, lib_php->p_offset, lib_php->p_vaddr + lib_base, lib_php->p_filesz) == NULL)
-            goto err;
+  if ((phbuf = read_program_header_table(lib_fd, lib_ehdr)) == NULL) {
+    return false;
+  }
+
+  // we want to process only PT_LOAD segments that are not writable.
+  // i.e., text segments. The read/write/exec (data) segments would
+  // have been already added from core file segments.
+  for (lib_php = phbuf, i = 0; i < lib_ehdr->e_phnum; i++) {
+    if ((lib_php->p_type == PT_LOAD) && !(lib_php->p_flags & PF_W) && (lib_php->p_filesz != 0)) {
+
+      uintptr_t target_vaddr = lib_php->p_vaddr + lib_base;
+      map_info *existing_map = core_lookup(ph, target_vaddr);
+
+      if (existing_map == NULL){
+        if (add_map_info(ph, lib_fd, lib_php->p_offset,
+                          target_vaddr, lib_php->p_filesz) == NULL) {
+          goto err;
+        }
+      } else {
+        if ((existing_map->memsz != page_size) &&
+            (existing_map->fd != lib_fd) &&
+            (existing_map->memsz != lib_php->p_filesz)){
+
+          print_debug("address conflict @ 0x%lx (size = %ld, flags = %d\n)",
+                        target_vaddr, lib_php->p_filesz, lib_php->p_flags);
+          goto err;
+        }
+
+        /* replace PT_LOAD segment with library segment */
+        print_debug("overwrote with new address mapping (memsz %ld -> %ld)\n",
+                     existing_map->memsz, lib_php->p_filesz);
+
+        existing_map->fd = lib_fd;
+        existing_map->offset = lib_php->p_offset;
+        existing_map->memsz = lib_php->p_filesz;
       }
-      lib_php++;
-   }
+    }
 
-   free(phbuf);
-   return true;
+    lib_php++;
+  }
+
+  free(phbuf);
+  return true;
 err:
-   free(phbuf);
-   return false;
+  free(phbuf);
+  return false;
 }
 
 // process segments from interpreter (ld.so or ld-linux.so)

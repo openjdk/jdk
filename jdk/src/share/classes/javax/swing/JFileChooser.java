@@ -362,6 +362,7 @@ public class JFileChooser extends JComponent implements Accessible {
      */
     protected void setup(FileSystemView view) {
         installShowFilesListener();
+        installHierarchyListener();
 
         if(view == null) {
             view = FileSystemView.getFileSystemView();
@@ -372,6 +373,22 @@ public class JFileChooser extends JComponent implements Accessible {
             setFileFilter(getAcceptAllFileFilter());
         }
         enableEvents(AWTEvent.MOUSE_EVENT_MASK);
+    }
+
+    private void installHierarchyListener() {
+        addHierarchyListener(new HierarchyListener() {
+            @Override
+            public void hierarchyChanged(HierarchyEvent e) {
+                if ((e.getChangeFlags() & HierarchyEvent.PARENT_CHANGED)
+                        == HierarchyEvent.PARENT_CHANGED) {
+                    JFileChooser fc = JFileChooser.this;
+                    JRootPane rootPane = SwingUtilities.getRootPane(fc);
+                    if (rootPane != null) {
+                        rootPane.setDefaultButton(fc.getUI().getDefaultButton(fc));
+                    }
+                }
+            }
+        });
     }
 
     private void installShowFilesListener() {
@@ -801,7 +818,6 @@ public class JFileChooser extends JComponent implements Accessible {
                 dialog.getRootPane().setWindowDecorationStyle(JRootPane.FILE_CHOOSER_DIALOG);
             }
         }
-        dialog.getRootPane().setDefaultButton(ui.getDefaultButton(this));
         dialog.pack();
         dialog.setLocationRelativeTo(parent);
 

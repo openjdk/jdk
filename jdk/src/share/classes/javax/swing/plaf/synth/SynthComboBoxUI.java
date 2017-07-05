@@ -35,7 +35,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 
 /**
- * Provides the Synth L&F UI delegate for
+ * Provides the Synth L&amp;F UI delegate for
  * {@link javax.swing.JComboBox}.
  *
  * @author Scott Violet
@@ -103,7 +103,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      *
      * Overridden to ensure that ButtonHandler is created prior to any of
      * the other installXXX methods, since several of them reference
@@ -152,7 +152,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void installListeners() {
@@ -163,7 +163,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void uninstallUI(JComponent c) {
@@ -175,7 +175,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallDefaults() {
@@ -187,7 +187,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected void uninstallListeners() {
@@ -200,7 +200,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public SynthContext getContext(JComponent c) {
@@ -251,7 +251,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected ComboPopup createPopup() {
@@ -261,7 +261,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected ListCellRenderer createRenderer() {
@@ -269,7 +269,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected ComboBoxEditor createEditor() {
@@ -281,7 +281,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     //======================
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void propertyChange(PropertyChangeEvent e) {
@@ -291,7 +291,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     protected JButton createArrowButton() {
@@ -360,7 +360,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,

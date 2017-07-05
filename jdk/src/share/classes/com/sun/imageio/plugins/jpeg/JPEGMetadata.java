@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,10 +278,11 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
                         (JFIFMarkerSegment) findMarkerSegment
                         (JFIFMarkerSegment.class, true);
                     if (jfif == null) {
-                        throw new IIOException
-                            ("ICC APP2 encountered without prior JFIF!");
+                        newGuy = new MarkerSegment(buffer);
+                        newGuy.loadData(buffer);
+                    } else {
+                        jfif.addICC(buffer);
                     }
-                    jfif.addICC(buffer);
                     // newGuy remains null
                 } else {
                     newGuy = new MarkerSegment(buffer);

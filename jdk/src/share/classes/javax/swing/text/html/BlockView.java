@@ -352,7 +352,7 @@ public class BlockView extends BoxView  {
      *
      * @param axis may be either <code>View.X_AXIS</code>
      *           or <code>View.Y_AXIS</code>
-     * @return   the span the view would like to be rendered into >= 0;
+     * @return   the span the view would like to be rendered into &gt;= 0;
      *           typically the view is told to render into the span
      *           that is returned, although there is no guarantee;
      *           the parent may choose to resize or break the view
@@ -368,7 +368,7 @@ public class BlockView extends BoxView  {
      *
      * @param axis may be either <code>View.X_AXIS</code>
      *           or <code>View.Y_AXIS</code>
-     * @return  the span the view would like to be rendered into >= 0;
+     * @return  the span the view would like to be rendered into &gt;= 0;
      *           typically the view is told to render into the span
      *           that is returned, although there is no guarantee;
      *           the parent may choose to resize or break the view
@@ -384,7 +384,7 @@ public class BlockView extends BoxView  {
      *
      * @param axis may be either <code>View.X_AXIS</code>
      *           or <code>View.Y_AXIS</code>
-     * @return   the span the view would like to be rendered into >= 0;
+     * @return   the span the view would like to be rendered into &gt;= 0;
      *           typically the view is told to render into the span
      *           that is returned, although there is no guarantee;
      *           the parent may choose to resize or break the view

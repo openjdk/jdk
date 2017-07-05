@@ -63,7 +63,7 @@ import java.util.TooManyListenersException;
  * itself between the platform and the
  * listeners provided by the initiator of the drag operation.
  * <p>
- * <a name="defaultCursor" />
+ * <a name="defaultCursor"></a>
  * By default, {@code DragSourceContext} sets the cursor as appropriate
  * for the current state of the drag and drop operation. For example, if
  * the user has chosen {@linkplain DnDConstants#ACTION_MOVE the move action},

@@ -43,7 +43,7 @@ import sun.swing.*;
 import sun.swing.SwingUtilities2;
 
 /**
- * Basic L&F implementation of a FileChooser.
+ * Basic L&amp;F implementation of a FileChooser.
  *
  * @author Jeff Dinkins
  */

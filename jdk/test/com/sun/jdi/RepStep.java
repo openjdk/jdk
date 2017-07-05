@@ -75,8 +75,12 @@ public class RepStep {
                                                    DEPTH);
 
         sr.addClassExclusionFilter("java.*");
+        sr.addClassExclusionFilter("javax.*");
         sr.addClassExclusionFilter("sun.*");
         sr.addClassExclusionFilter("com.sun.*");
+        sr.addClassExclusionFilter("com.oracle.*");
+        sr.addClassExclusionFilter("oracle.*");
+        sr.addClassExclusionFilter("jdk.internal.*");
         sr.enable();
     }
 

@@ -35,7 +35,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
     private static final Object[][] contents = {
         {"NEWLINE", "\n"},
         {"Warning.A.public.key.for.alias.signers.i.does.not.exist.Make.sure.a.KeyStore.is.properly.configured.",
-                "\u8B66\u544A: \u522B\u540D {0} \u7684\u516C\u5171\u5BC6\u94A5\u4E0D\u5B58\u5728\u3002\u8BF7\u786E\u4FDD\u5DF2\u6B63\u786E\u914D\u7F6E KeyStore\u3002"},
+                "\u8B66\u544A: \u522B\u540D {0} \u7684\u516C\u5171\u5BC6\u94A5\u4E0D\u5B58\u5728\u3002\u8BF7\u786E\u4FDD\u5DF2\u6B63\u786E\u914D\u7F6E\u5BC6\u94A5\u5E93\u3002"},
         {"Warning.Class.not.found.class", "\u8B66\u544A: \u627E\u4E0D\u5230\u7C7B: {0}"},
         {"Warning.Invalid.argument.s.for.constructor.arg",
                 "\u8B66\u544A: \u6784\u9020\u5668\u7684\u53C2\u6570\u65E0\u6548: {0}"},
@@ -62,7 +62,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"Add.Public.Key.Alias", "\u6DFB\u52A0\u516C\u5171\u5BC6\u94A5\u522B\u540D"},
         {"Remove.Public.Key.Alias", "\u5220\u9664\u516C\u5171\u5BC6\u94A5\u522B\u540D"},
         {"File", "\u6587\u4EF6"},
-        {"KeyStore", "KeyStore"},
+        {"KeyStore", "\u5BC6\u94A5\u5E93"},
         {"Policy.File.", "\u7B56\u7565\u6587\u4EF6:"},
         {"Could.not.open.policy.file.policyFile.e.toString.",
                 "\u65E0\u6CD5\u6253\u5F00\u7B56\u7565\u6587\u4EF6: {0}: {1}"},
@@ -94,10 +94,10 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {".Edit.Permission", "  \u7F16\u8F91\u6743\u9650"},
         {"Remove.Permission", "\u5220\u9664\u6743\u9650"},
         {"Done", "\u5B8C\u6210"},
-        {"KeyStore.URL.", "KeyStore URL:"},
-        {"KeyStore.Type.", "KeyStore \u7C7B\u578B:"},
-        {"KeyStore.Provider.", "KeyStore \u63D0\u4F9B\u65B9:"},
-        {"KeyStore.Password.URL.", "KeyStore \u53E3\u4EE4 URL:"},
+        {"KeyStore.URL.", "\u5BC6\u94A5\u5E93 URL:"},
+        {"KeyStore.Type.", "\u5BC6\u94A5\u5E93\u7C7B\u578B:"},
+        {"KeyStore.Provider.", "\u5BC6\u94A5\u5E93\u63D0\u4F9B\u65B9:"},
+        {"KeyStore.Password.URL.", "\u5BC6\u94A5\u5E93\u53E3\u4EE4 URL:"},
         {"Principals", "\u4E3B\u7528\u6237"},
         {".Edit.Principal.", "  \u7F16\u8F91\u4E3B\u7528\u6237:"},
         {".Add.New.Principal.", "  \u6DFB\u52A0\u65B0\u4E3B\u7528\u6237:"},
@@ -123,7 +123,7 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"Save.Changes", "\u4FDD\u5B58\u66F4\u6539"},
         {"No.Policy.Entry.selected", "\u6CA1\u6709\u9009\u62E9\u7B56\u7565\u6761\u76EE"},
         {"Unable.to.open.KeyStore.ex.toString.",
-                "\u65E0\u6CD5\u6253\u5F00 KeyStore: {0}"},
+                "\u65E0\u6CD5\u6253\u5F00\u5BC6\u94A5\u5E93: {0}"},
         {"No.principal.selected", "\u672A\u9009\u62E9\u4E3B\u7528\u6237"},
         {"No.permission.selected", "\u6CA1\u6709\u9009\u62E9\u6743\u9650"},
         {"name", "\u540D\u79F0"},
@@ -134,11 +134,14 @@ public class Resources_zh_CN extends java.util.ListResourceBundle {
         {"policy.type", "\u7B56\u7565\u7C7B\u578B"},
         {"property.name", "\u5C5E\u6027\u540D\u79F0"},
         {"provider.name", "\u63D0\u4F9B\u65B9\u540D\u79F0"},
+        {"url", "URL"},
+        {"method.list", "\u65B9\u6CD5\u5217\u8868"},
+        {"request.headers.list", "\u8BF7\u6C42\u6807\u5934\u5217\u8868"},
         {"Principal.List", "\u4E3B\u7528\u6237\u5217\u8868"},
         {"Permission.List", "\u6743\u9650\u5217\u8868"},
         {"Code.Base", "\u4EE3\u7801\u5E93"},
-        {"KeyStore.U.R.L.", "KeyStore URL:"},
-        {"KeyStore.Password.U.R.L.", "KeyStore \u53E3\u4EE4 URL:"}
+        {"KeyStore.U.R.L.", "\u5BC6\u94A5\u5E93 URL:"},
+        {"KeyStore.Password.U.R.L.", "\u5BC6\u94A5\u5E93\u53E3\u4EE4 URL:"}
     };
 
 

@@ -258,6 +258,12 @@ public class Container extends Component {
             public void validateUnconditionally(Container cont) {
                 cont.validateUnconditionally();
             }
+
+            @Override
+            public Component findComponentAt(Container cont, int x, int y,
+                    boolean ignoreEnabled) {
+                return cont.findComponentAt(x, y, ignoreEnabled);
+            }
         });
     }
 
@@ -2651,7 +2657,6 @@ public class Container extends Component {
      * behavior. Setting 'ignoreEnabled' to 'false' bypasses disabled
      * Components during the search. This behavior is used by the
      * lightweight cursor support in sun.awt.GlobalCursorManager.
-     * The cursor code calls this function directly via native code.
      *
      * The addition of this feature is temporary, pending the
      * adoption of new, public API which exports this feature.

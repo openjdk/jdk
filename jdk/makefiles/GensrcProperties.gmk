@@ -253,6 +253,13 @@ ifeq ($(OPENJDK_TARGET_OS),windows)
 	$(call CacheFind,$(JDK_TOPDIR)/src/windows/classes/sun/awt/windows)),\
 	ListResourceBundle,%zh_TW,%zh_HK))
 endif
+# os x specific awt properties
+ifeq ($(OPENJDK_TARGET_OS),macosx)
+$(eval $(call add_properties_to_compile,SUN_AWT,\
+	$(filter $(JDK_TOPDIR)/src/macosx/classes/sun/awt/resources/%.properties,\
+	$(call CacheFind,$(JDK_TOPDIR)/src/macosx/classes/sun/awt/resources)),\
+	ListResourceBundle))
+endif
 
 #sun/launcher/resources
 $(eval $(call add_properties_to_compile,SUN_LAUNCHER,\

@@ -40,8 +40,7 @@ public class Resources_it extends java.util.ListResourceBundle {
                 "*******************************************\n\n"},
 
         // keytool: Help part
-// "Option" should be translated.
-        {".OPTION.", " [Opzione]..."},
+        {".OPTION.", " [OPTION]..."},
         {"Options.", "Opzioni:"},
         {"Use.keytool.help.for.all.available.commands",
                  "Utilizzare \"keytool -help\" per visualizzare tutti i comandi disponibili"},
@@ -61,7 +60,6 @@ public class Resources_it extends java.util.ListResourceBundle {
                 "Esporta il certificato"}, //-exportcert
         {"Generates.a.key.pair",
                 "Genera una coppia di chiavi"}, //-genkeypair
-// translation of "secret" key should be different to "private" key.
         {"Generates.a.secret.key",
                 "Genera una chiave segreta"}, //-genseckey
         {"Generates.certificate.from.a.certificate.request",
@@ -244,8 +242,10 @@ public class Resources_it extends java.util.ListResourceBundle {
         {"Certification.request.stored.in.file.filename.",
                 "La richiesta di certificazione \u00E8 memorizzata nel file <{0}>"},
         {"Submit.this.to.your.CA", "Sottomettere alla propria CA"},
-        {"if.alias.not.specified.destalias.srckeypass.and.destkeypass.must.not.be.specified",
-            "Se l'alias non \u00E8 specificato, destalias, srckeypass e destkeypass non dovranno essere specificati"},
+        {"if.alias.not.specified.destalias.and.srckeypass.must.not.be.specified",
+            "Se l'alias non \u00E8 specificato, destalias e srckeypass non dovranno essere specificati"},
+        {"The.destination.pkcs12.keystore.has.different.storepass.and.keypass.Please.retry.with.destkeypass.specified.",
+            "Keystore pkcs12 di destinazione con storepass e keypass differenti. Riprovare con -destkeypass specificato."},
         {"Certificate.stored.in.file.filename.",
                 "Il certificato \u00E8 memorizzato nel file <{0}>"},
         {"Certificate.reply.was.installed.in.keystore",
@@ -361,7 +361,7 @@ public class Resources_it extends java.util.ListResourceBundle {
                  "L''alias <{0}> fa riferimento a un tipo di voce che non \u00E8 una voce di chiave privata. Il comando -keyclone supporta solo la copia delle voci di chiave private."},
 
         {".WARNING.WARNING.WARNING.",
-            "*****************  Avvertenza Avvertenza Avvertenza  *****************"},
+            "*****************  WARNING WARNING WARNING  *****************"},
         {"Signer.d.", "Firmatario #%d:"},
         {"Timestamp.", "Indicatore orario:"},
         {"Signature.", "Firma:"},
@@ -386,7 +386,7 @@ public class Resources_it extends java.util.ListResourceBundle {
                 "Certificato di primo livello nella risposta:\n"},
         {".is.not.trusted.", "...non \u00E8 considerato sicuro. "},
         {"Install.reply.anyway.no.", "Installare la risposta? [no]:  "},
-        {"NO", "No"},
+        {"NO", "NO"},
         {"Public.keys.in.reply.and.keystore.don.t.match",
                 "Le chiavi pubbliche nella risposta e nel keystore non corrispondono"},
         {"Certificate.reply.and.certificate.in.keystore.are.identical",
@@ -399,6 +399,10 @@ public class Resources_it extends java.util.ListResourceBundle {
                 "La chiave segreta non \u00E8 stata generata; l''alias <{0}> esiste gi\u00E0"},
         {"Please.provide.keysize.for.secret.key.generation",
                 "Specificare il valore -keysize per la generazione della chiave segreta"},
+
+        {"verified.by.s.in.s", "Verificato da %s in %s"},
+        {"warning.not.verified.make.sure.keystore.is.correct",
+            "AVVERTENZA: non verificato. Assicurarsi che -keystore sia corretto."},
 
         {"Extensions.", "Estensioni: "},
         {".Empty.value.", "(valore vuoto)"},

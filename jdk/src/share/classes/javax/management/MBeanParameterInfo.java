@@ -27,6 +27,7 @@ package javax.management;
 
 import java.util.Objects;
 
+
 /**
  * Describes an argument of an operation exposed by an MBean.
  * Instances of this class are immutable.  Subclasses may be mutable
@@ -137,10 +138,10 @@ public class MBeanParameterInfo extends MBeanFeatureInfo implements Cloneable {
         if (!(o instanceof MBeanParameterInfo))
             return false;
         MBeanParameterInfo p = (MBeanParameterInfo) o;
-        return (p.getName().equals(getName()) &&
-                p.getType().equals(getType()) &&
-                p.getDescription().equals(getDescription()) &&
-                p.getDescriptor().equals(getDescriptor()));
+        return (Objects.equals(p.getName(), getName()) &&
+                Objects.equals(p.getType(), getType()) &&
+                Objects.equals(p.getDescription(), getDescription()) &&
+                Objects.equals(p.getDescriptor(), getDescriptor()));
     }
 
     public int hashCode() {
