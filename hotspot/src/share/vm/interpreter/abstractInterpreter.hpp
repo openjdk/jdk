@@ -107,6 +107,8 @@ class AbstractInterpreter: AllStatic {
     java_lang_math_sqrt,                                        // implementation of java.lang.Math.sqrt  (x)
     java_lang_math_log,                                         // implementation of java.lang.Math.log   (x)
     java_lang_math_log10,                                       // implementation of java.lang.Math.log10 (x)
+    java_lang_math_pow,                                         // implementation of java.lang.Math.pow   (x,y)
+    java_lang_math_exp,                                         // implementation of java.lang.Math.exp   (x)
     java_lang_ref_reference_get,                                // implementation of java.lang.ref.Reference.get()
     number_of_method_entries,
     invalid = -1
