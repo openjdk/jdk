@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g DeleteEventRequestsTest.java
- *  @run main DeleteEventRequestsTest
+ *  @run driver DeleteEventRequestsTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

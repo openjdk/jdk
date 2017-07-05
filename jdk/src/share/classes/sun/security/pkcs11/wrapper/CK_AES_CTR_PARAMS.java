@@ -50,17 +50,17 @@ public class CK_AES_CTR_PARAMS {
     }
 
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
-        buffer.append(Constants.INDENT);
-        buffer.append("ulCounterBits: ");
-        buffer.append(ulCounterBits);
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("ulCounterBits: ");
+        sb.append(ulCounterBits);
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("cb: ");
-        buffer.append(Functions.toHexString(cb));
+        sb.append(Constants.INDENT);
+        sb.append("cb: ");
+        sb.append(Functions.toHexString(cb));
 
-        return buffer.toString();
+        return sb.toString();
     }
 }

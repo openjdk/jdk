@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,9 +52,6 @@
 #include "util_md.h"
 #include "error_messages.h"
 #include "debugInit.h"
-
-/* Get access to Native Platform Toolkit functions */
-#include "npt.h"
 
 /* Definition of a CommonRef tracked by the backend for the frontend */
 typedef struct RefNode {
@@ -122,9 +119,6 @@ typedef struct {
     char* property_user_dir;              /* UTF8 user.dir */
 
     unsigned log_flags;
-
-    /* The Native Platform Toolkit access */
-    NptEnv *npt;
 
     /* Common References static data */
     jrawMonitorID refLock;

@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: DOMX509Data.java 1333415 2012-05-03 12:03:51Z coheigea $
@@ -135,7 +135,7 @@ public final class DOMX509Data extends DOMStructure implements X509Data {
         this.content = Collections.unmodifiableList(content);
     }
 
-    public List getContent() {
+    public List<Object> getContent() {
         return content;
     }
 

@@ -1138,8 +1138,8 @@ static inline size_t percent_of_space(Space* space, HeapWord* addr)
 
 void CMSCollector::icms_update_allocation_limits()
 {
-  Generation* gen0 = GenCollectedHeap::heap()->get_gen(0);
-  EdenSpace* eden = gen0->as_DefNewGeneration()->eden();
+  Generation* young = GenCollectedHeap::heap()->get_gen(0);
+  EdenSpace* eden = young->as_DefNewGeneration()->eden();
 
   const unsigned int duty_cycle = stats().icms_update_duty_cycle();
   if (CMSTraceIncrementalPacing) {

@@ -130,34 +130,34 @@ public class CK_SLOT_INFO {
      * @return the string representation of CK_SLOT_INFO
      */
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
-        buffer.append(Constants.INDENT);
-        buffer.append("slotDescription: ");
-        buffer.append(new String(slotDescription));
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("slotDescription: ");
+        sb.append(new String(slotDescription));
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("manufacturerID: ");
-        buffer.append(new String(manufacturerID));
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("manufacturerID: ");
+        sb.append(new String(manufacturerID));
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("flags: ");
-        buffer.append(Functions.slotInfoFlagsToString(flags));
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("flags: ");
+        sb.append(Functions.slotInfoFlagsToString(flags));
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("hardwareVersion: ");
-        buffer.append(hardwareVersion.toString());
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("hardwareVersion: ");
+        sb.append(hardwareVersion.toString());
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("firmwareVersion: ");
-        buffer.append(firmwareVersion.toString());
+        sb.append(Constants.INDENT);
+        sb.append("firmwareVersion: ");
+        sb.append(firmwareVersion.toString());
         //buffer.append(Constants.NEWLINE);
 
-        return buffer.toString() ;
+        return sb.toString() ;
     }
 
 }

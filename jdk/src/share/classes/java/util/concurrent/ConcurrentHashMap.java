@@ -133,12 +133,12 @@ import java.util.stream.Stream;
  * mapped values are (perhaps transiently) not used or all take the
  * same mapping value.
  *
- * <p>A ConcurrentHashMap can be used as scalable frequency map (a
+ * <p>A ConcurrentHashMap can be used as a scalable frequency map (a
  * form of histogram or multiset) by using {@link
  * java.util.concurrent.atomic.LongAdder} values and initializing via
  * {@link #computeIfAbsent computeIfAbsent}. For example, to add a count
  * to a {@code ConcurrentHashMap<String,LongAdder> freqs}, you can use
- * {@code freqs.computeIfAbsent(k -> new LongAdder()).increment();}
+ * {@code freqs.computeIfAbsent(key, k -> new LongAdder()).increment();}
  *
  * <p>This class and its views and iterators implement all of the
  * <em>optional</em> methods of the {@link Map} and {@link Iterator}

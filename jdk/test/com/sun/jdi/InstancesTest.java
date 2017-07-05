@@ -29,7 +29,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g InstancesTest.java
- *  @run main InstancesTest
+ *  @run driver InstancesTest
  */
 
 /*

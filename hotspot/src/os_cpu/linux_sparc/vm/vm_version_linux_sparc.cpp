@@ -36,7 +36,7 @@ static bool detect_niagara() {
   }
 
   while (!feof(fp)) {
-    if (fscanf(fp, "cpu\t\t: %100[^\n]", &cpu) == 1) {
+    if (fscanf(fp, "cpu\t\t: %100[^\n]", cpu) == 1) {
       if (strstr(cpu, "Niagara") != NULL) {
         rv = true;
       }

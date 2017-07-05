@@ -168,6 +168,8 @@ public class ScrollPaneLayout
      * };
      * scrollpane.setLayout(mySPLayout):
      * </pre>
+     *
+     * @param sp an instance of the {@code JScrollPane}
      */
     public void syncWithScrollPane(JScrollPane sp) {
         viewport = sp.getViewport();
@@ -1106,6 +1108,7 @@ public class ScrollPaneLayout
      * Returns the bounds of the border around the specified scroll pane's
      * viewport.
      *
+     * @param scrollpane an instance of the {@code JScrollPane}
      * @return the size and position of the viewport border
      * @deprecated As of JDK version Swing1.1
      *    replaced by <code>JScrollPane.getViewportBorderBounds()</code>.

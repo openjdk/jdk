@@ -79,21 +79,21 @@ class FieldExpression extends UnaryExpression {
      * Convert an '.' expression to a qualified identifier
      */
     static public Identifier toIdentifier(Expression e) {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         while (e.op == FIELD) {
             FieldExpression fe = (FieldExpression)e;
             if (fe.id == idThis || fe.id == idClass) {
                 return null;
             }
-            buf.insert(0, fe.id);
-            buf.insert(0, '.');
+            sb.insert(0, fe.id);
+            sb.insert(0, '.');
             e = fe.right;
         }
         if (e.op != IDENT) {
             return null;
         }
-        buf.insert(0, ((IdentifierExpression)e).id);
-        return Identifier.lookup(buf.toString());
+        sb.insert(0, ((IdentifierExpression) e).id);
+        return Identifier.lookup(sb.toString());
     }
 
     /**

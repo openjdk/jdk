@@ -179,35 +179,35 @@ public abstract class State<T extends JComponent>{
         }
 
         private static String toString(int state) {
-            StringBuffer buffer = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             if ((state & SynthConstants.DEFAULT) == SynthConstants.DEFAULT) {
-                buffer.append("Default");
+                sb.append("Default");
             }
             if ((state & SynthConstants.DISABLED) == SynthConstants.DISABLED) {
-                if (buffer.length() > 0) buffer.append("+");
-                buffer.append("Disabled");
+                if (sb.length() > 0) sb.append("+");
+                sb.append("Disabled");
             }
             if ((state & SynthConstants.ENABLED) == SynthConstants.ENABLED) {
-                if (buffer.length() > 0) buffer.append("+");
-                buffer.append("Enabled");
+                if (sb.length() > 0) sb.append("+");
+                sb.append("Enabled");
             }
             if ((state & SynthConstants.FOCUSED) == SynthConstants.FOCUSED) {
-                if (buffer.length() > 0) buffer.append("+");
-                buffer.append("Focused");
+                if (sb.length() > 0) sb.append("+");
+                sb.append("Focused");
             }
             if ((state & SynthConstants.MOUSE_OVER) == SynthConstants.MOUSE_OVER) {
-                if (buffer.length() > 0) buffer.append("+");
-                buffer.append("MouseOver");
+                if (sb.length() > 0) sb.append("+");
+                sb.append("MouseOver");
             }
             if ((state & SynthConstants.PRESSED) == SynthConstants.PRESSED) {
-                if (buffer.length() > 0) buffer.append("+");
-                buffer.append("Pressed");
+                if (sb.length() > 0) sb.append("+");
+                sb.append("Pressed");
             }
             if ((state & SynthConstants.SELECTED) == SynthConstants.SELECTED) {
-                if (buffer.length() > 0) buffer.append("+");
-                buffer.append("Selected");
+                if (sb.length() > 0) sb.append("+");
+                sb.append("Selected");
             }
-            return buffer.toString();
+            return sb.toString();
         }
     }
 }

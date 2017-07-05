@@ -327,18 +327,6 @@ inline NativeMovRegMem* nativeMovRegMem_at (address address) {
   return test;
 }
 
-class NativeMovRegMemPatching: public NativeMovRegMem {
- private:
-  friend NativeMovRegMemPatching* nativeMovRegMemPatching_at (address address) {
-    NativeMovRegMemPatching* test = (NativeMovRegMemPatching*)(address - instruction_offset);
-    #ifdef ASSERT
-      test->verify();
-    #endif
-    return test;
-  }
-};
-
-
 
 // An interface for accessing/manipulating native leal instruction of form:
 //        leal reg, [reg + offset]

@@ -118,44 +118,44 @@ public class CK_PKCS5_PBKD2_PARAMS {
      * @return the string representation of CK_PKCS5_PBKD2_PARAMS
      */
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
-        buffer.append(Constants.INDENT);
-        buffer.append("saltSource: ");
-        buffer.append(saltSource);
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("saltSource: ");
+        sb.append(saltSource);
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("pSaltSourceData: ");
-        buffer.append(Functions.toHexString(pSaltSourceData));
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("pSaltSourceData: ");
+        sb.append(Functions.toHexString(pSaltSourceData));
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("ulSaltSourceDataLen: ");
-        buffer.append(pSaltSourceData.length);
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("ulSaltSourceDataLen: ");
+        sb.append(pSaltSourceData.length);
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("iterations: ");
-        buffer.append(iterations);
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("iterations: ");
+        sb.append(iterations);
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("prf: ");
-        buffer.append(prf);
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("prf: ");
+        sb.append(prf);
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("pPrfData: ");
-        buffer.append(Functions.toHexString(pPrfData));
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("pPrfData: ");
+        sb.append(Functions.toHexString(pPrfData));
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("ulPrfDataLen: ");
-        buffer.append(pPrfData.length);
+        sb.append(Constants.INDENT);
+        sb.append("ulPrfDataLen: ");
+        sb.append(pPrfData.length);
         //buffer.append(Constants.NEWLINE);
 
-        return buffer.toString();
+        return sb.toString();
     }
 
 }

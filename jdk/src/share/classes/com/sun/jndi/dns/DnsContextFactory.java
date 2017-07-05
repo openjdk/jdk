@@ -198,14 +198,14 @@ public class DnsContextFactory implements InitialContextFactory {
             }
         }
 
-        StringBuffer buf = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < servers.length; i++) {
             if (i > 0) {
-                buf.append(' ');
+                sb.append(' ');
             }
-            buf.append("dns://").append(servers[i]).append(path);
+            sb.append("dns://").append(servers[i]).append(path);
         }
-        return buf.toString();
+        return sb.toString();
     }
 
     /*

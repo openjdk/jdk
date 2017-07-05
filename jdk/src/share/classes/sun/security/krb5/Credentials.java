@@ -510,21 +510,21 @@ public class Credentials {
     }
 
     public String toString() {
-        StringBuffer buffer = new StringBuffer("Credentials:");
-        buffer.append(    "\n      client=").append(client);
-        buffer.append(    "\n      server=").append(server);
+        StringBuilder sb = new StringBuilder("Credentials:");
+        sb.append(    "\n      client=").append(client);
+        sb.append(    "\n      server=").append(server);
         if (authTime != null) {
-            buffer.append("\n    authTime=").append(authTime);
+            sb.append("\n    authTime=").append(authTime);
         }
         if (startTime != null) {
-            buffer.append("\n   startTime=").append(startTime);
+            sb.append("\n   startTime=").append(startTime);
         }
-        buffer.append(    "\n     endTime=").append(endTime);
-        buffer.append(    "\n   renewTill=").append(renewTill);
-        buffer.append(    "\n       flags=").append(flags);
-        buffer.append(    "\nEType (skey)=").append(key.getEType());
-        buffer.append(    "\n   (tkt key)=").append(ticket.encPart.eType);
-        return buffer.toString();
+        sb.append(    "\n     endTime=").append(endTime);
+        sb.append(    "\n   renewTill=").append(renewTill);
+        sb.append(    "\n       flags=").append(flags);
+        sb.append(    "\nEType (skey)=").append(key.getEType());
+        sb.append(    "\n   (tkt key)=").append(ticket.encPart.eType);
+        return sb.toString();
     }
 
 }

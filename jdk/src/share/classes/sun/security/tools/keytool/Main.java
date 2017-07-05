@@ -3664,7 +3664,7 @@ public final class Main {
                     .startsWith(s.toLowerCase(Locale.ENGLISH))) {
                 match[nmatch++] = i;
             } else {
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 boolean first = true;
                 for (char c: one.toCharArray()) {
                     if (first) {
@@ -3690,7 +3690,7 @@ public final class Main {
             if (match[1] > experiment) {
                 return match[0];
             }
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             MessageFormat form = new MessageFormat(rb.getString
                 ("command.{0}.is.ambiguous."));
             Object[] source = {s};

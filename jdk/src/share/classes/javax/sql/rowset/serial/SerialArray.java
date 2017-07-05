@@ -56,6 +56,7 @@ import java.util.Arrays;
  * SerialArray is to be used by more than one thread then access to the
  * SerialArray should be controlled by appropriate synchronization.
  *
+ * @since 1.5
  */
 public class SerialArray implements Array, Serializable, Cloneable {
 

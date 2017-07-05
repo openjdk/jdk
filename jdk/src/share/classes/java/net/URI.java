@@ -1957,7 +1957,7 @@ public final class URI
     private void defineString() {
         if (string != null) return;
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (scheme != null) {
             sb.append(scheme);
             sb.append(':');
@@ -2015,7 +2015,7 @@ public final class URI
             if (i >= 0)
                 path = base.substring(0, i + 1);
         } else {
-            StringBuffer sb = new StringBuffer(base.length() + cn);
+            StringBuilder sb = new StringBuilder(base.length() + cn);
             // 5.2 (6a)
             if (i >= 0)
                 sb.append(base.substring(0, i + 1));
@@ -2778,7 +2778,7 @@ public final class URI
         if (s.indexOf('%') < 0)
             return s;
 
-        StringBuffer sb = new StringBuffer(n);
+        StringBuilder sb = new StringBuilder(n);
         ByteBuffer bb = ByteBuffer.allocate(n);
         CharBuffer cb = CharBuffer.allocate(n);
         CharsetDecoder dec = ThreadLocalCoders.decoderFor("UTF-8")

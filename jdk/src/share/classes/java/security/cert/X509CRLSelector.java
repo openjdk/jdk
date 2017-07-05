@@ -566,7 +566,7 @@ public class X509CRLSelector implements CRLSelector {
      *         {@code X509CRLSelector}.
      */
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("X509CRLSelector: [\n");
         if (issuerNames != null) {
             sb.append("  IssuerNames:\n");
