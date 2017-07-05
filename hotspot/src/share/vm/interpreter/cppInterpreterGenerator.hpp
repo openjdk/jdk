@@ -53,6 +53,12 @@ class CppInterpreterGenerator: public AbstractInterpreterGenerator {
 #ifdef TARGET_ARCH_zero
 # include "cppInterpreterGenerator_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "cppInterpreterGenerator_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "cppInterpreterGenerator_ppc.hpp"
+#endif
 
 };
 

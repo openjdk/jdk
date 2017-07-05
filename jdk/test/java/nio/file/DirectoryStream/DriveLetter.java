@@ -52,16 +52,14 @@ public class DriveLetter {
             Path expected = Paths.get(drive).resolve(tempFile.getName());
 
             boolean found = false;
-            DirectoryStream<Path> stream = Paths.get(drive).newDirectoryStream();
-            try {
+            Path dir = Paths.get(drive);
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
                 for (Path file : stream) {
                     if (file.equals(expected)) {
                         found = true;
                         break;
                     }
                 }
-            } finally {
-                stream.close();
             }
             if (!found)
                 throw new RuntimeException("Temporary file not found???");

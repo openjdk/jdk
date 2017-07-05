@@ -57,8 +57,6 @@
 #ifndef _ECL_CURVE_H
 #define _ECL_CURVE_H
 
-#pragma ident   "%Z%%M% %I%     %E% SMI"
-
 #include "ecl-exp.h"
 #ifndef _KERNEL
 #include <stdlib.h>

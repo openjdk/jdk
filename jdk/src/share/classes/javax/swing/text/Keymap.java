@@ -137,6 +137,8 @@ public interface Keymap {
     /**
      * Sets the parent keymap, which will be used to
      * resolve key-bindings.
+     * The behavior is unspecified if a {@code Keymap} has itself
+     * as one of its resolve parents.
      *
      * @param parent the parent keymap
      */

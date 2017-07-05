@@ -70,6 +70,12 @@ class Disassembler {
 #ifdef TARGET_ARCH_zero
 # include "disassembler_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "disassembler_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "disassembler_ppc.hpp"
+#endif
 
 
  public:

@@ -54,11 +54,9 @@
  *
  *********************************************************************** */
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * Use is subject to license terms.
  */
-
-#pragma ident   "%Z%%M% %I%     %E% SMI"
 
 /* $Id: mpi.c,v 1.45 2006/09/29 20:12:21 alexei.volkov.bugs%sun.com Exp $ */
 
@@ -1148,7 +1146,7 @@ mp_err mp_expt(mp_int *a, mp_int *b, mp_int *c)
   mp_int   s, x;
   mp_err   res;
   mp_digit d;
-  int      dig, bit;
+  unsigned int      dig, bit;
 
   ARGCHK(a != NULL && b != NULL && c != NULL, MP_BADARG);
 
@@ -1523,7 +1521,7 @@ mp_err s_mp_exptmod(const mp_int *a, const mp_int *b, const mp_int *m, mp_int *c
   mp_int   s, x, mu;
   mp_err   res;
   mp_digit d;
-  int      dig, bit;
+  unsigned int      dig, bit;
 
   ARGCHK(a != NULL && b != NULL && c != NULL, MP_BADARG);
 
@@ -2057,7 +2055,7 @@ mp_size mp_trailing_zeros(const mp_int *mp)
 {
   mp_digit d;
   mp_size  n = 0;
-  int      ix;
+  unsigned int      ix;
 
   if (!mp || !MP_DIGITS(mp) || !mp_cmp_z(mp))
     return n;
@@ -2900,9 +2898,9 @@ void s_mp_copy(const mp_digit *sp, mp_digit *dp, mp_size count)
 /* Allocate ni records of nb bytes each, and return a pointer to that     */
 void    *s_mp_alloc(size_t nb, size_t ni, int kmflag)
 {
-  mp_int *mp;
   ++mp_allocs;
 #ifdef _KERNEL
+  mp_int *mp;
   mp = kmem_zalloc(nb * ni, kmflag);
   if (mp != NULL)
     FLAG(mp) = kmflag;
@@ -3112,7 +3110,7 @@ void     s_mp_div_2(mp_int *mp)
 mp_err s_mp_mul_2(mp_int *mp)
 {
   mp_digit *pd;
-  int      ix, used;
+  unsigned int      ix, used;
   mp_digit kin = 0;
 
   /* Shift digits leftward by 1 bit */
@@ -4663,7 +4661,7 @@ char     s_mp_todigit(mp_digit val, int r, int low)
 {
   char   ch;
 
-  if(val >= r)
+  if(val >= (unsigned int)r)
     return 0;
 
   ch = s_dmap_1[val];
@@ -4778,7 +4776,7 @@ mp_err
 mp_to_unsigned_octets(const mp_int *mp, unsigned char *str, mp_size maxlen)
 {
   int  ix, pos = 0;
-  int  bytes;
+  unsigned int  bytes;
 
   ARGCHK(mp != NULL && str != NULL && !SIGN(mp), MP_BADARG);
 
@@ -4810,7 +4808,7 @@ mp_err
 mp_to_signed_octets(const mp_int *mp, unsigned char *str, mp_size maxlen)
 {
   int  ix, pos = 0;
-  int  bytes;
+  unsigned int  bytes;
 
   ARGCHK(mp != NULL && str != NULL && !SIGN(mp), MP_BADARG);
 
@@ -4850,7 +4848,7 @@ mp_err
 mp_to_fixlen_octets(const mp_int *mp, unsigned char *str, mp_size length)
 {
   int  ix, pos = 0;
-  int  bytes;
+  unsigned int  bytes;
 
   ARGCHK(mp != NULL && str != NULL && !SIGN(mp), MP_BADARG);
 

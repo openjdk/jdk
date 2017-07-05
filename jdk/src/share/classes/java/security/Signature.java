@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import sun.security.jca.*;
 import sun.security.jca.GetInstance.Instance;
 
 /**
- * This Signature class is used to provide applications the functionality
+ * The Signature class is used to provide applications the functionality
  * of a digital signature algorithm. Digital signatures are used for
  * authentication and integrity assurance of digital data.
  *
@@ -98,6 +98,20 @@ import sun.security.jca.GetInstance.Instance;
  * the superclass are intended for cryptographic service providers who wish to
  * supply their own implementations of digital signature algorithms.
  *
+ * <p> Every implementation of the Java platform is required to support the
+ * following standard <code>Signature</code> algorithms:
+ * <ul>
+ * <li><tt>SHA1withDSA</tt></li>
+ * <li><tt>SHA1withRSA</tt></li>
+ * <li><tt>SHA256withRSA</tt></li>
+ * </ul>
+ * These algorithms are described in the <a href=
+ * "{@docRoot}/../technotes/guides/security/StandardNames.html#Signature">
+ * Signature section</a> of the
+ * Java Cryptography Architecture Standard Algorithm Name Documentation.
+ * Consult the release documentation for your implementation to see if any
+ * other algorithms are supported.
+ *
  * @author Benjamin Renaud
  *
  */
@@ -144,9 +158,9 @@ public abstract class Signature extends SignatureSpi {
      * Creates a Signature object for the specified algorithm.
      *
      * @param algorithm the standard string name of the algorithm.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the Signature section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#Signature">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      */
     protected Signature(String algorithm) {
@@ -184,9 +198,9 @@ public abstract class Signature extends SignatureSpi {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param algorithm the standard name of the algorithm requested.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the Signature section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#Signature">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @return the new Signature object.
@@ -303,9 +317,9 @@ public abstract class Signature extends SignatureSpi {
      * the {@link Security#getProviders() Security.getProviders()} method.
      *
      * @param algorithm the name of the algorithm requested.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the Signature section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#Signature">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @param provider the name of the provider.
@@ -353,9 +367,9 @@ public abstract class Signature extends SignatureSpi {
      * does not have to be registered in the provider list.
      *
      * @param algorithm the name of the algorithm requested.
-     * See Appendix A in the <a href=
-     * "../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the Signature section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#Signature">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard algorithm names.
      *
      * @param provider the provider.

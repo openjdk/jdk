@@ -27,15 +27,11 @@ package sun.nio.fs;
 
 import java.nio.*;
 import java.nio.file.*;
-import java.nio.file.attribute.*;
 import java.nio.charset.*;
-import java.nio.channels.*;
-import java.security.AccessController;
 import java.io.*;
 import java.net.URI;
 import java.util.*;
 import java.lang.ref.SoftReference;
-import sun.security.util.SecurityConstants;
 
 import static sun.nio.fs.UnixNativeDispatcher.*;
 import static sun.nio.fs.UnixConstants.*;
@@ -79,8 +75,6 @@ class UnixPath
     // removes redundant slashes and check input for invalid characters
     static String normalizeAndCheck(String input) {
         int n = input.length();
-        if (n == 0)
-            throw new InvalidPathException(input, "Path is empty");
         char prevChar = 0;
         for (int i=0; i < n; i++) {
             char c = input.charAt(i);
@@ -174,7 +168,13 @@ class UnixPath
         if (getFileSystem().needToResolveAgainstDefaultDirectory()) {
             return resolve(getFileSystem().defaultDirectory(), path);
         } else {
-            return path;
+            if (!isEmpty()) {
+                return path;
+            } else {
+                // empty path case will access current directory
+                byte[] here = { '.' };
+                return here;
+            }
         }
     }
 
@@ -193,7 +193,7 @@ class UnixPath
     }
 
     // Checks that the given file is a UnixPath
-    private UnixPath checkPath(FileRef obj) {
+    static UnixPath toUnixPath(Path obj) {
         if (obj == null)
             throw new NullPointerException();
         if (!(obj instanceof UnixPath))
@@ -209,12 +209,17 @@ class UnixPath
             // count names
             count = 0;
             index = 0;
-            while (index < path.length) {
-                byte c = path[index++];
-                if (c != '/') {
-                    count++;
-                    while (index < path.length && path[index] != '/')
-                        index++;
+            if (isEmpty()) {
+                // empty path has one name
+                count = 1;
+            } else {
+                while (index < path.length) {
+                    byte c = path[index++];
+                    if (c != '/') {
+                        count++;
+                        while (index < path.length && path[index] != '/')
+                            index++;
+                    }
                 }
             }
 
@@ -239,6 +244,16 @@ class UnixPath
         }
     }
 
+    // returns {@code true} if this path is an empty path
+    private boolean isEmpty() {
+        return path.length == 0;
+    }
+
+    // returns an empty path
+    private UnixPath emptyPath() {
+        return new UnixPath(getFileSystem(), new byte[0]);
+    }
+
     @Override
     public UnixFileSystem getFileSystem() {
         return fs;
@@ -246,7 +261,7 @@ class UnixPath
 
     @Override
     public UnixPath getRoot() {
-        if (path[0] == '/') {
+        if (path.length > 0 && path[0] == '/') {
             return getFileSystem().rootDirectory();
         } else {
             return null;
@@ -254,14 +269,17 @@ class UnixPath
     }
 
     @Override
-    public UnixPath getName() {
+    public UnixPath getFileName() {
         initOffsets();
 
         int count = offsets.length;
-        if (count == 0)
-            return null;  // no elements so no name
 
-        if (count == 1 && path[0] != '/')
+        // no elements so no name
+        if (count == 0)
+            return null;
+
+        // one name element and no root component
+        if (count == 1 && path.length > 0 && path[0] != '/')
             return this;
 
         int lastOffset = offsets[count-1];
@@ -349,41 +367,38 @@ class UnixPath
 
     @Override
     public boolean isAbsolute() {
-        return (path[0] == '/');
+        return (path.length > 0 && path[0] == '/');
     }
 
     // Resolve child against given base
     private static byte[] resolve(byte[] base, byte[] child) {
-        if (child[0] == '/')
+        int baseLength = base.length;
+        int childLength = child.length;
+        if (childLength == 0)
+            return base;
+        if (baseLength == 0 || child[0] == '/')
             return child;
         byte[] result;
-        if (base.length == 1 && base[0] == '/') {
-            result = new byte[child.length + 1];
+        if (baseLength == 1 && base[0] == '/') {
+            result = new byte[childLength + 1];
             result[0] = '/';
-            System.arraycopy(child, 0, result, 1, child.length);
+            System.arraycopy(child, 0, result, 1, childLength);
         } else {
-            result = new byte[base.length + 1 + child.length];
-            System.arraycopy(base, 0, result, 0, base.length);
+            result = new byte[baseLength + 1 + childLength];
+            System.arraycopy(base, 0, result, 0, baseLength);
             result[base.length] = '/';
-            System.arraycopy(child, 0, result,  base.length+1, child.length);
+            System.arraycopy(child, 0, result, baseLength+1, childLength);
         }
         return result;
     }
 
     @Override
     public UnixPath resolve(Path obj) {
-        if (obj == null)
-            return this;
-        byte[] other = checkPath(obj).path;
-        if (other[0] == '/')
+        byte[] other = toUnixPath(obj).path;
+        if (other.length > 0 && other[0] == '/')
             return ((UnixPath)obj);
         byte[] result = resolve(path, other);
         return new UnixPath(getFileSystem(), result);
-    }
-
-    @Override
-    public UnixPath resolve(String other) {
-        return resolve(new UnixPath(getFileSystem(), other));
     }
 
     UnixPath resolve(byte[] other) {
@@ -392,13 +407,17 @@ class UnixPath
 
     @Override
     public UnixPath relativize(Path obj) {
-        UnixPath other = checkPath(obj);
+        UnixPath other = toUnixPath(obj);
         if (other.equals(this))
-            return null;
+            return emptyPath();
 
         // can only relativize paths of the same type
         if (this.isAbsolute() != other.isAbsolute())
             throw new IllegalArgumentException("'other' is different type of Path");
+
+        // this path is the empty path
+        if (this.isEmpty())
+            return other;
 
         int bn = this.getNameCount();
         int cn = other.getNameCount();
@@ -419,14 +438,27 @@ class UnixPath
             if (dotdots == 0)
                 return remainder;
 
+            // other is the empty path
+            boolean isOtherEmpty = other.isEmpty();
+
             // result is a  "../" for each remaining name in base
-            // followed by the remaining names in other
-            byte[] result = new byte[dotdots*3 + remainder.path.length];
+            // followed by the remaining names in other. If the remainder is
+            // the empty path then we don't add the final trailing slash.
+            int len = dotdots*3 + remainder.path.length;
+            if (isOtherEmpty) {
+                assert remainder.isEmpty();
+                len--;
+            }
+            byte[] result = new byte[len];
             int pos = 0;
             while (dotdots > 0) {
                 result[pos++] = (byte)'.';
                 result[pos++] = (byte)'.';
-                result[pos++] = (byte)'/';
+                if (isOtherEmpty) {
+                    if (dotdots > 1) result[pos++] = (byte)'/';
+                } else {
+                    result[pos++] = (byte)'/';
+                }
                 dotdots--;
             }
             System.arraycopy(remainder.path, 0, result, pos, remainder.path.length);
@@ -457,7 +489,7 @@ class UnixPath
         int[] size = new int[count];                // length of name
         int remaining = count;                      // number of names remaining
         boolean hasDotDot = false;                  // has at least one ..
-        boolean isAbsolute = path[0] == '/';
+        boolean isAbsolute = isAbsolute();
 
         // first pass:
         //   1. compute length of names
@@ -542,7 +574,7 @@ class UnixPath
 
         // corner case - all names removed
         if (remaining == 0) {
-            return isAbsolute ? getFileSystem().rootDirectory() : null;
+            return isAbsolute ? getFileSystem().rootDirectory() : emptyPath();
         }
 
         // compute length of result
@@ -574,7 +606,7 @@ class UnixPath
 
     @Override
     public boolean startsWith(Path other) {
-        UnixPath that = checkPath(other);
+        UnixPath that = toUnixPath(other);
 
         // other path is longer
         if (that.path.length > path.length)
@@ -584,8 +616,9 @@ class UnixPath
         int thatOffsetCount = that.getNameCount();
 
         // other path has no name elements
-        if (thatOffsetCount == 0 && this.isAbsolute())
-            return true;
+        if (thatOffsetCount == 0 && this.isAbsolute()) {
+            return that.isEmpty() ? false : true;
+        }
 
         // given path has more elements that this path
         if (thatOffsetCount > thisOffsetCount)
@@ -622,13 +655,17 @@ class UnixPath
 
     @Override
     public boolean endsWith(Path other) {
-        UnixPath that = checkPath(other);
+        UnixPath that = toUnixPath(other);
 
         int thisLen = path.length;
         int thatLen = that.path.length;
 
         // other path is longer
         if (thatLen > thisLen)
+            return false;
+
+        // other path is the empty path
+        if (thisLen > 0 && thatLen == 0)
             return false;
 
         // other path is absolute so this path must be absolute
@@ -721,32 +758,6 @@ class UnixPath
         return stringValue;
     }
 
-    @Override
-    public Iterator<Path> iterator() {
-        initOffsets();
-        return new Iterator<Path>() {
-            int i = 0;
-            @Override
-            public boolean hasNext() {
-                return (i < offsets.length);
-            }
-            @Override
-            public Path next() {
-                if (i < offsets.length) {
-                    Path result = getName(i);
-                    i++;
-                    return result;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
-            @Override
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        };
-    }
-
     // -- file operations --
 
     // package-private
@@ -770,7 +781,6 @@ class UnixPath
         }
     }
 
-
     void checkRead() {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null)
@@ -790,296 +800,6 @@ class UnixPath
     }
 
     @Override
-    public FileStore getFileStore()
-        throws IOException
-    {
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new RuntimePermission("getFileStoreAttributes"));
-            checkRead();
-        }
-        return getFileSystem().getFileStore(this);
-    }
-
-    @Override
-    public void checkAccess(AccessMode... modes) throws IOException {
-        boolean e = false;
-        boolean r = false;
-        boolean w = false;
-        boolean x = false;
-
-        if (modes.length == 0) {
-            e = true;
-        } else {
-            for (AccessMode mode: modes) {
-                switch (mode) {
-                    case READ : r = true; break;
-                    case WRITE : w = true; break;
-                    case EXECUTE : x = true; break;
-                    default: throw new AssertionError("Should not get here");
-                }
-            }
-        }
-
-        int mode = 0;
-        if (e || r) {
-            checkRead();
-            mode |= (r) ? R_OK : F_OK;
-        }
-        if (w) {
-            checkWrite();
-            mode |= W_OK;
-        }
-        if (x) {
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                // not cached
-                sm.checkExec(getPathForPermissionCheck());
-            }
-            mode |= X_OK;
-        }
-        try {
-            access(this, mode);
-        } catch (UnixException exc) {
-            exc.rethrowAsIOException(this);
-        }
-    }
-
-    @Override
-    void implDelete(boolean failIfNotExists) throws IOException {
-        checkDelete();
-
-        // need file attributes to know if file is directory
-        UnixFileAttributes attrs = null;
-        try {
-            attrs = UnixFileAttributes.get(this, false);
-            if (attrs.isDirectory()) {
-                rmdir(this);
-            } else {
-                unlink(this);
-            }
-        } catch (UnixException x) {
-            // no-op if file does not exist
-            if (!failIfNotExists && x.errno() == ENOENT)
-                return;
-
-            // DirectoryNotEmptyException if not empty
-            if (attrs != null && attrs.isDirectory() &&
-                (x.errno() == EEXIST || x.errno() == ENOTEMPTY))
-                throw new DirectoryNotEmptyException(getPathForExecptionMessage());
-
-            x.rethrowAsIOException(this);
-        }
-    }
-
-    @Override
-    public DirectoryStream<Path> newDirectoryStream(DirectoryStream.Filter<? super Path> filter)
-        throws IOException
-    {
-        if (filter == null)
-            throw new NullPointerException();
-        checkRead();
-
-        // can't return SecureDirectoryStream on kernels that don't support
-        // openat, etc.
-        if (!supportsAtSysCalls()) {
-            try {
-                long ptr = opendir(this);
-                return new UnixDirectoryStream(this, ptr, filter);
-            } catch (UnixException x) {
-                if (x.errno() == ENOTDIR)
-                    throw new NotDirectoryException(getPathForExecptionMessage());
-                x.rethrowAsIOException(this);
-            }
-        }
-
-        // open directory and dup file descriptor for use by
-        // opendir/readdir/closedir
-        int dfd1 = -1;
-        int dfd2 = -1;
-        long dp = 0L;
-        try {
-            dfd1 = open(this, O_RDONLY, 0);
-            dfd2 = dup(dfd1);
-            dp = fdopendir(dfd1);
-        } catch (UnixException x) {
-            if (dfd1 != -1)
-                close(dfd1);
-            if (dfd2 != -1)
-                close(dfd2);
-            if (x.errno() == UnixConstants.ENOTDIR)
-                throw new NotDirectoryException(getPathForExecptionMessage());
-            x.rethrowAsIOException(this);
-        }
-        return new UnixSecureDirectoryStream(this, dp, dfd2, filter);
-    }
-
-    // invoked by AbstractPath#copyTo
-    @Override
-    public void implCopyTo(Path obj, CopyOption... options)
-        throws IOException
-    {
-        UnixPath target = (UnixPath)obj;
-        UnixCopyFile.copy(this, target, options);
-    }
-
-    @Override
-    public void implMoveTo(Path obj, CopyOption... options)
-        throws IOException
-    {
-        UnixPath target = (UnixPath)obj;
-        UnixCopyFile.move(this, target, options);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public <V extends FileAttributeView> V
-        getFileAttributeView(Class<V> type, LinkOption... options)
-    {
-        FileAttributeView view = getFileSystem()
-            .newFileAttributeView(type, this, options);
-        if (view == null)
-            return null;
-        return (V) view;
-    }
-
-    @Override
-    public DynamicFileAttributeView getFileAttributeView(String name,
-                                                         LinkOption... options)
-    {
-        return getFileSystem().newFileAttributeView(name, this, options);
-    }
-
-    @Override
-    public Path createDirectory(FileAttribute<?>... attrs)
-        throws IOException
-    {
-        checkWrite();
-
-        int mode = UnixFileModeAttribute
-            .toUnixMode(UnixFileModeAttribute.ALL_PERMISSIONS, attrs);
-        try {
-            mkdir(this, mode);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(this);
-        }
-        return this;
-    }
-
-    @Override
-    public SeekableByteChannel newByteChannel(Set<? extends OpenOption> options,
-                                              FileAttribute<?>... attrs)
-         throws IOException
-    {
-        int mode = UnixFileModeAttribute
-            .toUnixMode(UnixFileModeAttribute.ALL_READWRITE, attrs);
-        try {
-            return UnixChannelFactory.newFileChannel(this, options, mode);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(this);
-            return null;  // keep compiler happy
-        }
-    }
-
-    @Override
-    public boolean isSameFile(Path obj) throws IOException {
-        if (this.equals(obj))
-            return true;
-        if (!(obj instanceof UnixPath))  // includes null check
-            return false;
-        UnixPath other = (UnixPath)obj;
-
-        // check security manager access to both files
-        this.checkRead();
-        other.checkRead();
-
-        UnixFileAttributes thisAttrs;
-        UnixFileAttributes otherAttrs;
-        try {
-             thisAttrs = UnixFileAttributes.get(this, true);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(this);
-            return false;    // keep compiler happy
-        }
-        try {
-            otherAttrs = UnixFileAttributes.get(other, true);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(other);
-            return false;    // keep compiler happy
-        }
-        return thisAttrs.isSameFile(otherAttrs);
-    }
-
-    @Override
-    public Path createSymbolicLink(Path obj, FileAttribute<?>... attrs)
-        throws IOException
-    {
-        UnixPath target = checkPath(obj);
-
-        // no attributes supported when creating links
-        if (attrs.length > 0) {
-            UnixFileModeAttribute.toUnixMode(0, attrs);  // may throw NPE or UOE
-            throw new UnsupportedOperationException("Initial file attributes" +
-                "not supported when creating symbolic link");
-        }
-
-        // permission check
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new LinkPermission("symbolic"));
-            checkWrite();
-        }
-
-        // create link
-        try {
-            symlink(target.asByteArray(), this);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(this);
-        }
-
-        return this;
-    }
-
-    @Override
-    public Path createLink(Path obj) throws IOException {
-        UnixPath existing = checkPath(obj);
-
-        // permission check
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(new LinkPermission("hard"));
-            this.checkWrite();
-            existing.checkWrite();
-        }
-        try {
-            link(existing, this);
-        } catch (UnixException x) {
-            x.rethrowAsIOException(this, existing);
-        }
-        return this;
-    }
-
-    @Override
-    public Path readSymbolicLink() throws IOException {
-        // permission check
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            FilePermission perm = new FilePermission(getPathForPermissionCheck(),
-                SecurityConstants.FILE_READLINK_ACTION);
-            AccessController.checkPermission(perm);
-        }
-        try {
-            byte[] target = readlink(this);
-            return new UnixPath(getFileSystem(), target);
-        } catch (UnixException x) {
-           if (x.errno() == UnixConstants.EINVAL)
-                throw new NotLinkException(getPathForExecptionMessage());
-            x.rethrowAsIOException(this);
-            return null;    // keep compiler happy
-        }
-    }
-
-    @Override
     public UnixPath toAbsolutePath() {
         if (isAbsolute()) {
             return this;
@@ -1095,7 +815,7 @@ class UnixPath
     }
 
     @Override
-    public UnixPath toRealPath(boolean resolveLinks) throws IOException {
+    public Path toRealPath(boolean resolveLinks) throws IOException {
         checkRead();
 
         UnixPath absolute = toAbsolutePath();
@@ -1112,8 +832,7 @@ class UnixPath
 
         // if resolveLinks is false then eliminate "." and also ".."
         // where the previous element is not a link.
-        UnixPath root = getFileSystem().rootDirectory();
-        UnixPath result = root;
+        UnixPath result = fs.rootDirectory();
         for (int i=0; i<absolute.getNameCount(); i++) {
             UnixPath element = absolute.getName(i);
 
@@ -1134,7 +853,7 @@ class UnixPath
                 if (!attrs.isSymbolicLink()) {
                     result = result.getParent();
                     if (result == null) {
-                        result = root;
+                        result = fs.rootDirectory();
                     }
                     continue;
                 }
@@ -1149,15 +868,6 @@ class UnixPath
             x.rethrowAsIOException(result);
         }
         return result;
-    }
-
-    @Override
-    public boolean isHidden() {
-        checkRead();
-        UnixPath name = getName();
-        if (name == null)
-            return false;
-        return (name.asByteArray()[0] == '.');
     }
 
     @Override

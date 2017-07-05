@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,9 +69,9 @@ public abstract class Certificate implements java.io.Serializable {
      * Creates a certificate of the specified type.
      *
      * @param type the standard name of the certificate type.
-     * See Appendix A in the <a href=
-     * "../../../../technotes/guides/security/crypto/CryptoSpec.html#AppA">
-     * Java Cryptography Architecture API Specification &amp; Reference </a>
+     * See the CertificateFactory section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#CertificateFactory">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
      * for information about standard certificate types.
      */
     protected Certificate(String type) {

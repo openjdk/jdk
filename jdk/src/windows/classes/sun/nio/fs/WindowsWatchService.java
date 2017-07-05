@@ -106,8 +106,11 @@ class WindowsWatchService
         // completion key (used to map I/O completion to WatchKey)
         private int completionKey;
 
-        WindowsWatchKey(AbstractWatchService watcher, FileKey fileKey) {
-            super(watcher);
+        WindowsWatchKey(Path dir,
+                        AbstractWatchService watcher,
+                        FileKey fileKey)
+        {
+            super(dir, watcher);
             this.fileKey = fileKey;
         }
 
@@ -405,7 +408,7 @@ class WindowsWatchService
                 WindowsWatchKey watchKey;
                 if (existing == null) {
                     // not registered so create new watch key
-                    watchKey = new WindowsWatchKey(watcher, fk)
+                    watchKey = new WindowsWatchKey(dir, watcher, fk)
                         .init(handle, events, watchSubtree, buffer, countAddress,
                               overlappedAddress, completionKey);
                     // map file key to watch key

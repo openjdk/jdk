@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,8 @@ import java.security.cert.TrustAnchor;
 import java.security.cert.CRLException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertPathValidatorException.BasicReason;
+import java.security.cert.PKIXReason;
 import java.io.IOException;
 import java.security.interfaces.*;
 import java.security.spec.*;
@@ -196,14 +198,16 @@ final public class AlgorithmChecker extends PKIXCertPathChecker {
                 SIGNATURE_PRIMITIVE_SET,
                 currSigAlg, currSigAlgParams)) {
             throw new CertPathValidatorException(
-                "Algorithm constraints check failed: " + currSigAlg);
+                "Algorithm constraints check failed: " + currSigAlg,
+                null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
         }
 
         // check the key usage and key size
         boolean[] keyUsage = x509Cert.getKeyUsage();
         if (keyUsage != null && keyUsage.length < 9) {
             throw new CertPathValidatorException(
-                        "incorrect KeyUsage extension");
+                "incorrect KeyUsage extension",
+                null, null, -1, PKIXReason.INVALID_KEY_USAGE);
         }
 
         if (keyUsage != null) {
@@ -236,7 +240,8 @@ final public class AlgorithmChecker extends PKIXCertPathChecker {
             if (!primitives.isEmpty()) {
                 if (!constraints.permits(primitives, currPubKey)) {
                     throw new CertPathValidatorException(
-                        "algorithm constraints check failed");
+                        "algorithm constraints check failed",
+                        null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
                 }
             }
         }
@@ -248,7 +253,8 @@ final public class AlgorithmChecker extends PKIXCertPathChecker {
                         SIGNATURE_PRIMITIVE_SET,
                         currSigAlg, prevPubKey, currSigAlgParams)) {
                     throw new CertPathValidatorException(
-                        "Algorithm constraints check failed: " + currSigAlg);
+                        "Algorithm constraints check failed: " + currSigAlg,
+                        null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
                 }
             }
 
@@ -258,7 +264,7 @@ final public class AlgorithmChecker extends PKIXCertPathChecker {
                 // Inherit DSA parameters from previous key
                 if (!(prevPubKey instanceof DSAPublicKey)) {
                     throw new CertPathValidatorException("Input key is not " +
-                         "of a appropriate type for inheriting parameters");
+                        "of a appropriate type for inheriting parameters");
                 }
 
                 DSAParams params = ((DSAPublicKey)prevPubKey).getParams();
@@ -352,7 +358,8 @@ final public class AlgorithmChecker extends PKIXCertPathChecker {
         if (!certPathDefaultConstraints.permits(
                 SIGNATURE_PRIMITIVE_SET, sigAlgName, key, sigAlgParams)) {
             throw new CertPathValidatorException(
-                "algorithm check failed: " + sigAlgName + " is disabled");
+                "algorithm check failed: " + sigAlgName + " is disabled",
+                null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
         }
     }
 

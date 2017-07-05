@@ -25,147 +25,95 @@
 
 package java.nio.file;
 
-import java.nio.file.attribute.*;
-import java.nio.channels.SeekableByteChannel;
+import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.util.Iterator;
-import java.util.Set;
 
 /**
- * A file reference that locates a file using a system dependent path. The file
- * is not required to exist.
+ * An object that may be used to locate a file in a file system. It will
+ * typically represent a system dependent file path.
  *
- * <p> On many platforms a <em>path</em> is the means to locate and access files
- * in a file system. A path is hierarchical and composed of a sequence of
- * directory and file name elements separated by a special separator or
- * delimiter.
- *
- * <h4>Path operations</h4>
- *
- * <p> A system dependent path represented by this class is conceptually a
- * sequence of name elements and optionally a <em>root component</em>. The name
- * that is <em>farthest</em> from the root of the directory hierarchy is the
- * name of a file or directory. The other elements are directory names. The root
- * component typically identifies a file system hierarchy. A {@code Path} can
- * represent a root, a root and a sequence of names, or simply one or more name
- * elements. It defines the {@link #getName() getName}, {@link #getParent
- * getParent}, {@link #getRoot getRoot}, and {@link #subpath subpath} methods
- * to access the components or a subsequence of its name elements.
+ * <p> A {@code Path} represents a path that is hierarchical and composed of a
+ * sequence of directory and file name elements separated by a special separator
+ * or delimiter. A <em>root component</em>, that identifies a file system
+ * hierarchy, may also be present. The name element that is <em>farthest</em>
+ * from the root of the directory hierarchy is the name of a file or directory.
+ * The other name elements are directory names. A {@code Path} can represent a
+ * root, a root and a sequence of names, or simply one or more name elements.
+ * A {@code Path} is considered to be an <i>empty path</i> if it consists
+ * solely of one name element that is empty. Accessing a file using an
+ * <i>empty path</i> is equivalent to accessing the default directory of the
+ * file system. {@code Path} defines the {@link #getFileName() getFileName},
+ * {@link #getParent getParent}, {@link #getRoot getRoot}, and {@link #subpath
+ * subpath} methods to access the path components or a subsequence of its name
+ * elements.
  *
  * <p> In addition to accessing the components of a path, a {@code Path} also
- * defines {@link #resolve(Path) resolve} and {@link #relativize relativize}
- * operations. Paths can also be {@link #compareTo compared}, and tested
- * against each other using using the {@link #startsWith startsWith} and {@link
- * #endsWith endWith} methods.
+ * defines the {@link #resolve(Path) resolve} and {@link #resolveSibling(Path)
+ * resolveSibling} methods to combine paths. The {@link #relativize relativize}
+ * method that can be used to construct a relative path between two paths.
+ * Paths can be {@link #compareTo compared}, and tested against each other using
+ * the {@link #startsWith startsWith} and {@link #endsWith endWith} methods.
  *
- * <h4>File operations</h4>
+ * <p> This interface extends {@link Watchable} interface so that a directory
+ * located by a path can be {@link #register registered} with a {@link
+ * WatchService} and entries in the directory watched. </p>
  *
- * <p> A {@code Path} is either <em>absolute</em> or <em>relative</em>. An
- * absolute path is complete in that does not need to be combined with another
- * path in order to locate a file. All operations on relative paths are first
- * resolved against a file system's default directory as if by invoking the
- * {@link #toAbsolutePath toAbsolutePath} method.
+ * <p> <b>WARNING:</b> This interface is only intended to be implemented by
+ * those developing custom file system implementations. Methods may be added to
+ * this interface in future releases. </p>
  *
- * <p> In addition to the operations defined by the {@link FileRef} interface,
- * this class defines the following operations:
- *
- * <ul>
- *   <li><p> The {@link #newByteChannel newByteChannel} method
- *     may be used to open a file and obtain a byte channel for reading or
- *     writing. </p></li>
- *   <li><p> Files may be {@link #createFile(FileAttribute[]) created}, or
- *     directories may be {@link #createDirectory(FileAttribute[]) created}.
- *     </p></li>
- *   <li><p> The {@link #delete delete} method may be used to delete a file.
- *     </p></li>
- *   <li><p> The {@link #checkAccess checkAccess} method may be used to check
- *     the existence or accessibility of a file. </p></li>
- *   <li><p> The {@link #isSameFile isSameFile} method may be used to test if
- *     two file references locate the same file. </p></li>
- *   <li><p> The {@link #getFileStore getFileStore} method may be used to
- *     obtain the {@link FileStore} representing the storage where a file is
- *     located. </p></li>
- *   <li><p> Directories can be {@link #newDirectoryStream opened} so as to
- *      iterate over the entries in the directory. </p></li>
- *   <li><p> Files can be {@link #copyTo(Path,CopyOption[]) copied} or
- *     {@link #moveTo(Path,CopyOption[]) moved}. </p></li>
- *   <li><p> Symbolic links may be {@link #createSymbolicLink created}, or the
- *     target of a symbolic link may be {@link #readSymbolicLink read}. </p></li>
- *   <li><p> The {@link #toRealPath real} path of an existing file may be
- *     obtained. </li></p>
- * </ul>
- *
- * <p> This class implements {@link Watchable} interface so that a directory
- * located by a path can be {@link #register registered} with a {@link WatchService}.
- * and entries in the directory watched.
- *
- * <h4>File attributes</h4>
- *
- * In addition to the {@link #setAttribute setAttribute} and {@link #getAttribute
- * getAttribute} methods, the <a href="attribute/package-summary.html">{@code
- * java.nio.file.attribute}</a> package provides type-safe and efficient access
- * to file attributes or <em>meta-data</em> associated with files. The {@link
- * Attributes Attributes} class defines methods that operate on or return file
- * attributes. For example, the file type, size, timestamps, and other
- * <em>basic</em> meta-data are obtained, in bulk, by invoking the {@link
- * Attributes#readBasicFileAttributes Attributes.readBasicFileAttributes} method:
+ * <a name="interop"><h4>Accessing Files</h4></a>
+ * <p> Paths may be used with the {@link Files} class to operate on files,
+ * directories, and other types of files. For example, suppose we want a {@link
+ * java.io.BufferedReader} to read text from a file "{@code access.log}". The
+ * file is located in a directory "{@code logs}" relative to the current working
+ * directory and is UTF-8 encoded.
  * <pre>
- *     Path file = ...
- *     BasicFileAttributes attrs = Attributes.readBasicFileAttributes(file);
+ *     Path path = FileSystems.getDefault().getPath("logs", "access.log");
+ *     BufferReader reader = Files.newBufferedReader(path, Charset.forName("UTF-8"));
  * </pre>
  *
  * <a name="interop"><h4>Interoperability</h4></a>
- *
- * <p> Paths created by file systems associated with the default {@link
+ * <p> Paths associated with the default {@link
  * java.nio.file.spi.FileSystemProvider provider} are generally interoperable
  * with the {@link java.io.File java.io.File} class. Paths created by other
  * providers are unlikely to be interoperable with the abstract path names
- * represented by {@code java.io.File}. The {@link java.io.File#toPath
- * File.toPath} method may be used to obtain a {@code Path} from the abstract
- * path name represented by a {@code java.io.File java.io.File} object. The
- * resulting {@code Path} can be used to operate on the same file as the {@code
- * java.io.File} object.
- *
- * <p> Path objects created by file systems associated with the default
- * provider are interoperable with objects created by other file systems created
- * by the same provider. Path objects created by file systems associated with
- * other providers may not be interoperable with other file systems created by
- * the same provider. The reasons for this are provider specific.
+ * represented by {@code java.io.File}. The {@link java.io.File#toPath toPath}
+ * method may be used to obtain a {@code Path} from the abstract path name
+ * represented by a {@code java.io.File} object. The resulting {@code Path} can
+ * be used to operate on the same file as the {@code java.io.File} object. In
+ * addition, the {@link #toFile toFile} method is useful to construct a {@code
+ * File} from the {@code String} representation of a {@code Path}.
  *
  * <h4>Concurrency</h4></a>
- *
- * <p> Instances of this class are immutable and safe for use by multiple concurrent
- * threads.
+ * <p> Implementations of this interface are immutable and safe for use by
+ * multiple concurrent threads.
  *
  * @since 1.7
+ * @see Paths
  */
 
-public abstract class Path
-    implements FileRef, Comparable<Path>, Iterable<Path>, Watchable
+public interface Path
+    extends Comparable<Path>, Iterable<Path>, Watchable
 {
-    /**
-     * Initializes a new instance of this class.
-     */
-    protected Path() { }
-
     /**
      * Returns the file system that created this object.
      *
      * @return  the file system that created this object
      */
-    public abstract FileSystem getFileSystem();
+    FileSystem getFileSystem();
 
     /**
      * Tells whether or not this path is absolute.
      *
-     * <p> An absolute path is complete in that it doesn't need to be
-     * combined with other path information in order to locate a file.
+     * <p> An absolute path is complete in that it doesn't need to be combined
+     * with other path information in order to locate a file.
      *
      * @return  {@code true} if, and only if, this path is absolute
      */
-    public abstract boolean isAbsolute();
+    boolean isAbsolute();
 
     /**
      * Returns the root component of this path as a {@code Path} object,
@@ -174,17 +122,17 @@ public abstract class Path
      * @return  a path representing the root component of this path,
      *          or {@code null}
      */
-    public abstract Path getRoot();
+    Path getRoot();
 
     /**
-     * Returns the name of the file or directory denoted by this path. The
-     * file name is the <em>farthest</em> element from the root in the directory
-     * hierarchy.
+     * Returns the name of the file or directory denoted by this path as a
+     * {@code Path} object. The file name is the <em>farthest</em> element from
+     * the root in the directory hierarchy.
      *
      * @return  a path representing the name of the file or directory, or
      *          {@code null} if this path has zero elements
      */
-    public abstract Path getName();
+    Path getFileName();
 
     /**
      * Returns the <em>parent path</em>, or {@code null} if this path does not
@@ -209,7 +157,7 @@ public abstract class Path
      *
      * @return  a path representing the path's parent
      */
-    public abstract Path getParent();
+    Path getParent();
 
     /**
      * Returns the number of name elements in the path.
@@ -217,10 +165,10 @@ public abstract class Path
      * @return  the number of elements in the path, or {@code 0} if this path
      *          only represents a root component
      */
-    public abstract int getNameCount();
+    int getNameCount();
 
-   /**
-     * Returns a name element of this path.
+    /**
+     * Returns a name element of this path as a {@code Path} object.
      *
      * <p> The {@code index} parameter is the index of the name element to return.
      * The element that is <em>closest</em> to the root in the directory hierarchy
@@ -237,7 +185,7 @@ public abstract class Path
      *          equal to the number of elements, or this path has zero name
      *          elements
      */
-    public abstract Path getName(int index);
+    Path getName(int index);
 
     /**
      * Returns a relative {@code Path} that is a subsequence of the name
@@ -264,7 +212,7 @@ public abstract class Path
      *          the number of elements. If {@code endIndex} is less than or
      *          equal to {@code beginIndex}, or larger than the number of elements.
      */
-    public abstract Path subpath(int beginIndex, int endIndex);
+    Path subpath(int beginIndex, int endIndex);
 
     /**
      * Tests if this path starts with the given path.
@@ -286,7 +234,25 @@ public abstract class Path
      * @return  {@code true} if this path starts with the given path; otherwise
      *          {@code false}
      */
-    public abstract boolean startsWith(Path other);
+    boolean startsWith(Path other);
+
+    /**
+     * Tests if this path starts with a {@code Path}, constructed by converting
+     * the given path string, in exactly the manner specified by the {@link
+     * #startsWith(Path) startsWith(Path)} method. On UNIX for example, the path
+     * "{@code foo/bar}" starts with "{@code foo}" and "{@code foo/bar}". It
+     * does not start with "{@code f}" or "{@code fo}".
+     *
+     * @param   other
+     *          the given path string
+     *
+     * @return  {@code true} if this path starts with the given path; otherwise
+     *          {@code false}
+     *
+     * @throws  InvalidPathException
+     *          If the path string cannot be converted to a Path.
+     */
+    boolean startsWith(String other);
 
     /**
      * Tests if this path ends with the given path.
@@ -310,7 +276,25 @@ public abstract class Path
      * @return  {@code true} if this path ends with the given path; otherwise
      *          {@code false}
      */
-    public abstract boolean endsWith(Path other);
+    boolean endsWith(Path other);
+
+    /**
+     * Tests if this path ends with a {@code Path}, constructed by converting
+     * the given path string, in exactly the manner specified by the {@link
+     * #endsWith(Path) endsWith(Path)} method. On UNIX for example, the path
+     * "{@code foo/bar}" ends with "{@code foo/bar}" and "{@code bar}". It does
+     * not end with "{@code r}" or "{@code /bar}".
+     *
+     * @param   other
+     *          the given path string
+     *
+     * @return  {@code true} if this path starts with the given path; otherwise
+     *          {@code false}
+     *
+     * @throws  InvalidPathException
+     *          If the path string cannot be converted to a Path.
+     */
+    boolean endsWith(String other);
 
     /**
      * Returns a path that is this path with redundant name elements eliminated.
@@ -330,14 +314,14 @@ public abstract class Path
      * path may result in the path that locates a different file than the original
      * path. This can arise when the preceding name is a symbolic link.
      *
-     * @return  the resulting path, or this path if it does not contain
-     *          redundant name elements, or {@code null} if this path does not
-     *          have a root component and all name elements are redundant
+     * @return  the resulting path or this path if it does not contain
+     *          redundant name elements; an empty path is returned if this path
+     *          does have a root component and all name elements are redundant
      *
      * @see #getParent
      * @see #toRealPath
      */
-    public abstract Path normalize();
+    Path normalize();
 
     // -- resolution and relativization --
 
@@ -346,28 +330,31 @@ public abstract class Path
      *
      * <p> If the {@code other} parameter is an {@link #isAbsolute() absolute}
      * path then this method trivially returns {@code other}. If {@code other}
-     * is {@code null} then this path is returned. Otherwise this method
-     * considers this path to be a directory and resolves the given path
-     * against this path. In the simplest case, the given path does not have
-     * a {@link #getRoot root} component, in which case this method <em>joins</em>
-     * the given path to this path and returns a resulting path that {@link
-     * #endsWith ends} with the given path. Where the given path has a root
-     * component then resolution is highly implementation dependent and therefore
-     * unspecified.
+     * is an <i>empty path</i> then this method trivially returns this path.
+     * Otherwise this method considers this path to be a directory and resolves
+     * the given path against this path. In the simplest case, the given path
+     * does not have a {@link #getRoot root} component, in which case this method
+     * <em>joins</em> the given path to this path and returns a resulting path
+     * that {@link #endsWith ends} with the given path. Where the given path has
+     * a root component then resolution is highly implementation dependent and
+     * therefore unspecified.
      *
      * @param   other
-     *          the path to resolve against this path; can be {@code null}
+     *          the path to resolve against this path
      *
      * @return  the resulting path
      *
      * @see #relativize
      */
-    public abstract Path resolve(Path other);
+    Path resolve(Path other);
 
     /**
      * Converts a given path string to a {@code Path} and resolves it against
      * this {@code Path} in exactly the manner specified by the {@link
-     * #resolve(Path) resolve} method.
+     * #resolve(Path) resolve} method. For example, suppose that the name
+     * separator is "{@code /}" and a path represents "{@code foo/bar}", then
+     * invoking this method with the path string "{@code gus}" will result in
+     * the {@code Path} "{@code foo/bar/gus}".
      *
      * @param   other
      *          the path string to resolve against this path
@@ -375,11 +362,49 @@ public abstract class Path
      * @return  the resulting path
      *
      * @throws  InvalidPathException
-     *          If the path string cannot be converted to a Path.
+     *          if the path string cannot be converted to a Path.
      *
      * @see FileSystem#getPath
      */
-    public abstract Path resolve(String other);
+    Path resolve(String other);
+
+    /**
+     * Resolves the given path against this path's {@link #getParent parent}
+     * path. This is useful where a file name needs to be <i>replaced</i> with
+     * another file name. For example, suppose that the name separator is
+     * "{@code /}" and a path represents "{@code dir1/dir2/foo}", then invoking
+     * this method with the {@code Path} "{@code bar}" will result in the {@code
+     * Path} "{@code dir1/dir2/bar}". If this path does not have a parent path,
+     * or {@code other} is {@link #isAbsolute() absolute}, then this method
+     * returns {@code other}. If {@code other} is an empty path then this method
+     * returns this path's parent, or where this path doesn't have a parent, the
+     * empty path.
+     *
+     * @param   other
+     *          the path to resolve against this path's parent
+     *
+     * @return  the resulting path
+     *
+     * @see #resolve(Path)
+     */
+    Path resolveSibling(Path other);
+
+    /**
+     * Converts a given path string to a {@code Path} and resolves it against
+     * this path's {@link #getParent parent} path in exactly the manner
+     * specified by the {@link #resolveSibling(Path) resolveSibling} method.
+     *
+     * @param   other
+     *          the path string to resolve against this path's parent
+     *
+     * @return  the resulting path
+     *
+     * @throws  InvalidPathException
+     *          if the path string cannot be converted to a Path.
+     *
+     * @see FileSystem#getPath
+     */
+    Path resolveSibling(String other);
 
     /**
      * Constructs a relative path between this path and a given path.
@@ -395,17 +420,17 @@ public abstract class Path
      * constructed if only one of the paths have a root component. Where both
      * paths have a root component then it is implementation dependent if a
      * relative path can be constructed. If this path and the given path are
-     * {@link #equals equal} then {@code null} is returned.
+     * {@link #equals equal} then an <i>empty path</i> is returned.
      *
-     * <p> For any two paths <i>p</i> and <i>q</i>, where <i>q</i> does not have
-     * a root component,
+     * <p> For any two {@link #normalize normalized} paths <i>p</i> and
+     * <i>q</i>, where <i>q</i> does not have a root component,
      * <blockquote>
      *   <i>p</i><tt>.relativize(</tt><i>p</i><tt>.resolve(</tt><i>q</i><tt>)).equals(</tt><i>q</i><tt>)</tt>
      * </blockquote>
      *
      * <p> When symbolic links are supported, then whether the resulting path,
      * when resolved against this path, yields a path that can be used to locate
-     * the {@link #isSameFile same} file as {@code other} is implementation
+     * the {@link Files#isSameFile same} file as {@code other} is implementation
      * dependent. For example, if this path is  {@code "/a/b"} and the given
      * path is {@code "/a/x"} then the resulting relative path may be {@code
      * "../x"}. If {@code "b"} is a symbolic link then is implementation
@@ -414,185 +439,14 @@ public abstract class Path
      * @param   other
      *          the path to relativize against this path
      *
-     * @return  the resulting relative path, or {@code null} if both paths are
+     * @return  the resulting relative path, or an empty path if both paths are
      *          equal
      *
      * @throws  IllegalArgumentException
      *          if {@code other} is not a {@code Path} that can be relativized
      *          against this path
      */
-    public abstract Path relativize(Path other);
-
-    // -- file operations --
-
-    /**
-     * Deletes the file located by this path.
-     *
-     * <p> An implementation may require to examine the file to determine if the
-     * file is a directory. Consequently this method may not be atomic with respect
-     * to other file system operations.  If the file is a symbolic link then the
-     * symbolic link itself, not the final target of the link, is deleted.
-     *
-     * <p> If the file is a directory then the directory must be empty. In some
-     * implementations a directory has entries for special files or links that
-     * are created when the directory is created. In such implementations a
-     * directory is considered empty when only the special entries exist.
-     *
-     * <p> On some operating systems it may not be possible to remove a file when
-     * it is open and in use by this Java virtual machine or other programs.
-     *
-     * @throws  NoSuchFileException
-     *          if the file does not exist <i>(optional specific exception)</i>
-     * @throws  DirectoryNotEmptyException
-     *          if the file is a directory and could not otherwise be deleted
-     *          because the directory is not empty <i>(optional specific
-     *          exception)</i>
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkDelete(String)} method
-     *          is invoked to check delete access to the file
-     */
-    public abstract void delete() throws IOException;
-
-    /**
-     * Deletes the file located by this path, if it exists.
-     *
-     * <p> As with the {@link #delete delete()} method, an implementation may
-     * need to examine the file to determine if the file is a directory.
-     * Consequently this method may not be atomic with respect to other file
-     * system operations.  If the file is a symbolic link, then the symbolic
-     * link itself, not the final target of the link, is deleted.
-     *
-     * <p> If the file is a directory then the directory must be empty. In some
-     * implementations a directory has entries for special files or links that
-     * are created when the directory is created. In such implementations a
-     * directory is considered empty when only the special entries exist.
-     *
-     * <p> On some operating systems it may not be possible to remove a file when
-     * it is open and in use by this Java virtual machine or other programs.
-     *
-     * @throws  DirectoryNotEmptyException
-     *          if the file is a directory and could not otherwise be deleted
-     *          because the directory is not empty <i>(optional specific
-     *          exception)</i>
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkDelete(String)} method
-     *          is invoked to check delete access to the file.
-     */
-    public abstract void deleteIfExists() throws IOException;
-
-    /**
-     * Creates a symbolic link to a target <i>(optional operation)</i>.
-     *
-     * <p> The {@code target} parameter is the target of the link. It may be an
-     * {@link Path#isAbsolute absolute} or relative path and may not exist. When
-     * the target is a relative path then file system operations on the resulting
-     * link are relative to the path of the link.
-     *
-     * <p> The {@code attrs} parameter is an optional array of {@link FileAttribute
-     * attributes} to set atomically when creating the link. Each attribute is
-     * identified by its {@link FileAttribute#name name}. If more than one attribute
-     * of the same name is included in the array then all but the last occurrence
-     * is ignored.
-     *
-     * <p> Where symbolic links are supported, but the underlying {@link FileStore}
-     * does not support symbolic links, then this may fail with an {@link
-     * IOException}. Additionally, some operating systems may require that the
-     * Java virtual machine be started with implementation specific privileges to
-     * create symbolic links, in which case this method may throw {@code IOException}.
-     *
-     * @param   target
-     *          the target of the symbolic link
-     * @param   attrs
-     *          the array of attributes to set atomically when creating the
-     *          symbolic link
-     *
-     * @return  this path
-     *
-     * @throws  UnsupportedOperationException
-     *          if the implementation does not support symbolic links or the
-     *          array contains an attribute that cannot be set atomically when
-     *          creating the symbolic link
-     * @throws  FileAlreadyExistsException
-     *          if a file with the name already exists <i>(optional specific
-     *          exception)</i>
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager
-     *          is installed, it denies {@link LinkPermission}<tt>("symbolic")</tt>
-     *          or its {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method denies write access to the path of the symbolic link.
-     */
-    public abstract Path createSymbolicLink(Path target, FileAttribute<?>... attrs)
-        throws IOException;
-
-    /**
-     * Creates a new link (directory entry) for an existing file <i>(optional
-     * operation)</i>.
-     *
-     * <p> This path locates the directory entry to create. The {@code existing}
-     * parameter is the path to an existing file. This method creates a new
-     * directory entry for the file so that it can be accessed using this path.
-     * On some file systems this is known as creating a "hard link". Whether the
-     * file attributes are maintained for the file or for each directory entry
-     * is file system specific and therefore not specified. Typically, a file
-     * system requires that all links (directory entries) for a file be on the
-     * same file system. Furthermore, on some platforms, the Java virtual machine
-     * may require to be started with implementation specific privileges to
-     * create hard links or to create links to directories.
-     *
-     * @param   existing
-     *          a reference to an existing file
-     *
-     * @return  this path
-     *
-     * @throws  UnsupportedOperationException
-     *          if the implementation does not support adding an existing file
-     *          to a directory
-     * @throws  FileAlreadyExistsException
-     *          if the entry could not otherwise be created because a file of
-     *          that name already exists <i>(optional specific exception)</i>
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager
-     *          is installed, it denies {@link LinkPermission}<tt>("hard")</tt>
-     *          or its {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method denies write access to both this path and the path of the
-     *          existing file.
-     */
-    public abstract Path createLink(Path existing) throws IOException;
-
-    /**
-     * Reads the target of a symbolic link <i>(optional operation)</i>.
-     *
-     * <p> If the file system supports <a href="package-summary.html#links">symbolic
-     * links</a> then this method is used to read the target of the link, failing
-     * if the file is not a symbolic link. The target of the link need not exist.
-     * The returned {@code Path} object will be associated with the same file
-     * system as this {@code Path}.
-     *
-     * @return  a {@code Path} object representing the target of the link
-     *
-     * @throws  UnsupportedOperationException
-     *          if the implementation does not support symbolic links
-     * @throws  NotLinkException
-     *          if the target could otherwise not be read because the file
-     *          is not a symbolic link <i>(optional specific exception)</i>
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager
-     *          is installed, it checks that {@code FilePermission} has been
-     *          granted with the "{@code readlink}" action to read the link.
-     */
-    public abstract Path readSymbolicLink() throws IOException;
+    Path relativize(Path other);
 
     /**
      * Returns a URI to represent this path.
@@ -647,7 +501,7 @@ public abstract class Path
      *          is installed, the {@link #toAbsolutePath toAbsolutePath} method
      *          throws a security exception.
      */
-    public abstract URI toUri();
+    URI toUri();
 
     /**
      * Returns a {@code Path} object representing the absolute path of this
@@ -670,14 +524,14 @@ public abstract class Path
      *          checkPropertyAccess} method is invoked to check access to the
      *          system property {@code user.dir}
      */
-    public abstract Path toAbsolutePath();
+    Path toAbsolutePath();
 
     /**
      * Returns the <em>real</em> path of an existing file.
      *
      * <p> The precise definition of this method is implementation dependent but
      * in general it derives from this path, an {@link #isAbsolute absolute}
-     * path that locates the {@link #isSameFile same} file as this path, but
+     * path that locates the {@link Files#isSameFile same} file as this path, but
      * with name elements that represent the actual name of the directories
      * and the file. For example, where filename comparisons on a file system
      * are case insensitive then the name elements represent the names in their
@@ -713,756 +567,25 @@ public abstract class Path
      *          checkPropertyAccess} method is invoked to check access to the
      *          system property {@code user.dir}
      */
-    public abstract Path toRealPath(boolean resolveLinks) throws IOException;
+    Path toRealPath(boolean resolveLinks) throws IOException;
 
     /**
-     * Copy the file located by this path to a target location.
+     * Returns a {@link File} object representing this path. Where this {@code
+     * Path} is associated with the default provider, then this method is
+     * equivalent to returning a {@code File} object constructed with the
+     * {@code String} representation of this path.
      *
-     * <p> This method copies the file located by this {@code Path} to the
-     * target location with the {@code options} parameter specifying how the
-     * copy is performed. By default, the copy fails if the target file already
-     * exists, except if the source and target are the {@link #isSameFile same}
-     * file, in which case this method has no effect. File attributes are not
-     * required to be copied to the target file. If symbolic links are supported,
-     * and the file is a symbolic link, then the final target of the link is copied.
-     * If the file is a directory then it creates an empty directory in the target
-     * location (entries in the directory are not copied). This method can be
-     * used with the {@link Files#walkFileTree Files.walkFileTree} utility
-     * method to copy a directory and all entries in the directory, or an entire
-     * <i>file-tree</i> where required.
+     * <p> If this path was created by invoking the {@code File} {@link
+     * File#toPath toPath} method then there is no guarantee that the {@code
+     * File} object returned by this method is {@link #equals equal} to the
+     * original {@code File}.
      *
-     * <p> The {@code options} parameter is an array of options and may contain
-     * any of the following:
-     *
-     * <table border=1 cellpadding=5 summary="">
-     * <tr> <th>Option</th> <th>Description</th> </tr>
-     * <tr>
-     *   <td> {@link StandardCopyOption#REPLACE_EXISTING REPLACE_EXISTING} </td>
-     *   <td> If the target file exists, then the target file is replaced if it
-     *     is not a non-empty directory. If the target file exists and is a
-     *     symbolic link, then the symbolic link itself, not the target of
-     *     the link, is replaced. </td>
-     * </tr>
-     * <tr>
-     *   <td> {@link StandardCopyOption#COPY_ATTRIBUTES COPY_ATTRIBUTES} </td>
-     *   <td> Attempts to copy the file attributes associated with this file to
-     *     the target file. The exact file attributes that are copied is platform
-     *     and file system dependent and therefore unspecified. Minimally, the
-     *     {@link BasicFileAttributes#lastModifiedTime last-modified-time} is
-     *     copied to the target file if supported by both the source and target
-     *     file store. Copying of file timestamps may result in precision
-     *     loss. </td>
-     * </tr>
-     * <tr>
-     *   <td> {@link LinkOption#NOFOLLOW_LINKS NOFOLLOW_LINKS} </td>
-     *   <td> Symbolic links are not followed. If the file, located by this path,
-     *     is a symbolic link, then the symbolic link itself, not the target of
-     *     the link, is copied. It is implementation specific if file attributes
-     *     can be copied to the new link. In other words, the {@code
-     *     COPY_ATTRIBUTES} option may be ignored when copying a symbolic link. </td>
-     * </tr>
-     * </table>
-     *
-     * <p> An implementation of this interface may support additional
-     * implementation specific options.
-     *
-     * <p> Copying a file is not an atomic operation. If an {@link IOException}
-     * is thrown then it possible that the target file is incomplete or some of
-     * its file attributes have not been copied from the source file. When the
-     * {@code REPLACE_EXISTING} option is specified and the target file exists,
-     * then the target file is replaced. The check for the existence of the file
-     * and the creation of the new file may not be atomic with respect to other
-     * file system activities.
-     *
-     * @param   target
-     *          the target location
-     * @param   options
-     *          options specifying how the copy should be done
-     *
-     * @return  the target
+     * @return  a {@code File} object representing this path
      *
      * @throws  UnsupportedOperationException
-     *          if the array contains a copy option that is not supported
-     * @throws  FileAlreadyExistsException
-     *          if the target file exists and cannot be replaced because the
-     *          {@code REPLACE_EXISTING} option is not specified, or the target
-     *          file is a non-empty directory <i>(optional specific exception)</i>
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the source file, the
-     *          {@link SecurityManager#checkWrite(String) checkWrite} is invoked
-     *          to check write access to the target file. If a symbolic link is
-     *          copied the security manager is invoked to check {@link
-     *          LinkPermission}{@code ("symbolic")}.
+     *          if this {@code Path} is not associated with the default provider
      */
-    public abstract Path copyTo(Path target, CopyOption... options)
-        throws IOException;
-
-    /**
-     * Move or rename the file located by this path to a target location.
-     *
-     * <p> By default, this method attempts to move the file to the target
-     * location, failing if the target file exists except if the source and
-     * target are the {@link #isSameFile same} file, in which case this method
-     * has no effect. If the file is a symbolic link then the symbolic link
-     * itself, not the target of the link, is moved. This method may be
-     * invoked to move an empty directory. In some implementations a directory
-     * has entries for special files or links that are created when the
-     * directory is created. In such implementations a directory is considered
-     * empty when only the special entries exist. When invoked to move a
-     * directory that is not empty then the directory is moved if it does not
-     * require moving the entries in the directory.  For example, renaming a
-     * directory on the same {@link FileStore} will usually not require moving
-     * the entries in the directory. When moving a directory requires that its
-     * entries be moved then this method fails (by throwing an {@code
-     * IOException}). To move a <i>file tree</i> may involve copying rather
-     * than moving directories and this can be done using the {@link
-     * #copyTo copyTo} method in conjunction with the {@link
-     * Files#walkFileTree Files.walkFileTree} utility method.
-     *
-     * <p> The {@code options} parameter is an array of options and may contain
-     * any of the following:
-     *
-     * <table border=1 cellpadding=5 summary="">
-     * <tr> <th>Option</th> <th>Description</th> </tr>
-     * <tr>
-     *   <td> {@link StandardCopyOption#REPLACE_EXISTING REPLACE_EXISTING} </td>
-     *   <td> If the target file exists, then the target file is replaced if it
-     *     is not a non-empty directory. If the target file exists and is a
-     *     symbolic link, then the symbolic link itself, not the target of
-     *     the link, is replaced. </td>
-     * </tr>
-     * <tr>
-     *   <td> {@link StandardCopyOption#ATOMIC_MOVE ATOMIC_MOVE} </td>
-     *   <td> The move is performed as an atomic file system operation and all
-     *     other options are ignored. If the target file exists then it is
-     *     implementation specific if the existing file is replaced or this method
-     *     fails by throwing an {@link IOException}. If the move cannot be
-     *     performed as an atomic file system operation then {@link
-     *     AtomicMoveNotSupportedException} is thrown. This can arise, for
-     *     example, when the target location is on a different {@code FileStore}
-     *     and would require that the file be copied, or target location is
-     *     associated with a different provider to this object. </td>
-     * </table>
-     *
-     * <p> An implementation of this interface may support additional
-     * implementation specific options.
-     *
-     * <p> Where the move requires that the file be copied then the {@link
-     * BasicFileAttributes#lastModifiedTime last-modified-time} is copied to the
-     * new file. An implementation may also attempt to copy other file
-     * attributes but is not required to fail if the file attributes cannot be
-     * copied. When the move is performed as a non-atomic operation, and a {@code
-     * IOException} is thrown, then the state of the files is not defined. The
-     * original file and the target file may both exist, the target file may be
-     * incomplete or some of its file attributes may not been copied from the
-     * original file.
-     *
-     * @param   target
-     *          the target location
-     * @param   options
-     *          options specifying how the move should be done
-     *
-     * @return  the target
-     *
-     * @throws  UnsupportedOperationException
-     *          if the array contains a copy option that is not supported
-     * @throws  FileAlreadyExistsException
-     *          if the target file exists and cannot be replaced because the
-     *          {@code REPLACE_EXISTING} option is not specified, or the target
-     *          file is a non-empty directory
-     * @throws  AtomicMoveNotSupportedException
-     *          if the options array contains the {@code ATOMIC_MOVE} option but
-     *          the file cannot be moved as an atomic file system operation.
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method is invoked to check write access to both the source and
-     *          target file.
-     */
-    public abstract Path moveTo(Path target, CopyOption... options)
-        throws IOException;
-
-    /**
-     * Opens the directory referenced by this object, returning a {@code
-     * DirectoryStream} to iterate over all entries in the directory. The
-     * elements returned by the directory stream's {@link DirectoryStream#iterator
-     * iterator} are of type {@code Path}, each one representing an entry in the
-     * directory. The {@code Path} objects are obtained as if by {@link
-     * #resolve(Path) resolving} the name of the directory entry against this
-     * path.
-     *
-     * <p> The directory stream's {@code close} method should be invoked after
-     * iteration is completed so as to free any resources held for the open
-     * directory.
-     *
-     * <p> When an implementation supports operations on entries in the
-     * directory that execute in a race-free manner then the returned directory
-     * stream is a {@link SecureDirectoryStream}.
-     *
-     * @return  a new and open {@code DirectoryStream} object
-     *
-     * @throws  NotDirectoryException
-     *          if the file could not otherwise be opened because it is not
-     *          a directory <i>(optional specific exception)</i>
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the directory.
-     */
-    public abstract DirectoryStream<Path> newDirectoryStream()
-        throws IOException;
-
-    /**
-     * Opens the directory referenced by this object, returning a {@code
-     * DirectoryStream} to iterate over the entries in the directory. The
-     * elements returned by the directory stream's {@link DirectoryStream#iterator
-     * iterator} are of type {@code Path}, each one representing an entry in the
-     * directory. The {@code Path} objects are obtained as if by {@link
-     * #resolve(Path) resolving} the name of the directory entry against this
-     * path. The entries returned by the iterator are filtered by matching the
-     * {@code String} representation of their file names against the given
-     * <em>globbing</em> pattern.
-     *
-     * <p> For example, suppose we want to iterate over the files ending with
-     * ".java" in a directory:
-     * <pre>
-     *     Path dir = ...
-     *     DirectoryStream&lt;Path&gt; stream = dir.newDirectoryStream("*.java");
-     * </pre>
-     *
-     * <p> The globbing pattern is specified by the {@link
-     * FileSystem#getPathMatcher getPathMatcher} method.
-     *
-     * <p> The directory stream's {@code close} method should be invoked after
-     * iteration is completed so as to free any resources held for the open
-     * directory.
-     *
-     * <p> When an implementation supports operations on entries in the
-     * directory that execute in a race-free manner then the returned directory
-     * stream is a {@link SecureDirectoryStream}.
-     *
-     * @param   glob
-     *          the glob pattern
-     *
-     * @return  a new and open {@code DirectoryStream} object
-     *
-     * @throws  java.util.regex.PatternSyntaxException
-     *          if the pattern is invalid
-     * @throws  NotDirectoryException
-     *          if the file could not otherwise be opened because it is not
-     *          a directory <i>(optional specific exception)</i>
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the directory.
-     */
-    public abstract DirectoryStream<Path> newDirectoryStream(String glob)
-        throws IOException;
-
-    /**
-     * Opens the directory referenced by this object, returning a {@code
-     * DirectoryStream} to iterate over the entries in the directory. The
-     * elements returned by the directory stream's {@link DirectoryStream#iterator
-     * iterator} are of type {@code Path}, each one representing an entry in the
-     * directory. The {@code Path} objects are obtained as if by {@link
-     * #resolve(Path) resolving} the name of the directory entry against this
-     * path. The entries returned by the iterator are filtered by the given
-     * {@link DirectoryStream.Filter filter}.
-     *
-     * <p> The directory stream's {@code close} method should be invoked after
-     * iteration is completed so as to free any resources held for the open
-     * directory.
-     *
-     * <p> Where the filter terminates due to an uncaught error or runtime
-     * exception then it is propagated to the {@link Iterator#hasNext()
-     * hasNext} or {@link Iterator#next() next} method. Where an {@code
-     * IOException} is thrown, it results in the {@code hasNext} or {@code
-     * next} method throwing a {@link DirectoryIteratorException} with the
-     * {@code IOException} as the cause.
-     *
-     * <p> When an implementation supports operations on entries in the
-     * directory that execute in a race-free manner then the returned directory
-     * stream is a {@link SecureDirectoryStream}.
-     *
-     * <p> <b>Usage Example:</b>
-     * Suppose we want to iterate over the files in a directory that are
-     * larger than 8K.
-     * <pre>
-     *     DirectoryStream.Filter&lt;Path&gt; filter = new DirectoryStream.Filter&lt;Path&gt;() {
-     *         public boolean accept(Path file) throws IOException {
-     *             long size = Attributes.readBasicFileAttributes(file).size();
-     *             return (size > 8192L);
-     *         }
-     *     };
-     *     Path dir = ...
-     *     DirectoryStream&lt;Path&gt; stream = dir.newDirectoryStream(filter);
-     * </pre>
-     * @param   filter
-     *          the directory stream filter
-     *
-     * @return  a new and open {@code DirectoryStream} object
-     *
-     * @throws  NotDirectoryException
-     *          if the file could not otherwise be opened because it is not
-     *          a directory <i>(optional specific exception)</i>
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the directory.
-     */
-    public abstract DirectoryStream<Path> newDirectoryStream(DirectoryStream.Filter<? super Path> filter)
-        throws IOException;
-
-    /**
-     * Creates a new and empty file, failing if the file already exists.
-     *
-     * <p> This {@code Path} locates the file to create. The check for the
-     * existence of the file and the creation of the new file if it does not
-     * exist are a single operation that is atomic with respect to all other
-     * filesystem activities that might affect the directory.
-     *
-     * <p> The {@code attrs} parameter is an optional array of {@link FileAttribute
-     * file-attributes} to set atomically when creating the file. Each attribute
-     * is identified by its {@link FileAttribute#name name}. If more than one
-     * attribute of the same name is included in the array then all but the last
-     * occurrence is ignored.
-     *
-     * @param   attrs
-     *          an optional list of file attributes to set atomically when
-     *          creating the file
-     *
-     * @return  this path
-     *
-     * @throws  UnsupportedOperationException
-     *          if the array contains an attribute that cannot be set atomically
-     *          when creating the file
-     * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists
-     *          <i>(optional specific exception)</i>
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method is invoked to check write access to the new file.
-     */
-    public abstract Path createFile(FileAttribute<?>... attrs) throws IOException;
-
-    /**
-     * Creates a new directory.
-     *
-     * <p> This {@code Path} locates the directory to create. The check for the
-     * existence of the file and the creation of the directory if it does not
-     * exist are a single operation that is atomic with respect to all other
-     * filesystem activities that might affect the directory.
-     *
-     * <p> The {@code attrs} parameter is an optional array of {@link FileAttribute
-     * file-attributes} to set atomically when creating the directory. Each
-     * file attribute is identified by its {@link FileAttribute#name name}. If
-     * more than one attribute of the same name is included in the array then all
-     * but the last occurrence is ignored.
-     *
-     * @param   attrs
-     *          an optional list of file attributes to set atomically when
-     *          creating the directory
-     *
-     * @return  this path
-     *
-     * @throws  UnsupportedOperationException
-     *          if the array contains an attribute that cannot be set atomically
-     *          when creating the directory
-     * @throws  FileAlreadyExistsException
-     *          if a directory could not otherwise be created because a file of
-     *          that name already exists <i>(optional specific exception)</i>
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method is invoked to check write access to the new directory.
-     *
-     * @see Files#createDirectories
-     */
-    public abstract Path createDirectory(FileAttribute<?>... attrs)
-        throws IOException;
-
-    /**
-     * Opens or creates a file, returning a seekable byte channel to access the
-     * file.
-     *
-     * <p> The {@code options} parameter determines how the file is opened.
-     * The {@link StandardOpenOption#READ READ} and {@link StandardOpenOption#WRITE WRITE}
-     * options determine if the file should be opened for reading and/or writing.
-     * If neither option (or the {@link StandardOpenOption#APPEND APPEND}
-     * option) is contained in the array then the file is opened for reading.
-     * By default reading or writing commences at the beginning of the file.
-     *
-     * <p> In the addition to {@code READ} and {@code WRITE}, the following
-     * options may be present:
-     *
-     * <table border=1 cellpadding=5 summary="">
-     * <tr> <th>Option</th> <th>Description</th> </tr>
-     * <tr>
-     *   <td> {@link StandardOpenOption#APPEND APPEND} </td>
-     *   <td> If this option is present then the file is opened for writing and
-     *     each invocation of the channel's {@code write} method first advances
-     *     the position to the end of the file and then writes the requested
-     *     data. Whether the advancement of the position and the writing of the
-     *     data are done in a single atomic operation is system-dependent and
-     *     therefore unspecified. This option may not be used in conjunction
-     *     with the {@code READ} or {@code TRUNCATE_EXISTING} options. </td>
-     * </tr>
-     * <tr>
-     *   <td> {@link StandardOpenOption#TRUNCATE_EXISTING TRUNCATE_EXISTING} </td>
-     *   <td> If this option is present then the existing file is truncated to
-     *   a size of 0 bytes. This option is ignored when the file is opened only
-     *   for reading. </td>
-     * </tr>
-     * <tr>
-     *   <td> {@link StandardOpenOption#CREATE_NEW CREATE_NEW} </td>
-     *   <td> If this option is present then a new file is created, failing if
-     *   the file already exists or is a symbolic link. When creating a file the
-     *   check for the existence of the file and the creation of the file if it
-     *   does not exist is atomic with respect to other file system operations.
-     *   This option is ignored when the file is opened only for reading. </td>
-     * </tr>
-     * <tr>
-     *   <td > {@link StandardOpenOption#CREATE CREATE} </td>
-     *   <td> If this option is present then an existing file is opened if it
-     *   exists, otherwise a new file is created. This option is ignored if the
-     *   {@code CREATE_NEW} option is also present or the file is opened only
-     *   for reading. </td>
-     * </tr>
-     * <tr>
-     *   <td > {@link StandardOpenOption#DELETE_ON_CLOSE DELETE_ON_CLOSE} </td>
-     *   <td> When this option is present then the implementation makes a
-     *   <em>best effort</em> attempt to delete the file when closed by the
-     *   {@link SeekableByteChannel#close close} method. If the {@code close}
-     *   method is not invoked then a <em>best effort</em> attempt is made to
-     *   delete the file when the Java virtual machine terminates. </td>
-     * </tr>
-     * <tr>
-     *   <td>{@link StandardOpenOption#SPARSE SPARSE} </td>
-     *   <td> When creating a new file this option is a <em>hint</em> that the
-     *   new file will be sparse. This option is ignored when not creating
-     *   a new file. </td>
-     * </tr>
-     * <tr>
-     *   <td> {@link StandardOpenOption#SYNC SYNC} </td>
-     *   <td> Requires that every update to the file's content or metadata be
-     *   written synchronously to the underlying storage device. (see <a
-     *   href="package-summary.html#integrity"> Synchronized I/O file
-     *   integrity</a>). </td>
-     * <tr>
-     * <tr>
-     *   <td> {@link StandardOpenOption#DSYNC DSYNC} </td>
-     *   <td> Requires that every update to the file's content be written
-     *   synchronously to the underlying storage device. (see <a
-     *   href="package-summary.html#integrity"> Synchronized I/O file
-     *   integrity</a>). </td>
-     * </tr>
-     * </table>
-     *
-     * <p> An implementation may also support additional implementation specific
-     * options.
-     *
-     * <p> The {@code attrs} parameter is an optional array of file {@link
-     * FileAttribute file-attributes} to set atomically when a new file is created.
-     *
-     * <p> In the case of the default provider, the returned seekable byte channel
-     * is a {@link java.nio.channels.FileChannel}.
-     *
-     * <p> <b>Usage Examples:</b>
-     * <pre>
-     *     Path file = ...
-     *
-     *     // open file for reading
-     *     ReadableByteChannel rbc = file.newByteChannel(EnumSet.of(READ)));
-     *
-     *     // open file for writing to the end of an existing file, creating
-     *     // the file if it doesn't already exist
-     *     WritableByteChannel wbc = file.newByteChannel(EnumSet.of(CREATE,APPEND));
-     *
-     *     // create file with initial permissions, opening it for both reading and writing
-     *     FileAttribute&lt;Set&lt;PosixFilePermission&gt;&gt; perms = ...
-     *     SeekableByteChannel sbc = file.newByteChannel(EnumSet.of(CREATE_NEW,READ,WRITE), perms);
-     * </pre>
-     *
-     * @param   options
-     *          Options specifying how the file is opened
-     * @param   attrs
-     *          An optional list of file attributes to set atomically when
-     *          creating the file
-     *
-     * @return  a new seekable byte channel
-     *
-     * @throws  IllegalArgumentException
-     *          if the set contains an invalid combination of options
-     * @throws  UnsupportedOperationException
-     *          if an unsupported open option is specified or the array contains
-     *          attributes that cannot be set atomically when creating the file
-     * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists and the {@link
-     *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
-     *          <i>(optional specific exception)</i>
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the path if the file is
-     *          opened for reading. The {@link SecurityManager#checkWrite(String)
-     *          checkWrite} method is invoked to check write access to the path
-     *          if the file is opened for writing.
-     */
-    public abstract SeekableByteChannel newByteChannel(Set<? extends OpenOption> options,
-                                                       FileAttribute<?>... attrs)
-        throws IOException;
-
-    /**
-     * Opens or creates a file, returning a seekable byte channel to access the
-     * file.
-     *
-     * <p> This method opens or creates a file in exactly the manner specified
-     * by the {@link Path#newByteChannel(Set,FileAttribute[]) newByteChannel}
-     * method.
-     *
-     * @param   options
-     *          options specifying how the file is opened
-     *
-     * @return  a new seekable byte channel
-     *
-     * @throws  IllegalArgumentException
-     *          if the set contains an invalid combination of options
-     * @throws  UnsupportedOperationException
-     *          if an unsupported open option is specified
-     * @throws  FileAlreadyExistsException
-     *          if a file of that name already exists and the {@link
-     *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
-     *          <i>(optional specific exception)</i>
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the path if the file is
-     *          opened for reading. The {@link SecurityManager#checkWrite(String)
-     *          checkWrite} method is invoked to check write access to the path
-     *          if the file is opened for writing.
-     */
-    public abstract SeekableByteChannel newByteChannel(OpenOption... options)
-        throws IOException;
-
-    /**
-     * Opens or creates the file located by this object for writing, returning
-     * an output stream to write bytes to the file.
-     *
-     * <p> This method opens or creates a file in exactly the manner specified
-     * by the {@link Path#newByteChannel(Set,FileAttribute[]) newByteChannel}
-     * method except that the {@link StandardOpenOption#READ READ} option may not
-     * be present in the array of open options.
-     *
-     * @param   options
-     *          options specifying how the file is opened
-     *
-     * @return  a new output stream
-     *
-     * @throws  IllegalArgumentException            {@inheritDoc}
-     * @throws  UnsupportedOperationException       {@inheritDoc}
-     * @throws  IOException                         {@inheritDoc}
-     * @throws  SecurityException                   {@inheritDoc}
-     */
-    @Override
-    public abstract OutputStream newOutputStream(OpenOption... options)
-        throws IOException;
-
-    /**
-     * Tells whether or not the file located by this object is considered
-     * <em>hidden</em>. The exact definition of hidden is platform or provider
-     * dependent. On UNIX for example a file is considered to be hidden if its
-     * name begins with a period character ('.'). On Windows a file is
-     * considered hidden if it isn't a directory and the DOS {@link
-     * DosFileAttributes#isHidden hidden} attribute is set.
-     *
-     * <p> Depending on the implementation this method may require to access
-     * the file system to determine if the file is considered hidden.
-     *
-     * @return  {@code true} if the file is considered hidden
-     *
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the file.
-     */
-    public abstract boolean isHidden() throws IOException;
-
-    /**
-     * Checks the existence and optionally the accessibility of the file
-     * located by this path.
-     *
-     * <p> This method checks the existence of a file and that this Java virtual
-     * machine has appropriate privileges that would allow it access the file
-     * according to all of access modes specified in the {@code modes} parameter
-     * as follows:
-     *
-     * <table border=1 cellpadding=5 summary="">
-     * <tr> <th>Value</th> <th>Description</th> </tr>
-     * <tr>
-     *   <td> {@link AccessMode#READ READ} </td>
-     *   <td> Checks that the file exists and that the Java virtual machine has
-     *     permission to read the file. </td>
-     * </tr>
-     * <tr>
-     *   <td> {@link AccessMode#WRITE WRITE} </td>
-     *   <td> Checks that the file exists and that the Java virtual machine has
-     *     permission to write to the file, </td>
-     * </tr>
-     * <tr>
-     *   <td> {@link AccessMode#EXECUTE EXECUTE} </td>
-     *   <td> Checks that the file exists and that the Java virtual machine has
-     *     permission to {@link Runtime#exec execute} the file. The semantics
-     *     may differ when checking access to a directory. For example, on UNIX
-     *     systems, checking for {@code EXECUTE} access checks that the Java
-     *     virtual machine has permission to search the directory in order to
-     *     access file or subdirectories. </td>
-     * </tr>
-     * </table>
-     *
-     * <p> If the {@code modes} parameter is of length zero, then the existence
-     * of the file is checked.
-     *
-     * <p> This method follows symbolic links if the file referenced by this
-     * object is a symbolic link. Depending on the implementation, this method
-     * may require to read file permissions, access control lists, or other
-     * file attributes in order to check the effective access to the file. To
-     * determine the effective access to a file may require access to several
-     * attributes and so in some implementations this method may not be atomic
-     * with respect to other file system operations. Furthermore, as the result
-     * of this method is immediately outdated, there is no guarantee that a
-     * subsequence access will succeed (or even that it will access the same
-     * file). Care should be taken when using this method in security sensitive
-     * applications.
-     *
-     * @param   modes
-     *          The access modes to check; may have zero elements
-     *
-     * @throws  UnsupportedOperationException
-     *          an implementation is required to support checking for
-     *          {@code READ}, {@code WRITE}, and {@code EXECUTE} access. This
-     *          exception is specified to allow for the {@code Access} enum to
-     *          be extended in future releases.
-     * @throws  NoSuchFileException
-     *          if a file does not exist <i>(optional specific exception)</i>
-     * @throws  AccessDeniedException
-     *          the requested access would be denied or the access cannot be
-     *          determined because the Java virtual machine has insufficient
-     *          privileges or other reasons. <i>(optional specific exception)</i>
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          is invoked when checking read access to the file or only the
-     *          existence of the file, the {@link SecurityManager#checkWrite(String)
-     *          checkWrite} is invoked when checking write access to the file,
-     *          and {@link SecurityManager#checkExec(String) checkExec} is invoked
-     *          when checking execute access.
-     */
-    public abstract void checkAccess(AccessMode... modes) throws IOException;
-
-    /**
-     * Tests whether the file located by this path exists.
-     *
-     * <p> This convenience method is intended for cases where it is required to
-     * take action when it can be confirmed that a file exists. This method simply
-     * invokes the {@link #checkAccess checkAccess} method to check if the file
-     * exists. If the {@code checkAccess} method succeeds then this method returns
-     * {@code true}, otherwise if an {@code IOException} is thrown (because the
-     * file doesn't exist or cannot be accessed by this Java virtual machine)
-     * then {@code false} is returned.
-     *
-     * <p> Note that the result of this method is immediately outdated. If this
-     * method indicates the file exists then there is no guarantee that a
-     * subsequence access will succeed. Care should be taken when using this
-     * method in security sensitive applications.
-     *
-     * @return  {@code true} if the file exists; {@code false} if the file does
-     *          not exist or its existence cannot be determined.
-     *
-     * @throws  SecurityException
-     *          In the case of the default provider, the {@link
-     *          SecurityManager#checkRead(String)} is invoked to check
-     *          read access to the file.
-     *
-     * @see #notExists
-     */
-    public abstract boolean exists();
-
-    /**
-     * Tests whether the file located by this path does not exist.
-     *
-     * <p> This convenience method is intended for cases where it is required to
-     * take action when it can be confirmed that a file does not exist. This
-     * method invokes the {@link #checkAccess checkAccess} method to check if the
-     * file exists. If the file does not exist then {@code true} is returned,
-     * otherwise the file exists or cannot be accessed by this Java virtual
-     * machine and {@code false} is returned.
-     *
-     * <p> Note that this method is not the complement of the {@link #exists
-     * exists} method. Where it is not possible to determine if a file exists
-     * or not then both methods return {@code false}. As with the {@code exists}
-     * method, the result of this method is immediately outdated. If this
-     * method indicates the file does exist then there is no guarantee that a
-     * subsequence attempt to create the file will succeed. Care should be taken
-     * when using this method in security sensitive applications.
-     *
-     * @return  {@code true} if the file does not exist; {@code false} if the
-     *          file exists or its existence cannot be determined.
-     *
-     * @throws  SecurityException
-     *          In the case of the default provider, the {@link
-     *          SecurityManager#checkRead(String)} is invoked to check
-     *          read access to the file.
-     */
-    public abstract boolean notExists();
-
-    /**
-     * Returns the {@link FileStore} representing the file store where an
-     * existing file, located by this path, is stored.
-     *
-     * <p> Once a reference to the {@code FileStore} is obtained it is
-     * implementation specific if operations on the returned {@code FileStore},
-     * or {@link FileStoreAttributeView} objects obtained from it, continue
-     * to depend on the existence of the file. In particular the behavior is not
-     * defined for the case that the file is deleted or moved to a different
-     * file store.
-     *
-     * @return  the file store where the file is stored
-     *
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to the file, and in
-     *          addition it checks {@link RuntimePermission}<tt>
-     *          ("getFileStoreAttributes")</tt>
-     */
-    public abstract FileStore getFileStore() throws IOException;
+    File toFile();
 
     // -- watchable --
 
@@ -1471,8 +594,8 @@ public abstract class Path
      *
      * <p> In this release, this path locates a directory that exists. The
      * directory is registered with the watch service so that entries in the
-     * directory can be watched. The {@code events} parameter is an array of
-     * events to register and may contain the following events:
+     * directory can be watched. The {@code events} parameter is the events to
+     * register and may contain the following events:
      * <ul>
      *   <li>{@link StandardWatchEventKind#ENTRY_CREATE ENTRY_CREATE} -
      *       entry created or moved into the directory</li>
@@ -1489,10 +612,10 @@ public abstract class Path
      * <p> The set of events may include additional implementation specific
      * event that are not defined by the enum {@link StandardWatchEventKind}
      *
-     * <p> The {@code modifiers} parameter is an array of <em>modifiers</em>
-     * that qualify how the directory is registered. This release does not
-     * define any <em>standard</em> modifiers. The array may contain
-     * implementation specific modifiers.
+     * <p> The {@code modifiers} parameter specifies <em>modifiers</em> that
+     * qualify how the directory is registered. This release does not define any
+     * <em>standard</em> modifiers. It may contain implementation specific
+     * modifiers.
      *
      * <p> Where a file is registered with a watch service by means of a symbolic
      * link then it is implementation specific if the watch continues to depend
@@ -1525,9 +648,9 @@ public abstract class Path
      *          method is invoked to check read access to the file.
      */
     @Override
-    public abstract WatchKey register(WatchService watcher,
-                                      WatchEvent.Kind<?>[] events,
-                                      WatchEvent.Modifier... modifiers)
+    WatchKey register(WatchService watcher,
+                      WatchEvent.Kind<?>[] events,
+                      WatchEvent.Modifier... modifiers)
         throws IOException;
 
     /**
@@ -1573,8 +696,8 @@ public abstract class Path
      *          method is invoked to check read access to the file.
      */
     @Override
-    public abstract WatchKey register(WatchService watcher,
-                                      WatchEvent.Kind<?>... events)
+    WatchKey register(WatchService watcher,
+                      WatchEvent.Kind<?>... events)
         throws IOException;
 
     // -- Iterable --
@@ -1591,7 +714,7 @@ public abstract class Path
      * @return  an iterator over the name elements of this path.
      */
     @Override
-    public abstract Iterator<Path> iterator();
+    Iterator<Path> iterator();
 
     // -- compareTo/equals/hashCode --
 
@@ -1609,50 +732,7 @@ public abstract class Path
      *          lexicographically greater than the argument
      */
     @Override
-    public abstract int compareTo(Path other);
-
-    /**
-     * Tests if the file referenced by this object is the same file referenced
-     * by another object.
-     *
-     * <p> If this {@code Path} and the given {@code Path} are {@link
-     * #equals(Object) equal} then this method returns {@code true} without checking
-     * if the file exists. If the {@code Path} and the given {@code Path}
-     * are associated with different providers, or the given {@code Path} is
-     * {@code null} then this method returns {@code false}. Otherwise, this method
-     * checks if both {@code Paths} locate the same file, and depending on the
-     * implementation, may require to open or access both files.
-     *
-     * <p> If the file system and files remain static, then this method implements
-     * an equivalence relation for non-null {@code Paths}.
-     * <ul>
-     * <li>It is <i>reflexive</i>: for a non-null {@code Path} {@code f},
-     *     {@code f.isSameFile(f)} should return {@code true}.
-     * <li>It is <i>symmetric</i>: for two non-null {@code Path}
-     *     {@code f} and {@code g}, {@code f.isSameFile(g)} will equal
-     *     {@code g.isSameFile(f)}.
-     * <li>It is <i>transitive</i>: for three {@code Paths}
-     *     {@code f}, {@code g}, and {@code h}, if {@code f.isSameFile(g)} returns
-     *     {@code true} and {@code g.isSameFile(h)} returns {@code true}, then
-     *     {@code f.isSameFile(h)} will return return {@code true}.
-     * </ul>
-     *
-     * @param   other
-     *          the other file reference
-     *
-     * @return  {@code true} if, and only if, this object and the given object
-     *          locate the same file
-     *
-     * @throws  IOException
-     *          if an I/O error occurs
-     * @throws  SecurityException
-     *          In the case of the default provider, and a security manager is
-     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
-     *          method is invoked to check read access to both files.
-     *
-     * @see java.nio.file.attribute.BasicFileAttributes#fileKey
-     */
-    public abstract boolean isSameFile(Path other) throws IOException;
+    int compareTo(Path other);
 
     /**
      * Tests this path for equality with the given object.
@@ -1663,7 +743,9 @@ public abstract class Path
      * <p> Whether or not two path are equal depends on the file system
      * implementation. In some cases the paths are compared without regard
      * to case, and others are case sensitive. This method does not access the
-     * file system and the file is not required to exist.
+     * file system and the file is not required to exist. Where required, the
+     * {@link Files#isSameFile isSameFile} method may be used to check if two
+     * paths locate the same file.
      *
      * <p> This method satisfies the general contract of the {@link
      * java.lang.Object#equals(Object) Object.equals} method. </p>
@@ -1674,8 +756,7 @@ public abstract class Path
      * @return  {@code true} if, and only if, the given object is a {@code Path}
      *          that is identical to this {@code Path}
      */
-    @Override
-    public abstract boolean equals(Object other);
+    boolean equals(Object other);
 
     /**
      * Computes a hash code for this path.
@@ -1686,8 +767,7 @@ public abstract class Path
      *
      * @return  the hash-code value for this path
      */
-    @Override
-    public abstract int hashCode();
+    int hashCode();
 
     /**
      * Returns the string representation of this path.
@@ -1701,6 +781,5 @@ public abstract class Path
      *
      * @return  the string representation of this path
      */
-    @Override
-    public abstract String toString();
+    String toString();
 }

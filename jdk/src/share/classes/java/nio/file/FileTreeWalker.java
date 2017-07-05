@@ -69,7 +69,7 @@ class FileTreeWalker {
         FileVisitResult result = walk(start,
                                       0,
                                       new ArrayList<AncestorDirectory>());
-        Objects.nonNull(result, "FileVisitor returned null");
+        Objects.requireNonNull(result, "FileVisitor returned null");
     }
 
     /**
@@ -102,12 +102,13 @@ class FileTreeWalker {
         if (attrs == null) {
             try {
                 try {
-                    attrs = Attributes.readBasicFileAttributes(file, linkOptions);
+                    attrs = Files.readAttributes(file, BasicFileAttributes.class, linkOptions);
                 } catch (IOException x1) {
                     if (followLinks) {
                         try {
-                            attrs = Attributes
-                                .readBasicFileAttributes(file, LinkOption.NOFOLLOW_LINKS);
+                            attrs = Files.readAttributes(file,
+                                                         BasicFileAttributes.class,
+                                                         LinkOption.NOFOLLOW_LINKS);
                         } catch (IOException x2) {
                             exc = x2;
                         }
@@ -151,7 +152,7 @@ class FileTreeWalker {
                 } else {
                     boolean isSameFile = false;
                     try {
-                        isSameFile = file.isSameFile(ancestor.file());
+                        isSameFile = Files.isSameFile(file, ancestor.file());
                     } catch (IOException x) {
                         // ignore
                     } catch (SecurityException x) {
@@ -175,7 +176,7 @@ class FileTreeWalker {
 
             // open the directory
             try {
-                stream = file.newDirectoryStream();
+                stream = Files.newDirectoryStream(file);
             } catch (IOException x) {
                 return visitor.visitFileFailed(file, x);
             } catch (SecurityException x) {
@@ -212,7 +213,11 @@ class FileTreeWalker {
             } finally {
                 try {
                     stream.close();
-                } catch (IOException x) { }
+                } catch (IOException e) {
+                    // IOException will be notified to postVisitDirectory
+                    if (ioe == null)
+                        ioe = e;
+                }
             }
 
             // invoke postVisitDirectory last

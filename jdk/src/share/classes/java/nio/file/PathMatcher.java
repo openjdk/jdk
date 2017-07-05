@@ -32,7 +32,7 @@ package java.nio.file;
  * @since 1.7
  *
  * @see FileSystem#getPathMatcher
- * @see Path#newDirectoryStream(String)
+ * @see Files#newDirectoryStream(Path,String)
  */
 
 public interface PathMatcher {

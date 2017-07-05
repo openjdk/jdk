@@ -39,13 +39,14 @@ ElfSymbolTable::ElfSymbolTable(FILE* file, Elf_Shdr shdr) {
   // try to load the string table
   long cur_offset = ftell(file);
   if (cur_offset != -1) {
-    m_symbols = (Elf_Sym*)NEW_C_HEAP_ARRAY(char, shdr.sh_size);
+    // call malloc so we can back up if memory allocation fails.
+    m_symbols = (Elf_Sym*)os::malloc(shdr.sh_size);
     if (m_symbols) {
       if (fseek(file, shdr.sh_offset, SEEK_SET) ||
         fread((void*)m_symbols, shdr.sh_size, 1, file) != 1 ||
         fseek(file, cur_offset, SEEK_SET)) {
         m_status = Decoder::file_invalid;
-        FREE_C_HEAP_ARRAY(char, m_symbols);
+        os::free(m_symbols);
         m_symbols = NULL;
       }
     }
@@ -59,7 +60,7 @@ ElfSymbolTable::ElfSymbolTable(FILE* file, Elf_Shdr shdr) {
 
 ElfSymbolTable::~ElfSymbolTable() {
   if (m_symbols != NULL) {
-    FREE_C_HEAP_ARRAY(char, m_symbols);
+    os::free(m_symbols);
   }
 
   if (m_next != NULL) {

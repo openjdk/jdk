@@ -1598,6 +1598,12 @@ public:
 #ifdef TARGET_OS_ARCH_windows_x86
 # include "thread_windows_x86.hpp"
 #endif
+#ifdef TARGET_OS_ARCH_linux_arm
+# include "thread_linux_arm.hpp"
+#endif
+#ifdef TARGET_OS_ARCH_linux_ppc
+# include "thread_linux_ppc.hpp"
+#endif
 
 
  public:
@@ -1673,16 +1679,6 @@ inline size_t JavaThread::stack_available(address cur_sp) {
   }
   return cur_sp > low_addr ? cur_sp - low_addr : 0;
 }
-
-// A JavaThread for low memory detection support
-class LowMemoryDetectorThread : public JavaThread {
-  friend class VMStructs;
-public:
-  LowMemoryDetectorThread(ThreadFunction entry_point) : JavaThread(entry_point) {};
-
-  // Hide this thread from external view.
-  bool is_hidden_from_external_view() const      { return true; }
-};
 
 // A thread used for Compilation.
 class CompilerThread : public JavaThread {
