@@ -1327,7 +1327,7 @@ class MarkFromRootsClosure: public BitMapClosure {
                        CMSMarkStack*  markStack,
                        CMSMarkStack*  revisitStack,
                        bool should_yield, bool verifying = false);
-  void do_bit(size_t offset);
+  bool do_bit(size_t offset);
   void reset(HeapWord* addr);
   inline void do_yield_check();
 
@@ -1363,7 +1363,7 @@ class Par_MarkFromRootsClosure: public BitMapClosure {
                        CMSMarkStack*  overflow_stack,
                        CMSMarkStack*  revisit_stack,
                        bool should_yield);
-  void do_bit(size_t offset);
+  bool do_bit(size_t offset);
   inline void do_yield_check();
 
  private:
@@ -1411,7 +1411,7 @@ class MarkFromRootsVerifyClosure: public BitMapClosure {
                              CMSBitMap* verification_bm,
                              CMSBitMap* cms_bm,
                              CMSMarkStack*  mark_stack);
-  void do_bit(size_t offset);
+  bool do_bit(size_t offset);
   void reset(HeapWord* addr);
 };
 
@@ -1420,8 +1420,9 @@ class MarkFromRootsVerifyClosure: public BitMapClosure {
 // "empty" (i.e. the bit vector doesn't have any 1-bits).
 class FalseBitMapClosure: public BitMapClosure {
  public:
-  void do_bit(size_t offset) {
+  bool do_bit(size_t offset) {
     guarantee(false, "Should not have a 1 bit");
+    return true;
   }
 };
 

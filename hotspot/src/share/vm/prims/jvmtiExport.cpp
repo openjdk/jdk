@@ -2433,18 +2433,7 @@ JvmtiGCMarker::JvmtiGCMarker(bool full) : _full(full), _invocation_count(0) {
   // so we record the number of collections so that it can be checked in
   // the destructor.
   if (!_full) {
-    if (Universe::heap()->kind() == CollectedHeap::GenCollectedHeap) {
-      GenCollectedHeap* gch = GenCollectedHeap::heap();
-      assert(gch->n_gens() == 2, "configuration not recognized");
-      _invocation_count = (unsigned int)gch->get_gen(1)->stat_record()->invocations;
-    } else {
-#ifndef SERIALGC
-      assert(Universe::heap()->kind() == CollectedHeap::ParallelScavengeHeap, "checking");
-      _invocation_count = PSMarkSweep::total_invocations();
-#else  // SERIALGC
-      fatal("SerialGC only supported in this configuration.");
-#endif // SERIALGC
-    }
+    _invocation_count = Universe::heap()->total_full_collections();
   }
 
   // Do clean up tasks that need to be done at a safepoint
@@ -2466,20 +2455,7 @@ JvmtiGCMarker::~JvmtiGCMarker() {
   // generation but could have ended up doing a "full" GC - check the
   // GC count to see.
   if (!_full) {
-    if (Universe::heap()->kind() == CollectedHeap::GenCollectedHeap) {
-      GenCollectedHeap* gch = GenCollectedHeap::heap();
-      if (_invocation_count != (unsigned int)gch->get_gen(1)->stat_record()->invocations) {
-        _full = true;
-      }
-    } else {
-#ifndef SERIALGC
-      if (_invocation_count != PSMarkSweep::total_invocations()) {
-        _full = true;
-      }
-#else  // SERIALGC
-      fatal("SerialGC only supported in this configuration.");
-#endif // SERIALGC
-    }
+    _full = (_invocation_count != Universe::heap()->total_full_collections());
   }
 
   // Full collection probably means the perm generation has been GC'ed

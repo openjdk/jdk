@@ -72,7 +72,8 @@ class AbstractWorkGang: public CHeapObj {
   // Here's the public interface to this class.
 public:
   // Constructor and destructor.
-  AbstractWorkGang(const char* name, bool are_GC_threads);
+  AbstractWorkGang(const char* name, bool are_GC_task_threads,
+                   bool are_ConcurrentGC_threads);
   ~AbstractWorkGang();
   // Run a task, returns when the task is done (or terminated).
   virtual void run_task(AbstractGangTask* task) = 0;
@@ -83,7 +84,8 @@ public:
   const char* name() const;
 protected:
   // Initialize only instance data.
-  const bool _are_GC_threads;
+  const bool _are_GC_task_threads;
+  const bool _are_ConcurrentGC_threads;
   // Printing support.
   const char* _name;
   // The monitor which protects these data,
@@ -130,8 +132,11 @@ public:
   int finished_workers() const {
     return _finished_workers;
   }
-  bool are_GC_threads() const {
-    return _are_GC_threads;
+  bool are_GC_task_threads() const {
+    return _are_GC_task_threads;
+  }
+  bool are_ConcurrentGC_threads() const {
+    return _are_ConcurrentGC_threads;
   }
   // Predicates.
   bool is_idle() const {
@@ -190,7 +195,8 @@ public:
 class WorkGang: public AbstractWorkGang {
 public:
   // Constructor
-  WorkGang(const char* name, int workers, bool are_GC_threads);
+  WorkGang(const char* name, int workers,
+           bool are_GC_task_threads, bool are_ConcurrentGC_threads);
   // Run a task, returns when the task is done (or terminated).
   virtual void run_task(AbstractGangTask* task);
 };
@@ -206,6 +212,7 @@ public:
   virtual void run();
   // Predicate for Thread
   virtual bool is_GC_task_thread() const;
+  virtual bool is_ConcurrentGC_thread() const;
   // Printing
   void print_on(outputStream* st) const;
   virtual void print() const { print_on(tty); }
@@ -228,12 +235,17 @@ protected:
   Monitor _monitor;
   int     _n_workers;
   int     _n_completed;
+  bool    _should_reset;
 
-  Monitor* monitor()       { return &_monitor; }
-  int      n_workers()     { return _n_workers; }
-  int      n_completed()   { return _n_completed; }
+  Monitor* monitor()        { return &_monitor; }
+  int      n_workers()      { return _n_workers; }
+  int      n_completed()    { return _n_completed; }
+  bool     should_reset()   { return _should_reset; }
 
-  void     inc_completed() { _n_completed++; }
+  void     zero_completed() { _n_completed = 0; }
+  void     inc_completed()  { _n_completed++; }
+
+  void     set_should_reset(bool v) { _should_reset = v; }
 
 public:
   WorkGangBarrierSync();
@@ -342,4 +354,43 @@ public:
   // is the last thread to complete so that the thread can perform
   // cleanup if necessary.
   bool all_tasks_completed();
+};
+
+// Represents a set of free small integer ids.
+class FreeIdSet {
+  enum {
+    end_of_list = -1,
+    claimed = -2
+  };
+
+  int _sz;
+  Monitor* _mon;
+
+  int* _ids;
+  int _hd;
+  int _waiters;
+  int _claimed;
+
+  static bool _safepoint;
+  typedef FreeIdSet* FreeIdSetPtr;
+  static const int NSets = 10;
+  static FreeIdSetPtr _sets[NSets];
+  static bool _stat_init;
+  int _index;
+
+public:
+  FreeIdSet(int sz, Monitor* mon);
+  ~FreeIdSet();
+
+  static void set_safepoint(bool b);
+
+  // Attempt to claim the given id permanently.  Returns "true" iff
+  // successful.
+  bool claim_perm_id(int i);
+
+  // Returns an unclaimed parallel id (waiting for one to be released if
+  // necessary).  Returns "-1" if a GC wakes up a wait for an id.
+  int claim_par_id();
+
+  void release_par_id(int id);
 };

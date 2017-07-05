@@ -214,6 +214,7 @@ public:
 //////////////////////////////////////////////////////////////////////////
 class BlockOffsetArray: public BlockOffsetTable {
   friend class VMStructs;
+  friend class G1BlockOffsetArray; // temp. until we restructure and cleanup
  protected:
   // The following enums are used by do_block_internal() below
   enum Action {

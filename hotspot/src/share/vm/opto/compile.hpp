@@ -160,6 +160,7 @@ class Compile : public Phase {
   bool                  _print_assembly;        // True if we should dump assembly code for this compilation
 #ifndef PRODUCT
   bool                  _trace_opto_output;
+  bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
 
   // Compilation environment.
@@ -319,6 +320,8 @@ class Compile : public Phase {
   }
 #ifndef PRODUCT
   bool          trace_opto_output() const       { return _trace_opto_output; }
+  bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
+  void          set_parsed_irreducible_loop(bool z) { _parsed_irreducible_loop = z; }
 #endif
 
   void begin_method() {

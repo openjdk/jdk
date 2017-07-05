@@ -364,10 +364,8 @@ class CollectedHeap : public CHeapObj {
   // Can a compiler initialize a new object without store barriers?
   // This permission only extends from the creation of a new object
   // via a TLAB up to the first subsequent safepoint.
-  virtual bool can_elide_tlab_store_barriers() const {
-    guarantee(kind() < CollectedHeap::G1CollectedHeap, "else change or refactor this");
-    return true;
-  }
+  virtual bool can_elide_tlab_store_barriers() const = 0;
+
   // If a compiler is eliding store barriers for TLAB-allocated objects,
   // there is probably a corresponding slow path which can produce
   // an object allocated anywhere.  The compiler's runtime support
@@ -379,12 +377,10 @@ class CollectedHeap : public CHeapObj {
   // Can a compiler elide a store barrier when it writes
   // a permanent oop into the heap?  Applies when the compiler
   // is storing x to the heap, where x->is_perm() is true.
-  virtual bool can_elide_permanent_oop_store_barriers() const;
+  virtual bool can_elide_permanent_oop_store_barriers() const = 0;
 
   // Does this heap support heap inspection (+PrintClassHistogram?)
-  virtual bool supports_heap_inspection() const {
-    return false;   // Until RFE 5023697 is implemented
-  }
+  virtual bool supports_heap_inspection() const = 0;
 
   // Perform a collection of the heap; intended for use in implementing
   // "System.gc".  This probably implies as full a collection as the

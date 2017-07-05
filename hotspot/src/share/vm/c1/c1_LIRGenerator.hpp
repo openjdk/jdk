@@ -145,6 +145,7 @@ class PhiResolver: public CompilationResourceObj {
 
 // only the classes below belong in the same file
 class LIRGenerator: public InstructionVisitor, public BlockClosure {
+
  private:
   Compilation*  _compilation;
   ciMethod*     _method;    // method that we are compiling
@@ -154,6 +155,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   Values        _instruction_for_operand;
   BitMap2D      _vreg_flags; // flags which can be set on a per-vreg basis
   LIR_List*     _lir;
+  BarrierSet*   _bs;
 
   LIRGenerator* gen() {
     return this;
@@ -174,8 +176,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   LIR_OprList                     _reg_for_constants;
   Values                          _unpinned_constants;
 
-  LIR_Const*                      _card_table_base;
-
   friend class PhiResolver;
 
   // unified bailout support
@@ -195,8 +195,6 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   // get a constant into a register and get track of what register was used
   LIR_Opr load_constant(Constant* x);
   LIR_Opr load_constant(LIR_Const* constant);
-
-  LIR_Const* card_table_base() const { return _card_table_base; }
 
   void  set_result(Value x, LIR_Opr opr)           {
     assert(opr->is_valid(), "must set to valid value");
@@ -253,12 +251,17 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
 
   // generic interface
 
+  void pre_barrier(LIR_Opr addr_opr, bool patch,  CodeEmitInfo* info);
   void post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val);
 
   // specific implementations
+  // pre barriers
+
+  void G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, bool patch,  CodeEmitInfo* info);
 
   // post barriers
 
+  void G1SATBCardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val);
   void CardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val);
 
 

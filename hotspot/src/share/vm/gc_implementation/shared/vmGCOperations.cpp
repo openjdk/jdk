@@ -74,6 +74,7 @@ bool VM_GC_Operation::doit_prologue() {
   // If the GC count has changed someone beat us to the collection
   // Get the Heap_lock after the pending_list_lock.
   Heap_lock->lock();
+
   // Check invocations
   if (skip_operation()) {
     // skip collection
@@ -82,6 +83,8 @@ bool VM_GC_Operation::doit_prologue() {
     _prologue_succeeded = false;
   } else {
     _prologue_succeeded = true;
+    SharedHeap* sh = SharedHeap::heap();
+    if (sh != NULL) sh->_thread_holds_heap_lock_for_gc = true;
   }
   return _prologue_succeeded;
 }
@@ -90,6 +93,8 @@ bool VM_GC_Operation::doit_prologue() {
 void VM_GC_Operation::doit_epilogue() {
   assert(Thread::current()->is_Java_thread(), "just checking");
   // Release the Heap_lock first.
+  SharedHeap* sh = SharedHeap::heap();
+  if (sh != NULL) sh->_thread_holds_heap_lock_for_gc = false;
   Heap_lock->unlock();
   release_and_notify_pending_list_lock();
 }
@@ -148,12 +153,27 @@ void VM_GenCollectFull::doit() {
 void VM_GenCollectForPermanentAllocation::doit() {
   JvmtiGCForAllocationMarker jgcm;
   notify_gc_begin(true);
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  GCCauseSetter gccs(gch, _gc_cause);
-  gch->do_full_collection(gch->must_clear_all_soft_refs(),
-                          gch->n_gens() - 1);
-  _res = gch->perm_gen()->allocate(_size, false);
-  assert(gch->is_in_reserved_or_null(_res), "result not in heap");
+  SharedHeap* heap = (SharedHeap*)Universe::heap();
+  GCCauseSetter gccs(heap, _gc_cause);
+  switch (heap->kind()) {
+    case (CollectedHeap::GenCollectedHeap): {
+      GenCollectedHeap* gch = (GenCollectedHeap*)heap;
+      gch->do_full_collection(gch->must_clear_all_soft_refs(),
+                              gch->n_gens() - 1);
+      break;
+    }
+#ifndef SERIALGC
+    case (CollectedHeap::G1CollectedHeap): {
+      G1CollectedHeap* g1h = (G1CollectedHeap*)heap;
+      g1h->do_full_collection(_gc_cause == GCCause::_last_ditch_collection);
+      break;
+    }
+#endif // SERIALGC
+    default:
+      ShouldNotReachHere();
+  }
+  _res = heap->perm_gen()->allocate(_size, false);
+  assert(heap->is_in_reserved_or_null(_res), "result not in heap");
   if (_res == NULL && GC_locker::is_active_and_needs_gc()) {
     set_gc_locked();
   }

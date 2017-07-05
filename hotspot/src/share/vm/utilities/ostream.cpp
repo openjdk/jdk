@@ -188,6 +188,17 @@ void outputStream::stamp() {
   print_raw(buf);
 }
 
+void outputStream::stamp(bool guard,
+                         const char* prefix,
+                         const char* suffix) {
+  if (!guard) {
+    return;
+  }
+  print_raw(prefix);
+  stamp();
+  print_raw(suffix);
+}
+
 void outputStream::date_stamp(bool guard,
                               const char* prefix,
                               const char* suffix) {

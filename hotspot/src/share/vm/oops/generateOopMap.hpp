@@ -341,16 +341,22 @@ class GenerateOopMap VALUE_OBJ_CLASS_SPEC {
   BasicBlock *    _basic_blocks;             // Array of basicblock info
   int             _gc_points;
   int             _bb_count;
-  uintptr_t *     _bb_hdr_bits;
+  BitMap          _bb_hdr_bits;
 
   // Basicblocks methods
   void          initialize_bb               ();
   void          mark_bbheaders_and_count_gc_points();
-  bool          is_bb_header                (int bci) const   { return (_bb_hdr_bits[bci >> LogBitsPerWord] & ((uintptr_t)1 << (bci & (BitsPerWord-1)))) != 0; }
+  bool          is_bb_header                (int bci) const   {
+    return _bb_hdr_bits.at(bci);
+  }
   int           gc_points                   () const                          { return _gc_points; }
   int           bb_count                    () const                          { return _bb_count; }
-  void          set_bbmark_bit              (int bci);
-  void          clear_bbmark_bit            (int bci);
+  void          set_bbmark_bit              (int bci) {
+    _bb_hdr_bits.at_put(bci, true);
+  }
+  void          clear_bbmark_bit            (int bci) {
+    _bb_hdr_bits.at_put(bci, false);
+  }
   BasicBlock *  get_basic_block_at          (int bci) const;
   BasicBlock *  get_basic_block_containing  (int bci) const;
   void          interp_bb                   (BasicBlock *bb);
