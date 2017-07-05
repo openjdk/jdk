@@ -367,7 +367,7 @@ endif
 $(EXPORT_LIB_DIR)/%.jar: $(GEN_DIR)/%.jar
 	$(install-file)
 
-# Include files (jvmti.h, jvmticmlr.h, jni.h, $(JDK_INCLUDE_SUBDIR)/jni_md.h, jmm.h)
+# Include files (jvmti.h, jvmticmlr.h, jni.h, $(JDK_INCLUDE_SUBDIR)/jni_md.h, jmm.h, jfr.h)
 $(EXPORT_INCLUDE_DIR)/%: $(GEN_DIR)/jvmtifiles/%
 	$(install-file)
 
@@ -383,6 +383,16 @@ $(EXPORT_INCLUDE_DIR)/$(JDK_INCLUDE_SUBDIR)/jni_md.h: $(HS_JNI_ARCH_SRC)
 
 $(EXPORT_INCLUDE_DIR)/%: $(HS_SRC_DIR)/share/vm/services/%
 	$(install-file)
+
+JFR_EXISTS=$(shell if [ -d $(HS_ALT_SRC) ]; then echo 1; else echo 0; fi)
+# export jfr.h
+ifeq ($JFR_EXISTS,1)
+$(EXPORT_INCLUDE_DIR)/%: $(HS_ALT_SRC)/share/vm/jfr/agent/%
+	$(install-file)
+else
+$(EXPORT_INCLUDE_DIR)/jfr.h:
+	
+endif
 
 # Doc files (jvmti.html)
 $(EXPORT_DOCS_DIR)/platform/jvmti/%: $(DOCS_DIR)/%

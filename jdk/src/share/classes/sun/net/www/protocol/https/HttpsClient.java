@@ -36,7 +36,6 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.net.CookieHandler;
 import java.security.Principal;
 import java.security.cert.*;
 import java.util.StringTokenizer;
@@ -268,13 +267,6 @@ final class HttpsClient extends HttpClient
             port = getDefaultPort();
         }
         setConnectTimeout(connectTimeout);
-        // get the cookieHandler if there is any
-        cookieHandler = java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<CookieHandler>() {
-                public CookieHandler run() {
-                    return CookieHandler.getDefault();
-                }
-            });
         openServer();
     }
 

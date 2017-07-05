@@ -35,6 +35,8 @@ cl 2>&1 | grep "IA-64" >NUL
 if %errorlevel% == 0 goto isia64
 cl 2>&1 | grep "AMD64" >NUL
 if %errorlevel% == 0 goto amd64
+cl 2>&1 | grep "x64" >NUL
+if %errorlevel% == 0 goto amd64
 set ARCH=x86
 set BUILDARCH=i486
 set Platform_arch=x86

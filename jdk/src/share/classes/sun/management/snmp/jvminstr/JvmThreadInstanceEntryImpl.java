@@ -53,6 +53,8 @@ import sun.management.snmp.util.MibLogger;
 public class JvmThreadInstanceEntryImpl
     implements JvmThreadInstanceEntryMBean, Serializable {
 
+    static final long serialVersionUID = 910173589985461347L;
+
     public final static class ThreadStateMap {
         public final static class Byte0 {
             public final static byte inNative     = (byte)0x80; // bit 1

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -673,5 +673,23 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
 
 intptr_t *frame::initial_deoptimization_info() {
   // used to reset the saved FP
+  return fp();
+}
+
+intptr_t* frame::real_fp() const {
+  if (_cb != NULL) {
+    // use the frame size if valid
+    int size = _cb->frame_size();
+    if ((size > 0) &&
+        (! is_ricochet_frame())) {
+      // Work-around: ricochet explicitly excluded because frame size is not
+      // constant for the ricochet blob but its frame_size could not, for
+      // some reasons, be declared as <= 0. This potentially confusing
+      // size declaration should be fixed as another CR.
+      return unextended_sp() + size;
+    }
+  }
+  // else rely on fp()
+  assert(! is_compiled_frame(), "unknown compiled frame size");
   return fp();
 }

@@ -77,7 +77,7 @@
 // | method_size             | max_stack                  |
 // | max_locals              | size_of_parameters         |
 // |------------------------------------------------------|
-// | intrinsic_id, (unused)  |  throwout_count            |
+// |intrinsic_id|   flags    |  throwout_count            |
 // |------------------------------------------------------|
 // | num_breakpoints         |  (unused)                  |
 // |------------------------------------------------------|
@@ -124,6 +124,8 @@ class methodOopDesc : public oopDesc {
   u2                _max_locals;                 // Number of local variables used by this method
   u2                _size_of_parameters;         // size of the parameter block (receiver + arguments) in words
   u1                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
+  u1                _jfr_towrite : 1,            // Flags
+                                 : 7;
   u2                _interpreter_throwout_count; // Count of times method was exited via exception while interpreting
   u2                _number_of_breakpoints;      // fullspeed debugging support
   InvocationCounter _invocation_counter;         // Incremented before each activation of the method - used to trigger frequency-based optimizations
@@ -225,6 +227,7 @@ class methodOopDesc : public oopDesc {
   void clear_number_of_breakpoints()             { _number_of_breakpoints = 0; }
 
   // index into instanceKlass methods() array
+  // note: also used by jfr
   u2 method_idnum() const           { return constMethod()->method_idnum(); }
   void set_method_idnum(u2 idnum)   { constMethod()->set_method_idnum(idnum); }
 
@@ -649,6 +652,9 @@ class methodOopDesc : public oopDesc {
   // Helper routines for intrinsic_id() and vmIntrinsics::method().
   void init_intrinsic_id();     // updates from _none if a match
   static vmSymbols::SID klass_id_for_intrinsics(klassOop holder);
+
+  bool jfr_towrite()                 { return _jfr_towrite; }
+  void set_jfr_towrite(bool towrite) { _jfr_towrite = towrite; }
 
   // On-stack replacement support
   bool has_osr_nmethod(int level, bool match_level) {

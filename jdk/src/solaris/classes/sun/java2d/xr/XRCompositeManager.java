@@ -28,6 +28,9 @@ package sun.java2d.xr;
 import java.awt.*;
 import java.awt.geom.*;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
 import sun.font.*;
 import sun.java2d.*;
 import sun.java2d.jules.*;
@@ -83,7 +86,13 @@ public class XRCompositeManager {
         con = new XRBackendNative();
         // con = XRBackendJava.getInstance();
 
-        String gradProp = System.getProperty("sun.java2d.xrgradcache");
+        String gradProp =
+            AccessController.doPrivileged(new PrivilegedAction<String>() {
+                public String run() {
+                    return System.getProperty("sun.java2d.xrgradcache");
+                }
+            });
+
         enableGradCache = gradProp == null ||
                           !(gradProp.equalsIgnoreCase("false") ||
                           gradProp.equalsIgnoreCase("f"));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,24 @@
  * questions.
  */
 
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.FileVisitResult;
-import java.nio.file.SimpleFileVisitor;
-import javax.tools.ToolProvider;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.Files;
+import java.nio.file.FileVisitResult;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import javax.tools.JavaCompiler;
+import javax.tools.ToolProvider;
 
 import static java.nio.file.StandardCopyOption.*;
 
@@ -67,6 +68,10 @@ public enum TestHelper {
             System.getProperty("os.name", "unknown").startsWith("Linux");
     static final boolean isDualMode = isSolaris;
     static final boolean isSparc = System.getProperty("os.arch").startsWith("sparc");
+
+    static final String JAVA_FILE_EXT  = ".java";
+    static final String CLASS_FILE_EXT = ".class";
+    static final String JAR_FILE_EXT   = ".jar";
 
     static int testExitValue = 0;
 
@@ -301,6 +306,19 @@ public enum TestHelper {
             ex.printStackTrace();
             throw new RuntimeException(ex.getMessage());
         }
+    }
+
+    static FileFilter createFilter(final String extension) {
+        return new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                String name = pathname.getName();
+                if (name.endsWith(extension)) {
+                    return true;
+                }
+                return false;
+            }
+        };
     }
 
     /*

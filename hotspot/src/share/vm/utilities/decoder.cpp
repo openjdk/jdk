@@ -24,80 +24,85 @@
 
 #include "precompiled.hpp"
 #include "prims/jvm.h"
+#include "runtime/mutexLocker.hpp"
 #include "utilities/decoder.hpp"
 
-Decoder::decoder_status  Decoder::_decoder_status = Decoder::no_error;
-bool                     Decoder::_initialized = false;
+#if defined(_WINDOWS)
+  #include "decoder_windows.hpp"
+#elif defined(__APPLE__)
+  #include "decoder_machO.hpp"
+#else
+  #include "decoder_elf.hpp"
+#endif
 
-#if !defined(_WINDOWS) && !defined(__APPLE__)
+NullDecoder*  Decoder::_decoder = NULL;
+NullDecoder   Decoder::_do_nothing_decoder;
+Mutex*           Decoder::_decoder_lock = new Mutex(Mutex::safepoint,
+                                "DecoderLock");
 
-// Implementation of common functionalities among Solaris and Linux
-#include "utilities/elfFile.hpp"
+// _decoder_lock should already acquired before enter this method
+NullDecoder* Decoder::get_decoder() {
+  assert(_decoder_lock != NULL && _decoder_lock->owned_by_self(),
+    "Require DecoderLock to enter");
 
-ElfFile* Decoder::_opened_elf_files = NULL;
+  if (_decoder != NULL) {
+    return _decoder;
+  }
+
+  // Decoder is a secondary service. Although, it is good to have,
+  // but we can live without it.
+#if defined(_WINDOWS)
+  _decoder = new (std::nothrow) WindowsDecoder();
+#elif defined (__APPLE__)
+    _decoder = new (std::nothrow)MachODecoder();
+#else
+    _decoder = new (std::nothrow)ElfDecoder();
+#endif
+
+  if (_decoder == NULL || _decoder->has_error()) {
+    if (_decoder != NULL) {
+      delete _decoder;
+    }
+    _decoder = &_do_nothing_decoder;
+  }
+  return _decoder;
+}
+
+bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const char* modulepath) {
+  assert(_decoder_lock != NULL, "Just check");
+  MutexLockerEx locker(_decoder_lock, true);
+  NullDecoder* decoder = get_decoder();
+  assert(decoder != NULL, "null decoder");
+
+  return decoder->decode(addr, buf, buflen, offset, modulepath);
+}
+
+bool Decoder::demangle(const char* symbol, char* buf, int buflen) {
+  assert(_decoder_lock != NULL, "Just check");
+  MutexLockerEx locker(_decoder_lock, true);
+  NullDecoder* decoder = get_decoder();
+  assert(decoder != NULL, "null decoder");
+  return decoder->demangle(symbol, buf, buflen);
+}
 
 bool Decoder::can_decode_C_frame_in_vm() {
-  return true;
+  assert(_decoder_lock != NULL, "Just check");
+  MutexLockerEx locker(_decoder_lock, true);
+  NullDecoder* decoder = get_decoder();
+  assert(decoder != NULL, "null decoder");
+  return decoder->can_decode_C_frame_in_vm();
 }
 
-void Decoder::initialize() {
-  _initialized = true;
+// shutdown real decoder and replace it with
+// _do_nothing_decoder
+void Decoder::shutdown() {
+  assert(_decoder_lock != NULL, "Just check");
+  MutexLockerEx locker(_decoder_lock, true);
+
+  if (_decoder != NULL && _decoder != &_do_nothing_decoder) {
+    delete _decoder;
+  }
+
+  _decoder = &_do_nothing_decoder;
 }
 
-void Decoder::uninitialize() {
-  if (_opened_elf_files != NULL) {
-    delete _opened_elf_files;
-    _opened_elf_files = NULL;
-  }
-  _initialized = false;
-}
-
-Decoder::decoder_status Decoder::decode(address addr, const char* filepath, char *buf, int buflen, int *offset) {
-  if (_decoder_status != no_error) {
-    return _decoder_status;
-  }
-
-  ElfFile* file = get_elf_file(filepath);
-  if (_decoder_status != no_error) {
-    return _decoder_status;
-  }
-
-  const char* symbol = file->decode(addr, offset);
-  if (file->get_status() == out_of_memory) {
-    _decoder_status = out_of_memory;
-    return _decoder_status;
-  } else if (symbol != NULL) {
-    if (!demangle(symbol, buf, buflen)) {
-      jio_snprintf(buf, buflen, "%s", symbol);
-    }
-    return no_error;
-  } else {
-    return symbol_not_found;
-  }
-}
-
-ElfFile* Decoder::get_elf_file(const char* filepath) {
-  if (_decoder_status != no_error) {
-    return NULL;
-  }
-  ElfFile* file = _opened_elf_files;
-  while (file != NULL) {
-    if (file->same_elf_file(filepath)) {
-      return file;
-    }
-    file = file->m_next;
-  }
-
-  file = new ElfFile(filepath);
-  if (file == NULL) {
-    _decoder_status = out_of_memory;
-  }
-  if (_opened_elf_files != NULL) {
-    file->m_next = _opened_elf_files;
-  }
-
-  _opened_elf_files = file;
-  return file;
-}
-
-#endif

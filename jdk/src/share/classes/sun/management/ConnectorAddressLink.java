@@ -117,11 +117,11 @@ public class ConnectorAddressLink {
         } catch (IllegalArgumentException iae) {
             throw new IOException(iae.getMessage());
         }
-        List counters =
+        List<Counter> counters =
                 new PerfInstrumentation(bb).findByPattern(CONNECTOR_ADDRESS_COUNTER);
-        Iterator i = counters.iterator();
+        Iterator<Counter> i = counters.iterator();
         if (i.hasNext()) {
-            Counter c = (Counter) i.next();
+            Counter c = i.next();
             return (String) c.getValue();
         } else {
             return null;
@@ -167,13 +167,13 @@ public class ConnectorAddressLink {
         } catch (IllegalArgumentException iae) {
             throw new IOException(iae.getMessage());
         }
-        List counters = new PerfInstrumentation(bb).getAllCounters();
-        Map<String, String> properties = new HashMap<String, String>();
-        for (Object c : counters) {
-            String name = ((Counter) c).getName();
+        List<Counter> counters = new PerfInstrumentation(bb).getAllCounters();
+        Map<String, String> properties = new HashMap<>();
+        for (Counter c : counters) {
+            String name =  c.getName();
             if (name.startsWith(REMOTE_CONNECTOR_COUNTER_PREFIX) &&
                     !name.equals(CONNECTOR_ADDRESS_COUNTER)) {
-                properties.put(name, ((Counter) c).getValue().toString());
+                properties.put(name, c.getValue().toString());
             }
         }
         return properties;
