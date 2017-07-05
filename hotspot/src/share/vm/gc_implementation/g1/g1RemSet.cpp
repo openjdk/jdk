@@ -413,7 +413,7 @@ public:
     _ctbs(_g1h->g1_barrier_set()) {}
 
   bool doHeapRegion(HeapRegion* r) {
-    if (!r->continuesHumongous()) {
+    if (!r->is_continues_humongous()) {
       r->rem_set()->scrub(_ctbs, _region_bm, _card_bm);
     }
     return false;

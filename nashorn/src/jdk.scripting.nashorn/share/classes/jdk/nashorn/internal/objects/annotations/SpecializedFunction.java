@@ -77,7 +77,7 @@ public @interface SpecializedFunction {
             public boolean isEmpty() {
                 return true;
             }
-        };
+        }
 
         /**
          * Get the class representing the empty link logic

@@ -28,6 +28,7 @@
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/heapRegion.inline.hpp"
+#include "gc_implementation/g1/heapRegionBounds.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "gc_implementation/g1/heapRegionManager.inline.hpp"
 #include "gc_implementation/shared/liveRange.hpp"
@@ -138,32 +139,16 @@ void HeapRegionDCTOC::walk_mem_region(MemRegion mr,
   }
 }
 
-// Minimum region size; we won't go lower than that.
-// We might want to decrease this in the future, to deal with small
-// heaps a bit more efficiently.
-#define MIN_REGION_SIZE  (      1024 * 1024 )
-
-// Maximum region size; we don't go higher than that. There's a good
-// reason for having an upper bound. We don't want regions to get too
-// large, otherwise cleanup's effectiveness would decrease as there
-// will be fewer opportunities to find totally empty regions after
-// marking.
-#define MAX_REGION_SIZE  ( 32 * 1024 * 1024 )
-
-// The automatic region size calculation will try to have around this
-// many regions in the heap (based on the min heap size).
-#define TARGET_REGION_NUMBER          2048
-
 size_t HeapRegion::max_region_size() {
-  return (size_t)MAX_REGION_SIZE;
+  return HeapRegionBounds::max_size();
 }
 
 void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_heap_size) {
   uintx region_size = G1HeapRegionSize;
   if (FLAG_IS_DEFAULT(G1HeapRegionSize)) {
     size_t average_heap_size = (initial_heap_size + max_heap_size) / 2;
-    region_size = MAX2(average_heap_size / TARGET_REGION_NUMBER,
-                       (uintx) MIN_REGION_SIZE);
+    region_size = MAX2(average_heap_size / HeapRegionBounds::target_number(),
+                       (uintx) HeapRegionBounds::min_size());
   }
 
   int region_size_log = log2_long((jlong) region_size);
@@ -173,10 +158,10 @@ void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_hea
   region_size = ((uintx)1 << region_size_log);
 
   // Now make sure that we don't go over or under our limits.
-  if (region_size < MIN_REGION_SIZE) {
-    region_size = MIN_REGION_SIZE;
-  } else if (region_size > MAX_REGION_SIZE) {
-    region_size = MAX_REGION_SIZE;
+  if (region_size < HeapRegionBounds::min_size()) {
+    region_size = HeapRegionBounds::min_size();
+  } else if (region_size > HeapRegionBounds::max_size()) {
+    region_size = HeapRegionBounds::max_size();
   }
 
   // And recalculate the log.
@@ -213,11 +198,12 @@ void HeapRegion::reset_after_compaction() {
 void HeapRegion::hr_clear(bool par, bool clear_space, bool locked) {
   assert(_humongous_start_region == NULL,
          "we should have already filtered out humongous regions");
-  assert(_end == _orig_end,
+  assert(_end == orig_end(),
          "we should have already filtered out humongous regions");
 
   _in_collection_set = false;
 
+  set_allocation_context(AllocationContext::system());
   set_young_index_in_cset(-1);
   uninstall_surv_rate_group();
   set_free();
@@ -264,9 +250,9 @@ void HeapRegion::calc_gc_efficiency() {
   _gc_efficiency = (double) reclaimable_bytes() / region_elapsed_time_ms;
 }
 
-void HeapRegion::set_startsHumongous(HeapWord* new_top, HeapWord* new_end) {
-  assert(!isHumongous(), "sanity / pre-condition");
-  assert(end() == _orig_end,
+void HeapRegion::set_starts_humongous(HeapWord* new_top, HeapWord* new_end) {
+  assert(!is_humongous(), "sanity / pre-condition");
+  assert(end() == orig_end(),
          "Should be normal before the humongous object allocation");
   assert(top() == bottom(), "should be empty");
   assert(bottom() <= new_top && new_top <= new_end, "pre-condition");
@@ -278,30 +264,30 @@ void HeapRegion::set_startsHumongous(HeapWord* new_top, HeapWord* new_end) {
   _offsets.set_for_starts_humongous(new_top);
 }
 
-void HeapRegion::set_continuesHumongous(HeapRegion* first_hr) {
-  assert(!isHumongous(), "sanity / pre-condition");
-  assert(end() == _orig_end,
+void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {
+  assert(!is_humongous(), "sanity / pre-condition");
+  assert(end() == orig_end(),
          "Should be normal before the humongous object allocation");
   assert(top() == bottom(), "should be empty");
-  assert(first_hr->startsHumongous(), "pre-condition");
+  assert(first_hr->is_starts_humongous(), "pre-condition");
 
   _type.set_continues_humongous();
   _humongous_start_region = first_hr;
 }
 
 void HeapRegion::clear_humongous() {
-  assert(isHumongous(), "pre-condition");
+  assert(is_humongous(), "pre-condition");
 
-  if (startsHumongous()) {
+  if (is_starts_humongous()) {
     assert(top() <= end(), "pre-condition");
-    set_end(_orig_end);
+    set_end(orig_end());
     if (top() > end()) {
       // at least one "continues humongous" region after it
       set_top(end());
     }
   } else {
     // continues humongous
-    assert(end() == _orig_end, "sanity");
+    assert(end() == orig_end(), "sanity");
   }
 
   assert(capacity() == HeapRegion::GrainBytes, "pre-condition");
@@ -324,9 +310,10 @@ HeapRegion::HeapRegion(uint hrm_index,
                        MemRegion mr) :
     G1OffsetTableContigSpace(sharedOffsetArray, mr),
     _hrm_index(hrm_index),
+    _allocation_context(AllocationContext::system()),
     _humongous_start_region(NULL),
     _in_collection_set(false),
-    _next_in_special_set(NULL), _orig_end(NULL),
+    _next_in_special_set(NULL),
     _claimed(InitialClaimValue), _evacuation_failed(false),
     _prev_marked_bytes(0), _next_marked_bytes(0), _gc_efficiency(0.0),
     _next_young_region(NULL),
@@ -349,10 +336,14 @@ void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
 
   G1OffsetTableContigSpace::initialize(mr, clear_space, mangle_space);
 
-  _orig_end = mr.end();
   hr_clear(false /*par*/, false /*clear_space*/);
   set_top(bottom());
   record_top_and_timestamp();
+
+  assert(mr.end() == orig_end(),
+         err_msg("Given region end address " PTR_FORMAT " should match exactly "
+                 "bottom plus one region size, i.e. " PTR_FORMAT,
+                 p2i(mr.end()), p2i(orig_end())));
 }
 
 CompactibleSpace* HeapRegion::next_compaction_space() const {
@@ -663,7 +654,7 @@ void HeapRegion::verify_strong_code_roots(VerifyOption vo, bool* failures) const
     return;
   }
 
-  if (continuesHumongous()) {
+  if (is_continues_humongous()) {
     if (strong_code_roots_length > 0) {
       gclog_or_tty->print_cr("region "HR_FORMAT" is a continuation of a humongous "
                              "region but has "SIZE_FORMAT" code root entries",
@@ -683,6 +674,8 @@ void HeapRegion::verify_strong_code_roots(VerifyOption vo, bool* failures) const
 
 void HeapRegion::print() const { print_on(gclog_or_tty); }
 void HeapRegion::print_on(outputStream* st) const {
+  st->print("AC%4u", allocation_context());
+
   st->print(" %2s", get_short_type_str());
   if (in_collection_set())
     st->print(" CS");
@@ -788,7 +781,7 @@ public:
         HeapRegion* to   = _g1h->heap_region_containing(obj);
         if (from != NULL && to != NULL &&
             from != to &&
-            !to->isHumongous()) {
+            !to->is_humongous()) {
           jbyte cv_obj = *_bs->byte_for_const(_containing_obj);
           jbyte cv_field = *_bs->byte_for_const(p);
           const jbyte dirty = CardTableModRefBS::dirty_card_val();
@@ -842,19 +835,19 @@ void HeapRegion::verify(VerifyOption vo,
   HeapWord* p = bottom();
   HeapWord* prev_p = NULL;
   VerifyLiveClosure vl_cl(g1, vo);
-  bool is_humongous = isHumongous();
+  bool is_region_humongous = is_humongous();
   size_t object_num = 0;
   while (p < top()) {
     oop obj = oop(p);
     size_t obj_size = block_size(p);
     object_num += 1;
 
-    if (is_humongous != g1->isHumongous(obj_size) &&
+    if (is_region_humongous != g1->is_humongous(obj_size) &&
         !g1->is_obj_dead(obj, this)) { // Dead objects may have bigger block_size since they span several objects.
       gclog_or_tty->print_cr("obj "PTR_FORMAT" is of %shumongous size ("
                              SIZE_FORMAT" words) in a %shumongous region",
-                             p, g1->isHumongous(obj_size) ? "" : "non-",
-                             obj_size, is_humongous ? "" : "non-");
+                             p, g1->is_humongous(obj_size) ? "" : "non-",
+                             obj_size, is_region_humongous ? "" : "non-");
        *failures = true;
        return;
     }
@@ -963,7 +956,7 @@ void HeapRegion::verify(VerifyOption vo,
     }
   }
 
-  if (is_humongous && object_num > 1) {
+  if (is_region_humongous && object_num > 1) {
     gclog_or_tty->print_cr("region ["PTR_FORMAT","PTR_FORMAT"] is humongous "
                            "but has "SIZE_FORMAT", objects",
                            bottom(), end(), object_num);

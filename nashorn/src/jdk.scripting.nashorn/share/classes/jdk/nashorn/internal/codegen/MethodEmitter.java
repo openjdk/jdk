@@ -103,6 +103,7 @@ import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.RewriteException;
+import jdk.nashorn.internal.runtime.Scope;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
@@ -1044,6 +1045,14 @@ public class MethodEmitter implements Emitter {
             return this;
         }
         return load(getCompilerConstantSymbol(cc), type != null ? type : getCompilerConstantType(cc));
+    }
+
+    MethodEmitter loadScope() {
+        return loadCompilerConstant(SCOPE).checkcast(Scope.class);
+    }
+
+    MethodEmitter setSplitState(final int state) {
+        return loadScope().load(state).invoke(Scope.SET_SPLIT_STATE);
     }
 
     void storeCompilerConstant(final CompilerConstants cc) {
@@ -2134,6 +2143,8 @@ public class MethodEmitter implements Emitter {
             load("Function");
             invoke(ScriptRuntime.INVALIDATE_RESERVED_BUILTIN_NAME);
             break;
+        default:
+            break;
         }
         return this;
     }
@@ -2574,9 +2585,52 @@ public class MethodEmitter implements Emitter {
      *
      * @param args debug information to print
      */
+    @SuppressWarnings("unused")
     private void debug(final Object... args) {
         if (debug) {
             debug(30, args);
+        }
+    }
+
+    private void debug(final String arg) {
+        if (debug) {
+            debug(30, arg);
+        }
+    }
+
+    private void debug(final Object arg0, final Object arg1) {
+        if (debug) {
+            debug(30, new Object[] { arg0, arg1 });
+        }
+    }
+
+    private void debug(final Object arg0, final Object arg1, final Object arg2) {
+        if (debug) {
+            debug(30, new Object[] { arg0, arg1, arg2 });
+        }
+    }
+
+    private void debug(final Object arg0, final Object arg1, final Object arg2, final Object arg3) {
+        if (debug) {
+            debug(30, new Object[] { arg0, arg1, arg2, arg3 });
+        }
+    }
+
+    private void debug(final Object arg0, final Object arg1, final Object arg2, final Object arg3, final Object arg4) {
+        if (debug) {
+            debug(30, new Object[] { arg0, arg1, arg2, arg3, arg4 });
+        }
+    }
+
+    private void debug(final Object arg0, final Object arg1, final Object arg2, final Object arg3, final Object arg4, final Object arg5) {
+        if (debug) {
+            debug(30, new Object[] { arg0, arg1, arg2, arg3, arg4, arg5 });
+        }
+    }
+
+    private void debug(final Object arg0, final Object arg1, final Object arg2, final Object arg3, final Object arg4, final Object arg5, final Object arg6) {
+        if (debug) {
+            debug(30, new Object[] { arg0, arg1, arg2, arg3, arg4, arg5, arg6 });
         }
     }
 

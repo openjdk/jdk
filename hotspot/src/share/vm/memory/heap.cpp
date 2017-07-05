@@ -35,7 +35,9 @@ size_t CodeHeap::header_size() {
 
 // Implementation of Heap
 
-CodeHeap::CodeHeap() {
+CodeHeap::CodeHeap(const char* name, const int code_blob_type)
+  : _code_blob_type(code_blob_type) {
+  _name                         = name;
   _number_of_committed_segments = 0;
   _number_of_reserved_segments  = 0;
   _segment_size                 = 0;
@@ -44,6 +46,8 @@ CodeHeap::CodeHeap() {
   _freelist                     = NULL;
   _freelist_segments            = 0;
   _freelist_length              = 0;
+  _max_allocated_capacity       = 0;
+  _was_full                     = false;
 }
 
 
@@ -88,9 +92,8 @@ void CodeHeap::on_code_mapping(char* base, size_t size) {
 }
 
 
-bool CodeHeap::reserve(size_t reserved_size, size_t committed_size,
-                       size_t segment_size) {
-  assert(reserved_size >= committed_size, "reserved < committed");
+bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_size) {
+  assert(rs.size() >= committed_size, "reserved < committed");
   assert(segment_size >= sizeof(FreeBlock), "segment size is too small");
   assert(is_power_of_2(segment_size), "segment_size must be a power of 2");
 
@@ -102,18 +105,13 @@ bool CodeHeap::reserve(size_t reserved_size, size_t committed_size,
   if (os::can_execute_large_page_memory()) {
     const size_t min_pages = 8;
     page_size = MIN2(os::page_size_for_region(committed_size, min_pages),
-                     os::page_size_for_region(reserved_size, min_pages));
+                     os::page_size_for_region(rs.size(), min_pages));
   }
 
   const size_t granularity = os::vm_allocation_granularity();
-  const size_t r_align = MAX2(page_size, granularity);
-  const size_t r_size = align_size_up(reserved_size, r_align);
   const size_t c_size = align_size_up(committed_size, page_size);
 
-  const size_t rs_align = page_size == (size_t) os::vm_page_size() ? 0 :
-    MAX2(page_size, granularity);
-  ReservedCodeSpace rs(r_size, rs_align, rs_align > 0);
-  os::trace_page_sizes("code heap", committed_size, reserved_size, page_size,
+  os::trace_page_sizes(_name, committed_size, rs.size(), page_size,
                        rs.base(), rs.size());
   if (!_memory.initialize(rs, c_size)) {
     return false;
@@ -186,6 +184,7 @@ void* CodeHeap::allocate(size_t instance_size, bool is_critical) {
     assert(block->length() >= number_of_segments && block->length() < number_of_segments + CodeCacheMinBlockLength, "sanity check");
     assert(!block->free(), "must be marked free");
     DEBUG_ONLY(memset((void*)block->allocated_space(), badCodeHeapNewVal, instance_size));
+    _max_allocated_capacity = MAX2(_max_allocated_capacity, allocated_capacity());
     return block->allocated_space();
   }
 
@@ -207,6 +206,7 @@ void* CodeHeap::allocate(size_t instance_size, bool is_critical) {
     b->initialize(number_of_segments);
     _next_segment += number_of_segments;
     DEBUG_ONLY(memset((void *)b->allocated_space(), badCodeHeapNewVal, instance_size));
+    _max_allocated_capacity = MAX2(_max_allocated_capacity, allocated_capacity());
     return b->allocated_space();
   } else {
     return NULL;

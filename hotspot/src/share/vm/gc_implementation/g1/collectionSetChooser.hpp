@@ -109,7 +109,7 @@ public:
   bool should_add(HeapRegion* hr) {
     assert(hr->is_marked(), "pre-condition");
     assert(!hr->is_young(), "should never consider young regions");
-    return !hr->isHumongous() &&
+    return !hr->is_humongous() &&
             hr->live_bytes() < _region_live_threshold_bytes;
   }
 

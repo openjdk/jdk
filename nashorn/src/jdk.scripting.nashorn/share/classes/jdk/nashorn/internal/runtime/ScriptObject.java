@@ -935,10 +935,10 @@ public abstract class ScriptObject implements PropertyAccess {
      * creating setters that probably aren't used. Inject directly into the spill pool
      * the defaults for "arguments" and "caller"
      *
-     * @param key
-     * @param propertyFlags
-     * @param getter
-     * @param setter
+     * @param key           property key
+     * @param propertyFlags flags
+     * @param getter        getter for {@link UserAccessorProperty}, null if not present or N/A
+     * @param setter        setter for {@link UserAccessorProperty}, null if not present or N/A
      */
     protected final void initUserAccessors(final String key, final int propertyFlags, final ScriptFunction getter, final ScriptFunction setter) {
         final int slot = spillLength;
@@ -1749,8 +1749,8 @@ public abstract class ScriptObject implements PropertyAccess {
      */
     public Object put(final Object key, final Object value, final boolean strict) {
         final Object oldValue = get(key);
-        final int flags = strict ? NashornCallSiteDescriptor.CALLSITE_STRICT : 0;
-        set(key, value, flags);
+        final int scriptObjectFlags = strict ? NashornCallSiteDescriptor.CALLSITE_STRICT : 0;
+        set(key, value, scriptObjectFlags);
         return oldValue;
     }
 
@@ -1763,9 +1763,9 @@ public abstract class ScriptObject implements PropertyAccess {
      * @param strict strict mode or not
      */
     public void putAll(final Map<?, ?> otherMap, final boolean strict) {
-        final int flags = strict ? NashornCallSiteDescriptor.CALLSITE_STRICT : 0;
+        final int scriptObjectFlags = strict ? NashornCallSiteDescriptor.CALLSITE_STRICT : 0;
         for (final Map.Entry<?, ?> entry : otherMap.entrySet()) {
-            set(entry.getKey(), entry.getValue(), flags);
+            set(entry.getKey(), entry.getValue(), scriptObjectFlags);
         }
     }
 
@@ -2046,7 +2046,7 @@ public abstract class ScriptObject implements PropertyAccess {
     // Marks a property as declared and sets its value. Used as slow path for block-scoped LET and CONST
     @SuppressWarnings("unused")
     private void declareAndSet(final String key, final Object value) {
-        final PropertyMap map = getMap();
+        final PropertyMap oldMap = getMap();
         final FindProperty find = findProperty(key, false);
         assert find != null;
 
@@ -2054,7 +2054,7 @@ public abstract class ScriptObject implements PropertyAccess {
         assert property != null;
         assert property.needsDeclaration();
 
-        final PropertyMap newMap = map.replaceProperty(property, property.removeFlags(Property.NEEDS_DECLARATION));
+        final PropertyMap newMap = oldMap.replaceProperty(property, property.removeFlags(Property.NEEDS_DECLARATION));
         setMap(newMap);
         set(key, value, 0);
     }

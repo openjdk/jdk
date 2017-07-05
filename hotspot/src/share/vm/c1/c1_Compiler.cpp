@@ -76,6 +76,11 @@ void Compiler::initialize() {
   }
 }
 
+int Compiler::code_buffer_size() {
+  assert(SegmentedCodeCache, "Should be only used with a segmented code cache");
+  return Compilation::desired_max_code_buffer_size() + Compilation::desired_max_constant_size();
+}
+
 BufferBlob* Compiler::init_buffer_blob() {
   // Allocate buffer blob once at startup since allocation for each
   // compilation seems to be too expensive (at least on Intel win32).

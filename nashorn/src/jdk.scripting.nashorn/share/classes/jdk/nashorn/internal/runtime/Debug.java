@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.parser.TokenType.EOF;
-
 import jdk.nashorn.internal.parser.Lexer;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenStream;
@@ -42,12 +41,12 @@ public final class Debug {
 
     /**
      * Return the topmost JavaScript frame in a stack trace
-     * @param e
+     * @param t throwable that contains the stack trace
      * @return line describing the topmost JavaScript frame
      */
-    public static String firstJSFrame(final Throwable e) {
-        for (final StackTraceElement ste : e.getStackTrace()) {
-            if(ECMAErrors.isScriptFrame(ste)) {
+    public static String firstJSFrame(final Throwable t) {
+        for (final StackTraceElement ste : t.getStackTrace()) {
+            if (ECMAErrors.isScriptFrame(ste)) {
                 return ste.toString();
             }
         }

@@ -38,6 +38,7 @@ import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Setter;
 import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
+import jdk.nashorn.internal.objects.annotations.SpecializedFunction.LinkLogic;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.tools.nasgen.MemberInfo.Kind;
 
@@ -55,8 +56,8 @@ public final class ScriptClassInfo {
     static final String SETTER_ANNO_DESC        = Type.getDescriptor(Setter.class);
     static final String PROPERTY_ANNO_DESC      = Type.getDescriptor(Property.class);
     static final String WHERE_ENUM_DESC         = Type.getDescriptor(Where.class);
+    static final String LINK_LOGIC_DESC         = Type.getDescriptor(LinkLogic.class);
     static final String SPECIALIZED_FUNCTION    = Type.getDescriptor(SpecializedFunction.class);
-    static final String LINK_LOGIC_DESC         = "Ljdk/nashorn/internal/objects/annotations/SpecializedFunction$LinkLogic;";
 
     static final Map<String, Kind> annotations = new HashMap<>();
 

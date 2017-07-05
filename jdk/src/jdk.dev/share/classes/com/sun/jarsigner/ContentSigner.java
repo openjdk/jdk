@@ -37,6 +37,7 @@ import java.security.cert.CertificateException;
  * @author Vincent Ryan
  */
 
+@jdk.Exported
 public abstract class ContentSigner {
 
     /**

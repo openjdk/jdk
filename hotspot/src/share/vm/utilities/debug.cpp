@@ -653,6 +653,13 @@ void help() {
   tty->print_cr("  pm(int pc)    - print Method* given compiled PC");
   tty->print_cr("  findm(intptr_t pc) - finds Method*");
   tty->print_cr("  find(intptr_t x)   - finds & prints nmethod/stub/bytecode/oop based on pointer into it");
+  tty->print_cr("  pns(void* sp, void* fp, void* pc)  - print native (i.e. mixed) stack trace. E.g.");
+  tty->print_cr("                   pns($sp, $rbp, $pc) on Linux/amd64 and Solaris/amd64 or");
+  tty->print_cr("                   pns($sp, $ebp, $pc) on Linux/x86 or");
+  tty->print_cr("                   pns($sp, 0, $pc)    on Linux/ppc64 or");
+  tty->print_cr("                   pns($sp + 0x7ff, 0, $pc) on Solaris/SPARC");
+  tty->print_cr("                 - in gdb do 'set overload-resolution off' before calling pns()");
+  tty->print_cr("                 - in dbx do 'frame 1' before calling pns()");
 
   tty->print_cr("misc.");
   tty->print_cr("  flush()       - flushes the log file");
@@ -662,6 +669,59 @@ void help() {
   tty->print_cr("compiler debugging");
   tty->print_cr("  debug()       - to set things up for compiler debugging");
   tty->print_cr("  ndebug()      - undo debug");
+}
+
+#endif // !PRODUCT
+
+void print_native_stack(outputStream* st, frame fr, Thread* t, char* buf, int buf_size) {
+
+  // see if it's a valid frame
+  if (fr.pc()) {
+    st->print_cr("Native frames: (J=compiled Java code, j=interpreted, Vv=VM code, C=native code)");
+
+    int count = 0;
+    while (count++ < StackPrintLimit) {
+      fr.print_on_error(st, buf, buf_size);
+      st->cr();
+      // Compiled code may use EBP register on x86 so it looks like
+      // non-walkable C frame. Use frame.sender() for java frames.
+      if (t && t->is_Java_thread()) {
+        // Catch very first native frame by using stack address.
+        // For JavaThread stack_base and stack_size should be set.
+        if (!t->on_local_stack((address)(fr.real_fp() + 1))) {
+          break;
+        }
+        if (fr.is_java_frame() || fr.is_native_frame() || fr.is_runtime_frame()) {
+          RegisterMap map((JavaThread*)t, false); // No update
+          fr = fr.sender(&map);
+        } else {
+          fr = os::get_sender_for_C_frame(&fr);
+        }
+      } else {
+        // is_first_C_frame() does only simple checks for frame pointer,
+        // it will pass if java compiled code has a pointer in EBP.
+        if (os::is_first_C_frame(&fr)) break;
+        fr = os::get_sender_for_C_frame(&fr);
+      }
+    }
+
+    if (count > StackPrintLimit) {
+      st->print_cr("...<more frames>...");
+    }
+
+    st->cr();
+  }
+}
+
+#ifndef PRODUCT
+
+extern "C" void pns(void* sp, void* fp, void* pc) { // print native stack
+  Command c("pns");
+  static char buf[O_BUFLEN];
+  Thread* t = ThreadLocalStorage::get_thread_slow();
+  // Call generic frame constructor (certain arguments may be ignored)
+  frame fr(sp, fp, pc);
+  print_native_stack(tty, fr, t, buf, sizeof(buf));
 }
 
 #endif // !PRODUCT
