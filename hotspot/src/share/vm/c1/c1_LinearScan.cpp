@@ -1077,7 +1077,7 @@ IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
   }
 
 
-#ifdef X86
+#if defined(X86) || defined(S390)
   if (op->code() == lir_cmove) {
     // conditional moves can handle stack operands
     assert(op->result_opr()->is_register(), "result must always be in a register");
@@ -1088,7 +1088,7 @@ IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
   // this operand is allowed to be on the stack in some cases
   BasicType opr_type = opr->type_register();
   if (opr_type == T_FLOAT || opr_type == T_DOUBLE) {
-    if ((UseSSE == 1 && opr_type == T_FLOAT) || UseSSE >= 2) {
+    if ((UseSSE == 1 && opr_type == T_FLOAT) || UseSSE >= 2 S390_ONLY(|| true)) {
       // SSE float instruction (T_DOUBLE only supported with SSE2)
       switch (op->code()) {
         case lir_cmp:
@@ -1144,7 +1144,7 @@ IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
       }
     }
   }
-#endif // X86
+#endif // X86 S390
 
   // all other operands require a register
   return mustHaveRegister;
@@ -2653,6 +2653,11 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
     VMReg rname = frame_map()->fpu_regname(opr->fpu_regnr());
 #ifndef __SOFTFP__
 #ifndef VM_LITTLE_ENDIAN
+    // On S390 a (single precision) float value occupies only the high
+    // word of the full double register. So when the double register is
+    // stored to memory (e.g. by the RegisterSaver), then the float value
+    // is found at offset 0. I.e. the code below is not needed on S390.
+#ifndef S390
     if (! float_saved_as_double) {
       // On big endian system, we may have an issue if float registers use only
       // the low half of the (same) double registers.
@@ -2667,6 +2672,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
         rname = next; // VMReg for the low bits, e.g. the real VMReg for the float
       }
     }
+#endif // !S390
 #endif
 #endif
     LocationValue* sv = new LocationValue(Location::new_reg_loc(loc_type, rname));

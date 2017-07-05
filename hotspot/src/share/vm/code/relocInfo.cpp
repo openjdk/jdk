@@ -552,6 +552,14 @@ void virtual_call_Relocation::unpack_data() {
   _cached_value = x0==0? NULL: address_from_scaled_offset(x0, point);
 }
 
+void runtime_call_w_cp_Relocation::pack_data_to(CodeSection * dest) {
+  short* p = pack_1_int_to((short *)dest->locs_end(), (jint)(_offset >> 2));
+  dest->set_locs_end((relocInfo*) p);
+}
+
+void runtime_call_w_cp_Relocation::unpack_data() {
+  _offset = unpack_1_int() << 2;
+}
 
 void static_stub_Relocation::pack_data_to(CodeSection* dest) {
   short* p = (short*) dest->locs_end();
@@ -743,7 +751,9 @@ address virtual_call_Relocation::cached_value() {
 }
 
 Method* virtual_call_Relocation::method_value() {
-  Metadata* m = code()->metadata_at(_method_index);
+  CompiledMethod* cm = code();
+  if (cm == NULL) return (Method*)NULL;
+  Metadata* m = cm->metadata_at(_method_index);
   assert(m != NULL || _method_index == 0, "should be non-null for non-zero index");
   assert(m == NULL || m->is_method(), "not a method");
   return (Method*)m;
@@ -769,7 +779,9 @@ void opt_virtual_call_Relocation::unpack_data() {
 }
 
 Method* opt_virtual_call_Relocation::method_value() {
-  Metadata* m = code()->metadata_at(_method_index);
+  CompiledMethod* cm = code();
+  if (cm == NULL) return (Method*)NULL;
+  Metadata* m = cm->metadata_at(_method_index);
   assert(m != NULL || _method_index == 0, "should be non-null for non-zero index");
   assert(m == NULL || m->is_method(), "not a method");
   return (Method*)m;
@@ -800,7 +812,9 @@ address opt_virtual_call_Relocation::static_stub() {
 }
 
 Method* static_call_Relocation::method_value() {
-  Metadata* m = code()->metadata_at(_method_index);
+  CompiledMethod* cm = code();
+  if (cm == NULL) return (Method*)NULL;
+  Metadata* m = cm->metadata_at(_method_index);
   assert(m != NULL || _method_index == 0, "should be non-null for non-zero index");
   assert(m == NULL || m->is_method(), "not a method");
   return (Method*)m;
@@ -970,7 +984,9 @@ void RelocIterator::print_current() {
       // work even during GC or other inconvenient times.
       if (WizardMode && oop_value != NULL) {
         tty->print("oop_value=" INTPTR_FORMAT ": ", p2i(oop_value));
-        oop_value->print_value_on(tty);
+        if (oop_value->is_oop()) {
+          oop_value->print_value_on(tty);
+        }
       }
       break;
     }
@@ -1009,6 +1025,7 @@ void RelocIterator::print_current() {
       break;
     }
   case relocInfo::runtime_call_type:
+  case relocInfo::runtime_call_w_cp_type:
     {
       CallRelocation* r = (CallRelocation*) reloc();
       tty->print(" | [destination=" INTPTR_FORMAT "]", p2i(r->destination()));

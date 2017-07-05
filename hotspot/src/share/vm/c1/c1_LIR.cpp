@@ -209,6 +209,17 @@ void LIR_Op2::verify() const {
   }
 
   if (TwoOperandLIRForm) {
+
+#ifdef ASSERT
+    bool threeOperandForm = false;
+#ifdef S390
+    // There are 3 operand shifts on S390 (see LIR_Assembler::shift_op()).
+    threeOperandForm =
+      code() == lir_shl ||
+      ((code() == lir_shr || code() == lir_ushr) && (result_opr()->is_double_cpu() || in_opr1()->type() == T_OBJECT));
+#endif
+#endif
+
     switch (code()) {
     case lir_add:
     case lir_sub:
@@ -222,13 +233,13 @@ void LIR_Op2::verify() const {
     case lir_logic_xor:
     case lir_shl:
     case lir_shr:
-      assert(in_opr1() == result_opr(), "opr1 and result must match");
+      assert(in_opr1() == result_opr() || threeOperandForm, "opr1 and result must match");
       assert(in_opr1()->is_valid() && in_opr2()->is_valid(), "must be valid");
       break;
 
     // special handling for lir_ushr because of write barriers
     case lir_ushr:
-      assert(in_opr1() == result_opr() || in_opr2()->is_constant(), "opr1 and result must match or shift count is constant");
+      assert(in_opr1() == result_opr() || in_opr2()->is_constant() || threeOperandForm, "opr1 and result must match or shift count is constant");
       assert(in_opr1()->is_valid() && in_opr2()->is_valid(), "must be valid");
       break;
 
