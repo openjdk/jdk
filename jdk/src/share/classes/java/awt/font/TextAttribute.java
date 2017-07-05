@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ import java.io.InvalidObjectException;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.util.Map;
 import java.util.HashMap;
+import sun.misc.SharedSecrets;
 
 /**
  * The <code>TextAttribute</code> class defines attribute keys and
@@ -256,6 +257,13 @@ public final class TextAttribute extends Attribute {
     // table of all instances in this class, used by readResolve
     private static final Map<String, TextAttribute>
             instanceMap = new HashMap<String, TextAttribute>(29);
+
+    // For access from java.text.Bidi
+    static {
+        if (SharedSecrets.getJavaAWTFontAccess() == null) {
+            SharedSecrets.setJavaAWTFontAccess(new JavaAWTFontAccessImpl());
+        }
+    }
 
     /**
      * Constructs a <code>TextAttribute</code> with the specified name.

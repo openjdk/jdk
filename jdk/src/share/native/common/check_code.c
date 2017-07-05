@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1357,16 +1357,9 @@ verify_opcode_operands(context_type *context, unsigned int inumber, int offset)
                 }
                 (*env)->DeleteLocalRef(env, super);
 
-                /* The optimizer make cause this to happen on local code */
+                /* The optimizer may cause this to happen on local code */
                 if (not_found) {
-#ifdef BROKEN_JAVAC
-                    jobject loader = JVM_GetClassLoader(env, context->class);
-                    int has_loader = (loader != 0);
-                    (*env)->DeleteLocalRef(env, loader);
-                    if (has_loader)
-#endif /* BROKEN_JAVAC */
-                        CCerror(context,
-                                "Illegal use of nonvirtual function call");
+                    CCerror(context, "Illegal use of nonvirtual function call");
                 }
             }
         }

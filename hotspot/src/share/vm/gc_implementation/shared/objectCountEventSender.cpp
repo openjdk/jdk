@@ -24,6 +24,7 @@
 
 
 #include "precompiled.hpp"
+#include "gc_implementation/shared/gcId.hpp"
 #include "gc_implementation/shared/objectCountEventSender.hpp"
 #include "memory/heapInspection.hpp"
 #include "trace/tracing.hpp"
@@ -38,7 +39,7 @@ void ObjectCountEventSender::send(const KlassInfoEntry* entry, GCId gc_id, const
          "Only call this method if the event is enabled");
 
   EventObjectCountAfterGC event(UNTIMED);
-  event.set_gcId(gc_id);
+  event.set_gcId(gc_id.id());
   event.set_class(entry->klass());
   event.set_count(entry->count());
   event.set_totalSize(entry->words() * BytesPerWord);

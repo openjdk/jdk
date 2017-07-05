@@ -23,6 +23,7 @@
 
 /*
  * @test EnqueueMethodForCompilationTest
+ * @ignore 8046268
  * @bug 8006683 8007288 8022832
  * @library /testlibrary /testlibrary/whitebox
  * @build EnqueueMethodForCompilationTest

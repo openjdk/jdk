@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6911951
+ * @bug 6911951 7150092
  * @summary NTLM should be a supported Java SASL mechanism
  */
 import java.io.IOException;
@@ -59,7 +59,6 @@ public class NTLMTest {
 
         checkAuthOnly();
         checkClientNameOverride();
-        checkServerDomainOverride();
         checkClientDomainOverride();
         checkVersions();
         checkClientHostname();
@@ -116,15 +115,12 @@ public class NTLMTest {
         Map<String,Object> ps = new HashMap<>();
         ps.put("com.sun.security.sasl.ntlm.version", vs);
         SaslClient clnt = Sasl.createSaslClient(
-                new String[]{MECH}, USER1, PROTOCOL, null, pc,
+                new String[]{MECH}, USER1, PROTOCOL, REALM, pc,
                 new CallbackHandler() {
                     public void handle(Callback[] callbacks)
                             throws IOException, UnsupportedCallbackException {
                         for (Callback cb: callbacks) {
-                            if (cb instanceof NameCallback) {
-                                NameCallback ncb = (NameCallback)cb;
-                                ncb.setName(ncb.getDefaultName());
-                            } else if (cb instanceof PasswordCallback) {
+                            if (cb instanceof PasswordCallback) {
                                 ((PasswordCallback)cb).setPassword(PASS1);
                             }
                         }
@@ -159,15 +155,12 @@ public class NTLMTest {
         Map<String,Object> pc = new HashMap<>();
         pc.put("com.sun.security.sasl.ntlm.hostname", "this.is.com");
         SaslClient clnt = Sasl.createSaslClient(
-                new String[]{MECH}, USER1, PROTOCOL, null, pc,
+                new String[]{MECH}, USER1, PROTOCOL, REALM, pc,
                 new CallbackHandler() {
                     public void handle(Callback[] callbacks)
                             throws IOException, UnsupportedCallbackException {
                         for (Callback cb: callbacks) {
-                            if (cb instanceof NameCallback) {
-                                NameCallback ncb = (NameCallback)cb;
-                                ncb.setName(ncb.getDefaultName());
-                            } else if (cb instanceof PasswordCallback) {
+                            if (cb instanceof PasswordCallback) {
                                 ((PasswordCallback)cb).setPassword(PASS1);
                             }
                         }
@@ -212,12 +205,8 @@ public class NTLMTest {
                     public void handle(Callback[] callbacks)
                             throws IOException, UnsupportedCallbackException {
                         for (Callback cb: callbacks) {
-                            if (cb instanceof NameCallback) {
-                                NameCallback ncb = (NameCallback)cb;
-                                ncb.setName(ncb.getDefaultName());
-                            } else if(cb instanceof RealmCallback) {
-                                RealmCallback dcb = (RealmCallback)cb;
-                                dcb.setText("THIRDDOMAIN");
+                            if (cb instanceof RealmCallback) {
+                                ((RealmCallback)cb).setText(REALM);
                             } else if (cb instanceof PasswordCallback) {
                                 ((PasswordCallback)cb).setPassword(PASS1);
                             }
@@ -255,13 +244,13 @@ public class NTLMTest {
      */
     private static void checkClientNameOverride() throws Exception {
         SaslClient clnt = Sasl.createSaslClient(
-                new String[]{MECH}, null, PROTOCOL, null, null,
+                new String[]{MECH}, "someone", PROTOCOL, REALM, null,
                 new CallbackHandler() {
                     public void handle(Callback[] callbacks)
                             throws IOException, UnsupportedCallbackException {
                         for (Callback cb: callbacks) {
                             if (cb instanceof NameCallback) {
-                                NameCallback ncb = (NameCallback)cb;
+                                NameCallback ncb = (NameCallback) cb;
                                 ncb.setName(USER1);
                             } else if (cb instanceof PasswordCallback) {
                                 ((PasswordCallback)cb).setPassword(PASS1);
@@ -270,54 +259,7 @@ public class NTLMTest {
                     }
                 });
 
-        SaslServer srv = Sasl.createSaslServer(MECH, PROTOCOL, REALM, null,
-                new CallbackHandler() {
-                    public void handle(Callback[] callbacks)
-                            throws IOException, UnsupportedCallbackException {
-                        String domain = null, name = null;
-                        PasswordCallback pcb = null;
-                        for (Callback cb: callbacks) {
-                            if (cb instanceof NameCallback) {
-                                name = ((NameCallback)cb).getDefaultName();
-                            } else if (cb instanceof RealmCallback) {
-                                domain = ((RealmCallback)cb).getDefaultText();
-                            } else if (cb instanceof PasswordCallback) {
-                                pcb = (PasswordCallback)cb;
-                            }
-                        }
-                        if (pcb != null) {
-                            pcb.setPassword(getPass(domain, name));
-                        }
-                    }
-                });
-
-        handshake(clnt, srv);
-    }
-
-    /**
-     * server side domain provided in props.
-     * @throws Exception
-     */
-    private static void checkServerDomainOverride() throws Exception {
-        SaslClient clnt = Sasl.createSaslClient(
-                new String[]{MECH}, USER1, PROTOCOL, null, null,
-                new CallbackHandler() {
-                    public void handle(Callback[] callbacks)
-                            throws IOException, UnsupportedCallbackException {
-                        for (Callback cb: callbacks) {
-                            if (cb instanceof NameCallback) {
-                                NameCallback ncb = (NameCallback)cb;
-                                ncb.setName(ncb.getDefaultName());
-                            } else if (cb instanceof PasswordCallback) {
-                                ((PasswordCallback)cb).setPassword(PASS1);
-                            }
-                        }
-                    }
-                });
-
-        Map<String,Object> ps = new HashMap<>();
-        ps.put("com.sun.security.sasl.ntlm.domain", REALM);
-        SaslServer srv = Sasl.createSaslServer(MECH, PROTOCOL, null, ps,
+        SaslServer srv = Sasl.createSaslServer(MECH, PROTOCOL, "FAKE", null,
                 new CallbackHandler() {
                     public void handle(Callback[] callbacks)
                             throws IOException, UnsupportedCallbackException {

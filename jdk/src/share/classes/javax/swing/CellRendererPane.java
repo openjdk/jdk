@@ -190,7 +190,11 @@ public class CellRendererPane extends Container implements Accessible
 // Accessibility support
 ////////////////
 
+    /**
+     * {@code AccessibleContext} associated with this {@code CellRendererPan}
+     */
     protected AccessibleContext accessibleContext = null;
+
 
     /**
      * Gets the AccessibleContext associated with this CellRendererPane.

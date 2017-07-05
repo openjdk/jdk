@@ -44,6 +44,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/thread.inline.hpp"
 #include "utilities/decoder.hpp"
 
 #ifdef TARGET_ARCH_x86

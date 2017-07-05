@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
     private static final boolean DEBUG = false;
     private static final int syncWaitMs =
             Integer.getInteger("sun.jvmstat.perdata.syncWaitMs", 5000);
-    private static final ArrayList EMPTY_LIST = new ArrayList(0);
+    private static final ArrayList<Monitor> EMPTY_LIST = new ArrayList<Monitor>(0);
 
     /*
      * the following constants must be kept in sync with struct
@@ -190,8 +190,8 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
         getNewMonitors(map);
 
         // current implementation doesn't support deletion or reuse of entries
-        ArrayList removed = EMPTY_LIST;
-        ArrayList inserted = insertedMonitors;
+        ArrayList<Monitor> removed = EMPTY_LIST;
+        ArrayList<Monitor> inserted = insertedMonitors;
 
         insertedMonitors = new ArrayList<Monitor>();
         return new MonitorStatus(inserted, removed);
@@ -618,14 +618,14 @@ public class PerfDataBuffer extends PerfDataBufferImpl {
     /**
      * Method to dump debugging information
      */
-    private void dumpAll(Map map, int lvmid) {
+    private void dumpAll(Map<String, Monitor> map, int lvmid) {
         if (DEBUG) {
-            Set keys = map.keySet();
+            Set<String> keys = map.keySet();
 
             System.err.println("Dump for " + lvmid);
             int j = 0;
-            for (Iterator i = keys.iterator(); i.hasNext(); j++) {
-                Monitor monitor = (Monitor)map.get(i.next());
+            for (Iterator<String> i = keys.iterator(); i.hasNext(); j++) {
+                Monitor monitor = map.get(i.next());
                 System.err.println(j + "\t" + monitor.getName()
                                    + "=" + monitor.getValue());
             }

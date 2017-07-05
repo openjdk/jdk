@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactorySpi;
 import javax.crypto.spec.PBEKeySpec;
 import java.util.HashSet;
+import java.util.Locale;
 
 /**
  * This class implements a key factory for PBE keys according to PKCS#5,
@@ -56,24 +57,24 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
 
     static {
         validTypes = new HashSet<String>(17);
-        validTypes.add("PBEWithMD5AndDES".toUpperCase());
-        validTypes.add("PBEWithSHA1AndDESede".toUpperCase());
-        validTypes.add("PBEWithSHA1AndRC2_40".toUpperCase());
-        validTypes.add("PBEWithSHA1AndRC2_128".toUpperCase());
-        validTypes.add("PBEWithSHA1AndRC4_40".toUpperCase());
-        validTypes.add("PBEWithSHA1AndRC4_128".toUpperCase());
+        validTypes.add("PBEWithMD5AndDES".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithSHA1AndDESede".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithSHA1AndRC2_40".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithSHA1AndRC2_128".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithSHA1AndRC4_40".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithSHA1AndRC4_128".toUpperCase(Locale.ENGLISH));
         // Proprietary algorithm.
-        validTypes.add("PBEWithMD5AndTripleDES".toUpperCase());
-        validTypes.add("PBEWithHmacSHA1AndAES_128".toUpperCase());
-        validTypes.add("PBEWithHmacSHA224AndAES_128".toUpperCase());
-        validTypes.add("PBEWithHmacSHA256AndAES_128".toUpperCase());
-        validTypes.add("PBEWithHmacSHA384AndAES_128".toUpperCase());
-        validTypes.add("PBEWithHmacSHA512AndAES_128".toUpperCase());
-        validTypes.add("PBEWithHmacSHA1AndAES_256".toUpperCase());
-        validTypes.add("PBEWithHmacSHA224AndAES_256".toUpperCase());
-        validTypes.add("PBEWithHmacSHA256AndAES_256".toUpperCase());
-        validTypes.add("PBEWithHmacSHA384AndAES_256".toUpperCase());
-        validTypes.add("PBEWithHmacSHA512AndAES_256".toUpperCase());
+        validTypes.add("PBEWithMD5AndTripleDES".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithHmacSHA1AndAES_128".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithHmacSHA224AndAES_128".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithHmacSHA256AndAES_128".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithHmacSHA384AndAES_128".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithHmacSHA512AndAES_128".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithHmacSHA1AndAES_256".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithHmacSHA224AndAES_256".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithHmacSHA256AndAES_256".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithHmacSHA384AndAES_256".toUpperCase(Locale.ENGLISH));
+        validTypes.add("PBEWithHmacSHA512AndAES_256".toUpperCase(Locale.ENGLISH));
     }
 
     public static final class PBEWithMD5AndDES
@@ -237,7 +238,7 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
     protected KeySpec engineGetKeySpec(SecretKey key, Class<?> keySpecCl)
         throws InvalidKeySpecException {
         if ((key instanceof SecretKey)
-            && (validTypes.contains(key.getAlgorithm().toUpperCase()))
+            && (validTypes.contains(key.getAlgorithm().toUpperCase(Locale.ENGLISH)))
             && (key.getFormat().equalsIgnoreCase("RAW"))) {
 
             // Check if requested key spec is amongst the valid ones
@@ -279,7 +280,7 @@ abstract class PBEKeyFactory extends SecretKeyFactorySpi {
     {
         try {
             if ((key != null) &&
-                (validTypes.contains(key.getAlgorithm().toUpperCase())) &&
+                (validTypes.contains(key.getAlgorithm().toUpperCase(Locale.ENGLISH))) &&
                 (key.getFormat().equalsIgnoreCase("RAW"))) {
 
                 // Check if key originates from this factory
