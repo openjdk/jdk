@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -373,7 +373,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
     ScrubRemSetClaimValue      = 3,
     ParVerifyClaimValue        = 4,
     RebuildRSClaimValue        = 5,
-    CompleteMarkCSetClaimValue = 6
+    CompleteMarkCSetClaimValue = 6,
+    ParEvacFailureClaimValue   = 7
   };
 
   inline HeapWord* par_allocate_no_bot_updates(size_t word_size) {
@@ -582,37 +583,33 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // that the collector is about to start or has finished (concurrently)
   // marking the heap.
 
-  // Note the start of a marking phase. Record the
-  // start of the unmarked area of the region here.
-  void note_start_of_marking(bool during_initial_mark) {
-    init_top_at_conc_mark_count();
-    _next_marked_bytes = 0;
-    if (during_initial_mark && is_young() && !is_survivor())
-      _next_top_at_mark_start = bottom();
-    else
-      _next_top_at_mark_start = top();
-  }
+  // Notify the region that concurrent marking is starting. Initialize
+  // all fields related to the next marking info.
+  inline void note_start_of_marking();
 
-  // Note the end of a marking phase. Install the start of
-  // the unmarked area that was captured at start of marking.
-  void note_end_of_marking() {
-    _prev_top_at_mark_start = _next_top_at_mark_start;
-    _prev_marked_bytes = _next_marked_bytes;
-    _next_marked_bytes = 0;
+  // Notify the region that concurrent marking has finished. Copy the
+  // (now finalized) next marking info fields into the prev marking
+  // info fields.
+  inline void note_end_of_marking();
 
-    guarantee(_prev_marked_bytes <=
-              (size_t) (prev_top_at_mark_start() - bottom()) * HeapWordSize,
-              "invariant");
-  }
+  // Notify the region that it will be used as to-space during a GC
+  // and we are about to start copying objects into it.
+  inline void note_start_of_copying(bool during_initial_mark);
 
-  // After an evacuation, we need to update _next_top_at_mark_start
-  // to be the current top.  Note this is only valid if we have only
-  // ever evacuated into this region.  If we evacuate, allocate, and
-  // then evacuate we are in deep doodoo.
-  void note_end_of_copying() {
-    assert(top() >= _next_top_at_mark_start, "Increase only");
-    _next_top_at_mark_start = top();
-  }
+  // Notify the region that it ceases being to-space during a GC and
+  // we will not copy objects into it any more.
+  inline void note_end_of_copying(bool during_initial_mark);
+
+  // Notify the region that we are about to start processing
+  // self-forwarded objects during evac failure handling.
+  void note_self_forwarding_removal_start(bool during_initial_mark,
+                                          bool during_conc_mark);
+
+  // Notify the region that we have finished processing self-forwarded
+  // objects during evac failure handling.
+  void note_self_forwarding_removal_end(bool during_initial_mark,
+                                        bool during_conc_mark,
+                                        size_t marked_bytes);
 
   // Returns "false" iff no object in the region was allocated when the
   // last mark phase ended.

@@ -231,7 +231,7 @@ class ReferenceProcessor : public CHeapObj {
   bool        _enqueuing_is_done;       // true if all weak references enqueued
   bool        _processing_is_mt;        // true during phases when
                                         // reference processing is MT.
-  int         _next_id;                 // round-robin mod _num_q counter in
+  uint        _next_id;                 // round-robin mod _num_q counter in
                                         // support of work distribution
 
   // For collectors that do not keep GC liveness information
@@ -252,9 +252,9 @@ class ReferenceProcessor : public CHeapObj {
   // The discovered ref lists themselves
 
   // The active MT'ness degree of the queues below
-  int             _num_q;
+  uint             _num_q;
   // The maximum MT'ness degree of the queues below
-  int             _max_num_q;
+  uint             _max_num_q;
 
   // Master array of discovered oops
   DiscoveredList* _discovered_refs;
@@ -268,9 +268,9 @@ class ReferenceProcessor : public CHeapObj {
  public:
   static int number_of_subclasses_of_ref() { return (REF_PHANTOM - REF_OTHER); }
 
-  int num_q()                              { return _num_q; }
-  int max_num_q()                          { return _max_num_q; }
-  void set_active_mt_degree(int v)         { _num_q = v; }
+  uint num_q()                             { return _num_q; }
+  uint max_num_q()                         { return _max_num_q; }
+  void set_active_mt_degree(uint v)        { _num_q = v; }
 
   DiscoveredList* discovered_refs()        { return _discovered_refs; }
 
@@ -368,7 +368,7 @@ class ReferenceProcessor : public CHeapObj {
 
   // Returns the name of the discovered reference list
   // occupying the i / _num_q slot.
-  const char* list_name(int i);
+  const char* list_name(uint i);
 
   void enqueue_discovered_reflists(HeapWord* pending_list_addr, AbstractRefProcTaskExecutor* task_executor);
 
@@ -388,8 +388,8 @@ class ReferenceProcessor : public CHeapObj {
                                    YieldClosure*      yield);
 
   // round-robin mod _num_q (not: _not_ mode _max_num_q)
-  int next_id() {
-    int id = _next_id;
+  uint next_id() {
+    uint id = _next_id;
     if (++_next_id == _num_q) {
       _next_id = 0;
     }
@@ -434,8 +434,8 @@ class ReferenceProcessor : public CHeapObj {
 
   // Default parameters give you a vanilla reference processor.
   ReferenceProcessor(MemRegion span,
-                     bool mt_processing = false, int mt_processing_degree = 1,
-                     bool mt_discovery  = false, int mt_discovery_degree  = 1,
+                     bool mt_processing = false, uint mt_processing_degree = 1,
+                     bool mt_discovery  = false, uint mt_discovery_degree  = 1,
                      bool atomic_discovery = true,
                      BoolObjectClosure* is_alive_non_header = NULL,
                      bool discovered_list_needs_barrier = false);

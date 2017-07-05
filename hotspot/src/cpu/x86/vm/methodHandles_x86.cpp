@@ -1160,7 +1160,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
   Address rcx_amh_conversion( rcx_recv, java_lang_invoke_AdapterMethodHandle::conversion_offset_in_bytes() );
   Address vmarg;                // __ argument_address(vmargslot)
 
-  const int java_mirror_offset = klassOopDesc::klass_part_offset_in_bytes() + Klass::java_mirror_offset_in_bytes();
+  const int java_mirror_offset = in_bytes(Klass::java_mirror_offset());
 
   if (have_entry(ek)) {
     __ nop();                   // empty stubs make SG sick

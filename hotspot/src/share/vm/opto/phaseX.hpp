@@ -256,11 +256,6 @@ public:
   // For pessimistic optimizations this is simply pointer equivalence.
   bool eqv(const Node* n1, const Node* n2) const { return n1 == n2; }
 
-  // Return whether two Nodes are equivalent, after stripping casting.
-  bool eqv_uncast(const Node* n1, const Node* n2) const {
-    return eqv(n1->uncast(), n2->uncast());
-  }
-
   // For pessimistic passes, the return type must monotonically narrow.
   // For optimistic  passes, the return type must monotonically widen.
   // It is possible to get into a "death march" in either type of pass,

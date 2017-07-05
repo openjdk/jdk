@@ -1,0 +1,777 @@
+//
+// Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+// DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+//
+// This code is free software; you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 2 only, as
+// published by the Free Software Foundation.
+//
+// This code is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+// FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+// version 2 for more details (a copy is included in the LICENSE file that
+// accompanied this code).
+//
+// You should have received a copy of the GNU General Public License version
+// 2 along with this work; if not, write to the Free Software Foundation,
+// Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+//
+// Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+// or visit www.oracle.com if you need additional information or have any
+// questions.
+//
+//
+
+// X86 Common Architecture Description File
+
+source %{
+  // Float masks come from different places depending on platform.
+#ifdef _LP64
+  static address float_signmask()  { return StubRoutines::x86::float_sign_mask(); }
+  static address float_signflip()  { return StubRoutines::x86::float_sign_flip(); }
+  static address double_signmask() { return StubRoutines::x86::double_sign_mask(); }
+  static address double_signflip() { return StubRoutines::x86::double_sign_flip(); }
+#else
+  static address float_signmask()  { return (address)float_signmask_pool; }
+  static address float_signflip()  { return (address)float_signflip_pool; }
+  static address double_signmask() { return (address)double_signmask_pool; }
+  static address double_signflip() { return (address)double_signflip_pool; }
+#endif
+%}
+
+// INSTRUCTIONS -- Platform independent definitions (same for 32- and 64-bit)
+
+instruct addF_reg(regF dst, regF src) %{
+  predicate((UseSSE>=1) && (UseAVX == 0));
+  match(Set dst (AddF dst src));
+
+  format %{ "addss   $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ addss($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct addF_mem(regF dst, memory src) %{
+  predicate((UseSSE>=1) && (UseAVX == 0));
+  match(Set dst (AddF dst (LoadF src)));
+
+  format %{ "addss   $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ addss($dst$$XMMRegister, $src$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct addF_imm(regF dst, immF con) %{
+  predicate((UseSSE>=1) && (UseAVX == 0));
+  match(Set dst (AddF dst con));
+  format %{ "addss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ addss($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vaddF_reg(regF dst, regF src1, regF src2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (AddF src1 src2));
+
+  format %{ "vaddss  $dst, $src1, $src2" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vaddss($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vaddF_mem(regF dst, regF src1, memory src2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (AddF src1 (LoadF src2)));
+
+  format %{ "vaddss  $dst, $src1, $src2" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vaddss($dst$$XMMRegister, $src1$$XMMRegister, $src2$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vaddF_imm(regF dst, regF src, immF con) %{
+  predicate(UseAVX > 0);
+  match(Set dst (AddF src con));
+
+  format %{ "vaddss  $dst, $src, [$constantaddress]\t# load from constant table: float=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vaddss($dst$$XMMRegister, $src$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct addD_reg(regD dst, regD src) %{
+  predicate((UseSSE>=2) && (UseAVX == 0));
+  match(Set dst (AddD dst src));
+
+  format %{ "addsd   $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ addsd($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct addD_mem(regD dst, memory src) %{
+  predicate((UseSSE>=2) && (UseAVX == 0));
+  match(Set dst (AddD dst (LoadD src)));
+
+  format %{ "addsd   $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ addsd($dst$$XMMRegister, $src$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct addD_imm(regD dst, immD con) %{
+  predicate((UseSSE>=2) && (UseAVX == 0));
+  match(Set dst (AddD dst con));
+  format %{ "addsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ addsd($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vaddD_reg(regD dst, regD src1, regD src2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (AddD src1 src2));
+
+  format %{ "vaddsd  $dst, $src1, $src2" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vaddsd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vaddD_mem(regD dst, regD src1, memory src2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (AddD src1 (LoadD src2)));
+
+  format %{ "vaddsd  $dst, $src1, $src2" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vaddsd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vaddD_imm(regD dst, regD src, immD con) %{
+  predicate(UseAVX > 0);
+  match(Set dst (AddD src con));
+
+  format %{ "vaddsd  $dst, $src, [$constantaddress]\t# load from constant table: double=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vaddsd($dst$$XMMRegister, $src$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct subF_reg(regF dst, regF src) %{
+  predicate((UseSSE>=1) && (UseAVX == 0));
+  match(Set dst (SubF dst src));
+
+  format %{ "subss   $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ subss($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct subF_mem(regF dst, memory src) %{
+  predicate((UseSSE>=1) && (UseAVX == 0));
+  match(Set dst (SubF dst (LoadF src)));
+
+  format %{ "subss   $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ subss($dst$$XMMRegister, $src$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct subF_imm(regF dst, immF con) %{
+  predicate((UseSSE>=1) && (UseAVX == 0));
+  match(Set dst (SubF dst con));
+  format %{ "subss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ subss($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vsubF_reg(regF dst, regF src1, regF src2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (SubF src1 src2));
+
+  format %{ "vsubss  $dst, $src1, $src2" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vsubss($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vsubF_mem(regF dst, regF src1, memory src2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (SubF src1 (LoadF src2)));
+
+  format %{ "vsubss  $dst, $src1, $src2" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vsubss($dst$$XMMRegister, $src1$$XMMRegister, $src2$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vsubF_imm(regF dst, regF src, immF con) %{
+  predicate(UseAVX > 0);
+  match(Set dst (SubF src con));
+
+  format %{ "vsubss  $dst, $src, [$constantaddress]\t# load from constant table: float=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vsubss($dst$$XMMRegister, $src$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct subD_reg(regD dst, regD src) %{
+  predicate((UseSSE>=2) && (UseAVX == 0));
+  match(Set dst (SubD dst src));
+
+  format %{ "subsd   $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ subsd($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct subD_mem(regD dst, memory src) %{
+  predicate((UseSSE>=2) && (UseAVX == 0));
+  match(Set dst (SubD dst (LoadD src)));
+
+  format %{ "subsd   $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ subsd($dst$$XMMRegister, $src$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct subD_imm(regD dst, immD con) %{
+  predicate((UseSSE>=2) && (UseAVX == 0));
+  match(Set dst (SubD dst con));
+  format %{ "subsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ subsd($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vsubD_reg(regD dst, regD src1, regD src2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (SubD src1 src2));
+
+  format %{ "vsubsd  $dst, $src1, $src2" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vsubsd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vsubD_mem(regD dst, regD src1, memory src2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (SubD src1 (LoadD src2)));
+
+  format %{ "vsubsd  $dst, $src1, $src2" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vsubsd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vsubD_imm(regD dst, regD src, immD con) %{
+  predicate(UseAVX > 0);
+  match(Set dst (SubD src con));
+
+  format %{ "vsubsd  $dst, $src, [$constantaddress]\t# load from constant table: double=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vsubsd($dst$$XMMRegister, $src$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct mulF_reg(regF dst, regF src) %{
+  predicate((UseSSE>=1) && (UseAVX == 0));
+  match(Set dst (MulF dst src));
+
+  format %{ "mulss   $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ mulss($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct mulF_mem(regF dst, memory src) %{
+  predicate((UseSSE>=1) && (UseAVX == 0));
+  match(Set dst (MulF dst (LoadF src)));
+
+  format %{ "mulss   $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ mulss($dst$$XMMRegister, $src$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct mulF_imm(regF dst, immF con) %{
+  predicate((UseSSE>=1) && (UseAVX == 0));
+  match(Set dst (MulF dst con));
+  format %{ "mulss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ mulss($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmulF_reg(regF dst, regF src1, regF src2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (MulF src1 src2));
+
+  format %{ "vmulss  $dst, $src1, $src2" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vmulss($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmulF_mem(regF dst, regF src1, memory src2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (MulF src1 (LoadF src2)));
+
+  format %{ "vmulss  $dst, $src1, $src2" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vmulss($dst$$XMMRegister, $src1$$XMMRegister, $src2$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmulF_imm(regF dst, regF src, immF con) %{
+  predicate(UseAVX > 0);
+  match(Set dst (MulF src con));
+
+  format %{ "vmulss  $dst, $src, [$constantaddress]\t# load from constant table: float=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vmulss($dst$$XMMRegister, $src$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct mulD_reg(regD dst, regD src) %{
+  predicate((UseSSE>=2) && (UseAVX == 0));
+  match(Set dst (MulD dst src));
+
+  format %{ "mulsd   $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ mulsd($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct mulD_mem(regD dst, memory src) %{
+  predicate((UseSSE>=2) && (UseAVX == 0));
+  match(Set dst (MulD dst (LoadD src)));
+
+  format %{ "mulsd   $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ mulsd($dst$$XMMRegister, $src$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct mulD_imm(regD dst, immD con) %{
+  predicate((UseSSE>=2) && (UseAVX == 0));
+  match(Set dst (MulD dst con));
+  format %{ "mulsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ mulsd($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmulD_reg(regD dst, regD src1, regD src2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (MulD src1 src2));
+
+  format %{ "vmulsd  $dst, $src1, $src2" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vmulsd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmulD_mem(regD dst, regD src1, memory src2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (MulD src1 (LoadD src2)));
+
+  format %{ "vmulsd  $dst, $src1, $src2" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vmulsd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmulD_imm(regD dst, regD src, immD con) %{
+  predicate(UseAVX > 0);
+  match(Set dst (MulD src con));
+
+  format %{ "vmulsd  $dst, $src, [$constantaddress]\t# load from constant table: double=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vmulsd($dst$$XMMRegister, $src$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct divF_reg(regF dst, regF src) %{
+  predicate((UseSSE>=1) && (UseAVX == 0));
+  match(Set dst (DivF dst src));
+
+  format %{ "divss   $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ divss($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct divF_mem(regF dst, memory src) %{
+  predicate((UseSSE>=1) && (UseAVX == 0));
+  match(Set dst (DivF dst (LoadF src)));
+
+  format %{ "divss   $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ divss($dst$$XMMRegister, $src$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct divF_imm(regF dst, immF con) %{
+  predicate((UseSSE>=1) && (UseAVX == 0));
+  match(Set dst (DivF dst con));
+  format %{ "divss   $dst, [$constantaddress]\t# load from constant table: float=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ divss($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vdivF_reg(regF dst, regF src1, regF src2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (DivF src1 src2));
+
+  format %{ "vdivss  $dst, $src1, $src2" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vdivss($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vdivF_mem(regF dst, regF src1, memory src2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (DivF src1 (LoadF src2)));
+
+  format %{ "vdivss  $dst, $src1, $src2" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vdivss($dst$$XMMRegister, $src1$$XMMRegister, $src2$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vdivF_imm(regF dst, regF src, immF con) %{
+  predicate(UseAVX > 0);
+  match(Set dst (DivF src con));
+
+  format %{ "vdivss  $dst, $src, [$constantaddress]\t# load from constant table: float=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vdivss($dst$$XMMRegister, $src$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct divD_reg(regD dst, regD src) %{
+  predicate((UseSSE>=2) && (UseAVX == 0));
+  match(Set dst (DivD dst src));
+
+  format %{ "divsd   $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ divsd($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct divD_mem(regD dst, memory src) %{
+  predicate((UseSSE>=2) && (UseAVX == 0));
+  match(Set dst (DivD dst (LoadD src)));
+
+  format %{ "divsd   $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ divsd($dst$$XMMRegister, $src$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct divD_imm(regD dst, immD con) %{
+  predicate((UseSSE>=2) && (UseAVX == 0));
+  match(Set dst (DivD dst con));
+  format %{ "divsd   $dst, [$constantaddress]\t# load from constant table: double=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ divsd($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vdivD_reg(regD dst, regD src1, regD src2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (DivD src1 src2));
+
+  format %{ "vdivsd  $dst, $src1, $src2" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vdivsd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vdivD_mem(regD dst, regD src1, memory src2) %{
+  predicate(UseAVX > 0);
+  match(Set dst (DivD src1 (LoadD src2)));
+
+  format %{ "vdivsd  $dst, $src1, $src2" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vdivsd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vdivD_imm(regD dst, regD src, immD con) %{
+  predicate(UseAVX > 0);
+  match(Set dst (DivD src con));
+
+  format %{ "vdivsd  $dst, $src, [$constantaddress]\t# load from constant table: double=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vdivsd($dst$$XMMRegister, $src$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct absF_reg(regF dst) %{
+  predicate((UseSSE>=1) && (UseAVX == 0));
+  match(Set dst (AbsF dst));
+  ins_cost(150);
+  format %{ "andps   $dst, [0x7fffffff]\t# abs float by sign masking" %}
+  ins_encode %{
+    __ andps($dst$$XMMRegister, ExternalAddress(float_signmask()));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vabsF_reg(regF dst, regF src) %{
+  predicate(UseAVX > 0);
+  match(Set dst (AbsF src));
+  ins_cost(150);
+  format %{ "vandps  $dst, $src, [0x7fffffff]\t# abs float by sign masking" %}
+  ins_encode %{
+    __ vandps($dst$$XMMRegister, $src$$XMMRegister,
+              ExternalAddress(float_signmask()));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct absD_reg(regD dst) %{
+  predicate((UseSSE>=2) && (UseAVX == 0));
+  match(Set dst (AbsD dst));
+  ins_cost(150);
+  format %{ "andpd   $dst, [0x7fffffffffffffff]\t"
+            "# abs double by sign masking" %}
+  ins_encode %{
+    __ andpd($dst$$XMMRegister, ExternalAddress(double_signmask()));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vabsD_reg(regD dst, regD src) %{
+  predicate(UseAVX > 0);
+  match(Set dst (AbsD src));
+  ins_cost(150);
+  format %{ "vandpd  $dst, $src, [0x7fffffffffffffff]\t"
+            "# abs double by sign masking" %}
+  ins_encode %{
+    __ vandpd($dst$$XMMRegister, $src$$XMMRegister,
+              ExternalAddress(double_signmask()));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct negF_reg(regF dst) %{
+  predicate((UseSSE>=1) && (UseAVX == 0));
+  match(Set dst (NegF dst));
+  ins_cost(150);
+  format %{ "xorps   $dst, [0x80000000]\t# neg float by sign flipping" %}
+  ins_encode %{
+    __ xorps($dst$$XMMRegister, ExternalAddress(float_signflip()));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vnegF_reg(regF dst, regF src) %{
+  predicate(UseAVX > 0);
+  match(Set dst (NegF src));
+  ins_cost(150);
+  format %{ "vxorps  $dst, $src, [0x80000000]\t# neg float by sign flipping" %}
+  ins_encode %{
+    __ vxorps($dst$$XMMRegister, $src$$XMMRegister,
+              ExternalAddress(float_signflip()));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct negD_reg(regD dst) %{
+  predicate((UseSSE>=2) && (UseAVX == 0));
+  match(Set dst (NegD dst));
+  ins_cost(150);
+  format %{ "xorpd   $dst, [0x8000000000000000]\t"
+            "# neg double by sign flipping" %}
+  ins_encode %{
+    __ xorpd($dst$$XMMRegister, ExternalAddress(double_signflip()));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vnegD_reg(regD dst, regD src) %{
+  predicate(UseAVX > 0);
+  match(Set dst (NegD src));
+  ins_cost(150);
+  format %{ "vxorpd  $dst, $src, [0x8000000000000000]\t"
+            "# neg double by sign flipping" %}
+  ins_encode %{
+    __ vxorpd($dst$$XMMRegister, $src$$XMMRegister,
+              ExternalAddress(double_signflip()));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct sqrtF_reg(regF dst, regF src) %{
+  predicate(UseSSE>=1);
+  match(Set dst (ConvD2F (SqrtD (ConvF2D src))));
+
+  format %{ "sqrtss  $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ sqrtss($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct sqrtF_mem(regF dst, memory src) %{
+  predicate(UseSSE>=1);
+  match(Set dst (ConvD2F (SqrtD (ConvF2D (LoadF src)))));
+
+  format %{ "sqrtss  $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ sqrtss($dst$$XMMRegister, $src$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct sqrtF_imm(regF dst, immF con) %{
+  predicate(UseSSE>=1);
+  match(Set dst (ConvD2F (SqrtD (ConvF2D con))));
+  format %{ "sqrtss  $dst, [$constantaddress]\t# load from constant table: float=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ sqrtss($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct sqrtD_reg(regD dst, regD src) %{
+  predicate(UseSSE>=2);
+  match(Set dst (SqrtD src));
+
+  format %{ "sqrtsd  $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ sqrtsd($dst$$XMMRegister, $src$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct sqrtD_mem(regD dst, memory src) %{
+  predicate(UseSSE>=2);
+  match(Set dst (SqrtD (LoadD src)));
+
+  format %{ "sqrtsd  $dst, $src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ sqrtsd($dst$$XMMRegister, $src$$Address);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct sqrtD_imm(regD dst, immD con) %{
+  predicate(UseSSE>=2);
+  match(Set dst (SqrtD con));
+  format %{ "sqrtsd  $dst, [$constantaddress]\t# load from constant table: double=$con" %}
+  ins_cost(150);
+  ins_encode %{
+    __ sqrtsd($dst$$XMMRegister, $constantaddress($con));
+  %}
+  ins_pipe(pipe_slow);
+%}
+

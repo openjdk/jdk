@@ -924,10 +924,10 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
         scval = new ConstantOopWriteValue(tp->is_oopptr()->const_oop()->constant_encoding());
       }
 
-      OptoReg::Name box_reg = BoxLockNode::stack_slot(box_node);
+      OptoReg::Name box_reg = BoxLockNode::reg(box_node);
       Location basic_lock = Location::new_stk_loc(Location::normal,_regalloc->reg2offset(box_reg));
-      while( !box_node->is_BoxLock() )  box_node = box_node->in(1);
-      monarray->append(new MonitorValue(scval, basic_lock, box_node->as_BoxLock()->is_eliminated()));
+      bool eliminated = (box_node->is_BoxLock() && box_node->as_BoxLock()->is_eliminated());
+      monarray->append(new MonitorValue(scval, basic_lock, eliminated));
     }
 
     // We dump the object pool first, since deoptimization reads it in first.

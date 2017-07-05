@@ -3036,10 +3036,8 @@ void MacroAssembler::check_klass_subtype_fast_path(Register sub_klass,
                                                    Label* L_failure,
                                                    Label* L_slow_path,
                                         RegisterOrConstant super_check_offset) {
-  int sc_offset = (klassOopDesc::header_size() * HeapWordSize +
-                   Klass::secondary_super_cache_offset_in_bytes());
-  int sco_offset = (klassOopDesc::header_size() * HeapWordSize +
-                    Klass::super_check_offset_offset_in_bytes());
+  int sc_offset = in_bytes(Klass::secondary_super_cache_offset());
+  int sco_offset = in_bytes(Klass::super_check_offset_offset());
 
   bool must_load_sco  = (super_check_offset.constant_or_zero() == -1);
   bool need_slow_path = (must_load_sco ||
@@ -3159,10 +3157,8 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   assert(label_nulls <= 1, "at most one NULL in the batch");
 
   // a couple of useful fields in sub_klass:
-  int ss_offset = (klassOopDesc::header_size() * HeapWordSize +
-                   Klass::secondary_supers_offset_in_bytes());
-  int sc_offset = (klassOopDesc::header_size() * HeapWordSize +
-                   Klass::secondary_super_cache_offset_in_bytes());
+  int ss_offset = in_bytes(Klass::secondary_supers_offset());
+  int sc_offset = in_bytes(Klass::secondary_super_cache_offset());
 
   // Do a linear scan of the secondary super-klass chain.
   // This code is rarely used, so simplicity is a virtue here.
@@ -3336,7 +3332,7 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
   cmp_and_brx_short(temp_reg, markOopDesc::biased_lock_pattern, Assembler::notEqual, Assembler::pn, cas_label);
 
   load_klass(obj_reg, temp_reg);
-  ld_ptr(Address(temp_reg, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()), temp_reg);
+  ld_ptr(Address(temp_reg, Klass::prototype_header_offset()), temp_reg);
   or3(G2_thread, temp_reg, temp_reg);
   xor3(mark_reg, temp_reg, temp_reg);
   andcc(temp_reg, ~((int) markOopDesc::age_mask_in_place), temp_reg);
@@ -3413,7 +3409,7 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
   // FIXME: due to a lack of registers we currently blow away the age
   // bits in this situation. Should attempt to preserve them.
   load_klass(obj_reg, temp_reg);
-  ld_ptr(Address(temp_reg, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()), temp_reg);
+  ld_ptr(Address(temp_reg, Klass::prototype_header_offset()), temp_reg);
   or3(G2_thread, temp_reg, temp_reg);
   casn(mark_addr.base(), mark_reg, temp_reg);
   // If the biasing toward our thread failed, this means that
@@ -3443,7 +3439,7 @@ void MacroAssembler::biased_locking_enter(Register obj_reg, Register mark_reg,
   // FIXME: due to a lack of registers we currently blow away the age
   // bits in this situation. Should attempt to preserve them.
   load_klass(obj_reg, temp_reg);
-  ld_ptr(Address(temp_reg, Klass::prototype_header_offset_in_bytes() + klassOopDesc::klass_part_offset_in_bytes()), temp_reg);
+  ld_ptr(Address(temp_reg, Klass::prototype_header_offset()), temp_reg);
   casn(mark_addr.base(), mark_reg, temp_reg);
   // Fall through to the normal CAS-based lock, because no matter what
   // the result of the above CAS, some thread must have succeeded in

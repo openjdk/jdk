@@ -156,20 +156,19 @@ bool AdvancedThresholdPolicy::is_method_profiled(methodOop method) {
 // Called with the queue locked and with at least one element
 CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
   CompileTask *max_task = NULL;
-  methodOop max_method;
+  methodHandle max_method;
   jlong t = os::javaTimeMillis();
   // Iterate through the queue and find a method with a maximum rate.
   for (CompileTask* task = compile_queue->first(); task != NULL;) {
     CompileTask* next_task = task->next();
-    methodOop method = (methodOop)JNIHandles::resolve(task->method_handle());
-    methodDataOop mdo = method->method_data();
-    update_rate(t, method);
+    methodHandle method = (methodOop)JNIHandles::resolve(task->method_handle());
+    update_rate(t, method());
     if (max_task == NULL) {
       max_task = task;
       max_method = method;
     } else {
       // If a method has been stale for some time, remove it from the queue.
-      if (is_stale(t, TieredCompileTaskTimeout, method) && !is_old(method)) {
+      if (is_stale(t, TieredCompileTaskTimeout, method()) && !is_old(method())) {
         if (PrintTieredEvents) {
           print_event(REMOVE_FROM_QUEUE, method, method, task->osr_bci(), (CompLevel)task->comp_level());
         }
@@ -181,7 +180,7 @@ CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
       }
 
       // Select a method with a higher rate
-      if (compare_methods(method, max_method)) {
+      if (compare_methods(method(), max_method())) {
         max_task = task;
         max_method = method;
       }
@@ -190,7 +189,7 @@ CompileTask* AdvancedThresholdPolicy::select_task(CompileQueue* compile_queue) {
   }
 
   if (max_task->comp_level() == CompLevel_full_profile && TieredStopAtLevel > CompLevel_full_profile
-      && is_method_profiled(max_method)) {
+      && is_method_profiled(max_method())) {
     max_task->set_comp_level(CompLevel_limited_profile);
     if (PrintTieredEvents) {
       print_event(UPDATE_IN_QUEUE, max_method, max_method, max_task->osr_bci(), (CompLevel)max_task->comp_level());

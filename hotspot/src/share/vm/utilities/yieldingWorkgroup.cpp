@@ -33,11 +33,11 @@ class GangWorker;
 class WorkData;
 
 YieldingFlexibleWorkGang::YieldingFlexibleWorkGang(
-  const char* name, int workers, bool are_GC_task_threads) :
+  const char* name, uint workers, bool are_GC_task_threads) :
   FlexibleWorkGang(name, workers, are_GC_task_threads, false),
     _yielded_workers(0) {}
 
-GangWorker* YieldingFlexibleWorkGang::allocate_worker(int which) {
+GangWorker* YieldingFlexibleWorkGang::allocate_worker(uint which) {
   YieldingFlexibleGangWorker* new_member =
       new YieldingFlexibleGangWorker(this, which);
   return (YieldingFlexibleGangWorker*) new_member;
@@ -120,7 +120,7 @@ void YieldingFlexibleWorkGang::start_task(YieldingFlexibleGangTask* new_task) {
   new_task->set_gang(this);  // Establish 2-way binding to support yielding
   _sequence_number++;
 
-  int requested_size = new_task->requested_size();
+  uint requested_size = new_task->requested_size();
   assert(requested_size >= 0, "Should be non-negative");
   if (requested_size != 0) {
     _active_workers = MIN2(requested_size, total_workers());

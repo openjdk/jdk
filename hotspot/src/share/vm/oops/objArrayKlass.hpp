@@ -47,7 +47,7 @@ class objArrayKlass : public arrayKlass {
   oop* bottom_klass_addr()            { return (oop*)&_bottom_klass; }
 
   // Compiler/Interpreter offset
-  static int element_klass_offset_in_bytes() { return offset_of(objArrayKlass, _element_klass); }
+  static ByteSize element_klass_offset() { return in_ByteSize(sizeof(klassOopDesc) + offset_of(objArrayKlass, _element_klass)); }
 
   // Dispatched operation
   bool can_be_primary_super_slow() const;

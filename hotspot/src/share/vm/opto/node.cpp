@@ -833,8 +833,20 @@ Node* Node::uncast() const {
 
 //---------------------------uncast_helper-------------------------------------
 Node* Node::uncast_helper(const Node* p) {
-  uint max_depth = 3;
-  for (uint i = 0; i < max_depth; i++) {
+#ifdef ASSERT
+  uint depth_count = 0;
+  const Node* orig_p = p;
+#endif
+
+  while (true) {
+#ifdef ASSERT
+    if (depth_count >= K) {
+      orig_p->dump(4);
+      if (p != orig_p)
+        p->dump(1);
+    }
+    assert(depth_count++ < K, "infinite loop in Node::uncast_helper");
+#endif
     if (p == NULL || p->req() != 2) {
       break;
     } else if (p->is_ConstraintCast()) {

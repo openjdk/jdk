@@ -377,7 +377,7 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(bool concurrent_locks)
     }
 
   }
-
+  delete cycle;
   return deadlocks;
 }
 

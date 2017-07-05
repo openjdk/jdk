@@ -239,7 +239,7 @@ public:
 
   HeapWord* young_old_boundary() { return _young_old_boundary; }
 
-  void work(int i);
+  void work(uint worker_id);
 
   // Reset the terminator in ParScanThreadStateSet for
   // "active_workers" threads.

@@ -558,11 +558,11 @@ void G1RemSet::scrub(BitMap* region_bm, BitMap* card_bm) {
 }
 
 void G1RemSet::scrub_par(BitMap* region_bm, BitMap* card_bm,
-                                int worker_num, int claim_val) {
+                                uint worker_num, int claim_val) {
   ScrubRSClosure scrub_cl(region_bm, card_bm);
   _g1->heap_region_par_iterate_chunked(&scrub_cl,
                                        worker_num,
-                                       (int) n_workers(),
+                                       n_workers(),
                                        claim_val);
 }
 

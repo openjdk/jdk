@@ -631,7 +631,7 @@ class CFLS_LAB : public CHeapObj {
   static AdaptiveWeightedAverage
                  _blocks_to_claim  [CompactibleFreeListSpace::IndexSetSize];
   static size_t _global_num_blocks [CompactibleFreeListSpace::IndexSetSize];
-  static int    _global_num_workers[CompactibleFreeListSpace::IndexSetSize];
+  static uint   _global_num_workers[CompactibleFreeListSpace::IndexSetSize];
   size_t        _num_blocks        [CompactibleFreeListSpace::IndexSetSize];
 
   // Internal work method

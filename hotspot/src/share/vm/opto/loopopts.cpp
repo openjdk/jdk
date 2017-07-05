@@ -819,6 +819,8 @@ void PhaseIdealLoop::split_if_with_blocks_post( Node *n ) {
     if( iff->is_If() ) {        // Classic split-if?
       if( iff->in(0) != n_ctrl ) return; // Compare must be in same blk as if
     } else if (iff->is_CMove()) { // Trying to split-up a CMOVE
+      // Can't split CMove with different control edge.
+      if (iff->in(0) != NULL && iff->in(0) != n_ctrl ) return;
       if( get_ctrl(iff->in(2)) == n_ctrl ||
           get_ctrl(iff->in(3)) == n_ctrl )
         return;                 // Inputs not yet split-up
@@ -937,7 +939,7 @@ void PhaseIdealLoop::split_if_with_blocks_post( Node *n ) {
       }
       bool did_break = (i < imax);  // Did we break out of the previous loop?
       if (!did_break && n->outcnt() > 1) { // All uses in outer loops!
-        Node *late_load_ctrl;
+        Node *late_load_ctrl = NULL;
         if (n->is_Load()) {
           // If n is a load, get and save the result from get_late_ctrl(),
           // to be later used in calculating the control for n's clones.

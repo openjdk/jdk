@@ -2598,7 +2598,7 @@ void CompactibleFreeListSpace::printFLCensus(size_t sweep_count) const {
 AdaptiveWeightedAverage CFLS_LAB::_blocks_to_claim[]    =
   VECTOR_257(AdaptiveWeightedAverage(OldPLABWeight, (float)CMSParPromoteBlocksToClaim));
 size_t CFLS_LAB::_global_num_blocks[]  = VECTOR_257(0);
-int    CFLS_LAB::_global_num_workers[] = VECTOR_257(0);
+uint   CFLS_LAB::_global_num_workers[] = VECTOR_257(0);
 
 CFLS_LAB::CFLS_LAB(CompactibleFreeListSpace* cfls) :
   _cfls(cfls)
@@ -2732,7 +2732,7 @@ void CFLS_LAB::retire(int tid) {
         // Update globals stats for num_blocks used
         _global_num_blocks[i] += (_num_blocks[i] - num_retire);
         _global_num_workers[i]++;
-        assert(_global_num_workers[i] <= (ssize_t)ParallelGCThreads, "Too big");
+        assert(_global_num_workers[i] <= ParallelGCThreads, "Too big");
         if (num_retire > 0) {
           _cfls->_indexedFreeList[i].prepend(&_indexedFreeList[i]);
           // Reset this list.

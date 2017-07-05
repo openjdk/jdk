@@ -1040,6 +1040,10 @@ public:
   bool created_loop_node()     { return _created_loop_node; }
   void register_new_node( Node *n, Node *blk );
 
+#ifdef ASSERT
+void dump_bad_graph(Node* n, Node* early, Node* LCA);
+#endif
+
 #ifndef PRODUCT
   void dump( ) const;
   void dump( IdealLoopTree *loop, uint rpo_idx, Node_List &rpo_list ) const;

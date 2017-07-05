@@ -237,9 +237,21 @@ int NativeMovRegMem::instruction_start() const {
   int off = 0;
   u_char instr_0 = ubyte_at(off);
 
+  // See comment in Assembler::locate_operand() about VEX prefixes.
+  if (instr_0 == instruction_VEX_prefix_2bytes) {
+    assert((UseAVX > 0), "shouldn't have VEX prefix");
+    NOT_LP64(assert((0xC0 & ubyte_at(1)) == 0xC0, "shouldn't have LDS and LES instructions"));
+    return 2;
+  }
+  if (instr_0 == instruction_VEX_prefix_3bytes) {
+    assert((UseAVX > 0), "shouldn't have VEX prefix");
+    NOT_LP64(assert((0xC0 & ubyte_at(1)) == 0xC0, "shouldn't have LDS and LES instructions"));
+    return 3;
+  }
+
   // First check to see if we have a (prefixed or not) xor
-  if ( instr_0 >= instruction_prefix_wide_lo &&      // 0x40
-       instr_0 <= instruction_prefix_wide_hi) { // 0x4f
+  if (instr_0 >= instruction_prefix_wide_lo && // 0x40
+      instr_0 <= instruction_prefix_wide_hi) { // 0x4f
     off++;
     instr_0 = ubyte_at(off);
   }
@@ -256,13 +268,13 @@ int NativeMovRegMem::instruction_start() const {
     instr_0 = ubyte_at(off);
   }
 
-  if ( instr_0 == instruction_code_xmm_ss_prefix ||      // 0xf3
+  if ( instr_0 == instruction_code_xmm_ss_prefix || // 0xf3
        instr_0 == instruction_code_xmm_sd_prefix) { // 0xf2
     off++;
     instr_0 = ubyte_at(off);
   }
 
-  if ( instr_0 >= instruction_prefix_wide_lo &&      // 0x40
+  if ( instr_0 >= instruction_prefix_wide_lo && // 0x40
        instr_0 <= instruction_prefix_wide_hi) { // 0x4f
     off++;
     instr_0 = ubyte_at(off);

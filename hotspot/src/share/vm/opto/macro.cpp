@@ -1088,6 +1088,12 @@ void PhaseMacroExpand::expand_allocate_common(
   Node* klass_node        = alloc->in(AllocateNode::KlassNode);
   Node* initial_slow_test = alloc->in(AllocateNode::InitialTest);
 
+  Node* storestore = alloc->storestore();
+  if (storestore != NULL) {
+    // Break this link that is no longer useful and confuses register allocation
+    storestore->set_req(MemBarNode::Precedent, top());
+  }
+
   assert(ctrl != NULL, "must have control");
   // We need a Region and corresponding Phi's to merge the slow-path and fast-path results.
   // they will not be used if "always_slow" is set
@@ -1289,9 +1295,65 @@ void PhaseMacroExpand::expand_allocate_common(
                                    0, new_alloc_bytes, T_LONG);
     }
 
+    InitializeNode* init = alloc->initialization();
     fast_oop_rawmem = initialize_object(alloc,
                                         fast_oop_ctrl, fast_oop_rawmem, fast_oop,
                                         klass_node, length, size_in_bytes);
+
+    // If initialization is performed by an array copy, any required
+    // MemBarStoreStore was already added. If the object does not
+    // escape no need for a MemBarStoreStore. Otherwise we need a
+    // MemBarStoreStore so that stores that initialize this object
+    // can't be reordered with a subsequent store that makes this
+    // object accessible by other threads.
+    if (init == NULL || (!init->is_complete_with_arraycopy() && !init->does_not_escape())) {
+      if (init == NULL || init->req() < InitializeNode::RawStores) {
+        // No InitializeNode or no stores captured by zeroing
+        // elimination. Simply add the MemBarStoreStore after object
+        // initialization.
+        MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxBot, fast_oop_rawmem);
+        transform_later(mb);
+
+        mb->init_req(TypeFunc::Memory, fast_oop_rawmem);
+        mb->init_req(TypeFunc::Control, fast_oop_ctrl);
+        fast_oop_ctrl = new (C, 1) ProjNode(mb,TypeFunc::Control);
+        transform_later(fast_oop_ctrl);
+        fast_oop_rawmem = new (C, 1) ProjNode(mb,TypeFunc::Memory);
+        transform_later(fast_oop_rawmem);
+      } else {
+        // Add the MemBarStoreStore after the InitializeNode so that
+        // all stores performing the initialization that were moved
+        // before the InitializeNode happen before the storestore
+        // barrier.
+
+        Node* init_ctrl = init->proj_out(TypeFunc::Control);
+        Node* init_mem = init->proj_out(TypeFunc::Memory);
+
+        MemBarNode* mb = MemBarNode::make(C, Op_MemBarStoreStore, Compile::AliasIdxBot);
+        transform_later(mb);
+
+        Node* ctrl = new (C, 1) ProjNode(init,TypeFunc::Control);
+        transform_later(ctrl);
+        Node* mem = new (C, 1) ProjNode(init,TypeFunc::Memory);
+        transform_later(mem);
+
+        // The MemBarStoreStore depends on control and memory coming
+        // from the InitializeNode
+        mb->init_req(TypeFunc::Memory, mem);
+        mb->init_req(TypeFunc::Control, ctrl);
+
+        ctrl = new (C, 1) ProjNode(mb,TypeFunc::Control);
+        transform_later(ctrl);
+        mem = new (C, 1) ProjNode(mb,TypeFunc::Memory);
+        transform_later(mem);
+
+        // All nodes that depended on the InitializeNode for control
+        // and memory must now depend on the MemBarNode that itself
+        // depends on the InitializeNode
+        _igvn.replace_node(init_ctrl, ctrl);
+        _igvn.replace_node(init_mem, mem);
+      }
+    }
 
     if (C->env()->dtrace_extended_probes()) {
       // Slow-path call
@@ -1326,6 +1388,7 @@ void PhaseMacroExpand::expand_allocate_common(
     result_phi_rawmem->init_req(fast_result_path, fast_oop_rawmem);
   } else {
     slow_region = ctrl;
+    result_phi_i_o = i_o; // Rename it to use in the following code.
   }
 
   // Generate slow-path call
@@ -1350,6 +1413,10 @@ void PhaseMacroExpand::expand_allocate_common(
   copy_call_debug_info((CallNode *) alloc,  call);
   if (!always_slow) {
     call->set_cnt(PROB_UNLIKELY_MAG(4));  // Same effect as RC_UNCOMMON.
+  } else {
+    // Hook i_o projection to avoid its elimination during allocation
+    // replacement (when only a slow call is generated).
+    call->set_req(TypeFunc::I_O, result_phi_i_o);
   }
   _igvn.replace_node(alloc, call);
   transform_later(call);
@@ -1366,8 +1433,10 @@ void PhaseMacroExpand::expand_allocate_common(
   //
   extract_call_projections(call);
 
-  // An allocate node has separate memory projections for the uses on the control and i_o paths
-  // Replace uses of the control memory projection with result_phi_rawmem (unless we are only generating a slow call)
+  // An allocate node has separate memory projections for the uses on
+  // the control and i_o paths. Replace the control memory projection with
+  // result_phi_rawmem (unless we are only generating a slow call when
+  // both memory projections are combined)
   if (!always_slow && _memproj_fallthrough != NULL) {
     for (DUIterator_Fast imax, i = _memproj_fallthrough->fast_outs(imax); i < imax; i++) {
       Node *use = _memproj_fallthrough->fast_out(i);
@@ -1378,8 +1447,8 @@ void PhaseMacroExpand::expand_allocate_common(
       --i;
     }
   }
-  // Now change uses of _memproj_catchall to use _memproj_fallthrough and delete _memproj_catchall so
-  // we end up with a call that has only 1 memory projection
+  // Now change uses of _memproj_catchall to use _memproj_fallthrough and delete
+  // _memproj_catchall so we end up with a call that has only 1 memory projection.
   if (_memproj_catchall != NULL ) {
     if (_memproj_fallthrough == NULL) {
       _memproj_fallthrough = new (C, 1) ProjNode(call, TypeFunc::Memory);
@@ -1393,17 +1462,18 @@ void PhaseMacroExpand::expand_allocate_common(
       // back up iterator
       --i;
     }
+    assert(_memproj_catchall->outcnt() == 0, "all uses must be deleted");
+    _igvn.remove_dead_node(_memproj_catchall);
   }
 
-  // An allocate node has separate i_o projections for the uses on the control and i_o paths
-  // Replace uses of the control i_o projection with result_phi_i_o (unless we are only generating a slow call)
-  if (_ioproj_fallthrough == NULL) {
-    _ioproj_fallthrough = new (C, 1) ProjNode(call, TypeFunc::I_O);
-    transform_later(_ioproj_fallthrough);
-  } else if (!always_slow) {
+  // An allocate node has separate i_o projections for the uses on the control
+  // and i_o paths. Always replace the control i_o projection with result i_o
+  // otherwise incoming i_o become dead when only a slow call is generated
+  // (it is different from memory projections where both projections are
+  // combined in such case).
+  if (_ioproj_fallthrough != NULL) {
     for (DUIterator_Fast imax, i = _ioproj_fallthrough->fast_outs(imax); i < imax; i++) {
       Node *use = _ioproj_fallthrough->fast_out(i);
-
       _igvn.hash_delete(use);
       imax -= replace_input(use, _ioproj_fallthrough, result_phi_i_o);
       _igvn._worklist.push(use);
@@ -1411,9 +1481,13 @@ void PhaseMacroExpand::expand_allocate_common(
       --i;
     }
   }
-  // Now change uses of _ioproj_catchall to use _ioproj_fallthrough and delete _ioproj_catchall so
-  // we end up with a call that has only 1 control projection
+  // Now change uses of _ioproj_catchall to use _ioproj_fallthrough and delete
+  // _ioproj_catchall so we end up with a call that has only 1 i_o projection.
   if (_ioproj_catchall != NULL ) {
+    if (_ioproj_fallthrough == NULL) {
+      _ioproj_fallthrough = new (C, 1) ProjNode(call, TypeFunc::I_O);
+      transform_later(_ioproj_fallthrough);
+    }
     for (DUIterator_Fast imax, i = _ioproj_catchall->fast_outs(imax); i < imax; i++) {
       Node *use = _ioproj_catchall->fast_out(i);
       _igvn.hash_delete(use);
@@ -1422,11 +1496,25 @@ void PhaseMacroExpand::expand_allocate_common(
       // back up iterator
       --i;
     }
+    assert(_ioproj_catchall->outcnt() == 0, "all uses must be deleted");
+    _igvn.remove_dead_node(_ioproj_catchall);
   }
 
   // if we generated only a slow call, we are done
-  if (always_slow)
+  if (always_slow) {
+    // Now we can unhook i_o.
+    if (result_phi_i_o->outcnt() > 1) {
+      call->set_req(TypeFunc::I_O, top());
+    } else {
+      assert(result_phi_i_o->unique_ctrl_out() == call, "");
+      // Case of new array with negative size known during compilation.
+      // AllocateArrayNode::Ideal() optimization disconnect unreachable
+      // following code since call to runtime will throw exception.
+      // As result there will be no users of i_o after the call.
+      // Leave i_o attached to this call to avoid problems in preceding graph.
+    }
     return;
+  }
 
 
   if (_fallthroughcatchproj != NULL) {
@@ -1470,7 +1558,7 @@ PhaseMacroExpand::initialize_object(AllocateNode* alloc,
   Node* mark_node = NULL;
   // For now only enable fast locking for non-array types
   if (UseBiasedLocking && (length == NULL)) {
-    mark_node = make_load(control, rawmem, klass_node, Klass::prototype_header_offset_in_bytes() + sizeof(oopDesc), TypeRawPtr::BOTTOM, T_ADDRESS);
+    mark_node = make_load(control, rawmem, klass_node, in_bytes(Klass::prototype_header_offset()), TypeRawPtr::BOTTOM, T_ADDRESS);
   } else {
     mark_node = makecon(TypeRawPtr::make((address)markOopDesc::prototype()));
   }
@@ -1701,7 +1789,8 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
                          slow_call_address);
 }
 
-//-----------------------mark_eliminated_locking_nodes-----------------------
+//-------------------mark_eliminated_box----------------------------------
+//
 // During EA obj may point to several objects but after few ideal graph
 // transformations (CCP) it may point to only one non escaping object
 // (but still using phi), corresponding locks and unlocks will be marked
@@ -1712,62 +1801,148 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
 // marked for elimination since new obj has no escape information.
 // Mark all associated (same box and obj) lock and unlock nodes for
 // elimination if some of them marked already.
-void PhaseMacroExpand::mark_eliminated_locking_nodes(AbstractLockNode *alock) {
-  if (!alock->is_eliminated()) {
+void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
+  if (oldbox->as_BoxLock()->is_eliminated())
+    return; // This BoxLock node was processed already.
+
+  // New implementation (EliminateNestedLocks) has separate BoxLock
+  // node for each locked region so mark all associated locks/unlocks as
+  // eliminated even if different objects are referenced in one locked region
+  // (for example, OSR compilation of nested loop inside locked scope).
+  if (EliminateNestedLocks ||
+      oldbox->as_BoxLock()->is_simple_lock_region(NULL, obj)) {
+    // Box is used only in one lock region. Mark this box as eliminated.
+    _igvn.hash_delete(oldbox);
+    oldbox->as_BoxLock()->set_eliminated(); // This changes box's hash value
+    _igvn.hash_insert(oldbox);
+
+    for (uint i = 0; i < oldbox->outcnt(); i++) {
+      Node* u = oldbox->raw_out(i);
+      if (u->is_AbstractLock() && !u->as_AbstractLock()->is_non_esc_obj()) {
+        AbstractLockNode* alock = u->as_AbstractLock();
+        // Check lock's box since box could be referenced by Lock's debug info.
+        if (alock->box_node() == oldbox) {
+          // Mark eliminated all related locks and unlocks.
+          alock->set_non_esc_obj();
+        }
+      }
+    }
     return;
   }
-  if (!alock->is_coarsened()) { // Eliminated by EA
-      // Create new "eliminated" BoxLock node and use it
-      // in monitor debug info for the same object.
-      BoxLockNode* oldbox = alock->box_node()->as_BoxLock();
-      Node* obj = alock->obj_node();
-      if (!oldbox->is_eliminated()) {
-        BoxLockNode* newbox = oldbox->clone()->as_BoxLock();
+
+  // Create new "eliminated" BoxLock node and use it in monitor debug info
+  // instead of oldbox for the same object.
+  BoxLockNode* newbox = oldbox->clone()->as_BoxLock();
+
+  // Note: BoxLock node is marked eliminated only here and it is used
+  // to indicate that all associated lock and unlock nodes are marked
+  // for elimination.
+  newbox->set_eliminated();
+  transform_later(newbox);
+
+  // Replace old box node with new box for all users of the same object.
+  for (uint i = 0; i < oldbox->outcnt();) {
+    bool next_edge = true;
+
+    Node* u = oldbox->raw_out(i);
+    if (u->is_AbstractLock()) {
+      AbstractLockNode* alock = u->as_AbstractLock();
+      if (alock->box_node() == oldbox && alock->obj_node()->eqv_uncast(obj)) {
+        // Replace Box and mark eliminated all related locks and unlocks.
+        alock->set_non_esc_obj();
+        _igvn.hash_delete(alock);
+        alock->set_box_node(newbox);
+        _igvn._worklist.push(alock);
+        next_edge = false;
+      }
+    }
+    if (u->is_FastLock() && u->as_FastLock()->obj_node()->eqv_uncast(obj)) {
+      FastLockNode* flock = u->as_FastLock();
+      assert(flock->box_node() == oldbox, "sanity");
+      _igvn.hash_delete(flock);
+      flock->set_box_node(newbox);
+      _igvn._worklist.push(flock);
+      next_edge = false;
+    }
+
+    // Replace old box in monitor debug info.
+    if (u->is_SafePoint() && u->as_SafePoint()->jvms()) {
+      SafePointNode* sfn = u->as_SafePoint();
+      JVMState* youngest_jvms = sfn->jvms();
+      int max_depth = youngest_jvms->depth();
+      for (int depth = 1; depth <= max_depth; depth++) {
+        JVMState* jvms = youngest_jvms->of_depth(depth);
+        int num_mon  = jvms->nof_monitors();
+        // Loop over monitors
+        for (int idx = 0; idx < num_mon; idx++) {
+          Node* obj_node = sfn->monitor_obj(jvms, idx);
+          Node* box_node = sfn->monitor_box(jvms, idx);
+          if (box_node == oldbox && obj_node->eqv_uncast(obj)) {
+            int j = jvms->monitor_box_offset(idx);
+            _igvn.hash_delete(u);
+            u->set_req(j, newbox);
+            _igvn._worklist.push(u);
+            next_edge = false;
+          }
+        }
+      }
+    }
+    if (next_edge) i++;
+  }
+}
+
+//-----------------------mark_eliminated_locking_nodes-----------------------
+void PhaseMacroExpand::mark_eliminated_locking_nodes(AbstractLockNode *alock) {
+  if (EliminateNestedLocks) {
+    if (alock->is_nested()) {
+       assert(alock->box_node()->as_BoxLock()->is_eliminated(), "sanity");
+       return;
+    } else if (!alock->is_non_esc_obj()) { // Not eliminated or coarsened
+      // Only Lock node has JVMState needed here.
+      if (alock->jvms() != NULL && alock->as_Lock()->is_nested_lock_region()) {
+        // Mark eliminated related nested locks and unlocks.
+        Node* obj = alock->obj_node();
+        BoxLockNode* box_node = alock->box_node()->as_BoxLock();
+        assert(!box_node->is_eliminated(), "should not be marked yet");
         // Note: BoxLock node is marked eliminated only here
         // and it is used to indicate that all associated lock
         // and unlock nodes are marked for elimination.
-        newbox->set_eliminated();
-        transform_later(newbox);
-        // Replace old box node with new box for all users
-        // of the same object.
-        for (uint i = 0; i < oldbox->outcnt();) {
-
-          bool next_edge = true;
-          Node* u = oldbox->raw_out(i);
-          if (u->is_AbstractLock() &&
-              u->as_AbstractLock()->obj_node() == obj &&
-              u->as_AbstractLock()->box_node() == oldbox) {
-            // Mark all associated locks and unlocks.
-            u->as_AbstractLock()->set_eliminated();
-            _igvn.hash_delete(u);
-            u->set_req(TypeFunc::Parms + 1, newbox);
-            next_edge = false;
+        box_node->set_eliminated(); // Box's hash is always NO_HASH here
+        for (uint i = 0; i < box_node->outcnt(); i++) {
+          Node* u = box_node->raw_out(i);
+          if (u->is_AbstractLock()) {
+            alock = u->as_AbstractLock();
+            if (alock->box_node() == box_node) {
+              // Verify that this Box is referenced only by related locks.
+              assert(alock->obj_node()->eqv_uncast(obj), "");
+              // Mark all related locks and unlocks.
+              alock->set_nested();
+            }
           }
-          // Replace old box in monitor debug info.
-          if (u->is_SafePoint() && u->as_SafePoint()->jvms()) {
-            SafePointNode* sfn = u->as_SafePoint();
-            JVMState* youngest_jvms = sfn->jvms();
-            int max_depth = youngest_jvms->depth();
-            for (int depth = 1; depth <= max_depth; depth++) {
-              JVMState* jvms = youngest_jvms->of_depth(depth);
-              int num_mon  = jvms->nof_monitors();
-              // Loop over monitors
-              for (int idx = 0; idx < num_mon; idx++) {
-                Node* obj_node = sfn->monitor_obj(jvms, idx);
-                Node* box_node = sfn->monitor_box(jvms, idx);
-                if (box_node == oldbox && obj_node == obj) {
-                  int j = jvms->monitor_box_offset(idx);
-                  _igvn.hash_delete(u);
-                  u->set_req(j, newbox);
-                  next_edge = false;
-                }
-              } // for (int idx = 0;
-            } // for (int depth = 1;
-          } // if (u->is_SafePoint()
-          if (next_edge) i++;
-        } // for (uint i = 0; i < oldbox->outcnt();)
-      } // if (!oldbox->is_eliminated())
-  } // if (!alock->is_coarsened())
+        }
+      }
+      return;
+    }
+    // Process locks for non escaping object
+    assert(alock->is_non_esc_obj(), "");
+  } // EliminateNestedLocks
+
+  if (alock->is_non_esc_obj()) { // Lock is used for non escaping object
+    // Look for all locks of this object and mark them and
+    // corresponding BoxLock nodes as eliminated.
+    Node* obj = alock->obj_node();
+    for (uint j = 0; j < obj->outcnt(); j++) {
+      Node* o = obj->raw_out(j);
+      if (o->is_AbstractLock() &&
+          o->as_AbstractLock()->obj_node()->eqv_uncast(obj)) {
+        alock = o->as_AbstractLock();
+        Node* box = alock->box_node();
+        // Replace old box node with new eliminated box for all users
+        // of the same object and mark related locks as eliminated.
+        mark_eliminated_box(box, obj);
+      }
+    }
+  }
 }
 
 // we have determined that this lock/unlock can be eliminated, we simply
@@ -1782,7 +1957,7 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
     return false;
   }
 #ifdef ASSERT
-  if (alock->is_Lock() && !alock->is_coarsened()) {
+  if (!alock->is_coarsened()) {
     // Check that new "eliminated" BoxLock node is created.
     BoxLockNode* oldbox = alock->box_node()->as_BoxLock();
     assert(oldbox->is_eliminated(), "should be done already");
@@ -1874,6 +2049,8 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
   Node* box = lock->box_node();
   Node* flock = lock->fastlock_node();
 
+  assert(!box->as_BoxLock()->is_eliminated(), "sanity");
+
   // Make the merge point
   Node *region;
   Node *mem_phi;
@@ -1958,7 +2135,7 @@ void PhaseMacroExpand::expand_lock_node(LockNode *lock) {
 #endif
       klass_node->init_req(0, ctrl);
     }
-    Node *proto_node = make_load(ctrl, mem, klass_node, Klass::prototype_header_offset_in_bytes() + sizeof(oopDesc), TypeX_X, TypeX_X->basic_type());
+    Node *proto_node = make_load(ctrl, mem, klass_node, in_bytes(Klass::prototype_header_offset()), TypeX_X, TypeX_X->basic_type());
 
     Node* thread = transform_later(new (C, 1) ThreadLocalNode());
     Node* cast_thread = transform_later(new (C, 2) CastP2XNode(ctrl, thread));
@@ -2107,6 +2284,8 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   Node* mem = unlock->in(TypeFunc::Memory);
   Node* obj = unlock->obj_node();
   Node* box = unlock->box_node();
+
+  assert(!box->as_BoxLock()->is_eliminated(), "sanity");
 
   // No need for a null check on unlock
 

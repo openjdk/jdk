@@ -208,7 +208,7 @@ void instanceKlass::eager_initialize_impl(instanceKlassHandle this_oop) {
   // abort if someone beat us to the initialization
   if (!this_oop->is_not_initialized()) return;  // note: not equivalent to is_initialized()
 
-  ClassState old_state = this_oop->_init_state;
+  ClassState old_state = this_oop->init_state();
   link_class_impl(this_oop, true, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
@@ -2479,7 +2479,7 @@ void instanceKlass::set_init_state(ClassState state) {
   bool good_state = as_klassOop()->is_shared() ? (_init_state <= state)
                                                : (_init_state < state);
   assert(good_state || state == allocated, "illegal state transition");
-  _init_state = state;
+  _init_state = (u1)state;
 }
 #endif
 

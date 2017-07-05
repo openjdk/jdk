@@ -213,17 +213,11 @@ void SharkIntrinsics::do_Object_getClass() {
     SharkType::oop_type(),
     "klass");
 
-  Value *klass_part = builder()->CreateAddressOfStructEntry(
-    klass,
-    in_ByteSize(klassOopDesc::klass_part_offset_in_bytes()),
-    SharkType::klass_type(),
-    "klass_part");
-
   state()->push(
     SharkValue::create_jobject(
       builder()->CreateValueOfStructEntry(
-        klass_part,
-        in_ByteSize(Klass::java_mirror_offset_in_bytes()),
+        klass,
+        Klass::java_mirror_offset(),
         SharkType::oop_type(),
         "java_mirror"),
       true));

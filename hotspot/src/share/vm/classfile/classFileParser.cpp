@@ -45,6 +45,7 @@
 #include "oops/methodOop.hpp"
 #include "oops/symbol.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiThreadState.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/reflection.hpp"
@@ -1050,7 +1051,7 @@ static FieldAllocationType basic_type_to_atype(bool is_static, BasicType type) {
 
 class FieldAllocationCount: public ResourceObj {
  public:
-  unsigned int count[MAX_FIELD_ALLOCATION_TYPE];
+  u2 count[MAX_FIELD_ALLOCATION_TYPE];
 
   FieldAllocationCount() {
     for (int i = 0; i < MAX_FIELD_ALLOCATION_TYPE; i++) {
@@ -1060,6 +1061,8 @@ class FieldAllocationCount: public ResourceObj {
 
   FieldAllocationType update(bool is_static, BasicType type) {
     FieldAllocationType atype = basic_type_to_atype(is_static, type);
+    // Make sure there is no overflow with injected fields.
+    assert(count[atype] < 0xFFFF, "More than 65535 fields");
     count[atype]++;
     return atype;
   }
@@ -1070,7 +1073,7 @@ typeArrayHandle ClassFileParser::parse_fields(Symbol* class_name,
                                               constantPoolHandle cp, bool is_interface,
                                               FieldAllocationCount *fac,
                                               objArrayHandle* fields_annotations,
-                                              int* java_fields_count_ptr, TRAPS) {
+                                              u2* java_fields_count_ptr, TRAPS) {
   ClassFileStream* cfs = stream();
   typeArrayHandle nullHandle;
   cfs->guarantee_more(2, CHECK_(nullHandle));  // length
@@ -2639,8 +2642,11 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
                                                     TempNewSymbol& parsed_name,
                                                     bool verify,
                                                     TRAPS) {
-  // So that JVMTI can cache class file in the state before retransformable agents
-  // have modified it
+  // When a retransformable agent is attached, JVMTI caches the
+  // class bytes that existed before the first retransformation.
+  // If RedefineClasses() was used before the retransformable
+  // agent attached, then the cached class bytes may not be the
+  // original class bytes.
   unsigned char *cached_class_file_bytes = NULL;
   jint cached_class_file_length;
 
@@ -2660,6 +2666,25 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   _max_bootstrap_specifier_index = -1;
 
   if (JvmtiExport::should_post_class_file_load_hook()) {
+    // Get the cached class file bytes (if any) from the class that
+    // is being redefined or retransformed. We use jvmti_thread_state()
+    // instead of JvmtiThreadState::state_for(jt) so we don't allocate
+    // a JvmtiThreadState any earlier than necessary. This will help
+    // avoid the bug described by 7126851.
+    JvmtiThreadState *state = jt->jvmti_thread_state();
+    if (state != NULL) {
+      KlassHandle *h_class_being_redefined =
+                     state->get_class_being_redefined();
+      if (h_class_being_redefined != NULL) {
+        instanceKlassHandle ikh_class_being_redefined =
+          instanceKlassHandle(THREAD, (*h_class_being_redefined)());
+        cached_class_file_bytes =
+          ikh_class_being_redefined->get_cached_class_file_bytes();
+        cached_class_file_length =
+          ikh_class_being_redefined->get_cached_class_file_len();
+      }
+    }
+
     unsigned char* ptr = cfs->buffer();
     unsigned char* end_ptr = cfs->buffer() + cfs->length();
 
@@ -2843,7 +2868,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       local_interfaces = parse_interfaces(cp, itfs_len, class_loader, protection_domain, _class_name, CHECK_(nullHandle));
     }
 
-    int java_fields_count = 0;
+    u2 java_fields_count = 0;
     // Fields (offsets are filled in later)
     FieldAllocationCount fac;
     objArrayHandle fields_annotations;

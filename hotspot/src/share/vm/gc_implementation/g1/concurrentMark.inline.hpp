@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,6 +150,48 @@ inline void CMTask::deal_with_reference(oop obj) {
         }
       }
     }
+  }
+}
+
+inline void ConcurrentMark::markPrev(oop p) {
+  assert(!_prevMarkBitMap->isMarked((HeapWord*) p), "sanity");
+  // Note we are overriding the read-only view of the prev map here, via
+  // the cast.
+  ((CMBitMap*)_prevMarkBitMap)->mark((HeapWord*) p);
+}
+
+inline void ConcurrentMark::markNext(oop p) {
+  assert(!_nextMarkBitMap->isMarked((HeapWord*) p), "sanity");
+  _nextMarkBitMap->mark((HeapWord*) p);
+}
+
+inline void ConcurrentMark::grayRoot(oop obj, size_t word_size) {
+  HeapWord* addr = (HeapWord*) obj;
+
+  // Currently we don't do anything with word_size but we will use it
+  // in the very near future in the liveness calculation piggy-backing
+  // changes.
+
+#ifdef ASSERT
+  HeapRegion* hr = _g1h->heap_region_containing(addr);
+  assert(hr != NULL, "sanity");
+  assert(!hr->is_survivor(), "should not allocate survivors during IM");
+  assert(addr < hr->next_top_at_mark_start(),
+         err_msg("addr: "PTR_FORMAT" hr: "HR_FORMAT" NTAMS: "PTR_FORMAT,
+                 addr, HR_FORMAT_PARAMS(hr), hr->next_top_at_mark_start()));
+  // We cannot assert that word_size == obj->size() given that obj
+  // might not be in a consistent state (another thread might be in
+  // the process of copying it). So the best thing we can do is to
+  // assert that word_size is under an upper bound which is its
+  // containing region's capacity.
+  assert(word_size * HeapWordSize <= hr->capacity(),
+         err_msg("size: "SIZE_FORMAT" capacity: "SIZE_FORMAT" "HR_FORMAT,
+                 word_size * HeapWordSize, hr->capacity(),
+                 HR_FORMAT_PARAMS(hr)));
+#endif // ASSERT
+
+  if (!_nextMarkBitMap->isMarked(addr)) {
+    _nextMarkBitMap->parMark(addr);
   }
 }
 

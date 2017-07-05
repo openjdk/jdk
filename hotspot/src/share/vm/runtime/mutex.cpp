@@ -527,7 +527,21 @@ void Monitor::ILock (Thread * Self) {
 
 void Monitor::IUnlock (bool RelaxAssert) {
   assert (ILocked(), "invariant") ;
-  _LockWord.Bytes[_LSBINDEX] = 0 ;       // drop outer lock
+  // Conceptually we need a MEMBAR #storestore|#loadstore barrier or fence immediately
+  // before the store that releases the lock.  Crucially, all the stores and loads in the
+  // critical section must be globally visible before the store of 0 into the lock-word
+  // that releases the lock becomes globally visible.  That is, memory accesses in the
+  // critical section should not be allowed to bypass or overtake the following ST that
+  // releases the lock.  As such, to prevent accesses within the critical section
+  // from "leaking" out, we need a release fence between the critical section and the
+  // store that releases the lock.  In practice that release barrier is elided on
+  // platforms with strong memory models such as TSO.
+  //
+  // Note that the OrderAccess::storeload() fence that appears after unlock store
+  // provides for progress conditions and succession and is _not related to exclusion
+  // safety or lock release consistency.
+  OrderAccess::release_store(&_LockWord.Bytes[_LSBINDEX], 0); // drop outer lock
+
   OrderAccess::storeload ();
   ParkEvent * const w = _OnDeck ;
   assert (RelaxAssert || w != Thread::current()->_MutexEvent, "invariant") ;
