@@ -64,8 +64,8 @@ import sun.security.util.Debug;
  * <blockquote><pre>
  * SecureRandom r1 = new SecureRandom();
  * SecureRandom r2 = SecureRandom.getInstance("NativePRNG");
- * SecureRandom r3 = SecureRandom("DRBG",
- *         DrbgParameters.Instantiation(128, RESEED_ONLY, null));</pre>
+ * SecureRandom r3 = SecureRandom.getInstance("DRBG",
+ *         DrbgParameters.instantiation(128, RESEED_ONLY, null));</pre>
  * </blockquote>
  *
  * <p> The third statement above returns a {@code SecureRandom} object of the

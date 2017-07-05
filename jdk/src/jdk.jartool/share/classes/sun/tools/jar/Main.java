@@ -158,7 +158,7 @@ public class Main {
     static final String MANIFEST_DIR = "META-INF/";
     static final String VERSIONS_DIR = MANIFEST_DIR + "versions/";
     static final String VERSION = "1.0";
-
+    static final int VERSIONS_DIR_LENGTH = VERSIONS_DIR.length();
     private static ResourceBundle rsrc;
 
     /**
@@ -237,6 +237,7 @@ public class Main {
         if (!parseArgs(args)) {
             return false;
         }
+        File tmpFile = null;
         try {
             if (cflag || uflag) {
                 if (fname != null) {
@@ -303,8 +304,8 @@ public class Main {
                         ? "tmpjar"
                         : fname.substring(fname.indexOf(File.separatorChar) + 1);
 
-                File tmpfile = createTemporaryFile(tmpbase, ".jar");
-                try (OutputStream out = new FileOutputStream(tmpfile)) {
+                tmpFile = createTemporaryFile(tmpbase, ".jar");
+                try (OutputStream out = new FileOutputStream(tmpFile)) {
                     create(new BufferedOutputStream(out, 4096), manifest);
                 }
                 if (nflag) {
@@ -313,16 +314,16 @@ public class Main {
                         Packer packer = Pack200.newPacker();
                         Map<String, String> p = packer.properties();
                         p.put(Packer.EFFORT, "1"); // Minimal effort to conserve CPU
-                        try (JarFile jarFile = new JarFile(tmpfile.getCanonicalPath());
+                        try (JarFile jarFile = new JarFile(tmpFile.getCanonicalPath());
                              OutputStream pack = new FileOutputStream(packFile))
                         {
                             packer.pack(jarFile, pack);
                         }
-                        if (tmpfile.exists()) {
-                            tmpfile.delete();
+                        if (tmpFile.exists()) {
+                            tmpFile.delete();
                         }
-                        tmpfile = createTemporaryFile(tmpbase, ".jar");
-                        try (OutputStream out = new FileOutputStream(tmpfile);
+                        tmpFile = createTemporaryFile(tmpbase, ".jar");
+                        try (OutputStream out = new FileOutputStream(tmpFile);
                              JarOutputStream jos = new JarOutputStream(out))
                         {
                             Unpacker unpacker = Pack200.newUnpacker();
@@ -332,9 +333,9 @@ public class Main {
                         Files.deleteIfExists(packFile.toPath());
                     }
                 }
-                validateAndClose(tmpfile);
+                validateAndClose(tmpFile);
             } else if (uflag) {
-                File inputFile = null, tmpFile = null;
+                File inputFile = null;
                 if (fname != null) {
                     inputFile = new File(fname);
                     tmpFile = createTempFileInSameDirectoryAs(inputFile);
@@ -425,6 +426,9 @@ public class Main {
         } catch (Throwable t) {
             t.printStackTrace();
             ok = false;
+        } finally {
+            if (tmpFile != null && tmpFile.exists())
+                tmpFile.delete();
         }
         out.flush();
         err.flush();
@@ -681,7 +685,7 @@ public class Main {
     void addPackageIfNamed(Set<String> packages, String name) {
         if (name.startsWith(VERSIONS_DIR)) {
             // trim the version dir prefix
-            int i0 = VERSIONS_DIR.length();
+            int i0 = VERSIONS_DIR_LENGTH;
             int i = name.indexOf('/', i0);
             if (i <= 0) {
                 warn(formatMsg("warn.release.unexpected.versioned.entry", name));
@@ -699,7 +703,7 @@ public class Main {
         }
         String pn = toPackageName(name);
         // add if this is a class or resource in a package
-        if (Checks.isJavaIdentifier(pn)) {
+        if (Checks.isPackageName(pn)) {
             packages.add(pn);
         }
     }
@@ -1727,12 +1731,16 @@ public class Main {
     private boolean printModuleDescriptor(ZipFile zipFile)
         throws IOException
     {
-        ZipEntry entry = zipFile.getEntry(MODULE_INFO);
-        if (entry ==  null)
+        ZipEntry[] zes = zipFile.stream()
+            .filter(e -> isModuleInfoEntry(e.getName()))
+            .sorted(Validator.ENTRY_COMPARATOR)
+            .toArray(ZipEntry[]::new);
+        if (zes.length == 0)
             return false;
-
-        try (InputStream is = zipFile.getInputStream(entry)) {
-            printModuleDescriptor(is);
+        for (ZipEntry ze : zes) {
+            try (InputStream is = zipFile.getInputStream(ze)) {
+                printModuleDescriptor(is, ze.getName());
+            }
         }
         return true;
     }
@@ -1742,16 +1750,23 @@ public class Main {
     {
         try (BufferedInputStream bis = new BufferedInputStream(fis);
              ZipInputStream zis = new ZipInputStream(bis)) {
-
             ZipEntry e;
             while ((e = zis.getNextEntry()) != null) {
-                if (e.getName().equals(MODULE_INFO)) {
-                    printModuleDescriptor(zis);
-                    return true;
+                String ename = e.getName();
+                if (isModuleInfoEntry(ename)){
+                    moduleInfos.put(ename, zis.readAllBytes());
                 }
             }
         }
-        return false;
+        if (moduleInfos.size() == 0)
+            return false;
+        String[] names = moduleInfos.keySet().stream()
+            .sorted(Validator.ENTRYNAME_COMPARATOR)
+            .toArray(String[]::new);
+        for (String name : names) {
+            printModuleDescriptor(new ByteArrayInputStream(moduleInfos.get(name)), name);
+        }
+        return true;
     }
 
     static <T> String toString(Collection<T> set) {
@@ -1760,7 +1775,7 @@ public class Main {
                   .collect(joining(" "));
     }
 
-    private void printModuleDescriptor(InputStream entryInputStream)
+    private void printModuleDescriptor(InputStream entryInputStream, String ename)
         throws IOException
     {
         ModuleInfo.Attributes attrs = ModuleInfo.read(entryInputStream, null);
@@ -1768,10 +1783,12 @@ public class Main {
         ModuleHashes hashes = attrs.recordedHashes();
 
         StringBuilder sb = new StringBuilder();
-        sb.append("\n");
+        sb.append("\nmodule ")
+          .append(md.toNameAndVersion())
+          .append(" (").append(ename).append(")");
+
         if (md.isOpen())
-            sb.append("open ");
-        sb.append(md.toNameAndVersion());
+            sb.append("\n  open ");
 
         md.requires().stream()
             .sorted(Comparator.comparing(Requires::name))
@@ -1879,7 +1896,7 @@ public class Main {
             if (end == 0)
                 return true;
             if (name.startsWith(VERSIONS_DIR)) {
-                int off = VERSIONS_DIR.length();
+                int off = VERSIONS_DIR_LENGTH;
                 if (off == end)      // meta-inf/versions/module-info.class
                     return false;
                 while (off < end - 1) {
@@ -1995,7 +2012,7 @@ public class Main {
             }
             // get a resolved module graph
             Configuration config =
-                Configuration.empty().resolveRequires(system, finder, roots);
+                Configuration.empty().resolve(system, finder, roots);
 
             // filter modules resolved from the system module finder
             this.modules = config.modules().stream()

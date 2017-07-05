@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,9 @@ import javax.net.ssl.SSLProtocolException;
 import sun.security.action.GetPropertyAction;
 
 final class EllipticCurvesExtension extends HelloExtension {
+
+    /* Class and subclass dynamic debugging support */
+    private static final Debug debug = Debug.getInstance("ssl");
 
     private static final int ARBITRARY_PRIME = 0xff01;
     private static final int ARBITRARY_CHAR2 = 0xff02;
@@ -159,6 +162,11 @@ final class EllipticCurvesExtension extends HelloExtension {
                     }   // ignore unknown curves
                 }
             }
+            if (idList.isEmpty() && JsseJce.isEcAvailable()) {
+                throw new IllegalArgumentException(
+                    "System property jdk.tls.namedGroups(" + property + ") " +
+                    "contains no supported elliptic curves");
+            }
         } else {        // default curves
             int[] ids;
             if (requireFips) {
@@ -183,16 +191,17 @@ final class EllipticCurvesExtension extends HelloExtension {
             }
         }
 
-        if (idList.isEmpty()) {
-            throw new IllegalArgumentException(
-                "System property jdk.tls.namedGroups(" + property + ") " +
-                "contains no supported elliptic curves");
-        } else {
-            supportedCurveIds = new int[idList.size()];
-            int i = 0;
-            for (Integer id : idList) {
-                supportedCurveIds[i++] = id;
-            }
+        if (debug != null && idList.isEmpty()) {
+            Debug.log(
+                "Initialized [jdk.tls.namedGroups|default] list contains " +
+                "no available elliptic curves. " +
+                (property != null ? "(" + property + ")" : "[Default]"));
+        }
+
+        supportedCurveIds = new int[idList.size()];
+        int i = 0;
+        for (Integer id : idList) {
+            supportedCurveIds[i++] = id;
         }
     }
 

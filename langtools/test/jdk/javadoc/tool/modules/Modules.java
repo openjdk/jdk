@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8159305 8166127
+ * @bug 8159305 8166127 8175860
  * @summary Tests primarily the module graph computations.
  * @modules
  *      jdk.javadoc/jdk.javadoc.internal.api
@@ -38,6 +38,7 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import toolbox.*;
 import toolbox.Task.Expect;
@@ -89,6 +90,29 @@ public class Modules extends ModuleTestBase {
         checkModulesSpecified("m1", "m2");
         checkPackagesIncluded("m1pub", "m2pub");
         checkTypesIncluded("m1pub.A", "m2pub.A");
+
+    }
+
+    @Test
+    public void testMissingModuleWithSourcePath(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path mod = src.resolve("m1");
+
+        ModuleBuilder mb1 = new ModuleBuilder(tb, "m1");
+        mb1.comment("The first module.")
+                .exports("m1pub")
+                .requires("m2")
+                .classes("package m1pub; /** Class A */ public class A {}")
+                .classes("package m1pro; /** Class B */ public class B {}")
+                .write(src);
+
+        Path javafile = Paths.get(mod.toString(), "m1pub/A.java");
+
+        execNegativeTask("--source-path", mod.toString(),
+                javafile.toString());
+
+        assertErrorPresent("error: cannot access module-info");
+        assertErrorNotPresent("error - fatal error encountered");
 
     }
 
