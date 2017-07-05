@@ -144,6 +144,10 @@ AC_DEFUN_ONCE([LIB_SETUP_LLVM],
       fi
     done
 
+    # Due to https://llvm.org/bugs/show_bug.cgi?id=16902, llvm does not
+    # always properly detect -ltinfo
+    LLVM_LIBS="${LLVM_LIBS} -ltinfo"
+
     AC_SUBST(LLVM_CFLAGS)
     AC_SUBST(LLVM_LDFLAGS)
     AC_SUBST(LLVM_LIBS)

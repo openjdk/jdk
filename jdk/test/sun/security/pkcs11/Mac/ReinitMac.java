@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,21 +28,22 @@
  * @author Andreas Sterbenz
  * @library ..
  * @key randomness
+ * @run main/othervm ReinitMac
+ * @run main/othervm ReinitMac sm
  */
 
-import java.util.*;
-
-import java.security.*;
-
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import java.security.Provider;
+import java.util.Random;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 public class ReinitMac extends PKCS11Test {
 
     public static void main(String[] args) throws Exception {
-        main(new ReinitMac());
+        main(new ReinitMac(), args);
     }
 
+    @Override
     public void main(Provider p) throws Exception {
         if (p.getService("Mac", "HmacMD5") == null) {
             System.out.println(p + " does not support HmacMD5, skipping");

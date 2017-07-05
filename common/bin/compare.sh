@@ -306,7 +306,7 @@ compare_general_files() {
         ! -name "*.lib" ! -name "*.war" ! -name "JavaControlPanel" \
         ! -name "*.obj" ! -name "*.o" ! -name "JavaControlPanelHelper" \
         ! -name "JavaUpdater" ! -name "JavaWSApplicationStub" \
-        ! -name "jspawnhelper" \
+        ! -name "jspawnhelper" ! -name "*.a" \
         | $GREP -v "./bin/"  | $SORT | $FILTER)
 
     echo Other files with binary differences...
@@ -939,7 +939,7 @@ compare_all_libs() {
     WORK_DIR=$3
 
     LIBS=$(cd $THIS_DIR && $FIND . -type f \( -name 'lib*.so' -o -name '*.dylib' \
-        -o -name '*.dll' -o -name '*.obj' -o -name '*.o' \
+        -o -name '*.dll' -o -name '*.obj' -o -name '*.o' -o -name '*.a' \
         -o -name '*.cpl' \) | $SORT | $FILTER)
 
     if [ -n "$LIBS" ]; then

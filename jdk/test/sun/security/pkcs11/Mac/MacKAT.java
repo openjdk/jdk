@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,8 @@ import javax.crypto.spec.SecretKeySpec;
  * @summary Basic known-answer-test for Hmac algorithms
  * @author Andreas Sterbenz
  * @library ..
- * @run main MacKAT
+ * @run main/othervm MacKAT
+ * @run main/othervm MacKAT sm
  */
 public class MacKAT extends PKCS11Test {
 
@@ -178,7 +179,7 @@ public class MacKAT extends PKCS11Test {
     };
 
     public static void main(String[] args) throws Exception {
-        main(new MacKAT());
+        main(new MacKAT(), args);
     }
 
     @Override
