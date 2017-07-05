@@ -157,10 +157,7 @@ public class TestRTMAfterNonRTMDeopt extends CommandLineOptionTest {
 
         @Override
         public String[] getMethodsToCompileNames() {
-            return new String[] {
-                getMethodWithLockName(),
-                sun.misc.Unsafe.class.getName() + "::forceAbort"
-            };
+            return new String[] { getMethodWithLockName() };
         }
 
         public void forceAbort(int a[], boolean abort) {
@@ -183,13 +180,15 @@ public class TestRTMAfterNonRTMDeopt extends CommandLineOptionTest {
         public static void main(String args[]) throws Throwable {
             Test t = new Test();
 
-            if (Boolean.valueOf(args[0])) {
+            boolean shouldBeInflated = Boolean.valueOf(args[0]);
+            if (shouldBeInflated) {
                 AbortProvoker.inflateMonitor(t.monitor);
             }
 
             int tmp[] = new int[1];
 
             for (int i = 0; i < Test.ITERATIONS; i++ ) {
+                AbortProvoker.verifyMonitorState(t.monitor, shouldBeInflated);
                 if (i == Test.RANGE_CHECK_AT) {
                     t.forceAbort(new int[0], false);
                 } else {
