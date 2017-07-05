@@ -261,8 +261,7 @@ ifndef BUILD_CLIENT_ONLY
     ifeq ($(ZIP_DEBUGINFO_FILES),1)
       # the import JDK may not contain the target of the symlink
       ifneq ($(wildcard $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJSIG_DIZ_NAME)),)
-        # check for the .diz file, but create the .debuginfo link
-        IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME)
+        IMPORT_LIST += $(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_DIZ_NAME)
       endif
     else
       # the import JDK may not contain the target of the symlink
@@ -319,8 +318,7 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
     # the import JDK may not contain the target of the symlink
     ifneq ($(wildcard $(HOTSPOT_IMPORT_PATH)/$(ARCH_VM_SUBDIR)/$(LIBJSIG_DIZ_NAME)),)
-      # check for the .diz file, but create the .debuginfo link
-      IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME)
+      IMPORT_LIST += $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_DIZ_NAME)
     endif
   else
     # the import JDK may not contain the target of the symlink
@@ -472,11 +470,24 @@ $(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_NAME):
 	$(call install-sym-link, ../$(LIBJSIG_NAME))
 
   ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
-# we don't create a symlink to a libjsig.diz file
+# We don't create a symlink to a libjsig.diz file, but we do put
+# the libjsig.debuginfo symlink into a libjsig.diz file. The aurora
+# system does not like dangling symlinks.
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+$(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_DIZ_NAME) \
+$(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_DIZ_NAME):
+	@$(prep-target)
+	$(LN) -s ../$(LIBJSIG_DEBUGINFO_NAME) $(@D)/$(LIBJSIG_DEBUGINFO_NAME)
+	( $(CD) $(@D) ; \
+	 $(ZIPEXE) -y $(LIBJSIG_DIZ_NAME) $(LIBJSIG_DEBUGINFO_NAME) ; \
+	 $(RM) $(LIBJSIG_DEBUGINFO_NAME) ; \
+	)
+    else
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME) \
 $(LIB_LOCATION)/$(SERVER_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME):
 	@$(prep-target)
 	$(call install-sym-link, ../$(LIBJSIG_DEBUGINFO_NAME))
+    endif
   endif
 else
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_NAME):
@@ -484,10 +495,22 @@ $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_NAME):
 	$(call install-sym-link, ../$(LIBJSIG_NAME))
 
   ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
-# we don't create a symlink to a libjsig.diz file
+# We don't create a symlink to a libjsig.diz file, but we do put
+# the libjsig.debuginfo symlink into a libjsig.diz file. The aurora
+# system does not like dangling symlinks.
+    ifeq ($(ZIP_DEBUGINFO_FILES),1)
+$(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_DIZ_NAME):
+	@$(prep-target)
+	$(LN) -s ../$(LIBJSIG_DEBUGINFO_NAME) $(@D)/$(LIBJSIG_DEBUGINFO_NAME)
+	( $(CD) $(@D) ; \
+	 $(ZIPEXE) -y $(LIBJSIG_DIZ_NAME) $(LIBJSIG_DEBUGINFO_NAME) ; \
+	 $(RM) $(LIBJSIG_DEBUGINFO_NAME) ; \
+	)
+    else
 $(LIB_LOCATION)/$(CLIENT_LOCATION)/$(LIBJSIG_DEBUGINFO_NAME):
 	@$(prep-target)
 	$(call install-sym-link, ../$(LIBJSIG_DEBUGINFO_NAME))
+    endif
   endif
 endif
 

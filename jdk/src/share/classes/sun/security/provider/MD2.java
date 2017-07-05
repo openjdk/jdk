@@ -39,14 +39,14 @@ import java.util.Arrays;
 public final class MD2 extends DigestBase {
 
     // state, 48 ints
-    private final int[] X;
+    private int[] X;
 
     // checksum, 16 ints. they are really bytes, but byte arithmetic in
     // the JVM is much slower that int arithmetic.
-    private final int[] C;
+    private int[] C;
 
     // temporary store for checksum C during final digest
-    private final byte[] cBytes;
+    private byte[] cBytes;
 
     /**
      * Create a new MD2 digest. Called by the JCA framework
@@ -58,15 +58,12 @@ public final class MD2 extends DigestBase {
         cBytes = new byte[16];
     }
 
-    private MD2(MD2 base) {
-        super(base);
-        this.X = base.X.clone();
-        this.C = base.C.clone();
-        cBytes = new byte[16];
-    }
-
-    public Object clone() {
-        return new MD2(this);
+    public Object clone() throws CloneNotSupportedException {
+        MD2 copy = (MD2) super.clone();
+        copy.X = copy.X.clone();
+        copy.C = copy.C.clone();
+        copy.cBytes = new byte[16];
+        return copy;
     }
 
     // reset state and checksum

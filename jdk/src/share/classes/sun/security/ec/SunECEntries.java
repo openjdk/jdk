@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,17 +133,31 @@ final class SunECEntries {
             "sun.security.ec.ECDSASignature$Raw");
         map.put("Signature.SHA1withECDSA",
             "sun.security.ec.ECDSASignature$SHA1");
+        map.put("Signature.SHA224withECDSA",
+            "sun.security.ec.ECDSASignature$SHA224");
+        map.put("Alg.Alias.Signature.OID.1.2.840.10045.4.3.1", "SHA224withECDSA");
+        map.put("Alg.Alias.Signature.1.2.840.10045.4.3.1", "SHA224withECDSA");
+
         map.put("Signature.SHA256withECDSA",
             "sun.security.ec.ECDSASignature$SHA256");
+        map.put("Alg.Alias.Signature.OID.1.2.840.10045.4.3.2", "SHA256withECDSA");
+        map.put("Alg.Alias.Signature.1.2.840.10045.4.3.2", "SHA256withECDSA");
+
         map.put("Signature.SHA384withECDSA",
             "sun.security.ec.ECDSASignature$SHA384");
+        map.put("Alg.Alias.Signature.OID.1.2.840.10045.4.3.3", "SHA384withECDSA");
+        map.put("Alg.Alias.Signature.1.2.840.10045.4.3.3", "SHA384withECDSA");
+
         map.put("Signature.SHA512withECDSA",
             "sun.security.ec.ECDSASignature$SHA512");
+        map.put("Alg.Alias.Signature.OID.1.2.840.10045.4.3.4", "SHA512withECDSA");
+        map.put("Alg.Alias.Signature.1.2.840.10045.4.3.4", "SHA512withECDSA");
 
         String ecKeyClasses = "java.security.interfaces.ECPublicKey" +
                 "|java.security.interfaces.ECPrivateKey";
         map.put("Signature.NONEwithECDSA SupportedKeyClasses", ecKeyClasses);
         map.put("Signature.SHA1withECDSA SupportedKeyClasses", ecKeyClasses);
+        map.put("Signature.SHA224withECDSA SupportedKeyClasses", ecKeyClasses);
         map.put("Signature.SHA256withECDSA SupportedKeyClasses", ecKeyClasses);
         map.put("Signature.SHA384withECDSA SupportedKeyClasses", ecKeyClasses);
         map.put("Signature.SHA512withECDSA SupportedKeyClasses", ecKeyClasses);
@@ -152,6 +166,7 @@ final class SunECEntries {
 
         map.put("Signature.NONEwithECDSA ImplementedIn", "Software");
         map.put("Signature.SHA1withECDSA ImplementedIn", "Software");
+        map.put("Signature.SHA224withECDSA ImplementedIn", "Software");
         map.put("Signature.SHA256withECDSA ImplementedIn", "Software");
         map.put("Signature.SHA384withECDSA ImplementedIn", "Software");
         map.put("Signature.SHA512withECDSA ImplementedIn", "Software");
