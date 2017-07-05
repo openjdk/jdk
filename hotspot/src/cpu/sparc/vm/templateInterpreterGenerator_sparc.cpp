@@ -578,51 +578,39 @@ void TemplateInterpreterGenerator::lock_method() {
   __ lock_object(Lmonitors, O0);
 }
 
-
+// See if we've got enough room on the stack for locals plus overhead below
+// JavaThread::stack_overflow_limit(). If not, throw a StackOverflowError
+// without going through the signal handler, i.e., reserved and yellow zones
+// will not be made usable. The shadow zone must suffice to handle the
+// overflow.
 void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rframe_size,
-                                                         Register Rscratch,
-                                                         Register Rscratch2) {
+                                                                 Register Rscratch) {
   const int page_size = os::vm_page_size();
   Label after_frame_check;
 
-  assert_different_registers(Rframe_size, Rscratch, Rscratch2);
+  assert_different_registers(Rframe_size, Rscratch);
 
   __ set(page_size, Rscratch);
   __ cmp_and_br_short(Rframe_size, Rscratch, Assembler::lessEqual, Assembler::pt, after_frame_check);
 
-  // get the stack base, and in debug, verify it is non-zero
-  __ ld_ptr( G2_thread, Thread::stack_base_offset(), Rscratch );
+  // Get the stack overflow limit, and in debug, verify it is non-zero.
+  __ ld_ptr(G2_thread, JavaThread::stack_overflow_limit_offset(), Rscratch);
 #ifdef ASSERT
-  Label base_not_zero;
-  __ br_notnull_short(Rscratch, Assembler::pn, base_not_zero);
-  __ stop("stack base is zero in generate_stack_overflow_check");
-  __ bind(base_not_zero);
+  Label limit_ok;
+  __ br_notnull_short(Rscratch, Assembler::pn, limit_ok);
+  __ stop("stack overflow limit is zero in generate_stack_overflow_check");
+  __ bind(limit_ok);
 #endif
-
-  // get the stack size, and in debug, verify it is non-zero
-  assert( sizeof(size_t) == sizeof(intptr_t), "wrong load size" );
-  __ ld_ptr( G2_thread, Thread::stack_size_offset(), Rscratch2 );
-#ifdef ASSERT
-  Label size_not_zero;
-  __ br_notnull_short(Rscratch2, Assembler::pn, size_not_zero);
-  __ stop("stack size is zero in generate_stack_overflow_check");
-  __ bind(size_not_zero);
-#endif
-
-  // compute the beginning of the protected zone minus the requested frame size
-  __ sub( Rscratch, Rscratch2,   Rscratch );
-  __ set(MAX2(JavaThread::stack_shadow_zone_size(), JavaThread::stack_guard_zone_size()), Rscratch2 );
-  __ add( Rscratch, Rscratch2,   Rscratch );
 
   // Add in the size of the frame (which is the same as subtracting it from the
-  // SP, which would take another register
-  __ add( Rscratch, Rframe_size, Rscratch );
+  // SP, which would take another register.
+  __ add(Rscratch, Rframe_size, Rscratch);
 
-  // the frame is greater than one page in size, so check against
-  // the bottom of the stack
+  // The frame is greater than one page in size, so check against
+  // the bottom of the stack.
   __ cmp_and_brx_short(SP, Rscratch, Assembler::greaterUnsigned, Assembler::pt, after_frame_check);
 
-  // the stack will overflow, throw an exception
+  // The stack will overflow, throw an exception.
 
   // Note that SP is restored to sender's sp (in the delay slot). This
   // is necessary if the sender's frame is an extended compiled frame
@@ -636,8 +624,8 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rframe
   __ jump_to(stub, Rscratch);
   __ delayed()->mov(O5_savedSP, SP);
 
-  // if you get to here, then there is enough stack space
-  __ bind( after_frame_check );
+  // If you get to here, then there is enough stack space.
+  __ bind(after_frame_check);
 }
 
 
@@ -821,40 +809,44 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ add( Gframe_size,  extra_space, Gframe_size);
     __ round_to( Gframe_size, WordsPerLong );
     __ sll( Gframe_size, LogBytesPerWord, Gframe_size );
+
+    // Native calls don't need the stack size check since they have no
+    // expression stack and the arguments are already on the stack and
+    // we only add a handful of words to the stack.
   } else {
 
     //
     // Compute number of locals in method apart from incoming parameters
     //
-    const Address size_of_locals    (Otmp1, ConstMethod::size_of_locals_offset());
-    __ ld_ptr( constMethod, Otmp1 );
-    __ lduh( size_of_locals, Otmp1 );
-    __ sub( Otmp1, Glocals_size, Glocals_size );
-    __ round_to( Glocals_size, WordsPerLong );
-    __ sll( Glocals_size, Interpreter::logStackElementSize, Glocals_size );
+    const Address size_of_locals(Otmp1, ConstMethod::size_of_locals_offset());
+    __ ld_ptr(constMethod, Otmp1);
+    __ lduh(size_of_locals, Otmp1);
+    __ sub(Otmp1, Glocals_size, Glocals_size);
+    __ round_to(Glocals_size, WordsPerLong);
+    __ sll(Glocals_size, Interpreter::logStackElementSize, Glocals_size);
 
-    // see if the frame is greater than one page in size. If so,
-    // then we need to verify there is enough stack space remaining
+    // See if the frame is greater than one page in size. If so,
+    // then we need to verify there is enough stack space remaining.
     // Frame_size = (max_stack + extra_space) * BytesPerWord;
-    __ ld_ptr( constMethod, Gframe_size );
-    __ lduh( Gframe_size, in_bytes(ConstMethod::max_stack_offset()), Gframe_size );
-    __ add( Gframe_size, extra_space, Gframe_size );
-    __ round_to( Gframe_size, WordsPerLong );
-    __ sll( Gframe_size, Interpreter::logStackElementSize, Gframe_size);
+    __ ld_ptr(constMethod, Gframe_size);
+    __ lduh(Gframe_size, in_bytes(ConstMethod::max_stack_offset()), Gframe_size);
+    __ add(Gframe_size, extra_space, Gframe_size);
+    __ round_to(Gframe_size, WordsPerLong);
+    __ sll(Gframe_size, Interpreter::logStackElementSize, Gframe_size);
 
     // Add in java locals size for stack overflow check only
-    __ add( Gframe_size, Glocals_size, Gframe_size );
+    __ add(Gframe_size, Glocals_size, Gframe_size);
 
     const Register Otmp2 = O4;
     assert_different_registers(Otmp1, Otmp2, O5_savedSP);
-    generate_stack_overflow_check(Gframe_size, Otmp1, Otmp2);
+    generate_stack_overflow_check(Gframe_size, Otmp1);
 
-    __ sub( Gframe_size, Glocals_size, Gframe_size);
+    __ sub(Gframe_size, Glocals_size, Gframe_size);
 
     //
     // bump SP to accomodate the extra locals
     //
-    __ sub( SP, Glocals_size, SP );
+    __ sub(SP, Glocals_size, SP);
   }
 
   //

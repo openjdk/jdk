@@ -26,14 +26,13 @@
  * @bug 8137167
  * @summary Tests LogCompilation executed standalone without log commands or directives
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary /test/lib /compiler/testlibrary ../share /
+ * @library /testlibrary /test/lib ../share /
  * @build compiler.compilercontrol.logcompilation.LogTest
  *        pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *  -XX:+UnlockDiagnosticVMOptions compiler.compilercontrol.logcompilation.LogTest
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run driver compiler.compilercontrol.logcompilation.LogTest
  */
 
 package compiler.compilercontrol.logcompilation;
@@ -45,6 +44,8 @@ public class LogTest {
     public static void main(String[] args) {
         Scenario.Builder builder = Scenario.getBuilder();
         builder.addFlag("-XX:+UnlockDiagnosticVMOptions");
+        builder.addFlag("-Xbootclasspath/a:.");
+        builder.addFlag("-XX:+WhiteBoxAPI");
         builder.addFlag("-XX:+LogCompilation");
         builder.addFlag("-XX:LogFile=" + LogProcessor.LOG_FILE);
         Scenario scenario = builder.build();

@@ -144,6 +144,115 @@ public class JdkInternalMiscUnsafeAccessTestBoolean {
         }
 
 
+        UNSAFE.putBoolean(base, offset, true);
+
+        // Compare
+        {
+            boolean r = UNSAFE.compareAndSwapBoolean(base, offset, true, false);
+            assertEquals(r, true, "success compareAndSwap boolean");
+            boolean x = UNSAFE.getBoolean(base, offset);
+            assertEquals(x, false, "success compareAndSwap boolean value");
+        }
+
+        {
+            boolean r = UNSAFE.compareAndSwapBoolean(base, offset, true, false);
+            assertEquals(r, false, "failing compareAndSwap boolean");
+            boolean x = UNSAFE.getBoolean(base, offset);
+            assertEquals(x, false, "failing compareAndSwap boolean value");
+        }
+
+        // Advanced compare
+        {
+            boolean r = UNSAFE.compareAndExchangeBooleanVolatile(base, offset, false, true);
+            assertEquals(r, false, "success compareAndExchangeVolatile boolean");
+            boolean x = UNSAFE.getBoolean(base, offset);
+            assertEquals(x, true, "success compareAndExchangeVolatile boolean value");
+        }
+
+        {
+            boolean r = UNSAFE.compareAndExchangeBooleanVolatile(base, offset, false, false);
+            assertEquals(r, true, "failing compareAndExchangeVolatile boolean");
+            boolean x = UNSAFE.getBoolean(base, offset);
+            assertEquals(x, true, "failing compareAndExchangeVolatile boolean value");
+        }
+
+        {
+            boolean r = UNSAFE.compareAndExchangeBooleanAcquire(base, offset, true, false);
+            assertEquals(r, true, "success compareAndExchangeAcquire boolean");
+            boolean x = UNSAFE.getBoolean(base, offset);
+            assertEquals(x, false, "success compareAndExchangeAcquire boolean value");
+        }
+
+        {
+            boolean r = UNSAFE.compareAndExchangeBooleanAcquire(base, offset, true, false);
+            assertEquals(r, false, "failing compareAndExchangeAcquire boolean");
+            boolean x = UNSAFE.getBoolean(base, offset);
+            assertEquals(x, false, "failing compareAndExchangeAcquire boolean value");
+        }
+
+        {
+            boolean r = UNSAFE.compareAndExchangeBooleanRelease(base, offset, false, true);
+            assertEquals(r, false, "success compareAndExchangeRelease boolean");
+            boolean x = UNSAFE.getBoolean(base, offset);
+            assertEquals(x, true, "success compareAndExchangeRelease boolean value");
+        }
+
+        {
+            boolean r = UNSAFE.compareAndExchangeBooleanRelease(base, offset, false, false);
+            assertEquals(r, true, "failing compareAndExchangeRelease boolean");
+            boolean x = UNSAFE.getBoolean(base, offset);
+            assertEquals(x, true, "failing compareAndExchangeRelease boolean value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapBoolean(base, offset, true, false);
+            }
+            assertEquals(success, true, "weakCompareAndSwap boolean");
+            boolean x = UNSAFE.getBoolean(base, offset);
+            assertEquals(x, false, "weakCompareAndSwap boolean value");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapBooleanAcquire(base, offset, false, true);
+            }
+            assertEquals(success, true, "weakCompareAndSwapAcquire boolean");
+            boolean x = UNSAFE.getBoolean(base, offset);
+            assertEquals(x, true, "weakCompareAndSwapAcquire boolean");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapBooleanRelease(base, offset, true, false);
+            }
+            assertEquals(success, true, "weakCompareAndSwapRelease boolean");
+            boolean x = UNSAFE.getBoolean(base, offset);
+            assertEquals(x, false, "weakCompareAndSwapRelease boolean");
+        }
+
+        {
+            boolean success = false;
+            for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
+                success = UNSAFE.weakCompareAndSwapBooleanVolatile(base, offset, false, true);
+            }
+            assertEquals(success, true, "weakCompareAndSwapVolatile boolean");
+            boolean x = UNSAFE.getBoolean(base, offset);
+            assertEquals(x, true, "weakCompareAndSwapVolatile boolean");
+        }
+
+        UNSAFE.putBoolean(base, offset, false);
+
+        // Compare set and get
+        {
+            boolean o = UNSAFE.getAndSetBoolean(base, offset, true);
+            assertEquals(o, false, "getAndSet boolean");
+            boolean x = UNSAFE.getBoolean(base, offset);
+            assertEquals(x, true, "getAndSet boolean value");
+        }
 
     }
 
