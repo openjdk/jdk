@@ -1622,9 +1622,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         NOT_LP64(__ get_thread(thread);)
 
         Address queue_index(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                             PtrQueue::byte_offset_of_index()));
+                                             SATBMarkQueue::byte_offset_of_index()));
         Address buffer(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                        PtrQueue::byte_offset_of_buf()));
+                                        SATBMarkQueue::byte_offset_of_buf()));
 
         Label done;
         Label runtime;
@@ -1698,9 +1698,9 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
         const Register thread = NOT_LP64(rax) LP64_ONLY(r15_thread);
 
         Address queue_index(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                             PtrQueue::byte_offset_of_index()));
+                                             DirtyCardQueue::byte_offset_of_index()));
         Address buffer(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                        PtrQueue::byte_offset_of_buf()));
+                                        DirtyCardQueue::byte_offset_of_buf()));
 
         __ push(rax);
         __ push(rcx);

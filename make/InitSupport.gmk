@@ -287,13 +287,6 @@ else # $(HAS_SPEC)=true
 
   BUILD_LOG_WRAPPER := $(BASH) $(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)
 
-  # Disable the build log wrapper on sjavac+windows until
-  # we have solved how to prevent the log wrapper to wait
-  # for the background sjavac server process.
-  ifeq ($(ENABLE_SJAVAC)X$(OPENJDK_BUILD_OS),yesXwindows)
-    LOG_NOFILE := true
-  endif
-
   # Sanity check the spec file, so it matches this source code
   define CheckSpecSanity
     ifneq ($$(ACTUAL_TOPDIR), $$(TOPDIR))

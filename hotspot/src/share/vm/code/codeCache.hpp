@@ -85,26 +85,23 @@ class CodeCache : AllStatic {
 
   static address _low_bound;                            // Lower bound of CodeHeap addresses
   static address _high_bound;                           // Upper bound of CodeHeap addresses
-  static int _number_of_blobs;                          // Total number of CodeBlobs in the cache
-  static int _number_of_adapters;                       // Total number of Adapters in the cache
-  static int _number_of_nmethods;                       // Total number of nmethods in the cache
   static int _number_of_nmethods_with_dependencies;     // Total number of nmethods with dependencies
   static bool _needs_cache_clean;                       // True if inline caches of the nmethods needs to be flushed
   static nmethod* _scavenge_root_nmethods;              // linked via nm->scavenge_root_link()
-  static int _codemem_full_count;                       // Number of times a CodeHeap in the cache was full
 
   static void mark_scavenge_root_nmethods() PRODUCT_RETURN;
   static void verify_perm_nmethods(CodeBlobClosure* f_or_null) PRODUCT_RETURN;
 
   // CodeHeap management
   static void initialize_heaps();                             // Initializes the CodeHeaps
+  // Check the code heap sizes set by the user via command line
+  static void check_heap_sizes(size_t non_nmethod_size, size_t profiled_size, size_t non_profiled_size, size_t cache_size, bool all_set);
   // Creates a new heap with the given name and size, containing CodeBlobs of the given type
   static void add_heap(ReservedSpace rs, const char* name, int code_blob_type);
   static CodeHeap* get_code_heap(const CodeBlob* cb);         // Returns the CodeHeap for the given CodeBlob
   static CodeHeap* get_code_heap(int code_blob_type);         // Returns the CodeHeap for the given CodeBlobType
   // Returns the name of the VM option to set the size of the corresponding CodeHeap
   static const char* get_code_heap_flag_name(int code_blob_type);
-  static bool heap_available(int code_blob_type);             // Returns true if an own CodeHeap for the given CodeBlobType is available
   static size_t heap_alignment();                             // Returns the alignment of the CodeHeaps in bytes
   static ReservedCodeSpace reserve_heap_memory(size_t size);  // Reserves one continuous chunk of memory for the CodeHeaps
 
@@ -139,9 +136,12 @@ class CodeCache : AllStatic {
   static CodeBlob* find_blob_unsafe(void* start);       // Same as find_blob but does not fail if looking up a zombie method
   static nmethod*  find_nmethod(void* start);           // Returns the nmethod containing the given address
 
-  static int       nof_blobs()      { return _number_of_blobs; }      // Returns the total number of CodeBlobs in the cache
-  static int       nof_adapters()   { return _number_of_adapters; }   // Returns the total number of Adapters in the cache
-  static int       nof_nmethods()   { return _number_of_nmethods; }   // Returns the total number of nmethods in the cache
+  static int       blob_count();                        // Returns the total number of CodeBlobs in the cache
+  static int       blob_count(int code_blob_type);
+  static int       adapter_count();                     // Returns the total number of Adapters in the cache
+  static int       adapter_count(int code_blob_type);
+  static int       nmethod_count();                     // Returns the total number of nmethods in the cache
+  static int       nmethod_count(int code_blob_type);
 
   // GC support
   static void gc_epilogue();
@@ -177,7 +177,9 @@ class CodeCache : AllStatic {
 
   // The full limits of the codeCache
   static address low_bound()                          { return _low_bound; }
+  static address low_bound(int code_blob_type);
   static address high_bound()                         { return _high_bound; }
+  static address high_bound(int code_blob_type);
 
   // Profiling
   static size_t capacity();
@@ -190,6 +192,9 @@ class CodeCache : AllStatic {
   static bool needs_cache_clean()                     { return _needs_cache_clean; }
   static void set_needs_cache_clean(bool v)           { _needs_cache_clean = v;    }
   static void clear_inline_caches();                  // clear all inline caches
+
+  // Returns true if an own CodeHeap for the given CodeBlobType is available
+  static bool heap_available(int code_blob_type);
 
   // Returns the CodeBlobType for the given nmethod
   static int get_code_blob_type(nmethod* nm) {
@@ -239,7 +244,10 @@ class CodeCache : AllStatic {
   // tells how many nmethods have dependencies
   static int number_of_nmethods_with_dependencies();
 
-  static int get_codemem_full_count() { return _codemem_full_count; }
+  static int get_codemem_full_count(int code_blob_type) {
+    CodeHeap* heap = get_code_heap(code_blob_type);
+    return (heap != NULL) ? heap->full_count() : 0;
+  }
 };
 
 

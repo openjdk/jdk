@@ -7,6 +7,7 @@
                 JVM_ActiveProcessorCount;
                 JVM_ArrayCopy;
                 JVM_AssertionStatusDirectives;
+                JVM_CallStackWalk;
                 JVM_ClassDepth;
                 JVM_ClassLoaderDepth;
                 JVM_Clone;
@@ -31,12 +32,12 @@
                 JVM_CurrentTimeMillis;
                 JVM_DefineClass;
                 JVM_DefineClassWithSource;
-                JVM_DefineClassWithSourceCond;
                 JVM_DesiredAssertionStatus;
                 JVM_DoPrivileged;
                 JVM_DumpAllStacks;
                 JVM_DumpThreads;
                 JVM_FillInStackTrace;
+                JVM_FillStackFrames;
                 JVM_FindClassFromCaller;
                 JVM_FindClassFromClass;
                 JVM_FindClassFromBootLoader;
@@ -134,6 +135,7 @@
                 JVM_MonitorNotify;
                 JVM_MonitorNotifyAll;
                 JVM_MonitorWait;
+                JVM_MoreStackWalk;
                 JVM_NanoTime;
                 JVM_NativePath;
                 JVM_NewArray;
@@ -151,6 +153,7 @@
                 JVM_SetClassSigners;
                 JVM_SetNativeThreadName;
                 JVM_SetPrimitiveArrayElement;
+                JVM_SetMethodInfo;
                 JVM_SetThreadPriority;
                 JVM_Sleep;
                 JVM_StartThread;

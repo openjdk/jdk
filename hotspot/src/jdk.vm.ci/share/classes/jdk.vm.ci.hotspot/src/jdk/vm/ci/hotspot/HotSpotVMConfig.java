@@ -1193,9 +1193,12 @@ public class HotSpotVMConfig {
     @HotSpotVMConstant(name = "frame::interpreter_frame_sender_sp_offset", archs = {"amd64"}) @Stable public int frameInterpreterFrameSenderSpOffset;
     @HotSpotVMConstant(name = "frame::interpreter_frame_last_sp_offset", archs = {"amd64"}) @Stable public int frameInterpreterFrameLastSpOffset;
 
-    @HotSpotVMField(name = "PtrQueue::_active", type = "bool", get = HotSpotVMField.Type.OFFSET) @Stable public int ptrQueueActiveOffset;
-    @HotSpotVMField(name = "PtrQueue::_buf", type = "void**", get = HotSpotVMField.Type.OFFSET) @Stable public int ptrQueueBufferOffset;
-    @HotSpotVMField(name = "PtrQueue::_index", type = "size_t", get = HotSpotVMField.Type.OFFSET) @Stable public int ptrQueueIndexOffset;
+    @HotSpotVMConstant(name = "dirtyCardQueueBufferOffset") @Stable private int dirtyCardQueueBufferOffset;
+    @HotSpotVMConstant(name = "dirtyCardQueueIndexOffset") @Stable private int dirtyCardQueueIndexOffset;
+
+    @HotSpotVMConstant(name = "satbMarkQueueBufferOffset") @Stable private int satbMarkQueueBufferOffset;
+    @HotSpotVMConstant(name = "satbMarkQueueIndexOffset") @Stable private int satbMarkQueueIndexOffset;
+    @HotSpotVMConstant(name = "satbMarkQueueActiveOffset") @Stable private int satbMarkQueueActiveOffset;
 
     @HotSpotVMField(name = "OSThread::_interrupted", type = "jint", get = HotSpotVMField.Type.OFFSET) @Stable public int osThreadInterruptedOffset;
 
@@ -1396,23 +1399,23 @@ public class HotSpotVMConfig {
     // G1 Collector Related Values.
 
     public int g1CardQueueIndexOffset() {
-        return javaThreadDirtyCardQueueOffset + ptrQueueIndexOffset;
+        return javaThreadDirtyCardQueueOffset + dirtyCardQueueIndexOffset;
     }
 
     public int g1CardQueueBufferOffset() {
-        return javaThreadDirtyCardQueueOffset + ptrQueueBufferOffset;
+        return javaThreadDirtyCardQueueOffset + dirtyCardQueueBufferOffset;
     }
 
     public int g1SATBQueueMarkingOffset() {
-        return javaThreadSatbMarkQueueOffset + ptrQueueActiveOffset;
+        return javaThreadSatbMarkQueueOffset + satbMarkQueueActiveOffset;
     }
 
     public int g1SATBQueueIndexOffset() {
-        return javaThreadSatbMarkQueueOffset + ptrQueueIndexOffset;
+        return javaThreadSatbMarkQueueOffset + satbMarkQueueIndexOffset;
     }
 
     public int g1SATBQueueBufferOffset() {
-        return javaThreadSatbMarkQueueOffset + ptrQueueBufferOffset;
+        return javaThreadSatbMarkQueueOffset + satbMarkQueueBufferOffset;
     }
 
     @HotSpotVMField(name = "java_lang_Class::_klass_offset", type = "int", get = HotSpotVMField.Type.VALUE) @Stable public int klassOffset;
@@ -1677,6 +1680,7 @@ public class HotSpotVMConfig {
     @HotSpotVMField(name = "Deoptimization::UnrollBlock::_caller_adjustment", type = "int", get = HotSpotVMField.Type.OFFSET) @Stable public int deoptimizationUnrollBlockCallerAdjustmentOffset;
     @HotSpotVMField(name = "Deoptimization::UnrollBlock::_number_of_frames", type = "int", get = HotSpotVMField.Type.OFFSET) @Stable public int deoptimizationUnrollBlockNumberOfFramesOffset;
     @HotSpotVMField(name = "Deoptimization::UnrollBlock::_total_frame_sizes", type = "int", get = HotSpotVMField.Type.OFFSET) @Stable public int deoptimizationUnrollBlockTotalFrameSizesOffset;
+    @HotSpotVMField(name = "Deoptimization::UnrollBlock::_unpack_kind", type = "int", get = HotSpotVMField.Type.OFFSET) @Stable public int deoptimizationUnrollBlockUnpackKindOffset;
     @HotSpotVMField(name = "Deoptimization::UnrollBlock::_frame_sizes", type = "intptr_t*", get = HotSpotVMField.Type.OFFSET) @Stable public int deoptimizationUnrollBlockFrameSizesOffset;
     @HotSpotVMField(name = "Deoptimization::UnrollBlock::_frame_pcs", type = "address*", get = HotSpotVMField.Type.OFFSET) @Stable public int deoptimizationUnrollBlockFramePcsOffset;
     @HotSpotVMField(name = "Deoptimization::UnrollBlock::_initial_info", type = "intptr_t", get = HotSpotVMField.Type.OFFSET) @Stable public int deoptimizationUnrollBlockInitialInfoOffset;

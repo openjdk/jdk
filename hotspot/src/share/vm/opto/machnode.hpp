@@ -578,8 +578,8 @@ public:
 
 
 #ifndef PRODUCT
-  virtual const char *Name() const {
-    switch (_spill_type) {
+  static const char *spill_type(SpillType st) {
+    switch (st) {
       case TwoAddress:
         return "TwoAddressSpillCopy";
       case PhiInput:
@@ -610,6 +610,10 @@ public:
         assert(false, "Must have valid spill type");
         return "MachSpillCopy";
     }
+  }
+
+  virtual const char *Name() const {
+    return spill_type(_spill_type);
   }
 
   virtual void format( PhaseRegAlloc *, outputStream *st ) const;

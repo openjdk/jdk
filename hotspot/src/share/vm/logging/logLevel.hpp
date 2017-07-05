@@ -29,14 +29,8 @@
 
 // The list of log levels:
 //
-//  develop - A non-product level that is finer than trace.
-//            Should be used for really expensive and/or
-//            extensive logging, or logging that shouldn't
-//            or can't be included in a product build.
-//
-//  trace   - Finest level of logging in product builds.
-//            Use for extensive/noisy logging that can
-//            give slow-down when enabled.
+//  trace   - Finest level of logging. Use for extensive/noisy
+//            logging that can give slow-down when enabled.
 //
 //  debug   - A finer level of logging. Use for semi-noisy
 //            logging that is does not fit the info level.
@@ -49,7 +43,6 @@
 //  error   - Critical messages caused by errors.
 //
 #define LOG_LEVEL_LIST \
-  NOT_PRODUCT(LOG_LEVEL(Develop, develop)) \
   LOG_LEVEL(Trace, trace) \
   LOG_LEVEL(Debug, debug) \
   LOG_LEVEL(Info, info) \
@@ -65,6 +58,7 @@ class LogLevel : public AllStatic {
 #undef LOG_LEVEL
     Count,
     Invalid,
+    NotMentioned,
     First = Off + 1,
     Last = Error,
     Default = Warning,
@@ -72,6 +66,7 @@ class LogLevel : public AllStatic {
   };
 
   static const char *name(LogLevel::type level) {
+    assert(level >= 0 && level < LogLevel::Count, "Invalid level (enum value %d).", level);
     return _name[level];
   }
 

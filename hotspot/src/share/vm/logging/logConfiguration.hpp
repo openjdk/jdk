@@ -24,6 +24,7 @@
 #ifndef SHARE_VM_LOGGING_LOGCONFIGURATION_HPP
 #define SHARE_VM_LOGGING_LOGCONFIGURATION_HPP
 
+#include "logging/logLevel.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -69,6 +70,14 @@ class LogConfiguration : public AllStatic {
 
   // Disable all logging, equivalent to -Xlog:disable.
   static void disable_logging();
+
+  // Configures logging on stdout for the given tags and level combination.
+  // Intended for mappings between -XX: flags and Unified Logging configuration.
+  // If exact_match is true, only tagsets with precisely the specified tags will be configured
+  // (exact_match=false is the same as "-Xlog:<tags>*=<level>", and exact_match=true is "-Xlog:<tags>=<level>").
+  // Tags should be specified using the LOG_TAGS macro, e.g.
+  // LogConfiguration::configure_stdout(LogLevel::<level>, <true/false>, LOG_TAGS(<tags>));
+  static void configure_stdout(LogLevelType level, bool exact_match, ...);
 
   // Parse command line configuration. Parameter 'opts' is the string immediately following the -Xlog: argument ("gc" for -Xlog:gc).
   static bool parse_command_line_arguments(const char* opts = "all");

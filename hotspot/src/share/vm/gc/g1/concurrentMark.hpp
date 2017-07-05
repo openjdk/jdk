@@ -65,11 +65,8 @@ class CMBitMapRO VALUE_OBJ_CLASS_SPEC {
   // constructor
   CMBitMapRO(int shifter);
 
-  enum { do_yield = true };
-
   // inquiries
   HeapWord* startWord()   const { return _bmStartWord; }
-  size_t    sizeInWords() const { return _bmWordSize;  }
   // the following is one past the last word in space
   HeapWord* endWord()     const { return _bmStartWord + _bmWordSize; }
 
@@ -83,18 +80,12 @@ class CMBitMapRO VALUE_OBJ_CLASS_SPEC {
 
   // iteration
   inline bool iterate(BitMapClosure* cl, MemRegion mr);
-  inline bool iterate(BitMapClosure* cl);
 
   // Return the address corresponding to the next marked bit at or after
   // "addr", and before "limit", if "limit" is non-NULL.  If there is no
   // such bit, returns "limit" if that is non-NULL, or else "endWord()".
   HeapWord* getNextMarkedWordAddress(const HeapWord* addr,
                                      const HeapWord* limit = NULL) const;
-  // Return the address corresponding to the next unmarked bit at or after
-  // "addr", and before "limit", if "limit" is non-NULL.  If there is no
-  // such bit, returns "limit" if that is non-NULL, or else "endWord()".
-  HeapWord* getNextUnmarkedWordAddress(const HeapWord* addr,
-                                       const HeapWord* limit = NULL) const;
 
   // conversion utilities
   HeapWord* offsetToHeapWord(size_t offset) const {
@@ -103,7 +94,6 @@ class CMBitMapRO VALUE_OBJ_CLASS_SPEC {
   size_t heapWordToOffset(const HeapWord* addr) const {
     return pointer_delta(addr, _bmStartWord) >> _shifter;
   }
-  int heapWordDiffToOffsetDiff(size_t diff) const;
 
   // The argument addr should be the start address of a valid object
   HeapWord* nextObject(HeapWord* addr) {
@@ -153,19 +143,8 @@ class CMBitMap : public CMBitMapRO {
   inline void mark(HeapWord* addr);
   inline void clear(HeapWord* addr);
   inline bool parMark(HeapWord* addr);
-  inline bool parClear(HeapWord* addr);
 
-  void markRange(MemRegion mr);
   void clearRange(MemRegion mr);
-
-  // Starting at the bit corresponding to "addr" (inclusive), find the next
-  // "1" bit, if any.  This bit starts some run of consecutive "1"'s; find
-  // the end of this run (stopping at "end_addr").  Return the MemRegion
-  // covering from the start of the region corresponding to the first bit
-  // of the run to the end of the region corresponding to the last bit of
-  // the run.  If there is no "1" bit at or after "addr", return an empty
-  // MemRegion.
-  MemRegion getAndClearMarkedRegion(HeapWord* addr, HeapWord* end_addr);
 
   // Clear the whole mark bitmap.
   void clearAll();
@@ -229,19 +208,6 @@ class CMMarkStack VALUE_OBJ_CLASS_SPEC {
   // via one of the above "note" functions.  The mark stack must not
   // be modified while iterating.
   template<typename Fn> void iterate(Fn fn);
-};
-
-class ForceOverflowSettings VALUE_OBJ_CLASS_SPEC {
-private:
-#ifndef PRODUCT
-  uintx _num_remaining;
-  bool _force;
-#endif // !defined(PRODUCT)
-
-public:
-  void init() PRODUCT_RETURN;
-  void update() PRODUCT_RETURN;
-  bool should_force() PRODUCT_RETURN_( return false; );
 };
 
 class YoungList;
@@ -326,10 +292,6 @@ protected:
   double                _marking_task_overhead; // Marking target overhead for
                                                 // a single task
 
-  // Same as the two above, but for the cleanup task
-  double                _cleanup_sleep_factor;
-  double                _cleanup_task_overhead;
-
   FreeRegionList        _cleanup_list;
 
   // Concurrent marking support structures
@@ -404,9 +366,6 @@ protected:
 
   WorkGang* _parallel_workers;
 
-  ForceOverflowSettings _force_overflow_conc;
-  ForceOverflowSettings _force_overflow_stw;
-
   void weakRefsWorkParallelPart(BoolObjectClosure* is_alive, bool purged_classes);
   void weakRefsWork(bool clear_all_soft_refs);
 
@@ -443,8 +402,6 @@ protected:
   uint max_parallel_marking_threads() const { return _max_parallel_marking_threads;}
   double sleep_factor()                     { return _sleep_factor; }
   double marking_task_overhead()            { return _marking_task_overhead;}
-  double cleanup_sleep_factor()             { return _cleanup_sleep_factor; }
-  double cleanup_task_overhead()            { return _cleanup_task_overhead;}
 
   HeapWord*               finger()          { return _finger;   }
   bool                    concurrent()      { return _concurrent; }
@@ -501,22 +458,6 @@ protected:
   // Methods to enter the two overflow sync barriers
   void enter_first_sync_barrier(uint worker_id);
   void enter_second_sync_barrier(uint worker_id);
-
-  ForceOverflowSettings* force_overflow_conc() {
-    return &_force_overflow_conc;
-  }
-
-  ForceOverflowSettings* force_overflow_stw() {
-    return &_force_overflow_stw;
-  }
-
-  ForceOverflowSettings* force_overflow() {
-    if (concurrent()) {
-      return force_overflow_conc();
-    } else {
-      return force_overflow_stw();
-    }
-  }
 
   // Live Data Counting data structures...
   // These data structures are initialized at the start of
@@ -625,28 +566,6 @@ public:
                        uint worker_id,
                        HeapRegion* hr = NULL);
 
-  // It iterates over the heap and for each object it comes across it
-  // will dump the contents of its reference fields, as well as
-  // liveness information for the object and its referents. The dump
-  // will be written to a file with the following name:
-  // G1PrintReachableBaseFile + "." + str.
-  // vo decides whether the prev (vo == UsePrevMarking), the next
-  // (vo == UseNextMarking) marking information, or the mark word
-  // (vo == UseMarkWord) will be used to determine the liveness of
-  // each object / referent.
-  // If all is true, all objects in the heap will be dumped, otherwise
-  // only the live ones. In the dump the following symbols / breviations
-  // are used:
-  //   M : an explicitly live object (its bitmap bit is set)
-  //   > : an implicitly live object (over tams)
-  //   O : an object outside the G1 heap (typically: in the perm gen)
-  //   NOT : a reference field whose referent is not live
-  //   AND MARKED : indicates that an object is both explicitly and
-  //   implicitly live (it should be one or the other, not both)
-  void print_reachable(const char* str,
-                       VerifyOption vo,
-                       bool all) PRODUCT_RETURN;
-
   // Clear the next marking bitmap (will be called concurrently).
   void clearNextBitmap();
 
@@ -686,7 +605,6 @@ public:
   // next bitmaps.  NB: the previous bitmap is usually
   // read-only, so use this carefully!
   void clearRangePrevBitmap(MemRegion mr);
-  void clearRangeNextBitmap(MemRegion mr);
 
   // Notify data structures that a GC has started.
   void note_start_of_gc() {

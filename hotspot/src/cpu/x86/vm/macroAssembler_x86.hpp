@@ -962,10 +962,15 @@ public:
   void divss(XMMRegister dst, AddressLiteral src);
 
   // Move Unaligned Double Quadword
-  void movdqu(Address     dst, XMMRegister src)   { Assembler::movdqu(dst, src); }
-  void movdqu(XMMRegister dst, Address src)       { Assembler::movdqu(dst, src); }
-  void movdqu(XMMRegister dst, XMMRegister src)   { Assembler::movdqu(dst, src); }
+  void movdqu(Address     dst, XMMRegister src);
+  void movdqu(XMMRegister dst, Address src);
+  void movdqu(XMMRegister dst, XMMRegister src);
   void movdqu(XMMRegister dst, AddressLiteral src);
+  // AVX Unaligned forms
+  void vmovdqu(Address     dst, XMMRegister src);
+  void vmovdqu(XMMRegister dst, Address src);
+  void vmovdqu(XMMRegister dst, XMMRegister src);
+  void vmovdqu(XMMRegister dst, AddressLiteral src);
 
   // Move Aligned Double Quadword
   void movdqa(XMMRegister dst, Address src)       { Assembler::movdqa(dst, src); }
@@ -999,6 +1004,19 @@ public:
     Assembler::pclmulqdq(dst, src, 0x11);
   }
 
+  void pcmpeqb(XMMRegister dst, XMMRegister src);
+  void pcmpeqw(XMMRegister dst, XMMRegister src);
+
+  void pcmpestri(XMMRegister dst, Address src, int imm8);
+  void pcmpestri(XMMRegister dst, XMMRegister src, int imm8);
+
+  void pmovzxbw(XMMRegister dst, XMMRegister src);
+  void pmovzxbw(XMMRegister dst, Address src);
+
+  void pmovmskb(Register dst, XMMRegister src);
+
+  void ptest(XMMRegister dst, XMMRegister src);
+
   void sqrtsd(XMMRegister dst, XMMRegister src)    { Assembler::sqrtsd(dst, src); }
   void sqrtsd(XMMRegister dst, Address src)        { Assembler::sqrtsd(dst, src); }
   void sqrtsd(XMMRegister dst, AddressLiteral src);
@@ -1024,12 +1042,12 @@ public:
   void ucomisd(XMMRegister dst, AddressLiteral src);
 
   // Bitwise Logical XOR of Packed Double-Precision Floating-Point Values
-  void xorpd(XMMRegister dst, XMMRegister src) { Assembler::xorpd(dst, src); }
+  void xorpd(XMMRegister dst, XMMRegister src);
   void xorpd(XMMRegister dst, Address src)     { Assembler::xorpd(dst, src); }
   void xorpd(XMMRegister dst, AddressLiteral src);
 
   // Bitwise Logical XOR of Packed Single-Precision Floating-Point Values
-  void xorps(XMMRegister dst, XMMRegister src) { Assembler::xorps(dst, src); }
+  void xorps(XMMRegister dst, XMMRegister src);
   void xorps(XMMRegister dst, Address src)     { Assembler::xorps(dst, src); }
   void xorps(XMMRegister dst, AddressLiteral src);
 
@@ -1046,6 +1064,49 @@ public:
   void vaddss(XMMRegister dst, XMMRegister nds, XMMRegister src) { Assembler::vaddss(dst, nds, src); }
   void vaddss(XMMRegister dst, XMMRegister nds, Address src)     { Assembler::vaddss(dst, nds, src); }
   void vaddss(XMMRegister dst, XMMRegister nds, AddressLiteral src);
+
+  void vabsss(XMMRegister dst, XMMRegister nds, XMMRegister src, AddressLiteral negate_field, int vector_len);
+  void vabssd(XMMRegister dst, XMMRegister nds, XMMRegister src, AddressLiteral negate_field, int vector_len);
+
+  void vpaddb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpaddb(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
+  void vpaddw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpaddw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
+  void vpbroadcastw(XMMRegister dst, XMMRegister src);
+
+  void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+
+  void vpmovzxbw(XMMRegister dst, Address src, int vector_len);
+  void vpmovmskb(Register dst, XMMRegister src);
+
+  void vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpmullw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
+  void vpsubb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpsubb(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
+  void vpsubw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpsubw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
+  void vpsraw(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len);
+  void vpsraw(XMMRegister dst, XMMRegister nds, int shift, int vector_len);
+
+  void vpsrlw(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len);
+  void vpsrlw(XMMRegister dst, XMMRegister nds, int shift, int vector_len);
+
+  void vpsllw(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len);
+  void vpsllw(XMMRegister dst, XMMRegister nds, int shift, int vector_len);
+
+  void vptest(XMMRegister dst, XMMRegister src);
+
+  void punpcklbw(XMMRegister dst, XMMRegister src);
+  void punpcklbw(XMMRegister dst, Address src) { Assembler::punpcklbw(dst, src); }
+
+  void pshuflw(XMMRegister dst, XMMRegister src, int mode);
+  void pshuflw(XMMRegister dst, Address src, int mode) { Assembler::pshuflw(dst, src, mode); }
 
   void vandpd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) { Assembler::vandpd(dst, nds, src, vector_len); }
   void vandpd(XMMRegister dst, XMMRegister nds, Address src, int vector_len)     { Assembler::vandpd(dst, nds, src, vector_len); }

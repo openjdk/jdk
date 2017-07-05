@@ -253,6 +253,20 @@ class G1NewTracer : public YoungGCTracer {
   void report_evacuation_failed(EvacuationFailedInfo& ef_info);
 
   void report_evacuation_statistics(const G1EvacSummary& young_summary, const G1EvacSummary& old_summary) const;
+
+  void report_basic_ihop_statistics(size_t threshold,
+                                    size_t target_occupancy,
+                                    size_t current_occupancy,
+                                    size_t last_allocation_size,
+                                    double last_allocation_duration,
+                                    double last_marking_length);
+  void report_adaptive_ihop_statistics(size_t threshold,
+                                       size_t internal_target_occupancy,
+                                       size_t current_occupancy,
+                                       size_t additional_buffer_size,
+                                       double predicted_allocation_rate,
+                                       double predicted_marking_length,
+                                       bool prediction_active);
  private:
   void send_g1_young_gc_event();
   void send_evacuation_info_event(EvacuationInfo* info);
@@ -260,6 +274,20 @@ class G1NewTracer : public YoungGCTracer {
 
   void send_young_evacuation_statistics(const G1EvacSummary& summary) const;
   void send_old_evacuation_statistics(const G1EvacSummary& summary) const;
+
+  void send_basic_ihop_statistics(size_t threshold,
+                                  size_t target_occupancy,
+                                  size_t current_occupancy,
+                                  size_t last_allocation_size,
+                                  double last_allocation_duration,
+                                  double last_marking_length);
+  void send_adaptive_ihop_statistics(size_t threshold,
+                                     size_t internal_target_occupancy,
+                                     size_t current_occupancy,
+                                     size_t additional_buffer_size,
+                                     double predicted_allocation_rate,
+                                     double predicted_marking_length,
+                                     bool prediction_active);
 };
 #endif
 
