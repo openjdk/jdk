@@ -31,13 +31,12 @@
  */
 
 import java.lang.reflect.Field;
-import jdk.test.lib.unsafe.UnsafeHelper;
 import jdk.internal.misc.Unsafe;
 import static jdk.test.lib.Asserts.*;
 
 public class PageSize {
     public static void main(String args[]) throws Exception {
-        Unsafe unsafe = UnsafeHelper.getUnsafe();
+        Unsafe unsafe = Unsafe.getUnsafe();
         int pageSize = unsafe.pageSize();
 
         for (int n = 1; n != 0; n <<= 1) {

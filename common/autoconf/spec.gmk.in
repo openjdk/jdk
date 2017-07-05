@@ -241,12 +241,8 @@ BUILD_GTEST := @BUILD_GTEST@
 # Control use of precompiled header in hotspot libjvm build
 USE_PRECOMPILED_HEADER := @USE_PRECOMPILED_HEADER@
 
-# Should we compile support for running with a graphical UI? (ie headful)
-# Should we compile support for running without? (ie headless)
-SUPPORT_HEADFUL:=@SUPPORT_HEADFUL@
-SUPPORT_HEADLESS:=@SUPPORT_HEADLESS@
-# Legacy defines controlled by the SUPPORT_HEADLESS and SUPPORT_HEADFUL options.
-@BUILD_HEADLESS@
+# Only build headless support or not
+ENABLE_HEADLESS_ONLY := @ENABLE_HEADLESS_ONLY@
 
 # Legacy support
 USE_NEW_HOTSPOT_BUILD:=@USE_NEW_HOTSPOT_BUILD@

@@ -26,6 +26,7 @@
  * @test
  * @bug 8163561
  * @modules java.base/sun.net.www
+ *          java.httpclient
  * @summary Verify that Proxy-Authenticate header is correctly handled
  *
  * @run main/othervm ProxyAuthTest

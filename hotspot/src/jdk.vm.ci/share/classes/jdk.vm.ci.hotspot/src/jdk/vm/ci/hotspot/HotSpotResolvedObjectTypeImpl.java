@@ -24,6 +24,7 @@ package jdk.vm.ci.hotspot;
 
 import static java.util.Objects.requireNonNull;
 import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
+import static jdk.vm.ci.hotspot.HotSpotConstantPool.isSignaturePolymorphicHolder;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
@@ -426,7 +427,7 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             // Methods can only be resolved against concrete types
             return null;
         }
-        if (method.isConcrete() && method.getDeclaringClass().equals(this) && method.isPublic()) {
+        if (method.isConcrete() && method.getDeclaringClass().equals(this) && method.isPublic() && !isSignaturePolymorphicHolder(method.getDeclaringClass())) {
             return method;
         }
         if (!method.getDeclaringClass().isAssignableFrom(this)) {

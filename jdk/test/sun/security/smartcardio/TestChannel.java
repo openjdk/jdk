@@ -21,11 +21,12 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6239117
  * @summary test logical channels work
  * @author Andreas Sterbenz
+ * @modules java.smartcardio/javax.smartcardio
  * @run main/manual TestChannel
  */
 

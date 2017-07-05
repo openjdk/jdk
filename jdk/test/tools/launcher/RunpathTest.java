@@ -40,7 +40,7 @@ public class RunpathTest extends TestHelper {
     }
 
     final String findElfReader() {
-        String[] paths = {"/bin", "/sbin", "/usr/bin", "/usr/sbin", "/usr/ccs/bin"};
+        String[] paths = {"/usr/sbin", "/usr/bin"};
         final String cmd = isSolaris ? "elfdump" : "readelf";
         for (String x : paths) {
             File p = new File(x);
