@@ -26,6 +26,7 @@
 package jdk.incubator.http.internal.websocket;
 
 import jdk.incubator.http.WebSocket.MessagePart;
+import jdk.incubator.http.internal.common.Log;
 import jdk.incubator.http.internal.websocket.Frame.Opcode;
 
 import java.nio.ByteBuffer;
@@ -33,13 +34,11 @@ import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 
 import static java.lang.String.format;
-import static java.lang.System.Logger.Level.TRACE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static jdk.incubator.http.internal.common.Utils.dump;
 import static jdk.incubator.http.internal.websocket.StatusCodes.NO_STATUS_CODE;
 import static jdk.incubator.http.internal.websocket.StatusCodes.checkIncomingCode;
-import static jdk.incubator.http.internal.websocket.WebSocketImpl.logger;
 
 /*
  * Consumes frame parts and notifies a message consumer, when there is
@@ -71,17 +70,13 @@ class FrameConsumer implements Frame.Consumer {
 
     @Override
     public void fin(boolean value) {
-        if (logger.isLoggable(TRACE)) {
-            logger.log(TRACE, "Reading fin: {0}", value);
-        }
+        Log.logTrace("Reading fin: {0}", value);
         fin = value;
     }
 
     @Override
     public void rsv1(boolean value) {
-        if (logger.isLoggable(TRACE)) {
-            logger.log(TRACE, "Reading rsv1: {0}", value);
-        }
+        Log.logTrace("Reading rsv1: {0}", value);
         if (value) {
             throw new FailWebSocketException("Unexpected rsv1 bit");
         }
@@ -89,9 +84,7 @@ class FrameConsumer implements Frame.Consumer {
 
     @Override
     public void rsv2(boolean value) {
-        if (logger.isLoggable(TRACE)) {
-            logger.log(TRACE, "Reading rsv2: {0}", value);
-        }
+        Log.logTrace("Reading rsv2: {0}", value);
         if (value) {
             throw new FailWebSocketException("Unexpected rsv2 bit");
         }
@@ -99,9 +92,7 @@ class FrameConsumer implements Frame.Consumer {
 
     @Override
     public void rsv3(boolean value) {
-        if (logger.isLoggable(TRACE)) {
-            logger.log(TRACE, "Reading rsv3: {0}", value);
-        }
+        Log.logTrace("Reading rsv3: {0}", value);
         if (value) {
             throw new FailWebSocketException("Unexpected rsv3 bit");
         }
@@ -109,7 +100,7 @@ class FrameConsumer implements Frame.Consumer {
 
     @Override
     public void opcode(Opcode v) {
-        logger.log(TRACE, "Reading opcode: {0}", v);
+        Log.logTrace("Reading opcode: {0}", v);
         if (v == Opcode.PING || v == Opcode.PONG || v == Opcode.CLOSE) {
             if (!fin) {
                 throw new FailWebSocketException("Fragmented control frame  " + v);
@@ -137,9 +128,7 @@ class FrameConsumer implements Frame.Consumer {
 
     @Override
     public void mask(boolean value) {
-        if (logger.isLoggable(TRACE)) {
-            logger.log(TRACE, "Reading mask: {0}", value);
-        }
+        Log.logTrace("Reading mask: {0}", value);
         if (value) {
             throw new FailWebSocketException("Masked frame received");
         }
@@ -147,10 +136,7 @@ class FrameConsumer implements Frame.Consumer {
 
     @Override
     public void payloadLen(long value) {
-        if (logger.isLoggable(TRACE)) {
-            // Checked for being loggable because of autoboxing of 'value'
-            logger.log(TRACE, "Reading payloadLen: {0}", value);
-        }
+        Log.logTrace("Reading payloadLen: {0}", value);
         if (opcode.isControl()) {
             if (value > 125) {
                 throw new FailWebSocketException(
@@ -178,9 +164,7 @@ class FrameConsumer implements Frame.Consumer {
 
     @Override
     public void payloadData(ByteBuffer data) {
-        if (logger.isLoggable(TRACE)) {
-            logger.log(TRACE, "Reading payloadData: data={0}", data);
-        }
+        Log.logTrace("Reading payloadData: data={0}", data);
         unconsumedPayloadLen -= data.remaining();
         boolean isLast = unconsumedPayloadLen == 0;
         if (opcode.isControl()) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ public class WrongSelectionOnMouseOver implements Runnable {
     private UIManager.LookAndFeelInfo laf;
     JFrame frame1;
     JFrame frame2;
+    private Point menu1location;
+    private Point menu2location;
 
     public WrongSelectionOnMouseOver(UIManager.LookAndFeelInfo laf) throws Exception {
         this.laf = laf;
@@ -136,7 +138,7 @@ public class WrongSelectionOnMouseOver implements Runnable {
             m2.add(i2);
 
             frame2.setLayout(new FlowLayout());
-            frame2.setBounds(400, 200, 200, 200);
+            frame2.setBounds(450, 200, 200, 200);
 
             frame2.setVisible(true);
         }
@@ -166,8 +168,13 @@ public class WrongSelectionOnMouseOver implements Runnable {
 
         robot.waitForIdle();
 
-        robot.mouseMove((int) m1.getLocationOnScreen().getX() + 5,
-                (int) m1.getLocationOnScreen().getY() + 5);
+        SwingUtilities.invokeAndWait(() -> {
+            menu1location = m1.getLocationOnScreen();
+            menu2location = m2.getLocationOnScreen();
+        });
+
+        robot.mouseMove((int) menu1location.getX() + 5,
+                (int) menu1location.getY() + 5);
         robot.mousePress(MouseEvent.BUTTON1_MASK);
         robot.mouseRelease(MouseEvent.BUTTON1_MASK);
 
@@ -175,8 +182,8 @@ public class WrongSelectionOnMouseOver implements Runnable {
             throw new RuntimeException("Menu has not been selected.");
         };
 
-        robot.mouseMove((int) m2.getLocationOnScreen().getX() + 5,
-                (int) m2.getLocationOnScreen().getY() + 5);
+        robot.mouseMove((int) menu2location.getX() + 5,
+                (int) menu2location.getY() + 5);
 
         if (!secondMenuMouseEntered.await(5, TimeUnit.SECONDS)) {
             throw new RuntimeException("MouseEntered event missed for the second menu");
