@@ -47,8 +47,6 @@ define_pd_global(intx, OptoLoopAlignment,     16);
 define_pd_global(intx, InlineFrequencyCount,  100);
 define_pd_global(intx, InlineSmallCode,       1500);
 
-define_pd_global(intx, PreInflateSpin,        10);
-
 // Flags for template interpreter.
 define_pd_global(bool, RewriteBytecodes,      true);
 define_pd_global(bool, RewriteFrequentPairs,  true);

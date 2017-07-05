@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,58 @@ package com.sun.hotspot.tools.compiler;
 
 import java.util.Arrays;
 
-public class Method implements Constants {
+import static com.sun.hotspot.tools.compiler.Constants.*;
 
+/**
+ * Representation of a Java method in a compilation log.
+ */
+public class Method {
+
+    /**
+     * The name of the class holding the method.
+     */
     private String holder;
+
+    /**
+     * The method's name.
+     */
     private String name;
+
+    /**
+     * The return type of the method, as a fully qualified (source-level) class
+     * or primitive type name.
+     */
     private String returnType;
-    private String arguments;
+
+    /**
+     * The method's signature, in internal form.
+     */
+    private String signature;
+
+    /**
+     * The length of the method's byte code.
+     */
     private String bytes;
+
+    /**
+     * The number of times this method was invoked in the interpreter.
+     */
     private String iicount;
+
+    /**
+     * The method's flags, in the form of a {@code String} representing the
+     * {@code int} encoding them.
+     */
     private String flags;
 
+    /**
+     * Decode the {@link flags} numerical string to a format for console
+     * output. The result does not honour all possible flags but includes
+     * information about OSR compilation.
+     *
+     * @param osr_bci the byte code index at which an OSR compilation takes
+     * place, or -1 if the compilation is not an OSR one.
+     */
     String decodeFlags(int osr_bci) {
         int f = Integer.parseInt(getFlags());
         char[] c = new char[4];
@@ -49,6 +91,12 @@ public class Method implements Constants {
         return new String(c);
     }
 
+    /**
+     * Format this method for console output.
+     *
+     * @param osr_bci the byte code index at which OSR takes place, or -1 if no
+     * OSR compilation is going on.
+     */
     String format(int osr_bci) {
         if (osr_bci >= 0) {
             return getHolder() + "::" + getName() + " @ " + osr_bci + " (" + getBytes() + " bytes)";
@@ -60,6 +108,10 @@ public class Method implements Constants {
     @Override
     public String toString() {
         return getHolder() + "::" + getName() + " (" + getBytes() + " bytes)";
+    }
+
+    public String getFullName() {
+        return getHolder().replace('/', '.') + "." + getName() + signature;
     }
 
     public String getHolder() {
@@ -86,12 +138,16 @@ public class Method implements Constants {
         this.returnType = returnType;
     }
 
-    public String getArguments() {
-        return arguments;
+    public String getSignature() {
+        return signature;
     }
 
-    public void setArguments(String arguments) {
-        this.arguments = arguments;
+    public void setSignature(String signature) {
+        this.signature = signature.replace('/', '.');
+    }
+
+    public String getArguments() {
+        return signature.substring(0, signature.indexOf(')') + 1);
     }
 
     public String getBytes() {
@@ -121,10 +177,13 @@ public class Method implements Constants {
     @Override
     public boolean equals(Object o) {
         if (o instanceof Method) {
-            Method other = (Method)o;
-            return holder.equals(other.holder) && name.equals(other.name) &&
-                arguments.equals(other.arguments) && returnType.equals(other.returnType);
+            Method other = (Method) o;
+            return holder.equals(other.holder) && name.equals(other.name) && signature.equals(other.signature);
         }
         return false;
+    }
+
+    public int hashCode() {
+        return holder.hashCode() ^ name.hashCode();
     }
 }
