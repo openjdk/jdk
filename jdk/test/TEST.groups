@@ -272,8 +272,7 @@ jdk_other = \
     com/sun/jndi \
     com/sun/corba \
     org/omg/CORBA \
-    lib/testlibrary \
-    sample
+    lib/testlibrary
 
 #
 # SCTP is its own group as it is highly sensitive to kernel/network config
@@ -465,7 +464,6 @@ jdk = \
 needs_jdk = \
   :jdk_jdi \
   com/sun/tools \
-  demo \
   jdk/security/jarsigner \
   sun/security/tools/jarsigner \
   sun/security/tools/policytool \
@@ -775,7 +773,6 @@ compact1_minimal = \
   javax \
   jdk \
   lib \
-  sample \
   sun \
   vm \
  -:needs_full_vm_compact1 \

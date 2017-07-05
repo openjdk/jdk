@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,9 +171,9 @@ import sun.rmi.transport.LiveRef;
  * By default, server sockets created by {@link RMISocketFactory}
  * listen on all network interfaces. See the
  * {@link RMISocketFactory} class and the section
- * <a href="{@docRoot}/../platform/rmi/spec/rmi-server29.html">RMI Socket Factories</a>
+ * <a href="{@docRoot}/../specs/rmi/server.html#rmi-socket-factories">RMI Socket Factories</a>
  * in the
- * <a href="{@docRoot}/../platform/rmi/spec/rmiTOC.html">Java RMI Specification</a>.
+ * <a href="{@docRoot}/../specs/rmi/index.html">Java RMI Specification</a>.
  *
  * @author  Ann Wollrath
  * @author  Peter Jones

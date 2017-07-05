@@ -402,9 +402,7 @@ public class AutomaticModulesTest {
     // Main-Class files that do not map to a legal qualified type name
     @DataProvider(name = "badmainclass")
     public Object[][] createBadMainClass() {
-        return new Object[][]{
-
-            { "Main",        null },
+        return new Object[][] {
             { "p..Main",     null },
             { "p-.Main",     null },
 
@@ -415,7 +413,7 @@ public class AutomaticModulesTest {
      * Test that a JAR file with a Main-Class attribute that is not a qualified
      * type name.
      */
-    @Test(dataProvider = "badmainclass", expectedExceptions = FindException.class)
+    @Test(dataProvider = "badmainclass")
     public void testBadMainClass(String mainClass, String ignore) throws IOException {
         Manifest man = new Manifest();
         Attributes attrs = man.getMainAttributes();
@@ -426,14 +424,16 @@ public class AutomaticModulesTest {
         String entry = mainClass.replace('.', '/') + ".class";
         createDummyJarFile(dir.resolve("m.jar"), man, entry);
 
-        // should throw FindException
-        ModuleFinder.of(dir).findAll();
+        // bad Main-Class value should be ignored
+        Optional<ModuleReference> omref = ModuleFinder.of(dir).find("m");
+        assertTrue(omref.isPresent());
+        ModuleDescriptor descriptor = omref.get().descriptor();
+        assertFalse(descriptor.mainClass().isPresent());
     }
 
     /**
      * Test that a JAR file with a Main-Class attribute that is not in the module
      */
-    @Test(expectedExceptions = FindException.class)
     public void testMissingMainClassPackage() throws IOException {
         Manifest man = new Manifest();
         Attributes attrs = man.getMainAttributes();
@@ -443,8 +443,11 @@ public class AutomaticModulesTest {
         Path dir = Files.createTempDirectory(USER_DIR, "mods");
         createDummyJarFile(dir.resolve("m.jar"), man);
 
-        // should throw FindException
-        ModuleFinder.of(dir).findAll();
+        // Main-Class should be ignored because package p is not in module
+        Optional<ModuleReference> omref = ModuleFinder.of(dir).find("m");
+        assertTrue(omref.isPresent());
+        ModuleDescriptor descriptor = omref.get().descriptor();
+        assertFalse(descriptor.mainClass().isPresent());
     }
 
 

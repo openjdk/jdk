@@ -546,20 +546,14 @@ public final class ModuleInfo {
     private ModuleTarget readModuleTargetAttribute(DataInput in, ConstantPool cpool)
         throws IOException
     {
-        String osName = null;
-        String osArch = null;
+        String targetPlatform = null;
 
-        int name_index = in.readUnsignedShort();
-        if (name_index != 0)
-            osName = cpool.getUtf8(name_index);
+        int index = in.readUnsignedShort();
+        if (index != 0)
+            targetPlatform = cpool.getUtf8(index);
 
-        int arch_index = in.readUnsignedShort();
-        if (arch_index != 0)
-            osArch = cpool.getUtf8(arch_index);
-
-        return new ModuleTarget(osName, osArch);
+        return new ModuleTarget(targetPlatform);
     }
-
 
     /**
      * Reads the ModuleHashes attribute
@@ -611,7 +605,6 @@ public final class ModuleInfo {
 
         return new ModuleResolution(flags);
     }
-
 
     /**
      * Returns true if the given attribute can be present at most once

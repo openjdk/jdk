@@ -188,6 +188,53 @@ public abstract class ClientNotifForwarder {
     }
 
     public synchronized Integer[]
+    getListenerIds(ObjectName name,
+                   NotificationListener listener)
+            throws ListenerNotFoundException, IOException {
+
+        List<Integer> ids = new ArrayList<Integer>();
+        List<ClientListenerInfo> values =
+                new ArrayList<ClientListenerInfo>(infoList.values());
+        for (int i=values.size()-1; i>=0; i--) {
+            ClientListenerInfo li = values.get(i);
+
+            if (li.sameAs(name, listener)) {
+                ids.add(li.getListenerID());
+            }
+        }
+
+        if (ids.isEmpty())
+            throw new ListenerNotFoundException("Listener not found");
+
+        return ids.toArray(new Integer[0]);
+    }
+
+    public synchronized Integer
+    getListenerId(ObjectName name,
+                   NotificationListener listener,
+                   NotificationFilter filter,
+                   Object handback)
+            throws ListenerNotFoundException, IOException {
+
+        Integer id = null;
+
+        List<ClientListenerInfo> values =
+                new ArrayList<ClientListenerInfo>(infoList.values());
+        for (int i=values.size()-1; i>=0; i--) {
+            ClientListenerInfo li = values.get(i);
+            if (li.sameAs(name, listener, filter, handback)) {
+                id=li.getListenerID();
+                break;
+            }
+        }
+
+        if (id == null)
+            throw new ListenerNotFoundException("Listener not found");
+
+        return id;
+    }
+
+    public synchronized Integer[]
         removeNotificationListener(ObjectName name,
                                    NotificationListener listener)
         throws ListenerNotFoundException, IOException {
@@ -198,24 +245,12 @@ public abstract class ClientNotifForwarder {
             logger.trace("removeNotificationListener",
                          "Remove the listener "+listener+" from "+name);
         }
-
-        List<Integer> ids = new ArrayList<Integer>();
-        List<ClientListenerInfo> values =
-                new ArrayList<ClientListenerInfo>(infoList.values());
-        for (int i=values.size()-1; i>=0; i--) {
-            ClientListenerInfo li = values.get(i);
-
-            if (li.sameAs(name, listener)) {
-                ids.add(li.getListenerID());
-
-                infoList.remove(li.getListenerID());
-            }
+        Integer[] liIds = getListenerIds(name, listener);
+        for (int i = 0; i < liIds.length; i++) {
+            infoList.remove(liIds[i]);
         }
 
-        if (ids.isEmpty())
-            throw new ListenerNotFoundException("Listener not found");
-
-        return ids.toArray(new Integer[0]);
+        return liIds;
     }
 
     public synchronized Integer
@@ -231,26 +266,11 @@ public abstract class ClientNotifForwarder {
         }
 
         beforeRemove();
+        Integer liId = getListenerId(name, listener,
+                filter, handback);
+        infoList.remove(liId);
 
-        Integer id = null;
-
-        List<ClientListenerInfo> values =
-                new ArrayList<ClientListenerInfo>(infoList.values());
-        for (int i=values.size()-1; i>=0; i--) {
-            ClientListenerInfo li = values.get(i);
-            if (li.sameAs(name, listener, filter, handback)) {
-                id=li.getListenerID();
-
-                infoList.remove(id);
-
-                break;
-            }
-        }
-
-        if (id == null)
-            throw new ListenerNotFoundException("Listener not found");
-
-        return id;
+        return liId;
     }
 
     public synchronized Integer[] removeNotificationListener(ObjectName name) {

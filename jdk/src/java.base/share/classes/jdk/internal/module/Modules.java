@@ -25,12 +25,22 @@
 
 package jdk.internal.module;
 
+import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
+import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReference;
+import java.lang.module.ResolvedModule;
 import java.net.URI;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import jdk.internal.loader.BootLoader;
+import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.SharedSecrets;
@@ -38,8 +48,8 @@ import jdk.internal.misc.SharedSecrets;
 /**
  * A helper class for creating and updating modules. This class is intended to
  * support command-line options, tests, and the instrumentation API. It is also
- * used by the VM to add read edges when agents are instrumenting code that
- * need to link to supporting classes.
+ * used by the VM to load modules or add read edges when agents are instrumenting
+ * code that need to link to supporting classes.
  *
  * The parameters that are package names in this API are the fully-qualified
  * names of the packages as defined in section 6.5.3 of <cite>The Java&trade;
@@ -154,4 +164,90 @@ public class Modules {
         addReads(m, BootLoader.getUnnamedModule());
         addReads(m, ClassLoaders.appClassLoader().getUnnamedModule());
     }
+
+    /**
+     * Called by the VM to load a system module, typically "java.instrument" or
+     * "jdk.management.agent". If the module is not loaded then it is resolved
+     * and loaded (along with any dependences that weren't previously loaded)
+     * into a child layer.
+     */
+    public static synchronized Module loadModule(String name) {
+        ModuleLayer top = topLayer;
+        if (top == null)
+            top = ModuleLayer.boot();
+
+        Module module = top.findModule(name).orElse(null);
+        if (module != null) {
+            // module already loaded
+            return module;
+        }
+
+        // resolve the module with the top-most layer as the parent
+        ModuleFinder empty = ModuleFinder.of();
+        ModuleFinder finder = ModuleBootstrap.unlimitedFinder();
+        Set<String> roots = Set.of(name);
+        Configuration cf = top.configuration().resolveAndBind(empty, finder, roots);
+
+        // create the child layer
+        Function<String, ClassLoader> clf = ModuleLoaderMap.mappingFunction(cf);
+        ModuleLayer newLayer = top.defineModules(cf, clf);
+
+        // add qualified exports/opens to give access to modules in child layer
+        Map<String, Module> map = newLayer.modules().stream()
+                                          .collect(Collectors.toMap(Module::getName,
+                                                  Function.identity()));
+        ModuleLayer layer = top;
+        while (layer != null) {
+            for (Module m : layer.modules()) {
+                // qualified exports
+                m.getDescriptor().exports().stream()
+                    .filter(ModuleDescriptor.Exports::isQualified)
+                    .forEach(e -> e.targets().forEach(target -> {
+                        Module other = map.get(target);
+                        if (other != null) {
+                            addExports(m, e.source(), other);
+                        }}));
+
+                // qualified opens
+                m.getDescriptor().opens().stream()
+                    .filter(ModuleDescriptor.Opens::isQualified)
+                    .forEach(o -> o.targets().forEach(target -> {
+                        Module other = map.get(target);
+                        if (other != null) {
+                            addOpens(m, o.source(), other);
+                        }}));
+            }
+
+            List<ModuleLayer> parents = layer.parents();
+            assert parents.size() <= 1;
+            layer = parents.isEmpty() ? null : parents.get(0);
+        }
+
+        // update security manager before making types visible
+        JLA.addNonExportedPackages(newLayer);
+
+        // update the built-in class loaders to make the types visible
+        for (ResolvedModule resolvedModule : cf.modules()) {
+            ModuleReference mref = resolvedModule.reference();
+            String mn = mref.descriptor().name();
+            ClassLoader cl = clf.apply(mn);
+            if (cl == null) {
+                BootLoader.loadModule(mref);
+            } else {
+                ((BuiltinClassLoader) cl).loadModule(mref);
+            }
+        }
+
+        // new top layer
+        topLayer = newLayer;
+
+        // return module
+        return newLayer.findModule(name)
+                       .orElseThrow(() -> new InternalError("module not loaded"));
+
+    }
+
+    // the top-most system layer
+    private static ModuleLayer topLayer;
+
 }

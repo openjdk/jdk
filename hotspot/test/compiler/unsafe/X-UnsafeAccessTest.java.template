@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,11 @@
  * @bug 8143628
  * @summary Test unsafe access for $type$
  *
+#if[JdkInternalMisc]
+ * @modules $module$/$package$:+open
+#else[JdkInternalMisc]
  * @modules $module$/$package$
+#end[JdkInternalMisc]
  * @run testng/othervm -Diters=100   -Xint                   compiler.unsafe.$Qualifier$UnsafeAccessTest$Type$
  * @run testng/othervm -Diters=20000 -XX:TieredStopAtLevel=1 compiler.unsafe.$Qualifier$UnsafeAccessTest$Type$
  * @run testng/othervm -Diters=20000 -XX:-TieredCompilation  compiler.unsafe.$Qualifier$UnsafeAccessTest$Type$
@@ -219,33 +223,51 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
 
         // Compare
         {
+#if[JdkInternalMisc]
+            boolean r = UNSAFE.compareAndSet$Type$(base, offset, $value1$, $value2$);
+            assertEquals(r, true, "success compareAndSet $type$");
+#else[JdkInternalMisc]
             boolean r = UNSAFE.compareAndSwap$Type$(base, offset, $value1$, $value2$);
             assertEquals(r, true, "success compareAndSwap $type$");
+#end[JdkInternalMisc]
             $type$ x = UNSAFE.get$Type$(base, offset);
+#if[JdkInternalMisc]
+            assertEquals(x, $value2$, "success compareAndSet $type$ value");
+#else[JdkInternalMisc]
             assertEquals(x, $value2$, "success compareAndSwap $type$ value");
+#end[JdkInternalMisc]
         }
 
         {
+#if[JdkInternalMisc]
+            boolean r = UNSAFE.compareAndSet$Type$(base, offset, $value1$, $value3$);
+            assertEquals(r, false, "failing compareAndSet $type$");
+#else[JdkInternalMisc]
             boolean r = UNSAFE.compareAndSwap$Type$(base, offset, $value1$, $value3$);
             assertEquals(r, false, "failing compareAndSwap $type$");
+#end[JdkInternalMisc]
             $type$ x = UNSAFE.get$Type$(base, offset);
+#if[JdkInternalMisc]
+            assertEquals(x, $value2$, "failing compareAndSet $type$ value");
+#else[JdkInternalMisc]
             assertEquals(x, $value2$, "failing compareAndSwap $type$ value");
+#end[JdkInternalMisc]
         }
 
 #if[JdkInternalMisc]
         // Advanced compare
         {
-            $type$ r = UNSAFE.compareAndExchange$Type$Volatile(base, offset, $value2$, $value1$);
-            assertEquals(r, $value2$, "success compareAndExchangeVolatile $type$");
+            $type$ r = UNSAFE.compareAndExchange$Type$(base, offset, $value2$, $value1$);
+            assertEquals(r, $value2$, "success compareAndExchange $type$");
             $type$ x = UNSAFE.get$Type$(base, offset);
-            assertEquals(x, $value1$, "success compareAndExchangeVolatile $type$ value");
+            assertEquals(x, $value1$, "success compareAndExchange $type$ value");
         }
 
         {
-            $type$ r = UNSAFE.compareAndExchange$Type$Volatile(base, offset, $value2$, $value3$);
-            assertEquals(r, $value1$, "failing compareAndExchangeVolatile $type$");
+            $type$ r = UNSAFE.compareAndExchange$Type$(base, offset, $value2$, $value3$);
+            assertEquals(r, $value1$, "failing compareAndExchange $type$");
             $type$ x = UNSAFE.get$Type$(base, offset);
-            assertEquals(x, $value1$, "failing compareAndExchangeVolatile $type$ value");
+            assertEquals(x, $value1$, "failing compareAndExchange $type$ value");
         }
 
         {
@@ -279,41 +301,41 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwap$Type$(base, offset, $value1$, $value2$);
+                success = UNSAFE.weakCompareAndSet$Type$Plain(base, offset, $value1$, $value2$);
             }
-            assertEquals(success, true, "weakCompareAndSwap $type$");
+            assertEquals(success, true, "weakCompareAndSetPlain $type$");
             $type$ x = UNSAFE.get$Type$(base, offset);
-            assertEquals(x, $value2$, "weakCompareAndSwap $type$ value");
+            assertEquals(x, $value2$, "weakCompareAndSetPlain $type$ value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwap$Type$Acquire(base, offset, $value2$, $value1$);
+                success = UNSAFE.weakCompareAndSet$Type$Acquire(base, offset, $value2$, $value1$);
             }
-            assertEquals(success, true, "weakCompareAndSwapAcquire $type$");
+            assertEquals(success, true, "weakCompareAndSetAcquire $type$");
             $type$ x = UNSAFE.get$Type$(base, offset);
-            assertEquals(x, $value1$, "weakCompareAndSwapAcquire $type$");
+            assertEquals(x, $value1$, "weakCompareAndSetAcquire $type$");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwap$Type$Release(base, offset, $value1$, $value2$);
+                success = UNSAFE.weakCompareAndSet$Type$Release(base, offset, $value1$, $value2$);
             }
-            assertEquals(success, true, "weakCompareAndSwapRelease $type$");
+            assertEquals(success, true, "weakCompareAndSetRelease $type$");
             $type$ x = UNSAFE.get$Type$(base, offset);
-            assertEquals(x, $value2$, "weakCompareAndSwapRelease $type$");
+            assertEquals(x, $value2$, "weakCompareAndSetRelease $type$");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwap$Type$Volatile(base, offset, $value2$, $value1$);
+                success = UNSAFE.weakCompareAndSet$Type$(base, offset, $value2$, $value1$);
             }
-            assertEquals(success, true, "weakCompareAndSwapVolatile $type$");
+            assertEquals(success, true, "weakCompareAndSet $type$");
             $type$ x = UNSAFE.get$Type$(base, offset);
-            assertEquals(x, $value1$, "weakCompareAndSwapVolatile $type$");
+            assertEquals(x, $value1$, "weakCompareAndSet $type$");
         }
 
 #end[JdkInternalMisc]
@@ -354,4 +376,3 @@ public class $Qualifier$UnsafeAccessTest$Type$ {
 #end[!boolean]
 #end[!Object]
 }
-

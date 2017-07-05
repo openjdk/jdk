@@ -100,28 +100,29 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             connectPipe(hPipe);
 
             // create an input stream for the pipe
-            PipedInputStream is = new PipedInputStream(hPipe);
+            PipedInputStream in = new PipedInputStream(hPipe);
 
             // read completion status
-            int status = readInt(is);
+            int status = readInt(in);
             if (status != 0) {
                 // read from the stream and use that as the error message
-                String message = readErrorMessage(is);
-                is.close();
+                String message = readErrorMessage(in);
+                in.close();
                 // special case the load command so that the right exception is thrown
                 if (cmd.equals("load")) {
-                    throw new AgentLoadException("Failed to load agent library");
+                    String msg = "Failed to load agent library";
+                    if (!message.isEmpty())
+                        msg += ": " + message;
+                    throw new AgentLoadException(msg);
                 } else {
-                    if (message == null) {
-                        throw new AttachOperationFailedException("Command failed in target VM");
-                    } else {
-                        throw new AttachOperationFailedException(message);
-                    }
+                    if (message.isEmpty())
+                        message = "Command failed in target VM";
+                    throw new AttachOperationFailedException(message);
                 }
             }
 
             // return the input stream
-            return is;
+            return in;
 
         } catch (IOException ioe) {
             closePipe(hPipe);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @bug 8081678
  * @summary Tests for stream returning methods
- * @library ../../util/stream/bootlib
+ * @library /lib/testlibrary/bootlib
  * @build java.base/java.util.stream.OpTestCase
  * @run testng/othervm PermissionCollectionStreamTest
  */
