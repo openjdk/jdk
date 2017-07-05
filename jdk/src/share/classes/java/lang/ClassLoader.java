@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1683,22 +1683,29 @@ public abstract class ClassLoader {
         private int jniVersion;
         // the class from which the library is loaded, also indicates
         // the loader this native library belongs.
-        private Class<?> fromClass;
+        private final Class<?> fromClass;
         // the canonicalized name of the native library.
+        // or static library name
         String name;
+        // Indicates if the native library is linked into the VM
+        boolean isBuiltin;
+        // Indicates if the native library is loaded
+        boolean loaded;
+        native void load(String name, boolean isBuiltin);
 
-        native void load(String name);
         native long find(String name);
-        native void unload();
+        native void unload(String name, boolean isBuiltin);
+        static native String findBuiltinLib(String name);
 
-        public NativeLibrary(Class<?> fromClass, String name) {
+        public NativeLibrary(Class<?> fromClass, String name, boolean isBuiltin) {
             this.name = name;
             this.fromClass = fromClass;
+            this.isBuiltin = isBuiltin;
         }
 
         protected void finalize() {
             synchronized (loadedLibraryNames) {
-                if (fromClass.getClassLoader() != null && handle != 0) {
+                if (fromClass.getClassLoader() != null && loaded) {
                     /* remove the native library name */
                     int size = loadedLibraryNames.size();
                     for (int i = 0; i < size; i++) {
@@ -1710,7 +1717,7 @@ public abstract class ClassLoader {
                     /* unload the library. */
                     ClassLoader.nativeLibraryContext.push(this);
                     try {
-                        unload();
+                        unload(name, isBuiltin);
                     } finally {
                         ClassLoader.nativeLibraryContext.pop();
                     }
@@ -1830,20 +1837,24 @@ public abstract class ClassLoader {
     }
 
     private static boolean loadLibrary0(Class<?> fromClass, final File file) {
-        boolean exists = AccessController.doPrivileged(
-            new PrivilegedAction<Object>() {
-                public Object run() {
-                    return file.exists() ? Boolean.TRUE : null;
-                }})
-            != null;
-        if (!exists) {
-            return false;
-        }
-        String name;
-        try {
-            name = file.getCanonicalPath();
-        } catch (IOException e) {
-            return false;
+        // Check to see if we're attempting to access a static library
+        String name = NativeLibrary.findBuiltinLib(file.getName());
+        boolean isBuiltin = (name != null);
+        if (!isBuiltin) {
+            boolean exists = AccessController.doPrivileged(
+                new PrivilegedAction<Object>() {
+                    public Object run() {
+                        return file.exists() ? Boolean.TRUE : null;
+                    }})
+                != null;
+            if (!exists) {
+                return false;
+            }
+            try {
+                name = file.getCanonicalPath();
+            } catch (IOException e) {
+                return false;
+            }
         }
         ClassLoader loader =
             (fromClass == null) ? null : fromClass.getClassLoader();
@@ -1891,14 +1902,14 @@ public abstract class ClassLoader {
                         }
                     }
                 }
-                NativeLibrary lib = new NativeLibrary(fromClass, name);
+                NativeLibrary lib = new NativeLibrary(fromClass, name, isBuiltin);
                 nativeLibraryContext.push(lib);
                 try {
-                    lib.load(name);
+                    lib.load(name, isBuiltin);
                 } finally {
                     nativeLibraryContext.pop();
                 }
-                if (lib.handle != 0) {
+                if (lib.loaded) {
                     loadedLibraryNames.addElement(name);
                     libs.addElement(lib);
                     return true;

@@ -37,6 +37,8 @@ public class CompileUnit {
 
     private long weight;
 
+    private Class<?> clazz;
+
     CompileUnit(final String className, final ClassEmitter classEmitter) {
         this(className, classEmitter, 0L);
     }
@@ -45,6 +47,24 @@ public class CompileUnit {
         this.className    = className;
         this.classEmitter = classEmitter;
         this.weight       = initialWeight;
+    }
+
+    /**
+     * Return the class that contains the code for this unit, null if not
+     * generated yet
+     *
+     * @return class with compile unit code
+     */
+    public Class<?> getCode() {
+        return clazz;
+    }
+
+    /**
+     * Set class when it exists. Only accessible from compiler
+     * @param clazz class with code for this compile unit
+     */
+    void setCode(final Class<?> clazz) {
+        this.clazz = clazz;
     }
 
     /**

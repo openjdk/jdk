@@ -337,27 +337,16 @@ VirtualSpaceNode::VirtualSpaceNode(size_t byte_size) : _top(NULL), _next(NULL), 
   // align up to vm allocation granularity
   byte_size = align_size_up(byte_size, os::vm_allocation_granularity());
 
-  // This allocates memory with mmap.  For DumpSharedspaces, allocate the
-  // space at low memory so that other shared images don't conflict.
-  // This is the same address as memory needed for UseCompressedOops but
-  // compressed oops don't work with CDS (offsets in metadata are wrong), so
-  // borrow the same address.
+  // This allocates memory with mmap.  For DumpSharedspaces, try to reserve
+  // configurable address, generally at the top of the Java heap so other
+  // memory addresses don't conflict.
   if (DumpSharedSpaces) {
-    char* shared_base = (char*)HeapBaseMinAddress;
+    char* shared_base = (char*)SharedBaseAddress;
     _rs = ReservedSpace(byte_size, 0, false, shared_base, 0);
     if (_rs.is_reserved()) {
-      assert(_rs.base() == shared_base, "should match");
+      assert(shared_base == 0 || _rs.base() == shared_base, "should match");
     } else {
-      // If we are dumping the heap, then allocate a wasted block of address
-      // space in order to push the heap to a lower address.  This extra
-      // address range allows for other (or larger) libraries to be loaded
-      // without them occupying the space required for the shared spaces.
-      uintx reserved = 0;
-      uintx block_size = 64*1024*1024;
-      while (reserved < SharedDummyBlockSize) {
-        char* dummy = os::reserve_memory(block_size);
-        reserved += block_size;
-      }
+      // Get a mmap region anywhere if the SharedBaseAddress fails.
       _rs = ReservedSpace(byte_size);
     }
     MetaspaceShared::set_shared_rs(&_rs);

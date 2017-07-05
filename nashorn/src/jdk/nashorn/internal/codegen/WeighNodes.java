@@ -47,7 +47,6 @@ import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode.ArrayUnit;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.PropertyNode;
-import jdk.nashorn.internal.ir.ReferenceNode;
 import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.SplitNode;
@@ -80,7 +79,7 @@ final class WeighNodes extends NodeOperatorVisitor {
     private static final long LITERAL_WEIGHT   = 10;
     private static final long LOOP_WEIGHT      = 4;
     private static final long NEW_WEIGHT       = 6;
-    private static final long REFERENCE_WEIGHT = 20;
+    private static final long FUNC_EXPR_WEIGHT = 20;
     private static final long RETURN_WEIGHT    = 2;
     private static final long SPLIT_WEIGHT     = 40;
     private static final long SWITCH_WEIGHT    = 8;
@@ -94,36 +93,37 @@ final class WeighNodes extends NodeOperatorVisitor {
     /** Optional cache for weight of block nodes. */
     private final Map<Node, Long> weightCache;
 
-    /*
+    private final FunctionNode topFunction;
+
+    /**
      * Constructor
      *
      * @param weightCache cache of already calculated block weights
      */
-    private WeighNodes(final Map<Node, Long> weightCache) {
+    private WeighNodes(FunctionNode topFunction, final Map<Node, Long> weightCache) {
         super(null, null);
+        this.topFunction = topFunction;
         this.weightCache = weightCache;
     }
 
     static long weigh(final Node node) {
-        final WeighNodes weighNodes = new WeighNodes(null);
-        node.accept(weighNodes);
-        return weighNodes.weight;
+        return weigh(node, null);
     }
 
     static long weigh(final Node node, final Map<Node, Long> weightCache) {
-        final WeighNodes weighNodes = new WeighNodes(weightCache);
+        final WeighNodes weighNodes = new WeighNodes(node instanceof FunctionNode ? (FunctionNode)node : null, weightCache);
         node.accept(weighNodes);
         return weighNodes.weight;
     }
 
     @Override
-    public Node leave(final AccessNode accessNode) {
+    public Node leaveAccessNode(final AccessNode accessNode) {
         weight += ACCESS_WEIGHT;
         return accessNode;
     }
 
     @Override
-    public Node enter(final Block block) {
+    public Node enterBlock(final Block block) {
         if (weightCache != null && weightCache.containsKey(block)) {
             weight += weightCache.get(block);
             return null;
@@ -133,78 +133,79 @@ final class WeighNodes extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node leave(final BreakNode breakNode) {
+    public Node leaveBreakNode(final BreakNode breakNode) {
         weight += BREAK_WEIGHT;
         return breakNode;
     }
 
     @Override
-    public Node leave(final CallNode callNode) {
+    public Node leaveCallNode(final CallNode callNode) {
         weight += CALL_WEIGHT;
         return callNode;
     }
 
     @Override
-    public Node leave(final CatchNode catchNode) {
+    public Node leaveCatchNode(final CatchNode catchNode) {
         weight += CATCH_WEIGHT;
         return catchNode;
     }
 
     @Override
-    public Node leave(final ContinueNode continueNode) {
+    public Node leaveContinueNode(final ContinueNode continueNode) {
         weight += CONTINUE_WEIGHT;
         return continueNode;
     }
 
     @Override
-    public Node leave(final DoWhileNode doWhileNode) {
+    public Node leaveDoWhileNode(final DoWhileNode doWhileNode) {
         weight += LOOP_WEIGHT;
         return doWhileNode;
     }
 
     @Override
-    public Node leave(final ExecuteNode executeNode) {
+    public Node leaveExecuteNode(final ExecuteNode executeNode) {
         return executeNode;
     }
 
     @Override
-    public Node leave(final ForNode forNode) {
+    public Node leaveForNode(final ForNode forNode) {
         weight += LOOP_WEIGHT;
         return forNode;
     }
 
     @Override
-    public Node enter(final FunctionNode functionNode) {
-        final List<Node> statements = functionNode.getStatements();
-
-        for (final Node statement : statements) {
-            statement.accept(this);
+    public Node enterFunctionNode(final FunctionNode functionNode) {
+        if(functionNode == topFunction) {
+            // the function being weighted; descend into its statements
+            functionNode.visitStatements(this);
+        } else {
+            // just a reference to inner function from outer function
+            weight += FUNC_EXPR_WEIGHT;
         }
-
         return null;
     }
 
     @Override
-    public Node leave(final IdentNode identNode) {
+    public Node leaveIdentNode(final IdentNode identNode) {
         weight += ACCESS_WEIGHT + identNode.getName().length() * 2;
         return identNode;
     }
 
     @Override
-    public Node leave(final IfNode ifNode) {
+    public Node leaveIfNode(final IfNode ifNode) {
         weight += IF_WEIGHT;
         return ifNode;
     }
 
     @Override
-    public Node leave(final IndexNode indexNode) {
+    public Node leaveIndexNode(final IndexNode indexNode) {
         weight += ACCESS_WEIGHT;
         return indexNode;
     }
 
     @SuppressWarnings("rawtypes")
     @Override
-    public Node enter(final LiteralNode literalNode) {
+    public Node enterLiteralNode(final LiteralNode literalNode) {
         weight += LITERAL_WEIGHT;
 
         if (literalNode instanceof ArrayLiteralNode) {
@@ -230,67 +231,61 @@ final class WeighNodes extends NodeOperatorVisitor {
     }
 
     @Override
-    public Node leave(final PropertyNode propertyNode) {
+    public Node leavePropertyNode(final PropertyNode propertyNode) {
         weight += LITERAL_WEIGHT;
         return propertyNode;
     }
 
     @Override
-    public Node leave(final ReferenceNode referenceNode) {
-        weight += REFERENCE_WEIGHT;
-        return referenceNode;
-    }
-
-    @Override
-    public Node leave(final ReturnNode returnNode) {
+    public Node leaveReturnNode(final ReturnNode returnNode) {
         weight += RETURN_WEIGHT;
         return returnNode;
     }
 
     @Override
-    public Node leave(final RuntimeNode runtimeNode) {
+    public Node leaveRuntimeNode(final RuntimeNode runtimeNode) {
         weight += CALL_WEIGHT;
         return runtimeNode;
     }
 
     @Override
-    public Node enter(final SplitNode splitNode) {
+    public Node enterSplitNode(final SplitNode splitNode) {
         weight += SPLIT_WEIGHT;
         return null;
     }
 
     @Override
-    public Node leave(final SwitchNode switchNode) {
+    public Node leaveSwitchNode(final SwitchNode switchNode) {
         weight += SWITCH_WEIGHT;
         return switchNode;
     }
 
     @Override
-    public Node leave(final ThrowNode throwNode) {
+    public Node leaveThrowNode(final ThrowNode throwNode) {
         weight += THROW_WEIGHT;
         return throwNode;
     }
 
     @Override
-    public Node leave(final TryNode tryNode) {
+    public Node leaveTryNode(final TryNode tryNode) {
         weight += THROW_WEIGHT;
         return tryNode;
     }
 
     @Override
-    public Node leave(final VarNode varNode) {
+    public Node leaveVarNode(final VarNode varNode) {
         weight += VAR_WEIGHT;
         return varNode;
     }
 
     @Override
-    public Node leave(final WhileNode whileNode) {
+    public Node leaveWhileNode(final WhileNode whileNode) {
         weight += LOOP_WEIGHT;
         return whileNode;
     }
 
     @Override
-    public Node leave(final WithNode withNode) {
+    public Node leaveWithNode(final WithNode withNode) {
         weight += WITH_WEIGHT;
         return withNode;
     }

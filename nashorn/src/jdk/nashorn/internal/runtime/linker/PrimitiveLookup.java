@@ -109,7 +109,6 @@ public class PrimitiveLookup {
             }
             return new GuardedInvocation(method, guard, link.getSwitchPoint());
         }
-        assert desc.getNameTokenCount() <= 2; // Named operations would hit the return null after findProperty
         return null;
     }
 }

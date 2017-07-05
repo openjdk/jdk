@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,7 +208,7 @@ pathToNTPath(JNIEnv *env, jstring path, jboolean throwFNFE) {
     return pathbuf;
 }
 
-jlong
+FD
 winFileHandleOpen(JNIEnv *env, jstring path, int flags)
 {
     const DWORD access =
@@ -264,7 +264,7 @@ winFileHandleOpen(JNIEnv *env, jstring path, int flags)
 void
 fileOpen(JNIEnv *env, jobject this, jstring path, jfieldID fid, int flags)
 {
-    jlong h = winFileHandleOpen(env, path, flags);
+    FD h = winFileHandleOpen(env, path, flags);
     if (h >= 0) {
         SET_FD(this, h, fid);
     }
@@ -274,12 +274,12 @@ fileOpen(JNIEnv *env, jobject this, jstring path, jfieldID fid, int flags)
    old C style int fd as is used in HPI layer */
 
 static int
-handleNonSeekAvailable(jlong, long *);
+handleNonSeekAvailable(FD, long *);
 static int
-handleStdinAvailable(jlong, long *);
+handleStdinAvailable(FD, long *);
 
 int
-handleAvailable(jlong fd, jlong *pbytes) {
+handleAvailable(FD fd, jlong *pbytes) {
     HANDLE h = (HANDLE)fd;
     DWORD type = 0;
 
@@ -317,7 +317,7 @@ handleAvailable(jlong fd, jlong *pbytes) {
 }
 
 static int
-handleNonSeekAvailable(jlong fd, long *pbytes) {
+handleNonSeekAvailable(FD fd, long *pbytes) {
     /* This is used for available on non-seekable devices
      * (like both named and anonymous pipes, such as pipes
      *  connected to an exec'd process).
@@ -346,7 +346,7 @@ handleNonSeekAvailable(jlong fd, long *pbytes) {
 }
 
 static int
-handleStdinAvailable(jlong fd, long *pbytes) {
+handleStdinAvailable(FD fd, long *pbytes) {
     HANDLE han;
     DWORD numEventsRead = 0;    /* Number of events read from buffer */
     DWORD numEvents = 0;        /* Number of events in buffer */
@@ -412,8 +412,8 @@ handleStdinAvailable(jlong fd, long *pbytes) {
  * denied".
  */
 
-JNIEXPORT int
-handleSync(jlong fd) {
+int
+handleSync(FD fd) {
     /*
      * From the documentation:
      *
@@ -443,7 +443,7 @@ handleSync(jlong fd) {
 
 
 int
-handleSetLength(jlong fd, jlong length) {
+handleSetLength(FD fd, jlong length) {
     HANDLE h = (HANDLE)fd;
     long high = (long)(length >> 32);
     DWORD ret;
@@ -459,7 +459,7 @@ handleSetLength(jlong fd, jlong length) {
 
 JNIEXPORT
 jint
-handleRead(jlong fd, void *buf, jint len)
+handleRead(FD fd, void *buf, jint len)
 {
     DWORD read = 0;
     BOOL result = 0;
@@ -482,7 +482,7 @@ handleRead(jlong fd, void *buf, jint len)
     return (jint)read;
 }
 
-static jint writeInternal(jlong fd, const void *buf, jint len, jboolean append)
+static jint writeInternal(FD fd, const void *buf, jint len, jboolean append)
 {
     BOOL result = 0;
     DWORD written = 0;
@@ -510,13 +510,11 @@ static jint writeInternal(jlong fd, const void *buf, jint len, jboolean append)
     return (jint)written;
 }
 
-JNIEXPORT
-jint handleWrite(jlong fd, const void *buf, jint len) {
+jint handleWrite(FD fd, const void *buf, jint len) {
     return writeInternal(fd, buf, len, JNI_FALSE);
 }
 
-JNIEXPORT
-jint handleAppend(jlong fd, const void *buf, jint len) {
+jint handleAppend(FD fd, const void *buf, jint len) {
     return writeInternal(fd, buf, len, JNI_TRUE);
 }
 
@@ -545,7 +543,7 @@ handleClose(JNIEnv *env, jobject this, jfieldID fid)
 }
 
 jlong
-handleLseek(jlong fd, jlong offset, jint whence)
+handleLseek(FD fd, jlong offset, jint whence)
 {
     LARGE_INTEGER pos, distance;
     DWORD lowPos = 0;
@@ -568,4 +566,45 @@ handleLseek(jlong fd, jlong offset, jint whence)
         return -1;
     }
     return long_to_jlong(pos.QuadPart);
+}
+
+size_t
+getLastErrorString(char *buf, size_t len)
+{
+    DWORD errval;
+    if (len > 0) {
+        if ((errval = GetLastError()) != 0) {
+            // DOS error
+            size_t n = (size_t)FormatMessage(
+                FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
+                NULL,
+                errval,
+                0,
+                buf,
+                (DWORD)len,
+                NULL);
+            if (n > 3) {
+                // Drop final '.', CR, LF
+                if (buf[n - 1] == '\n') n--;
+                if (buf[n - 1] == '\r') n--;
+                if (buf[n - 1] == '.') n--;
+                buf[n] = '\0';
+            }
+            return n;
+        }
+
+        if (errno != 0) {
+            // C runtime error that has no corresponding DOS error code
+            const char *err = strerror(errno);
+            size_t n = strlen(err);
+            if (n >= len)
+                n = len - 1;
+
+            strncpy(buf, err, n);
+            buf[n] = '\0';
+            return n;
+        }
+    }
+
+    return 0;
 }

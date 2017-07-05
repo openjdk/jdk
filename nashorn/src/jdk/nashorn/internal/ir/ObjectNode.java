@@ -28,7 +28,6 @@ package jdk.nashorn.internal.ir;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -36,9 +35,6 @@ import jdk.nashorn.internal.runtime.Source;
  * IR representation of an object literal.
  */
 public class ObjectNode extends Node {
-    /** Literal context. */
-    @Ignore
-    private Block context;
 
     /** Literal elements. */
     private final List<Node> elements;
@@ -49,13 +45,11 @@ public class ObjectNode extends Node {
      * @param source   the source
      * @param token    token
      * @param finish   finish
-     * @param context  the block for this ObjectNode
      * @param elements the elements used to initialize this ObjectNode
      */
-    public ObjectNode(final Source source, final long token, final int finish, final Block context, final List<Node> elements) {
+    public ObjectNode(final Source source, final long token, final int finish, final List<Node> elements) {
         super(source, token, finish);
 
-        this.context  = context;
         this.elements = elements;
     }
 
@@ -68,7 +62,6 @@ public class ObjectNode extends Node {
             newElements.add(cs.existingOrCopy(element));
         }
 
-        this.context  = (Block)cs.existingOrCopy(objectNode.context);
         this.elements = newElements;
     }
 
@@ -79,16 +72,12 @@ public class ObjectNode extends Node {
 
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enter(this) != null) {
-            if (context != null) {
-                context = (Block)context.accept(visitor);
-            }
-
+        if (visitor.enterObjectNode(this) != null) {
             for (int i = 0, count = elements.size(); i < count; i++) {
                 elements.set(i, elements.get(i).accept(visitor));
             }
 
-            return visitor.leave(this);
+            return visitor.leaveObjectNode(this);
         }
 
         return this;
@@ -114,14 +103,6 @@ public class ObjectNode extends Node {
         }
 
         sb.append('}');
-    }
-
-    /**
-     * Get the block that is this ObjectNode's literal context
-     * @return the block
-     */
-    public Block getContext() {
-        return context;
     }
 
     /**

@@ -36,15 +36,17 @@ import jdk.nashorn.internal.codegen.types.Type;
  * by using JSType.toInt32. Especially in scenarios where the field is already stored
  * as a primitive, this will be much faster than the "object is all I see" scope
  * available in the method
+ * @param <T> the type of the node implementing the interface
  */
 
-public interface TypeOverride {
+public interface TypeOverride<T extends Node> {
     /**
      * Set the override type
      *
      * @param type  the type
+     * @return a node equivalent to this one except for the requested change.
      */
-    public void setType(final Type type);
+    public T setType(final Type type);
 
     /**
      * Returns true if this node can have a callsite override, e.g. all scope ident nodes

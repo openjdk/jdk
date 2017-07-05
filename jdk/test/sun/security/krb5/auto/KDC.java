@@ -923,29 +923,29 @@ public class KDC {
                         pas2 = new DerValue[] {
                             new DerValue(new ETypeInfo2(1, null, null).asn1Encode()),
                             new DerValue(new ETypeInfo2(1, "", null).asn1Encode()),
-                            new DerValue(new ETypeInfo2(1, OneKDC.REALM, new byte[]{1}).asn1Encode()),
+                            new DerValue(new ETypeInfo2(1, realm, new byte[]{1}).asn1Encode()),
                         };
                         pas = new DerValue[] {
                             new DerValue(new ETypeInfo(1, null).asn1Encode()),
                             new DerValue(new ETypeInfo(1, "").asn1Encode()),
-                            new DerValue(new ETypeInfo(1, OneKDC.REALM).asn1Encode()),
+                            new DerValue(new ETypeInfo(1, realm).asn1Encode()),
                         };
                         break;
                     case 2:     // we still reject non-null s2kparams and prefer E2 over E
                         pas2 = new DerValue[] {
-                            new DerValue(new ETypeInfo2(1, OneKDC.REALM, new byte[]{1}).asn1Encode()),
+                            new DerValue(new ETypeInfo2(1, realm, new byte[]{1}).asn1Encode()),
                             new DerValue(new ETypeInfo2(1, null, null).asn1Encode()),
                             new DerValue(new ETypeInfo2(1, "", null).asn1Encode()),
                         };
                         pas = new DerValue[] {
-                            new DerValue(new ETypeInfo(1, OneKDC.REALM).asn1Encode()),
+                            new DerValue(new ETypeInfo(1, realm).asn1Encode()),
                             new DerValue(new ETypeInfo(1, null).asn1Encode()),
                             new DerValue(new ETypeInfo(1, "").asn1Encode()),
                         };
                         break;
                     case 3:     // but only E is wrong
                         pas = new DerValue[] {
-                            new DerValue(new ETypeInfo(1, OneKDC.REALM).asn1Encode()),
+                            new DerValue(new ETypeInfo(1, realm).asn1Encode()),
                             new DerValue(new ETypeInfo(1, null).asn1Encode()),
                             new DerValue(new ETypeInfo(1, "").asn1Encode()),
                         };

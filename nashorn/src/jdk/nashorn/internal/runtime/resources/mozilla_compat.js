@@ -1,21 +1,21 @@
 /*
  * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- * 
+ *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
  * published by the Free Software Foundation.
- * 
+ *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
- * 
+ *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- * 
+ *
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
@@ -34,7 +34,7 @@ Object.defineProperty(this, "JavaAdapter", {
         if (arguments.length < 2) {
             throw new TypeError("JavaAdapter requires atleast two arguments");
         }
-            
+
         var types = Array.prototype.slice.call(arguments, 0, arguments.length - 1);
         var NewType = Java.extend.apply(Java, types);
         return new NewType(arguments[arguments.length - 1]);
@@ -56,10 +56,10 @@ Object.defineProperty(this, "importPackage", {
                     return type;
                 } catch (e) {}
             }
-            
+
             return oldNoSuchProperty? oldNoSuchProperty(name) : undefined;
         }
-        
+
         var prefix = "[JavaPackage ";
         return function() {
             for (var i in arguments) {
@@ -343,7 +343,9 @@ Object.defineProperty(this, "importClass", {
     configurable: true, enumerable: false, writable: true,
     value: function(clazz) {
         if (Java.isType(clazz)) {
-            this[clazz.class.getSimpleName()] = clazz;
+            var className = Java.typeName(clazz);
+            var simpleName = className.substring(className.lastIndexOf('.') + 1);
+            this[simpleName] = clazz;
         } else {
             throw new TypeError(clazz + " is not a Java class");
         }
