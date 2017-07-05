@@ -81,6 +81,9 @@ class Field extends AccessibleObject implements Member {
     // For sharing of FieldAccessors. This branching structure is
     // currently only two levels deep (i.e., one root Field and
     // potentially many Field objects pointing to it.)
+    //
+    // If this branching structure would ever contain cycles, deadlocks can
+    // occur in annotation code.
     private Field               root;
 
     // Generics infrastructure
@@ -141,6 +144,9 @@ class Field extends AccessibleObject implements Member {
         // which implicitly requires that new java.lang.reflect
         // objects be fabricated for each reflective call on Class
         // objects.)
+        if (this.root != null)
+            throw new IllegalArgumentException("Can not copy a non-root Field");
+
         Field res = new Field(clazz, name, type, modifiers, slot, signature, annotations);
         res.root = this;
         // Might as well eagerly propagate this if already present
@@ -1137,10 +1143,15 @@ class Field extends AccessibleObject implements Member {
 
     private synchronized  Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
         if (declaredAnnotations == null) {
-            declaredAnnotations = AnnotationParser.parseAnnotations(
-                annotations, sun.misc.SharedSecrets.getJavaLangAccess().
-                getConstantPool(getDeclaringClass()),
-                getDeclaringClass());
+            Field root = this.root;
+            if (root != null) {
+                declaredAnnotations = root.declaredAnnotations();
+            } else {
+                declaredAnnotations = AnnotationParser.parseAnnotations(
+                        annotations,
+                        sun.misc.SharedSecrets.getJavaLangAccess().getConstantPool(getDeclaringClass()),
+                        getDeclaringClass());
+            }
         }
         return declaredAnnotations;
     }

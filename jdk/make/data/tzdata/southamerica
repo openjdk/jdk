@@ -21,13 +21,13 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-# <pre>
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 
-# This data is by no means authoritative; if you think you know better,
+# This file is by no means authoritative; if you think you know better,
 # go ahead and edit the file (and please send any changes to
-# tz@iana.org for general use in the future).
+# tz@iana.org for general use in the future).  For more, please see
+# the file CONTRIBUTING in the tz distribution.
 
 # From Paul Eggert (2006-03-22):
 # A good source for time zone historical data outside the U.S. is
@@ -35,8 +35,8 @@
 # San Diego: ACS Publications, Inc. (2003).
 #
 # For data circa 1899, a common source is:
-# Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94
-# <http://www.jstor.org/stable/1774359>.
+# Milne J. Civil time. Geogr J. 1899 Feb;13(2):173-94.
+# http://www.jstor.org/stable/1774359
 #
 # Gwillim Law writes that a good source
 # for recent time zone data is the International Air Transport
@@ -53,24 +53,24 @@
 #	I suggest the use of _Summer time_ instead of the more cumbersome
 #	_daylight-saving time_.  _Summer time_ seems to be in general use
 #	in Europe and South America.
-#	-- E O Cutler, _New York Times_ (1937-02-14), quoted in
+#	-- E O Cutler, _New York Times_ (1937-02-14), quoted in
 #	H L Mencken, _The American Language: Supplement I_ (1960), p 466
 #
 # Earlier editions of these tables also used the North American style
 # for time zones in Brazil, but this was incorrect, as Brazilians say
-# "summer time".  Reinaldo Goulart, a Sao Paulo businessman active in
+# "summer time".  Reinaldo Goulart, a São Paulo businessman active in
 # the railroad sector, writes (1999-07-06):
 #	The subject of time zones is currently a matter of discussion/debate in
-#	Brazil.  Let's say that "the Brasilia time" is considered the
-#	"official time" because Brasilia is the capital city.
-#	The other three time zones are called "Brasilia time "minus one" or
+#	Brazil.  Let's say that "the Brasília time" is considered the
+#	"official time" because Brasília is the capital city.
+#	The other three time zones are called "Brasília time "minus one" or
 #	"plus one" or "plus two".  As far as I know there is no such
 #	name/designation as "Eastern Time" or "Central Time".
 # So I invented the following (English-language) abbreviations for now.
 # Corrections are welcome!
 #		std	dst
 #	-2:00	FNT	FNST	Fernando de Noronha
-#	-3:00	BRT	BRST	Brasilia
+#	-3:00	BRT	BRST	Brasília
 #	-4:00	AMT	AMST	Amazon
 #	-5:00	ACT	ACST	Acre
 
@@ -84,7 +84,7 @@
 # Argentina: first Sunday in October to first Sunday in April since 1976.
 # Double Summer time from 1969 to 1974.  Switches at midnight.
 
-# From U. S. Naval Observatory (1988-01-199):
+# From U. S. Naval Observatory (1988-01-19):
 # ARGENTINA           3 H BEHIND   UTC
 
 # From Hernan G. Otero (1995-06-26):
@@ -118,7 +118,7 @@ Rule	Arg	1988	only	-	Dec	 1	0:00	1:00	S
 # From Hernan G. Otero (1995-06-26):
 # These corrections were contributed by InterSoft Argentina S.A.,
 # obtaining the data from the:
-# Talleres de Hidrografia Naval Argentina
+# Talleres de Hidrografía Naval Argentina
 # (Argentine Naval Hydrography Institute)
 Rule	Arg	1989	1993	-	Mar	Sun>=1	0:00	0	-
 Rule	Arg	1989	1992	-	Oct	Sun>=15	0:00	1:00	S
@@ -140,13 +140,13 @@ Rule	Arg	1999	only	-	Oct	Sun>=1	0:00	1:00	S
 Rule	Arg	2000	only	-	Mar	3	0:00	0	-
 #
 # From Peter Gradelski via Steffen Thorsen (2000-03-01):
-# We just checked with our Sao Paulo office and they say the government of
+# We just checked with our São Paulo office and they say the government of
 # Argentina decided not to become one of the countries that go on or off DST.
 # So Buenos Aires should be -3 hours from GMT at all times.
 #
-# From Fabian L. Arce Jofre (2000-04-04):
+# From Fabián L. Arce Jofré (2000-04-04):
 # The law that claimed DST for Argentina was derogated by President Fernando
-# de la Rua on March 2, 2000, because it would make people spend more energy
+# de la Rúa on March 2, 2000, because it would make people spend more energy
 # in the winter time, rather than less.  The change took effect on March 3.
 #
 # From Mariano Absatz (2001-06-06):
@@ -179,15 +179,13 @@ Rule	Arg	2000	only	-	Mar	3	0:00	0	-
 # that Argentina will use DST next year as well, from October to
 # March, although exact rules are not given.
 #
-# From Jesper Norgaard Welen (2007-12-26)
+# From Jesper Nørgaard Welen (2007-12-26)
 # The last hurdle of Argentina DST is over, the proposal was approved in
-# the lower chamber too (Deputados) with a vote 192 for and 2 against.
+# the lower chamber too (Diputados) with a vote 192 for and 2 against.
 # By the way thanks to Mariano Absatz and Daniel Mario Vega for the link to
 # the original scanned proposal, where the dates and the zero hours are
 # clear and unambiguous...This is the article about final approval:
-# <a href="http://www.lanacion.com.ar/politica/nota.asp?nota_id=973996">
 # http://www.lanacion.com.ar/politica/nota.asp?nota_id=973996
-# </a>
 #
 # From Paul Eggert (2007-12-22):
 # For dates after mid-2008, the following rules are my guesses and
@@ -197,13 +195,8 @@ Rule	Arg	2000	only	-	Mar	3	0:00	0	-
 # As per message from Carlos Alberto Fonseca Arauz (Nicaragua),
 # Argentina will start DST on Sunday October 19, 2008.
 #
-# <a href="http://www.worldtimezone.com/dst_news/dst_news_argentina03.html">
 # http://www.worldtimezone.com/dst_news/dst_news_argentina03.html
-# </a>
-# OR
-# <a href="http://www.impulsobaires.com.ar/nota.php?id=57832 (in spanish)">
 # http://www.impulsobaires.com.ar/nota.php?id=57832 (in spanish)
-# </a>
 
 # From Rodrigo Severo (2008-10-06):
 # Here is some info available at a Gentoo bug related to TZ on Argentina's DST:
@@ -212,48 +205,39 @@ Rule	Arg	2000	only	-	Mar	3	0:00	0	-
 # Hi, there is a problem with timezone-data-2008e and maybe with
 # timezone-data-2008f
 # Argentinian law [Number] 25.155 is no longer valid.
-# <a href="http://www.infoleg.gov.ar/infolegInternet/anexos/60000-64999/60036/norma.htm">
 # http://www.infoleg.gov.ar/infolegInternet/anexos/60000-64999/60036/norma.htm
-# </a>
 # The new one is law [Number] 26.350
-# <a href="http://www.infoleg.gov.ar/infolegInternet/anexos/135000-139999/136191/norma.htm">
 # http://www.infoleg.gov.ar/infolegInternet/anexos/135000-139999/136191/norma.htm
-# </a>
 # So there is no summer time in Argentina for now.
 
 # From Mariano Absatz (2008-10-20):
-# Decree 1693/2008 applies Law 26.350 for the summer 2008/2009 establishing DST in Argentina
-# From 2008-10-19 until 2009-03-15
-# <a href="http://www.boletinoficial.gov.ar/Bora.Portal/CustomControls/PdfContent.aspx?fp=16102008&pi=3&pf=4&s=0&sec=01">
+# Decree 1693/2008 applies Law 26.350 for the summer 2008/2009 establishing DST
+# in Argentina from 2008-10-19 until 2009-03-15.
 # http://www.boletinoficial.gov.ar/Bora.Portal/CustomControls/PdfContent.aspx?fp=16102008&pi=3&pf=4&s=0&sec=01
-# </a>
 #
-# Decree 1705/2008 excepting 12 Provinces from applying DST in the summer 2008/2009:
-# Catamarca, La Rioja, Mendoza, Salta, San Juan, San Luis, La Pampa, Neuquen, Rio Negro, Chubut, Santa Cruz
-# and Tierra del Fuego
-# <a href="http://www.boletinoficial.gov.ar/Bora.Portal/CustomControls/PdfContent.aspx?fp=17102008&pi=1&pf=1&s=0&sec=01">
+
+# Decree 1705/2008 excepting 12 Provinces from applying DST in the summer
+# 2008/2009: Catamarca, La Rioja, Mendoza, Salta, San Juan, San Luis, La
+# Pampa, Neuquén, Rio Negro, Chubut, Santa Cruz and Tierra del Fuego
 # http://www.boletinoficial.gov.ar/Bora.Portal/CustomControls/PdfContent.aspx?fp=17102008&pi=1&pf=1&s=0&sec=01
-# </a>
 #
-# Press release 235 dated Saturday October 18th, from the Government of the Province of Jujuy saying
-# it will not apply DST either (even when it was not included in Decree 1705/2008)
-# <a href="http://www.jujuy.gov.ar/index2/partes_prensa/18_10_08/235-181008.doc">
+# Press release 235 dated Saturday October 18th, from the Government of the
+# Province of Jujuy saying it will not apply DST either (even when it was not
+# included in Decree 1705/2008).
 # http://www.jujuy.gov.ar/index2/partes_prensa/18_10_08/235-181008.doc
-# </a>
 
 # From fullinet (2009-10-18):
 # As announced in
-# <a hef="http://www.argentina.gob.ar/argentina/portal/paginas.dhtml?pagina=356">
 # http://www.argentina.gob.ar/argentina/portal/paginas.dhtml?pagina=356
-# </a>
-# (an official .gob.ar) under title: "Sin Cambio de Hora" (english: "No hour change")
+# (an official .gob.ar) under title: "Sin Cambio de Hora"
+# (English: "No hour change").
 #
-# "Por el momento, el Gobierno Nacional resolvio no modificar la hora
-# oficial, decision que estaba en estudio para su implementacion el
-# domingo 18 de octubre. Desde el Ministerio de Planificacion se anuncio
-# que la Argentina hoy, en estas condiciones meteorologicas, no necesita
-# la modificacion del huso horario, ya que 2009 nos encuentra con
-# crecimiento en la produccion y distribucion energetica."
+# "Por el momento, el Gobierno Nacional resolvió no modificar la hora
+# oficial, decisión que estaba en estudio para su implementación el
+# domingo 18 de octubre. Desde el Ministerio de Planificación se anunció
+# que la Argentina hoy, en estas condiciones meteorológicas, no necesita
+# la modificación del huso horario, ya que 2009 nos encuentra con
+# crecimiento en la producción y distribución energética."
 
 Rule	Arg	2007	only	-	Dec	30	0:00	1:00	S
 Rule	Arg	2008	2009	-	Mar	Sun>=15	0:00	0	-
@@ -267,10 +251,10 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 # It's Law No. 7,210.  This change is due to a public power emergency, so for
 # now we'll assume it's for this year only.
 #
-# From Paul Eggert (2006-03-22):
-# <a href="http://www.spicasc.net/horvera.html">
-# Hora de verano para la Republica Argentina (2003-06-08)
-# </a> says that standard time in Argentina from 1894-10-31
+# From Paul Eggert (2014-08-09):
+# Hora de verano para la República Argentina
+# http://buenasiembra.com.ar/esoterismo/astrologia/hora-de-verano-de-la-republica-argentina-27.html
+# says that standard time in Argentina from 1894-10-31
 # to 1920-05-01 was -4:16:48.25.  Go with this more-precise value
 # over Shanks & Pottenger.
 #
@@ -285,10 +269,10 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 # time in October 17th.
 #
 # Catamarca, Chubut, La Rioja, San Juan, San Luis, Santa Cruz,
-# Tierra del Fuego, Tucuman.
+# Tierra del Fuego, Tucumán.
 #
 # From Mariano Absatz (2004-06-14):
-# ... this weekend, the Province of Tucuman decided it'd go back to UTC-03:00
+# ... this weekend, the Province of Tucumán decided it'd go back to UTC-03:00
 # yesterday midnight (that is, at 24:00 Saturday 12th), since the people's
 # annoyance with the change is much higher than the power savings obtained....
 #
@@ -323,49 +307,38 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 # Here are articles that Argentina Province San Luis is planning to end DST
 # as earlier as upcoming Monday January 21, 2008 or February 2008:
 #
-# Provincia argentina retrasa reloj y marca diferencia con resto del pais
+# Provincia argentina retrasa reloj y marca diferencia con resto del país
 # (Argentine Province delayed clock and mark difference with the rest of the
 # country)
-# <a href="http://cl.invertia.com/noticias/noticia.aspx?idNoticia=200801171849_EFE_ET4373&idtel">
 # http://cl.invertia.com/noticias/noticia.aspx?idNoticia=200801171849_EFE_ET4373&idtel
-# </a>
 #
 # Es inminente que en San Luis atrasen una hora los relojes
 # (It is imminent in San Luis clocks one hour delay)
-# <a href="http://www.lagaceta.com.ar/vernotae.asp?id_nota=253414">
-# http://www.lagaceta.com.ar/vernotae.asp?id_nota=253414
-# </a>
-#
-# <a href="http://www.worldtimezone.net/dst_news/dst_news_argentina02.html">
+# http://www.lagaceta.com.ar/nota/253414/Economia/Es-inminente-que-en-San-Luis-atrasen-una-hora-los-relojes.html
 # http://www.worldtimezone.net/dst_news/dst_news_argentina02.html
-# </a>
 
-# From Jesper Norgaard Welen (2008-01-18):
+# From Jesper Nørgaard Welen (2008-01-18):
 # The page of the San Luis provincial government
-# <a href="http://www.sanluis.gov.ar/notas.asp?idCanal=0&id=22812">
 # http://www.sanluis.gov.ar/notas.asp?idCanal=0&id=22812
-# </a>
 # confirms what Alex Krivenyshev has earlier sent to the tz
 # emailing list about that San Luis plans to return to standard
 # time much earlier than the rest of the country. It also
 # confirms that upon request the provinces San Juan and Mendoza
 # refused to follow San Luis in this change.
 #
-# The change is supposed to take place Monday the 21.st at 0:00
+# The change is supposed to take place Monday the 21st at 0:00
 # hours. As far as I understand it if this goes ahead, we need
 # a new timezone for San Luis (although there are also documented
 # independent changes in the southamerica file of San Luis in
 # 1990 and 1991 which has not been confirmed).
 
-# From Jesper Norgaard Welen (2008-01-25):
+# From Jesper Nørgaard Welen (2008-01-25):
 # Unfortunately the below page has become defunct, about the San Luis
 # time change. Perhaps because it now is part of a group of pages "Most
 # important pages of 2008."
 #
 # You can use
-# <a href="http://www.sanluis.gov.ar/notas.asp?idCanal=8141&id=22834">
 # http://www.sanluis.gov.ar/notas.asp?idCanal=8141&id=22834
-# </a>
 # instead it seems. Or use "Buscador" from the main page of the San Luis
 # government, and fill in "huso" and click OK, and you will get 3 pages
 # from which the first one is identical to the above.
@@ -385,9 +358,9 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 # back in 2004, when these provinces changed to UTC-4 for a few days, I
 # mailed them personally and never got an answer).
 
-# From Paul Eggert (2008-06-30):
-# Unless otherwise specified, data are from Shanks & Pottenger through 1992,
-# from the IATA otherwise.  As noted below, Shanks & Pottenger say that
+# From Paul Eggert (2014-08-12):
+# Unless otherwise specified, data entries are from Shanks & Pottenger through
+# 1992, from the IATA otherwise.  As noted below, Shanks & Pottenger say that
 # America/Cordoba split into 6 subregions during 1991/1992, one of which
 # was America/San_Luis, but we haven't verified this yet so for now we'll
 # keep America/Cordoba a single region rather than splitting it into the
@@ -399,14 +372,9 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 # to utc-04:00 until the second Saturday in October...
 #
 # The press release is at
-# <a href="http://www.sanluis.gov.ar/SL/Paginas/NoticiaDetalle.asp?TemaId=1&InfoPrensaId=3102">
 # http://www.sanluis.gov.ar/SL/Paginas/NoticiaDetalle.asp?TemaId=1&InfoPrensaId=3102
-# </a>
-# (I couldn't find the decree, but
-# <a href="http://www.sanluis.gov.ar">
-# www.sanluis.gov.ar
-# <a/>
-# is the official page for the Province Government).
+# (I couldn't find the decree, but www.sanluis.gov.ar
+# is the official page for the Province Government.)
 #
 # There's also a note in only one of the major national papers ...
 # http://www.lanacion.com.ar/nota.asp?nota_id=1107912
@@ -423,9 +391,7 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 # ...the Province of San Luis is a case in itself.
 #
 # The Law at
-# <a href="http://www.diputadossanluis.gov.ar/diputadosasp/paginas/verNorma.asp?NormaID=276>"
 # http://www.diputadossanluis.gov.ar/diputadosasp/paginas/verNorma.asp?NormaID=276
-# </a>
 # is ambiguous because establishes a calendar from the 2nd Sunday in
 # October at 0:00 thru the 2nd Saturday in March at 24:00 and the
 # complement of that starting on the 2nd Sunday of March at 0:00 and
@@ -454,19 +420,15 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 # ...
 
 # From Alexander Krivenyshev (2010-04-09):
-# According to news reports from El Diario de la Republica Province San
+# According to news reports from El Diario de la República Province San
 # Luis, Argentina (standard time UTC-04) will keep Daylight Saving Time
-# after April 11, 2010--will continue to have same time as rest of
+# after April 11, 2010 - will continue to have same time as rest of
 # Argentina (UTC-3) (no DST).
 #
-# Confirmaron la pr&oacute;rroga del huso horario de verano (Spanish)
-# <a href="http://www.eldiariodelarepublica.com/index.php?option=com_content&task=view&id=29383&Itemid=9">
+# Confirmaron la prórroga del huso horario de verano (Spanish)
 # http://www.eldiariodelarepublica.com/index.php?option=com_content&task=view&id=29383&Itemid=9
-# </a>
 # or (some English translation):
-# <a href="http://www.worldtimezone.com/dst_news/dst_news_argentina08.html">
 # http://www.worldtimezone.com/dst_news/dst_news_argentina08.html
-# </a>
 
 # From Mariano Absatz (2010-04-12):
 # yes...I can confirm this...and given that San Luis keeps calling
@@ -478,7 +440,7 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 # Perhaps San Luis operates on the legal fiction that it is at UTC-4
 # with perpetual summer time, but ordinary usage typically seems to
 # just say it's at UTC-3; see, for example,
-# <http://es.wikipedia.org/wiki/Hora_oficial_argentina>.
+# http://es.wikipedia.org/wiki/Hora_oficial_argentina
 # We've documented similar situations as being plain changes to
 # standard time, so let's do that here too.  This does not change UTC
 # offsets, only tm_isdst and the time zone abbreviations.  One minor
@@ -486,20 +448,20 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 # setting for time stamps past 2038.
 
 # From Paul Eggert (2013-02-21):
-# Milne says Cordoba time was -4:16:48.2.  Round to the nearest second.
+# Milne says Córdoba time was -4:16:48.2.  Round to the nearest second.
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 #
 # Buenos Aires (BA), Capital Federal (CF),
-Zone America/Argentina/Buenos_Aires -3:53:48 - LMT 1894 Oct 31
-			-4:16:48 -	CMT	1920 May # Cordoba Mean Time
+Zone America/Argentina/Buenos_Aires -3:53:48 - LMT	1894 Oct 31
+			-4:16:48 -	CMT	1920 May    # Córdoba Mean Time
 			-4:00	-	ART	1930 Dec
 			-4:00	Arg	AR%sT	1969 Oct  5
 			-3:00	Arg	AR%sT	1999 Oct  3
 			-4:00	Arg	AR%sT	2000 Mar  3
 			-3:00	Arg	AR%sT
 #
-# Cordoba (CB), Santa Fe (SF), Entre Rios (ER), Corrientes (CN), Misiones (MN),
+# Córdoba (CB), Santa Fe (SF), Entre Ríos (ER), Corrientes (CN), Misiones (MN),
 # Chaco (CC), Formosa (FM), Santiago del Estero (SE)
 #
 # Shanks & Pottenger also make the following claims, which we haven't verified:
@@ -519,7 +481,7 @@ Zone America/Argentina/Cordoba -4:16:48 - LMT	1894 Oct 31
 			-4:00	Arg	AR%sT	2000 Mar  3
 			-3:00	Arg	AR%sT
 #
-# Salta (SA), La Pampa (LP), Neuquen (NQ), Rio Negro (RN)
+# Salta (SA), La Pampa (LP), Neuquén (NQ), Rio Negro (RN)
 Zone America/Argentina/Salta -4:21:40 - LMT	1894 Oct 31
 			-4:16:48 -	CMT	1920 May
 			-4:00	-	ART	1930 Dec
@@ -531,7 +493,7 @@ Zone America/Argentina/Salta -4:21:40 - LMT	1894 Oct 31
 			-3:00	Arg	AR%sT	2008 Oct 18
 			-3:00	-	ART
 #
-# Tucuman (TM)
+# Tucumán (TM)
 Zone America/Argentina/Tucuman -4:20:52 - LMT	1894 Oct 31
 			-4:16:48 -	CMT	1920 May
 			-4:00	-	ART	1930 Dec
@@ -642,8 +604,8 @@ Zone America/Argentina/San_Luis -4:25:24 - LMT	1894 Oct 31
 			-3:00	-	ART
 #
 # Santa Cruz (SC)
-Zone America/Argentina/Rio_Gallegos -4:36:52 - LMT 1894 Oct 31
-			-4:16:48 -	CMT	1920 May # Cordoba Mean Time
+Zone America/Argentina/Rio_Gallegos -4:36:52 - LMT	1894 Oct 31
+			-4:16:48 -	CMT	1920 May    # Córdoba Mean Time
 			-4:00	-	ART	1930 Dec
 			-4:00	Arg	AR%sT	1969 Oct  5
 			-3:00	Arg	AR%sT	1999 Oct  3
@@ -653,9 +615,9 @@ Zone America/Argentina/Rio_Gallegos -4:36:52 - LMT 1894 Oct 31
 			-3:00	Arg	AR%sT	2008 Oct 18
 			-3:00	-	ART
 #
-# Tierra del Fuego, Antartida e Islas del Atlantico Sur (TF)
-Zone America/Argentina/Ushuaia -4:33:12 - LMT 1894 Oct 31
-			-4:16:48 -	CMT	1920 May # Cordoba Mean Time
+# Tierra del Fuego, Antártida e Islas del Atlántico Sur (TF)
+Zone America/Argentina/Ushuaia -4:33:12 - LMT	1894 Oct 31
+			-4:16:48 -	CMT	1920 May    # Córdoba Mean Time
 			-4:00	-	ART	1930 Dec
 			-4:00	Arg	AR%sT	1969 Oct  5
 			-3:00	Arg	AR%sT	1999 Oct  3
@@ -686,13 +648,13 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 
 # From IATA SSIM (1996-02):
 # _Only_ the following states in BR1 observe DST: Rio Grande do Sul (RS),
-# Santa Catarina (SC), Parana (PR), Sao Paulo (SP), Rio de Janeiro (RJ),
-# Espirito Santo (ES), Minas Gerais (MG), Bahia (BA), Goias (GO),
+# Santa Catarina (SC), Paraná (PR), São Paulo (SP), Rio de Janeiro (RJ),
+# Espírito Santo (ES), Minas Gerais (MG), Bahia (BA), Goiás (GO),
 # Distrito Federal (DF), Tocantins (TO), Sergipe [SE] and Alagoas [AL].
 # [The last three states are new to this issue of the IATA SSIM.]
 
 # From Gwillim Law (1996-10-07):
-# Geography, history (Tocantins was part of Goias until 1989), and other
+# Geography, history (Tocantins was part of Goiás until 1989), and other
 # sources of time zone information lead me to believe that AL, SE, and TO were
 # always in BR1, and so the only change was whether or not they observed DST....
 # The earliest issue of the SSIM I have is 2/91.  Each issue from then until
@@ -706,16 +668,14 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 # However, some conclusions can be drawn from another IATA manual: the Airline
 # Coding Directory, which lists close to 400 airports in Brazil.  For each
 # airport it gives a time zone which is coded to the SSIM.  From that
-# information, I'm led to conclude that the states of Amapa (AP), Ceara (CE),
-# Maranhao (MA), Paraiba (PR), Pernambuco (PE), Piaui (PI), and Rio Grande do
-# Norte (RN), and the eastern part of Para (PA) are all in BR1 without DST.
+# information, I'm led to conclude that the states of Amapá (AP), Ceará (CE),
+# Maranhão (MA), Paraíba (PR), Pernambuco (PE), Piauí (PI), and Rio Grande do
+# Norte (RN), and the eastern part of Pará (PA) are all in BR1 without DST.
 
 # From Marcos Tadeu (1998-09-27):
-# <a href="http://pcdsh01.on.br/verao1.html">
-# Brazilian official page
-# </a>
+# Brazilian official page <http://pcdsh01.on.br/verao1.html>
 
-# From Jesper Norgaard (2000-11-03):
+# From Jesper Nørgaard (2000-11-03):
 # [For an official list of which regions in Brazil use which time zones, see:]
 # http://pcdsh01.on.br/Fusbr.htm
 # http://pcdsh01.on.br/Fusbrhv.htm
@@ -748,13 +708,13 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 
 # From Paul Schulze (2008-06-24):
 # ...by law number 11.662 of April 24, 2008 (published in the "Diario
-# Oficial da Uniao"...) in Brazil there are changes in the timezones,
+# Oficial da União"...) in Brazil there are changes in the timezones,
 # effective today (00:00am at June 24, 2008) as follows:
 #
-# a) The timezone UTC+5 is e[x]tinguished, with all the Acre state and the
+# a) The timezone UTC+5 is extinguished, with all the Acre state and the
 # part of the Amazonas state that had this timezone now being put to the
 # timezone UTC+4
-# b) The whole Para state now is put at timezone UTC+3, instead of just
+# b) The whole Pará state now is put at timezone UTC+3, instead of just
 # part of it, as was before.
 #
 # This change follows a proposal of senator Tiao Viana of Acre state, that
@@ -767,13 +727,11 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 
 # From Rodrigo Severo (2008-06-24):
 # Just correcting the URL:
-# <a href="https://www.in.gov.br/imprensa/visualiza/index.jsp?jornal=do&secao=1&pagina=1&data=25/04/2008">
 # https://www.in.gov.br/imprensa/visualiza/index.jsp?jornal=do&secao=1&pagina=1&data=25/04/2008
-# </a>
 #
 # As a result of the above Decree I believe the America/Rio_Branco
 # timezone shall be modified from UTC-5 to UTC-4 and a new timezone shall
-# be created to represent the...west side of the Para State. I
+# be created to represent the...west side of the Pará State. I
 # suggest this new timezone be called Santarem as the most
 # important/populated city in the affected area.
 #
@@ -782,19 +740,16 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 
 # From Alex Krivenyshev (2008-06-24):
 # This is a quick reference page for New and Old Brazil Time Zones map.
-# <a href="http://www.worldtimezone.com/brazil-time-new-old.php">
 # http://www.worldtimezone.com/brazil-time-new-old.php
-# </a>
 #
-# - 4 time zones replaced by 3 time zones-eliminating time zone UTC- 05
-# (state Acre and the part of the Amazonas will be UTC/GMT- 04) - western
-# part of Par state is moving to one timezone UTC- 03 (from UTC -04).
+# - 4 time zones replaced by 3 time zones - eliminating time zone UTC-05
+# (state Acre and the part of the Amazonas will be UTC/GMT-04) - western
+# part of Par state is moving to one timezone UTC-03 (from UTC-04).
 
 # From Paul Eggert (2002-10-10):
 # The official decrees referenced below are mostly taken from
-# <a href="http://pcdsh01.on.br/DecHV.html">
-# Decretos sobre o Horario de Verao no Brasil
-# </a>.
+# Decretos sobre o Horário de Verão no Brasil.
+# http://pcdsh01.on.br/DecHV.html
 
 # From Steffen Thorsen (2008-08-29):
 # As announced by the government and many newspapers in Brazil late
@@ -806,25 +761,17 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 # It has not yet been posted to http://pcdsh01.on.br/DecHV.html
 #
 # An official page about it:
-# <a href="http://www.mme.gov.br/site/news/detail.do?newsId=16722">
 # http://www.mme.gov.br/site/news/detail.do?newsId=16722
-# </a>
 # Note that this link does not always work directly, but must be accessed
 # by going to
-# <a href="http://www.mme.gov.br/first">
 # http://www.mme.gov.br/first
-# </a>
 #
 # One example link that works directly:
-# <a href="http://jornale.com.br/index.php?option=com_content&task=view&id=13530&Itemid=54">
 # http://jornale.com.br/index.php?option=com_content&task=view&id=13530&Itemid=54
 # (Portuguese)
-# </a>
 #
 # We have a written a short article about it as well:
-# <a href="http://www.timeanddate.com/news/time/brazil-dst-2008-2009.html">
 # http://www.timeanddate.com/news/time/brazil-dst-2008-2009.html
-# </a>
 #
 # From Alexander Krivenyshev (2011-10-04):
 # State Bahia will return to Daylight savings time this year after 8 years off.
@@ -832,17 +779,12 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 # television station in Salvador.
 
 # In Portuguese:
-# <a href="http://g1.globo.com/bahia/noticia/2011/10/governador-jaques-wagner-confirma-horario-de-verao-na-bahia.html">
 # http://g1.globo.com/bahia/noticia/2011/10/governador-jaques-wagner-confirma-horario-de-verao-na-bahia.html
-# </a> and
-# <a href="http://noticias.terra.com.br/brasil/noticias/0,,OI5390887-EI8139,00-Bahia+volta+a+ter+horario+de+verao+apos+oito+anos.html">
 # http://noticias.terra.com.br/brasil/noticias/0,,OI5390887-EI8139,00-Bahia+volta+a+ter+horario+de+verao+apos+oito+anos.html
-# </a>
 
 # From Guilherme Bernardes Rodrigues (2011-10-07):
 # There is news in the media, however there is still no decree about it.
-# I just send a e-mail to Zulmira Brandao at
-# <a href="http://pcdsh01.on.br/">http://pcdsh01.on.br/</a> the
+# I just send a e-mail to Zulmira Brandao at http://pcdsh01.on.br/ the
 # official agency about time in Brazil, and she confirmed that the old rule is
 # still in force.
 
@@ -854,9 +796,7 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 #
 # DECRETO No- 7.584, DE 13 DE OUTUBRO DE 2011
 # Link :
-# <a href="http://www.in.gov.br/visualiza/index.jsp?data=13/10/2011&jornal=1000&pagina=6&totalArquivos=6">
 # http://www.in.gov.br/visualiza/index.jsp?data=13/10/2011&jornal=1000&pagina=6&totalArquivos=6
-# </a>
 
 # From Kelley Cook (2012-10-16):
 # The governor of state of Bahia in Brazil announced on Thursday that
@@ -884,42 +824,42 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 # For now, assume western Amazonas will change as well.
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-# Decree <a href="http://pcdsh01.on.br/HV20466.htm">20,466</a> (1931-10-01)
-# Decree <a href="http://pcdsh01.on.br/HV21896.htm">21,896</a> (1932-01-10)
+# Decree 20,466 <http://pcdsh01.on.br/HV20466.htm> (1931-10-01)
+# Decree 21,896 <http://pcdsh01.on.br/HV21896.htm> (1932-01-10)
 Rule	Brazil	1931	only	-	Oct	 3	11:00	1:00	S
 Rule	Brazil	1932	1933	-	Apr	 1	 0:00	0	-
 Rule	Brazil	1932	only	-	Oct	 3	 0:00	1:00	S
-# Decree <a href="http://pcdsh01.on.br/HV23195.htm">23,195</a> (1933-10-10)
+# Decree 23,195 <http://pcdsh01.on.br/HV23195.htm> (1933-10-10)
 # revoked DST.
-# Decree <a href="http://pcdsh01.on.br/HV27496.htm">27,496</a> (1949-11-24)
-# Decree <a href="http://pcdsh01.on.br/HV27998.htm">27,998</a> (1950-04-13)
+# Decree 27,496 <http://pcdsh01.on.br/HV27496.htm> (1949-11-24)
+# Decree 27,998 <http://pcdsh01.on.br/HV27998.htm> (1950-04-13)
 Rule	Brazil	1949	1952	-	Dec	 1	 0:00	1:00	S
 Rule	Brazil	1950	only	-	Apr	16	 1:00	0	-
 Rule	Brazil	1951	1952	-	Apr	 1	 0:00	0	-
-# Decree <a href="http://pcdsh01.on.br/HV32308.htm">32,308</a> (1953-02-24)
+# Decree 32,308 <http://pcdsh01.on.br/HV32308.htm> (1953-02-24)
 Rule	Brazil	1953	only	-	Mar	 1	 0:00	0	-
-# Decree <a href="http://pcdsh01.on.br/HV34724.htm">34,724</a> (1953-11-30)
+# Decree 34,724 <http://pcdsh01.on.br/HV34724.htm> (1953-11-30)
 # revoked DST.
-# Decree <a href="http://pcdsh01.on.br/HV52700.htm">52,700</a> (1963-10-18)
+# Decree 52,700 <http://pcdsh01.on.br/HV52700.htm> (1963-10-18)
 # established DST from 1963-10-23 00:00 to 1964-02-29 00:00
 # in SP, RJ, GB, MG, ES, due to the prolongation of the drought.
-# Decree <a href="http://pcdsh01.on.br/HV53071.htm">53,071</a> (1963-12-03)
+# Decree 53,071 <http://pcdsh01.on.br/HV53071.htm> (1963-12-03)
 # extended the above decree to all of the national territory on 12-09.
 Rule	Brazil	1963	only	-	Dec	 9	 0:00	1:00	S
-# Decree <a href="http://pcdsh01.on.br/HV53604.htm">53,604</a> (1964-02-25)
+# Decree 53,604 <http://pcdsh01.on.br/HV53604.htm> (1964-02-25)
 # extended summer time by one day to 1964-03-01 00:00 (start of school).
 Rule	Brazil	1964	only	-	Mar	 1	 0:00	0	-
-# Decree <a href="http://pcdsh01.on.br/HV55639.htm">55,639</a> (1965-01-27)
+# Decree 55,639 <http://pcdsh01.on.br/HV55639.htm> (1965-01-27)
 Rule	Brazil	1965	only	-	Jan	31	 0:00	1:00	S
 Rule	Brazil	1965	only	-	Mar	31	 0:00	0	-
-# Decree <a href="http://pcdsh01.on.br/HV57303.htm">57,303</a> (1965-11-22)
+# Decree 57,303 <http://pcdsh01.on.br/HV57303.htm> (1965-11-22)
 Rule	Brazil	1965	only	-	Dec	 1	 0:00	1:00	S
-# Decree <a href="http://pcdsh01.on.br/HV57843.htm">57,843</a> (1966-02-18)
+# Decree 57,843 <http://pcdsh01.on.br/HV57843.htm> (1966-02-18)
 Rule	Brazil	1966	1968	-	Mar	 1	 0:00	0	-
 Rule	Brazil	1966	1967	-	Nov	 1	 0:00	1:00	S
-# Decree <a href="http://pcdsh01.on.br/HV63429.htm">63,429</a> (1968-10-15)
+# Decree 63,429 <http://pcdsh01.on.br/HV63429.htm> (1968-10-15)
 # revoked DST.
-# Decree <a href="http://pcdsh01.on.br/HV91698.htm">91,698</a> (1985-09-27)
+# Decree 91,698 <http://pcdsh01.on.br/HV91698.htm> (1985-09-27)
 Rule	Brazil	1985	only	-	Nov	 2	 0:00	1:00	S
 # Decree 92,310 (1986-01-21)
 # Decree 92,463 (1986-03-13)
@@ -927,42 +867,42 @@ Rule	Brazil	1986	only	-	Mar	15	 0:00	0	-
 # Decree 93,316 (1986-10-01)
 Rule	Brazil	1986	only	-	Oct	25	 0:00	1:00	S
 Rule	Brazil	1987	only	-	Feb	14	 0:00	0	-
-# Decree <a href="http://pcdsh01.on.br/HV94922.htm">94,922</a> (1987-09-22)
+# Decree 94,922 <http://pcdsh01.on.br/HV94922.htm> (1987-09-22)
 Rule	Brazil	1987	only	-	Oct	25	 0:00	1:00	S
 Rule	Brazil	1988	only	-	Feb	 7	 0:00	0	-
-# Decree <a href="http://pcdsh01.on.br/HV96676.htm">96,676</a> (1988-09-12)
+# Decree 96,676 <http://pcdsh01.on.br/HV96676.htm> (1988-09-12)
 # except for the states of AC, AM, PA, RR, RO, and AP (then a territory)
 Rule	Brazil	1988	only	-	Oct	16	 0:00	1:00	S
 Rule	Brazil	1989	only	-	Jan	29	 0:00	0	-
-# Decree <a href="http://pcdsh01.on.br/HV98077.htm">98,077</a> (1989-08-21)
+# Decree 98,077 <http://pcdsh01.on.br/HV98077.htm> (1989-08-21)
 # with the same exceptions
 Rule	Brazil	1989	only	-	Oct	15	 0:00	1:00	S
 Rule	Brazil	1990	only	-	Feb	11	 0:00	0	-
-# Decree <a href="http://pcdsh01.on.br/HV99530.htm">99,530</a> (1990-09-17)
+# Decree 99,530 <http://pcdsh01.on.br/HV99530.htm> (1990-09-17)
 # adopted by RS, SC, PR, SP, RJ, ES, MG, GO, MS, DF.
 # Decree 99,629 (1990-10-19) adds BA, MT.
 Rule	Brazil	1990	only	-	Oct	21	 0:00	1:00	S
 Rule	Brazil	1991	only	-	Feb	17	 0:00	0	-
-# <a href="http://pcdsh01.on.br/HV1991.htm">Unnumbered decree</a> (1991-09-25)
+# Unnumbered decree <http://pcdsh01.on.br/HV1991.htm> (1991-09-25)
 # adopted by RS, SC, PR, SP, RJ, ES, MG, BA, GO, MT, MS, DF.
 Rule	Brazil	1991	only	-	Oct	20	 0:00	1:00	S
 Rule	Brazil	1992	only	-	Feb	 9	 0:00	0	-
-# <a href="http://pcdsh01.on.br/HV1992.htm">Unnumbered decree</a> (1992-10-16)
+# Unnumbered decree <http://pcdsh01.on.br/HV1992.htm> (1992-10-16)
 # adopted by same states.
 Rule	Brazil	1992	only	-	Oct	25	 0:00	1:00	S
 Rule	Brazil	1993	only	-	Jan	31	 0:00	0	-
-# Decree <a href="http://pcdsh01.on.br/HV942.htm">942</a> (1993-09-28)
+# Decree 942 <http://pcdsh01.on.br/HV942.htm> (1993-09-28)
 # adopted by same states, plus AM.
-# Decree <a href="http://pcdsh01.on.br/HV1252.htm">1,252</a> (1994-09-22;
+# Decree 1,252 <http://pcdsh01.on.br/HV1252.htm> (1994-09-22;
 # web page corrected 2004-01-07) adopted by same states, minus AM.
-# Decree <a href="http://pcdsh01.on.br/HV1636.htm">1,636</a> (1995-09-14)
+# Decree 1,636 <http://pcdsh01.on.br/HV1636.htm> (1995-09-14)
 # adopted by same states, plus MT and TO.
-# Decree <a href="http://pcdsh01.on.br/HV1674.htm">1,674</a> (1995-10-13)
+# Decree 1,674 <http://pcdsh01.on.br/HV1674.htm> (1995-10-13)
 # adds AL, SE.
 Rule	Brazil	1993	1995	-	Oct	Sun>=11	 0:00	1:00	S
 Rule	Brazil	1994	1995	-	Feb	Sun>=15	 0:00	0	-
 Rule	Brazil	1996	only	-	Feb	11	 0:00	0	-
-# Decree <a href="http://pcdsh01.on.br/HV2000.htm">2,000</a> (1996-09-04)
+# Decree 2,000 <http://pcdsh01.on.br/HV2000.htm> (1996-09-04)
 # adopted by same states, minus AL, SE.
 Rule	Brazil	1996	only	-	Oct	 6	 0:00	1:00	S
 Rule	Brazil	1997	only	-	Feb	16	 0:00	0	-
@@ -975,53 +915,51 @@ Rule	Brazil	1997	only	-	Feb	16	 0:00	0	-
 #
 # Decree 2,317 (1997-09-04), adopted by same states.
 Rule	Brazil	1997	only	-	Oct	 6	 0:00	1:00	S
-# Decree <a href="http://pcdsh01.on.br/figuras/HV2495.JPG">2,495</a>
+# Decree 2,495 <http://pcdsh01.on.br/figuras/HV2495.JPG>
 # (1998-02-10)
 Rule	Brazil	1998	only	-	Mar	 1	 0:00	0	-
-# Decree <a href="http://pcdsh01.on.br/figuras/Hv98.jpg">2,780</a> (1998-09-11)
+# Decree 2,780 <http://pcdsh01.on.br/figuras/Hv98.jpg> (1998-09-11)
 # adopted by the same states as before.
 Rule	Brazil	1998	only	-	Oct	11	 0:00	1:00	S
 Rule	Brazil	1999	only	-	Feb	21	 0:00	0	-
-# Decree <a href="http://pcdsh01.on.br/figuras/HV3150.gif">3,150</a>
+# Decree 3,150 <http://pcdsh01.on.br/figuras/HV3150.gif>
 # (1999-08-23) adopted by same states.
-# Decree <a href="http://pcdsh01.on.br/DecHV99.gif">3,188</a> (1999-09-30)
+# Decree 3,188 <http://pcdsh01.on.br/DecHV99.gif> (1999-09-30)
 # adds SE, AL, PB, PE, RN, CE, PI, MA and RR.
 Rule	Brazil	1999	only	-	Oct	 3	 0:00	1:00	S
 Rule	Brazil	2000	only	-	Feb	27	 0:00	0	-
-# Decree <a href="http://pcdsh01.on.br/DEC3592.htm">3,592</a> (2000-09-06)
+# Decree 3,592 <http://pcdsh01.on.br/DEC3592.htm> (2000-09-06)
 # adopted by the same states as before.
-# Decree <a href="http://pcdsh01.on.br/Dec3630.jpg">3,630</a> (2000-10-13)
+# Decree 3,630 <http://pcdsh01.on.br/Dec3630.jpg> (2000-10-13)
 # repeals DST in PE and RR, effective 2000-10-15 00:00.
-# Decree <a href="http://pcdsh01.on.br/Dec3632.jpg">3,632</a> (2000-10-17)
+# Decree 3,632 <http://pcdsh01.on.br/Dec3632.jpg> (2000-10-17)
 # repeals DST in SE, AL, PB, RN, CE, PI and MA, effective 2000-10-22 00:00.
-# Decree <a href="http://pcdsh01.on.br/figuras/HV3916.gif">3,916</a>
+# Decree 3,916 <http://pcdsh01.on.br/figuras/HV3916.gif>
 # (2001-09-13) reestablishes DST in AL, CE, MA, PB, PE, PI, RN, SE.
 Rule	Brazil	2000	2001	-	Oct	Sun>=8	 0:00	1:00	S
 Rule	Brazil	2001	2006	-	Feb	Sun>=15	 0:00	0	-
 # Decree 4,399 (2002-10-01) repeals DST in AL, CE, MA, PB, PE, PI, RN, SE.
-# <a href="http://www.presidencia.gov.br/CCIVIL/decreto/2002/D4399.htm">4,399</a>
+# 4,399 <http://www.presidencia.gov.br/CCIVIL/decreto/2002/D4399.htm>
 Rule	Brazil	2002	only	-	Nov	 3	 0:00	1:00	S
 # Decree 4,844 (2003-09-24; corrected 2003-09-26) repeals DST in BA, MT, TO.
-# <a href="http://www.presidencia.gov.br/CCIVIL/decreto/2003/D4844.htm">4,844</a>
+# 4,844 <http://www.presidencia.gov.br/CCIVIL/decreto/2003/D4844.htm>
 Rule	Brazil	2003	only	-	Oct	19	 0:00	1:00	S
 # Decree 5,223 (2004-10-01) reestablishes DST in MT.
-# <a href="http://www.planalto.gov.br/ccivil_03/_Ato2004-2006/2004/Decreto/D5223.htm">5,223</a>
+# 5,223 <http://www.planalto.gov.br/ccivil_03/_Ato2004-2006/2004/Decreto/D5223.htm>
 Rule	Brazil	2004	only	-	Nov	 2	 0:00	1:00	S
-# Decree <a href="http://pcdsh01.on.br/DecHV5539.gif">5,539</a> (2005-09-19),
+# Decree 5,539 <http://pcdsh01.on.br/DecHV5539.gif> (2005-09-19),
 # adopted by the same states as before.
 Rule	Brazil	2005	only	-	Oct	16	 0:00	1:00	S
-# Decree <a href="http://pcdsh01.on.br/DecHV5920.gif">5,920</a> (2006-10-03),
+# Decree 5,920 <http://pcdsh01.on.br/DecHV5920.gif> (2006-10-03),
 # adopted by the same states as before.
 Rule	Brazil	2006	only	-	Nov	 5	 0:00	1:00	S
 Rule	Brazil	2007	only	-	Feb	25	 0:00	0	-
-# Decree <a href="http://pcdsh01.on.br/DecHV6212.gif">6,212</a> (2007-09-26),
+# Decree 6,212 <http://pcdsh01.on.br/DecHV6212.gif> (2007-09-26),
 # adopted by the same states as before.
 Rule	Brazil	2007	only	-	Oct	Sun>=8	 0:00	1:00	S
 # From Frederico A. C. Neves (2008-09-10):
 # According to this decree
-# <a href="http://www.planalto.gov.br/ccivil_03/_Ato2007-2010/2008/Decreto/D6558.htm">
 # http://www.planalto.gov.br/ccivil_03/_Ato2007-2010/2008/Decreto/D6558.htm
-# </a>
 # [t]he DST period in Brazil now on will be from the 3rd Oct Sunday to the
 # 3rd Feb Sunday. There is an exception on the return date when this is
 # the Carnival Sunday then the return date will be the next Sunday...
@@ -1056,29 +994,29 @@ Zone America/Noronha	-2:09:40 -	LMT	1914
 			-2:00	Brazil	FN%sT	2002 Oct  1
 			-2:00	-	FNT
 # Other Atlantic islands have no permanent settlement.
-# These include Trindade and Martin Vaz (administratively part of ES),
-# Atol das Rocas (RN), and Penedos de Sao Pedro e Sao Paulo (PE).
+# These include Trindade and Martim Vaz (administratively part of ES),
+# Rocas Atoll (RN), and the St Peter and St Paul Archipelago (PE).
 # Fernando de Noronha was a separate territory from 1942-09-02 to 1989-01-01;
 # it also included the Penedos.
 #
-# Amapa (AP), east Para (PA)
-# East Para includes Belem, Maraba, Serra Norte, and Sao Felix do Xingu.
-# The division between east and west Para is the river Xingu.
+# Amapá (AP), east Pará (PA)
+# East Pará includes Belém, Marabá, Serra Norte, and São Félix do Xingu.
+# The division between east and west Pará is the river Xingu.
 # In the north a very small part from the river Javary (now Jari I guess,
-# the border with Amapa) to the Amazon, then to the Xingu.
+# the border with Amapá) to the Amazon, then to the Xingu.
 Zone America/Belem	-3:13:56 -	LMT	1914
 			-3:00	Brazil	BR%sT	1988 Sep 12
 			-3:00	-	BRT
 #
-# west Para (PA)
-# West Para includes Altamira, Oribidos, Prainha, Oriximina, and Santarem.
+# west Pará (PA)
+# West Pará includes Altamira, Óbidos, Prainha, Oriximiná, and Santarém.
 Zone America/Santarem	-3:38:48 -	LMT	1914
 			-4:00	Brazil	AM%sT	1988 Sep 12
-			-4:00	-	AMT	2008 Jun 24 00:00
+			-4:00	-	AMT	2008 Jun 24  0:00
 			-3:00	-	BRT
 #
-# Maranhao (MA), Piaui (PI), Ceara (CE), Rio Grande do Norte (RN),
-# Paraiba (PB)
+# Maranhão (MA), Piauí (PI), Ceará (CE), Rio Grande do Norte (RN),
+# Paraíba (PB)
 Zone America/Fortaleza	-2:34:00 -	LMT	1914
 			-3:00	Brazil	BR%sT	1990 Sep 17
 			-3:00	-	BRT	1999 Sep 30
@@ -1125,11 +1063,11 @@ Zone America/Bahia	-2:34:04 -	LMT	1914
 			-3:00	Brazil	BR%sT	2012 Oct 21
 			-3:00	-	BRT
 #
-# Goias (GO), Distrito Federal (DF), Minas Gerais (MG),
-# Espirito Santo (ES), Rio de Janeiro (RJ), Sao Paulo (SP), Parana (PR),
+# Goiás (GO), Distrito Federal (DF), Minas Gerais (MG),
+# Espírito Santo (ES), Rio de Janeiro (RJ), São Paulo (SP), Paraná (PR),
 # Santa Catarina (SC), Rio Grande do Sul (RS)
 Zone America/Sao_Paulo	-3:06:28 -	LMT	1914
-			-3:00	Brazil	BR%sT	1963 Oct 23 00:00
+			-3:00	Brazil	BR%sT	1963 Oct 23  0:00
 			-3:00	1:00	BRST	1964
 			-3:00	Brazil	BR%sT
 #
@@ -1143,7 +1081,7 @@ Zone America/Cuiaba	-3:44:20 -	LMT	1914
 			-4:00	-	AMT	2004 Oct  1
 			-4:00	Brazil	AM%sT
 #
-# Rondonia (RO)
+# Rondônia (RO)
 Zone America/Porto_Velho -4:15:36 -	LMT	1914
 			-4:00	Brazil	AM%sT	1988 Sep 12
 			-4:00	-	AMT
@@ -1155,7 +1093,7 @@ Zone America/Boa_Vista	-4:02:40 -	LMT	1914
 			-4:00	Brazil	AM%sT	2000 Oct 15
 			-4:00	-	AMT
 #
-# east Amazonas (AM): Boca do Acre, Jutai, Manaus, Floriano Peixoto
+# east Amazonas (AM): Boca do Acre, Jutaí, Manaus, Floriano Peixoto
 # The great circle line from Tabatinga to Porto Acre divides
 # east from west Amazonas.
 Zone America/Manaus	-4:00:04 -	LMT	1914
@@ -1165,19 +1103,19 @@ Zone America/Manaus	-4:00:04 -	LMT	1914
 			-4:00	-	AMT
 #
 # west Amazonas (AM): Atalaia do Norte, Boca do Maoco, Benjamin Constant,
-#	Eirunepe, Envira, Ipixuna
+#	Eirunepé, Envira, Ipixuna
 Zone America/Eirunepe	-4:39:28 -	LMT	1914
 			-5:00	Brazil	AC%sT	1988 Sep 12
 			-5:00	-	ACT	1993 Sep 28
 			-5:00	Brazil	AC%sT	1994 Sep 22
-			-5:00	-	ACT	2008 Jun 24 00:00
+			-5:00	-	ACT	2008 Jun 24  0:00
 			-4:00	-	AMT	2013 Nov 10
 			-5:00	-	ACT
 #
 # Acre (AC)
 Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 			-5:00	Brazil	AC%sT	1988 Sep 12
-			-5:00	-	ACT	2008 Jun 24 00:00
+			-5:00	-	ACT	2008 Jun 24  0:00
 			-4:00	-	AMT	2013 Nov 10
 			-5:00	-	ACT
 
@@ -1198,66 +1136,54 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # From Oscar van Vlijmen (2006-10-08):
 # http://www.horaoficial.cl/cambio.htm
 
-# From Jesper Norgaard Welen (2006-10-08):
+# From Jesper Nørgaard Welen (2006-10-08):
 # I think that there are some obvious mistakes in the suggested link
 # from Oscar van Vlijmen,... for instance entry 66 says that GMT-4
 # ended 1990-09-12 while entry 67 only begins GMT-3 at 1990-09-15
 # (they should have been 1990-09-15 and 1990-09-16 respectively), but
 # anyhow it clears up some doubts too.
 
-# From Paul Eggert (2006-12-27):
-# The following data for Chile and America/Santiago are from
+# From Paul Eggert (2014-08-12):
+# The following data entries for Chile and America/Santiago are from
 # <http://www.horaoficial.cl/horaof.htm> (2006-09-20), transcribed by
-# Jesper Norgaard Welen.  The data for Pacific/Easter are from Shanks
+# Jesper Nørgaard Welen.  The data entries for Pacific/Easter are from Shanks
 # & Pottenger, except with DST transitions after 1932 cloned from
-# America/Santiago.  The pre-1980 Pacific/Easter data are dubious,
+# America/Santiago.  The pre-1980 Pacific/Easter data entries are dubious,
 # but we have no other source.
 
-# From German Poo-Caaman~o (2008-03-03):
+# From Germán Poo-Caamaño (2008-03-03):
 # Due to drought, Chile extends Daylight Time in three weeks.  This
 # is one-time change (Saturday 3/29 at 24:00 for America/Santiago
 # and Saturday 3/29 at 22:00 for Pacific/Easter)
 # The Supreme Decree is located at
-# <a href="http://www.shoa.cl/servicios/supremo316.pdf">
 # http://www.shoa.cl/servicios/supremo316.pdf
-# </a>
 # and the instructions for 2008 are located in:
-# <a href="http://www.horaoficial.cl/cambio.htm">
 # http://www.horaoficial.cl/cambio.htm
-# </a>.
 
-# From Jose Miguel Garrido (2008-03-05):
+# From José Miguel Garrido (2008-03-05):
 # ...
 # You could see the announces of the change on
-# <a href="http://www.shoa.cl/noticias/2008/04hora/hora.htm">
 # http://www.shoa.cl/noticias/2008/04hora/hora.htm
-# </a>.
 
 # From Angel Chiang (2010-03-04):
 # Subject: DST in Chile exceptionally extended to 3 April due to earthquake
-# <a href="http://www.gobiernodechile.cl/viewNoticia.aspx?idArticulo=30098">
 # http://www.gobiernodechile.cl/viewNoticia.aspx?idArticulo=30098
-# </a>
 # (in Spanish, last paragraph).
 #
 # This is breaking news. There should be more information available later.
 
-# From Arthur Daivd Olson (2010-03-06):
+# From Arthur David Olson (2010-03-06):
 # Angel Chiang's message confirmed by Julio Pacheco; Julio provided a patch.
 
-# From Glenn Eychaner (2011-03-02): [geychaner@mac.com]
+# From Glenn Eychaner (2011-03-02):
 # It appears that the Chilean government has decided to postpone the
 # change from summer time to winter time again, by three weeks to April
 # 2nd:
-# <a href="http://www.emol.com/noticias/nacional/detalle/detallenoticias.asp?idnoticia=467651">
 # http://www.emol.com/noticias/nacional/detalle/detallenoticias.asp?idnoticia=467651
-# </a>
 #
 # This is not yet reflected in the official "cambio de hora" site, but
 # probably will be soon:
-# <a href="http://www.horaoficial.cl/cambio.htm">
 # http://www.horaoficial.cl/cambio.htm
-# </a>
 
 # From Arthur David Olson (2011-03-02):
 # The emol.com article mentions a water shortage as the cause of the
@@ -1265,9 +1191,7 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 
 # From Glenn Eychaner (2011-03-28):
 # The article:
-# <a href="http://diario.elmercurio.com/2011/03/28/_portada/_portada/noticias/7565897A-CA86-49E6-9E03-660B21A4883E.htm?id=3D{7565897A-CA86-49E6-9E03-660B21A4883E}">
 # http://diario.elmercurio.com/2011/03/28/_portada/_portada/noticias/7565897A-CA86-49E6-9E03-660B21A4883E.htm?id=3D{7565897A-CA86-49E6-9E03-660B21A4883E}
-# </a>
 #
 # In English:
 # Chile's clocks will go back an hour this year on the 7th of May instead
@@ -1298,7 +1222,7 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # start date is 2013-09-08 00:00....
 # http://www.gob.cl/informa/2013/02/15/gobierno-anuncia-fechas-de-cambio-de-hora-para-el-ano-2013.htm
 
-# From Jose Miguel Garrido (2014-02-19):
+# From José Miguel Garrido (2014-02-19):
 # Today appeared in the Diario Oficial a decree amending the time change
 # dates to 2014.
 # DST End: last Saturday of April 2014 (Sun 27 Apr 2014 03:00 UTC)
@@ -1352,7 +1276,7 @@ Rule	Chile	2012	max	-	Sep	Sun>=2	4:00u	1:00	S
 # (1996-09) says 1998-03-08.  Ignore these.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Santiago	-4:42:46 -	LMT	1890
-			-4:42:46 -	SMT	1910 	    # Santiago Mean Time
+			-4:42:46 -	SMT	1910        # Santiago Mean Time
 			-5:00	-	CLT	1916 Jul  1 # Chile Time
 			-4:42:46 -	SMT	1918 Sep  1 # Santiago Mean Time
 			-4:00	-	CLT	1919 Jul  1 # Chile Time
@@ -1361,16 +1285,16 @@ Zone America/Santiago	-4:42:46 -	LMT	1890
 			-4:00	Chile	CL%sT
 Zone Pacific/Easter	-7:17:44 -	LMT	1890
 			-7:17:28 -	EMT	1932 Sep    # Easter Mean Time
-			-7:00	Chile	EAS%sT	1982 Mar 13 21:00 # Easter I Time
+			-7:00	Chile	EAS%sT	1982 Mar 13 21:00 # Easter Time
 			-6:00	Chile	EAS%sT
 #
-# Sala y Gomez Island is like Pacific/Easter.
-# Other Chilean locations, including Juan Fernandez Is, San Ambrosio,
-# San Felix, and Antarctic bases, are like America/Santiago.
+# Salas y Gómez Island is uninhabited.
+# Other Chilean locations, including Juan Fernández Is, Desventuradas Is,
+# and Antarctic bases, are like America/Santiago.
 
 # Colombia
 
-# Milne gives 4:56:16.4 for Bogota time in 1899; round to nearest.  He writes,
+# Milne gives 4:56:16.4 for Bogotá time in 1899; round to nearest.  He writes,
 # "A variation of fifteen minutes in the public clocks of Bogota is not rare."
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
@@ -1378,37 +1302,37 @@ Rule	CO	1992	only	-	May	 3	0:00	1:00	S
 Rule	CO	1993	only	-	Apr	 4	0:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Bogota	-4:56:16 -	LMT	1884 Mar 13
-			-4:56:16 -	BMT	1914 Nov 23 # Bogota Mean Time
+			-4:56:16 -	BMT	1914 Nov 23 # Bogotá Mean Time
 			-5:00	CO	CO%sT	# Colombia Time
 # Malpelo, Providencia, San Andres
 # no information; probably like America/Bogota
 
-# Curacao
+# Curaçao
 
-# Milne gives 4:35:46.9 for Curacao mean time; round to nearest.
+# Milne gives 4:35:46.9 for Curaçao mean time; round to nearest.
 #
 # From Paul Eggert (2006-03-22):
 # Shanks & Pottenger say that The Bottom and Philipsburg have been at
 # -4:00 since standard time was introduced on 1912-03-02; and that
 # Kralendijk and Rincon used Kralendijk Mean Time (-4:33:08) from
 # 1912-02-02 to 1965-01-01.  The former is dubious, since S&P also say
-# Saba Island has been like Curacao.
+# Saba Island has been like Curaçao.
 # This all predates our 1970 cutoff, though.
 #
-# By July 2007 Curacao and St Maarten are planned to become
+# By July 2007 Curaçao and St Maarten are planned to become
 # associated states within the Netherlands, much like Aruba;
 # Bonaire, Saba and St Eustatius would become directly part of the
 # Netherlands as Kingdom Islands.  This won't affect their time zones
 # though, as far as we know.
 #
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	America/Curacao	-4:35:47 -	LMT	1912 Feb 12	# Willemstad
+Zone	America/Curacao	-4:35:47 -	LMT	1912 Feb 12 # Willemstad
 			-4:30	-	ANT	1965 # Netherlands Antilles Time
 			-4:00	-	AST
 
 # From Arthur David Olson (2011-06-15):
 # use links for places with new iso3166 codes.
-# The name "Lower Prince's Quarter" is both longer than fourteen charaters
+# The name "Lower Prince's Quarter" is both longer than fourteen characters
 # and contains an apostrophe; use "Lower_Princes" below.
 
 Link	America/Curacao	America/Lower_Princes	# Sint Maarten
@@ -1416,7 +1340,7 @@ Link	America/Curacao	America/Kralendijk	# Caribbean Netherlands
 
 # Ecuador
 #
-# Milne says the Sentral and South American Telegraph Company used -5:24:15.
+# Milne says the Central and South American Telegraph Company used -5:24:15.
 #
 # From Paul Eggert (2007-03-04):
 # Apparently Ecuador had a failed experiment with DST in 1992.
@@ -1427,10 +1351,10 @@ Link	America/Curacao	America/Kralendijk	# Caribbean Netherlands
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Guayaquil	-5:19:20 -	LMT	1890
 			-5:14:00 -	QMT	1931 # Quito Mean Time
-			-5:00	-	ECT	     # Ecuador Time
+			-5:00	-	ECT	# Ecuador Time
 Zone Pacific/Galapagos	-5:58:24 -	LMT	1931 # Puerto Baquerizo Moreno
 			-5:00	-	ECT	1986
-			-6:00	-	GALT	     # Galapagos Time
+			-6:00	-	GALT	# Galápagos Time
 
 # Falklands
 
@@ -1439,7 +1363,7 @@ Zone Pacific/Galapagos	-5:58:24 -	LMT	1931 # Puerto Baquerizo Moreno
 # the IATA gives 1996-09-08.  Go with Shanks & Pottenger.
 
 # From Falkland Islands Government Office, London (2001-01-22)
-# via Jesper Norgaard:
+# via Jesper Nørgaard:
 # ... the clocks revert back to Local Mean Time at 2 am on Sunday 15
 # April 2001 and advance one hour to summer time at 2 am on Sunday 2
 # September.  It is anticipated that the clocks will revert back at 2
@@ -1488,9 +1412,7 @@ Zone Pacific/Galapagos	-5:58:24 -	LMT	1931 # Puerto Baquerizo Moreno
 # daylight saving time.
 #
 # One source:
-# <a href="http://www.falklandnews.com/public/story.cfm?get=5914&source=3">
 # http://www.falklandnews.com/public/story.cfm?get=5914&source=3
-# </a>
 #
 # We have gotten this confirmed by a clerk of the legislative assembly:
 # Normally the clocks revert to Local Mean Time (UTC/GMT -4 hours) on the
@@ -1531,10 +1453,10 @@ Rule	Falk	2001	2010	-	Apr	Sun>=15	2:00	0	-
 Rule	Falk	2001	2010	-	Sep	Sun>=1	2:00	1:00	S
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Atlantic/Stanley	-3:51:24 -	LMT	1890
-			-3:51:24 -	SMT	1912 Mar 12  # Stanley Mean Time
-			-4:00	Falk	FK%sT	1983 May     # Falkland Is Time
+			-3:51:24 -	SMT	1912 Mar 12 # Stanley Mean Time
+			-4:00	Falk	FK%sT	1983 May    # Falkland Is Time
 			-3:00	Falk	FK%sT	1985 Sep 15
-			-4:00	Falk	FK%sT	2010 Sep 5 02:00
+			-4:00	Falk	FK%sT	2010 Sep  5  2:00
 			-3:00	-	FKST
 
 # French Guiana
@@ -1545,7 +1467,7 @@ Zone America/Cayenne	-3:29:20 -	LMT	1911 Jul
 
 # Guyana
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone	America/Guyana	-3:52:40 -	LMT	1915 Mar	# Georgetown
+Zone	America/Guyana	-3:52:40 -	LMT	1915 Mar    # Georgetown
 			-3:45	-	GBGT	1966 May 26 # Br Guiana Time
 			-3:45	-	GYT	1975 Jul 31 # Guyana Time
 			-3:00	-	GYT	1991
@@ -1555,8 +1477,8 @@ Zone	America/Guyana	-3:52:40 -	LMT	1915 Mar	# Georgetown
 # Paraguay
 #
 # From Paul Eggert (2006-03-22):
-# Shanks & Pottenger say that spring transitions are from 01:00 -> 02:00,
-# and autumn transitions are from 00:00 -> 23:00.  Go with pre-1999
+# Shanks & Pottenger say that spring transitions are 01:00 -> 02:00,
+# and autumn transitions are 00:00 -> 23:00.  Go with pre-1999
 # editions of Shanks, and with the IATA, who say transitions occur at 00:00.
 #
 # From Waldemar Villamayor-Venialbo (2013-09-20):
@@ -1582,9 +1504,8 @@ Rule	Para	1996	only	-	Mar	 1	0:00	0	-
 # (10-01).
 #
 # Translated by Gwillim Law (2001-02-27) from
-# <a href="http://www.diarionoticias.com.py/011000/nacional/naciona1.htm">
-# Noticias, a daily paper in Asuncion, Paraguay (2000-10-01)
-# </a>:
+# Noticias, a daily paper in Asunción, Paraguay (2000-10-01):
+# http://www.diarionoticias.com.py/011000/nacional/naciona1.htm
 # Starting at 0:00 today, the clock will be set forward 60 minutes, in
 # fulfillment of Decree No. 7,273 of the Executive Power....  The time change
 # system has been operating for several years.  Formerly there was a separate
@@ -1605,21 +1526,18 @@ Rule	Para	1998	2001	-	Mar	Sun>=1	0:00	0	-
 Rule	Para	2002	2004	-	Apr	Sun>=1	0:00	0	-
 Rule	Para	2002	2003	-	Sep	Sun>=1	0:00	1:00	S
 #
-# From Jesper Norgaard Welen (2005-01-02):
+# From Jesper Nørgaard Welen (2005-01-02):
 # There are several sources that claim that Paraguay made
 # a timezone rule change in autumn 2004.
 # From Steffen Thorsen (2005-01-05):
 # Decree 1,867 (2004-03-05)
-# From Carlos Raul Perasso via Jesper Norgaard Welen (2006-10-13)
-# <http://www.presidencia.gov.py/decretos/D1867.pdf>
+# From Carlos Raúl Perasso via Jesper Nørgaard Welen (2006-10-13)
+# http://www.presidencia.gov.py/decretos/D1867.pdf
 Rule	Para	2004	2009	-	Oct	Sun>=15	0:00	1:00	S
 Rule	Para	2005	2009	-	Mar	Sun>=8	0:00	0	-
-# From Carlos Raul Perasso (2010-02-18):
-# By decree number 3958 issued yesterday (
-# <a href="http://www.presidencia.gov.py/v1/wp-content/uploads/2010/02/decreto3958.pdf">
+# From Carlos Raúl Perasso (2010-02-18):
+# By decree number 3958 issued yesterday
 # http://www.presidencia.gov.py/v1/wp-content/uploads/2010/02/decreto3958.pdf
-# </a>
-# )
 # Paraguay changes its DST schedule, postponing the March rule to April and
 # modifying the October date. The decree reads:
 # ...
@@ -1635,25 +1553,25 @@ Rule	Para	2010	2012	-	Apr	Sun>=8	0:00	0	-
 # Paraguay will end DST on 2013-03-24 00:00....
 # http://www.ande.gov.py/interna.php?id=1075
 #
-# From Carlos Raul Perasso (2013-03-15):
+# From Carlos Raúl Perasso (2013-03-15):
 # The change in Paraguay is now final.  Decree number 10780
 # http://www.presidencia.gov.py/uploads/pdf/presidencia-3b86ff4b691c79d4f5927ca964922ec74772ce857c02ca054a52a37b49afc7fb.pdf
-# From Carlos Raul Perasso (2014-02-28):
+# From Carlos Raúl Perasso (2014-02-28):
 # Decree 1264 can be found at:
 # http://www.presidencia.gov.py/archivos/documentos/DECRETO1264_ey9r8zai.pdf
 Rule	Para	2013	max	-	Mar	Sun>=22	0:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Asuncion	-3:50:40 -	LMT	1890
-			-3:50:40 -	AMT	1931 Oct 10 # Asuncion Mean Time
-			-4:00	-	PYT	1972 Oct # Paraguay Time
+			-3:50:40 -	AMT	1931 Oct 10 # Asunción Mean Time
+			-4:00	-	PYT	1972 Oct    # Paraguay Time
 			-3:00	-	PYT	1974 Apr
 			-4:00	Para	PY%sT
 
 # Peru
 #
-# <a href="news:xrGmb.39935$gA1.13896113@news4.srv.hcvlny.cv.net">
-# From Evelyn C. Leeper via Mark Brader (2003-10-26):</a>
+# From Evelyn C. Leeper via Mark Brader (2003-10-26)
+# <news:xrGmb.39935$gA1.13896113@news4.srv.hcvlny.cv.net>:
 # When we were in Peru in 1985-1986, they apparently switched over
 # sometime between December 29 and January 3 while we were on the Amazon.
 #
@@ -1679,7 +1597,7 @@ Zone	America/Lima	-5:08:12 -	LMT	1890
 
 # South Georgia
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
-Zone Atlantic/South_Georgia -2:26:08 -	LMT	1890		# Grytviken
+Zone Atlantic/South_Georgia -2:26:08 -	LMT	1890 # Grytviken
 			-2:00	-	GST	# South Georgia Time
 
 # South Sandwich Is
@@ -1689,9 +1607,9 @@ Zone Atlantic/South_Georgia -2:26:08 -	LMT	1890		# Grytviken
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Paramaribo	-3:40:40 -	LMT	1911
 			-3:40:52 -	PMT	1935     # Paramaribo Mean Time
-			-3:40:36 -	PMT	1945 Oct # The capital moved?
+			-3:40:36 -	PMT	1945 Oct    # The capital moved?
 			-3:30	-	NEGT	1975 Nov 20 # Dutch Guiana Time
-			-3:30	-	SRT	1984 Oct # Suriname Time
+			-3:30	-	SRT	1984 Oct    # Suriname Time
 			-3:00	-	SRT
 
 # Trinidad and Tobago
@@ -1706,7 +1624,7 @@ Link America/Port_of_Spain America/Grenada
 Link America/Port_of_Spain America/Guadeloupe
 Link America/Port_of_Spain America/Marigot	# St Martin (French part)
 Link America/Port_of_Spain America/Montserrat
-Link America/Port_of_Spain America/St_Barthelemy
+Link America/Port_of_Spain America/St_Barthelemy # St Barthélemy
 Link America/Port_of_Spain America/St_Kitts	# St Kitts & Nevis
 Link America/Port_of_Spain America/St_Lucia
 Link America/Port_of_Spain America/St_Thomas	# Virgin Islands (US)
@@ -1765,7 +1683,7 @@ Rule	Uruguay	1990	1991	-	Oct	Sun>=21	 0:00	1:00	S
 Rule	Uruguay	1992	only	-	Oct	18	 0:00	1:00	S
 Rule	Uruguay	1993	only	-	Feb	28	 0:00	0	-
 # From Eduardo Cota (2004-09-20):
-# The uruguayan government has decreed a change in the local time....
+# The Uruguayan government has decreed a change in the local time....
 # http://www.presidencia.gub.uy/decretos/2004091502.htm
 Rule	Uruguay	2004	only	-	Sep	19	 0:00	1:00	S
 # From Steffen Thorsen (2005-03-11):
@@ -1779,14 +1697,14 @@ Rule	Uruguay	2005	only	-	Mar	27	 2:00	0	-
 # 02:00 local time, official time in Uruguay will be at GMT -2.
 Rule	Uruguay	2005	only	-	Oct	 9	 2:00	1:00	S
 Rule	Uruguay	2006	only	-	Mar	12	 2:00	0	-
-# From Jesper Norgaard Welen (2006-09-06):
+# From Jesper Nørgaard Welen (2006-09-06):
 # http://www.presidencia.gub.uy/_web/decretos/2006/09/CM%20210_08%2006%202006_00001.PDF
 Rule	Uruguay	2006	max	-	Oct	Sun>=1	 2:00	1:00	S
 Rule	Uruguay	2007	max	-	Mar	Sun>=8	 2:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone America/Montevideo	-3:44:44 -	LMT	1898 Jun 28
-			-3:44:44 -	MMT	1920 May  1	# Montevideo MT
-			-3:30	Uruguay	UY%sT	1942 Dec 14	# Uruguay Time
+			-3:44:44 -	MMT	1920 May  1 # Montevideo MT
+			-3:30	Uruguay	UY%sT	1942 Dec 14 # Uruguay Time
 			-3:00	Uruguay	UY%sT
 
 # Venezuela
@@ -1794,14 +1712,14 @@ Zone America/Montevideo	-3:44:44 -	LMT	1898 Jun 28
 # From John Stainforth (2007-11-28):
 # ... the change for Venezuela originally expected for 2007-12-31 has
 # been brought forward to 2007-12-09.  The official announcement was
-# published today in the "Gaceta Oficial de la Republica Bolivariana
-# de Venezuela, numero 38.819" (official document for all laws or
+# published today in the "Gaceta Oficial de la República Bolivariana
+# de Venezuela, número 38.819" (official document for all laws or
 # resolution publication)
 # http://www.globovision.com/news.php?nid=72208
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	America/Caracas	-4:27:44 -	LMT	1890
 			-4:27:40 -	CMT	1912 Feb 12 # Caracas Mean Time?
-			-4:30	-	VET	1965	     # Venezuela Time
-			-4:00	-	VET	2007 Dec  9 03:00
+			-4:30	-	VET	1965        # Venezuela Time
+			-4:00	-	VET	2007 Dec  9  3:00
 			-4:30	-	VET

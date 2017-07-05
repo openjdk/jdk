@@ -487,17 +487,8 @@ ALL_TARGETS += default all
 # Clean targets
 #
 ################################################################################
-
-# If running a clean target, disable parallel execution
-ifneq ($(findstring clean, $(MAKECMDGOALS)), )
-  .NOTPARALLEL:
-  # It's not recommended to run additional targets to clean on the same make
-  # command line. Try to detect this and issue a warning.
-  ifneq ($(filter-out clean%, $(MAKECMDGOALS)), )
-    $(warning Mixing clean targets with normal build targets will not work well \
-        and is not recommended.)
-  endif
-endif
+# Clean targets are automatically run serially by the Makefile calling this 
+# file.
 
 CLEAN_COMPONENTS += langtools corba hotspot jdk nashorn images \
     bootcycle-build docs docstemp test
@@ -542,6 +533,9 @@ ifeq ($(findstring reconfigure, $(MAKECMDGOALS)), )
 	@$(ECHO) "It may also be ignored by setting IGNORE_OLD_CONFIG=true"
 	@if test "x$(IGNORE_OLD_CONFIG)" != "xtrue"; then exit 1; fi
 endif
+
+# The reconfigure target is automatically run serially from everything else
+# by the Makefile calling this file.
 
 reconfigure:
         ifneq ($(CONFIGURE_COMMAND_LINE), )

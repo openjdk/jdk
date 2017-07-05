@@ -78,7 +78,6 @@ ArrayKlass::ArrayKlass(Symbol* name) {
   set_dimension(1);
   set_higher_dimension(NULL);
   set_lower_dimension(NULL);
-  set_component_mirror(NULL);
   // Arrays don't add any new methods, so their vtable is the same size as
   // the vtable of klass Object.
   int vtable_size = Universe::base_vtable_size();
@@ -160,14 +159,6 @@ void ArrayKlass::array_klasses_do(void f(Klass* k)) {
   }
 }
 
-// GC support
-
-void ArrayKlass::oops_do(OopClosure* cl) {
-  Klass::oops_do(cl);
-
-  cl->do_oop(adr_component_mirror());
-}
-
 // JVM support
 
 jint ArrayKlass::compute_modifier_flags(TRAPS) const {
@@ -182,8 +173,6 @@ jint ArrayKlass::jvmti_class_status() const {
 
 void ArrayKlass::remove_unshareable_info() {
   Klass::remove_unshareable_info();
-  // Clear the java mirror
-  set_component_mirror(NULL);
 }
 
 void ArrayKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
@@ -217,10 +206,6 @@ void ArrayKlass::oop_print_on(oop obj, outputStream* st) {
 
 void ArrayKlass::verify_on(outputStream* st) {
   Klass::verify_on(st);
-
-  if (component_mirror() != NULL) {
-    guarantee(component_mirror()->klass() != NULL, "should have a class");
-  }
 }
 
 void ArrayKlass::oop_verify_on(oop obj, outputStream* st) {

@@ -195,6 +195,17 @@ Java_sun_nio_fs_WindowsNativeDispatcher_initIDs(JNIEnv* env, jclass this)
     }
 }
 
+JNIEXPORT jlong JNICALL
+Java_sun_nio_fs_WindowsNativeDispatcher_CreateEvent(JNIEnv* env, jclass this,
+    jboolean bManualReset, jboolean bInitialState)
+{
+    HANDLE hEvent = CreateEventW(NULL, bManualReset, bInitialState, NULL);
+    if (hEvent == NULL) {
+        throwWindowsException(env, GetLastError());
+    }
+    return ptr_to_jlong(hEvent);
+}
+
 JNIEXPORT jstring JNICALL
 Java_sun_nio_fs_WindowsNativeDispatcher_FormatMessage(JNIEnv* env, jclass this, jint errorCode) {
     WCHAR message[255];
@@ -1230,23 +1241,38 @@ Java_sun_nio_fs_WindowsNativeDispatcher_PostQueuedCompletionStatus(JNIEnv* env, 
 }
 
 JNIEXPORT void JNICALL
+Java_sun_nio_fs_WindowsNativeDispatcher_CancelIo(JNIEnv* env, jclass this, jlong hFile) {
+    if (CancelIo((HANDLE)jlong_to_ptr(hFile)) == 0) {
+        throwWindowsException(env, GetLastError());
+    }
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_WindowsNativeDispatcher_GetOverlappedResult(JNIEnv *env, jclass this,
+    jlong hFile, jlong lpOverlapped)
+{
+    BOOL res;
+    DWORD bytesTransferred = -1;
+
+    res = GetOverlappedResult((HANDLE)jlong_to_ptr(hFile),
+                              (LPOVERLAPPED)jlong_to_ptr(lpOverlapped),
+                              &bytesTransferred,
+                              TRUE);
+    if (res == 0) {
+        throwWindowsException(env, GetLastError());
+    }
+
+    return (jint)bytesTransferred;
+}
+
+JNIEXPORT void JNICALL
 Java_sun_nio_fs_WindowsNativeDispatcher_ReadDirectoryChangesW(JNIEnv* env, jclass this,
     jlong hDirectory, jlong bufferAddress, jint bufferLength, jboolean watchSubTree, jint filter,
     jlong bytesReturnedAddress, jlong pOverlapped)
 {
     BOOL res;
     BOOL subtree = (watchSubTree == JNI_TRUE) ? TRUE : FALSE;
-
-    /* Any unused members of [OVERLAPPED] structure should always be initialized to zero
-       before the structure is used in a function call.
-       Otherwise, the function may fail and return ERROR_INVALID_PARAMETER.
-       http://msdn.microsoft.com/en-us/library/windows/desktop/ms684342%28v=vs.85%29.aspx
-
-       The [Offset] and [OffsetHigh] members of this structure are not used.
-       http://msdn.microsoft.com/en-us/library/windows/desktop/aa365465%28v=vs.85%29.aspx
-
-       [hEvent] should be zero, other fields are the return values. */
-    ZeroMemory((LPOVERLAPPED)jlong_to_ptr(pOverlapped), sizeof(OVERLAPPED));
+    LPOVERLAPPED ov = (LPOVERLAPPED)jlong_to_ptr(pOverlapped);
 
     res = ReadDirectoryChangesW((HANDLE)jlong_to_ptr(hDirectory),
                                 (LPVOID)jlong_to_ptr(bufferAddress),
