@@ -23,8 +23,6 @@
 
 package testtaglets;
 
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.util.*;
 
 import com.sun.javadoc.*;

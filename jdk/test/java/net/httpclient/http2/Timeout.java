@@ -32,6 +32,7 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.CompletionException;
 import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import static jdk.incubator.http.HttpRequest.BodyProcessor.fromString;
@@ -75,6 +76,9 @@ public class Timeout {
             Thread server = new Thread(() -> {
                 while (true) {
                     System.out.println("server: ready");
+                    SSLParameters params = ssocket.getSSLParameters();
+                    params.setApplicationProtocols(new String[]{"h2"});
+                    ssocket.setSSLParameters(params);
                     ready = true;
                     try (SSLSocket socket = (SSLSocket) ssocket.accept()) {
 
