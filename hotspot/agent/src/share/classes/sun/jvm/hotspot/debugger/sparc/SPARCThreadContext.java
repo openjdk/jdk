@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 
 package sun.jvm.hotspot.debugger.sparc;
 
+import java.lang.annotation.Native;
+
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
 
@@ -34,6 +36,10 @@ import sun.jvm.hotspot.debugger.cdbg.*;
 
 public abstract class SPARCThreadContext implements ThreadContext {
   // Taken from /usr/include/sys/procfs_isa.h
+
+  // One instance of the Native annotation is enough to trigger header generation
+  // for this file.
+  @Native
   public static final int R_G0 = 0;
   public static final int R_G1 = 1;
   public static final int R_G2 = 2;

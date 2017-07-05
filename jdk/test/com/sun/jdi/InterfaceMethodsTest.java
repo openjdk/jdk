@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /**
  *  @test
  *  @bug 8031195
+ *  @bug 8071657
  *  @summary  JDI: Add support for static and default methods in interfaces
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
@@ -38,6 +39,7 @@ public class InterfaceMethodsTest extends TestScaffold {
     private static final int RESULT_A = 1;
     private static final int RESULT_B = 1;
     private static final int RESULT_TARGET = 1;
+
     static interface InterfaceA {
         static int staticMethodA() {
             System.out.println("-InterfaceA: static interface method A-");
@@ -202,6 +204,9 @@ public class InterfaceMethodsTest extends TestScaffold {
 
         // try to invoke static method B on the instance
         testInvokePos(ifaceClass, ref, "staticMethodB", "()I", vm().mirrorOf(RESULT_A));
+
+        // try to invoke a virtual method
+        testInvokePos(ifaceClass, ref, "implementedMethod", "()I", vm().mirrorOf(RESULT_A), true);
     }
 
     private void testInterfaceB(ObjectReference ref) {
@@ -302,9 +307,14 @@ public class InterfaceMethodsTest extends TestScaffold {
 
     private void testInvokePos(ReferenceType targetClass, ObjectReference ref, String methodName,
                                String methodSig, Value value) {
+        testInvokePos(targetClass, ref, methodName, methodSig, value, false);
+    }
+
+    private void testInvokePos(ReferenceType targetClass, ObjectReference ref, String methodName,
+                               String methodSig, Value value, boolean virtual) {
         logInvocation(ref, methodName, methodSig, targetClass);
         try {
-            invoke(targetClass, ref, methodName, methodSig, value);
+            invoke(targetClass, ref, methodName, methodSig, value, virtual);
             System.err.println("--- PASSED");
         } catch (Exception e) {
             System.err.println("--- FAILED");
@@ -314,9 +324,14 @@ public class InterfaceMethodsTest extends TestScaffold {
 
     private void testInvokeNeg(ReferenceType targetClass, ObjectReference ref, String methodName,
                                String methodSig, Value value, String msg) {
+        testInvokeNeg(targetClass, ref, methodName, methodSig, value, msg, false);
+    }
+
+    private void testInvokeNeg(ReferenceType targetClass, ObjectReference ref, String methodName,
+                               String methodSig, Value value, String msg, boolean virtual) {
         logInvocation(ref, methodName, methodSig, targetClass);
         try {
-            invoke(targetClass, ref, methodName, methodSig, value);
+            invoke(targetClass, ref, methodName, methodSig, value, virtual);
             System.err.println("--- FAILED");
             failure("FAILED: " + msg);
         } catch (Exception e) {
@@ -326,7 +341,7 @@ public class InterfaceMethodsTest extends TestScaffold {
     }
 
     private void invoke(ReferenceType targetClass, ObjectReference ref, String methodName,
-                        String methodSig, Value value)
+                        String methodSig, Value value, boolean virtual)
     throws Exception {
         Method method = getMethod(targetClass, methodName, methodSig);
         if (method == null) {
@@ -334,10 +349,15 @@ public class InterfaceMethodsTest extends TestScaffold {
         }
 
         println("Invoking " + (method.isAbstract() ? "abstract " : " ") + "method: " + method);
+        println(method.declaringType().toString());
 
         Value returnValue = null;
         if (ref != null) {
-            returnValue = invokeInstance(ref, method);
+            if (virtual) {
+                returnValue = invokeVirtual(ref, method);
+            } else {
+                returnValue = invokeInstance(ref, method);
+            }
         } else {
             returnValue = invokeStatic(targetClass, method);
         }
@@ -360,6 +380,10 @@ public class InterfaceMethodsTest extends TestScaffold {
 
     private Value invokeInstance(ObjectReference ref, Method method) throws Exception {
         return ref.invokeMethod(mainThread, method, Collections.emptyList(), ObjectReference.INVOKE_NONVIRTUAL);
+    }
+
+    private Value invokeVirtual(ObjectReference ref, Method method) throws Exception {
+        return ref.invokeMethod(mainThread, method, Collections.emptyList(), 0);
     }
 
     private Value invokeStatic(ReferenceType refType, Method method) throws Exception {

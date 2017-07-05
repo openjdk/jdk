@@ -48,6 +48,12 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_CPU],
       VAR_CPU_BITS=32
       VAR_CPU_ENDIAN=little
       ;;
+    aarch64)
+      VAR_CPU=aarch64
+      VAR_CPU_ARCH=aarch64
+      VAR_CPU_BITS=64
+      VAR_CPU_ENDIAN=little
+      ;;
     powerpc)
       VAR_CPU=ppc
       VAR_CPU_ARCH=ppc

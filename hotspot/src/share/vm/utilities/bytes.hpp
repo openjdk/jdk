@@ -40,5 +40,8 @@
 #ifdef TARGET_ARCH_ppc
 # include "bytes_ppc.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "bytes_aarch64.hpp"
+#endif
 
 #endif // SHARE_VM_UTILITIES_BYTES_HPP
