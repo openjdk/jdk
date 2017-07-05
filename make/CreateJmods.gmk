@@ -77,7 +77,7 @@ ifeq ($(MODULE), java.base)
 
     EXCLUDE_PATTERN := $(strip $(subst $(SPACE),|,$(strip $(ALL_UPGRADEABLE_MODULES))))
 
-    JMOD_FLAGS += --modulepath $(JMODS_DIR) \
+    JMOD_FLAGS += --module-path $(JMODS_DIR) \
         --hash-modules '^(?!$(EXCLUDE_PATTERN))'
   endif
 endif
@@ -102,7 +102,7 @@ $(JMODS_DIR)/$(MODULE).jmod: $(DEPS)
             --os-name $(REQUIRED_OS_NAME) \
             --os-arch $(OPENJDK_TARGET_CPU_LEGACY) \
             --os-version $(REQUIRED_OS_VERSION) \
-            --modulepath $(JMODS_DIR) \
+            --module-path $(JMODS_DIR) \
             --exclude '**{_the.*,*.diz,*.debuginfo,*.dSYM/**,*.pdb,*.map}' \
 	    $(JMOD_FLAGS) $(SUPPORT_OUTPUTDIR)/jmods/$(notdir $@)
 	$(MV) $(SUPPORT_OUTPUTDIR)/jmods/$(notdir $@) $@

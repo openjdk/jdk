@@ -52,7 +52,7 @@ do
   mkdir -p mods/$B
   CLASSES="`find $TESTSRC/src/$B -name '*.java'`"
   if [ "x$CLASSES" != x ]; then
-    $JAVAC -g -d mods -modulesourcepath $TESTSRC/src $CP $CLASSES
+    $JAVAC -g -d mods --module-source-path $TESTSRC/src $CP $CLASSES
   fi
   PROPS="`(cd $TESTSRC/src/$B; find . -name '*.properties')`"
   if [ "x$PROPS" != x ]; then
@@ -67,7 +67,7 @@ do
 done
 
 mkdir -p mods/test
-$JAVAC -g -cp mods/mainbundles -d mods -modulesourcepath $TESTSRC/src \
+$JAVAC -g -cp mods/mainbundles -d mods --module-source-path $TESTSRC/src \
     `find $TESTSRC/src/test -name "*.java"`
 
 # Create a jar to be added to the class path. Expected only properties files are
@@ -81,9 +81,9 @@ $JAR -cf extra.jar -C classes jdk/test/resources/eu \
 STATUS=0
 
 echo "jdk.test.Main should load bundles using ResourceBundleProviders."
-$JAVA -mp mods -m test/jdk.test.Main de fr ja ja-jp zh-tw en de ja-jp || STATUS=1
+$JAVA -p mods -m test/jdk.test.Main de fr ja ja-jp zh-tw en de ja-jp || STATUS=1
 
 echo "jdk.test.Main should NOT load bundles from the jar file specified by the class-path."
-$JAVA -cp extra.jar -mp mods -m test/jdk.test.Main es vi && STATUS=1
+$JAVA -cp extra.jar -p mods -m test/jdk.test.Main es vi && STATUS=1
 
 exit $STATUS

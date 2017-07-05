@@ -40,7 +40,7 @@
  *                                 -XX:CompileCommand=dontinline,compiler.unsafe.UnsafeGetConstantField::checkGetAddress
  *                                 -XX:CompileCommand=dontinline,*::test*
  *                                 -XX:+UseUnalignedAccesses
- *                                 -XaddReads:java.base=ALL-UNNAMED
+ *                                 --add-reads=java.base=ALL-UNNAMED
  *                                 compiler.unsafe.UnsafeGetConstantField
  *
  * @run main/bootclasspath/othervm -XX:+UnlockDiagnosticVMOptions
@@ -50,7 +50,7 @@
  *                                 -XX:CompileCommand=dontinline,*::test*
  *                                 -XX:CompileCommand=inline,*Unsafe::get*
  *                                 -XX:-UseUnalignedAccesses
- *                                 -XaddReads:java.base=ALL-UNNAMED
+ *                                 --add-reads=java.base=ALL-UNNAMED
  *                                 compiler.unsafe.UnsafeGetConstantField
  */
 

@@ -58,10 +58,10 @@ cleantmp:
 
 ctw.jar: filelist wb.jar
 	@mkdir -p $(OUTPUT_DIR)
-	$(JAVAC) -XaddExports:java.base/jdk.internal.jimage=ALL-UNNAMED \
-		-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED \
-		-XaddExports:java.base/jdk.internal.reflect=ALL-UNNAMED \
-		-sourcepath $(SRC_DIR) -d $(OUTPUT_DIR) -cp wb.jar @filelist
+	$(JAVAC) --add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \
+		 --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
+		 --add-exports java.base/jdk.internal.reflect=ALL-UNNAMED \
+		 -sourcepath $(SRC_DIR) -d $(OUTPUT_DIR) -cp wb.jar @filelist
 	$(JAR) --create --file=$@ --main-class $(MAIN_CLASS) -C $(OUTPUT_DIR) .
 
 wb.jar: wb_filelist

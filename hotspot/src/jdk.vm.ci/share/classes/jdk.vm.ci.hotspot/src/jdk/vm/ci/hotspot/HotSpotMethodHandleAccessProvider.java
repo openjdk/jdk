@@ -109,6 +109,9 @@ public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProv
             if (!s.getReturnType(CLASS).equals(resultType)) {
                 return false;
             }
+            if (s.getParameterCount(false) != parameterTypes.length) {
+                return false;
+            }
             for (int i = 0; i < s.getParameterCount(false); ++i) {
                 if (!s.getParameterType(i, CLASS).equals(parameterTypes[i])) {
                     return false;

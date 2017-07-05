@@ -102,24 +102,21 @@ static void checkArg(const char *arg) {
 
     // All arguments arrive here must be a launcher argument,
     // ie. by now, all argfile expansions must have been performed.
-    if (*arg++ == '-') {
+    if (*arg == '-') {
         expectingNoDashArg = JNI_FALSE;
-        if (JLI_StrCmp(arg, "cp") == 0 ||
-            JLI_StrCmp(arg, "classpath") == 0 ||
-            JLI_StrCmp(arg, "addmods") == 0 ||
-            JLI_StrCmp(arg, "limitmods") == 0 ||
-            JLI_StrCmp(arg, "mp") == 0 ||
-            JLI_StrCmp(arg, "modulepath") == 0 ||
-            JLI_StrCmp(arg, "upgrademodulepath") == 0) {
+        if (IsWhiteSpaceOption(arg)) {
+            // expect an argument
             expectingNoDashArg = JNI_TRUE;
-        } else if (JLI_StrCmp(arg, "jar") == 0 ||
-                   JLI_StrCmp(arg, "m") == 0) {
-            // This is tricky, we do expect NoDashArg
-            // But that is considered main class to stop expansion
-            expectingNoDashArg = JNI_FALSE;
-            // We can not just update the idx here because if -jar @file
-            // still need expansion of @file to get the argument for -jar
-        } else if (JLI_StrCmp(arg, "Xdisable-@files") == 0) {
+
+            if (JLI_StrCmp(arg, "-jar") == 0 ||
+                JLI_StrCmp(arg, "-m") == 0) {
+                // This is tricky, we do expect NoDashArg
+                // But that is considered main class to stop expansion
+                expectingNoDashArg = JNI_FALSE;
+                // We can not just update the idx here because if -jar @file
+                // still need expansion of @file to get the argument for -jar
+            }
+        } else if (JLI_StrCmp(arg, "-Xdisable-@files") == 0) {
             stopExpansion = JNI_TRUE;
         }
     } else {

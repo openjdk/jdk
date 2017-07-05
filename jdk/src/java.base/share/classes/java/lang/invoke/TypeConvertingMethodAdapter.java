@@ -38,7 +38,7 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
         super(Opcodes.ASM5, mv);
     }
 
-    private static final int NUM_WRAPPERS = Wrapper.values().length;
+    private static final int NUM_WRAPPERS = Wrapper.COUNT;
 
     private static final String NAME_OBJECT = "java/lang/Object";
     private static final String WRAPPER_PREFIX = "Ljava/lang/";

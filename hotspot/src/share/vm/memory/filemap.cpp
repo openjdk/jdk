@@ -911,8 +911,8 @@ bool FileMapInfo::FileMapHeader::validate() {
     return false;
   }
 
-  if (Arguments::get_xpatchprefix() != NULL) {
-    FileMapInfo::fail_continue("The shared archive file cannot be used with -Xpatch.");
+  if (Arguments::get_patch_mod_prefix() != NULL) {
+    FileMapInfo::fail_continue("The shared archive file cannot be used with --patch-module.");
     return false;
   }
 

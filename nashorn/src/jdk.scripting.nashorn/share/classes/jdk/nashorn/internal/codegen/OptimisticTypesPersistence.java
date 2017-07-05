@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,6 +324,8 @@ public final class OptimisticTypesPersistence {
                 }
                 versionDir.mkdirs();
                 if (versionDir.isDirectory()) {
+                    //FIXME:Logger is disabled as Context.getContext() always returns null here because global scope object will not be created
+                    //by the time this method gets invoked
                     getLogger().info("Optimistic type persistence directory is " + versionDir);
                     return versionDir;
                 }
@@ -450,10 +452,12 @@ public final class OptimisticTypesPersistence {
     private static DebugLogger getLogger() {
         try {
             return Context.getContext().getLogger(RecompilableScriptFunctionData.class);
+        } catch (final NullPointerException e) {
+            //Don't print stacktrace until we revisit this, NPE is a known issue here
         } catch (final Exception e) {
             e.printStackTrace();
-            return DebugLogger.DISABLED_LOGGER;
         }
+        return DebugLogger.DISABLED_LOGGER;
     }
 
     private static void scheduleCleanup() {
