@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,8 @@ REGISTER_DEFINITION(Register, G1_scratch);
 REGISTER_DEFINITION(Register, G3_scratch);
 REGISTER_DEFINITION(Register, G4_scratch);
 REGISTER_DEFINITION(Register, Gtemp);
+REGISTER_DEFINITION(Register, G5_method_type);
+REGISTER_DEFINITION(Register, G3_method_handle);
 REGISTER_DEFINITION(Register, Lentry_args);
 
 #ifdef CC_INTERP

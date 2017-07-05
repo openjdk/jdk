@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -937,12 +937,12 @@ void AdapterGenerator::gen_i2c_adapter(
   // Inputs:
   // G2_thread      - TLS
   // G5_method      - Method oop
-  // O0             - Flag telling us to restore SP from O5
-  // O4_args        - Pointer to interpreter's args
-  // O5             - Caller's saved SP, to be restored if needed
+  // G4 (Gargs)     - Pointer to interpreter's args
+  // O0..O4         - free for scratch
+  // O5_savedSP     - Caller's saved SP, to be restored if needed
   // O6             - Current SP!
   // O7             - Valid return address
-  // L0-L7, I0-I7    - Caller's temps (no frame pushed yet)
+  // L0-L7, I0-I7   - Caller's temps (no frame pushed yet)
 
   // Outputs:
   // G2_thread      - TLS
@@ -954,7 +954,7 @@ void AdapterGenerator::gen_i2c_adapter(
   // F0-F7          - more outgoing args
 
 
-  // O4 is about to get loaded up with compiled callee's args
+  // Gargs is the incoming argument base, and also an outgoing argument.
   __ sub(Gargs, BytesPerWord, Gargs);
 
 #ifdef ASSERT

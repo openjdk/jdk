@@ -408,6 +408,15 @@ inline bool is_java_primitive(BasicType t) {
   return T_BOOLEAN <= t && t <= T_LONG;
 }
 
+inline bool is_subword_type(BasicType t) {
+  // these guys are processed exactly like T_INT in calling sequences:
+  return (t == T_BOOLEAN || t == T_CHAR || t == T_BYTE || t == T_SHORT);
+}
+
+inline bool is_signed_subword_type(BasicType t) {
+  return (t == T_BYTE || t == T_SHORT);
+}
+
 // Convert a char from a classfile signature to a BasicType
 inline BasicType char2type(char c) {
   switch( c ) {
