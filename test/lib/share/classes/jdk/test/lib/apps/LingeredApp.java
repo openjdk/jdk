@@ -287,7 +287,7 @@ public class LingeredApp {
             }
         }
         else{
-            // Lets user manage LingerApp options
+            // Lets user manage LingeredApp options
             cmd.addAll(vmArguments);
         }
 
@@ -321,6 +321,20 @@ public class LingeredApp {
     }
 
     /**
+     * Delete lock file that signals app to terminate, then
+     * wait until app is actually terminated.
+     * @throws IOException
+     */
+    public void stopApp() throws IOException {
+        deleteLock();
+        waitAppTerminate();
+        int exitcode = appProcess.exitValue();
+        if (exitcode != 0) {
+            throw new IOException("LingeredApp terminated with non-zero exit code " + exitcode);
+        }
+    }
+
+    /**
      *  High level interface for test writers
      */
     /**
@@ -351,17 +365,11 @@ public class LingeredApp {
         return startApp(null);
     }
 
-    /**
-     * Delete lock file that signal app to terminate, then
-     * waits until app is actually terminated.
-     * @throws IOException
-     */
-    public void stopApp() throws IOException {
-        deleteLock();
-        waitAppTerminate();
-        int exitcode = appProcess.exitValue();
-        if (exitcode != 0) {
-            throw new IOException("LingeredApp terminated with non-zero exit code " + exitcode);
+    public static void stopApp(LingeredApp app) throws IOException {
+        if (app != null) {
+            // LingeredApp can throw an exception during the intialization,
+            // make sure we don't have cascade NPE
+            app.stopApp();
         }
     }
 
