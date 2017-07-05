@@ -658,8 +658,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     fi
     OUTPUT_ROOT="$SRC_ROOT/build/${CONF_NAME}"
     $MKDIR -p "$OUTPUT_ROOT"
-    CONFIGURESUPPORT_OUTPUTDIR="$OUTPUT_ROOT/configure-support"
-    $MKDIR -p "$CONFIGURESUPPORT_OUTPUTDIR"
     if test ! -d "$OUTPUT_ROOT"; then
       AC_MSG_ERROR([Could not create build directory $OUTPUT_ROOT])
     fi
@@ -702,6 +700,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
 
   BASIC_FIXUP_PATH(OUTPUT_ROOT)
 
+  CONFIGURESUPPORT_OUTPUTDIR="$OUTPUT_ROOT/configure-support"
+  $MKDIR -p "$CONFIGURESUPPORT_OUTPUTDIR"
+
   AC_SUBST(SPEC, $OUTPUT_ROOT/spec.gmk)
   AC_SUBST(CONF_NAME, $CONF_NAME)
   AC_SUBST(OUTPUT_ROOT, $OUTPUT_ROOT)
@@ -730,6 +731,16 @@ AC_DEFUN([BASIC_CHECK_MAKE_VERSION],
 [
   MAKE_CANDIDATE="$1"
   DESCRIPTION="$2"
+
+  # On Cygwin, we require a newer version of make than on other platforms
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    MAKE_VERSION_EXPR="-e 4\."
+    MAKE_REQUIRED_VERSION="4.0"
+   else
+    MAKE_VERSION_EXPR="-e 3\.8[[12]] -e 4\."
+    MAKE_REQUIRED_VERSION="3.81"
+  fi
+
   if test "x$MAKE_CANDIDATE" != x; then
     AC_MSG_NOTICE([Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION])
     MAKE_VERSION_STRING=`$MAKE_CANDIDATE --version | $HEAD -n 1`
@@ -737,9 +748,9 @@ AC_DEFUN([BASIC_CHECK_MAKE_VERSION],
     if test "x$IS_GNU_MAKE" = x; then
       AC_MSG_NOTICE([Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring.])
     else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP -e '3\.8[[12]]' -e '4\.'`
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP $MAKE_VERSION_EXPR`
       if test "x$IS_MODERN_MAKE" = x; then
-        AC_MSG_NOTICE([Found GNU make at $MAKE_CANDIDATE, however this is not version 3.81 or later. (it is: $MAKE_VERSION_STRING). Ignoring.])
+        AC_MSG_NOTICE([Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring.])
       else
         if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
           if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -803,7 +814,7 @@ AC_DEFUN([BASIC_CHECK_GNU_MAKE],
     fi
     BASIC_CHECK_MAKE_VERSION("$MAKE", [user supplied MAKE=$MAKE])
     if test "x$FOUND_MAKE" = x; then
-      AC_MSG_ERROR([The specified make (by MAKE=$MAKE) is not GNU make 3.81 or newer.])
+      AC_MSG_ERROR([The specified make (by MAKE=$MAKE) is not GNU make $MAKE_REQUIRED_VERSION or newer.])
     fi
   else
     # Try our hardest to locate a correct version of GNU make
@@ -831,13 +842,13 @@ AC_DEFUN([BASIC_CHECK_GNU_MAKE],
     fi
 
     if test "x$FOUND_MAKE" = x; then
-      AC_MSG_ERROR([Cannot find GNU make 3.81 or newer! Please put it in the path, or add e.g. MAKE=/opt/gmake3.81/make as argument to configure.])
+      AC_MSG_ERROR([Cannot find GNU make $MAKE_REQUIRED_VERSION or newer! Please put it in the path, or add e.g. MAKE=/opt/gmake3.81/make as argument to configure.])
     fi
   fi
 
   MAKE=$FOUND_MAKE
   AC_SUBST(MAKE)
-  AC_MSG_NOTICE([Using GNU make 3.81 (or later) at $FOUND_MAKE (version: $MAKE_VERSION_STRING)])
+  AC_MSG_NOTICE([Using GNU make at $FOUND_MAKE (version: $MAKE_VERSION_STRING)])
 
   BASIC_CHECK_MAKE_OUTPUT_SYNC
 ])
