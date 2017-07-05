@@ -357,9 +357,10 @@ Symbol* MethodHandles::signature_polymorphic_intrinsic_name(vmIntrinsics::ID iid
   case vmIntrinsics::_linkToStatic:     return vmSymbols::linkToStatic_name();
   case vmIntrinsics::_linkToSpecial:    return vmSymbols::linkToSpecial_name();
   case vmIntrinsics::_linkToInterface:  return vmSymbols::linkToInterface_name();
+  default:
+    fatal("unexpected intrinsic id: %d %s", iid, vmIntrinsics::name_at(iid));
+    return 0;
   }
-  fatal("unexpected intrinsic id: %d %s", iid, vmIntrinsics::name_at(iid));
-  return 0;
 }
 
 Bytecodes::Code MethodHandles::signature_polymorphic_intrinsic_bytecode(vmIntrinsics::ID id) {
@@ -382,9 +383,10 @@ int MethodHandles::signature_polymorphic_intrinsic_ref_kind(vmIntrinsics::ID iid
   case vmIntrinsics::_linkToStatic:     return JVM_REF_invokeStatic;
   case vmIntrinsics::_linkToSpecial:    return JVM_REF_invokeSpecial;
   case vmIntrinsics::_linkToInterface:  return JVM_REF_invokeInterface;
+  default:
+    fatal("unexpected intrinsic id: %d %s", iid, vmIntrinsics::name_at(iid));
+    return 0;
   }
-  fatal("unexpected intrinsic id: %d %s", iid, vmIntrinsics::name_at(iid));
-  return 0;
 }
 
 vmIntrinsics::ID MethodHandles::signature_polymorphic_name_id(Symbol* name) {
@@ -400,6 +402,7 @@ vmIntrinsics::ID MethodHandles::signature_polymorphic_name_id(Symbol* name) {
   case vmSymbols::VM_SYMBOL_ENUM_NAME(linkToStatic_name):     return vmIntrinsics::_linkToStatic;
   case vmSymbols::VM_SYMBOL_ENUM_NAME(linkToSpecial_name):    return vmIntrinsics::_linkToSpecial;
   case vmSymbols::VM_SYMBOL_ENUM_NAME(linkToInterface_name):  return vmIntrinsics::_linkToInterface;
+  default:                                                    break;
   }
 
   // Cover the case of invokeExact and any future variants of invokeFoo.

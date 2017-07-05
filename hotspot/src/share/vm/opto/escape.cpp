@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -512,11 +512,11 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       if (adr_type == NULL) {
         break; // skip dead nodes
       }
-      if (adr_type->isa_oopptr() ||
-          (opcode == Op_StoreP || opcode == Op_StoreN || opcode == Op_StoreNKlass) &&
-                        (adr_type == TypeRawPtr::NOTNULL &&
-                         adr->in(AddPNode::Address)->is_Proj() &&
-                         adr->in(AddPNode::Address)->in(0)->is_Allocate())) {
+      if (   adr_type->isa_oopptr()
+          || (   (opcode == Op_StoreP || opcode == Op_StoreN || opcode == Op_StoreNKlass)
+              && adr_type == TypeRawPtr::NOTNULL
+              && adr->in(AddPNode::Address)->is_Proj()
+              && adr->in(AddPNode::Address)->in(0)->is_Allocate())) {
         delayed_worklist->push(n); // Process it later.
 #ifdef ASSERT
         assert(adr->is_AddP(), "expecting an AddP");
@@ -725,11 +725,11 @@ void ConnectionGraph::add_final_edges(Node *n) {
           opcode == Op_CompareAndExchangeN || opcode == Op_CompareAndExchangeP) {
         add_local_var_and_edge(n, PointsToNode::NoEscape, adr, NULL);
       }
-      if (adr_type->isa_oopptr() ||
-          (opcode == Op_StoreP || opcode == Op_StoreN || opcode == Op_StoreNKlass) &&
-                        (adr_type == TypeRawPtr::NOTNULL &&
-                         adr->in(AddPNode::Address)->is_Proj() &&
-                         adr->in(AddPNode::Address)->in(0)->is_Allocate())) {
+      if (   adr_type->isa_oopptr()
+          || (   (opcode == Op_StoreP || opcode == Op_StoreN || opcode == Op_StoreNKlass)
+              && adr_type == TypeRawPtr::NOTNULL
+              && adr->in(AddPNode::Address)->is_Proj()
+              && adr->in(AddPNode::Address)->in(0)->is_Allocate())) {
         // Point Address to Value
         PointsToNode* adr_ptn = ptnode_adr(adr->_idx);
         assert(adr_ptn != NULL &&
@@ -1964,8 +1964,8 @@ Node* ConnectionGraph::optimize_ptr_compare(Node* n) {
   bool set2_has_unknown_ptr = ptn2->points_to(phantom_obj);
   bool set1_has_null_ptr    = ptn1->points_to(null_obj);
   bool set2_has_null_ptr    = ptn2->points_to(null_obj);
-  if (set1_has_unknown_ptr && set2_has_null_ptr ||
-      set2_has_unknown_ptr && set1_has_null_ptr) {
+  if ((set1_has_unknown_ptr && set2_has_null_ptr) ||
+      (set2_has_unknown_ptr && set1_has_null_ptr)) {
     // Check nullness of unknown object.
     return NULL;
   }
@@ -2624,7 +2624,7 @@ void ConnectionGraph::move_inst_mem(Node* n, GrowableArray<PhiNode *>  &orig_phi
         continue;
       }
       tp = use->as_MemBar()->adr_type()->isa_ptr();
-      if (tp != NULL && C->get_alias_index(tp) == alias_idx ||
+      if ((tp != NULL && C->get_alias_index(tp) == alias_idx) ||
           alias_idx == general_idx) {
         continue; // Nothing to do
       }

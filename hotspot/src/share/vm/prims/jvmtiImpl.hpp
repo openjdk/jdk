@@ -65,6 +65,7 @@ class JvmtiBreakpoints;
 
 class GrowableElement : public CHeapObj<mtInternal> {
 public:
+  virtual ~GrowableElement() {}
   virtual address getCacheValue()          =0;
   virtual bool equals(GrowableElement* e)  =0;
   virtual bool lessThan(GrowableElement *e)=0;

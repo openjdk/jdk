@@ -172,9 +172,10 @@ static BasicType runtime_type_from(JavaValue* result) {
     case T_ARRAY  : // fall through
     case T_OBJECT:  return T_OBJECT;
 #endif
+    default:
+      ShouldNotReachHere();
+      return T_ILLEGAL;
   }
-  ShouldNotReachHere();
-  return T_ILLEGAL;
 }
 
 // ============ Virtual calls ============

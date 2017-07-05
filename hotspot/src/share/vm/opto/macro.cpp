@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1359,7 +1359,7 @@ void PhaseMacroExpand::expand_allocate_common(
   }
 
   if (C->env()->dtrace_alloc_probes() ||
-      !UseTLAB && (!Universe::heap()->supports_inline_contig_alloc())) {
+      (!UseTLAB && !Universe::heap()->supports_inline_contig_alloc())) {
     // Force slow-path allocation
     always_slow = true;
     initial_slow_test = NULL;

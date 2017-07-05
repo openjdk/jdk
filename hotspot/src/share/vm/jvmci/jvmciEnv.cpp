@@ -357,6 +357,8 @@ methodHandle JVMCIEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
         }
       }
       break;
+    default:
+      break;
     }
   }
 
@@ -604,4 +606,3 @@ JVMCIEnv::CodeInstallResult JVMCIEnv::register_method(
 
   return result;
 }
-

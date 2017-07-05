@@ -149,8 +149,8 @@ static bool match_option(const JavaVMOption *option, const char* name) {
 static bool match_option(const JavaVMOption* option, const char** names, const char** tail,
   bool tail_allowed) {
   for (/* empty */; *names != NULL; ++names) {
-    if (match_option(option, *names, tail)) {
-      if (**tail == '\0' || tail_allowed && **tail == ':') {
+  if (match_option(option, *names, tail)) {
+      if (**tail == '\0' || (tail_allowed && **tail == ':')) {
         return true;
       }
     }

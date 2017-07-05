@@ -363,8 +363,8 @@ void SafepointSynchronize::begin() {
       if (safepoint_limit_time < current_time) {
         tty->print_cr("# SafepointSynchronize: Finished after "
                       INT64_FORMAT_W(6) " ms",
-                      ((current_time - safepoint_limit_time) / MICROUNITS +
-                       (jlong)SafepointTimeoutDelay));
+                      (int64_t)((current_time - safepoint_limit_time) / MICROUNITS +
+                                (jlong)SafepointTimeoutDelay));
       }
     }
 #endif
@@ -1268,11 +1268,11 @@ void SafepointSynchronize::print_statistics() {
                INT64_FORMAT_W(7) " " INT64_FORMAT_W(7) " "
                INT64_FORMAT_W(7) " " INT64_FORMAT_W(7) " "
                INT64_FORMAT_W(7) " ] ",
-               sstats->_time_to_spin / MICROUNITS,
-               sstats->_time_to_wait_to_block / MICROUNITS,
-               sstats->_time_to_sync / MICROUNITS,
-               sstats->_time_to_do_cleanups / MICROUNITS,
-               sstats->_time_to_exec_vmop / MICROUNITS);
+               (int64_t)(sstats->_time_to_spin / MICROUNITS),
+               (int64_t)(sstats->_time_to_wait_to_block / MICROUNITS),
+               (int64_t)(sstats->_time_to_sync / MICROUNITS),
+               (int64_t)(sstats->_time_to_do_cleanups / MICROUNITS),
+               (int64_t)(sstats->_time_to_exec_vmop / MICROUNITS));
 
     if (need_to_track_page_armed_status) {
       tty->print(INT32_FORMAT_W(10) " ", sstats->_page_armed);
@@ -1320,10 +1320,10 @@ void SafepointSynchronize::print_stat_on_exit() {
   tty->print_cr(UINT64_FORMAT_W(5) " VM operations coalesced during safepoint",
                 _coalesced_vmop_count);
   tty->print_cr("Maximum sync time  " INT64_FORMAT_W(5) " ms",
-                _max_sync_time / MICROUNITS);
+                (int64_t)(_max_sync_time / MICROUNITS));
   tty->print_cr("Maximum vm operation time (except for Exit VM operation)  "
                 INT64_FORMAT_W(5) " ms",
-                _max_vmop_time / MICROUNITS);
+                (int64_t)(_max_vmop_time / MICROUNITS));
 }
 
 // ------------------------------------------------------------------------------------------------

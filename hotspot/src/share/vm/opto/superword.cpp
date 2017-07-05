@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,6 +324,9 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
             //       Support needs to be augmented for logical qword operations, currently we map to dword
             //       buckets for vectors on logicals as these were legacy.
             small_basic_type = true;
+            break;
+
+          default:
             break;
           }
         }
@@ -752,13 +755,13 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops) {
       int vw = vector_width_in_bytes(s);
       assert(vw > 1, "sanity");
       SWPointer p(s, this, NULL, false);
-      if (cmp_ct.at(j) >  max_ct ||
-          cmp_ct.at(j) == max_ct &&
-            (vw >  max_vw ||
-             vw == max_vw &&
-              (data_size(s) <  min_size ||
-               data_size(s) == min_size &&
-                 (p.offset_in_bytes() < min_iv_offset)))) {
+      if ( cmp_ct.at(j) >  max_ct ||
+          (cmp_ct.at(j) == max_ct &&
+            ( vw >  max_vw ||
+             (vw == max_vw &&
+              ( data_size(s) <  min_size ||
+               (data_size(s) == min_size &&
+                p.offset_in_bytes() < min_iv_offset)))))) {
         max_ct = cmp_ct.at(j);
         max_vw = vw;
         max_idx = j;
@@ -775,13 +778,13 @@ MemNode* SuperWord::find_align_to_ref(Node_List &memops) {
         int vw = vector_width_in_bytes(s);
         assert(vw > 1, "sanity");
         SWPointer p(s, this, NULL, false);
-        if (cmp_ct.at(j) >  max_ct ||
-            cmp_ct.at(j) == max_ct &&
-              (vw >  max_vw ||
-               vw == max_vw &&
-                (data_size(s) <  min_size ||
-                 data_size(s) == min_size &&
-                   (p.offset_in_bytes() < min_iv_offset)))) {
+        if ( cmp_ct.at(j) >  max_ct ||
+            (cmp_ct.at(j) == max_ct &&
+              ( vw >  max_vw ||
+               (vw == max_vw &&
+                ( data_size(s) <  min_size ||
+                 (data_size(s) == min_size &&
+                  p.offset_in_bytes() < min_iv_offset)))))) {
           max_ct = cmp_ct.at(j);
           max_vw = vw;
           max_idx = j;
@@ -925,7 +928,7 @@ void SuperWord::dependence_graph() {
   // First, assign a dependence node to each memory node
   for (int i = 0; i < _block.length(); i++ ) {
     Node *n = _block.at(i);
-    if (n->is_Mem() || n->is_Phi() && n->bottom_type() == Type::MEMORY) {
+    if (n->is_Mem() || (n->is_Phi() && n->bottom_type() == Type::MEMORY)) {
       _dg.make_node(n);
     }
   }
@@ -1745,8 +1748,8 @@ bool CMoveKit::test_cmpd_pack(Node_List* cmpd_pk, Node_List* cmovd_pk) {
   Node_List* in1_pk = _sw->my_pack(in1);
   Node_List* in2_pk = _sw->my_pack(in2);
 
-  if (in1_pk != NULL && in1_pk->size() != cmpd_pk->size()
-    || in2_pk != NULL && in2_pk->size() != cmpd_pk->size() ) {
+  if (  (in1_pk != NULL && in1_pk->size() != cmpd_pk->size())
+     || (in2_pk != NULL && in2_pk->size() != cmpd_pk->size()) ) {
     return false;
   }
 
@@ -4038,7 +4041,7 @@ DepSuccs::DepSuccs(Node* n, DepGraph& dg) {
     _next_idx = 0;
     _end_idx  = _n->outcnt();
     _dep_next = dg.dep(_n)->out_head();
-  } else if (_n->is_Mem() || _n->is_Phi() && _n->bottom_type() == Type::MEMORY) {
+  } else if (_n->is_Mem() || (_n->is_Phi() && _n->bottom_type() == Type::MEMORY)) {
     _next_idx = 0;
     _end_idx  = 0;
     _dep_next = dg.dep(_n)->out_head();

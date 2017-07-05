@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -266,6 +266,8 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
     case Bytecodes::_invokehandle:
       code = target->is_static() ? Bytecodes::_invokestatic : Bytecodes::_invokespecial;
       break;
+    default:
+      break;
     }
   }
 
@@ -301,11 +303,11 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
   // determine actual method (use CHA if necessary)
   ciMethod* inline_target = NULL;
   if (target->is_loaded() && klass->is_loaded()
-      && (klass->is_initialized() || klass->is_interface() && target->holder()->is_initialized())
+      && (klass->is_initialized() || (klass->is_interface() && target->holder()->is_initialized()))
       && target->is_loaded()) {
     if (code == Bytecodes::_invokestatic
         || code == Bytecodes::_invokespecial
-        || code == Bytecodes::_invokevirtual && target->is_final_method()) {
+        || (code == Bytecodes::_invokevirtual && target->is_final_method())) {
       inline_target = target;
     } else {
       inline_target = target->find_monomorphic_target(calling_klass, callee_holder, actual_recv);
@@ -342,7 +344,8 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
 
     // record dependencies if at least one parameter retained stack-allocatable
     if (must_record_dependencies) {
-      if (code == Bytecodes::_invokeinterface || code == Bytecodes::_invokevirtual && !target->is_final_method()) {
+      if (code == Bytecodes::_invokeinterface ||
+          (code == Bytecodes::_invokevirtual && !target->is_final_method())) {
         _dependencies.append(actual_recv);
         _dependencies.append(inline_target);
       }

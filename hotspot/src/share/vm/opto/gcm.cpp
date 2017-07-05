@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -512,7 +512,7 @@ Block* PhaseCFG::insert_anti_dependences(Block* LCA, Node* load, bool verify) {
 #ifdef ASSERT
   if (load_alias_idx == Compile::AliasIdxBot && C->AliasLevel() > 0 &&
       (PrintOpto || VerifyAliases ||
-       PrintMiscellaneous && (WizardMode || Verbose))) {
+       (PrintMiscellaneous && (WizardMode || Verbose)))) {
     // Load nodes should not consume all of memory.
     // Reporting a bottom type indicates a bug in adlc.
     // If some particular type of node validly consumes all of memory,
@@ -931,7 +931,7 @@ void PhaseCFG::compute_latencies_backwards(VectorSet &visited, Node_Stack &stack
   Node *n;
 
   // Walk over all the nodes from last to first
-  while (n = iter.next()) {
+  while ((n = iter.next())) {
     // Set the latency for the definitions of this instruction
     partial_latency_of_defs(n);
   }
@@ -1206,7 +1206,7 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
   Node *self;
 
   // Walk over all the nodes from last to first
-  while (self = iter.next()) {
+  while ((self = iter.next())) {
     Block* early = get_block_for_node(self); // Earliest legal placement
 
     if (self->is_top()) {
@@ -1234,7 +1234,7 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
         early->add_inst(self);
         continue;
         break;
-      case Op_CheckCastPP:
+      case Op_CheckCastPP: {
         // Don't move CheckCastPP nodes away from their input, if the input
         // is a rawptr (5071820).
         Node *def = self->in(1);
@@ -1245,6 +1245,9 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
 #endif
           continue;
         }
+        break;
+      }
+      default:
         break;
       }
     }

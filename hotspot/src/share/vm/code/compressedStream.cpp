@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,9 @@ inline jint  CompressedStream::decode_sign(juint value) {
 // converts trailing zeroes (common in floats) to leading zeroes
 inline juint CompressedStream::reverse_int(juint i) {
   // Hacker's Delight, Figure 7-1
-  i = (i & 0x55555555) << 1 | (i >> 1) & 0x55555555;
-  i = (i & 0x33333333) << 2 | (i >> 2) & 0x33333333;
-  i = (i & 0x0f0f0f0f) << 4 | (i >> 4) & 0x0f0f0f0f;
+  i = (i & 0x55555555) << 1 | ((i >> 1) & 0x55555555);
+  i = (i & 0x33333333) << 2 | ((i >> 2) & 0x33333333);
+  i = (i & 0x0f0f0f0f) << 4 | ((i >> 4) & 0x0f0f0f0f);
   i = (i << 24) | ((i & 0xff00) << 8) | ((i >> 8) & 0xff00) | (i >> 24);
   return i;
 }

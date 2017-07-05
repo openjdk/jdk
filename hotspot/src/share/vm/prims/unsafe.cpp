@@ -112,7 +112,7 @@ static inline void* index_oop_from_field_offset_long(oop p, jlong field_offset) 
              "raw [ptr+disp] must be consistent with oop::field_base");
     }
     jlong p_size = HeapWordSize * (jlong)(p->size());
-    assert(byte_offset < p_size, "Unsafe access: offset " INT64_FORMAT " > object's size " INT64_FORMAT, byte_offset, p_size);
+    assert(byte_offset < p_size, "Unsafe access: offset " INT64_FORMAT " > object's size " INT64_FORMAT, (int64_t)byte_offset, (int64_t)p_size);
   }
 #endif
 

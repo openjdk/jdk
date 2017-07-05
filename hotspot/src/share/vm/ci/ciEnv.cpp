@@ -797,6 +797,8 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
           }
         }
         break;
+      default:
+        break;
       }
     }
 

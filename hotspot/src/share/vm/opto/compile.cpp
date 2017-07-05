@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3405,7 +3405,7 @@ void Compile::final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_
           for (uint i = 0; i < in->outcnt(); i++) {
             Node* u = in->raw_out(i);
             if (!u->is_SafePoint() ||
-                 u->is_Call() && u->as_Call()->has_non_debug_use(n)) {
+                (u->is_Call() && u->as_Call()->has_non_debug_use(n))) {
               safe_to_skip = false;
             }
           }
@@ -3837,9 +3837,8 @@ bool Compile::Constant::operator==(const Constant& other) {
   case T_ADDRESS: return (_v._value.l == other._v._value.l);
   case T_VOID:    return (_v._value.l == other._v._value.l);  // jump-table entries
   case T_METADATA: return (_v._metadata == other._v._metadata);
-  default: ShouldNotReachHere();
+  default: ShouldNotReachHere(); return false;
   }
-  return false;
 }
 
 static int type_to_size_in_bytes(BasicType t) {
@@ -3854,10 +3853,10 @@ static int type_to_size_in_bytes(BasicType t) {
   case T_VOID:
   case T_ADDRESS:
   case T_OBJECT:  return sizeof(jobject);
+  default:
+    ShouldNotReachHere();
+    return -1;
   }
-
-  ShouldNotReachHere();
-  return -1;
 }
 
 int Compile::ConstantTable::qsort_comparator(Constant* a, Constant* b) {

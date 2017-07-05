@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,8 @@ else
 	$(call create-mapfile)
 endif
 
-# Disabling switch warning for clang because of test source.
+# Disabling undef, switch, format-nonliteral and tautological-undefined-compare
+# warnings for clang because of test source.
 
 # Note: On AIX, the gtest test classes linked into the libjvm.so push the TOC
 # size beyond 64k, so we need to link with bigtoc. However, this means that

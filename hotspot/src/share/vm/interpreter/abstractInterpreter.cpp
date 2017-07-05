@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,7 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
     case vmIntrinsics::_floatToRawIntBits:   return java_lang_Float_floatToRawIntBits;
     case vmIntrinsics::_longBitsToDouble:    return java_lang_Double_longBitsToDouble;
     case vmIntrinsics::_doubleToRawLongBits: return java_lang_Double_doubleToRawLongBits;
+    default:                                 break;
   }
 #endif // CC_INTERP
 
@@ -182,8 +183,9 @@ AbstractInterpreter::MethodKind AbstractInterpreter::method_kind(methodHandle m)
     case vmIntrinsics::_fmaD  : return java_lang_math_fmaD ;
     case vmIntrinsics::_fmaF  : return java_lang_math_fmaF ;
 
-    case vmIntrinsics::_Reference_get:
-                                return java_lang_ref_reference_get;
+    case vmIntrinsics::_Reference_get
+                              : return java_lang_ref_reference_get;
+    default                   : break;
   }
 
   // Accessor method?

@@ -188,7 +188,7 @@ void ConstantLongValue::write_on(DebugInfoWriteStream* stream) {
 }
 
 void ConstantLongValue::print_on(outputStream* st) const {
-  st->print(INT64_FORMAT, value());
+  st->print(JLONG_FORMAT, value());
 }
 
 // ConstantDoubleValue
