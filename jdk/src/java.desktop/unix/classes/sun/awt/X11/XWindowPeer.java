@@ -46,6 +46,7 @@ import java.util.Vector;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.util.logging.PlatformLogger;
 
 import sun.awt.AWTAccessor;
@@ -225,7 +226,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         Window t_window = (Window)target;
         Window owner = t_window.getOwner();
         if (owner != null) {
-            ownerPeer = (XWindowPeer)owner.getPeer();
+            ownerPeer = AWTAccessor.getComponentAccessor().getPeer(owner);
             if (focusLog.isLoggable(PlatformLogger.Level.FINER)) {
                 focusLog.finer("Owner is " + owner);
                 focusLog.finer("Owner peer is " + ownerPeer);
@@ -401,15 +402,15 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
     }
 
-    @SuppressWarnings("deprecation")
     public void recursivelySetIcon(java.util.List<IconInfo> icons) {
         dumpIcons(winAttr.icons);
         setIconHints(icons);
         Window target = (Window)this.target;
         Window[] children = target.getOwnedWindows();
         int cnt = children.length;
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
         for (int i = 0; i < cnt; i++) {
-            ComponentPeer childPeer = children[i].getPeer();
+            final ComponentPeer childPeer = acc.getPeer(children[i]);
             if (childPeer != null && childPeer instanceof XWindowPeer) {
                 if (((XWindowPeer)childPeer).winAttr.iconsInherited) {
                     ((XWindowPeer)childPeer).winAttr.icons = icons;
@@ -1161,7 +1162,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         if (warningWindow != null) {
             // We can't use the coordinates stored in the XBaseWindow since
             // they are zeros for decorated frames.
-            AWTAccessor.ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
+            ComponentAccessor compAccessor = AWTAccessor.getComponentAccessor();
             int x = compAccessor.getX(target);
             int y = compAccessor.getY(target);
             int width = compAccessor.getWidth(target);
@@ -1486,7 +1487,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         XToolkit.awtLock();
         try {
             if (isReparented() && delayedModalBlocking) {
-                addToTransientFors((XDialogPeer) AWTAccessor.getComponentAccessor().getPeer(modalBlocker));
+                addToTransientFors(AWTAccessor.getComponentAccessor().getPeer(modalBlocker));
                 delayedModalBlocking = false;
             }
         } finally {
@@ -1570,7 +1571,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         try {
             // State lock should always be after awtLock
             synchronized(getStateLock()) {
-                XDialogPeer blockerPeer = (XDialogPeer) AWTAccessor.getComponentAccessor().getPeer(d);
+                XDialogPeer blockerPeer = AWTAccessor.getComponentAccessor().getPeer(d);
                 if (blocked) {
                     if (log.isLoggable(PlatformLogger.Level.FINE)) {
                         log.fine("{0} is blocked by {1}", this, blockerPeer);
@@ -1852,7 +1853,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         // current chain iterator in the order from next to prev
         XWindowPeer chainToSplit = prevTransientFor;
         while (chainToSplit != null) {
-            XWindowPeer blocker = (XWindowPeer) AWTAccessor.getComponentAccessor().getPeer(chainToSplit.modalBlocker);
+            XWindowPeer blocker = AWTAccessor.getComponentAccessor().getPeer(chainToSplit.modalBlocker);
             if (thisChainBlockers.contains(blocker)) {
                 // add to this dialog's chain
                 setToplevelTransientFor(thisChain, chainToSplit, true, false);
@@ -1913,7 +1914,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
         focusLog.fine("Parent window is not active");
 
-        XDecoratedPeer wpeer = (XDecoratedPeer)AWTAccessor.getComponentAccessor().getPeer(ownerWindow);
+        XDecoratedPeer wpeer = AWTAccessor.getComponentAccessor().getPeer(ownerWindow);
         if (wpeer != null && wpeer.requestWindowFocus(this, time, timeProvided)) {
             focusLog.fine("Parent window accepted focus request - generating focus for this window");
             return true;
@@ -2259,7 +2260,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                         while (w != null && toplevel != this && !(toplevel instanceof XDialogPeer)) {
                             w = (Window) AWTAccessor.getComponentAccessor().getParent(w);
                             if (w != null) {
-                                toplevel = (XWindowPeer) AWTAccessor.getComponentAccessor().getPeer(w);
+                                toplevel = AWTAccessor.getComponentAccessor().getPeer(w);
                             }
                         }
                         if (w == null || (w != this.target && w instanceof Dialog)) {

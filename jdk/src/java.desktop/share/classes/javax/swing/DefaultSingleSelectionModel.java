@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,8 @@ import java.util.EventListener;
 @SuppressWarnings("serial") // Same-version serialization only
 public class DefaultSingleSelectionModel implements SingleSelectionModel,
 Serializable {
-    /* Only one ModelChangeEvent is needed per model instance since the
+    /**
+     * Only one ModelChangeEvent is needed per model instance since the
      * event's only (read-only) state is the source property.  The source
      * of events generated here is always "this".
      */
@@ -57,12 +58,16 @@ Serializable {
 
     private int index = -1;
 
-    // implements javax.swing.SingleSelectionModel
+    /**
+     * {@inheritDoc}
+     */
     public int getSelectedIndex() {
         return index;
     }
 
-    // implements javax.swing.SingleSelectionModel
+    /**
+     * {@inheritDoc}
+     */
     public void setSelectedIndex(int index) {
         if (this.index != index) {
             this.index = index;
@@ -70,12 +75,16 @@ Serializable {
         }
     }
 
-    // implements javax.swing.SingleSelectionModel
+    /**
+     * {@inheritDoc}
+     */
     public void clearSelection() {
         setSelectedIndex(-1);
     }
 
-    // implements javax.swing.SingleSelectionModel
+    /**
+     * {@inheritDoc}
+     */
     public boolean isSelected() {
         boolean ret = false;
         if (getSelectedIndex() != -1) {

@@ -378,12 +378,8 @@ public final class FontUtilities {
      * Suggested usage is something like :
      * FontUIResource fuir;
      * Font desktopFont = getDesktopFont(..);
-     * // NOTE even if fontSupportsDefaultEncoding returns true because
-     * // you get Tahoma and are running in an English locale, you may
-     * // still want to just call getCompositeFontUIResource() anyway
-     * // as only then will you get fallback fonts - eg for CJK.
      * if (FontManager.fontSupportsDefaultEncoding(desktopFont)) {
-     *   fuir = new FontUIResource(..);
+     *   fuir = new FontUIResource(desktopFont);
      * } else {
      *   fuir = FontManager.getCompositeFontUIResource(desktopFont);
      * }

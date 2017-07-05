@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,23 @@
  */
 package java.awt;
 
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
 import java.awt.peer.FramePeer;
-import java.awt.event.*;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Vector;
-import java.io.Serializable;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-import sun.awt.AppContext;
-import sun.awt.SunToolkit;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Vector;
+
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+
 import sun.awt.AWTAccessor;
-import java.lang.ref.WeakReference;
-import javax.accessibility.*;
+import sun.awt.SunToolkit;
 
 /**
  * A <code>Frame</code> is a top-level window with a title and a border.
@@ -474,7 +476,7 @@ public class Frame extends Window implements MenuContainer {
     public void addNotify() {
         synchronized (getTreeLock()) {
             if (peer == null) {
-                peer = getToolkit().createFrame(this);
+                peer = getComponentFactory().createFrame(this);
             }
             FramePeer p = (FramePeer)peer;
             MenuBar menuBar = this.menuBar;

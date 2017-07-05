@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.awt.Insets;
 import javax.swing.plaf.UIResource;
 
 
-/*
+/**
  * A subclass of Insets that implements UIResource.  UI
  * classes that use Insets values for default properties
  * should use this class.
@@ -50,6 +50,13 @@ import javax.swing.plaf.UIResource;
 @SuppressWarnings("serial") // Same-version serialization only
 public class InsetsUIResource extends Insets implements UIResource
 {
+    /**
+     * Constructs an {@code InsetsUIResource}.
+     * @param top the inset from the top
+     * @param left the inset from the left
+     * @param bottom the inset from the bottom
+     * @param right the inset from the right
+     */
     public InsetsUIResource(int top, int left, int bottom, int right) {
         super(top, left, bottom, right);
     }

@@ -94,9 +94,9 @@ public abstract class CardTerminals {
      *
      * @param state the State
      * @return an unmodifiable list of all terminals matching the specified
-     *   attribute.
+     *   state.
      *
-     * @throws NullPointerException if attr is null
+     * @throws NullPointerException if state is null
      * @throws CardException if the card operation failed
      */
     public abstract List<CardTerminal> list(State state) throws CardException;

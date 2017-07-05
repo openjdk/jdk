@@ -31,6 +31,7 @@ import java.lang.reflect.Method;
 import java.awt.Toolkit;
 import java.awt.Frame;
 
+import sun.awt.AWTAccessor;
 
 
 /**
@@ -45,7 +46,8 @@ public final class UtilInternal {
                InstantiationException, InvocationTargetException
     {
         Toolkit tk = Toolkit.getDefaultToolkit();
-        FramePeer frame_peer = (FramePeer) embedder.getPeer();
+        FramePeer frame_peer = AWTAccessor.getComponentAccessor()
+                                          .getPeer(embedder);
         System.out.println("frame's peer = " + frame_peer);
         if ("sun.awt.windows.WToolkit".equals(tk.getClass().getName())) {
             Class comp_peer_class =

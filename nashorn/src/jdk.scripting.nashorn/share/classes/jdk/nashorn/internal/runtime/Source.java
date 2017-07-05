@@ -28,9 +28,11 @@ package jdk.nashorn.internal.runtime;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.io.Reader;
 import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
@@ -44,6 +46,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
@@ -988,5 +991,40 @@ public final class Source implements Loggable {
     @Override
     public DebugLogger getLogger() {
         return initLogger(Context.getContextTrusted());
+    }
+
+    private File dumpFile(final String dir) {
+        final URL u = getURL();
+        final StringBuilder buf = new StringBuilder();
+        // make it unique by prefixing current date & time
+        buf.append(LocalDateTime.now().toString());
+        buf.append('_');
+        if (u != null) {
+            // make it a safe file name
+            buf.append(u.toString()
+                    .replace('/', '_')
+                    .replace('\\', '_'));
+        } else {
+            buf.append(getName());
+        }
+
+        return new File(dir, buf.toString());
+    }
+
+    void dump(final String dir) {
+        final File file = dumpFile(dir);
+        try (final FileOutputStream fos = new FileOutputStream(file)) {
+            final PrintWriter pw = new PrintWriter(fos);
+            pw.print(data.toString());
+            pw.flush();
+        } catch (final IOException ioExp) {
+            debug("Skipping source dump for " +
+                    name +
+                    ": " +
+                    ECMAErrors.getMessage(
+                        "io.error.cant.write",
+                        dir.toString() +
+                        " : " + ioExp.toString()));
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,14 @@ import java.awt.Transparency;
 import java.awt.image.ColorModel;
 import java.awt.peer.ComponentPeer;
 
+import sun.awt.AWTAccessor;
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.awt.image.SunVolatileImage;
 import sun.awt.image.VolatileSurfaceManager;
 import sun.java2d.BackBufferCapsProvider;
 import sun.java2d.SurfaceData;
 import static sun.java2d.opengl.OGLContext.OGLContextCaps.*;
 import sun.java2d.pipe.hw.ExtendedBufferCapabilities;
-import static sun.java2d.pipe.hw.AccelSurface.*;
 import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.*;
 
 public class CGLVolatileSurfaceManager extends VolatileSurfaceManager {
@@ -74,11 +75,11 @@ public class CGLVolatileSurfaceManager extends VolatileSurfaceManager {
      * Create a pbuffer-based SurfaceData object (or init the backbuffer
      * of an existing window if this is a double buffered GraphicsConfig)
      */
-    @SuppressWarnings("deprecation")
     protected SurfaceData initAcceleratedSurface() {
         SurfaceData sData = null;
         Component comp = vImg.getComponent();
-        final ComponentPeer peer = (comp != null) ? comp.getPeer() : null;
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
+        final ComponentPeer peer = (comp != null) ? acc.getPeer(comp) : null;
 
         try {
             boolean createVSynced = false;

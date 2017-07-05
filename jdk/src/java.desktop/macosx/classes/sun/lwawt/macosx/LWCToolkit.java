@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -293,7 +293,7 @@ public final class LWCToolkit extends LWToolkit {
     }
 
     @Override
-    protected DesktopPeer createDesktopPeer(Desktop target) {
+    public DesktopPeer createDesktopPeer(Desktop target) {
         return new CDesktopPeer();
     }
 
@@ -575,7 +575,8 @@ public final class LWCToolkit extends LWToolkit {
 
         final boolean[] ret = new boolean[1];
 
-        try {  invokeAndWait(new Runnable() { public void run() { synchronized(ret) {
+        try {  invokeAndWait(new Runnable() { @Override
+                                              public void run() { synchronized(ret) {
             ret[0] = a.equals(b);
         }}}, c); } catch (Exception e) { e.printStackTrace(); }
 

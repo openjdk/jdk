@@ -1228,31 +1228,41 @@ public final class NativeArray extends ScriptObject implements OptimisticBuiltin
         final List<Object> list = Arrays.asList(array);
         final Object cmpThis = cmp == null || cmp.isStrict() ? ScriptRuntime.UNDEFINED : Global.instance();
 
-        Collections.sort(list, new Comparator<Object>() {
-            private final MethodHandle call_cmp = getCALL_CMP();
-            @Override
-            public int compare(final Object x, final Object y) {
-                if (x == ScriptRuntime.UNDEFINED && y == ScriptRuntime.UNDEFINED) {
-                    return 0;
-                } else if (x == ScriptRuntime.UNDEFINED) {
-                    return 1;
-                } else if (y == ScriptRuntime.UNDEFINED) {
-                    return -1;
-                }
-
-                if (cmp != null) {
-                    try {
-                        return (int)Math.signum((double)call_cmp.invokeExact(cmp, cmpThis, x, y));
-                    } catch (final RuntimeException | Error e) {
-                        throw e;
-                    } catch (final Throwable t) {
-                        throw new RuntimeException(t);
+        try {
+            Collections.sort(list, new Comparator<Object>() {
+                private final MethodHandle call_cmp = getCALL_CMP();
+                @Override
+                public int compare(final Object x, final Object y) {
+                    if (x == ScriptRuntime.UNDEFINED && y == ScriptRuntime.UNDEFINED) {
+                        return 0;
+                    } else if (x == ScriptRuntime.UNDEFINED) {
+                        return 1;
+                    } else if (y == ScriptRuntime.UNDEFINED) {
+                        return -1;
                     }
-                }
 
-                return JSType.toString(x).compareTo(JSType.toString(y));
-            }
-        });
+                    if (cmp != null) {
+                        try {
+                            return (int)Math.signum((double)call_cmp.invokeExact(cmp, cmpThis, x, y));
+                        } catch (final RuntimeException | Error e) {
+                            throw e;
+                        } catch (final Throwable t) {
+                            throw new RuntimeException(t);
+                        }
+                    }
+
+                    return JSType.toString(x).compareTo(JSType.toString(y));
+                }
+            });
+        } catch (final IllegalArgumentException iae) {
+            // Collections.sort throws IllegalArgumentException when
+            // Comparison method violates its general contract
+
+            // See ECMA spec 15.4.4.11 Array.prototype.sort (comparefn).
+            // If "comparefn" is not undefined and is not a consistent
+            // comparison function for the elements of this array, the
+            // behaviour of sort is implementation-defined.
+        }
 
         return list.toArray(new Object[array.length]);
     }

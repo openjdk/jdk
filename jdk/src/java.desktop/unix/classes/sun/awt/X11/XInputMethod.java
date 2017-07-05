@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.awt.Container;
 import java.awt.Rectangle;
 import java.awt.im.spi.InputMethodContext;
 import java.awt.peer.ComponentPeer;
+
+import sun.awt.AWTAccessor;
 import sun.awt.X11InputMethod;
 
 import sun.util.logging.PlatformLogger;
@@ -137,9 +139,10 @@ public class XInputMethod extends X11InputMethod {
         XToolkit.awtUnlock();
     }
 
-    @SuppressWarnings("deprecation")
     long getCurrentParentWindow() {
-        return ((XWindow)clientComponentWindow.getPeer()).getContentWindow();
+        XWindow peer = AWTAccessor.getComponentAccessor()
+                                  .getPeer(clientComponentWindow);
+        return peer.getContentWindow();
     }
 
     /*

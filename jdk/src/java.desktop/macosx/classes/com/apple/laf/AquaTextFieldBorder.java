@@ -124,7 +124,7 @@ public class AquaTextFieldBorder extends AquaBorder {
 
     public Insets getBorderInsets(final Component c) {
         if (!(c instanceof JTextComponent) || c.isOpaque()) return new InsetsUIResource(3, 7, 3, 7);
-        return new InsetsUIResource(6, 7, 6, 7);
+        return new InsetsUIResource(5, 5, 5, 5);
     }
 
     protected static State getStateFor(final JTextComponent jc) {

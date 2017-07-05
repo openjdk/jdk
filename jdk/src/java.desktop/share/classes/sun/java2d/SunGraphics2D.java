@@ -244,7 +244,6 @@ public final class SunGraphics2D
     public Shape usrClip;
     protected Region devClip;           // Actual physical drawable in pixels
 
-    private final int devScale;         // Actual physical scale factor
     private int resolutionVariantHint;
 
     // cached state for text rendering
@@ -268,8 +267,6 @@ public final class SunGraphics2D
         surfaceData = sd;
         foregroundColor = fg;
         backgroundColor = bg;
-
-        transform = new AffineTransform();
         stroke = defaultStroke;
         composite = defaultComposite;
         paint = foregroundColor;
@@ -287,13 +284,12 @@ public final class SunGraphics2D
 
         interpolationType = AffineTransformOp.TYPE_NEAREST_NEIGHBOR;
 
-        validateColor();
-
-        devScale = sd.getDefaultScale();
-        if (devScale != 1) {
-            transform.setToScale(devScale, devScale);
+        transform = getDefaultTransform();
+        if (!transform.isIdentity()) {
             invalidateTransform();
         }
+
+        validateColor();
 
         font = f;
         if (font == null) {
@@ -302,6 +298,11 @@ public final class SunGraphics2D
 
         setDevClip(sd.getBounds());
         invalidatePipe();
+    }
+
+    private AffineTransform getDefaultTransform() {
+        GraphicsConfiguration gc = getDeviceConfiguration();
+        return (gc == null) ? new AffineTransform() : gc.getDefaultTransform();
     }
 
     protected Object clone() {
@@ -1610,11 +1611,10 @@ public final class SunGraphics2D
      */
     @Override
     public void setTransform(AffineTransform Tx) {
-        if ((constrainX | constrainY) == 0 && devScale == 1) {
+        if ((constrainX | constrainY) == 0) {
             transform.setTransform(Tx);
         } else {
-            transform.setTransform(devScale, 0, 0, devScale, constrainX,
-                                   constrainY);
+            transform.setToTranslation(constrainX, constrainY);
             transform.concatenate(Tx);
         }
         invalidateTransform();
@@ -1674,13 +1674,11 @@ public final class SunGraphics2D
      */
     @Override
     public AffineTransform getTransform() {
-        if ((constrainX | constrainY) == 0 && devScale == 1) {
+        if ((constrainX | constrainY) == 0) {
             return new AffineTransform(transform);
         }
-        final double invScale = 1.0 / devScale;
-        AffineTransform tx = new AffineTransform(invScale, 0, 0, invScale,
-                                                 -constrainX * invScale,
-                                                 -constrainY * invScale);
+        AffineTransform tx
+                = AffineTransform.getTranslateInstance(-constrainX, -constrainY);
         tx.concatenate(transform);
         return tx;
     }
