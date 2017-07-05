@@ -212,6 +212,10 @@ Java_java_lang_System_initProperties(JNIEnv *env, jclass cla, jobject props)
     PUTPROP(props, "os.version", sprops->os_version);
     PUTPROP(props, "os.arch", sprops->os_arch);
 
+#ifdef JDK_ARCH_ABI_PROP_NAME
+    PUTPROP(props, "sun.arch.abi", sprops->sun_arch_abi);
+#endif
+
     /* file system properties */
     PUTPROP(props, "file.separator", sprops->file_separator);
     PUTPROP(props, "path.separator", sprops->path_separator);

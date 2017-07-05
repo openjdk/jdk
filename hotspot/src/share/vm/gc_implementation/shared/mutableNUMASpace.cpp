@@ -948,6 +948,8 @@ void MutableNUMASpace::LGRPSpace::scan_pages(size_t page_size, size_t page_count
       break;
     }
     if (e != scan_end) {
+      assert(e < scan_end, err_msg("e: " PTR_FORMAT " scan_end: " PTR_FORMAT, e, scan_end));
+
       if ((page_expected.size != page_size || page_expected.lgrp_id != lgrp_id())
           && page_expected.size != 0) {
         os::free_memory(s, pointer_delta(e, s, sizeof(char)), page_size);

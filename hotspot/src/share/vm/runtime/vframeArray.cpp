@@ -160,6 +160,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
                                          int callee_locals,
                                          frame* caller,
                                          bool is_top_frame,
+                                         bool is_bottom_frame,
                                          int exec_mode) {
   JavaThread* thread = (JavaThread*) Thread::current();
 
@@ -275,7 +276,8 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
                                  callee_locals,
                                  caller,
                                  iframe(),
-                                 is_top_frame);
+                                 is_top_frame,
+                                 is_bottom_frame);
 
   // Update the pc in the frame object and overwrite the temporary pc
   // we placed in the skeletal frame now that we finally know the
@@ -420,6 +422,7 @@ int vframeArrayElement::on_stack_size(int caller_actual_parameters,
                                       int callee_parameters,
                                       int callee_locals,
                                       bool is_top_frame,
+                                      bool is_bottom_frame,
                                       int popframe_extra_stack_expression_els) const {
   assert(method()->max_locals() == locals()->size(), "just checking");
   int locks = monitors() == NULL ? 0 : monitors()->number_of_monitors();
@@ -431,7 +434,8 @@ int vframeArrayElement::on_stack_size(int caller_actual_parameters,
                                       caller_actual_parameters,
                                       callee_parameters,
                                       callee_locals,
-                                      is_top_frame);
+                                      is_top_frame,
+                                      is_bottom_frame);
 }
 
 
@@ -522,7 +526,7 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
 
   // Do the unpacking of interpreter frames; the frame at index 0 represents the top activation, so it has no callee
   // Unpack the frames from the oldest (frames() -1) to the youngest (0)
-  frame caller_frame = me;
+  frame* caller_frame = &me;
   for (index = frames() - 1; index >= 0 ; index--) {
     vframeArrayElement* elem = element(index);  // caller
     int callee_parameters, callee_locals;
@@ -542,13 +546,14 @@ void vframeArray::unpack_to_stack(frame &unpack_frame, int exec_mode, int caller
     elem->unpack_on_stack(caller_actual_parameters,
                           callee_parameters,
                           callee_locals,
-                          &caller_frame,
+                          caller_frame,
                           index == 0,
+                          index == frames() - 1,
                           exec_mode);
     if (index == frames() - 1) {
       Deoptimization::unwind_callee_save_values(elem->iframe(), this);
     }
-    caller_frame = *elem->iframe();
+    caller_frame = elem->iframe();
     caller_actual_parameters = callee_parameters;
   }
   deallocate_monitor_chunks();

@@ -159,7 +159,12 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
 
             // Store Table ScrollPane Corner Component
             uiDefaults.put("Table.scrollPaneCornerComponent",
-                    TableScrollPaneCorner.class);
+                    new UIDefaults.ActiveValue() {
+                        @Override
+                        public Object createValue(UIDefaults table) {
+                            return new TableScrollPaneCorner();
+                        }
+                    });
 
             // Setup the settings for ToolBarSeparator which is custom
             // installed for Nimbus

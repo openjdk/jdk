@@ -51,7 +51,6 @@ import java.util.Vector;
 import java.util.Hashtable;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
-import sun.misc.ClassFileTransformer;
 import sun.misc.CompoundEnumeration;
 import sun.misc.Resource;
 import sun.misc.URLClassPath;
@@ -669,41 +668,6 @@ public abstract class ClassLoader {
         return source;
     }
 
-    private Class<?> defineTransformedClass(String name, byte[] b, int off, int len,
-                                            ProtectionDomain pd,
-                                            ClassFormatError cfe, String source)
-      throws ClassFormatError
-    {
-        // Class format error - try to transform the bytecode and
-        // define the class again
-        //
-        ClassFileTransformer[] transformers =
-            ClassFileTransformer.getTransformers();
-        Class<?> c = null;
-
-        if (transformers != null) {
-            for (ClassFileTransformer transformer : transformers) {
-                try {
-                    // Transform byte code using transformer
-                    byte[] tb = transformer.transform(b, off, len);
-                    c = defineClass1(name, tb, 0, tb.length,
-                                     pd, source);
-                    break;
-                } catch (ClassFormatError cfe2)     {
-                    // If ClassFormatError occurs, try next transformer
-                }
-            }
-        }
-
-        // Rethrow original ClassFormatError if unable to transform
-        // bytecode to well-formed
-        //
-        if (c == null)
-            throw cfe;
-
-        return c;
-    }
-
     private void postDefineClass(Class<?> c, ProtectionDomain pd)
     {
         if (pd.getCodeSource() != null) {
@@ -783,17 +747,8 @@ public abstract class ClassLoader {
         throws ClassFormatError
     {
         protectionDomain = preDefineClass(name, protectionDomain);
-
-        Class<?> c = null;
         String source = defineClassSourceLocation(protectionDomain);
-
-        try {
-            c = defineClass1(name, b, off, len, protectionDomain, source);
-        } catch (ClassFormatError cfe) {
-            c = defineTransformedClass(name, b, off, len, protectionDomain, cfe,
-                                       source);
-        }
-
+        Class<?> c = defineClass1(name, b, off, len, protectionDomain, source);
         postDefineClass(c, protectionDomain);
         return c;
     }
@@ -881,20 +836,8 @@ public abstract class ClassLoader {
         }
 
         protectionDomain = preDefineClass(name, protectionDomain);
-
-        Class<?> c = null;
         String source = defineClassSourceLocation(protectionDomain);
-
-        try {
-            c = defineClass2(name, b, b.position(), len, protectionDomain,
-                             source);
-        } catch (ClassFormatError cfe) {
-            byte[] tb = new byte[len];
-            b.get(tb);  // get bytes out of byte buffer.
-            c = defineTransformedClass(name, tb, 0, len, protectionDomain, cfe,
-                                       source);
-        }
-
+        Class<?> c = defineClass2(name, b, b.position(), len, protectionDomain, source);
         postDefineClass(c, protectionDomain);
         return c;
     }

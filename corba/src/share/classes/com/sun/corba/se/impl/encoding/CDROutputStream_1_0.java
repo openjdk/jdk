@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,18 +189,8 @@ public class CDROutputStream_1_0 extends CDROutputStreamBase
 
     private final void createRepositoryIdHandlers()
     {
-        if (orb != null) {
-            // Get the appropriate versions based on the ORB version.  The
-            // ORB versioning info is only in the core ORB.
-            repIdUtil
-                = RepositoryIdFactory.getRepIdUtility(orb);
-            repIdStrs
-                = RepositoryIdFactory.getRepIdStringsFactory(orb);
-        } else {
-            // Get the latest versions
-            repIdUtil = RepositoryIdFactory.getRepIdUtility();
-            repIdStrs = RepositoryIdFactory.getRepIdStringsFactory();
-        }
+        repIdUtil = RepositoryIdFactory.getRepIdUtility();
+        repIdStrs = RepositoryIdFactory.getRepIdStringsFactory();
     }
 
     public BufferManagerWrite getBufferManager()
@@ -705,7 +695,7 @@ public class CDROutputStream_1_0 extends CDROutputStreamBase
     private void writeArray(Serializable array, Class clazz) {
 
         if (valueHandler == null)
-            valueHandler = ORBUtility.createValueHandler(orb); //d11638
+            valueHandler = ORBUtility.createValueHandler(); //d11638
 
         // Write value_tag
         int indirection = writeValueTag(mustChunk, true,
@@ -768,7 +758,7 @@ public class CDROutputStream_1_0 extends CDROutputStreamBase
 
     private void writeRMIIIOPValueType(Serializable object, Class clazz) {
         if (valueHandler == null)
-            valueHandler = ORBUtility.createValueHandler(orb); //d11638
+            valueHandler = ORBUtility.createValueHandler(); //d11638
 
         Serializable key = object;
 

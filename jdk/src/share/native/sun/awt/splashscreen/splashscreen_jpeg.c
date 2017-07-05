@@ -133,6 +133,10 @@ SplashDecodeJpeg(Splash * splash, struct jpeg_decompress_struct *cinfo)
     ImageFormat srcFormat;
 
     jpeg_read_header(cinfo, TRUE);
+
+    // SplashScreen jpeg converter expects data in RGB format only
+    cinfo->out_color_space = JCS_RGB;
+
     jpeg_start_decompress(cinfo);
 
     SplashCleanup(splash);

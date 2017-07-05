@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -735,6 +735,112 @@ public final class UntrustedCertificates {
         "9WWUf6MCxDgxvV0jh+zUVrLJsm7kBQb87PX6iHBZ1O7m3bV6oKNgLwIMq94SXa/w\n" +
         "NUuqikeRGvWFLELHHe+VQ7NeuJWTpdrFKKqtci0xrZlrbP+MISevrZqRK8fdWMNu\n" +
         "B8WfedLHjFW/TMcnXlEWKz4=\n" +
+        "-----END CERTIFICATE-----");
+
+        //
+        // Revoked DigiCert code signing certificates used to sign malware
+        //
+
+        // Subject: CN=Buster Paper Comercial Ltda,
+        //          O=Buster Paper Comercial Ltda,
+        //          L=S?o Jos? Dos Campos,
+        //          ST=S?o Paulo,
+        //          C=BR
+        // Issuer:  CN=DigiCert Assured ID Code Signing CA-1,
+        //          OU=www.digicert.com,
+        //          O=DigiCert Inc,
+        //          C=US
+        // Serial:  07:b4:4c:db:ff:fb:78:de:05:f4:26:16:72:a6:73:12
+        add("buster-paper-comercial-ltda-72A67312",
+        "-----BEGIN CERTIFICATE-----\n" +
+        "MIIGwzCCBaugAwIBAgIQB7RM2//7eN4F9CYWcqZzEjANBgkqhkiG9w0BAQUFADBv\n" +
+        "MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3\n" +
+        "d3cuZGlnaWNlcnQuY29tMS4wLAYDVQQDEyVEaWdpQ2VydCBBc3N1cmVkIElEIENv\n" +
+        "ZGUgU2lnbmluZyBDQS0xMB4XDTEzMDExNzAwMDAwMFoXDTE0MDEyMjEyMDAwMFow\n" +
+        "gY4xCzAJBgNVBAYTAkJSMRMwEQYDVQQIDApTw6NvIFBhdWxvMR4wHAYDVQQHDBVT\n" +
+        "w6NvIEpvc8OpIERvcyBDYW1wb3MxJDAiBgNVBAoTG0J1c3RlciBQYXBlciBDb21l\n" +
+        "cmNpYWwgTHRkYTEkMCIGA1UEAxMbQnVzdGVyIFBhcGVyIENvbWVyY2lhbCBMdGRh\n" +
+        "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzO0l6jWIpEfO2oUpVHpL\n" +
+        "HETj5lzivNb0S9jKHgGJax917czh81PnGTxwxFXd6gLJuy/XFHvmiSi8g8jzlymn\n" +
+        "2Ji5zQ3CPaz7nomJokSUDlMVJ2qYWtctw4jrdjuI4qtn+koXXUFkWjkf8h8251I4\n" +
+        "tUs7S49HE2Go5owCYP3byajj7fsFAYR/Xb7TdVtndkZsUB/YgOjHovyACjouaNCi\n" +
+        "mDiRyQ6zLLjZGiyeD65Yiseuhp5b8/BL5h1p7w76QYMYMVQNAdtDKut2R8MBpuWf\n" +
+        "Ny7Eoi0x/gm1p9X5Rcl5aN7K0G4UtTAJKbkuUfXddsyFoM0Nx8uo8SgNQ8Y/X5Jx\n" +
+        "BwIDAQABo4IDOTCCAzUwHwYDVR0jBBgwFoAUe2jOKarAF75JeuHlP9an90WPNTIw\n" +
+        "HQYDVR0OBBYEFFLZ3n5nt/Eer7n1bvtOqMb1qKO5MA4GA1UdDwEB/wQEAwIHgDAT\n" +
+        "BgNVHSUEDDAKBggrBgEFBQcDAzBzBgNVHR8EbDBqMDOgMaAvhi1odHRwOi8vY3Js\n" +
+        "My5kaWdpY2VydC5jb20vYXNzdXJlZC1jcy0yMDExYS5jcmwwM6AxoC+GLWh0dHA6\n" +
+        "Ly9jcmw0LmRpZ2ljZXJ0LmNvbS9hc3N1cmVkLWNzLTIwMTFhLmNybDCCAcQGA1Ud\n" +
+        "IASCAbswggG3MIIBswYJYIZIAYb9bAMBMIIBpDA6BggrBgEFBQcCARYuaHR0cDov\n" +
+        "L3d3dy5kaWdpY2VydC5jb20vc3NsLWNwcy1yZXBvc2l0b3J5Lmh0bTCCAWQGCCsG\n" +
+        "AQUFBwICMIIBVh6CAVIAQQBuAHkAIAB1AHMAZQAgAG8AZgAgAHQAaABpAHMAIABD\n" +
+        "AGUAcgB0AGkAZgBpAGMAYQB0AGUAIABjAG8AbgBzAHQAaQB0AHUAdABlAHMAIABh\n" +
+        "AGMAYwBlAHAAdABhAG4AYwBlACAAbwBmACAAdABoAGUAIABEAGkAZwBpAEMAZQBy\n" +
+        "AHQAIABDAFAALwBDAFAAUwAgAGEAbgBkACAAdABoAGUAIABSAGUAbAB5AGkAbgBn\n" +
+        "ACAAUABhAHIAdAB5ACAAQQBnAHIAZQBlAG0AZQBuAHQAIAB3AGgAaQBjAGgAIABs\n" +
+        "AGkAbQBpAHQAIABsAGkAYQBiAGkAbABpAHQAeQAgAGEAbgBkACAAYQByAGUAIABp\n" +
+        "AG4AYwBvAHIAcABvAHIAYQB0AGUAZAAgAGgAZQByAGUAaQBuACAAYgB5ACAAcgBl\n" +
+        "AGYAZQByAGUAbgBjAGUALjCBggYIKwYBBQUHAQEEdjB0MCQGCCsGAQUFBzABhhho\n" +
+        "dHRwOi8vb2NzcC5kaWdpY2VydC5jb20wTAYIKwYBBQUHMAKGQGh0dHA6Ly9jYWNl\n" +
+        "cnRzLmRpZ2ljZXJ0LmNvbS9EaWdpQ2VydEFzc3VyZWRJRENvZGVTaWduaW5nQ0Et\n" +
+        "MS5jcnQwDAYDVR0TAQH/BAIwADANBgkqhkiG9w0BAQUFAAOCAQEAPTTQvpOIikXI\n" +
+        "hTLnNbajaFRR5GhQpTzUNgBfF9VYSlNw/wMjpGsrh5RxaJCip52jbehmTgjMRhft\n" +
+        "jRYyml44PAVsCcR9uEoDpCZYpI1fHI1R+F8jd1C9rqprbSwwOG4xlg4SmvTHYs6e\n" +
+        "gBItQ/1p9XY+Sf4Wv1qOuOFL1qvV/5VyR2zdlOQCmKCeMgxt6a/tHLBDiAA67D44\n" +
+        "/vfdoNJl0CU2It0PO60jdCPFNWIRcxL+OSDqAoePeUC7xQ+JsTEIxuUE8+d6w6fc\n" +
+        "BV2mYb1flh22t46GLjh4gyo7xw3aL6L0L0jzlTT6IcEw6NIbaPbIKj/npQnHobYj\n" +
+        "XMuKLxbh7g==\n" +
+        "-----END CERTIFICATE-----");
+
+        // Subject: CN=BUSTER ASSISTENCIA TECNICA ELETRONICA LTDA - ME,
+        //          O=BUSTER ASSISTENCIA TECNICA ELETRONICA LTDA - ME,
+        //          L=S?o Paulo,
+        //          ST=S?o Paulo,
+        //          C=BR
+        // Issuer:  CN=DigiCert Assured ID Code Signing CA-1,
+        //          OU=www.digicert.com,
+        //          O=DigiCert Inc,
+        //          C=US
+        // Serial:  0a:38:9b:95:ee:73:6d:d1:3b:c0:ed:74:3f:d7:4d:2f
+        add("buster-assistencia-tecnica-electronica-ltda-3FD74D2F",
+        "-----BEGIN CERTIFICATE-----\n" +
+        "MIIG4DCCBcigAwIBAgIQCjible5zbdE7wO10P9dNLzANBgkqhkiG9w0BAQUFADBv\n" +
+        "MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3\n" +
+        "d3cuZGlnaWNlcnQuY29tMS4wLAYDVQQDEyVEaWdpQ2VydCBBc3N1cmVkIElEIENv\n" +
+        "ZGUgU2lnbmluZyBDQS0xMB4XDTEyMTEwOTAwMDAwMFoXDTEzMTExNDEyMDAwMFow\n" +
+        "gasxCzAJBgNVBAYTAkJSMRMwEQYDVQQIDApTw6NvIFBhdWxvMRMwEQYDVQQHDApT\n" +
+        "w6NvIFBhdWxvMTgwNgYDVQQKEy9CVVNURVIgQVNTSVNURU5DSUEgVEVDTklDQSBF\n" +
+        "TEVUUk9OSUNBIExUREEgLSBNRTE4MDYGA1UEAxMvQlVTVEVSIEFTU0lTVEVOQ0lB\n" +
+        "IFRFQ05JQ0EgRUxFVFJPTklDQSBMVERBIC0gTUUwggEiMA0GCSqGSIb3DQEBAQUA\n" +
+        "A4IBDwAwggEKAoIBAQDAqNeEs5/B2CTXGjTOkUIdu6jV6qulOZwdw4sefHWYj1UR\n" +
+        "4z6zPk9kjpUgbnb402RFq88QtfInwddZ/wXn9OxMtDd/3TnC7HrhNS7ga79ZFL2V\n" +
+        "JnmzKHum2Yvh0q82QEJ9tHBR2X9VdKpUIH08Zs3k6cWWM1H0YX0cxA/HohhesQJW\n" +
+        "kwJ3urOIJiH/HeByDk8a1NS8safcCxk5vxvW4WvCg43iT09LeHY5Aa8abKw8lqVb\n" +
+        "0tD5ZSIjdmdj3TT1U37iAHLLRM2DXbxfdbhouUX1c5U1ZHAMA67HwjKiseOiDaHj\n" +
+        "NUGbC37C+cgbc9VVM/cURD8WvS0Kj6fQv7F2QtJDAgMBAAGjggM5MIIDNTAfBgNV\n" +
+        "HSMEGDAWgBR7aM4pqsAXvkl64eU/1qf3RY81MjAdBgNVHQ4EFgQU88EXKAyDsh30\n" +
+        "o9+Gu9a4xUy+FSMwDgYDVR0PAQH/BAQDAgeAMBMGA1UdJQQMMAoGCCsGAQUFBwMD\n" +
+        "MHMGA1UdHwRsMGowM6AxoC+GLWh0dHA6Ly9jcmwzLmRpZ2ljZXJ0LmNvbS9hc3N1\n" +
+        "cmVkLWNzLTIwMTFhLmNybDAzoDGgL4YtaHR0cDovL2NybDQuZGlnaWNlcnQuY29t\n" +
+        "L2Fzc3VyZWQtY3MtMjAxMWEuY3JsMIIBxAYDVR0gBIIBuzCCAbcwggGzBglghkgB\n" +
+        "hv1sAwEwggGkMDoGCCsGAQUFBwIBFi5odHRwOi8vd3d3LmRpZ2ljZXJ0LmNvbS9z\n" +
+        "c2wtY3BzLXJlcG9zaXRvcnkuaHRtMIIBZAYIKwYBBQUHAgIwggFWHoIBUgBBAG4A\n" +
+        "eQAgAHUAcwBlACAAbwBmACAAdABoAGkAcwAgAEMAZQByAHQAaQBmAGkAYwBhAHQA\n" +
+        "ZQAgAGMAbwBuAHMAdABpAHQAdQB0AGUAcwAgAGEAYwBjAGUAcAB0AGEAbgBjAGUA\n" +
+        "IABvAGYAIAB0AGgAZQAgAEQAaQBnAGkAQwBlAHIAdAAgAEMAUAAvAEMAUABTACAA\n" +
+        "YQBuAGQAIAB0AGgAZQAgAFIAZQBsAHkAaQBuAGcAIABQAGEAcgB0AHkAIABBAGcA\n" +
+        "cgBlAGUAbQBlAG4AdAAgAHcAaABpAGMAaAAgAGwAaQBtAGkAdAAgAGwAaQBhAGIA\n" +
+        "aQBsAGkAdAB5ACAAYQBuAGQAIABhAHIAZQAgAGkAbgBjAG8AcgBwAG8AcgBhAHQA\n" +
+        "ZQBkACAAaABlAHIAZQBpAG4AIABiAHkAIAByAGUAZgBlAHIAZQBuAGMAZQAuMIGC\n" +
+        "BggrBgEFBQcBAQR2MHQwJAYIKwYBBQUHMAGGGGh0dHA6Ly9vY3NwLmRpZ2ljZXJ0\n" +
+        "LmNvbTBMBggrBgEFBQcwAoZAaHR0cDovL2NhY2VydHMuZGlnaWNlcnQuY29tL0Rp\n" +
+        "Z2lDZXJ0QXNzdXJlZElEQ29kZVNpZ25pbmdDQS0xLmNydDAMBgNVHRMBAf8EAjAA\n" +
+        "MA0GCSqGSIb3DQEBBQUAA4IBAQAei1QmiXepje8OIfo/WonD4MIXgpPr2dfRaquQ\n" +
+        "A8q63OpTRSveyqdQDCSPpDRF/nvO1Y30yksZvIH1tNBsW5LBdxAKN3lFdBlqBwtE\n" +
+        "Q3jHc0KVVYRJ0FBaGE/PJHmRajscdAhYIcMPhTga0u0tDK+wOHEq3993dfl6yHjA\n" +
+        "XHU2iW5pnk75ZoE39zALD5eKXT8ZXrET5c3XUFJKWA+XuGmdmyzqo0Au49PanBv9\n" +
+        "UlZnabYfqoMArqMS0tGSX4cGgi9/2E+pHG9BX4sFW+ZDumroOA2pxyMWEKjxePEL\n" +
+        "zCOfhbsRWdMLYepauaNZOIMZXmFwcrIl0TGMkTAtATz+XmZc\n" +
         "-----END CERTIFICATE-----");
 
     }

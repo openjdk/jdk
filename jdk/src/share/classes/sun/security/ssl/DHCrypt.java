@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,14 @@ package sun.security.ssl;
 
 import java.math.BigInteger;
 import java.security.*;
-
+import java.io.IOException;
+import javax.net.ssl.SSLHandshakeException;
 import javax.crypto.SecretKey;
 import javax.crypto.KeyAgreement;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.*;
+
+import sun.security.util.KeyUtil;
 
 /**
  * This class implements the Diffie-Hellman key exchange algorithm.
@@ -54,7 +57,8 @@ import javax.crypto.spec.*;
  *  . if we are server, call DHCrypt(keyLength,random). This generates
  *    an ephemeral keypair of the request length.
  *  . if we are client, call DHCrypt(modulus, base, random). This
- *    generates an ephemeral keypair using the parameters specified by the server.
+ *    generates an ephemeral keypair using the parameters specified by
+ *    the server.
  *  . send parameters and public value to remote peer
  *  . receive peers ephemeral public key
  *  . call getAgreedSecret() to calculate the shared secret
@@ -83,6 +87,9 @@ final class DHCrypt {
     // public component of our key, X = (g ^ x) mod p
     private BigInteger publicValue;             // X (aka y)
 
+    // the times to recove from failure if public key validation
+    private static int MAX_FAILOVER_TIMES = 2;
+
     /**
      * Generate a Diffie-Hellman keypair of the specified size.
      */
@@ -90,9 +97,12 @@ final class DHCrypt {
         try {
             KeyPairGenerator kpg = JsseJce.getKeyPairGenerator("DiffieHellman");
             kpg.initialize(keyLength, random);
-            KeyPair kp = kpg.generateKeyPair();
-            privateKey = kp.getPrivate();
-            DHPublicKeySpec spec = getDHPublicKeySpec(kp.getPublic());
+
+            DHPublicKeySpec spec = generateDHPublicKeySpec(kpg);
+            if (spec == null) {
+                throw new RuntimeException("Could not generate DH keypair");
+            }
+
             publicValue = spec.getY();
             modulus = spec.getP();
             base = spec.getG();
@@ -115,20 +125,25 @@ final class DHCrypt {
             KeyPairGenerator kpg = JsseJce.getKeyPairGenerator("DiffieHellman");
             DHParameterSpec params = new DHParameterSpec(modulus, base);
             kpg.initialize(params, random);
-            KeyPair kp = kpg.generateKeyPair();
-            privateKey = kp.getPrivate();
-            DHPublicKeySpec spec = getDHPublicKeySpec(kp.getPublic());
+
+            DHPublicKeySpec spec = generateDHPublicKeySpec(kpg);
+            if (spec == null) {
+                throw new RuntimeException("Could not generate DH keypair");
+            }
+
             publicValue = spec.getY();
         } catch (GeneralSecurityException e) {
             throw new RuntimeException("Could not generate DH keypair", e);
         }
     }
 
+
     static DHPublicKeySpec getDHPublicKeySpec(PublicKey key) {
         if (key instanceof DHPublicKey) {
             DHPublicKey dhKey = (DHPublicKey)key;
             DHParameterSpec params = dhKey.getParams();
-            return new DHPublicKeySpec(dhKey.getY(), params.getP(), params.getG());
+            return new DHPublicKeySpec(dhKey.getY(),
+                                    params.getP(), params.getG());
         }
         try {
             KeyFactory factory = JsseJce.getKeyFactory("DH");
@@ -166,17 +181,32 @@ final class DHCrypt {
      * <P>It is illegal to call this member function if the private key
      * has not been set (or generated).
      *
-     * @param peerPublicKey the peer's public key.
-     * @returns the secret, which is an unsigned big-endian integer
-     *  the same size as the Diffie-Hellman modulus.
+     * @param  peerPublicKey the peer's public key.
+     * @param  keyIsValidated whether the {@code peerPublicKey} has beed
+     *         validated
+     * @return the secret, which is an unsigned big-endian integer
+     *         the same size as the Diffie-Hellman modulus.
      */
-    SecretKey getAgreedSecret(BigInteger peerPublicValue) {
+    SecretKey getAgreedSecret(BigInteger peerPublicValue,
+            boolean keyIsValidated) throws IOException {
         try {
             KeyFactory kf = JsseJce.getKeyFactory("DiffieHellman");
             DHPublicKeySpec spec =
                         new DHPublicKeySpec(peerPublicValue, modulus, base);
             PublicKey publicKey = kf.generatePublic(spec);
             KeyAgreement ka = JsseJce.getKeyAgreement("DiffieHellman");
+
+            // validate the Diffie-Hellman public key
+            if (!keyIsValidated &&
+                    !KeyUtil.isOracleJCEProvider(ka.getProvider().getName())) {
+                try {
+                    KeyUtil.validate(spec);
+                } catch (InvalidKeyException ike) {
+                    // prefer handshake_failure alert to internal_error alert
+                    throw new SSLHandshakeException(ike.getMessage());
+                }
+            }
+
             ka.init(privateKey);
             ka.doPhase(publicKey, true);
             return ka.generateSecret("TlsPremasterSecret");
@@ -185,4 +215,33 @@ final class DHCrypt {
         }
     }
 
+    // Generate and validate DHPublicKeySpec
+    private DHPublicKeySpec generateDHPublicKeySpec(KeyPairGenerator kpg)
+            throws GeneralSecurityException {
+
+        boolean doExtraValiadtion =
+                    (!KeyUtil.isOracleJCEProvider(kpg.getProvider().getName()));
+        for (int i = 0; i <= MAX_FAILOVER_TIMES; i++) {
+            KeyPair kp = kpg.generateKeyPair();
+            privateKey = kp.getPrivate();
+            DHPublicKeySpec spec = getDHPublicKeySpec(kp.getPublic());
+
+            // validate the Diffie-Hellman public key
+            if (doExtraValiadtion) {
+                try {
+                    KeyUtil.validate(spec);
+                } catch (InvalidKeyException ivke) {
+                    if (i == MAX_FAILOVER_TIMES) {
+                        throw ivke;
+                    }
+                    // otherwise, ignore the exception and try the next one
+                    continue;
+                }
+            }
+
+            return spec;
+        }
+
+        return null;
+    }
 }

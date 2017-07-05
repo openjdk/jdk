@@ -2189,10 +2189,7 @@ public final class TypeCodeImpl extends TypeCode
 
                 if (labelIndex == _unionLabels.length) {
                     // check if label has not been found
-                    if (_defaultIndex == -1)
-                        // throw exception if default was not expected
-                        throw wrapper.unexpectedUnionDefault() ;
-                    else
+                    if (_defaultIndex != -1)
                         // must be of the default branch type
                         _memberTypes[_defaultIndex].copy(src, dst);
                 }

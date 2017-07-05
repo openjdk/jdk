@@ -2540,7 +2540,7 @@ void ciTypeFlow::build_loop_tree(Block* blk) {
   } else if (innermost->head() == blk) {
     // If loop header, complete the tree pointers
     if (blk->loop() != innermost) {
-#if ASSERT
+#ifdef ASSERT
       assert(blk->loop()->head() == innermost->head(), "same head");
       Loop* dl;
       for (dl = innermost; dl != NULL && dl != blk->loop(); dl = dl->parent());

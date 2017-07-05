@@ -34,11 +34,11 @@ import sun.invoke.util.Wrapper;
 import static sun.invoke.util.Wrapper.*;
 
 /**
- * Abstract implementation of a meta-factory which provides parameter unrolling and input validation.
+ * Abstract implementation of a lambda metafactory which provides parameter unrolling and input validation.
  *
- * @author Robert Field
+ * @see LambdaMetafactory
  */
-/*non-public*/ abstract class AbstractValidatingLambdaMetafactory {
+/* package */ abstract class AbstractValidatingLambdaMetafactory {
 
     /*
      * For context, the comments for the following fields are marked in quotes with their values, given this program:
@@ -54,16 +54,19 @@ import static sun.invoke.util.Wrapper.*;
     final Class<?> targetClass;               // The class calling the meta-factory via invokedynamic "class X"
     final MethodType invokedType;             // The type of the invoked method "(CC)II"
     final Class<?> samBase;                   // The type of the returned instance "interface JJ"
-    final boolean isSerializable;             // Should the returned instance be serializable
+    final MethodHandle samMethod;             // Raw method handle for the functional interface method
     final MethodHandleInfo samInfo;           // Info about the SAM method handle "MethodHandleInfo[9 II.foo(Object)Object]"
     final Class<?> samClass;                  // Interface containing the SAM method "interface II"
     final MethodType samMethodType;           // Type of the SAM method "(Object)Object"
+    final MethodHandle implMethod;            // Raw method handle for the implementation method
     final MethodHandleInfo implInfo;          // Info about the implementation method handle "MethodHandleInfo[5 CC.impl(int)String]"
     final int implKind;                       // Invocation kind for implementation "5"=invokevirtual
     final boolean implIsInstanceMethod;       // Is the implementation an instance method "true"
     final Class<?> implDefiningClass;         // Type defining the implementation "class CC"
     final MethodType implMethodType;          // Type of the implementation method "(int)String"
     final MethodType instantiatedMethodType;  // Instantiated erased functional interface method type "(Integer)Object"
+    final boolean isSerializable;             // Should the returned instance be serializable
+    final Class<?>[] markerInterfaces;        // Additional marker interfaces to be implemented
 
 
     /**
@@ -80,27 +83,35 @@ import static sun.invoke.util.Wrapper.*;
      * @param implMethod The implementation method which should be called (with suitable adaptation of argument
      *                   types, return types, and adjustment for captured arguments) when methods of the resulting
      *                   functional interface instance are invoked.
-     * @param instantiatedMethodType The signature of the SAM method from the functional interface's perspective
+     * @param instantiatedMethodType The signature of the primary functional interface method after type variables
+     *                               are substituted with their instantiation from the capture site
      * @throws ReflectiveOperationException
+     * @throws LambdaConversionException If any of the meta-factory protocol invariants are violated
      */
     AbstractValidatingLambdaMetafactory(MethodHandles.Lookup caller,
                                        MethodType invokedType,
                                        MethodHandle samMethod,
                                        MethodHandle implMethod,
-                                       MethodType instantiatedMethodType)
-            throws ReflectiveOperationException {
+                                       MethodType instantiatedMethodType,
+                                       int flags,
+                                       Class<?>[] markerInterfaces)
+            throws ReflectiveOperationException, LambdaConversionException {
         this.targetClass = caller.lookupClass();
         this.invokedType = invokedType;
 
         this.samBase = invokedType.returnType();
-        this.isSerializable = Serializable.class.isAssignableFrom(samBase);
 
+        this.samMethod = samMethod;
         this.samInfo = new MethodHandleInfo(samMethod);
         this.samClass = samInfo.getDeclaringClass();
         this.samMethodType  = samInfo.getMethodType();
 
+        this.implMethod = implMethod;
         this.implInfo = new MethodHandleInfo(implMethod);
-        this.implKind = implInfo.getReferenceKind() == MethodHandleInfo.REF_invokeSpecial? MethodHandleInfo.REF_invokeVirtual : implInfo.getReferenceKind(); // @@@ Temp work-around to hotspot incorrectly converting to invokespecial
+        // @@@ Temporary work-around pending resolution of 8005119
+        this.implKind = (implInfo.getReferenceKind() == MethodHandleInfo.REF_invokeSpecial)
+                        ? MethodHandleInfo.REF_invokeVirtual
+                        : implInfo.getReferenceKind();
         this.implIsInstanceMethod =
                 implKind == MethodHandleInfo.REF_invokeVirtual ||
                 implKind == MethodHandleInfo.REF_invokeSpecial ||
@@ -109,6 +120,30 @@ import static sun.invoke.util.Wrapper.*;
         this.implMethodType = implInfo.getMethodType();
 
         this.instantiatedMethodType = instantiatedMethodType;
+
+        if (!samClass.isInterface()) {
+            throw new LambdaConversionException(String.format(
+                    "Functional interface %s is not an interface",
+                    samClass.getName()));
+        }
+
+        boolean foundSerializableSupertype = Serializable.class.isAssignableFrom(samBase);
+        for (Class<?> c : markerInterfaces) {
+            if (!c.isInterface()) {
+                throw new LambdaConversionException(String.format(
+                        "Marker interface %s is not an interface",
+                        c.getName()));
+            }
+            foundSerializableSupertype |= Serializable.class.isAssignableFrom(c);
+        }
+        this.isSerializable = ((flags & LambdaMetafactory.FLAG_SERIALIZABLE) != 0)
+                              || foundSerializableSupertype;
+
+        if (isSerializable && !foundSerializableSupertype) {
+            markerInterfaces = Arrays.copyOf(markerInterfaces, markerInterfaces.length + 1);
+            markerInterfaces[markerInterfaces.length-1] = Serializable.class;
+        }
+        this.markerInterfaces = markerInterfaces;
     }
 
     /**
@@ -127,8 +162,9 @@ import static sun.invoke.util.Wrapper.*;
     void validateMetafactoryArgs() throws LambdaConversionException {
         // Check target type is a subtype of class where SAM method is defined
         if (!samClass.isAssignableFrom(samBase)) {
-            throw new LambdaConversionException(String.format("Invalid target type %s for lambda conversion; not a subtype of functional interface %s",
-                    samBase.getName(), samClass.getName()));
+            throw new LambdaConversionException(
+                    String.format("Invalid target type %s for lambda conversion; not a subtype of functional interface %s",
+                                  samBase.getName(), samClass.getName()));
         }
 
         switch (implKind) {
@@ -149,14 +185,16 @@ import static sun.invoke.util.Wrapper.*;
         final int samArity = samMethodType.parameterCount();
         final int instantiatedArity = instantiatedMethodType.parameterCount();
         if (implArity + receiverArity != capturedArity + samArity) {
-            throw new LambdaConversionException(String.format("Incorrect number of parameters for %s method %s; %d captured parameters, %d functional interface parameters, %d implementation parameters",
-                    implIsInstanceMethod ? "instance" : "static", implInfo,
-                    capturedArity, samArity, implArity));
+            throw new LambdaConversionException(
+                    String.format("Incorrect number of parameters for %s method %s; %d captured parameters, %d functional interface method parameters, %d implementation parameters",
+                                  implIsInstanceMethod ? "instance" : "static", implInfo,
+                                  capturedArity, samArity, implArity));
         }
         if (instantiatedArity != samArity) {
-            throw new LambdaConversionException(String.format("Incorrect number of parameters for %s method %s; %d functional interface parameters, %d SAM method parameters",
-                    implIsInstanceMethod ? "instance" : "static", implInfo,
-                    instantiatedArity, samArity));
+            throw new LambdaConversionException(
+                    String.format("Incorrect number of parameters for %s method %s; %d instantiated parameters, %d functional interface method parameters",
+                                  implIsInstanceMethod ? "instance" : "static", implInfo,
+                                  instantiatedArity, samArity));
         }
 
         // If instance: first captured arg (receiver) must be subtype of class where impl method is defined
@@ -180,8 +218,9 @@ import static sun.invoke.util.Wrapper.*;
 
             // check receiver type
             if (!implDefiningClass.isAssignableFrom(receiverClass)) {
-                throw new LambdaConversionException(String.format("Invalid receiver type %s; not a subtype of implementation type %s",
-                                                                  receiverClass, implDefiningClass));
+                throw new LambdaConversionException(
+                        String.format("Invalid receiver type %s; not a subtype of implementation type %s",
+                                      receiverClass, implDefiningClass));
             }
         } else {
             // no receiver
@@ -196,7 +235,8 @@ import static sun.invoke.util.Wrapper.*;
             Class<?> capturedParamType = invokedType.parameterType(i + capturedStart);
             if (!capturedParamType.equals(implParamType)) {
                 throw new LambdaConversionException(
-                        String.format("Type mismatch in captured lambda parameter %d: expecting %s, found %s", i, capturedParamType, implParamType));
+                        String.format("Type mismatch in captured lambda parameter %d: expecting %s, found %s",
+                                      i, capturedParamType, implParamType));
             }
         }
         // Check for adaptation match on SAM arguments
@@ -206,7 +246,8 @@ import static sun.invoke.util.Wrapper.*;
             Class<?> instantiatedParamType = instantiatedMethodType.parameterType(i + samOffset);
             if (!isAdaptableTo(instantiatedParamType, implParamType, true)) {
                 throw new LambdaConversionException(
-                        String.format("Type mismatch for lambda argument %d: %s is not convertible to %s", i, instantiatedParamType, implParamType));
+                        String.format("Type mismatch for lambda argument %d: %s is not convertible to %s",
+                                      i, instantiatedParamType, implParamType));
             }
         }
 
@@ -218,7 +259,8 @@ import static sun.invoke.util.Wrapper.*;
                   : implMethodType.returnType();
         if (!isAdaptableToAsReturn(actualReturnType, expectedType)) {
             throw new LambdaConversionException(
-                    String.format("Type mismatch for lambda return: %s is not convertible to %s", actualReturnType, expectedType));
+                    String.format("Type mismatch for lambda return: %s is not convertible to %s",
+                                  actualReturnType, expectedType));
         }
      }
 
@@ -274,8 +316,8 @@ import static sun.invoke.util.Wrapper.*;
     }
 
 
-    /*********** Logging support -- for debugging only
-    static final Executor logPool = Executors.newSingleThreadExecutor(); // @@@ For debugging only
+    /*********** Logging support -- for debugging only, uncomment as needed
+    static final Executor logPool = Executors.newSingleThreadExecutor();
     protected static void log(final String s) {
         MethodHandleProxyLambdaMetafactory.logPool.execute(new Runnable() {
             @Override
@@ -297,17 +339,21 @@ import static sun.invoke.util.Wrapper.*;
     ***********************/
 
     /**
-     * Find the SAM method and corresponding methods which should be bridged. SAM method and those to be bridged
-     * will have the same name and number of parameters. Check for matching default methods (non-abstract), they
-     * should not be bridged-over and indicate a complex bridging situation.
+     * Find the functional interface method and corresponding abstract methods
+     * which should be bridged. The functional interface method and those to be
+     * bridged will have the same name and number of parameters. Check for
+     * matching default methods (non-abstract), the VM will create bridges for
+     * default methods; We don't have enough readily available type information
+     * to distinguish between where the functional interface method should be
+     * bridged and where the default method should be bridged; This situation is
+     * flagged.
      */
     class MethodAnalyzer {
         private final Method[] methods = samBase.getMethods();
-        private final List<Method> methodsFound = new ArrayList<>(methods.length);
 
         private Method samMethod = null;
         private final List<Method> methodsToBridge = new ArrayList<>(methods.length);
-        private boolean defaultMethodFound = false;
+        private boolean conflictFoundBetweenDefaultAndBridge = false;
 
         MethodAnalyzer() {
             String samMethodName = samInfo.getName();
@@ -315,29 +361,34 @@ import static sun.invoke.util.Wrapper.*;
             int samParamLength = samParamTypes.length;
             Class<?> samReturnType = samMethodType.returnType();
             Class<?> objectClass = Object.class;
+            List<Method> defaultMethods = new ArrayList<>(methods.length);
 
             for (Method m : methods) {
                 if (m.getName().equals(samMethodName) && m.getDeclaringClass() != objectClass) {
                     Class<?>[] mParamTypes = m.getParameterTypes();
                     if (mParamTypes.length == samParamLength) {
+                        // Method matches name and parameter length -- and is not Object
                         if (Modifier.isAbstract(m.getModifiers())) {
-                            // Exclude methods with duplicate signatures
-                            if (methodUnique(m)) {
-                                if (m.getReturnType().equals(samReturnType) && Arrays.equals(mParamTypes, samParamTypes)) {
-                                    // Exact match, this is the SAM method signature
-                                    samMethod = m;
-                                } else {
-                                    methodsToBridge.add(m);
-                                }
+                            // Method is abstract
+                            if (m.getReturnType().equals(samReturnType)
+                                    && Arrays.equals(mParamTypes, samParamTypes)) {
+                                // Exact match, this is the SAM method signature
+                                samMethod = m;
+                            } else if (!hasMatchingBridgeSignature(m)) {
+                                // Record bridges, exclude methods with duplicate signatures
+                                methodsToBridge.add(m);
                             }
                         } else {
-                            // This is a default method, flag for special processing
-                            defaultMethodFound = true;
-                            // Ignore future matching abstracts.
-                            // Note, due to reabstraction, this is really a punt, hence pass-off to VM
-                            methodUnique(m);
+                            // Record default methods for conflict testing
+                            defaultMethods.add(m);
                         }
                     }
+                }
+            }
+            for (Method dm : defaultMethods) {
+                if (hasMatchingBridgeSignature(dm)) {
+                    conflictFoundBetweenDefaultAndBridge = true;
+                    break;
                 }
             }
         }
@@ -350,27 +401,26 @@ import static sun.invoke.util.Wrapper.*;
             return methodsToBridge;
         }
 
-        boolean wasDefaultMethodFound() {
-            return defaultMethodFound;
+        boolean conflictFoundBetweenDefaultAndBridge() {
+            return conflictFoundBetweenDefaultAndBridge;
         }
 
         /**
-         * Search the list of previously found methods to determine if there is a method with the same signature
-         * (return and parameter types) as the specified method. If it wasn't found before, add to the found list.
+         * Search the list of previously found bridge methods to determine if there is a method with the same signature
+         * (return and parameter types) as the specified method.
          *
          * @param m The method to match
-         * @return False if the method was found, True otherwise
+         * @return True if the method was found, False otherwise
          */
-        private boolean methodUnique(Method m) {
+        private boolean hasMatchingBridgeSignature(Method m) {
             Class<?>[] ptypes = m.getParameterTypes();
             Class<?> rtype = m.getReturnType();
-            for (Method md : methodsFound) {
+            for (Method md : methodsToBridge) {
                 if (md.getReturnType().equals(rtype) && Arrays.equals(ptypes, md.getParameterTypes())) {
+                    return true;
+                }
+            }
                     return false;
                 }
             }
-            methodsFound.add(m);
-            return true;
-        }
-    }
 }

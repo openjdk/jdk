@@ -336,7 +336,6 @@ typedef BinaryTreeDictionary<Metablock, FreeList> MetablockTreeDictionary;
   nonstatic_field(Klass,                       _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Klass,                       _subklass,                                     Klass*)                                \
   nonstatic_field(Klass,                       _next_sibling,                                 Klass*)                                \
-  nonproduct_nonstatic_field(Klass,            _verify_count,                                 int)                                   \
   nonstatic_field(Klass,                       _alloc_count,                                  juint)                                 \
   nonstatic_field(MethodData,           _size,                                         int)                                   \
   nonstatic_field(MethodData,           _method,                                       Method*)                        \

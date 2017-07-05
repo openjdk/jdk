@@ -141,32 +141,30 @@ else
 fi
 
 PASS1_MESG="before any redefines"
-cnt=`grep "$PASS1_MESG" output.log | grep 'version-0' | wc -l | sed 's/^ *//'`
-case "$cnt" in
-2)
+cnt=`grep "$PASS1_MESG" output.log | grep 'version-0' | wc -l`
+# no quotes around $cnt so any whitespace from 'wc -l' is ignored
+if [ $cnt = 2 ]; then
     echo "INFO: found 2 version-0 '$PASS1_MESG' mesgs."
-    ;;
-*)
+else
     echo "FAIL: did NOT find 2 version-0 '$PASS1_MESG' mesgs."
+    echo "INFO: cnt='$cnt'"
     echo "INFO: grep '$PASS1_MESG' output:"
     grep "$PASS1_MESG" output.log
     result=1
-    ;;
-esac
+fi
 
 PASS2_MESG="after redefine"
-cnt=`grep "$PASS2_MESG" output.log | grep 'version-1' | wc -l | sed 's/^ *//'`
-case "$cnt" in
-2)
+cnt=`grep "$PASS2_MESG" output.log | grep 'version-1' | wc -l`
+# no quotes around $cnt so any whitespace from 'wc -l' is ignored
+if [ $cnt = 2 ]; then
     echo "INFO: found 2 version-1 '$PASS2_MESG' mesgs."
-    ;;
-*)
+else
     echo "FAIL: did NOT find 2 version-1 '$PASS2_MESG' mesgs."
+    echo "INFO: cnt='$cnt'"
     echo "INFO: grep '$PASS2_MESG' output:"
     grep "$PASS2_MESG" output.log
     result=1
-    ;;
-esac
+fi
 
 if [ "$result" = 0 ]; then
     echo "PASS: test passed both positive and negative output checks."

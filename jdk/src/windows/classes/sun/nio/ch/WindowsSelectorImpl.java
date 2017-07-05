@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.nio.channels.ClosedSelectorException;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
 import java.io.IOException;
+import java.nio.channels.CancelledKeyException;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -561,17 +562,19 @@ final class WindowsSelectorImpl extends SelectorImpl {
     protected void implDereg(SelectionKeyImpl ski) throws IOException{
         int i = ski.getIndex();
         assert (i >= 0);
-        if (i != totalChannels - 1) {
-            // Copy end one over it
-            SelectionKeyImpl endChannel = channelArray[totalChannels-1];
-            channelArray[i] = endChannel;
-            endChannel.setIndex(i);
-            pollWrapper.replaceEntry(pollWrapper, totalChannels - 1,
+        synchronized (closeLock) {
+            if (i != totalChannels - 1) {
+                // Copy end one over it
+                SelectionKeyImpl endChannel = channelArray[totalChannels-1];
+                channelArray[i] = endChannel;
+                endChannel.setIndex(i);
+                pollWrapper.replaceEntry(pollWrapper, totalChannels - 1,
                                                                 pollWrapper, i);
+            }
+            ski.setIndex(-1);
         }
         channelArray[totalChannels - 1] = null;
         totalChannels--;
-        ski.setIndex(-1);
         if ( totalChannels != 1 && totalChannels % MAX_SELECTABLE_FDS == 1) {
             totalChannels--;
             threadsCount--; // The last thread has become redundant.
@@ -589,7 +592,11 @@ final class WindowsSelectorImpl extends SelectorImpl {
         synchronized (closeLock) {
             if (pollWrapper == null)
                 throw new ClosedSelectorException();
-            pollWrapper.putEventOps(sk.getIndex(), ops);
+            // make sure this sk has not been removed yet
+            int index = sk.getIndex();
+            if (index == -1)
+                throw new CancelledKeyException();
+            pollWrapper.putEventOps(index, ops);
         }
     }
 
