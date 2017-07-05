@@ -777,6 +777,7 @@ class InstanceKlass: public Klass {
 
   // subclass/subinterface checks
   bool implements_interface(Klass* k) const;
+  bool is_same_or_direct_interface(Klass* k) const;
 
   // Access to the implementor of an interface.
   Klass* implementor() const

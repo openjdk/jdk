@@ -69,7 +69,7 @@ ifeq ($(SKIP_BOOT_CYCLE),false)
   BRIDGE_TARGETS += bootcycle-images
 endif
 bridgeBuild: bridge2configure
-	@cd $(root_dir) && $(MAKE) -f NewMakefile.gmk $(BRIDGE_TARGETS)
+	@cd $(root_dir) && $(MAKE) -f Makefile $(BRIDGE_TARGETS)
 
 # Bridge from old Makefile ALT settings to configure options
 bridge2configure: $(BUILD_DIR_ROOT)/.bridge2configureOpts
