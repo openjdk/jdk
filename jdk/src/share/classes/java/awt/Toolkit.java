@@ -1857,7 +1857,7 @@ public abstract class Toolkit {
 
     /**
      * Adds the specified property change listener for the named desktop
-     * property. When a {@link PropertyChangeListenerProxy} object is added,
+     * property. When a {@link java.beans.PropertyChangeListenerProxy} object is added,
      * its property name is ignored, and the wrapped listener is added.
      * If {@code name} is {@code null} or {@code pcl} is {@code null},
      * no exception is thrown and no action is performed.
@@ -1874,7 +1874,7 @@ public abstract class Toolkit {
 
     /**
      * Removes the specified property change listener for the named
-     * desktop property. When a {@link PropertyChangeListenerProxy} object
+     * desktop property. When a {@link java.beans.PropertyChangeListenerProxy} object
      * is removed, its property name is ignored, and
      * the wrapped listener is removed.
      * If {@code name} is {@code null} or {@code pcl} is {@code null},
@@ -1893,11 +1893,11 @@ public abstract class Toolkit {
     /**
      * Returns an array of all the property change listeners
      * registered on this toolkit. The returned array
-     * contains {@code PropertyChangeListenerProxy} objects
+     * contains {@link java.beans.PropertyChangeListenerProxy} objects
      * that associate listeners with the names of desktop properties.
      *
-     * @return all of this toolkit's {@ code PropertyChangeListener}
-     *         objects wrapped in {@code PropertyChangeListenerProxy} objects
+     * @return all of this toolkit's {@link PropertyChangeListener}
+     *         objects wrapped in {@code java.beans.PropertyChangeListenerProxy} objects
      *         or an empty array  if no listeners are added
      *
      * @see PropertyChangeSupport#getPropertyChangeListeners()
