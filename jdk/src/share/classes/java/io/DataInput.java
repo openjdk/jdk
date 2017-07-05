@@ -48,132 +48,87 @@ package java.io;
  * may be thrown if the input stream has been
  * closed.
  *
- * <h4><a name="modified-utf-8">Modified UTF-8</a></h4>
+ * <h3><a name="modified-utf-8">Modified UTF-8</a></h3>
  * <p>
  * Implementations of the DataInput and DataOutput interfaces represent
  * Unicode strings in a format that is a slight modification of UTF-8.
  * (For information regarding the standard UTF-8 format, see section
  * <i>3.9 Unicode Encoding Forms</i> of <i>The Unicode Standard, Version
  * 4.0</i>).
- * Note that in the following tables, the most significant bit appears in the
+ * Note that in the following table, the most significant bit appears in the
  * far left-hand column.
- * <p>
- * All characters in the range {@code '\u005Cu0001'} to
- * {@code '\u005Cu007F'} are represented by a single byte:
  *
  * <blockquote>
- *   <table border="1" cellspacing="0" cellpadding="8" width="50%"
+ *   <table border="1" cellspacing="0" cellpadding="8"
  *          summary="Bit values and bytes">
  *     <tr>
+ *       <th colspan="9"><span style="font-weight:normal">
+ *         All characters in the range {@code '\u005Cu0001'} to
+ *         {@code '\u005Cu007F'} are represented by a single byte:</span></th>
+ *     </tr>
+ *     <tr>
  *       <td></td>
- *       <th id="bit_a">Bit Values</th>
+ *       <th colspan="8" id="bit_a">Bit Values</th>
  *     </tr>
  *     <tr>
  *       <th id="byte1_a">Byte 1</th>
- *       <td>
- *         <table border="1" cellspacing="0" width="100%">
- *           <tr>
- *             <td width="12%"><center>0</center>
- *             <td colspan="7"><center>bits 6-0</center>
- *           </tr>
- *         </table>
- *       </td>
+ *       <td><center>0</center>
+ *       <td colspan="7"><center>bits 6-0</center>
  *     </tr>
- *   </table>
- * </blockquote>
- *
- * <p>
- * The null character {@code '\u005Cu0000'} and characters in the
- * range {@code '\u005Cu0080'} to {@code '\u005Cu07FF'} are
- * represented by a pair of bytes:
- *
- * <blockquote>
- *   <table border="1" cellspacing="0" cellpadding="8" width="50%"
- *          summary="Bit values and bytes">
+ *     <tr>
+ *       <th colspan="9"><span style="font-weight:normal">
+ *         The null character {@code '\u005Cu0000'} and characters
+ *         in the range {@code '\u005Cu0080'} to {@code '\u005Cu07FF'} are
+ *         represented by a pair of bytes:</span></th>
+ *     </tr>
  *     <tr>
  *       <td></td>
- *       <th id="bit_b">Bit Values</th>
+ *       <th colspan="8" id="bit_b">Bit Values</th>
  *     </tr>
  *     <tr>
  *       <th id="byte1_b">Byte 1</th>
- *       <td>
- *         <table border="1" cellspacing="0" width="100%">
- *           <tr>
- *             <td width="12%"><center>1</center>
- *             <td width="13%"><center>1</center>
- *             <td width="12%"><center>0</center>
- *             <td colspan="5"><center>bits 10-6</center>
- *           </tr>
- *         </table>
- *       </td>
+ *       <td><center>1</center>
+ *       <td><center>1</center>
+ *       <td><center>0</center>
+ *       <td colspan="5"><center>bits 10-6</center>
  *     </tr>
  *     <tr>
  *       <th id="byte2_a">Byte 2</th>
- *       <td>
- *         <table border="1" cellspacing="0" width="100%">
- *           <tr>
- *             <td width="12%"><center>1</center>
- *             <td width="13%"><center>0</center>
- *             <td colspan="6"><center>bits 5-0</center>
- *           </tr>
- *         </table>
- *       </td>
+ *       <td><center>1</center>
+ *       <td><center>0</center>
+ *       <td colspan="6"><center>bits 5-0</center>
  *     </tr>
- *   </table>
- *  </blockquote>
- *
- * <br>
- * {@code char} values in the range {@code '\u005Cu0800'} to
- * {@code '\u005CuFFFF'} are represented by three bytes:
- *
- * <blockquote>
- *   <table border="1" cellspacing="0" cellpadding="8" width="50%"
- *          summary="Bit values and bytes">
+ *     <tr>
+ *       <th colspan="9"><span style="font-weight:normal">
+ *         {@code char} values in the range {@code '\u005Cu0800'}
+ *         to {@code '\u005CuFFFF'} are represented by three bytes:</span></th>
+ *     </tr>
  *     <tr>
  *       <td></td>
- *       <th id="bit_c">Bit Values</th>
+ *       <th colspan="8"id="bit_c">Bit Values</th>
  *     </tr>
  *     <tr>
  *       <th id="byte1_c">Byte 1</th>
- *       <td>
- *         <table border="1" cellspacing="0" width="100%">
- *           <tr>
- *             <td width="12%"><center>1</center>
- *             <td width="13%"><center>1</center>
- *             <td width="12%"><center>1</center>
- *             <td width="13%"><center>0</center>
- *             <td colspan="4"><center>bits 15-12</center>
- *           </tr>
- *         </table>
- *       </td>
+ *       <td><center>1</center>
+ *       <td><center>1</center>
+ *       <td><center>1</center>
+ *       <td><center>0</center>
+ *       <td colspan="4"><center>bits 15-12</center>
  *     </tr>
  *     <tr>
  *       <th id="byte2_b">Byte 2</th>
- *       <td>
- *         <table border="1" cellspacing="0" width="100%">
- *           <tr>
- *             <td width="12%"><center>1</center>
- *             <td width="13%"><center>0</center>
- *             <td colspan="6"><center>bits 11-6</center>
- *           </tr>
- *         </table>
- *       </td>
+ *       <td><center>1</center>
+ *       <td><center>0</center>
+ *       <td colspan="6"><center>bits 11-6</center>
  *     </tr>
  *     <tr>
  *       <th id="byte3">Byte 3</th>
- *       <td>
- *         <table border="1" cellspacing="0" width="100%">
- *           <tr>
- *             <td width="12%"><center>1</center>
- *             <td width="13%"><center>0</center>
- *             <td colspan="6"><center>bits 5-0</center>
- *           </tr>
- *         </table>
- *       </td>
+ *       <td><center>1</center>
+ *       <td><center>0</center>
+ *       <td colspan="6"><center>bits 5-0</center>
  *     </tr>
  *   </table>
- *  </blockquote>
- *
+ * </blockquote>
  * <p>
  * The differences between this format and the
  * standard UTF-8 format are the following:

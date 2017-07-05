@@ -465,6 +465,53 @@ public class TCKZoneId extends AbstractTCKTest {
     }
 
     //-----------------------------------------------------------------------
+    @DataProvider(name="prefixValid")
+    Object[][] data_prefixValid() {
+        return new Object[][] {
+                {"GMT", "+01:00"},
+                {"UTC", "+01:00"},
+                {"UT", "+01:00"},
+                {"", "+01:00"},
+        };
+    }
+
+    @Test(dataProvider="prefixValid")
+    public void test_prefixOfOffset(String prefix, String offset) {
+        ZoneOffset zoff = ZoneOffset.of(offset);
+        ZoneId zoneId = ZoneId.ofOffset(prefix, zoff);
+        assertEquals(zoneId.getId(), prefix + zoff.getId(), "in correct id for : " + prefix + ", zoff: " + zoff);
+
+    }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="prefixInvalid")
+    Object[][] data_prefixInvalid() {
+        return new Object[][] {
+                {"GM", "+01:00"},
+                {"U", "+01:00"},
+                {"UTC0", "+01:00"},
+                {"A", "+01:00"},
+        };
+    }
+
+    @Test(dataProvider="prefixInvalid", expectedExceptions=java.lang.IllegalArgumentException.class)
+    public void test_invalidPrefixOfOffset(String prefix, String offset) {
+        ZoneOffset zoff = ZoneOffset.of(offset);
+        ZoneId zoneId = ZoneId.ofOffset(prefix, zoff);
+        fail("should have thrown an exception for prefix: " + prefix);
+    }
+
+    @Test(expectedExceptions=java.lang.NullPointerException.class)
+    public void test_nullPrefixOfOffset() {
+        ZoneId.ofOffset(null, ZoneOffset.ofTotalSeconds(1));
+    }
+
+    @Test(expectedExceptions=java.lang.NullPointerException.class)
+    public void test_nullOffsetOfOffset() {
+        ZoneId.ofOffset("GMT", null);
+    }
+
+    //-----------------------------------------------------------------------
     @DataProvider(name="offsetBasedValidOther")
     Object[][] data_offsetBasedValidOther() {
         return new Object[][] {

@@ -561,6 +561,7 @@ public interface Map<K,V> {
     * concurrency properties.
     *
     * @param key the key whose associated value is to be returned
+    * @param defaultValue the default mapping of the key
     * @return the value to which the specified key is mapped, or
     * {@code defaultValue} if this map contains no mapping for the key
     * @throws ClassCastException if the key is of an inappropriate type for

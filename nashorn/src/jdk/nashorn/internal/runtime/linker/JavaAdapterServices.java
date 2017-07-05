@@ -37,7 +37,7 @@ import jdk.nashorn.internal.runtime.Undefined;
 /**
  * Provides static utility services to generated Java adapter classes.
  */
-public class JavaAdapterServices {
+public final class JavaAdapterServices {
     private static final ThreadLocal<ScriptObject> classOverrides = new ThreadLocal<>();
 
     private JavaAdapterServices() {

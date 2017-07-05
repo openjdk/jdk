@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.RandomAccess;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
 
 /**
@@ -46,7 +47,7 @@ import jdk.nashorn.internal.runtime.linker.InvokeByName;
  * operations respectively, while {@link #addLast(Object)} and {@link #removeLast()} will translate to {@code push} and
  * {@code pop}.
  */
-public class ListAdapter extends AbstractList<Object> implements RandomAccess, Deque<Object> {
+public final class ListAdapter extends AbstractList<Object> implements RandomAccess, Deque<Object> {
     // These add to the back and front of the list
     private static final InvokeByName PUSH    = new InvokeByName("push",    ScriptObject.class, void.class, Object.class);
     private static final InvokeByName UNSHIFT = new InvokeByName("unshift", ScriptObject.class, void.class, Object.class);
@@ -157,7 +158,7 @@ public class ListAdapter extends AbstractList<Object> implements RandomAccess, D
         }
     }
     private static void checkFunction(Object fn, InvokeByName invoke) {
-        if(!(fn instanceof ScriptFunction)) {
+        if(!(Bootstrap.isCallable(fn))) {
             throw new UnsupportedOperationException("The script object doesn't have a function named " + invoke.getName());
         }
     }

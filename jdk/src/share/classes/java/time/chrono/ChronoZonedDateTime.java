@@ -63,6 +63,7 @@ package java.time.chrono;
 
 import static java.time.temporal.ChronoField.INSTANT_SECONDS;
 import static java.time.temporal.ChronoField.OFFSET_SECONDS;
+import static java.time.temporal.ChronoUnit.FOREVER;
 import static java.time.temporal.ChronoUnit.NANOS;
 
 import java.time.DateTimeException;
@@ -73,6 +74,7 @@ import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
@@ -115,7 +117,7 @@ import java.util.Objects;
  * @param <D> the concrete type for the date of this date-time
  * @since 1.8
  */
-public interface ChronoZonedDateTime<D extends ChronoLocalDate<D>>
+public interface ChronoZonedDateTime<D extends ChronoLocalDate>
         extends Temporal, Comparable<ChronoZonedDateTime<?>> {
 
     /**
@@ -338,8 +340,53 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate<D>>
      */
     ChronoZonedDateTime<D> withZoneSameInstant(ZoneId zone);
 
-    @Override   // Override to provide javadoc
+    /**
+     * Checks if the specified field is supported.
+     * <p>
+     * This checks if the specified field can be queried on this date-time.
+     * If false, then calling the {@link #range(TemporalField) range},
+     * {@link #get(TemporalField) get} and {@link #with(TemporalField, long)}
+     * methods will throw an exception.
+     * <p>
+     * The set of supported fields is defined by the chronology and normally includes
+     * all {@code ChronoField} fields.
+     * <p>
+     * If the field is not a {@code ChronoField}, then the result of this method
+     * is obtained by invoking {@code TemporalField.isSupportedBy(TemporalAccessor)}
+     * passing {@code this} as the argument.
+     * Whether the field is supported is determined by the field.
+     *
+     * @param field  the field to check, null returns false
+     * @return true if the field can be queried, false if not
+     */
+    @Override
     boolean isSupported(TemporalField field);
+
+    /**
+     * Checks if the specified unit is supported.
+     * <p>
+     * This checks if the specified unit can be added to or subtracted from this date-time.
+     * If false, then calling the {@link #plus(long, TemporalUnit)} and
+     * {@link #minus(long, TemporalUnit) minus} methods will throw an exception.
+     * <p>
+     * The set of supported units is defined by the chronology and normally includes
+     * all {@code ChronoUnit} units except {@code FOREVER}.
+     * <p>
+     * If the unit is not a {@code ChronoUnit}, then the result of this method
+     * is obtained by invoking {@code TemporalUnit.isSupportedBy(Temporal)}
+     * passing {@code this} as the argument.
+     * Whether the unit is supported is determined by the unit.
+     *
+     * @param unit  the unit to check, null returns false
+     * @return true if the unit can be added/subtracted, false if not
+     */
+    @Override
+    default boolean isSupported(TemporalUnit unit) {
+        if (unit instanceof ChronoUnit) {
+            return unit != FOREVER;
+        }
+        return unit != null && unit.isSupportedBy(this);
+    }
 
     //-----------------------------------------------------------------------
     // override for covariant return type
@@ -350,7 +397,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate<D>>
      */
     @Override
     default ChronoZonedDateTime<D> with(TemporalAdjuster adjuster) {
-        return (ChronoZonedDateTime<D>)(toLocalDate().getChronology().ensureChronoZonedDateTime(Temporal.super.with(adjuster)));
+        return ChronoZonedDateTimeImpl.ensureValid(toLocalDate().getChronology(), Temporal.super.with(adjuster));
     }
 
     /**
@@ -368,7 +415,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate<D>>
      */
     @Override
     default ChronoZonedDateTime<D> plus(TemporalAmount amount) {
-        return (ChronoZonedDateTime<D>)(toLocalDate().getChronology().ensureChronoZonedDateTime(Temporal.super.plus(amount)));
+        return ChronoZonedDateTimeImpl.ensureValid(toLocalDate().getChronology(), Temporal.super.plus(amount));
     }
 
     /**
@@ -386,7 +433,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate<D>>
      */
     @Override
     default ChronoZonedDateTime<D> minus(TemporalAmount amount) {
-        return (ChronoZonedDateTime<D>)(toLocalDate().getChronology().ensureChronoZonedDateTime(Temporal.super.minus(amount)));
+        return ChronoZonedDateTimeImpl.ensureValid(toLocalDate().getChronology(), Temporal.super.minus(amount));
     }
 
     /**
@@ -396,7 +443,7 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate<D>>
      */
     @Override
     default ChronoZonedDateTime<D> minus(long amountToSubtract, TemporalUnit unit) {
-        return (ChronoZonedDateTime<D>)(toLocalDate().getChronology().ensureChronoZonedDateTime(Temporal.super.minus(amountToSubtract, unit)));
+        return ChronoZonedDateTimeImpl.ensureValid(toLocalDate().getChronology(), Temporal.super.minus(amountToSubtract, unit));
     }
 
     //-----------------------------------------------------------------------

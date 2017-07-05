@@ -65,13 +65,16 @@ import java.time.DateTimeException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.format.ResolverStyle;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
 import java.time.temporal.ValueRange;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * The Thai Buddhist calendar system.
@@ -289,16 +292,19 @@ public final class ThaiBuddhistChronology extends Chronology implements Serializ
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ChronoLocalDateTime<ThaiBuddhistDate> localDateTime(TemporalAccessor temporal) {
         return (ChronoLocalDateTime<ThaiBuddhistDate>)super.localDateTime(temporal);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ChronoZonedDateTime<ThaiBuddhistDate> zonedDateTime(TemporalAccessor temporal) {
         return (ChronoZonedDateTime<ThaiBuddhistDate>)super.zonedDateTime(temporal);
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ChronoZonedDateTime<ThaiBuddhistDate> zonedDateTime(Instant instant, ZoneId zone) {
         return (ChronoZonedDateTime<ThaiBuddhistDate>)super.zonedDateTime(instant, zone);
     }
@@ -328,7 +334,7 @@ public final class ThaiBuddhistChronology extends Chronology implements Serializ
     }
 
     @Override
-    public Era eraOf(int eraValue) {
+    public ThaiBuddhistEra eraOf(int eraValue) {
         return ThaiBuddhistEra.of(eraValue);
     }
 
@@ -355,6 +361,12 @@ public final class ThaiBuddhistChronology extends Chronology implements Serializ
             }
         }
         return field.range();
+    }
+
+    //-----------------------------------------------------------------------
+    @Override  // override for return type
+    public ThaiBuddhistDate resolveDate(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+        return (ThaiBuddhistDate) super.resolveDate(fieldValues, resolverStyle);
     }
 
 }

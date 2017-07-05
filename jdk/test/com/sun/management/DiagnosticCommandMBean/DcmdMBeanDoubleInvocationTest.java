@@ -25,25 +25,15 @@
  * @test
  * @bug     7150256
  * @summary Basic Test for the DiagnosticCommandMBean
- * @author  Frederic Parain
+ * @author  Frederic Parain, Shanliang JIANG
  *
- * @run main/othervm -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.port=8125 DcmdMBeanDoubleInvocationTest
+ * @run main/othervm DcmdMBeanDoubleInvocationTest
  */
 
 
-import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.management.Descriptor;
-import javax.management.InstanceNotFoundException;
-import javax.management.IntrospectionException;
-import javax.management.MBeanInfo;
-import javax.management.MBeanOperationInfo;
 import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import javax.management.ReflectionException;
 import javax.management.*;
 import javax.management.remote.*;
 
@@ -52,39 +42,42 @@ public class DcmdMBeanDoubleInvocationTest {
     private static String HOTSPOT_DIAGNOSTIC_MXBEAN_NAME =
         "com.sun.management:type=DiagnosticCommand";
 
-    public static void main(String[] args) {
-        MBeanServerConnection mbs = null;
+    public static void main(String[] args) throws Exception {
+        System.out.println("--->JRCMD MBean Test: invocation on \"help VM.version\" ...");
+
+        ObjectName name = new ObjectName(HOTSPOT_DIAGNOSTIC_MXBEAN_NAME);
+        String[] helpArgs = {"-all", "\n", "VM.version"};
+        Object[] dcmdArgs = {helpArgs};
+        String[] signature = {String[].class.getName()};
+
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        JMXServiceURL url = new JMXServiceURL("rmi", null, 0);
+        JMXConnectorServer cs = null;
+        JMXConnector cc = null;
         try {
-            JMXServiceURL url = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://localhost:8125/jmxrmi");
-            JMXConnector connector = JMXConnectorFactory.connect(url);
-            mbs = connector.getMBeanServerConnection();
-        } catch(Throwable t) {
-            t.printStackTrace();
-        }
-        ObjectName name;
-        try {
-            name = new ObjectName(HOTSPOT_DIAGNOSTIC_MXBEAN_NAME);
-            MBeanInfo info = mbs.getMBeanInfo(name);
-            String[] helpArgs = {"-all", "\n", "VM.version"};
-            Object[] dcmdArgs = {helpArgs};
-            String[] signature = {String[].class.getName()};
-            String result = (String) mbs.invoke(name, "help", dcmdArgs, signature);
+            cs = JMXConnectorServerFactory.newJMXConnectorServer(url, null, mbs);
+            cs.start();
+            JMXServiceURL addr = cs.getAddress();
+            cc = JMXConnectorFactory.connect(addr);
+            MBeanServerConnection mbsc = cc.getMBeanServerConnection();
+
+            String result = (String) mbsc.invoke(name, "help", dcmdArgs, signature);
             System.out.println(result);
-         } catch (RuntimeMBeanException ex) {
+
+            throw new Error("Test failed: Double commands have not been detected");
+        } catch (RuntimeMBeanException ex) {
             if (ex.getCause() instanceof IllegalArgumentException) {
-                System.out.println("Test passed");
-                return;
+                System.out.println("JTest passed: Double commands have been detected");
             } else {
                 ex.printStackTrace();
-                throw new RuntimeException("TEST FAILED");
+                throw new Error("TEST FAILED: got unknown exception "+ex);
             }
-        } catch (InstanceNotFoundException | IntrospectionException
-                | ReflectionException | MalformedObjectNameException
-                | MBeanException|IOException ex) {
-            ex.printStackTrace();
-            throw new RuntimeException("TEST FAILED");
+        } finally {
+            try {
+                cc.close();
+                cs.stop();
+            } catch (Exception e) {
+            }
         }
-        System.out.println("Double commands have not been detected");
-        throw new RuntimeException("TEST FAILED");
     }
 }

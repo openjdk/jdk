@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,14 +54,14 @@ import sun.text.normalizer.NormalizerBase;
  * For example, consider the following in Spanish:
  * <blockquote>
  * <pre>
- * "ca" -> the first key is key('c') and second key is key('a').
- * "cha" -> the first key is key('ch') and second key is key('a').
+ * "ca" &rarr; the first key is key('c') and second key is key('a').
+ * "cha" &rarr; the first key is key('ch') and second key is key('a').
  * </pre>
  * </blockquote>
  * And in German,
  * <blockquote>
  * <pre>
- * "\u00e4b"-> the first key is key('a'), the second key is key('e'), and
+ * "\u00e4b" &rarr; the first key is key('a'), the second key is key('e'), and
  * the third key is key('b').
  * </pre>
  * </blockquote>
@@ -177,6 +177,8 @@ public final class CollationElementIterator
      * means that when you change direction while iterating (i.e., call next() and
      * then call previous(), or call previous() and then call next()), you'll get
      * back the same element twice.</p>
+     *
+     * @return the next collation element
      */
     public int next()
     {
@@ -272,6 +274,8 @@ public final class CollationElementIterator
      * updates the pointer.  This means that when you change direction while
      * iterating (i.e., call next() and then call previous(), or call previous()
      * and then call next()), you'll get back the same element twice.</p>
+     *
+     * @return the previous collation element
      * @since 1.2
      */
     public int previous()

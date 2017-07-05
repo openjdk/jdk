@@ -36,7 +36,7 @@ import java.util.StringTokenizer;
  *
  * {@code --log=module1:level1,module2:level2... }
  */
-public class KeyValueOption extends Option<String> {
+public final class KeyValueOption extends Option<String> {
     /**
      * Map of keys given
      */

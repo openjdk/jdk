@@ -189,7 +189,7 @@ public final class NativeJSON extends ScriptObject {
             if (value instanceof ScriptObject) {
                 final ScriptObject svalue = (ScriptObject)value;
                 final Object toJSON = TO_JSON.getGetter().invokeExact(svalue);
-                if (toJSON instanceof ScriptFunction) {
+                if (Bootstrap.isCallable(toJSON)) {
                     value = TO_JSON.getInvoker().invokeExact(toJSON, svalue, key);
                 }
             }

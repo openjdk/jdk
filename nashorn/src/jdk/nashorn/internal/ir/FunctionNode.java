@@ -540,12 +540,13 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     /**
      * Check if this function's generated Java method needs a {@code callee} parameter. Functions that need access to
      * their parent scope, functions that reference themselves, and non-strict functions that need an Arguments object
-     * (since it exposes {@code arguments.callee} property) will need to have a callee parameter.
+     * (since it exposes {@code arguments.callee} property) will need to have a callee parameter. We also return true
+     * for split functions to make sure symbols slots are the same in the main and split methods.
      *
      * @return true if the function's generated Java method needs a {@code callee} parameter.
      */
     public boolean needsCallee() {
-        return needsParentScope() || needsSelfSymbol() || (needsArguments() && !isStrict());
+        return needsParentScope() || needsSelfSymbol() || isSplit() || (needsArguments() && !isStrict());
     }
 
     /**
@@ -816,6 +817,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         if (this.returnType == returnType) {
             return this;
         }
+        final Type type = Type.widest(this.returnType, returnType.isObject() ? Type.OBJECT : returnType);
         return Node.replaceInLexicalContext(
             lc,
             this,
@@ -824,12 +826,10 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                 lastToken,
                 flags,
                 name,
-                Type.widest(this.returnType, returnType.isObject() ?
-                    Type.OBJECT :
-                    returnType),
+                type,
                 compileUnit,
                 compilationState,
-                body,
+                body.setReturnType(type),
                 parameters,
                 snapshot,
                 hints));

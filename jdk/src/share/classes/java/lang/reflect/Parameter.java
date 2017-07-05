@@ -162,7 +162,7 @@ public final class Parameter implements AnnotatedElement {
 
     /**
      * Returns the name of the parameter.  If the parameter's name is
-     * {@linkplain isNamePresent() present}, then this method returns
+     * {@linkplain #isNamePresent() present}, then this method returns
      * the name provided by the class file. Otherwise, this method
      * synthesizes a name of the form argN, where N is the index of
      * the parameter in the descriptor of the method which declares
