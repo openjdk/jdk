@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -332,12 +332,15 @@ dtrace:helper:ustack:
 
   this->nameSymbol = copyin_ptr(this->constantPool +
       this->nameIndex * sizeof (pointer) + SIZE_ConstantPool);
+  /* The symbol is a CPSlot and has lower bit set to indicate metadata */
+  this->nameSymbol &= (~1); /* remove metadata lsb */
 
   this->nameSymbolLength = copyin_uint16(this->nameSymbol +
       OFFSET_Symbol_length);
 
   this->signatureSymbol = copyin_ptr(this->constantPool +
       this->signatureIndex * sizeof (pointer) + SIZE_ConstantPool);
+  this->signatureSymbol &= (~1); /* remove metadata lsb */
 
   this->signatureSymbolLength = copyin_uint16(this->signatureSymbol +
       OFFSET_Symbol_length);

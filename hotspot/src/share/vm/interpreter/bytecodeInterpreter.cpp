@@ -1581,7 +1581,7 @@ run:
 #define ARRAY_LOADTO32(T, T2, format, stackRes, extra)                                \
       {                                                                               \
           ARRAY_INTRO(-2);                                                            \
-          extra;                                                                      \
+          (void)extra;                                                                \
           SET_ ## stackRes(*(T2 *)(((address) arrObj->base(T)) + index * sizeof(T2)), \
                            -2);                                                       \
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -1);                                      \
@@ -1592,8 +1592,8 @@ run:
       {                                                                                    \
           ARRAY_INTRO(-2);                                                                 \
           SET_ ## stackRes(*(T2 *)(((address) arrObj->base(T)) + index * sizeof(T2)), -1); \
-          extra;                                                                           \
-          UPDATE_PC_AND_CONTINUE(1);                                            \
+          (void)extra;                                                                     \
+          UPDATE_PC_AND_CONTINUE(1);                                                       \
       }
 
       CASE(_iaload):
@@ -1617,7 +1617,7 @@ run:
 #define ARRAY_STOREFROM32(T, T2, format, stackSrc, extra)                            \
       {                                                                              \
           ARRAY_INTRO(-3);                                                           \
-          extra;                                                                     \
+          (void)extra;                                                               \
           *(T2 *)(((address) arrObj->base(T)) + index * sizeof(T2)) = stackSrc( -1); \
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -3);                                     \
       }
@@ -1626,7 +1626,7 @@ run:
 #define ARRAY_STOREFROM64(T, T2, stackSrc, extra)                                    \
       {                                                                              \
           ARRAY_INTRO(-4);                                                           \
-          extra;                                                                     \
+          (void)extra;                                                               \
           *(T2 *)(((address) arrObj->base(T)) + index * sizeof(T2)) = stackSrc( -1); \
           UPDATE_PC_AND_TOS_AND_CONTINUE(1, -4);                                     \
       }

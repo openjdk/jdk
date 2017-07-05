@@ -840,6 +840,117 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
   return generate_accessor_entry();
 }
 
+/**
+ * Method entry for static native methods:
+ *   int java.util.zip.CRC32.update(int crc, int b)
+ */
+address InterpreterGenerator::generate_CRC32_update_entry() {
+  if (UseCRC32Intrinsics) {
+    address entry = __ pc();
+
+    // rbx,: Method*
+    // rsi: senderSP must preserved for slow path, set SP to it on fast path
+    // rdx: scratch
+    // rdi: scratch
+
+    Label slow_path;
+    // If we need a safepoint check, generate full interpreter entry.
+    ExternalAddress state(SafepointSynchronize::address_of_state());
+    __ cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
+             SafepointSynchronize::_not_synchronized);
+    __ jcc(Assembler::notEqual, slow_path);
+
+    // We don't generate local frame and don't align stack because
+    // we call stub code and there is no safepoint on this path.
+
+    // Load parameters
+    const Register crc = rax;  // crc
+    const Register val = rdx;  // source java byte value
+    const Register tbl = rdi;  // scratch
+
+    // Arguments are reversed on java expression stack
+    __ movl(val, Address(rsp,   wordSize)); // byte value
+    __ movl(crc, Address(rsp, 2*wordSize)); // Initial CRC
+
+    __ lea(tbl, ExternalAddress(StubRoutines::crc_table_addr()));
+    __ notl(crc); // ~crc
+    __ update_byte_crc32(crc, val, tbl);
+    __ notl(crc); // ~crc
+    // result in rax
+
+    // _areturn
+    __ pop(rdi);                // get return address
+    __ mov(rsp, rsi);           // set sp to sender sp
+    __ jmp(rdi);
+
+    // generate a vanilla native entry as the slow path
+    __ bind(slow_path);
+
+    (void) generate_native_entry(false);
+
+    return entry;
+  }
+  return generate_native_entry(false);
+}
+
+/**
+ * Method entry for static native methods:
+ *   int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
+ *   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
+ */
+address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+  if (UseCRC32Intrinsics) {
+    address entry = __ pc();
+
+    // rbx,: Method*
+    // r13: senderSP must preserved for slow path, set SP to it on fast path
+
+    Label slow_path;
+    // If we need a safepoint check, generate full interpreter entry.
+    ExternalAddress state(SafepointSynchronize::address_of_state());
+    __ cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
+             SafepointSynchronize::_not_synchronized);
+    __ jcc(Assembler::notEqual, slow_path);
+
+    // We don't generate local frame and don't align stack because
+    // we call stub code and there is no safepoint on this path.
+
+    // Load parameters
+    const Register crc = c_rarg0;  // crc
+    const Register buf = c_rarg1;  // source java byte array address
+    const Register len = c_rarg2;  // length
+
+    // Arguments are reversed on java expression stack
+    __ movl(len,   Address(rsp,   wordSize)); // Length
+    // Calculate address of start element
+    if (kind == Interpreter::java_util_zip_CRC32_updateByteBuffer) {
+      __ movptr(buf, Address(rsp, 3*wordSize)); // long buf
+      __ addptr(buf, Address(rsp, 2*wordSize)); // + offset
+      __ movl(crc,   Address(rsp, 5*wordSize)); // Initial CRC
+    } else {
+      __ movptr(buf, Address(rsp, 3*wordSize)); // byte[] array
+      __ addptr(buf, arrayOopDesc::base_offset_in_bytes(T_BYTE)); // + header size
+      __ addptr(buf, Address(rsp, 2*wordSize)); // + offset
+      __ movl(crc,   Address(rsp, 4*wordSize)); // Initial CRC
+    }
+
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, StubRoutines::updateBytesCRC32()), crc, buf, len);
+    // result in rax
+
+    // _areturn
+    __ pop(rdi);                // get return address
+    __ mov(rsp, r13);           // set sp to sender sp
+    __ jmp(rdi);
+
+    // generate a vanilla native entry as the slow path
+    __ bind(slow_path);
+
+    (void) generate_native_entry(false);
+
+    return entry;
+  }
+  return generate_native_entry(false);
+}
 
 // Interpreter stub for calling a native method. (asm interpreter)
 // This sets up a somewhat different looking stack for calling the
@@ -1510,15 +1621,16 @@ address AbstractInterpreterGenerator::generate_method_entry(
   // determine code generation flags
   bool synchronized = false;
   address entry_point = NULL;
+  InterpreterGenerator* ig_this = (InterpreterGenerator*)this;
 
   switch (kind) {
-  case Interpreter::zerolocals             :                                                                             break;
-  case Interpreter::zerolocals_synchronized: synchronized = true;                                                        break;
-  case Interpreter::native                 : entry_point = ((InterpreterGenerator*)this)->generate_native_entry(false); break;
-  case Interpreter::native_synchronized    : entry_point = ((InterpreterGenerator*)this)->generate_native_entry(true);  break;
-  case Interpreter::empty                  : entry_point = ((InterpreterGenerator*)this)->generate_empty_entry();       break;
-  case Interpreter::accessor               : entry_point = ((InterpreterGenerator*)this)->generate_accessor_entry();    break;
-  case Interpreter::abstract               : entry_point = ((InterpreterGenerator*)this)->generate_abstract_entry();    break;
+  case Interpreter::zerolocals             :                                                      break;
+  case Interpreter::zerolocals_synchronized: synchronized = true;                                 break;
+  case Interpreter::native                 : entry_point = ig_this->generate_native_entry(false); break;
+  case Interpreter::native_synchronized    : entry_point = ig_this->generate_native_entry(true);  break;
+  case Interpreter::empty                  : entry_point = ig_this->generate_empty_entry();       break;
+  case Interpreter::accessor               : entry_point = ig_this->generate_accessor_entry();    break;
+  case Interpreter::abstract               : entry_point = ig_this->generate_abstract_entry();    break;
 
   case Interpreter::java_lang_math_sin     : // fall thru
   case Interpreter::java_lang_math_cos     : // fall thru
@@ -1528,9 +1640,15 @@ address AbstractInterpreterGenerator::generate_method_entry(
   case Interpreter::java_lang_math_log10   : // fall thru
   case Interpreter::java_lang_math_sqrt    : // fall thru
   case Interpreter::java_lang_math_pow     : // fall thru
-  case Interpreter::java_lang_math_exp     : entry_point = ((InterpreterGenerator*)this)->generate_math_entry(kind);    break;
+  case Interpreter::java_lang_math_exp     : entry_point = ig_this->generate_math_entry(kind);      break;
   case Interpreter::java_lang_ref_reference_get
-                                           : entry_point = ((InterpreterGenerator*)this)->generate_Reference_get_entry(); break;
+                                           : entry_point = ig_this->generate_Reference_get_entry(); break;
+  case Interpreter::java_util_zip_CRC32_update
+                                           : entry_point = ig_this->generate_CRC32_update_entry();  break;
+  case Interpreter::java_util_zip_CRC32_updateBytes
+                                           : // fall thru
+  case Interpreter::java_util_zip_CRC32_updateByteBuffer
+                                           : entry_point = ig_this->generate_CRC32_updateBytes_entry(kind); break;
   default:
     fatal(err_msg("unexpected method kind: %d", kind));
     break;
@@ -1540,8 +1658,7 @@ address AbstractInterpreterGenerator::generate_method_entry(
     return entry_point;
   }
 
-  return ((InterpreterGenerator*) this)->
-                                generate_normal_entry(synchronized);
+  return ig_this->generate_normal_entry(synchronized);
 }
 
 // These should never be compiled since the interpreter will prefer
