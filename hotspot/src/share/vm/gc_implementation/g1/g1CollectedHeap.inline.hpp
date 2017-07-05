@@ -60,7 +60,8 @@ inline bool G1CollectedHeap::obj_in_cs(oop obj) {
 
 inline HeapWord*
 G1CollectedHeap::attempt_allocation(size_t word_size,
-                                    unsigned int* gc_count_before_ret) {
+                                    unsigned int* gc_count_before_ret,
+                                    int* gclocker_retry_count_ret) {
   assert_heap_not_locked_and_not_at_safepoint();
   assert(!isHumongous(word_size), "attempt_allocation() should not "
          "be called for humongous allocation requests");
@@ -68,7 +69,9 @@ G1CollectedHeap::attempt_allocation(size_t word_size,
   HeapWord* result = _mutator_alloc_region.attempt_allocation(word_size,
                                                       false /* bot_updates */);
   if (result == NULL) {
-    result = attempt_allocation_slow(word_size, gc_count_before_ret);
+    result = attempt_allocation_slow(word_size,
+                                     gc_count_before_ret,
+                                     gclocker_retry_count_ret);
   }
   assert_heap_not_locked();
   if (result != NULL) {

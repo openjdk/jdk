@@ -1331,6 +1331,10 @@ class StubGenerator: public StubCodeGenerator {
       }
       __ addptr(qword_count, 4);
       __ BIND(L_end);
+      if (UseAVX >= 2) {
+        // clean upper bits of YMM registers
+        __ vzeroupper();
+      }
     } else {
       // Copy 32-bytes per iteration
       __ BIND(L_loop);
@@ -1404,6 +1408,10 @@ class StubGenerator: public StubCodeGenerator {
       }
       __ subptr(qword_count, 4);
       __ BIND(L_end);
+      if (UseAVX >= 2) {
+        // clean upper bits of YMM registers
+        __ vzeroupper();
+      }
     } else {
       // Copy 32-bytes per iteration
       __ BIND(L_loop);

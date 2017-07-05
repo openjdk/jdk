@@ -559,18 +559,21 @@ protected:
   // the mutator alloc region without taking the Heap_lock. This
   // should only be used for non-humongous allocations.
   inline HeapWord* attempt_allocation(size_t word_size,
-                                      unsigned int* gc_count_before_ret);
+                                      unsigned int* gc_count_before_ret,
+                                      int* gclocker_retry_count_ret);
 
   // Second-level mutator allocation attempt: take the Heap_lock and
   // retry the allocation attempt, potentially scheduling a GC
   // pause. This should only be used for non-humongous allocations.
   HeapWord* attempt_allocation_slow(size_t word_size,
-                                    unsigned int* gc_count_before_ret);
+                                    unsigned int* gc_count_before_ret,
+                                    int* gclocker_retry_count_ret);
 
   // Takes the Heap_lock and attempts a humongous allocation. It can
   // potentially schedule a GC pause.
   HeapWord* attempt_allocation_humongous(size_t word_size,
-                                         unsigned int* gc_count_before_ret);
+                                         unsigned int* gc_count_before_ret,
+                                         int* gclocker_retry_count_ret);
 
   // Allocation attempt that should be called during safepoints (e.g.,
   // at the end of a successful GC). expect_null_mutator_alloc_region

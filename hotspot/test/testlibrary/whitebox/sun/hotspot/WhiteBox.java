@@ -94,4 +94,10 @@ public class WhiteBox {
   public native int     getMethodCompilationLevel(Method method);
   public native boolean setDontInlineMethod(Method method, boolean value);
   public native int     getCompileQueuesSize();
+
+  //Intered strings
+  public native boolean isInStringTable(String str);
+
+  // force Full GC
+  public native void fullGC();
 }

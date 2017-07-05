@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,11 +180,12 @@ int UTF8::quoted_ascii_length(const char* utf8_str, int utf8_length) {
 }
 
 // converts a utf8 string to quoted ascii
-void UTF8::as_quoted_ascii(const char* utf8_str, char* buf, int buflen) {
+void UTF8::as_quoted_ascii(const char* utf8_str, int utf8_length, char* buf, int buflen) {
   const char *ptr = utf8_str;
+  const char *utf8_end = ptr + utf8_length;
   char* p = buf;
   char* end = buf + buflen;
-  while (*ptr != '\0') {
+  while (ptr < utf8_end) {
     jchar c;
     ptr = UTF8::next(ptr, &c);
     if (c >= 32 && c < 127) {
@@ -196,6 +197,7 @@ void UTF8::as_quoted_ascii(const char* utf8_str, char* buf, int buflen) {
       p += 6;
     }
   }
+  assert(p < end, "sanity");
   *p = '\0';
 }
 
