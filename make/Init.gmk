@@ -50,7 +50,7 @@ ifeq ($(HAS_SPEC),)
   include $(topdir)/make/Help.gmk
 
   # Targets provided by Init.gmk.
-  ALL_INIT_TARGETS := print-modules print-targets reconfigure
+  ALL_INIT_TARGETS := print-modules print-targets print-configuration reconfigure
 
   # CALLED_TARGETS is the list of targets that the user provided,
   # or "default" if unspecified.
@@ -227,6 +227,9 @@ else # HAS_SPEC=true
 	( cd $(TOPDIR) && \
 	    $(MAKE) $(MAKE_ARGS) -j 1 -f make/Main.gmk $(USER_MAKE_VARS) \
 	    NO_RECIPES=true print-targets )
+
+  print-configuration:
+	  $(ECHO) $(CONFIGURE_COMMAND_LINE)
 
   reconfigure:
         ifneq ($(CONFIGURE_COMMAND_LINE), )
