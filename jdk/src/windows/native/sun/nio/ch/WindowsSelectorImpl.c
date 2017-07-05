@@ -37,6 +37,7 @@
 #include "jni.h"
 #include "jni_util.h"
 #include "sun_nio_ch_WindowsSelectorImpl.h"
+#include "sun_nio_ch_PollArrayWrapper.h"
 #include "winsock2.h"
 
 
@@ -44,10 +45,6 @@ typedef struct {
     jint fd;
     jshort events;
 } pollfd;
-
-static int POLLIN   = 1;
-static int POLLCONN = 2;
-static int POLLOUT  = 4;
 
 #define WAKEUP_SOCKET_BUF_SIZE 16
 
@@ -82,11 +79,13 @@ Java_sun_nio_ch_WindowsSelectorImpl_00024SubSelector_poll0(JNIEnv *env, jobject 
 
     /* Set FD_SET structures required for select */
     for (i = 0; i < numfds; i++) {
-        if (fds[i].events & POLLIN) {
+        if (fds[i].events & sun_nio_ch_PollArrayWrapper_POLLIN) {
            readfds.fd_array[read_count] = fds[i].fd;
            read_count++;
         }
-        if (fds[i].events & (POLLOUT | POLLCONN)) {
+        if (fds[i].events & (sun_nio_ch_PollArrayWrapper_POLLOUT |
+                             sun_nio_ch_PollArrayWrapper_POLLCONN))
+        {
            writefds.fd_array[write_count] = fds[i].fd;
            write_count++;
         }
@@ -111,11 +110,13 @@ Java_sun_nio_ch_WindowsSelectorImpl_00024SubSelector_poll0(JNIEnv *env, jobject 
             /* prepare select structures for the i-th socket */
             errreadfds.fd_count = 0;
             errwritefds.fd_count = 0;
-            if (fds[i].events & POLLIN) {
+            if (fds[i].events & sun_nio_ch_PollArrayWrapper_POLLIN) {
                errreadfds.fd_array[0] = fds[i].fd;
                errreadfds.fd_count = 1;
             }
-            if (fds[i].events & (POLLOUT | POLLCONN)) {
+            if (fds[i].events & (sun_nio_ch_PollArrayWrapper_POLLOUT |
+                                 sun_nio_ch_PollArrayWrapper_POLLCONN))
+            {
                 errwritefds.fd_array[0] = fds[i].fd;
                 errwritefds.fd_count = 1;
             }
@@ -187,7 +188,8 @@ Java_sun_nio_ch_WindowsSelectorImpl_setWakeupSocket0(JNIEnv *env, jclass this,
                                                 jint scoutFd)
 {
     /* Write one byte into the pipe */
-    send(scoutFd, (char*)&POLLIN, 1, 0);
+    const char byte = 1;
+    send(scoutFd, &byte, 1, 0);
 }
 
 JNIEXPORT void JNICALL

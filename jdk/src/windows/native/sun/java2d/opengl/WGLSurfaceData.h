@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2004-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,12 +35,9 @@
  * OGLSurfaceData.  It is referenced by the native OGLSDOps structure.
  */
 typedef struct _WGLSDOps {
-    jlong peerData;
     WGLGraphicsConfigInfo *configInfo;
-    union {
-        HWND        window;
-        HPBUFFERARB pbuffer;
-    } drawable;
+    HWND        window;
+    HPBUFFERARB pbuffer;
     HDC pbufferDC;
 } WGLSDOps;
 

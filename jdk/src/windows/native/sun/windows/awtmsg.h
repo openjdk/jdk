@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,17 +251,6 @@ enum {
     WM_AWT_SHOWCURSOR,
     WM_AWT_HIDECURSOR,
     WM_AWT_CREATE_PRINTED_PIXELS,
-
-    /* Synchronize ddraw fullscreen events on Windows event thread */
-    WM_AWT_DD_CREATE_SURFACE,
-    WM_AWT_DD_ENTER_FULLSCREEN,
-    WM_AWT_DD_EXIT_FULLSCREEN,
-    WM_AWT_DD_SET_DISPLAY_MODE,
-    WM_AWT_DD_RESTORE_DISPLAY_MODE,
-
-    /* Synchronize D3D device creation on Windows event thread */
-    WM_AWT_D3D_CREATE_DEVICE,
-    WM_AWT_D3D_RELEASE_DEVICE,
 
     // Tray messages
     WM_AWT_TRAY_NOTIFY,

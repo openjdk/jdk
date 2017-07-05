@@ -30,6 +30,7 @@ import java.awt.Graphics;
 import java.awt.Rectangle;
 
 import sun.awt.EmbeddedFrame;
+import sun.awt.Win32GraphicsEnvironment;
 
 public class WEmbeddedFramePeer extends WFramePeer {
 
@@ -70,5 +71,14 @@ public class WEmbeddedFramePeer extends WFramePeer {
     Rectangle constrainBounds(int x, int y, int width, int height) {
         // We don't constrain the bounds of the EmbeddedFrames
         return new Rectangle(x, y, width, height);
+    }
+
+    @Override
+    public boolean isAccelCapable() {
+        // REMIND: Temp workaround for issues with using HW acceleration
+        // in the browser on Vista when DWM is enabled
+        // Note: isDWMCompositionEnabled is only relevant on Vista, returns
+        // false on other systems.
+        return !Win32GraphicsEnvironment.isDWMCompositionEnabled();
     }
 }

@@ -47,6 +47,10 @@ DYNANY_GENERATED_java = \
 	org/omg/DynamicAny/DynUnionOperations.java \
 	org/omg/DynamicAny/DynValue.java \
 	org/omg/DynamicAny/DynValueOperations.java \
+	org/omg/DynamicAny/DynValueBox.java \
+	org/omg/DynamicAny/DynValueBoxOperations.java \
+	org/omg/DynamicAny/DynValueCommon.java \
+	org/omg/DynamicAny/DynValueCommonOperations.java \
 	org/omg/DynamicAny/NameDynAnyPair.java \
 	org/omg/DynamicAny/NameValuePair.java \
 	org/omg/DynamicAny/DynAnyPackage/InvalidValue.java \
@@ -70,8 +74,16 @@ DYNANY_GENERATED_java = \
 	org/omg/DynamicAny/DynSequenceHelper.java \
 	org/omg/DynamicAny/NameDynAnyPairSeqHelper.java \
 	org/omg/DynamicAny/NameValuePairHelper.java \
-	org/omg/DynamicAny/NameValuePairSeqHelper.java 
-
+	org/omg/DynamicAny/NameValuePairSeqHelper.java  \
+	org/omg/DynamicAny/_DynAnyFactoryStub.java \
+	org/omg/DynamicAny/_DynAnyStub.java \
+	org/omg/DynamicAny/_DynArrayStub.java \
+	org/omg/DynamicAny/_DynEnumStub.java \
+	org/omg/DynamicAny/_DynFixedStub.java \
+	org/omg/DynamicAny/_DynSequenceStub.java \
+	org/omg/DynamicAny/_DynStructStub.java \
+	org/omg/DynamicAny/_DynUnionStub.java \
+	org/omg/DynamicAny/_DynValueStub.java
 
 DYNANY_HELP_HOLD_java = \
 	org/omg/DynamicAny/AnySeqHolder.java \

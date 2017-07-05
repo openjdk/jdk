@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,23 +27,26 @@ package sun.java2d.opengl;
 
 import java.awt.AlphaComposite;
 import java.awt.GraphicsEnvironment;
+import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.image.ColorModel;
 import java.awt.image.Raster;
 import sun.awt.SunHints;
 import sun.awt.image.PixelConverter;
+import sun.java2d.pipe.hw.AccelSurface;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
 import sun.java2d.SurfaceDataProxy;
+import sun.java2d.loops.CompositeType;
 import sun.java2d.loops.GraphicsPrimitive;
 import sun.java2d.loops.MaskFill;
 import sun.java2d.loops.SurfaceType;
-import sun.java2d.pipe.PixelToShapeConverter;
+import sun.java2d.pipe.ParallelogramPipe;
+import sun.java2d.pipe.PixelToParallelogramConverter;
 import sun.java2d.pipe.RenderBuffer;
-import sun.java2d.pipe.RenderQueue;
 import sun.java2d.pipe.TextPipe;
 import static sun.java2d.pipe.BufferedOpCodes.*;
-import static sun.java2d.opengl.OGLContext.*;
+import static sun.java2d.opengl.OGLContext.OGLContextCaps.*;
 
 /**
  * This class describes an OpenGL "surface", that is, a region of pixels
@@ -92,17 +95,16 @@ import static sun.java2d.opengl.OGLContext.*;
  * FLIP_BACKBUFFER   OpenGLSurface
  * FBOBJECT          OpenGLSurfaceRTT
  */
-public abstract class OGLSurfaceData extends SurfaceData {
+public abstract class OGLSurfaceData extends SurfaceData
+    implements AccelSurface {
 
     /**
      * OGL-specific surface types
+     *
+     * @see sun.java2d.pipe.hw.AccelSurface
      */
-    public static final int UNDEFINED       = 0;
-    public static final int WINDOW          = 1;
-    public static final int PBUFFER         = 2;
-    public static final int TEXTURE         = 3;
-    public static final int FLIP_BACKBUFFER = 4;
-    public static final int FBOBJECT        = 5;
+    public static final int PBUFFER         = RT_PLAIN;
+    public static final int FBOBJECT        = RT_TEXTURE;
 
     /**
      * Pixel formats
@@ -148,11 +150,14 @@ public abstract class OGLSurfaceData extends SurfaceData {
     private static boolean isGradShaderEnabled;
 
     private OGLGraphicsConfig graphicsConfig;
-    private int textureTarget;
     protected int type;
+    // these fields are set from the native code when the surface is
+    // initialized
+    private int nativeWidth, nativeHeight;
 
     protected static OGLRenderer oglRenderPipe;
-    protected static PixelToShapeConverter oglTxRenderPipe;
+    protected static PixelToParallelogramConverter oglTxRenderPipe;
+    protected static ParallelogramPipe oglAAPgramPipe;
     protected static OGLTextRenderer oglTextPipe;
     protected static OGLDrawImage oglImagePipe;
 
@@ -170,6 +175,7 @@ public abstract class OGLSurfaceData extends SurfaceData {
                                            int width, int height);
 
     private native int getTextureTarget(long pData);
+    private native int getTextureID(long pData);
 
     static {
         if (!GraphicsEnvironment.isHeadless()) {
@@ -203,9 +209,14 @@ public abstract class OGLSurfaceData extends SurfaceData {
             oglRenderPipe = new OGLRenderer(rq);
             if (GraphicsPrimitive.tracingEnabled()) {
                 oglTextPipe = oglTextPipe.traceWrap();
-                oglRenderPipe = oglRenderPipe.traceWrap();
+                //The wrapped oglRenderPipe will wrap the AA pipe as well...
+                //oglAAPgramPipe = oglRenderPipe.traceWrap();
             }
-            oglTxRenderPipe = new PixelToShapeConverter(oglRenderPipe);
+            oglAAPgramPipe = oglRenderPipe.getAAParallelogramPipe();
+            oglTxRenderPipe =
+                new PixelToParallelogramConverter(oglRenderPipe,
+                                                  oglRenderPipe,
+                                                  1.0, 0.25, true);
 
             OGLBlitLoops.register();
             OGLMaskFill.register();
@@ -282,9 +293,7 @@ public abstract class OGLSurfaceData extends SurfaceData {
             break;
         }
 
-        if (success) {
-            textureTarget = getTextureTarget(getNativeOps());
-        } else {
+        if (!success) {
             throw new OutOfMemoryError("can't create offscreen surface");
         }
     }
@@ -323,7 +332,7 @@ public abstract class OGLSurfaceData extends SurfaceData {
      * Returns the OGLContext for the GraphicsConfig associated with this
      * surface.
      */
-    final OGLContext getContext() {
+    public final OGLContext getContext() {
         return graphicsConfig.getContext();
     }
 
@@ -337,7 +346,7 @@ public abstract class OGLSurfaceData extends SurfaceData {
     /**
      * Returns one of the surface type constants defined above.
      */
-    final int getType() {
+    public final int getType() {
         return type;
     }
 
@@ -346,8 +355,41 @@ public abstract class OGLSurfaceData extends SurfaceData {
      * for that texture (either GL_TEXTURE_2D or GL_TEXTURE_RECTANGLE_ARB).
      * Otherwise, this method will return zero.
      */
-    final int getTextureTarget() {
-        return textureTarget;
+    public final int getTextureTarget() {
+        return getTextureTarget(getNativeOps());
+    }
+
+    /**
+     * If this surface is backed by a texture object, returns the texture ID
+     * for that texture.
+     * Otherwise, this method will return zero.
+     */
+    public final int getTextureID() {
+        return getTextureID(getNativeOps());
+    }
+
+    /**
+     * Returns native resource of specified {@code resType} associated with
+     * this surface.
+     *
+     * Specifically, for {@code OGLSurfaceData} this method returns the
+     * the following:
+     * <pre>
+     * TEXTURE              - texture id
+     * </pre>
+     *
+     * Note: the resource returned by this method is only valid on the rendering
+     * thread.
+     *
+     * @return native resource of specified type or 0L if
+     * such resource doesn't exist or can not be retrieved.
+     * @see sun.java2d.pipe.hw.AccelSurface#getNativeResource
+     */
+    public long getNativeResource(int resType) {
+        if (resType == TEXTURE) {
+            return getTextureID();
+        }
+        return 0L;
     }
 
     public Raster getRaster(int x, int y, int w, int h) {
@@ -366,7 +408,7 @@ public abstract class OGLSurfaceData extends SurfaceData {
      */
     public boolean canRenderLCDText(SunGraphics2D sg2d) {
         return
-            graphicsConfig.isCapPresent(OGLContext.CAPS_EXT_LCD_SHADER) &&
+            graphicsConfig.isCapPresent(CAPS_EXT_LCD_SHADER) &&
             sg2d.compositeState <= SunGraphics2D.COMP_ISCOPY &&
             sg2d.paintState <= SunGraphics2D.PAINT_OPAQUECOLOR;
     }
@@ -405,7 +447,7 @@ public abstract class OGLSurfaceData extends SurfaceData {
             validated = true;
         }
 
-        PixelToShapeConverter txPipe = null;
+        PixelToParallelogramConverter txPipe = null;
         OGLRenderer nonTxPipe = null;
 
         if (sg2d.antialiasHint != SunHints.INTVAL_ANTIALIAS_ON) {
@@ -422,12 +464,28 @@ public abstract class OGLSurfaceData extends SurfaceData {
                 // custom paints handled by super.validatePipe() below
             }
         } else {
-            if (sg2d.paintState <= sg2d.PAINT_ALPHACOLOR &&
-                sg2d.compositeState == sg2d.COMP_XOR)
-            {
-                // install the solid pipes when AA and XOR are both enabled
-                txPipe = oglTxRenderPipe;
-                nonTxPipe = oglRenderPipe;
+            if (sg2d.paintState <= sg2d.PAINT_ALPHACOLOR) {
+                if (graphicsConfig.isCapPresent(CAPS_PS30) &&
+                    (sg2d.imageComp == CompositeType.SrcOverNoEa ||
+                     sg2d.imageComp == CompositeType.SrcOver))
+                {
+                    if (!validated) {
+                        super.validatePipe(sg2d);
+                        validated = true;
+                    }
+                    PixelToParallelogramConverter aaConverter =
+                        new PixelToParallelogramConverter(sg2d.shapepipe,
+                                                          oglAAPgramPipe,
+                                                          1.0/8.0, 0.499,
+                                                          false);
+                    sg2d.drawpipe = aaConverter;
+                    sg2d.fillpipe = aaConverter;
+                    sg2d.shapepipe = aaConverter;
+                } else if (sg2d.compositeState == sg2d.COMP_XOR) {
+                    // install the solid pipes when AA and XOR are both enabled
+                    txPipe = oglTxRenderPipe;
+                    nonTxPipe = oglRenderPipe;
+                }
             }
             // other cases handled by super.validatePipe() below
         }
@@ -443,7 +501,11 @@ public abstract class OGLSurfaceData extends SurfaceData {
                 sg2d.drawpipe = nonTxPipe;
                 sg2d.fillpipe = nonTxPipe;
             }
-            sg2d.shapepipe = nonTxPipe;
+            // Note that we use the transforming pipe here because it
+            // will examine the shape and possibly perform an optimized
+            // operation if it can be simplified.  The simplifications
+            // will be valid for all STROKE and TRANSFORM types.
+            sg2d.shapepipe = txPipe;
         } else {
             if (!validated) {
                 super.validatePipe(sg2d);
@@ -472,7 +534,7 @@ public abstract class OGLSurfaceData extends SurfaceData {
              * validation code will choose a more general software-based loop.
              */
             if (!OGLPaints.isValid(sg2d) ||
-                !graphicsConfig.isCapPresent(CAPS_EXT_MULTITEXTURE))
+                !graphicsConfig.isCapPresent(CAPS_MULTITEXTURE))
             {
                 return null;
             }
@@ -564,7 +626,7 @@ public abstract class OGLSurfaceData extends SurfaceData {
      * when using the basic GL_TEXTURE_2D target.
      */
     boolean isTexNonPow2Available() {
-        return graphicsConfig.isCapPresent(OGLContext.CAPS_EXT_TEXNONPOW2);
+        return graphicsConfig.isCapPresent(CAPS_TEXNONPOW2);
     }
 
     /**
@@ -573,6 +635,16 @@ public abstract class OGLSurfaceData extends SurfaceData {
      * GL_ARB_texture_rectangle extension is present).
      */
     boolean isTexRectAvailable() {
-        return graphicsConfig.isCapPresent(OGLContext.CAPS_EXT_TEXRECT);
+        return graphicsConfig.isCapPresent(CAPS_EXT_TEXRECT);
+    }
+
+    public Rectangle getNativeBounds() {
+        OGLRenderQueue rq = OGLRenderQueue.getInstance();
+        rq.lock();
+        try {
+            return new Rectangle(nativeWidth, nativeHeight);
+        } finally {
+            rq.unlock();
+        }
     }
 }

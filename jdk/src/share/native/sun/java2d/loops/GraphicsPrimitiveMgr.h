@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -501,7 +501,6 @@ extern JNIEXPORT jint JNICALL
 GrPrim_Sg2dGetEaRGB(JNIEnv *env, jobject sg2d);
 extern JNIEXPORT jint JNICALL
 GrPrim_Sg2dGetLCDTextContrast(JNIEnv *env, jobject sg2d);
-extern jint GrPrim_ColorGetRGB(JNIEnv *env, jobject color);
 
 /*
  * Data structure and functions to retrieve and use
