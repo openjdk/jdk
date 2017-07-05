@@ -64,7 +64,7 @@ class JvmtiBreakpoints;
 // to update its pointer to the address cache.
 //
 
-class GrowableElement : public CHeapObj {
+class GrowableElement : public CHeapObj<mtInternal> {
 public:
   virtual address getCacheValue()          =0;
   virtual bool equals(GrowableElement* e)  =0;
@@ -130,7 +130,7 @@ public:
 // Note   : typesafe wrapper for GrowableCache of JvmtiBreakpoint
 //
 
-class JvmtiBreakpointCache : public CHeapObj {
+class JvmtiBreakpointCache : public CHeapObj<mtInternal> {
 
 private:
   GrowableCache _cache;
@@ -258,7 +258,7 @@ public:
 // CHeap allocated to emphasize its similarity to JvmtiFramePops.
 //
 
-class JvmtiBreakpoints : public CHeapObj {
+class JvmtiBreakpoints : public CHeapObj<mtInternal> {
 private:
 
   JvmtiBreakpointCache _bps;
@@ -496,7 +496,7 @@ class JvmtiDeferredEvent VALUE_OBJ_CLASS_SPEC {
 class JvmtiDeferredEventQueue : AllStatic {
   friend class JvmtiDeferredEvent;
  private:
-  class QueueNode : public CHeapObj {
+  class QueueNode : public CHeapObj<mtInternal> {
    private:
     JvmtiDeferredEvent _event;
     QueueNode* _next;

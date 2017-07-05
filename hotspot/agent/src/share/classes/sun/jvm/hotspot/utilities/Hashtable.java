@@ -40,7 +40,7 @@ public class Hashtable extends BasicHashtable {
 
   private static synchronized void initialize(TypeDataBase db) {
     // just to confirm that type exists
-    Type type = db.lookupType("Hashtable<intptr_t>");
+    Type type = db.lookupType("IntptrHashtable");
   }
 
   // derived class may return Class<? extends HashtableEntry>

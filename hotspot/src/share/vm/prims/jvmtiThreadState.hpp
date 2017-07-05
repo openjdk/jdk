@@ -72,7 +72,7 @@ class JvmtiEnvThreadStateIterator : public StackObj {
 //
 // The Jvmti state for each thread (across all JvmtiEnv):
 // 1. Local table of enabled events.
-class JvmtiThreadState : public CHeapObj {
+class JvmtiThreadState : public CHeapObj<mtInternal> {
  private:
   friend class JvmtiEnv;
   JavaThread        *_thread;

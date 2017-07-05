@@ -116,7 +116,7 @@ public:
 };
 
 // Per-thread Statistics for synchronization
-class ThreadStatistics : public CHeapObj {
+class ThreadStatistics : public CHeapObj<mtInternal> {
 private:
   // The following contention statistics are only updated by
   // the thread owning these statistics when contention occurs.
@@ -186,7 +186,7 @@ public:
 };
 
 // Thread snapshot to represent the thread state and statistics
-class ThreadSnapshot : public CHeapObj {
+class ThreadSnapshot : public CHeapObj<mtInternal> {
 private:
   JavaThread* _thread;
   oop         _threadObj;
@@ -244,7 +244,7 @@ public:
   void        oops_do(OopClosure* f);
 };
 
-class ThreadStackTrace : public CHeapObj {
+class ThreadStackTrace : public CHeapObj<mtInternal> {
  private:
   JavaThread*                     _thread;
   int                             _depth;  // number of stack frames added
@@ -275,7 +275,7 @@ class ThreadStackTrace : public CHeapObj {
 // StackFrameInfo for keeping methodOop and bci during
 // stack walking for later construction of StackTraceElement[]
 // Java instances
-class StackFrameInfo : public CHeapObj {
+class StackFrameInfo : public CHeapObj<mtInternal> {
  private:
   methodOop           _method;
   int                 _bci;
@@ -299,7 +299,7 @@ class StackFrameInfo : public CHeapObj {
   void      print_on(outputStream* st) const;
 };
 
-class ThreadConcurrentLocks : public CHeapObj {
+class ThreadConcurrentLocks : public CHeapObj<mtInternal> {
 private:
   GrowableArray<instanceOop>* _owned_locks;
   ThreadConcurrentLocks*      _next;
@@ -356,7 +356,7 @@ class ThreadDumpResult : public StackObj {
   void                 oops_do(OopClosure* f);
 };
 
-class DeadlockCycle : public CHeapObj {
+class DeadlockCycle : public CHeapObj<mtInternal> {
  private:
   bool _is_deadlock;
   GrowableArray<JavaThread*>* _threads;

@@ -384,7 +384,7 @@ extern "C" {
     typedef void (*__exit_proc)(void);
 }
 
-class ExitProc : public CHeapObj {
+class ExitProc : public CHeapObj<mtInternal> {
  private:
   __exit_proc _proc;
   // void (*_proc)(void);

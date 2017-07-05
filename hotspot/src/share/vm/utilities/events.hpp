@@ -46,7 +46,7 @@
 // crash time.  This is a very generic interface that is mainly here
 // for completeness.  Normally the templated EventLogBase would be
 // subclassed to provide different log types.
-class EventLog : public CHeapObj {
+class EventLog : public CHeapObj<mtInternal> {
   friend class Events;
 
  private:

@@ -71,8 +71,8 @@ class PSScavenge: AllStatic {
   static HeapWord*           _young_generation_boundary; // The lowest address possible for the young_gen.
                                                          // This is used to decide if an oop should be scavenged,
                                                          // cards should be marked, etc.
-  static Stack<markOop>          _preserved_mark_stack; // List of marks to be restored after failed promotion
-  static Stack<oop>              _preserved_oop_stack;  // List of oops that need their mark restored.
+  static Stack<markOop, mtGC> _preserved_mark_stack; // List of marks to be restored after failed promotion
+  static Stack<oop, mtGC>     _preserved_oop_stack;  // List of oops that need their mark restored.
   static CollectorCounters*      _counters;         // collector performance counters
   static bool                    _promotion_failed;
 

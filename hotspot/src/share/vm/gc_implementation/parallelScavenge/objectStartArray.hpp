@@ -35,7 +35,7 @@
 // covered region.
 //
 
-class ObjectStartArray : public CHeapObj {
+class ObjectStartArray : public CHeapObj<mtGC> {
  friend class VerifyObjectStartArrayClosure;
 
  private:
