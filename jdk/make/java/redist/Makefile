@@ -251,9 +251,11 @@ endif # INCLUDE_SA
 #
 ifdef OPENJDK
 
-include $(BUILDDIR)/common/internal/BinaryPlugs.gmk
+  ifeq ($(IMPORT_BINARY_PLUGS),true)
+    include $(BUILDDIR)/common/internal/BinaryPlugs.gmk
 
-build: import-binary-plugs
+    build: import-binary-plugs
+  endif
 
 else # !OPENJDK
 

@@ -2327,6 +2327,46 @@ class MacroAssembler: public Assembler {
                                Register temp_reg, Register temp2_reg,
                                Label& no_such_interface);
 
+  // Test sub_klass against super_klass, with fast and slow paths.
+
+  // The fast path produces a tri-state answer: yes / no / maybe-slow.
+  // One of the three labels can be NULL, meaning take the fall-through.
+  // If super_check_offset is -1, the value is loaded up from super_klass.
+  // No registers are killed, except temp_reg and temp2_reg.
+  // If super_check_offset is not -1, temp2_reg is not used and can be noreg.
+  void check_klass_subtype_fast_path(Register sub_klass,
+                                     Register super_klass,
+                                     Register temp_reg,
+                                     Register temp2_reg,
+                                     Label* L_success,
+                                     Label* L_failure,
+                                     Label* L_slow_path,
+                RegisterConstant super_check_offset = RegisterConstant(-1),
+                Register instanceof_hack = noreg);
+
+  // The rest of the type check; must be wired to a corresponding fast path.
+  // It does not repeat the fast path logic, so don't use it standalone.
+  // The temp_reg can be noreg, if no temps are available.
+  // It can also be sub_klass or super_klass, meaning it's OK to kill that one.
+  // Updates the sub's secondary super cache as necessary.
+  void check_klass_subtype_slow_path(Register sub_klass,
+                                     Register super_klass,
+                                     Register temp_reg,
+                                     Register temp2_reg,
+                                     Register temp3_reg,
+                                     Register temp4_reg,
+                                     Label* L_success,
+                                     Label* L_failure);
+
+  // Simplified, combined version, good for typical uses.
+  // Falls through on failure.
+  void check_klass_subtype(Register sub_klass,
+                           Register super_klass,
+                           Register temp_reg,
+                           Register temp2_reg,
+                           Label& L_success);
+
+
   // Stack overflow checking
 
   // Note: this clobbers G3_scratch

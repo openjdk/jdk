@@ -35,6 +35,7 @@ include $(BUILDDIR)/common/Defs.gmk
 #
 # Files to compile
 #
+AUTO_JAVA_PRUNE = snmp
 AUTO_FILES_JAVA_DIRS = javax/management com/sun/jmx com/sun/management/jmx 
 
 #
