@@ -363,6 +363,9 @@ ALL_TARGETS += store-source-revision create-source-revision-tracker bootcycle-im
 ################################################################################
 # Docs targets
 
+docs-module-graphs:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-module-graphs)
+
 docs-javadoc:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f Javadoc.gmk docs-javadoc)
 
@@ -375,7 +378,7 @@ docs-zip:
 update-build-docs:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f UpdateBuildDocs.gmk)
 
-ALL_TARGETS += docs-javadoc docs-copy docs-zip update-build-docs
+ALL_TARGETS += docs-module-graphs docs-javadoc docs-copy docs-zip update-build-docs
 
 ################################################################################
 # Cross compilation support
@@ -772,6 +775,8 @@ else
 
   bootcycle-images: jdk-image
 
+  docs-module-graphs: exploded-image buildtools-modules 
+
   docs-javadoc: $(GENSRC_TARGETS) rmic
 
   # The gensrc step for jdk.jdi creates an html file that is used by docs-copy.
@@ -929,7 +934,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 endif
 
 # This target builds the documentation image
-docs-image: docs-javadoc docs-copy
+docs-image: docs-module-graphs docs-javadoc docs-copy
 
 # This target builds the test image
 test-image: prepare-test-image test-image-hotspot-jtreg-native \
