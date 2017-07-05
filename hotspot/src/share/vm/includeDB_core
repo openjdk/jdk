@@ -554,7 +554,6 @@ ciEnv.cpp                               jvmtiExport.hpp
 ciEnv.cpp                               linkResolver.hpp
 ciEnv.cpp                               methodDataOop.hpp
 ciEnv.cpp                               objArrayKlass.hpp
-ciEnv.cpp                               oop.hpp
 ciEnv.cpp                               oop.inline.hpp
 ciEnv.cpp                               oop.inline2.hpp
 ciEnv.cpp                               oopFactory.hpp
@@ -785,7 +784,6 @@ ciObjectFactory.hpp                     growableArray.hpp
 ciSignature.cpp                         allocation.inline.hpp
 ciSignature.cpp                         ciSignature.hpp
 ciSignature.cpp                         ciUtilities.hpp
-ciSignature.cpp                         oop.hpp
 ciSignature.cpp                         oop.inline.hpp
 ciSignature.cpp                         signature.hpp
 
@@ -950,7 +948,6 @@ classLoadingService.hpp                 perfData.hpp
 classify.cpp                            classify.hpp
 classify.cpp                            systemDictionary.hpp
 
-classify.hpp                            oop.hpp
 classify.hpp                            oop.inline.hpp
 
 codeBlob.cpp                            allocation.inline.hpp
@@ -1185,7 +1182,6 @@ compilerOracle.cpp                      handles.inline.hpp
 compilerOracle.cpp                      jniHandles.hpp
 compilerOracle.cpp                      klass.hpp
 compilerOracle.cpp                      methodOop.hpp
-compilerOracle.cpp                      oop.hpp
 compilerOracle.cpp                      oop.inline.hpp
 compilerOracle.cpp                      oopFactory.hpp
 compilerOracle.cpp                      resourceArea.hpp
@@ -1629,7 +1625,6 @@ frame.cpp                               methodDataOop.hpp
 frame.cpp                               methodOop.hpp
 frame.cpp                               monitorChunk.hpp
 frame.cpp                               nativeInst_<arch>.hpp
-frame.cpp                               oop.hpp
 frame.cpp                               oop.inline.hpp
 frame.cpp                               oop.inline2.hpp
 frame.cpp                               oopMapCache.hpp
@@ -1797,7 +1792,6 @@ generation.cpp                          genOopClosures.inline.hpp
 generation.cpp                          generation.hpp
 generation.cpp                          generation.inline.hpp
 generation.cpp                          java.hpp
-generation.cpp                          oop.hpp
 generation.cpp                          oop.inline.hpp
 generation.cpp                          spaceDecorator.hpp
 generation.cpp                          space.inline.hpp
@@ -2270,7 +2264,6 @@ java.cpp                                jvmtiExport.hpp
 java.cpp                                memprofiler.hpp
 java.cpp                                methodOop.hpp
 java.cpp                                objArrayOop.hpp
-java.cpp                                oop.hpp
 java.cpp                                oop.inline.hpp
 java.cpp                                oopFactory.hpp
 java.cpp                                sharedRuntime.hpp
@@ -2947,7 +2940,7 @@ mutex_<os_family>.inline.hpp            thread_<os_family>.inline.hpp
 nativeInst_<arch>.cpp                   assembler_<arch>.inline.hpp
 nativeInst_<arch>.cpp                   handles.hpp
 nativeInst_<arch>.cpp                   nativeInst_<arch>.hpp
-nativeInst_<arch>.cpp                   oop.hpp
+nativeInst_<arch>.cpp                   oop.inline.hpp
 nativeInst_<arch>.cpp                   ostream.hpp
 nativeInst_<arch>.cpp                   resourceArea.hpp
 nativeInst_<arch>.cpp                   sharedRuntime.hpp
@@ -3842,7 +3835,7 @@ stackMapTable.hpp                       stackMapFrame.hpp
 stackValue.cpp                          debugInfo.hpp
 stackValue.cpp                          frame.inline.hpp
 stackValue.cpp                          handles.inline.hpp
-stackValue.cpp                          oop.hpp
+stackValue.cpp                          oop.inline.hpp
 stackValue.cpp                          stackValue.hpp
 
 stackValue.hpp                          handles.hpp
@@ -4329,7 +4322,6 @@ typeArrayOop.hpp                        typeArrayKlass.hpp
 unhandledOops.cpp                       collectedHeap.hpp
 unhandledOops.cpp                       gcLocker.inline.hpp
 unhandledOops.cpp                       globalDefinitions.hpp
-unhandledOops.cpp                       oop.hpp
 unhandledOops.cpp                       oop.inline.hpp
 unhandledOops.cpp                       thread.hpp
 unhandledOops.cpp                       unhandledOops.hpp
@@ -4465,7 +4457,6 @@ vframe.cpp                              javaClasses.hpp
 vframe.cpp                              nmethod.hpp
 vframe.cpp                              objectMonitor.hpp
 vframe.cpp                              objectMonitor.inline.hpp
-vframe.cpp                              oop.hpp
 vframe.cpp                              oop.inline.hpp
 vframe.cpp                              oopMapCache.hpp
 vframe.cpp                              pcDesc.hpp
@@ -4577,7 +4568,6 @@ vmThread.cpp                            events.hpp
 vmThread.cpp                            interfaceSupport.hpp
 vmThread.cpp                            methodOop.hpp
 vmThread.cpp                            mutexLocker.hpp
-vmThread.cpp                            oop.hpp
 vmThread.cpp                            oop.inline.hpp
 vmThread.cpp                            os.hpp
 vmThread.cpp                            resourceArea.hpp

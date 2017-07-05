@@ -1048,7 +1048,11 @@ UNSAFE_ENTRY(jboolean, Unsafe_CompareAndSwapObject(JNIEnv *env, jobject unsafe, 
   oop e = JNIHandles::resolve(e_h);
   oop p = JNIHandles::resolve(obj);
   HeapWord* addr = (HeapWord *)index_oop_from_field_offset_long(p, offset);
-  update_barrier_set_pre((void*)addr, e);
+  if (UseCompressedOops) {
+    update_barrier_set_pre((narrowOop*)addr, e);
+  } else {
+    update_barrier_set_pre((oop*)addr, e);
+  }
   oop res = oopDesc::atomic_compare_exchange_oop(x, addr, e);
   jboolean success  = (res == e);
   if (success)
