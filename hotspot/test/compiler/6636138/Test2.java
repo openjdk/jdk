@@ -29,7 +29,7 @@
  * @run main/othervm -server -Xbatch -XX:CompileOnly=Test2.shift Test2
  */
 
-class Test2 {
+public class Test2 {
 
     public static void init(int src[]) {
         // Initialize the array
