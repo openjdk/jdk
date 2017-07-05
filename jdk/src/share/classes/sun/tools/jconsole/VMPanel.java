@@ -28,18 +28,16 @@ package sun.tools.jconsole;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.*;
-import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.List;
 import java.util.Timer;
-
 import javax.swing.*;
 import javax.swing.plaf.*;
 
+
 import com.sun.tools.jconsole.JConsolePlugin;
 import com.sun.tools.jconsole.JConsoleContext;
-import static com.sun.tools.jconsole.JConsoleContext.ConnectionState.*;
 
 import static sun.tools.jconsole.ProxyClient.*;
 
@@ -51,13 +49,10 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
     private int updateInterval;
     private String hostName;
     private int port;
-    private int vmid;
     private String userName;
     private String password;
     private String url;
     private VMInternalFrame vmIF = null;
-    private static final String windowsLaF =
-            "com.sun.java.swing.plaf.windows.WindowsLookAndFeel";
     private static ArrayList<TabInfo> tabInfos = new ArrayList<TabInfo>();
     private boolean wasConnected = false;
 
@@ -100,7 +95,6 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
         this.updateInterval = updateInterval;
         this.hostName = proxyClient.getHostName();
         this.port = proxyClient.getPort();
-        this.vmid = proxyClient.getVmid();
         this.userName = proxyClient.getUserName();
         this.password = proxyClient.getPassword();
         this.url = proxyClient.getUrl();
@@ -186,9 +180,9 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
     public String getToolTipText(MouseEvent event) {
         if (connectedIconBounds.contains(event.getPoint())) {
             if (isConnected()) {
-                return getText("Connected. Click to disconnect.");
+                return Messages.CONNECTED_PUNCTUATION_CLICK_TO_DISCONNECT_;
             } else {
-                return getText("Disconnected. Click to connect.");
+                return Messages.DISCONNECTED_PUNCTUATION_CLICK_TO_CONNECT_;
             }
         } else {
             return super.getToolTipText(event);
@@ -219,7 +213,7 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
 
     private Tab instantiate(TabInfo tabInfo) {
         try {
-            Constructor con = tabInfo.tabClass.getConstructor(VMPanel.class);
+            Constructor<?> con = tabInfo.tabClass.getConstructor(VMPanel.class);
             return (Tab) con.newInstance(this);
         } catch (Exception ex) {
             System.err.println(ex);
@@ -354,7 +348,7 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
     private void onConnecting() {
         time0 = System.currentTimeMillis();
 
-        final JConsole jc = (JConsole) SwingUtilities.getWindowAncestor(this);
+        SwingUtilities.getWindowAncestor(this);
 
         String connectionName = getConnectionName();
         progressBar = new JProgressBar();
@@ -363,9 +357,9 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
         progressPanel.add(progressBar);
 
         Object[] message = {
-            "<html><h3>" + getText("connectingTo1", connectionName) + "</h3></html>",
+            "<html><h3>" + Resources.format(Messages.CONNECTING_TO1, connectionName) + "</h3></html>",
             progressPanel,
-            "<html><b>" + getText("connectingTo2", connectionName) + "</b></html>"
+            "<html><b>" + Resources.format(Messages.CONNECTING_TO2, connectionName) + "</b></html>"
         };
 
         optionPane =
@@ -373,7 +367,7 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
                 message,
                 JOptionPane.DEFAULT_OPTION,
                 JOptionPane.INFORMATION_MESSAGE, null,
-                new String[]{getText("Cancel")},
+                new String[]{Messages.CANCEL},
                 0);
 
 
@@ -409,7 +403,7 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
         if (vmIF != null) {
             String displayName = getDisplayName();
             if (!proxyClient.isConnected()) {
-                displayName = getText("ConnectionName (disconnected)", displayName);
+                displayName = Resources.format(Messages.CONNECTION_NAME__DISCONNECTED_, displayName);
             }
             vmIF.setTitle(displayName);
         }
@@ -458,25 +452,18 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
     private void vmPanelDied() {
         disconnect();
 
-        final JConsole jc = (JConsole) SwingUtilities.getWindowAncestor(this);
-
         JOptionPane optionPane;
-
-        final String connectStr = getText("Connect");
-        final String reconnectStr = getText("Reconnect");
-        final String cancelStr = getText("Cancel");
-
         String msgTitle, msgExplanation, buttonStr;
 
         if (wasConnected) {
             wasConnected = false;
-            msgTitle = getText("connectionLost1");
-            msgExplanation = getText("connectionLost2", getConnectionName());
-            buttonStr = reconnectStr;
+            msgTitle = Messages.CONNECTION_LOST1;
+            msgExplanation = Resources.format(Messages.CONNECTING_TO2, getConnectionName());
+            buttonStr = Messages.RECONNECT;
         } else {
-            msgTitle = getText("connectionFailed1");
-            msgExplanation = getText("connectionFailed2", getConnectionName());
-            buttonStr = connectStr;
+            msgTitle =Messages.CONNECTION_FAILED1;
+            msgExplanation = Resources.format(Messages.CONNECTION_FAILED2, getConnectionName());
+            buttonStr = Messages.CONNECT;
         }
 
         optionPane =
@@ -485,7 +472,7 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
                 "<b>" + msgExplanation + "</b>",
                 JOptionPane.DEFAULT_OPTION,
                 JOptionPane.WARNING_MESSAGE, null,
-                new String[]{buttonStr, cancelStr},
+                new String[]{buttonStr, Messages.CANCEL},
                 0);
 
         optionPane.addPropertyChangeListener(new PropertyChangeListener() {
@@ -494,7 +481,7 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
                 if (event.getPropertyName().equals(JOptionPane.VALUE_PROPERTY)) {
                     Object value = event.getNewValue();
 
-                    if (value == reconnectStr || value == connectStr) {
+                    if (value == Messages.RECONNECT || value == Messages.CONNECT) {
                         connect();
                     } else if (!everConnected) {
                         try {
@@ -641,11 +628,6 @@ public class VMPanel extends JTabbedPane implements PropertyChangeListener {
             this.name = name;
             this.tabVisible = tabVisible;
         }
-    }
-
-    // Convenience methods
-    private static String getText(String key, Object... args) {
-        return Resources.getText(key, args);
     }
 
     private void createPluginTabs() {

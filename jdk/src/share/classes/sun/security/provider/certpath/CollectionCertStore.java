@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.security.cert.CRL;
 import java.util.Collection;
 import java.util.ConcurrentModificationException;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.security.cert.CertSelector;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreException;
@@ -114,6 +113,7 @@ public class CollectionCertStore extends CertStoreSpi {
      *         match the specified selector
      * @throws CertStoreException if an exception occurs
      */
+    @Override
     public Collection<Certificate> engineGetCertificates
             (CertSelector selector) throws CertStoreException {
         if (coll == null) {
@@ -122,18 +122,15 @@ public class CollectionCertStore extends CertStoreSpi {
         // Tolerate a few ConcurrentModificationExceptions
         for (int c = 0; c < 10; c++) {
             try {
-                HashSet<Certificate> result = new HashSet<Certificate>();
-                Iterator<?> i = coll.iterator();
+                HashSet<Certificate> result = new HashSet<>();
                 if (selector != null) {
-                    while (i.hasNext()) {
-                        Object o = i.next();
+                    for (Object o : coll) {
                         if ((o instanceof Certificate) &&
                             selector.match((Certificate) o))
                             result.add((Certificate)o);
                     }
                 } else {
-                    while (i.hasNext()) {
-                        Object o = i.next();
+                    for (Object o : coll) {
                         if (o instanceof Certificate)
                             result.add((Certificate)o);
                     }
@@ -157,6 +154,7 @@ public class CollectionCertStore extends CertStoreSpi {
      *         match the specified selector
      * @throws CertStoreException if an exception occurs
      */
+    @Override
     public Collection<CRL> engineGetCRLs(CRLSelector selector)
         throws CertStoreException
     {
@@ -166,22 +164,19 @@ public class CollectionCertStore extends CertStoreSpi {
         // Tolerate a few ConcurrentModificationExceptions
         for (int c = 0; c < 10; c++) {
             try {
-                HashSet<CRL> result = new HashSet<CRL>();
-                Iterator<?> i = coll.iterator();
+                HashSet<CRL> result = new HashSet<>();
                 if (selector != null) {
-                    while (i.hasNext()) {
-                        Object o = i.next();
+                    for (Object o : coll) {
                         if ((o instanceof CRL) && selector.match((CRL) o))
                             result.add((CRL)o);
                     }
                 } else {
-                    while (i.hasNext()) {
-                        Object o = i.next();
+                    for (Object o : coll) {
                         if (o instanceof CRL)
                             result.add((CRL)o);
                     }
                 }
-                return(result);
+                return result;
             } catch (ConcurrentModificationException e) { }
         }
         throw new ConcurrentModificationException("Too many "

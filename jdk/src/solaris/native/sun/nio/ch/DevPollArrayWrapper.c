@@ -28,9 +28,7 @@
 #include "jvm.h"
 #include "jlong.h"
 #include "sun_nio_ch_DevPollArrayWrapper.h"
-#include "java_lang_Integer.h"
 #include <sys/poll.h>
-#include <sys/resource.h>
 #include <unistd.h>
 #include <sys/time.h>
 
@@ -118,27 +116,20 @@ JNIEXPORT void JNICALL
 Java_sun_nio_ch_DevPollArrayWrapper_register(JNIEnv *env, jobject this,
                                              jint wfd, jint fd, jint mask)
 {
-    struct pollfd a[2];
-    unsigned char *pollBytes = (unsigned char *)&a[0];
-    unsigned char *pollEnd = pollBytes + sizeof(struct pollfd) * 2;
+    struct pollfd a[1];
+    int n;
 
-    /* We clear it first, otherwise any entries between poll invocations
-       get OR'd together */
     a[0].fd = fd;
-    a[0].events = POLLREMOVE;
+    a[0].events = mask;
     a[0].revents = 0;
 
-    a[1].fd = fd;
-    a[1].events = mask;
-    a[1].revents = 0;
-
-    while (pollBytes < pollEnd) {
-        int bytesWritten = write(wfd, pollBytes, (int)(pollEnd - pollBytes));
-        if (bytesWritten < 0) {
+    n = write(wfd, &a[0], sizeof(a));
+    if (n != sizeof(a)) {
+        if (n < 0) {
             JNU_ThrowIOExceptionWithLastError(env, "Error writing pollfds");
-            return;
+        } else {
+            JNU_ThrowIOException(env, "Unexpected number of bytes written");
         }
-        pollBytes += bytesWritten;
     }
 }
 
@@ -183,21 +174,6 @@ Java_sun_nio_ch_DevPollArrayWrapper_poll0(JNIEnv *env, jobject this,
         return -1;
     }
     return result;
-}
-
-JNIEXPORT jint JNICALL
-Java_sun_nio_ch_DevPollArrayWrapper_fdLimit(JNIEnv *env, jclass this)
-{
-    struct rlimit rlp;
-    if (getrlimit(RLIMIT_NOFILE, &rlp) < 0) {
-        JNU_ThrowIOExceptionWithLastError(env,
-                                          "getrlimit failed");
-    }
-    if (rlp.rlim_max < 0 || rlp.rlim_max > java_lang_Integer_MAX_VALUE) {
-        return java_lang_Integer_MAX_VALUE;
-    } else {
-        return (jint)rlp.rlim_max;
-    }
 }
 
 JNIEXPORT void JNICALL

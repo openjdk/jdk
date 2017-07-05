@@ -28,33 +28,21 @@ package sun.tools.jconsole.inspector;
 import javax.swing.*;
 import javax.swing.event.*;
 import javax.swing.table.*;
-import javax.swing.tree.*;
-import javax.swing.border.*;
 import java.awt.BorderLayout;
-import java.awt.GridLayout;
 import java.awt.FlowLayout;
 import java.awt.Component;
-import java.awt.EventQueue;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Rectangle;
 import java.awt.event.*;
-import java.awt.Insets;
 import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.util.*;
-import java.io.*;
 import java.lang.reflect.Array;
 
-import javax.management.*;
 import javax.management.openmbean.*;
 
-import sun.tools.jconsole.BorderedComponent;
 import sun.tools.jconsole.JConsole;
-import sun.tools.jconsole.LabeledComponent;
+import sun.tools.jconsole.Messages;
 import sun.tools.jconsole.Resources;
-import sun.tools.jconsole.VariableGridLayout;
 
 @SuppressWarnings("serial")
 public class XOpenTypeViewer extends JPanel implements ActionListener {
@@ -65,9 +53,9 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
     XOpenTypeDataListener listener = new XOpenTypeDataListener();
 
     private static final String compositeNavigationSingle =
-            Resources.getText("MBeansTab.compositeNavigationSingle");
+            Messages.MBEANS_TAB_COMPOSITE_NAVIGATION_SINGLE;
     private static final String tabularNavigationSingle =
-            Resources.getText("MBeansTab.tabularNavigationSingle");
+            Messages.MBEANS_TAB_TABULAR_NAVIGATION_SINGLE;
 
     private static TableCellEditor editor =
             new Utils.ReadOnlyTableCellEditor(new JTextField());
@@ -121,7 +109,6 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
 
     static abstract class XOpenTypeData extends JTable {
         XOpenTypeData parent;
-        private Color defaultColor;
         protected int col1Width = -1;
         protected int col2Width = -1;
         private boolean init;
@@ -139,7 +126,7 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
                 Object value = getModel().getValueAt(row, col);
                 if (value != null) {
                     if(isClickableElement(value))
-                        return Resources.getText("Double click to visualize")
+                        return Messages.DOUBLE_CLICK_TO_VISUALIZE
                         + ". " + value.toString();
                     else
                         return value.toString();
@@ -265,7 +252,7 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
                 Object c1 = o1.get(key);
                 Object c2 = o2.get(key);
                 if (c1 instanceof Comparable && c2 instanceof Comparable) {
-                    int result = ((Comparable) c1).compareTo(c2);
+                    int result = ((Comparable<Object>) c1).compareTo(c2);
                     if (result != 0)
                         return result;
                 }
@@ -358,7 +345,7 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
 
     static class XCompositeData extends XOpenTypeData {
         protected final String[] columnNames = {
-            Resources.getText("Name"), Resources.getText("Value")
+            Messages.NAME, Messages.VALUE
         };
         CompositeData composite;
 
@@ -398,8 +385,8 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
 
         private void load(CompositeData data) {
             CompositeType type = data.getCompositeType();
-            Set keys = type.keySet();
-            Iterator it = keys.iterator();
+            Set<String> keys = type.keySet();
+            Iterator<String> it = keys.iterator();
             Object[] rowData = new Object[2];
             while (it.hasNext()) {
                 String key = (String) it.next();
@@ -408,13 +395,13 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
                 if (val == null) {
                     rowData[1] = "";
                 } else {
-                    OpenType openType = type.getType(key);
+                    OpenType<?> openType = type.getType(key);
                     if (openType instanceof CompositeType) {
                         rowData[1] =
                                 new XCompositeData(this, (CompositeData) val);
                     } else if (openType instanceof ArrayType) {
                         rowData[1] =
-                                new XArrayData(this, (ArrayType) openType, val);
+                                new XArrayData(this, (ArrayType<?>) openType, val);
                     } else if (openType instanceof SimpleType) {
                         rowData[1] = val;
                     } else if (openType instanceof TabularType) {
@@ -453,21 +440,21 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
 
         private int dimension;
         private int size;
-        private OpenType elemType;
+        private OpenType<?> elemType;
         private Object val;
         private boolean isCompositeType;
         private boolean isTabularType;
         private int currentIndex;
         private CompositeData[] elements;
-        private final String[] arrayColumns = {Resources.getText("Value")};
+        private final String[] arrayColumns = {Messages.VALUE};
         private Font normalFont, boldFont;
 
-        XArrayData(XOpenTypeData parent, ArrayType type, Object val) {
+        XArrayData(XOpenTypeData parent, ArrayType<?> type, Object val) {
             this(parent, type.getDimension(), type.getElementOpenType(), val);
         }
 
         XArrayData(XOpenTypeData parent, int dimension,
-                OpenType elemType, Object val) {
+                OpenType<?> elemType, Object val) {
             super(parent);
             this.dimension = dimension;
             this.elemType = elemType;
@@ -486,10 +473,9 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
 
         public void viewed(XOpenTypeViewer viewer) throws Exception {
             if (size == 0)
-                throw new Exception(Resources.getText("Empty array"));
+                throw new Exception(Messages.EMPTY_ARRAY);
             if (dimension > 1)
-                throw new Exception(Resources.getText("Dimension is not " +
-                        "supported:") +
+                throw new Exception(Messages.DIMENSION_IS_NOT_SUPPORTED_COLON +
                         dimension);
             super.viewed(viewer);
         }
@@ -565,7 +551,7 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
 
         public String toString() {
             if (dimension > 1) {
-                return Resources.getText("Dimension is not supported:") +
+                return Messages.DIMENSION_IS_NOT_SUPPORTED_COLON +
                         dimension;
             } else {
                 return elemType.getTypeName() + "[" + size + "]";
@@ -694,7 +680,7 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
                     tabular.canIncrement() || tabular.canDecrement();
             if (hasMoreThanOneElement) {
                 tabularLabel.setText(
-                        Resources.getText("MBeansTab.tabularNavigationMultiple",
+                        Resources.format(Messages.MBEANS_TAB_TABULAR_NAVIGATION_MULTIPLE,
                         String.format("%d", tabular.getSelectedElementIndex() + 1),
                         String.format("%d", tabular.getElementCount())));
             } else {
@@ -717,7 +703,7 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
                     array.canIncrement() || array.canDecrement();
             if (hasMoreThanOneElement) {
                 compositeLabel.setText(
-                        Resources.getText("MBeansTab.compositeNavigationMultiple",
+                        Resources.format(Messages.MBEANS_TAB_COMPOSITE_NAVIGATION_MULTIPLE,
                         String.format("%d", array.getSelectedElementIndex() + 1),
                         String.format("%d", array.getElementCount())));
             } else {
@@ -781,8 +767,8 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        tabularPrev = new JButton(Resources.getText("<"));
-        tabularNext = new JButton(Resources.getText(">"));
+        tabularPrev = new JButton(Messages.LESS_THAN);
+        tabularNext = new JButton(Messages.GREATER_THAN);
         JPanel tabularButtons = new JPanel(new FlowLayout(FlowLayout.LEFT));
         tabularButtons.add(tabularPrev);
         tabularPrev.addActionListener(this);
@@ -793,13 +779,13 @@ public class XOpenTypeViewer extends JPanel implements ActionListener {
         tabularNext.addActionListener(this);
         tabularButtons.setBackground(Color.white);
 
-        prev = new JButton(Resources.getText("<<"));
+        prev = new JButton(Messages.A_LOT_LESS_THAN);
         prev.addActionListener(this);
         buttons.add(prev);
 
-        incr = new JButton(Resources.getText(">"));
+        incr = new JButton(Messages.GREATER_THAN);
         incr.addActionListener(this);
-        decr = new JButton(Resources.getText("<"));
+        decr = new JButton(Messages.LESS_THAN);
         decr.addActionListener(this);
 
         JPanel array = new JPanel();

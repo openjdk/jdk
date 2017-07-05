@@ -50,6 +50,7 @@
             <fileset dir="${classes.dir}">
                 <include name="sun/tools/jconsole/**/*.class"/>
                 <include name="com/sun/tools/jconsole/**/*.class"/>
+                <include name="sun/tools/jconsole/resources/*.properties"/>
                 <include name="sun/tools/jconsole/resources/*.gif"/>
                 <include name="sun/tools/jconsole/resources/*.png"/>
             </fileset>

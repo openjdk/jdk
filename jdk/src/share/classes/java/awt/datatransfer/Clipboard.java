@@ -35,7 +35,6 @@ import java.io.IOException;
 
 import sun.awt.EventListenerAggregate;
 
-
 /**
  * A class that implements a mechanism to transfer data using
  * cut/copy/paste operations.

@@ -29,7 +29,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.beans.*;
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
 import java.net.*;
 import java.util.*;
 import java.util.List;
@@ -38,8 +37,6 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.event.*;
 import javax.swing.plaf.*;
-import javax.management.remote.JMXServiceURL;
-import javax.management.remote.JMXConnector;
 import javax.security.auth.login.FailedLoginException;
 import javax.net.ssl.SSLHandshakeException;
 
@@ -47,7 +44,6 @@ import com.sun.tools.jconsole.JConsolePlugin;
 
 import sun.net.util.IPAddressUtil;
 
-import static sun.tools.jconsole.Resources.*;
 import static sun.tools.jconsole.Utilities.*;
 
 @SuppressWarnings("serial")
@@ -68,7 +64,7 @@ public class JConsole extends JFrame
                 try {
                     UIManager.setLookAndFeel(systemLaF);
                 } catch (Exception e) {
-                    System.err.println(Resources.getText("JConsole: ", e.getMessage()));
+                    System.err.println(Resources.format(Messages.JCONSOLE_COLON_, e.getMessage()));
                 }
             }
         }
@@ -87,7 +83,7 @@ public class JConsole extends JFrame
 
 
     private final static String title =
-        Resources.getText("Java Monitoring & Management Console");
+        Messages.JAVA_MONITORING___MANAGEMENT_CONSOLE;
     public final static String ROOT_URL =
         "service:jmx:";
 
@@ -116,7 +112,7 @@ public class JConsole extends JFrame
 
         setRootPane(new FixedJRootPane());
         setAccessibleDescription(this,
-                                 getText("JConsole.accessibleDescription"));
+                                 Messages.JCONSOLE_ACCESSIBLE_DESCRIPTION);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         menuBar = new JMenuBar();
@@ -124,12 +120,12 @@ public class JConsole extends JFrame
 
         // TODO: Use Actions !
 
-        JMenu connectionMenu = new JMenu(getText("Connection"));
-        connectionMenu.setMnemonic(getMnemonicInt("Connection"));
+        JMenu connectionMenu = new JMenu(Messages.CONNECTION);
+        connectionMenu.setMnemonic(Resources.getMnemonicInt(Messages.CONNECTION));
         menuBar.add(connectionMenu);
         if(hotspot) {
-            hotspotMI = new JMenuItem(getText("Hotspot MBeans..."));
-            hotspotMI.setMnemonic(getMnemonicInt("Hotspot MBeans..."));
+            hotspotMI = new JMenuItem(Messages.HOTSPOT_MBEANS_ELLIPSIS);
+            hotspotMI.setMnemonic(Resources.getMnemonicInt(Messages.HOTSPOT_MBEANS_ELLIPSIS));
             hotspotMI.setAccelerator(KeyStroke.
                                      getKeyStroke(KeyEvent.VK_H,
                                                   InputEvent.CTRL_MASK));
@@ -139,8 +135,8 @@ public class JConsole extends JFrame
             connectionMenu.addSeparator();
         }
 
-        connectMI = new JMenuItem(Resources.getText("New Connection..."));
-        connectMI.setMnemonic(getMnemonicInt("New Connection..."));
+        connectMI = new JMenuItem(Messages.NEW_CONNECTION_ELLIPSIS);
+        connectMI.setMnemonic(Resources.getMnemonicInt(Messages.NEW_CONNECTION_ELLIPSIS));
         connectMI.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N,
                                                         InputEvent.CTRL_MASK));
         connectMI.addActionListener(this);
@@ -148,27 +144,27 @@ public class JConsole extends JFrame
 
         connectionMenu.addSeparator();
 
-        exitMI = new JMenuItem(Resources.getText("Exit"));
-        exitMI.setMnemonic(getMnemonicInt("Exit"));
+        exitMI = new JMenuItem(Messages.EXIT);
+        exitMI.setMnemonic(Resources.getMnemonicInt(Messages.EXIT));
         exitMI.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F4,
                                                      InputEvent.ALT_MASK));
         exitMI.addActionListener(this);
         connectionMenu.add(exitMI);
 
 
-        JMenu helpMenu = new JMenu(getText("HelpMenu.title"));
-        helpMenu.setMnemonic(getMnemonicInt("HelpMenu.title"));
+        JMenu helpMenu = new JMenu(Messages.HELP_MENU_TITLE);
+        helpMenu.setMnemonic(Resources.getMnemonicInt(Messages.HELP_MENU_TITLE));
         menuBar.add(helpMenu);
 
         if (AboutDialog.isBrowseSupported()) {
-            userGuideMI = new JMenuItem(getText("HelpMenu.UserGuide.title"));
-            userGuideMI.setMnemonic(getMnemonicInt("HelpMenu.UserGuide.title"));
+            userGuideMI = new JMenuItem(Messages.HELP_MENU_USER_GUIDE_TITLE);
+            userGuideMI.setMnemonic(Resources.getMnemonicInt(Messages.HELP_MENU_USER_GUIDE_TITLE));
             userGuideMI.addActionListener(this);
             helpMenu.add(userGuideMI);
             helpMenu.addSeparator();
         }
-        aboutMI = new JMenuItem(getText("HelpMenu.About.title"));
-        aboutMI.setMnemonic(getMnemonicInt("HelpMenu.About.title"));
+        aboutMI = new JMenuItem(Messages.HELP_MENU_ABOUT_TITLE);
+        aboutMI.setMnemonic(Resources.getMnemonicInt(Messages.HELP_MENU_ABOUT_TITLE));
         aboutMI.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
         aboutMI.addActionListener(this);
         helpMenu.add(aboutMI);
@@ -191,8 +187,8 @@ public class JConsole extends JFrame
             ((BorderLayout)cp.getLayout()).
             getLayoutComponent(BorderLayout.CENTER);
 
-        windowMenu = new WindowMenu(Resources.getText("Window"));
-        windowMenu.setMnemonic(getMnemonicInt("Window"));
+        windowMenu = new WindowMenu(Messages.WINDOW);
+        windowMenu.setMnemonic(Resources.getMnemonicInt(Messages.WINDOW));
         // Add Window menu before Help menu
         menuBar.add(windowMenu, menuBar.getComponentCount() - 1);
 
@@ -219,25 +215,25 @@ public class JConsole extends JFrame
         WindowMenu(String text) {
             super(text);
 
-            cascadeMI = new JMenuItem(Resources.getText("Cascade"));
-            cascadeMI.setMnemonic(getMnemonicInt("Cascade"));
+            cascadeMI = new JMenuItem(Messages.CASCADE);
+            cascadeMI.setMnemonic(Resources.getMnemonicInt(Messages.CASCADE));
             cascadeMI.addActionListener(JConsole.this);
             add(cascadeMI);
 
-            tileMI = new JMenuItem(Resources.getText("Tile"));
-            tileMI.setMnemonic(getMnemonicInt("Tile"));
+            tileMI = new JMenuItem(Messages.TILE);
+            tileMI.setMnemonic(Resources.getMnemonicInt(Messages.TILE));
             tileMI.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T,
                                                          InputEvent.CTRL_MASK));
             tileMI.addActionListener(JConsole.this);
             add(tileMI);
 
-            minimizeAllMI = new JMenuItem(Resources.getText("Minimize All"));
-            minimizeAllMI.setMnemonic(getMnemonicInt("Minimize All"));
+            minimizeAllMI = new JMenuItem(Messages.MINIMIZE_ALL);
+            minimizeAllMI.setMnemonic(Resources.getMnemonicInt(Messages.MINIMIZE_ALL));
             minimizeAllMI.addActionListener(JConsole.this);
             add(minimizeAllMI);
 
-            restoreAllMI = new JMenuItem(Resources.getText("Restore All"));
-            restoreAllMI.setMnemonic(getMnemonicInt("Restore All"));
+            restoreAllMI = new JMenuItem(Messages.RESTORE_ALL);
+            restoreAllMI.setMnemonic(Resources.getMnemonicInt(Messages.RESTORE_ALL));
             restoreAllMI.addActionListener(JConsole.this);
             add(restoreAllMI);
 
@@ -721,7 +717,7 @@ public class JConsole extends JFrame
     }
 
     private String errorMessage(Exception ex) {
-       String msg = Resources.getText("Connection failed");
+       String msg = Messages.CONNECTION_FAILED;
        if (ex instanceof IOException || ex instanceof SecurityException) {
            Throwable cause = null;
            Throwable c = ex.getCause();
@@ -732,7 +728,7 @@ public class JConsole extends JFrame
            if (cause instanceof ConnectException) {
                return msg + ": " + cause.getMessage();
            } else if (cause instanceof UnknownHostException) {
-               return Resources.getText("Unknown Host", cause.getMessage());
+               return Resources.format(Messages.UNKNOWN_HOST, cause.getMessage());
            } else if (cause instanceof NoRouteToHostException) {
                return msg + ": " + cause.getMessage();
            } else if (cause instanceof FailedLoginException) {
@@ -741,7 +737,7 @@ public class JConsole extends JFrame
                return msg + ": "+ cause.getMessage();
            }
         } else if (ex instanceof MalformedURLException) {
-           return Resources.getText("Invalid URL", ex.getMessage());
+           return Resources.format(Messages.INVALID_URL, ex.getMessage());
         }
         return msg + ": " + ex.getMessage();
     }
@@ -770,7 +766,7 @@ public class JConsole extends JFrame
 
 
     private static void usage() {
-        System.err.println(Resources.getText("zz usage text", "jconsole"));
+        System.err.println(Resources.format(Messages.ZZ_USAGE_TEXT, "jconsole"));
     }
 
     private static void mainInit(final List<String> urls,
@@ -1003,13 +999,13 @@ public class JConsole extends JFrame
                 pluginService = plugins;
             } catch (ServiceConfigurationError e) {
                 // Error occurs during initialization of plugin
-                System.out.println(Resources.getText("Fail to load plugin",
+                System.out.println(Resources.format(Messages.FAIL_TO_LOAD_PLUGIN,
                                    e.getMessage()));
             } catch (MalformedURLException e) {
                 if (JConsole.isDebug()) {
                     e.printStackTrace();
                 }
-                System.out.println(Resources.getText("Invalid plugin path",
+                System.out.println(Resources.format(Messages.INVALID_PLUGIN_PATH,
                                    e.getMessage()));
             }
         }

@@ -35,7 +35,8 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.*;
 import javax.swing.table.*;
-import sun.tools.jconsole.Resources;
+
+import sun.tools.jconsole.Messages;
 
 import static sun.tools.jconsole.Utilities.*;
 
@@ -43,11 +44,11 @@ import static sun.tools.jconsole.Utilities.*;
 public class XMBeanInfo extends JPanel {
 
     private static final Color lightYellow = new Color(255, 255, 128);
-    private final int NAME_COLUMN = 0;
+     private final int NAME_COLUMN = 0;
     private final int VALUE_COLUMN = 1;
     private final String[] columnNames = {
-        Resources.getText("Name"),
-        Resources.getText("Value")
+        Messages.NAME,
+        Messages.VALUE
     };
     private JTable infoTable = new JTable();
     private JTable descTable = new JTable();
@@ -163,7 +164,7 @@ public class XMBeanInfo extends JPanel {
         descTable.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
         JScrollPane descTableScrollPane = new JScrollPane(descTable);
         descBorderPanel.setBorder(
-                BorderFactory.createTitledBorder(Resources.getText("Descriptor")));
+            BorderFactory.createTitledBorder(Messages.DESCRIPTOR));
         descBorderPanel.add(descTableScrollPane);
         // Add the two tables to the grid
         //
@@ -230,20 +231,20 @@ public class XMBeanInfo extends JPanel {
         emptyInfoTable();
         emptyDescTable();
         ((TitledBorder) infoBorderPanel.getBorder()).setTitle(
-                Resources.getText("MBeanInfo"));
-        String text = Resources.getText("Info") + ":";
+                Messages.MBEAN_INFO);
+        String text = Messages.INFO + ":";
         DefaultTableModel tableModel = (DefaultTableModel) infoTable.getModel();
         Object rowData[] = new Object[2];
         rowData[0] = new TableRowDivider(text);
         rowData[1] = new TableRowDivider("");
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("ObjectName");
+        rowData[0] = Messages.OBJECT_NAME;
         rowData[1] = mbean.getObjectName();
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("ClassName");
+        rowData[0] = Messages.CLASS_NAME;
         rowData[1] = mbeanInfo.getClassName();
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("Description");
+        rowData[0] = Messages.DESCRIPTION;
         rowData[1] = mbeanInfo.getDescription();
         tableModel.addRow(rowData);
         addDescriptor(mbeanInfo.getDescriptor(), text);
@@ -252,13 +253,13 @@ public class XMBeanInfo extends JPanel {
         int i = 0;
         for (MBeanConstructorInfo mbci : mbeanInfo.getConstructors()) {
             addMBeanConstructorInfo(mbci,
-                    Resources.getText("Constructor") + "-" + i + ":");
+                    Messages.CONSTRUCTOR + "-" + i + ":");
             // MBeanParameterInfo
             //
             int j = 0;
             for (MBeanParameterInfo mbpi : mbci.getSignature()) {
                 addMBeanParameterInfo(mbpi,
-                        Resources.getText("Parameter") + "-" + i + "-" + j + ":");
+                        Messages.PARAMETER + "-" + i + "-" + j + ":");
                 j++;
             }
             i++;
@@ -271,29 +272,29 @@ public class XMBeanInfo extends JPanel {
         emptyInfoTable();
         emptyDescTable();
         ((TitledBorder) infoBorderPanel.getBorder()).setTitle(
-                Resources.getText("MBeanAttributeInfo"));
-        String text = Resources.getText("Attribute") + ":";
+                Messages.MBEAN_ATTRIBUTE_INFO);
+        String text = Messages.ATTRIBUTE + ":";
         DefaultTableModel tableModel = (DefaultTableModel) infoTable.getModel();
         Object rowData[] = new Object[2];
         rowData[0] = new TableRowDivider(text);
         rowData[1] = new TableRowDivider("");
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("Name");
+        rowData[0] = Messages.NAME;
         rowData[1] = mbai.getName();
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("Description");
+        rowData[0] = Messages.DESCRIPTION;
         rowData[1] = mbai.getDescription();
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("Readable");
+        rowData[0] = Messages.READABLE;
         rowData[1] = mbai.isReadable();
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("Writable");
+        rowData[0] = Messages.WRITABLE;
         rowData[1] = mbai.isWritable();
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("Is");
+        rowData[0] = Messages.IS;
         rowData[1] = mbai.isIs();
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("Type");
+        rowData[0] = Messages.TYPE;
         rowData[1] = mbai.getType();
         tableModel.addRow(rowData);
         addDescriptor(mbai.getDescriptor(), text);
@@ -305,36 +306,36 @@ public class XMBeanInfo extends JPanel {
         emptyInfoTable();
         emptyDescTable();
         ((TitledBorder) infoBorderPanel.getBorder()).setTitle(
-                Resources.getText("MBeanOperationInfo"));
-        String text = Resources.getText("Operation") + ":";
+                Messages.MBEAN_OPERATION_INFO);
+        String text = Messages.OPERATION + ":";
         DefaultTableModel tableModel = (DefaultTableModel) infoTable.getModel();
         Object rowData[] = new Object[2];
         rowData[0] = new TableRowDivider(text);
         rowData[1] = new TableRowDivider("");
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("Name");
+        rowData[0] = Messages.NAME;
         rowData[1] = mboi.getName();
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("Description");
+        rowData[0] = Messages.DESCRIPTION;
         rowData[1] = mboi.getDescription();
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("Impact");
+        rowData[0] = Messages.IMPACT;
         switch (mboi.getImpact()) {
             case MBeanOperationInfo.INFO:
-                rowData[1] = Resources.getText("INFO");
+                rowData[1] = Messages.INFO_CAPITALIZED;
                 break;
             case MBeanOperationInfo.ACTION:
-                rowData[1] = Resources.getText("ACTION");
+                rowData[1] = Messages.ACTION_CAPITALIZED;
                 break;
             case MBeanOperationInfo.ACTION_INFO:
-                rowData[1] = Resources.getText("ACTION_INFO");
+                rowData[1] = Messages.ACTION_INFO_CAPITALIZED;
                 break;
             case MBeanOperationInfo.UNKNOWN:
-                rowData[1] = Resources.getText("UNKNOWN");
+                rowData[1] = Messages.UNKNOWN_CAPITALIZED;
                 break;
         }
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("ReturnType");
+        rowData[0] = Messages.RETURN_TYPE;
         rowData[1] = mboi.getReturnType();
         tableModel.addRow(rowData);
         addDescriptor(mboi.getDescriptor(), text);
@@ -343,7 +344,7 @@ public class XMBeanInfo extends JPanel {
         int i = 0;
         for (MBeanParameterInfo mbpi : mboi.getSignature()) {
             addMBeanParameterInfo(mbpi,
-                    Resources.getText("Parameter") + "-" + i++ + ":");
+                    Messages.PARAMETER + "-" + i++ + ":");
         }
         tableModel.newDataAvailable(new TableModelEvent(tableModel));
     }
@@ -353,20 +354,20 @@ public class XMBeanInfo extends JPanel {
         emptyInfoTable();
         emptyDescTable();
         ((TitledBorder) infoBorderPanel.getBorder()).setTitle(
-                Resources.getText("MBeanNotificationInfo"));
-        String text = Resources.getText("Notification") + ":";
+                Messages.MBEAN_NOTIFICATION_INFO);
+        String text = Messages.NOTIFICATION + ":";
         DefaultTableModel tableModel = (DefaultTableModel) infoTable.getModel();
         Object rowData[] = new Object[2];
         rowData[0] = new TableRowDivider(text);
         rowData[1] = new TableRowDivider("");
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("Name");
+        rowData[0] = Messages.NAME;
         rowData[1] = mbni.getName();
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("Description");
+        rowData[0] = Messages.DESCRIPTION;
         rowData[1] = mbni.getDescription();
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("NotifTypes");
+        rowData[0] = Messages.NOTIF_TYPES;
         rowData[1] = Arrays.toString(mbni.getNotifTypes());
         tableModel.addRow(rowData);
         addDescriptor(mbni.getDescriptor(), text);
@@ -380,10 +381,10 @@ public class XMBeanInfo extends JPanel {
         rowData[0] = new TableRowDivider(text);
         rowData[1] = new TableRowDivider("");
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("Name");
+        rowData[0] = Messages.NAME;
         rowData[1] = mbci.getName();
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("Description");
+        rowData[0] = Messages.DESCRIPTION;
         rowData[1] = mbci.getDescription();
         tableModel.addRow(rowData);
         addDescriptor(mbci.getDescriptor(), text);
@@ -397,13 +398,13 @@ public class XMBeanInfo extends JPanel {
         rowData[0] = new TableRowDivider(text);
         rowData[1] = new TableRowDivider("");
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("Name");
+        rowData[0] = Messages.NAME;
         rowData[1] = mbpi.getName();
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("Description");
+        rowData[0] = Messages.DESCRIPTION;
         rowData[1] = mbpi.getDescription();
         tableModel.addRow(rowData);
-        rowData[0] = Resources.getText("Type");
+        rowData[0] = Messages.TYPE;
         rowData[1] = mbpi.getType();
         tableModel.addRow(rowData);
         addDescriptor(mbpi.getDescriptor(), text);
