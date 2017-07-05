@@ -473,7 +473,8 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
         CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
         ;;
       ppc )
-        # on ppc we don't prevent gcc to omit frame pointer nor strict-aliasing
+        # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
+        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
         ;;
       * )
         CCXXFLAGS_JDK="$CCXXFLAGS_JDK -fno-omit-frame-pointer"
