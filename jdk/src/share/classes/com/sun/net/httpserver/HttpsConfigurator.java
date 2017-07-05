@@ -91,6 +91,7 @@ public class HttpsConfigurator {
         return context;
     }
 
+//BEGIN_TIGER_EXCLUDE
    /**
     * Called by the HttpsServer to configure the parameters
     * for a https connection currently being established.
@@ -111,4 +112,5 @@ public class HttpsConfigurator {
     public void configure (HttpsParameters params) {
         params.setSSLParameters (getSSLContext().getDefaultSSLParameters());
     }
+//END_TIGER_EXCLUDE
 }

@@ -1,8 +1,7 @@
 /**
  * @test
- * @bug 6945564
+ * @bug 6945564 6959267
  * @summary  Check that the j.l.Character.UnicodeScript
- * @ignore don't run until #6903266 is integrated
  */
 
 import java.io.*;
@@ -15,11 +14,15 @@ public class CheckScript {
 
     public static void main(String[] args) throws Exception {
 
-        if (args.length != 1) {
-            System.out.println("java CharacterScript script.txt");
-            System.exit(1);
+        BufferedReader sbfr = null;
+        if (args.length == 0) {
+            sbfr = new BufferedReader(new FileReader(new File(System.getProperty("test.src", "."), "Scripts.txt")));
+        } else if (args.length == 1) {
+            sbfr = new BufferedReader(new FileReader(args[0]));
+        } else {
+            System.out.println("java CharacterScript Scripts.txt");
+            throw new RuntimeException("Datafile name should be specified.");
         }
-        BufferedReader sbfr = new BufferedReader(new FileReader(args[0]));
         Matcher m = Pattern.compile("(\\p{XDigit}+)(?:\\.{2}(\\p{XDigit}+))?\\s+;\\s+(\\w+)\\s+#.*").matcher("");
         String line = null;
         HashMap<String,ArrayList<Integer>> scripts = new HashMap<>();

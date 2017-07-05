@@ -559,6 +559,8 @@ public:
             CriticalSection::Lock lock(threadLock);
             return wrongThread;
         }
+        // returns true if the current thread is "preload" thread
+        bool OnPreloadThread();
 
     private:
         // data access lock
