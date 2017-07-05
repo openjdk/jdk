@@ -1,5 +1,5 @@
 /*
- * Copyright 1994-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1994-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,12 @@ import java.net.URI;
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Hashtable;
-import java.util.Random;
+import java.util.*;
+import java.nio.file.*;
+import java.nio.file.attribute.*;
 import java.security.AccessController;
-import java.security.AccessControlException;
+import java.security.PrivilegedAction;
+import java.security.SecureRandom;
 import sun.security.action.GetPropertyAction;
 
 
@@ -130,6 +130,18 @@ import sun.security.action.GetPropertyAction;
  * <p> Instances of the <code>File</code> class are immutable; that is, once
  * created, the abstract pathname represented by a <code>File</code> object
  * will never change.
+ *
+ * <h4>Interoperability with {@code java.nio.file} package</h4>
+ *
+ * <p> The <a href="../../java/nio/file/package-summary.html">{@code java.nio.file}</a>
+ * package defines interfaces and classes for the Java virtual machine to access
+ * files, file attributes, and file systems. This API may be used to overcome
+ * many of the limitations of the {@code java.io.File} class.
+ * The {@link #toPath toPath} method may be used to obtain a {@link
+ * Path} that uses the abstract path represented by a {@code File} object to
+ * locate a file. The resulting {@code Path} provides more efficient and
+ * extensive access to file attributes, additional file operations, and I/O
+ * exceptions to help diagnose errors when an operation on a file fails.
  *
  * @author  unascribed
  * @since   JDK1.0
@@ -573,6 +585,7 @@ public class File
      *          read access to the file
      *
      * @since   JDK1.1
+     * @see     Path#toRealPath
      */
     public String getCanonicalPath() throws IOException {
         return fs.canonicalize(fs.resolve(this));
@@ -597,6 +610,7 @@ public class File
      *          read access to the file
      *
      * @since 1.2
+     * @see     Path#toRealPath
      */
     public File getCanonicalFile() throws IOException {
         String canonPath = getCanonicalPath();
@@ -662,6 +676,14 @@ public class File
      * <tt>file:</tt> URI that is created in a virtual machine on one operating
      * system is converted into an abstract pathname in a virtual machine on a
      * different operating system.
+     *
+     * <p> Note that when this abstract pathname represents a UNC pathname then
+     * all components of the UNC (including the server name component) are encoded
+     * in the {@code URI} path. The authority component is undefined, meaning
+     * that it is represented as {@code null}. The {@link Path} class defines the
+     * {@link Path#toUri toUri} method to encode the server name in the authority
+     * component of the resulting {@code URI}. The {@link #toPath toPath} method
+     * may be used to obtain a {@code Path} representing this abstract pathname.
      *
      * @return  An absolute, hierarchical URI with a scheme equal to
      *          <tt>"file"</tt>, a path representing this abstract pathname,
@@ -764,6 +786,8 @@ public class File
      *          If a security manager exists and its <code>{@link
      *          java.lang.SecurityManager#checkRead(java.lang.String)}</code>
      *          method denies read access to the file
+     *
+     * @see Attributes#readBasicFileAttributes
      */
     public boolean isDirectory() {
         SecurityManager security = System.getSecurityManager();
@@ -788,6 +812,8 @@ public class File
      *          If a security manager exists and its <code>{@link
      *          java.lang.SecurityManager#checkRead(java.lang.String)}</code>
      *          method denies read access to the file
+     *
+     * @see Attributes#readBasicFileAttributes
      */
     public boolean isFile() {
         SecurityManager security = System.getSecurityManager();
@@ -836,6 +862,8 @@ public class File
      *          If a security manager exists and its <code>{@link
      *          java.lang.SecurityManager#checkRead(java.lang.String)}</code>
      *          method denies read access to the file
+     *
+     * @see Attributes#readBasicFileAttributes
      */
     public long lastModified() {
         SecurityManager security = System.getSecurityManager();
@@ -858,6 +886,8 @@ public class File
      *          If a security manager exists and its <code>{@link
      *          java.lang.SecurityManager#checkRead(java.lang.String)}</code>
      *          method denies read access to the file
+     *
+     * @see Attributes#readBasicFileAttributes
      */
     public long length() {
         SecurityManager security = System.getSecurityManager();
@@ -906,6 +936,12 @@ public class File
      * Deletes the file or directory denoted by this abstract pathname.  If
      * this pathname denotes a directory, then the directory must be empty in
      * order to be deleted.
+     *
+     * <p> Note that the {@link Path} class defines the {@link Path#delete
+     * delete} method to throw an {@link IOException} when a file cannot be
+     * deleted. This is useful for error reporting and to diagnose why a file
+     * cannot be deleted. The {@link #toPath toPath} method may be used to
+     * obtain a {@code Path} representing this abstract pathname.
      *
      * @return  <code>true</code> if and only if the file or directory is
      *          successfully deleted; <code>false</code> otherwise
@@ -973,6 +1009,13 @@ public class File
      * will appear in any specific order; they are not, in particular,
      * guaranteed to appear in alphabetical order.
      *
+     * <p> Note that the {@link Path} class defines the {@link
+     * Path#newDirectoryStream newDirectoryStream} method to open a directory
+     * and iterate over the names of the files in the directory. This may use
+     * less resources when working with very large directories. The {@link
+     * #toPath toPath} method may be used to obtain a {@code Path} representing
+     * this abstract pathname.
+     *
      * @return  An array of strings naming the files and directories in the
      *          directory denoted by this abstract pathname.  The array will be
      *          empty if the directory is empty.  Returns {@code null} if
@@ -1024,13 +1067,13 @@ public class File
         if ((names == null) || (filter == null)) {
             return names;
         }
-        ArrayList v = new ArrayList();
+        List<String> v = new ArrayList<String>();
         for (int i = 0 ; i < names.length ; i++) {
             if (filter.accept(this, names[i])) {
                 v.add(names[i]);
             }
         }
-        return (String[])(v.toArray(new String[v.size()]));
+        return v.toArray(new String[v.size()]);
     }
 
     /**
@@ -1051,6 +1094,13 @@ public class File
      * <p> There is no guarantee that the name strings in the resulting array
      * will appear in any specific order; they are not, in particular,
      * guaranteed to appear in alphabetical order.
+     *
+     * <p> Note that the {@link Path} class defines the {@link
+     * Path#newDirectoryStream newDirectoryStream} method to open a directory
+     * and iterate over the names of the files in the directory. This may use
+     * less resources when working with very large directories. The {@link
+     * #toPath toPath} method may be used to obtain a {@code Path} representing
+     * this abstract pathname.
      *
      * @return  An array of abstract pathnames denoting the files and
      *          directories in the directory denoted by this abstract pathname.
@@ -1157,6 +1207,12 @@ public class File
     /**
      * Creates the directory named by this abstract pathname.
      *
+     * <p> Note that the {@link Path} class defines the {@link Path#createDirectory
+     * createDirectory} method to throw an {@link IOException} when a directory
+     * cannot be created. This is useful for error reporting and to diagnose why
+     * a directory cannot be created. The {@link #toPath toPath} method may be
+     * used to obtain a {@code Path} representing this abstract pathname.
+     *
      * @return  <code>true</code> if and only if the directory was
      *          created; <code>false</code> otherwise
      *
@@ -1221,6 +1277,11 @@ public class File
      * might not succeed if a file with the destination abstract pathname
      * already exists.  The return value should always be checked to make sure
      * that the rename operation was successful.
+     *
+     * <p> Note that the {@link Path} class defines the {@link Path#moveTo
+     * moveTo} method to move or rename a file in a platform independent manner.
+     * The {@link #toPath toPath} method may be used to obtain a {@code Path}
+     * representing this abstract pathname.
      *
      * @param  dest  The new abstract pathname for the named file
      *
@@ -1304,9 +1365,13 @@ public class File
         return fs.setReadOnly(this);
     }
 
-   /**
+    /**
      * Sets the owner's or everybody's write permission for this abstract
      * pathname.
+     *
+     * <p> The {@link Attributes Attributes} class defines methods that operate
+     * on file attributes including file permissions. This may be used when
+     * finer manipulation of file permissions is required.
      *
      * @param   writable
      *          If <code>true</code>, sets the access permission to allow write
@@ -1370,6 +1435,10 @@ public class File
     /**
      * Sets the owner's or everybody's read permission for this abstract
      * pathname.
+     *
+     * <p> The {@link Attributes Attributes} class defines methods that operate
+     * on file attributes including file permissions. This may be used when
+     * finer manipulation of file permissions is required.
      *
      * @param   readable
      *          If <code>true</code>, sets the access permission to allow read
@@ -1439,6 +1508,10 @@ public class File
     /**
      * Sets the owner's or everybody's execute permission for this abstract
      * pathname.
+     *
+     * <p> The {@link Attributes Attributes} class defines methods that operate
+     * on file attributes including file permissions. This may be used when
+     * finer manipulation of file permissions is required.
      *
      * @param   executable
      *          If <code>true</code>, sets the access permission to allow execute
@@ -1678,44 +1751,44 @@ public class File
 
     /* -- Temporary files -- */
 
-    private static final Object tmpFileLock = new Object();
+    private static class TemporaryDirectory {
+        private TemporaryDirectory() { }
 
-    private static int counter = -1; /* Protected by tmpFileLock */
+        static final String valueAsString = fs.normalize(
+            AccessController.doPrivileged(new GetPropertyAction("java.io.tmpdir")));
+        static final File valueAsFile =
+            new File(valueAsString, fs.prefixLength(valueAsString));
 
-    private static File generateFile(String prefix, String suffix, File dir)
-        throws IOException
-    {
-        if (counter == -1) {
-            counter = new Random().nextInt() & 0xffff;
-        }
-        counter++;
-        return new File(dir, prefix + Integer.toString(counter) + suffix);
-    }
-
-    private static String tmpdir; /* Protected by tmpFileLock */
-
-    private static String getTempDir() {
-        if (tmpdir == null)
-            tmpdir = fs.normalize(
-                AccessController.doPrivileged(
-                    new GetPropertyAction("java.io.tmpdir")));
-        return tmpdir;
-    }
-
-    private static boolean checkAndCreate(String filename, SecurityManager sm)
-        throws IOException
-    {
-        if (sm != null) {
-            try {
-                sm.checkWrite(filename);
-            } catch (AccessControlException x) {
-                /* Throwing the original AccessControlException could disclose
-                   the location of the default temporary directory, so we
-                   re-throw a more innocuous SecurityException */
-                throw new SecurityException("Unable to create temporary file");
+        // file name generation
+        private static final SecureRandom random = new SecureRandom();
+        static File generateFile(String prefix, String suffix, File dir) {
+            long n = random.nextLong();
+            if (n == Long.MIN_VALUE) {
+                n = 0;      // corner case
+            } else {
+                n = Math.abs(n);
             }
+            return new File(dir, prefix + Long.toString(n) + suffix);
         }
-        return fs.createFileExclusively(filename);
+
+        // default file permissions
+        static final FileAttribute<Set<PosixFilePermission>> defaultPosixFilePermissions =
+            PosixFilePermissions.asFileAttribute(EnumSet
+                .of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
+        static final boolean isPosix = isPosix();
+        static boolean isPosix() {
+            return AccessController.doPrivileged(
+                new PrivilegedAction<Boolean>() {
+                    public Boolean run() {
+                        try {
+                            return FileSystems.getDefault().getPath(valueAsString)
+                                .getFileStore().supportsFileAttributeView("posix");
+                        } catch (IOException e) {
+                            throw new IOError(e);
+                        }
+                    }
+                });
+        }
     }
 
     /**
@@ -1791,22 +1864,29 @@ public class File
                                       File directory)
         throws IOException
     {
-        if (prefix == null) throw new NullPointerException();
         if (prefix.length() < 3)
             throw new IllegalArgumentException("Prefix string too short");
-        String s = (suffix == null) ? ".tmp" : suffix;
-        synchronized (tmpFileLock) {
-            if (directory == null) {
-                String tmpDir = getTempDir();
-                directory = new File(tmpDir, fs.prefixLength(tmpDir));
+        if (suffix == null)
+            suffix = ".tmp";
+
+        File tmpdir = (directory != null) ?
+            directory : TemporaryDirectory.valueAsFile;
+        SecurityManager sm = System.getSecurityManager();
+        File f;
+        do {
+            f = TemporaryDirectory.generateFile(prefix, suffix, tmpdir);
+            if (sm != null) {
+                try {
+                    sm.checkWrite(f.getPath());
+                } catch (SecurityException se) {
+                    // don't reveal temporary directory location
+                    if (directory == null)
+                        throw new SecurityException("Unable to create temporary file");
+                    throw se;
+                }
             }
-            SecurityManager sm = System.getSecurityManager();
-            File f;
-            do {
-                f = generateFile(prefix, s, directory);
-            } while (!checkAndCreate(f.getPath(), sm));
-            return f;
-        }
+        } while (!fs.createFileExclusively(f.getPath()));
+        return f;
     }
 
     /**
@@ -1844,6 +1924,122 @@ public class File
         return createTempFile(prefix, suffix, null);
     }
 
+    /**
+     * Creates an empty file in the default temporary-file directory, using
+     * the given prefix and suffix to generate its name. This method is
+     * equivalent to invoking the {@link #createTempFile(String,String)
+     * createTempFile(prefix,&nbsp;suffix)} method with the addition that the
+     * resulting pathname may be requested to be deleted when the Java virtual
+     * machine terminates, and the initial file attributes to set atomically
+     * when creating the file may be specified.
+     *
+     * <p> When the value of the {@code deleteOnExit} method is {@code true}
+     * then the resulting file is requested to be deleted when the Java virtual
+     * machine terminates as if by invoking the {@link #deleteOnExit deleteOnExit}
+     * method.
+     *
+     * <p> The {@code attrs} parameter is an optional array of {@link FileAttribute
+     * attributes} to set atomically when creating the file. Each attribute is
+     * identified by its {@link FileAttribute#name name}. If more than one attribute
+     * of the same name is included in the array then all but the last occurrence
+     * is ignored.
+     *
+     * @param   prefix
+     *          The prefix string to be used in generating the file's
+     *          name; must be at least three characters long
+     * @param   suffix
+     *          The suffix string to be used in generating the file's
+     *          name; may be {@code null}, in which case the suffix
+     *          {@code ".tmp"} will be used
+     * @param   deleteOnExit
+     *          {@code true} if the file denoted by resulting pathname be
+     *          deleted when the Java virtual machine terminates
+     * @param   attrs
+     *          An optional list of file attributes to set atomically when creating
+     *          the file
+     *
+     * @return  An abstract pathname denoting a newly-created empty file
+     *
+     * @throws  IllegalArgumentException
+     *          If the <code>prefix</code> argument contains fewer than three
+     *          characters
+     * @throws  UnsupportedOperationException
+     *          If the array contains an attribute that cannot be set atomically
+     *          when creating the file
+     * @throws  IOException
+     *          If a file could not be created
+     * @throws  SecurityException
+     *          If a security manager exists and its <code>{@link
+     *          java.lang.SecurityManager#checkWrite(java.lang.String)}</code>
+     *          method does not allow a file to be created. When the {@code
+     *          deleteOnExit} parameter has the value {@code true} then the
+     *          security manager's {@link
+     *          java.lang.SecurityManager#checkDelete(java.lang.String)} is
+     *          invoked to check delete access to the file.
+     * @since 1.7
+     */
+    public static File createTempFile(String prefix,
+                                      String suffix,
+                                      boolean deleteOnExit,
+                                      FileAttribute<?>... attrs)
+        throws IOException
+    {
+        if (prefix.length() < 3)
+            throw new IllegalArgumentException("Prefix string too short");
+        suffix = (suffix == null) ? ".tmp" : suffix;
+
+        // special case POSIX environments so that 0600 is used as the file mode
+        if (TemporaryDirectory.isPosix) {
+            if (attrs.length == 0) {
+                // no attributes so use default permissions
+                attrs = new FileAttribute<?>[1];
+                attrs[0] = TemporaryDirectory.defaultPosixFilePermissions;
+            } else {
+                // check if posix permissions given; if not use default
+                boolean hasPermissions = false;
+                for (int i=0; i<attrs.length; i++) {
+                    if (attrs[i].name().equals("posix:permissions")) {
+                        hasPermissions = true;
+                        break;
+                    }
+                }
+                if (!hasPermissions) {
+                    FileAttribute<?>[] copy = new FileAttribute<?>[attrs.length+1];
+                    System.arraycopy(attrs, 0, copy, 0, attrs.length);
+                    attrs = copy;
+                    attrs[attrs.length-1] =
+                        TemporaryDirectory.defaultPosixFilePermissions;
+                }
+            }
+        }
+
+        // use Path#createFile to create file
+        SecurityManager sm = System.getSecurityManager();
+        for (;;) {
+            File f = TemporaryDirectory
+                .generateFile(prefix, suffix, TemporaryDirectory.valueAsFile);
+            if (sm != null && deleteOnExit)
+                sm.checkDelete(f.getPath());
+            try {
+                f.toPath().createFile(attrs);
+                if (deleteOnExit)
+                    DeleteOnExitHook.add(f.getPath());
+                return f;
+            } catch (InvalidPathException e) {
+                // don't reveal temporary directory location
+                if (sm != null)
+                    throw new IllegalArgumentException("Invalid prefix or suffix");
+                throw e;
+            } catch (SecurityException e) {
+                // don't reveal temporary directory location
+                if (sm != null)
+                    throw new SecurityException("Unable to create temporary file");
+                throw e;
+            } catch (FileAlreadyExistsException e) {
+                // ignore
+            }
+        }
+    }
 
     /* -- Basic infrastructure -- */
 
@@ -1963,5 +2159,46 @@ public class File
         );
     }
 
+    // -- Integration with java.nio.file --
 
+    private volatile transient Path filePath;
+
+    /**
+     * Returns a {@link Path java.nio.file.Path} object constructed from the
+     * this abstract path. The first invocation of this method works as if
+     * invoking it were equivalent to evaluating the expression:
+     * <blockquote><pre>
+     * {@link FileSystems#getDefault FileSystems.getDefault}().{@link FileSystem#getPath getPath}(this.{@link #getPath getPath}());
+     * </pre></blockquote>
+     * Subsequent invocations of this method return the same {@code Path}.
+     *
+     * <p> If this abstract pathname is the empty abstract pathname then this
+     * method returns a {@code Path} that may be used to access to the current
+     * user directory.
+     *
+     * @return  A {@code Path} constructed from this abstract path. The resulting
+     *          {@code Path} is associated with the {@link FileSystems#getDefault
+     *          default-filesystem}.
+     *
+     * @throws  InvalidPathException
+     *          If a {@code Path} object cannot be constructed from the abstract
+     *          path (see {@link java.nio.file.FileSystem#getPath FileSystem.getPath})
+     *
+     * @since   1.7
+     */
+    public Path toPath() {
+        if (filePath == null) {
+            synchronized (this) {
+                if (filePath == null) {
+                    if (path.length() == 0) {
+                        // assume default file system treats "." as current directory
+                        filePath = Paths.get(".");
+                    } else {
+                        filePath = Paths.get(path);
+                    }
+                }
+            }
+        }
+        return filePath;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class SocketOptionTests {
         ServerSocketChannel ssc = ServerSocketChannel.open();
 
         // check supported options
-        Set<SocketOption<?>> options = ssc.options();
+        Set<SocketOption<?>> options = ssc.supportedOptions();
         if (!options.contains(SO_REUSEADDR))
             throw new RuntimeException("SO_REUSEADDR should be supported");
         if (!options.contains(SO_RCVBUF))

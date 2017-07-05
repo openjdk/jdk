@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ public final class SecurityConstants {
     public static final String FILE_EXECUTE_ACTION = "execute";
     public static final String FILE_READ_ACTION = "read";
     public static final String FILE_WRITE_ACTION = "write";
+    public static final String FILE_READLINK_ACTION = "readlink";
 
     public static final String SOCKET_RESOLVE_ACTION = "resolve";
     public static final String SOCKET_CONNECT_ACTION = "connect";

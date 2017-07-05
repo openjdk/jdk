@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class DerValue {
     protected DerInputBuffer    buffer;
 
     /**
-     * The DER-encoded data of the value.
+     * The DER-encoded data of the value, never null
      */
     public final DerInputStream data;
 
@@ -378,8 +378,6 @@ public class DerValue {
                         ("Indefinite length encoding not supported");
             length = DerInputStream.getLength(in);
         }
-        if (length == 0)
-            return null;
 
         if (fullyBuffered && in.available() != length)
             throw new IOException("extra data given to DerValue constructor");
@@ -477,6 +475,11 @@ public class DerValue {
                 "DerValue.getOctetString, not an Octet String: " + tag);
         }
         bytes = new byte[length];
+        // Note: do not tempt to call buffer.read(bytes) at all. There's a
+        // known bug that it returns -1 instead of 0.
+        if (length == 0) {
+            return bytes;
+        }
         if (buffer.read(bytes) != length)
             throw new IOException("short read on DerValue buffer");
         if (isConstructed()) {

@@ -174,7 +174,7 @@ typedef struct jzfile {   /* Zip file */
 #ifdef USE_MMAP
     unsigned char *maddr; /* beginning address of the CEN & ENDHDR */
     jlong mlen;           /* length (in bytes) mmaped */
-    off_t offset;         /* offset of the mmapped region from the
+    jlong offset;         /* offset of the mmapped region from the
                              start of the file. */
 #else
     cencache cencache;    /* CEN header cache */
