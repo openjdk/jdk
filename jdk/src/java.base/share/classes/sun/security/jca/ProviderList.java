@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,9 +178,9 @@ public final class ProviderList {
             if (k == -1) {
                 config = new ProviderConfig(entry);
             } else {
-                String className = entry.substring(0, k);
+                String provName = entry.substring(0, k);
                 String argument = entry.substring(k + 1).trim();
-                config = new ProviderConfig(className, argument);
+                config = new ProviderConfig(provName, argument);
             }
 
             // Get rid of duplicate providers.
@@ -200,10 +200,10 @@ public final class ProviderList {
      * bootclasspath and cannot be in signed JAR files. This is to avoid
      * possible recursion and deadlock during verification.
      */
-    ProviderList getJarList(String[] jarClassNames) {
+    ProviderList getJarList(String[] jarProvNames) {
         List<ProviderConfig> newConfigs = new ArrayList<>();
-        for (String className : jarClassNames) {
-            ProviderConfig newConfig = new ProviderConfig(className);
+        for (String provName : jarProvNames) {
+            ProviderConfig newConfig = new ProviderConfig(provName);
             for (ProviderConfig config : configs) {
                 // if the equivalent object is present in this provider list,
                 // use the old object rather than the new object.

@@ -23,8 +23,9 @@
 
 /*
  *@test
- *@bug 4810032
+ *@bug 4810032 8008577
  *@summary verify the ja full time pattern parsing
+ * @run main/othervm -Djava.locale.providers=JRE,SPI Bug4810032
 */
 
 import java.text.*;

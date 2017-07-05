@@ -218,10 +218,10 @@ public class TestTextParser extends AbstractTestPrinterParser {
     Object[][] providerStandaloneText() {
         // Locale, TemporalField, TextStyle, expected value, input text
         return new Object[][] {
-            {RUSSIAN, MONTH_OF_YEAR, TextStyle.FULL_STANDALONE,   1, "\u042f\u043d\u0432\u0430\u0440\u044c"},
-            {RUSSIAN, MONTH_OF_YEAR, TextStyle.FULL_STANDALONE,  12, "\u0414\u0435\u043a\u0430\u0431\u0440\u044c"},
-            {RUSSIAN, MONTH_OF_YEAR, TextStyle.SHORT_STANDALONE,  1, "\u042f\u043d\u0432."},
-            {RUSSIAN, MONTH_OF_YEAR, TextStyle.SHORT_STANDALONE, 12, "\u0414\u0435\u043a."},
+            {RUSSIAN, MONTH_OF_YEAR, TextStyle.FULL_STANDALONE,   1, "\u044f\u043d\u0432\u0430\u0440\u044c"},
+            {RUSSIAN, MONTH_OF_YEAR, TextStyle.FULL_STANDALONE,  12, "\u0434\u0435\u043a\u0430\u0431\u0440\u044c"},
+            {RUSSIAN, MONTH_OF_YEAR, TextStyle.SHORT_STANDALONE,  1, "\u044f\u043d\u0432."},
+            {RUSSIAN, MONTH_OF_YEAR, TextStyle.SHORT_STANDALONE, 12, "\u0434\u0435\u043a."},
             {FINNISH, DAY_OF_WEEK,   TextStyle.FULL_STANDALONE,   2, "tiistai"},
             {FINNISH, DAY_OF_WEEK,   TextStyle.SHORT_STANDALONE,  2, "ti"},
         };
@@ -247,9 +247,9 @@ public class TestTextParser extends AbstractTestPrinterParser {
         // Locale, TemporalField, expected value, input text
         return new Object[][] {
             {RUSSIAN, MONTH_OF_YEAR, 1, "\u044f\u043d\u0432\u0430\u0440\u044f"}, // full format
-            {RUSSIAN, MONTH_OF_YEAR, 1, "\u042f\u043d\u0432\u0430\u0440\u044c"}, // full standalone
-            {RUSSIAN, MONTH_OF_YEAR, 1, "\u044f\u043d\u0432"},  // short format
-            {RUSSIAN, MONTH_OF_YEAR, 1, "\u042f\u043d\u0432."}, // short standalone
+            {RUSSIAN, MONTH_OF_YEAR, 1, "\u044f\u043d\u0432\u0430\u0440\u044c"}, // full standalone
+            {RUSSIAN, MONTH_OF_YEAR, 1, "\u044f\u043d\u0432."}, // short format
+            {RUSSIAN, MONTH_OF_YEAR, 1, "\u044f\u043d\u0432."}, // short standalone
         };
     }
 

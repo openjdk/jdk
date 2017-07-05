@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8005471
+ * @bug 8005471 8008577
  * @run main/othervm -Djava.locale.providers=CLDR CLDRDisplayNamesTest
  * @summary Make sure that localized time zone names of CLDR are used
  * if specified.
@@ -53,21 +53,21 @@ public class CLDRDisplayNamesTest {
         },
         {
             "zh-CN",
-            "\u592a\u5e73\u6d0b\u6807\u51c6\u65f6\u95f4",
+            "\u5317\u7f8e\u592a\u5e73\u6d0b\u6807\u51c6\u65f6\u95f4",
             "PST",
-            "\u592a\u5e73\u6d0b\u590f\u4ee4\u65f6\u95f4",
+            "\u5317\u7f8e\u592a\u5e73\u6d0b\u590f\u4ee4\u65f6\u95f4",
             "PDT",
-            //"\u7f8e\u56fd\u592a\u5e73\u6d0b\u65f6\u95f4",
-            //"PT"
+            //"\u5317\u7f8e\u592a\u5e73\u6d0b\u65f6\u95f4",
+            //"PT",
         },
         {
             "de-DE",
-            "Nordamerikanische Westk\u00fcsten-Winterzeit",
+            "Nordamerikanische Westk\u00fcsten-Normalzeit",
             "PST",
             "Nordamerikanische Westk\u00fcsten-Sommerzeit",
             "PDT",
             //"Nordamerikanische Westk\u00fcstenzeit",
-            //"PT"
+            //"PT",
         },
     };
 

@@ -51,6 +51,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 import sun.util.locale.provider.JRELocaleProviderAdapter;
 import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.ResourceBundleBasedAdapter;
 import static sun.util.locale.provider.LocaleProviderAdapter.Type.CLDR;
 import static sun.util.locale.provider.LocaleProviderAdapter.Type.JRE;
 
@@ -205,16 +206,19 @@ public class LocaleData {
          */
         @Override
          public List<Locale> getCandidateLocales(String baseName, Locale locale) {
-            List<Locale> candidates = super.getCandidateLocales(baseName, locale);
+            LocaleProviderAdapter.Type type = baseName.contains(DOTCLDR) ? CLDR : JRE;
+            LocaleProviderAdapter adapter = LocaleProviderAdapter.forType(type);
+            List<Locale> candidates = adapter instanceof ResourceBundleBasedAdapter ?
+                ((ResourceBundleBasedAdapter)adapter).getCandidateLocales(baseName, locale) :
+                super.getCandidateLocales(baseName, locale);
+
             // Weed out Locales which are known to have no resource bundles
             int lastDot = baseName.lastIndexOf('.');
             String category = (lastDot >= 0) ? baseName.substring(lastDot + 1) : baseName;
-            LocaleProviderAdapter.Type type = baseName.contains(DOTCLDR) ? CLDR : JRE;
-            LocaleProviderAdapter adapter = LocaleProviderAdapter.forType(type);
             Set<String> langtags = ((JRELocaleProviderAdapter)adapter).getLanguageTagSet(category);
             if (!langtags.isEmpty()) {
                 for (Iterator<Locale> itr = candidates.iterator(); itr.hasNext();) {
-                    if (!LocaleProviderAdapter.isSupportedLocale(itr.next(), type, langtags)) {
+                    if (!adapter.isSupportedProviderLocale(itr.next(), langtags)) {
                         itr.remove();
                     }
                 }
@@ -247,17 +251,18 @@ public class LocaleData {
         private static final String DOTCLDR      = ".cldr";
 
         /**
-         * Changes baseName to its per-language package name and
+         * Changes baseName to its per-language/country package name and
          * calls the super class implementation. For example,
          * if the baseName is "sun.text.resources.FormatData" and locale is ja_JP,
-         * the baseName is changed to "sun.text.resources.ja.FormatData". If
+         * the baseName is changed to "sun.text.resources.ja.JP.FormatData". If
          * baseName contains "cldr", such as "sun.text.resources.cldr.FormatData",
-         * the name is changed to "sun.text.resources.cldr.jp.FormatData".
+         * the name is changed to "sun.text.resources.cldr.ja.JP.FormatData".
          */
         @Override
         public String toBundleName(String baseName, Locale locale) {
             String newBaseName = baseName;
             String lang = locale.getLanguage();
+            String ctry = locale.getCountry();
             if (lang.length() > 0) {
                 if (baseName.startsWith(JRE.getUtilResourcesPackage())
                         || baseName.startsWith(JRE.getTextResourcesPackage())) {
@@ -268,7 +273,8 @@ public class LocaleData {
                     if (baseName.indexOf(DOTCLDR, index) > 0) {
                         index += DOTCLDR.length();
                     }
-                    newBaseName = baseName.substring(0, index + 1) + lang
+                    ctry = (ctry.length() == 2) ? ("." + ctry) : "";
+                    newBaseName = baseName.substring(0, index + 1) + lang + ctry
                                       + baseName.substring(index);
                 }
             }

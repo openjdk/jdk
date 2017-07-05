@@ -1,0 +1,875 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
+<!--
+Copyright © 1991-2013 Unicode, Inc.
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+For terms of use, see http://www.unicode.org/copyright.html
+-->
+<supplementalData>
+    <version number="$Revision: 9034 $"/>
+    <generation date="$Date: 2013-07-15 13:48:35 -0500 (Mon, 15 Jul 2013) $"/>
+	<telephoneCodeData>
+		<!--
+		References:
+		1.	International Telecommunication Union: List Of ITU Recommendation E.164 Assigned Country Codes (Position on 15 September 2007)
+			available at <http://www.itu.int/opb/publications.aspx?parent=T-SP&view=T-SP2>
+		2.	World Telephone Numbering Guide <http://www.wtng.info/>
+		
+		Special cases below: 001, AC, AQ, AS, GU, PS, VA, XK, YT
+		Unknown telephoneCountryCode for territories: BV, HM
+		-->
+	
+		<codesByTerritory territory="001">
+			<telephoneCountryCode code="388"/>	<!-- CountryGroup = Code for groups of countries, shared code -->
+				<!-- +388 3	CountryGroup (European Telephony Numbering Space) -->
+			<telephoneCountryCode code="800"/>	<!-- International Freephone Service -->
+			<telephoneCountryCode code="808"/>	<!-- International Shared Cost Services (ISCS) -->
+			<telephoneCountryCode code="870"/>	<!-- Inmarsat Single Number Access Service (SNAC) - satellite service for ships, islands, remote locations -->
+			<telephoneCountryCode code="871"/>	<!-- Inmarsat (Atlantic Ocean - East) - satellite service for ships, islands, remote locations -->
+			<telephoneCountryCode code="872"/>	<!-- Inmarsat (Pacific Ocean) - satellite service for ships, islands, remote locations -->
+			<telephoneCountryCode code="873"/>	<!-- Inmarsat (Indian Ocean) - satellite service for ships, islands, remote locations -->
+			<telephoneCountryCode code="874"/>	<!-- Inmarsat (Atlantic Ocean - West) - satellite service for ships, islands, remote locations -->
+			<!-- telephoneCountryCode code="875" -->	<!-- Reserved - Maritime Mobile Service Applications -->
+			<!-- telephoneCountryCode code="876" -->	<!-- Reserved - Maritime Mobile Service Applications -->
+			<!-- telephoneCountryCode code="877" -->	<!-- Reserved - Maritime Mobile Service Applications -->
+			<telephoneCountryCode code="878"/>	<!-- Universal Personal Telecommunication Service -->
+				<!-- +878 10	VISIONng -->
+			<!-- telephoneCountryCode code="879" -->	<!-- Reserved for national non-commercial purposes (for national mobile/maritime uses?) -->
+			<telephoneCountryCode code="881"/>	<!-- Global Mobile Satellite System (GMSS), shared code -->
+				<!-- +881 0/1	ICO Global Communications -->
+				<!-- +881 2/3	Ellipso -->
+				<!-- +881 6/7	Iridium Satellite -->
+				<!-- +881 8/9	Globalstar Inc. -->
+			<telephoneCountryCode code="882"/>	<!-- International Networks, shared code -->
+				<!-- +882 10	British Telecom - Global Office -->
+				<!-- +882 12	Verizon - HyperStream International Data network -->
+				<!-- +882 13	Telespazio S.p.A. - EMS Regional Mobile Satellite -->
+				<!-- +882 15	Reach - Global International ATM Network -->
+				<!-- +882 16	UAE Admin - Thuraya RMSS Network -->
+				<!-- +882 20	Asia Cellular Satellite - Garuda Mobile Telecom Satellite System -->
+				<!-- +882 22	Cable & Wireless Global Network -->
+				<!-- +882 23	Site-Equant Network -->
+				<!-- +882 24	TeliaSonera multinational ATM Network -->
+				<!-- +882 28	Deutsche Telekom Next Generation Network -->
+				<!-- +882 30	Singapore Telecom - Global Reach Network -->
+				<!-- +882 31	Telekom Malaysia - Global International ATM Netwoork -->
+				<!-- +882 32	Maritime Communications Partner A.S. - MCP Network -->
+				<!-- +882 33	Oration Technologies Network -->
+				<!-- +882 34	Global Networks Switzerland -->
+				<!-- +882 35	Jasper Systems -->
+				<!-- +882 36	Jersey Telecom -->
+				<!-- +882 37	Cingular Wireless Network -->
+				<!-- +882 38	Ellipso -->
+				<!-- +882 39	Vodaphone Malta -->
+				<!-- +882 40	Oy Cubio Communications -->
+				<!-- +882 41	Intermatica -->
+				<!-- +882 42	Seanet Maritime Communications -->
+				<!-- +882 98	ONAIR N.V. - SITA GSM services in aircraft -->
+				<!-- +882 99	Telenor GSM network, services in aircraft -->
+			<telephoneCountryCode code="883"/>	<!-- International Networks, shared code -->
+				<!-- +883 100	Denver Consultants Inc. -->
+				<!-- +883 110	Aicent Inc. -->
+				<!-- +883 5100	Voxbone SA -->
+			<telephoneCountryCode code="888"/>	<!-- Telecommunications for Disaster Relief, UN OCHA -->
+			<telephoneCountryCode code="979"/>	<!-- International Premium Rate Service (IPRS) -->
+			<telephoneCountryCode code="991"/>	<!-- trial of proposed new International Telecom Public Correspondence service -->
+			<!-- telephoneCountryCode code="999" -->	<!-- Reserved for future global service (proposed Disaster Relief Service, or is that just +888?) -->
+		</codesByTerritory>
+		
+		<codesByTerritory territory="AC">	<!-- Ascension Island; in ISO 3166, code AC is "exceptionally reserved" for it but not officially assigned -->
+			<telephoneCountryCode code="247"/>
+			<!-- Ascension is administered by SH Saint Helena, 800 miles away with a different telephoneCountryCode +290 -->
+		</codesByTerritory>
+		<codesByTerritory territory="AD">	<!-- Andorra -->
+			<telephoneCountryCode code="376"/>
+		</codesByTerritory>
+		<codesByTerritory territory="AE">	<!-- United Arab Emirates (Abu Dhabi, Dubai, ...) -->
+			<telephoneCountryCode code="971"/>
+		</codesByTerritory>
+		<codesByTerritory territory="AF">	<!-- Afghanistan -->
+			<telephoneCountryCode code="93"/>
+		</codesByTerritory>
+		<codesByTerritory territory="AG">	<!-- Antigua and Barbuda -->
+			<telephoneCountryCode code="1"/><!-- +1 268 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="AI">	<!-- Anguilla -->
+			<telephoneCountryCode code="1"/><!-- +1 264 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="AL">	<!-- Albania -->
+			<telephoneCountryCode code="355"/>
+		</codesByTerritory>
+		<codesByTerritory territory="AM">	<!-- Armenia -->
+			<telephoneCountryCode code="374"/>
+		</codesByTerritory>
+		<codesByTerritory territory="AO">	<!-- Angola -->
+			<telephoneCountryCode code="244"/>
+		</codesByTerritory>
+		<codesByTerritory territory="AQ">	<!-- Antarctica (non-French territories; French Antarctic territories have territory="TF") -->
+			<telephoneCountryCode code="672"/>	<!-- Australian External Territories including Antarctic territory -->
+			<!-- French Antarctic territories have telephoneCountryCode 262 and territory="TF" -->
+		</codesByTerritory>
+		<codesByTerritory territory="AR">	<!-- Argentina -->
+			<telephoneCountryCode code="54"/>
+		</codesByTerritory>
+		<codesByTerritory territory="AS">	<!-- American Samoa -->
+			<telephoneCountryCode code="1"/><!-- +1 684 from="2004-10-02" -->	<!-- North America Numbering Plan -->
+			<!-- telephoneCountryCode code="684" to="2005-04-02" -->	<!-- now a spare code -->
+		</codesByTerritory>
+		<codesByTerritory territory="AT">	<!-- Austria -->
+			<telephoneCountryCode code="43"/>
+		</codesByTerritory>
+		<codesByTerritory territory="AU">	<!-- Australia -->
+			<telephoneCountryCode code="61"/>
+		</codesByTerritory>
+		<codesByTerritory territory="AW">	<!-- Aruba -->
+			<telephoneCountryCode code="297"/>
+		</codesByTerritory>
+		<codesByTerritory territory="AX">	<!-- Åland Islands -->
+			<telephoneCountryCode code="358"/>	<!-- Finland -->
+		</codesByTerritory>
+		<codesByTerritory territory="AZ">	<!-- Azerbaijan -->
+			<telephoneCountryCode code="994"/>
+		</codesByTerritory>
+		<codesByTerritory territory="BA">	<!-- Bosnia and Herzegovina -->
+			<telephoneCountryCode code="387"/>
+		</codesByTerritory>
+		<codesByTerritory territory="BB">	<!-- Barbados -->
+			<telephoneCountryCode code="1"/><!-- +1 246 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="BD">	<!-- Bangladesh -->
+			<telephoneCountryCode code="880"/>
+		</codesByTerritory>
+		<codesByTerritory territory="BE">	<!-- Belgium -->
+			<telephoneCountryCode code="32"/>
+		</codesByTerritory>
+		<codesByTerritory territory="BF">	<!-- Burkina Faso -->
+			<telephoneCountryCode code="226"/>
+		</codesByTerritory>
+		<codesByTerritory territory="BG">	<!-- Bulgaria -->
+			<telephoneCountryCode code="359"/>
+		</codesByTerritory>
+		<codesByTerritory territory="BH">	<!-- Bahrain -->
+			<telephoneCountryCode code="973"/>
+		</codesByTerritory>
+		<codesByTerritory territory="BI">	<!-- Burundi -->
+			<telephoneCountryCode code="257"/>
+		</codesByTerritory>
+		<codesByTerritory territory="BJ">	<!-- Benin -->
+			<telephoneCountryCode code="229"/>
+		</codesByTerritory>
+		<codesByTerritory territory="BL">	<!-- Saint Barthélemy -->
+			<telephoneCountryCode code="590"/>	<!-- French Dept. of Guadeloupe / French Antilles  -->
+		</codesByTerritory>
+		<codesByTerritory territory="BM">	<!-- Bermuda -->
+			<telephoneCountryCode code="1"/><!-- +1 441 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="BN">	<!-- Brunei Darussalam -->
+			<telephoneCountryCode code="673"/>
+		</codesByTerritory>
+		<codesByTerritory territory="BO">	<!-- Bolivia -->
+			<telephoneCountryCode code="591"/>
+		</codesByTerritory>
+		<codesByTerritory territory="BQ">	<!-- Caribbean Netherlands: Bonaire, Saint Eustatius and Saba -->
+			<telephoneCountryCode code="599"/>
+		</codesByTerritory>
+		<codesByTerritory territory="BR">	<!-- Brazil -->
+			<telephoneCountryCode code="55"/>
+		</codesByTerritory>
+		<codesByTerritory territory="BS">	<!-- Bahamas -->
+			<telephoneCountryCode code="1"/><!-- +1 242 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="BT">	<!-- Bhutan -->
+			<telephoneCountryCode code="975"/>
+		</codesByTerritory>
+		<!-- telephoneCodes territory="BV" -->	<!-- Bouvet Island, uninhabited -->	<!-- telephoneCountryCode unknown -->
+		<codesByTerritory territory="BW">	<!-- Botswana -->
+			<telephoneCountryCode code="267"/>
+		</codesByTerritory>
+		<codesByTerritory territory="BY">	<!-- Belarus -->
+			<telephoneCountryCode code="375"/>
+		</codesByTerritory>
+		<codesByTerritory territory="BZ">	<!-- Belize -->
+			<telephoneCountryCode code="501"/>
+		</codesByTerritory>
+		<codesByTerritory territory="CA">	<!-- Canada -->
+			<telephoneCountryCode code="1"/>	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="CC">	<!-- Cocos (Keeling) Islands -->
+			<telephoneCountryCode code="61"/>	<!-- Australia -->
+		</codesByTerritory>
+		<codesByTerritory territory="CD">	<!-- Congo, Dem. Rep. of the (formerly Zaire) -->
+			<telephoneCountryCode code="243"/>
+		</codesByTerritory>
+		<codesByTerritory territory="CF">	<!-- Central African Republic -->
+			<telephoneCountryCode code="236"/>
+		</codesByTerritory>
+		<codesByTerritory territory="CG">	<!-- Congo (Rep. of the) (Brazzaville) -->
+			<telephoneCountryCode code="242"/>
+		</codesByTerritory>
+		<codesByTerritory territory="CH">	<!-- Switzerland -->
+			<telephoneCountryCode code="41"/>
+		</codesByTerritory>
+		<codesByTerritory territory="CI">	<!-- Côte d'Ivoire -->
+			<telephoneCountryCode code="225"/>
+		</codesByTerritory>
+		<codesByTerritory territory="CK">	<!-- Cook Islands -->
+			<telephoneCountryCode code="682"/>
+		</codesByTerritory>
+		<codesByTerritory territory="CL">	<!-- Chile -->
+			<telephoneCountryCode code="56"/>
+		</codesByTerritory>
+		<codesByTerritory territory="CM">	<!-- Cameroon -->
+			<telephoneCountryCode code="237"/>
+		</codesByTerritory>
+		<codesByTerritory territory="CN">	<!-- China -->
+			<telephoneCountryCode code="86"/>
+		</codesByTerritory>
+		<codesByTerritory territory="CO">	<!-- Colombia -->
+			<telephoneCountryCode code="57"/>
+		</codesByTerritory>
+		<codesByTerritory territory="CR">	<!-- Costa Rica -->
+			<telephoneCountryCode code="506"/>
+		</codesByTerritory>
+		<!-- telephoneCodes territory="CS" -->	<!-- see ME Montenegro or RS Serbia -->
+		<codesByTerritory territory="CU">	<!-- Cuba -->
+			<telephoneCountryCode code="53"/>
+		</codesByTerritory>
+		<codesByTerritory territory="CV">	<!-- Cape Verde -->
+			<telephoneCountryCode code="238"/>
+		</codesByTerritory>
+		<codesByTerritory territory="CW">	<!-- Curacao -->
+			<telephoneCountryCode code="599"/>
+		</codesByTerritory>
+		<codesByTerritory territory="CX">	<!-- Christmas Island -->
+			<telephoneCountryCode code="61"/>	<!-- Australia -->
+		</codesByTerritory>
+		<codesByTerritory territory="CY">	<!-- Cyprus -->
+			<telephoneCountryCode code="357"/>
+		</codesByTerritory>
+		<codesByTerritory territory="CZ">	<!-- Czech Rep. -->
+			<telephoneCountryCode code="420"/>
+		</codesByTerritory>
+		<codesByTerritory territory="DE">	<!-- Germany -->
+			<telephoneCountryCode code="49"/>
+		</codesByTerritory>
+		<codesByTerritory territory="DJ">	<!-- Djibouti -->
+			<telephoneCountryCode code="253"/>
+		</codesByTerritory>
+		<codesByTerritory territory="DK">	<!-- Denmark -->
+			<telephoneCountryCode code="45"/>
+		</codesByTerritory>
+		<codesByTerritory territory="DM">	<!-- Dominica -->
+			<telephoneCountryCode code="1"/><!-- +1 767 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="DO">	<!-- Dominican Rep. -->
+			<telephoneCountryCode code="1"/><!-- +1 809/829 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="DZ">	<!-- Algeria -->
+			<telephoneCountryCode code="213"/>
+		</codesByTerritory>
+		<codesByTerritory territory="EC">	<!-- Ecuador -->
+			<telephoneCountryCode code="593"/>
+		</codesByTerritory>
+		<codesByTerritory territory="EE">	<!-- Estonia -->
+			<telephoneCountryCode code="372"/>
+		</codesByTerritory>
+		<codesByTerritory territory="EG">	<!-- Egypt (Arab Republic of) -->
+			<telephoneCountryCode code="20"/>
+		</codesByTerritory>
+		<codesByTerritory territory="EH">	<!-- Western Sahara -->
+			<telephoneCountryCode code="212"/> <!-- via Morocco -->
+		</codesByTerritory>
+		<codesByTerritory territory="ER">	<!-- Eritrea -->
+			<telephoneCountryCode code="291"/>
+		</codesByTerritory>
+		<codesByTerritory territory="ES">	<!-- Spain -->
+			<telephoneCountryCode code="34"/>
+		</codesByTerritory>
+		<codesByTerritory territory="ET">	<!-- Ethiopia -->
+			<telephoneCountryCode code="251"/>
+		</codesByTerritory>
+		<codesByTerritory territory="FI">	<!-- Finland -->
+			<telephoneCountryCode code="358"/>
+		</codesByTerritory>
+		<codesByTerritory territory="FJ">	<!-- Fiji -->
+			<telephoneCountryCode code="679"/>
+		</codesByTerritory>
+		<codesByTerritory territory="FK">	<!-- Falkland Islands (Malvinas) -->
+			<telephoneCountryCode code="500"/>
+		</codesByTerritory>
+		<codesByTerritory territory="FM">	<!-- Micronesia, Federated States of -->
+			<telephoneCountryCode code="691"/>
+		</codesByTerritory>
+		<codesByTerritory territory="FO">	<!-- Faroe Islands -->
+			<telephoneCountryCode code="298"/>
+		</codesByTerritory>
+		<codesByTerritory territory="FR">	<!-- France -->
+			<telephoneCountryCode code="33"/>
+		</codesByTerritory>
+		<codesByTerritory territory="GA">	<!-- Gabon -->
+			<telephoneCountryCode code="241"/>
+		</codesByTerritory>
+		<codesByTerritory territory="GB">	<!-- United Kingdom -->
+			<telephoneCountryCode code="44"/>	<!-- United Kingdom -->
+		</codesByTerritory>
+		<codesByTerritory territory="GD">	<!-- Grenada -->
+			<telephoneCountryCode code="1"/><!-- +1 473 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="GE">	<!-- Georgia -->
+			<telephoneCountryCode code="995"/>
+		</codesByTerritory>
+		<codesByTerritory territory="GF">	<!-- French Guiana (French Dept. of) -->
+			<telephoneCountryCode code="594"/>
+		</codesByTerritory>
+		<codesByTerritory territory="GG">	<!-- Guernsey -->
+			<telephoneCountryCode code="44"/>	<!-- United Kingdom -->
+		</codesByTerritory>
+		<codesByTerritory territory="GH">	<!-- Ghana -->
+			<telephoneCountryCode code="233"/>
+		</codesByTerritory>
+		<codesByTerritory territory="GI">	<!-- Gibraltar -->
+			<telephoneCountryCode code="350"/>
+		</codesByTerritory>
+		<codesByTerritory territory="GL">	<!-- Greenland -->
+			<telephoneCountryCode code="299"/>
+		</codesByTerritory>
+		<codesByTerritory territory="GM">	<!-- Gambia -->
+			<telephoneCountryCode code="220"/>
+		</codesByTerritory>
+		<codesByTerritory territory="GN">	<!-- Guinea -->
+			<telephoneCountryCode code="224"/>
+		</codesByTerritory>
+		<codesByTerritory territory="GP">	<!-- Guadeloupe -->
+			<telephoneCountryCode code="590"/>	<!-- French Dept. of Guadeloupe / French Antilles -->
+		</codesByTerritory>
+		<codesByTerritory territory="GQ">	<!-- Equatorial Guinea -->
+			<telephoneCountryCode code="240"/>
+		</codesByTerritory>
+		<codesByTerritory territory="GR">	<!-- Greece -->
+			<telephoneCountryCode code="30"/>
+		</codesByTerritory>
+		<codesByTerritory territory="GS">	<!-- South Georgia and the South Sandwich Islands -->
+			<telephoneCountryCode code="500"/>	<!-- Falkland Islands -->
+		</codesByTerritory>
+		<codesByTerritory territory="GT">	<!-- Guatemala -->
+			<telephoneCountryCode code="502"/>
+		</codesByTerritory>
+		<codesByTerritory territory="GU">	<!-- Guam -->
+			<telephoneCountryCode code="1"/><!-- +1 671 from="1997-07-01" -->	<!-- North America Numbering Plan -->
+			<!-- telephoneCountryCode code="671" to="1998-07-01" -->	<!-- now a spare code -->
+		</codesByTerritory>
+		<codesByTerritory territory="GW">	<!-- Guinea-Bissau -->
+			<telephoneCountryCode code="245"/>
+		</codesByTerritory>
+		<codesByTerritory territory="GY">	<!-- Guyana -->
+			<telephoneCountryCode code="592"/>
+		</codesByTerritory>
+		<codesByTerritory territory="HK">	<!-- Hong Kong, China -->
+			<telephoneCountryCode code="852"/>
+		</codesByTerritory>
+		<!-- telephoneCodes territory="HM" -->	<!-- Heard Island & Mcdonald Islands, uninhabited -->	<!-- telephoneCountryCode unknown -->
+		<codesByTerritory territory="HN">	<!-- Honduras -->
+			<telephoneCountryCode code="504"/>
+		</codesByTerritory>
+		<codesByTerritory territory="HR">	<!-- Croatia -->
+			<telephoneCountryCode code="385"/>
+		</codesByTerritory>
+		<codesByTerritory territory="HT">	<!-- Haiti -->
+			<telephoneCountryCode code="509"/>
+		</codesByTerritory>
+		<codesByTerritory territory="HU">	<!-- Hungary -->
+			<telephoneCountryCode code="36"/>
+		</codesByTerritory>
+		<codesByTerritory territory="ID">	<!-- Indonesia -->
+			<telephoneCountryCode code="62"/>
+		</codesByTerritory>
+		<codesByTerritory territory="IE">	<!-- Ireland -->
+			<telephoneCountryCode code="353"/>
+		</codesByTerritory>
+		<codesByTerritory territory="IL">	<!-- Israel -->
+			<telephoneCountryCode code="972"/>	<!-- Israel Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="IM">	<!-- Isle of Man -->
+			<telephoneCountryCode code="44"/>	<!-- United Kingdom -->
+		</codesByTerritory>
+		<codesByTerritory territory="IN">	<!-- India -->
+			<telephoneCountryCode code="91"/>
+		</codesByTerritory>
+		<codesByTerritory territory="IO">	<!-- British Indian Ocean Territory / Diego Garcia -->
+			<telephoneCountryCode code="246"/>
+		</codesByTerritory>
+		<codesByTerritory territory="IQ">	<!-- Iraq -->
+			<telephoneCountryCode code="964"/>
+		</codesByTerritory>
+		<codesByTerritory territory="IR">	<!-- Iran, Islamic Republic of -->
+			<telephoneCountryCode code="98"/>
+		</codesByTerritory>
+		<codesByTerritory territory="IS">	<!-- Iceland -->
+			<telephoneCountryCode code="354"/>
+		</codesByTerritory>
+		<codesByTerritory territory="IT">	<!-- Italy -->
+			<telephoneCountryCode code="39"/>
+		</codesByTerritory>
+		<codesByTerritory territory="JE">	<!-- Jersey -->
+			<telephoneCountryCode code="44"/>	<!-- United Kingdom -->
+		</codesByTerritory>
+		<codesByTerritory territory="JM">	<!-- Jamaica -->
+			<telephoneCountryCode code="1"/><!-- +1 876 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="JO">	<!-- Jordan -->
+			<telephoneCountryCode code="962"/>
+		</codesByTerritory>
+		<codesByTerritory territory="JP">	<!-- Japan -->
+			<telephoneCountryCode code="81"/>
+		</codesByTerritory>
+		<codesByTerritory territory="KE">	<!-- Kenya -->
+			<telephoneCountryCode code="254"/>
+		</codesByTerritory>
+		<codesByTerritory territory="KG">	<!-- Kyrgyzstan -->
+			<telephoneCountryCode code="996"/>
+		</codesByTerritory>
+		<codesByTerritory territory="KH">	<!-- Cambodia -->
+			<telephoneCountryCode code="855"/>
+		</codesByTerritory>
+		<codesByTerritory territory="KI">	<!-- Kiribati -->
+			<telephoneCountryCode code="686"/>
+		</codesByTerritory>
+		<codesByTerritory territory="KM">	<!-- Comoros -->
+			<telephoneCountryCode code="269"/>	<!-- previously shared with YT Mayotte -->
+		</codesByTerritory>
+		<codesByTerritory territory="KN">	<!-- Saint Kitts and Nevis -->
+			<telephoneCountryCode code="1"/><!-- +1 869 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="KP">	<!-- Korea, Dem. People's Rep. of -->
+			<telephoneCountryCode code="850"/>
+		</codesByTerritory>
+		<codesByTerritory territory="KR">	<!-- Korea (Rep. of) -->
+			<telephoneCountryCode code="82"/>
+		</codesByTerritory>
+		<codesByTerritory territory="KW">	<!-- Kuwait -->
+			<telephoneCountryCode code="965"/>
+		</codesByTerritory>
+		<codesByTerritory territory="KY">	<!-- Cayman Islands -->
+			<telephoneCountryCode code="1"/><!-- +1 345 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="KZ">	<!-- Kazakhstan -->
+			<telephoneCountryCode code="7"/>	<!-- Russia and Kazakhstan shared code -->
+		</codesByTerritory>
+		<codesByTerritory territory="LA">	<!-- Lao People's Dem. Rep. -->
+			<telephoneCountryCode code="856"/>
+		</codesByTerritory>
+		<codesByTerritory territory="LB">	<!-- Lebanon -->
+			<telephoneCountryCode code="961"/>
+		</codesByTerritory>
+		<codesByTerritory territory="LC">	<!-- Saint Lucia -->
+			<telephoneCountryCode code="1"/><!-- +1 758 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="LI">	<!-- Liechtenstein -->
+			<telephoneCountryCode code="423"/>
+		</codesByTerritory>
+		<codesByTerritory territory="LK">	<!-- Sri Lanka -->
+			<telephoneCountryCode code="94"/>
+		</codesByTerritory>
+		<codesByTerritory territory="LR">	<!-- Liberia -->
+			<telephoneCountryCode code="231"/>
+		</codesByTerritory>
+		<codesByTerritory territory="LS">	<!-- Lesotho -->
+			<telephoneCountryCode code="266"/>
+		</codesByTerritory>
+		<codesByTerritory territory="LT">	<!-- Lithuania -->
+			<telephoneCountryCode code="370"/>
+		</codesByTerritory>
+		<codesByTerritory territory="LU">	<!-- Luxembourg -->
+			<telephoneCountryCode code="352"/>
+		</codesByTerritory>
+		<codesByTerritory territory="LV">	<!-- Latvia -->
+			<telephoneCountryCode code="371"/>
+		</codesByTerritory>
+		<codesByTerritory territory="LY">	<!-- Libya (Soc. People’s Libyan Arab Jamahiriya) -->
+			<telephoneCountryCode code="218"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MA">	<!-- Morocco -->
+			<telephoneCountryCode code="212"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MC">	<!-- Monaco -->
+			<telephoneCountryCode code="377"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MD">	<!-- Moldova, Rep. of -->
+			<telephoneCountryCode code="373"/>
+		</codesByTerritory>
+		<codesByTerritory territory="ME">	<!-- Montenegro -->
+			<telephoneCountryCode code="382"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MF">	<!-- Saint Martin -->
+			<telephoneCountryCode code="590"/> <!-- French Antilles -->
+		</codesByTerritory>
+		<codesByTerritory territory="MG">	<!-- Madagascar -->
+			<telephoneCountryCode code="261"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MH">	<!-- Marshall Islands -->
+			<telephoneCountryCode code="692"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MK">	<!-- Macedonia, Former Yugoslav Rep. of -->
+			<telephoneCountryCode code="389"/>
+		</codesByTerritory>
+		<codesByTerritory territory="ML">	<!-- Mali -->
+			<telephoneCountryCode code="223"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MM">	<!-- Myanmar -->
+			<telephoneCountryCode code="95"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MN">	<!-- Mongolia -->
+			<telephoneCountryCode code="976"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MO">	<!-- Macao, China -->
+			<telephoneCountryCode code="853"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MP">	<!-- Northern Mariana Islands -->
+			<telephoneCountryCode code="1"/><!-- +1 670 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="MQ">	<!-- Martinique (French Dept. of) -->
+			<telephoneCountryCode code="596"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MR">	<!-- Mauritania -->
+			<telephoneCountryCode code="222"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MS">	<!-- Montserrat -->
+			<telephoneCountryCode code="1"/><!-- +1 664 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="MT">	<!-- Malta -->
+			<telephoneCountryCode code="356"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MU">	<!-- Mauritius -->
+			<telephoneCountryCode code="230"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MV">	<!-- Maldives -->
+			<telephoneCountryCode code="960"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MW">	<!-- Malawi -->
+			<telephoneCountryCode code="265"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MX">	<!-- Mexico -->
+			<telephoneCountryCode code="52"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MY">	<!-- Malaysia -->
+			<telephoneCountryCode code="60"/>
+		</codesByTerritory>
+		<codesByTerritory territory="MZ">	<!-- Mozambique -->
+			<telephoneCountryCode code="258"/>
+		</codesByTerritory>
+		<codesByTerritory territory="NA">	<!-- Namibia -->
+			<telephoneCountryCode code="264"/>
+		</codesByTerritory>
+		<codesByTerritory territory="NC">	<!-- New Caledonia (Territoire français d'outre-mer) -->
+			<telephoneCountryCode code="687"/>
+		</codesByTerritory>
+		<codesByTerritory territory="NE">	<!-- Niger -->
+			<telephoneCountryCode code="227"/>
+		</codesByTerritory>
+		<codesByTerritory territory="NF">	<!-- Norfolk Island -->
+			<telephoneCountryCode code="672"/>	<!-- Australian External Territories -->
+		</codesByTerritory>
+		<codesByTerritory territory="NG">	<!-- Nigeria -->
+			<telephoneCountryCode code="234"/>
+		</codesByTerritory>
+		<codesByTerritory territory="NI">	<!-- Nicaragua -->
+			<telephoneCountryCode code="505"/>
+		</codesByTerritory>
+		<codesByTerritory territory="NL">	<!-- Netherlands -->
+			<telephoneCountryCode code="31"/>
+		</codesByTerritory>
+		<codesByTerritory territory="NO">	<!-- Norway -->
+			<telephoneCountryCode code="47"/>
+		</codesByTerritory>
+		<codesByTerritory territory="NP">	<!-- Nepal -->
+			<telephoneCountryCode code="977"/>
+		</codesByTerritory>
+		<codesByTerritory territory="NR">	<!-- Nauru -->
+			<telephoneCountryCode code="674"/>
+		</codesByTerritory>
+		<codesByTerritory territory="NU">	<!-- Niue -->
+			<telephoneCountryCode code="683"/>
+		</codesByTerritory>
+		<codesByTerritory territory="NZ">	<!-- New Zealand -->
+			<telephoneCountryCode code="64"/>
+		</codesByTerritory>
+		<codesByTerritory territory="OM">	<!-- Oman -->
+			<telephoneCountryCode code="968"/>
+		</codesByTerritory>
+		<codesByTerritory territory="PA">	<!-- Panama -->
+			<telephoneCountryCode code="507"/>
+		</codesByTerritory>
+		<codesByTerritory territory="PE">	<!-- Peru -->
+			<telephoneCountryCode code="51"/>
+		</codesByTerritory>
+		<codesByTerritory territory="PF">	<!-- French Polynesia (Tahiti) (Territoire français d'outre-mer) -->
+			<telephoneCountryCode code="689"/>
+		</codesByTerritory>
+		<codesByTerritory territory="PG">	<!-- Papua New Guinea -->
+			<telephoneCountryCode code="675"/>
+		</codesByTerritory>
+		<codesByTerritory territory="PH">	<!-- Philippines -->
+			<telephoneCountryCode code="63"/>
+		</codesByTerritory>
+		<codesByTerritory territory="PK">	<!-- Pakistan -->
+			<telephoneCountryCode code="92"/>
+		</codesByTerritory>
+		<codesByTerritory territory="PL">	<!-- Poland -->
+			<telephoneCountryCode code="48"/>
+		</codesByTerritory>
+		<codesByTerritory territory="PM">	<!-- Saint Pierre and Miquelon (Collectivité territoriale de la République française) -->
+			<telephoneCountryCode code="508"/>
+		</codesByTerritory>
+		<codesByTerritory territory="PN">	<!-- Pitcairn Islands -->
+			<telephoneCountryCode code="870"/>
+		</codesByTerritory>
+		<codesByTerritory territory="PR">	<!-- Puerto Rico -->
+			<telephoneCountryCode code="1"/><!-- +1 787/939 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="PS">	<!-- Palestinian Territory, Occupied -->
+			<telephoneCountryCode code="972"/>	<!-- via Israel Numbering Plan (from some locations, many of the same telephone numbers can also be reached via telephoneCountryCode 970 -->
+			<telephoneCountryCode code="970" alt="limitedAvailability"/>	<!-- reserved for Palestinian Authority; this code is partially implemented depending on the origin of the call (and the destination number?) -->
+		</codesByTerritory>
+		<codesByTerritory territory="PT">	<!-- Portugal -->
+			<telephoneCountryCode code="351"/>
+		</codesByTerritory>
+		<codesByTerritory territory="PW">	<!-- Palau -->
+			<telephoneCountryCode code="680"/>
+		</codesByTerritory>
+		<codesByTerritory territory="PY">	<!-- Paraguay -->
+			<telephoneCountryCode code="595"/>
+		</codesByTerritory>
+		<codesByTerritory territory="QA">	<!-- Qatar -->
+			<telephoneCountryCode code="974"/>
+		</codesByTerritory>
+		<!-- telephoneCodes territory="EU" -->	<!-- European Union, see specific countries -->
+		<codesByTerritory territory="RE">	<!-- Réunion -->
+			<telephoneCountryCode code="262"/>	<!-- French Departments & Territories in the Indian Ocean -->
+		</codesByTerritory>
+		<codesByTerritory territory="RO">	<!-- Romania -->
+			<telephoneCountryCode code="40"/>
+		</codesByTerritory>
+		<codesByTerritory territory="RS">	<!-- Serbia -->
+			<telephoneCountryCode code="381"/>
+		</codesByTerritory>
+		<codesByTerritory territory="RU">	<!-- Russian Federation -->
+			<telephoneCountryCode code="7"/>	<!-- Russia and Kazakhstan shared code -->
+		</codesByTerritory>
+		<codesByTerritory territory="RW">	<!-- Rwanda -->
+			<telephoneCountryCode code="250"/>
+		</codesByTerritory>
+		<codesByTerritory territory="SA">	<!-- Saudi Arabia -->
+			<telephoneCountryCode code="966"/>
+		</codesByTerritory>
+		<codesByTerritory territory="SB">	<!-- Solomon Islands -->
+			<telephoneCountryCode code="677"/>
+		</codesByTerritory>
+		<codesByTerritory territory="SC">	<!-- Seychelles -->
+			<telephoneCountryCode code="248"/>
+		</codesByTerritory>
+		<codesByTerritory territory="SD">	<!-- Sudan -->
+			<telephoneCountryCode code="249"/>
+		</codesByTerritory>
+		<codesByTerritory territory="SE">	<!-- Sweden -->
+			<telephoneCountryCode code="46"/>
+		</codesByTerritory>
+		<codesByTerritory territory="SG">	<!-- Singapore -->
+			<telephoneCountryCode code="65"/>
+		</codesByTerritory>
+		<codesByTerritory territory="SH">	<!-- Saint Helena -->
+			<telephoneCountryCode code="290"/>	<!-- Saint Helena & Tristan da Cunha -->
+		</codesByTerritory>
+		<codesByTerritory territory="SI">	<!-- Slovenia -->
+			<telephoneCountryCode code="386"/>
+		</codesByTerritory>
+		<codesByTerritory territory="SJ">	<!-- Svalbard and Jan Mayen Islands-->
+			<telephoneCountryCode code="47"/>	<!-- Norway -->
+		</codesByTerritory>
+		<codesByTerritory territory="SK">	<!-- Slovakia -->
+			<telephoneCountryCode code="421"/>
+		</codesByTerritory>
+		<codesByTerritory territory="SL">	<!-- Sierra Leone -->
+			<telephoneCountryCode code="232"/>
+		</codesByTerritory>
+		<codesByTerritory territory="SM">	<!-- San Marino -->
+			<telephoneCountryCode code="378"/>
+		</codesByTerritory>
+		<codesByTerritory territory="SN">	<!-- Senegal -->
+			<telephoneCountryCode code="221"/>
+		</codesByTerritory>
+		<codesByTerritory territory="SO">	<!-- Somalia -->
+			<telephoneCountryCode code="252"/>
+		</codesByTerritory>
+		<codesByTerritory territory="SR">	<!-- Suriname -->
+			<telephoneCountryCode code="597"/>
+		</codesByTerritory>
+		<codesByTerritory territory="SS">	<!-- South Sudan -->
+			<telephoneCountryCode code="211"/>
+		</codesByTerritory>
+		<codesByTerritory territory="ST">	<!-- Sao Tome and Principe -->
+			<telephoneCountryCode code="239"/>
+		</codesByTerritory>
+		<codesByTerritory territory="SV">	<!-- El Salvador -->
+			<telephoneCountryCode code="503"/>
+		</codesByTerritory>
+		<codesByTerritory territory="SX">	<!-- Sint Maarten -->
+			<telephoneCountryCode code="1"/><!-- +1 721 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="SY">	<!-- Syrian Arab Republic -->
+			<telephoneCountryCode code="963"/>
+		</codesByTerritory>
+		<codesByTerritory territory="SZ">	<!-- Swaziland -->
+			<telephoneCountryCode code="268"/>
+		</codesByTerritory>
+		<codesByTerritory territory="TC">	<!-- Turks and Caicos Islands -->
+			<telephoneCountryCode code="1"/><!-- +1 649 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="TD">	<!-- Chad -->
+			<telephoneCountryCode code="235"/>
+		</codesByTerritory>
+		<codesByTerritory territory="TF">	<!-- French Southern Territories -->
+			<telephoneCountryCode code="262"/>	<!-- French Departments & Territories in the Indian Ocean, including southern & Antarctic territories -->
+		</codesByTerritory>
+		<codesByTerritory territory="TG">	<!-- Togo -->
+			<telephoneCountryCode code="228"/>
+		</codesByTerritory>
+		<codesByTerritory territory="TH">	<!-- Thailand -->
+			<telephoneCountryCode code="66"/>
+		</codesByTerritory>
+		<codesByTerritory territory="TJ">	<!-- Tajikistan -->
+			<telephoneCountryCode code="992"/>
+		</codesByTerritory>
+		<codesByTerritory territory="TK">	<!-- Tokelau -->
+			<telephoneCountryCode code="690"/>
+		</codesByTerritory>
+		<codesByTerritory territory="TL">	<!-- Timor-Leste -->
+			<telephoneCountryCode code="670"/>
+		</codesByTerritory>
+		<codesByTerritory territory="TM">	<!-- Turkmenistan -->
+			<telephoneCountryCode code="993"/>
+		</codesByTerritory>
+		<codesByTerritory territory="TN">	<!-- Tunisia -->
+			<telephoneCountryCode code="216"/>
+		</codesByTerritory>
+		<codesByTerritory territory="TO">	<!-- Tonga -->
+			<telephoneCountryCode code="676"/>
+		</codesByTerritory>
+		<codesByTerritory territory="TR">	<!-- Turkey -->
+			<telephoneCountryCode code="90"/>
+		</codesByTerritory>
+		<codesByTerritory territory="TT">	<!-- Trinidad and Tobago -->
+			<telephoneCountryCode code="1"/><!-- +1 868 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="TV">	<!-- Tuvalu -->
+			<telephoneCountryCode code="688"/>
+		</codesByTerritory>
+		<codesByTerritory territory="TW">	<!-- Taiwan, China -->
+			<telephoneCountryCode code="886"/>
+		</codesByTerritory>
+		<codesByTerritory territory="TZ">	<!-- Tanzania -->
+			<telephoneCountryCode code="255"/>
+		</codesByTerritory>
+		<codesByTerritory territory="UA">	<!-- Ukraine -->
+			<telephoneCountryCode code="380"/>
+		</codesByTerritory>
+		<codesByTerritory territory="UG">	<!-- Uganda -->
+			<telephoneCountryCode code="256"/>
+		</codesByTerritory>
+		<codesByTerritory territory="UM">	<!-- United States Minor Outlying Islands -->
+			<telephoneCountryCode code="1"/>	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="US">	<!-- United States -->
+			<telephoneCountryCode code="1"/>	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="UY">	<!-- Uruguay -->
+			<telephoneCountryCode code="598"/>
+		</codesByTerritory>
+		<codesByTerritory territory="UZ">	<!-- Uzbekistan -->
+			<telephoneCountryCode code="998"/>
+		</codesByTerritory>
+		<codesByTerritory territory="VA">	<!-- Vatican City State -->
+			<telephoneCountryCode code="39"/>	<!-- Italy -->
+			<!-- telephoneCountryCode code="379" -->	<!-- code for Vatican, reserved for future use -->
+		</codesByTerritory>
+		<codesByTerritory territory="VC">	<!-- Saint Vincent and the Grenadines -->
+			<telephoneCountryCode code="1"/><!-- +1 784 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="VE">	<!-- Venezuela -->
+			<telephoneCountryCode code="58"/>
+		</codesByTerritory>
+		<codesByTerritory territory="VG">	<!-- Virgin Islands, British -->
+			<telephoneCountryCode code="1"/><!-- +1 284 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="VI">	<!-- Virgin Islands, United States  -->
+			<telephoneCountryCode code="1"/><!-- +1 340 -->	<!-- North America Numbering Plan -->
+		</codesByTerritory>
+		<codesByTerritory territory="VN">	<!-- Viet Nam -->
+			<telephoneCountryCode code="84"/>
+		</codesByTerritory>
+		<codesByTerritory territory="VU">	<!-- Vanuatu -->
+			<telephoneCountryCode code="678"/>
+		</codesByTerritory>
+		<codesByTerritory territory="WF">	<!-- Wallis and Futuna (Territoire français d'outre-mer) -->
+			<telephoneCountryCode code="681"/>
+		</codesByTerritory>
+		<codesByTerritory territory="WS">	<!-- Samoa -->
+			<telephoneCountryCode code="685"/>
+		</codesByTerritory>
+        <codesByTerritory territory="XK">   <!-- Kosovo -->
+            <telephoneCountryCode code="377"/> <!-- mobile phone networks -->
+            <telephoneCountryCode code="381"/> <!--  official (Serbia), used for landlines -->
+            <telephoneCountryCode code="386"/> <!--  mobile phone networks, partial (Slovenia) -->
+        </codesByTerritory>
+		<codesByTerritory territory="YE">	<!-- Yemen -->
+			<telephoneCountryCode code="967"/>	<!-- (originally just for Yemen Arab Republic, before merge) -->
+		</codesByTerritory>
+		<codesByTerritory territory="YT">	<!-- Mayotte -->
+			<telephoneCountryCode code="262"/><!-- from="2007-03-30" -->	<!-- French Departments & Territories in the Indian Ocean -->
+			<!-- telephoneCountryCode code="269" to="2007-03-30" -->	<!-- previously shared with KM Comoros -->
+		</codesByTerritory>
+		<codesByTerritory territory="ZA">	<!-- South Africa -->
+			<telephoneCountryCode code="27"/>
+		</codesByTerritory>
+		<codesByTerritory territory="ZM">	<!-- Zambia -->
+			<telephoneCountryCode code="260"/>
+		</codesByTerritory>
+		<codesByTerritory territory="ZW">	<!-- Zimbabwe -->
+			<telephoneCountryCode code="263"/>
+		</codesByTerritory>
+		
+		<!-- currently spare or otherwise unused telephoneCountryCode codes:
+			+210 (reserved for Morocco?)
+			+211 (reserved for Morocco?)
+			+214 (reserved for Algeria?)
+			+215 (reserved for Algeria?)
+			+217 (reserved for Tunisia?)
+			+219 (reserved for Libya?)
+			+259 (originally intended for Zanzibar, which is now part of Tanzania)
+			+280 to 289 (reserved for E.164 country code expansion)
+			+292 to 294
+			+295 (discontinued, previously assigned for San Marino)
+			+296 (once considered for Trinidad/Tobago)
+			+383
+			+384
+			+422
+			+424 to 429
+			+671 (discontinued; used for Guam until 1998-07-01)
+			+684 (discontinued; used for American Samoa until 2005-04-02)
+			+693 to 699
+			+801 to 807
+			+809
+			+830 to 839
+			+851
+			+854
+			+857 to 859
+			+884 to 885
+			+887
+			+889
+			+890 to 899 (reserved for E.164 country code expansion)
+			+969 (reservation currently under investigation; previously for Yemen Democratic Republic, then discontinued 1994)
+			+978
+			+990
+			+997
+		-->
+	</telephoneCodeData>
+</supplementalData>

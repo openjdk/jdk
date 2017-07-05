@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8004489 8006509
+ * @bug 8004489 8006509 8008577
  * @summary Unit test for CLDR FormatData resources
  * @modules java.base/sun.util.locale.provider
  * @compile -XDignore.symbol.file CldrFormatNamesTest.java
@@ -63,12 +63,12 @@ public class CldrFormatNamesTest {
         },
         {
             Locale.PRC,
-            "field.zone", "\u533a\u57df",
+            "field.zone", "\u65f6\u533a",
             "java.time.islamic.DatePatterns", new String[] {
                 "Gy\u5e74M\u6708d\u65e5EEEE",
                 "Gy\u5e74M\u6708d\u65e5",
                 "Gy\u5e74M\u6708d\u65e5",
-                "Gyy-MM-dd",
+                "Gy/M/d",
             },
             "calendarname.islamic", "\u4f0a\u65af\u5170\u65e5\u5386",
         },
@@ -76,12 +76,23 @@ public class CldrFormatNamesTest {
             Locale.GERMANY,
             "field.dayperiod", "Tagesh\u00e4lfte",
             "java.time.islamic.DatePatterns", new String[] {
-                "EEEE d. MMMM y G",
+                "EEEE, d. MMMM y G",
                 "d. MMMM y G",
-                "d. MMM y G",
-                "d.M.y G",
+                "dd.MM.y G",
+                "dd.MM.yy GGGGG",
             },
             "calendarname.islamic", "Islamischer Kalender",
+        },
+        {
+            Locale.FRANCE,
+            "field.dayperiod", "cadran",
+            "java.time.islamic.DatePatterns", new String[] {
+                "EEEE d MMMM y G",
+                "d MMMM y G",
+                "d MMM y G",
+                "dd/MM/y GGGGG",
+            },
+            "calendarname.islamic", "calendrier musulman",
         },
     };
 
@@ -127,16 +138,16 @@ public class CldrFormatNamesTest {
                     if (expected instanceof String) {
                         if (!expected.equals(value)) {
                             errors++;
-                            System.err.printf("error: key='%s', got '%s' expected '%s'%n",
-                                              key, value, expected);
+                            System.err.printf("error: key='%s', got '%s' expected '%s', rb: %s%n",
+                                              key, value, expected, rb);
                         }
                     } else if (expected instanceof String[]) {
                         try {
                             if (!Arrays.equals((Object[]) value, (Object[]) expected)) {
                                 errors++;
-                                System.err.printf("error: key='%s', got '%s' expected '%s'%n",
+                                System.err.printf("error: key='%s', got '%s' expected '%s', rb: %s%n",
                                                   key, Arrays.asList((Object[])value),
-                                                  Arrays.asList((Object[])expected));
+                                                  Arrays.asList((Object[])expected), rb);
                             }
                         } catch (Exception e) {
                             errors++;
@@ -145,7 +156,7 @@ public class CldrFormatNamesTest {
                     }
                 } else {
                     errors++;
-                    System.err.println("No resource for " + key);
+                    System.err.println("No resource for " + key+", rb: "+rb);
                 }
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
+import java.security.InvalidParameterException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.security.Provider.Service;
 import java.security.Security;
 
 /**
@@ -360,7 +363,7 @@ public class Sasl {
 
         SaslClient mech = null;
         SaslClientFactory fac;
-        String className;
+        Service service;
         String mechName;
 
         for (int i = 0; i < mechanisms.length; i++) {
@@ -370,31 +373,32 @@ public class Sasl {
             } else if (mechName.length() == 0) {
                 continue;
             }
-            String mechFilter = "SaslClientFactory." + mechName;
-            Provider[] provs = Security.getProviders(mechFilter);
-            for (int j = 0; provs != null && j < provs.length; j++) {
-                className = provs[j].getProperty(mechFilter);
-                if (className == null) {
-                    // Case is ignored
-                    continue;
-                }
+            String type = "SaslClientFactory";
+            Provider[] provs = Security.getProviders(type + "." + mechName);
+            if (provs != null) {
+                for (Provider p : provs) {
+                    service = p.getService(type, mechName);
+                    if (service == null) {
+                        // no such service exists
+                        continue;
+                    }
 
-                fac = (SaslClientFactory) loadFactory(provs[j], className);
-                if (fac != null) {
-                    mech = fac.createSaslClient(
-                        new String[]{mechanisms[i]}, authorizationId,
-                        protocol, serverName, props, cbh);
-                    if (mech != null) {
-                        return mech;
+                    fac = (SaslClientFactory) loadFactory(service);
+                    if (fac != null) {
+                        mech = fac.createSaslClient(
+                            new String[]{mechanisms[i]}, authorizationId,
+                            protocol, serverName, props, cbh);
+                        if (mech != null) {
+                            return mech;
+                        }
                     }
                 }
             }
         }
-
         return null;
     }
 
-    private static Object loadFactory(Provider p, String className)
+    private static Object loadFactory(Service service)
         throws SaslException {
         try {
             /*
@@ -406,18 +410,9 @@ public class Sasl {
              * have "getClassLoader" permission, or a SecurityException
              * will be thrown.
              */
-            ClassLoader cl = p.getClass().getClassLoader();
-            Class<?> implClass;
-            implClass = Class.forName(className, true, cl);
-            return implClass.newInstance();
-        } catch (ClassNotFoundException e) {
-            throw new SaslException("Cannot load class " + className, e);
-        } catch (InstantiationException e) {
-            throw new SaslException("Cannot instantiate class " + className, e);
-        } catch (IllegalAccessException e) {
-            throw new SaslException("Cannot access class " + className, e);
-        } catch (SecurityException e) {
-            throw new SaslException("Cannot access class " + className, e);
+            return service.newInstance(null);
+        } catch (InvalidParameterException | NoSuchAlgorithmException e) {
+            throw new SaslException("Cannot instantiate service " + service, e);
         }
     }
 
@@ -503,7 +498,7 @@ public class Sasl {
 
         SaslServer mech = null;
         SaslServerFactory fac;
-        String className;
+        Service service;
 
         if (mechanism == null) {
             throw new NullPointerException("Mechanism name cannot be null");
@@ -511,24 +506,25 @@ public class Sasl {
             return null;
         }
 
-        String mechFilter = "SaslServerFactory." + mechanism;
-        Provider[] provs = Security.getProviders(mechFilter);
-        for (int j = 0; provs != null && j < provs.length; j++) {
-            className = provs[j].getProperty(mechFilter);
-            if (className == null) {
-                throw new SaslException("Provider does not support " +
-                    mechFilter);
-            }
-            fac = (SaslServerFactory) loadFactory(provs[j], className);
-            if (fac != null) {
-                mech = fac.createSaslServer(
-                    mechanism, protocol, serverName, props, cbh);
-                if (mech != null) {
-                    return mech;
+        String type = "SaslServerFactory";
+        Provider[] provs = Security.getProviders(type + "." + mechanism);
+        if (provs != null) {
+            for (Provider p : provs) {
+                service = p.getService(type, mechanism);
+                if (service == null) {
+                    throw new SaslException("Provider does not support " +
+                        mechanism + " " + type);
+                }
+                fac = (SaslServerFactory) loadFactory(service);
+                if (fac != null) {
+                    mech = fac.createSaslServer(
+                        mechanism, protocol, serverName, props, cbh);
+                    if (mech != null) {
+                        return mech;
+                    }
                 }
             }
         }
-
         return null;
     }
 
@@ -582,36 +578,21 @@ public class Sasl {
             return result;
         }
 
-
-        Provider[] providers = Security.getProviders();
-        HashSet<String> classes = new HashSet<String>();
+        Provider[] provs = Security.getProviders();
         Object fac;
 
-        for (int i = 0; i < providers.length; i++) {
-            classes.clear();
+        for (Provider p : provs) {
 
-            // Check the keys for each provider.
-            for (Enumeration<Object> e = providers[i].keys(); e.hasMoreElements(); ) {
-                String currentKey = (String)e.nextElement();
-                if (currentKey.startsWith(serviceName)) {
-                    // We should skip the currentKey if it contains a
-                    // whitespace. The reason is: such an entry in the
-                    // provider property contains attributes for the
-                    // implementation of an algorithm. We are only interested
-                    // in entries which lead to the implementation
-                    // classes.
-                    if (currentKey.indexOf(' ') < 0) {
-                        String className = providers[i].getProperty(currentKey);
-                        if (!classes.contains(className)) {
-                            classes.add(className);
-                            try {
-                                fac = loadFactory(providers[i], className);
-                                if (fac != null) {
-                                    result.add(fac);
-                                }
-                            }catch (Exception ignore) {
-                            }
+            Iterator<Service> iter = p.getServices().iterator();
+            while (iter.hasNext()) {
+                Service s = iter.next();
+                if (s.getType().equals(serviceName)) {
+                    try {
+                        fac = loadFactory(s);
+                        if (fac != null) {
+                            result.add(fac);
                         }
+                    } catch (Exception ignore) {
                     }
                 }
             }

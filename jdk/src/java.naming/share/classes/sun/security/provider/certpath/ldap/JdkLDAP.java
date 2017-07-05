@@ -27,11 +27,7 @@ package sun.security.provider.certpath.ldap;
 
 import java.util.HashMap;
 import java.util.List;
-import java.security.Provider;
-import java.security.NoSuchAlgorithmException;
-import java.security.InvalidParameterException;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.ProviderException;
+import java.security.*;
 import java.security.cert.CertStoreParameters;
 
 /**
@@ -75,16 +71,22 @@ public final class JdkLDAP extends Provider {
     public JdkLDAP() {
         super("JdkLDAP", 1.9d, "JdkLDAP Provider (implements LDAP CertStore)");
 
-        HashMap<String, String> attrs = new HashMap<>(2);
-        attrs.put("LDAPSchema", "RFC2587");
-        attrs.put("ImplementedIn", "Software");
+        final Provider p = this;
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
+                HashMap<String, String> attrs = new HashMap<>(2);
+                attrs.put("LDAPSchema", "RFC2587");
+                attrs.put("ImplementedIn", "Software");
 
-        /*
-         * CertStore
-         * attrs: LDAPSchema, ImplementedIn
-         */
-        putService(new ProviderService(this, "CertStore",
-            "LDAP", "sun.security.provider.certpath.ldap.LDAPCertStore",
-            null, attrs));
+                /*
+                 * CertStore
+                 * attrs: LDAPSchema, ImplementedIn
+                 */
+                putService(new ProviderService(p, "CertStore",
+                           "LDAP", "sun.security.provider.certpath.ldap.LDAPCertStore",
+                           null, attrs));
+                return null;
+            }
+        });
     }
 }
