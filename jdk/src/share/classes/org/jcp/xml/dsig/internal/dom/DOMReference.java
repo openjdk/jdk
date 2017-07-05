@@ -204,22 +204,32 @@ public final class DOMReference extends DOMStructure
         Element nextSibling = DOMUtils.getFirstChildElement(refElem);
         List<Transform> transforms = new ArrayList<Transform>(5);
         if (nextSibling.getLocalName().equals("Transforms")) {
-            Element transformElem = DOMUtils.getFirstChildElement(nextSibling);
-
-            int transformCount = 0;
+            Element transformElem = DOMUtils.getFirstChildElement(nextSibling,
+                                                                  "Transform");
+            transforms.add(new DOMTransform(transformElem, context, provider));
+            transformElem = DOMUtils.getNextSiblingElement(transformElem);
             while (transformElem != null) {
+                String localName = transformElem.getLocalName();
+                if (!localName.equals("Transform")) {
+                    throw new MarshalException(
+                        "Invalid element name: " + localName +
+                        ", expected Transform");
+                }
                 transforms.add
                     (new DOMTransform(transformElem, context, provider));
-                transformElem = DOMUtils.getNextSiblingElement(transformElem);
-
-                transformCount++;
-                if (secVal && (transformCount > MAXIMUM_TRANSFORM_COUNT)) {
+                if (secVal && (transforms.size() > MAXIMUM_TRANSFORM_COUNT)) {
                     String error = "A maxiumum of " + MAXIMUM_TRANSFORM_COUNT + " "
                         + "transforms per Reference are allowed with secure validation";
                     throw new MarshalException(error);
                 }
+                transformElem = DOMUtils.getNextSiblingElement(transformElem);
             }
             nextSibling = DOMUtils.getNextSiblingElement(nextSibling);
+        }
+        if (!nextSibling.getLocalName().equals("DigestMethod")) {
+            throw new MarshalException("Invalid element name: " +
+                                       nextSibling.getLocalName() +
+                                       ", expected DigestMethod");
         }
 
         // unmarshal DigestMethod
@@ -234,11 +244,17 @@ public final class DOMReference extends DOMStructure
         }
 
         // unmarshal DigestValue
+        Element dvElem = DOMUtils.getNextSiblingElement(dmElem, "DigestValue");
         try {
-            Element dvElem = DOMUtils.getNextSiblingElement(dmElem);
             this.digestValue = Base64.decode(dvElem);
         } catch (Base64DecodingException bde) {
             throw new MarshalException(bde);
+        }
+
+        // check for extra elements
+        if (DOMUtils.getNextSiblingElement(dvElem) != null) {
+            throw new MarshalException(
+                "Unexpected element after DigestValue element");
         }
 
         // unmarshal attributes

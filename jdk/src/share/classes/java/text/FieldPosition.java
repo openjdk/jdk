@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,7 @@ public class FieldPosition {
      * identified by constants, whose names typically end with _FIELD,
      * in the various subclasses of Format.
      *
+     * @param field the field identifier
      * @see java.text.NumberFormat#INTEGER_FIELD
      * @see java.text.NumberFormat#FRACTION_FIELD
      * @see java.text.DateFormat#YEAR_FIELD
@@ -157,6 +158,8 @@ public class FieldPosition {
 
     /**
      * Retrieves the field identifier.
+     *
+     * @return the field identifier
      */
     public int getField() {
         return field;
@@ -164,6 +167,8 @@ public class FieldPosition {
 
     /**
      * Retrieves the index of the first character in the requested field.
+     *
+     * @return the begin index
      */
     public int getBeginIndex() {
         return beginIndex;
@@ -172,6 +177,8 @@ public class FieldPosition {
     /**
      * Retrieves the index of the character following the last character in the
      * requested field.
+     *
+     * @return the end index
      */
     public int getEndIndex() {
         return endIndex;
@@ -179,6 +186,8 @@ public class FieldPosition {
 
     /**
      * Sets the begin index.  For use by subclasses of Format.
+     *
+     * @param bi the begin index
      * @since 1.2
      */
     public void setBeginIndex(int bi) {
@@ -187,6 +196,8 @@ public class FieldPosition {
 
     /**
      * Sets the end index.  For use by subclasses of Format.
+     *
+     * @param ei the end index
      * @since 1.2
      */
     public void setEndIndex(int ei) {

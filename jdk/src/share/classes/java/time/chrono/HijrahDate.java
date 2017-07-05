@@ -109,7 +109,7 @@ import java.time.temporal.ValueRange;
  */
 public final class HijrahDate
         extends ChronoDateImpl<HijrahDate>
-        implements ChronoLocalDate<HijrahDate>, Serializable {
+        implements ChronoLocalDate, Serializable {
 
     /**
      * Serialization version.
@@ -204,7 +204,7 @@ public final class HijrahDate
      * @throws DateTimeException if the current date cannot be obtained
      */
     public static HijrahDate now(Clock clock) {
-        return HijrahChronology.INSTANCE.date(LocalDate.now(clock));
+        return HijrahDate.ofEpochDay(HijrahChronology.INSTANCE, LocalDate.now(clock).toEpochDay());
     }
 
     /**
@@ -349,7 +349,7 @@ public final class HijrahDate
                 }
                 return getChronology().range(f);
             }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.rangeRefinedBy(this);
     }
@@ -372,7 +372,7 @@ public final class HijrahDate
                 case YEAR: return prolepticYear;
                 case ERA: return getEraValue();
             }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.getFrom(this);
     }
@@ -393,7 +393,7 @@ public final class HijrahDate
                 case ALIGNED_DAY_OF_WEEK_IN_MONTH: return plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_MONTH));
                 case ALIGNED_DAY_OF_WEEK_IN_YEAR: return plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_YEAR));
                 case DAY_OF_MONTH: return resolvePreviousValid(prolepticYear, monthOfYear, nvalue);
-                case DAY_OF_YEAR: return resolvePreviousValid(prolepticYear, ((nvalue - 1) / 30) + 1, ((nvalue - 1) % 30) + 1);
+                case DAY_OF_YEAR: return plusDays(Math.min(nvalue, lengthOfYear()) - getDayOfYear());
                 case EPOCH_DAY: return new HijrahDate(chrono, newValue);
                 case ALIGNED_WEEK_OF_MONTH: return plusDays((newValue - getLong(ALIGNED_WEEK_OF_MONTH)) * 7);
                 case ALIGNED_WEEK_OF_YEAR: return plusDays((newValue - getLong(ALIGNED_WEEK_OF_YEAR)) * 7);
@@ -403,9 +403,9 @@ public final class HijrahDate
                 case YEAR: return resolvePreviousValid(nvalue, monthOfYear, dayOfMonth);
                 case ERA: return resolvePreviousValid(1 - prolepticYear, monthOfYear, dayOfMonth);
             }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
         }
-        return ChronoLocalDate.super.with(field, newValue);
+        return super.with(field, newValue);
     }
 
     private HijrahDate resolvePreviousValid(int prolepticYear, int month, int day) {
@@ -479,7 +479,7 @@ public final class HijrahDate
      * @return the day-of-year
      */
     private int getDayOfYear() {
-        return chrono.getDayOfYear(prolepticYear, monthOfYear);
+        return chrono.getDayOfYear(prolepticYear, monthOfYear) + dayOfMonth;
     }
 
     /**
@@ -575,12 +575,13 @@ public final class HijrahDate
     }
 
     @Override        // for javadoc and covariant return type
+    @SuppressWarnings("unchecked")
     public final ChronoLocalDateTime<HijrahDate> atTime(LocalTime localTime) {
-        return super.atTime(localTime);
+        return (ChronoLocalDateTime<HijrahDate>)super.atTime(localTime);
     }
 
     @Override
-    public Period periodUntil(ChronoLocalDate<?> endDate) {
+    public Period until(ChronoLocalDate endDate) {
         // TODO: untested
         HijrahDate end = getChronology().date(endDate);
         long totalMonths = (end.prolepticYear - this.prolepticYear) * 12 + (end.monthOfYear - this.monthOfYear);  // safe
@@ -622,7 +623,7 @@ public final class HijrahDate
         return this;
     }
 
-    static ChronoLocalDate<HijrahDate> readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+    static HijrahDate readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         HijrahChronology chrono = (HijrahChronology) in.readObject();
         int year = in.readInt();
         int month = in.readByte();

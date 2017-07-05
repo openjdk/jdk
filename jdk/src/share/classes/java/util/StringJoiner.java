@@ -202,15 +202,17 @@ public final class StringJoiner {
      * @param other The {@code StringJoiner} whose contents should be merged
      *              into this one
      * @throws NullPointerException if the other {@code StringJoiner} is null
+     * @return This {@code StringJoiner}
      */
     public StringJoiner merge(StringJoiner other) {
         Objects.requireNonNull(other);
         if (other.value != null) {
+            final int length = other.value.length();
+            // lock the length so that we can seize the data to be appended
+            // before initiate copying to avoid interference, especially when
+            // merge 'this'
             StringBuilder builder = prepareBuilder();
-            StringBuilder otherBuilder = other.value;
-            if (other.prefix.length() < otherBuilder.length()) {
-                builder.append(otherBuilder, other.prefix.length(), otherBuilder.length());
-            }
+            builder.append(other.value, other.prefix.length(), length);
         }
         return this;
     }

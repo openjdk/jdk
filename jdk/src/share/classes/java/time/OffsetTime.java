@@ -348,8 +348,9 @@ public final class OffsetTime
      * Checks if the specified field is supported.
      * <p>
      * This checks if this time can be queried for the specified field.
-     * If false, then calling the {@link #range(TemporalField) range} and
-     * {@link #get(TemporalField) get} methods will throw an exception.
+     * If false, then calling the {@link #range(TemporalField) range},
+     * {@link #get(TemporalField) get} and {@link #with(TemporalField, long)}
+     * methods will throw an exception.
      * <p>
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The supported fields are:
@@ -389,6 +390,43 @@ public final class OffsetTime
         return field != null && field.isSupportedBy(this);
     }
 
+    /**
+     * Checks if the specified unit is supported.
+     * <p>
+     * This checks if the specified unit can be added to, or subtracted from, this date-time.
+     * If false, then calling the {@link #plus(long, TemporalUnit)} and
+     * {@link #minus(long, TemporalUnit) minus} methods will throw an exception.
+     * <p>
+     * If the unit is a {@link ChronoUnit} then the query is implemented here.
+     * The supported units are:
+     * <ul>
+     * <li>{@code NANOS}
+     * <li>{@code MICROS}
+     * <li>{@code MILLIS}
+     * <li>{@code SECONDS}
+     * <li>{@code MINUTES}
+     * <li>{@code HOURS}
+     * <li>{@code HALF_DAYS}
+     * </ul>
+     * All other {@code ChronoUnit} instances will return false.
+     * <p>
+     * If the unit is not a {@code ChronoUnit}, then the result of this method
+     * is obtained by invoking {@code TemporalUnit.isSupportedBy(Temporal)}
+     * passing {@code this} as the argument.
+     * Whether the unit is supported is determined by the unit.
+     *
+     * @param unit  the unit to check, null returns false
+     * @return true if the unit can be added/subtracted, false if not
+     */
+    @Override  // override for Javadoc
+    public boolean isSupported(TemporalUnit unit) {
+        if (unit instanceof ChronoUnit) {
+            return unit.isTimeBased();
+        }
+        return unit != null && unit.isSupportedBy(this);
+    }
+
+    //-----------------------------------------------------------------------
     /**
      * Gets the range of valid values for the specified field.
      * <p>
@@ -1084,7 +1122,7 @@ public final class OffsetTime
      * The start and end points are {@code this} and the specified time.
      * The result will be negative if the end is before the start.
      * For example, the period in hours between two times can be calculated
-     * using {@code startTime.periodUntil(endTime, HOURS)}.
+     * using {@code startTime.until(endTime, HOURS)}.
      * <p>
      * The {@code Temporal} passed to this method must be an {@code OffsetTime}.
      * If the offset differs between the two times, then the specified
@@ -1100,7 +1138,7 @@ public final class OffsetTime
      * The second is to use {@link TemporalUnit#between(Temporal, Temporal)}:
      * <pre>
      *   // these two lines are equivalent
-     *   amount = start.periodUntil(end, MINUTES);
+     *   amount = start.until(end, MINUTES);
      *   amount = MINUTES.between(start, end);
      * </pre>
      * The choice should be made based on which makes the code more readable.
@@ -1125,7 +1163,7 @@ public final class OffsetTime
      * @throws ArithmeticException if numeric overflow occurs
      */
     @Override
-    public long periodUntil(Temporal endTime, TemporalUnit unit) {
+    public long until(Temporal endTime, TemporalUnit unit) {
         if (endTime instanceof OffsetTime == false) {
             Objects.requireNonNull(endTime, "endTime");
             throw new DateTimeException("Unable to calculate amount as objects are of two different types");
@@ -1142,7 +1180,7 @@ public final class OffsetTime
                 case HOURS: return nanosUntil / NANOS_PER_HOUR;
                 case HALF_DAYS: return nanosUntil / (12 * NANOS_PER_HOUR);
             }
-            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit.getName());
+            throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
         return unit.between(this, endTime);
     }

@@ -286,6 +286,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      *
      * @throws UnsupportedOperationException
      *         If this UUID is not a version 1 UUID
+     * @return The timestamp of this {@code UUID}.
      */
     public long timestamp() {
         if (version() != 1) {

@@ -27,11 +27,14 @@ package java.util.function;
 import java.util.Objects;
 
 /**
- * Determines if the input objects match some criteria. This is the two-arity
- * specialization of {@link Predicate}.
+ * Represents a predicate (boolean-valued function) of two arguments.  This is
+ * the two-arity specialization of {@link Predicate}.
  *
- * @param <T> the type of the first argument to {@code test}
- * @param <U> the type of the second argument to {@code test}
+ * <p>This is a <a href="package-summary.html">functional interface</a>
+ * whose functional method is {@link #test(Object, Object)}.
+ *
+ * @param <T> the type of the first argument to the predicate
+ * @param <U> the type of the second argument the predicate
  *
  * @see Predicate
  * @since 1.8
@@ -40,34 +43,41 @@ import java.util.Objects;
 public interface BiPredicate<T, U> {
 
     /**
-     * Return {@code true} if the inputs match some criteria.
+     * Evaluates this predicate on the given arguments.
      *
-     * @param t an input object
-     * @param u an input object
-     * @return {@code true} if the inputs match some criteria
+     * @param t the first input argument
+     * @param u the second input argument
+     * @return {@code true} if the input arguments match the predicate,
+     * otherwise {@code false}
      */
     boolean test(T t, U u);
 
     /**
-     * Returns a predicate which evaluates to {@code true} only if this
-     * predicate and the provided predicate both evaluate to {@code true}. If
-     * this predicate returns {@code false} then the remaining predicate is not
-     * evaluated.
+     * Returns a composed predicate that represents a short-circuiting logical
+     * AND of this predicate and another.  When evaluating the composed
+     * predicate, if this predicate is {@code false}, then the {@code other}
+     * predicate is not evaluated.
      *
-     * @param p a predicate which will be logically-ANDed with this predicate
-     * @return a new predicate which returns {@code true} only if both
-     * predicates return {@code true}
-     * @throws NullPointerException if p is null
+     * <p>Any exceptions thrown during evaluation of either predicate are relayed
+     * to the caller; if evaluation of this predicate throws an exception, the
+     * {@code other} predicate will not be evaluated.
+     *
+     * @param other a predicate that will be logically-ANDed with this
+     *              predicate
+     * @return a composed predicate that represents the short-circuiting logical
+     * AND of this predicate and the {@code other} predicate
+     * @throws NullPointerException if other is null
      */
-    default BiPredicate<T, U> and(BiPredicate<? super T, ? super U> p) {
-        Objects.requireNonNull(p);
-        return (T t, U u) -> test(t, u) && p.test(t, u);
+    default BiPredicate<T, U> and(BiPredicate<? super T, ? super U> other) {
+        Objects.requireNonNull(other);
+        return (T t, U u) -> test(t, u) && other.test(t, u);
     }
 
     /**
-     * Returns a predicate which negates the result of this predicate.
+     * Returns a predicate that represents the logical negation of this
+     * predicate.
      *
-     * @return a new predicate who's result is always the opposite of this
+     * @return a predicate that represents the logical negation of this
      * predicate
      */
     default BiPredicate<T, U> negate() {
@@ -75,18 +85,23 @@ public interface BiPredicate<T, U> {
     }
 
     /**
-     * Returns a predicate which evaluates to {@code true} if either this
-     * predicate or the provided predicate evaluates to {@code true}. If this
-     * predicate returns {@code true} then the remaining predicate is not
-     * evaluated.
+     * Returns a composed predicate that represents a short-circuiting logical
+     * OR of this predicate and another.  When evaluating the composed
+     * predicate, if this predicate is {@code true}, then the {@code other}
+     * predicate is not evaluated.
      *
-     * @param p a predicate which will be logically-ORed with this predicate
-     * @return a new predicate which returns {@code true} if either predicate
-     * returns {@code true}
-     * @throws NullPointerException if p is null
+     * <p>Any exceptions thrown during evaluation of either predicate are relayed
+     * to the caller; if evaluation of this predicate throws an exception, the
+     * {@code other} predicate will not be evaluated.
+     *
+     * @param other a predicate that will be logically-ORed with this
+     *              predicate
+     * @return a composed predicate that represents the short-circuiting logical
+     * OR of this predicate and the {@code other} predicate
+     * @throws NullPointerException if other is null
      */
-    default BiPredicate<T, U> or(BiPredicate<? super T, ? super U> p) {
-        Objects.requireNonNull(p);
-        return (T t, U u) -> test(t, u) || p.test(t, u);
+    default BiPredicate<T, U> or(BiPredicate<? super T, ? super U> other) {
+        Objects.requireNonNull(other);
+        return (T t, U u) -> test(t, u) || other.test(t, u);
     }
 }

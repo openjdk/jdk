@@ -71,6 +71,8 @@ import static java.time.temporal.ChronoUnit.YEARS;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.Chronology;
 import java.time.chrono.IsoChronology;
 import java.time.format.ResolverStyle;
@@ -289,10 +291,6 @@ public final class IsoFields {
     private static enum Field implements TemporalField {
         DAY_OF_QUARTER {
             @Override
-            public String getName() {
-                return "DayOfQuarter";
-            }
-            @Override
             public TemporalUnit getBaseUnit() {
                 return DAYS;
             }
@@ -344,17 +342,21 @@ public final class IsoFields {
                 return (R) temporal.with(DAY_OF_YEAR, temporal.getLong(DAY_OF_YEAR) + (newValue - curValue));
             }
             @Override
-            public Map<TemporalField, Long> resolve(TemporalAccessor temporal, long doq, ResolverStyle resolverStyle) {
-                if ((temporal.isSupported(YEAR) && temporal.isSupported(QUARTER_OF_YEAR)) == false) {
+            public ChronoLocalDate resolve(
+                    Map<TemporalField, Long> fieldValues, Chronology chronology, ZoneId zone, ResolverStyle resolverStyle) {
+                Long yearLong = fieldValues.get(YEAR);
+                Long qoyLong = fieldValues.get(QUARTER_OF_YEAR);
+                if (yearLong == null || qoyLong == null) {
                     return null;
                 }
-                int y = temporal.get(YEAR);  // validated
+                int y = YEAR.checkValidIntValue(yearLong);  // always validate
+                long doq = fieldValues.get(DAY_OF_QUARTER);
                 LocalDate date;
                 if (resolverStyle == ResolverStyle.LENIENT) {
-                    long qoy = temporal.getLong(QUARTER_OF_YEAR);  // unvalidated
-                    date = LocalDate.of(y, 1, 1).plusMonths(Math.multiplyExact(Math.subtractExact(qoy, 1), 3));
+                    date = LocalDate.of(y, 1, 1).plusMonths(Math.multiplyExact(Math.subtractExact(qoyLong, 1), 3));
+                    doq = Math.subtractExact(doq, 1);
                 } else {
-                    int qoy = temporal.get(QUARTER_OF_YEAR);  // validated
+                    int qoy = QUARTER_OF_YEAR.range().checkValidIntValue(qoyLong, QUARTER_OF_YEAR);  // validated
                     date = LocalDate.of(y, ((qoy - 1) * 3) + 1, 1);
                     if (doq < 1 || doq > 90) {
                         if (resolverStyle == ResolverStyle.STRICT) {
@@ -363,20 +365,19 @@ public final class IsoFields {
                             range().checkValidValue(doq, this);  // allow 1-92 rolling into next quarter
                         }
                     }
+                    doq--;
                 }
-                long epochDay = Math.addExact(date.toEpochDay(), Math.subtractExact(doq, 1));
-                Map<TemporalField, Long> result = new HashMap<>(4, 1.0f);
-                result.put(EPOCH_DAY, epochDay);
-                result.put(YEAR, null);
-                result.put(QUARTER_OF_YEAR, null);
-                return result;
+                fieldValues.remove(this);
+                fieldValues.remove(YEAR);
+                fieldValues.remove(QUARTER_OF_YEAR);
+                return date.plusDays(doq);
+            }
+            @Override
+            public String toString() {
+                return "DayOfQuarter";
             }
         },
         QUARTER_OF_YEAR {
-            @Override
-            public String getName() {
-                return "QuarterOfYear";
-            }
             @Override
             public TemporalUnit getBaseUnit() {
                 return QUARTER_YEARS;
@@ -409,20 +410,19 @@ public final class IsoFields {
                 range().checkValidValue(newValue, this);  // strictly check from 1 to 4
                 return (R) temporal.with(MONTH_OF_YEAR, temporal.getLong(MONTH_OF_YEAR) + (newValue - curValue) * 3);
             }
+            @Override
+            public String toString() {
+                return "QuarterOfYear";
+            }
         },
         WEEK_OF_WEEK_BASED_YEAR {
-            @Override
-            public String getName() {
-                return "WeekOfWeekBasedYear";
-            }
-
             @Override
             public String getDisplayName(Locale locale) {
                 Objects.requireNonNull(locale, "locale");
                 LocaleResources lr = LocaleProviderAdapter.getResourceBundleBased()
                                             .getLocaleResources(locale);
                 ResourceBundle rb = lr.getJavaTimeFormatData();
-                return rb.containsKey("field.week") ? rb.getString("field.week") : getName();
+                return rb.containsKey("field.week") ? rb.getString("field.week") : toString();
             }
 
             @Override
@@ -463,14 +463,18 @@ public final class IsoFields {
                 return (R) temporal.plus(Math.subtractExact(newValue, getFrom(temporal)), WEEKS);
             }
             @Override
-            public Map<TemporalField, Long> resolve(TemporalAccessor temporal, long wowby, ResolverStyle resolverStyle) {
-                if ((temporal.isSupported(WEEK_BASED_YEAR) && temporal.isSupported(DAY_OF_WEEK)) == false) {
+            public ChronoLocalDate resolve(
+                    Map<TemporalField, Long> fieldValues, Chronology chronology, ZoneId zone, ResolverStyle resolverStyle) {
+                Long wbyLong = fieldValues.get(WEEK_BASED_YEAR);
+                Long dowLong = fieldValues.get(DAY_OF_WEEK);
+                if (wbyLong == null || dowLong == null) {
                     return null;
                 }
-                int wby = temporal.get(WEEK_BASED_YEAR);  // validated
+                int wby = WEEK_BASED_YEAR.range().checkValidIntValue(wbyLong, WEEK_BASED_YEAR);  // always validate
+                long wowby = fieldValues.get(WEEK_OF_WEEK_BASED_YEAR);
                 LocalDate date = LocalDate.of(wby, 1, 4);
                 if (resolverStyle == ResolverStyle.LENIENT) {
-                    long dow = temporal.getLong(DAY_OF_WEEK);  // unvalidated
+                    long dow = dowLong;  // unvalidated
                     if (dow > 7) {
                         date = date.plusWeeks((dow - 1) / 7);
                         dow = ((dow - 1) % 7) + 1;
@@ -480,7 +484,7 @@ public final class IsoFields {
                     }
                     date = date.plusWeeks(Math.subtractExact(wowby, 1)).with(DAY_OF_WEEK, dow);
                 } else {
-                    int dow = temporal.get(DAY_OF_WEEK);  // validated
+                    int dow = DAY_OF_WEEK.checkValidIntValue(dowLong);  // validated
                     if (wowby < 1 || wowby > 52) {
                         if (resolverStyle == ResolverStyle.STRICT) {
                             getWeekRange(date).checkValidValue(wowby, this);  // only allow exact range
@@ -490,18 +494,17 @@ public final class IsoFields {
                     }
                     date = date.plusWeeks(wowby - 1).with(DAY_OF_WEEK, dow);
                 }
-                Map<TemporalField, Long> result = new HashMap<>(2, 1.0f);
-                result.put(EPOCH_DAY, date.toEpochDay());
-                result.put(WEEK_BASED_YEAR, null);
-                result.put(DAY_OF_WEEK, null);
-                return result;
+                fieldValues.remove(this);
+                fieldValues.remove(WEEK_BASED_YEAR);
+                fieldValues.remove(DAY_OF_WEEK);
+                return date;
+            }
+            @Override
+            public String toString() {
+                return "WeekOfWeekBasedYear";
             }
         },
         WEEK_BASED_YEAR {
-            @Override
-            public String getName() {
-                return "WeekBasedYear";
-            }
             @Override
             public TemporalUnit getBaseUnit() {
                 return WEEK_BASED_YEARS;
@@ -537,6 +540,10 @@ public final class IsoFields {
                 date = date.withDayOfYear(180).withYear(newVal).with(WEEK_OF_WEEK_BASED_YEAR, week);
                 return (R) date.with(date);
             }
+            @Override
+            public String toString() {
+                return "WeekBasedYear";
+            }
         };
 
         @Override
@@ -545,13 +552,13 @@ public final class IsoFields {
         }
 
         @Override
-        public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
-            return range();
+        public boolean isTimeBased() {
+            return false;
         }
 
         @Override
-        public String toString() {
-            return getName();
+        public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
+            return range();
         }
 
         //-------------------------------------------------------------------------
@@ -636,11 +643,6 @@ public final class IsoFields {
         }
 
         @Override
-        public String getName() {
-            return name;
-        }
-
-        @Override
         public Duration getDuration() {
             return duration;
         }
@@ -651,6 +653,16 @@ public final class IsoFields {
         }
 
         @Override
+        public boolean isDateBased() {
+            return true;
+        }
+
+        @Override
+        public boolean isTimeBased() {
+            return false;
+        }
+
+        @Override
         public boolean isSupportedBy(Temporal temporal) {
             return temporal.isSupported(EPOCH_DAY);
         }
@@ -658,7 +670,7 @@ public final class IsoFields {
         @SuppressWarnings("unchecked")
         @Override
         public <R extends Temporal> R addTo(R temporal, long amount) {
-            switch(this) {
+            switch (this) {
                 case WEEK_BASED_YEARS:
                     return (R) temporal.with(WEEK_BASED_YEAR,
                             Math.addExact(temporal.get(WEEK_BASED_YEAR), amount));
@@ -678,7 +690,7 @@ public final class IsoFields {
                     return Math.subtractExact(temporal2.getLong(WEEK_BASED_YEAR),
                             temporal1.getLong(WEEK_BASED_YEAR));
                 case QUARTER_YEARS:
-                    return temporal1.periodUntil(temporal2, MONTHS) / 3;
+                    return temporal1.until(temporal2, MONTHS) / 3;
                 default:
                     throw new IllegalStateException("Unreachable");
             }
@@ -686,8 +698,7 @@ public final class IsoFields {
 
         @Override
         public String toString() {
-            return getName();
-
+            return name;
         }
     }
 }

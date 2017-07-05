@@ -68,12 +68,13 @@ import java.util.NoSuchElementException;
  *
  * <p><a name="format"> A service provider is identified by placing a
  * <i>provider-configuration file</i> in the resource directory
- * <tt>META-INF/services</tt>.  The file's name is the fully-qualified <a
+ * <tt>META-INF/services</tt>.</a>  The file's name is the fully-qualified <a
  * href="../lang/ClassLoader.html#name">binary name</a> of the service's type.
  * The file contains a list of fully-qualified binary names of concrete
  * provider classes, one per line.  Space and tab characters surrounding each
  * name, as well as blank lines, are ignored.  The comment character is
- * <tt>'#'</tt> (<tt>'&#92;u0023'</tt>, <font size="-1">NUMBER SIGN</font>); on
+ * <tt>'#'</tt> (<tt>'&#92;u0023'</tt>,
+ * <font style="font-size:smaller;">NUMBER SIGN</font>); on
  * each line all characters following the first comment character are ignored.
  * The file must be encoded in UTF-8.
  *
@@ -484,6 +485,8 @@ public final class ServiceLoader<S>
      * Creates a new service loader for the given service type and class
      * loader.
      *
+     * @param  <S> the class of the service type
+     *
      * @param  service
      *         The interface or abstract class representing the service
      *
@@ -517,6 +520,8 @@ public final class ServiceLoader<S>
      * ServiceLoader.load(<i>service</i>,
      *                    Thread.currentThread().getContextClassLoader())</pre></blockquote>
      *
+     * @param  <S> the class of the service type
+     *
      * @param  service
      *         The interface or abstract class representing the service
      *
@@ -545,6 +550,8 @@ public final class ServiceLoader<S>
      * desired.  The resulting service will only find and load providers that
      * have been installed into the current Java virtual machine; providers on
      * the application's class path will be ignored.
+     *
+     * @param  <S> the class of the service type
      *
      * @param  service
      *         The interface or abstract class representing the service

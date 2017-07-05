@@ -157,10 +157,10 @@ public final class Class<T> implements java.io.Serializable,
      *
      * The string is formatted as a list of type modifiers, if any,
      * followed by the kind of type (empty string for primitive types
-     * and {@code class}, {@code enum}, {@code interface}, or {@code
-     * &#64;interface}, as appropriate), followed by the type's name,
-     * followed by an angle-bracketed comma-separated list of the
-     * type's type parameters, if any.
+     * and {@code class}, {@code enum}, {@code interface}, or
+     * <code>&#64;</code>{@code interface}, as appropriate), followed
+     * by the type's name, followed by an angle-bracketed
+     * comma-separated list of the type's type parameters, if any.
      *
      * A space is used to separate modifiers from one another and to
      * separate any modifiers from the kind of type. The modifiers

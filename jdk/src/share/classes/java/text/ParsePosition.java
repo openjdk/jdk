@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,6 +69,8 @@ public class ParsePosition {
      * Retrieve the current parse position.  On input to a parse method, this
      * is the index of the character at which parsing will begin; on output, it
      * is the index of the character following the last character parsed.
+     *
+     * @return the current parse position
      */
     public int getIndex() {
         return index;
@@ -76,6 +78,8 @@ public class ParsePosition {
 
     /**
      * Set the current parse position.
+     *
+     * @param index the current parse position
      */
     public void setIndex(int index) {
         this.index = index;
@@ -83,6 +87,8 @@ public class ParsePosition {
 
     /**
      * Create a new ParsePosition with the given initial index.
+     *
+     * @param index initial index
      */
     public ParsePosition(int index) {
         this.index = index;
@@ -91,6 +97,8 @@ public class ParsePosition {
      * Set the index at which a parse error occurred.  Formatters
      * should set this before returning an error code from their
      * parseObject method.  The default value is -1 if this is not set.
+     *
+     * @param ei the index at which an error occurred
      * @since 1.2
      */
     public void setErrorIndex(int ei)
@@ -101,12 +109,15 @@ public class ParsePosition {
     /**
      * Retrieve the index at which an error occurred, or -1 if the
      * error index has not been set.
+     *
+     * @return the index at which an error occurred
      * @since 1.2
      */
     public int getErrorIndex()
     {
         return errorIndex;
     }
+
     /**
      * Overrides equals
      */

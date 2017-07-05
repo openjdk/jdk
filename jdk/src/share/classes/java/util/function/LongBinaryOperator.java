@@ -25,24 +25,26 @@
 package java.util.function;
 
 /**
- * An operation on two {@code long} operands yielding a {@code long} result.
- * This is the primitive type specialization of {@link BinaryOperator} for
- * {@code long}.
+ * Represents an operation upon two {@code long}-valued operands and producing a
+ * {@code long}-valued result.   This is the primitive type specialization of
+ * {@link BinaryOperator} for {@code long}.
+ *
+ * <p>This is a <a href="package-summary.html">functional interface</a>
+ * whose functional method is {@link #applyAsLong(long, long)}.
  *
  * @see BinaryOperator
+ * @see LongUnaryOperator
  * @since 1.8
  */
 @FunctionalInterface
 public interface LongBinaryOperator {
 
     /**
-     * Returns the {@code long} result of the operation upon the {@code long}
-     * operands. The parameters are named {@code left} and {@code right} for
-     * operations where the order of parameters matters.
+     * Applies this operator to the given operands.
      *
-     * @param left the left operand value
-     * @param right  the right operand value
-     * @return the result of the operation
+     * @param left the first operand
+     * @param right the second operand
+     * @return the operator result
      */
     long applyAsLong(long left, long right);
 }

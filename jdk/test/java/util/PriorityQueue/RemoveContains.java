@@ -64,6 +64,7 @@ public class RemoveContains {
             public int compare(String x, String y) {
                 return x.charAt(0) - y.charAt(0); }};
 
+        test(new PriorityQueue<String>(firstChar));
         test(new PriorityQueue<String>(10, firstChar));
         test(new PriorityBlockingQueue<String>(10, firstChar));
         test(new ArrayBlockingQueue<String>(10));
