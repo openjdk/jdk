@@ -25,6 +25,7 @@
 
 package sun.print;
 
+import javax.print.attribute.Attribute;
 import javax.print.attribute.PrintRequestAttribute;
 import java.awt.Frame;
 
@@ -72,7 +73,7 @@ public final class DialogOwner
      * @return  Printing attribute class (category), an instance of class
      *          {@link java.lang.Class java.lang.Class}.
      */
-    public final Class getCategory() {
+    public final Class<? extends Attribute> getCategory() {
         return DialogOwner.class;
     }
 

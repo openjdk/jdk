@@ -198,13 +198,13 @@ void SharedRuntime::trace_ic_miss(address at) {
 
 void SharedRuntime::print_ic_miss_histogram() {
   if (ICMissHistogram) {
-    tty->print_cr ("IC Miss Histogram:");
+    tty->print_cr("IC Miss Histogram:");
     int tot_misses = 0;
     for (int i = 0; i < _ICmiss_index; i++) {
       tty->print_cr("  at: " INTPTR_FORMAT "  nof: %d", _ICmiss_at[i], _ICmiss_count[i]);
       tot_misses += _ICmiss_count[i];
     }
-    tty->print_cr ("Total IC misses: %7d", tot_misses);
+    tty->print_cr("Total IC misses: %7d", tot_misses);
   }
 }
 #endif // PRODUCT
@@ -266,7 +266,7 @@ JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
   xbits.f = x;
   ybits.f = y;
   // x Mod Infinity == x unless x is infinity
-  if ( ((xbits.i & float_sign_mask) != float_infinity) &&
+  if (((xbits.i & float_sign_mask) != float_infinity) &&
        ((ybits.i & float_sign_mask) == float_infinity) ) {
     return x;
   }
@@ -281,7 +281,7 @@ JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
   xbits.d = x;
   ybits.d = y;
   // x Mod Infinity == x unless x is infinity
-  if ( ((xbits.l & double_sign_mask) != double_infinity) &&
+  if (((xbits.l & double_sign_mask) != double_infinity) &&
        ((ybits.l & double_sign_mask) == double_infinity) ) {
     return x;
   }
@@ -537,13 +537,13 @@ address SharedRuntime::get_poll_stub(address pc) {
   CodeBlob *cb = CodeCache::find_blob(pc);
 
   // Should be an nmethod
-  assert( cb && cb->is_nmethod(), "safepoint polling: pc must refer to an nmethod" );
+  assert(cb && cb->is_nmethod(), "safepoint polling: pc must refer to an nmethod");
 
   // Look up the relocation information
-  assert( ((nmethod*)cb)->is_at_poll_or_poll_return(pc),
-    "safepoint polling: type must be poll" );
+  assert(((nmethod*)cb)->is_at_poll_or_poll_return(pc),
+    "safepoint polling: type must be poll");
 
-  assert( ((NativeInstruction*)pc)->is_safepoint_poll(),
+  assert(((NativeInstruction*)pc)->is_safepoint_poll(),
     "Only polling locations are used for safepoint");
 
   bool at_poll_return = ((nmethod*)cb)->is_at_poll_return(pc);
@@ -562,7 +562,7 @@ address SharedRuntime::get_poll_stub(address pc) {
     stub = SharedRuntime::polling_page_safepoint_handler_blob()->entry_point();
   }
 #ifndef PRODUCT
-  if( TraceSafepoint ) {
+  if (TraceSafepoint) {
     char buf[256];
     jio_snprintf(buf, sizeof(buf),
                  "... found polling page %s exception at pc = "
@@ -1474,7 +1474,7 @@ methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
         should_be_mono = true;
       } else if (inline_cache->is_icholder_call()) {
         CompiledICHolder* ic_oop = inline_cache->cached_icholder();
-        if ( ic_oop != NULL) {
+        if (ic_oop != NULL) {
 
           if (receiver()->klass() == ic_oop->holder_klass()) {
             // This isn't a real miss. We must have seen that compiled code
@@ -1728,7 +1728,7 @@ IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
       iter.next();
       assert(iter.has_current(), "must have a reloc at java call site");
       relocInfo::relocType typ = iter.reloc()->type();
-      if ( typ != relocInfo::static_call_type &&
+      if (typ != relocInfo::static_call_type &&
            typ != relocInfo::opt_virtual_call_type &&
            typ != relocInfo::static_stub_type) {
         return;
@@ -1784,7 +1784,7 @@ JRT_ENTRY(void, SharedRuntime::slow_arraycopy_C(oopDesc* src,  jint src_pos,
   // The copy_array mechanism is awkward and could be removed, but
   // the compilers don't call this function except as a last resort,
   // so it probably doesn't matter.
-  src->klass()->copy_array((arrayOopDesc*)src,  src_pos,
+  src->klass()->copy_array((arrayOopDesc*)src, src_pos,
                                         (arrayOopDesc*)dest, dest_pos,
                                         length, thread);
 }
@@ -1891,8 +1891,8 @@ void SharedRuntime::print_statistics() {
   ttyLocker ttyl;
   if (xtty != NULL)  xtty->head("statistics type='SharedRuntime'");
 
-  if (_monitor_enter_ctr ) tty->print_cr("%5d monitor enter slow",  _monitor_enter_ctr);
-  if (_monitor_exit_ctr  ) tty->print_cr("%5d monitor exit slow",   _monitor_exit_ctr);
+  if (_monitor_enter_ctr) tty->print_cr("%5d monitor enter slow",  _monitor_enter_ctr);
+  if (_monitor_exit_ctr) tty->print_cr("%5d monitor exit slow",   _monitor_exit_ctr);
   if (_throw_null_ctr) tty->print_cr("%5d implicit null throw", _throw_null_ctr);
 
   SharedRuntime::print_ic_miss_histogram();
@@ -1905,36 +1905,36 @@ void SharedRuntime::print_statistics() {
   }
 
   // Dump the JRT_ENTRY counters
-  if( _new_instance_ctr ) tty->print_cr("%5d new instance requires GC", _new_instance_ctr);
-  if( _new_array_ctr ) tty->print_cr("%5d new array requires GC", _new_array_ctr);
-  if( _multi1_ctr ) tty->print_cr("%5d multianewarray 1 dim", _multi1_ctr);
-  if( _multi2_ctr ) tty->print_cr("%5d multianewarray 2 dim", _multi2_ctr);
-  if( _multi3_ctr ) tty->print_cr("%5d multianewarray 3 dim", _multi3_ctr);
-  if( _multi4_ctr ) tty->print_cr("%5d multianewarray 4 dim", _multi4_ctr);
-  if( _multi5_ctr ) tty->print_cr("%5d multianewarray 5 dim", _multi5_ctr);
+  if (_new_instance_ctr) tty->print_cr("%5d new instance requires GC", _new_instance_ctr);
+  if (_new_array_ctr) tty->print_cr("%5d new array requires GC", _new_array_ctr);
+  if (_multi1_ctr) tty->print_cr("%5d multianewarray 1 dim", _multi1_ctr);
+  if (_multi2_ctr) tty->print_cr("%5d multianewarray 2 dim", _multi2_ctr);
+  if (_multi3_ctr) tty->print_cr("%5d multianewarray 3 dim", _multi3_ctr);
+  if (_multi4_ctr) tty->print_cr("%5d multianewarray 4 dim", _multi4_ctr);
+  if (_multi5_ctr) tty->print_cr("%5d multianewarray 5 dim", _multi5_ctr);
 
-  tty->print_cr("%5d inline cache miss in compiled", _ic_miss_ctr );
-  tty->print_cr("%5d wrong method", _wrong_method_ctr );
-  tty->print_cr("%5d unresolved static call site", _resolve_static_ctr );
-  tty->print_cr("%5d unresolved virtual call site", _resolve_virtual_ctr );
-  tty->print_cr("%5d unresolved opt virtual call site", _resolve_opt_virtual_ctr );
+  tty->print_cr("%5d inline cache miss in compiled", _ic_miss_ctr);
+  tty->print_cr("%5d wrong method", _wrong_method_ctr);
+  tty->print_cr("%5d unresolved static call site", _resolve_static_ctr);
+  tty->print_cr("%5d unresolved virtual call site", _resolve_virtual_ctr);
+  tty->print_cr("%5d unresolved opt virtual call site", _resolve_opt_virtual_ctr);
 
-  if( _mon_enter_stub_ctr ) tty->print_cr("%5d monitor enter stub", _mon_enter_stub_ctr );
-  if( _mon_exit_stub_ctr ) tty->print_cr("%5d monitor exit stub", _mon_exit_stub_ctr );
-  if( _mon_enter_ctr ) tty->print_cr("%5d monitor enter slow", _mon_enter_ctr );
-  if( _mon_exit_ctr ) tty->print_cr("%5d monitor exit slow", _mon_exit_ctr );
-  if( _partial_subtype_ctr) tty->print_cr("%5d slow partial subtype", _partial_subtype_ctr );
-  if( _jbyte_array_copy_ctr ) tty->print_cr("%5d byte array copies", _jbyte_array_copy_ctr );
-  if( _jshort_array_copy_ctr ) tty->print_cr("%5d short array copies", _jshort_array_copy_ctr );
-  if( _jint_array_copy_ctr ) tty->print_cr("%5d int array copies", _jint_array_copy_ctr );
-  if( _jlong_array_copy_ctr ) tty->print_cr("%5d long array copies", _jlong_array_copy_ctr );
-  if( _oop_array_copy_ctr ) tty->print_cr("%5d oop array copies", _oop_array_copy_ctr );
-  if( _checkcast_array_copy_ctr ) tty->print_cr("%5d checkcast array copies", _checkcast_array_copy_ctr );
-  if( _unsafe_array_copy_ctr ) tty->print_cr("%5d unsafe array copies", _unsafe_array_copy_ctr );
-  if( _generic_array_copy_ctr ) tty->print_cr("%5d generic array copies", _generic_array_copy_ctr );
-  if( _slow_array_copy_ctr ) tty->print_cr("%5d slow array copies", _slow_array_copy_ctr );
-  if( _find_handler_ctr ) tty->print_cr("%5d find exception handler", _find_handler_ctr );
-  if( _rethrow_ctr ) tty->print_cr("%5d rethrow handler", _rethrow_ctr );
+  if (_mon_enter_stub_ctr) tty->print_cr("%5d monitor enter stub", _mon_enter_stub_ctr);
+  if (_mon_exit_stub_ctr) tty->print_cr("%5d monitor exit stub", _mon_exit_stub_ctr);
+  if (_mon_enter_ctr) tty->print_cr("%5d monitor enter slow", _mon_enter_ctr);
+  if (_mon_exit_ctr) tty->print_cr("%5d monitor exit slow", _mon_exit_ctr);
+  if (_partial_subtype_ctr) tty->print_cr("%5d slow partial subtype", _partial_subtype_ctr);
+  if (_jbyte_array_copy_ctr) tty->print_cr("%5d byte array copies", _jbyte_array_copy_ctr);
+  if (_jshort_array_copy_ctr) tty->print_cr("%5d short array copies", _jshort_array_copy_ctr);
+  if (_jint_array_copy_ctr) tty->print_cr("%5d int array copies", _jint_array_copy_ctr);
+  if (_jlong_array_copy_ctr) tty->print_cr("%5d long array copies", _jlong_array_copy_ctr);
+  if (_oop_array_copy_ctr) tty->print_cr("%5d oop array copies", _oop_array_copy_ctr);
+  if (_checkcast_array_copy_ctr) tty->print_cr("%5d checkcast array copies", _checkcast_array_copy_ctr);
+  if (_unsafe_array_copy_ctr) tty->print_cr("%5d unsafe array copies", _unsafe_array_copy_ctr);
+  if (_generic_array_copy_ctr) tty->print_cr("%5d generic array copies", _generic_array_copy_ctr);
+  if (_slow_array_copy_ctr) tty->print_cr("%5d slow array copies", _slow_array_copy_ctr);
+  if (_find_handler_ctr) tty->print_cr("%5d find exception handler", _find_handler_ctr);
+  if (_rethrow_ctr) tty->print_cr("%5d rethrow handler", _rethrow_ctr);
 
   AdapterHandlerLibrary::print_statistics();
 
@@ -1997,7 +1997,7 @@ class MethodArityHistogram {
   MethodArityHistogram() {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     _max_arity = _max_size = 0;
-    for (int i = 0; i < MAX_ARITY; i++) _arity_histogram[i] = _size_histogram [i] = 0;
+    for (int i = 0; i < MAX_ARITY; i++) _arity_histogram[i] = _size_histogram[i] = 0;
     CodeCache::nmethods_do(add_method_to_histogram);
     print_histogram();
   }
@@ -2062,7 +2062,7 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
   // These are correct for the current system but someday it might be
   // necessary to make this mapping platform dependent.
   static int adapter_encoding(BasicType in) {
-    switch(in) {
+    switch (in) {
       case T_BOOLEAN:
       case T_BYTE:
       case T_SHORT:
@@ -2479,7 +2479,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
       tty->print_cr("i2c argument handler #%d for: %s %s (%d bytes generated)",
                     _adapters->number_of_entries(), (method->is_static() ? "static" : "receiver"),
                     method->signature()->as_C_string(), insts_size);
-      tty->print_cr("c2i argument handler starts at %p",entry->get_c2i_entry());
+      tty->print_cr("c2i argument handler starts at %p", entry->get_c2i_entry());
       if (Verbose || PrintStubCode) {
         address first_pc = entry->base_address();
         if (first_pc != NULL) {
@@ -2504,7 +2504,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
                  new_adapter->name(),
                  fingerprint->as_string(),
                  new_adapter->content_begin());
-    Forte::register_stub(blob_id, new_adapter->content_begin(),new_adapter->content_end());
+    Forte::register_stub(blob_id, new_adapter->content_begin(), new_adapter->content_end());
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {
       JvmtiExport::post_dynamic_code_generated(blob_id, new_adapter->content_begin(), new_adapter->content_end());
@@ -2605,12 +2605,12 @@ void AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
       BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, total_args_passed);
       VMRegPair*   regs = NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);
       int i=0;
-      if( !method->is_static() )  // Pass in receiver first
+      if (!method->is_static())  // Pass in receiver first
         sig_bt[i++] = T_OBJECT;
       SignatureStream ss(method->signature());
-      for( ; !ss.at_return_type(); ss.next()) {
+      for (; !ss.at_return_type(); ss.next()) {
         sig_bt[i++] = ss.type();  // Collect remaining bits of signature
-        if( ss.type() == T_LONG || ss.type() == T_DOUBLE )
+        if (ss.type() == T_LONG || ss.type() == T_DOUBLE)
           sig_bt[i++] = T_VOID;   // Longs & doubles take 2 Java slots
       }
       assert(i == total_args_passed, "");
@@ -2762,10 +2762,10 @@ void SharedRuntime::convert_ints_to_longints(int i2l_argcnt, int& in_args_count,
         case T_SHORT:
         case T_INT:
           // Convert (bt) to (T_LONG,bt).
-          new_in_sig_bt[argcnt  ] = T_LONG;
+          new_in_sig_bt[argcnt] = T_LONG;
           new_in_sig_bt[argcnt+1] = bt;
           assert(reg.first()->is_valid() && !reg.second()->is_valid(), "");
-          new_in_regs[argcnt  ].set2(reg.first());
+          new_in_regs[argcnt].set2(reg.first());
           new_in_regs[argcnt+1].set_bad();
           argcnt++;
           break;
@@ -2808,17 +2808,17 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
   int len = (int)strlen(s);
   s++; len--;                   // Skip opening paren
   char *t = s+len;
-  while( *(--t) != ')' ) ;      // Find close paren
+  while (*(--t) != ')');      // Find close paren
 
-  BasicType *sig_bt = NEW_RESOURCE_ARRAY( BasicType, 256 );
-  VMRegPair *regs = NEW_RESOURCE_ARRAY( VMRegPair, 256 );
+  BasicType *sig_bt = NEW_RESOURCE_ARRAY(BasicType, 256);
+  VMRegPair *regs = NEW_RESOURCE_ARRAY(VMRegPair, 256);
   int cnt = 0;
   if (has_receiver) {
     sig_bt[cnt++] = T_OBJECT; // Receiver is argument 0; not in signature
   }
 
-  while( s < t ) {
-    switch( *s++ ) {            // Switch on signature character
+  while (s < t) {
+    switch (*s++) {            // Switch on signature character
     case 'B': sig_bt[cnt++] = T_BYTE;    break;
     case 'C': sig_bt[cnt++] = T_CHAR;    break;
     case 'D': sig_bt[cnt++] = T_DOUBLE;  sig_bt[cnt++] = T_VOID; break;
@@ -2829,16 +2829,16 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
     case 'Z': sig_bt[cnt++] = T_BOOLEAN; break;
     case 'V': sig_bt[cnt++] = T_VOID;    break;
     case 'L':                   // Oop
-      while( *s++ != ';'  ) ;   // Skip signature
+      while (*s++ != ';');   // Skip signature
       sig_bt[cnt++] = T_OBJECT;
       break;
     case '[': {                 // Array
       do {                      // Skip optional size
-        while( *s >= '0' && *s <= '9' ) s++;
-      } while( *s++ == '[' );   // Nested arrays?
+        while (*s >= '0' && *s <= '9') s++;
+      } while (*s++ == '[');   // Nested arrays?
       // Skip element type
-      if( s[-1] == 'L' )
-        while( *s++ != ';'  ) ; // Skip signature
+      if (s[-1] == 'L')
+        while (*s++ != ';'); // Skip signature
       sig_bt[cnt++] = T_ARRAY;
       break;
     }
@@ -2850,7 +2850,7 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
     sig_bt[cnt++] = T_OBJECT;
   }
 
-  assert( cnt < 256, "grow table size" );
+  assert(cnt < 256, "grow table size");
 
   int comp_args_on_stack;
   comp_args_on_stack = java_calling_convention(sig_bt, regs, cnt, true);
@@ -2861,12 +2861,12 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
   if (comp_args_on_stack) {
     for (int i = 0; i < cnt; i++) {
       VMReg reg1 = regs[i].first();
-      if( reg1->is_stack()) {
+      if (reg1->is_stack()) {
         // Yuck
         reg1 = reg1->bias(out_preserve_stack_slots());
       }
       VMReg reg2 = regs[i].second();
-      if( reg2->is_stack()) {
+      if (reg2->is_stack()) {
         // Yuck
         reg2 = reg2->bias(out_preserve_stack_slots());
       }
@@ -2904,15 +2904,15 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
   // frame accessor methods and be platform independent.
 
   frame fr = thread->last_frame();
-  assert( fr.is_interpreted_frame(), "" );
-  assert( fr.interpreter_frame_expression_stack_size()==0, "only handle empty stacks" );
+  assert(fr.is_interpreted_frame(), "");
+  assert(fr.interpreter_frame_expression_stack_size()==0, "only handle empty stacks");
 
   // Figure out how many monitors are active.
   int active_monitor_count = 0;
-  for( BasicObjectLock *kptr = fr.interpreter_frame_monitor_end();
+  for (BasicObjectLock *kptr = fr.interpreter_frame_monitor_end();
        kptr < fr.interpreter_frame_monitor_begin();
        kptr = fr.next_monitor_in_interpreter_frame(kptr) ) {
-    if( kptr->obj() != NULL ) active_monitor_count++;
+    if (kptr->obj() != NULL) active_monitor_count++;
   }
 
   // QQQ we could place number of active monitors in the array so that compiled code
@@ -2926,17 +2926,17 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
 
   // Copy the locals.  Order is preserved so that loading of longs works.
   // Since there's no GC I can copy the oops blindly.
-  assert( sizeof(HeapWord)==sizeof(intptr_t), "fix this code");
+  assert(sizeof(HeapWord)==sizeof(intptr_t), "fix this code");
   Copy::disjoint_words((HeapWord*)fr.interpreter_frame_local_at(max_locals-1),
                        (HeapWord*)&buf[0],
                        max_locals);
 
   // Inflate locks.  Copy the displaced headers.  Be careful, there can be holes.
   int i = max_locals;
-  for( BasicObjectLock *kptr2 = fr.interpreter_frame_monitor_end();
+  for (BasicObjectLock *kptr2 = fr.interpreter_frame_monitor_end();
        kptr2 < fr.interpreter_frame_monitor_begin();
        kptr2 = fr.next_monitor_in_interpreter_frame(kptr2) ) {
-    if( kptr2->obj() != NULL) {         // Avoid 'holes' in the monitor array
+    if (kptr2->obj() != NULL) {         // Avoid 'holes' in the monitor array
       BasicLock *lock = kptr2->lock();
       // Inflate so the displaced header becomes position-independent
       if (lock->displaced_header()->is_unlocked())
@@ -2946,20 +2946,20 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *thread) )
       buf[i++] = cast_from_oop<intptr_t>(kptr2->obj());
     }
   }
-  assert( i - max_locals == active_monitor_count*2, "found the expected number of monitors" );
+  assert(i - max_locals == active_monitor_count*2, "found the expected number of monitors");
 
   return buf;
 JRT_END
 
 JRT_LEAF(void, SharedRuntime::OSR_migration_end( intptr_t* buf) )
-  FREE_C_HEAP_ARRAY(intptr_t,buf, mtCode);
+  FREE_C_HEAP_ARRAY(intptr_t, buf, mtCode);
 JRT_END
 
 bool AdapterHandlerLibrary::contains(CodeBlob* b) {
   AdapterHandlerTableIterator iter(_adapters);
   while (iter.has_next()) {
     AdapterHandlerEntry* a = iter.next();
-    if ( b == CodeCache::find_blob(a->get_i2c_entry()) ) return true;
+    if (b == CodeCache::find_blob(a->get_i2c_entry())) return true;
   }
   return false;
 }

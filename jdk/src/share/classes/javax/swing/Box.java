@@ -75,6 +75,7 @@ import javax.accessibility.*;
  * @see BoxLayout
  *
  * @author  Timothy Prinzing
+ * @since 1.2
  */
 @SuppressWarnings("serial")
 public class Box extends JComponent implements Accessible {

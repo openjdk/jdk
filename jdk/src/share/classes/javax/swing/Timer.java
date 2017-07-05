@@ -145,6 +145,7 @@ import javax.swing.event.EventListenerList;
  *
  *
  * @author Dave Moore
+ * @since 1.2
  */
 @SuppressWarnings("serial")
 public class Timer implements Serializable

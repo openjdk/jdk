@@ -71,7 +71,12 @@ SplashDecodePng(Splash * splash, png_rw_ptr read_func, void *io_ptr)
         goto done;
     }
 
+#ifdef __APPLE__
+    /* use setjmp/longjmp versions that do not save/restore the signal mask */
+    if (_setjmp(png_set_longjmp_fn(png_ptr, _longjmp, sizeof(jmp_buf)))) {
+#else
     if (setjmp(png_jmpbuf(png_ptr))) {
+#endif
         goto done;
     }
 

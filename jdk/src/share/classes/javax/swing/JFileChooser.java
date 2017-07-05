@@ -86,7 +86,7 @@ import java.lang.ref.WeakReference;
  * description: A component which allows for the interactive selection of a file.
  *
  * @author Jeff Dinkins
- *
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class JFileChooser extends JComponent implements Accessible {

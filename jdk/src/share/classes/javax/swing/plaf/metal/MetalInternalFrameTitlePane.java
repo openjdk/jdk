@@ -46,8 +46,19 @@ import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class MetalInternalFrameTitlePane  extends BasicInternalFrameTitlePane {
 
+    /**
+     * The value {@code isPalette}
+     */
     protected boolean isPalette = false;
+
+    /**
+     * The palette close icon.
+     */
     protected Icon paletteCloseIcon;
+
+    /**
+     * The height of the palette title.
+     */
     protected int paletteTitleHeight;
 
     private static final Border handyEmptyBorder = new EmptyBorder(0,0,0,0);
@@ -94,6 +105,11 @@ public class MetalInternalFrameTitlePane  extends BasicInternalFrameTitlePane {
     private Color activeBumpsShadow = MetalLookAndFeel.
                              getPrimaryControlDarkShadow();
 
+    /**
+     * Constructs a new instance of {@code MetalInternalFrameTitlePane}
+     *
+     * @param f an instance of {@code JInternalFrame}
+     */
     public MetalInternalFrameTitlePane(JInternalFrame f) {
         super( f );
     }
@@ -307,6 +323,11 @@ public class MetalInternalFrameTitlePane  extends BasicInternalFrameTitlePane {
         }
     }
 
+    /**
+     * Paints palette.
+     *
+     * @param g a instance of {@code Graphics}
+     */
     public void paintPalette(Graphics g)  {
         boolean leftToRight = MetalUtils.isLeftToRight(frame);
 
@@ -471,6 +492,11 @@ public class MetalInternalFrameTitlePane  extends BasicInternalFrameTitlePane {
         bumps.paintIcon(this, g, bumpXOffset, bumpYOffset);
     }
 
+    /**
+     * If {@code b} is {@code true}, sets palette icons.
+     *
+     * @param b if {@code true}, sets palette icons
+     */
     public void setPalette(boolean b) {
         isPalette = b;
 

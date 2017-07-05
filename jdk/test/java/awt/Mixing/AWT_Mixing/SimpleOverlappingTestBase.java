@@ -24,6 +24,7 @@
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+import test.java.awt.regtesthelpers.Util;
 
 /**
  * Base class for testing overlapping of Swing and AWT component put into one frame.

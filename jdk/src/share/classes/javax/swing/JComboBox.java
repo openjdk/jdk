@@ -77,6 +77,7 @@ import javax.accessibility.*;
  *
  * @author Arnaud Weber
  * @author Mark Davidson
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JComboBox<E> extends JComponent
@@ -1318,13 +1319,15 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * do not call or override.
      */
     public void actionPerformed(ActionEvent e) {
-        Object newItem = getEditor().getItem();
-        setPopupVisible(false);
-        getModel().setSelectedItem(newItem);
-        String oldCommand = getActionCommand();
-        setActionCommand("comboBoxEdited");
-        fireActionEvent();
-        setActionCommand(oldCommand);
+        ComboBoxEditor editor = getEditor();
+        if ((editor != null) && (e != null) && (editor == e.getSource())) {
+            setPopupVisible(false);
+            getModel().setSelectedItem(editor.getItem());
+            String oldCommand = getActionCommand();
+            setActionCommand("comboBoxEdited");
+            fireActionEvent();
+            setActionCommand(oldCommand);
+        }
     }
 
     /**

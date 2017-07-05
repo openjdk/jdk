@@ -33,8 +33,7 @@
 # team when determining which APIs to extract javadoc
 # comments from.
 
-DOMAPI_PKGS = com.sun.java.browser.dom \
-    org.w3c.dom \
+DOMAPI_PKGS = org.w3c.dom \
     org.w3c.dom.bootstrap \
     org.w3c.dom.ls \
     org.w3c.dom.ranges \

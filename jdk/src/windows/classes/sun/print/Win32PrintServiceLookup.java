@@ -183,6 +183,7 @@ public class Win32PrintServiceLookup extends PrintServiceLookup {
         }
     }
 
+    @SuppressWarnings("unchecked") // Cast to Class<PrintServiceAttribute>
     boolean matchingService(PrintService service,
                             PrintServiceAttributeSet serviceSet) {
         if (serviceSet != null) {
@@ -246,7 +247,7 @@ public class Win32PrintServiceLookup extends PrintServiceLookup {
         if (services.length == 0) {
             return services;
         } else {
-            ArrayList matchingServices = new ArrayList();
+            ArrayList<PrintService> matchingServices = new ArrayList<>();
             for (int i=0; i<services.length; i++) {
                 try {
                     if (services[i].
@@ -257,7 +258,7 @@ public class Win32PrintServiceLookup extends PrintServiceLookup {
                 }
             }
             services = new PrintService[matchingServices.size()];
-            return (PrintService[])matchingServices.toArray(services);
+            return matchingServices.toArray(services);
         }
     }
 

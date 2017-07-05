@@ -72,6 +72,7 @@ import javax.swing.event.*;
  * <code>ActionEvent</code> to be fired.
  *
  * @author Jeff Dinkins
+ * @since 1.2
  */
 public interface ButtonModel extends ItemSelectable {
 

@@ -221,7 +221,7 @@ final class NamingEventNotifier implements Runnable {
             return;
 
         NamingEvent e = new NamingEvent(eventSrc, NamingEvent.OBJECT_ADDED,
-            newBd, null, new Long(changeID));
+            newBd, null, changeID);
         support.queueEvent(e, namingListeners);
     }
 
@@ -233,7 +233,7 @@ final class NamingEventNotifier implements Runnable {
             return;
 
         NamingEvent e = new NamingEvent(eventSrc, NamingEvent.OBJECT_REMOVED,
-            null, oldBd, new Long(changeID));
+            null, oldBd, changeID);
         support.queueEvent(e, namingListeners);
     }
 
@@ -248,7 +248,7 @@ final class NamingEventNotifier implements Runnable {
         Binding oldBd = new Binding(newBd.getName(), null, newBd.isRelative());
 
         NamingEvent e = new NamingEvent(
-            eventSrc, NamingEvent.OBJECT_CHANGED, newBd, oldBd, new Long(changeID));
+            eventSrc, NamingEvent.OBJECT_CHANGED, newBd, oldBd, changeID);
         support.queueEvent(e, namingListeners);
     }
 
@@ -273,7 +273,7 @@ final class NamingEventNotifier implements Runnable {
         }
 
         NamingEvent e = new NamingEvent(
-            eventSrc, NamingEvent.OBJECT_RENAMED, newBd, oldBd, new Long(changeID));
+            eventSrc, NamingEvent.OBJECT_RENAMED, newBd, oldBd, changeID);
         support.queueEvent(e, namingListeners);
     }
 

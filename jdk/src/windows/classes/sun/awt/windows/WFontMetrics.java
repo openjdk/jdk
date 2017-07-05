@@ -199,10 +199,10 @@ final class WFontMetrics extends FontMetrics {
 
     native void init();
 
-    static Hashtable table = new Hashtable();
+    static Hashtable<Font, FontMetrics> table = new Hashtable<>();
 
     static FontMetrics getFontMetrics(Font font) {
-        FontMetrics fm = (FontMetrics)table.get(font);
+        FontMetrics fm = table.get(font);
         if (fm == null) {
             table.put(font, fm = new WFontMetrics(font));
         }

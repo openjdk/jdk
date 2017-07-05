@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public class BeanContextServiceRevokedEvent extends BeanContextEvent {
      * @param sc the service that is being revoked
      * @param invalidate <code>true</code> for immediate revocation
      */
-    public BeanContextServiceRevokedEvent(BeanContextServices bcs, Class sc, boolean invalidate) {
+    public BeanContextServiceRevokedEvent(BeanContextServices bcs, Class<?> sc, boolean invalidate) {
         super((BeanContext)bcs);
 
         serviceClass    = sc;
@@ -67,7 +67,7 @@ public class BeanContextServiceRevokedEvent extends BeanContextEvent {
      * @return A <code>Class</code> reference to the
      * service that is being revoked
      */
-    public Class getServiceClass() { return serviceClass; }
+    public Class<?> getServiceClass() { return serviceClass; }
 
     /**
      * Checks this event to determine whether or not
@@ -76,7 +76,7 @@ public class BeanContextServiceRevokedEvent extends BeanContextEvent {
      * @return <code>true</code> if the service being revoked is of the
      * same class as the specified service
      */
-    public boolean isServiceClass(Class service) {
+    public boolean isServiceClass(Class<?> service) {
         return serviceClass.equals(service);
     }
 
@@ -94,6 +94,6 @@ public class BeanContextServiceRevokedEvent extends BeanContextEvent {
     /**
      * A <code>Class</code> reference to the service that is being revoked.
      */
-    protected Class                      serviceClass;
+    protected Class<?>                   serviceClass;
     private   boolean                    invalidateRefs;
 }

@@ -40,19 +40,30 @@ public class FormSubmitEvent extends HTMLFrameHyperlinkEvent {
     /**
      * Represents an HTML form method type.
      * <UL>
-     * <LI><code>GET</code> corresponds to the GET form method</LI>
-     * <LI><code>POST</code> corresponds to the POST from method</LI>
+     * <LI>{@code GET} corresponds to the GET form method</LI>
+     * <LI>{@code POST} corresponds to the POST from method</LI>
      * </UL>
      * @since 1.5
      */
-    public enum MethodType { GET, POST };
+    public enum MethodType {
+
+        /**
+         * {@code GET} corresponds to the GET form method
+         */
+        GET,
+
+        /**
+         * {@code POST} corresponds to the POST from method
+         */
+        POST
+    }
 
     /**
      * Creates a new object representing an html form submit event.
      *
      * @param source the object responsible for the event
      * @param type the event type
-     * @param actionURL the form action URL
+     * @param targetURL the form action URL
      * @param sourceElement the element that corresponds to the source
      *                      of the event
      * @param targetFrame the Frame to display the document in

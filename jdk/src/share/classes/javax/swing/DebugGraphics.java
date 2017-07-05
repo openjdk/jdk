@@ -45,6 +45,7 @@ import java.text.AttributedCharacterIterator;
  * @see RepaintManager#setDoubleBufferingEnabled
  *
  * @author Dave Karlton
+ * @since 1.2
  */
 public class DebugGraphics extends Graphics {
     Graphics                    graphics;

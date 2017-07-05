@@ -61,6 +61,7 @@ import java.io.IOException;
  *
  * @author Arnaud Weber
  * @author Steve Wilson
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JPanel extends JComponent implements Accessible

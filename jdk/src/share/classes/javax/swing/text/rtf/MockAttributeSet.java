@@ -74,7 +74,7 @@ class MockAttributeSet
 
     public void addAttributes(AttributeSet attr)
     {
-        Enumeration as = attr.getAttributeNames();
+        Enumeration<?> as = attr.getAttributeNames();
         while(as.hasMoreElements()) {
             Object el = as.nextElement();
             backing.put(el, attr.getAttribute(el));
@@ -102,7 +102,7 @@ class MockAttributeSet
     }
 
 
-    public Enumeration getAttributeNames()
+    public Enumeration<?> getAttributeNames()
     {
          return backing.keys();
     }

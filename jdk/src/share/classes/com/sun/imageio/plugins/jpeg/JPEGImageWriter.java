@@ -179,7 +179,7 @@ public class JPEGImageWriter extends ImageWriter {
         java.security.AccessController.doPrivileged(
             new java.security.PrivilegedAction<Void>() {
                 public Void run() {
-                    System.loadLibrary("jpeg");
+                    System.loadLibrary("javajpeg");
                     return null;
                 }
             });

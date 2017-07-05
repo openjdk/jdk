@@ -188,8 +188,8 @@ public class KerberosTime {
     }
 
     public int getMicroSeconds() {
-        Long temp_long = new Long((kerberosTime % 1000L) * 1000L);
-        return temp_long.intValue() + microSeconds;
+        int temp_int = (int) ((kerberosTime % 1000L) * 1000L);
+        return temp_int + microSeconds;
     }
 
     /**
@@ -250,8 +250,7 @@ public class KerberosTime {
     }
 
     public int getSeconds() {
-        Long temp_long = new Long(kerberosTime / 1000L);
-        return temp_long.intValue();
+        return (int) (kerberosTime / 1000L);
     }
 
     /**

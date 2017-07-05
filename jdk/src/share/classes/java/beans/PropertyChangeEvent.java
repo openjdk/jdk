@@ -43,6 +43,8 @@ import java.util.EventObject;
  * An event source may send a null object as the name to indicate that an
  * arbitrary set of if its properties have changed.  In this case the
  * old and new values should also be null.
+ *
+ * @since 1.1
  */
 public class PropertyChangeEvent extends EventObject {
     private static final long serialVersionUID = 7042693688939648123L;

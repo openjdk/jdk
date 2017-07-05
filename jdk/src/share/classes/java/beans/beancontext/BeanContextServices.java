@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public interface BeanContextServices extends BeanContext, BeanContextServicesLis
      * associated with the service
      * @return true if the service was successful added, false otherwise
      */
-    boolean addService(Class serviceClass, BeanContextServiceProvider serviceProvider);
+    boolean addService(Class<?> serviceClass, BeanContextServiceProvider serviceProvider);
 
     /**
      * BeanContextServiceProviders wishing to remove
@@ -83,7 +83,7 @@ public interface BeanContextServices extends BeanContext, BeanContextServicesLis
      * terminate service to all currently outstanding references
      * to the specified service.
      */
-    void revokeService(Class serviceClass, BeanContextServiceProvider serviceProvider, boolean revokeCurrentServicesNow);
+    void revokeService(Class<?> serviceClass, BeanContextServiceProvider serviceProvider, boolean revokeCurrentServicesNow);
 
     /**
      * Reports whether or not a given service is
@@ -91,7 +91,7 @@ public interface BeanContextServices extends BeanContext, BeanContextServicesLis
      * @param serviceClass the service in question
      * @return true if the service is available
      */
-    boolean hasService(Class serviceClass);
+    boolean hasService(Class<?> serviceClass);
 
     /**
      * A <code>BeanContextChild</code>, or any arbitrary object
@@ -113,7 +113,7 @@ public interface BeanContextServices extends BeanContext, BeanContextServicesLis
      * @return a reference to this context's named
      * Service as requested or <code>null</code>
      */
-    Object getService(BeanContextChild child, Object requestor, Class serviceClass, Object serviceSelector, BeanContextServiceRevokedListener bcsrl) throws TooManyListenersException;
+    Object getService(BeanContextChild child, Object requestor, Class<?> serviceClass, Object serviceSelector, BeanContextServiceRevokedListener bcsrl) throws TooManyListenersException;
 
     /**
      * Releases a <code>BeanContextChild</code>'s
@@ -131,7 +131,7 @@ public interface BeanContextServices extends BeanContext, BeanContextServicesLis
      * @return an <code>Iterator</code> consisting of the
      * currently available services
      */
-    Iterator getCurrentServiceClasses();
+    Iterator<?> getCurrentServiceClasses();
 
     /**
      * Gets the list of service dependent service parameters
@@ -142,7 +142,7 @@ public interface BeanContextServices extends BeanContext, BeanContextServicesLis
      * @return the currently available service selectors
      * for the named serviceClass
      */
-    Iterator getCurrentServiceSelectors(Class serviceClass);
+    Iterator<?> getCurrentServiceSelectors(Class<?> serviceClass);
 
     /**
      * Adds a <code>BeanContextServicesListener</code> to this BeanContext

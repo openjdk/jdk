@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,11 @@ public interface LayoutManager2 extends LayoutManager {
     /**
      * Calculates the maximum size dimensions for the specified container,
      * given the components it contains.
+     *
      * @see java.awt.Component#getMaximumSize
      * @see LayoutManager
+     * @param  target the target container
+     * @return the maximum size of the container
      */
     public Dimension maximumLayoutSize(Container target);
 
@@ -66,6 +69,9 @@ public interface LayoutManager2 extends LayoutManager {
      * components.  The value should be a number between 0 and 1
      * where 0 represents alignment along the origin, 1 is aligned
      * the furthest away from the origin, 0.5 is centered, etc.
+     *
+     * @param  target the target container
+     * @return the x-axis alignment preference
      */
     public float getLayoutAlignmentX(Container target);
 
@@ -75,12 +81,16 @@ public interface LayoutManager2 extends LayoutManager {
      * components.  The value should be a number between 0 and 1
      * where 0 represents alignment along the origin, 1 is aligned
      * the furthest away from the origin, 0.5 is centered, etc.
+     *
+     * @param  target the target container
+     * @return the y-axis alignment preference
      */
     public float getLayoutAlignmentY(Container target);
 
     /**
      * Invalidates the layout, indicating that if the layout manager
      * has cached information it should be discarded.
+     * @param  target the target container
      */
     public void invalidateLayout(Container target);
 

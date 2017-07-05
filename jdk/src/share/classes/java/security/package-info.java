@@ -92,14 +92,14 @@
  *     </b></a></li>
  *
  *   <li><b>keytool</b>
- *     (<a href="{@docRoot}/../technotes/tools/solaris/keytool.html">
+ *     (<a href="{@docRoot}/../technotes/tools/unix/keytool.html">
  *       for Solaris/Linux</a>)
  *     (<a href="{@docRoot}/../technotes/tools/windows/keytool.html">
  *       for Windows</a>)
  *     </li>
  *
  *   <li><b>jarsigner</b>
- *     (<a href="{@docRoot}/../technotes/tools/solaris/jarsigner.html">
+ *     (<a href="{@docRoot}/../technotes/tools/unix/jarsigner.html">
  *       for Solaris/Linux</a>)
  *     (<a href="{@docRoot}/../technotes/tools/windows/jarsigner.html">
  *       for Windows</a>)

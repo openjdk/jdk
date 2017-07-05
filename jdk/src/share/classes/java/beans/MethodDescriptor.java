@@ -34,6 +34,8 @@ import java.util.ArrayList;
 /**
  * A MethodDescriptor describes a particular method that a Java Bean
  * supports for external access from other components.
+ *
+ * @since 1.1
  */
 
 public class MethodDescriptor extends FeatureDescriptor {

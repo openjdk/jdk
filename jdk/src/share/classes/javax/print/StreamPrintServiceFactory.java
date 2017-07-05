@@ -59,7 +59,7 @@ import java.util.ServiceConfigurationError;
 public abstract class StreamPrintServiceFactory {
 
     static class Services {
-        private ArrayList listOfFactories = null;
+        private ArrayList<StreamPrintServiceFactory> listOfFactories = null;
     }
 
     private static Services getServices() {
@@ -72,12 +72,12 @@ public abstract class StreamPrintServiceFactory {
         return services;
     }
 
-    private static ArrayList getListOfFactories() {
+    private static ArrayList<StreamPrintServiceFactory> getListOfFactories() {
         return getServices().listOfFactories;
     }
 
-    private static ArrayList initListOfFactories() {
-        ArrayList listOfFactories = new ArrayList();
+    private static ArrayList<StreamPrintServiceFactory> initListOfFactories() {
+        ArrayList<StreamPrintServiceFactory> listOfFactories = new ArrayList<>();
         getServices().listOfFactories = listOfFactories;
         return listOfFactories;
     }
@@ -108,9 +108,8 @@ public abstract class StreamPrintServiceFactory {
          lookupStreamPrintServiceFactories(DocFlavor flavor,
                                            String outputMimeType) {
 
-         ArrayList list = getFactories(flavor, outputMimeType);
-         return (StreamPrintServiceFactory[])
-               (list.toArray(new StreamPrintServiceFactory[list.size()]));
+         ArrayList<StreamPrintServiceFactory> list = getFactories(flavor, outputMimeType);
+         return list.toArray(new StreamPrintServiceFactory[list.size()]);
      }
 
     /** Queries the factory for the document format that is emitted
@@ -162,10 +161,10 @@ public abstract class StreamPrintServiceFactory {
     public abstract StreamPrintService getPrintService(OutputStream out);
 
 
-    private static ArrayList getAllFactories() {
+    private static ArrayList<StreamPrintServiceFactory> getAllFactories() {
         synchronized (StreamPrintServiceFactory.class) {
 
-          ArrayList listOfFactories = getListOfFactories();
+          ArrayList<StreamPrintServiceFactory> listOfFactories = getListOfFactories();
             if (listOfFactories != null) {
                 return listOfFactories;
             } else {
@@ -174,12 +173,12 @@ public abstract class StreamPrintServiceFactory {
 
             try {
                 java.security.AccessController.doPrivileged(
-                     new java.security.PrivilegedExceptionAction() {
+                     new java.security.PrivilegedExceptionAction<Object>() {
                         public Object run() {
                             Iterator<StreamPrintServiceFactory> iterator =
                                 ServiceLoader.load
                                 (StreamPrintServiceFactory.class).iterator();
-                            ArrayList lof = getListOfFactories();
+                            ArrayList<StreamPrintServiceFactory> lof = getListOfFactories();
                             while (iterator.hasNext()) {
                                 try {
                                     lof.add(iterator.next());
@@ -210,17 +209,16 @@ public abstract class StreamPrintServiceFactory {
         return false;
     }
 
-    private static ArrayList getFactories(DocFlavor flavor, String outType) {
+    private static ArrayList<StreamPrintServiceFactory> getFactories(DocFlavor flavor, String outType) {
 
         if (flavor == null && outType == null) {
             return getAllFactories();
         }
 
-        ArrayList list = new ArrayList();
-        Iterator iterator = getAllFactories().iterator();
+        ArrayList<StreamPrintServiceFactory> list = new ArrayList<>();
+        Iterator<StreamPrintServiceFactory> iterator = getAllFactories().iterator();
         while (iterator.hasNext()) {
-            StreamPrintServiceFactory factory =
-                (StreamPrintServiceFactory)iterator.next();
+            StreamPrintServiceFactory factory = iterator.next();
             if ((outType == null ||
                  outType.equalsIgnoreCase(factory.getOutputFormat())) &&
                 (flavor == null ||

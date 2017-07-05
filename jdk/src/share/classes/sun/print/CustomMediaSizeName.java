@@ -33,8 +33,8 @@ import javax.print.attribute.standard.MediaSizeName;
 import java.util.ArrayList;
 
 class CustomMediaSizeName extends MediaSizeName {
-    private static ArrayList customStringTable = new ArrayList();
-    private static ArrayList customEnumTable = new ArrayList();
+    private static ArrayList<String> customStringTable = new ArrayList<>();
+    private static ArrayList<MediaSizeName> customEnumTable = new ArrayList<>();
     private String choiceName;
     private MediaSizeName mediaName;
 
@@ -162,7 +162,7 @@ class CustomMediaSizeName extends MediaSizeName {
      */
     protected String[] getStringTable() {
       String[] nameTable = new String[customStringTable.size()];
-      return (String[])customStringTable.toArray(nameTable);
+      return customStringTable.toArray(nameTable);
     }
 
     /**
@@ -170,7 +170,7 @@ class CustomMediaSizeName extends MediaSizeName {
      */
     protected EnumSyntax[] getEnumValueTable() {
       MediaSizeName[] enumTable = new MediaSizeName[customEnumTable.size()];
-      return (MediaSizeName[])customEnumTable.toArray(enumTable);
+      return customEnumTable.toArray(enumTable);
     }
 
 }

@@ -43,14 +43,50 @@ import sun.awt.AppContext;
 @SuppressWarnings("serial") // Same-version serialization only
 public final
 class Element implements DTDConstants, Serializable {
+
+    /**
+     * The element index
+     */
     public int index;
+
+    /**
+     * The name of the element
+     */
     public String name;
+
+    /**
+     * {@code true} if the start tag can be omitted
+     */
     public boolean oStart;
+
+    /**
+     * {@code true} if the end tag can be omitted
+     */
     public boolean oEnd;
+
+    /**
+     * The set of elements that can occur inside the element
+     */
     public BitSet inclusions;
+
+    /**
+     * The set of elements that must not occur inside the element
+     */
     public BitSet exclusions;
+
+    /**
+     * The element type
+     */
     public int type = ANY;
+
+    /**
+     * The content model
+     */
     public ContentModel content;
+
+    /**
+     * The attributes
+     */
     public AttributeList atts;
 
     /**
@@ -208,6 +244,14 @@ class Element implements DTDConstants, Serializable {
         contentTypes.put("ANY", Integer.valueOf(ANY));
     }
 
+    /**
+     * Converts {@code nm} to type. Returns appropriate DTDConstants
+     * if the {@code nm} is equal to CDATA, RCDATA, EMPTY or ANY, 0 otherwise.
+     *
+     * @param nm a name
+     * @return appropriate DTDConstants if the {@code nm} is equal to
+     * CDATA, RCDATA, EMPTY or ANY, 0 otherwise.
+     */
     public static int name2type(String nm) {
         Integer val = contentTypes.get(nm);
         return (val != null) ? val.intValue() : 0;

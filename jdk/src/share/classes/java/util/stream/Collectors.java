@@ -729,7 +729,7 @@ public final class Collectors {
      * person in each city:
      * <pre>{@code
      *     Comparator<Person> byHeight = Comparator.comparing(Person::getHeight);
-     *     Map<City, Person> tallestByCity
+     *     Map<City, Optional<Person>> tallestByCity
      *         = people.stream().collect(groupingBy(Person::getCity, reducing(BinaryOperator.maxBy(byHeight))));
      * }</pre>
      *
@@ -784,7 +784,7 @@ public final class Collectors {
      *     Comparator<String> byLength = Comparator.comparing(String::length);
      *     Map<City, String> longestLastNameByCity
      *         = people.stream().collect(groupingBy(Person::getCity,
-     *                                              reducing(Person::getLastName, BinaryOperator.maxBy(byLength))));
+     *                                              reducing("", Person::getLastName, BinaryOperator.maxBy(byLength))));
      * }</pre>
      *
      * @param <T> the type of the input elements
@@ -1220,7 +1220,7 @@ public final class Collectors {
      * students to their grade point average:
      * <pre>{@code
      *     Map<Student, Double> studentToGPA
-     *         students.stream().collect(toMap(Functions.identity(),
+     *         students.stream().collect(toMap(Function.identity(),
      *                                         student -> computeGPA(student)));
      * }</pre>
      * And the following produces a {@code Map} mapping a unique identifier to
@@ -1228,7 +1228,7 @@ public final class Collectors {
      * <pre>{@code
      *     Map<String, Student> studentIdToStudent
      *         students.stream().collect(toMap(Student::getId,
-     *                                         Functions.identity());
+     *                                         Function.identity());
      * }</pre>
      *
      * @implNote
@@ -1390,7 +1390,7 @@ public final class Collectors {
      * students to their grade point average:
      * <pre>{@code
      *     Map<Student, Double> studentToGPA
-     *         students.stream().collect(toMap(Functions.identity(),
+     *         students.stream().collect(toMap(Function.identity(),
      *                                         student -> computeGPA(student)));
      * }</pre>
      * And the following produces a {@code Map} mapping a unique identifier to
@@ -1398,7 +1398,7 @@ public final class Collectors {
      * <pre>{@code
      *     Map<String, Student> studentIdToStudent
      *         students.stream().collect(toConcurrentMap(Student::getId,
-     *                                                   Functions.identity());
+     *                                                   Function.identity());
      * }</pre>
      *
      * <p>This is a {@link Collector.Characteristics#CONCURRENT concurrent} and

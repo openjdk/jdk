@@ -33,6 +33,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.SpringLayout;
 import javax.swing.SwingUtilities;
+import test.java.awt.regtesthelpers.Util;
 
 /**
  * AWT/Swing overlapping test for {@link javax.swing.JPopupMenu } component.
@@ -43,6 +44,8 @@ import javax.swing.SwingUtilities;
 @test
 @summary Overlapping test for javax.swing.JScrollPane
 @author sergey.grinev@oracle.com: area=awt.mixing
+@library ../../regtesthelpers
+@build Util
 @run main JPopupMenuOverlapping
  */
 public class JPopupMenuOverlapping extends OverlappingTestBase {

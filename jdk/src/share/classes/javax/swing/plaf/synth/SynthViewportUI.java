@@ -141,8 +141,7 @@ public class SynthViewportUI extends ViewportUI
     }
 
     private SynthContext getContext(JComponent c, int state) {
-        return SynthContext.getContext(SynthContext.class, c,
-                                       getRegion(c), style, state);
+        return SynthContext.getContext(c, style, state);
     }
 
     private Region getRegion(JComponent c) {
