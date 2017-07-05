@@ -25,66 +25,29 @@
 
 package jdk.internal.jimage;
 
-import java.io.PrintStream;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public final class BasicImageWriter {
+
+    public static final String IMAGE_EXT = ".jimage";
+    public static final String BOOT_NAME = "bootmodules";
+    public static final String BOOT_IMAGE_NAME = BOOT_NAME + IMAGE_EXT;
+
     private final static int RETRY_LIMIT = 1000;
 
     private ByteOrder byteOrder;
-    private ImageStrings strings;
-    private int count;
+    private ImageStringsWriter strings;
+    private int length;
     private int[] redirect;
-    private ImageLocation[] locations;
-    private List<ImageLocation> input;
+    private ImageLocationWriter[] locations;
+    private List<ImageLocationWriter> input;
     private ImageStream headerStream;
     private ImageStream redirectStream;
     private ImageStream locationOffsetStream;
     private ImageStream locationStream;
     private ImageStream allIndexStream;
-
-    static class ImageBucket implements Comparable<ImageBucket> {
-        final List<ImageLocation> list;
-
-        ImageBucket() {
-            this.list = new ArrayList<>();
-        }
-
-        void add(ImageLocation location) {
-            list.add(location);
-        }
-
-        int getSize() {
-            return list.size();
-        }
-
-        List<ImageLocation> getList() {
-            return list;
-        }
-
-        ImageLocation getFirst() {
-            assert !list.isEmpty() : "bucket should never be empty";
-            return list.get(0);
-        }
-
-        @Override
-        public int hashCode() {
-            return getFirst().hashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return this == obj;
-        }
-
-        @Override
-        public int compareTo(ImageBucket o) {
-            return o.getSize() - getSize();
-        }
-    }
 
     public BasicImageWriter() {
         this(ByteOrder.nativeOrder());
@@ -93,12 +56,16 @@ public final class BasicImageWriter {
     public BasicImageWriter(ByteOrder byteOrder) {
         this.byteOrder = byteOrder;
         this.input = new ArrayList<>();
-        this.strings = new ImageStrings();
+        this.strings = new ImageStringsWriter();
         this.headerStream = new ImageStream(byteOrder);
         this.redirectStream = new ImageStream(byteOrder);
         this.locationOffsetStream = new ImageStream(byteOrder);
         this.locationStream = new ImageStream(byteOrder);
         this.allIndexStream = new ImageStream(byteOrder);
+    }
+
+    public ByteOrder getByteOrder() {
+        return byteOrder;
     }
 
     public int addString(String string) {
@@ -109,104 +76,48 @@ public final class BasicImageWriter {
         return strings.add(string);
     }
 
-    public void addLocation(String fullname, long contentOffset, long compressedSize, long uncompressedSize) {
-        ImageLocation location = ImageLocation.newLocation(new UTF8String(fullname), strings, contentOffset, compressedSize, uncompressedSize);
+    public String getString(int offset) {
+        UTF8String utf8 = strings.get(offset);
+        return utf8 != null? utf8.toString() : null;
+    }
+
+    public void addLocation(String fullname, long contentOffset,
+            long compressedSize, long uncompressedSize) {
+        ImageLocationWriter location =
+                ImageLocationWriter.newLocation(new UTF8String(fullname), strings,
+                        contentOffset, compressedSize, uncompressedSize);
         input.add(location);
-        count++;
+        length++;
+    }
+
+    ImageLocationWriter[] getLocations() {
+        return locations;
+    }
+
+    int getLocationsCount() {
+        return input.size();
     }
 
     private void generatePerfectHash() {
-        redo:
-        while(true) {
-            redirect = new int[count];
-            locations = new ImageLocation[count];
+        PerfectHashBuilder<ImageLocationWriter> builder =
+            new PerfectHashBuilder<>(
+                new PerfectHashBuilder.Entry<ImageLocationWriter>().getClass(),
+                new PerfectHashBuilder.Bucket<ImageLocationWriter>().getClass());
 
-            ImageBucket[] sorted = createBuckets();
-
-            int free = 0;
-
-            for (ImageBucket bucket : sorted) {
-                if (bucket.getSize() != 1) {
-                    if (!packCollidedEntries(bucket, count)) {
-                        count = (count + 1) | 1;
-
-                        continue redo;
-                    }
-                } else {
-                    for ( ; free < count && locations[free] != null; free++) {}
-                    assert free < count : "no free slots";
-                    locations[free] = bucket.getFirst();
-                    redirect[bucket.hashCode() % count] = -1 - free;
-                    free++;
-                }
-            }
-
-            break;
-        }
-    }
-
-    private ImageBucket[] createBuckets() {
-        ImageBucket[] buckets = new ImageBucket[count];
-
-        input.stream().forEach((location) -> {
-            int index = location.hashCode() % count;
-            ImageBucket bucket = buckets[index];
-
-            if (bucket == null) {
-                buckets[index] = bucket = new ImageBucket();
-            }
-
-            bucket.add(location);
+        input.forEach((location) -> {
+            builder.put(location.getFullName(), location);
         });
 
-        ImageBucket[] sorted = Arrays.asList(buckets).stream()
-                .filter((bucket) -> (bucket != null))
-                .sorted()
-                .toArray(ImageBucket[]::new);
+        builder.generate();
 
-        return sorted;
-    }
+        length = builder.getCount();
+        redirect = builder.getRedirect();
+        PerfectHashBuilder.Entry<ImageLocationWriter>[] order = builder.getOrder();
+        locations = new ImageLocationWriter[length];
 
-    private boolean packCollidedEntries(ImageBucket bucket, int count) {
-        List<Integer> undo = new ArrayList<>();
-        int base = UTF8String.HASH_MULTIPLIER + 1;
-
-        int retry = 0;
-
-        redo:
-        while (true) {
-            for (ImageLocation location : bucket.getList()) {
-                int index = location.hashCode(base) % count;
-
-                if (locations[index] != null) {
-                    undo.stream().forEach((i) -> {
-                        locations[i] = null;
-                    });
-
-                    undo.clear();
-                    base++;
-
-                    if (base == 0) {
-                        base = 1;
-                    }
-
-                    if (++retry > RETRY_LIMIT) {
-                        return false;
-                    }
-
-                    continue redo;
-                }
-
-                locations[index] = location;
-                undo.add(index);
-            }
-
-            redirect[bucket.hashCode() % count] = base;
-
-            break;
+        for (int i = 0; i < length; i++) {
+            locations[i] = order[i].getValue();
         }
-
-        return true;
     }
 
     private void prepareStringBytes() {
@@ -214,17 +125,17 @@ public final class BasicImageWriter {
     }
 
     private void prepareRedirectBytes() {
-        for (int i = 0; i < count; i++) {
+        for (int i = 0; i < length; i++) {
             redirectStream.putInt(redirect[i]);
         }
     }
 
     private void prepareLocationBytes() {
         // Reserve location offset zero for empty locations
-        locationStream.put(ImageLocation.ATTRIBUTE_END << 3);
+        locationStream.put(ImageLocationWriter.ATTRIBUTE_END << 3);
 
-        for (int i = 0; i < count; i++) {
-            ImageLocation location = locations[i];
+        for (int i = 0; i < length; i++) {
+            ImageLocationWriter location = locations[i];
 
             if (location != null) {
                 location.writeTo(locationStream);
@@ -235,14 +146,16 @@ public final class BasicImageWriter {
     }
 
     private void prepareOffsetBytes() {
-        for (int i = 0; i < count; i++) {
-            ImageLocation location = locations[i];
-            locationOffsetStream.putInt(location != null ? location.getLocationOffset() : 0);
+        for (int i = 0; i < length; i++) {
+            ImageLocationWriter location = locations[i];
+            int offset = location != null ? location.getLocationOffset() : 0;
+            locationOffsetStream.putInt(offset);
         }
     }
 
     private void prepareHeaderBytes() {
-        ImageHeader header = new ImageHeader(count, locationStream.getSize(), strings.getSize());
+        ImageHeader header = new ImageHeader(input.size(), length,
+                locationStream.getSize(), strings.getSize());
         header.writeTo(headerStream);
     }
 
@@ -268,33 +181,15 @@ public final class BasicImageWriter {
         return allIndexStream.toArray();
     }
 
-    ImageLocation find(UTF8String key) {
-        int index = key.hashCode() % count;
-        index = redirect[index];
+    ImageLocationWriter find(UTF8String key) {
+        int index = redirect[key.hashCode() % length];
 
         if (index < 0) {
             index = -index - 1;
-            ImageLocation location = locations[index];
-
-            return location;
         } else {
-            index = key.hashCode(index) % count;
-            ImageLocation location = locations[index];
-
-            return location;
+            index = key.hashCode(index) % length;
         }
-    }
 
-    public void statistics() {
-        getBytes();
-        PrintStream out = System.out;
-        out.println("Count: " + count);
-        out.println("Header bytes size: " + headerStream.getSize());
-        out.println("Redirect bytes size: " + redirectStream.getSize());
-        out.println("Offset bytes size: " + locationOffsetStream.getSize());
-        out.println("Location bytes size: " + locationStream.getSize());
-        out.println("String count: " + strings.getCount());
-        out.println("String bytes size: " + strings.getSize());
-        out.println("Total bytes size: " + allIndexStream.getSize());
+        return locations[index];
     }
 }

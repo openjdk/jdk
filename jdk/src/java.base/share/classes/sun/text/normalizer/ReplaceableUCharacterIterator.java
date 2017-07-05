@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ package sun.text.normalizer;
  *
  * What are first, last, and getBeginIndex doing here?!?!?!
  */
-public class ReplaceableUCharacterIterator extends UCharacterIterator {
+class ReplaceableUCharacterIterator extends UCharacterIterator {
 
     // public constructor ------------------------------------------------------
 
@@ -63,7 +63,6 @@ public class ReplaceableUCharacterIterator extends UCharacterIterator {
         this.currentIndex = 0;
     }
 
-    //// for StringPrep
     /**
      * Public constructor
      * @param buf buffer of text on which the iterator will be based
@@ -164,7 +163,6 @@ public class ReplaceableUCharacterIterator extends UCharacterIterator {
         this.currentIndex = currentIndex;
     }
 
-    //// for StringPrep
     public int getText(char[] fillIn, int offset){
         int length = replaceable.length();
         if(offset < 0 || offset + length > fillIn.length){

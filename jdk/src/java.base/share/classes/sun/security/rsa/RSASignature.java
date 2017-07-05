@@ -27,7 +27,6 @@ package sun.security.rsa;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 import java.security.*;
 import java.security.interfaces.*;
@@ -194,7 +193,7 @@ public abstract class RSASignature extends SignatureSpi {
             byte[] decrypted = RSACore.rsa(sigBytes, publicKey);
             byte[] unpadded = padding.unpad(decrypted);
             byte[] decodedDigest = decodeSignature(digestOID, unpadded);
-            return Arrays.equals(digest, decodedDigest);
+            return MessageDigest.isEqual(digest, decodedDigest);
         } catch (javax.crypto.BadPaddingException e) {
             // occurs if the app has used the wrong RSA public key
             // or if sigBytes is invalid

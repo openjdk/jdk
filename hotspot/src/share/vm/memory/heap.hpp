@@ -28,6 +28,7 @@
 #include "code/codeBlob.hpp"
 #include "memory/allocation.hpp"
 #include "memory/virtualspace.hpp"
+#include "utilities/macros.hpp"
 
 // Blocks
 
@@ -80,6 +81,7 @@ class FreeBlock: public HeapBlock {
 
 class CodeHeap : public CHeapObj<mtCode> {
   friend class VMStructs;
+  friend class PregeneratedCodeHeap;
  private:
   VirtualSpace _memory;                          // the memory holding the blocks
   VirtualSpace _segmap;                          // the memory holding the segment map
@@ -148,8 +150,8 @@ class CodeHeap : public CHeapObj<mtCode> {
   char* high() const                             { return _memory.high(); }
   char* high_boundary() const                    { return _memory.high_boundary(); }
 
-  bool  contains(const void* p) const            { return low_boundary() <= p && p < high(); }
-  void* find_start(void* p)     const;           // returns the block containing p or NULL
+  virtual bool  contains(const void* p) const    { return low_boundary() <= p && p < high(); }
+  virtual void* find_start(void* p)     const;   // returns the block containing p or NULL
   size_t alignment_unit()       const;           // alignment of any block
   size_t alignment_offset()     const;           // offset of first byte of any block, within the enclosing alignment unit
   static size_t header_size();                   // returns the header size for each heap block
@@ -158,9 +160,9 @@ class CodeHeap : public CHeapObj<mtCode> {
   int    freelist_length()       const           { return _freelist_length; } // number of elements in the freelist
 
   // returns the first block or NULL
-  void* first() const       { return next_used(first_block()); }
+  virtual void* first() const                    { return next_used(first_block()); }
   // returns the next block given a block p or NULL
-  void* next(void* p) const { return next_used(next_block(block_start(p))); }
+  virtual void* next(void* p) const              { return next_used(next_block(block_start(p))); }
 
   // Statistics
   size_t capacity() const;

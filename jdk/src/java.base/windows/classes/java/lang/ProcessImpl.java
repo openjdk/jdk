@@ -34,7 +34,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.Override;
 import java.lang.ProcessBuilder.Redirect;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -391,7 +390,7 @@ final class ProcessImpl extends Process {
 
         handle = create(cmdstr, envblock, path,
                         stdHandles, redirectErrorStream);
-        processHandle = ProcessHandleImpl.getUnchecked(getProcessId0(handle));
+        processHandle = ProcessHandleImpl.getInternal(getProcessId0(handle));
 
         java.security.AccessController.doPrivileged(
         new java.security.PrivilegedAction<Void>() {

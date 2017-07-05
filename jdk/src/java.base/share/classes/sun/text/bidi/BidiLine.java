@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
- *******************************************************************************
- * (C) Copyright IBM Corp. and others, 1996-2009 - All Rights Reserved         *
- *                                                                             *
- * The original version of this source code and documentation is copyrighted   *
- * and owned by IBM, These materials are provided under terms of a License     *
- * Agreement between IBM and Sun. This technology is protected by multiple     *
- * US and International patents. This notice and attribution to IBM may not    *
- * to removed.                                                                 *
- *******************************************************************************
- */
+*******************************************************************************
+*   Copyright (C) 2001-2014, International Business Machines
+*   Corporation and others.  All Rights Reserved.
+*******************************************************************************
+*/
 /* Written by Simon Montagu, Matitiahu Allouche
  * (ported from C code written by Markus W. Scherer)
  */
@@ -42,7 +38,7 @@ package sun.text.bidi;
 import java.text.Bidi;
 import java.util.Arrays;
 
-public final class BidiLine {
+final class BidiLine {
 
     /*
      * General remarks about the functions in this file:
@@ -122,13 +118,13 @@ public final class BidiLine {
            level of B chars from 0 to paraLevel in getLevels when
            orderParagraphsLTR==TRUE
         */
-        if (BidiBase.NoContextRTL(dirProps[start - 1]) == BidiBase.B) {
+        if (dirProps[start - 1] == BidiBase.B) {
             bidiBase.trailingWSStart = start;   /* currently == bidiBase.length */
             return;
         }
         /* go backwards across all WS, BN, explicit codes */
         while (start > 0 &&
-                (BidiBase.DirPropFlagNC(dirProps[start - 1]) & BidiBase.MASK_WS) != 0) {
+                (BidiBase.DirPropFlag(dirProps[start - 1]) & BidiBase.MASK_WS) != 0) {
             --start;
         }
 
@@ -140,12 +136,10 @@ public final class BidiLine {
         bidiBase.trailingWSStart=start;
     }
 
-    public static Bidi setLine(Bidi bidi, BidiBase paraBidi,
-                               Bidi newBidi, BidiBase newBidiBase,
-                               int start, int limit) {
+    static Bidi setLine(BidiBase paraBidi,
+                              Bidi newBidi, BidiBase lineBidi,
+                              int start, int limit) {
         int length;
-
-        BidiBase lineBidi = newBidiBase;
 
         /* set the values in lineBidi from its paraBidi parent */
         /* class members are already initialized to 0 */
@@ -161,6 +155,8 @@ public final class BidiLine {
         lineBidi.paraLevel = paraBidi.GetParaLevelAt(start);
         lineBidi.paraCount = paraBidi.paraCount;
         lineBidi.runs = new BidiRun[0];
+        lineBidi.reorderingMode = paraBidi.reorderingMode;
+        lineBidi.reorderingOptions = paraBidi.reorderingOptions;
         if (paraBidi.controlCount > 0) {
             int j;
             for (j = start; j < limit; j++) {
@@ -206,7 +202,7 @@ public final class BidiLine {
             setTrailingWSStart(lineBidi);
             trailingWSStart = lineBidi.trailingWSStart;
 
-            /* recalculate lineBidi.direction */
+            /* recalculate lineBidiBase.direction */
             if (trailingWSStart == 0) {
                 /* all levels are at paraLevel */
                 lineBidi.direction = (byte)(lineBidi.paraLevel & 1);
@@ -260,7 +256,8 @@ public final class BidiLine {
             }
         }
 
-        newBidiBase.paraBidi = paraBidi; /* mark successful setLine */
+        lineBidi.paraBidi = paraBidi;     /* mark successful setLine */
+
         return newBidi;
     }
 
@@ -303,30 +300,19 @@ public final class BidiLine {
         return bidiBase.levels;
     }
 
-    static BidiRun getLogicalRun(BidiBase bidiBase, int logicalPosition)
-    {
-        /* this is done based on runs rather than on levels since levels have
-           a special interpretation when REORDER_RUNS_ONLY
-         */
-        BidiRun newRun = new BidiRun(), iRun;
-        getRuns(bidiBase);
-        int runCount = bidiBase.runCount;
-        int visualStart = 0, logicalLimit = 0;
-        iRun = bidiBase.runs[0];
+    static BidiRun getVisualRun(BidiBase bidiBase, int runIndex) {
+        int start = bidiBase.runs[runIndex].start;
+        int limit;
+        byte level = bidiBase.runs[runIndex].level;
 
-        for (int i = 0; i < runCount; i++) {
-            iRun = bidiBase.runs[i];
-            logicalLimit = iRun.start + iRun.limit - visualStart;
-            if ((logicalPosition >= iRun.start) &&
-                (logicalPosition < logicalLimit)) {
-                break;
-            }
-            visualStart = iRun.limit;
+        if (runIndex > 0) {
+            limit = start +
+                    bidiBase.runs[runIndex].limit -
+                    bidiBase.runs[runIndex - 1].limit;
+        } else {
+            limit = start + bidiBase.runs[0].limit;
         }
-        newRun.start = iRun.start;
-        newRun.limit = logicalLimit;
-        newRun.level = iRun.level;
-        return newRun;
+        return new BidiRun(start, limit, level);
     }
 
     /* in trivial cases there is only one trivial run; called by getRuns() */
@@ -502,7 +488,7 @@ public final class BidiLine {
             int length = bidiBase.length, limit;
             byte[] levels = bidiBase.levels;
             int i, runCount;
-            byte level = BidiBase.INTERNAL_LEVEL_DEFAULT_LTR;   /* initialize with no valid level */
+            byte level = -1;    /* initialize with no valid level */
             /*
              * If there are WS characters at the end of the line
              * and the run preceding them has a level different from
@@ -651,7 +637,7 @@ public final class BidiLine {
         maxLevel = 0;
         for (start = levels.length; start>0; ) {
             level = levels[--start];
-            if (level > BidiBase.MAX_EXPLICIT_LEVEL + 1) {
+            if (level < 0 || level > (BidiBase.MAX_EXPLICIT_LEVEL + 1)) {
                 return null;
             }
             if (level < minLevel) {

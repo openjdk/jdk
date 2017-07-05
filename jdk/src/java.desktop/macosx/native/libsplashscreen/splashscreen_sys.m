@@ -275,7 +275,6 @@ SplashRedrawWindow(Splash * splash) {
         [image addRepresentation: rep];
         float scaleFactor = splash->scaleFactor;
         if (scaleFactor > 0 && scaleFactor != 1) {
-            [image setScalesWhenResized:YES];
             NSSize size = [image size];
             size.width /= scaleFactor;
             size.height /= scaleFactor;

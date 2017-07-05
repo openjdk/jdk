@@ -69,10 +69,10 @@ bool G1BlockOffsetSharedArray::is_card_boundary(HeapWord* p) const {
 #ifdef ASSERT
 void G1BlockOffsetSharedArray::check_index(size_t index, const char* msg) const {
   assert((index) < (_reserved.word_size() >> LogN_words),
-         err_msg("%s - index: "SIZE_FORMAT", _vs.committed_size: "SIZE_FORMAT,
+         err_msg("%s - index: " SIZE_FORMAT ", _vs.committed_size: " SIZE_FORMAT,
                  msg, (index), (_reserved.word_size() >> LogN_words)));
   assert(G1CollectedHeap::heap()->is_in_exact(address_for_index_raw(index)),
-         err_msg("Index "SIZE_FORMAT" corresponding to "PTR_FORMAT
+         err_msg("Index " SIZE_FORMAT " corresponding to " PTR_FORMAT
                  " (%u) is not in committed area.",
                  (index),
                  p2i(address_for_index_raw(index)),
@@ -430,11 +430,11 @@ void
 G1BlockOffsetArray::print_on(outputStream* out) {
   size_t from_index = _array->index_for(_bottom);
   size_t to_index = _array->index_for(_end);
-  out->print_cr(">> BOT for area ["PTR_FORMAT","PTR_FORMAT") "
-                "cards ["SIZE_FORMAT","SIZE_FORMAT")",
+  out->print_cr(">> BOT for area [" PTR_FORMAT "," PTR_FORMAT ") "
+                "cards [" SIZE_FORMAT "," SIZE_FORMAT ")",
                 p2i(_bottom), p2i(_end), from_index, to_index);
   for (size_t i = from_index; i < to_index; ++i) {
-    out->print_cr("  entry "SIZE_FORMAT_W(8)" | "PTR_FORMAT" : %3u",
+    out->print_cr("  entry " SIZE_FORMAT_W(8) " | " PTR_FORMAT " : %3u",
                   i, p2i(_array->address_for_index(i)),
                   (uint) _array->offset_array(i));
   }
@@ -514,7 +514,7 @@ G1BlockOffsetArrayContigSpace::set_for_starts_humongous(HeapWord* new_top) {
 void
 G1BlockOffsetArrayContigSpace::print_on(outputStream* out) {
   G1BlockOffsetArray::print_on(out);
-  out->print_cr("  next offset threshold: "PTR_FORMAT, p2i(_next_offset_threshold));
-  out->print_cr("  next offset index:     "SIZE_FORMAT, _next_offset_index);
+  out->print_cr("  next offset threshold: " PTR_FORMAT, p2i(_next_offset_threshold));
+  out->print_cr("  next offset index:     " SIZE_FORMAT, _next_offset_index);
 }
 #endif // !PRODUCT

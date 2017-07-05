@@ -31,6 +31,7 @@ import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * Utility methods for operating on and creating streams.
@@ -98,6 +99,7 @@ final class Streams {
         }
 
         @Override
+        @HotSpotIntrinsicCandidate
         public void forEachRemaining(IntConsumer consumer) {
             Objects.requireNonNull(consumer);
 

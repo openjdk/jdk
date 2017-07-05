@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,141 +25,98 @@
 
 package jdk.tools.jimage;
 
-import java.io.BufferedOutputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.MessageFormat;
-import java.util.ArrayList;
+import static java.nio.file.StandardOpenOption.READ;
+import static java.nio.file.StandardOpenOption.WRITE;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import jdk.internal.jimage.BasicImageReader;
-import jdk.internal.jimage.BasicImageWriter;
 import jdk.internal.jimage.ImageHeader;
+import static jdk.internal.jimage.ImageHeader.MAGIC;
+import static jdk.internal.jimage.ImageHeader.MAJOR_VERSION;
+import static jdk.internal.jimage.ImageHeader.MINOR_VERSION;
 import jdk.internal.jimage.ImageLocation;
-import jdk.internal.jimage.PackageModuleMap;
+import jdk.internal.jimage.ImageModuleData;
+import jdk.internal.jimage.ImageResourcesTree;
+import jdk.tools.jimage.TaskHelper.BadArgs;
+import jdk.tools.jimage.TaskHelper.HiddenOption;
+import jdk.tools.jimage.TaskHelper.Option;
+import jdk.tools.jimage.TaskHelper.OptionsHelper;
 
 class JImageTask {
-    static class BadArgs extends Exception {
-        static final long serialVersionUID = 8765093759964640723L;  // ## re-generate
-        final String key;
-        final Object[] args;
-        boolean showUsage;
 
-        BadArgs(String key, Object... args) {
-            super(JImageTask.getMessage(key, args));
-            this.key = key;
-            this.args = args;
-        }
-
-        BadArgs showUsage(boolean b) {
-            showUsage = b;
-            return this;
-        }
-    }
-
-    static abstract class Option {
-        final boolean hasArg;
-        final String[] aliases;
-
-        Option(boolean hasArg, String... aliases) {
-            this.hasArg = hasArg;
-            this.aliases = aliases;
-        }
-
-        boolean isHidden() {
-            return false;
-        }
-
-        boolean matches(String opt) {
-            for (String a : aliases) {
-                if (a.equals(opt)) {
-                    return true;
-                } else if (opt.startsWith("--") && hasArg && opt.startsWith(a + "=")) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        boolean ignoreRest() {
-            return false;
-        }
-
-        abstract void process(JImageTask task, String opt, String arg) throws BadArgs;
-    }
-
-    static abstract class HiddenOption extends Option {
-        HiddenOption(boolean hasArg, String... aliases) {
-            super(hasArg, aliases);
-        }
-
-        @Override
-        boolean isHidden() {
-            return true;
-        }
-    }
-
-    static Option[] recognizedOptions = {
-        new Option(true, "--dir") {
+    static final Option<?>[] recognizedOptions = {
+        new Option<JImageTask>(true, "--dir") {
             @Override
-            void process(JImageTask task, String opt, String arg) throws BadArgs {
+            protected void process(JImageTask task, String opt, String arg) throws BadArgs {
                  task.options.directory = arg;
             }
         },
-        new HiddenOption(false, "--fullversion") {
+        new HiddenOption<JImageTask>(false, "--fullversion") {
             @Override
-            void process(JImageTask task, String opt, String arg) {
+            protected void process(JImageTask task, String opt, String arg) {
                 task.options.fullVersion = true;
             }
         },
-        new Option(false, "--help") {
+        new Option<JImageTask>(false, "--help") {
             @Override
-            void process(JImageTask task, String opt, String arg) {
+            protected void process(JImageTask task, String opt, String arg) {
                 task.options.help = true;
             }
         },
-        new Option(false, "--verbose") {
+
+        new Option<JImageTask>(true, "--flags") {
             @Override
-            void process(JImageTask task, String opt, String arg) throws BadArgs {
+            protected void process(JImageTask task, String opt, String arg) {
+                task.options.flags = arg;
+            }
+        },
+
+        new Option<JImageTask>(false, "--verbose") {
+            @Override
+            protected void process(JImageTask task, String opt, String arg) throws BadArgs {
                  task.options.verbose = true;
             }
         },
-        new Option(false, "--version") {
+        new Option<JImageTask>(false, "--version") {
             @Override
-            void process(JImageTask task, String opt, String arg) {
+            protected void process(JImageTask task, String opt, String arg) {
                 task.options.version = true;
             }
         },
     };
+    private static final TaskHelper taskHelper
+            = new TaskHelper("jdk.tools.jimage.resources.jimage");
+    private static final OptionsHelper<JImageTask> optionsHelper
+            = taskHelper.newOptionsHelper(JImageTask.class, recognizedOptions);
 
-    static class Options {
+    static class OptionsValues {
         Task task = Task.LIST;
         String directory = ".";
         boolean fullVersion;
         boolean help;
+        String flags;
         boolean verbose;
         boolean version;
         List<File> jimages = new LinkedList<>();
     }
 
     private static final String PROGNAME = "jimage";
-    private final Options options = new Options();
+    private final OptionsValues options = new OptionsValues();
 
     enum Task {
-        RECREATE,
         EXTRACT,
         INFO,
         LIST,
+        RECREATE,
+        SET,
         VERIFY
     };
 
@@ -210,23 +167,29 @@ class JImageTask {
 
     int run(String[] args) {
         if (log == null) {
-            log = new PrintWriter(System.out);
+            setLog(new PrintWriter(System.out));
         }
 
         try {
-            handleOptions(args);
+            List<String> unhandled = optionsHelper.handleOptions(this, args);
+            if(!unhandled.isEmpty()) {
+                options.task = Enum.valueOf(Task.class, unhandled.get(0).toUpperCase());
+                for(int i = 1; i < unhandled.size(); i++) {
+                    options.jimages.add(new File(unhandled.get(i)));
+                }
+            }
             if (options.help) {
-                showHelp();
+                optionsHelper.showHelp(PROGNAME, "recreate only options:");
             }
             if (options.version || options.fullVersion) {
-                showVersion(options.fullVersion);
+                taskHelper.showVersion(options.fullVersion);
             }
             boolean ok = run();
             return ok ? EXIT_OK : EXIT_ERROR;
         } catch (BadArgs e) {
-            reportError(e.key, e.args);
+            taskHelper.reportError(e.key, e.args);
             if (e.showUsage) {
-                log.println(getMessage("main.usage.summary", PROGNAME));
+                log.println(taskHelper.getMessage("main.usage.summary", PROGNAME));
             }
             return EXIT_CMDERR;
         } catch (Exception x) {
@@ -237,98 +200,26 @@ class JImageTask {
         }
     }
 
-    static final String MODULES_ENTRY = PackageModuleMap.MODULES_ENTRY;
-    static final String PACKAGES_ENTRY = "/" + PackageModuleMap.PACKAGES_ENTRY;
-
     private void recreate() throws IOException, BadArgs {
         File directory = new File(options.directory);
-        Path dirPath = directory.toPath();
-        int chop = dirPath.toString().length() + 1;
-
         if (!directory.isDirectory()) {
-            throw new BadArgs("err.not.a.dir", directory.getAbsolutePath());
+            throw taskHelper.newBadArgs("err.not.a.dir", directory.getAbsolutePath());
         }
-
+        Path dirPath = directory.toPath();
         if (options.jimages.isEmpty()) {
-            throw new BadArgs("err.jimage.not.specified");
+            throw taskHelper.newBadArgs("err.jimage.not.specified");
         } else if (options.jimages.size() != 1) {
-            throw new BadArgs("err.only.one.jimage");
+            throw taskHelper.newBadArgs("err.only.one.jimage");
         }
 
-        File jimage = options.jimages.get(0);
-        final List<File> files = new ArrayList<>();
-        final BasicImageWriter writer = new BasicImageWriter();
-        final Long longZero = 0L;
+        Path jimage = options.jimages.get(0).toPath();
 
-        // Note: code sensitive to Netbeans parser crashing.
-        long total = Files.walk(dirPath).reduce(longZero, (Long offset, Path path) -> {
-                    long size = 0;
-                    String pathString = path.toString();
-
-                    if (pathString.length() < chop || pathString.startsWith(".")) {
-                        return 0L;
-                    }
-
-                    File file = path.toFile();
-
-                    if (file.isFile()) {
-                        String name = pathString.substring(chop).replace(File.separatorChar, '/');
-
-                        if (options.verbose) {
-                            log.println(name);
-                        }
-
-                        if (name.endsWith(MODULES_ENTRY) || name.endsWith(PACKAGES_ENTRY)) {
-                            try {
-                                try (Stream<String> lines = Files.lines(path)) {
-                                    size = lines.peek(s -> writer.addString(s)).count() * 4;
-                                }
-                            } catch (IOException ex) {
-                                // Caught again when writing file.
-                                size = 0;
-                            }
-                        } else {
-                            size = file.length();
-                        }
-
-                        writer.addLocation(name, offset, 0L, size);
-                        files.add(file);
-                    }
-
-                    return offset + size;
-                },
-                (Long offsetL, Long offsetR) -> { return longZero; } );
-
-        if (jimage.createNewFile()) {
-            try (OutputStream os = Files.newOutputStream(jimage.toPath());
-                    BufferedOutputStream bos = new BufferedOutputStream(os);
-                    DataOutputStream out = new DataOutputStream(bos)) {
-
-                byte[] index = writer.getBytes();
-                out.write(index, 0, index.length);
-
-                for (File file : files) {
-                    try {
-                        Path path = file.toPath();
-                        String name = path.toString().replace(File.separatorChar, '/');
-
-                        if (name.endsWith(MODULES_ENTRY) || name.endsWith(PACKAGES_ENTRY)) {
-                            for (String line: Files.readAllLines(path)) {
-                                int off = writer.addString(line);
-                                out.writeInt(off);
-                            }
-                        } else {
-                            Files.copy(path, out);
-                        }
-                    } catch (IOException ex) {
-                        throw new BadArgs("err.cannot.read.file", file.getName());
-                    }
-                }
-            }
+        if (jimage.toFile().createNewFile()) {
+            ExtractedImage img = new ExtractedImage(dirPath, log, options.verbose);
+            img.recreateJImage(jimage);
         } else {
-            throw new BadArgs("err.jimage.already.exists", jimage.getName());
+            throw taskHelper.newBadArgs("err.jimage.already.exists", jimage.getFileName());
         }
-
     }
 
     private void title(File file, BasicImageReader reader) {
@@ -351,10 +242,12 @@ class JImageTask {
     }
 
     private interface ResourceAction {
-        public void apply(BasicImageReader reader, String name, ImageLocation location) throws IOException, BadArgs;
+        public void apply(BasicImageReader reader, String name,
+                ImageLocation location) throws IOException, BadArgs;
     }
 
-    private void extract(BasicImageReader reader, String name, ImageLocation location) throws IOException, BadArgs {
+    private void extract(BasicImageReader reader, String name,
+            ImageLocation location) throws IOException, BadArgs {
         File directory = new File(options.directory);
         byte[] bytes = reader.getResource(location);
         File resource =  new File(directory, name);
@@ -362,21 +255,23 @@ class JImageTask {
 
         if (parent.exists()) {
             if (!parent.isDirectory()) {
-                throw new BadArgs("err.cannot.create.dir", parent.getAbsolutePath());
+                throw taskHelper.newBadArgs("err.cannot.create.dir", parent.getAbsolutePath());
             }
         } else if (!parent.mkdirs()) {
-            throw new BadArgs("err.cannot.create.dir", parent.getAbsolutePath());
+            throw taskHelper.newBadArgs("err.cannot.create.dir", parent.getAbsolutePath());
         }
 
-        if (name.endsWith(MODULES_ENTRY) || name.endsWith(PACKAGES_ENTRY)) {
-            List<String> names = reader.getNames(bytes);
-            Files.write(resource.toPath(), names);
+        if (name.endsWith(ImageModuleData.META_DATA_EXTENSION)) {
+            ImageModuleData imageModuleData = new ImageModuleData(reader, bytes);
+            List<String> lines = imageModuleData.fromModulePackages();
+            Files.write(resource.toPath(), lines);
         } else {
-            Files.write(resource.toPath(), bytes);
+            if (!ImageResourcesTree.isTreeInfoResource(name)) {
+                Files.write(resource.toPath(), bytes);
+            }
         }
     }
 
-    private static final int NAME_WIDTH = 40;
     private static final int NUMBER_WIDTH = 12;
     private static final int OFFSET_WIDTH = NUMBER_WIDTH;
     private static final int SIZE_WIDTH = NUMBER_WIDTH;
@@ -397,12 +292,14 @@ class JImageTask {
         }
     }
 
-    private void info(File file, BasicImageReader reader) {
+    private void info(File file, BasicImageReader reader) throws IOException {
         ImageHeader header = reader.getHeader();
 
         log.println(" Major Version:  " + header.getMajorVersion());
         log.println(" Minor Version:  " + header.getMinorVersion());
-        log.println(" Location Count: " + header.getLocationCount());
+        log.println(" Flags:          " + Integer.toHexString(header.getMinorVersion()));
+        log.println(" Resource Count: " + header.getResourceCount());
+        log.println(" Table Length:   " + header.getTableLength());
         log.println(" Offsets Size:   " + header.getOffsetsSize());
         log.println(" Redirects Size: " + header.getRedirectSize());
         log.println(" Locations Size: " + header.getLocationsSize());
@@ -414,15 +311,38 @@ class JImageTask {
         print(reader, name);
     }
 
-    void verify(BasicImageReader reader, String name, ImageLocation location) {
-        if (name.endsWith(".class")) {
-            byte[] bytes;
+    void set(File file, BasicImageReader reader) throws BadArgs {
+        try {
+            ImageHeader oldHeader = reader.getHeader();
+
+            int value = 0;
             try {
-                bytes = reader.getResource(location);
-            } catch (IOException ex) {
-                log.println(ex);
-                bytes = null;
+                value = Integer.valueOf(options.flags);
+            } catch (NumberFormatException ex) {
+                throw taskHelper.newBadArgs("err.flags.not.int", options.flags);
             }
+
+            ImageHeader newHeader = new ImageHeader(MAGIC, MAJOR_VERSION, MINOR_VERSION,
+                    value,
+                    oldHeader.getResourceCount(), oldHeader.getTableLength(),
+                    oldHeader.getLocationsSize(), oldHeader.getStringsSize());
+
+            ByteBuffer buffer = ByteBuffer.allocate(ImageHeader.getHeaderSize());
+            buffer.order(ByteOrder.nativeOrder());
+            newHeader.writeTo(buffer);
+            buffer.rewind();
+
+            try (FileChannel channel = FileChannel.open(file.toPath(), READ, WRITE)) {
+                channel.write(buffer, 0);
+            }
+        } catch (IOException ex) {
+            throw taskHelper.newBadArgs("err.cannot.update.file", file.getName());
+        }
+    }
+
+     void verify(BasicImageReader reader, String name, ImageLocation location) {
+        if (name.endsWith(".class")) {
+            byte[] bytes = reader.getResource(location);
 
             if (bytes == null || bytes.length <= 4 ||
                 (bytes[0] & 0xFF) != 0xCA ||
@@ -435,10 +355,11 @@ class JImageTask {
         }
     }
 
-    private void iterate(JImageAction jimageAction, ResourceAction resourceAction) throws IOException, BadArgs {
+    private void iterate(JImageAction jimageAction,
+            ResourceAction resourceAction) throws IOException, BadArgs {
         for (File file : options.jimages) {
             if (!file.exists() || !file.isFile()) {
-                throw new BadArgs("err.not.a.jimage", file.getName());
+                throw taskHelper.newBadArgs("err.not.a.jimage", file.getName());
             }
 
             String path = file.getCanonicalPath();
@@ -449,11 +370,13 @@ class JImageTask {
             }
 
             if (resourceAction != null) {
-                String[] entryNames = reader.getEntryNames(true);
+                String[] entryNames = reader.getEntryNames();
 
                 for (String name : entryNames) {
-                    ImageLocation location = reader.findLocation(name);
-                    resourceAction.apply(reader, name, location);
+                    if (!ImageResourcesTree.isTreeInfoResource(name)) {
+                        ImageLocation location = reader.findLocation(name);
+                        resourceAction.apply(reader, name, location);
+                    }
                 }
             }
        }
@@ -461,9 +384,6 @@ class JImageTask {
 
     private boolean run() throws IOException, BadArgs {
         switch (options.task) {
-            case RECREATE:
-                recreate();
-                break;
             case EXTRACT:
                 iterate(null, this::extract);
                 break;
@@ -473,11 +393,17 @@ class JImageTask {
             case LIST:
                 iterate(this::listTitle, this::list);
                 break;
+            case RECREATE:
+                recreate();
+                break;
+            case SET:
+                iterate(this::set, null);
+                break;
             case VERIFY:
                 iterate(this::title, this::verify);
                 break;
             default:
-                throw new BadArgs("err.invalid.task", options.task.name()).showUsage(true);
+                throw taskHelper.newBadArgs("err.invalid.task", options.task.name()).showUsage(true);
         }
         return true;
     }
@@ -485,112 +411,6 @@ class JImageTask {
     private PrintWriter log;
     void setLog(PrintWriter out) {
         log = out;
-    }
-    public void handleOptions(String[] args) throws BadArgs {
-        // process options
-        int first = 0;
-
-        if (args.length == 0) {
-            return;
-        }
-
-        String arg = args[first];
-
-        if (!arg.startsWith("-")) {
-            try {
-                options.task = Enum.valueOf(Task.class, arg.toUpperCase());
-                first++;
-            } catch (IllegalArgumentException e) {
-                throw new BadArgs("err.invalid.task", arg).showUsage(true);
-            }
-        }
-
-        for (int i = first; i < args.length; i++) {
-            arg = args[i];
-
-            if (arg.charAt(0) == '-') {
-                Option option = getOption(arg);
-                String param = null;
-
-                if (option.hasArg) {
-                    if (arg.startsWith("--") && arg.indexOf('=') > 0) {
-                        param = arg.substring(arg.indexOf('=') + 1, arg.length());
-                    } else if (i + 1 < args.length) {
-                        param = args[++i];
-                    }
-
-                    if (param == null || param.isEmpty() || param.charAt(0) == '-') {
-                        throw new BadArgs("err.missing.arg", arg).showUsage(true);
-                    }
-                }
-
-                option.process(this, arg, param);
-
-                if (option.ignoreRest()) {
-                    i = args.length;
-                }
-            } else {
-                File file = new File(arg);
-                options.jimages.add(file);
-            }
-        }
-    }
-
-    private Option getOption(String name) throws BadArgs {
-        for (Option o : recognizedOptions) {
-            if (o.matches(name)) {
-                return o;
-            }
-        }
-        throw new BadArgs("err.unknown.option", name).showUsage(true);
-    }
-
-    private void reportError(String key, Object... args) {
-        log.println(getMessage("error.prefix") + " " + getMessage(key, args));
-    }
-
-    private void warning(String key, Object... args) {
-        log.println(getMessage("warn.prefix") + " " + getMessage(key, args));
-    }
-
-    private void showHelp() {
-        log.println(getMessage("main.usage", PROGNAME));
-        for (Option o : recognizedOptions) {
-            String name = o.aliases[0].substring(1); // there must always be at least one name
-            name = name.charAt(0) == '-' ? name.substring(1) : name;
-            if (o.isHidden() || name.equals("h")) {
-                continue;
-            }
-            log.println(getMessage("main.opt." + name));
-        }
-    }
-
-    private void showVersion(boolean full) {
-        log.println(version(full ? "full" : "release"));
-    }
-
-    private String version(String key) {
-        return System.getProperty("java.version");
-    }
-
-    static String getMessage(String key, Object... args) {
-        try {
-            return MessageFormat.format(ResourceBundleHelper.bundle.getString(key), args);
-        } catch (MissingResourceException e) {
-            throw new InternalError("Missing message: " + key);
-        }
-    }
-
-    private static class ResourceBundleHelper {
-        static final ResourceBundle bundle;
-
-        static {
-            Locale locale = Locale.getDefault();
-            try {
-                bundle = ResourceBundle.getBundle("jdk.tools.jimage.resources.jimage", locale);
-            } catch (MissingResourceException e) {
-                throw new InternalError("Cannot find jimage resource bundle for locale " + locale);
-            }
-        }
+        taskHelper.setLog(log);
     }
 }

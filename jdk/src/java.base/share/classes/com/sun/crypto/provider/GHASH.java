@@ -31,6 +31,8 @@ package com.sun.crypto.provider;
 
 import java.security.ProviderException;
 
+import jdk.internal.HotSpotIntrinsicCandidate;
+
 /**
  * This class represents the GHASH function defined in NIST 800-38D
  * under section 6.4. It needs to be constructed w/ a hash subkey, i.e.
@@ -227,6 +229,7 @@ final class GHASH {
      * the hotspot signature.  This method and methods called by it, cannot
      * throw exceptions or allocate arrays as it will breaking intrinsics
      */
+    @HotSpotIntrinsicCandidate
     private static void processBlocks(byte[] data, int inOfs, int blocks, long[] st, long[] subH) {
         int offset = inOfs;
         while (blocks > 0) {

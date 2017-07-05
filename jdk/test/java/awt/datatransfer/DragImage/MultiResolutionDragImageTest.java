@@ -36,6 +36,8 @@ import static java.awt.event.InputEvent.BUTTON1_DOWN_MASK;
  * @author Hendrik Schreiber
  * @summary [macosx] Drag image of TransferHandler does not honor
  * MultiResolutionImage
+ * @modules java.desktop/sun.awt.image
+ *          java.desktop/sun.java2d
  * @run main MultiResolutionDragImageTest TEST_DRAG
  */
 public class MultiResolutionDragImageTest {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,11 +30,10 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.Rectangle;
-import java.awt.Transparency;
 import java.awt.image.ColorModel;
+
 import sun.awt.X11ComponentPeer;
 import sun.java2d.SurfaceData;
-import sun.java2d.loops.SurfaceType;
 
 public abstract class GLXSurfaceData extends OGLSurfaceData {
 
@@ -42,9 +41,6 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
     private GLXGraphicsConfig graphicsConfig;
 
     private native void initOps(X11ComponentPeer peer, long aData);
-    protected native boolean initPbuffer(long pData, long pConfigInfo,
-                                         boolean isOpaque,
-                                         int width, int height);
 
     protected GLXSurfaceData(X11ComponentPeer peer, GLXGraphicsConfig gc,
                              ColorModel cm, int type)
@@ -91,7 +87,7 @@ public abstract class GLXSurfaceData extends OGLSurfaceData {
 
     /**
      * Creates a SurfaceData object representing an off-screen buffer (either
-     * a Pbuffer or Texture).
+     * a FBO or Texture).
      */
     public static GLXOffScreenSurfaceData createData(GLXGraphicsConfig gc,
                                                      int width, int height,

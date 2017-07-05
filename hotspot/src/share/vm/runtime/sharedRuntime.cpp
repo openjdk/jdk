@@ -27,6 +27,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
+#include "code/codeCacheExtensions.hpp"
 #include "code/scopeDesc.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/abstractCompiler.hpp"
@@ -2307,19 +2308,35 @@ BufferBlob* AdapterHandlerLibrary::buffer_blob() {
   return _buffer;
 }
 
+extern "C" void unexpected_adapter_call() {
+  ShouldNotCallThis();
+}
+
 void AdapterHandlerLibrary::initialize() {
   if (_adapters != NULL) return;
   _adapters = new AdapterHandlerTable();
 
-  // Create a special handler for abstract methods.  Abstract methods
-  // are never compiled so an i2c entry is somewhat meaningless, but
-  // throw AbstractMethodError just in case.
-  // Pass wrong_method_abstract for the c2i transitions to return
-  // AbstractMethodError for invalid invocations.
-  address wrong_method_abstract = SharedRuntime::get_handle_wrong_method_abstract_stub();
-  _abstract_method_handler = AdapterHandlerLibrary::new_entry(new AdapterFingerPrint(0, NULL),
-                                                              StubRoutines::throw_AbstractMethodError_entry(),
-                                                              wrong_method_abstract, wrong_method_abstract);
+  if (!CodeCacheExtensions::skip_compiler_support()) {
+    // Create a special handler for abstract methods.  Abstract methods
+    // are never compiled so an i2c entry is somewhat meaningless, but
+    // throw AbstractMethodError just in case.
+    // Pass wrong_method_abstract for the c2i transitions to return
+    // AbstractMethodError for invalid invocations.
+    address wrong_method_abstract = SharedRuntime::get_handle_wrong_method_abstract_stub();
+    _abstract_method_handler = AdapterHandlerLibrary::new_entry(new AdapterFingerPrint(0, NULL),
+                                                                StubRoutines::throw_AbstractMethodError_entry(),
+                                                                wrong_method_abstract, wrong_method_abstract);
+  } else {
+    // Adapters are not supposed to be used.
+    // Generate a special one to cause an error if used (and store this
+    // singleton in place of the useless _abstract_method_error adapter).
+    address entry = (address) &unexpected_adapter_call;
+    _abstract_method_handler = AdapterHandlerLibrary::new_entry(new AdapterFingerPrint(0, NULL),
+                                                                entry,
+                                                                entry,
+                                                                entry);
+
+  }
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* fingerprint,
@@ -2345,6 +2362,15 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
     MutexLocker mu(AdapterHandlerLibrary_lock);
     // make sure data structure is initialized
     initialize();
+
+    if (CodeCacheExtensions::skip_compiler_support()) {
+      // adapters are useless and should not be used, including the
+      // abstract_method_handler. However, some callers check that
+      // an adapter was installed.
+      // Return the singleton adapter, stored into _abstract_method_handler
+      // and modified to cause an error if we ever call it.
+      return _abstract_method_handler;
+    }
 
     if (method->is_abstract()) {
       return _abstract_method_handler;
@@ -2615,71 +2641,6 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::block_for_jni_critical(JavaThread* threa
   GC_locker::lock_critical(thread);
   GC_locker::unlock_critical(thread);
 JRT_END
-
-int SharedRuntime::convert_ints_to_longints_argcnt(int in_args_count, BasicType* in_sig_bt) {
-  int argcnt = in_args_count;
-  if (CCallingConventionRequiresIntsAsLongs) {
-    for (int in = 0; in < in_args_count; in++) {
-      BasicType bt = in_sig_bt[in];
-      switch (bt) {
-        case T_BOOLEAN:
-        case T_CHAR:
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:
-          argcnt++;
-          break;
-        default:
-          break;
-      }
-    }
-  } else {
-    assert(0, "This should not be needed on this platform");
-  }
-
-  return argcnt;
-}
-
-void SharedRuntime::convert_ints_to_longints(int i2l_argcnt, int& in_args_count,
-                                             BasicType*& in_sig_bt, VMRegPair*& in_regs) {
-  if (CCallingConventionRequiresIntsAsLongs) {
-    VMRegPair *new_in_regs   = NEW_RESOURCE_ARRAY(VMRegPair, i2l_argcnt);
-    BasicType *new_in_sig_bt = NEW_RESOURCE_ARRAY(BasicType, i2l_argcnt);
-
-    int argcnt = 0;
-    for (int in = 0; in < in_args_count; in++, argcnt++) {
-      BasicType bt  = in_sig_bt[in];
-      VMRegPair reg = in_regs[in];
-      switch (bt) {
-        case T_BOOLEAN:
-        case T_CHAR:
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:
-          // Convert (bt) to (T_LONG,bt).
-          new_in_sig_bt[argcnt] = T_LONG;
-          new_in_sig_bt[argcnt+1] = bt;
-          assert(reg.first()->is_valid() && !reg.second()->is_valid(), "");
-          new_in_regs[argcnt].set2(reg.first());
-          new_in_regs[argcnt+1].set_bad();
-          argcnt++;
-          break;
-        default:
-          // No conversion needed.
-          new_in_sig_bt[argcnt] = bt;
-          new_in_regs[argcnt]   = reg;
-          break;
-      }
-    }
-    assert(argcnt == i2l_argcnt, "must match");
-
-    in_regs = new_in_regs;
-    in_sig_bt = new_in_sig_bt;
-    in_args_count = i2l_argcnt;
-  } else {
-    assert(0, "This should not be needed on this platform");
-  }
-}
 
 // -------------------------------------------------------------------------
 // Java-Java calling convention

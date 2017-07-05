@@ -26,6 +26,8 @@
   @bug       6516675
   @summary   Tests that EmbeddedFrame can be focused.
   @author    anton.tarasov: area=awt-focus
+  @modules   java.desktop/java.awt.peer
+             java.desktop/sun.awt
   @library   ../../regtesthelpers
   @build     Util UtilInternal
   @run       main FocusEmbeddedFrameTest
