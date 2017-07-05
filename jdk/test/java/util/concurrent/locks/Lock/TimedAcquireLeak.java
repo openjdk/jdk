@@ -42,7 +42,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.lang.ref.WeakReference;
-import java.util.SplittableRandom;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -52,6 +51,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.regex.Matcher;
@@ -192,7 +192,7 @@ public class TimedAcquireLeak {
         final String childClassName = Job.class.getName();
         final String classToCheckForLeaks = Job.classToCheckForLeaks();
         final String uniqueID =
-            String.valueOf(new SplittableRandom().nextInt(Integer.MAX_VALUE));
+            String.valueOf(ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE));
 
         final String[] jobCmd = {
             java, "-Xmx8m", "-XX:+UsePerfData",
@@ -259,7 +259,7 @@ public class TimedAcquireLeak {
                 = rwlock.writeLock();
             rwlock.writeLock().lock();
 
-            final BlockingQueue<Object> q = new LinkedBlockingQueue<Object>();
+            final BlockingQueue<Object> q = new LinkedBlockingQueue<>();
             final Semaphore fairSem = new Semaphore(0, true);
             final Semaphore unfairSem = new Semaphore(0, false);
             //final int threads =
@@ -275,7 +275,7 @@ public class TimedAcquireLeak {
             for (int i = 0; i < threads; i++)
                 new Thread() { public void run() {
                     try {
-                        final SplittableRandom rnd = new SplittableRandom();
+                        final ThreadLocalRandom rnd = ThreadLocalRandom.current();
                         for (int j = 0; j < iterations; j++) {
                             if (j == iterations/10 || j == iterations - 1) {
                                 cb.await(); // Quiesce

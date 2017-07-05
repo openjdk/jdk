@@ -28,9 +28,8 @@
 #
 # @key intermittent
 # @library /lib/testlibrary
-# @modules java.management/sun.management
-#          java.management/sun.management.jmxremote
-#          java.management
+# @modules jdk.management.agent/jdk.internal.agent
+#          jdk.management.agent/sun.management.jmxremote
 # @build jdk.testlibrary.* TestLogger Utils RmiBootstrapTest
 # @run shell/timeout=300  RmiBootstrapTest.sh
 
@@ -51,8 +50,8 @@ chmod -R 777 ${TESTCLASSES}/ssl
 DEBUGOPTIONS=""
 export DEBUGOPTIONS
 
-EXTRAOPTIONS="--add-exports java.management/sun.management=ALL-UNNAMED \
- --add-exports java.management/sun.management.jmxremote=ALL-UNNAMED"
+EXTRAOPTIONS="--add-exports jdk.management.agent/jdk.internal.agent=ALL-UNNAMED \
+ --add-exports jdk.management.agent/sun.management.jmxremote=ALL-UNNAMED"
 export EXTRAOPTIONS
 
 # Call the common generic test

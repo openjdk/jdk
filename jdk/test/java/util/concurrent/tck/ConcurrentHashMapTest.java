@@ -61,7 +61,7 @@ public class ConcurrentHashMapTest extends JSR166TestCase {
      * Returns a new map from Integers 1-5 to Strings "A"-"E".
      */
     private static ConcurrentHashMap<Integer, String> map5() {
-        ConcurrentHashMap map = new ConcurrentHashMap<Integer, String>(5);
+        ConcurrentHashMap<Integer, String> map = new ConcurrentHashMap<>(5);
         assertTrue(map.isEmpty());
         map.put(one, "A");
         map.put(two, "B");

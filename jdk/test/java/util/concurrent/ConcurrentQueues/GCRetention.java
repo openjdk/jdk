@@ -82,10 +82,10 @@ public class GCRetention {
         throw new AssertionError("failed to do a \"full\" gc");
     }
 
-    final Map<String,String> results = new ConcurrentHashMap<String,String>();
+    final Map<String,String> results = new ConcurrentHashMap<>();
 
     Collection<Queue<Boolean>> queues() {
-        List<Queue<Boolean>> queues = new ArrayList<Queue<Boolean>>();
+        List<Queue<Boolean>> queues = new ArrayList<>();
         queues.add(new ConcurrentLinkedDeque<Boolean>());
         queues.add(new ConcurrentLinkedQueue<Boolean>());
         queues.add(new ArrayBlockingQueue<Boolean>(count, false));
@@ -107,7 +107,7 @@ public class GCRetention {
     }
 
     void prettyPrintResults() {
-        List<String> classNames = new ArrayList<String>(results.keySet());
+        List<String> classNames = new ArrayList<>(results.keySet());
         Collections.sort(classNames);
         int maxClassNameLength = 0;
         int maxNanosLength = 0;

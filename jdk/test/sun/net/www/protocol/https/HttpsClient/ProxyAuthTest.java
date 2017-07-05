@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@
  * @bug 4323990 4413069 8160838
  * @summary HttpsURLConnection doesn't send Proxy-Authorization on CONNECT
  *     Incorrect checking of proxy server response
- * @modules java.base/sun.net.www
+ * @modules jdk.crypto.ec
+ *          java.base/sun.net.www
  * @library /javax/net/ssl/templates
  * @run main/othervm ProxyAuthTest fail
  * @run main/othervm -Djdk.http.auth.tunneling.disabledSchemes=Basic

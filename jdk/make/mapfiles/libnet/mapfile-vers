@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ SUNWprivate_1.1 {
 		Java_sun_net_sdp_SdpSupport_convert0;
 		Java_sun_net_sdp_SdpSupport_create0;
 		Java_sun_net_spi_DefaultProxySelector_init;
-		Java_sun_net_spi_DefaultProxySelector_getSystemProxy;
+		Java_sun_net_spi_DefaultProxySelector_getSystemProxies;
 		NET_SockaddrToInetAddress;
                 NET_SockaddrEqualsInetAddress;
 		NET_InetAddressToSockaddr;

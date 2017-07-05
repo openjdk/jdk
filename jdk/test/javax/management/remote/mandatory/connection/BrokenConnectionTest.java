@@ -27,7 +27,7 @@
  * @summary Tests behaviour when connections break
  * @author Eamonn McManus
  * @key intermittent
- * @modules java.management
+ * @modules java.management.rmi
  * @run clean BrokenConnectionTest
  * @run build BrokenConnectionTest
  * @run main BrokenConnectionTest

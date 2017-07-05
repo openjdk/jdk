@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,30 @@
  */
 package org.graalvm.compiler.nodes.util;
 
+import static org.graalvm.compiler.graph.Graph.Options.VerifyGraalGraphEdges;
+import static org.graalvm.compiler.nodes.util.GraphUtil.Options.VerifyKillCFGUnusedNodes;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Set;
 
 import org.graalvm.compiler.bytecode.Bytecode;
 import org.graalvm.compiler.code.SourceStackTraceBailoutException;
+import org.graalvm.compiler.core.common.CollectionsFactory;
 import org.graalvm.compiler.core.common.spi.ConstantFieldProvider;
+import org.graalvm.compiler.core.common.type.StampFactory;
+import org.graalvm.compiler.debug.Debug;
+import org.graalvm.compiler.graph.Graph;
 import org.graalvm.compiler.graph.Node;
+import org.graalvm.compiler.graph.NodeClass;
 import org.graalvm.compiler.graph.NodeWorkList;
+import org.graalvm.compiler.graph.Position;
 import org.graalvm.compiler.graph.iterators.NodeIterable;
 import org.graalvm.compiler.graph.spi.SimplifierTool;
+import org.graalvm.compiler.nodeinfo.InputType;
+import org.graalvm.compiler.nodeinfo.NodeInfo;
 import org.graalvm.compiler.nodes.AbstractBeginNode;
 import org.graalvm.compiler.nodes.AbstractEndNode;
 import org.graalvm.compiler.nodes.AbstractMergeNode;
@@ -48,11 +60,15 @@ import org.graalvm.compiler.nodes.ProxyNode;
 import org.graalvm.compiler.nodes.StateSplit;
 import org.graalvm.compiler.nodes.StructuredGraph;
 import org.graalvm.compiler.nodes.ValueNode;
+import org.graalvm.compiler.nodes.calc.FloatingNode;
 import org.graalvm.compiler.nodes.java.MethodCallTargetNode;
 import org.graalvm.compiler.nodes.spi.ArrayLengthProvider;
 import org.graalvm.compiler.nodes.spi.LimitedValueProxy;
 import org.graalvm.compiler.nodes.spi.LoweringProvider;
 import org.graalvm.compiler.nodes.spi.ValueProxy;
+import org.graalvm.compiler.options.Option;
+import org.graalvm.compiler.options.OptionType;
+import org.graalvm.compiler.options.OptionValue;
 
 import jdk.vm.ci.code.BailoutException;
 import jdk.vm.ci.code.BytecodePosition;
@@ -64,22 +80,78 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public class GraphUtil {
 
-    public static void killCFG(Node node, SimplifierTool tool) {
-        NodeWorkList worklist = killCFG(node, tool, null);
-        if (worklist != null) {
-            for (Node successor : worklist) {
-                killCFG(successor, tool, worklist);
+    public static class Options {
+        @Option(help = "Verify that there are no new unused nodes when performing killCFG", type = OptionType.Debug)//
+        public static final OptionValue<Boolean> VerifyKillCFGUnusedNodes = new OptionValue<>(false);
+    }
+
+    @SuppressWarnings("try")
+    public static void killCFG(FixedNode node, SimplifierTool tool) {
+        try (Debug.Scope scope = Debug.scope("KillCFG", node)) {
+            Set<Node> unusedNodes = null;
+            Set<Node> unsafeNodes = null;
+            Graph.NodeEventScope nodeEventScope = null;
+            if (VerifyGraalGraphEdges.getValue()) {
+                unsafeNodes = collectUnsafeNodes(node.graph());
+            }
+            if (VerifyKillCFGUnusedNodes.getValue()) {
+                Set<Node> collectedUnusedNodes = unusedNodes = CollectionsFactory.newSet();
+                nodeEventScope = node.graph().trackNodeEvents(new Graph.NodeEventListener() {
+                    @Override
+                    public void event(Graph.NodeEvent e, Node n) {
+                        if (e == Graph.NodeEvent.ZERO_USAGES && isFloatingNode(n)) {
+                            collectedUnusedNodes.add(n);
+                        }
+                    }
+                });
+            }
+            Debug.dump(Debug.VERY_DETAILED_LOG_LEVEL, node.graph(), "Before killCFG %s", node);
+            NodeWorkList worklist = killCFG(node, tool, null);
+            if (worklist != null) {
+                for (Node n : worklist) {
+                    killCFG(n, tool, worklist);
+                }
+            }
+            if (VerifyGraalGraphEdges.getValue()) {
+                Set<Node> newUnsafeNodes = collectUnsafeNodes(node.graph());
+                newUnsafeNodes.removeAll(unsafeNodes);
+                assert newUnsafeNodes.isEmpty() : "New unsafe nodes: " + newUnsafeNodes;
+            }
+            if (VerifyKillCFGUnusedNodes.getValue()) {
+                nodeEventScope.close();
+                unusedNodes.removeIf(n -> n.isDeleted());
+                assert unusedNodes.isEmpty() : "New unused nodes: " + unusedNodes;
+            }
+        } catch (Throwable t) {
+            throw Debug.handle(t);
+        }
+    }
+
+    /**
+     * Collects all node in the graph which have non-optional inputs that are null.
+     */
+    private static Set<Node> collectUnsafeNodes(Graph graph) {
+        Set<Node> unsafeNodes = CollectionsFactory.newSet();
+        for (Node n : graph.getNodes()) {
+            for (Position pos : n.inputPositions()) {
+                Node input = pos.get(n);
+                if (input == null) {
+                    if (!pos.isInputOptional()) {
+                        unsafeNodes.add(n);
+                    }
+                }
             }
         }
+        return unsafeNodes;
     }
 
     private static NodeWorkList killCFG(Node node, SimplifierTool tool, NodeWorkList worklist) {
         NodeWorkList newWorklist = worklist;
-        // DebugScope.forceDump(node.graph(), "kill CFG %s", node);
         if (node instanceof FixedNode) {
             newWorklist = killCFGLinear((FixedNode) node, newWorklist, tool);
         } else {
-            propagateKill(node);
+            newWorklist = propagateKill(node, newWorklist);
+            Debug.dump(Debug.VERY_DETAILED_LOG_LEVEL, node.graph(), "killCFG (Floating) %s", node);
         }
         return newWorklist;
     }
@@ -93,19 +165,20 @@ public class GraphUtil {
             if (current instanceof AbstractEndNode) {
                 // We reached a control flow end.
                 AbstractEndNode end = (AbstractEndNode) current;
-                killEnd(end, tool);
+                newWorklist = killEnd(end, newWorklist, tool);
             } else if (current instanceof FixedWithNextNode) {
-                next = ((FixedWithNextNode) current).next();
+                // Node guaranteed to have a single successor
+                FixedWithNextNode fixedWithNext = (FixedWithNextNode) current;
+                assert fixedWithNext.successors().count() == 1 || fixedWithNext.successors().count() == 0;
+                assert fixedWithNext.successors().first() == fixedWithNext.next();
+                next = fixedWithNext.next();
             } else {
-                // Normal control flow node.
                 /*
                  * We do not take a successor snapshot because this iterator supports concurrent
                  * modifications as long as they do not change the size of the successor list. Not
                  * taking a snapshot allows us to see modifications to other branches that may
                  * happen while processing one branch.
                  */
-                // assert node.successors().count() > 1 || node.successors().count() == 0 :
-                // node.getClass();
                 Iterator<Node> successors = current.successors().iterator();
                 if (successors.hasNext()) {
                     Node first = successors.next();
@@ -126,100 +199,158 @@ public class GraphUtil {
                 }
             }
             current.replaceAtPredecessor(null);
-            propagateKill(current);
+            newWorklist = propagateKill(current, newWorklist);
+            Debug.dump(Debug.VERY_DETAILED_LOG_LEVEL, current.graph(), "killCFGLinear %s", current);
             current = next;
         }
+        Debug.dump(Debug.DETAILED_LOG_LEVEL, in.graph(), "killCFGLinear %s", in);
         return newWorklist;
     }
 
-    public static void killCFG(Node node) {
+    public static void killCFG(FixedNode node) {
         killCFG(node, null);
     }
 
-    private static void killEnd(AbstractEndNode end, SimplifierTool tool) {
+    /**
+     * Node type used temporarily while deleting loops.
+     *
+     * It is used as replacement for the loop {@link PhiNode PhiNodes} in order to break data-flow
+     * cycles before deleting the loop. The control-flow of the whole loop is killed before killing
+     * the poison node if they are still alive.
+     */
+    @NodeInfo(allowedUsageTypes = InputType.Unchecked)
+    private static final class PoisonNode extends FloatingNode {
+        public static final NodeClass<PoisonNode> TYPE = NodeClass.create(PoisonNode.class);
+
+        protected PoisonNode() {
+            super(TYPE, StampFactory.forVoid());
+        }
+    }
+
+    private static NodeWorkList killEnd(AbstractEndNode end, NodeWorkList worklist, SimplifierTool tool) {
+        NodeWorkList newWorklist = worklist;
         AbstractMergeNode merge = end.merge();
         if (merge != null) {
             merge.removeEnd(end);
             StructuredGraph graph = end.graph();
             if (merge instanceof LoopBeginNode && merge.forwardEndCount() == 0) {
                 // dead loop
-                for (PhiNode phi : merge.phis().snapshot()) {
-                    propagateKill(phi);
-                }
                 LoopBeginNode begin = (LoopBeginNode) merge;
                 // disconnect and delete loop ends & loop exits
                 for (LoopEndNode loopend : begin.loopEnds().snapshot()) {
                     loopend.predecessor().replaceFirstSuccessor(loopend, null);
                     loopend.safeDelete();
                 }
-                begin.removeExits();
-                FixedNode loopBody = begin.next();
-                if (loopBody != null) { // for small infinite loops, the body may be killed while
-                                        // killing the loop ends
-                    killCFG(loopBody);
+                // clean unused proxies to avoid creating new unused nodes
+                for (LoopExitNode exit : begin.loopExits()) {
+                    for (ProxyNode vpn : exit.proxies().snapshot()) {
+                        tryKillUnused(vpn);
+                    }
                 }
+                begin.removeExits();
+                PoisonNode poison = null;
+                if (merge.phis().isNotEmpty()) {
+                    poison = graph.unique(new PoisonNode());
+                    for (PhiNode phi : merge.phis()) {
+                        phi.replaceAtUsages(poison);
+                    }
+                    for (PhiNode phi : merge.phis().snapshot()) {
+                        killWithUnusedFloatingInputs(phi);
+                    }
+                }
+                FixedNode loopBody = begin.next();
+                Debug.dump(Debug.VERY_DETAILED_LOG_LEVEL, end.graph(), "killEnd (Loop) %s after initial loop cleanup", end);
+                if (loopBody != null) {
+                    // for small infinite loops, the body may already be killed while killing the
+                    // LoopEnds
+                    newWorklist = killCFG(loopBody, tool, worklist);
+                }
+                FrameState frameState = begin.stateAfter();
                 begin.safeDelete();
+                if (frameState != null) {
+                    tryKillUnused(frameState);
+                }
+                if (poison != null && poison.isAlive()) {
+                    if (newWorklist == null) {
+                        newWorklist = graph.createNodeWorkList();
+                    }
+                    // drain the worklist to finish the loop before adding the poison
+                    for (Node n : newWorklist) {
+                        killCFG(n, tool, newWorklist);
+                    }
+                    if (poison.isAlive()) {
+                        newWorklist.add(poison);
+                    }
+                }
             } else if (merge instanceof LoopBeginNode && ((LoopBeginNode) merge).loopEnds().isEmpty()) {
                 // not a loop anymore
                 if (tool != null) {
-                    merge.phis().forEach(phi -> tool.addToWorkList(phi.usages()));
+                    for (PhiNode phi : merge.phis()) {
+                        tool.addToWorkList(phi.usages());
+                    }
                 }
                 graph.reduceDegenerateLoopBegin((LoopBeginNode) merge);
             } else if (merge.phiPredecessorCount() == 1) {
                 // not a merge anymore
                 if (tool != null) {
-                    merge.phis().forEach(phi -> tool.addToWorkList(phi.usages()));
+                    for (PhiNode phi : merge.phis()) {
+                        tool.addToWorkList(phi.usages());
+                    }
                 }
                 graph.reduceTrivialMerge(merge);
             }
         }
+        return newWorklist;
     }
 
     public static boolean isFloatingNode(Node n) {
         return !(n instanceof FixedNode);
     }
 
-    private static void propagateKill(Node node) {
+    private static NodeWorkList propagateKill(Node node, NodeWorkList workList) {
+        NodeWorkList newWorkList = workList;
         if (node != null && node.isAlive()) {
-            node.markDeleted();
-
-            for (Node in : node.inputs()) {
-                if (in.isAlive()) {
-                    in.removeUsage(node);
-                    if (in.hasNoUsages() && !(in instanceof FixedNode)) {
-                        killWithUnusedFloatingInputs(in);
-                    }
-                }
-            }
-
-            ArrayList<Node> usageToKill = null;
-            for (Node usage : node.usages()) {
-                if (usage.isAlive() && !(usage instanceof FixedNode)) {
-                    if (usageToKill == null) {
-                        usageToKill = new ArrayList<>();
-                    }
-                    usageToKill.add(usage);
-                }
-            }
-            if (usageToKill != null) {
-                for (Node usage : usageToKill) {
-                    if (usage.isAlive()) {
-                        if (usage instanceof PhiNode) {
-                            PhiNode phiNode = (PhiNode) usage;
-                            usage.replaceFirstInput(node, null);
-                            if (phiNode.merge() == null || !phiNode.hasValidInput()) {
-                                propagateKill(usage);
-                            }
+            for (Node usage : node.usages().snapshot()) {
+                assert usage.isAlive();
+                if (isFloatingNode(usage)) {
+                    boolean addUsage = false;
+                    if (usage instanceof PhiNode) {
+                        PhiNode phi = (PhiNode) usage;
+                        assert phi.merge() != null;
+                        if (phi.merge() == node) {
+                            // we reach the phi directly through he merge, queue it.
+                            addUsage = true;
                         } else {
-                            propagateKill(usage);
+                            // we reach it though a value
+                            assert phi.values().contains(node);
+                            // let that be handled when we reach the corresponding End node
                         }
+                    } else {
+                        addUsage = true;
+                    }
+                    if (addUsage) {
+                        if (newWorkList == null) {
+                            newWorkList = node.graph().createNodeWorkList();
+                        }
+                        newWorkList.add(usage);
                     }
                 }
+                usage.replaceFirstInput(node, null);
             }
+            killWithUnusedFloatingInputs(node);
         }
+        return newWorkList;
+    }
+
+    private static boolean checkKill(Node node) {
+        node.assertTrue(node.isAlive(), "must be alive");
+        node.assertTrue(node.hasNoUsages(), "cannot kill node %s because of usages: %s", node, node.usages());
+        node.assertTrue(node.predecessor() == null, "cannot kill node %s because of predecessor: %s", node, node.predecessor());
+        return true;
     }
 
     public static void killWithUnusedFloatingInputs(Node node) {
+        assert checkKill(node);
         node.markDeleted();
         outer: for (Node in : node.inputs()) {
             if (in.isAlive()) {
@@ -227,7 +358,7 @@ public class GraphUtil {
                 if (in.hasNoUsages()) {
                     node.maybeNotifyZeroUsages(in);
                 }
-                if (!(in instanceof FixedNode)) {
+                if (isFloatingNode(in)) {
                     if (in.hasNoUsages()) {
                         killWithUnusedFloatingInputs(in);
                     } else if (in instanceof PhiNode) {
@@ -242,6 +373,35 @@ public class GraphUtil {
                 }
             }
         }
+    }
+
+    /**
+     * Removes all nodes created after the {@code mark}, assuming no "old" nodes point to "new"
+     * nodes.
+     */
+    public static void removeNewNodes(Graph graph, Graph.Mark mark) {
+        assert checkNoOldToNewEdges(graph, mark);
+        for (Node n : graph.getNewNodes(mark)) {
+            n.markDeleted();
+            for (Node in : n.inputs()) {
+                in.removeUsage(n);
+            }
+        }
+    }
+
+    private static boolean checkNoOldToNewEdges(Graph graph, Graph.Mark mark) {
+        for (Node old : graph.getNodes()) {
+            if (graph.isNew(mark, old)) {
+                break;
+            }
+            for (Node n : old.successors()) {
+                assert !graph.isNew(mark, n) : old + " -> " + n;
+            }
+            for (Node n : old.inputs()) {
+                assert !graph.isNew(mark, n) : old + " -> " + n;
+            }
+        }
+        return true;
     }
 
     public static void removeFixedWithUnusedInputs(FixedWithNextNode fixed) {
@@ -688,8 +848,9 @@ public class GraphUtil {
 
         @Override
         public void deleteBranch(Node branch) {
-            branch.predecessor().replaceFirstSuccessor(branch, null);
-            GraphUtil.killCFG(branch, this);
+            FixedNode fixedBranch = (FixedNode) branch;
+            fixedBranch.predecessor().replaceFirstSuccessor(fixedBranch, null);
+            GraphUtil.killCFG(fixedBranch, this);
         }
 
         @Override

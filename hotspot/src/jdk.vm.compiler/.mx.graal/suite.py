@@ -638,6 +638,7 @@ suite = {
       "annotationProcessors" : [
         "GRAAL_NODEINFO_PROCESSOR",
         "GRAAL_REPLACEMENTS_VERIFIER",
+        "GRAAL_OPTIONS_PROCESSOR",
       ],
       "workingSets" : "Graal,Graph",
     },

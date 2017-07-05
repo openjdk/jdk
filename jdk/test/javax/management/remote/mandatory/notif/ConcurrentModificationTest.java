@@ -26,7 +26,7 @@
  * @bug 7120365
  * @summary test on Concurrent Modification
  * @author Shanliang JIANG
- * @modules java.management
+ * @modules java.management.rmi
  * @run main ConcurrentModificationTest
  */
 

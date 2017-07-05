@@ -26,7 +26,7 @@
  * @bug 6199899
  * @summary Tests reconnection done by a fetching notif thread.
  * @author Shanliang JIANG
- * @modules java.management
+ * @modules java.management.rmi
  * @run clean NotifReconnectDeadlockTest
  * @run build NotifReconnectDeadlockTest
  * @run main NotifReconnectDeadlockTest

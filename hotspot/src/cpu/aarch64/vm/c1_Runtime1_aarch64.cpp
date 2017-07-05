@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1178,6 +1178,15 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
 
         Label done;
         Label runtime;
+
+        // Is marking still active?
+        if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+          __ ldrw(tmp, in_progress);
+        } else {
+          assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+          __ ldrb(tmp, in_progress);
+        }
+        __ cbzw(tmp, done);
 
         // Can we store original value in the thread's buffer?
         __ ldr(tmp, queue_index);

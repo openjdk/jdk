@@ -46,7 +46,7 @@ public class ProxyForMethodHandle {
      * to a dynamic module
      */
     @Test
-    static void testRunnableMethodHandle() throws Exception {
+    public static void testRunnableMethodHandle() throws Exception {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         MethodType mt = MethodType.methodType(void.class);
         MethodHandle mh = lookup.findStatic(ProxyForMethodHandle.class, "runForRunnable", mt);

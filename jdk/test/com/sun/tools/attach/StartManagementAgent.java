@@ -41,7 +41,7 @@ import jdk.testlibrary.Utils;
  * @summary Test for VirtualMachine.startManagementAgent and VirtualMachine.startLocalManagementAgent
  * @modules jdk.jartool/sun.tools.jar
  * @library /lib/testlibrary
- * @modules java.management
+ * @modules jdk.management.agent
  *          jdk.attach
  *          jdk.jartool/sun.tools.jar
  * @run build Application SimpleProvider jdk.testlibrary.*
