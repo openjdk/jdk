@@ -25,7 +25,9 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
+import java.nio.file.Path;
+import java.nio.file.LinkOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.spi.FileSystemProvider;
 import java.io.IOException;
 import java.util.Map;
@@ -34,7 +36,7 @@ import java.util.Map;
  * Base implementation class of FileSystemProvider
  */
 
-abstract class AbstractFileSystemProvider extends FileSystemProvider {
+public abstract class AbstractFileSystemProvider extends FileSystemProvider {
     protected AbstractFileSystemProvider() { }
 
     /**
@@ -106,5 +108,50 @@ abstract class AbstractFileSystemProvider extends FileSystemProvider {
     @Override
     public final boolean deleteIfExists(Path file) throws IOException {
         return implDelete(file, false);
+    }
+
+    /**
+     * Tests whether a file is a directory.
+     *
+     * @return  {@code true} if the file is a directory; {@code false} if
+     *          the file does not exist, is not a directory, or it cannot
+     *          be determined if the file is a directory or not.
+     */
+    public boolean isDirectory(Path file) {
+        try {
+            return readAttributes(file, BasicFileAttributes.class).isDirectory();
+        } catch (IOException ioe) {
+            return false;
+        }
+    }
+
+    /**
+     * Tests whether a file is a regular file with opaque content.
+     *
+     * @return  {@code true} if the file is a regular file; {@code false} if
+     *          the file does not exist, is not a regular file, or it
+     *          cannot be determined if the file is a regular file or not.
+     */
+    public boolean isRegularFile(Path file) {
+        try {
+            return readAttributes(file, BasicFileAttributes.class).isRegularFile();
+        } catch (IOException ioe) {
+            return false;
+        }
+    }
+
+    /**
+     * Checks the existence of a file.
+     *
+     * @return  {@code true} if the file exists; {@code false} if the file does
+     *          not exist or its existence cannot be determined.
+     */
+    public boolean exists(Path file) {
+        try {
+            checkAccess(file);
+            return true;
+        } catch (IOException ioe) {
+            return false;
+        }
     }
 }

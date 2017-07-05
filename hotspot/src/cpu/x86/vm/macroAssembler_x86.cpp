@@ -1106,7 +1106,7 @@ int MacroAssembler::biased_locking_enter(Register lock_reg,
   assert_different_registers(lock_reg, obj_reg, swap_reg, tmp_reg);
   assert(markOopDesc::age_shift == markOopDesc::lock_bits + markOopDesc::biased_lock_bits, "biased locking makes assumptions about bit layout");
   Address mark_addr      (obj_reg, oopDesc::mark_offset_in_bytes());
-  Address saved_mark_addr(lock_reg, 0);
+  NOT_LP64( Address saved_mark_addr(lock_reg, 0); )
 
   if (PrintBiasedLockingStatistics && counters == NULL) {
     counters = BiasedLocking::counters();
@@ -1695,7 +1695,7 @@ void MacroAssembler::fast_lock(Register objReg, Register boxReg, Register tmpReg
                                RTMLockingCounters* stack_rtm_counters,
                                Metadata* method_data,
                                bool use_rtm, bool profile_rtm) {
-  // Ensure the register assignents are disjoint
+  // Ensure the register assignments are disjoint
   assert(tmpReg == rax, "");
 
   if (use_rtm) {
@@ -2194,8 +2194,8 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
       cmpptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), (int32_t)NULL_WORD);
       jccb  (Assembler::zero, LGoSlowPath);
 
+      xorptr(boxReg, boxReg);
       if ((EmitSync & 16) && os::is_MP()) {
-        orptr(boxReg, boxReg);
         xchgptr(boxReg, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
       } else {
         movptr(Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), (int32_t)NULL_WORD);
@@ -2227,7 +2227,6 @@ void MacroAssembler::fast_unlock(Register objReg, Register boxReg, Register tmpR
 
       // box is really RAX -- the following CMPXCHG depends on that binding
       // cmpxchg R,[M] is equivalent to rax = CAS(M,rax,R)
-      movptr(boxReg, (int32_t)NULL_WORD);
       if (os::is_MP()) { lock(); }
       cmpxchgptr(r15_thread, Address(tmpReg, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
       // There's no successor so we tried to regrab the lock.

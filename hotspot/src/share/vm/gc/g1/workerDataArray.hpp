@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,12 @@ class outputStream;
 
 template <class T>
 class WorkerDataArray  : public CHeapObj<mtGC> {
+  friend class WDAPrinter;
   T*          _data;
   uint        _length;
   const char* _title;
 
   WorkerDataArray<size_t>* _thread_work_items;
-
-  NOT_PRODUCT(inline T uninitialized() const;)
-
-  void set_all(T value);
 
  public:
   WorkerDataArray(uint length, const char* title);
@@ -52,37 +49,38 @@ class WorkerDataArray  : public CHeapObj<mtGC> {
     return _thread_work_items;
   }
 
+  static T uninitialized();
+
   void set(uint worker_i, T value);
   T get(uint worker_i) const;
 
   void add(uint worker_i, T value);
 
-  double average(uint active_threads) const;
-  T sum(uint active_threads) const;
+  // The sum() and average() methods below consider uninitialized slots to be 0.
+  double average() const;
+  T sum() const;
 
   const char* title() const {
     return _title;
   }
 
-  void clear();
-
-  void reset() PRODUCT_RETURN;
-  void verify(uint active_threads) const PRODUCT_RETURN;
+  void reset();
+  void set_all(T value);
 
 
  private:
   class WDAPrinter {
   public:
-    static void summary(outputStream* out, const char* title, double min, double avg, double max, double diff, double sum, bool print_sum);
-    static void summary(outputStream* out, const char* title, size_t min, double avg, size_t max, size_t diff, size_t sum, bool print_sum);
+    static void summary(outputStream* out, double min, double avg, double max, double diff, double sum, bool print_sum);
+    static void summary(outputStream* out, size_t min, double avg, size_t max, size_t diff, size_t sum, bool print_sum);
 
-    static void details(const WorkerDataArray<double>* phase, outputStream* out, uint active_threads);
-    static void details(const WorkerDataArray<size_t>* phase, outputStream* out, uint active_threads);
+    static void details(const WorkerDataArray<double>* phase, outputStream* out);
+    static void details(const WorkerDataArray<size_t>* phase, outputStream* out);
   };
 
  public:
-  void print_summary_on(outputStream* out, uint active_threads, bool print_sum = true) const;
-  void print_details_on(outputStream* out, uint active_threads) const;
+  void print_summary_on(outputStream* out, bool print_sum = true) const;
+  void print_details_on(outputStream* out) const;
 };
 
 #endif // SHARE_VM_GC_G1_WORKERDATAARRAY_HPP
