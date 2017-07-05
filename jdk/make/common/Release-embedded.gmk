@@ -189,7 +189,7 @@ reduced-headless-image-jre:: $(RT_JAR) $(RESOURCES_JAR) $(BUILD_META_INDEX) $(HL
 	$(RM) -r $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/audio
 	$(RM) -fr $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/applet
 	$(RM)  $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/$(LIBARCH)/awt_robot
-	$(RM) -r $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/$(LIBARCH)/xawt
+	$(RM)  $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/$(LIBARCH)/libawt_xawt.so
 	$(RM) -r $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/$(LIBARCH)/libsplashscreen.so
 	@# Remove oblique fonts and reduce font support to LucidaSansRegular only
 	$(RM) -fr $(JRE_REDUCED_HEADLESS_IMAGE_DIR)/lib/oblique-fonts

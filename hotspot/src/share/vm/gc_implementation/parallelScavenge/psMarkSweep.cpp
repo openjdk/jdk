@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -132,9 +132,7 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
   AdaptiveSizePolicyOutput(size_policy, heap->total_collections());
 
-  if (PrintHeapAtGC) {
-    Universe::print_heap_before_gc();
-  }
+  heap->print_heap_before_gc();
 
   // Fill in TLABs
   heap->accumulate_statistics_all_tlabs();
@@ -377,9 +375,7 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
   NOT_PRODUCT(ref_processor()->verify_no_references_recorded());
 
-  if (PrintHeapAtGC) {
-    Universe::print_heap_after_gc();
-  }
+  heap->print_heap_after_gc();
 
   heap->post_full_gc_dump();
 
@@ -504,7 +500,6 @@ void PSMarkSweep::deallocate_stacks() {
 
 void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
-  EventMark m("1 mark object");
   TraceTime tm("phase 1", PrintGCDetails && Verbose, true, gclog_or_tty);
   trace(" 1");
 
@@ -563,7 +558,6 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
 
 
 void PSMarkSweep::mark_sweep_phase2() {
-  EventMark m("2 compute new addresses");
   TraceTime tm("phase 2", PrintGCDetails && Verbose, true, gclog_or_tty);
   trace("2");
 
@@ -608,7 +602,6 @@ static PSAlwaysTrueClosure always_true;
 
 void PSMarkSweep::mark_sweep_phase3() {
   // Adjust the pointers to reflect the new locations
-  EventMark m("3 adjust pointers");
   TraceTime tm("phase 3", PrintGCDetails && Verbose, true, gclog_or_tty);
   trace("3");
 

@@ -40,7 +40,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <ctype.h>
-#include <wait.h>
+#include <sys/wait.h>
 #include <signal.h>
 #include <string.h>
 #include <errno.h>
