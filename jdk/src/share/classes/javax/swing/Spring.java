@@ -65,7 +65,7 @@ import java.awt.Component;
  *  from <code>a</code>
  *  to <code>b</code>,
  *  where <code>a &lt;= b</code>).
- *  <p>
+ *
  *  <pre>
  *          [a1, b1] + [a2, b2] = [a1 + a2, b1 + b2]
  *
@@ -78,7 +78,7 @@ import java.awt.Component;
  *  If we denote <code>Spring</code>s as <code>[a, b, c]</code>,
  *  where <code>a &lt;= b &lt;= c</code>, we can define the same
  *  arithmetic operators on <code>Spring</code>s:
- *  <p>
+ *
  *  <pre>
  *          [a1, b1, c1] + [a2, b2, c2] = [a1 + a2, b1 + b2, c1 + c2]
  *
@@ -89,7 +89,7 @@ import java.awt.Component;
  *  <p>
  *  With both intervals and <code>Spring</code>s we can define "-" and <em>min</em>
  *  in terms of negation:
- *  <p>
+ *
  *  <pre>
  *      X - Y = X + (-Y)
  *

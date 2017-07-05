@@ -91,7 +91,7 @@ import java.util.StringTokenizer;
  * to provide a specific set of defaults. These are documented in the
  * classes that require the specific default.
  *
- * <h3><a name="#defaultRecommendation">ComponentUIs and defaults</a></h3>
+ * <h3><a name="defaultRecommendation">ComponentUIs and defaults</a></h3>
  *
  * All {@code ComponentUIs} typically need to set various properties
  * on the {@code JComponent} the {@code ComponentUI} is providing the
@@ -120,7 +120,7 @@ import java.util.StringTokenizer;
  * {@code ComponentUI} implementations should use the various install methods
  * provided by this class as they handle the necessary checking and install
  * the property using the recommended guidelines.
- * <p>
+ *
  * <h3><a name="exceptions"></a>Exceptions</h3>
  *
  * All of the install methods provided by {@code LookAndFeel} need to

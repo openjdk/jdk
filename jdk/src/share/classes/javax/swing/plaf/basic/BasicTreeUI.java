@@ -1398,7 +1398,7 @@ public class BasicTreeUI extends TreeUI
 
     /**
      * Paints the vertical part of the leg. The receiver should
-     * NOT modify <code>clipBounds</code>, <code>insets</code>.<p>
+     * NOT modify <code>clipBounds</code>, <code>insets</code>.
      */
     protected void paintVerticalPartOfLeg(Graphics g, Rectangle clipBounds,
                                           Insets insets, TreePath path) {

@@ -158,9 +158,10 @@ public abstract class XMLEventFactory {
    *   If {@code factoryId} is "javax.xml.stream.XMLEventFactory",
    *   use the service-provider loading facilities, defined by the
    *   {@link java.util.ServiceLoader} class, to attempt to locate and load an
-   *   implementation of the service using the {@linkplain
-   *   java.util.ServiceLoader#load(java.lang.Class) default loading mechanism}:
-   *   the service-provider loading facility will use the {@linkplain
+   *   implementation of the service using the specified {@code ClassLoader}.
+   *   If {@code classLoader} is null, the {@linkplain
+   *   java.util.ServiceLoader#load(java.lang.Class) default loading mechanism} will apply:
+   *   That is, the service-provider loading facility will use the {@linkplain
    *   java.lang.Thread#getContextClassLoader() current thread's context class loader}
    *   to attempt to load the service. If the context class
    *   loader is null, the {@linkplain
@@ -178,6 +179,10 @@ public abstract class XMLEventFactory {
    * No changes in behavior are defined by this replacement method relative
    * to the deprecated method.
    * </p>
+   *
+   * @apiNote The parameter factoryId defined here is inconsistent with that
+   * of other JAXP factories where the first parameter is fully qualified
+   * factory class name that provides implementation of the factory.
    *
    * @param factoryId             Name of the factory to find, same as
    *                              a property name
