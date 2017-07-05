@@ -110,7 +110,7 @@ bool SharedPathsMiscInfo::check() {
 bool SharedPathsMiscInfo::check(jint type, const char* path) {
   switch (type) {
   case BOOT:
-    if (strcmp(path, Arguments::get_sysclasspath()) != 0) {
+    if (os::file_name_strcmp(path, Arguments::get_sysclasspath()) != 0) {
       return fail("[BOOT classpath mismatch, actual: -Dsun.boot.class.path=", Arguments::get_sysclasspath());
     }
     break;

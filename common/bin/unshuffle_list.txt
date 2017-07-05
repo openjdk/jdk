@@ -1212,6 +1212,7 @@ jdk/src/java.rmi/share/classes/sun/rmi/transport/tcp : jdk/src/share/classes/sun
 jdk/src/java.rmi/share/doc/stub/java/rmi/activation : jdk/src/share/doc/stub/java/rmi/activation
 jdk/src/java.rmi/unix/bin/java-rmi.cgi.sh : jdk/src/solaris/bin/java-rmi.cgi.sh
 jdk/src/java.scripting/share/classes/javax/script : jdk/src/share/classes/javax/script
+jdk/src/java.scripting/share/classes/com/sun/tools/script/shell : jdk/src/share/classes/com/sun/tools/script/shell
 jdk/src/java.security.acl/share/classes/java/security/acl : jdk/src/share/classes/java/security/acl
 jdk/src/java.security.acl/share/classes/sun/security/acl : jdk/src/share/classes/sun/security/acl
 jdk/src/java.security.jgss/macosx/native/libosxkrb5/nativeccache.c : jdk/src/share/native/sun/security/krb5/nativeccache.c
@@ -1301,7 +1302,6 @@ jdk/src/jdk.deploy.osx/macosx/native/libosx/JavaAppLauncher.m : jdk/src/macosx/n
 jdk/src/jdk.deploy.osx/macosx/native/libosx/KeystoreImpl.m : jdk/src/macosx/native/apple/security/KeystoreImpl.m
 jdk/src/jdk.dev/share/classes/com/sun/jarsigner : jdk/src/share/classes/com/sun/jarsigner
 jdk/src/jdk.dev/share/classes/com/sun/tools/hat : jdk/src/share/classes/com/sun/tools/hat
-jdk/src/jdk.dev/share/classes/com/sun/tools/script/shell : jdk/src/share/classes/com/sun/tools/script/shell
 jdk/src/jdk.dev/share/classes/sun/security/tools/jarsigner : jdk/src/share/classes/sun/security/tools/jarsigner
 jdk/src/jdk.dev/share/classes/sun/tools/jar : jdk/src/share/classes/sun/tools/jar
 jdk/src/jdk.dev/share/classes/sun/tools/native2ascii : jdk/src/share/classes/sun/tools/native2ascii
