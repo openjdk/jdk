@@ -387,8 +387,8 @@ public final class Method extends Executable {
      *
      * If this method was declared to take a variable number of
      * arguments, instead of denoting the last parameter as
-     * "<tt><i>Type</i>[]</tt>", it is denoted as
-     * "<tt><i>Type</i>...</tt>".
+     * "<code><i>Type</i>[]</code>", it is denoted as
+     * "<code><i>Type</i>...</code>".
      *
      * A space is used to separate access modifiers from one another
      * and from the type parameters or return type.  If there are no

@@ -65,7 +65,7 @@ import sun.reflect.Reflection;
  * <p>
  * Each Logger has a "Level" associated with it.  This reflects
  * a minimum Level that this logger cares about.  If a Logger's
- * level is set to <tt>null</tt>, then its effective level is inherited
+ * level is set to {@code null}, then its effective level is inherited
  * from its parent, which may in turn obtain it recursively from its
  * parent, and so on up the tree.
  * <p>
@@ -74,7 +74,7 @@ import sun.reflect.Reflection;
  * of the LogManager class.  However it may also be dynamically changed
  * by calls on the Logger.setLevel method.  If a logger's level is
  * changed the change may also affect child loggers, since any child
- * logger that has <tt>null</tt> as its level will inherit its
+ * logger that has {@code null} as its level will inherit its
  * effective level from its parent.
  * <p>
  * On each logging call the Logger initially performs a cheap
@@ -116,25 +116,25 @@ import sun.reflect.Reflection;
  * unnecessary message construction. For example, if the developer wants to
  * log system health status for diagnosis, with the String-accepting version,
  * the code would look like:
- <pre><code>
-
-   class DiagnosisMessages {
-     static String systemHealthStatus() {
-       // collect system health information
-       ...
-     }
-   }
-   ...
-   logger.log(Level.FINER, DiagnosisMessages.systemHealthStatus());
-</code></pre>
+ * <pre>{@code
+ *
+ *  class DiagnosisMessages {
+ *    static String systemHealthStatus() {
+ *      // collect system health information
+ *      ...
+ *    }
+ *  }
+ *  ...
+ *  logger.log(Level.FINER, DiagnosisMessages.systemHealthStatus());
+ * }</pre>
  * With the above code, the health status is collected unnecessarily even when
  * the log level FINER is disabled. With the Supplier-accepting version as
  * below, the status will only be collected when the log level FINER is
  * enabled.
- <pre><code>
-
-   logger.log(Level.FINER, DiagnosisMessages::systemHealthStatus);
-</code></pre>
+ * <pre>{@code
+ *
+ *  logger.log(Level.FINER, DiagnosisMessages::systemHealthStatus);
+ * }</pre>
  * <p>
  * When looking for a {@code ResourceBundle}, the logger will first look at
  * whether a bundle was specified using {@link
@@ -345,11 +345,11 @@ public class Logger {
      * which may cause deadlocks with the LogManager class initialization.
      * In such cases two class initialization wait for each other to complete.
      * The preferred way to get the global logger object is via the call
-     * <code>Logger.getGlobal()</code>.
+     * {@code Logger.getGlobal()}.
      * For compatibility with old JDK versions where the
-     * <code>Logger.getGlobal()</code> is not available use the call
-     * <code>Logger.getLogger(Logger.GLOBAL_LOGGER_NAME)</code>
-     * or <code>Logger.getLogger("global")</code>.
+     * {@code Logger.getGlobal()} is not available use the call
+     * {@code Logger.getLogger(Logger.GLOBAL_LOGGER_NAME)}
+     * or {@code Logger.getLogger("global")}.
      */
     @Deprecated
     public static final Logger global = new Logger(GLOBAL_LOGGER_NAME);

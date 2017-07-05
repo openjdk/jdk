@@ -28,7 +28,7 @@ package java.lang.management;
 /**
  * The management interface for the {@linkplain java.util.logging logging} facility.
  *
- * <p>There is a single global instance of the <tt>PlatformLoggingMXBean</tt>.
+ * <p>There is a single global instance of the {@code PlatformLoggingMXBean}.
  * The {@link java.lang.management.ManagementFactory#getPlatformMXBean(Class)
  * ManagementFactory.getPlatformMXBean} method can be used to obtain
  * the {@code PlatformLoggingMXBean} object as follows:
@@ -44,7 +44,7 @@ package java.lang.management;
  *      {@link java.util.logging.LogManager#LOGGING_MXBEAN_NAME java.util.logging:type=Logging}
  * </pre>
  *
- * <p>The instance registered in the platform <tt>MBeanServer</tt> with
+ * <p>The instance registered in the platform {@code MBeanServer} with
  * this {@code ObjectName} implements all attributes defined by
  * {@link java.util.logging.LoggingMXBean}.
  *

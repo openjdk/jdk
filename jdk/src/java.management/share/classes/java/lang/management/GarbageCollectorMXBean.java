@@ -39,13 +39,13 @@ package java.lang.management;
  * that can be obtained by calling
  * the {@link ManagementFactory#getGarbageCollectorMXBeans} method or
  * from the {@link ManagementFactory#getPlatformMBeanServer
- * platform <tt>MBeanServer</tt>} method.
+ * platform MBeanServer} method.
  *
- * <p>The <tt>ObjectName</tt> for uniquely identifying the MXBean for
+ * <p>The {@code ObjectName} for uniquely identifying the MXBean for
  * a garbage collector within an MBeanServer is:
  * <blockquote>
  *   {@link ManagementFactory#GARBAGE_COLLECTOR_MXBEAN_DOMAIN_TYPE
- *    <tt>java.lang:type=GarbageCollector</tt>}<tt>,name=</tt><i>collector's name</i>
+ *    java.lang:type=GarbageCollector}{@code ,name=}<i>collector's name</i>
  * </blockquote>
  *
  * It can be obtained by calling the
@@ -68,7 +68,7 @@ package java.lang.management;
 public interface GarbageCollectorMXBean extends MemoryManagerMXBean {
     /**
      * Returns the total number of collections that have occurred.
-     * This method returns <tt>-1</tt> if the collection count is undefined for
+     * This method returns {@code -1} if the collection count is undefined for
      * this collector.
      *
      * @return the total number of collections that have occurred.
@@ -77,7 +77,7 @@ public interface GarbageCollectorMXBean extends MemoryManagerMXBean {
 
     /**
      * Returns the approximate accumulated collection elapsed time
-     * in milliseconds.  This method returns <tt>-1</tt> if the collection
+     * in milliseconds.  This method returns {@code -1} if the collection
      * elapsed time is undefined for this collector.
      * <p>
      * The Java virtual machine implementation may use a high resolution

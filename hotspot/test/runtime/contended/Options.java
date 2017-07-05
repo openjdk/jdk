@@ -55,7 +55,6 @@ public class Options {
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("ContendedPaddingWidth");
         output.shouldContain("outside the allowed range");
-        output.shouldContain("must be a multiple of 8");
         output.shouldHaveExitValue(1);
 
         pb = ProcessTools.createJavaProcessBuilder("-XX:ContendedPaddingWidth=0", "-version");
@@ -90,7 +89,6 @@ public class Options {
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("ContendedPaddingWidth");
         output.shouldContain("outside the allowed range");
-        output.shouldContain("must be a multiple of 8");
         output.shouldHaveExitValue(1);
 
         pb = ProcessTools.createJavaProcessBuilder("-XX:ContendedPaddingWidth=8200", "-version"); // 8192+8 = 8200

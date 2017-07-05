@@ -39,7 +39,7 @@ import java.math.BigInteger;
 /**
  * Implements the ASN.1 KDC-REQ-BODY type.
  *
- * <xmp>
+ * <pre>{@code
  * KDC-REQ-BODY ::= SEQUENCE {
  *      kdc-options             [0] KDCOptions,
  *      cname                   [1] PrincipalName OPTIONAL
@@ -60,7 +60,7 @@ import java.math.BigInteger;
  *      additional-tickets      [11] SEQUENCE OF Ticket OPTIONAL
  *                                       -- NOTE: not empty
  * }
- * </xmp>
+ * }</pre>
  *
  * <p>
  * This definition reflects the Network Working Group RFC 4120

@@ -69,8 +69,10 @@ public class Klist {
      * <li><b>-n</b>  do not reverse-resolve addresses
      * </ul>
      * available options for keytabs:
+     * <ul>
      * <li><b>-t</b> shows keytab entry timestamps
      * <li><b>-K</b> shows keytab entry DES keys
+     * </ul>
      */
     public static void main(String[] args) {
         Klist klist = new Klist();

@@ -177,7 +177,7 @@ public class EnvHelp {
      *     The ClassLoader object found in <var>env</var> for
      *     <code>jmx.remote.default.class.loader</code>, if any.
      * </li>
-     * <li>The <tt>Thread.currentThread().getContextClassLoader()</tt>
+     * <li>The {@code Thread.currentThread().getContextClassLoader()}
      *     otherwise.
      * </li>
      * </ul>

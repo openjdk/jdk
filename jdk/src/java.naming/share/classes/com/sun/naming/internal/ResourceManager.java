@@ -137,7 +137,7 @@ public final class ResourceManager {
      * context (never null).  This is based on the environment
      * parameter, the system properties, and all application resource files.
      *
-     * <p> This method will modify <tt>env</tt> and save
+     * <p> This method will modify {@code env} and save
      * a reference to it.  The caller may no longer modify it.
      *
      * @param env       environment passed to initial context constructor.
@@ -195,7 +195,7 @@ public final class ResourceManager {
       * may in turn contain values that come from system properties,
       * or application resource files.
       *
-      * If <tt>concat</tt> is true and both the environment and the provider
+      * If {@code concat} is true and both the environment and the provider
       * resource file contain the property, the two values are concatenated
       * (with a ':' separator).
       *

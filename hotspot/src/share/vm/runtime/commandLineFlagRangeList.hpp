@@ -66,6 +66,8 @@ public:
   static CommandLineFlagRange* find(const char* name);
   static void add(CommandLineFlagRange* range) { _ranges->append(range); }
   static void print(const char* name, outputStream* st, bool unspecified = false);
+  // Check the final values of all flags for ranges.
+  static bool check_ranges();
 };
 
 #endif // SHARE_VM_RUNTIME_COMMANDLINEFLAGRANGELIST_HPP
