@@ -107,8 +107,8 @@ static bool is_dominator(Block* d, Block* n) {
 //------------------------------schedule_pinned_nodes--------------------------
 // Set the basic block for Nodes pinned into blocks
 void PhaseCFG::schedule_pinned_nodes(VectorSet &visited) {
-  // Allocate node stack of size C->unique()+8 to avoid frequent realloc
-  GrowableArray <Node *> spstack(C->unique() + 8);
+  // Allocate node stack of size C->live_nodes()+8 to avoid frequent realloc
+  GrowableArray <Node *> spstack(C->live_nodes() + 8);
   spstack.push(_root);
   while (spstack.is_nonempty()) {
     Node* node = spstack.pop();
@@ -1310,7 +1310,7 @@ void PhaseCFG::global_code_motion() {
   visited.Clear();
   Node_List stack(arena);
   // Pre-grow the list
-  stack.map((C->unique() >> 1) + 16, NULL);
+  stack.map((C->live_nodes() >> 1) + 16, NULL);
   if (!schedule_early(visited, stack)) {
     // Bailout without retry
     C->record_method_not_compilable("early schedule failed");

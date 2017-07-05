@@ -56,7 +56,7 @@ import java.util.NoSuchElementException;
  *
  * }</pre></blockquote>
  *
- * <p> The <tt>init</tt> method is invoked by the <tt>PreHashedMap</tt>
+ * <p> The {@code init} method is invoked by the {@code PreHashedMap}
  * constructor with an object array long enough for the map's rows.  The method
  * must construct the hash chain for each row and store it in the appropriate
  * element of the array.
@@ -73,7 +73,7 @@ import java.util.NoSuchElementException;
  * methods in the {@link java.util.Collections} utility class.
  *
  * <p> In the JDK build, subclasses of this class are typically created via the
- * <tt>Hasher</tt> program in the <tt>make/tools/Hasher</tt> directory.
+ * {@code Hasher} program in the {@code make/tools/Hasher} directory.
  *
  * @author Mark Reinhold
  * @since 1.5
@@ -95,7 +95,7 @@ public abstract class PreHashedMap<V>
      * Creates a new map.
      *
      * <p> This constructor invokes the {@link #init init} method, passing it a
-     * newly-constructed row array that is <tt>rows</tt> elements long.
+     * newly-constructed row array that is {@code rows} elements long.
      *
      * @param rows
      *        The number of rows in the map

@@ -216,11 +216,14 @@
 #	republished in Finest Hour (Spring 2002) 1(114):26
 #	http://www.winstonchurchill.org/images/finesthour/Vol.01%20No.114.pdf
 
-# From Paul Eggert (1996-09-03):
+# From Paul Eggert (2015-08-08):
 # The OED Supplement says that the English originally said "Daylight Saving"
 # when they were debating the adoption of DST in 1908; but by 1916 this
 # term appears only in quotes taken from DST's opponents, whereas the
 # proponents (who eventually won the argument) are quoted as using "Summer".
+# The term "Summer Time" was introduced by Herbert Samuel, Home Secretary; see:
+# Viscount Samuel. Leisure in a Democracy. Cambridge University Press
+# ISBN 978-1-107-49471-8 (1949, reissued 2015), p 8.
 
 # From Arthur David Olson (1989-01-19):
 # A source at the British Information Office in New York avers that it's
@@ -366,7 +369,7 @@
 
 # From an anonymous contributor (1996-06-02):
 # The law governing time in Ireland is under Statutory Instrument SI 395/94,
-# which gives force to European Union 7th Council Directive # 94/21/EC.
+# which gives force to European Union 7th Council Directive No. 94/21/EC.
 # Under this directive, the Minister for Justice in Ireland makes appropriate
 # regulations. I spoke this morning with the Secretary of the Department of
 # Justice (tel +353 1 678 9711) who confirmed to me that the correct name is
@@ -615,11 +618,11 @@ Rule	Russia	1921	only	-	Feb	14	23:00	1:00	MSD
 Rule	Russia	1921	only	-	Mar	20	23:00	2:00	MSM  # Midsummer
 Rule	Russia	1921	only	-	Sep	 1	 0:00	1:00	MSD
 Rule	Russia	1921	only	-	Oct	 1	 0:00	0	-
-# Act No.925 of the Council of Ministers of the USSR (1980-10-24):
+# Act No. 925 of the Council of Ministers of the USSR (1980-10-24):
 Rule	Russia	1981	1984	-	Apr	 1	 0:00	1:00	S
 Rule	Russia	1981	1983	-	Oct	 1	 0:00	0	-
-# Act No.967 of the Council of Ministers of the USSR (1984-09-13), repeated in
-# Act No.227 of the Council of Ministers of the USSR (1989-03-14):
+# Act No. 967 of the Council of Ministers of the USSR (1984-09-13), repeated in
+# Act No. 227 of the Council of Ministers of the USSR (1989-03-14):
 Rule	Russia	1984	1991	-	Sep	lastSun	 2:00s	0	-
 Rule	Russia	1985	1991	-	Mar	lastSun	 2:00s	1:00	S
 #
@@ -851,7 +854,7 @@ Zone	Europe/Brussels	0:17:30 -	LMT	1880
 # Bulgaria
 #
 # From Plamen Simenov via Steffen Thorsen (1999-09-09):
-# A document of Government of Bulgaria (No.94/1997) says:
+# A document of Government of Bulgaria (No. 94/1997) says:
 # EET -> EETDST is in 03:00 Local time in last Sunday of March ...
 # EETDST -> EET is in 04:00 Local time in last Sunday of October
 #
@@ -868,7 +871,7 @@ Zone	Europe/Sofia	1:33:16 -	LMT	1880
 			1:00	C-Eur	CE%sT	1945
 			1:00	-	CET	1945 Apr  2  3:00
 			2:00	-	EET	1979 Mar 31 23:00
-			2:00	Bulg	EE%sT	1982 Sep 26  2:00
+			2:00	Bulg	EE%sT	1982 Sep 26  3:00
 			2:00	C-Eur	EE%sT	1991
 			2:00	E-Eur	EE%sT	1997
 			2:00	EU	EE%sT
@@ -1085,8 +1088,8 @@ Zone America/Thule	-4:35:08 -	LMT	1916 Jul 28 # Pituffik air base
 # after that.
 
 # From Mart Oruaas (2000-01-29):
-# Regulation no. 301 (1999-10-12) obsoletes previous regulation
-# no. 206 (1998-09-22) and thus sticks Estonia to +02:00 GMT for all
+# Regulation No. 301 (1999-10-12) obsoletes previous regulation
+# No. 206 (1998-09-22) and thus sticks Estonia to +02:00 GMT for all
 # the year round.  The regulation is effective 1999-11-01.
 
 # From Toomas Soome (2002-02-21):
@@ -1107,7 +1110,7 @@ Zone	Europe/Tallinn	1:39:00	-	LMT	1880
 			3:00	Russia	MSK/MSD	1989 Mar 26  2:00s
 			2:00	1:00	EEST	1989 Sep 24  2:00s
 			2:00	C-Eur	EE%sT	1998 Sep 22
-			2:00	EU	EE%sT	1999 Nov  1
+			2:00	EU	EE%sT	1999 Oct 31  4:00
 			2:00	-	EET	2002 Feb 21
 			2:00	EU	EE%sT
 
@@ -1550,21 +1553,21 @@ Link	Europe/Rome	Europe/San_Marino
 # correct data in juridical acts and I found some juridical documents about
 # changes in the counting of time in Latvia from 1981....
 #
-# Act No.35 of the Council of Ministers of Latvian SSR of 1981-01-22 ...
-# according to the Act No.925 of the Council of Ministers of USSR of 1980-10-24
+# Act No. 35 of the Council of Ministers of Latvian SSR of 1981-01-22 ...
+# according to the Act No. 925 of the Council of Ministers of USSR of 1980-10-24
 # ...: all year round the time of 2nd time zone + 1 hour, in addition turning
 # the hands of the clock 1 hour forward on 1 April at 00:00 (GMT 31 March 21:00)
 # and 1 hour backward on the 1 October at 00:00 (GMT 30 September 20:00).
 #
-# Act No.592 of the Council of Ministers of Latvian SSR of 1984-09-24 ...
-# according to the Act No.967 of the Council of Ministers of USSR of 1984-09-13
+# Act No. 592 of the Council of Ministers of Latvian SSR of 1984-09-24 ...
+# according to the Act No. 967 of the Council of Ministers of USSR of 1984-09-13
 # ...: all year round the time of 2nd time zone + 1 hour, in addition turning
 # the hands of the clock 1 hour forward on the last Sunday of March at 02:00
 # (GMT 23:00 on the previous day) and 1 hour backward on the last Sunday of
 # September at 03:00 (GMT 23:00 on the previous day).
 #
-# Act No.81 of the Council of Ministers of Latvian SSR of 1989-03-22 ...
-# according to the Act No.227 of the Council of Ministers of USSR of 1989-03-14
+# Act No. 81 of the Council of Ministers of Latvian SSR of 1989-03-22 ...
+# according to the Act No. 227 of the Council of Ministers of USSR of 1989-03-14
 # ...: since the last Sunday of March 1989 in Lithuanian SSR, Latvian SSR,
 # Estonian SSR and Kaliningrad region of Russian Federation all year round the
 # time of 2nd time zone (Moscow time minus one hour). On the territory of Latvia
@@ -1581,7 +1584,7 @@ Link	Europe/Rome	Europe/San_Marino
 # From Andrei Ivanov (2000-03-06):
 # This year Latvia will not switch to Daylight Savings Time (as specified in
 # The Regulations of the Cabinet of Ministers of the Rep. of Latvia of
-# 29-Feb-2000 (#79) <http://www.lv-laiks.lv/wwwraksti/2000/071072/vd4.htm>,
+# 29-Feb-2000 (No. 79) <http://www.lv-laiks.lv/wwwraksti/2000/071072/vd4.htm>,
 # in Latvian for subscribers only).
 
 # From RFE/RL Newsline
@@ -1786,6 +1789,18 @@ Zone	Europe/Malta	0:58:04 -	LMT	1893 Nov  2  0:00s # Valletta
 # News from Moldova (in russian):
 # http://ru.publika.md/link_317061.html
 
+# From Roman Tudos (2015-07-02):
+# http://lex.justice.md/index.php?action=view&view=doc&lang=1&id=355077
+# From Paul Eggert (2015-07-01):
+# The abovementioned official link to IGO1445-868/2014 states that
+# 2014-10-26's fallback transition occurred at 03:00 local time.  Also,
+# http://www.trm.md/en/social/la-30-martie-vom-trece-la-ora-de-vara
+# says the 2014-03-30 spring-forward transition was at 02:00 local time.
+# Guess that since 1997 Moldova has switched one hour before the EU.
+
+# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+Rule	Moldova	1997	max	-	Mar	lastSun	 2:00	1:00	S
+Rule	Moldova	1997	max	-	Oct	lastSun	 3:00	0	-
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Europe/Chisinau	1:55:20 -	LMT	1880
@@ -1800,7 +1815,7 @@ Zone	Europe/Chisinau	1:55:20 -	LMT	1880
 			2:00	Russia	EE%sT	1992
 			2:00	E-Eur	EE%sT	1997
 # See Romania commentary for the guessed 1997 transition to EU rules.
-			2:00	EU	EE%sT
+			2:00	Moldova	EE%sT
 
 # Monaco
 # Shanks & Pottenger give 0:09:20 for Paris Mean Time; go with Howse's
@@ -2146,7 +2161,7 @@ Zone Europe/Bucharest	1:44:24 -	LMT	1891 Oct
 # Russia
 
 # From Alexander Krivenyshev (2011-09-15):
-# Based on last Russian Government Decree # 725 on August 31, 2011
+# Based on last Russian Government Decree No. 725 on August 31, 2011
 # (Government document
 # http://www.government.ru/gov/results/16355/print/
 # in Russian)
@@ -2156,7 +2171,7 @@ Zone Europe/Bucharest	1:44:24 -	LMT	1891 Oct
 # http://www.worldtimezone.com/dst_news/dst_news_russia36.htm
 
 # From Sanjeev Gupta (2011-09-27):
-# Scans of [Decree #23 of January 8, 1992] are available at:
+# Scans of [Decree No. 23 of January 8, 1992] are available at:
 # http://government.consultant.ru/page.aspx?1223966
 # They are in Cyrillic letters (presumably Russian).
 
@@ -2167,19 +2182,19 @@ Zone Europe/Bucharest	1:44:24 -	LMT	1891 Oct
 # One source is
 # http://government.ru/gov/results/16355/
 # which, according to translate.google.com, begins "Decree of August 31,
-# 2011 No 725" and contains no other dates or "effective date" information.
+# 2011 No. 725" and contains no other dates or "effective date" information.
 #
 # Another source is
 # http://www.rg.ru/2011/09/06/chas-zona-dok.html
 # which, according to translate.google.com, begins "Resolution of the
 # Government of the Russian Federation on August 31, 2011 N 725" and also
 # contains "Date first official publication: September 6, 2011 Posted on:
-# in the 'RG' - Federal Issue number 5573 September 6, 2011" but which
+# in the 'RG' - Federal Issue No. 5573 September 6, 2011" but which
 # does not contain any "effective date" information.
 #
 # Another source is
 # http://en.wikipedia.org/wiki/Oymyakonsky_District#cite_note-RuTime-7
-# which, in note 8, contains "Resolution #725 of August 31, 2011...
+# which, in note 8, contains "Resolution No. 725 of August 31, 2011...
 # Effective as of after 7 days following the day of the official publication"
 # but which does not contain any reference to September 6, 2011.
 #
@@ -2387,7 +2402,7 @@ Zone Europe/Simferopol	 2:16:24 -	LMT	1880
 # changed in May.
 			 2:00	E-Eur	EE%sT	1994 May
 # From IATA SSIM (1994/1997), which also says that Kerch is still like Kiev.
-			 3:00	E-Eur	MSK/MSD	1996 Mar 31  3:00s
+			 3:00	E-Eur	MSK/MSD	1996 Mar 31  0:00s
 			 3:00	1:00	MSD	1996 Oct 27  3:00s
 # IATA SSIM (1997-09) says Crimea switched to EET/EEST.
 # Assume it happened in March by not changing the clocks.
@@ -2522,7 +2537,7 @@ Zone Asia/Novosibirsk	 5:31:40 -	LMT	1919 Dec 14  6:00
 # from current Russia Zone 6 - Krasnoyarsk Time Zone (KRA) UTC +0700
 # to Russia Zone 5 - Novosibirsk Time Zone (NOV) UTC +0600
 #
-# This is according to Government of Russia decree # 740, on September
+# This is according to Government of Russia decree No. 740, on September
 # 14, 2009 "Application in the territory of the Kemerovo region the Fifth
 # time zone." ("Russia Zone 5" or old "USSR Zone 5" is GMT +0600)
 #
@@ -2945,7 +2960,7 @@ Zone	Africa/Ceuta	-0:21:16 -	LMT	1901
 Zone	Atlantic/Canary	-1:01:36 -	LMT	1922 Mar # Las Palmas de Gran C.
 			-1:00	-	CANT	1946 Sep 30  1:00 # Canaries T
 			 0:00	-	WET	1980 Apr  6  0:00s
-			 0:00	1:00	WEST	1980 Sep 28  0:00s
+			 0:00	1:00	WEST	1980 Sep 28  1:00u
 			 0:00	EU	WE%sT
 # IATA SSIM (1996-09) says the Canaries switch at 2:00u, not 1:00u.
 # Ignore this for now, as the Canaries are part of the EU.
@@ -3235,7 +3250,7 @@ Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 # From Igor Karpov, who works for the Ukrainian Ministry of Justice,
 # via Garrett Wollman (2003-01-27):
 # BTW, I've found the official document on this matter. It's government
-# regulations number 509, May 13, 1996. In my poor translation it says:
+# regulations No. 509, May 13, 1996. In my poor translation it says:
 # "Time in Ukraine is set to second timezone (Kiev time). Each last Sunday
 # of March at 3am the time is changing to 4am and each last Sunday of
 # October the time at 4am is changing to 3am"
@@ -3244,7 +3259,7 @@ Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 # On September 20, 2011 the deputies of the Verkhovna Rada agreed to
 # abolish the transfer clock to winter time.
 #
-# Bill number 8330 of MP from the Party of Regions Oleg Nadoshi got
+# Bill No. 8330 of MP from the Party of Regions Oleg Nadoshi got
 # approval from 266 deputies.
 #
 # Ukraine abolishes transfer back to the winter time (in Russian)

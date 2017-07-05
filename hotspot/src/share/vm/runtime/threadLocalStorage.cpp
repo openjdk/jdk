@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,11 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadLocalStorage.hpp"
+
+// Solaris no longer has this kind of ThreadLocalStorage implementation.
+// This will be removed from all platforms in the near future.
+
+#ifndef SOLARIS
 
 // static member initialization
 int ThreadLocalStorage::_thread_index = -1;
@@ -54,3 +59,5 @@ void ThreadLocalStorage::init() {
 bool ThreadLocalStorage::is_initialized() {
     return (thread_index() != -1);
 }
+
+#endif // SOLARIS

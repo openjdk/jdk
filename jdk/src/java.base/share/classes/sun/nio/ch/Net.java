@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -391,8 +391,7 @@ public class Net {
     private static native boolean isIPv6Available0();
 
     /*
-     * Returns 1 for Windows versions that support exclusive binding by default, 0
-     * for those that do not, and -1 for Solaris/Linux/Mac OS
+     * Returns 1 for Windows and -1 for Solaris/Linux/Mac OS
      */
     private static native int isExclusiveBindAvailable();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,10 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadLocalStorage.hpp"
-
+#include "runtime/thread.inline.hpp"
 
 void MacroAssembler::int3() {
   push(rax);
@@ -39,98 +38,32 @@ void MacroAssembler::int3() {
   pop(rax);
 }
 
-#define __  _masm->
-#ifndef _LP64
-static void slow_call_thr_specific(MacroAssembler* _masm, Register thread) {
-
-  // slow call to of thr_getspecific
-  // int thr_getspecific(thread_key_t key, void **value);
-  // Consider using pthread_getspecific instead.
-
-__  push(0);                                                            // allocate space for return value
-  if (thread != rax) __ push(rax);                                      // save rax, if caller still wants it
-__  push(rcx);                                                          // save caller save
-__  push(rdx);                                                          // save caller save
-  if (thread != rax) {
-__    lea(thread, Address(rsp, 3 * sizeof(int)));                       // address of return value
-  } else {
-__    lea(thread, Address(rsp, 2 * sizeof(int)));                       // address of return value
-  }
-__  push(thread);                                                       // and pass the address
-__  push(ThreadLocalStorage::thread_index());                           // the key
-__  call(RuntimeAddress(CAST_FROM_FN_PTR(address, thr_getspecific)));
-__  increment(rsp, 2 * wordSize);
-__  pop(rdx);
-__  pop(rcx);
-  if (thread != rax) __ pop(rax);
-__  pop(thread);
-
-}
-#else
-static void slow_call_thr_specific(MacroAssembler* _masm, Register thread) {
-  // slow call to of thr_getspecific
-  // int thr_getspecific(thread_key_t key, void **value);
-  // Consider using pthread_getspecific instead.
-
-  if (thread != rax) {
-__    push(rax);
-  }
-__  push(0); // space for return value
-__  push(rdi);
-__  push(rsi);
-__  lea(rsi, Address(rsp, 16)); // pass return value address
-__  push(rdx);
-__  push(rcx);
-__  push(r8);
-__  push(r9);
-__  push(r10);
-  // XXX
-__  mov(r10, rsp);
-__  andptr(rsp, -16);
-__  push(r10);
-__  push(r11);
-
-__  movl(rdi, ThreadLocalStorage::thread_index());
-__  call(RuntimeAddress(CAST_FROM_FN_PTR(address, thr_getspecific)));
-
-__  pop(r11);
-__  pop(rsp);
-__  pop(r10);
-__  pop(r9);
-__  pop(r8);
-__  pop(rcx);
-__  pop(rdx);
-__  pop(rsi);
-__  pop(rdi);
-__  pop(thread); // load return value
-  if (thread != rax) {
-__    pop(rax);
-  }
-}
-#endif //LP64
-
+// This is simply a call to ThreadLocalStorage::thread()
 void MacroAssembler::get_thread(Register thread) {
-
-  int segment = NOT_LP64(Assembler::GS_segment) LP64_ONLY(Assembler::FS_segment);
-  // Try to emit a Solaris-specific fast TSD/TLS accessor.
-  ThreadLocalStorage::pd_tlsAccessMode tlsMode = ThreadLocalStorage::pd_getTlsAccessMode ();
-  if (tlsMode == ThreadLocalStorage::pd_tlsAccessIndirect) {            // T1
-     // Use thread as a temporary: mov r, gs:[0]; mov r, [r+tlsOffset]
-     emit_int8 (segment);
-     // ExternalAddress doesn't work because it can't take NULL
-     AddressLiteral null(0, relocInfo::none);
-     movptr (thread, null);
-     movptr(thread, Address(thread, ThreadLocalStorage::pd_getTlsOffset())) ;
-     return ;
-  } else
-  if (tlsMode == ThreadLocalStorage::pd_tlsAccessDirect) {              // T2
-     // mov r, gs:[tlsOffset]
-     emit_int8 (segment);
-     AddressLiteral tls_off((address)ThreadLocalStorage::pd_getTlsOffset(), relocInfo::none);
-     movptr (thread, tls_off);
-     return ;
+  if (thread != rax) {
+    push(rax);
   }
+  push(rdi);
+  push(rsi);
+  push(rdx);
+  push(rcx);
+  push(r8);
+  push(r9);
+  push(r10);
+  push(r11);
 
-  slow_call_thr_specific(this, thread);
+  call(RuntimeAddress(CAST_FROM_FN_PTR(address, ThreadLocalStorage::thread)));
 
+  pop(r11);
+  pop(r10);
+  pop(r9);
+  pop(r8);
+  pop(rcx);
+  pop(rdx);
+  pop(rsi);
+  pop(rdi);
+  if (thread != rax) {
+    movl(thread, rax);
+    pop(rax);
+  }
 }
