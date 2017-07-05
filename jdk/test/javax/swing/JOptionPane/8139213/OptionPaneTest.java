@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8139213
  * @summary Mac OS Aqua X LAF: JOptionPane truncates the first button
  * @run main OptionPaneTest

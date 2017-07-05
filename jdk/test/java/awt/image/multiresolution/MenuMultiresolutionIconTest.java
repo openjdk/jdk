@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 8150258
  * @author a.stepanov
  * @summary Check that correct resolution variants are chosen for menu icons

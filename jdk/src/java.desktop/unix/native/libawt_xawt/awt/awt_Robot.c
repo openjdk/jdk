@@ -100,9 +100,9 @@ static int32_t isXTestAvailable() {
 
     /* check if XTest is available */
     isXTestAvailable = XQueryExtension(awt_display, XTestExtensionName, &major_opcode, &first_event, &first_error);
-    DTRACE_PRINTLN3("RobotPeer: XQueryExtension(XTEST) returns major_opcode = %d, first_event = %d, first_error = %d",
-                    major_opcode, first_event, first_error);
     if (isXTestAvailable) {
+        DTRACE_PRINTLN3("RobotPeer: XQueryExtension(XTEST) returns major_opcode = %d, first_event = %d, first_error = %d",
+                        major_opcode, first_event, first_error);
         /* check if XTest version is OK */
         XTestQueryExtension(awt_display, &event_basep, &error_basep, &majorp, &minorp);
         DTRACE_PRINTLN4("RobotPeer: XTestQueryExtension returns event_basep = %d, error_basep = %d, majorp = %d, minorp = %d",

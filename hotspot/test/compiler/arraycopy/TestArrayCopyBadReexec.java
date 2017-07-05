@@ -25,9 +25,12 @@
  * @test
  * @bug 8073866
  * @summary Fix for 8064703 may also cause stores between the allocation and arraycopy to be rexecuted after a deoptimization
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestArrayCopyBadReexec
  *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   compiler.arraycopy.TestArrayCopyBadReexec
  */
+
+package compiler.arraycopy;
 
 public class TestArrayCopyBadReexec {
 

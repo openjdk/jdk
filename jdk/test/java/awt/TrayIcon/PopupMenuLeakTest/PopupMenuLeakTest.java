@@ -23,6 +23,7 @@
 
 /*
  @test
+ @key headful
   @bug 8007220
   @summary Reference to the popup leaks after the TrayIcon is removed
   @author Petr Pchelko

@@ -21,26 +21,28 @@
  * questions.
  */
 
-import sun.hotspot.WhiteBox;
+/*
+ * @test TestAnonymousClassUnloading
+ * @bug 8054402
+ * @summary "Tests unloading of anonymous classes."
+ * @library /testlibrary /test/lib /
+ * @modules java.base/jdk.internal.misc
+ *
+ * @run main/othervm/bootclasspath -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:-BackgroundCompilation
+ *      compiler.classUnloading.anonymousClass.TestAnonymousClassUnloading
+ */
+
+package compiler.classUnloading.anonymousClass;
+
 import jdk.internal.misc.Unsafe;
+import sun.hotspot.WhiteBox;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
 
-/*
- * @test TestAnonymousClassUnloading
- * @bug 8054402
- * @summary "Tests unloading of anonymous classes."
- * @library /testlibrary /test/lib
- * @modules java.base/jdk.internal.misc
- * @compile TestAnonymousClassUnloading.java
- * @run main ClassFileInstaller TestAnonymousClassUnloading
- *                              sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-BackgroundCompilation TestAnonymousClassUnloading
- */
 public class TestAnonymousClassUnloading {
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
@@ -107,7 +109,8 @@ public class TestAnonymousClassUnloading {
      */
     static public void main(String[] args) throws Exception {
         // (1) Load an anonymous version of this class using the corresponding Unsafe method
-        URL classUrl = TestAnonymousClassUnloading.class.getResource("TestAnonymousClassUnloading.class");
+        URL classUrl = TestAnonymousClassUnloading.class.getResource(
+                TestAnonymousClassUnloading.class.getName().replace('.', '/') + ".class");
         URLConnection connection = classUrl.openConnection();
 
         int length = connection.getContentLength();

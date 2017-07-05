@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @key headful
  * @bug 6276087
  * @author Romain Guy
  * @summary Tests opacity of a popup menu.

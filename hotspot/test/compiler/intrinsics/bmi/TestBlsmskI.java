@@ -27,15 +27,19 @@
  * @bug 8031321
  * @summary Verify that results of computations are the same w/
  *          and w/o usage of BLSMSK instruction
- * @library /testlibrary /test/lib
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestBlsmskI BMITestRunner Expr
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ *
+ * @build compiler.intrinsics.bmi.TestBlsmskI
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI TestBlsmskI
+ *                   -XX:+WhiteBoxAPI
+ *                   compiler.intrinsics.bmi.TestBlsmskI
  */
+
+package compiler.intrinsics.bmi;
 
 import sun.hotspot.cpuinfo.CPUInfo;
 

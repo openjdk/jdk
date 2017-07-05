@@ -21,11 +21,13 @@
  * questions.
  */
 
-/* @test
-   @bug 8079640
-   @summary GroupLayout incorrect layout with large JTextArea
-   @author Semyon Sadetsky
-  */
+/*
+ * @test
+ * @key headful
+ * @bug 8079640
+ * @summary GroupLayout incorrect layout with large JTextArea
+ * @author Semyon Sadetsky
+ */
 
 
 import javax.swing.*;

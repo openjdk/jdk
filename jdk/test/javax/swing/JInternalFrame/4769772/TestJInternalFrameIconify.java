@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 4769772
  * @summary JInternalFrame.setIcon(true) before JDesktopPane.add(JIF) causes wrong state
  * @run main TestJInternalFrameIconify

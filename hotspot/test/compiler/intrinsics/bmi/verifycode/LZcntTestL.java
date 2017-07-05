@@ -24,15 +24,22 @@
 /*
  * @test
  * @bug 8031321
- * @library /testlibrary /test/lib / ..
+ * @requires vm.flavor == "server"
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build LZcntTestL
+ *
+ * @build compiler.intrinsics.bmi.verifycode.LZcntTestL
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCountLeadingZerosInstruction LZcntTestL
+ *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UseCountLeadingZerosInstruction
+ *      compiler.intrinsics.bmi.verifycode.LZcntTestL
  */
+
+package compiler.intrinsics.bmi.verifycode;
+
+import compiler.intrinsics.bmi.TestLzcntL;
 
 import java.lang.reflect.Method;
 

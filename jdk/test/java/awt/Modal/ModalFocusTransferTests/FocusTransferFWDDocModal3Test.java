@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8047367 8049339
  * @summary Check whether the focus transfer between windows occurs correctly when the following happens:
  *          a frame (F) is shown; a window having F as owner is shown; a document modal dialog having

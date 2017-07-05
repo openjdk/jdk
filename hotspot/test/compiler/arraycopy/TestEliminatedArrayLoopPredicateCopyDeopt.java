@@ -25,9 +25,12 @@
  * @test
  * @bug 8134974
  * @summary Cannot pin eliminated arraycopy loads for deopt state in uncommon trap path if it is a loop predicate unc
- * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestEliminatedArrayLoopPredicateCopyDeopt
  *
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement
+ *                   compiler.arraycopy.TestEliminatedArrayLoopPredicateCopyDeopt
  */
+
+package compiler.arraycopy;
 
 public class TestEliminatedArrayLoopPredicateCopyDeopt {
 

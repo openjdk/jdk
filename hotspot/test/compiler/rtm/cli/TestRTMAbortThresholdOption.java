@@ -26,12 +26,15 @@
  * @test
  * @bug 8031320
  * @summary Verify processing of RTMAbortThreshold option.
- * @library /testlibrary
+ * @library /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestRTMAbortThresholdOption
- * @run main/othervm TestRTMAbortThresholdOption
+ *
+ * @build compiler.rtm.cli.TestRTMAbortThresholdOption
+ * @run main/othervm compiler.rtm.cli.TestRTMAbortThresholdOption
  */
+
+package compiler.rtm.cli;
 
 public class TestRTMAbortThresholdOption
         extends RTMGenericCommandLineOptionTest {

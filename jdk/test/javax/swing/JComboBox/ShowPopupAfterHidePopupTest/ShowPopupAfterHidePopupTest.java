@@ -21,12 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 8006417
-   @summary JComboBox.showPopup(), hidePopup() fails in JRE 1.7 on OS X
-   @author Anton Litvinov
-   @run main ShowPopupAfterHidePopupTest
-*/
+/*
+ * @test
+ * @key headful
+ * @bug 8006417
+ * @summary JComboBox.showPopup(), hidePopup() fails in JRE 1.7 on OS X
+ * @author Anton Litvinov
+ * @run main ShowPopupAfterHidePopupTest
+ */
 
 import java.awt.*;
 

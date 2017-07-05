@@ -512,8 +512,11 @@ class HeapRegion: public G1ContiguousSpace {
 #endif // ASSERT
 
 
-  // Reset HR stuff to default values.
-  void hr_clear(bool par, bool clear_space, bool locked = false);
+  // Reset the HeapRegion to default values.
+  // If skip_remset is true, do not clear the remembered set.
+  void hr_clear(bool skip_remset, bool clear_space, bool locked = false);
+  // Clear the parts skipped by skip_remset in hr_clear() in the HeapRegion during
+  // a concurrent phase.
   void par_clear();
 
   // Get the start of the unmarked area in this region.

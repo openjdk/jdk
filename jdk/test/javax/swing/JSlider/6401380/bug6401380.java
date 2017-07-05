@@ -20,14 +20,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/* @test
-   @bug 6401380
-   @summary JSlider - mouse click ont the left side of the knob is ignored.
-   @library ../../../../lib/testlibrary
-   @build ExtendedRobot
-   @author Alexander Potochkin
-   @run main bug6401380
-*/
+
+/*
+ * @test
+ * @key headful
+ * @bug 6401380
+ * @summary JSlider - mouse click ont the left side of the knob is ignored.
+ * @library ../../../../lib/testlibrary
+ * @build ExtendedRobot
+ * @author Alexander Potochkin
+ * @run main bug6401380
+ */
 
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicSliderUI;

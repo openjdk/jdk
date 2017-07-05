@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-JNIEXPORT jfloat JNICALL Java_Test15FloatJNIArgs_add15floats
+JNIEXPORT jfloat JNICALL Java_compiler_floatingpoint_Test15FloatJNIArgs_add15floats
   (JNIEnv *env, jclass cls,
    jfloat  f1, jfloat  f2, jfloat  f3, jfloat  f4,
    jfloat  f5, jfloat  f6, jfloat  f7, jfloat  f8,

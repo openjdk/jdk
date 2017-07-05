@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug 6539458
   @summary JPopupMenu does not display if invoker is instance of JWindow
   @author oleg.sukhodolsky area=awt.grab

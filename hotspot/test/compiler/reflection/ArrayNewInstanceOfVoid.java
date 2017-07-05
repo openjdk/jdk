@@ -25,7 +25,11 @@
  * @test
  * @bug 8029366
  * @summary ShouldNotReachHere error when creating an array with component type of void
+ *
+ * @run main compiler.reflection.ArrayNewInstanceOfVoid
  */
+
+package compiler.reflection;
 
 public class ArrayNewInstanceOfVoid {
     public static void main(String[] args) {

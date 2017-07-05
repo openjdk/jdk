@@ -517,18 +517,18 @@ public class TIFFField implements Cloneable {
      * @param count The number of data values.
      * @param data The actual data content of the field.
      *
-     * @throws NullPointerException if {@code tag&nbsp;==&nbsp;null}.
+     * @throws NullPointerException if {@code tag == null}.
      * @throws IllegalArgumentException if {@code type} is not
      * one of the {@code TIFFTag.TIFF_*} data type constants.
      * @throws IllegalArgumentException if {@code type} is an unacceptable
      * data type for the supplied {@code TIFFTag}.
-     * @throws IllegalArgumentException if {@code count&nbsp;&lt;&nbsp;0}.
-     * @throws IllegalArgumentException if {@code count&nbsp;&lt;&nbsp;1}
+     * @throws IllegalArgumentException if {@code count < 0}.
+     * @throws IllegalArgumentException if {@code count < 1}
      * and {@code type} is {@code TIFF_RATIONAL} or
      * {@code TIFF_SRATIONAL}.
-     * @throws IllegalArgumentException if {@code count&nbsp;&ne;&nbsp;1}
+     * @throws IllegalArgumentException if {@code count != 1}
      * and {@code type} is {@code TIFF_IFD_POINTER}.
-     * @throws NullPointerException if {@code data&nbsp;==&nbsp;null}.
+     * @throws NullPointerException if {@code data == null}.
      * @throws IllegalArgumentException if {@code data} is an instance of
      * a class incompatible with the specified type.
      * @throws IllegalArgumentException if the size of the data array is wrong.
@@ -632,12 +632,12 @@ public class TIFFField implements Cloneable {
      * @param type One of the {@code TIFFTag.TIFF_*} constants
      * indicating the data type of the field as written to the TIFF stream.
      * @param count The number of data values.
-     * @throws NullPointerException if {@code tag&nbsp;==&nbsp;null}.
+     * @throws NullPointerException if {@code tag == null}.
      * @throws IllegalArgumentException if {@code type} is not
      * one of the {@code TIFFTag.TIFF_*} data type constants.
      * @throws IllegalArgumentException if {@code type} is an unacceptable
      * data type for the supplied {@code TIFFTag}.
-     * @throws IllegalArgumentException if {@code count&nbsp;&lt;&nbsp;0}.
+     * @throws IllegalArgumentException if {@code count < 0}.
      * @see #TIFFField(TIFFTag,int,int,Object)
      */
     public TIFFField(TIFFTag tag, int type, int count) {
@@ -649,16 +649,16 @@ public class TIFFField implements Cloneable {
      * value.
      * The field will have type
      * {@link TIFFTag#TIFF_SHORT  TIFF_SHORT} if
-     * {@code val&nbsp;&lt;&nbsp;65536} and type
+     * {@code val < 65536} and type
      * {@link TIFFTag#TIFF_LONG TIFF_LONG} otherwise.  The count
      * of the field will be unity.
      *
      * @param tag The tag to associate with this field.
      * @param value The value to associate with this field.
-     * @throws NullPointerException if {@code tag&nbsp;==&nbsp;null}.
+     * @throws NullPointerException if {@code tag == null}.
      * @throws IllegalArgumentException if the derived type is unacceptable
      * for the supplied {@code TIFFTag}.
-     * @throws IllegalArgumentException if {@code value&nbsp;&lt;&nbsp;0}.
+     * @throws IllegalArgumentException if {@code value < 0}.
      */
     public TIFFField(TIFFTag tag, int value) {
         if(tag == null) {
@@ -705,19 +705,26 @@ public class TIFFField implements Cloneable {
      * @param offset The IFD offset.
      * @param dir The directory.
      *
-     * @throws NullPointerException if {@code tag&nbsp;==&nbsp;null}.
-     * @throws IllegalArgumentException if {@code type} is neither
-     * {@code TIFFTag.TIFF_LONG} nor {@code TIFFTag.TIFF_IFD_POINTER}.
+     * @throws NullPointerException if {@code tag == null}.
      * @throws IllegalArgumentException if {@code type} is an unacceptable
      * data type for the supplied {@code TIFFTag}.
-     * @throws IllegalArgumentException if {@code offset} is non-positive.
-     * @throws NullPointerException if {@code dir&nbsp;==&nbsp;null}.
+     * @throws IllegalArgumentException if {@code type} is neither
+     * {@code TIFFTag.TIFF_LONG} nor {@code TIFFTag.TIFF_IFD_POINTER}.
+     * @throws IllegalArgumentException if {@code offset <= 0}.
+     * @throws NullPointerException if {@code dir == null}.
      *
      * @see #TIFFField(TIFFTag,int,int,Object)
      */
     public TIFFField(TIFFTag tag, int type, long offset, TIFFDirectory dir) {
-        this(tag, type, 1, new long[] {offset});
-        if (type != TIFFTag.TIFF_LONG && type != TIFFTag.TIFF_IFD_POINTER) {
+        if (tag == null) {
+            throw new NullPointerException("tag == null!");
+        } else if (type < TIFFTag.MIN_DATATYPE || type > TIFFTag.MAX_DATATYPE) {
+            throw new IllegalArgumentException("Unknown data type "+type);
+        } else if (!tag.isDataTypeOK(type)) {
+            throw new IllegalArgumentException("Illegal data type " + type
+                + " for " + tag.getName() + " tag");
+        } else if (type != TIFFTag.TIFF_LONG
+                   && type != TIFFTag.TIFF_IFD_POINTER) {
             throw new IllegalArgumentException("type " + type
                 + " is neither TIFFTag.TIFF_LONG nor TIFFTag.TIFF_IFD_POINTER");
         } else if (offset <= 0) {
@@ -726,6 +733,13 @@ public class TIFFField implements Cloneable {
         } else if (dir == null) {
             throw new NullPointerException("dir == null");
         }
+
+        this.tag = tag;
+        this.tagNumber = tag.getNumber();
+        this.type = type;
+        this.count = 1;
+        this.data = new long[] {offset};
+
         this.dir = dir;
     }
 
@@ -739,7 +753,7 @@ public class TIFFField implements Cloneable {
     }
 
     /**
-     * Retrieves the tag number in the range {@code [0,&nbsp;65535]}.
+     * Retrieves the tag number in the range {@code [0,65535]}.
      *
      * @return The tag number.
      */
@@ -804,7 +818,7 @@ public class TIFFField implements Cloneable {
      *
      * @throws IllegalArgumentException if {@code dataType} is not
      * one of the {@code TIFFTag.TIFF_*} data type constants.
-     * @throws IllegalArgumentException if {@code count&nbsp;&lt;&nbsp;0}.
+     * @throws IllegalArgumentException if {@code count < 0}.
      */
     public static Object createArrayForType(int dataType, int count) {
         if(count < 0) {

@@ -26,11 +26,13 @@
  * @test
  * @bug 8072753
  * @summary Inner loop induction variable increment occurs before compare which causes integer overflow
- * @run main/othervm CountedLoopProblem
+ * @run main/othervm compiler.loopopts.CountedLoopProblem
  *
  */
 
-import java.util.*;
+package compiler.loopopts;
+
+import java.util.Random;
 
 public class CountedLoopProblem {
     public static void main(String[] args) throws Exception {

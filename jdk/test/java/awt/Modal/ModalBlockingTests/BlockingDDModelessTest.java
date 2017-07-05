@@ -25,6 +25,7 @@ import java.awt.Dialog;
 
 /*
  * @test
+ * @key headful
  * @bug 8049617
  * @summary Check whether a modeless Dialog created with a Dialog
  *          constructor receives focus, whether its components receive focus

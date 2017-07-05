@@ -23,12 +23,13 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6464022
  * @summary Memory leak in JOptionPane.createDialog
  * @author Pavel Porvatov
  * @library ../../regtesthelpers
  * @build Util
- * @run main bug6464022
+ * @run main/othervm -mx128m bug6464022
  */
 
 import javax.swing.*;

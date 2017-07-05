@@ -21,7 +21,9 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
+ * @key headful
  * @bug 4523758
  * @summary Directly check that torn-off combo works
  * @library ../../../../lib/testlibrary

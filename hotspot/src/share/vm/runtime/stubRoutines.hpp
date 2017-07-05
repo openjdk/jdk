@@ -30,6 +30,7 @@
 #include "runtime/frame.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "utilities/macros.hpp"
 
 // StubRoutines provides entry points to assembly routines used by
 // compiled code and the run-time system. Platform-specific entry
@@ -83,21 +84,8 @@ class StubRoutines: AllStatic {
 
   // Dependencies
   friend class StubGenerator;
-#if defined STUBROUTINES_MD_HPP
-# include STUBROUTINES_MD_HPP
-#elif defined TARGET_ARCH_MODEL_x86_32
-# include "stubRoutines_x86_32.hpp"
-#elif defined TARGET_ARCH_MODEL_x86_64
-# include "stubRoutines_x86_64.hpp"
-#elif defined TARGET_ARCH_MODEL_sparc
-# include "stubRoutines_sparc.hpp"
-#elif defined TARGET_ARCH_MODEL_zero
-# include "stubRoutines_zero.hpp"
-#elif defined TARGET_ARCH_MODEL_ppc_64
-# include "stubRoutines_ppc_64.hpp"
-#elif defined TARGET_ARCH_MODEL_aarch64
-# include "stubRoutines_aarch64.hpp"
-#endif
+
+#include CPU_HEADER(stubRoutines)
 
   static jint    _verify_oop_count;
   static address _verify_oop_subroutine_entry;

@@ -26,9 +26,13 @@
  * @test
  * @bug 8054478
  * @summary dead backbranch in main loop results in erroneous array access
- * @run main/othervm -XX:CompileOnly=TestDeadBackbranchArrayAccess -Xcomp TestDeadBackbranchArrayAccess
  *
+ * @run main/othervm -Xcomp
+ *      -XX:CompileCommand=compileonly,compiler.loopopts.TestDeadBackbranchArrayAccess::*
+ *      compiler.loopopts.TestDeadBackbranchArrayAccess
  */
+
+package compiler.loopopts;
 
 public class TestDeadBackbranchArrayAccess {
     static char[] pattern0 = {0};

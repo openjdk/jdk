@@ -28,51 +28,54 @@
  * @bug 8154537
  * @key regression
  * @summary Test that the rotate distance used in the rotate instruction is properly masked with 0x1f
- * @run main/othervm -Xbatch -XX:-UseOnStackReplacement IntRotateWithImmediate
+ *
+ * @run main/othervm -Xbatch -XX:-UseOnStackReplacement compiler.codegen.IntRotateWithImmediate
  * @author volker.simonis@gmail.com
  */
 
+package compiler.codegen;
+
 public class IntRotateWithImmediate {
 
-  // This is currently the same as Integer.rotateRight()
-  static int rotateRight1(int i, int distance) {
-    // On some architectures (i.e. x86_64 and ppc64) the following computation is
-    // matched in the .ad file into a single MachNode which emmits a single rotate
-    // machine instruction. It is important that the shift amount is masked to match
-    // corresponding immediate width in the native instruction. On x86_64 the rotate
-    // left instruction ('rol') encodes an 8-bit immediate while the corresponding
-    // 'rotlwi' instruction on Power only encodes a 5-bit immediate.
-    return ((i >>> distance) | (i << -distance));
-  }
-
-  static int rotateRight2(int i, int distance) {
-      return ((i >>> distance) | (i << (32-distance)));
-  }
-
-  static int compute1(int x) {
-    return rotateRight1(x, 3);
-  }
-
-  static int compute2(int x) {
-    return rotateRight2(x, 3);
-  }
-
-  public static void main(String args[]) {
-    int val = 4096;
-
-    int firstResult = compute1(val);
-
-    for (int i = 0; i < 100000; i++) {
-      int newResult = compute1(val);
-      if (firstResult != newResult) {
-        throw new InternalError(firstResult + " != " + newResult);
-      }
-      newResult = compute2(val);
-      if (firstResult != newResult) {
-        throw new InternalError(firstResult + " != " + newResult);
-      }
+    // This is currently the same as Integer.rotateRight()
+    static int rotateRight1(int i, int distance) {
+        // On some architectures (i.e. x86_64 and ppc64) the following computation is
+        // matched in the .ad file into a single MachNode which emmits a single rotate
+        // machine instruction. It is important that the shift amount is masked to match
+        // corresponding immediate width in the native instruction. On x86_64 the rotate
+        // left instruction ('rol') encodes an 8-bit immediate while the corresponding
+        // 'rotlwi' instruction on Power only encodes a 5-bit immediate.
+        return ((i >>> distance) | (i << -distance));
     }
-    System.out.println("OK");
-  }
+
+    static int rotateRight2(int i, int distance) {
+        return ((i >>> distance) | (i << (32 - distance)));
+    }
+
+    static int compute1(int x) {
+        return rotateRight1(x, 3);
+    }
+
+    static int compute2(int x) {
+        return rotateRight2(x, 3);
+    }
+
+    public static void main(String args[]) {
+        int val = 4096;
+
+        int firstResult = compute1(val);
+
+        for (int i = 0; i < 100000; i++) {
+            int newResult = compute1(val);
+            if (firstResult != newResult) {
+                throw new InternalError(firstResult + " != " + newResult);
+            }
+            newResult = compute2(val);
+            if (firstResult != newResult) {
+                throw new InternalError(firstResult + " != " + newResult);
+            }
+        }
+        System.out.println("OK");
+    }
 
 }

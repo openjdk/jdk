@@ -23,6 +23,7 @@
 
 /*
   @test
+  @key headful
   @bug      4823903
   @summary  Tests actual focused window retaining.
   @author   Anton.Tarasov: area=awt.focus

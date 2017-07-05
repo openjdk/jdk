@@ -79,7 +79,7 @@ public class GcInfoBuilder {
     }
 
     public String[] getPoolNames() {
-        return poolNames;
+        return poolNames.clone();
     }
 
     int getGcExtItemCount() {

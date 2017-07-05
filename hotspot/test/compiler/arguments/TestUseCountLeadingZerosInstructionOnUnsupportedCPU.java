@@ -26,20 +26,19 @@
  * @bug 8031321
  * @summary Verify processing of UseCountLeadingZerosInstruction option
  *          on CPU without LZCNT support.
- * @library /testlibrary /test/lib
+ * @library /testlibrary /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestUseCountLeadingZerosInstructionOnUnsupportedCPU
- *        BMIUnsupportedCPUTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ *
+ * @build compiler.arguments.TestUseCountLeadingZerosInstructionOnUnsupportedCPU
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
- *                   TestUseCountLeadingZerosInstructionOnUnsupportedCPU
+ *                   compiler.arguments.TestUseCountLeadingZerosInstructionOnUnsupportedCPU
  */
 
-import sun.hotspot.cpuinfo.CPUInfo;
-import jdk.test.lib.*;
+package compiler.arguments;
 
 public class TestUseCountLeadingZerosInstructionOnUnsupportedCPU
      extends BMIUnsupportedCPUTest {
