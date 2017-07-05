@@ -322,6 +322,14 @@ public class Block extends Node implements BreakableNode, Terminal, Flags<Block>
     }
 
     /**
+     * Returns the last statement in the block.
+     * @return the last statement in the block, or null if the block has no statements.
+     */
+    public Statement getLastStatement() {
+        return statements.isEmpty() ? null : statements.get(statements.size() - 1);
+    }
+
+    /**
      * Reset the statement list for this block
      *
      * @param lc lexical context

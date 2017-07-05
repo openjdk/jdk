@@ -77,7 +77,7 @@ public final class BreakNode extends JumpStatement {
     }
 
     @Override
-    public Label getTargetLabel(final BreakableNode target) {
+    Label getTargetLabel(final BreakableNode target) {
         return target.getBreakLabel();
     }
 }
