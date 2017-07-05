@@ -1,5 +1,4 @@
 grant {
     permission com.sun.rmi.rmid.ExecOptionPermission "-Djava.security.manager=default";
     permission com.sun.rmi.rmid.ExecOptionPermission "-Djava.security.policy=*";
-    permission com.sun.rmi.rmid.ExecOptionPermission "-DunregisterGroup.port=*";
 };

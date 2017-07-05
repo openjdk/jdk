@@ -25,12 +25,12 @@
 
 package sun.util.locale.provider;
 
+import java.io.IOException;
 import java.text.BreakIterator;
 import java.text.spi.BreakIteratorProvider;
 import java.util.Locale;
-import java.util.ResourceBundle;
+import java.util.MissingResourceException;
 import java.util.Set;
-import sun.util.resources.LocaleData;
 
 /**
  * Concrete implementation of the  {@link java.text.spi.BreakIteratorProvider
@@ -159,24 +159,22 @@ public class BreakIteratorProviderImpl extends BreakIteratorProvider
             throw new NullPointerException();
         }
 
-        ResourceBundle bundle = LocaleData.getBundle(
-                LocaleProviderAdapter.Type.JRE.getTextResourcesPackage() + ".BreakIteratorInfo", locale);
-        String[] classNames = bundle.getStringArray("BreakIteratorClasses");
-
-        String dataFile = bundle.getString(dataName);
+        LocaleResources lr = LocaleProviderAdapter.forJRE().getLocaleResources(locale);
+        String[] classNames = (String[]) lr.getBreakIteratorInfo("BreakIteratorClasses");
+        String dataFile = (String) lr.getBreakIteratorInfo(dataName);
 
         try {
             switch (classNames[type]) {
             case "RuleBasedBreakIterator":
                 return new RuleBasedBreakIterator(dataFile);
             case "DictionaryBasedBreakIterator":
-                String dictionaryFile = bundle.getString(dictionaryName);
+                String dictionaryFile = (String) lr.getBreakIteratorInfo(dictionaryName);
                 return new DictionaryBasedBreakIterator(dataFile, dictionaryFile);
             default:
                 throw new IllegalArgumentException("Invalid break iterator class \"" +
                                 classNames[type] + "\"");
             }
-        } catch (Exception e) {
+        } catch (IOException | MissingResourceException | IllegalArgumentException e) {
             throw new InternalError(e.toString(), e);
         }
     }

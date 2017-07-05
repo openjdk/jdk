@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,7 +547,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
 
         // max. 2 chars allowed
         if (value >= -9 && value <= 99) {
-          sprintf(buffer, INT64_FORMAT, value);
+          sprintf(buffer, JLONG_FORMAT, value);
           print_prop(short_name, buffer);
         } else {
           print_prop(short_name, "L");

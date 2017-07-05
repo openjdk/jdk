@@ -26,8 +26,7 @@
 package sun.net.www.protocol.http.ntlm;
 
 import java.io.IOException;
-import sun.misc.BASE64Encoder;
-import sun.misc.BASE64Decoder;
+import java.util.Base64;
 
 /*
  * Hooks into Windows implementation of NTLM.
@@ -77,11 +76,11 @@ public class NTLMAuthSequence {
         assert !status.sequenceComplete;
 
         if (token != null)
-            input = (new BASE64Decoder()).decodeBuffer(token);
+            input = Base64.getDecoder().decode(token);
         byte[] b = getNextToken (crdHandle, input, status);
         if (b == null)
             throw new IOException ("Internal authentication error");
-        return (new B64Encoder()).encode (b);
+        return Base64.getEncoder().encodeToString(b);
     }
 
     public boolean isComplete() {
@@ -95,8 +94,3 @@ public class NTLMAuthSequence {
     private native byte[] getNextToken (long crdHandle, byte[] lastToken, Status returned);
 }
 
-class B64Encoder extends BASE64Encoder {
-    protected int bytesPerLine () {
-        return 1024;
-    }
-}

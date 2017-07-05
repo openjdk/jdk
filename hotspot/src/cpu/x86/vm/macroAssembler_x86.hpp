@@ -1135,6 +1135,10 @@ public:
                      Register to, Register value, Register count,
                      Register rtmp, XMMRegister xtmp);
 
+  void encode_iso_array(Register src, Register dst, Register len,
+                        XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3,
+                        XMMRegister tmp4, Register tmp5, Register result);
+
 #undef VIRTUAL
 
 };

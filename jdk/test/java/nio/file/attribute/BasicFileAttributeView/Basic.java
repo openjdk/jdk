@@ -49,9 +49,9 @@ public class Basic {
         check(!attrs.isSymbolicLink(), "is not a link");
         check(!attrs.isOther(), "is not other");
 
-        // last-modified-time should match java.io.File
+        // last-modified-time should match java.io.File in seconds
         File f = new File(dir.toString());
-        check(f.lastModified() == attrs.lastModifiedTime().toMillis(),
+        check(f.lastModified()/1000 == attrs.lastModifiedTime().to(TimeUnit.SECONDS),
               "last-modified time should be the same");
     }
 
@@ -64,10 +64,10 @@ public class Basic {
         check(!attrs.isSymbolicLink(), "is not a link");
         check(!attrs.isOther(), "is not other");
 
-        // size and last-modified-time should match java.io.File
+        // size and last-modified-time should match java.io.File in seconds
         File f = new File(file.toString());
         check(f.length() == attrs.size(), "size should be the same");
-        check(f.lastModified() == attrs.lastModifiedTime().toMillis(),
+        check(f.lastModified()/1000 == attrs.lastModifiedTime().to(TimeUnit.SECONDS),
               "last-modified time should be the same");
 
         // copy last-modified time and file create time from directory to file,

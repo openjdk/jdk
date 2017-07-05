@@ -42,6 +42,10 @@ if [ "${TESTJAVA}" = "" ] ; then
     exit 1
 fi
 
+if [ "${COMPILEJAVA}" = "" ] ; then
+    COMPILEJAVA="${TESTJAVA}"
+fi
+
 # set platform-specific variables
 OS=`uname -s`
 case "$OS" in
@@ -69,7 +73,7 @@ echo TESTJAVA=${TESTJAVA}
 echo ""
 
 # compile test
-${TESTJAVA}${FS}bin${FS}javac \
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
         -d ${TESTCLASSES} \
         ${TESTSRC}${FS}Starter.java ${TESTSRC}${FS}DelegatingLoader.java
 
@@ -80,7 +84,7 @@ then
 fi
 
 # set up test
-${TESTJAVA}${FS}bin${FS}javac \
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
         -d ${TESTCLASSES}${FS} \
         ${TESTSRC}${FS}Alice.java ${TESTSRC}${FS}SupBob.java \
         ${TESTSRC}${FS}Bob.java ${TESTSRC}${FS}SupAlice.java

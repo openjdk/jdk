@@ -2619,13 +2619,15 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
     private static class FocusColorProperty extends DesktopProperty {
         public FocusColorProperty () {
-            // Fallback value is never used bacause of the configureValue method doesn't return null
+            // Fallback value is never used because of the configureValue method doesn't return null
             super("win.3d.backgroundColor", Color.BLACK);
         }
 
         @Override
         protected Object configureValue(Object value) {
-            if (! ((Boolean)Toolkit.getDefaultToolkit().getDesktopProperty("win.highContrast.on")).booleanValue()){
+            Object highContrastOn = Toolkit.getDefaultToolkit().
+                    getDesktopProperty("win.highContrast.on");
+            if (highContrastOn == null || !((Boolean) highContrastOn).booleanValue()) {
                 return Color.BLACK;
             }
             return Color.BLACK.equals(value) ? Color.WHITE : Color.BLACK;

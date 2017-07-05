@@ -507,7 +507,7 @@ public class TextField extends TextComponent {
      * @since 1.4
      */
     public synchronized ActionListener[] getActionListeners() {
-        return (ActionListener[])(getListeners(ActionListener.class));
+        return getListeners(ActionListener.class);
     }
 
     /**

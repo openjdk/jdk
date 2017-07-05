@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,42 @@
  * This notice and attribution to Taligent may not be removed.
  * Taligent is a registered trademark of Taligent, Inc.
  *
+ */
+
+/*
+ * COPYRIGHT AND PERMISSION NOTICE
+ *
+ * Copyright (C) 1991-2012 Unicode, Inc. All rights reserved. Distributed under
+ * the Terms of Use in http://www.unicode.org/copyright.html.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of the Unicode data files and any associated documentation (the "Data
+ * Files") or Unicode software and any associated documentation (the
+ * "Software") to deal in the Data Files or Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge,
+ * publish, distribute, and/or sell copies of the Data Files or Software, and
+ * to permit persons to whom the Data Files or Software are furnished to do so,
+ * provided that (a) the above copyright notice(s) and this permission notice
+ * appear with all copies of the Data Files or Software, (b) both the above
+ * copyright notice(s) and this permission notice appear in associated
+ * documentation, and (c) there is clear notice in each modified Data File or
+ * in the Software as well as in the documentation associated with the Data
+ * File(s) or Software that the data or software has been modified.
+ *
+ * THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+ * KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF
+ * THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS
+ * INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR
+ * CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+ * DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+ * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE
+ * OF THE DATA FILES OR SOFTWARE.
+ *
+ * Except as contained in this notice, the name of a copyright holder shall not
+ * be used in advertising or otherwise to promote the sale, use or other
+ * dealings in these Data Files or Software without prior written authorization
+ * of the copyright holder.
  */
 
 package sun.text.resources.ar;
@@ -159,6 +195,118 @@ public class FormatData_ar extends ListResourceBundle {
                 }
             },
             { "DateTimePatternChars", "GanjkHmsSEDFwWxhKzZ" },
+            { "cldr.buddhist.DatePatterns",
+                new String[] {
+                    "EEEE\u060c d MMMM\u060c y G",
+                    "d MMMM\u060c y G",
+                    "dd\u200f/MM\u200f/y G",
+                    "d\u200f/M\u200f/y G",
+                }
+            },
+            { "cldr.japanese.DatePatterns",
+                new String[] {
+                    "EEEE\u060c d MMMM\u060c y G",
+                    "d MMMM\u060c y G",
+                    "dd\u200f/MM\u200f/y G",
+                    "d\u200f/M\u200f/y G",
+                }
+            },
+            { "roc.Eras",
+                new String[] {
+                    "Before R.O.C.",
+                    "\u062c\u0645\u0647\u0648\u0631\u064a\u0629 \u0627\u0644\u0635\u064a",
+                }
+            },
+            { "cldr.roc.DatePatterns",
+                new String[] {
+                    "EEEE\u060c d MMMM\u060c y G",
+                    "d MMMM\u060c y G",
+                    "dd\u200f/MM\u200f/y G",
+                    "d\u200f/M\u200f/y G",
+                }
+            },
+            { "roc.DatePatterns",
+                new String[] {
+                    "EEEE\u060c d MMMM\u060c y GGGG",
+                    "d MMMM\u060c y GGGG",
+                    "dd\u200f/MM\u200f/y GGGG",
+                    "d\u200f/M\u200f/y GGGG",
+                }
+            },
+            { "islamic.MonthNames",
+                new String[] {
+                    "\u0645\u062d\u0631\u0645",
+                    "\u0635\u0641\u0631",
+                    "\u0631\u0628\u064a\u0639 \u0627\u0644\u0623\u0648\u0644",
+                    "\u0631\u0628\u064a\u0639 \u0627\u0644\u0622\u062e\u0631",
+                    "\u062c\u0645\u0627\u062f\u0649 \u0627\u0644\u0623\u0648\u0644\u0649",
+                    "\u062c\u0645\u0627\u062f\u0649 \u0627\u0644\u0622\u062e\u0631\u0629",
+                    "\u0631\u062c\u0628",
+                    "\u0634\u0639\u0628\u0627\u0646",
+                    "\u0631\u0645\u0636\u0627\u0646",
+                    "\u0634\u0648\u0627\u0644",
+                    "\u0630\u0648 \u0627\u0644\u0642\u0639\u062f\u0629",
+                    "\u0630\u0648 \u0627\u0644\u062d\u062c\u0629",
+                    "",
+                }
+            },
+            { "islamic.MonthAbbreviations",
+                new String[] {
+                    "\u0645\u062d\u0631\u0645",
+                    "\u0635\u0641\u0631",
+                    "\u0631\u0628\u064a\u0639 \u0627\u0644\u0623\u0648\u0644",
+                    "\u0631\u0628\u064a\u0639 \u0627\u0644\u0622\u062e\u0631",
+                    "\u062c\u0645\u0627\u062f\u0649 \u0627\u0644\u0623\u0648\u0644\u0649",
+                    "\u062c\u0645\u0627\u062f\u0649 \u0627\u0644\u0622\u062e\u0631\u0629",
+                    "\u0631\u062c\u0628",
+                    "\u0634\u0639\u0628\u0627\u0646",
+                    "\u0631\u0645\u0636\u0627\u0646",
+                    "\u0634\u0648\u0627\u0644",
+                    "\u0630\u0648 \u0627\u0644\u0642\u0639\u062f\u0629",
+                    "\u0630\u0648 \u0627\u0644\u062d\u062c\u0629",
+                    "",
+                }
+            },
+            { "islamic.Eras",
+                new String[] {
+                    "",
+                    "\u0647\u0640",
+                }
+            },
+            { "cldr.islamic.DatePatterns",
+                new String[] {
+                    "EEEE\u060c d MMMM y",
+                    "d MMMM y",
+                    "d MMM\u060c y G",
+                    "d\u200f/M\u200f/yyyy",
+                }
+            },
+            { "islamic.DatePatterns",
+                new String[] {
+                    "EEEE\u060c d MMMM y",
+                    "d MMMM y",
+                    "d MMM\u060c y GGGG",
+                    "d\u200f/M\u200f/yyyy",
+                }
+            },
+            { "calendarname.islamic-civil", "\u062a\u0642\u0648\u064a\u0645 \u0627\u0633\u0644\u0627\u0645\u064a \u0645\u062f\u0646\u064a" },
+            { "calendarname.islamicc", "\u062a\u0642\u0648\u064a\u0645 \u0627\u0633\u0644\u0627\u0645\u064a \u0645\u062f\u0646\u064a" },
+            { "calendarname.islamic", "\u0627\u0644\u062a\u0642\u0648\u064a\u0645 \u0627\u0644\u0647\u062c\u0631\u064a" },
+            { "calendarname.japanese", "\u0627\u0644\u062a\u0642\u0648\u064a\u0645 \u0627\u0644\u064a\u0627\u0628\u0627\u0646\u064a" },
+            { "calendarname.gregorian", "\u0627\u0644\u062a\u0642\u0648\u064a\u0645 \u0627\u0644\u0645\u064a\u0644\u0627\u062f\u064a" },
+            { "calendarname.gregory", "\u0627\u0644\u062a\u0642\u0648\u064a\u0645 \u0627\u0644\u0645\u064a\u0644\u0627\u062f\u064a" },
+            { "calendarname.roc", "\u062a\u0642\u0648\u064a\u0645 \u0645\u064a\u0646\u062c\u0648" },
+            { "calendarname.buddhist", "\u0627\u0644\u062a\u0642\u0648\u064a\u0645 \u0627\u0644\u0628\u0648\u0630\u064a" },
+            { "field.era", "\u0627\u0644\u0639\u0635\u0631" },
+            { "field.year", "\u0627\u0644\u0633\u0646\u0629" },
+            { "field.month", "\u0627\u0644\u0634\u0647\u0631" },
+            { "field.week", "\u0627\u0644\u0623\u0633\u0628\u0648\u0639" },
+            { "field.weekday", "\u0627\u0644\u064a\u0648\u0645" },
+            { "field.dayperiod", "\u0635/\u0645" },
+            { "field.hour", "\u0627\u0644\u0633\u0627\u0639\u0627\u062a" },
+            { "field.minute", "\u0627\u0644\u062f\u0642\u0627\u0626\u0642" },
+            { "field.second", "\u0627\u0644\u062b\u0648\u0627\u0646\u064a" },
+            { "field.zone", "\u0627\u0644\u062a\u0648\u0642\u064a\u062a" },
         };
     }
 }

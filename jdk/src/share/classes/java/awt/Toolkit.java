@@ -863,7 +863,7 @@ public abstract class Toolkit {
                         new java.security.PrivilegedAction<Void>() {
                     public Void run() {
                         String nm = null;
-                        Class cls = null;
+                        Class<?> cls = null;
                         try {
                             nm = System.getProperty("awt.toolkit");
                             try {
