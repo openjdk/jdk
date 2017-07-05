@@ -2063,7 +2063,9 @@ Zone Europe/Samara	 3:20:36 -	LMT	1919 Jul  1 2:00
 			 3:00	Russia	KUY%sT	1991 Mar 31 2:00s
 			 2:00	Russia	KUY%sT	1991 Sep 29 2:00s
 			 3:00	-	KUYT	1991 Oct 20 3:00
-			 4:00	Russia	SAM%sT	# Samara Time
+			 4:00	Russia	SAM%sT	2010 Mar 28 2:00s # Samara Time
+			 3:00	Russia	SAM%sT
+
 #
 # From Oscar van Vlijmen (2001-08-25): [This region consists of]
 # Respublika Bashkortostan, Komi-Permyatskij avtonomnyj okrug,
@@ -2216,7 +2218,8 @@ Zone Asia/Kamchatka	10:34:36 -	LMT	1922 Nov 10
 			11:00	-	PETT	1930 Jun 21 # P-K Time
 			12:00	Russia	PET%sT	1991 Mar 31 2:00s
 			11:00	Russia	PET%sT	1992 Jan 19 2:00s
-			12:00	Russia	PET%sT
+			12:00	Russia	PET%sT	2010 Mar 28 2:00s
+			11:00	Russia	PET%sT
 #
 # Chukotskij avtonomnyj okrug
 Zone Asia/Anadyr	11:49:56 -	LMT	1924 May  2
@@ -2224,7 +2227,8 @@ Zone Asia/Anadyr	11:49:56 -	LMT	1924 May  2
 			13:00	Russia	ANA%sT	1982 Apr  1 0:00s
 			12:00	Russia	ANA%sT	1991 Mar 31 2:00s
 			11:00	Russia	ANA%sT	1992 Jan 19 2:00s
-			12:00	Russia	ANA%sT
+			12:00	Russia	ANA%sT	2010 Mar 28 2:00s
+			11:00	Russia	ANA%sT
 
 # Serbia
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]

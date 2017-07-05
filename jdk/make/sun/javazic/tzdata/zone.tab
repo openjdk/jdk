@@ -66,6 +66,7 @@ AQ	-6617+11031	Antarctica/Casey	Casey Station, Bailey Peninsula
 AQ	-7824+10654	Antarctica/Vostok	Vostok Station, S Magnetic Pole
 AQ	-6640+14001	Antarctica/DumontDUrville	Dumont-d'Urville Station, Terre Adelie
 AQ	-690022+0393524	Antarctica/Syowa	Syowa Station, E Ongul I
+AQ	-5430+15857	Antarctica/Macquarie	Macquarie Island Station, Macquarie Island
 AR	-3436-05827	America/Argentina/Buenos_Aires	Buenos Aires (BA, CF)
 AR	-3124-06411	America/Argentina/Cordoba	most locations (CB, CC, CN, ER, FM, MN, SE, SF)
 AR	-2447-06525	America/Argentina/Salta	(SA, LP, NQ, RN)
@@ -351,7 +352,7 @@ RS	+4450+02030	Europe/Belgrade
 RU	+5443+02030	Europe/Kaliningrad	Moscow-01 - Kaliningrad
 RU	+5545+03735	Europe/Moscow	Moscow+00 - west Russia
 RU	+4844+04425	Europe/Volgograd	Moscow+00 - Caspian Sea
-RU	+5312+05009	Europe/Samara	Moscow+01 - Samara, Udmurtia
+RU	+5312+05009	Europe/Samara	Moscow - Samara, Udmurtia
 RU	+5651+06036	Asia/Yekaterinburg	Moscow+02 - Urals
 RU	+5500+07324	Asia/Omsk	Moscow+03 - west Siberia
 RU	+5502+08255	Asia/Novosibirsk	Moscow+03 - Novosibirsk
@@ -362,8 +363,8 @@ RU	+6200+12940	Asia/Yakutsk	Moscow+06 - Lena River
 RU	+4310+13156	Asia/Vladivostok	Moscow+07 - Amur River
 RU	+4658+14242	Asia/Sakhalin	Moscow+07 - Sakhalin Island
 RU	+5934+15048	Asia/Magadan	Moscow+08 - Magadan
-RU	+5301+15839	Asia/Kamchatka	Moscow+09 - Kamchatka
-RU	+6445+17729	Asia/Anadyr	Moscow+10 - Bering Sea
+RU	+5301+15839	Asia/Kamchatka	Moscow+08 - Kamchatka
+RU	+6445+17729	Asia/Anadyr	Moscow+08 - Bering Sea
 RW	-0157+03004	Africa/Kigali
 SA	+2438+04643	Asia/Riyadh
 SB	-0932+16012	Pacific/Guadalcanal

@@ -99,6 +99,29 @@ public class Expression extends Statement {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * If the invoked method completes normally,
+     * the value it returns is copied in the {@code value} property.
+     * Note that the {@code value} property is set to {@code null},
+     * if the return type of the underlying method is {@code void}.
+     *
+     * @throws NullPointerException if the value of the {@code target} or
+     *                              {@code methodName} property is {@code null}
+     * @throws NoSuchMethodException if a matching method is not found
+     * @throws SecurityException if a security manager exists and
+     *                           it denies the method invocation
+     * @throws Exception that is thrown by the invoked method
+     *
+     * @see java.lang.reflect.Method
+     * @since 1.7
+     */
+    @Override
+    public void execute() throws Exception {
+        setValue(invoke());
+    }
+
+    /**
      * If the value property of this instance is not already set,
      * this method dynamically finds the method with the specified
      * methodName on this target with these arguments and calls it.

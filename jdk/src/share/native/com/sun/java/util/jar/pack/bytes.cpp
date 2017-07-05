@@ -40,7 +40,7 @@ bool bytes::inBounds(const void* p) {
 
 void bytes::malloc(size_t len_) {
   len = len_;
-  ptr = NEW(byte, len_+1);  // add trailing zero byte always
+  ptr = NEW(byte, add_size(len_, 1));  // add trailing zero byte always
   if (ptr == null) {
     // set ptr to some victim memory, to ease escape
     set(dummy, sizeof(dummy)-1);
@@ -56,7 +56,7 @@ void bytes::realloc(size_t len_) {
     return;
   }
   byte* oldptr = ptr;
-  ptr = (len_ >= PSIZE_MAX) ? null : (byte*)::realloc(ptr, len_+1);
+  ptr = (len_ >= PSIZE_MAX) ? null : (byte*)::realloc(ptr, add_size(len_, 1));
   if (ptr != null)  {
     mtrace('r', oldptr, 0);
     mtrace('m', ptr, len_+1);

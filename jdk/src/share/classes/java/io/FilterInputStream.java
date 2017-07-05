@@ -134,9 +134,18 @@ class FilterInputStream extends InputStream {
     }
 
     /**
-     * {@inheritDoc}
+     * Skips over and discards <code>n</code> bytes of data from the
+     * input stream. The <code>skip</code> method may, for a variety of
+     * reasons, end up skipping over some smaller number of bytes,
+     * possibly <code>0</code>. The actual number of bytes skipped is
+     * returned.
      * <p>
      * This method simply performs <code>in.skip(n)</code>.
+     *
+     * @param      n   the number of bytes to be skipped.
+     * @return     the actual number of bytes skipped.
+     * @exception  IOException  if the stream does not support seek,
+     *                          or if some other I/O error occurs.
      */
     public long skip(long n) throws IOException {
         return in.skip(n);
