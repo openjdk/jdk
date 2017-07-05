@@ -26,6 +26,9 @@
  * com.sun.management.jmxremote.autodiscovery=false should be respected.
  *
  * @author Alex Schenkman
+ */
+
+/*
  * @test JdpOffTest.java
  * @summary Assert that no JDP packets are sent to the default address and port.
  * @library /lib/testlibrary

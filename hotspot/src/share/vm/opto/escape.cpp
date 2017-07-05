@@ -82,7 +82,7 @@ bool ConnectionGraph::has_candidates(Compile *C) {
 }
 
 void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
-  Compile::TracePhase t2("escapeAnalysis", &Phase::_t_escapeAnalysis, true);
+  Compile::TracePhase tp("escapeAnalysis", &Phase::timers[Phase::_t_escapeAnalysis]);
   ResourceMark rm;
 
   // Add ConP#NULL and ConN#NULL nodes before ConnectionGraph construction
@@ -117,7 +117,7 @@ bool ConnectionGraph::compute_escape() {
   GrowableArray<FieldNode*>      oop_fields_worklist;
   DEBUG_ONLY( GrowableArray<Node*> addp_worklist; )
 
-  { Compile::TracePhase t3("connectionGraph", &Phase::_t_connectionGraph, true);
+  { Compile::TracePhase tp("connectionGraph", &Phase::timers[Phase::_t_connectionGraph]);
 
   // 1. Populate Connection Graph (CG) with PointsTo nodes.
   ideal_nodes.map(C->live_nodes(), NULL);  // preallocate space
@@ -2839,6 +2839,13 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
           continue;
         }
       }
+
+      const TypeOopPtr *t = igvn->type(n)->isa_oopptr();
+      if (t == NULL)
+        continue;  // not a TypeOopPtr
+      if (!t->klass_is_exact())
+        continue; // not an unique type
+
       if (alloc->is_Allocate()) {
         // Set the scalar_replaceable flag for allocation
         // so it could be eliminated.
@@ -2857,10 +2864,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist)
       //   - not determined to be ineligible by escape analysis
       set_map(alloc, n);
       set_map(n, alloc);
-      const TypeOopPtr *t = igvn->type(n)->isa_oopptr();
-      if (t == NULL)
-        continue;  // not a TypeOopPtr
-      const TypeOopPtr* tinst = t->cast_to_exactness(true)->is_oopptr()->cast_to_instance_id(ni);
+      const TypeOopPtr* tinst = t->cast_to_instance_id(ni);
       igvn->hash_delete(n);
       igvn->set_type(n,  tinst);
       n->raise_bottom_type(tinst);

@@ -56,6 +56,7 @@ import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -75,7 +76,7 @@ import org.xml.sax.InputSource;
  * Utility class to find/parse script test files and to create 'test' instances.
  * Actual 'test' object type is decided by clients of this class.
  */
-final class TestFinder {
+public final class TestFinder {
     private TestFinder() {}
 
     interface TestFactory<T> {
@@ -215,6 +216,8 @@ final class TestFinder {
         final List<String> scriptArguments = new ArrayList<>();
         boolean inComment = false;
 
+        boolean explicitOptimistic = false;
+
         try (Scanner scanner = new Scanner(testFile)) {
             while (scanner.hasNext()) {
                 // TODO: Scan for /ref=file qualifiers, etc, to determine run
@@ -287,7 +290,11 @@ final class TestFinder {
                     scriptArguments.add(scanner.next());
                     break;
                 case "@option":
-                    engineOptions.add(scanner.next());
+                    final String next = scanner.next();
+                    engineOptions.add(next);
+                    if (next.startsWith("--optimistic-types")) {
+                        explicitOptimistic = true;
+                    }
                     break;
                 case "@fork":
                     fork = true;
@@ -336,9 +343,58 @@ final class TestFinder {
                 testOptions.put(OPTIONS_FORK, "true");
             }
 
+            //if there are explicit optimistic type settings, use those - do not override
+            //the test might only work with optimistic types on or off.
+            if (!explicitOptimistic) {
+                addExplicitOptimisticTypes(engineOptions);
+            }
+
             tests.add(factory.createTest(framework, testFile.toFile(), engineOptions, testOptions, scriptArguments));
         } else if (!isNotTest) {
             orphans.add(name);
+        }
+    }
+
+    //the reverse of the default setting for optimistic types, if enabled, false, otherwise true
+    //thus, true for 8u40, false for 9
+    private static final boolean OPTIMISTIC_OVERRIDE = false;
+
+    /**
+     * Check if there is an optimistic override, that disables the default
+     * false optimistic types and sets them to true, for testing purposes
+     *
+     * @return true if optimistic type override has been set by test suite
+     */
+    public static boolean hasOptimisticOverride() {
+        return Boolean.valueOf(OPTIMISTIC_OVERRIDE).toString().equals(System.getProperty("optimistic.override"));
+    }
+
+    /**
+     * Add an optimistic-types=true option to an argument list if this
+     * is set to override the default false. Add an optimistic-types=true
+     * options to an argument list if this is set to override the default
+     * true
+     *
+     * @args new argument list array
+     */
+    public static String[] addExplicitOptimisticTypes(String[] args) {
+        if (hasOptimisticOverride()) {
+            final List<String> newList = new ArrayList<>(Arrays.asList(args));
+            newList.add("--optimistic-types=" + Boolean.valueOf(OPTIMISTIC_OVERRIDE));
+            return newList.toArray(new String[0]);
+        }
+        return args;
+    }
+
+    /**
+     * Add an optimistic-types=true option to an argument list if this
+     * is set to override the default false
+     *
+     * @args argument list
+     */
+    public static void addExplicitOptimisticTypes(List<String> args) {
+        if (hasOptimisticOverride()) {
+            args.add("--optimistic-types=" + Boolean.valueOf(OPTIMISTIC_OVERRIDE));
         }
     }
 

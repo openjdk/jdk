@@ -24,6 +24,7 @@
 /*
  * @test CodelistTest
  * @bug 8054889
+ * @library ..
  * @build DcmdUtil MethodIdentifierParser CodelistTest
  * @run main CodelistTest
  * @summary Test of diagnostic command Compiler.codelist
@@ -70,11 +71,14 @@ public class CodelistTest {
             // int compileLevel = Integer.parseInt(parts[1]);
             String methodPrintedInLogFormat = parts[2];
 
-            // skip inits and clinits - they can not be reflected
+            // skip inits, clinits and methodHandles - they can not be reflected
             if (methodPrintedInLogFormat.contains("<init>")) {
                 continue;
             }
             if (methodPrintedInLogFormat.contains("<clinit>")) {
+                continue;
+            }
+            if (methodPrintedInLogFormat.contains("MethodHandle")) {
                 continue;
             }
 
@@ -86,7 +90,7 @@ public class CodelistTest {
                 m = null;
             }
             if (m == null) {
-                throw new Exception("Test failed");
+                throw new Exception("Test failed on: " + methodPrintedInLogFormat);
             }
             if (count > 10) {
                 // Testing 10 entries is enough. Lets not waste time.

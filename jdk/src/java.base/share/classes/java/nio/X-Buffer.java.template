@@ -384,7 +384,7 @@ public abstract class $Type$Buffer
      * and vice versa.  The new buffer's capacity and limit will be
      * <tt>array.length</tt>, its position will be zero, and its mark will be
      * undefined.  Its {@link #array backing array} will be the
-     * given array, and its {@link #arrayOffset array offset>} will
+     * given array, and its {@link #arrayOffset array offset} will
      * be zero.  </p>
      *
      * @param  array

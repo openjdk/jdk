@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ import sun.security.util.Debug;
  * <p> If successful, it returns a certification path which has successfully
  * satisfied all the constraints and requirements specified in the
  * PKIXBuilderParameters object and has been validated according to the PKIX
- * path validation algorithm defined in RFC 3280.
+ * path validation algorithm defined in RFC 5280.
  *
  * <p> This implementation uses a depth-first search approach to finding
  * certification paths. If it comes to a point in which it cannot find
