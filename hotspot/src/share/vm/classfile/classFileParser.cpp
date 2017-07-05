@@ -122,7 +122,7 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
         if (!EnableMethodHandles ||
             _major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
           classfile_parse_error(
-            (!EnableInvokeDynamic ?
+            (!EnableMethodHandles ?
              "This JVM does not support constant tag %u in class file %s" :
              "Class file version does not support constant tag %u in class file %s"),
             tag, CHECK);
@@ -138,6 +138,22 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
           cp->method_type_index_at_put(index, signature_index);
         } else {
           ShouldNotReachHere();
+        }
+        break;
+      case JVM_CONSTANT_InvokeDynamic :
+        {
+          if (!EnableInvokeDynamic ||
+              _major_version < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
+            classfile_parse_error(
+              (!EnableInvokeDynamic ?
+               "This JVM does not support constant tag %u in class file %s" :
+               "Class file version does not support constant tag %u in class file %s"),
+              tag, CHECK);
+          }
+          cfs->guarantee_more(5, CHECK);  // bsm_index, name_and_type_index, tag/access_flags
+          u2 bootstrap_method_index = cfs->get_u2_fast();
+          u2 name_and_type_index = cfs->get_u2_fast();
+          cp->invoke_dynamic_at_put(index, bootstrap_method_index, name_and_type_index);
         }
         break;
       case JVM_CONSTANT_Integer :
@@ -414,6 +430,24 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
               ref_index, CHECK_(nullHandle));
         }
         break;
+      case JVM_CONSTANT_InvokeDynamic :
+        {
+          int bootstrap_method_ref_index = cp->invoke_dynamic_bootstrap_method_ref_index_at(index);
+          int name_and_type_ref_index = cp->invoke_dynamic_name_and_type_ref_index_at(index);
+          check_property((bootstrap_method_ref_index == 0 && AllowTransitionalJSR292)
+                         ||
+                         (valid_cp_range(bootstrap_method_ref_index, length) &&
+                          cp->tag_at(bootstrap_method_ref_index).is_method_handle()),
+                         "Invalid constant pool index %u in class file %s",
+                         bootstrap_method_ref_index,
+                         CHECK_(nullHandle));
+          check_property(valid_cp_range(name_and_type_ref_index, length) &&
+                         cp->tag_at(name_and_type_ref_index).is_name_and_type(),
+                         "Invalid constant pool index %u in class file %s",
+                         name_and_type_ref_index,
+                         CHECK_(nullHandle));
+          break;
+        }
       default:
         fatal(err_msg("bad constant pool tag value %u",
                       cp->tag_at(index).value()));

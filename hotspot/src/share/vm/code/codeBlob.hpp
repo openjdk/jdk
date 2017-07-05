@@ -219,8 +219,7 @@ class BufferBlob: public CodeBlob {
 
 class AdapterBlob: public BufferBlob {
 private:
-  AdapterBlob(int size)                 : BufferBlob("I2C/C2I adapters", size) {}
-  AdapterBlob(int size, CodeBuffer* cb) : BufferBlob("I2C/C2I adapters", size, cb) {}
+  AdapterBlob(int size, CodeBuffer* cb);
 
 public:
   // Creation
