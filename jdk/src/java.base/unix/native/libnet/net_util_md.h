@@ -120,47 +120,6 @@ int getDefaultIPv6Interface(struct in6_addr *target_addr);
 
 #ifdef __solaris__
 int net_getParam(char *driver, char *param);
-
-#ifndef SO_FLOW_SLA
-#define SO_FLOW_SLA 0x1018
-
-#if _LONG_LONG_ALIGNMENT == 8 && _LONG_LONG_ALIGNMENT_32 == 4
-#pragma pack(4)
 #endif
-
-/*
- * Used with the setsockopt(SO_FLOW_SLA, ...) call to set
- * per socket service level properties.
- * When the application uses per-socket API, we will enforce the properties
- * on both outbound and inbound packets.
- *
- * For now, only priority and maxbw are supported in SOCK_FLOW_PROP_VERSION1.
- */
-typedef struct sock_flow_props_s {
-        int             sfp_version;
-        uint32_t        sfp_mask;
-        int             sfp_priority;   /* flow priority */
-        uint64_t        sfp_maxbw;      /* bandwidth limit in bps */
-        int             sfp_status;     /* flow create status for getsockopt */
-} sock_flow_props_t;
-
-#define SOCK_FLOW_PROP_VERSION1 1
-
-/* bit mask values for sfp_mask */
-#define SFP_MAXBW       0x00000001      /* Flow Bandwidth Limit */
-#define SFP_PRIORITY    0x00000008      /* Flow priority */
-
-/* possible values for sfp_priority */
-#define SFP_PRIO_NORMAL 1
-#define SFP_PRIO_HIGH   2
-
-#if _LONG_LONG_ALIGNMENT == 8 && _LONG_LONG_ALIGNMENT_32 == 4
-#pragma pack()
-#endif /* _LONG_LONG_ALIGNMENT */
-
-#endif /* SO_FLOW_SLA */
-#endif /* __solaris__ */
-
-JNIEXPORT jboolean JNICALL NET_IsFlowSupported();
 
 #endif /* NET_UTILS_MD_H */

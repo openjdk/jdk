@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /* @test
  * @summary unit tests for method handles which permute their arguments
+ * @library /lib/testlibrary/jsr292 /lib/testlibrary
  * @run testng/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies -ea -esa -DPermuteArgsTest.MAX_ARITY=8 test.java.lang.invoke.PermuteArgsTest
  */
 /* Examples of manual runs:
@@ -35,6 +36,8 @@ package test.java.lang.invoke;
 
 import org.testng.*;
 import org.testng.annotations.*;
+
+import com.oracle.testlibrary.jsr292.CodeCacheOverflowProcessor;
 
 import java.util.*;
 import java.lang.reflect.*;
@@ -122,9 +125,15 @@ public class PermuteArgsTest {
         }
         new PermuteArgsTest().test();
     }
+
     static int testCases;
+
     @Test
     public void test() throws Throwable {
+        CodeCacheOverflowProcessor.runMHTest(this::test0);
+    }
+
+    public void test0() throws Throwable {
         testCases = 0;
         Lookup lookup = lookup();
         for (Method m : lookup.lookupClass().getDeclaredMethods()) {

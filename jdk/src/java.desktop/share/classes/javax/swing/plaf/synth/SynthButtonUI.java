@@ -105,7 +105,6 @@ public class SynthButtonUI extends BasicButtonUI implements
             }
 
         }
-        context.dispose();
     }
 
     /**
@@ -125,7 +124,6 @@ public class SynthButtonUI extends BasicButtonUI implements
         SynthContext context = getContext(b, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
     }
 
@@ -226,7 +224,6 @@ public class SynthButtonUI extends BasicButtonUI implements
         else {
             baseline = textRect.y + fm.getAscent();
         }
-        context.dispose();
         return baseline;
     }
 
@@ -253,7 +250,6 @@ public class SynthButtonUI extends BasicButtonUI implements
         SynthLookAndFeel.update(context, g);
         paintBackground(context, g, c);
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -270,7 +266,6 @@ public class SynthButtonUI extends BasicButtonUI implements
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -321,7 +316,6 @@ public class SynthButtonUI extends BasicButtonUI implements
     protected Icon getDefaultIcon(AbstractButton b) {
         SynthContext context = getContext(b);
         Icon icon = context.getStyle().getIcon(context, getPropertyPrefix() + "icon");
-        context.dispose();
         return icon;
     }
 
@@ -473,7 +467,6 @@ public class SynthButtonUI extends BasicButtonUI implements
                b.getVerticalTextPosition(), b.getIconTextGap(),
                b.getDisplayedMnemonicIndex());
 
-        ss.dispose();
         return size;
     }
 
@@ -494,7 +487,6 @@ public class SynthButtonUI extends BasicButtonUI implements
                b.getVerticalTextPosition(), b.getIconTextGap(),
                b.getDisplayedMnemonicIndex());
 
-        ss.dispose();
         return size;
     }
 
@@ -516,7 +508,6 @@ public class SynthButtonUI extends BasicButtonUI implements
                b.getVerticalTextPosition(), b.getIconTextGap(),
                b.getDisplayedMnemonicIndex());
 
-        ss.dispose();
         return size;
     }
 

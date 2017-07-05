@@ -52,7 +52,6 @@ import sun.awt.*;
 import sun.awt.datatransfer.DataTransferer;
 import sun.font.FontConfigManager;
 import sun.java2d.SunGraphicsEnvironment;
-import sun.misc.*;
 import sun.awt.util.PerformanceLogger;
 import sun.awt.util.ThreadGroupUtils;
 import sun.print.PrintJob2D;
@@ -1144,7 +1143,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     public FileDialogPeer createFileDialog(FileDialog target) {
         FileDialogPeer peer = null;
         // The current GtkFileChooser is available from GTK+ 2.4
-        if (!getSunAwtDisableGtkFileDialogs() && checkGtkVersion(2, 4, 0)) {
+        if (!getSunAwtDisableGtkFileDialogs() &&
+                      (checkGtkVersion(2, 4, 0) || checkGtkVersion(3, 0, 0))) {
             peer = new GtkFileDialogPeer(target);
         } else {
             peer = new XFileDialogPeer(target);

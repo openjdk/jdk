@@ -49,6 +49,11 @@ public final class IdentNode extends Expression implements PropertyKey, Function
     private static final int FUTURESTRICT_NAME = 1 << 3;
     private static final int IS_DECLARED_HERE  = 1 << 4;
     private static final int IS_DEAD           = 1 << 5;
+    private static final int DIRECT_SUPER      = 1 << 6;
+    private static final int REST_PARAMETER    = 1 << 7;
+    private static final int PROTO_PROPERTY    = 1 << 8;
+    private static final int DEFAULT_PARAMETER = 1 << 9;
+    private static final int DESTRUCTURED_PARAMETER = 1 << 10;
 
     /** Identifier. */
     private final String name;
@@ -381,5 +386,95 @@ public final class IdentNode extends Expression implements PropertyKey, Function
     @Override
     public LocalVariableConversion getLocalVariableConversion() {
         return conversion;
+    }
+
+    /**
+     * Checks if this is a direct super identifier
+     *
+     * @return true if the direct super flag is set
+     */
+    public boolean isDirectSuper() {
+        return (flags & DIRECT_SUPER) != 0;
+    }
+
+    /**
+     * Return a new identifier with the direct super flag set.
+     *
+     * @return the new identifier
+     */
+    public IdentNode setIsDirectSuper() {
+        return new IdentNode(this, name, type, flags | DIRECT_SUPER, programPoint, conversion);
+    }
+
+    /**
+     * Checks if this is a rest parameter
+     *
+     * @return true if the rest parameter flag is set
+     */
+    public boolean isRestParameter() {
+        return (flags & REST_PARAMETER) != 0;
+    }
+
+    /**
+     * Return a new identifier with the rest parameter flag set.
+     *
+     * @return the new identifier
+     */
+    public IdentNode setIsRestParameter() {
+        return new IdentNode(this, name, type, flags | REST_PARAMETER, programPoint, conversion);
+    }
+
+    /**
+     * Checks if this is a proto property name.
+     *
+     * @return true if this is the proto property name
+     */
+    public boolean isProtoPropertyName() {
+        return (flags & PROTO_PROPERTY) != 0;
+    }
+
+    /**
+     * Return a new identifier with the proto property name flag set.
+     *
+     * @return the new identifier
+     */
+    public IdentNode setIsProtoPropertyName() {
+        return new IdentNode(this, name, type, flags | PROTO_PROPERTY, programPoint, conversion);
+    }
+
+    /**
+     * Checks whether this is a default parameter.
+     *
+     * @return true if this is a default parameter
+     */
+    public boolean isDefaultParameter() {
+        return (flags & DEFAULT_PARAMETER) != 0;
+    }
+
+    /**
+     * Return a new identifier with the default parameter flag set.
+     *
+     * @return the new identifier
+     */
+    public IdentNode setIsDefaultParameter() {
+        return new IdentNode(this, name, type, flags | DEFAULT_PARAMETER, programPoint, conversion);
+    }
+
+    /**
+     * Checks whether this is a destructured parameter.
+     *
+     * @return true if this is a destructured parameter
+     */
+    public boolean isDestructuredParameter() {
+        return (flags & DESTRUCTURED_PARAMETER) != 0;
+    }
+
+    /**
+     * Return a new identifier with the destructured parameter flag set.
+     *
+     * @return the new identifier
+     */
+    public IdentNode setIsDestructuredParameter() {
+        return new IdentNode(this, name, type, flags | DESTRUCTURED_PARAMETER, programPoint, conversion);
     }
 }

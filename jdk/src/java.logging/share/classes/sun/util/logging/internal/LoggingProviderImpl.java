@@ -32,6 +32,7 @@ import java.util.ResourceBundle;
 import java.util.function.Supplier;
 import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
+import java.lang.reflect.Module;
 import java.util.Objects;
 import java.util.logging.LogManager;
 import jdk.internal.logger.DefaultLoggerFinder;
@@ -398,21 +399,20 @@ public final class LoggingProviderImpl extends DefaultLoggerFinder {
     }
 
     /**
-     * Creates a java.util.logging.Logger for the given caller.
+     * Creates a java.util.logging.Logger for the given module.
      * @param name the logger name.
-     * @param caller the caller for which the logger should be created.
-     * @return a Logger suitable for use in the given caller.
+     * @param module the module for which the logger should be created.
+     * @return a Logger suitable for use in the given module.
      */
     private static java.util.logging.Logger demandJULLoggerFor(final String name,
-                                                            /* Module */
-                                                            final Class<?> caller) {
+                                                               Module module) {
         final LogManager manager = LogManager.getLogManager();
         final SecurityManager sm = System.getSecurityManager();
         if (sm == null) {
-            return logManagerAccess.demandLoggerFor(manager, name, caller);
+            return logManagerAccess.demandLoggerFor(manager, name, module);
         } else {
             final PrivilegedAction<java.util.logging.Logger> pa =
-                    () -> logManagerAccess.demandLoggerFor(manager, name, caller);
+                    () -> logManagerAccess.demandLoggerFor(manager, name, module);
             return AccessController.doPrivileged(pa, null, LOGGING_CONTROL_PERMISSION);
         }
     }
@@ -429,17 +429,17 @@ public final class LoggingProviderImpl extends DefaultLoggerFinder {
      * {@code RuntimePermission("loggerFinder")}.
      */
     @Override
-    protected Logger demandLoggerFor(String name, /* Module */ Class<?> caller) {
+    protected Logger demandLoggerFor(String name, Module module) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(LOGGERFINDER_PERMISSION);
         }
-        return JULWrapper.of(demandJULLoggerFor(name,caller));
+        return JULWrapper.of(demandJULLoggerFor(name,module));
     }
 
     public static interface LogManagerAccess {
         java.util.logging.Logger demandLoggerFor(LogManager manager,
-                String name, /* Module */ Class<?> caller);
+                String name, Module module);
     }
 
     // Hook for tests

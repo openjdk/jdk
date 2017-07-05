@@ -98,11 +98,9 @@ public class SynthToolBarUI extends BasicToolBarUI
         SynthContext context = getContext(
                 c, Region.TOOL_BAR_CONTENT, null, ENABLED);
         contentStyle = SynthLookAndFeel.updateStyle(context, this);
-        context.dispose();
 
         context = getContext(c, Region.TOOL_BAR_DRAG_WINDOW, null, ENABLED);
         dragWindowStyle = SynthLookAndFeel.updateStyle(context, this);
-        context.dispose();
 
         context = getContext(c, ENABLED);
         SynthStyle oldStyle = style;
@@ -116,7 +114,6 @@ public class SynthToolBarUI extends BasicToolBarUI
                 installKeyboardActions();
             }
         }
-        context.dispose();
     }
 
     /**
@@ -127,7 +124,6 @@ public class SynthToolBarUI extends BasicToolBarUI
         SynthContext context = getContext(toolBar, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
 
         handleIcon = null;
@@ -135,13 +131,11 @@ public class SynthToolBarUI extends BasicToolBarUI
         context = getContext(toolBar, Region.TOOL_BAR_CONTENT,
                              contentStyle, ENABLED);
         contentStyle.uninstallDefaults(context);
-        context.dispose();
         contentStyle = null;
 
         context = getContext(toolBar, Region.TOOL_BAR_DRAG_WINDOW,
                              dragWindowStyle, ENABLED);
         dragWindowStyle.uninstallDefaults(context);
-        context.dispose();
         dragWindowStyle = null;
 
         toolBar.setLayout(null);
@@ -215,7 +209,6 @@ public class SynthToolBarUI extends BasicToolBarUI
                           g, 0, 0, c.getWidth(), c.getHeight(),
                           toolBar.getOrientation());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -232,7 +225,6 @@ public class SynthToolBarUI extends BasicToolBarUI
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -289,7 +281,6 @@ public class SynthToolBarUI extends BasicToolBarUI
         SynthContext subcontext = getContext(
                 toolBar, Region.TOOL_BAR_CONTENT, contentStyle);
         paintContent(subcontext, g, contentRect);
-        subcontext.dispose();
     }
 
     /**
@@ -326,7 +317,6 @@ public class SynthToolBarUI extends BasicToolBarUI
                                                            dragWindow.getOrientation());
         context.getPainter().paintToolBarDragWindowBorder(context, g, 0, 0, w, h,
                                                           dragWindow.getOrientation());
-        context.dispose();
     }
 
     //
@@ -383,7 +373,6 @@ public class SynthToolBarUI extends BasicToolBarUI
             dim.width += insets.left + insets.right;
             dim.height += insets.top + insets.bottom;
 
-            context.dispose();
             return dim;
         }
 
@@ -421,7 +410,6 @@ public class SynthToolBarUI extends BasicToolBarUI
             dim.width += insets.left + insets.right;
             dim.height += insets.top + insets.bottom;
 
-            context.dispose();
             return dim;
         }
 
@@ -543,7 +531,6 @@ public class SynthToolBarUI extends BasicToolBarUI
                     }
                 }
             }
-            context.dispose();
         }
 
         private boolean isGlue(Component c) {

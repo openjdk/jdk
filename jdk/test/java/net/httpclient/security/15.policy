@@ -16,7 +16,7 @@ grant {
     permission java.net.URLPermission "socket://127.0.0.1:27301", "CONNECT";
 
     // Test checks for this explicitly
-    permission java.net.RuntimePermission "foobar"; 
+    permission java.net.RuntimePermission "foobar";
 };
 
 

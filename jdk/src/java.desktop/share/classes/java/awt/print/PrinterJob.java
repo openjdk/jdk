@@ -577,6 +577,8 @@ public abstract class PrinterJob {
     /**
      * Gets the name of the printing user.
      * @return the name of the printing user
+     * @throws SecurityException if a security manager exists and
+     *         PropertyPermission - user.name is not given in the policy file
      */
     public abstract String getUserName();
 

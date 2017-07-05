@@ -110,13 +110,11 @@ public class SynthMenuUI extends BasicMenuUI
                 installKeyboardActions();
             }
         }
-        context.dispose();
 
         SynthContext accContext = getContext(mi, Region.MENU_ITEM_ACCELERATOR,
                                              ENABLED);
 
         accStyle = SynthLookAndFeel.updateStyle(accContext, this);
-        accContext.dispose();
     }
 
     /**
@@ -140,13 +138,11 @@ public class SynthMenuUI extends BasicMenuUI
     protected void uninstallDefaults() {
         SynthContext context = getContext(menuItem, ENABLED);
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
 
         SynthContext accContext = getContext(menuItem,
                                      Region.MENU_ITEM_ACCELERATOR, ENABLED);
         accStyle.uninstallDefaults(accContext);
-        accContext.dispose();
         accStyle = null;
 
         super.uninstallDefaults();
@@ -218,8 +214,6 @@ public class SynthMenuUI extends BasicMenuUI
                 defaultTextIconGap, acceleratorDelimiter,
                 MenuItemLayoutHelper.useCheckAndArrow(menuItem),
                 getPropertyPrefix());
-        context.dispose();
-        accContext.dispose();
         return value;
     }
 
@@ -243,7 +237,6 @@ public class SynthMenuUI extends BasicMenuUI
         context.getPainter().paintMenuBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -260,7 +253,6 @@ public class SynthMenuUI extends BasicMenuUI
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -279,7 +271,6 @@ public class SynthMenuUI extends BasicMenuUI
         Icon arrowIcon = style.getIcon(context, prefix + ".arrowIcon");
         SynthGraphicsUtils.paint(context, accContext, g, checkIcon, arrowIcon,
               acceleratorDelimiter, defaultTextIconGap, getPropertyPrefix());
-        accContext.dispose();
     }
 
     /**

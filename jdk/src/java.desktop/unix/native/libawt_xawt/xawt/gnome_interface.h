@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 #ifndef _GNOME_INTERFACE_H
 #define _GNOME_INTERFACE_H
-#include "gtk2_interface.h"
+#include "gtk_interface.h"
 #include <dlfcn.h>
 #include <jvm_md.h>
 #include <jni.h>

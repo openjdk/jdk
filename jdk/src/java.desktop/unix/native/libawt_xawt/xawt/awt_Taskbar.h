@@ -26,7 +26,7 @@
 #ifndef AWT_TASKBAR_H
 #define AWT_TASKBAR_H
 
-#include "gtk2_interface.h"
+#include "gtk_interface.h"
 
 typedef void UnityLauncherEntry;
 typedef void DbusmenuMenuitem;

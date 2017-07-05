@@ -98,7 +98,7 @@ import javax.accessibility.*;
  * <PRE>
  *     layeredPane.add(child, JLayeredPane.DEFAULT_LAYER);
  * or
- *     layeredPane.add(child, new Integer(10));
+ *     layeredPane.add(child, Integer.valueOf.valueOf(10));
  * </PRE>
  * The layer attribute can also be set on a Component by calling<PRE>
  *     layeredPaneParent.setLayer(child, 10)</PRE>
@@ -162,23 +162,23 @@ import javax.accessibility.*;
 @SuppressWarnings("serial")
 public class JLayeredPane extends JComponent implements Accessible {
     /// Watch the values in getObjectForLayer()
-    /** Convenience object defining the Default layer. Equivalent to new Integer(0).*/
+    /** Convenience object defining the Default layer. Equivalent to Integer.valueOf(0).*/
     public static final Integer DEFAULT_LAYER = 0;
-    /** Convenience object defining the Palette layer. Equivalent to new Integer(100).*/
+    /** Convenience object defining the Palette layer. Equivalent to Integer.valueOf(100).*/
     public static final Integer PALETTE_LAYER = 100;
-    /** Convenience object defining the Modal layer. Equivalent to new Integer(200).*/
+    /** Convenience object defining the Modal layer. Equivalent to Integer.valueOf(200).*/
     public static final Integer MODAL_LAYER = 200;
-    /** Convenience object defining the Popup layer. Equivalent to new Integer(300).*/
+    /** Convenience object defining the Popup layer. Equivalent to Integer.valueOf(300).*/
     public static final Integer POPUP_LAYER = 300;
-    /** Convenience object defining the Drag layer. Equivalent to new Integer(400).*/
+    /** Convenience object defining the Drag layer. Equivalent to Integer.valueOf(400).*/
     public static final Integer DRAG_LAYER = 400;
     /** Convenience object defining the Frame Content layer.
       * This layer is normally only use to position the contentPane and menuBar
       * components of JFrame.
-      * Equivalent to new Integer(-30000).
+      * Equivalent to Integer.valueOf(-30000).
       * @see JFrame
       */
-    public static final Integer FRAME_CONTENT_LAYER = new Integer(-30000);
+    public static final Integer FRAME_CONTENT_LAYER = -30000;
 
     /** Bound property */
     public static final String LAYER_PROPERTY = "layeredContainerLayer";

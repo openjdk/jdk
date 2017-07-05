@@ -139,7 +139,6 @@ class SynthArrowButton extends JButton implements SwingConstants, UIResource {
                 }
             }
 
-            context.dispose();
             return dim;
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 
 #ifndef HEADLESS
 #include "awt.h"
-#include "gtk2_interface.h"
+#include "gtk_interface.h"
 #endif /* !HEADLESS */
 
 
@@ -45,13 +45,12 @@ static jmethodID icon_upcall_method = NULL;
 /*
  * Class:     sun_awt_UNIXToolkit
  * Method:    check_gtk
- * Signature: ()Z
+ * Signature: (I)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_sun_awt_UNIXToolkit_check_1gtk(JNIEnv *env, jclass klass)
-{
+Java_sun_awt_UNIXToolkit_check_1gtk(JNIEnv *env, jclass klass, jint version) {
 #ifndef HEADLESS
-    return (jboolean)gtk2_check_version();
+    return (jboolean)gtk_check_version(version);
 #else
     return JNI_FALSE;
 #endif /* !HEADLESS */
@@ -61,13 +60,13 @@ Java_sun_awt_UNIXToolkit_check_1gtk(JNIEnv *env, jclass klass)
 /*
  * Class:     sun_awt_UNIXToolkit
  * Method:    load_gtk
- * Signature: ()Z
+ * Signature: (I)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_sun_awt_UNIXToolkit_load_1gtk(JNIEnv *env, jclass klass)
-{
+Java_sun_awt_UNIXToolkit_load_1gtk(JNIEnv *env, jclass klass, jint version,
+                                                             jboolean verbose) {
 #ifndef HEADLESS
-    return (jboolean)gtk2_load(env);
+    return (jboolean)gtk_load(env, version, verbose);
 #else
     return JNI_FALSE;
 #endif /* !HEADLESS */
@@ -83,16 +82,14 @@ JNIEXPORT jboolean JNICALL
 Java_sun_awt_UNIXToolkit_unload_1gtk(JNIEnv *env, jclass klass)
 {
 #ifndef HEADLESS
-    return (jboolean)gtk2_unload();
+    return (jboolean)gtk->unload();
 #else
     return JNI_FALSE;
 #endif /* !HEADLESS */
 }
 
-jboolean _icon_upcall(JNIEnv *env, jobject this, GdkPixbuf *pixbuf)
+jboolean init_method(JNIEnv *env, jobject this)
 {
-    jboolean result = JNI_FALSE;
-
     if (this_class == NULL) {
         this_class = (*env)->NewGlobalRef(env,
                                           (*env)->GetObjectClass(env, this));
@@ -100,33 +97,7 @@ jboolean _icon_upcall(JNIEnv *env, jobject this, GdkPixbuf *pixbuf)
                                  "loadIconCallback", "([BIIIIIZ)V");
         CHECK_NULL_RETURN(icon_upcall_method, JNI_FALSE);
     }
-
-    if (pixbuf != NULL)
-    {
-        guchar *pixbuf_data = (*fp_gdk_pixbuf_get_pixels)(pixbuf);
-        int row_stride = (*fp_gdk_pixbuf_get_rowstride)(pixbuf);
-        int width = (*fp_gdk_pixbuf_get_width)(pixbuf);
-        int height = (*fp_gdk_pixbuf_get_height)(pixbuf);
-        int bps = (*fp_gdk_pixbuf_get_bits_per_sample)(pixbuf);
-        int channels = (*fp_gdk_pixbuf_get_n_channels)(pixbuf);
-        gboolean alpha = (*fp_gdk_pixbuf_get_has_alpha)(pixbuf);
-
-        /* Copy the data array into a Java structure so we can pass it back. */
-        jbyteArray data = (*env)->NewByteArray(env, (row_stride * height));
-        JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
-
-        (*env)->SetByteArrayRegion(env, data, 0, (row_stride * height),
-                                   (jbyte *)pixbuf_data);
-
-        /* Release the pixbuf. */
-        (*fp_g_object_unref)(pixbuf);
-
-        /* Call the callback method to create the image on the Java side. */
-        (*env)->CallVoidMethod(env, this, icon_upcall_method, data,
-                width, height, row_stride, bps, channels, alpha);
-        result = JNI_TRUE;
-    }
-    return result;
+    return JNI_TRUE;
 }
 
 /*
@@ -144,7 +115,6 @@ Java_sun_awt_UNIXToolkit_load_1gtk_1icon(JNIEnv *env, jobject this,
     int len;
     char *filename_str = NULL;
     GError **error = NULL;
-    GdkPixbuf *pixbuf;
 
     if (filename == NULL)
     {
@@ -158,13 +128,17 @@ Java_sun_awt_UNIXToolkit_load_1gtk_1icon(JNIEnv *env, jobject this,
         JNU_ThrowOutOfMemoryError(env, "OutOfMemoryError");
         return JNI_FALSE;
     }
+    if (!init_method(env, this) ) {
+        return JNI_FALSE;
+    }
     (*env)->GetStringUTFRegion(env, filename, 0, len, filename_str);
-    pixbuf = (*fp_gdk_pixbuf_new_from_file)(filename_str, error);
+    jboolean result = gtk->get_file_icon_data(env, filename_str, error,
+                                            icon_upcall_method, this);
 
     /* Release the strings we've allocated. */
     free(filename_str);
 
-    return _icon_upcall(env, this, pixbuf);
+    return result;
 #else /* HEADLESS */
     return JNI_FALSE;
 #endif /* !HEADLESS */
@@ -186,7 +160,6 @@ Java_sun_awt_UNIXToolkit_load_1stock_1icon(JNIEnv *env, jobject this,
     int len;
     char *stock_id_str = NULL;
     char *detail_str = NULL;
-    GdkPixbuf *pixbuf;
 
     if (stock_id == NULL)
     {
@@ -215,8 +188,12 @@ Java_sun_awt_UNIXToolkit_load_1stock_1icon(JNIEnv *env, jobject this,
         (*env)->GetStringUTFRegion(env, detail, 0, len, detail_str);
     }
 
-    pixbuf = gtk2_get_stock_icon(widget_type, stock_id_str, icon_size,
-                                 text_direction, detail_str);
+    if (!init_method(env, this) ) {
+        return JNI_FALSE;
+    }
+    jboolean result = gtk->get_icon_data(env, widget_type, stock_id_str,
+                  icon_size, text_direction, detail_str,
+                  icon_upcall_method, this);
 
     /* Release the strings we've allocated. */
     free(stock_id_str);
@@ -224,8 +201,7 @@ Java_sun_awt_UNIXToolkit_load_1stock_1icon(JNIEnv *env, jobject this,
     {
         free(detail_str);
     }
-
-    return _icon_upcall(env, this, pixbuf);
+    return result;
 #else /* HEADLESS */
     return JNI_FALSE;
 #endif /* !HEADLESS */
@@ -279,11 +255,25 @@ Java_sun_awt_UNIXToolkit_gtkCheckVersionImpl(JNIEnv *env, jobject this,
 {
     char *ret;
 
-    ret = fp_gtk_check_version(major, minor, micro);
+    ret = gtk->gtk_check_version(major, minor, micro);
     if (ret == NULL) {
         return TRUE;
     }
 
-    free(ret);
     return FALSE;
+}
+
+/*
+ * Class:     sun_awt_UNIXToolkit
+ * Method:    get_gtk_version
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL
+Java_sun_awt_UNIXToolkit_get_1gtk_1version(JNIEnv *env, jclass klass)
+{
+#ifndef HEADLESS
+    return gtk ? gtk->version : GTK_ANY;
+#else
+    return GTK_ANY;
+#endif /* !HEADLESS */
 }

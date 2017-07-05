@@ -392,7 +392,7 @@ public class ParameterBlock implements Cloneable, Serializable {
      *         the specified parameter.
      */
     public ParameterBlock add(float f) {
-        return add(new Float(f));
+        return add(Float.valueOf(f));
     }
 
     /**
@@ -403,7 +403,7 @@ public class ParameterBlock implements Cloneable, Serializable {
      *         the specified parameter.
      */
     public ParameterBlock add(double d) {
-        return add(new Double(d));
+        return add(Double.valueOf(d));
     }
 
     /**
@@ -521,7 +521,7 @@ public class ParameterBlock implements Cloneable, Serializable {
      *        the specified parameter.
      */
     public ParameterBlock set(float f, int index) {
-        return set(new Float(f), index);
+        return set(Float.valueOf(f), index);
     }
 
     /**
@@ -537,7 +537,7 @@ public class ParameterBlock implements Cloneable, Serializable {
      *        the specified parameter.
      */
     public ParameterBlock set(double d, int index) {
-        return set(new Double(d), index);
+        return set(Double.valueOf(d), index);
     }
 
     /**

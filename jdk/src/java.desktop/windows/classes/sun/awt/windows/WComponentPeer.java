@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@ import java.awt.*;
 import java.awt.peer.*;
 import java.awt.image.VolatileImage;
 import sun.awt.RepaintArea;
-import sun.awt.CausedFocusEvent;
 import sun.awt.image.SunVolatileImage;
 import sun.awt.image.ToolkitImage;
 import java.awt.image.BufferedImage;
@@ -321,7 +320,7 @@ public abstract class WComponentPeer extends WObjectPeer
                   WKeyboardFocusManagerPeer.shouldFocusOnClick((Component)target))
               {
                   WKeyboardFocusManagerPeer.requestFocusFor((Component)target,
-                                                            CausedFocusEvent.Cause.MOUSE_EVENT);
+                                                            FocusEvent.Cause.MOUSE_EVENT);
               }
               break;
         }
@@ -687,7 +686,7 @@ public abstract class WComponentPeer extends WObjectPeer
     @Override
     public boolean requestFocus(Component lightweightChild, boolean temporary,
                                 boolean focusedWindowChangeAllowed, long time,
-                                CausedFocusEvent.Cause cause)
+                                FocusEvent.Cause cause)
     {
         if (WKeyboardFocusManagerPeer.
             processSynchronousLightweightTransfer((Component)target, lightweightChild, temporary,

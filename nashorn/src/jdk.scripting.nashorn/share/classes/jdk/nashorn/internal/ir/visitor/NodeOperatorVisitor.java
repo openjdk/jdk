@@ -133,8 +133,8 @@ public abstract class NodeOperatorVisitor<T extends LexicalContext> extends Node
             return enterASSIGN_SHR(binaryNode);
         case ASSIGN_SUB:
             return enterASSIGN_SUB(binaryNode);
-        case BIND:
-            return enterBIND(binaryNode);
+        case ARROW:
+            return enterARROW(binaryNode);
         case BIT_AND:
             return enterBIT_AND(binaryNode);
         case BIT_OR:
@@ -217,8 +217,8 @@ public abstract class NodeOperatorVisitor<T extends LexicalContext> extends Node
             return leaveASSIGN_SHR(binaryNode);
         case ASSIGN_SUB:
             return leaveASSIGN_SUB(binaryNode);
-        case BIND:
-            return leaveBIND(binaryNode);
+        case ARROW:
+            return leaveARROW(binaryNode);
         case BIT_AND:
             return leaveBIT_AND(binaryNode);
         case BIT_OR:
@@ -735,22 +735,22 @@ public abstract class NodeOperatorVisitor<T extends LexicalContext> extends Node
     }
 
     /**
-     * Binary enter - callback for entering a bind operator
+     * Binary enter - callback for entering a arrow operator
      *
      * @param  binaryNode the node
      * @return true if traversal should continue and node children be traversed, false otherwise
      */
-    public boolean enterBIND(final BinaryNode binaryNode) {
+    public boolean enterARROW(final BinaryNode binaryNode) {
         return enterDefault(binaryNode);
     }
 
     /**
-     * Binary leave - callback for leaving a bind operator
+     * Binary leave - callback for leaving a arrow operator
      *
      * @param  binaryNode the node
      * @return processed node, which will replace the original one, or the original node
      */
-    public Node leaveBIND(final BinaryNode binaryNode) {
+    public Node leaveARROW(final BinaryNode binaryNode) {
         return leaveDefault(binaryNode);
     }
 

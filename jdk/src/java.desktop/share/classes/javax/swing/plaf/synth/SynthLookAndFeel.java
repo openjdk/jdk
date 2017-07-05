@@ -976,7 +976,6 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
                 if (currBG != null && !currBG.equals(lastBG)) {
                     comp.repaint();
                 }
-                context.dispose();
             }
         }
     }
