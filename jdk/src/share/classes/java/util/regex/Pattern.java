@@ -1545,8 +1545,8 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             String[] subResult = producePermutations(otherChars);
 
             String prefix = input.substring(offset, offset+len);
-            for(int y=0; y<subResult.length; y++)
-                temp[index++] =  prefix + subResult[y];
+            for (String sre : subResult)
+                temp[index++] = prefix + sre;
         }
         String[] result = new String[index];
         for (int x=0; x<index; x++)
@@ -2702,15 +2702,22 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             // property construct \p{name=value}
             String value = name.substring(i + 1);
             name = name.substring(0, i).toLowerCase(Locale.ENGLISH);
-            if ("sc".equals(name) || "script".equals(name)) {
-                node = unicodeScriptPropertyFor(value);
-            } else if ("blk".equals(name) || "block".equals(name)) {
-                node = unicodeBlockPropertyFor(value);
-            } else if ("gc".equals(name) || "general_category".equals(name)) {
-                node = charPropertyNodeFor(value);
-            } else {
-                throw error("Unknown Unicode property {name=<" + name + ">, "
-                             + "value=<" + value + ">}");
+            switch (name) {
+                case "sc":
+                case "script":
+                    node = unicodeScriptPropertyFor(value);
+                    break;
+                case "blk":
+                case "block":
+                    node = unicodeBlockPropertyFor(value);
+                    break;
+                case "gc":
+                case "general_category":
+                    node = charPropertyNodeFor(value);
+                    break;
+                default:
+                    throw error("Unknown Unicode property {name=<" + name + ">, "
+                                + "value=<" + value + ">}");
             }
         } else {
             if (name.startsWith("In")) {
@@ -5497,8 +5504,8 @@ NEXT:       while (i <= last) {
 
         BnMS(int[] src, int[] lastOcc, int[] optoSft, Node next) {
             super(src, lastOcc, optoSft, next);
-            for (int x = 0; x < buffer.length; x++) {
-                lengthInChars += Character.charCount(buffer[x]);
+            for (int cp : buffer) {
+                lengthInChars += Character.charCount(cp);
             }
         }
         boolean match(Matcher matcher, int i, CharSequence seq) {

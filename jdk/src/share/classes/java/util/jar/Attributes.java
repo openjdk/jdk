@@ -296,24 +296,22 @@ public class Attributes implements Map<Object,Object>, Cloneable {
      * XXX Need to handle UTF8 values and break up lines longer than 72 bytes
      */
      void write(DataOutputStream os) throws IOException {
-        Iterator<Map.Entry<Object, Object>> it = entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<Object, Object> e = it.next();
-            StringBuffer buffer = new StringBuffer(
-                                        ((Name)e.getKey()).toString());
-            buffer.append(": ");
+         for (Entry<Object, Object> e : entrySet()) {
+             StringBuffer buffer = new StringBuffer(
+                                         ((Name) e.getKey()).toString());
+             buffer.append(": ");
 
-            String value = (String)e.getValue();
-            if (value != null) {
-                byte[] vb = value.getBytes("UTF8");
-                value = new String(vb, 0, 0, vb.length);
-            }
-            buffer.append(value);
+             String value = (String) e.getValue();
+             if (value != null) {
+                 byte[] vb = value.getBytes("UTF8");
+                 value = new String(vb, 0, 0, vb.length);
+             }
+             buffer.append(value);
 
-            buffer.append("\r\n");
-            Manifest.make72Safe(buffer);
-            os.writeBytes(buffer.toString());
-        }
+             buffer.append("\r\n");
+             Manifest.make72Safe(buffer);
+             os.writeBytes(buffer.toString());
+         }
         os.writeBytes("\r\n");
     }
 
@@ -340,16 +338,14 @@ public class Attributes implements Map<Object,Object>, Cloneable {
 
         // write out all attributes except for the version
         // we wrote out earlier
-        Iterator<Map.Entry<Object, Object>> it = entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<Object, Object> e = it.next();
-            String name = ((Name)e.getKey()).toString();
-            if ((version != null) && ! (name.equalsIgnoreCase(vername))) {
+        for (Entry<Object, Object> e : entrySet()) {
+            String name = ((Name) e.getKey()).toString();
+            if ((version != null) && !(name.equalsIgnoreCase(vername))) {
 
                 StringBuffer buffer = new StringBuffer(name);
                 buffer.append(": ");
 
-                String value = (String)e.getValue();
+                String value = (String) e.getValue();
                 if (value != null) {
                     byte[] vb = value.getBytes("UTF8");
                     value = new String(vb, 0, 0, vb.length);

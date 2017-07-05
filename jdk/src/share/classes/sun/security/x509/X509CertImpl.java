@@ -1115,8 +1115,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         SubjectKeyIdentifierExtension ski = getSubjectKeyIdentifierExtension();
         if (ski != null) {
             try {
-                return (KeyIdentifier)ski.get(
-                    SubjectKeyIdentifierExtension.KEY_ID);
+                return ski.get(SubjectKeyIdentifierExtension.KEY_ID);
             } catch (IOException ioe) {} // not possible
         }
         return null;

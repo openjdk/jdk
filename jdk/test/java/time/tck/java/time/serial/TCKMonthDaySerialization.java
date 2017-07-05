@@ -99,4 +99,9 @@ public class TCKMonthDaySerialization extends AbstractTCKTest {
         assertSerializedBySer(MonthDay.of(9, 16), bytes);
     }
 
+    @Test
+    public void test_invalid_serialform() throws Exception {
+        assertNotSerializable(MonthDay.class);
+    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -604,9 +604,9 @@ class Inet6Address extends InetAddress {
 
         ObjectInputStream.GetField gf = s.readFields();
         byte[] ipaddress = (byte[])gf.get("ipaddress", null);
-        int scope_id = (int)gf.get("scope_id", -1);
-        boolean scope_id_set = (boolean)gf.get("scope_id_set", false);
-        boolean scope_ifname_set = (boolean)gf.get("scope_ifname_set", false);
+        int scope_id = gf.get("scope_id", -1);
+        boolean scope_id_set = gf.get("scope_id_set", false);
+        boolean scope_ifname_set = gf.get("scope_ifname_set", false);
         String ifname = (String)gf.get("ifname", null);
 
         if (ifname != null && !"".equals (ifname)) {
