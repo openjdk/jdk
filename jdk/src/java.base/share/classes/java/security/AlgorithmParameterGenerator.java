@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ import java.util.Objects;
  * following standard {@code AlgorithmParameterGenerator} algorithms and
  * keysizes in parentheses:
  * <ul>
- * <li>{@code DiffieHellman} (1024, 2048, 4096)</li>
+ * <li>{@code DiffieHellman} (1024, 2048)</li>
  * <li>{@code DSA} (1024, 2048)</li>
  * </ul>
  * These algorithms are described in the <a href=

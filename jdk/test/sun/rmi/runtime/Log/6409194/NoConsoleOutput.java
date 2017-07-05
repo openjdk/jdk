@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,11 @@ public class NoConsoleOutput {
                 + " --add-exports=java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED"
                 + " -Djava.util.logging.config.file="
                 + loggingPropertiesFile, "", out, err);
-        vm.execute();
+        try {
+            vm.execute();
+        } finally {
+            vm.destroy();
+        }
 
         /*
          * Verify that the subprocess had no System.err output.

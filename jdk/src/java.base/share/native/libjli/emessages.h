@@ -36,6 +36,7 @@
 #define JNI_ERROR       "Error: A JNI error has occurred, please check your installation and try again"
 #define JNI_ERROR1      "Error: can't find JNI interfaces in: %s"
 
+#define ARG_INFO_ENVVAR "NOTE: Picked up the following options via %s:\n  %s"
 #define ARG_WARN        "Warning: %s option is no longer supported."
 
 #define ARG_ERROR1      "Error: %s requires class path specification"
@@ -45,6 +46,10 @@
 #define ARG_ERROR5      "Error: %s requires module id"
 #define ARG_ERROR6      "Error: %s requires modules to be specified"
 #define ARG_ERROR7      "Error: %s can only be specified once"
+#define ARG_ERROR8      "Error: Unmatched quote in environment variable %s"
+#define ARG_ERROR9      "Error: Option %s is not allowed in environment variable %s"
+#define ARG_ERROR10     "Error: Option %s in %s is not allowed in environment variable %s"
+#define ARG_ERROR11     "Error: Cannot specify main class in environment variable %s"
 
 #define JVM_ERROR1      "Error: Could not create the Java Virtual Machine.\n" GEN_ERROR
 #define JVM_ERROR2      "Error: Could not detach main thread.\n" JNI_ERROR

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,7 @@ public class LeaseCheckInterval implements Remote, Unreferenced {
                            String.valueOf(LEASE_VALUE));
 
         LeaseCheckInterval obj = new LeaseCheckInterval();
+        JavaVM jvm = null;
 
         try {
             UnicastRemoteObject.exportObject(obj);
@@ -96,8 +97,9 @@ public class LeaseCheckInterval implements Remote, Unreferenced {
 
             synchronized (obj.lock) {
                 System.err.println("starting remote client VM...");
-                (new JavaVM("SelfTerminator", "-Drmi.registry.port=" +
-                            registryPort, "")).start();
+                jvm = new JavaVM("SelfTerminator", "-Drmi.registry.port=" +
+                            registryPort, "");
+                jvm.start();
 
                 System.err.println("waiting for unreferenced() callback...");
                 obj.lock.wait(TIMEOUT);
@@ -120,6 +122,9 @@ public class LeaseCheckInterval implements Remote, Unreferenced {
                     "TEST FAILED: unexpected exception: " + e.toString());
             }
         } finally {
+            if (jvm != null) {
+                jvm.destroy();
+            }
             /*
              * When all is said and done, try to unexport the remote object
              * so that the VM has a chance to exit.

@@ -32,7 +32,7 @@ import java.io.*;
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
-import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -244,7 +244,7 @@ public abstract class ShellFolder extends File {
             return (ShellFolder)file;
         }
 
-        if (!Files.exists(file.toPath(), LinkOption.NOFOLLOW_LINKS)) {
+        if (!Files.exists(Paths.get(file.getPath()), LinkOption.NOFOLLOW_LINKS)) {
             throw new FileNotFoundException();
         }
         return shellFolderManager.createShellFolder(file);
