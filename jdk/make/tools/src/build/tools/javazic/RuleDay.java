@@ -139,7 +139,7 @@ class RuleDay {
         if (isLast()) {
             return -1;
         }
-        return getDay();
+        return isEarlier() ? -getDay() : getDay();
     }
 
     /**
@@ -147,13 +147,10 @@ class RuleDay {
      * @return the SimpleTimeZone day-of-week rule value
      */
     int getDayOfWeekForSimpleTimeZoneInt() {
-        if (!isLater() && !isEarlier() && !isLast()) {
-            return 0;
-        }
-        if (isLater()) {
+        if (isEarlier() || isLater()) {
             return -getDayOfWeekNum();
         }
-        return getDayOfWeekNum();
+        return isLast() ? getDayOfWeekNum() : 0;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,11 +433,12 @@ final public class SSLEngineImpl extends SSLEngine {
             connectionState = cs_RENEGOTIATE;
         }
         if (roleIsServer) {
-            handshaker = new ServerHandshaker
-                        (this, sslContext, enabledProtocols, doClientAuth);
+            handshaker = new ServerHandshaker(this, sslContext,
+                        enabledProtocols, doClientAuth,
+                        connectionState == cs_RENEGOTIATE, protocolVersion);
         } else {
-            handshaker = new ClientHandshaker
-                        (this, sslContext, enabledProtocols);
+            handshaker = new ClientHandshaker(this, sslContext,
+                        enabledProtocols, protocolVersion);
         }
         handshaker.enabledCipherSuites = enabledCipherSuites;
         handshaker.setEnableSessionCreation(enableSessionCreation);
@@ -639,6 +640,10 @@ final public class SSLEngineImpl extends SSLEngine {
             break;
 
         case cs_DATA:
+            if (!Handshaker.renegotiable) {
+                throw new SSLHandshakeException("renegotiation is not allowed");
+            }
+
             // initialize the handshaker, move to cs_RENEGOTIATE
             initHandshaker();
             break;
@@ -966,7 +971,13 @@ final public class SSLEngineImpl extends SSLEngine {
                     handshaker.process_record(inputRecord, expectingFinished);
                     expectingFinished = false;
 
-                    if (handshaker.isDone()) {
+                    if (handshaker.invalidated) {
+                        handshaker = null;
+                        // if state is cs_RENEGOTIATE, revert it to cs_DATA
+                        if (connectionState == cs_RENEGOTIATE) {
+                            connectionState = cs_DATA;
+                        }
+                    } else if (handshaker.isDone()) {
                         sess = handshaker.getSession();
                         if (!writer.hasOutboundData()) {
                             hsStatus = HandshakeStatus.FINISHED;
