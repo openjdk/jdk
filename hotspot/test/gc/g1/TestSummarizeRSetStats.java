@@ -23,7 +23,7 @@
 
 /*
  * @test TestSummarizeRSetStats.java
- * @bug 8013895
+ * @bug 8013895 8129977
  * @library /testlibrary
  * @modules java.base/sun.misc
  *          java.management/sun.management

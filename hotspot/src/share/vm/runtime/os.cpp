@@ -1237,7 +1237,7 @@ bool os::set_boot_path(char fileSep, char pathSep) {
   struct stat st;
 
   // modular image if bootmodules.jimage exists
-  char* jimage = format_boot_path("%/lib/modules/bootmodules.jimage", home, home_len, fileSep, pathSep);
+  char* jimage = format_boot_path("%/lib/modules/" BOOT_IMAGE_NAME, home, home_len, fileSep, pathSep);
   if (jimage == NULL) return false;
   bool has_jimage = (os::stat(jimage, &st) == 0);
   if (has_jimage) {

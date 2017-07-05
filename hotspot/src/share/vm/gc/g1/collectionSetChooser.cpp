@@ -119,7 +119,7 @@ void CollectionSetChooser::verify() {
   }
   guarantee(sum_of_reclaimable_bytes == _remaining_reclaimable_bytes,
             err_msg("reclaimable bytes inconsistent, "
-                    "remaining: "SIZE_FORMAT" sum: "SIZE_FORMAT,
+                    "remaining: " SIZE_FORMAT " sum: " SIZE_FORMAT,
                     _remaining_reclaimable_bytes, sum_of_reclaimable_bytes));
 }
 #endif // !PRODUCT

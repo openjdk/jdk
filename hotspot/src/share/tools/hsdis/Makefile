@@ -70,7 +70,8 @@ CONFIGURE_ARGS= --host=$(MINGW) --target=$(MINGW)
 else   #linux
 CPU             = $(shell uname -m)
 ARCH1=$(CPU:x86_64=amd64)
-ARCH=$(ARCH1:i686=i386)
+ARCH2=$(ARCH1:i686=i386)
+ARCH=$(ARCH2:ppc64le=ppc64)
 ifdef LP64
 CFLAGS/sparcv9	+= -m64
 CFLAGS/amd64	+= -m64

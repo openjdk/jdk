@@ -78,6 +78,7 @@ class CodeCache : AllStatic {
   friend class VMStructs;
   friend class NMethodIterator;
   friend class WhiteBox;
+  friend class CodeCacheLoader;
  private:
   // CodeHeaps of the cache
   static GrowableArray<CodeHeap*>* _heaps;

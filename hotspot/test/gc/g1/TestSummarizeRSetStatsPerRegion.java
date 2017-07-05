@@ -23,7 +23,7 @@
 
 /*
  * @test TestSummarizeRSetStatsPerRegion.java
- * @bug 8014078
+ * @bug 8014078 8129977
  * @library /testlibrary
  * @modules java.base/sun.misc
  *          java.management/sun.management

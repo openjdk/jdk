@@ -40,7 +40,7 @@ protected:
   HeapRegionClaimer _hrclaimer;
 
 public:
-  G1ParRemoveSelfForwardPtrsTask(G1CollectedHeap* g1h);
+  G1ParRemoveSelfForwardPtrsTask();
 
   void work(uint worker_id);
 };
