@@ -574,9 +574,13 @@ bool InstructForm::needs_anti_dependence_check(FormDict &globals) const {
   // TEMPORARY
   // if( is_simple_chain_rule(globals) )  return false;
 
-  // String-compare uses many memorys edges, but writes none
+  // String.(compareTo/equals/indexOf) and Arrays.equals use many memorys edges,
+  // but writes none
   if( _matrule && _matrule->_rChild &&
-      strcmp(_matrule->_rChild->_opType,"StrComp")==0 )
+      ( strcmp(_matrule->_rChild->_opType,"StrComp"    )==0 ||
+        strcmp(_matrule->_rChild->_opType,"StrEquals"  )==0 ||
+        strcmp(_matrule->_rChild->_opType,"StrIndexOf" )==0 ||
+        strcmp(_matrule->_rChild->_opType,"AryEq"      )==0 ))
     return true;
 
   // Check if instruction has a USE of a memory operand class, but no defs
@@ -815,8 +819,10 @@ uint InstructForm::oper_input_base(FormDict &globals) {
     return AdlcVMDeps::Parms;   // Skip the machine-state edges
 
   if( _matrule->_rChild &&
-          strcmp(_matrule->_rChild->_opType,"StrComp")==0 ) {
-        // String compare takes 1 control and 4 memory edges.
+      ( strcmp(_matrule->_rChild->_opType,"StrComp"   )==0 ||
+        strcmp(_matrule->_rChild->_opType,"StrEquals" )==0 ||
+        strcmp(_matrule->_rChild->_opType,"StrIndexOf")==0 )) {
+        // String.(compareTo/equals/indexOf) take 1 control and 4 memory edges.
     return 5;
   }
 

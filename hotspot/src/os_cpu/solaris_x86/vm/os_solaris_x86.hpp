@@ -32,13 +32,11 @@
   static jint  (*atomic_cmpxchg_func)     (jint,  volatile jint*,  jint);
   static jlong (*atomic_cmpxchg_long_func)(jlong, volatile jlong*, jlong);
   static jint  (*atomic_add_func)         (jint,  volatile jint*);
-  static void  (*fence_func)              ();
 
   static jint  atomic_xchg_bootstrap        (jint,  volatile jint*);
   static jint  atomic_cmpxchg_bootstrap     (jint,  volatile jint*,  jint);
   static jlong atomic_cmpxchg_long_bootstrap(jlong, volatile jlong*, jlong);
   static jint  atomic_add_bootstrap         (jint,  volatile jint*);
-  static void  fence_bootstrap              ();
 
   static void setup_fpu();
 #endif // AMD64

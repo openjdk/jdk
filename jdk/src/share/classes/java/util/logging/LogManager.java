@@ -215,6 +215,14 @@ public class LogManager {
     // This private class is used as a shutdown hook.
     // It does a "reset" to close all open handlers.
     private class Cleaner extends Thread {
+
+        private Cleaner() {
+            /* Set context class loader to null in order to avoid
+             * keeping a strong reference to an application classloader.
+             */
+            this.setContextClassLoader(null);
+        }
+
         public void run() {
             // This is to ensure the LogManager.<clinit> is completed
             // before synchronized block. Otherwise deadlocks are possible.
