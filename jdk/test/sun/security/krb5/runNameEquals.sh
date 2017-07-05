@@ -43,6 +43,10 @@ if [ "${TESTJAVA}" = "" ] ; then
    exit 1
 fi
 
+if [ "${COMPILEJAVA}" = "" ]; then
+    COMPILEJAVA="${TESTJAVA}"
+fi
+
 NATIVE=false
 
 # set platform-dependent variables
@@ -73,7 +77,7 @@ esac
 
 TEST=Krb5NameEquals
 
-${TESTJAVA}${FILESEP}bin${FILESEP}javac \
+${COMPILEJAVA}${FILESEP}bin${FILESEP}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
     -d ${TESTCLASSES}${FILESEP} \
     ${TESTSRC}${FILESEP}${TEST}.java
 

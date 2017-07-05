@@ -44,7 +44,8 @@ case "$OS" in
     exit 1;
     ;;
 esac
-${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}Constructor.java
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . \
+    ${TESTSRC}${FS}Constructor.java
 
 failures=0
 

@@ -49,7 +49,7 @@ mkdir -p classes
 for dir in `echo ${TESTCLASSPATH:-$TESTCLASSES} | sed -e "s/$PS/ /"` ; do cp $dir/*.class classes ; done
 rm classes/ExtLoadedImpl.class classes/ExtLoadedImpl_Stub.class classes/CheckLoader.class
 mkdir -p ext
-$TESTJAVA/bin/jar cf ext/ext.jar -C $TESTCLASSES ExtLoadedImpl.class -C $TESTCLASSES ExtLoadedImpl_Stub.class -C $TESTCLASSES CheckLoader.class
+$COMPILEJAVA/bin/jar ${TESTTOOLVMOPTS} cf ext/ext.jar -C $TESTCLASSES ExtLoadedImpl.class -C $TESTCLASSES ExtLoadedImpl_Stub.class -C $TESTCLASSES CheckLoader.class
 
 $TESTJAVA/bin/java ${TESTVMOPTS} -cp classes -Dtest.src=$TESTSRC -Dtest.classes=$TESTCLASSES -Djava.security.policy=$TESTSRC/security.policy -Djava.ext.dirs=ext ExtLoadedImplTest
 

@@ -45,9 +45,12 @@ class UnixFileAttributes
     private int     st_uid;
     private int     st_gid;
     private long    st_size;
-    private long    st_atime;
-    private long    st_mtime;
-    private long    st_ctime;
+    private long    st_atime_sec;
+    private long    st_atime_nsec;
+    private long    st_mtime_sec;
+    private long    st_mtime_nsec;
+    private long    st_ctime_sec;
+    private long    st_ctime_nsec;
 
     // created lazily
     private volatile UserPrincipal owner;
@@ -101,8 +104,20 @@ class UnixFileAttributes
     int uid()   { return st_uid; }
     int gid()   { return st_gid; }
 
+    private static FileTime toFileTime(long sec, long nsec) {
+        if (nsec == 0) {
+            return FileTime.from(sec, TimeUnit.SECONDS);
+        } else {
+            // truncate to microseconds to avoid overflow with timestamps
+            // way out into the future. We can re-visit this if FileTime
+            // is updated to define a from(secs,nsecs) method.
+            long micro = sec*1000000L + nsec/1000L;
+            return FileTime.from(micro, TimeUnit.MICROSECONDS);
+        }
+    }
+
     FileTime ctime() {
-        return FileTime.from(st_ctime, TimeUnit.SECONDS);
+        return toFileTime(st_ctime_sec, st_ctime_nsec);
     }
 
     boolean isDevice() {
@@ -114,12 +129,12 @@ class UnixFileAttributes
 
     @Override
     public FileTime lastModifiedTime() {
-        return FileTime.from(st_mtime, TimeUnit.SECONDS);
+        return toFileTime(st_mtime_sec, st_mtime_nsec);
     }
 
     @Override
     public FileTime lastAccessTime() {
-        return FileTime.from(st_atime, TimeUnit.SECONDS);
+        return toFileTime(st_atime_sec, st_atime_nsec);
     }
 
     @Override

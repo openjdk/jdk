@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,8 +105,9 @@ import sun.awt.AWTAccessor;
  *       exists and contains the key <code>swing.defaultlaf</code>,
  *       use its value as the default look and feel class name. The location
  *       that is checked for <code>swing.properties</code> may vary depending
- *       upon the implementation of the Java platform. In Sun's implementation
- *       the location is <code>${java.home}/lib/swing.properties</code>.
+ *       upon the implementation of the Java platform. Typically the
+ *       <code>swing.properties</code> file is located in the <code>lib</code>
+ *       subdirectory of the Java installation directory.
  *       Refer to the release notes of the implementation being used for
  *       further details.
  *   <li>Otherwise use the cross platform look and feel.
@@ -256,7 +257,7 @@ public class UIManager implements Serializable
     }
 
 
-    /* Keys used for the properties file in <java.home>/lib/swing.properties.
+    /* Keys used in the <code>swing.properties</code> properties file.
      * See loadUserProperties(), initialize().
      */
 
@@ -267,7 +268,7 @@ public class UIManager implements Serializable
     private static final String disableMnemonicKey = "swing.disablenavaids";
 
     /**
-     * Return a swing.properties file key for the attribute of specified
+     * Return a <code>swing.properties</code> file key for the attribute of specified
      * look and feel.  The attr is either "name" or "class", a typical
      * key would be: "swing.installedlaf.windows.name"
      */
@@ -276,9 +277,11 @@ public class UIManager implements Serializable
     }
 
     /**
-     * The filename for swing.properties is a path like this (Unix version):
-     * <java.home>/lib/swing.properties.  This method returns a bogus
-     * filename if java.home isn't defined.
+     * The location of the <code>swing.properties</code> property file is
+     * implementation-specific.
+     * It is typically located in the <code>lib</code> subdirectory of the Java
+     * installation directory. This method returns a bogus filename
+     * if <code>java.home</code> isn't defined.
      */
     private static String makeSwingPropertiesFilename() {
         String sep = File.separator;
@@ -352,7 +355,7 @@ public class UIManager implements Serializable
 
     /**
      * The default value of <code>installedLAFS</code> is used when no
-     * swing.properties
+     * <code>swing.properties</code>
      * file is available or if the file doesn't contain a "swing.installedlafs"
      * property.
      *
@@ -1271,7 +1274,8 @@ public class UIManager implements Serializable
 
 
     /**
-     * If a swing.properties file exist and it has a swing.installedlafs property
+     * If a <code>swing.properties</code> file exist and it has a
+     * <code>swing.installedlafs</code> property
      * then initialize the <code>installedLAFs</code> field.
      *
      * @see #getInstalledLookAndFeels

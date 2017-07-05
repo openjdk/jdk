@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -299,6 +299,18 @@ class JapaneseImperialCalendar extends Calendar {
         super(zone, aLocale);
         jdate = jcal.newCalendarDate(zone);
         setTimeInMillis(System.currentTimeMillis());
+    }
+
+    /**
+     * Constructs an "empty" {@code JapaneseImperialCalendar}.
+     *
+     * @param zone    the given time zone
+     * @param aLocale the given locale
+     * @param flag    the flag requesting an empty instance
+     */
+    JapaneseImperialCalendar(TimeZone zone, Locale aLocale, boolean flag) {
+        super(zone, aLocale);
+        jdate = jcal.newCalendarDate(zone);
     }
 
     /**

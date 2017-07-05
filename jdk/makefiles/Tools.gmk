@@ -106,6 +106,10 @@ TOOL_JARSPLIT=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
 TOOL_JAVAZIC=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
 	build.tools.javazic.Main
 
+TOOL_TZDB=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses \
+	build.tools.tzdb.TzdbZoneRulesCompiler
+
+
 # TODO: There are references to the jdwpgen.jar in jdk/make/netbeans/jdwpgen/build.xml 
 # and nbproject/project.properties in the same dir. Needs to be looked at.
 TOOL_JDWPGEN=$(JAVA) -cp $(JDK_OUTPUTDIR)/btclasses build.tools.jdwpgen.Main

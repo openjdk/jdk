@@ -41,6 +41,10 @@ if [ "${TESTJAVA}" = "" ] ; then
    exit 1
 fi
 
+if [ "${COMPILEJAVA}" = "" ]; then
+   COMPILEJAVA="${TESTJAVA}"
+fi
+
 # set platform-dependent variables
 OS=`uname -s`
 case "$OS" in
@@ -65,12 +69,14 @@ esac
 # compile the test program
 cd ${TESTSRC}${FILESEP}
 rm GrantAllPermToExtWhenNoPolicy.class
-${TESTJAVA}${FILESEP}bin${FILESEP}javac -d ${TESTSRC}${FILESEP} ${TESTSRC}${FILESEP}SomeExtensionClass.java
-${TESTJAVA}${FILESEP}bin${FILESEP}javac -d ${TESTSRC}${FILESEP} ${TESTSRC}${FILESEP}GrantAllPermToExtWhenNoPolicy.java
+${COMPILEJAVA}${FILESEP}bin${FILESEP}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
+    -d ${TESTSRC}${FILESEP} ${TESTSRC}${FILESEP}SomeExtensionClass.java
+${COMPILEJAVA}${FILESEP}bin${FILESEP}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
+    -d ${TESTSRC}${FILESEP} ${TESTSRC}${FILESEP}GrantAllPermToExtWhenNoPolicy.java
 
 # create the extension JAR file
 cd ${TESTCLASSES}
-${TESTJAVA}${FILESEP}bin${FILESEP}jar cvf SomeExt.jar SomeExtensionClass*.class
+${COMPILEJAVA}${FILESEP}bin${FILESEP}jar cvf SomeExt.jar SomeExtensionClass*.class
 rm SomeExtensionClass.class
 
 # move the extension JAR file to the extension directory

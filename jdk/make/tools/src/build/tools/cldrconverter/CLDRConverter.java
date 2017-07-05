@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ public class CLDRConverter {
     static final String LOCALE_NAME_PREFIX = "locale.displayname.";
     static final String CURRENCY_SYMBOL_PREFIX = "currency.symbol.";
     static final String CURRENCY_NAME_PREFIX = "currency.displayname.";
+    static final String CALENDAR_NAME_PREFIX = "calendarname.";
     static final String TIMEZONE_ID_PREFIX = "timezone.id.";
     static final String ZONE_NAME_PREFIX = "timezone.displayname.";
     static final String METAZONE_ID_PREFIX = "metazone.id.";
@@ -519,35 +520,70 @@ public class CLDRConverter {
         return calendarData;
     }
 
+    static final String[] FORMAT_DATA_ELEMENTS = {
+        "MonthNames",
+        "standalone.MonthNames",
+        "MonthAbbreviations",
+        "standalone.MonthAbbreviations",
+        "MonthNarrow",
+        "standalone.MonthNarrows",
+        "DayNames",
+        "standalone.DayNames",
+        "DayAbbreviations",
+        "standalone.DayAbbreviations",
+        "DayNarrows",
+        "standalone.DayNarrows",
+        "AmPmMarkers",
+        "narrow.AmPmMarkers",
+        "long.Eras",
+        "Eras",
+        "narrow.Eras",
+        "field.era",
+        "field.year",
+        "field.month",
+        "field.week",
+        "field.weekday",
+        "field.dayperiod",
+        "field.hour",
+        "field.minute",
+        "field.second",
+        "field.zone",
+        "TimePatterns",
+        "DatePatterns",
+        "DateTimePatterns",
+        "DateTimePatternChars"
+    };
+
     private static Map<String, Object> extractFormatData(Map<String, Object> map, String id) {
         Map<String, Object> formatData = new LinkedHashMap<>();
         for (CalendarType calendarType : CalendarType.values()) {
             String prefix = calendarType.keyElementName();
-            copyIfPresent(map, prefix + "MonthNames", formatData); // default FORMAT since JDK8
-            copyIfPresent(map, prefix + "standalone.MonthNames", formatData);
-            copyIfPresent(map, prefix + "MonthAbbreviations", formatData);
-            copyIfPresent(map, prefix + "standalone.MonthAbbreviations", formatData);
-            copyIfPresent(map, prefix + "MonthNarrow", formatData);
-            copyIfPresent(map, prefix + "standalone.MonthNarrows", formatData);
-            copyIfPresent(map, prefix + "DayNames", formatData);
-            copyIfPresent(map, prefix + "standalone.DayNames", formatData);
-            copyIfPresent(map, prefix + "DayAbbreviations", formatData);
-            copyIfPresent(map, prefix + "standalone.DayAbbreviations", formatData);
-            copyIfPresent(map, prefix + "DayNarrows", formatData);
-            copyIfPresent(map, prefix + "standalone.DayNarrows", formatData);
-            copyIfPresent(map, prefix + "AmPmMarkers", formatData);
-            copyIfPresent(map, prefix + "narrow.AmPmMarkers", formatData);
-            copyIfPresent(map, prefix + "long.Eras", formatData);
-            copyIfPresent(map, prefix + "Eras", formatData);
-            copyIfPresent(map, prefix + "narrow.Eras", formatData);
-            copyIfPresent(map, prefix + "TimePatterns", formatData);
-            copyIfPresent(map, prefix + "DatePatterns", formatData);
-            copyIfPresent(map, prefix + "DateTimePatterns", formatData);
-            copyIfPresent(map, prefix + "DateTimePatternChars", formatData);
+            for (String element : FORMAT_DATA_ELEMENTS) {
+                String key = prefix + element;
+                copyIfPresent(map, "cldr." + key, formatData);
+                copyIfPresent(map, key, formatData);
+            }
+        }
+
+        // Copy available calendar names
+        for (String key : map.keySet()) {
+            if (key.startsWith(CLDRConverter.CALENDAR_NAME_PREFIX)) {
+                String type = key.substring(CLDRConverter.CALENDAR_NAME_PREFIX.length());
+                for (CalendarType calendarType : CalendarType.values()) {
+                    if (type.equals(calendarType.lname())) {
+                        Object value = map.get(key);
+                        formatData.put(key, value);
+                        String ukey = CLDRConverter.CALENDAR_NAME_PREFIX + calendarType.uname();
+                        if (!key.equals(ukey)) {
+                            formatData.put(ukey, value);
+                        }
+                    }
+                }
+            }
         }
 
         copyIfPresent(map, "DefaultNumberingSystem", formatData);
-        String defaultScript = (String) map.get("DefaultNumberingSystem");
+
         @SuppressWarnings("unchecked")
         List<String> numberingScripts = (List<String>) map.remove("numberingScripts");
         if (numberingScripts != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,9 +63,10 @@ import com.sun.media.sound.JDK13Services;
  * <p>Properties can be used to specify the default mixer
  * for specific line types.
  * Both system properties and a properties file are considered.
- * In the Oracle reference implementation, the properties file is
- * &quot;lib/sound.properties&quot; in the JRE
- * directory. If a property exists both as a system property and in the
+ * The <code>sound.properties</code> properties file is read from
+ * an implementation-specific location (typically it is the <code>lib</code>
+ * directory in the Java installation directory).
+ * If a property exists both as a system property and in the
  * properties file, the system property takes precedence. If none is
  * specified, a suitable default is chosen among the available devices.
  * The syntax of the properties file is specified in

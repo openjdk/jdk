@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import sun.awt.image.*;
 import sun.java2d.*;
 import sun.print.*;
 import apple.laf.*;
-import apple.laf.JRSUIConstants.Widget;
 import apple.laf.JRSUIUtils.NineSliceMetricsProvider;
 
 abstract class AquaPainter <T extends JRSUIState> {
@@ -63,7 +62,7 @@ abstract class AquaPainter <T extends JRSUIState> {
     }
 
     static <T extends JRSUIState> AquaPainter<T> create(final T state, final NineSliceMetricsProvider metricsProvider) {
-        return new AquaNineSlicingImagePainter<T>(state, metricsProvider);
+        return new AquaNineSlicingImagePainter<>(state, metricsProvider);
     }
 
     abstract void paint(final Graphics2D g, final T stateToPaint, final Component c);
@@ -71,7 +70,7 @@ abstract class AquaPainter <T extends JRSUIState> {
     final Rectangle boundsRect = new Rectangle();
     final JRSUIControl control;
     T state;
-    public AquaPainter(final JRSUIControl control, final T state) {
+    AquaPainter(final JRSUIControl control, final T state) {
         this.control = control;
         this.state = state;
     }
@@ -94,14 +93,14 @@ abstract class AquaPainter <T extends JRSUIState> {
         protected final HashMap<T, RecyclableJRSUISlicedImageControl> slicedControlImages;
         protected final NineSliceMetricsProvider metricsProvider;
 
-        public AquaNineSlicingImagePainter(final T state) {
+        AquaNineSlicingImagePainter(final T state) {
             this(state, null);
         }
 
-        public AquaNineSlicingImagePainter(final T state, final NineSliceMetricsProvider metricsProvider) {
+        AquaNineSlicingImagePainter(final T state, final NineSliceMetricsProvider metricsProvider) {
             super(new JRSUIControl(false), state);
             this.metricsProvider = metricsProvider;
-            slicedControlImages = new HashMap<T, RecyclableJRSUISlicedImageControl>();
+            slicedControlImages = new HashMap<>();
         }
 
         @Override
@@ -127,7 +126,7 @@ abstract class AquaPainter <T extends JRSUIState> {
     }
 
     static class AquaSingleImagePainter<T extends JRSUIState> extends AquaPainter<T> {
-        public AquaSingleImagePainter(final T state) {
+        AquaSingleImagePainter(final T state) {
             super(new JRSUIControl(false), state);
         }
 
@@ -137,12 +136,12 @@ abstract class AquaPainter <T extends JRSUIState> {
         }
 
         static void paintFromSingleCachedImage(final Graphics2D g, final JRSUIControl control, final JRSUIState controlState, final Component c, final Rectangle boundsRect) {
-            Rectangle clipRect = g.getClipBounds();
-            Rectangle intersection = boundsRect.intersection(clipRect);
+            final Rectangle clipRect = g.getClipBounds();
+            final Rectangle intersection = boundsRect.intersection(clipRect);
             if (intersection.width <= 0 || intersection.height <= 0) return;
 
-            int imgX1 = intersection.x - boundsRect.x;
-            int imgY1 = intersection.y - boundsRect.y;
+            final int imgX1 = intersection.x - boundsRect.x;
+            final int imgY1 = intersection.y - boundsRect.y;
 
             final GraphicsConfiguration config = g.getDeviceConfiguration();
             final ImageCache cache = ImageCache.getInstance();
@@ -150,19 +149,14 @@ abstract class AquaPainter <T extends JRSUIState> {
             if (image == null) {
                 image = new BufferedImage(boundsRect.width, boundsRect.height, BufferedImage.TYPE_INT_ARGB_PRE);
                 cache.setImage(image, config, boundsRect.width, boundsRect.height, controlState);
-            } else {
-                g.drawImage(image, intersection.x, intersection.y, intersection.x + intersection.width, intersection.y + intersection.height,
-                        imgX1, imgY1, imgX1 + intersection.width, imgY1 + intersection.height, null);
-                return;
+                final WritableRaster raster = image.getRaster();
+                final DataBufferInt buffer = (DataBufferInt)raster.getDataBuffer();
+
+                control.set(controlState);
+                control.paint(SunWritableRaster.stealData(buffer, 0),
+                              image.getWidth(), image.getHeight(), 0, 0, boundsRect.width, boundsRect.height);
+                SunWritableRaster.markDirty(buffer);
             }
-
-            final WritableRaster raster = image.getRaster();
-            final DataBufferInt buffer = (DataBufferInt)raster.getDataBuffer();
-
-            control.set(controlState);
-            control.paint(SunWritableRaster.stealData(buffer, 0),
-                    image.getWidth(), image.getHeight(), 0, 0, boundsRect.width, boundsRect.height);
-            SunWritableRaster.markDirty(buffer);
 
             g.drawImage(image, intersection.x, intersection.y, intersection.x + intersection.width, intersection.y + intersection.height,
                     imgX1, imgY1, imgX1 + intersection.width, imgY1 + intersection.height, null);
@@ -173,7 +167,7 @@ abstract class AquaPainter <T extends JRSUIState> {
         final JRSUIControl control;
         final JRSUIState state;
 
-        public RecyclableJRSUISlicedImageControl(final JRSUIControl control, final JRSUIState state, final NineSliceMetrics metrics) {
+        RecyclableJRSUISlicedImageControl(final JRSUIControl control, final JRSUIState state, final NineSliceMetrics metrics) {
             super(metrics);
             this.control = control;
             this.state = state;

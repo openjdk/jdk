@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.security.*;
 import java.lang.ref.WeakReference;
+import java.util.function.Supplier;
 
 /**
  * A Logger object is used to log messages for a specific
@@ -95,6 +96,33 @@ import java.lang.ref.WeakReference;
  * java.text.MessageFormat style formatting to format parameters, so
  * for example a format string "{0} {1}" would format two parameters
  * as strings.
+ * <p>
+ * A set of methods alternatively take a "msgSupplier" instead of a "msg"
+ * argument.  These methods take a {@link Supplier}{@code <String>} function
+ * which is invoked to construct the desired log message only when the message
+ * actually is to be logged based on the effective log level thus eliminating
+ * unnecessary message construction. For example, if the developer wants to
+ * log system health status for diagnosis, with the String-accepting version,
+ * the code would look like:
+ <code><pre>
+
+   class DiagnosisMessages {
+     static String systemHealthStatus() {
+       // collect system health information
+       ...
+     }
+   }
+   ...
+   logger.log(Level.FINER, DiagnosisMessages.systemHealthStatus());
+ </pre></code>
+ * With the above code, the health status is collected unnecessarily even when
+ * the log level FINER is disabled. With the Supplier-accepting version as
+ * below, the status will only be collected when the log level FINER is
+ * enabled.
+ <code><pre>
+
+   logger.log(Level.FINER, DiagnosisMessages::systemHealthStatus);
+ </pre></code>
  * <p>
  * When mapping ResourceBundle names to ResourceBundles, the Logger
  * will first try to use the Thread's ContextClassLoader.  If that
@@ -567,6 +595,27 @@ public class Logger {
     }
 
     /**
+     * Log a message, which is only to be constructed if the logging level
+     * is such that the message will actually be logged.
+     * <p>
+     * If the logger is currently enabled for the given message
+     * level then the message is constructed by invoking the provided
+     * supplier function and forwarded to all the registered output
+     * Handler objects.
+     * <p>
+     * @param   level   One of the message level identifiers, e.g., SEVERE
+     * @param   msgSupplier   A function, which when called, produces the
+     *                        desired log message
+     */
+    public void log(Level level, Supplier<String> msgSupplier) {
+        if (level.intValue() < levelValue || levelValue == offValue) {
+            return;
+        }
+        LogRecord lr = new LogRecord(level, msgSupplier.get());
+        doLog(lr);
+    }
+
+    /**
      * Log a message, with one object parameter.
      * <p>
      * If the logger is currently enabled for the given message
@@ -615,7 +664,7 @@ public class Logger {
      * which is forwarded to all registered output handlers.
      * <p>
      * Note that the thrown argument is stored in the LogRecord thrown
-     * property, rather than the LogRecord parameters property.  Thus is it
+     * property, rather than the LogRecord parameters property.  Thus it is
      * processed specially by output Formatters and is not treated
      * as a formatting parameter to the LogRecord message property.
      * <p>
@@ -628,6 +677,34 @@ public class Logger {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
+        lr.setThrown(thrown);
+        doLog(lr);
+    }
+
+    /**
+     * Log a lazily constructed message, with associated Throwable information.
+     * <p>
+     * If the logger is currently enabled for the given message level then the
+     * message is constructed by invoking the provided supplier function. The
+     * message and the given {@link Throwable} are then stored in a {@link
+     * LogRecord} which is forwarded to all registered output handlers.
+     * <p>
+     * Note that the thrown argument is stored in the LogRecord thrown
+     * property, rather than the LogRecord parameters property.  Thus it is
+     * processed specially by output Formatters and is not treated
+     * as a formatting parameter to the LogRecord message property.
+     * <p>
+     * @param   level   One of the message level identifiers, e.g., SEVERE
+     * @param   thrown  Throwable associated with log message.
+     * @param   msgSupplier   A function, which when called, produces the
+     *                        desired log message
+     * @since   1.8
+     */
+    public void log(Level level, Throwable thrown, Supplier<String> msgSupplier) {
+        if (level.intValue() < levelValue || levelValue == offValue) {
+            return;
+        }
+        LogRecord lr = new LogRecord(level, msgSupplier.get());
         lr.setThrown(thrown);
         doLog(lr);
     }
@@ -654,6 +731,33 @@ public class Logger {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
+        lr.setSourceClassName(sourceClass);
+        lr.setSourceMethodName(sourceMethod);
+        doLog(lr);
+    }
+
+    /**
+     * Log a lazily constructed message, specifying source class and method,
+     * with no arguments.
+     * <p>
+     * If the logger is currently enabled for the given message
+     * level then the message is constructed by invoking the provided
+     * supplier function and forwarded to all the registered output
+     * Handler objects.
+     * <p>
+     * @param   level   One of the message level identifiers, e.g., SEVERE
+     * @param   sourceClass    name of class that issued the logging request
+     * @param   sourceMethod   name of method that issued the logging request
+     * @param   msgSupplier   A function, which when called, produces the
+     *                        desired log message
+     * @since   1.8
+     */
+    public void logp(Level level, String sourceClass, String sourceMethod,
+                     Supplier<String> msgSupplier) {
+        if (level.intValue() < levelValue || levelValue == offValue) {
+            return;
+        }
+        LogRecord lr = new LogRecord(level, msgSupplier.get());
         lr.setSourceClassName(sourceClass);
         lr.setSourceMethodName(sourceMethod);
         doLog(lr);
@@ -721,7 +825,7 @@ public class Logger {
      * which is forwarded to all registered output handlers.
      * <p>
      * Note that the thrown argument is stored in the LogRecord thrown
-     * property, rather than the LogRecord parameters property.  Thus is it
+     * property, rather than the LogRecord parameters property.  Thus it is
      * processed specially by output Formatters and is not treated
      * as a formatting parameter to the LogRecord message property.
      * <p>
@@ -732,11 +836,45 @@ public class Logger {
      * @param   thrown  Throwable associated with log message.
      */
     public void logp(Level level, String sourceClass, String sourceMethod,
-                                                        String msg, Throwable thrown) {
+                     String msg, Throwable thrown) {
         if (level.intValue() < levelValue || levelValue == offValue) {
             return;
         }
         LogRecord lr = new LogRecord(level, msg);
+        lr.setSourceClassName(sourceClass);
+        lr.setSourceMethodName(sourceMethod);
+        lr.setThrown(thrown);
+        doLog(lr);
+    }
+
+    /**
+     * Log a lazily constructed message, specifying source class and method,
+     * with associated Throwable information.
+     * <p>
+     * If the logger is currently enabled for the given message level then the
+     * message is constructed by invoking the provided supplier function. The
+     * message and the given {@link Throwable} are then stored in a {@link
+     * LogRecord} which is forwarded to all registered output handlers.
+     * <p>
+     * Note that the thrown argument is stored in the LogRecord thrown
+     * property, rather than the LogRecord parameters property.  Thus it is
+     * processed specially by output Formatters and is not treated
+     * as a formatting parameter to the LogRecord message property.
+     * <p>
+     * @param   level   One of the message level identifiers, e.g., SEVERE
+     * @param   sourceClass    name of class that issued the logging request
+     * @param   sourceMethod   name of method that issued the logging request
+     * @param   thrown  Throwable associated with log message.
+     * @param   msgSupplier   A function, which when called, produces the
+     *                        desired log message
+     * @since   1.8
+     */
+    public void logp(Level level, String sourceClass, String sourceMethod,
+                     Throwable thrown, Supplier<String> msgSupplier) {
+        if (level.intValue() < levelValue || levelValue == offValue) {
+            return;
+        }
+        LogRecord lr = new LogRecord(level, msgSupplier.get());
         lr.setSourceClassName(sourceClass);
         lr.setSourceMethodName(sourceMethod);
         lr.setThrown(thrown);
@@ -869,7 +1007,7 @@ public class Logger {
      * then the msg string is not localized.
      * <p>
      * Note that the thrown argument is stored in the LogRecord thrown
-     * property, rather than the LogRecord parameters property.  Thus is it
+     * property, rather than the LogRecord parameters property.  Thus it is
      * processed specially by output Formatters and is not treated
      * as a formatting parameter to the LogRecord message property.
      * <p>
@@ -1014,7 +1152,7 @@ public class Logger {
      * LogRecord's message is set to "THROW".
      * <p>
      * Note that the thrown argument is stored in the LogRecord thrown
-     * property, rather than the LogRecord parameters property.  Thus is it
+     * property, rather than the LogRecord parameters property.  Thus it is
      * processed specially by output Formatters and is not treated
      * as a formatting parameter to the LogRecord message property.
      * <p>
@@ -1147,6 +1285,130 @@ public class Logger {
             return;
         }
         log(Level.FINEST, msg);
+    }
+
+    //=======================================================================
+    // Start of simple convenience methods using level names as method names
+    // and use Supplier<String>
+    //=======================================================================
+
+    /**
+     * Log a SEVERE message, which is only to be constructed if the logging
+     * level is such that the message will actually be logged.
+     * <p>
+     * If the logger is currently enabled for the SEVERE message
+     * level then the message is constructed by invoking the provided
+     * supplier function and forwarded to all the registered output
+     * Handler objects.
+     * <p>
+     * @param   msgSupplier   A function, which when called, produces the
+     *                        desired log message
+     * @since   1.8
+     */
+    public void severe(Supplier<String> msgSupplier) {
+        log(Level.SEVERE, msgSupplier);
+    }
+
+    /**
+     * Log a WARNING message, which is only to be constructed if the logging
+     * level is such that the message will actually be logged.
+     * <p>
+     * If the logger is currently enabled for the WARNING message
+     * level then the message is constructed by invoking the provided
+     * supplier function and forwarded to all the registered output
+     * Handler objects.
+     * <p>
+     * @param   msgSupplier   A function, which when called, produces the
+     *                        desired log message
+     * @since   1.8
+     */
+    public void warning(Supplier<String> msgSupplier) {
+        log(Level.WARNING, msgSupplier);
+    }
+
+    /**
+     * Log a INFO message, which is only to be constructed if the logging
+     * level is such that the message will actually be logged.
+     * <p>
+     * If the logger is currently enabled for the INFO message
+     * level then the message is constructed by invoking the provided
+     * supplier function and forwarded to all the registered output
+     * Handler objects.
+     * <p>
+     * @param   msgSupplier   A function, which when called, produces the
+     *                        desired log message
+     * @since   1.8
+     */
+    public void info(Supplier<String> msgSupplier) {
+        log(Level.INFO, msgSupplier);
+    }
+
+    /**
+     * Log a CONFIG message, which is only to be constructed if the logging
+     * level is such that the message will actually be logged.
+     * <p>
+     * If the logger is currently enabled for the CONFIG message
+     * level then the message is constructed by invoking the provided
+     * supplier function and forwarded to all the registered output
+     * Handler objects.
+     * <p>
+     * @param   msgSupplier   A function, which when called, produces the
+     *                        desired log message
+     * @since   1.8
+     */
+    public void config(Supplier<String> msgSupplier) {
+        log(Level.CONFIG, msgSupplier);
+    }
+
+    /**
+     * Log a FINE message, which is only to be constructed if the logging
+     * level is such that the message will actually be logged.
+     * <p>
+     * If the logger is currently enabled for the FINE message
+     * level then the message is constructed by invoking the provided
+     * supplier function and forwarded to all the registered output
+     * Handler objects.
+     * <p>
+     * @param   msgSupplier   A function, which when called, produces the
+     *                        desired log message
+     * @since   1.8
+     */
+    public void fine(Supplier<String> msgSupplier) {
+        log(Level.FINE, msgSupplier);
+    }
+
+    /**
+     * Log a FINER message, which is only to be constructed if the logging
+     * level is such that the message will actually be logged.
+     * <p>
+     * If the logger is currently enabled for the FINER message
+     * level then the message is constructed by invoking the provided
+     * supplier function and forwarded to all the registered output
+     * Handler objects.
+     * <p>
+     * @param   msgSupplier   A function, which when called, produces the
+     *                        desired log message
+     * @since   1.8
+     */
+    public void finer(Supplier<String> msgSupplier) {
+        log(Level.FINER, msgSupplier);
+    }
+
+    /**
+     * Log a FINEST message, which is only to be constructed if the logging
+     * level is such that the message will actually be logged.
+     * <p>
+     * If the logger is currently enabled for the FINEST message
+     * level then the message is constructed by invoking the provided
+     * supplier function and forwarded to all the registered output
+     * Handler objects.
+     * <p>
+     * @param   msgSupplier   A function, which when called, produces the
+     *                        desired log message
+     * @since   1.8
+     */
+    public void finest(Supplier<String> msgSupplier) {
+        log(Level.FINEST, msgSupplier);
     }
 
     //================================================================

@@ -30,10 +30,14 @@ fi
 if [ "${TESTJAVA}" = "" ] ; then
   TESTJAVA=/usr
 fi
+if [ "${COMPILEJAVA}" = "" ]; then
+  COMPILEJAVA="${TESTJAVA}"
+fi
 
-# create a test keystore and dummy cert
+# create a test keystore and dummy cert. Note that we use the COMPILEJAVA
+# as this test is a TimeZone test, it doesn't test keytool
 rm -f ${TESTCLASSES}/timezonedatetest.store
-${TESTJAVA}/bin/keytool -genkeypair -alias testcert \
+${COMPILEJAVA}/bin/keytool ${TESTTOOLVMOPTS} -genkeypair -alias testcert \
   -keystore ${TESTCLASSES}/timezonedatetest.store \
   -storepass testpass -validity 360 \
   -dname "cn=Mark Wildebeest, ou=FreeSoft, o=Red Hat, c=NL" \
@@ -41,12 +45,12 @@ ${TESTJAVA}/bin/keytool -genkeypair -alias testcert \
 
 # create a jar file to sign with the test class in it.
 rm -f ${TESTCLASSES}/timezonedatetest.jar
-${TESTJAVA}/bin/jar cf \
+${COMPILEJAVA}/bin/jar ${TESTTOOLVMOPTS} cf \
   ${TESTCLASSES}/timezonedatetest.jar \
   -C ${TESTCLASSES} TimeZoneDatePermissionCheck.class
 
 # sign it
-${TESTJAVA}/bin/jarsigner \
+${COMPILEJAVA}/bin/jarsigner ${TESTTOOLVMOPTS} \
   -keystore ${TESTCLASSES}/timezonedatetest.store \
   -storepass testpass ${TESTCLASSES}/timezonedatetest.jar testcert
 
