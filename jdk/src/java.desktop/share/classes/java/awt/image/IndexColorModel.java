@@ -55,7 +55,7 @@ import java.util.Arrays;
  * {@code IndexColorModel} objects are never pre-multiplied with
  * the alpha components.
  * <p>
- * <a name="transparency">
+ * <a id="transparency">
  * The transparency of an {@code IndexColorModel} object is
  * determined by examining the alpha components of the colors in the
  * colormap and choosing the most specific value after considering
@@ -86,7 +86,7 @@ import java.util.Arrays;
  * and {@code getNumComponents} returns 4.
  *
  * <p>
- * <a name="index_values">
+ * <a id="index_values">
  * The values used to index into the colormap are taken from the least
  * significant <em>n</em> bits of pixel representations where
  * <em>n</em> is based on the pixel size specified in the constructor.

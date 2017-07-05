@@ -66,10 +66,9 @@ public final class ModuleInfoWriter {
         // write ModuleMainClass if the module has a main class
         md.mainClass().ifPresent(mc -> cw.visitAttribute(new ModuleMainClassAttribute(mc)));
 
-        // write ModuleTarget if there is a platform OS/arch
+        // write ModuleTarget if there is a target platform
         if (target != null) {
-            cw.visitAttribute(new ModuleTargetAttribute(target.osName(),
-                                                        target.osArch()));
+            cw.visitAttribute(new ModuleTargetAttribute(target.targetPlatform()));
         }
 
         cw.visitEnd();

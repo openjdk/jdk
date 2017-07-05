@@ -158,10 +158,10 @@ void ModuleEntry::set_read_walk_required(ClassLoaderData* m_loader_data) {
       loader_data() != m_loader_data &&
       !m_loader_data->is_builtin_class_loader_data()) {
     _must_walk_reads = true;
-    if (log_is_enabled(Trace, modules)) {
+    if (log_is_enabled(Trace, module)) {
       ResourceMark rm;
-      log_trace(modules)("ModuleEntry::set_read_walk_required(): module %s reads list must be walked",
-                         (name() != NULL) ? name()->as_C_string() : UNNAMED_MODULE);
+      log_trace(module)("ModuleEntry::set_read_walk_required(): module %s reads list must be walked",
+                        (name() != NULL) ? name()->as_C_string() : UNNAMED_MODULE);
     }
   }
 }
@@ -180,10 +180,10 @@ void ModuleEntry::purge_reads() {
     // on the remaining live modules on the reads list.
     _must_walk_reads = false;
 
-    if (log_is_enabled(Trace, modules)) {
+    if (log_is_enabled(Trace, module)) {
       ResourceMark rm;
-      log_trace(modules)("ModuleEntry::purge_reads(): module %s reads list being walked",
-                         (name() != NULL) ? name()->as_C_string() : UNNAMED_MODULE);
+      log_trace(module)("ModuleEntry::purge_reads(): module %s reads list being walked",
+                        (name() != NULL) ? name()->as_C_string() : UNNAMED_MODULE);
     }
 
     // Go backwards because this removes entries that are dead.
@@ -236,8 +236,11 @@ ModuleEntryTable::~ModuleEntryTable() {
       m = m->next();
 
       ResourceMark rm;
-      log_debug(modules)("ModuleEntryTable: deleting module: %s", to_remove->name() != NULL ?
-                         to_remove->name()->as_C_string() : UNNAMED_MODULE);
+      if (to_remove->name() != NULL) {
+        log_info(module, unload)("unloading module %s", to_remove->name()->as_C_string());
+      }
+      log_debug(module)("ModuleEntryTable: deleting module: %s", to_remove->name() != NULL ?
+                        to_remove->name()->as_C_string() : UNNAMED_MODULE);
 
       // Clean out the C heap allocated reads list first before freeing the entry
       to_remove->delete_reads();
@@ -315,9 +318,9 @@ ModuleEntry* ModuleEntryTable::new_entry(unsigned int hash, Handle module_handle
 
   if (ClassLoader::is_in_patch_mod_entries(name)) {
     entry->set_is_patched();
-    if (log_is_enabled(Trace, modules, patch)) {
+    if (log_is_enabled(Trace, module, patch)) {
       ResourceMark rm;
-      log_trace(modules, patch)("Marked module %s as patched from --patch-module", name->as_C_string());
+      log_trace(module, patch)("Marked module %s as patched from --patch-module", name->as_C_string());
     }
   }
 

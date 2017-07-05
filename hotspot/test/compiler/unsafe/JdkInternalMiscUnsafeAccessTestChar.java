@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,32 +198,32 @@ public class JdkInternalMiscUnsafeAccessTestChar {
 
         // Compare
         {
-            boolean r = UNSAFE.compareAndSwapChar(base, offset, '\u0123', '\u4567');
-            assertEquals(r, true, "success compareAndSwap char");
+            boolean r = UNSAFE.compareAndSetChar(base, offset, '\u0123', '\u4567');
+            assertEquals(r, true, "success compareAndSet char");
             char x = UNSAFE.getChar(base, offset);
-            assertEquals(x, '\u4567', "success compareAndSwap char value");
+            assertEquals(x, '\u4567', "success compareAndSet char value");
         }
 
         {
-            boolean r = UNSAFE.compareAndSwapChar(base, offset, '\u0123', '\u89AB');
-            assertEquals(r, false, "failing compareAndSwap char");
+            boolean r = UNSAFE.compareAndSetChar(base, offset, '\u0123', '\u89AB');
+            assertEquals(r, false, "failing compareAndSet char");
             char x = UNSAFE.getChar(base, offset);
-            assertEquals(x, '\u4567', "failing compareAndSwap char value");
+            assertEquals(x, '\u4567', "failing compareAndSet char value");
         }
 
         // Advanced compare
         {
-            char r = UNSAFE.compareAndExchangeCharVolatile(base, offset, '\u4567', '\u0123');
-            assertEquals(r, '\u4567', "success compareAndExchangeVolatile char");
+            char r = UNSAFE.compareAndExchangeChar(base, offset, '\u4567', '\u0123');
+            assertEquals(r, '\u4567', "success compareAndExchange char");
             char x = UNSAFE.getChar(base, offset);
-            assertEquals(x, '\u0123', "success compareAndExchangeVolatile char value");
+            assertEquals(x, '\u0123', "success compareAndExchange char value");
         }
 
         {
-            char r = UNSAFE.compareAndExchangeCharVolatile(base, offset, '\u4567', '\u89AB');
-            assertEquals(r, '\u0123', "failing compareAndExchangeVolatile char");
+            char r = UNSAFE.compareAndExchangeChar(base, offset, '\u4567', '\u89AB');
+            assertEquals(r, '\u0123', "failing compareAndExchange char");
             char x = UNSAFE.getChar(base, offset);
-            assertEquals(x, '\u0123', "failing compareAndExchangeVolatile char value");
+            assertEquals(x, '\u0123', "failing compareAndExchange char value");
         }
 
         {
@@ -257,41 +257,41 @@ public class JdkInternalMiscUnsafeAccessTestChar {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapChar(base, offset, '\u0123', '\u4567');
+                success = UNSAFE.weakCompareAndSetCharPlain(base, offset, '\u0123', '\u4567');
             }
-            assertEquals(success, true, "weakCompareAndSwap char");
+            assertEquals(success, true, "weakCompareAndSetPlain char");
             char x = UNSAFE.getChar(base, offset);
-            assertEquals(x, '\u4567', "weakCompareAndSwap char value");
+            assertEquals(x, '\u4567', "weakCompareAndSetPlain char value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapCharAcquire(base, offset, '\u4567', '\u0123');
+                success = UNSAFE.weakCompareAndSetCharAcquire(base, offset, '\u4567', '\u0123');
             }
-            assertEquals(success, true, "weakCompareAndSwapAcquire char");
+            assertEquals(success, true, "weakCompareAndSetAcquire char");
             char x = UNSAFE.getChar(base, offset);
-            assertEquals(x, '\u0123', "weakCompareAndSwapAcquire char");
+            assertEquals(x, '\u0123', "weakCompareAndSetAcquire char");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapCharRelease(base, offset, '\u0123', '\u4567');
+                success = UNSAFE.weakCompareAndSetCharRelease(base, offset, '\u0123', '\u4567');
             }
-            assertEquals(success, true, "weakCompareAndSwapRelease char");
+            assertEquals(success, true, "weakCompareAndSetRelease char");
             char x = UNSAFE.getChar(base, offset);
-            assertEquals(x, '\u4567', "weakCompareAndSwapRelease char");
+            assertEquals(x, '\u4567', "weakCompareAndSetRelease char");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapCharVolatile(base, offset, '\u4567', '\u0123');
+                success = UNSAFE.weakCompareAndSetChar(base, offset, '\u4567', '\u0123');
             }
-            assertEquals(success, true, "weakCompareAndSwapVolatile char");
+            assertEquals(success, true, "weakCompareAndSet char");
             char x = UNSAFE.getChar(base, offset);
-            assertEquals(x, '\u0123', "weakCompareAndSwapVolatile char");
+            assertEquals(x, '\u0123', "weakCompareAndSet char");
         }
 
         UNSAFE.putChar(base, offset, '\u4567');
@@ -324,4 +324,3 @@ public class JdkInternalMiscUnsafeAccessTestChar {
         }
     }
 }
-
