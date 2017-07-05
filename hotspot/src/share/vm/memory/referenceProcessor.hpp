@@ -255,7 +255,11 @@ class ReferenceProcessor : public CHeapObj {
   int             _num_q;
   // The maximum MT'ness degree of the queues below
   int             _max_num_q;
-  // Arrays of lists of oops, one per thread
+
+  // Master array of discovered oops
+  DiscoveredList* _discovered_refs;
+
+  // Arrays of lists of oops, one per thread (pointers into master array above)
   DiscoveredList* _discoveredSoftRefs;
   DiscoveredList* _discoveredWeakRefs;
   DiscoveredList* _discoveredFinalRefs;
@@ -267,7 +271,8 @@ class ReferenceProcessor : public CHeapObj {
   int num_q()                              { return _num_q; }
   int max_num_q()                          { return _max_num_q; }
   void set_active_mt_degree(int v)         { _num_q = v; }
-  DiscoveredList* discovered_soft_refs()   { return _discoveredSoftRefs; }
+
+  DiscoveredList* discovered_refs()        { return _discovered_refs; }
 
   ReferencePolicy* setup_policy(bool always_clear) {
     _current_soft_ref_policy = always_clear ?
@@ -411,6 +416,7 @@ class ReferenceProcessor : public CHeapObj {
   // constructor
   ReferenceProcessor():
     _span((HeapWord*)NULL, (HeapWord*)NULL),
+    _discovered_refs(NULL),
     _discoveredSoftRefs(NULL),  _discoveredWeakRefs(NULL),
     _discoveredFinalRefs(NULL), _discoveredPhantomRefs(NULL),
     _discovering_refs(false),
