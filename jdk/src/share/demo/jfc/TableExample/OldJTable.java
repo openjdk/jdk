@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,28 +29,26 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
-import java.lang.Thread;
-import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.plaf.*;
-import javax.swing.table.*;
+import java.util.EventObject;
+import java.util.List;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 
 
 /**
  *  The OldJTable is an unsupported class containing some methods that were
  *  deleted from the JTable between releases 0.6 and 0.7
  */
+@SuppressWarnings("serial")
 public class OldJTable extends JTable
 {
    /*
-    *  A new convenience method returning the index of the column in the co-ordinate
-    *  space of the view.
+    *  A new convenience method returning the index of the column in the
+    *  co-ordinate space of the view.
     */
     public int getColumnIndex(Object identifier) {
         return getColumnModel().getColumnIndex(identifier);
@@ -65,7 +63,7 @@ public class OldJTable extends JTable
         return addColumn(columnIdentifier, width, null, null, null);
     }
 
-    public TableColumn addColumn(Object columnIdentifier, Vector columnData) {
+    public TableColumn addColumn(Object columnIdentifier, List columnData) {
         return addColumn(columnIdentifier, -1, null, null, columnData);
     }
 
@@ -79,16 +77,17 @@ public class OldJTable extends JTable
 
     public TableColumn addColumn(Object columnIdentifier, int width,
                                  TableCellRenderer renderer,
-                                 TableCellEditor editor, Vector columnData) {
+                                 TableCellEditor editor, List columnData) {
         checkDefaultTableModel();
 
         // Set up the model side first
         DefaultTableModel m = (DefaultTableModel)getModel();
-        m.addColumn(columnIdentifier, columnData);
+        m.addColumn(columnIdentifier, columnData.toArray());
 
         // The column will have been added to the end, so the index of the
         // column in the model is the last element.
-        TableColumn newColumn = new TableColumn(m.getColumnCount()-1, width, renderer, editor);
+        TableColumn newColumn = new TableColumn(
+                m.getColumnCount()-1, width, renderer, editor);
         super.addColumn(newColumn);
         return newColumn;
     }
@@ -104,9 +103,9 @@ public class OldJTable extends JTable
         ((DefaultTableModel)getModel()).addRow(rowData);
     }
 
-    public void addRow(Vector rowData) {
+    public void addRow(List rowData) {
         checkDefaultTableModel();
-        ((DefaultTableModel)getModel()).addRow(rowData);
+        ((DefaultTableModel)getModel()).addRow(rowData.toArray());
     }
 
     public void removeRow(int rowIndex) {
@@ -124,9 +123,9 @@ public class OldJTable extends JTable
         ((DefaultTableModel)getModel()).insertRow(rowIndex, rowData);
     }
 
-    public void insertRow(int rowIndex, Vector rowData) {
+    public void insertRow(int rowIndex, List rowData) {
         checkDefaultTableModel();
-        ((DefaultTableModel)getModel()).insertRow(rowIndex, rowData);
+        ((DefaultTableModel)getModel()).insertRow(rowIndex, rowData.toArray());
     }
 
     public void setNumRows(int newSize) {
@@ -134,9 +133,10 @@ public class OldJTable extends JTable
         ((DefaultTableModel)getModel()).setNumRows(newSize);
     }
 
-    public void setDataVector(Vector newData, Vector columnIds) {
+    public void setDataVector(Object[][] newData, List columnIds) {
         checkDefaultTableModel();
-        ((DefaultTableModel)getModel()).setDataVector(newData, columnIds);
+        ((DefaultTableModel)getModel()).setDataVector(
+                newData, columnIds.toArray());
     }
 
     public void setDataVector(Object[][] newData, Object[] columnIds) {
@@ -154,11 +154,11 @@ public class OldJTable extends JTable
 //
 
     public Object getValueAt(Object columnIdentifier, int rowIndex) {
-        return  super.getValueAt(rowIndex, getColumnIndex(columnIdentifier));
+        return super.getValueAt(rowIndex, getColumnIndex(columnIdentifier));
     }
 
     public boolean isCellEditable(Object columnIdentifier, int rowIndex) {
-        return  super.isCellEditable(rowIndex, getColumnIndex(columnIdentifier));
+        return super.isCellEditable(rowIndex, getColumnIndex(columnIdentifier));
     }
 
     public void setValueAt(Object aValue, Object columnIdentifier, int rowIndex) {
@@ -217,7 +217,8 @@ public class OldJTable extends JTable
     public TableColumn addColumn(int modelColumn, int width,
                                  TableCellRenderer renderer,
                                  TableCellEditor editor) {
-        TableColumn newColumn = new TableColumn(modelColumn, width, renderer, editor);
+        TableColumn newColumn = new TableColumn(
+                modelColumn, width, renderer, editor);
         addColumn(newColumn);
         return newColumn;
     }

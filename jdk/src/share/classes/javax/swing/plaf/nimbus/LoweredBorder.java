@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,11 @@ package javax.swing.plaf.nimbus;
 
 import javax.swing.border.Border;
 import javax.swing.JComponent;
-import javax.swing.plaf.UIResource;
 import java.awt.Insets;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Color;
-import java.awt.Transparency;
 import java.awt.RenderingHints;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
@@ -58,7 +56,9 @@ class LoweredBorder extends AbstractRegionPainter implements Border {
 
     @Override
     protected Object[] getExtendedCacheKeys(JComponent c) {
-        return new Object[] {c.getBackground()};
+        return (c != null)
+                ? new Object[] { c.getBackground() }
+                : null;
     }
 
     /**
@@ -85,6 +85,7 @@ class LoweredBorder extends AbstractRegionPainter implements Border {
      */
     protected void doPaint(Graphics2D g, JComponent c, int width, int height,
             Object[] extendedCacheKeys) {
+        Color color = (c == null) ? Color.BLACK : c.getBackground();
         BufferedImage img1 = new BufferedImage(IMG_SIZE,IMG_SIZE,
                     BufferedImage.TYPE_INT_ARGB);
         BufferedImage img2 = new BufferedImage(IMG_SIZE,IMG_SIZE,
@@ -93,14 +94,14 @@ class LoweredBorder extends AbstractRegionPainter implements Border {
         Graphics2D g2 = (Graphics2D)img1.getGraphics();
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
-        g2.setColor(c.getBackground());
+        g2.setColor(color);
         g2.fillRoundRect(2,0,26,26,RADIUS,RADIUS);
         g2.dispose();
         // draw shadow
         InnerShadowEffect effect = new InnerShadowEffect();
         effect.setDistance(1);
         effect.setSize(3);
-        effect.setColor(getLighter(c.getBackground(),2.1f));
+        effect.setColor(getLighter(color, 2.1f));
         effect.setAngle(90);
         effect.applyEffect(img1,img2,IMG_SIZE,IMG_SIZE);
         // draw outline to img2
@@ -108,7 +109,7 @@ class LoweredBorder extends AbstractRegionPainter implements Border {
         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
         g2.setClip(0,28,IMG_SIZE,1);
-        g2.setColor(getLighter(c.getBackground(),0.90f));
+        g2.setColor(getLighter(color, 0.90f));
         g2.drawRoundRect(2,1,25,25,RADIUS,RADIUS);
         g2.dispose();
         // draw final image
@@ -150,7 +151,7 @@ class LoweredBorder extends AbstractRegionPainter implements Border {
      * @param c the component for which this border insets value applies
      */
     public Insets getBorderInsets(Component c) {
-        return INSETS;
+        return (Insets) INSETS.clone();
     }
 
     /**

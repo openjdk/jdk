@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@
  *      6379214 6485516 6486607 4225362 4494727 6533691 6531591 6531593 6570259
  *      6509039 6609737 6610748 6645271 6507067 6873931 6450945 6645268 6646611
  *      6645405 6650730 6910489 6573250 6870908 6585666 6716626 6914413 6916787
- *      6919624 6998391 7019267 7020960 7025837
+ *      6919624 6998391 7019267 7020960 7025837 7020583
  * @summary Verify locale data
  *
  */

@@ -1740,16 +1740,19 @@ public final class KeyTool {
                 KeyStore.TrustedCertificateEntry.class)) {
             // We have a trusted certificate entry
             Certificate cert = keyStore.getCertificate(alias);
+            Object[] source = {"trustedCertEntry"};
+            String mf = new MessageFormat(
+                    rb.getString("Entry.type.type.")).format(source) + "\n";
             if (verbose && (cert instanceof X509Certificate)) {
-                out.println(rb.getString("Entry.type.trustedCertEntry."));
+                out.println(mf);
                 printX509Cert((X509Certificate)cert, out);
             } else if (rfc) {
-                out.println(rb.getString("Entry.type.trustedCertEntry."));
+                out.println(mf);
                 dumpCert(cert, out);
             } else if (debug) {
                 out.println(cert.toString());
             } else {
-                out.println(rb.getString("trustedCertEntry."));
+                out.println("trustedCertEntry, ");
                 out.println(rb.getString("Certificate.fingerprint.SHA1.")
                             + getCertFingerPrint("SHA1", cert));
             }
@@ -1836,10 +1839,6 @@ public final class KeyTool {
                 (".WARNING.WARNING.WARNING."));
             System.err.println(rb.getString
                 (".The.integrity.of.the.information.stored.in.the.srckeystore."));
-            System.err.println(rb.getString
-                (".has.NOT.been.verified.In.order.to.verify.its.integrity."));
-            System.err.println(rb.getString
-                (".you.must.provide.the.srckeystore.password."));
             System.err.println(rb.getString
                 (".WARNING.WARNING.WARNING."));
             System.err.println();
@@ -3186,10 +3185,6 @@ public final class KeyTool {
             (".WARNING.WARNING.WARNING."));
         System.err.println(rb.getString
             (".The.integrity.of.the.information.stored.in.your.keystore."));
-        System.err.println(rb.getString
-            (".has.NOT.been.verified.In.order.to.verify.its.integrity."));
-        System.err.println(rb.getString
-            (".you.must.provide.your.keystore.password."));
         System.err.println(rb.getString
             (".WARNING.WARNING.WARNING."));
         System.err.println();

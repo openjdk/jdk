@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,19 +362,15 @@ public class Realm implements Cloneable {
         Stack<String> iStack = new Stack<>();
 
         /*
-         * I don't expect any more than a handful of intermediaries.
+         * The half-established reversed-path, starting from the final target
+         * (sRealm), each item can be connected to by the next one.
+         * Might contains wrong item, if found, a bad track is performed
          */
         Vector<String> tempList = new Vector<>(8, 8);
-
-        /*
-         * The initiator at first location.
-         */
-        tempList.add(cRealm);
+        tempList.add(sRealm);
 
         int count = 0; // For debug only
-        if (DEBUG) {
-            tempTarget = sRealm;
-        }
+        tempTarget = sRealm;
 
         out: do {
             if (DEBUG) {
@@ -384,8 +380,8 @@ public class Realm implements Cloneable {
             }
 
             if (intermediaries != null &&
-                !intermediaries.equals(PrincipalName.REALM_COMPONENT_SEPARATOR_STR))
-            {
+                !intermediaries.equals(".") &&
+                !intermediaries.equals(cRealm)) {
                 if (DEBUG) {
                     System.out.println(">>> Realm parseCapaths: loop " +
                                        count + ": intermediaries=[" +
@@ -466,11 +462,15 @@ public class Realm implements Cloneable {
 
         } while (true);
 
+        if (tempList.isEmpty()) {
+            return null;
+        }
+
+        // From (SREALM, T1, T2) to (CREALM, T2, T1)
         retList = new String[tempList.size()];
-        try {
-            retList = tempList.toArray(retList);
-        } catch (ArrayStoreException exc) {
-            retList = null;
+        retList[0] = cRealm;
+        for (int i=1; i<tempList.size(); i++) {
+            retList[i] = tempList.elementAt(tempList.size()-i);
         }
 
         if (DEBUG && retList != null) {

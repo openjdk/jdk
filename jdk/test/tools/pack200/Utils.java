@@ -21,18 +21,18 @@
  * questions.
  */
 
+import java.nio.file.Path;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
-import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -43,6 +43,8 @@ import java.util.jar.JarOutputStream;
 import java.util.jar.Pack200;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import static java.nio.file.StandardCopyOption.*;
 
 /**
  *
@@ -180,45 +182,12 @@ class Utils {
         }
     };
 
-    private static void setFileAttributes(File src, File dst) throws IOException {
-        dst.setExecutable(src.canExecute());
-        dst.setReadable(src.canRead());
-        dst.setWritable(src.canWrite());
-        dst.setLastModified(src.lastModified());
-    }
-
     static void copyFile(File src, File dst) throws IOException {
-        if (src.isDirectory()) {
-            dst.mkdirs();
-            setFileAttributes(src, dst);
-            return;
-        } else {
-            File baseDirFile = dst.getParentFile();
-            if (!baseDirFile.exists()) {
-                baseDirFile.mkdirs();
-            }
+        Path parent = dst.toPath().getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
         }
-        FileInputStream in = null;
-        FileOutputStream out = null;
-        FileChannel srcChannel = null;
-        FileChannel dstChannel = null;
-        try {
-            in = new FileInputStream(src);
-            out = new FileOutputStream(dst);
-            srcChannel = in.getChannel();
-            dstChannel = out.getChannel();
-
-            long retval = srcChannel.transferTo(0, src.length(), dstChannel);
-            if (src.length() != dst.length()) {
-                throw new IOException("file copy failed for " + src);
-            }
-        } finally {
-            close(srcChannel);
-            close(dstChannel);
-            close(in);
-            close(out);
-        }
-        setFileAttributes(src, dst);
+        Files.copy(src.toPath(), dst.toPath(), COPY_ATTRIBUTES, REPLACE_EXISTING);
     }
 
     static String baseName(File file, String extension) {

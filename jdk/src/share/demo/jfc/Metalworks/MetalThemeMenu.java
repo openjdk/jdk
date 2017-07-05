@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,51 +29,57 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import javax.swing.ButtonGroup;
+import javax.swing.JMenu;
+import javax.swing.JRadioButtonMenuItem;
+import javax.swing.UIManager;
+import javax.swing.plaf.metal.MetalLookAndFeel;
+import javax.swing.plaf.metal.MetalTheme;
 
-import javax.swing.plaf.metal.*;
-import javax.swing.*;
-import javax.swing.border.*;
-import java.awt.*;
-import java.awt.event.*;
 
 /**
  * This class describes a theme using "green" colors.
  *
  * @author Steve Wilson
+ * @author Alexander Kouznetsov
  */
-public class MetalThemeMenu extends JMenu implements ActionListener{
+@SuppressWarnings("serial")
+public class MetalThemeMenu extends JMenu implements ActionListener {
 
-  MetalTheme[] themes;
-  public MetalThemeMenu(String name, MetalTheme[] themeArray) {
-    super(name);
-    themes = themeArray;
-    ButtonGroup group = new ButtonGroup();
-    for (int i = 0; i < themes.length; i++) {
-        JRadioButtonMenuItem item = new JRadioButtonMenuItem( themes[i].getName() );
-        group.add(item);
-        add( item );
-        item.setActionCommand(i+"");
-        item.addActionListener(this);
-        if ( i == 0)
-            item.setSelected(true);
+    MetalTheme[] themes;
+
+    @SuppressWarnings("LeakingThisInConstructor")
+    public MetalThemeMenu(String name, MetalTheme[] themeArray) {
+        super(name);
+        themes = themeArray;
+        ButtonGroup group = new ButtonGroup();
+        for (int i = 0; i < themes.length; i++) {
+            JRadioButtonMenuItem item = new JRadioButtonMenuItem(themes[i].
+                    getName());
+            group.add(item);
+            add(item);
+            item.setActionCommand(i + "");
+            item.addActionListener(this);
+            if (i == 0) {
+                item.setSelected(true);
+            }
+        }
+
     }
 
-  }
+    public void actionPerformed(ActionEvent e) {
+        String numStr = e.getActionCommand();
+        MetalTheme selectedTheme = themes[Integer.parseInt(numStr)];
+        MetalLookAndFeel.setCurrentTheme(selectedTheme);
+        try {
+            UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+        } catch (Exception ex) {
+            System.out.println("Failed loading Metal");
+            System.out.println(ex);
+        }
 
-  public void actionPerformed(ActionEvent e) {
-    String numStr = e.getActionCommand();
-    MetalTheme selectedTheme = themes[ Integer.parseInt(numStr) ];
-    MetalLookAndFeel.setCurrentTheme(selectedTheme);
-    try {
-        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-    } catch (Exception ex) {
-        System.out.println("Failed loading Metal");
-        System.out.println(ex);
     }
-
-  }
-
 }

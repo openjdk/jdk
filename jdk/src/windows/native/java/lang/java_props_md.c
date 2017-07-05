@@ -196,42 +196,23 @@ getHomeFromRegistry()
 /*
  * Code to figure out the user's home directory using shell32.dll
  */
-typedef HRESULT (WINAPI *GetSpecialFolderType)(HWND, int, LPITEMIDLIST *);
-typedef BOOL (WINAPI *GetPathFromIDListType)(LPCITEMIDLIST, LPSTR);
-
 WCHAR*
 getHomeFromShell32()
 {
-    HMODULE lib = LoadLibraryW(L"SHELL32.DLL");
-    GetSpecialFolderType do_get_folder;
-    GetPathFromIDListType do_get_path;
     HRESULT rc;
     LPITEMIDLIST item_list = 0;
     WCHAR *p;
     WCHAR path[MAX_PATH+1];
     int size = MAX_PATH+1;
 
-    if (lib == 0) {
-        // We can't load the library !!??
-        return NULL;
-    }
-
-    do_get_folder = (GetSpecialFolderType)GetProcAddress(lib, "SHGetSpecialFolderLocation");
-    do_get_path = (GetPathFromIDListType)GetProcAddress(lib, "SHGetPathFromIDListW");
-
-    if (do_get_folder == 0 || do_get_path == 0) {
-        // the library doesn't hold the right functions !!??
-        return NULL;
-    }
-
-    rc = (*do_get_folder)(NULL, CSIDL_DESKTOPDIRECTORY, &item_list);
+    rc = SHGetSpecialFolderLocation(NULL, CSIDL_DESKTOPDIRECTORY, &item_list);
     if (!SUCCEEDED(rc)) {
         // we can't find the shell folder.
         return NULL;
     }
 
     path[0] = 0;
-    (*do_get_path)(item_list, (LPSTR)path);
+    SHGetPathFromIDListW(item_list, (LPWSTR)path);
 
     /* Get the parent of Desktop directory */
     p = wcsrchr(path, L'\\');
@@ -253,17 +234,7 @@ getHomeFromShell32()
 static boolean
 haveMMX(void)
 {
-    boolean mmx = 0;
-    HMODULE lib = LoadLibrary("KERNEL32");
-    if (lib != NULL) {
-        BOOL (WINAPI *isProcessorFeaturePresent)(DWORD) =
-            (BOOL (WINAPI *)(DWORD))
-            GetProcAddress(lib, "IsProcessorFeaturePresent");
-        if (isProcessorFeaturePresent != NULL)
-            mmx = isProcessorFeaturePresent(PF_MMX_INSTRUCTIONS_AVAILABLE);
-        FreeLibrary(lib);
-    }
-    return mmx;
+    return IsProcessorFeaturePresent(PF_MMX_INSTRUCTIONS_AVAILABLE);
 }
 
 static const char *
@@ -532,10 +503,19 @@ GetJavaProperties(JNIEnv* env)
         if (uname != NULL && wcslen(uname) > 0) {
             sprops.user_name = _wcsdup(uname);
         } else {
-            WCHAR buf[100];
-            int buflen = sizeof(buf);
-            sprops.user_name =
-                GetUserNameW(buf, &buflen) ? _wcsdup(buf) : L"unknown";
+            DWORD buflen = 0;
+            if (GetUserNameW(NULL, &buflen) == 0 &&
+                GetLastError() == ERROR_INSUFFICIENT_BUFFER)
+            {
+                uname = (WCHAR*)malloc(buflen * sizeof(WCHAR));
+                if (uname != NULL && GetUserNameW(uname, &buflen) == 0) {
+                    free(uname);
+                    uname = NULL;
+                }
+            } else {
+                uname = NULL;
+            }
+            sprops.user_name = (uname != NULL) ? uname : L"unknown";
         }
     }
 
@@ -633,8 +613,8 @@ GetJavaProperties(JNIEnv* env)
     /* Current directory */
     {
         WCHAR buf[MAX_PATH];
-        GetCurrentDirectoryW(sizeof(buf), buf);
-        sprops.user_dir = _wcsdup(buf);
+        if (GetCurrentDirectoryW(sizeof(buf)/sizeof(WCHAR), buf) != 0)
+            sprops.user_dir = _wcsdup(buf);
     }
 
     sprops.file_separator = "\\";

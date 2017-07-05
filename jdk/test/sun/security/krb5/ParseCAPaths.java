@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 6789935
+ * @run main/othervm ParseCAPaths
  * @summary cross-realm capath search error
  */
 
@@ -30,9 +31,10 @@ import java.util.Arrays;
 import sun.security.krb5.Realm;
 
 public class ParseCAPaths {
-    static boolean failed = false;
+    static Exception failed = null;
     public static void main(String[] args) throws Exception {
-        System.setProperty("java.security.krb5.conf", System.getProperty("test.src", ".") +"/krb5-capaths.conf");
+        System.setProperty("java.security.krb5.conf",
+                System.getProperty("test.src", ".") +"/krb5-capaths.conf");
         //System.setProperty("sun.security.krb5.debug", "true");
 
         // Standard example
@@ -59,9 +61,13 @@ public class ParseCAPaths {
         check("G1.COM", "G3.COM", "G1.COM", "COM");
         check("H1.COM", "H3.COM", "H1.COM");
         check("I1.COM", "I4.COM", "I1.COM", "I5.COM");
-
-        if (failed) {
-            throw new Exception("Failed somewhere.");
+        // J2=J1 is the same as J2=.
+        check("J1.COM", "J2.COM", "J1.COM");
+        // 7019384
+        check("A9.PRAGUE.XXX.CZ", "SERVIS.XXX.CZ",
+                "A9.PRAGUE.XXX.CZ", "PRAGUE.XXX.CZ", "ROOT.XXX.CZ");
+        if (failed != null) {
+            throw failed;
         }
     }
 
@@ -69,10 +75,10 @@ public class ParseCAPaths {
         try {
             check2(from, to, paths);
         } catch (Exception e) {
-            failed = true;
-            e.printStackTrace();
+            failed = e;
         }
     }
+
     static void check2(String from, String to, String... paths)
             throws Exception {
         System.out.println(from + " -> " + to);
