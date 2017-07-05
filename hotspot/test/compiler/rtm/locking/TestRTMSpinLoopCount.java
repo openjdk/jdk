@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify that RTMSpinLoopCount affects time spent
  *          between locking attempts.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestRTMSpinLoopCount
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

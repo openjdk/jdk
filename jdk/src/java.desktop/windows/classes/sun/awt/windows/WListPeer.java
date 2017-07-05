@@ -39,6 +39,7 @@ final class WListPeer extends WComponentPeer implements ListPeer {
     // ListPeer implementation
 
     @Override
+    @SuppressWarnings("deprecation")
     public int[] getSelectedIndexes() {
         List l = (List)target;
         int len = l.countItems();
@@ -92,6 +93,7 @@ final class WListPeer extends WComponentPeer implements ListPeer {
 
     @Override
     public native void delItems(int start, int end);
+    @SuppressWarnings("deprecation")
     public void clear() {
         List l = (List)target;
         delItems(0, l.countItems());
@@ -129,6 +131,7 @@ final class WListPeer extends WComponentPeer implements ListPeer {
     native void create(WComponentPeer parent);
 
     @Override
+    @SuppressWarnings("deprecation")
     void initialize() {
         List li = (List)target;
 

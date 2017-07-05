@@ -279,6 +279,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * @param f the font
      * @return the metrics
      */
+    @SuppressWarnings("deprecation")
     public FontMetrics getFontMetrics(Font f) {
         // The Toolkit implementations cache, so we just forward
         // to the default toolkit.

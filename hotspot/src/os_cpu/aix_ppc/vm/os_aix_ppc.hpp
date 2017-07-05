@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_AIX_OJDKPPC_VM_OS_AIX_PPC_HPP
-#define OS_CPU_AIX_OJDKPPC_VM_OS_AIX_PPC_HPP
+#ifndef OS_CPU_AIX_PPC_VM_OS_AIX_PPC_HPP
+#define OS_CPU_AIX_PPC_VM_OS_AIX_PPC_HPP
 
   static void setup_fpu() {}
 
@@ -32,4 +32,4 @@
   // Note: Currently only used in 64 bit Windows implementations
   static bool register_code_area(char *low, char *high) { return true; }
 
-#endif // OS_CPU_AIX_OJDKPPC_VM_OS_AIX_PPC_HPP
+#endif // OS_CPU_AIX_PPC_VM_OS_AIX_PPC_HPP

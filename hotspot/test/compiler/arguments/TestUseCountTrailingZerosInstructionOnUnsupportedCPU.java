@@ -26,7 +26,7 @@
  * @bug 8031321
  * @summary Verify processing of UseCountTrailingZerosInstruction option
  *          on CPU without TZCNT instruction (BMI1 feature) support.
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestUseCountTrailingZerosInstructionOnUnsupportedCPU
  *        BMIUnsupportedCPUTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
@@ -59,6 +59,9 @@ public class TestUseCountTrailingZerosInstructionOnUnsupportedCPU
           -XX:+UseBMI1Instructions -version
         */
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                "Feature bmi1 is not supported on current CPU. Option "
+                    + "UseCountTrailingZerosInstruction should have 'false'"
+                    + " value",
                 TestUseCountTrailingZerosInstructionOnUnsupportedCPU.
                         ENABLE_BMI);
 
@@ -68,6 +71,9 @@ public class TestUseCountTrailingZerosInstructionOnUnsupportedCPU
           -version
         */
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                    "Feature bmi1 is not supported on current CPU. Option "
+                    + "UseCountTrailingZerosInstruction should have 'false'"
+                    + " value",
                 CommandLineOptionTest.prepareBooleanFlag(optionName, true),
                 TestUseCountTrailingZerosInstructionOnUnsupportedCPU.
                         ENABLE_BMI);

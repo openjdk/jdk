@@ -108,6 +108,7 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         setExtendedState(state);
     }
 
+    @SuppressWarnings("deprecation")
     public void setMenuBar(MenuBar mb) {
         // state_lock should always be the second after awt_lock
         XToolkit.awtLock();

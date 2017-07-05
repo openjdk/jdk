@@ -63,9 +63,7 @@ void MutableSpace::numa_setup_pages(MemRegion mr, bool clear_space) {
 }
 
 void MutableSpace::pretouch_pages(MemRegion mr) {
-  for (volatile char *p = (char*)mr.start(); p < (char*)mr.end(); p += os::vm_page_size()) {
-    char t = *p; *p = t;
-  }
+  os::pretouch_memory((char*)mr.start(), (char*)mr.end());
 }
 
 void MutableSpace::initialize(MemRegion mr,

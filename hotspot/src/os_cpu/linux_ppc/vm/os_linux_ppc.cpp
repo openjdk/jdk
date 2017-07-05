@@ -453,7 +453,7 @@ void os::Linux::set_fpu_control_word(int fpu_control) {
 ////////////////////////////////////////////////////////////////////////////////
 // thread stack
 
-size_t os::Linux::min_stack_allowed = 768*K;
+size_t os::Linux::min_stack_allowed = 128*K;
 
 bool os::Linux::supports_variable_stack_size() { return true; }
 

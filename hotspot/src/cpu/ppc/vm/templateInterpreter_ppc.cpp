@@ -91,7 +91,7 @@ address TemplateInterpreterGenerator::generate_ClassCastException_verbose_handle
 
   // Thread will be loaded to R3_ARG1.
   // Target class oop is in register R5_ARG3 by convention!
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_ClassCastException_verbose, R17_tos, R5_ARG3));
+  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_ClassCastException_verbose), R17_tos, R5_ARG3);
   // Above call must not return here since exception pending.
   DEBUG_ONLY(__ should_not_reach_here();)
   return entry;
@@ -171,6 +171,10 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   // Compiled code destroys templateTableBase, reload.
   __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R12_scratch2);
+
+  if (state == atos) {
+    __ profile_return_type(R3_RET, R11_scratch1, R12_scratch2);
+  }
 
   const Register cache = R11_scratch1;
   const Register size  = R12_scratch2;
@@ -1189,6 +1193,10 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
       __ li(R0, 1);
       __ stb(R0, in_bytes(JavaThread::do_not_unlock_if_synchronized_offset()), R16_thread);
     }
+
+    // Argument and return type profiling.
+    __ profile_parameters_type(R3_ARG1, R4_ARG2, R5_ARG3, R6_ARG4);
+
     // Increment invocation counter and check for overflow.
     if (inc_counter) {
       generate_counter_incr(&invocation_counter_overflow, &profile_method, &profile_method_continue);
@@ -1469,6 +1477,8 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ resize_frame_absolute(R12_scratch2, R11_scratch1, R0);
     if (ProfileInterpreter) {
       __ set_method_data_pointer_for_bcp();
+      __ ld(R11_scratch1, 0, R1_SP);
+      __ std(R28_mdx, _ijava_state_neg(mdx), R11_scratch1);
     }
 #if INCLUDE_JVMTI
     Label L_done;
@@ -1480,13 +1490,11 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     // The member name argument must be restored if _invokestatic is re-executed after a PopFrame call.
     // Detect such a case in the InterpreterRuntime function and return the member name argument, or NULL.
     __ ld(R4_ARG2, 0, R18_locals);
-    __ call_VM(R11_scratch1, CAST_FROM_FN_PTR(address, InterpreterRuntime::member_name_arg_or_null),
-               R4_ARG2, R19_method, R14_bcp);
-
-    __ cmpdi(CCR0, R11_scratch1, 0);
+    __ MacroAssembler::call_VM(R4_ARG2, CAST_FROM_FN_PTR(address, InterpreterRuntime::member_name_arg_or_null), R4_ARG2, R19_method, R14_bcp, false);
+    __ restore_interpreter_state(R11_scratch1, /*bcp_and_mdx_only*/ true);
+    __ cmpdi(CCR0, R4_ARG2, 0);
     __ beq(CCR0, L_done);
-
-    __ std(R11_scratch1, wordSize, R15_esp);
+    __ std(R4_ARG2, wordSize, R15_esp);
     __ bind(L_done);
 #endif // INCLUDE_JVMTI
     __ dispatch_next(vtos);

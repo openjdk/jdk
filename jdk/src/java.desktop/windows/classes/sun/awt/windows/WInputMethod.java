@@ -606,6 +606,7 @@ final class WInputMethod extends InputMethodAdapter
 
     // java.awt.Toolkit#getNativeContainer() is not available
     //  from this package
+    @SuppressWarnings("deprecation")
     private WComponentPeer getNearestNativePeer(Component comp)
     {
         if (comp==null)     return null;
