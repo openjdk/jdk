@@ -29,6 +29,8 @@
  * @run testng JdiBadOptionLaunchExecutionControlTest
  */
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.testng.annotations.Test;
 import jdk.jshell.JShell;
 import static org.testng.Assert.assertTrue;
@@ -42,6 +44,8 @@ public class JdiBadOptionLaunchExecutionControlTest {
 
     public void badOptionLaunchTest() {
         try {
+            // turn on logging of launch failures
+            Logger.getLogger("jdk.jshell.execution").setLevel(Level.ALL);
             JShell.builder()
                     .executionEngine("jdi:launch(true)")
                     .remoteVMOptions("-BadBadOption")

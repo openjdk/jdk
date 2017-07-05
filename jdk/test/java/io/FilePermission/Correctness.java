@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,12 +89,14 @@ public class Correctness {
         //check("/-", "-");
 
         try {
-            // containsPath is broken on Windows.
             containsMethod = FilePermission.class.getDeclaredMethod(
                     "containsPath", Path.class, Path.class);
             containsMethod.setAccessible(true);
             System.out.println();
 
+            // The 1st 2 args of contains() must be normalized paths.
+            // When FilePermission::containsPath is called by implies,
+            // paths have already been normalized.
             contains("x", "x", 0);
             contains("x", "x/y", 1);
             contains("x", "x/y/z", 2);
@@ -160,7 +162,7 @@ public class Correctness {
         }
     }
 
-    static void check(String s1, String s2, boolean expected) {
+    static void check0(String s1, String s2, boolean expected) {
         FilePermission fp1 = new FilePermission(s1, "read");
         FilePermission fp2 = new FilePermission(s2, "read");
         boolean b = fp1.implies(fp2);
@@ -170,6 +172,16 @@ public class Correctness {
             err = true;
             System.out.println(fp1);
             System.out.println(fp2);
+        }
+    }
+
+    static void check(String s1, String s2, boolean expected) {
+        check0(s1, s2, expected);
+        if (isWindows) {
+            check0("C:" + s1, s2, false);
+            check0(s1, "C:" + s2, false);
+            check0("C:" + s1, "D:" + s2, false);
+            check0("C:" + s1, "C:" + s2, expected);
         }
     }
 

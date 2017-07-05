@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.Map;
  * An abstract class for service providers that provide localized string
  * representations (display names) of {@code Calendar} field values.
  *
- * <p><a name="calendartypes"><b>Calendar Types</b></a>
+ * <p><a id="calendartypes"><b>Calendar Types</b></a>
  *
  * <p>Calendar types are used to specify calendar systems for which the {@link
  * #getDisplayName(String, int, int, int, Locale) getDisplayName} and {@link
@@ -46,12 +46,16 @@ import java.util.Map;
  * Calendar}. The following are calendar-common fields and their values to be
  * supported for each calendar system.
  *
- * <table style="border-bottom:1px solid" border="1" cellpadding="3" cellspacing="0" summary="Field values">
+ * <table class="plain" style="border-bottom:1px solid">
+ * <caption style="display:none">Field values</caption>
+ * <thead>
  *   <tr>
  *     <th>Field</th>
  *     <th>Value</th>
  *     <th>Description</th>
  *   </tr>
+ * </thead>
+ * <tbody>
  *   <tr>
  *     <td valign="top">{@link Calendar#MONTH}</td>
  *     <td valign="top">{@link Calendar#JANUARY} to {@link Calendar#UNDECIMBER}</td>
@@ -73,17 +77,22 @@ import java.util.Map;
  *     <td valign="top">{@link Calendar#AM} to {@link Calendar#PM}</td>
  *     <td>0 - AM, 1 - PM</td>
  *   </tr>
+ * </tbody>
  * </table>
  *
  * <p style="margin-top:20px">The following are calendar-specific fields and their values to be supported.
  *
- * <table style="border-bottom:1px solid" border="1" cellpadding="3" cellspacing="0" summary="Calendar type and field values">
+ * <table class="plain" style="border-bottom:1px solid">
+ * <caption style="display:none">Calendar type and field values</caption>
+ * <thead>
  *   <tr>
  *     <th>Calendar Type</th>
  *     <th>Field</th>
  *     <th>Value</th>
  *     <th>Description</th>
  *   </tr>
+ * </thead>
+ * <tbody>
  *   <tr>
  *     <td rowspan="2" valign="top">{@code "gregory"}</td>
  *     <td rowspan="2" valign="top">{@link Calendar#ERA}</td>
@@ -154,6 +163,7 @@ import java.util.Map;
  *     <td>1</td>
  *     <td>Anno Hijrah (AH)</td>
  *   </tr>
+ * </tbody>
  * </table>
  *
  * <p>Calendar field value names for {@code "gregory"} must be consistent with

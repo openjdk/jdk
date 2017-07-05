@@ -158,8 +158,6 @@ public class B8035158 {
         t.add(new TestCase("google.com|bing.com|yahoo.com", "http://127.0.0.1", false));
         t.add(new TestCase("google.com|bing.com|yahoo.com", "http://yahoo.com", false));
 
-        // example from
-        // http://docs.oracle.com/javase/7/docs/technotes/guides/net/proxies.html
         t.add(new TestCase("localhost|host.example.com", "http://localhost",
                 false));
         t.add(new TestCase("localhost|host.example.com",

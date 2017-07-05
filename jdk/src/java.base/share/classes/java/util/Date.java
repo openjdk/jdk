@@ -728,7 +728,6 @@ public class Date
      * @see     java.util.Calendar
      * @deprecated As of JDK version 1.1,
      * replaced by {@code Calendar.get(Calendar.DAY_OF_MONTH)}.
-     * @deprecated
      */
     @Deprecated
     public int getDate() {
