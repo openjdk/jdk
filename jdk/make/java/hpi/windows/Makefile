@@ -37,8 +37,6 @@ include $(BUILDDIR)/common/Defs.gmk
 # windows compiler flags
 ifeq ($(PLATFORM),windows)
   CPPFLAGS_DBG += -DLOGGING
-  # Files built here do not compile with warning level 3 if warnings are fatal
-  COMPILER_WARNINGS_FATAL=false
 endif
 
 FILES_c = \

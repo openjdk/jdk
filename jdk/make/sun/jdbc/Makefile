@@ -69,11 +69,6 @@ ifneq ($(PLATFORM), windows)
   INIT += $(ODBC_FAKE_LIBRARIES)
 endif
 
-ifeq ($(PLATFORM),windows)
-  # Files built here do not compile with warning level 3 if warnings are fatal
-  COMPILER_WARNINGS_FATAL=false
-endif
-
 #
 # Rules
 #

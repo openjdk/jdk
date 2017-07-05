@@ -25,7 +25,7 @@
 
 package com.sun.jmx.mbeanserver;
 
-import javax.management.DynamicMBean;
+import javax.management.DynamicWrapperMBean;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
@@ -35,17 +35,7 @@ import javax.management.ObjectName;
  *
  * @since 1.6
  */
-public interface DynamicMBean2 extends DynamicMBean {
-    /**
-     * The resource corresponding to this MBean.  This is the object whose
-     * class name should be reflected by the MBean's
-     * getMBeanInfo().getClassName() for example.  For a "plain"
-     * DynamicMBean it will be "this".  For an MBean that wraps another
-     * object, like javax.management.StandardMBean, it will be the wrapped
-     * object.
-     */
-    public Object getResource();
-
+public interface DynamicMBean2 extends DynamicWrapperMBean {
     /**
      * The name of this MBean's class, as used by permission checks.
      * This is typically equal to getResource().getClass().getName().

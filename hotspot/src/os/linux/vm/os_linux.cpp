@@ -2414,8 +2414,20 @@ static bool linux_mprotect(char* addr, size_t size, int prot) {
   return ::mprotect(bottom, size, prot) == 0;
 }
 
-bool os::protect_memory(char* addr, size_t size) {
-  return linux_mprotect(addr, size, PROT_READ);
+// Set protections specified
+bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
+                        bool is_committed) {
+  unsigned int p = 0;
+  switch (prot) {
+  case MEM_PROT_NONE: p = PROT_NONE; break;
+  case MEM_PROT_READ: p = PROT_READ; break;
+  case MEM_PROT_RW:   p = PROT_READ|PROT_WRITE; break;
+  case MEM_PROT_RWX:  p = PROT_READ|PROT_WRITE|PROT_EXEC; break;
+  default:
+    ShouldNotReachHere();
+  }
+  // is_committed is unused.
+  return linux_mprotect(addr, bytes, p);
 }
 
 bool os::guard_memory(char* addr, size_t size) {
@@ -3704,8 +3716,9 @@ void os::make_polling_page_unreadable(void) {
 
 // Mark the polling page as readable
 void os::make_polling_page_readable(void) {
-  if( !protect_memory((char *)_polling_page, Linux::page_size()) )
+  if( !linux_mprotect((char *)_polling_page, Linux::page_size(), PROT_READ)) {
     fatal("Could not enable polling page");
+  }
 };
 
 int os::active_processor_count() {

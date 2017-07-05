@@ -36,11 +36,6 @@ FILES_m = mapfile-vers
 
 include $(BUILDDIR)/common/Defs.gmk
 
-ifeq ($(PLATFORM), windows)
-  # Files built here do not compile with warning level 3 if warnings are fatal
-  COMPILER_WARNINGS_FATAL=false
-endif
-
 ifeq ($(PLATFORM), linux)
   OTHER_LDLIBS += -lnsl $(LIBSOCKET) -lpthread
 endif

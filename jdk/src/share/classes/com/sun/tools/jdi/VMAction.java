@@ -38,15 +38,27 @@ class VMAction extends EventObject {
     static final int VM_NOT_SUSPENDED = 2;
 
     int id;
+    ThreadReference resumingThread;
 
     VMAction(VirtualMachine vm, int id) {
+        this(vm, null, id);
+    }
+
+    // For id = VM_NOT_SUSPENDED, if resumingThread != null, then it is
+    // the only thread that is being resumed.
+     VMAction(VirtualMachine vm,  ThreadReference resumingThread, int id) {
         super(vm);
         this.id = id;
+        this.resumingThread = resumingThread;
     }
     VirtualMachine vm() {
         return (VirtualMachine)getSource();
     }
     int id() {
         return id;
+    }
+
+    ThreadReference resumingThread() {
+        return resumingThread;
     }
 }
