@@ -226,8 +226,6 @@ class FrameMap : public CompilationResourceObj {
     return make_new_address(sp_offset_for_monitor_object(monitor_index));
   }
 
-  void print_frame_layout() const;
-
   // Creates Location describing desired slot and returns it via pointer
   // to Location object. Returns true if the stack frame offset was legal
   // (as defined by Location::legal_offset_in_bytes()), false otherwise.

@@ -25,7 +25,6 @@
 #ifndef OS_SOLARIS_VM_OS_SOLARIS_INLINE_HPP
 #define OS_SOLARIS_VM_OS_SOLARIS_INLINE_HPP
 
-#include "runtime/atomic.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/os.hpp"
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,8 +327,28 @@ DeadlockCycle* ThreadService::find_deadlocks_at_safepoint(bool concurrent_locks)
     while (waitingToLockMonitor != NULL || waitingToLockBlocker != NULL) {
       cycle->add_thread(currentThread);
       if (waitingToLockMonitor != NULL) {
-        currentThread = Threads::owning_thread_from_monitor_owner((address)waitingToLockMonitor->owner(),
-                                                                  false /* no locking needed */);
+        currentThread = Threads::owning_thread_from_monitor_owner(
+                          (address)waitingToLockMonitor->owner(),
+                          false /* no locking needed */);
+        if (currentThread == NULL) {
+          // This function is called at a safepoint so the JavaThread
+          // that owns waitingToLockMonitor should be findable, but
+          // if it is not findable, then the previous currentThread is
+          // blocked permanently. We record this as a deadlock.
+          num_deadlocks++;
+
+          cycle->set_deadlock(true);
+
+          // add this cycle to the deadlocks list
+          if (deadlocks == NULL) {
+            deadlocks = cycle;
+          } else {
+            last->set_next(cycle);
+          }
+          last = cycle;
+          cycle = new DeadlockCycle();
+          break;
+        }
       } else {
         if (concurrent_locks) {
           if (waitingToLockBlocker->is_a(SystemDictionary::abstract_ownable_synchronizer_klass())) {
@@ -841,7 +861,17 @@ void DeadlockCycle::print_on(outputStream* st) const {
         owner_desc = " (JVMTI raw monitor),\n  which is held by";
       }
       currentThread = Threads::owning_thread_from_monitor_owner(
-        (address)waitingToLockMonitor->owner(), false /* no locking needed */);
+                        (address)waitingToLockMonitor->owner(),
+                        false /* no locking needed */);
+      if (currentThread == NULL) {
+        // The deadlock was detected at a safepoint so the JavaThread
+        // that owns waitingToLockMonitor should be findable, but
+        // if it is not findable, then the previous currentThread is
+        // blocked permanently.
+        st->print("%s UNKNOWN_owner_addr=" PTR_FORMAT, owner_desc,
+                  (address)waitingToLockMonitor->owner());
+        continue;
+      }
     } else {
       st->print("  waiting for ownable synchronizer " INTPTR_FORMAT ", (a %s)",
                 (address)waitingToLockBlocker,

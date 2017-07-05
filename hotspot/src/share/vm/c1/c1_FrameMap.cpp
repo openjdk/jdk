@@ -308,27 +308,6 @@ ByteSize FrameMap::sp_offset_for_monitor_object(int index) const {
   return sp_offset_for_monitor_base(index) + in_ByteSize(BasicObjectLock::obj_offset_in_bytes());
 }
 
-void FrameMap::print_frame_layout() const {
-  int svar;
-  tty->print_cr("#####################################");
-  tty->print_cr("Frame size in words %d", framesize());
-
-  if( _num_monitors > 0) {
-    tty->print_cr("monitor [0]:%d | [%2d]:%d",
-                  in_bytes(sp_offset_for_monitor_base(0)),
-                  in_bytes(sp_offset_for_monitor_base(_num_monitors)));
-  }
-  if( _num_spills > 0) {
-    svar = _num_spills - 1;
-    if(svar == 0)
-      tty->print_cr("spill   [0]:%d", in_bytes(sp_offset_for_spill(0)));
-    else
-      tty->print_cr("spill   [0]:%d | [%2d]:%d", in_bytes(sp_offset_for_spill(0)),
-                    svar,
-                    in_bytes(sp_offset_for_spill(svar)));
-  }
-}
-
 
 // For OopMaps, map a local variable or spill index to an VMReg.
 // This is the offset from sp() in the frame of the slot for the index,
