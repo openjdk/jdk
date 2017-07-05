@@ -22,14 +22,17 @@
  */
 
 /* @test
- * @bug 4413817
+ * @bug 4413817 8004928
  * @summary Verify that ObjectInputStream.resolveProxyClass can properly
  *          resolve a dynamic proxy class which implements a non-public
  *          interface not defined in the latest user defined class loader.
  */
 
 import java.io.*;
-import java.lang.reflect.*;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Proxy;
 
 public class NonPublicInterface {
 
@@ -39,35 +42,19 @@ public class NonPublicInterface {
         }
     }
 
+    public static final String nonPublicIntrfaceName = "java.util.zip.ZipConstants";
+
     public static void main(String[] args) throws Exception {
-        Class nonPublic = null;
-        String[] nonPublicInterfaces = new String[] {
-            "java.awt.Conditional",
-            "java.util.zip.ZipConstants",
-            "javax.swing.GraphicsWrapper",
-            "javax.swing.JPopupMenu$Popup",
-            "javax.swing.JTable$Resizable2",
-            "javax.swing.JTable$Resizable3",
-            "javax.swing.ToolTipManager$Popup",
-            "sun.audio.Format",
-            "sun.audio.HaePlayable",
-            "sun.tools.agent.StepConstants",
-        };
-        for (int i = 0; i < nonPublicInterfaces.length; i++) {
-            try {
-                nonPublic = Class.forName(nonPublicInterfaces[i]);
-                break;
-            } catch (ClassNotFoundException ex) {
-            }
-        }
-        if (nonPublic == null) {
-            throw new Error("couldn't find system non-public interface");
+        Class<?> nonPublic = Class.forName(nonPublicIntrfaceName);
+        if (Modifier.isPublic(nonPublic.getModifiers())) {
+            throw new Error("Interface " + nonPublicIntrfaceName +
+                    " is public and need to be changed!");
         }
 
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         ObjectOutputStream oout = new ObjectOutputStream(bout);
         oout.writeObject(Proxy.newProxyInstance(nonPublic.getClassLoader(),
-            new Class[]{ nonPublic }, new Handler()));
+            new Class<?>[]{ nonPublic }, new Handler()));
         oout.close();
         ObjectInputStream oin = new ObjectInputStream(
             new ByteArrayInputStream(bout.toByteArray()));

@@ -30,6 +30,7 @@
 import java.io.*;
 
 import javax.swing.*;
+import javax.swing.plaf.metal.*;
 
 public class bug7193219 {
     private static byte[] serializeGUI() {
@@ -73,6 +74,7 @@ public class bug7193219 {
     }
 
     public static void main(String[] args) throws Exception {
+        UIManager.setLookAndFeel(new MetalLookAndFeel());
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {

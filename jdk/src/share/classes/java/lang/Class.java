@@ -506,6 +506,7 @@ public final
      * returns {@code false} otherwise.
      * @return {@code true} if and only if this class is a synthetic class as
      *         defined by the Java Language Specification.
+     * @jls 13.1 The Form of a Binary
      * @since 1.5
      */
     public boolean isSynthetic() {
