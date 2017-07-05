@@ -1,6 +1,6 @@
 <?xml version="1.0"?> 
 <!--
- Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ JvmtiEnv::</xsl:text>
     // DO PRIMITIVE CLASS PROCESSING
     return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
   }
-  klassOop k_oop = java_lang_Class::as_klassOop(k_mirror);
+  Klass* k_oop = java_lang_Class::as_Klass(k_mirror);
   if (k_oop == NULL) {
     return JVMTI_ERROR_INVALID_CLASS;
   }</xsl:text>

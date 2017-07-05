@@ -33,5 +33,7 @@ void DeliverJavaKeyEvent(JNIEnv *env, NSEvent *event, jobject peer);
 void DeliverJavaMouseEvent(JNIEnv *env, NSEvent *event, jobject peer);
 void SendAdditionalJavaEvents(JNIEnv *env, NSEvent *nsEvent, jobject peer);
 jint GetJavaMouseModifiers(NSInteger button, NSUInteger modifierFlags);
+jint NsKeyModifiersToJavaModifiers(NSUInteger nsFlags, BOOL isExtMods);
+NSUInteger JavaModifiersToNsKeyModifiers(jint javaModifiers, BOOL isExtMods);
 
 #endif /* __AWTEVENT_H */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ class AwtDesktopProperties {
         void GetColorParameters();
         void GetOtherParameters();
         void GetSoundEvents();
+        void GetCaretParameters();
 
         static BOOL GetBooleanParameter(UINT spi);
         static UINT GetIntegerParameter(UINT spi);

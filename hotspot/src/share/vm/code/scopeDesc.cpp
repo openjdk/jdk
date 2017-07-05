@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ void ScopeDesc::decode_body() {
     // This is a sentinel record, which is only relevant to
     // approximate queries.  Decode a reasonable frame.
     _sender_decode_offset = DebugInformationRecorder::serialized_null;
-    _method = methodHandle(_code->method());
+    _method = _code->method();
     _bci = InvocationEntryBci;
     _locals_decode_offset = DebugInformationRecorder::serialized_null;
     _expressions_decode_offset = DebugInformationRecorder::serialized_null;
@@ -75,7 +75,7 @@ void ScopeDesc::decode_body() {
     DebugInfoReadStream* stream  = stream_at(decode_offset());
 
     _sender_decode_offset = stream->read_int();
-    _method = methodHandle((methodOop) stream->read_oop());
+    _method = stream->read_method();
     _bci    = stream->read_bci();
 
     // decode offsets for body and sender
@@ -157,7 +157,7 @@ ScopeDesc* ScopeDesc::sender() const {
 
 void ScopeDesc::print_value_on(outputStream* st) const {
   tty->print("   ");
-  method()()->print_short_name(st);
+  method()->print_short_name(st);
   int lineno = method()->line_number_from_bci(bci());
   if (lineno != -1) {
     st->print_cr("@%d (line %d)", bci(), lineno);

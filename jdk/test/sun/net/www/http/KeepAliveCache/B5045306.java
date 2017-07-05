@@ -25,7 +25,7 @@
  * @test
  * @bug 5045306 6356004 6993490
  * @library ../../httptest/
- * @build HttpCallback HttpServer HttpTransaction
+ * @build HttpCallback TestHttpServer HttpTransaction
  * @run main/othervm B5045306
  * @summary Http keep-alive implementation is not efficient
  */
@@ -50,7 +50,7 @@ import java.lang.management.*;
 public class B5045306
 {
     static SimpleHttpTransaction httpTrans;
-    static HttpServer server;
+    static TestHttpServer server;
 
     public static void main(String[] args) throws Exception {
         startHttpServer();
@@ -60,7 +60,7 @@ public class B5045306
     public static void startHttpServer() {
         try {
             httpTrans = new SimpleHttpTransaction();
-            server = new HttpServer(httpTrans, 1, 10, 0);
+            server = new TestHttpServer(httpTrans, 1, 10, 0);
         } catch (IOException e) {
             e.printStackTrace();
         }

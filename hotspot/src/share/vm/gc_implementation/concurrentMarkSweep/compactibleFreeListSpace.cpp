@@ -29,7 +29,7 @@
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
 #include "gc_implementation/shared/liveRange.hpp"
 #include "gc_implementation/shared/spaceDecorator.hpp"
-#include "gc_interface/collectedHeap.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/blockOffsetTable.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -658,13 +658,13 @@ protected:
     void walk_mem_region_with_cl_nopar(MemRegion mr,                    \
                                        HeapWord* bottom, HeapWord* top, \
                                        ClosureType* cl)
-  walk_mem_region_with_cl_DECL(OopClosure);
+  walk_mem_region_with_cl_DECL(ExtendedOopClosure);
   walk_mem_region_with_cl_DECL(FilteringClosure);
 
 public:
   FreeListSpace_DCTOC(CompactibleFreeListSpace* sp,
                       CMSCollector* collector,
-                      OopClosure* cl,
+                      ExtendedOopClosure* cl,
                       CardTableModRefBS::PrecisionStyle precision,
                       HeapWord* boundary) :
     Filtering_DCTOC(sp, cl, precision, boundary),
@@ -746,11 +746,11 @@ void FreeListSpace_DCTOC::walk_mem_region_with_cl_nopar(MemRegion mr,           
 // (There are only two of these, rather than N, because the split is due
 // only to the introduction of the FilteringClosure, a local part of the
 // impl of this abstraction.)
-FreeListSpace_DCTOC__walk_mem_region_with_cl_DEFN(OopClosure)
+FreeListSpace_DCTOC__walk_mem_region_with_cl_DEFN(ExtendedOopClosure)
 FreeListSpace_DCTOC__walk_mem_region_with_cl_DEFN(FilteringClosure)
 
 DirtyCardToOopClosure*
-CompactibleFreeListSpace::new_dcto_cl(OopClosure* cl,
+CompactibleFreeListSpace::new_dcto_cl(ExtendedOopClosure* cl,
                                       CardTableModRefBS::PrecisionStyle precision,
                                       HeapWord* boundary) {
   return new FreeListSpace_DCTOC(this, _collector, cl, precision, boundary);
@@ -781,7 +781,7 @@ void CompactibleFreeListSpace::blk_iterate(BlkClosure* cl) {
 }
 
 // Apply the given closure to each oop in the space.
-void CompactibleFreeListSpace::oop_iterate(OopClosure* cl) {
+void CompactibleFreeListSpace::oop_iterate(ExtendedOopClosure* cl) {
   assert_lock_strong(freelistLock());
   HeapWord *cur, *limit;
   size_t curSize;
@@ -795,7 +795,7 @@ void CompactibleFreeListSpace::oop_iterate(OopClosure* cl) {
 }
 
 // Apply the given closure to each oop in the space \intersect memory region.
-void CompactibleFreeListSpace::oop_iterate(MemRegion mr, OopClosure* cl) {
+void CompactibleFreeListSpace::oop_iterate(MemRegion mr, ExtendedOopClosure* cl) {
   assert_lock_strong(freelistLock());
   if (is_empty()) {
     return;
@@ -1006,13 +1006,12 @@ size_t CompactibleFreeListSpace::block_size(const HeapWord* p) const {
       }
     } else {
       // must read from what 'p' points to in each loop.
-      klassOop k = ((volatile oopDesc*)p)->klass_or_null();
+      Klass* k = ((volatile oopDesc*)p)->klass_or_null();
       if (k != NULL) {
-        assert(k->is_oop(true /* ignore mark word */), "Should be klass oop");
+        assert(k->is_klass(), "Should really be klass oop.");
         oop o = (oop)p;
-        assert(o->is_parsable(), "Should be parsable");
         assert(o->is_oop(true /* ignore mark word */), "Should be an oop.");
-        size_t res = o->size_given_klass(k->klass_part());
+        size_t res = o->size_given_klass(k);
         res = adjustObjectSize(res);
         assert(res != 0, "Block size should not be 0");
         return res;
@@ -1021,6 +1020,7 @@ size_t CompactibleFreeListSpace::block_size(const HeapWord* p) const {
   }
 }
 
+// TODO: Now that is_parsable is gone, we should combine these two functions.
 // A variant of the above that uses the Printezis bits for
 // unparsable but allocated objects. This avoids any possible
 // stalls waiting for mutators to initialize objects, and is
@@ -1048,15 +1048,15 @@ const {
       }
     } else {
       // must read from what 'p' points to in each loop.
-      klassOop k = ((volatile oopDesc*)p)->klass_or_null();
+      Klass* k = ((volatile oopDesc*)p)->klass_or_null();
       // We trust the size of any object that has a non-NULL
       // klass and (for those in the perm gen) is parsable
       // -- irrespective of its conc_safe-ty.
-      if (k != NULL && ((oopDesc*)p)->is_parsable()) {
-        assert(k->is_oop(), "Should really be klass oop.");
+      if (k != NULL) {
+        assert(k->is_klass(), "Should really be klass oop.");
         oop o = (oop)p;
         assert(o->is_oop(), "Should be an oop");
-        size_t res = o->size_given_klass(k->klass_part());
+        size_t res = o->size_given_klass(k);
         res = adjustObjectSize(res);
         assert(res != 0, "Block size should not be 0");
         return res;
@@ -1103,7 +1103,7 @@ bool CompactibleFreeListSpace::block_is_obj(const HeapWord* p) const {
   // assert(CollectedHeap::use_parallel_gc_threads() || _bt.block_start(p) == p,
   //        "Should be a block boundary");
   if (FreeChunk::indicatesFreeChunk(p)) return false;
-  klassOop k = oop(p)->klass_or_null();
+  Klass* k = oop(p)->klass_or_null();
   if (k != NULL) {
     // Ignore mark word because it may have been used to
     // chain together promoted objects (the last one
@@ -1140,23 +1140,6 @@ bool CompactibleFreeListSpace::obj_is_alive(const HeapWord* p) const {
   if (_collector->abstract_state() == CMSCollector::Sweeping) {
     CMSBitMap* live_map = _collector->markBitMap();
     return live_map->par_isMarked((HeapWord*) p);
-  } else {
-    // If we're not currently sweeping and we haven't swept the perm gen in
-    // the previous concurrent cycle then we may have dead but unswept objects
-    // in the perm gen. In this case, we use the "deadness" information
-    // that we had saved in perm_gen_verify_bit_map at the last sweep.
-    if (!CMSClassUnloadingEnabled && _collector->_permGen->reserved().contains(p)) {
-      if (_collector->verifying()) {
-        CMSBitMap* dead_map = _collector->perm_gen_verify_bit_map();
-        // Object is marked in the dead_map bitmap at the previous sweep
-        // when we know that it's dead; if the bitmap is not allocated then
-        // the object is alive.
-        return (dead_map->sizeInBits() == 0) // bit_map has been allocated
-               || !dead_map->par_isMarked((HeapWord*) p);
-      } else {
-        return false; // We can't say for sure if it's live, so we say that it's dead.
-      }
-    }
   }
   return true;
 }
@@ -2442,7 +2425,7 @@ class VerifyAllOopsClosure: public OopClosure {
   VerifyAllOopsClosure(const CMSCollector* collector,
     const CompactibleFreeListSpace* sp, MemRegion span,
     bool past_remark, CMSBitMap* bit_map) :
-    OopClosure(), _collector(collector), _sp(sp), _span(span),
+    _collector(collector), _sp(sp), _span(span),
     _past_remark(past_remark), _bit_map(bit_map) { }
 
   virtual void do_oop(oop* p)       { VerifyAllOopsClosure::do_oop_work(p); }
@@ -2478,8 +2461,10 @@ void CompactibleFreeListSpace::verify() const {
     VerifyAllOopsClosure cl(_collector, this, span, past_remark,
       _collector->markBitMap());
     CollectedHeap* ch = Universe::heap();
-    ch->oop_iterate(&cl);              // all oops in generations
-    ch->permanent_oop_iterate(&cl);    // all oops in perm gen
+
+    // Iterate over all oops in the heap. Uses the _no_header version
+    // since we are not interested in following the klass pointers.
+    ch->oop_iterate_no_header(&cl);
   }
 
   if (VerifyObjectStartArray) {

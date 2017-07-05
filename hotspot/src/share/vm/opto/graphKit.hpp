@@ -743,7 +743,7 @@ class GraphKit : public Phase {
   void shared_unlock(Node* box, Node* obj);
 
   // helper functions for the fast path/slow path idioms
-  Node* fast_and_slow(Node* in, const Type *result_type, Node* null_result, IfNode* fast_test, Node* fast_result, address slow_call, const TypeFunc *slow_call_type, Node* slow_arg, klassOop ex_klass, Node* slow_result);
+  Node* fast_and_slow(Node* in, const Type *result_type, Node* null_result, IfNode* fast_test, Node* fast_result, address slow_call, const TypeFunc *slow_call_type, Node* slow_arg, Klass* ex_klass, Node* slow_result);
 
   // Generate an instance-of idiom.  Used by both the instance-of bytecode
   // and the reflective instance-of call.

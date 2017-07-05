@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,10 +47,19 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
     }
   } else if (which == Assembler::narrow_oop_operand) {
     address disp = Assembler::locate_operand(addr(), which);
+    // both compressed oops and compressed classes look the same
+    if (Universe::heap()->is_in_reserved((oop)x)) {
     if (verify_only) {
       assert(*(uint32_t*) disp == oopDesc::encode_heap_oop((oop)x), "instructions must match");
     } else {
       *(int32_t*) disp = oopDesc::encode_heap_oop((oop)x);
+    }
+  } else {
+      if (verify_only) {
+        assert(*(uint32_t*) disp == oopDesc::encode_klass((Klass*)x), "instructions must match");
+      } else {
+        *(int32_t*) disp = oopDesc::encode_klass((Klass*)x);
+      }
     }
   } else {
     // Note:  Use runtime_call_type relocations for call32_operand.
@@ -238,4 +247,7 @@ void poll_return_Relocation::fix_relocation_after_move(const CodeBuffer* src, Co
     * disp = (int32_t)new_disp;
   }
 #endif // _LP64
+}
+
+void metadata_Relocation::pd_fix_value(address x) {
 }

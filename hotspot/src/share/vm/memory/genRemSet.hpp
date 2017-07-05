@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,22 @@ class BarrierSet;
 class OopsInGenClosure;
 class CardTableRS;
 
+// Helper to remember modified oops in all klasses.
+class KlassRemSet {
+  bool _accumulate_modified_oops;
+ public:
+  KlassRemSet() : _accumulate_modified_oops(false) {}
+  void set_accumulate_modified_oops(bool value) { _accumulate_modified_oops = value; }
+  bool accumulate_modified_oops() { return _accumulate_modified_oops; }
+  bool mod_union_is_clear();
+  void clear_mod_union();
+};
+
 class GenRemSet: public CHeapObj<mtGC> {
   friend class Generation;
 
   BarrierSet* _bs;
+  KlassRemSet _klass_rem_set;
 
 public:
   enum Name {
@@ -61,6 +73,8 @@ public:
 
   // Set the barrier set.
   void set_bs(BarrierSet* bs) { _bs = bs; }
+
+  KlassRemSet* klass_rem_set() { return &_klass_rem_set; }
 
   // Do any (sequential) processing necessary to prepare for (possibly
   // "parallel", if that arg is true) calls to younger_refs_iterate.
@@ -121,7 +135,7 @@ public:
   // younger than gen from generations gen and older.
   // The parameter clear_perm indicates if the perm_gen's
   // remembered set should also be processed/cleared.
-  virtual void clear_into_younger(Generation* gen, bool clear_perm) = 0;
+  virtual void clear_into_younger(Generation* gen) = 0;
 
   // Informs the RS that refs in the given "mr" may have changed
   // arbitrarily, and therefore may contain old-to-young pointers.
@@ -136,7 +150,7 @@ public:
   // younger indicates if the same should be done for younger generations
   // as well. The parameter perm indicates if the same should be done for
   // perm gen as well.
-  virtual void invalidate_or_clear(Generation* gen, bool younger, bool perm) = 0;
+  virtual void invalidate_or_clear(Generation* gen, bool younger) = 0;
 };
 
 #endif // SHARE_VM_MEMORY_GENREMSET_HPP

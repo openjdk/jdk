@@ -128,7 +128,7 @@ public class CloseTest extends Common {
         // load tests
         loadClass ("com.foo.TestClass1", loader, false);
         loadClass ("com.foo.TestClass", loader, true);
-        loadClass ("java.awt.Button", loader, true);
+        loadClass ("java.sql.Array", loader, true);
 
         // now check we can delete the path
         rm_minus_rf (new File(name));

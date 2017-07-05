@@ -31,8 +31,8 @@
 #include "compiler/compilerOracle.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allocation.inline.hpp"
-#include "oops/methodDataOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/methodData.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/arguments.hpp"
@@ -242,7 +242,7 @@ CompileTaskWrapper::~CompileTaskWrapper() {
   if (log != NULL)  task->log_task_done(log);
   thread->set_task(NULL);
   task->set_code_handle(NULL);
-  DEBUG_ONLY(thread->set_env((ciEnv*)badAddress));
+  thread->set_env(NULL);
   if (task->is_blocking()) {
     MutexLocker notifier(task->lock(), thread);
     task->mark_complete();
@@ -271,7 +271,8 @@ void CompileTask::initialize(int compile_id,
   assert(!_lock->is_locked(), "bad locking");
 
   _compile_id = compile_id;
-  _method = JNIHandles::make_global(method);
+  _method = method();
+  _method_loader = JNIHandles::make_global(_method->method_holder()->class_loader());
   _osr_bci = osr_bci;
   _is_blocking = is_blocking;
   _comp_level = comp_level;
@@ -282,6 +283,7 @@ void CompileTask::initialize(int compile_id,
   _code_handle = NULL;
 
   _hot_method = NULL;
+  _hot_method_loader = NULL;
   _hot_count = hot_count;
   _time_queued = 0;  // tidy
   _comment = comment;
@@ -292,8 +294,9 @@ void CompileTask::initialize(int compile_id,
       if (hot_method == method) {
         _hot_method = _method;
       } else {
-        _hot_method = JNIHandles::make_global(hot_method);
+        _hot_method = hot_method();
       }
+      _hot_method_loader = JNIHandles::make_global(_hot_method->method_holder()->class_loader());
     }
   }
 
@@ -318,19 +321,25 @@ void CompileTask::set_code(nmethod* nm) {
 void CompileTask::free() {
   set_code(NULL);
   assert(!_lock->is_locked(), "Should not be locked when freed");
-  if (_hot_method != NULL && _hot_method != _method) {
-    JNIHandles::destroy_global(_hot_method);
-  }
-  JNIHandles::destroy_global(_method);
+  JNIHandles::destroy_global(_method_loader);
+  JNIHandles::destroy_global(_hot_method_loader);
 }
 
+
+void CompileTask::mark_on_stack() {
+  // Mark these methods as something redefine classes cannot remove.
+  _method->set_on_stack(true);
+  if (_hot_method != NULL) {
+    _hot_method->set_on_stack(true);
+  }
+}
 
 // ------------------------------------------------------------------
 // CompileTask::print
 void CompileTask::print() {
   tty->print("<CompileTask compile_id=%d ", _compile_id);
   tty->print("method=");
-  ((methodOop)JNIHandles::resolve(_method))->print_name(tty);
+  _method->print_name(tty);
   tty->print_cr(" osr_bci=%d is_blocking=%s is_complete=%s is_success=%s>",
              _osr_bci, bool_to_str(_is_blocking),
              bool_to_str(_is_complete), bool_to_str(_is_success));
@@ -365,7 +374,7 @@ void CompileTask::print_line() {
 
 // ------------------------------------------------------------------
 // CompileTask::print_compilation_impl
-void CompileTask::print_compilation_impl(outputStream* st, methodOop method, int compile_id, int comp_level,
+void CompileTask::print_compilation_impl(outputStream* st, Method* method, int compile_id, int comp_level,
                                          bool is_osr_method, int osr_bci, bool is_blocking,
                                          const char* msg, bool short_form) {
   if (!short_form) {
@@ -483,19 +492,15 @@ void CompileTask::print_inline_indent(int inline_level, outputStream* st) {
 // ------------------------------------------------------------------
 // CompileTask::print_compilation
 void CompileTask::print_compilation(outputStream* st, bool short_form) {
-  oop rem = JNIHandles::resolve(method_handle());
-  assert(rem != NULL && rem->is_method(), "must be");
-  methodOop method = (methodOop) rem;
   bool is_osr_method = osr_bci() != InvocationEntryBci;
-  print_compilation_impl(st, method, compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), NULL, short_form);
+  print_compilation_impl(st, method(), compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), NULL, short_form);
 }
 
 // ------------------------------------------------------------------
 // CompileTask::log_task
 void CompileTask::log_task(xmlStream* log) {
   Thread* thread = Thread::current();
-  methodHandle method(thread,
-                      (methodOop)JNIHandles::resolve(method_handle()));
+  methodHandle method(thread, this->method());
   ResourceMark rm(thread);
 
   // <task id='9' method='M' osr_bci='X' level='1' blocking='1' stamp='1.234'>
@@ -530,10 +535,8 @@ void CompileTask::log_task_queued() {
     xtty->print(" comment='%s'", _comment);
   }
   if (_hot_method != NULL) {
-    methodHandle hot(thread,
-                     (methodOop)JNIHandles::resolve(_hot_method));
-    methodHandle method(thread,
-                        (methodOop)JNIHandles::resolve(_method));
+    methodHandle hot(thread, _hot_method);
+    methodHandle method(thread, _method);
     if (hot() != method()) {
       xtty->method(hot);
     }
@@ -558,8 +561,7 @@ void CompileTask::log_task_start(CompileLog* log)   {
 // CompileTask::log_task_done
 void CompileTask::log_task_done(CompileLog* log) {
   Thread* thread = Thread::current();
-  methodHandle method(thread,
-                      (methodOop)JNIHandles::resolve(method_handle()));
+  methodHandle method(thread, this->method());
   ResourceMark rm(thread);
 
   // <task_done ... stamp='1.234'>  </task>
@@ -610,7 +612,7 @@ void CompileQueue::add(CompileTask* task) {
   ++_size;
 
   // Mark the method as being in the compile queue.
-  ((methodOop)JNIHandles::resolve(task->method_handle()))->set_queued_for_compilation();
+  task->method()->set_queued_for_compilation();
 
   if (CIPrintCompileQueue) {
     print();
@@ -672,6 +674,16 @@ void CompileQueue::remove(CompileTask* task)
     _last = task->prev();
   }
   --_size;
+}
+
+// methods in the compile queue need to be marked as used on the stack
+// so that they don't get reclaimed by Redefine Classes
+void CompileQueue::mark_on_stack() {
+  CompileTask* task = _first;
+  while (task != NULL) {
+    task->mark_on_stack();
+    task = task->next();
+  }
 }
 
 // ------------------------------------------------------------------
@@ -868,7 +880,7 @@ void CompileBroker::compilation_init() {
 CompilerThread* CompileBroker::make_compiler_thread(const char* name, CompileQueue* queue, CompilerCounters* counters, TRAPS) {
   CompilerThread* compiler_thread = NULL;
 
-  klassOop k =
+  Klass* k =
     SystemDictionary::resolve_or_fail(vmSymbols::java_lang_Thread(),
                                       true, CHECK_0);
   instanceKlassHandle klass (THREAD, k);
@@ -987,6 +999,18 @@ void CompileBroker::init_compiler_threads(int c1_compiler_count, int c2_compiler
   }
 }
 
+
+// Set the methods on the stack as on_stack so that redefine classes doesn't
+// reclaim them
+void CompileBroker::mark_on_stack() {
+  if (_c2_method_queue != NULL) {
+    _c2_method_queue->mark_on_stack();
+  }
+  if (_c1_method_queue != NULL) {
+    _c1_method_queue->mark_on_stack();
+  }
+}
+
 // ------------------------------------------------------------------
 // CompileBroker::is_idle
 bool CompileBroker::is_idle() {
@@ -1025,9 +1049,9 @@ void CompileBroker::compile_method_base(methodHandle method,
   }
 
   guarantee(!method->is_abstract(), "cannot compile abstract methods");
-  assert(method->method_holder()->klass_part()->oop_is_instance(),
+  assert(method->method_holder()->oop_is_instance(),
          "sanity check");
-  assert(!instanceKlass::cast(method->method_holder())->is_not_initialized(),
+  assert(!InstanceKlass::cast(method->method_holder())->is_not_initialized(),
          "method holder must be initialized");
   assert(!method->is_method_handle_intrinsic(), "do not enqueue these guys");
 
@@ -1084,7 +1108,7 @@ void CompileBroker::compile_method_base(methodHandle method,
   // the pending list lock or a 3-way deadlock may occur
   // between the reference handler thread, a GC (instigated
   // by a compiler thread), and compiled method registration.
-  if (instanceRefKlass::owns_pending_list_lock(JavaThread::current())) {
+  if (InstanceRefKlass::owns_pending_list_lock(JavaThread::current())) {
     return;
   }
 
@@ -1179,10 +1203,10 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
                                        methodHandle hot_method, int hot_count,
                                        const char* comment, Thread* THREAD) {
   // make sure arguments make sense
-  assert(method->method_holder()->klass_part()->oop_is_instance(), "not an instance method");
+  assert(method->method_holder()->oop_is_instance(), "not an instance method");
   assert(osr_bci == InvocationEntryBci || (0 <= osr_bci && osr_bci < method->code_size()), "bci out of range");
   assert(!method->is_abstract() && (osr_bci == InvocationEntryBci || !method->is_native()), "cannot compile abstract/native methods");
-  assert(!instanceKlass::cast(method->method_holder())->is_not_initialized(), "method holder must be initialized");
+  assert(!InstanceKlass::cast(method->method_holder())->is_not_initialized(), "method holder must be initialized");
 
   if (!TieredCompilation) {
     comp_level = CompLevel_highest_tier;
@@ -1234,7 +1258,7 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
     method->constants()->resolve_string_constants(CHECK_AND_CLEAR_NULL);
     // Resolve all classes seen in the signature of the method
     // we are compiling.
-    methodOopDesc::load_signature_classes(method, CHECK_AND_CLEAR_NULL);
+    Method::load_signature_classes(method, CHECK_AND_CLEAR_NULL);
   }
 
   // If the method is native, do the lookup in the thread requesting
@@ -1416,7 +1440,7 @@ uint CompileBroker::assign_compile_id(methodHandle method, int osr_bci) {
 // Should the current thread be blocked until this compilation request
 // has been fulfilled?
 bool CompileBroker::is_compile_blocking(methodHandle method, int osr_bci) {
-  assert(!instanceRefKlass::owns_pending_list_lock(JavaThread::current()), "possible deadlock");
+  assert(!InstanceRefKlass::owns_pending_list_lock(JavaThread::current()), "possible deadlock");
   return !BackgroundCompilation;
 }
 
@@ -1497,8 +1521,7 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   JavaThread *thread = JavaThread::current();
   thread->set_blocked_on_compilation(true);
 
-  methodHandle method(thread,
-                      (methodOop)JNIHandles::resolve(task->method_handle()));
+  methodHandle method(thread, task->method());
   {
     MutexLocker waiter(task->lock(), thread);
 
@@ -1583,8 +1606,7 @@ void CompileBroker::compiler_thread_loop() {
       CompileTaskWrapper ctw(task);
       nmethodLocker result_handle;  // (handle for the nmethod produced by this task)
       task->set_code_handle(&result_handle);
-      methodHandle method(thread,
-                     (methodOop)JNIHandles::resolve(task->method_handle()));
+      methodHandle method(thread, task->method());
 
       // Never compile a method if breakpoints are present in it
       if (method()->number_of_breakpoints() == 0) {
@@ -1690,7 +1712,6 @@ void CompileBroker::maybe_block() {
   }
 }
 
-
 // ------------------------------------------------------------------
 // CompileBroker::invoke_compiler_on_method
 //
@@ -1721,8 +1742,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     // accidentally be referenced once the thread transitions to
     // native.  The NoHandleMark before the transition should catch
     // any cases where this occurs in the future.
-    methodHandle method(thread,
-                        (methodOop)JNIHandles::resolve(task->method_handle()));
+    methodHandle method(thread, task->method());
     should_break = check_break_at(method, compile_id, is_osr);
     if (should_log && !CompilerOracle::should_log(method)) {
       should_log = false;
@@ -1737,7 +1757,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
   // Allocate a new set of JNI handles.
   push_jni_handle_block();
-  jobject target_handle = JNIHandles::make_local(thread, JNIHandles::resolve(task->method_handle()));
+  Method* target_handle = task->method();
   int compilable = ciEnv::MethodCompilable;
   {
     int system_dictionary_modification_counter;
@@ -1806,8 +1826,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   }
   pop_jni_handle_block();
 
-  methodHandle method(thread,
-                      (methodOop)JNIHandles::resolve(task->method_handle()));
+  methodHandle method(thread, task->method());
 
   DTRACE_METHOD_COMPILE_END_PROBE(compiler(task->comp_level()), method, task->is_success());
 
@@ -1901,7 +1920,7 @@ void CompileBroker::set_last_compile(CompilerThread* thread, methodHandle method
   size_t maxLen = CompilerCounters::cmname_buffer_length;
 
   if (UsePerfData) {
-    const char* class_name = method->method_holder()->klass_part()->name()->as_C_string();
+    const char* class_name = method->method_holder()->name()->as_C_string();
 
     size_t s1len = strlen(class_name);
     size_t s2len = strlen(method_name);
@@ -1995,7 +2014,7 @@ bool CompileBroker::check_break_at(methodHandle method, int compile_id, bool is_
 
 void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time, CompileTask* task) {
   bool success = task->is_success();
-  methodHandle method (thread, (methodOop)JNIHandles::resolve(task->method_handle()));
+  methodHandle method (thread, task->method());
   uint compile_id = task->compile_id();
   bool is_osr = (task->osr_bci() != standard_entry_bci);
   nmethod* code = task->code();

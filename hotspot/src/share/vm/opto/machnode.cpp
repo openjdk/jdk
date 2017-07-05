@@ -38,7 +38,7 @@ int MachOper::reg(PhaseRegAlloc *ra_, const Node *node, int idx) const {
   return (int)(ra_->get_encode(node->in(idx)));
 }
 intptr_t  MachOper::constant() const { return 0x00; }
-bool MachOper::constant_is_oop() const { return false; }
+relocInfo::relocType MachOper::constant_reloc() const { return relocInfo::none; }
 jdouble MachOper::constantD() const { ShouldNotReachHere(); return 0.0; }
 jfloat  MachOper::constantF() const { ShouldNotReachHere(); return 0.0; }
 jlong   MachOper::constantL() const { ShouldNotReachHere(); return CONST64(0) ; }
@@ -54,7 +54,7 @@ int MachOper::constant_disp()  const { return 0; }
 int MachOper::base_position()  const { return -1; }  // no base input
 int MachOper::index_position() const { return -1; }  // no index input
 // Check for PC-Relative displacement
-bool MachOper::disp_is_oop() const { return false; }
+relocInfo::relocType MachOper::disp_reloc() const { return relocInfo::none; }
 // Return the label
 Label*   MachOper::label()  const { ShouldNotReachHere(); return 0; }
 intptr_t MachOper::method() const { ShouldNotReachHere(); return 0; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ void pd_ps(frame f) {
       CodeBlob *b = CodeCache::find_blob((address) pc);
       if (b != NULL) {
         if (b->is_nmethod()) {
-          methodOop m = ((nmethod*)b)->method();
+          Method* m = ((nmethod*)b)->method();
           int nlocals = m->max_locals();
           int nparams  = m->size_of_parameters();
           tty->print_cr("compiled java method (locals = %d, params = %d)", nlocals, nparams);

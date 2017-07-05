@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,8 +259,7 @@ final public class AlgorithmChecker extends PKIXCertPathChecker {
             }
 
             // Inherit key parameters from previous key
-            if (currPubKey instanceof DSAPublicKey &&
-                ((DSAPublicKey)currPubKey).getParams() == null) {
+            if (PKIX.isDSAPublicKeyWithoutParams(currPubKey)) {
                 // Inherit DSA parameters from previous key
                 if (!(prevPubKey instanceof DSAPublicKey)) {
                     throw new CertPathValidatorException("Input key is not " +

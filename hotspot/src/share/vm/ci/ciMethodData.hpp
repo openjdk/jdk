@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 #include "ci/ciKlass.hpp"
 #include "ci/ciObject.hpp"
 #include "ci/ciUtilities.hpp"
-#include "oops/methodDataOop.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 
 class ciBitData;
@@ -71,9 +71,9 @@ public:
 
   ciKlass* receiver(uint row) {
     assert((uint)row < row_limit(), "oob");
-    ciObject* recv = (ciObject*)intptr_at(receiver0_offset + row * receiver_type_row_cell_count);
+    ciKlass* recv = (ciKlass*)intptr_at(receiver0_offset + row * receiver_type_row_cell_count);
     assert(recv == NULL || recv->is_klass(), "wrong type");
-    return (ciKlass*)recv;
+    return recv;
   }
 
   // Copy & translate from oop based ReceiverTypeData
@@ -139,10 +139,10 @@ public:
 
 // ciMethodData
 //
-// This class represents a methodDataOop in the HotSpot virtual
+// This class represents a MethodData* in the HotSpot virtual
 // machine.
 
-class ciMethodData : public ciObject {
+class ciMethodData : public ciMetadata {
   CI_PACKAGE_ACCESS
 
 private:
@@ -179,9 +179,9 @@ private:
   int _backedge_counter;
 
   // Coherent snapshot of original header.
-  methodDataOopDesc _orig;
+  MethodData _orig;
 
-  ciMethodData(methodDataHandle h_md);
+  ciMethodData(MethodData* md);
   ciMethodData();
 
   // Accessors
@@ -189,11 +189,8 @@ private:
   int extra_data_size() const { return _extra_data_size; }
   intptr_t * data() const { return _data; }
 
-  methodDataOop get_methodDataOop() const {
-    if (handle() == NULL) return NULL;
-    methodDataOop mdo = (methodDataOop)get_oop();
-    assert(mdo != NULL, "illegal use of unloaded method data");
-    return mdo;
+  MethodData* get_MethodData() const {
+    return (MethodData*)_metadata;
   }
 
   const char* type_string()                      { return "ciMethodData"; }
@@ -232,7 +229,7 @@ private:
   ciArgInfoData *arg_info() const;
 
 public:
-  bool is_method_data()  { return true; }
+  bool is_method_data() const { return true; }
 
   void set_mature() { _state = mature_state; }
 
@@ -244,7 +241,7 @@ public:
 
   int invocation_count() { return _invocation_counter; }
   int backedge_count()   { return _backedge_counter;   }
-  // Transfer information about the method to methodDataOop.
+  // Transfer information about the method to MethodData*.
   // would_profile means we would like to profile this method,
   // meaning it's not trivial.
   void set_would_profile(bool p);
@@ -300,9 +297,9 @@ public:
   bool has_escape_info();
   void update_escape_info();
 
-  void set_eflag(methodDataOopDesc::EscapeFlag f);
-  void clear_eflag(methodDataOopDesc::EscapeFlag f);
-  bool eflag_set(methodDataOopDesc::EscapeFlag f) const;
+  void set_eflag(MethodData::EscapeFlag f);
+  void clear_eflag(MethodData::EscapeFlag f);
+  bool eflag_set(MethodData::EscapeFlag f) const;
 
   void set_arg_local(int i);
   void set_arg_stack(int i);

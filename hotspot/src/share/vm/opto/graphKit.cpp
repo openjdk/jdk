@@ -3446,12 +3446,6 @@ void GraphKit::write_barrier_post(Node* oop_store,
     if (t == TypePtr::NULL_PTR || t == Type::TOP)
       // stores of null never (?) need barriers
       return;
-    ciObject* con = t->is_oopptr()->const_oop();
-    if (con != NULL
-        && con->is_perm()
-        && Universe::heap()->can_elide_permanent_oop_store_barriers())
-      // no store barrier needed, because no old-to-new ref created
-      return;
   }
 
   if (use_ReduceInitialCardMarks()

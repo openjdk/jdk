@@ -94,17 +94,17 @@ private:
   // Adding elements
   Symbol* basic_add(int index, u1* name, int len, unsigned int hashValue,
                     bool c_heap, TRAPS);
-
-  bool basic_add(Handle class_loader, constantPoolHandle cp, int names_count,
+  bool basic_add(ClassLoaderData* loader_data,
+                 constantPoolHandle cp, int names_count,
                  const char** names, int* lengths, int* cp_indices,
                  unsigned int* hashValues, TRAPS);
 
-  static void new_symbols(Handle class_loader, constantPoolHandle cp,
-                          int names_count,
+  static void new_symbols(ClassLoaderData* loader_data,
+                          constantPoolHandle cp, int names_count,
                           const char** name, int* lengths,
                           int* cp_indices, unsigned int* hashValues,
                           TRAPS) {
-    add(class_loader, cp, names_count, name, lengths, cp_indices, hashValues, THREAD);
+    add(loader_data, cp, names_count, name, lengths, cp_indices, hashValues, THREAD);
   }
 
   // Table size
@@ -170,7 +170,8 @@ public:
   static Symbol* lookup_unicode(const jchar* name, int len, TRAPS);
   static Symbol* lookup_only_unicode(const jchar* name, int len, unsigned int& hash);
 
-  static void add(Handle class_loader, constantPoolHandle cp, int names_count,
+  static void add(ClassLoaderData* loader_data,
+                  constantPoolHandle cp, int names_count,
                   const char** names, int* lengths, int* cp_indices,
                   unsigned int* hashValues, TRAPS);
 

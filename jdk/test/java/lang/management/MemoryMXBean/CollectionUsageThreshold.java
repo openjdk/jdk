@@ -48,7 +48,7 @@ public class CollectionUsageThreshold {
     private static Map<String, PoolRecord> result = new HashMap<>();
     private static boolean trace = false;
     private static boolean testFailed = false;
-    private static final int EXPECTED_NUM_POOLS = 2;
+    private static int numMemoryPools = 1;
     private static final int NUM_GCS = 3;
     private static final int THRESHOLD = 10;
     private static Checker checker;
@@ -129,14 +129,19 @@ public class CollectionUsageThreshold {
         for (MemoryPoolMXBean p : pools) {
             MemoryUsage u = p.getUsage();
             if (p.isUsageThresholdSupported() && p.isCollectionUsageThresholdSupported()) {
+                if (p.getName().toLowerCase().contains("perm")) {
+                    // if we have a "perm gen" pool increase the number of expected
+                    // memory pools by one.
+                    numMemoryPools++;
+                }
                 PoolRecord pr = new PoolRecord(p);
                 result.put(p.getName(), pr);
-                if (result.size() == EXPECTED_NUM_POOLS) {
+                if (result.size() == numMemoryPools) {
                     break;
                 }
             }
         }
-        if (result.size() != EXPECTED_NUM_POOLS) {
+        if (result.size() != numMemoryPools) {
             throw new RuntimeException("Unexpected number of selected pools");
         }
 
@@ -209,7 +214,7 @@ public class CollectionUsageThreshold {
         public void run() {
             while (true) {
                 try {
-                    signals.acquire(EXPECTED_NUM_POOLS);
+                    signals.acquire(numMemoryPools);
                     checkResult();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);

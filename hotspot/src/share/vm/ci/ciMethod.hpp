@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,9 @@ class BCEscapeAnalyzer;
 
 // ciMethod
 //
-// This class represents a methodOop in the HotSpot virtual
+// This class represents a Method* in the HotSpot virtual
 // machine.
-class ciMethod : public ciObject {
+class ciMethod : public ciMetadata {
   friend class CompileBroker;
   CI_PACKAGE_ACCESS
   friend class ciEnv;
@@ -90,8 +90,8 @@ class ciMethod : public ciObject {
   ciMethod(methodHandle h_m);
   ciMethod(ciInstanceKlass* holder, ciSymbol* name, ciSymbol* signature, ciInstanceKlass* accessor);
 
-  methodOop get_methodOop() const {
-    methodOop m = (methodOop)get_oop();
+  Method* get_Method() const {
+    Method* m = (Method*)_metadata;
     assert(m != NULL, "illegal use of unloaded method");
     return m;
   }
@@ -164,8 +164,8 @@ class ciMethod : public ciObject {
   // Code size for inlining decisions.
   int code_size_for_inlining();
 
-  bool force_inline() { return get_methodOop()->force_inline(); }
-  bool dont_inline()  { return get_methodOop()->dont_inline();  }
+  bool force_inline() { return get_Method()->force_inline(); }
+  bool dont_inline()  { return get_Method()->dont_inline();  }
 
   int comp_level();
   int highest_osr_comp_level();
@@ -268,7 +268,7 @@ class ciMethod : public ciObject {
   bool has_member_arg() const;
 
   // What kind of ciObject is this?
-  bool is_method()                               { return true; }
+  bool is_method() const                         { return true; }
 
   // Java access flags
   bool is_public      () const                   { return flags().is_public(); }

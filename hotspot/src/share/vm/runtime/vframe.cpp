@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,8 +146,8 @@ static void print_locked_object_class_name(outputStream* st, Handle obj, const c
   if (obj.not_null()) {
     st->print("\t- %s <" INTPTR_FORMAT "> ", lock_state, (address)obj());
     if (obj->klass() == SystemDictionary::Class_klass()) {
-      klassOop target_klass = java_lang_Class::as_klassOop(obj());
-      st->print_cr("(a java.lang.Class for %s)", instanceKlass::cast(target_klass)->external_name());
+      Klass* target_klass = java_lang_Class::as_Klass(obj());
+      st->print_cr("(a java.lang.Class for %s)", InstanceKlass::cast(target_klass)->external_name());
     } else {
       Klass* k = Klass::cast(obj->klass());
       st->print_cr("(a %s)", k->external_name());
@@ -161,7 +161,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
   // If this is the first frame, and java.lang.Object.wait(...) then print out the receiver.
   if (frame_count == 0) {
     if (method()->name() == vmSymbols::wait_name() &&
-        instanceKlass::cast(method()->method_holder())->name() == vmSymbols::java_lang_Object()) {
+        InstanceKlass::cast(method()->method_holder())->name() == vmSymbols::java_lang_Object()) {
       StackValueCollection* locs = locals();
       if (!locs->is_empty()) {
         StackValue* sv = locs->at(0);
@@ -186,7 +186,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
       MonitorInfo* monitor = mons->at(index);
       if (monitor->eliminated() && is_compiled_frame()) { // Eliminated in compiled code
         if (monitor->owner_is_scalar_replaced()) {
-          Klass* k = Klass::cast(monitor->owner_klass());
+          Klass* k = java_lang_Class::as_Klass(monitor->owner_klass());
           st->print("\t- eliminated <owner is scalar replaced> (a %s)", k->external_name());
         } else {
           oop obj = monitor->owner();
@@ -249,7 +249,7 @@ int interpretedVFrame::bci() const {
   return method()->bci_from(bcp());
 }
 
-methodOop interpretedVFrame::method() const {
+Method* interpretedVFrame::method() const {
   return fr().interpreter_frame_method();
 }
 
@@ -527,7 +527,7 @@ void javaVFrame::print() {
     MonitorInfo* monitor = list->at(index);
     tty->print("\t  obj\t");
     if (monitor->owner_is_scalar_replaced()) {
-      Klass* k = Klass::cast(monitor->owner_klass());
+      Klass* k = java_lang_Class::as_Klass(monitor->owner_klass());
       tty->print("( is scalar replaced %s)", k->external_name());
     } else if (monitor->owner() == NULL) {
       tty->print("( null )");
@@ -546,14 +546,14 @@ void javaVFrame::print() {
 
 
 void javaVFrame::print_value() const {
-  methodOop  m = method();
-  klassOop   k = m->method_holder();
+  Method*    m = method();
+  Klass*     k = m->method_holder();
   tty->print_cr("frame( sp=" INTPTR_FORMAT ", unextended_sp=" INTPTR_FORMAT ", fp=" INTPTR_FORMAT ", pc=" INTPTR_FORMAT ")",
                 _fr.sp(),  _fr.unextended_sp(), _fr.fp(), _fr.pc());
   tty->print("%s.%s", Klass::cast(k)->internal_name(), m->name()->as_C_string());
 
   if (!m->is_native()) {
-    Symbol*  source_name = instanceKlass::cast(k)->source_file_name();
+    Symbol*  source_name = InstanceKlass::cast(k)->source_file_name();
     int        line_number = m->line_number_from_bci(bci());
     if (source_name != NULL && (line_number != -1)) {
       tty->print("(%s:%d)", source_name->as_C_string(), line_number);
