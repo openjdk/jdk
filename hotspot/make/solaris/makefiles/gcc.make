@@ -39,6 +39,7 @@ Compiler = gcc
 # prints the numbers (e.g. "2.95", "3.2.1")
 CC_VER_MAJOR := $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f1)
 CC_VER_MINOR := $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f2)
+CC_VER_MICRO := $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f3)
 
 # Check for the versions of C++ and C compilers ($CXX and $CC) used.
 
@@ -160,6 +161,10 @@ ifeq ($(USE_CLANG), true)
     OPT_CFLAGS/loopTransform.o += $(OPT_CFLAGS/NOOPT)
   endif
 else
+  # Do not allow GCC 4.1.1
+  ifeq ($(shell expr $(CC_VER_MAJOR) = 4 \& $(CC_VER_MINOR) = 1 \& $(CC_VER_MICRO) = 1), 1)
+    $(error "GCC $(CC_VER_MAJOR).$(CC_VER_MINOR).$(CC_VER_MICRO) not supported because of https://gcc.gnu.org/bugzilla/show_bug.cgi?id=27724")
+  endif
   # 6835796. Problem in GCC 4.3.0 with mulnode.o optimized compilation.
   ifeq ($(shell expr $(CC_VER_MAJOR) = 4 \& $(CC_VER_MINOR) = 3), 1)
     OPT_CFLAGS/mulnode.o += $(OPT_CFLAGS/NOOPT)

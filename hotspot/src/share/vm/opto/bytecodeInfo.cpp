@@ -108,7 +108,7 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
                                int caller_bci, ciCallProfile& profile,
                                WarmCallInfo* wci_result) {
   // Allows targeted inlining
-  if (callee_method->should_inline()) {
+  if (C->directive()->should_inline(callee_method)) {
     *wci_result = *(WarmCallInfo::always_hot());
     if (C->print_inlining() && Verbose) {
       CompileTask::print_inline_indent(inline_level());
@@ -222,12 +222,12 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
   }
 
   // ignore heuristic controls on inlining
-  if (callee_method->should_inline()) {
+  if (C->directive()->should_inline(callee_method)) {
     set_msg("force inline by CompileCommand");
     return false;
   }
 
-  if (callee_method->should_not_inline()) {
+  if (C->directive()->should_not_inline(callee_method)) {
     set_msg("disallowed by CompileCommand");
     return true;
   }

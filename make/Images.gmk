@@ -40,7 +40,7 @@ $(eval $(call IncludeCustomExtension, , Images-pre.gmk))
 MAIN_MODULES += java.se java.smartcardio jdk.httpserver jdk.sctp \
                jdk.security.auth jdk.security.jgss jdk.pack200 jdk.xml.dom \
                jdk.accessibility jdk.internal.le jdk.scripting.nashorn.shell \
-               jdk.vm.ci
+               jdk.vm.ci jdk.management
 
 # providers
 PROVIDER_MODULES += jdk.charsets jdk.crypto.ec jdk.crypto.pkcs11 jdk.jvmstat jdk.localedata \
@@ -435,7 +435,7 @@ JDK_TARGETS += $(JDK_IMAGE_DIR)/src.zip
 # directories will always trigger the rule for recompile since
 # _the.list_of_packages files are touched.
 ifneq ($(findstring images, $(MAKECMDGOALS)), )
-  $(JDK_IMAGE_DIR)/demo/%: $(SUPPORT_OUTPUTDIR)/demo/image/%
+  $(JDK_IMAGE_DIR)/demo/%: $(SUPPORT_OUTPUTDIR)/demos/image/%
 	if [ ! -d "$@" ]; then \
 	  $(ECHO) $(LOG_INFO) Copying '$(patsubst $(OUTPUT_ROOT)/%,%,$@)'; \
 	  $(MKDIR) -p $(@D); \
@@ -443,9 +443,9 @@ ifneq ($(findstring images, $(MAKECMDGOALS)), )
 	fi
 
   # Find all files including directories
-  JDK_DEMO_TARGETS := $(if $(wildcard $(SUPPORT_OUTPUTDIR)/demo/image), \
-      $(patsubst $(SUPPORT_OUTPUTDIR)/demo/image/%, $(JDK_IMAGE_DIR)/demo/%, \
-      $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/demo/image \
+  JDK_DEMO_TARGETS := $(if $(wildcard $(SUPPORT_OUTPUTDIR)/demos/image), \
+      $(patsubst $(SUPPORT_OUTPUTDIR)/demos/image/%, $(JDK_IMAGE_DIR)/demo/%, \
+      $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/demos/image \
           ! \( -name "_the*" -o -name "javac_state" \) )))
 
   JDK_TARGETS += $(JDK_DEMO_TARGETS)

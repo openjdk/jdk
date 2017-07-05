@@ -39,7 +39,7 @@ public final class ProcessTools {
   /**
    * Pumps stdout and stderr from running the process into a String.
    *
-   * @param processHandler ProcessHandler to run.
+   * @param processBuilder ProcessBuilder to run.
    * @return Output from process.
    * @throws IOException If an I/O error occurs.
    */
@@ -109,6 +109,17 @@ public final class ProcessTools {
   }
 
   /**
+   * Gets the array of strings containing input arguments passed to the VM
+   *
+   * @return arguments
+   */
+  public static String[] getVmInputArgs() {
+    RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
+    List<String> args = runtime.getInputArguments();
+    return args.toArray(new String[args.size()]);
+  }
+
+  /**
    * Get platform specific VM arguments (e.g. -d64 on 64bit Solaris)
    *
    * @return String[] with platform specific arguments, empty if there are none
@@ -169,6 +180,26 @@ public final class ProcessTools {
    */
   public static OutputAnalyzer executeTestJvm(String... cmds) throws Throwable {
     ProcessBuilder pb = createJavaProcessBuilder(Utils.addTestJavaOpts(cmds));
+    return executeProcess(pb);
+  }
+
+  /**
+   * Executes a test jvm process, waits for it to finish and returns the process output.
+   * The default jvm options from the test's run command, jtreg, test.vm.opts and test.java.opts, are added.
+   * The java from the test.jdk is used to execute the command.
+   *
+   * The command line will be like:
+   * {test.jdk}/bin/java {test.fromRun.opts} {test.vm.opts} {test.java.opts} cmds
+   *
+   * @param cmds User specifed arguments.
+   * @return The output from the process.
+   */
+  public static OutputAnalyzer executeTestJvmAllArgs(String... cmds) throws Throwable {
+    List<String> argsList = new ArrayList<>();
+    String[] testArgs = getVmInputArgs();
+    Collections.addAll(argsList, testArgs);
+    Collections.addAll(argsList, Utils.addTestJavaOpts(cmds));
+    ProcessBuilder pb = createJavaProcessBuilder(argsList.toArray(new String[argsList.size()]));
     return executeProcess(pb);
   }
 

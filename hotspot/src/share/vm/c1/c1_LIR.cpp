@@ -731,7 +731,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_tan:
     case lir_sin:
     case lir_cos:
-    case lir_log:
     case lir_log10: {
       assert(op->as_Op2() != NULL, "must be");
       LIR_Op2* op2 = (LIR_Op2*)op;
@@ -1769,7 +1768,6 @@ const char * LIR_Op::name() const {
      case lir_sin:                   s = "sin";           break;
      case lir_cos:                   s = "cos";           break;
      case lir_tan:                   s = "tan";           break;
-     case lir_log:                   s = "log";           break;
      case lir_log10:                 s = "log10";         break;
      case lir_pow:                   s = "pow";           break;
      case lir_logic_and:             s = "logic_and";     break;

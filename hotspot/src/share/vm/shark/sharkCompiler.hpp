@@ -30,6 +30,7 @@
 #include "ci/ciMethod.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "shark/llvmHeaders.hpp"
 #include "shark/sharkMemoryManager.hpp"
 
@@ -54,7 +55,7 @@ class SharkCompiler : public AbstractCompiler {
   void initialize();
 
   // Compile a normal (bytecode) method and install it in the VM
-  void compile_method(ciEnv* env, ciMethod* target, int entry_bci);
+  void compile_method(ciEnv* env, ciMethod* target, int entry_bci, DirectiveSet* dirset);
 
   // Print compilation timers and statistics
   void print_timers();
