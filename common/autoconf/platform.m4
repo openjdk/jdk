@@ -333,17 +333,6 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS],
     fi
     AC_SUBST(DEFINE_CROSS_COMPILE_ARCH)
 
-    # Some Zero and Shark settings.
-    # ZERO_ARCHFLAG tells the compiler which mode to build for
-    case "${OPENJDK_TARGET_CPU}" in
-      s390)
-        ZERO_ARCHFLAG="-m31"
-        ;;
-      *)
-        ZERO_ARCHFLAG="-m${OPENJDK_TARGET_CPU_BITS}"
-    esac
-    AC_SUBST(ZERO_ARCHFLAG)
-
     # ZERO_ARCHDEF is used to enable architecture-specific code
     case "${OPENJDK_TARGET_CPU}" in
       ppc*)    ZERO_ARCHDEF=PPC   ;;
@@ -444,6 +433,7 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_BITS],
 # (The JVM can use 32 or 64 bit Java pointers but that decision
 # is made at runtime.)
 #
+
 if test "x$OPENJDK_TARGET_OS" = xsolaris; then
   # Always specify -m flags on Solaris
   PLATFORM_SET_COMPILER_TARGET_BITS_FLAGS

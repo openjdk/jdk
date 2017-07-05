@@ -352,16 +352,22 @@ ifneq ($(OPENJDK_TARGET_OS),windows)
         JDK_MAN_PAGES += jvisualvm.1
     endif
 
+    ifndef OPENJDK
+        MAN_SRC_BASEDIR:=$(JDK_TOPDIR)/src/closed
+    else
+        MAN_SRC_BASEDIR:=$(JDK_TOPDIR)/src
+    endif
+
     ifeq ($(OPENJDK_TARGET_OS), linux)
-        MAN_SRC_DIR:=$(JDK_TOPDIR)/src/linux/doc
+        MAN_SRC_DIR:=$(MAN_SRC_BASEDIR)/linux/doc
         MAN1_SUBDIR:=man
     endif
     ifeq ($(OPENJDK_TARGET_OS), solaris)
-        MAN_SRC_DIR:=$(JDK_TOPDIR)/src/solaris/doc
+        MAN_SRC_DIR:=$(MAN_SRC_BASEDIR)/solaris/doc
         MAN1_SUBDIR:=sun/man/man1
     endif
     ifeq ($(OPENJDK_TARGET_OS), macosx)
-        MAN_SRC_DIR:=$(JDK_TOPDIR)/src/bsd/doc
+        MAN_SRC_DIR:=$(MAN_SRC_BASEDIR)/bsd/doc
         MAN1_SUBDIR:=man
         JDK_MAN_PAGES := $(filter-out jcmd.1, $(JDK_MAN_PAGES))
         JDK_MAN_PAGES := $(filter-out jvisualvm.1, $(JDK_MAN_PAGES))

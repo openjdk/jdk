@@ -67,7 +67,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /Zi /Od /D "WIN32" /D "_CONSOLE" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /ML /W3 /WX /Gm /GX /Zi /Od /I "." /I "$(HotSpotWorkSpace)\src\share\vm\opto" /I "$(HotSpotWorkSpace)\src\share\vm\prims" /I "$(HotSpotWorkSpace)\src\share\vm\lookup" /I "$(HotSpotWorkSpace)\src\share\vm\interpreter" /I "$(HotSpotWorkSpace)\src\share\vm\asm" /I "$(HotSpotWorkSpace)\src\share\vm\compiler" /I "$(HotSpotWorkSpace)\src\share\vm\utilities" /I "$(HotSpotWorkSpace)\src\share\vm\code" /I "$(HotSpotWorkSpace)\src\share\vm\oops" /I "$(HotSpotWorkSpace)\src\share\vm\runtime" /I "$(HotSpotWorkSpace)\src\share\vm\memory" /I "$(HotSpotWorkSpace)\src\share\vm\libadt" /I "$(HotSpotWorkSpace)\src\cpu\i486\vm" /I "$(HotSpotWorkSpace)\src\os\win32\vm" /D "WIN32" /D "DEBUG" /D "_WINDOWS" /D "ASSERT" /Fr /FD /c
+# ADD CPP /nologo /ML /W3 /WX /Gm /GX /Zi /Od /I "." /I "$(HotSpotWorkSpace)\src\share\vm\opto" /I "$(HotSpotWorkSpace)\src\share\vm\prims" /I "$(HotSpotWorkSpace)\src\share\vm\lookup" /I "$(HotSpotWorkSpace)\src\share\vm\interpreter" /I "$(HotSpotWorkSpace)\src\share\vm\asm" /I "$(HotSpotWorkSpace)\src\share\vm\compiler" /I "$(HotSpotWorkSpace)\src\share\vm\utilities" /I "$(HotSpotWorkSpace)\src\share\vm\code" /I "$(HotSpotWorkSpace)\src\share\vm\oops" /I "$(HotSpotWorkSpace)\src\share\vm\runtime" /I "$(HotSpotWorkSpace)\src\share\vm\memory" /I "$(HotSpotWorkSpace)\src\share\vm\libadt" /I "$(HotSpotWorkSpace)\src\cpu\i486\vm" /I "$(HotSpotWorkSpace)\src\os\win32\vm" /D "WIN32" /D "_WINDOWS" /D "ASSERT" /Fr /FD /c
 # ADD BASE RSC /l 0x409
 # ADD RSC /l 0x409
 BSC32=bscmake.exe
