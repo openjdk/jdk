@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +31,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 import java.util.Arrays;
 import java.util.Random;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 import static java.lang.System.out;
 
 /**
@@ -41,7 +40,7 @@ import static java.lang.System.out;
  * @summary MessageDigest tests with DigestIOStream
  * @author Kevin Liu
  * @key randomness
- * @library /lib/testlibrary
+ * @library /test/lib
  * @run main/timeout=180 TestDigestIOStream
  */
 

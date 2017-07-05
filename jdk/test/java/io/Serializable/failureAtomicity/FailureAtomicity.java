@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,7 @@
  * @bug 8071474
  * @summary Better failure atomicity for default read object.
  * @modules jdk.compiler
- * @library /lib/testlibrary
- * @build jdk.testlibrary.FileUtils
+ * @library /test/lib
  * @compile FailureAtomicity.java SerialRef.java
  * @run main failureAtomicity.FailureAtomicity
  */
@@ -59,7 +58,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
-import jdk.testlibrary.FileUtils;
+import jdk.test.lib.util.FileUtils;
 
 @SuppressWarnings("unchecked")
 public class FailureAtomicity {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,7 @@
 /*
  * @test
  * @bug 6499848
- * @library /lib/testlibrary/
- * @build jdk.testlibrary.RandomFactory
+ * @library /test/lib
  * @run main GCDuringIteration
  * @summary Check that iterators work properly in the presence of
  *          concurrent finalization and removal of elements.
@@ -43,7 +42,7 @@ import java.util.Random;
 import java.util.WeakHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.function.BooleanSupplier;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 public class GCDuringIteration {
 

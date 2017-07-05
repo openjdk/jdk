@@ -23,9 +23,8 @@
 
 /* @test
  * @bug 8072773
- * @library /lib/testlibrary/ /lib/testlibrary/bootlib
+ * @library /test/lib /lib/testlibrary/bootlib
  * @build java.base/java.util.stream.OpTestCase
- * @build jdk.testlibrary.RandomFactory
  * @run testng/othervm StreamLinesTest
  * @summary Tests streams returned from Files.lines, primarily focused on
  *          testing the file-channel-based stream stream with supported
@@ -54,7 +53,7 @@ import java.util.function.Supplier;
 import java.util.stream.OpTestCase;
 import java.util.stream.Stream;
 import java.util.stream.TestData;
-import jdk.testlibrary.RandomFactory;
+import jdk.test.lib.RandomFactory;
 
 public class StreamLinesTest extends OpTestCase {
 
