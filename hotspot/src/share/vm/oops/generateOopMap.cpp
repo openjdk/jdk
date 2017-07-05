@@ -807,7 +807,7 @@ void GenerateOopMap::set_var(int localNo, CellTypeState cts) {
 }
 
 CellTypeState GenerateOopMap::get_var(int localNo) {
-  assert(localNo < _max_locals + _nof_refval_conflicts, "variable read error")
+  assert(localNo < _max_locals + _nof_refval_conflicts, "variable read error");
   if (localNo < 0 || localNo > _max_locals) {
     verify_error("variable read error: r%d", localNo);
     return valCTS; // just to pick something;

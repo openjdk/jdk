@@ -328,7 +328,7 @@ void xmlStream::done_raw(const char* kind) {
 // ------------------------------------------------------------------
 void xmlStream::va_done(const char* format, va_list ap) {
   char buffer[200];
-  guarantee(strlen(format) + 10 < sizeof(buffer), "bigger format buffer")
+  guarantee(strlen(format) + 10 < sizeof(buffer), "bigger format buffer");
   const char* kind = format;
   const char* kind_end = strchr(kind, ' ');
   size_t kind_len = (kind_end != NULL) ? (kind_end - kind) : strlen(kind);

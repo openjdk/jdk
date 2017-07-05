@@ -260,3 +260,23 @@ Java_sun_awt_SunToolkit_closeSplashScreen(JNIEnv *env, jclass cls)
     }
     dlclose(hSplashLib);
 }
+
+/*
+ * Class:     sun_awt_UNIXToolkit
+ * Method:    gtkCheckVersionImpl
+ * Signature: (III)Ljava/lang/String;
+ */
+JNIEXPORT jboolean JNICALL
+Java_sun_awt_UNIXToolkit_gtkCheckVersionImpl(JNIEnv *env, jobject this,
+        jint major, jint minor, jint micro)
+{
+    char *ret;
+
+    ret = fp_gtk_check_version(major, minor, micro);
+    if (ret == NULL) {
+        return TRUE;
+    }
+
+    free(ret);
+    return FALSE;
+}

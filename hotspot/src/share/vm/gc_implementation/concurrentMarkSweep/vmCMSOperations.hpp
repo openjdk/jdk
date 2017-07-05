@@ -126,8 +126,7 @@ class VM_GenCollectFullConcurrent: public VM_GC_Operation {
                               GCCause::Cause gc_cause)
     : VM_GC_Operation(gc_count_before, full_gc_count_before, true /* full */) {
     _gc_cause = gc_cause;
-    assert(FullGCCount_lock != NULL && UseConcMarkSweepGC &&
-           ExplicitGCInvokesConcurrent, "Otherwise shouldn't be here");
+    assert(FullGCCount_lock != NULL, "Error");
     assert(UseAsyncConcMarkSweepGC, "Else will hang caller");
   }
   ~VM_GenCollectFullConcurrent() {}

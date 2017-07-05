@@ -103,7 +103,7 @@ LoaderConstraintEntry** LoaderConstraintTable::find_loader_constraint(
 
 
 void LoaderConstraintTable::purge_loader_constraints(BoolObjectClosure* is_alive) {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint")
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
   // Remove unloaded entries from constraint table
   for (int index = 0; index < table_size(); index++) {
     LoaderConstraintEntry** p = bucket_addr(index);

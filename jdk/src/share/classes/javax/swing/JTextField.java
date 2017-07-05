@@ -292,7 +292,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      */
     @Override
     public boolean isValidateRoot() {
-        return SwingUtilities.getParentViewport(this) == null;
+        return !(SwingUtilities.getUnwrappedParent(this) instanceof JViewport);
     }
 
 

@@ -86,8 +86,23 @@ class Random implements java.io.Serializable {
      * the seed of the random number generator to a value very likely
      * to be distinct from any other invocation of this constructor.
      */
-    public Random() { this(++seedUniquifier + System.nanoTime()); }
-    private static volatile long seedUniquifier = 8682522807148012L;
+    public Random() {
+        this(seedUniquifier() ^ System.nanoTime());
+    }
+
+    private static long seedUniquifier() {
+        // L'Ecuyer, "Tables of Linear Congruential Generators of
+        // Different Sizes and Good Lattice Structure", 1999
+        for (;;) {
+            long current = seedUniquifier.get();
+            long next = current * 181783497276652981L;
+            if (seedUniquifier.compareAndSet(current, next))
+                return next;
+        }
+    }
+
+    private static final AtomicLong seedUniquifier
+        = new AtomicLong(8682522807148012L);
 
     /**
      * Creates a new random number generator using a single {@code long} seed.
@@ -103,8 +118,11 @@ class Random implements java.io.Serializable {
      * @see   #setSeed(long)
      */
     public Random(long seed) {
-        this.seed = new AtomicLong(0L);
-        setSeed(seed);
+        this.seed = new AtomicLong(initialScramble(seed));
+    }
+
+    private static long initialScramble(long seed) {
+        return (seed ^ multiplier) & mask;
     }
 
     /**
@@ -127,8 +145,7 @@ class Random implements java.io.Serializable {
      * @param seed the initial seed
      */
     synchronized public void setSeed(long seed) {
-        seed = (seed ^ multiplier) & mask;
-        this.seed.set(seed);
+        this.seed.set(initialScramble(seed));
         haveNextNextGaussian = false;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,26 +191,10 @@ class frame VALUE_OBJ_CLASS_SPEC {
   intptr_t*  interpreter_frame_mdx_addr() const;
 
  public:
-  // Tags for TaggedStackInterpreter
-  enum Tag {
-      TagValue = 0,          // Important: must be zero to use G0 on sparc.
-      TagReference = 0x555,  // Reference type - is an oop that needs gc.
-      TagCategory2 = 0x666   // Only used internally by interpreter
-                             // and not written to the java stack.
-      // The values above are chosen so that misuse causes a crash
-      // with a recognizable value.
-  };
-
-  static Tag tag_for_basic_type(BasicType typ) {
-    return (typ == T_OBJECT ? TagReference : TagValue);
-  }
-
   // Locals
 
   // The _at version returns a pointer because the address is used for GC.
   intptr_t* interpreter_frame_local_at(int index) const;
-  Tag       interpreter_frame_local_tag(int index) const;
-  void      interpreter_frame_set_local_tag(int index, Tag tag) const;
 
   void interpreter_frame_set_locals(intptr_t* locs);
 
@@ -260,8 +244,6 @@ class frame VALUE_OBJ_CLASS_SPEC {
 
   // The _at version returns a pointer because the address is used for GC.
   intptr_t* interpreter_frame_expression_stack_at(jint offset) const;
-  Tag       interpreter_frame_expression_stack_tag(jint offset) const;
-  void      interpreter_frame_set_expression_stack_tag(jint offset, Tag tag) const;
 
   // top of expression stack
   intptr_t* interpreter_frame_tos_at(jint offset) const;
@@ -375,12 +357,6 @@ class frame VALUE_OBJ_CLASS_SPEC {
   void oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache = true);
 
  private:
-  void oops_interpreted_locals_do(OopClosure *f,
-                                 int max_locals,
-                                 InterpreterOopMap *mask);
-  void oops_interpreted_expressions_do(OopClosure *f, symbolHandle signature,
-                                 bool has_receiver, int max_stack, int max_locals,
-                                 InterpreterOopMap *mask);
   void oops_interpreted_arguments_do(symbolHandle signature, bool has_receiver, OopClosure* f);
 
   // Iteration of oops
