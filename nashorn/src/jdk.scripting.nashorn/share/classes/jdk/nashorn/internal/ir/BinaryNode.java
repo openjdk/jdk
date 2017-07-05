@@ -264,6 +264,10 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         case COMMARIGHT: {
             return rhs.getType(localVariableTypes);
         }
+        case AND:
+        case OR:{
+            return Type.widestReturnType(lhs.getType(localVariableTypes), rhs.getType(localVariableTypes));
+        }
         default:
             if (isComparison()) {
                 return Type.BOOLEAN;

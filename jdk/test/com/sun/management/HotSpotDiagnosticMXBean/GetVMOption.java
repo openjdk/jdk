@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,16 +32,15 @@
 
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.VMOption;
-import com.sun.management.VMOption.Origin;
 import java.lang.management.ManagementFactory;
 import java.util.List;
 import javax.management.MBeanServer;
 
 public class GetVMOption {
-    private static String PRINT_GC_DETAILS = "PrintGCDetails";
-    private static String EXPECTED_VALUE = "true";
-    private static String BAD_OPTION = "BadOption";
-    private static String HOTSPOT_DIAGNOSTIC_MXBEAN_NAME =
+    private static final String PRINT_GC_DETAILS = "PrintGCDetails";
+    private static final String EXPECTED_VALUE = "true";
+    private static final String BAD_OPTION = "BadOption";
+    private static final String HOTSPOT_DIAGNOSTIC_MXBEAN_NAME =
         "com.sun.management:type=HotSpotDiagnostic";
 
     public static void main(String[] args) throws Exception {

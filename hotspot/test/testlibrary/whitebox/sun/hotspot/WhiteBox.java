@@ -98,10 +98,10 @@ public class WhiteBox {
   public native void NMTCommitMemory(long addr, long size);
   public native void NMTUncommitMemory(long addr, long size);
   public native void NMTReleaseMemory(long addr, long size);
-  public native void NMTOverflowHashBucket(long num);
   public native long NMTMallocWithPseudoStack(long size, int index);
   public native boolean NMTIsDetailSupported();
   public native boolean NMTChangeTrackingLevel();
+  public native int NMTGetHashSize();
 
   // Compiler
   public native void    deoptimizeAll();
@@ -179,6 +179,8 @@ public class WhiteBox {
   public native void printRegionInfo(int context);
 
   // VM flags
+  public native boolean isConstantVMFlag(String name);
+  public native boolean isLockedVMFlag(String name);
   public native void    setBooleanVMFlag(String name, boolean value);
   public native void    setIntxVMFlag(String name, long value);
   public native void    setUintxVMFlag(String name, long value);

@@ -553,6 +553,7 @@ ClassLoaderData* ClassLoaderDataGraph::_saved_unloading = NULL;
 ClassLoaderData* ClassLoaderDataGraph::_saved_head = NULL;
 
 bool ClassLoaderDataGraph::_should_purge = false;
+bool ClassLoaderDataGraph::_metaspace_oom = false;
 
 // Add a new class loader data node to the list.  Assign the newly created
 // ClassLoaderData into the java/lang/ClassLoader object as a hidden field
@@ -804,12 +805,17 @@ void ClassLoaderDataGraph::purge() {
   ClassLoaderData* list = _unloading;
   _unloading = NULL;
   ClassLoaderData* next = list;
+  bool classes_unloaded = false;
   while (next != NULL) {
     ClassLoaderData* purge_me = next;
     next = purge_me->next();
     delete purge_me;
+    classes_unloaded = true;
   }
-  Metaspace::purge();
+  if (classes_unloaded) {
+    Metaspace::purge();
+    set_metaspace_oom(false);
+  }
 }
 
 void ClassLoaderDataGraph::post_class_unload_events(void) {
