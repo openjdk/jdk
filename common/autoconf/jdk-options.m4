@@ -491,53 +491,74 @@ AC_DEFUN_ONCE([JDKOPT_DETECT_INTREE_EC],
 AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
 [
   #
-  # ENABLE_DEBUG_SYMBOLS
+  # NATIVE_DEBUG_SYMBOLS
   # This must be done after the toolchain is setup, since we're looking at objcopy.
   #
-  AC_ARG_ENABLE([debug-symbols],
-      [AS_HELP_STRING([--disable-debug-symbols],[disable generation of debug symbols @<:@enabled@:>@])])
+  AC_MSG_CHECKING([what type of native debug symbols to use])
+  AC_ARG_WITH([native-debug-symbols],
+      [AS_HELP_STRING([--with-native-debug-symbols],
+      [set the native debug symbol configuration (none, internal, external, zipped) @<:@zipped@:>@])],
+      [],
+      [with_native_debug_symbols="zipped"])
+  NATIVE_DEBUG_SYMBOLS=$with_native_debug_symbols
+  AC_MSG_RESULT([$NATIVE_DEBUG_SYMBOLS])
 
-  AC_MSG_CHECKING([if we should generate debug symbols])
+  if test "x$NATIVE_DEBUG_SYMBOLS" = xzipped; then
 
-  if test "x$enable_debug_symbols" = "xyes" && test "x$OBJCOPY" = x; then
-    # explicit enabling of enable-debug-symbols and can't find objcopy
-    #   this is an error
-    AC_MSG_ERROR([Unable to find objcopy, cannot enable debug-symbols])
-  fi
-
-  if test "x$enable_debug_symbols" = "xyes"; then
-    ENABLE_DEBUG_SYMBOLS=true
-  elif test "x$enable_debug_symbols" = "xno"; then
-    ENABLE_DEBUG_SYMBOLS=false
-  else
-    # Default is on if objcopy is found
-    if test "x$OBJCOPY" != x; then
-      ENABLE_DEBUG_SYMBOLS=true
-    # MacOS X and Windows don't use objcopy but default is on for those OSes
-    elif test "x$OPENJDK_TARGET_OS" = xmacosx || test "x$OPENJDK_TARGET_OS" = xwindows; then
-      ENABLE_DEBUG_SYMBOLS=true
-    else
-      ENABLE_DEBUG_SYMBOLS=false
+    if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
+      if test "x$OBJCOPY" = x; then
+        # enabling of enable-debug-symbols and can't find objcopy
+        # this is an error
+        AC_MSG_ERROR([Unable to find objcopy, cannot enable native debug symbols])
+      fi
     fi
-  fi
 
-  AC_MSG_RESULT([$ENABLE_DEBUG_SYMBOLS])
-
-  #
-  # ZIP_DEBUGINFO_FILES
-  #
-  AC_MSG_CHECKING([if we should zip debug-info files])
-  AC_ARG_ENABLE([zip-debug-info],
-      [AS_HELP_STRING([--disable-zip-debug-info],[disable zipping of debug-info files @<:@enabled@:>@])],
-      [enable_zip_debug_info="${enableval}"], [enable_zip_debug_info="yes"])
-  AC_MSG_RESULT([${enable_zip_debug_info}])
-
-  if test "x${enable_zip_debug_info}" = "xno"; then
-    ZIP_DEBUGINFO_FILES=false
-  else
+    ENABLE_DEBUG_SYMBOLS=true
     ZIP_DEBUGINFO_FILES=true
+    DEBUG_BINARIES=true
+    STRIP_POLICY=min_strip
+  elif test "x$NATIVE_DEBUG_SYMBOLS" = xnone; then
+    ENABLE_DEBUG_SYMBOLS=false
+    ZIP_DEBUGINFO_FILES=false
+    DEBUG_BINARIES=false
+    STRIP_POLICY=no_strip
+  elif test "x$NATIVE_DEBUG_SYMBOLS" = xinternal; then
+    ENABLE_DEBUG_SYMBOLS=false  # -g option only
+    ZIP_DEBUGINFO_FILES=false
+    DEBUG_BINARIES=true
+    STRIP_POLICY=no_strip
+    STRIP=""
+  elif test "x$NATIVE_DEBUG_SYMBOLS" = xexternal; then
+
+    if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
+      if test "x$OBJCOPY" = x; then
+        # enabling of enable-debug-symbols and can't find objcopy
+        # this is an error
+        AC_MSG_ERROR([Unable to find objcopy, cannot enable native debug symbols])
+      fi
+    fi
+
+    ENABLE_DEBUG_SYMBOLS=true
+    ZIP_DEBUGINFO_FILES=false
+    DEBUG_BINARIES=true
+    STRIP_POLICY=min_strip
+  else
+    AC_MSG_ERROR([Allowed native debug symbols are: none, internal, external, zipped])
   fi
 
+  # --enable-debug-symbols is deprecated.
+  # Please use --with-native-debug-symbols=[internal,external,zipped] .
+  BASIC_DEPRECATED_ARG_ENABLE(debug-symbols, debug_symbols,
+        [Please use --with-native-debug-symbols=[[internal,external,zipped]] .])
+
+  # --enable-zip-debug-info is deprecated.
+  # Please use --with-native-debug-symbols=zipped .
+  BASIC_DEPRECATED_ARG_ENABLE(zip-debug-info, zip_debug_info,
+                              [Please use --with-native-debug-symbols=zipped .])
+
+  AC_SUBST(NATIVE_DEBUG_SYMBOLS)
+  AC_SUBST(DEBUG_BINARIES)
+  AC_SUBST(STRIP_POLICY)
   AC_SUBST(ENABLE_DEBUG_SYMBOLS)
   AC_SUBST(ZIP_DEBUGINFO_FILES)
 ])

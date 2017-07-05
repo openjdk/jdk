@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,9 +71,11 @@ class SolarisUserDefinedFileAttributeView
         if (System.getSecurityManager() != null)
             checkAccess(file.getPathForPermissionCheck(), true, false);
 
-        int fd = file.openForAttributeAccess(followLinks);
+        int fd = -1;
         try {
             try {
+                fd = file.openForAttributeAccess(followLinks);
+
                 // open extended attribute directory
                 int dfd = openat(fd, HERE, (O_RDONLY|O_XATTR), 0);
                 long dp;
@@ -112,9 +114,11 @@ class SolarisUserDefinedFileAttributeView
         if (System.getSecurityManager() != null)
             checkAccess(file.getPathForPermissionCheck(), true, false);
 
-        int fd = file.openForAttributeAccess(followLinks);
+        int fd = -1;
         try {
             try {
+                fd = file.openForAttributeAccess(followLinks);
+
                 // open attribute file
                 int afd = openat(fd, nameAsBytes(file,name), (O_RDONLY|O_XATTR), 0);
                 try {
@@ -142,9 +146,11 @@ class SolarisUserDefinedFileAttributeView
         if (System.getSecurityManager() != null)
             checkAccess(file.getPathForPermissionCheck(), true, false);
 
-        int fd = file.openForAttributeAccess(followLinks);
+        int fd = -1;
         try {
             try {
+                fd = file.openForAttributeAccess(followLinks);
+
                 // open attribute file
                 int afd = openat(fd, nameAsBytes(file,name), (O_RDONLY|O_XATTR), 0);
 
@@ -181,9 +187,11 @@ class SolarisUserDefinedFileAttributeView
         if (System.getSecurityManager() != null)
             checkAccess(file.getPathForPermissionCheck(), false, true);
 
-        int fd = file.openForAttributeAccess(followLinks);
+        int fd = -1;
         try {
             try {
+                fd = file.openForAttributeAccess(followLinks);
+
                 // open/create attribute file
                 int afd = openat(fd, nameAsBytes(file,name),
                                  (O_CREAT|O_WRONLY|O_TRUNC|O_XATTR),
@@ -217,8 +225,10 @@ class SolarisUserDefinedFileAttributeView
         if (System.getSecurityManager() != null)
             checkAccess(file.getPathForPermissionCheck(), false, true);
 
-        int fd = file.openForAttributeAccess(followLinks);
+        int fd = -1;
         try {
+            fd = file.openForAttributeAccess(followLinks);
+
             int dfd = openat(fd, HERE, (O_RDONLY|O_XATTR), 0);
             try {
                 unlinkat(dfd, nameAsBytes(file,name), 0);

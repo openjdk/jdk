@@ -77,6 +77,7 @@ void Phase::print_timers() {
          tty->print_cr("           Other:               %7.3f s", other);
        }
     }
+    tty->print_cr ("         Renumber Live:       %7.3f s", timers[_t_renumberLive].seconds());
     tty->print_cr ("         IdealLoop:           %7.3f s", timers[_t_idealLoop].seconds());
     tty->print_cr ("         IdealLoop Verify:    %7.3f s", timers[_t_idealLoopVerify].seconds());
     tty->print_cr ("         Cond Const Prop:     %7.3f s", timers[_t_ccp].seconds());
@@ -88,6 +89,7 @@ void Phase::print_timers() {
       (timers[_t_escapeAnalysis].seconds() +
        timers[_t_iterGVN].seconds() +
        timers[_t_incrInline].seconds() +
+       timers[_t_renumberLive].seconds() +
        timers[_t_idealLoop].seconds() +
        timers[_t_idealLoopVerify].seconds() +
        timers[_t_ccp].seconds() +

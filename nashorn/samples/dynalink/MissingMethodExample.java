@@ -1,5 +1,3 @@
-# underscore name translator dynalink linker example
-
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  *
@@ -31,20 +29,25 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// This script assumes you've built jdk9 or using latest
-// jdk9 image and put the 'bin' directory in the PATH
+import java.util.ArrayList;
 
-$EXEC.throwOnError=true
+// This is an example class that implements MissingMethodHandler
+// to receive "doesNotUnderstand" calls on 'missing methods'
+public class MissingMethodExample extends ArrayList
+        implements MissingMethodHandler {
 
-// compile UnderscoreNameLinkerExporter
-`javac -cp ../dist/nashorn.jar UnderscoreNameLinkerExporter.java`
-
-// make a jar file out of pluggable linker
-`jar cvf underscore_linker.jar UnderscoreNameLinkerExporter*.class META-INF/`
-
-// run a sample script that uses pluggable linker
-// but make sure classpath points to the pluggable linker jar!
-
-`jjs -cp underscore_linker.jar underscore.js`
-print($OUT)
+    @Override
+    public Object doesNotUnderstand(String name, Object... args) {
+        // This simple doesNotUnderstand just prints method name and args.
+        // You can put useful method routing logic here.
+        System.out.println("you called " + name);
+        if (args.length != 0) {
+            System.out.println("arguments are: ");
+            for (Object arg : args) {
+                System.out.println("    " + arg);
+            }
+        }
+        return this;
+    }
+}
 

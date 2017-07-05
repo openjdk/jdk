@@ -54,15 +54,13 @@ final class PropertiesHelper {
      * @param classPath Class path to compute properties of java package objects
      */
     PropertiesHelper(final String classPath) {
-        if (PackagesHelper.isAvailable()) {
-            try {
-                this.pkgsHelper = new PackagesHelper(classPath);
-            } catch (final IOException exp) {
-                if (Main.DEBUG) {
-                    exp.printStackTrace();
-                }
-                this.pkgsHelper = null;
+        try {
+            this.pkgsHelper = new PackagesHelper(classPath);
+        } catch (final IOException exp) {
+            if (Main.DEBUG) {
+                exp.printStackTrace();
             }
+            this.pkgsHelper = null;
         }
     }
 
