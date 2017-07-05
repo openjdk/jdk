@@ -22,13 +22,18 @@
  */
 
 /*
+ * The -XX:MarkSweepAlwaysCompactCount=1 argument below makes sure serial gc
+ * compacts the heap at every full gc so that the usage is correctly updated.
+ */
+
+/*
  * @test
  * @bug     4892507
  * @summary Basic Test for MemoryPool.resetPeakUsage()
  * @author  Mandy Chung
  *
  * @build ResetPeakMemoryUsage MemoryUtil
- * @run main/othervm -XX:+UseSerialGC -Xmn8m ResetPeakMemoryUsage
+ * @run main/othervm -XX:+UseSerialGC -XX:MarkSweepAlwaysCompactCount=1 -Xmn8m ResetPeakMemoryUsage
  * @run main/othervm -XX:+UseConcMarkSweepGC -Xmn8m ResetPeakMemoryUsage
  * @run main/othervm -XX:+UseParallelGC -Xmn8m ResetPeakMemoryUsage
  * @run main/othervm -XX:+UseG1GC -Xmn8m -XX:G1HeapRegionSize=1m ResetPeakMemoryUsage

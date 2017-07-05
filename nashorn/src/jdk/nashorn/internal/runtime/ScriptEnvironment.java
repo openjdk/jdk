@@ -54,7 +54,7 @@ public final class ScriptEnvironment {
     private final Namespace namespace;
 
     /** Current Options object. */
-    private Options options;
+    private final Options options;
 
     /** Always allow functions as statements */
     public final boolean _anon_functions;
@@ -155,6 +155,9 @@ public final class ScriptEnvironment {
     /** print symbols and their contents for the script */
     public final boolean _print_symbols;
 
+    /** range analysis for known types */
+    public final boolean _range_analysis;
+
     /** is this environment in scripting mode? */
     public final boolean _scripting;
 
@@ -183,7 +186,7 @@ public final class ScriptEnvironment {
      * @param out output print writer
      * @param err error print writer
      */
-    ScriptEnvironment(final Options options, final PrintWriter out, final PrintWriter err) {
+    public ScriptEnvironment(final Options options, final PrintWriter out, final PrintWriter err) {
         this.out = out;
         this.err = err;
         this.namespace = new Namespace();
@@ -219,6 +222,7 @@ public final class ScriptEnvironment {
         _print_parse          = options.getBoolean("print.parse");
         _print_lower_parse    = options.getBoolean("print.lower.parse");
         _print_symbols        = options.getBoolean("print.symbols");
+        _range_analysis       = options.getBoolean("range.analysis");
         _scripting            = options.getBoolean("scripting");
         _strict               = options.getBoolean("strict");
         _version              = options.getBoolean("version");
@@ -258,14 +262,19 @@ public final class ScriptEnvironment {
         }
         this._callsite_flags = callSiteFlags;
 
-        final Option<?> option = options.get("timezone");
-        if (option != null) {
-            this._timezone = (TimeZone)option.getValue();
+        final Option<?> timezoneOption = options.get("timezone");
+        if (timezoneOption != null) {
+            this._timezone = (TimeZone)timezoneOption.getValue();
         } else {
             this._timezone  = TimeZone.getDefault();
         }
 
-        this._locale = Locale.getDefault();
+        final Option<?> localeOption = options.get("locale");
+        if (localeOption != null) {
+            this._locale = (Locale)localeOption.getValue();
+        } else {
+            this._locale = Locale.getDefault();
+        }
     }
 
     /**

@@ -81,7 +81,7 @@ public class SplitNode extends LexicalContextNode {
     }
 
     @Override
-    public Node accept(final LexicalContext lc, final NodeVisitor visitor) {
+    public Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterSplitNode(this)) {
             return visitor.leaveSplitNode(setBody(lc, body.accept(visitor)));
         }

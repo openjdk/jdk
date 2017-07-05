@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8010837
+ * @bug 8010837 8011136
  * @summary Test if available returns correct value when skipping beyond
  *          the end of a file.
  * @author Dan Xu
@@ -42,6 +42,7 @@ public class NegativeAvailable {
     public static void main(String[] args) throws IOException {
         final int SIZE = 10;
         final int SKIP = 5;
+        final int NEGATIVE_SKIP = -5;
 
         // Create a temporary file with size of 10 bytes.
         Path tmp = Files.createTempFile(null, null);
@@ -56,12 +57,15 @@ public class NegativeAvailable {
         try (FileInputStream fis = new FileInputStream(tempFile)) {
             if (tempFile.length() != SIZE) {
                 throw new RuntimeException("unexpected file size = "
-                    + tempFile.length());
+                                           + tempFile.length());
             }
             long space = skipBytes(fis, SKIP, SIZE);
+            space = skipBytes(fis, NEGATIVE_SKIP, space);
             space = skipBytes(fis, SKIP, space);
             space = skipBytes(fis, SKIP, space);
             space = skipBytes(fis, SKIP, space);
+            space = skipBytes(fis, NEGATIVE_SKIP, space);
+            space = skipBytes(fis, NEGATIVE_SKIP, space);
         }
         Files.deleteIfExists(tmp);
     }
@@ -74,17 +78,18 @@ public class NegativeAvailable {
         long skip = fis.skip(toSkip);
         if (skip != toSkip) {
             throw new RuntimeException("skip() returns " + skip
-                + " but expected " + toSkip);
+                                       + " but expected " + toSkip);
         }
-        long remaining = space - toSkip;
+        long newSpace = space - toSkip;
+        long remaining = newSpace > 0 ? newSpace : 0;
         int avail = fis.available();
         if (avail != remaining) {
             throw new RuntimeException("available() returns " + avail
-                + " but expected " + remaining);
+                                       + " but expected " + remaining);
         }
 
         System.out.println("Skipped " + skip + " bytes "
-            + " available() returns " + avail);
-        return remaining;
+                           + " available() returns " + avail);
+        return newSpace;
     }
 }

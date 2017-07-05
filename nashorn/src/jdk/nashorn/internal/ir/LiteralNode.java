@@ -28,6 +28,7 @@ package jdk.nashorn.internal.ir;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
@@ -208,7 +209,7 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
      * @param visitor IR navigating visitor.
      */
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterLiteralNode(this)) {
             return visitor.leaveLiteralNode(this);
         }
@@ -514,7 +515,7 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
         }
 
         @Override
-        public Node accept(final NodeVisitor visitor) {
+        public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
             if (visitor.enterLiteralNode(this)) {
                 if (value != null) {
                     final Node newValue = value.accept(visitor);
@@ -840,7 +841,7 @@ public abstract class LiteralNode<T> extends Node implements PropertyKey {
         }
 
         @Override
-        public Node accept(final NodeVisitor visitor) {
+        public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
             if (visitor.enterLiteralNode(this)) {
                 final List<Node> oldValue = Arrays.asList(value);
                 final List<Node> newValue = Node.accept(visitor, Node.class, oldValue);

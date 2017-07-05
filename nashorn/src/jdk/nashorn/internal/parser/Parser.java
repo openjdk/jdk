@@ -1537,7 +1537,7 @@ loop:
 
         endOfLine();
 
-        appendStatement(new ThrowNode(throwLine, throwToken, finish, expression));
+        appendStatement(new ThrowNode(throwLine, throwToken, finish, expression, 0));
     }
 
     /**
@@ -1597,7 +1597,7 @@ loop:
                 try {
                     // Get CATCH body.
                     final Block catchBody = getBlock(true);
-                    final CatchNode catchNode = new CatchNode(catchLine, catchToken, finish, exception, ifExpression, catchBody);
+                    final CatchNode catchNode = new CatchNode(catchLine, catchToken, finish, exception, ifExpression, catchBody, 0);
                     appendStatement(catchNode);
                 } finally {
                     catchBlock = restoreBlock(catchBlock);

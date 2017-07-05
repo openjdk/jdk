@@ -53,56 +53,6 @@ class ByteCodeMachine extends StackMachine {
         this.code = regex.code;
     }
 
-    protected int stkp; // a temporary
-    private boolean makeCaptureHistoryTree(CaptureTreeNode node) {
-        //CaptureTreeNode child;
-        int k = stkp;
-        //int k = kp;
-
-        while (k < stk) {
-            StackEntry e = stack[k];
-            if (e.type == MEM_START) {
-                int n = e.getMemNum();
-                if (n <= Config.MAX_CAPTURE_HISTORY_GROUP && bsAt(regex.captureHistory, n)) {
-                    CaptureTreeNode child = new CaptureTreeNode();
-                    child.group = n;
-                    child.beg = e.getMemPStr() - str;
-                    node.addChild(child);
-                    stkp = k + 1;
-                    if (makeCaptureHistoryTree(child)) return true;
-
-                    k = stkp;
-                    child.end = e.getMemPStr() - str;
-                }
-            } else if (e.type == MEM_END) {
-                if (e.getMemNum() == node.group) {
-                    node.end = e.getMemPStr() - str;
-                    stkp = k;
-                    return false;
-                }
-            }
-        }
-        return true; /* 1: root node ending. */
-    }
-
-    private void checkCaptureHistory(Region region) {
-        CaptureTreeNode node;
-        if (region.historyRoot == null) {
-            node = region.historyRoot = new CaptureTreeNode();
-        } else {
-            node = region.historyRoot;
-            node.clear();
-        }
-
-        // was clear ???
-        node.group = 0;
-        node.beg = sstart - str;
-        node.end = s      - str;
-
-        stkp = 0;
-        makeCaptureHistoryTree(region.historyRoot);
-    }
-
     private boolean stringCmpIC(int caseFlodFlag, int s1, IntHolder ps2, int mbLen, int textEnd) {
 
         int s2 = ps2.value;
@@ -175,13 +125,6 @@ class ByteCodeMachine extends StackMachine {
                 case OPCode.EXACT5:                     opExact5();                continue;
                 case OPCode.EXACTN:                     opExactN();                continue;
 
-                case OPCode.EXACTMB2N1:                 opExactMB2N1();            break;
-                case OPCode.EXACTMB2N2:                 opExactMB2N2();            continue;
-                case OPCode.EXACTMB2N3:                 opExactMB2N3();            continue;
-                case OPCode.EXACTMB2N:                  opExactMB2N();             continue;
-                case OPCode.EXACTMB3N:                  opExactMB3N();             continue;
-                case OPCode.EXACTMBN:                   opExactMBN();              continue;
-
                 case OPCode.EXACT1_IC:                  opExact1IC();              break;
                 case OPCode.EXACTN_IC:                  opExactNIC();              continue;
 
@@ -199,8 +142,6 @@ class ByteCodeMachine extends StackMachine {
                 case OPCode.ANYCHAR_ML_STAR:            opAnyCharMLStar();         break;
                 case OPCode.ANYCHAR_STAR_PEEK_NEXT:     opAnyCharStarPeekNext();   break;
                 case OPCode.ANYCHAR_ML_STAR_PEEK_NEXT:  opAnyCharMLStarPeekNext(); break;
-                case OPCode.STATE_CHECK_ANYCHAR_STAR:   opStateCheckAnyCharStar(); break;
-                case OPCode.STATE_CHECK_ANYCHAR_ML_STAR:opStateCheckAnyCharMLStar();break;
 
                 case OPCode.WORD:                       opWord();                  break;
                 case OPCode.NOT_WORD:                   opNotWord();               break;
@@ -239,11 +180,6 @@ class ByteCodeMachine extends StackMachine {
                 case OPCode.JUMP:                       opJump();                  continue;
                 case OPCode.PUSH:                       opPush();                  continue;
 
-                // CEC
-                case OPCode.STATE_CHECK_PUSH:           opStateCheckPush();        continue;
-                case OPCode.STATE_CHECK_PUSH_OR_JUMP:   opStateCheckPushOrJump();  continue;
-                case OPCode.STATE_CHECK:                opStateCheck();            continue;
-
                 case OPCode.POP:                        opPop();                   continue;
                 case OPCode.PUSH_OR_JUMP_EXACT1:        opPushOrJumpExact1();      continue;
                 case OPCode.PUSH_IF_PEEK_NEXT:          opPushIfPeekNext();        continue;
@@ -265,10 +201,6 @@ class ByteCodeMachine extends StackMachine {
                 case OPCode.LOOK_BEHIND:                opLookBehind();            continue;
                 case OPCode.PUSH_LOOK_BEHIND_NOT:       opPushLookBehindNot();     continue;
                 case OPCode.FAIL_LOOK_BEHIND_NOT:       opFailLookBehindNot();     continue;
-
-                // USE_SUBEXP_CALL
-                case OPCode.CALL:                       opCall();                  continue;
-                case OPCode.RETURN:                     opReturn();                continue;
 
                 case OPCode.FINISH:
                     return finish();
@@ -322,9 +254,6 @@ class ByteCodeMachine extends StackMachine {
 
                 }
 
-                if (Config.USE_CAPTURE_HISTORY) {
-                    if (regex.captureHistory != 0) checkCaptureHistory(region);
-                }
             } else {
                 msaBegin = sstart - str;
                 msaEnd   = s      - str;
@@ -435,125 +364,6 @@ class ByteCodeMachine extends StackMachine {
             while (tlen-- > 0) if (code[ip++] != chars[s++]) {opFail(); return;}
         }
         sprev = s - 1;
-    }
-
-    private void opExactMB2N1() {
-        if (s + 2 > range) {opFail(); return;}
-        if (code[ip] != chars[s]) {opFail(); return;}
-        ip++; s++;
-        if (code[ip] != chars[s]) {opFail(); return;}
-        ip++; s++;
-        sprev = sbegin; // break;
-    }
-
-    private void opExactMB2N2() {
-        if (s + 4 > range) {opFail(); return;}
-        if (code[ip] != chars[s]) {opFail(); return;}
-        ip++; s++;
-        if (code[ip] != chars[s]) {opFail(); return;}
-        ip++; s++;
-        sprev = s;
-        if (code[ip] != chars[s]) {opFail(); return;}
-        ip++; s++;
-        if (code[ip] != chars[s]) {opFail(); return;}
-        ip++; s++;
-   }
-
-    private void opExactMB2N3() {
-        if (s + 6 > range) {opFail(); return;}
-        if (code[ip] != chars[s]) {opFail(); return;}
-        ip++; s++;
-        if (code[ip] != chars[s]) {opFail(); return;}
-        ip++; s++;
-        if (code[ip] != chars[s]) {opFail(); return;}
-        ip++; s++;
-        if (code[ip] != chars[s]) {opFail(); return;}
-        ip++; s++;
-        sprev = s;
-        if (code[ip] != chars[s]) {opFail(); return;}
-        ip++; s++;
-        if (code[ip] != chars[s]) {opFail(); return;}
-        ip++; s++;
-    }
-
-    private void opExactMB2N() {
-        int tlen = code[ip++];
-        if (s + tlen * 2 > range) {opFail(); return;}
-
-        if (Config.USE_STRING_TEMPLATES) {
-            char[] bs = regex.templates[code[ip++]];
-            int ps = code[ip++];
-
-            while(tlen-- > 0) {
-                if (bs[ps] != chars[s]) {opFail(); return;}
-                ps++; s++;
-                if (bs[ps] != chars[s]) {opFail(); return;}
-                ps++; s++;
-            }
-        } else {
-            while(tlen-- > 0) {
-                if (code[ip] != chars[s]) {opFail(); return;}
-                ip++; s++;
-                if (code[ip] != chars[s]) {opFail(); return;}
-                ip++; s++;
-            }
-        }
-        sprev = s - 2;
-    }
-
-    private void opExactMB3N() {
-        int tlen = code[ip++];
-        if (s + tlen * 3 > range) {opFail(); return;}
-
-        if (Config.USE_STRING_TEMPLATES) {
-            char[] bs = regex.templates[code[ip++]];
-            int ps = code[ip++];
-
-            while (tlen-- > 0) {
-                if (bs[ps] != chars[s]) {opFail(); return;}
-                ps++; s++;
-                if (bs[ps] != chars[s]) {opFail(); return;}
-                ps++; s++;
-                if (bs[ps] != chars[s]) {opFail(); return;}
-                ps++; s++;
-            }
-        } else {
-            while (tlen-- > 0) {
-                if (code[ip] != chars[s]) {opFail(); return;}
-                ip++; s++;
-                if (code[ip] != chars[s]) {opFail(); return;}
-                ip++; s++;
-                if (code[ip] != chars[s]) {opFail(); return;}
-                ip++; s++;
-            }
-        }
-
-        sprev = s - 3;
-    }
-
-    private void opExactMBN() {
-        int tlen = code[ip++];   /* mb-len */
-        int tlen2= code[ip++];   /* string len */
-
-        tlen2 *= tlen;
-        if (s + tlen2 > range) {opFail(); return;}
-
-        if (Config.USE_STRING_TEMPLATES) {
-            char[] bs = regex.templates[code[ip++]];
-            int ps = code[ip++];
-
-            while (tlen2-- > 0) {
-                if (bs[ps] != chars[s]) {opFail(); return;}
-                ps++; s++;
-            }
-        } else {
-            while (tlen2-- > 0) {
-                if (code[ip] != chars[s]) {opFail(); return;}
-                ip++; s++;
-            }
-        }
-
-        sprev = s - tlen;
     }
 
     private void opExact1IC() {
@@ -745,34 +555,6 @@ class ByteCodeMachine extends StackMachine {
             s++;
         }
         ip++;
-        sprev = sbegin; // break;
-    }
-
-    // CEC
-    private void opStateCheckAnyCharStar() {
-        int mem = code[ip++];
-        final char[] chars = this.chars;
-
-        while (s < range) {
-            if (stateCheckVal(s, mem)) {opFail(); return;}
-            pushAltWithStateCheck(ip, s, sprev, mem);
-            if (chars[s] == EncodingHelper.NEW_LINE) {opFail(); return;}
-            sprev = s;
-            s++;
-        }
-        sprev = sbegin; // break;
-    }
-
-    // CEC
-    private void opStateCheckAnyCharMLStar() {
-        int mem = code[ip++];
-
-        while (s < range) {
-            if (stateCheckVal(s, mem)) {opFail(); return;}
-            pushAltWithStateCheck(ip, s, sprev, mem);
-            sprev = s;
-            s++;
-        }
         sprev = sbegin; // break;
     }
 
@@ -1223,33 +1005,6 @@ class ByteCodeMachine extends StackMachine {
         pushAlt(ip + addr, s, sprev);
     }
 
-    // CEC
-    private void opStateCheckPush() {
-        int mem = code[ip++];
-        if (stateCheckVal(s, mem)) {opFail(); return;}
-        int addr = code[ip++];
-        pushAltWithStateCheck(ip + addr, s, sprev, mem);
-    }
-
-    // CEC
-    private void opStateCheckPushOrJump() {
-        int mem = code[ip++];
-        int addr= code[ip++];
-
-        if (stateCheckVal(s, mem)) {
-            ip += addr;
-        } else {
-            pushAltWithStateCheck(ip + addr, s, sprev, mem);
-        }
-    }
-
-    // CEC
-    private void opStateCheck() {
-        int mem = code[ip++];
-        if (stateCheckVal(s, mem)) {opFail(); return;}
-        pushStateCheck(s, mem);
-    }
-
     private void opPop() {
         popOne();
     }
@@ -1425,17 +1180,6 @@ class ByteCodeMachine extends StackMachine {
         opFail();
     }
 
-    private void opCall() {
-        int addr = code[ip++];
-        pushCallFrame(ip);
-        ip = addr; // absolute address
-    }
-
-    private void opReturn() {
-        ip = sreturn();
-        pushReturn();
-    }
-
     private void opFail() {
         if (stack == null) {
             ip = regex.codeLength - 1;
@@ -1447,13 +1191,6 @@ class ByteCodeMachine extends StackMachine {
         ip    = e.getStatePCode();
         s     = e.getStatePStr();
         sprev = e.getStatePStrPrev();
-
-        if (Config.USE_COMBINATION_EXPLOSION_CHECK) {
-            if (e.getStateCheck() != 0) {
-                e.type = STATE_CHECK_MARK;
-                stk++;
-            }
-        }
     }
 
     private int finish() {

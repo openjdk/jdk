@@ -106,20 +106,10 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
     Type(final String name, final Class<?> clazz, final int weight, final int slots) {
         this.name       = name;
         this.clazz      = clazz;
-        this.descriptor = Type.getDescriptor(clazz);
+        this.descriptor = jdk.internal.org.objectweb.asm.Type.getDescriptor(clazz);
         this.weight     = weight;
         assert weight >= MIN_WEIGHT && weight <= MAX_WEIGHT : "illegal type weight: " + weight;
         this.slots      = slots;
-    }
-
-    /**
-     * Return an internal descriptor for a type
-     *
-     * @param type the type
-     * @return descriptor string
-     */
-    public static String getDescriptor(final Class<?> type) {
-        return jdk.internal.org.objectweb.asm.Type.getDescriptor(type);
     }
 
     /**

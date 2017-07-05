@@ -754,25 +754,11 @@ public final class NativeArray extends ScriptObject {
         final Object       obj                 = Global.toObject(self);
         final ScriptObject sobj                = (ScriptObject)obj;
         final long         len                 = JSType.toUint32(sobj.getLength());
-        final double       startNum            = JSType.toNumber(start);
-        final long         relativeStartUint32 = JSType.toUint32(startNum);
-        final long         relativeStart       = JSType.toInteger(startNum);
+        final long         relativeStart       = JSType.toLong(start);
+        final long         relativeEnd         = (end == ScriptRuntime.UNDEFINED) ? len : JSType.toLong(end);
 
-        long k = relativeStart < 0 ?
-                Math.max(len + relativeStart, 0) :
-                Math.min(
-                    Math.max(relativeStartUint32, relativeStart),
-                    len);
-
-        final double endNum = (end == ScriptRuntime.UNDEFINED)? Double.NaN : JSType.toNumber(end);
-        final long relativeEndUint32 = (end == ScriptRuntime.UNDEFINED)? len : JSType.toUint32(endNum);
-        final long relativeEnd       = (end == ScriptRuntime.UNDEFINED)? len : JSType.toInteger(endNum);
-
-        final long finale = relativeEnd < 0 ?
-                Math.max(len + relativeEnd, 0) :
-                Math.min(
-                    Math.max(relativeEndUint32, relativeEnd),
-                    len);
+        long k = relativeStart < 0 ? Math.max(len + relativeStart, 0) : Math.min(relativeStart, len);
+        final long finale = relativeEnd < 0 ? Math.max(len + relativeEnd, 0) : Math.min(relativeEnd, len);
 
         if (k >= finale) {
             return new NativeArray(0);
@@ -909,21 +895,10 @@ public final class NativeArray extends ScriptObject {
         final ScriptObject sobj                = (ScriptObject)obj;
         final boolean      strict              = Global.isStrict();
         final long         len                 = JSType.toUint32(sobj.getLength());
-        final double       startNum            = JSType.toNumber(start);
-        final long         relativeStartUint32 = JSType.toUint32(startNum);
-        final long         relativeStart       = JSType.toInteger(startNum);
+        final long         relativeStart       = JSType.toLong(start);
 
-        //TODO: workaround overflow of relativeStart for start > Integer.MAX_VALUE
-        final long actualStart = relativeStart < 0 ?
-            Math.max(len + relativeStart, 0) :
-            Math.min(
-                Math.max(relativeStartUint32, relativeStart),
-                len);
-
-        final long actualDeleteCount =
-            Math.min(
-                Math.max(JSType.toInteger(deleteCount), 0),
-                len - actualStart);
+        final long actualStart = relativeStart < 0 ? Math.max(len + relativeStart, 0) : Math.min(relativeStart, len);
+        final long actualDeleteCount = Math.min(Math.max(JSType.toLong(deleteCount), 0), len - actualStart);
 
         final NativeArray array = new NativeArray(actualDeleteCount);
 

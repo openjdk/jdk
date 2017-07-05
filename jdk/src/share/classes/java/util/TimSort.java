@@ -111,9 +111,13 @@ class TimSort<T> {
     private static final int INITIAL_TMP_STORAGE_LENGTH = 256;
 
     /**
-     * Temp storage for merges.
+     * Temp storage for merges. A workspace array may optionally be
+     * provided in constructor, and if so will be used as long as it
+     * is big enough.
      */
-    private T[] tmp; // Actual runtime type will be Object[], regardless of T
+    private T[] tmp;
+    private int tmpBase; // base of tmp array slice
+    private int tmpLen;  // length of tmp array slice
 
     /**
      * A stack of pending runs yet to be merged.  Run i starts at
@@ -134,17 +138,31 @@ class TimSort<T> {
      *
      * @param a the array to be sorted
      * @param c the comparator to determine the order of the sort
+     * @param work a workspace array (slice)
+     * @param workBase origin of usable space in work array
+     * @param workLen usable size of work array
      */
-    private TimSort(T[] a, Comparator<? super T> c) {
+    private TimSort(T[] a, Comparator<? super T> c, T[] work, int workBase, int workLen) {
         this.a = a;
         this.c = c;
 
         // Allocate temp storage (which may be increased later if necessary)
         int len = a.length;
-        @SuppressWarnings({"unchecked", "UnnecessaryLocalVariable"})
-        T[] newArray = (T[]) new Object[len < 2 * INITIAL_TMP_STORAGE_LENGTH ?
-                                        len >>> 1 : INITIAL_TMP_STORAGE_LENGTH];
-        tmp = newArray;
+        int tlen = (len < 2 * INITIAL_TMP_STORAGE_LENGTH) ?
+            len >>> 1 : INITIAL_TMP_STORAGE_LENGTH;
+        if (work == null || workLen < tlen || workBase + tlen > work.length) {
+            @SuppressWarnings({"unchecked", "UnnecessaryLocalVariable"})
+            T[] newArray = (T[])java.lang.reflect.Array.newInstance
+                (a.getClass().getComponentType(), tlen);
+            tmp = newArray;
+            tmpBase = 0;
+            tmpLen = tlen;
+        }
+        else {
+            tmp = work;
+            tmpBase = workBase;
+            tmpLen = workLen;
+        }
 
         /*
          * Allocate runs-to-be-merged stack (which cannot be expanded).  The
@@ -164,22 +182,30 @@ class TimSort<T> {
     }
 
     /*
-     * The next two methods (which are package private and static) constitute
-     * the entire API of this class.  Each of these methods obeys the contract
-     * of the public method with the same signature in java.util.Arrays.
+     * The next method (package private and static) constitutes the
+     * entire API of this class.
      */
 
-    static <T> void sort(T[] a, Comparator<? super T> c) {
-        sort(a, 0, a.length, c);
-    }
+    /**
+     * Sorts the given range, using the given workspace array slice
+     * for temp storage when possible. This method is designed to be
+     * invoked from public methods (in class Arrays) after performing
+     * any necessary array bounds checks and expanding parameters into
+     * the required forms.
+     *
+     * @param a the array to be sorted
+     * @param lo the index of the first element, inclusive, to be sorted
+     * @param hi the index of the last element, exclusive, to be sorted
+     * @param c the comparator to use
+     * @param work a workspace array (slice)
+     * @param workBase origin of usable space in work array
+     * @param workLen usable size of work array
+     * @since 1.8
+     */
+    static <T> void sort(T[] a, int lo, int hi, Comparator<? super T> c,
+                         T[] work, int workBase, int workLen) {
+        assert c != null && a != null && lo >= 0 && lo <= hi && hi <= a.length;
 
-    static <T> void sort(T[] a, int lo, int hi, Comparator<? super T> c) {
-        if (c == null) {
-            Arrays.sort(a, lo, hi);
-            return;
-        }
-
-        rangeCheck(a.length, lo, hi);
         int nRemaining  = hi - lo;
         if (nRemaining < 2)
             return;  // Arrays of size 0 and 1 are always sorted
@@ -196,7 +222,7 @@ class TimSort<T> {
          * extending short natural runs to minRun elements, and merging runs
          * to maintain stack invariant.
          */
-        TimSort<T> ts = new TimSort<>(a, c);
+        TimSort<T> ts = new TimSort<>(a, c, work, workBase, workLen);
         int minRun = minRunLength(nRemaining);
         do {
             // Identify next run
@@ -653,11 +679,10 @@ class TimSort<T> {
         // Copy first run into temp array
         T[] a = this.a; // For performance
         T[] tmp = ensureCapacity(len1);
-        System.arraycopy(a, base1, tmp, 0, len1);
-
-        int cursor1 = 0;       // Indexes into tmp array
+        int cursor1 = tmpBase; // Indexes into tmp array
         int cursor2 = base2;   // Indexes int a
         int dest = base1;      // Indexes int a
+        System.arraycopy(a, base1, tmp, cursor1, len1);
 
         // Move first element of second run and deal with degenerate cases
         a[dest++] = a[cursor2++];
@@ -770,16 +795,17 @@ class TimSort<T> {
         // Copy second run into temp array
         T[] a = this.a; // For performance
         T[] tmp = ensureCapacity(len2);
-        System.arraycopy(a, base2, tmp, 0, len2);
+        int tmpBase = this.tmpBase;
+        System.arraycopy(a, base2, tmp, tmpBase, len2);
 
         int cursor1 = base1 + len1 - 1;  // Indexes into a
-        int cursor2 = len2 - 1;          // Indexes into tmp array
+        int cursor2 = tmpBase + len2 - 1; // Indexes into tmp array
         int dest = base2 + len2 - 1;     // Indexes into a
 
         // Move last element of first run and deal with degenerate cases
         a[dest--] = a[cursor1--];
         if (--len1 == 0) {
-            System.arraycopy(tmp, 0, a, dest - (len2 - 1), len2);
+            System.arraycopy(tmp, tmpBase, a, dest - (len2 - 1), len2);
             return;
         }
         if (len2 == 1) {
@@ -838,7 +864,7 @@ class TimSort<T> {
                 if (--len2 == 1)
                     break outer;
 
-                count2 = len2 - gallopLeft(a[cursor1], tmp, 0, len2, len2 - 1, c);
+                count2 = len2 - gallopLeft(a[cursor1], tmp, tmpBase, len2, len2 - 1, c);
                 if (count2 != 0) {
                     dest -= count2;
                     cursor2 -= count2;
@@ -870,7 +896,7 @@ class TimSort<T> {
         } else {
             assert len1 == 0;
             assert len2 > 0;
-            System.arraycopy(tmp, 0, a, dest - (len2 - 1), len2);
+            System.arraycopy(tmp, tmpBase, a, dest - (len2 - 1), len2);
         }
     }
 
@@ -883,7 +909,7 @@ class TimSort<T> {
      * @return tmp, whether or not it grew
      */
     private T[] ensureCapacity(int minCapacity) {
-        if (tmp.length < minCapacity) {
+        if (tmpLen < minCapacity) {
             // Compute smallest power of 2 > minCapacity
             int newSize = minCapacity;
             newSize |= newSize >> 1;
@@ -899,30 +925,12 @@ class TimSort<T> {
                 newSize = Math.min(newSize, a.length >>> 1);
 
             @SuppressWarnings({"unchecked", "UnnecessaryLocalVariable"})
-            T[] newArray = (T[]) new Object[newSize];
+            T[] newArray = (T[])java.lang.reflect.Array.newInstance
+                (a.getClass().getComponentType(), newSize);
             tmp = newArray;
+            tmpLen = newSize;
+            tmpBase = 0;
         }
         return tmp;
-    }
-
-    /**
-     * Checks that fromIndex and toIndex are in range, and throws an
-     * appropriate exception if they aren't.
-     *
-     * @param arrayLen the length of the array
-     * @param fromIndex the index of the first element of the range
-     * @param toIndex the index after the last element of the range
-     * @throws IllegalArgumentException if fromIndex > toIndex
-     * @throws ArrayIndexOutOfBoundsException if fromIndex < 0
-     *         or toIndex > arrayLen
-     */
-    private static void rangeCheck(int arrayLen, int fromIndex, int toIndex) {
-        if (fromIndex > toIndex)
-            throw new IllegalArgumentException("fromIndex(" + fromIndex +
-                       ") > toIndex(" + toIndex+")");
-        if (fromIndex < 0)
-            throw new ArrayIndexOutOfBoundsException(fromIndex);
-        if (toIndex > arrayLen)
-            throw new ArrayIndexOutOfBoundsException(toIndex);
     }
 }

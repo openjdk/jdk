@@ -43,7 +43,7 @@ function tohex(d, w) {
 function arrstr(a, n, w) {
   var s = "";
   if (typeof n == "undefined") n = a.length;
-  if (typeof w == "undefined") w = a.BYTES_PER_ELEMENT * 2;
+  if (typeof w == "undefined") w = a.constructor.BYTES_PER_ELEMENT * 2;
   for (var i = 0; i < n; i++) {
     s += tohex(a[i], w);
   }
@@ -96,7 +96,7 @@ function fillArray(a, start) {
   var b = new ArrayBuffer(8);
   for (var i in types) {
     var x = new types[i](b);
-    print(x.byteOffset, x.byteLength, x.length, x.BYTES_PER_ELEMENT);
+    print(x.byteOffset, x.byteLength, x.length, x.constructor.BYTES_PER_ELEMENT);
     assertTrue(function(){ return x.constructor === types[i] });
   }
 })();

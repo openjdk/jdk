@@ -47,7 +47,6 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleScriptContext;
-import netscape.javascript.JSObject;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

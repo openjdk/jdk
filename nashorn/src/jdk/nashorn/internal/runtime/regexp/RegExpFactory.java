@@ -29,7 +29,7 @@ import jdk.nashorn.internal.runtime.ParserException;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
- * Factory class for regular expressions. This class creates instances of {@link DefaultRegExp}.
+ * Factory class for regular expressions. This class creates instances of {@link JdkRegExp}.
  * An alternative factory can be installed using the {@code nashorn.regexp.impl} system property.
  */
 public class RegExpFactory {
@@ -62,8 +62,8 @@ public class RegExpFactory {
      * @return new RegExp
      * @throws ParserException if flags is invalid or pattern string has syntax error.
      */
-    protected RegExp compile(final String pattern, final String flags) throws ParserException {
-        return new DefaultRegExp(pattern, flags);
+    public RegExp compile(final String pattern, final String flags) throws ParserException {
+        return new JdkRegExp(pattern, flags);
     }
 
     /**

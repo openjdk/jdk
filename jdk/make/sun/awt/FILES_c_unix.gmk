@@ -171,3 +171,13 @@ FILES_NO_MOTIF_c = \
         GLXSurfaceData.c \
         AccelGlyphCache.c \
 	CUPSfuncs.c
+
+ifeq ($(PLATFORM), macosx)
+FILES_NO_MOTIF_objc = \
+		AWTFont.m \
+		AWTStrike.m \
+		CCharToGlyphMapper.m \
+		CGGlyphImages.m \
+		CGGlyphOutlines.m \
+		CoreTextSupport.m
+endif # PLATFORM

@@ -422,6 +422,14 @@ if test "x$MILESTONE" = x; then
   MILESTONE=internal
 fi
 
+AC_ARG_WITH(update-version, [AS_HELP_STRING([--with-update-version], 
+                          [Set update version value for build @<:@b00@:>@])])
+if test "x$with_update_version" = xyes; then
+  AC_MSG_ERROR([Update version must have a value])
+elif test "x$with_update_version" != x; then
+  JDK_UPDATE_VERSION="$with_update_version"
+fi
+
 AC_ARG_WITH(build-number, [AS_HELP_STRING([--with-build-number], 
                           [Set build number value for build @<:@b00@:>@])])
 if test "x$with_build_number" = xyes; then

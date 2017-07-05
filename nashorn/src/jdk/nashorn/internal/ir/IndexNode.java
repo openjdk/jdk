@@ -56,19 +56,12 @@ public final class IndexNode extends BaseNode {
     }
 
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterIndexNode(this)) {
-            final Node      newBase  = base.accept(visitor);
-            final Node      newIndex = index.accept(visitor);
-            final IndexNode newNode;
-            if (newBase != base || newIndex != index) {
-                newNode = new IndexNode(this, newBase, newIndex, isFunction(), hasCallSiteType());
-            } else {
-                newNode = this;
-            }
-            return visitor.leaveIndexNode(newNode);
+            return visitor.leaveIndexNode(
+                setBase(base.accept(visitor)).
+                setIndex(index.accept(visitor)));
         }
-
         return this;
     }
 
@@ -104,6 +97,13 @@ public final class IndexNode extends BaseNode {
      */
     public Node getIndex() {
         return index;
+    }
+
+    private IndexNode setBase(final Node base) {
+        if (this.base == base) {
+            return this;
+        }
+        return new IndexNode(this, base, index, isFunction(), hasCallSiteType());
     }
 
     /**

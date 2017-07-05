@@ -24,6 +24,8 @@
  */
 package java.util.function;
 
+import java.util.Objects;
+
 /**
  * An operation on a single {@code long} operand yielding a {@code long} result.
  * This is the primitive type specialization of {@link UnaryOperator} for
@@ -42,5 +44,46 @@ public interface LongUnaryOperator {
      * @param operand the operand value
      * @return the operation result value
      */
-    public long applyAsLong(long operand);
+    long applyAsLong(long operand);
+
+    /**
+     * Compose a new function which applies the provided function followed by
+     * this function.  If either function throws an exception, it is relayed
+     * to the caller.
+     *
+     * @param before An additional function to be applied before this function
+     * is applied
+     * @return A function which performs the provided function followed by this
+     * function
+     * @throws NullPointerException if before is null
+     */
+    default LongUnaryOperator compose(LongUnaryOperator before) {
+        Objects.requireNonNull(before);
+        return (long v) -> applyAsLong(before.applyAsLong(v));
+    }
+
+    /**
+     * Compose a new function which applies this function followed by the
+     * provided function.  If either function throws an exception, it is relayed
+     * to the caller.
+     *
+     * @param after An additional function to be applied after this function is
+     * applied
+     * @return A function which performs this function followed by the provided
+     * function followed
+     * @throws NullPointerException if after is null
+     */
+    default LongUnaryOperator andThen(LongUnaryOperator after) {
+        Objects.requireNonNull(after);
+        return (long t) -> after.applyAsLong(applyAsLong(t));
+    }
+
+    /**
+     * Returns a unary operator that provides its input value as the result.
+     *
+     * @return a unary operator that provides its input value as the result
+     */
+    static LongUnaryOperator identity() {
+        return t -> t;
+    }
 }

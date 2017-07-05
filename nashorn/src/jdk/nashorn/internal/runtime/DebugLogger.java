@@ -35,7 +35,6 @@ import jdk.nashorn.internal.runtime.options.Options;
  */
 
 public final class DebugLogger {
-    @SuppressWarnings("NonConstantLogger")
     private final Logger  logger;
     private final boolean isEnabled;
 

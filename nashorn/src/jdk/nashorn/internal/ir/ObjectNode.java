@@ -58,7 +58,7 @@ public final class ObjectNode extends Node {
     }
 
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterObjectNode(this)) {
             return visitor.leaveObjectNode(setElements(Node.accept(visitor, Node.class, elements)));
         }

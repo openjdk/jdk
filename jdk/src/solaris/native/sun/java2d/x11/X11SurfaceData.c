@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,6 @@ static UnlockFunc X11SD_Unlock;
 static DisposeFunc X11SD_Dispose;
 static GetPixmapBgFunc X11SD_GetPixmapWithBg;
 static ReleasePixmapBgFunc X11SD_ReleasePixmapWithBg;
-extern int J2DXErrHandler(Display *display, XErrorEvent *xerr);
 extern AwtGraphicsConfigDataPtr
     getGraphicsConfigFromComponentPeer(JNIEnv *env, jobject this);
 extern struct X11GraphicsConfigIDs x11GraphicsConfigIDs;
@@ -521,6 +520,8 @@ XImage* X11SD_CreateSharedImage(X11SDOps *xsdo,
 {
     XImage *img = NULL;
     XShmSegmentInfo *shminfo;
+    JNIEnv* env;
+    jboolean xShmAttachResult;
 
     shminfo = malloc(sizeof(XShmSegmentInfo));
     if (shminfo == NULL) {
@@ -559,9 +560,8 @@ XImage* X11SD_CreateSharedImage(X11SDOps *xsdo,
 
     shminfo->readOnly = False;
 
-    resetXShmAttachFailed();
-    EXEC_WITH_XERROR_HANDLER(J2DXErrHandler,
-                             XShmAttach(awt_display, shminfo));
+    env = (JNIEnv*)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+    xShmAttachResult = TryXShmAttach(env, awt_display, shminfo);
 
     /*
      * Once the XSync round trip has finished then we
@@ -570,7 +570,7 @@ XImage* X11SD_CreateSharedImage(X11SDOps *xsdo,
      */
     shmctl(shminfo->shmid, IPC_RMID, 0);
 
-    if (isXShmAttachFailed() == JNI_TRUE) {
+    if (xShmAttachResult == JNI_FALSE) {
         J2dRlsTraceLn1(J2D_TRACE_ERROR,
                        "X11SD_SetupSharedSegment XShmAttach has failed: %s",
                        strerror(errno));
