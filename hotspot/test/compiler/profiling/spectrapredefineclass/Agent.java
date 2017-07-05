@@ -24,10 +24,12 @@
 package compiler.profiling.spectrapredefineclass;
 
 import com.sun.tools.attach.VirtualMachine;
+import jdk.test.lib.Utils;
 
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.Instrumentation;
 import java.lang.management.ManagementFactory;
+import java.nio.file.Paths;
 import java.security.ProtectionDomain;
 
 class A {
@@ -67,8 +69,7 @@ class Test {
 }
 
 public class Agent implements ClassFileTransformer {
-
-
+    public static final String AGENT_JAR = Paths.get(Utils.TEST_CLASSES, "agent.jar").toString();
     static public boolean m2(A a) {
         boolean res = false;
         if (a.getClass() == B.class) {
@@ -95,7 +96,7 @@ public class Agent implements ClassFileTransformer {
         // Redefine class
         try {
             VirtualMachine vm = VirtualMachine.attach(pid);
-            vm.loadAgent(System.getProperty("test.classes",".") + "/agent.jar", "");
+            vm.loadAgent(AGENT_JAR, "");
             vm.detach();
         } catch (Exception e) {
             throw new RuntimeException(e);

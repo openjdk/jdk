@@ -508,7 +508,7 @@ void InlineTree::print_inlining(ciMethod* callee_method, int caller_bci,
 #if INCLUDE_TRACE
   EventCompilerInlining event;
   if (event.should_commit()) {
-    event.set_compileID(C->compile_id());
+    event.set_compileId(C->compile_id());
     event.set_message(inline_msg);
     event.set_succeeded(success);
     event.set_bci(caller_bci);

@@ -26,11 +26,9 @@
  * @bug 8148376
  * @summary Checks PLAB statistics on evacuation failure
  * @requires vm.gc.G1
- * @library /testlibrary /
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.management
- * @build gc.g1.plab.lib.LogParser
- *        gc.g1.plab.lib.AppPLABEvacuationFailure
  * @run main gc.g1.plab.TestPLABEvacuationFailure
  */
 package gc.g1.plab;
@@ -43,8 +41,8 @@ import java.util.Collections;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
 
 import gc.g1.plab.lib.LogParser;
