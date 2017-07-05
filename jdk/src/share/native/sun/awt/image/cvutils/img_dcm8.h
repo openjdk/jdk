@@ -52,8 +52,6 @@
 #define DecodeDeclared
 #endif
 
-#include "java_awt_image_DirectColorModel.h"
-
 #define DeclareDCM8Vars                                         \
     IfAlpha(unsigned int alpha_off;)                            \
     unsigned int red_off, green_off, blue_off;
