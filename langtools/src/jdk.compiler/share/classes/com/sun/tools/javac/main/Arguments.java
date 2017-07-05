@@ -598,9 +598,6 @@ public class Arguments {
                     && !fm.hasLocation(StandardLocation.CLASS_OUTPUT)) {
                 log.error(Errors.NoOutputDir);
             }
-            if (options.isSet(Option.XMODULE)) {
-                log.error(Errors.XmoduleNoModuleSourcepath);
-            }
         }
 
         if (fm.hasLocation(StandardLocation.ANNOTATION_PROCESSOR_MODULE_PATH) &&
