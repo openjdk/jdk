@@ -72,24 +72,23 @@ import java.util.*;
  * Here is a class with a method that sets up a ScheduledExecutorService
  * to beep every ten seconds for an hour:
  *
- * <pre>
+ *  <pre> {@code
  * import static java.util.concurrent.TimeUnit.*;
  * class BeeperControl {
- *    private final ScheduledExecutorService scheduler =
- *       Executors.newScheduledThreadPool(1);
+ *   private final ScheduledExecutorService scheduler =
+ *     Executors.newScheduledThreadPool(1);
  *
- *    public void beepForAnHour() {
- *        final Runnable beeper = new Runnable() {
- *                public void run() { System.out.println("beep"); }
- *            };
- *        final ScheduledFuture&lt;?&gt; beeperHandle =
- *            scheduler.scheduleAtFixedRate(beeper, 10, 10, SECONDS);
- *        scheduler.schedule(new Runnable() {
- *                public void run() { beeperHandle.cancel(true); }
- *            }, 60 * 60, SECONDS);
- *    }
- * }
- * </pre>
+ *   public void beepForAnHour() {
+ *     final Runnable beeper = new Runnable() {
+ *       public void run() { System.out.println("beep"); }
+ *     };
+ *     final ScheduledFuture<?> beeperHandle =
+ *       scheduler.scheduleAtFixedRate(beeper, 10, 10, SECONDS);
+ *     scheduler.schedule(new Runnable() {
+ *       public void run() { beeperHandle.cancel(true); }
+ *     }, 60 * 60, SECONDS);
+ *   }
+ * }}</pre>
  *
  * @since 1.5
  * @author Doug Lea

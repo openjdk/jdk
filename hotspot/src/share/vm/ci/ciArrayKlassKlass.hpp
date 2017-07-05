@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,11 @@
  *
  */
 
+#ifndef SHARE_VM_CI_CIARRAYKLASSKLASS_HPP
+#define SHARE_VM_CI_CIARRAYKLASSKLASS_HPP
+
+#include "ci/ciKlassKlass.hpp"
+
 // ciArrayKlassKlass
 //
 // This class represents a klassOop in the HotSpot virtual machine
@@ -41,3 +46,5 @@ public:
   // What kind of ciObject is this?
   bool is_array_klass_klass() { return true; }
 };
+
+#endif // SHARE_VM_CI_CIARRAYKLASSKLASS_HPP

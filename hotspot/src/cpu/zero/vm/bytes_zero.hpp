@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,11 @@
  * questions.
  *
  */
+
+#ifndef CPU_ZERO_VM_BYTES_ZERO_HPP
+#define CPU_ZERO_VM_BYTES_ZERO_HPP
+
+#include "memory/allocation.hpp"
 
 typedef union unaligned {
   u4 u;
@@ -160,5 +165,10 @@ class Bytes: AllStatic {
 #ifdef VM_LITTLE_ENDIAN
 // The following header contains the implementations of swap_u2,
 // swap_u4, and swap_u8
-#include "incls/_bytes_pd.inline.hpp.incl"
+#ifdef TARGET_OS_ARCH_linux_zero
+# include "bytes_linux_zero.inline.hpp"
+#endif
+
 #endif // VM_LITTLE_ENDIAN
+
+#endif // CPU_ZERO_VM_BYTES_ZERO_HPP

@@ -22,6 +22,16 @@
  *
  */
 
+#ifndef SHARE_VM_GC_INTERFACE_COLLECTEDHEAP_HPP
+#define SHARE_VM_GC_INTERFACE_COLLECTEDHEAP_HPP
+
+#include "gc_interface/gcCause.hpp"
+#include "memory/allocation.hpp"
+#include "memory/barrierSet.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/perfData.hpp"
+#include "runtime/safepoint.hpp"
+
 // A "CollectedHeap" is an implementation of a java heap for HotSpot.  This
 // is an abstract class: there may be many different kinds of heaps.  This
 // class defines the functions that a heap must implement, and contains
@@ -644,3 +654,5 @@ class GCCauseSetter : StackObj {
     _heap->set_gc_cause(_previous_cause);
   }
 };
+
+#endif // SHARE_VM_GC_INTERFACE_COLLECTEDHEAP_HPP

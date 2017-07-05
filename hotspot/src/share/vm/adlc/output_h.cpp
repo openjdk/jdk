@@ -1550,7 +1550,12 @@ void ArchDesc::declareClasses(FILE *fp) {
     }
 
     // virtual functions for encode and format
-    //
+
+    // Virtual function for evaluating the constant.
+    if (instr->is_mach_constant()) {
+      fprintf(fp,"  virtual void           eval_constant(Compile* C);\n");
+    }
+
     // Output the opcode function and the encode function here using the
     // encoding class information in the _insencode slot.
     if ( instr->_insencode ) {
@@ -1559,7 +1564,7 @@ void ArchDesc::declareClasses(FILE *fp) {
 
     // virtual function for getting the size of an instruction
     if ( instr->_size ) {
-       fprintf(fp,"  virtual uint           size(PhaseRegAlloc *ra_) const;\n");
+      fprintf(fp,"  virtual uint           size(PhaseRegAlloc *ra_) const;\n");
     }
 
     // Return the top-level ideal opcode.
@@ -1752,6 +1757,7 @@ void ArchDesc::declareClasses(FILE *fp) {
     // Virtual methods which are only generated to override base class
     if( instr->expands() || instr->needs_projections() ||
         instr->has_temps() ||
+        instr->is_mach_constant() ||
         instr->_matrule != NULL &&
         instr->num_opnds() != instr->num_unique_opnds() ) {
       fprintf(fp,"  virtual MachNode      *Expand(State *state, Node_List &proj_list, Node* mem);\n");
@@ -1779,24 +1785,6 @@ void ArchDesc::declareClasses(FILE *fp) {
 
     // Declare short branch methods, if applicable
     instr->declare_short_branch_methods(fp);
-
-    // Instructions containing a constant that will be entered into the
-    // float/double table redefine the base virtual function
-#ifdef SPARC
-    // Sparc doubles entries in the constant table require more space for
-    // alignment. (expires 9/98)
-    int table_entries = (3 * instr->num_consts( _globalNames, Form::idealD ))
-      + instr->num_consts( _globalNames, Form::idealF );
-#else
-    int table_entries = instr->num_consts( _globalNames, Form::idealD )
-      + instr->num_consts( _globalNames, Form::idealF );
-#endif
-    if( table_entries != 0 ) {
-      fprintf(fp,"  virtual int            const_size() const {");
-      fprintf(fp,   " return %d;", table_entries);
-      fprintf(fp, " }\n");
-    }
-
 
     // See if there is an "ins_pipe" declaration for this instruction
     if (instr->_ins_pipe) {

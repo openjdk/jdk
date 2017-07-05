@@ -22,6 +22,14 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_ASSEMBLER_SPARC_INLINE_HPP
+#define CPU_SPARC_VM_ASSEMBLER_SPARC_INLINE_HPP
+
+#include "asm/assembler.inline.hpp"
+#include "asm/codeBuffer.hpp"
+#include "code/codeCache.hpp"
+#include "runtime/handles.inline.hpp"
+
 inline void MacroAssembler::pd_patch_instruction(address branch, address target) {
   jint& stub_inst = *(jint*) branch;
   stub_inst = patched_branch(target - branch, stub_inst, 0);
@@ -320,6 +328,11 @@ inline void Assembler::stcsr(  int crd, Register s1, int simm13a) { v8_only();  
 inline void Assembler::stdcq(  int crd, Register s1, Register s2) { v8_only();  emit_long( op(ldst_op) | fcn(crd) | op3(stdcq_op3) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::stdcq(  int crd, Register s1, int simm13a) { v8_only();  emit_data( op(ldst_op) | fcn(crd) | op3(stdcq_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
+inline void Assembler::sub(Register s1, RegisterOrConstant s2, Register d, int offset) {
+  if (s2.is_register())  sub(s1, s2.as_register(),          d);
+  else                 { sub(s1, s2.as_constant() + offset, d); offset = 0; }
+  if (offset != 0)       sub(d,  offset,                    d);
+}
 
 // pp 231
 
@@ -822,3 +835,5 @@ inline void MacroAssembler::membar( Membar_mask_bits const7a ) {
     Assembler::ldstub(SP, 0, G0);
   }
 }
+
+#endif // CPU_SPARC_VM_ASSEMBLER_SPARC_INLINE_HPP

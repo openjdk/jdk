@@ -22,8 +22,29 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_interp_masm_x86_64.cpp.incl"
+#include "precompiled.hpp"
+#include "interp_masm_x86_64.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/interpreterRuntime.hpp"
+#include "oops/arrayOop.hpp"
+#include "oops/markOop.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/methodOop.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "prims/jvmtiThreadState.hpp"
+#include "runtime/basicLock.hpp"
+#include "runtime/biasedLocking.hpp"
+#include "runtime/sharedRuntime.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 
 // Implementation of InterpreterMacroAssembler
@@ -428,10 +449,9 @@ void InterpreterMacroAssembler::jump_from_interpreted(Register method, Register 
     // JVMTI events, such as single-stepping, are implemented partly by avoiding running
     // compiled code in threads for which the event is enabled.  Check here for
     // interp_only_mode if these events CAN be enabled.
-    get_thread(temp);
     // interp_only is an int, on little endian it is sufficient to test the byte only
-    // Is a cmpl faster (ce
-    cmpb(Address(temp, JavaThread::interp_only_mode_offset()), 0);
+    // Is a cmpl faster?
+    cmpb(Address(r15_thread, JavaThread::interp_only_mode_offset()), 0);
     jcc(Assembler::zero, run_compiled_code);
     jmp(Address(method, methodOopDesc::interpreter_entry_offset()));
     bind(run_compiled_code);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,28 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_oopFactory.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/compiledICHolderKlass.hpp"
+#include "oops/constMethodKlass.hpp"
+#include "oops/constantPoolKlass.hpp"
+#include "oops/cpCacheKlass.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/instanceKlassKlass.hpp"
+#include "oops/instanceOop.hpp"
+#include "oops/klassKlass.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/methodDataKlass.hpp"
+#include "oops/methodKlass.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.inline.hpp"
 
 
 typeArrayOop oopFactory::new_charArray(const char* utf8_str, TRAPS) {

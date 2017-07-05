@@ -22,8 +22,52 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_classLoader.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/classFileParser.hpp"
+#include "classfile/classFileStream.hpp"
+#include "classfile/classLoader.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "compiler/compileBroker.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/bytecodeStream.hpp"
+#include "interpreter/oopMapCache.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/generation.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/constantPoolKlass.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/instanceRefKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "prims/jvm_misc.hpp"
+#include "runtime/arguments.hpp"
+#include "runtime/compilationPolicy.hpp"
+#include "runtime/fprofiler.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/init.hpp"
+#include "runtime/interfaceSupport.hpp"
+#include "runtime/java.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/threadCritical.hpp"
+#include "runtime/timer.hpp"
+#include "services/management.hpp"
+#include "services/threadService.hpp"
+#include "utilities/events.hpp"
+#include "utilities/hashtable.hpp"
+#include "utilities/hashtable.inline.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+#endif
 
 
 // Entry points in zip.dll for loading zip/jar file entries
@@ -160,13 +204,13 @@ ClassFileStream* ClassPathDirEntry::open_stream(const char* name) {
   struct stat st;
   if (os::stat(path, &st) == 0) {
     // found file, open it
-    int file_handle = hpi::open(path, 0, 0);
+    int file_handle = os::open(path, 0, 0);
     if (file_handle != -1) {
       // read contents into resource array
       u1* buffer = NEW_RESOURCE_ARRAY(u1, st.st_size);
       size_t num_read = os::read(file_handle, (char*) buffer, st.st_size);
       // close file
-      hpi::close(file_handle);
+      os::close(file_handle);
       // construct ClassFileStream
       if (num_read == (size_t)st.st_size) {
         if (UsePerfData) {
@@ -559,18 +603,18 @@ void ClassLoader::load_zip_library() {
   // Load zip library
   char path[JVM_MAXPATHLEN];
   char ebuf[1024];
-  hpi::dll_build_name(path, sizeof(path), Arguments::get_dll_dir(), "zip");
-  void* handle = hpi::dll_load(path, ebuf, sizeof ebuf);
+  os::dll_build_name(path, sizeof(path), Arguments::get_dll_dir(), "zip");
+  void* handle = os::dll_load(path, ebuf, sizeof ebuf);
   if (handle == NULL) {
     vm_exit_during_initialization("Unable to load ZIP library", path);
   }
   // Lookup zip entry points
-  ZipOpen      = CAST_TO_FN_PTR(ZipOpen_t, hpi::dll_lookup(handle, "ZIP_Open"));
-  ZipClose     = CAST_TO_FN_PTR(ZipClose_t, hpi::dll_lookup(handle, "ZIP_Close"));
-  FindEntry    = CAST_TO_FN_PTR(FindEntry_t, hpi::dll_lookup(handle, "ZIP_FindEntry"));
-  ReadEntry    = CAST_TO_FN_PTR(ReadEntry_t, hpi::dll_lookup(handle, "ZIP_ReadEntry"));
-  ReadMappedEntry = CAST_TO_FN_PTR(ReadMappedEntry_t, hpi::dll_lookup(handle, "ZIP_ReadMappedEntry"));
-  GetNextEntry = CAST_TO_FN_PTR(GetNextEntry_t, hpi::dll_lookup(handle, "ZIP_GetNextEntry"));
+  ZipOpen      = CAST_TO_FN_PTR(ZipOpen_t, os::dll_lookup(handle, "ZIP_Open"));
+  ZipClose     = CAST_TO_FN_PTR(ZipClose_t, os::dll_lookup(handle, "ZIP_Close"));
+  FindEntry    = CAST_TO_FN_PTR(FindEntry_t, os::dll_lookup(handle, "ZIP_FindEntry"));
+  ReadEntry    = CAST_TO_FN_PTR(ReadEntry_t, os::dll_lookup(handle, "ZIP_ReadEntry"));
+  ReadMappedEntry = CAST_TO_FN_PTR(ReadMappedEntry_t, os::dll_lookup(handle, "ZIP_ReadMappedEntry"));
+  GetNextEntry = CAST_TO_FN_PTR(GetNextEntry_t, os::dll_lookup(handle, "ZIP_GetNextEntry"));
 
   // ZIP_Close is not exported on Windows in JDK5.0 so don't abort if ZIP_Close is NULL
   if (ZipOpen == NULL || FindEntry == NULL || ReadEntry == NULL || GetNextEntry == NULL) {
@@ -579,7 +623,7 @@ void ClassLoader::load_zip_library() {
 
   // Lookup canonicalize entry in libjava.dll
   void *javalib_handle = os::native_java_library();
-  CanonicalizeEntry = CAST_TO_FN_PTR(canonicalize_fn_t, hpi::dll_lookup(javalib_handle, "Canonicalize"));
+  CanonicalizeEntry = CAST_TO_FN_PTR(canonicalize_fn_t, os::dll_lookup(javalib_handle, "Canonicalize"));
   // This lookup only works on 1.3. Do not check for non-null here
 }
 
@@ -1028,7 +1072,7 @@ bool ClassLoader::get_canonical_path(char* orig, char* out, int len) {
   assert(orig != NULL && out != NULL && len > 0, "bad arguments");
   if (CanonicalizeEntry != NULL) {
     JNIEnv* env = JavaThread::current()->jni_environment();
-    if ((CanonicalizeEntry)(env, hpi::native_path(orig), out, len) < 0) {
+    if ((CanonicalizeEntry)(env, os::native_path(orig), out, len) < 0) {
       return false;
     }
   } else {

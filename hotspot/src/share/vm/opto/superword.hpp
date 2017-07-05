@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+#ifndef SHARE_VM_OPTO_SUPERWORD_HPP
+#define SHARE_VM_OPTO_SUPERWORD_HPP
+
+#include "opto/connode.hpp"
+#include "opto/loopnode.hpp"
+#include "opto/node.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/vectornode.hpp"
+#include "utilities/growableArray.hpp"
 
 //
 //                  S U P E R W O R D   T R A N S F O R M
@@ -507,3 +517,5 @@ class OrderedPair VALUE_OBJ_CLASS_SPEC {
 
   static const OrderedPair initial;
 };
+
+#endif // SHARE_VM_OPTO_SUPERWORD_HPP

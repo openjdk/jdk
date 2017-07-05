@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef OS_SOLARIS_VM_OS_SHARE_SOLARIS_HPP
+#define OS_SOLARIS_VM_OS_SHARE_SOLARIS_HPP
 
 // Defines the interfaces to Solaris operating systems that vary across platforms
 
@@ -65,3 +68,5 @@ extern "C" void _mark_fpu_nosave() ;
 #endif
 
 #define PROCFILE_LENGTH 128
+
+#endif // OS_SOLARIS_VM_OS_SHARE_SOLARIS_HPP

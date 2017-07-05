@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,13 +107,9 @@ public abstract class POAPolicyMediatorBase_R extends POAPolicyMediatorBase {
             throw new ServantAlreadyActive();
         ActiveObjectMap.Key key = new ActiveObjectMap.Key( id ) ;
 
-        // Note that this can't happen for system assigned IDs since the
-        // POA never hands out the same ID.  However, we make this redundant
-        // check here to share the code.
-        if (activeObjectMap.containsKey(key))
-            throw new ObjectAlreadyActive() ;
-
         AOMEntry entry = activeObjectMap.get( key ) ;
+
+        // Check for an ObjectAlreadyActive error
         entry.activateObject() ;
         activateServant( key, entry, servant ) ;
     }

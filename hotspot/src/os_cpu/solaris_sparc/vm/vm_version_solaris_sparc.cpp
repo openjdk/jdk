@@ -22,8 +22,9 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_vm_version_solaris_sparc.cpp.incl"
+#include "precompiled.hpp"
+#include "runtime/os.hpp"
+#include "vm_version_sparc.hpp"
 
 # include <sys/auxv.h>
 # include <sys/auxv_SPARC.h>

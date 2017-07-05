@@ -22,8 +22,9 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_iterator.cpp.incl"
+#include "precompiled.hpp"
+#include "memory/iterator.hpp"
+#include "oops/oop.inline.hpp"
 
 #ifdef ASSERT
 bool OopClosure::_must_remember_klasses = false;

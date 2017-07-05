@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_THREADCRITICAL_HPP
+#define SHARE_VM_RUNTIME_THREADCRITICAL_HPP
+
+#include "memory/allocation.hpp"
 
 // ThreadCritical is used to protect short non-blocking critical sections.
 // This class must use no vm facilities that require initialization.
@@ -51,3 +56,5 @@ class ThreadCritical : public StackObj {
   ThreadCritical();
   ~ThreadCritical();
 };
+
+#endif // SHARE_VM_RUNTIME_THREADCRITICAL_HPP

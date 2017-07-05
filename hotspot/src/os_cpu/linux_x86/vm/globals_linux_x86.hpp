@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef OS_CPU_LINUX_X86_VM_GLOBALS_LINUX_X86_HPP
+#define OS_CPU_LINUX_X86_VM_GLOBALS_LINUX_X86_HPP
+
 // Sets the default values for platform dependent flags used by the runtime system.
 // (see globals.hpp)
 
@@ -45,3 +48,5 @@ define_pd_global(uintx,JVMInvokeMethodSlack,     8192);
 define_pd_global(uintx,HeapBaseMinAddress,       2*G);
 // Only used on 64 bit Windows platforms
 define_pd_global(bool, UseVectoredExceptions,    false);
+
+#endif // OS_CPU_LINUX_X86_VM_GLOBALS_LINUX_X86_HPP

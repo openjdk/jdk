@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,21 @@
  *
  */
 
+#ifndef OS_WINDOWS_VM_THREAD_WINDOWS_INLINE_HPP
+#define OS_WINDOWS_VM_THREAD_WINDOWS_INLINE_HPP
+
+#include "runtime/atomic.hpp"
+#include "runtime/prefetch.hpp"
+#include "runtime/thread.hpp"
+#include "runtime/threadLocalStorage.hpp"
+#ifdef TARGET_OS_ARCH_windows_x86
+# include "atomic_windows_x86.inline.hpp"
+# include "orderAccess_windows_x86.inline.hpp"
+# include "prefetch_windows_x86.inline.hpp"
+#endif
+
 // Contains inlined functions for class Thread and ThreadLocalStorage
 
 inline void ThreadLocalStorage::pd_invalidate_all()            { return; }
+
+#endif // OS_WINDOWS_VM_THREAD_WINDOWS_INLINE_HPP

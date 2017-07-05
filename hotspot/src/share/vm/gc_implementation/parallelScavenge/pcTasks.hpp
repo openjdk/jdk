@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PCTASKS_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PCTASKS_HPP
+
+#include "gc_implementation/parallelScavenge/gcTaskManager.hpp"
+#include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
+#include "gc_implementation/parallelScavenge/psTasks.hpp"
+
 
 // Tasks for parallel compaction of the old generation
 //
@@ -250,3 +257,5 @@ class DrainStacksCompactionTask : public GCTask {
   char* name() { return (char *)"drain-region-task"; }
   virtual void do_it(GCTaskManager* manager, uint which);
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PCTASKS_HPP

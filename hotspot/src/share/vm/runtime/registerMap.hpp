@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,21 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_REGISTERMAP_HPP
+#define SHARE_VM_RUNTIME_REGISTERMAP_HPP
+
+#include "code/vmreg.hpp"
+#include "utilities/globalDefinitions.hpp"
+#ifdef TARGET_ARCH_x86
+# include "register_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "register_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "register_zero.hpp"
+#endif
 
 class JavaThread;
 
@@ -114,5 +129,16 @@ class RegisterMap : public StackObj {
   void print() const;
 
   // the following contains the definition of pd_xxx methods
-# include "incls/_registerMap_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "registerMap_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "registerMap_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "registerMap_zero.hpp"
+#endif
+
 };
+
+#endif // SHARE_VM_RUNTIME_REGISTERMAP_HPP

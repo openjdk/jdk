@@ -25,7 +25,7 @@
 
 /*
  *
- * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2010 - All Rights Reserved
  *
  */
 
@@ -472,6 +472,7 @@ enum LEFeatureTags {
     LE_CALT_FEATURE_TAG = 0x63616C74UL, /**< 'calt' */
     LE_CASE_FEATURE_TAG = 0x63617365UL, /**< 'case' */
     LE_CCMP_FEATURE_TAG = 0x63636D70UL, /**< 'ccmp' */
+        LE_CJCT_FEATURE_TAG = 0x636A6374UL, /**< 'cjct' */
     LE_CLIG_FEATURE_TAG = 0x636C6967UL, /**< 'clig' */
     LE_CPSP_FEATURE_TAG = 0x63707370UL, /**< 'cpsp' */
     LE_CSWH_FEATURE_TAG = 0x63737768UL, /**< 'cswh' */
@@ -535,6 +536,7 @@ enum LEFeatureTags {
     LE_RAND_FEATURE_TAG = 0x72616E64UL, /**< 'rand' */
     LE_RLIG_FEATURE_TAG = 0x726C6967UL, /**< 'rlig' */
     LE_RPHF_FEATURE_TAG = 0x72706866UL, /**< 'rphf' */
+        LE_RKRF_FEATURE_TAG = 0x726B7266UL, /**< 'rkrf' */
     LE_RTBD_FEATURE_TAG = 0x72746264UL, /**< 'rtbd' */
     LE_RTLA_FEATURE_TAG = 0x72746C61UL, /**< 'rtla' */
     LE_RUBY_FEATURE_TAG = 0x72756279UL, /**< 'ruby' */

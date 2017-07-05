@@ -21,9 +21,11 @@
  * questions.
  *
  */
-# include "incls/_precompiled.incl"
-# include "incls/_jvmtiManageCapabilities.cpp.incl"
 
+#include "precompiled.hpp"
+#include "jvmtifiles/jvmtiEnv.hpp"
+#include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiManageCapabilities.hpp"
 static const jint CAPA_SIZE = (JVMTI_INTERNAL_CAPABILITY_COUNT + 7) / 8;
 
   // capabilities which are always potentially available

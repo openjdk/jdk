@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_WATERMARK_HPP
+#define SHARE_VM_MEMORY_WATERMARK_HPP
+
+#include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // A water mark points into a space and is used during GC to keep track of
 // progress.
@@ -51,3 +57,5 @@ inline bool operator==(const WaterMark& x, const WaterMark& y) {
 inline bool operator!=(const WaterMark& x, const WaterMark& y) {
   return !(x == y);
 }
+
+#endif // SHARE_VM_MEMORY_WATERMARK_HPP

@@ -25,8 +25,11 @@
 // make sure the defines don't screw up the declarations later on in this file
 #define DONT_USE_REGISTER_DEFINES
 
-#include "incls/_precompiled.incl"
-#include "incls/_register_definitions_sparc.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "asm/register.hpp"
+#include "interp_masm_sparc.hpp"
+#include "register_sparc.hpp"
 
 REGISTER_DEFINITION(Register, noreg);
 

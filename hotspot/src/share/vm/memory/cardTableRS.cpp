@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,19 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_cardTableRS.cpp.incl"
+#include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/cardTableRS.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/generation.hpp"
+#include "memory/space.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/java.hpp"
+#include "runtime/os.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/g1/concurrentMark.hpp"
+#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#endif
 
 CardTableRS::CardTableRS(MemRegion whole_heap,
                          int max_covered_regions) :

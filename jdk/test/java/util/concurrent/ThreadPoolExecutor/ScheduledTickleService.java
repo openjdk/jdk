@@ -37,10 +37,10 @@ public class ScheduledTickleService {
 
     // We get intermittent ClassCastException if greater than 1
     // because of calls to compareTo
-    private final static int concurrency = 2;
+    private static final int concurrency = 2;
 
     // Record when tasks are done
-    public final static CountDownLatch done = new CountDownLatch(concurrency);
+    public static final CountDownLatch done = new CountDownLatch(concurrency);
 
     public static void realMain(String... args) throws InterruptedException {
         // our tickle service

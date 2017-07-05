@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SERVICES_MEMORYUSAGE_HPP
+#define SHARE_VM_SERVICES_MEMORYUSAGE_HPP
+
+#include "utilities/globalDefinitions.hpp"
 
 // A memory usage contains the following attributes about memory usage:
 //  initSize - represents the initial amount of memory (in bytes) that
@@ -75,3 +80,5 @@ public:
   jlong committed_as_jlong() const { return convert_to_jlong(_committed); }
   jlong max_size_as_jlong()  const { return convert_to_jlong(_maxSize); }
 };
+
+#endif // SHARE_VM_SERVICES_MEMORYUSAGE_HPP

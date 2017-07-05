@@ -22,6 +22,22 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CONCURRENTMARKSWEEPGENERATION_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CONCURRENTMARKSWEEPGENERATION_HPP
+
+#include "gc_implementation/concurrentMarkSweep/freeBlockDictionary.hpp"
+#include "gc_implementation/shared/gSpaceCounters.hpp"
+#include "gc_implementation/shared/gcStats.hpp"
+#include "gc_implementation/shared/generationCounters.hpp"
+#include "memory/generation.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/virtualspace.hpp"
+#include "services/memoryService.hpp"
+#include "utilities/bitMap.inline.hpp"
+#include "utilities/stack.inline.hpp"
+#include "utilities/taskqueue.hpp"
+#include "utilities/yieldingWorkgroup.hpp"
+
 // ConcurrentMarkSweepGeneration is in support of a concurrent
 // mark-sweep old generation in the Detlefs-Printezis--Boehm-Demers-Schenker
 // style. We assume, for now, that this generation is always the
@@ -1882,3 +1898,5 @@ class TraceCMSMemoryManagerStats : public TraceMemoryManagerStats {
   TraceCMSMemoryManagerStats();
 };
 
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CONCURRENTMARKSWEEPGENERATION_HPP

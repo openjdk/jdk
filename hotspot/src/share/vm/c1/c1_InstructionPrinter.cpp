@@ -22,8 +22,12 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_c1_InstructionPrinter.cpp.incl"
+#include "precompiled.hpp"
+#include "c1/c1_InstructionPrinter.hpp"
+#include "c1/c1_ValueStack.hpp"
+#include "ci/ciArray.hpp"
+#include "ci/ciInstance.hpp"
+#include "ci/ciObject.hpp"
 
 
 #ifndef PRODUCT

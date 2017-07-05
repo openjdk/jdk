@@ -22,6 +22,16 @@
  *
  */
 
+#ifndef SHARE_VM_C1_C1_CODESTUBS_HPP
+#define SHARE_VM_C1_C1_CODESTUBS_HPP
+
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_IR.hpp"
+#include "c1/c1_Instruction.hpp"
+#include "c1/c1_LIR.hpp"
+#include "c1/c1_Runtime1.hpp"
+#include "utilities/array.hpp"
+
 class CodeEmitInfo;
 class LIR_Assembler;
 class LIR_OpVisitState;
@@ -586,3 +596,5 @@ class G1PostBarrierStub: public CodeStub {
 
 #endif // SERIALGC
 //////////////////////////////////////////////////////////////////////////////////////////
+
+#endif // SHARE_VM_C1_C1_CODESTUBS_HPP

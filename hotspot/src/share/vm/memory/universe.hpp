@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_MEMORY_UNIVERSE_HPP
+#define SHARE_VM_MEMORY_UNIVERSE_HPP
+
+#include "runtime/handles.hpp"
+#include "utilities/growableArray.hpp"
+
 // Universe is a name space holding known system classes and objects in the VM.
 //
 // Loaded classes are accessible through the SystemDictionary.
@@ -461,3 +467,5 @@ class DeferredObjAllocEvent : public CHeapObj {
     size_t bytesize() { return _bytesize; }
     oop    get_oop()  { return _oop; }
 };
+
+#endif // SHARE_VM_MEMORY_UNIVERSE_HPP

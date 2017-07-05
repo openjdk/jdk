@@ -87,7 +87,7 @@ public class BlockingTaskExecutor {
      * A helper class with a method to wait for a notification.
      *
      * The notification is received via the
-     * <code>sendNotification</code> method.
+     * {@code sendNotification} method.
      */
     static class NotificationReceiver {
         /** Has the notifiee been notified? */

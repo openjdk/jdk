@@ -22,8 +22,21 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_ciTypeFlow.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/ciConstant.hpp"
+#include "ci/ciField.hpp"
+#include "ci/ciMethod.hpp"
+#include "ci/ciMethodData.hpp"
+#include "ci/ciObjArrayKlass.hpp"
+#include "ci/ciStreams.hpp"
+#include "ci/ciTypeArrayKlass.hpp"
+#include "ci/ciTypeFlow.hpp"
+#include "compiler/compileLog.hpp"
+#include "interpreter/bytecode.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "memory/allocation.inline.hpp"
+#include "runtime/deoptimization.hpp"
+#include "utilities/growableArray.hpp"
 
 // ciTypeFlow::JsrSet
 //

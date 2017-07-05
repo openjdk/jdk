@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef CPU_X86_VM_C2_GLOBALS_X86_HPP
+#define CPU_X86_VM_C2_GLOBALS_X86_HPP
+
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+
 // Sets the default values for platform dependent flags used by the server compiler.
 // (see c2_globals.hpp).  Alpha-sorted.
 
@@ -87,3 +93,5 @@ define_pd_global(uintx,MaxPermSize, ScaleForWordSize(64*M));
 
 // Ergonomics related flags
 define_pd_global(bool, NeverActAsServerClassMachine, false);
+
+#endif // CPU_X86_VM_C2_GLOBALS_X86_HPP

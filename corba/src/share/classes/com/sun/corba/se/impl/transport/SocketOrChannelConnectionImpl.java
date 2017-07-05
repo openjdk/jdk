@@ -811,12 +811,35 @@ public class SocketOrChannelConnectionImpl
                     dprint(".close: " + this, e);
                 }
             }
+            closeConnectionResources();
         } finally {
             if (orb.transportDebugFlag) {
                 dprint(".close<-: " + this);
             }
         }
     }
+
+    public void closeConnectionResources() {
+           if (orb.transportDebugFlag) {
+               dprint(".closeConnectionResources->: " + this);
+           }
+           Selector selector = orb.getTransportManager().getSelector(0);
+           selector.unregisterForEvent(this);
+           try {
+             if (socketChannel != null)
+              socketChannel.close() ;
+                if (socket != null && !socket.isClosed())
+                socket.close() ;
+           } catch (IOException e) {
+             if (orb.transportDebugFlag) {
+                 dprint( ".closeConnectionResources: " + this, e ) ;
+             }
+           }
+           if (orb.transportDebugFlag) {
+               dprint(".closeConnectionResources<-: " + this);
+           }
+     }
+
 
     public Acceptor getAcceptor()
     {

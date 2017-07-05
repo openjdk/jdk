@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,6 +22,11 @@
  * questions.
  *
  */
+
+#ifndef CPU_ZERO_VM_STACK_ZERO_HPP
+#define CPU_ZERO_VM_STACK_ZERO_HPP
+
+#include "utilities/sizes.hpp"
 
 class ZeroStack {
  private:
@@ -217,3 +222,5 @@ class ZeroFrame {
                         char*     fieldbuf,
                         int       buflen) const;
 };
+
+#endif // CPU_ZERO_VM_STACK_ZERO_HPP

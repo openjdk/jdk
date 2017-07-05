@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CODE_ICBUFFER_HPP
+#define SHARE_VM_CODE_ICBUFFER_HPP
+
+#include "code/stubs.hpp"
+#include "interpreter/bytecodes.hpp"
+#include "memory/allocation.hpp"
 
 //
 // For CompiledIC's:
@@ -126,3 +133,5 @@ class InlineCacheBuffer: public AllStatic {
   static address ic_destination_for(CompiledIC *ic);
   static oop     cached_oop_for(CompiledIC *ic);
 };
+
+#endif // SHARE_VM_CODE_ICBUFFER_HPP

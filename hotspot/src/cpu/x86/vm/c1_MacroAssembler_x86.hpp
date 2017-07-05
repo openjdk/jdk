@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_X86_VM_C1_MACROASSEMBLER_X86_HPP
+#define CPU_X86_VM_C1_MACROASSEMBLER_X86_HPP
 
 // C1_MacroAssembler contains high-level macros for C1
 
@@ -113,3 +116,5 @@
   }
 
   void invalidate_registers(bool inv_rax, bool inv_rbx, bool inv_rcx, bool inv_rdx, bool inv_rsi, bool inv_rdi) PRODUCT_RETURN;
+
+#endif // CPU_X86_VM_C1_MACROASSEMBLER_X86_HPP

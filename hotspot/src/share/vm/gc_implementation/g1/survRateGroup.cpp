@@ -22,8 +22,12 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_survRateGroup.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/g1CollectorPolicy.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
+#include "gc_implementation/g1/survRateGroup.hpp"
+#include "memory/allocation.hpp"
 
 SurvRateGroup::SurvRateGroup(G1CollectorPolicy* g1p,
                              const char* name,

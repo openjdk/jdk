@@ -265,6 +265,9 @@ public class SignatureFileVerifier {
                 debug.println("processSignature unsigned name = "+name);
             }
         }
+
+        // MANIFEST.MF is always regarded as signed
+        updateSigners(newSigners, signers, JarFile.MANIFEST_NAME);
     }
 
     /**

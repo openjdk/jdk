@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_UTILITIES_BITMAP_INLINE_HPP
+#define SHARE_VM_UTILITIES_BITMAP_INLINE_HPP
+
+#include "runtime/atomic.hpp"
+#include "utilities/bitMap.hpp"
 
 #ifdef ASSERT
 inline void BitMap::verify_index(idx_t index) const {
@@ -319,3 +325,5 @@ inline BitMap::idx_t BitMap::get_next_zero_offset(idx_t l_offset,
 inline void BitMap2D::clear() {
   _map.clear();
 }
+
+#endif // SHARE_VM_UTILITIES_BITMAP_INLINE_HPP

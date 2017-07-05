@@ -275,18 +275,17 @@ public abstract class Charset
 
     /* -- Static methods -- */
 
-    private static String bugLevel = null;
+    private static volatile String bugLevel = null;
 
     static boolean atBugLevel(String bl) {              // package-private
-        if (bugLevel == null) {
+        String level = bugLevel;
+        if (level == null) {
             if (!sun.misc.VM.isBooted())
                 return false;
-            bugLevel = AccessController.doPrivileged(
-                new GetPropertyAction("sun.nio.cs.bugLevel"));
-            if (bugLevel == null)
-                bugLevel = "";
+            bugLevel = level = AccessController.doPrivileged(
+                new GetPropertyAction("sun.nio.cs.bugLevel", ""));
         }
-        return (bugLevel != null) && bugLevel.equals(bl);
+        return level.equals(bl);
     }
 
     /**

@@ -22,6 +22,18 @@
  *
  */
 
+#ifndef SHARE_VM_CI_CIENV_HPP
+#define SHARE_VM_CI_CIENV_HPP
+
+#include "ci/ciClassList.hpp"
+#include "ci/ciObjectFactory.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "code/debugInfoRec.hpp"
+#include "code/dependencies.hpp"
+#include "code/exceptionHandlerTable.hpp"
+#include "compiler/oopMap.hpp"
+#include "runtime/thread.hpp"
+
 class CompileTask;
 
 // ciEnv
@@ -384,3 +396,5 @@ public:
   void record_method_not_compilable(const char* reason, bool all_tiers = true);
   void record_out_of_memory_failure();
 };
+
+#endif // SHARE_VM_CI_CIENV_HPP

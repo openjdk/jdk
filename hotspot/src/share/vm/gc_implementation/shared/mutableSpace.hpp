@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_MUTABLESPACE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_MUTABLESPACE_HPP
+
+#include "gc_implementation/shared/immutableSpace.hpp"
+#include "memory/memRegion.hpp"
+#include "utilities/copy.hpp"
 
 // A MutableSpace is a subtype of ImmutableSpace that supports the
 // concept of allocation. This includes the concepts that a space may
@@ -136,3 +143,5 @@ class MutableSpace: public ImmutableSpace {
   virtual void print_short_on(outputStream* st) const;
   virtual void verify(bool allow_dirty);
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_MUTABLESPACE_HPP

@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_INTERPRETER_INVOCATIONCOUNTER_HPP
+#define SHARE_VM_INTERPRETER_INVOCATIONCOUNTER_HPP
+
+#include "memory/allocation.hpp"
+#include "runtime/handles.hpp"
+#include "utilities/exceptions.hpp"
+
 // InvocationCounters are used to trigger actions when a limit (threshold) is reached.
 // For different states, different limits and actions can be defined in the initialization
 // routine of InvocationCounters.
@@ -134,3 +141,5 @@ inline void InvocationCounter::decay() {
   set(state(), new_count);
 }
 
+
+#endif // SHARE_VM_INTERPRETER_INVOCATIONCOUNTER_HPP
