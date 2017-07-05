@@ -22,22 +22,20 @@
  */
 
 /**
- *  @test
- *  @bug 4419314
- *  @author Robert Field
- *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g HelloWorld.java
- *  @run build VMDeathRequestTest
- *  @run driver VMDeathRequestTest
- *
+ * @test
+ * @bug 4419314
  * @summary VMDeathRequestTest checks to see that
  * VMDisconnectedException is never thrown before VMDisconnectEvent.
  *
  * Failure mode for this test is throwing VMDisconnectedException
  * on vm.eventQueue().remove();
  * Does not use a scaffold since we don't want that hiding the exception.
+ * @author Robert Field
+ *
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g HelloWorld.java
+ * @run build VMDeathRequestTest
+ * @run driver VMDeathRequestTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

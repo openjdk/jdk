@@ -417,7 +417,7 @@ void CodeCache::add_heap(ReservedSpace rs, const char* name, int code_blob_type)
 CodeHeap* CodeCache::get_code_heap(const CodeBlob* cb) {
   assert(cb != NULL, "CodeBlob is null");
   FOR_ALL_HEAPS(heap) {
-    if ((*heap)->contains(cb->code_begin())) {
+    if ((*heap)->contains_blob(cb)) {
       return *heap;
     }
   }
@@ -1211,7 +1211,7 @@ void CodeCache::make_marked_nmethods_not_entrant() {
   CompiledMethodIterator iter;
   while(iter.next_alive()) {
     CompiledMethod* nm = iter.method();
-    if (nm->is_marked_for_deoptimization()) {
+    if (nm->is_marked_for_deoptimization() && !nm->is_not_entrant()) {
       nm->make_not_entrant();
     }
   }

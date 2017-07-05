@@ -24,6 +24,7 @@
 /**
  * @test
  * @library modules
+ * @modules java.scripting
  * @build bananascript/*
  * @compile src/pearscript/org/pear/PearScriptEngineFactory.java
  *          src/pearscript/org/pear/PearScript.java
@@ -33,7 +34,6 @@
 
 import java.lang.module.Configuration;
 import java.lang.module.ModuleFinder;
-import java.lang.reflect.Layer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -228,7 +228,7 @@ public class Basic {
      */
     @Test
     public void testWithCustomLayer1() {
-        Layer layer = createCustomLayer("bananascript");
+        ModuleLayer layer = createCustomLayer("bananascript");
 
         ClassLoader loader = layer.findLoader("bananascript");
         List<ScriptEngineFactory> providers
@@ -257,7 +257,7 @@ public class Basic {
      */
     @Test
     public void testWithCustomLayer2() {
-        Layer layer = createCustomLayer("bananascript");
+        ModuleLayer layer = createCustomLayer("bananascript");
 
         List<ScriptEngineFactory> factories
             = collectAll(ServiceLoader.load(layer, ScriptEngineFactory.class));
@@ -292,7 +292,7 @@ public class Basic {
      */
     @Test
     public void testWithCustomLayer3() {
-        Layer bootLayer = Layer.boot();
+        ModuleLayer bootLayer = ModuleLayer.boot();
         Configuration cf0 = bootLayer.configuration();
 
         // boot layer should contain "bananascript"
@@ -311,21 +311,22 @@ public class Basic {
         ModuleFinder finder = ModuleFinder.of(dir);
 
         // layer1
-        Configuration cf1 = cf0.resolveRequiresAndUses(finder, ModuleFinder.of(), Set.of());
-        Layer layer1 = bootLayer.defineModulesWithOneLoader(cf1, scl);
+        Configuration cf1 = cf0.resolveAndBind(finder, ModuleFinder.of(), Set.of());
+        ModuleLayer layer1 = bootLayer.defineModulesWithOneLoader(cf1, scl);
         assertTrue(layer1.modules().size() == 1);
 
         // layer2
-        Configuration cf2 = cf0.resolveRequiresAndUses(finder, ModuleFinder.of(), Set.of());
-        Layer layer2 = bootLayer.defineModulesWithOneLoader(cf2, scl);
+        Configuration cf2 = cf0.resolveAndBind(finder, ModuleFinder.of(), Set.of());
+        ModuleLayer layer2 = bootLayer.defineModulesWithOneLoader(cf2, scl);
         assertTrue(layer2.modules().size() == 1);
 
         // layer3 with layer1 and layer2 as parents
-        Configuration cf3 = Configuration.resolveRequiresAndUses(finder,
+        Configuration cf3 = Configuration.resolveAndBind(finder,
                 List.of(cf1, cf2),
                 ModuleFinder.of(),
                 Set.of());
-        Layer layer3 = Layer.defineModulesWithOneLoader(cf3, List.of(layer1, layer2), scl).layer();
+        ModuleLayer layer3
+            = ModuleLayer.defineModulesWithOneLoader(cf3, List.of(layer1, layer2), scl).layer();
         assertTrue(layer3.modules().size() == 1);
 
 
@@ -389,12 +390,12 @@ public class Basic {
     @Test(expectedExceptions = { NullPointerException.class })
     public void testLoadNull3() {
         class S { }
-        ServiceLoader.load((Layer) null, S.class);
+        ServiceLoader.load((ModuleLayer) null, S.class);
     }
 
     @Test(expectedExceptions = { NullPointerException.class })
     public void testLoadNull4() {
-        ServiceLoader.load(Layer.empty(), null);
+        ServiceLoader.load(ModuleLayer.empty(), null);
     }
 
     @Test(expectedExceptions = { NullPointerException.class })
@@ -403,19 +404,19 @@ public class Basic {
     }
 
     /**
-     * Create a custom Layer by resolving the given module names. The modules
+     * Create a custom layer by resolving the given module names. The modules
      * are located in the {@code ${test.classes}/modules} directory.
      */
-    private Layer createCustomLayer(String... modules) {
+    private ModuleLayer createCustomLayer(String... modules) {
         Path dir = Paths.get(System.getProperty("test.classes", "."), "modules");
         ModuleFinder finder = ModuleFinder.of(dir);
         Set<String> roots = new HashSet<>();
         Collections.addAll(roots, modules);
-        Layer bootLayer = Layer.boot();
+        ModuleLayer bootLayer = ModuleLayer.boot();
         Configuration parent = bootLayer.configuration();
-        Configuration cf = parent.resolveRequires(finder, ModuleFinder.of(), roots);
+        Configuration cf = parent.resolve(finder, ModuleFinder.of(), roots);
         ClassLoader scl = ClassLoader.getSystemClassLoader();
-        Layer layer = bootLayer.defineModulesWithOneLoader(cf, scl);
+        ModuleLayer layer = bootLayer.defineModulesWithOneLoader(cf, scl);
         assertTrue(layer.modules().size() == 1);
         return layer;
     }

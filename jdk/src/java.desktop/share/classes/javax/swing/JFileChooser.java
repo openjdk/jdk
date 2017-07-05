@@ -1754,6 +1754,7 @@ public class JFileChooser extends JComponent implements Accessible {
      *                the event
      * @see EventListenerList
      */
+    @SuppressWarnings("deprecation")
     protected void fireActionPerformed(String command) {
         // Guaranteed to return a non-null array
         Object[] listeners = listenerList.getListenerList();

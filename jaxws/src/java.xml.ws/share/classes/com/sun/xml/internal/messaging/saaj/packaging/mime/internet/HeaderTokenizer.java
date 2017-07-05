@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,14 +95,15 @@ public class HeaderTokenizer {
          * one of the following:
          * <ul>
          * <li><code>ATOM</code> A sequence of ASCII characters
-         *      delimited by either SPACE, CTL, "(", <"> or the
-         *      specified SPECIALS
+         *      delimited by either SPACE, CTL, "(", &lt;"&gt; or the
+         *      specified SPECIALS</li>
          * <li><code>QUOTEDSTRING</code> A sequence of ASCII characters
-         *      within quotes
+         *      within quotes</li>
          * <li><code>COMMENT</code> A sequence of ASCII characters
-         *      within "(" and ")".
-         * <li><code>EOF</code> End of header
+         *      within "(" and ")".</li>
+         * <li><code>EOF</code> End of header</li>
          * </ul>
+         * @return type
          */
         public int getType() {
             return type;
@@ -176,6 +177,7 @@ public class HeaderTokenizer {
      * Constructor. The RFC822 defined delimiters - RFC822 - are
      * used to delimit ATOMS. Also comments are skipped and not
      * returned as tokens
+     * @param header The header that is tokenized.
      */
     public HeaderTokenizer(String header)  {
         this(header, RFC822);
@@ -317,7 +319,7 @@ public class HeaderTokenizer {
             currentPos++; // re-position currentPos
             char ch[] = new char[1];
             ch[0] = c;
-            return new Token((int)c, new String(ch));
+            return new Token(c, new String(ch));
         }
 
         // Check for ATOM

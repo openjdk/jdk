@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ public enum StandardLocation implements Location {
 
     /**
      * Location to search for modules containing annotation processors.
+     * @spec JPMS
      * @since 9
      */
     ANNOTATION_PROCESSOR_MODULE_PATH,
@@ -82,27 +83,38 @@ public enum StandardLocation implements Location {
 
     /**
      * Location to search for the source code of modules.
+     * @spec JPMS
      * @since 9
      */
     MODULE_SOURCE_PATH,
 
     /**
      * Location to search for upgradeable system modules.
+     * @spec JPMS
      * @since 9
      */
     UPGRADE_MODULE_PATH,
 
     /**
      * Location to search for system modules.
+     * @spec JPMS
      * @since 9
      */
     SYSTEM_MODULES,
 
     /**
      * Location to search for precompiled user modules.
+     * @spec JPMS
      * @since 9
      */
-    MODULE_PATH;
+    MODULE_PATH,
+
+    /**
+     * Location to search for module patches.
+     * @spec JPMS
+     * @since 9
+     */
+    PATCH_MODULE_PATH;
 
     /**
      * Returns a location object with the given name.  The following
@@ -115,6 +127,9 @@ public enum StandardLocation implements Location {
      *
      * @param name a name
      * @return a location
+     *
+     * @revised 9
+     * @spec JPMS
      */
     public static Location locationFor(final String name) {
         if (locations.isEmpty()) {
@@ -150,6 +165,10 @@ public enum StandardLocation implements Location {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     * @since 9
+     */
     @Override
     public boolean isModuleOrientedLocation() {
         switch (this) {
@@ -158,6 +177,7 @@ public enum StandardLocation implements Location {
             case UPGRADE_MODULE_PATH:
             case SYSTEM_MODULES:
             case MODULE_PATH:
+            case PATCH_MODULE_PATH:
                 return true;
             default:
                 return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,25 @@ public class DerInputStream {
     }
 
     /**
+     * Create a DER input stream from part of a data buffer with
+     * additional arg to control whether DER checks are enforced.
+     * The buffer is not copied, it is shared.  Accordingly, the
+     * buffer should be treated as read-only.
+     *
+     * @param data the buffer from which to create the string (CONSUMED)
+     * @param offset the first index of <em>data</em> which will
+     *          be read as DER input in the new stream
+     * @param len how long a chunk of the buffer to use,
+     *          starting at "offset"
+     * @param allowBER whether to allow constructed indefinite-length
+     *          encoding as well as tolerate leading 0s
+     */
+    public DerInputStream(byte[] data, int offset, int len,
+        boolean allowBER) throws IOException {
+        init(data, offset, len, allowBER);
+    }
+
+    /**
      * Create a DER input stream from part of a data buffer.
      * The buffer is not copied, it is shared.  Accordingly, the
      * buffer should be treated as read-only.
@@ -95,47 +114,27 @@ public class DerInputStream {
         init(data, offset, len, true);
     }
 
-    /**
-     * Create a DER input stream from part of a data buffer with
-     * additional arg to indicate whether to allow constructed
-     * indefinite-length encoding.
-     * The buffer is not copied, it is shared.  Accordingly, the
-     * buffer should be treated as read-only.
-     *
-     * @param data the buffer from which to create the string (CONSUMED)
-     * @param offset the first index of <em>data</em> which will
-     *          be read as DER input in the new stream
-     * @param len how long a chunk of the buffer to use,
-     *          starting at "offset"
-     * @param allowIndefiniteLength whether to allow constructed
-     *          indefinite-length encoding
-     */
-    public DerInputStream(byte[] data, int offset, int len,
-        boolean allowIndefiniteLength) throws IOException {
-        init(data, offset, len, allowIndefiniteLength);
-    }
-
     /*
      * private helper routine
      */
-    private void init(byte[] data, int offset, int len,
-        boolean allowIndefiniteLength) throws IOException {
+    private void init(byte[] data, int offset, int len, boolean allowBER) throws IOException {
         if ((offset+2 > data.length) || (offset+len > data.length)) {
             throw new IOException("Encoding bytes too short");
         }
         // check for indefinite length encoding
         if (DerIndefLenConverter.isIndefinite(data[offset+1])) {
-            if (!allowIndefiniteLength) {
+            if (!allowBER) {
                 throw new IOException("Indefinite length BER encoding found");
             } else {
                 byte[] inData = new byte[len];
                 System.arraycopy(data, offset, inData, 0, len);
 
                 DerIndefLenConverter derIn = new DerIndefLenConverter();
-                buffer = new DerInputBuffer(derIn.convert(inData));
+                buffer = new DerInputBuffer(derIn.convert(inData), allowBER);
             }
-        } else
-            buffer = new DerInputBuffer(data, offset, len);
+        } else {
+            buffer = new DerInputBuffer(data, offset, len, allowBER);
+        }
         buffer.mark(Integer.MAX_VALUE);
     }
 
@@ -156,7 +155,7 @@ public class DerInputStream {
      */
     public DerInputStream subStream(int len, boolean do_skip)
     throws IOException {
-        DerInputBuffer  newbuf = buffer.dup();
+        DerInputBuffer newbuf = buffer.dup();
 
         newbuf.truncate(len);
         if (do_skip) {
@@ -399,7 +398,8 @@ public class DerInputStream {
            dis.readFully(indefData, offset, readLen);
            dis.close();
            DerIndefLenConverter derIn = new DerIndefLenConverter();
-           buffer = new DerInputBuffer(derIn.convert(indefData));
+           buffer = new DerInputBuffer(derIn.convert(indefData), buffer.allowBER);
+
            if (tag != buffer.read())
                 throw new IOException("Indefinite length encoding" +
                         " not supported");
@@ -427,7 +427,7 @@ public class DerInputStream {
         DerValue value;
 
         do {
-            value = new DerValue(newstr.buffer);
+            value = new DerValue(newstr.buffer, buffer.allowBER);
             vec.addElement(value);
         } while (newstr.available() > 0);
 

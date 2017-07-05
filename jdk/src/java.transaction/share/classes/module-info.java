@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,11 @@
  * <P>
  * The subset consists of RMI exception types which are mapped to CORBA system
  * exceptions by the 'Java Language to IDL Mapping Specification'.
+ *
+ * @moduleGraph
+ * @since 9
  */
+@Deprecated(since="9", forRemoval=true)
 module java.transaction {
     requires transitive java.rmi;
     exports javax.transaction;
