@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 #include "code/nmethod.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
-#include "oops/methodDataOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/methodData.hpp"
+#include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/vmThread.hpp"
@@ -379,7 +379,7 @@ void xmlStream::method(methodHandle method) {
   print(" iicount='%d'", method->interpreter_invocation_count());
   int throwouts = method->interpreter_throwout_count();
   if (throwouts != 0)  print(" throwouts='%d'", throwouts);
-  methodDataOop mdo = method->method_data();
+  MethodData* mdo = method->method_data();
   if (mdo != NULL) {
     uint cnt;
     cnt = mdo->decompile_count();
@@ -399,7 +399,7 @@ void xmlStream::method_text(methodHandle method) {
   assert_if_no_error(inside_attrs(), "printing attributes");
   if (method.is_null())  return;
   //method->print_short_name(text());
-  method->method_holder()->klass_part()->name()->print_symbol_on(text());
+  method->method_holder()->name()->print_symbol_on(text());
   print_raw(" ");  // " " is easier for tools to parse than "::"
   method->name()->print_symbol_on(text());
   print_raw(" ");  // separator
@@ -442,7 +442,7 @@ void xmlStream::name_text(const Symbol* name) {
 
 void xmlStream::object(const char* attr, Handle x) {
   assert_if_no_error(inside_attrs(), "printing attributes");
-  if (x.is_null())  return;
+  if (x == NULL)  return;
   print_raw(" ");
   print_raw(attr);
   print_raw("='");
@@ -452,14 +452,31 @@ void xmlStream::object(const char* attr, Handle x) {
 
 void xmlStream::object_text(Handle x) {
   assert_if_no_error(inside_attrs(), "printing attributes");
-  if (x.is_null())  return;
+  if (x == NULL)  return;
+  x->print_value_on(text());
+}
+
+
+void xmlStream::object(const char* attr, Metadata* x) {
+  assert_if_no_error(inside_attrs(), "printing attributes");
+  if (x == NULL)  return;
+  print_raw(" ");
+  print_raw(attr);
+  print_raw("='");
+  object_text(x);
+  print_raw("'");
+}
+
+void xmlStream::object_text(Metadata* x) {
+  assert_if_no_error(inside_attrs(), "printing attributes");
+  if (x == NULL)  return;
   //x->print_value_on(text());
   if (x->is_method())
-    method_text(methodOop(x()));
+    method_text((Method*)x);
   else if (x->is_klass())
-    klass_text(klassOop(x()));
+    klass_text((Klass*)x);
   else
-    x->print_value_on(text());
+    ShouldNotReachHere(); // Add impl if this is reached.
 }
 
 

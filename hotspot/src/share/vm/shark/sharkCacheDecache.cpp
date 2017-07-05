@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -107,7 +107,7 @@ void SharkDecacher::process_oop_tmp_slot(Value** value, int offset) {
 void SharkDecacher::process_method_slot(Value** value, int offset) {
   // Decache the method pointer
   write_value_to_frame(
-    SharkType::methodOop_type(),
+    SharkType::Method*_type(),
     *value,
     offset);
 
@@ -205,7 +205,7 @@ void SharkCacher::process_oop_tmp_slot(Value** value, int offset) {
 
 void SharkCacher::process_method_slot(Value** value, int offset) {
   // Cache the method pointer
-  *value = read_value_from_frame(SharkType::methodOop_type(), offset);
+  *value = read_value_from_frame(SharkType::Method*_type(), offset);
 }
 
 void SharkFunctionEntryCacher::process_method_slot(Value** value, int offset) {

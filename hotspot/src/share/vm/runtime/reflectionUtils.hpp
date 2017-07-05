@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,14 @@
 // interfaces last).
 //
 //    for (KlassStream st(k, false, false); !st.eos(); st.next()) {
-//      klassOop k = st.klass();
+//      Klass* k = st.klass();
 //      ...
 //    }
 
 class KlassStream VALUE_OBJ_CLASS_SPEC {
  protected:
   instanceKlassHandle _klass;           // current klass/interface iterated over
-  objArrayHandle      _interfaces;      // transitive interfaces for initial class
+  Array<Klass*>*    _interfaces;      // transitive interfaces for initial class
   int                 _interface_index; // current interface being processed
   bool                _local_only;      // process initial class/interface only
   bool                _classes_only;    // process classes only (no interfaces)
@@ -75,14 +75,14 @@ class KlassStream VALUE_OBJ_CLASS_SPEC {
 // Usage:
 //
 //    for (MethodStream st(k, false, false); !st.eos(); st.next()) {
-//      methodOop m = st.method();
+//      Method* m = st.method();
 //      ...
 //    }
 
 class MethodStream : public KlassStream {
  private:
   int length() const          { return methods()->length(); }
-  objArrayOop methods() const { return _klass->methods(); }
+  Array<Method*>* methods() const { return _klass->methods(); }
  public:
   MethodStream(instanceKlassHandle klass, bool local_only, bool classes_only)
     : KlassStream(klass, local_only, classes_only) {
@@ -91,7 +91,7 @@ class MethodStream : public KlassStream {
   }
 
   void next() { _index--; }
-  methodOop method() const { return methodOop(methods()->obj_at(index())); }
+  Method* method() const { return methods()->at(index()); }
 };
 
 
@@ -138,16 +138,15 @@ class FieldStream : public KlassStream {
 
 class FilteredField {
  private:
-  klassOop _klass;
+  Klass* _klass;
   int      _field_offset;
 
  public:
-  FilteredField(klassOop klass, int field_offset) {
+  FilteredField(Klass* klass, int field_offset) {
     _klass = klass;
     _field_offset = field_offset;
   }
-  klassOop klass() { return _klass; }
-  oop* klass_addr() { return (oop*) &_klass; }
+  Klass* klass() { return _klass; }
   int  field_offset() { return _field_offset; }
 };
 
@@ -156,7 +155,7 @@ class FilteredFieldsMap : AllStatic {
   static GrowableArray<FilteredField *> *_filtered_fields;
  public:
   static void initialize();
-  static bool is_filtered_field(klassOop klass, int field_offset) {
+  static bool is_filtered_field(Klass* klass, int field_offset) {
     for (int i=0; i < _filtered_fields->length(); i++) {
       if (klass == _filtered_fields->at(i)->klass() &&
         field_offset == _filtered_fields->at(i)->field_offset()) {
@@ -165,21 +164,21 @@ class FilteredFieldsMap : AllStatic {
     }
     return false;
   }
-  static int  filtered_fields_count(klassOop klass, bool local_only) {
+  static int  filtered_fields_count(Klass* klass, bool local_only) {
     int nflds = 0;
     for (int i=0; i < _filtered_fields->length(); i++) {
       if (local_only && klass == _filtered_fields->at(i)->klass()) {
         nflds++;
-      } else if (klass->klass_part()->is_subtype_of(_filtered_fields->at(i)->klass())) {
+      } else if (klass->is_subtype_of(_filtered_fields->at(i)->klass())) {
         nflds++;
       }
     }
     return nflds;
   }
-  // GC support.
-  static void klasses_oops_do(OopClosure* f) {
+  // Enhance Class Redefinition Support
+  static void classes_do(KlassClosure* f) {
     for (int i = 0; i < _filtered_fields->length(); i++) {
-      f->do_oop((oop*)_filtered_fields->at(i)->klass_addr());
+      f->do_klass(_filtered_fields->at(i)->klass());
     }
   }
 };
@@ -204,13 +203,13 @@ class FilteredFieldStream : public FieldStream {
  public:
   FilteredFieldStream(instanceKlassHandle klass, bool local_only, bool classes_only)
     : FieldStream(klass, local_only, classes_only) {
-    _filtered_fields_count = FilteredFieldsMap::filtered_fields_count((klassOop)klass(), local_only);
+    _filtered_fields_count = FilteredFieldsMap::filtered_fields_count((Klass*)klass(), local_only);
   }
   int field_count();
   void next() {
     _index -= 1;
     if (has_filtered_field()) {
-      while (_index >=0 && FilteredFieldsMap::is_filtered_field((klassOop)_klass(), offset())) {
+      while (_index >=0 && FilteredFieldsMap::is_filtered_field((Klass*)_klass(), offset())) {
         _index -= 1;
       }
     }

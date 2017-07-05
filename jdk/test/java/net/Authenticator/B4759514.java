@@ -25,7 +25,7 @@
  * @test
  * @bug 4759514
  * @library ../../../sun/net/www/httptest/
- * @build HttpCallback HttpServer ClosedChannelList HttpTransaction
+ * @build HttpCallback TestHttpServer ClosedChannelList HttpTransaction
  * @run main B4759514
  * @summary Digest Authentication is erroniously quoting the nc value, contrary to RFC 2617
  */
@@ -91,13 +91,13 @@ public class B4759514 implements HttpCallback {
         is.close();
     }
 
-    static HttpServer server;
+    static TestHttpServer server;
 
     public static void main (String[] args) throws Exception {
         MyAuthenticator auth = new MyAuthenticator ();
         Authenticator.setDefault (auth);
         try {
-            server = new HttpServer (new B4759514(), 1, 10, 0);
+            server = new TestHttpServer (new B4759514(), 1, 10, 0);
             System.out.println ("Server: listening on port: " + server.getLocalPort());
             client ("http://localhost:"+server.getLocalPort()+"/d1/foo.html");
         } catch (Exception e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.memory;
 
 import java.util.*;
+import sun.jvm.hotspot.classfile.ClassLoaderData;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.types.*;
@@ -43,12 +44,12 @@ public class DictionaryEntry extends sun.jvm.hotspot.utilities.HashtableEntry {
   private static synchronized void initialize(TypeDataBase db) {
     Type type = db.lookupType("DictionaryEntry");
     pdSetField = type.getAddressField("_pd_set");
-    loaderField = type.getOopField("_loader");
+    loaderDataField = type.getAddressField("_loader_data");
   }
 
   // Fields
   private static AddressField pdSetField;
-  private static sun.jvm.hotspot.types.OopField loaderField;
+  private static AddressField loaderDataField;
 
   // Accessors
 
@@ -59,11 +60,15 @@ public class DictionaryEntry extends sun.jvm.hotspot.utilities.HashtableEntry {
   }
 
   public Oop loader() {
-    return VM.getVM().getObjectHeap().newOop(loaderField.getValue(addr));
+    return loaderData().getClassLoader();
+  }
+
+  public ClassLoaderData loaderData() {
+    return ClassLoaderData.instantiateWrapperFor(loaderDataField.getValue(addr));
   }
 
   public Klass klass() {
-    return (Klass)VM.getVM().getObjectHeap().newOop(literalValue().addOffsetToAsOopHandle(0));
+    return (Klass)Metadata.instantiateWrapperFor(literalValue());
   }
 
   public DictionaryEntry(Address addr) {

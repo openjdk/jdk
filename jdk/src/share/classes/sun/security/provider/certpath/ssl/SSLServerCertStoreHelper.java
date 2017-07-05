@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,16 @@
 
 package sun.security.provider.certpath.ssl;
 
+import java.io.IOException;
 import java.net.URI;
-import java.util.Collection;
 import java.security.NoSuchAlgorithmException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.cert.CertStore;
+import java.security.cert.CertStoreException;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509CRLSelector;
+import java.util.Collection;
 import javax.security.auth.x500.X500Principal;
-import java.io.IOException;
 
 import sun.security.provider.certpath.CertStoreHelper;
 
@@ -65,5 +66,11 @@ public final class SSLServerCertStoreHelper extends CertStoreHelper {
         throws IOException
     {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean isCausedByNetworkIssue(CertStoreException e) {
+        Throwable t = e.getCause();
+        return (t != null && t instanceof IOException);
     }
 }

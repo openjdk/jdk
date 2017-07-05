@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 #define SHARE_VM_PRIMS_METHODCOMPARATOR_HPP
 
 #include "interpreter/bytecodeStream.hpp"
-#include "oops/constantPoolOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/constantPool.hpp"
+#include "oops/method.hpp"
 
 class BciMap;
 
@@ -37,14 +37,15 @@ class BciMap;
 class MethodComparator {
  private:
   static BytecodeStream *_s_old, *_s_new;
-  static constantPoolOop _old_cp, _new_cp;
+  static ConstantPool* _old_cp;
+  static ConstantPool* _new_cp;
   static BciMap *_bci_map;
   static bool _switchable_test;
   static GrowableArray<int> *_fwd_jmps;
 
   static bool args_same(Bytecodes::Code c_old, Bytecodes::Code c_new);
   static bool pool_constants_same(int cpi_old, int cpi_new);
-  static int check_stack_and_locals_size(methodOop old_method, methodOop new_method);
+  static int check_stack_and_locals_size(Method* old_method, Method* new_method);
 
  public:
   // Check if the new method is equivalent to the old one modulo constant pool (EMCP).
@@ -52,9 +53,9 @@ class MethodComparator {
   // on the source code level. Practically, we check whether the only difference between
   // method versions is some constantpool indices embedded into the bytecodes, and whether
   // these indices eventually point to the same constants for both method versions.
-  static bool methods_EMCP(methodOop old_method, methodOop new_method);
+  static bool methods_EMCP(Method* old_method, Method* new_method);
 
-  static bool methods_switchable(methodOop old_method, methodOop new_method, BciMap &bci_map);
+  static bool methods_switchable(Method* old_method, Method* new_method, BciMap &bci_map);
 };
 
 

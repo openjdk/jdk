@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@
   nonstatic_field(CompactibleFreeListSpace,    _collector,                                    CMSCollector*)                         \
   nonstatic_field(CompactibleFreeListSpace,    _bt,                                           BlockOffsetArrayNonContigSpace)        \
                                                                                                                                      \
-  nonstatic_field(CMSPermGen,                  _gen,                                          ConcurrentMarkSweepGeneration*)        \
-  nonstatic_field(CMSBitMap,                   _bmStartWord,                                  HeapWord*)                             \
   nonstatic_field(CMSBitMap,                   _bmWordSize,                                   size_t)                                \
   nonstatic_field(CMSBitMap,                   _shifter,                                      const int)                            \
   nonstatic_field(CMSBitMap,                      _bm,                                           BitMap)                            \
@@ -57,8 +55,6 @@
                                                                           \
            declare_type(ConcurrentMarkSweepGeneration,CardGeneration)     \
            declare_type(CompactibleFreeListSpace,     CompactibleSpace)   \
-           declare_type(CMSPermGenGen,                ConcurrentMarkSweepGeneration) \
-           declare_type(CMSPermGen,                   PermGen)            \
            declare_type(ConcurrentMarkSweepThread,    NamedThread)        \
            declare_type(SurrogateLockerThread, JavaThread)                \
   declare_toplevel_type(CMSCollector)                                     \
@@ -80,6 +76,5 @@
 
 #define VM_INT_CONSTANTS_CMS(declare_constant)                            \
   declare_constant(Generation::ConcurrentMarkSweep)                       \
-  declare_constant(PermGen::ConcurrentMarkSweep)
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_VMSTRUCTS_CMS_HPP

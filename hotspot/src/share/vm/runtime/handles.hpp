@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,6 @@
 #define SHARE_VM_RUNTIME_HANDLES_HPP
 
 #include "oops/klass.hpp"
-#include "oops/klassOop.hpp"
-#include "utilities/top.hpp"
 
 //------------------------------------------------------------------------------------------------------------------------
 // In order to preserve oops during garbage collection, they should be
@@ -56,17 +54,8 @@
 // there is a corresponding handle called xxxHandle, e.g.
 //
 //   oop           Handle
-//   methodOop     methodHandle
+//   Method*       methodHandle
 //   instanceOop   instanceHandle
-//
-// For klassOops, it is often useful to model the Klass hierarchy in order
-// to get access to the klass_part without casting. For each xxxKlass there
-// is a corresponding handle called xxxKlassHandle, e.g.
-//
-//   klassOop      Klass           KlassHandle
-//   klassOop      methodKlass     methodKlassHandle
-//   klassOop      instanceKlass   instanceKlassHandle
-//
 
 //------------------------------------------------------------------------------------------------------------------------
 // Base class for all handles. Provides overloading of frequently
@@ -84,12 +73,7 @@ class Handle VALUE_OBJ_CLASS_SPEC {
   // Constructors
   Handle()                                       { _handle = NULL; }
   Handle(oop obj);
-#ifndef ASSERT
   Handle(Thread* thread, oop obj);
-#else
-  // Don't inline body with assert for current thread
-  Handle(Thread* thread, oop obj);
-#endif // ASSERT
 
   // General access
   oop     operator () () const                   { return obj(); }
@@ -115,53 +99,8 @@ class Handle VALUE_OBJ_CLASS_SPEC {
   static oop raw_resolve(oop *handle)            { return handle == NULL ? (oop)NULL : *handle; }
 };
 
-
-//------------------------------------------------------------------------------------------------------------------------
-// Base class for Handles containing klassOops. Provides overloading of frequently
-// used operators for ease of use and typed access to the Klass part.
-class KlassHandle: public Handle {
- protected:
-  klassOop    obj() const                        { return (klassOop)Handle::obj(); }
-  klassOop    non_null_obj() const               { return (klassOop)Handle::non_null_obj(); }
-  Klass*      as_klass() const                   { return non_null_obj()->klass_part(); }
-
- public:
-  // Constructors
-  KlassHandle ()                                 : Handle()            {}
-  KlassHandle (oop obj) : Handle(obj) {
-    assert(SharedSkipVerify || is_null() || obj->is_klass(), "not a klassOop");
-  }
-  KlassHandle (Klass* kl) : Handle(kl ? kl->as_klassOop() : (klassOop)NULL) {
-    assert(SharedSkipVerify || is_null() || obj()->is_klass(), "not a klassOop");
-  }
-
-  // Faster versions passing Thread
-  KlassHandle (Thread* thread, oop obj) : Handle(thread, obj) {
-    assert(SharedSkipVerify || is_null() || obj->is_klass(), "not a klassOop");
-  }
-  KlassHandle (Thread *thread, Klass* kl)
-    : Handle(thread, kl ? kl->as_klassOop() : (klassOop)NULL) {
-    assert(is_null() || obj()->is_klass(), "not a klassOop");
-  }
-
-  // Direct interface, use very sparingly.
-  // Used by SystemDictionaryHandles to create handles on existing WKKs.
-  // The obj of such a klass handle may be null, because the handle is formed
-  // during system bootstrapping.
-  KlassHandle(klassOop *handle, bool dummy) : Handle((oop*)handle, dummy) {
-    assert(SharedSkipVerify || is_null() || obj() == NULL || obj()->is_klass(), "not a klassOop");
-  }
-
-  // General access
-  klassOop    operator () () const               { return obj(); }
-  Klass*      operator -> () const               { return as_klass(); }
-};
-
-
-//------------------------------------------------------------------------------------------------------------------------
 // Specific Handles for different oop types
 #define DEF_HANDLE(type, is_a)                   \
-  class type##Handle;                            \
   class type##Handle: public Handle {            \
    protected:                                    \
     type##Oop    obj() const                     { return (type##Oop)Handle::obj(); } \
@@ -178,9 +117,6 @@ class KlassHandle: public Handle {
       assert(SharedSkipVerify || is_null() || ((oop)obj)->is_a(), "illegal type");  \
     }                                                                         \
     \
-    /* Special constructor, use sparingly */ \
-    type##Handle (type##Oop *handle, bool dummy) : Handle((oop*)handle, dummy) {} \
-                                                 \
     /* Operators for ease of use */              \
     type##Oop    operator () () const            { return obj(); } \
     type##Oop    operator -> () const            { return non_null_obj(); } \
@@ -188,52 +124,94 @@ class KlassHandle: public Handle {
 
 
 DEF_HANDLE(instance         , is_instance         )
-DEF_HANDLE(method           , is_method           )
-DEF_HANDLE(constMethod      , is_constMethod      )
-DEF_HANDLE(methodData       , is_methodData       )
 DEF_HANDLE(array            , is_array            )
-DEF_HANDLE(constantPool     , is_constantPool     )
-DEF_HANDLE(constantPoolCache, is_constantPoolCache)
 DEF_HANDLE(objArray         , is_objArray         )
 DEF_HANDLE(typeArray        , is_typeArray        )
 
 //------------------------------------------------------------------------------------------------------------------------
-// Specific KlassHandles for different Klass types
 
-#define DEF_KLASS_HANDLE(type, is_a)             \
-  class type##Handle : public KlassHandle {      \
+// Metadata Handles.  Unlike oop Handles these are needed to prevent metadata
+// from being reclaimed by RedefineClasses.
+
+// Specific Handles for different oop types
+#define DEF_METADATA_HANDLE(name, type)          \
+  class name##Handle;                            \
+  class name##Handle {                           \
+    type*     _value;                            \
+    Thread*   _thread;                           \
+   protected:                                    \
+    type*        obj() const                     { return _value; } \
+    type*        non_null_obj() const            { assert(_value != NULL, "resolving NULL _value"); return _value; } \
+                                                 \
    public:                                       \
     /* Constructors */                           \
-    type##Handle ()                              : KlassHandle()           {} \
-    type##Handle (klassOop obj) : KlassHandle(obj) {                          \
-      assert(SharedSkipVerify || is_null() || obj->klass_part()->is_a(),      \
-             "illegal type");                                                 \
-    }                                                                         \
-    type##Handle (Thread* thread, klassOop obj) : KlassHandle(thread, obj) {  \
-      assert(SharedSkipVerify || is_null() || obj->klass_part()->is_a(),      \
-             "illegal type");                                                 \
-    }                                                                         \
+    name##Handle () : _value(NULL), _thread(NULL) {}   \
+    name##Handle (type* obj);                    \
+    name##Handle (Thread* thread, type* obj);    \
                                                  \
-    /* Access to klass part */                   \
-    type*        operator -> () const            { return (type*)obj()->klass_part(); } \
+    name##Handle (const name##Handle &h);        \
+    name##Handle& operator=(const name##Handle &s); \
                                                  \
-    static type##Handle cast(KlassHandle h)      { return type##Handle(h()); } \
+    /* Destructor */                             \
+    ~name##Handle ();                            \
+    void remove();                               \
                                                  \
+    /* Operators for ease of use */              \
+    type*        operator () () const            { return obj(); } \
+    type*        operator -> () const            { return non_null_obj(); } \
+                                                 \
+    bool    operator == (type* o) const          { return obj() == o; } \
+    bool    operator == (const name##Handle& h) const  { return obj() == h.obj(); } \
+                                                 \
+    /* Null checks */                            \
+    bool    is_null() const                      { return _value == NULL; } \
+    bool    not_null() const                     { return _value != NULL; } \
   };
 
 
-DEF_KLASS_HANDLE(instanceKlass         , oop_is_instance_slow )
-DEF_KLASS_HANDLE(methodKlass           , oop_is_method        )
-DEF_KLASS_HANDLE(constMethodKlass      , oop_is_constMethod   )
-DEF_KLASS_HANDLE(klassKlass            , oop_is_klass         )
-DEF_KLASS_HANDLE(arrayKlassKlass       , oop_is_arrayKlass    )
-DEF_KLASS_HANDLE(objArrayKlassKlass    , oop_is_objArrayKlass )
-DEF_KLASS_HANDLE(typeArrayKlassKlass   , oop_is_typeArrayKlass)
-DEF_KLASS_HANDLE(arrayKlass            , oop_is_array         )
-DEF_KLASS_HANDLE(typeArrayKlass        , oop_is_typeArray_slow)
-DEF_KLASS_HANDLE(objArrayKlass         , oop_is_objArray_slow )
-DEF_KLASS_HANDLE(constantPoolKlass     , oop_is_constantPool  )
-DEF_KLASS_HANDLE(constantPoolCacheKlass, oop_is_constantPool  )
+DEF_METADATA_HANDLE(method, Method)
+DEF_METADATA_HANDLE(constantPool, ConstantPool)
+
+// Writing this class explicitly, since DEF_METADATA_HANDLE(klass) doesn't
+// provide the necessary Klass* <-> Klass* conversions. This Klass
+// could be removed when we don't have the Klass* typedef anymore.
+class KlassHandle {
+  Klass* _value;
+ protected:
+   Klass* obj() const          { return _value; }
+   Klass* non_null_obj() const { assert(_value != NULL, "resolving NULL _value"); return _value; }
+
+ public:
+   KlassHandle()                                 : _value(NULL) {}
+   KlassHandle(const Klass* obj)                 : _value(const_cast<Klass *>(obj)) {};
+   KlassHandle(Thread* thread, const Klass* obj) : _value(const_cast<Klass *>(obj)) {};
+
+   Klass* operator () () const { return obj(); }
+   Klass* operator -> () const { return non_null_obj(); }
+
+   bool operator == (Klass* o) const             { return obj() == o; }
+   bool operator == (const KlassHandle& h) const { return obj() == h.obj(); }
+
+    bool is_null() const  { return _value == NULL; }
+    bool not_null() const { return _value != NULL; }
+};
+
+class instanceKlassHandle : public KlassHandle {
+ public:
+  /* Constructors */
+  instanceKlassHandle () : KlassHandle() {}
+  instanceKlassHandle (const Klass* k) : KlassHandle(k) {
+    assert(SharedSkipVerify || k == NULL || k->oop_is_instance(),
+           "illegal type");
+  }
+  instanceKlassHandle (Thread* thread, const Klass* k) : KlassHandle(thread, k) {
+    assert(SharedSkipVerify || k == NULL || k->oop_is_instance(),
+           "illegal type");
+  }
+  /* Access to klass part */
+  InstanceKlass*       operator () () const { return (InstanceKlass*)obj(); }
+  InstanceKlass*       operator -> () const { return (InstanceKlass*)obj(); }
+};
 
 
 //------------------------------------------------------------------------------------------------------------------------

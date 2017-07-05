@@ -188,11 +188,15 @@ class InterpreterMacroAssembler: public MacroAssembler {
                                   Register   Rdst,
                                   setCCOrNot should_set_CC = dont_set_CC );
 
+  // Note: "get_cache_and_index" really means "get the index, use it to get the cache entry, and throw away the index".
   void get_cache_and_index_at_bcp(Register cache, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
   void get_cache_and_index_and_bytecode_at_bcp(Register cache, Register temp, Register bytecode, int byte_no, int bcp_offset, size_t index_size = sizeof(u2));
   void get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
-  void get_cache_index_at_bcp(Register cache, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
+  // Note: This one does not fetch the cache.  The first argument is a temp which may be killed.
+  void get_cache_index_at_bcp(Register temp, Register index, int bcp_offset, size_t index_size = sizeof(u2));
 
+  // load cpool->resolved_references(index);
+  void load_resolved_reference_at_index(Register result, Register index);
 
   // common code
 

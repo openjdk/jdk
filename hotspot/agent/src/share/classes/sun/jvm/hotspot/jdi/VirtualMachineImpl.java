@@ -447,7 +447,7 @@ public class VirtualMachineImpl extends MirrorImpl implements PathSearchingVirtu
                 newRefType = new ClassTypeImpl(this, (InstanceKlass)kk);
             }
         } else {
-            throw new RuntimeException("should not reach here");
+            throw new RuntimeException("should not reach here:" + kk);
         }
 
         typesByID.put(kk, newRefType);

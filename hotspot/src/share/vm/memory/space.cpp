@@ -178,7 +178,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   }
 }
 
-DirtyCardToOopClosure* Space::new_dcto_cl(OopClosure* cl,
+DirtyCardToOopClosure* Space::new_dcto_cl(ExtendedOopClosure* cl,
                                           CardTableModRefBS::PrecisionStyle precision,
                                           HeapWord* boundary) {
   return new DirtyCardToOopClosure(this, cl, precision, boundary);
@@ -253,11 +253,11 @@ void ContiguousSpaceDCTOC::walk_mem_region_with_cl(MemRegion mr,        \
 // (There are only two of these, rather than N, because the split is due
 // only to the introduction of the FilteringClosure, a local part of the
 // impl of this abstraction.)
-ContiguousSpaceDCTOC__walk_mem_region_with_cl_DEFN(OopClosure)
+ContiguousSpaceDCTOC__walk_mem_region_with_cl_DEFN(ExtendedOopClosure)
 ContiguousSpaceDCTOC__walk_mem_region_with_cl_DEFN(FilteringClosure)
 
 DirtyCardToOopClosure*
-ContiguousSpace::new_dcto_cl(OopClosure* cl,
+ContiguousSpace::new_dcto_cl(ExtendedOopClosure* cl,
                              CardTableModRefBS::PrecisionStyle precision,
                              HeapWord* boundary) {
   return new ContiguousSpaceDCTOC(this, cl, precision, boundary);
@@ -548,7 +548,7 @@ void ContiguousSpace::verify() const {
   }
 }
 
-void Space::oop_iterate(OopClosure* blk) {
+void Space::oop_iterate(ExtendedOopClosure* blk) {
   ObjectToOopClosure blk2(blk);
   object_iterate(&blk2);
 }
@@ -679,7 +679,7 @@ void ContiguousSpace::object_iterate_mem(MemRegion mr, UpwardsObjectClosure* cl)
 #undef ContigSpace_PAR_OOP_ITERATE_DEFN
 #endif // SERIALGC
 
-void ContiguousSpace::oop_iterate(OopClosure* blk) {
+void ContiguousSpace::oop_iterate(ExtendedOopClosure* blk) {
   if (is_empty()) return;
   HeapWord* obj_addr = bottom();
   HeapWord* t = top();
@@ -689,7 +689,7 @@ void ContiguousSpace::oop_iterate(OopClosure* blk) {
   }
 }
 
-void ContiguousSpace::oop_iterate(MemRegion mr, OopClosure* blk) {
+void ContiguousSpace::oop_iterate(MemRegion mr, ExtendedOopClosure* blk) {
   if (is_empty()) {
     return;
   }
@@ -1002,17 +1002,7 @@ void OffsetTableContigSpace::verify() const {
   guarantee(p == top(), "end of last object must match end of space");
 }
 
-void OffsetTableContigSpace::serialize_block_offset_array_offsets(
-                                                      SerializeOopClosure* soc) {
-  _offsets.serialize(soc);
-}
-
 
 size_t TenuredSpace::allowed_dead_ratio() const {
   return MarkSweepDeadRatio;
-}
-
-
-size_t ContigPermSpace::allowed_dead_ratio() const {
-  return PermMarkSweepDeadRatio;
 }

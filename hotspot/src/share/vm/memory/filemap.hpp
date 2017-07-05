@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,7 @@
 #ifndef SHARE_VM_MEMORY_FILEMAP_HPP
 #define SHARE_VM_MEMORY_FILEMAP_HPP
 
-#include "memory/compactingPermGenGen.hpp"
-#include "memory/space.hpp"
+#include "memory/metaspaceShared.hpp"
 
 // Layout of the file:
 //  header: dump of archive instance plus versioning info, datestamp, etc.
@@ -43,6 +42,7 @@ static const int JVM_IDENT_MAX = 256;
 static const int JVM_ARCH_MAX = 12;
 
 
+class Metaspace;
 
 class FileMapInfo : public CHeapObj<mtInternal> {
 private:
@@ -71,7 +71,7 @@ private:
       size_t _used;          // for setting space top on read
       bool   _read_only;     // read only space?
       bool   _allow_exec;    // executable code in space?
-    } _space[CompactingPermGenGen::n_regions];
+    } _space[MetaspaceShared::n_regions];
 
     // The following fields are all sanity checks for whether this archive
     // will function correctly with this JVM and the bootclasspath it's
@@ -120,17 +120,17 @@ public:
   bool  open_for_read();
   void  open_for_write();
   void  write_header();
-  void  write_space(int i, CompactibleSpace* space, bool read_only);
+  void  write_space(int i, Metaspace* space, bool read_only);
   void  write_region(int region, char* base, size_t size,
                      size_t capacity, bool read_only, bool allow_exec);
   void  write_bytes(const void* buffer, int count);
   void  write_bytes_aligned(const void* buffer, int count);
-  bool  map_space(int i, ReservedSpace rs, ContiguousSpace *space);
   char* map_region(int i, ReservedSpace rs);
-  char* map_region(int i, bool address_must_match);
+  char* map_region(int i);
   void  unmap_region(int i);
   void  close();
   bool  is_open() { return _file_open; }
+  ReservedSpace reserve_shared_memory();
 
   // JVM/TI RedefineClasses() support:
   // Remap the shared readonly space to shared readwrite, private.

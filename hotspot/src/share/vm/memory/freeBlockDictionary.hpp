@@ -48,6 +48,10 @@ class FreeBlockDictionary: public CHeapObj<mtGC> {
   };
 
  private:
+  // This field is added and can be set to point to the
+  // the Mutex used to synchronize access to the
+  // dictionary so that assertion checking can be done.
+  // For example it is set to point to _parDictionaryAllocLock.
   NOT_PRODUCT(Mutex* _lock;)
 
  public:

@@ -32,14 +32,15 @@ import static javax.management.openmbean.SimpleType.*;
 
 import com.sun.jmx.remote.util.EnvHelp;
 
-import java.beans.ConstructorProperties;
 import java.io.InvalidObjectException;
+import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -1129,14 +1130,56 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
         to getters.  */
     private static final class CompositeBuilderViaConstructor
             extends CompositeBuilder {
+        static class AnnotationHelper {
+            private static Class<? extends Annotation> constructorPropertiesClass;
+            private static Method valueMethod;
+            static {
+                findConstructorPropertiesClass();
+            }
+
+            @SuppressWarnings("unchecked")
+            private static void findConstructorPropertiesClass() {
+                try {
+                    constructorPropertiesClass = (Class<? extends Annotation>)
+                        Class.forName("java.beans.ConstructorProperties", false,
+                                      DefaultMXBeanMappingFactory.class.getClassLoader());
+                    valueMethod = constructorPropertiesClass.getMethod("value");
+                } catch (ClassNotFoundException cnf) {
+                    // java.beans not present
+                } catch (NoSuchMethodException e) {
+                    // should not reach here
+                    throw new InternalError(e);
+                }
+            }
+
+            static boolean isAvailable() {
+                return constructorPropertiesClass != null;
+            }
+
+            static String[] getPropertyNames(Constructor<?> constr) {
+                if (!isAvailable())
+                    return null;
+
+                Annotation a = constr.getAnnotation(constructorPropertiesClass);
+                if (a == null) return null;
+
+                try {
+                    return (String[]) valueMethod.invoke(a);
+                } catch (InvocationTargetException e) {
+                    throw new InternalError(e);
+                } catch (IllegalAccessException e) {
+                    throw new InternalError(e);
+                }
+            }
+        }
 
         CompositeBuilderViaConstructor(Class<?> targetClass, String[] itemNames) {
             super(targetClass, itemNames);
         }
 
         String applicable(Method[] getters) throws InvalidObjectException {
-
-            final Class<ConstructorProperties> propertyNamesClass = ConstructorProperties.class;
+            if (!AnnotationHelper.isAvailable())
+                return "@ConstructorProperties annotation not available";
 
             Class<?> targetClass = getTargetClass();
             Constructor<?>[] constrs = targetClass.getConstructors();
@@ -1145,7 +1188,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             List<Constructor<?>> annotatedConstrList = newList();
             for (Constructor<?> constr : constrs) {
                 if (Modifier.isPublic(constr.getModifiers())
-                        && constr.getAnnotation(propertyNamesClass) != null)
+                        && AnnotationHelper.getPropertyNames(constr) != null)
                     annotatedConstrList.add(constr);
             }
 
@@ -1174,8 +1217,7 @@ public class DefaultMXBeanMappingFactory extends MXBeanMappingFactory {
             // so we can test unambiguity.
             Set<BitSet> getterIndexSets = newSet();
             for (Constructor<?> constr : annotatedConstrList) {
-                String[] propertyNames =
-                    constr.getAnnotation(propertyNamesClass).value();
+                String[] propertyNames = AnnotationHelper.getPropertyNames(constr);
 
                 Type[] paramTypes = constr.getGenericParameterTypes();
                 if (paramTypes.length != propertyNames.length) {

@@ -50,10 +50,11 @@ ConNode *ConNode::make( Compile* C, const Type *t ) {
   case T_FLOAT:     return new (C, 1) ConFNode( t->is_float_constant() );
   case T_DOUBLE:    return new (C, 1) ConDNode( t->is_double_constant() );
   case T_VOID:      return new (C, 1) ConNode ( Type::TOP );
-  case T_OBJECT:    return new (C, 1) ConPNode( t->is_oopptr() );
+  case T_OBJECT:    return new (C, 1) ConPNode( t->is_ptr() );
   case T_ARRAY:     return new (C, 1) ConPNode( t->is_aryptr() );
   case T_ADDRESS:   return new (C, 1) ConPNode( t->is_ptr() );
   case T_NARROWOOP: return new (C, 1) ConNNode( t->is_narrowoop() );
+  case T_METADATA:  return new (C, 1) ConPNode( t->is_ptr() );
     // Expected cases:  TypePtr::NULL_PTR, any is_rawptr()
     // Also seen: AnyPtr(TopPTR *+top); from command line:
     //   r -XX:+PrintOpto -XX:CIStart=285 -XX:+CompileTheWorld -XX:CompileTheWorldStartAt=660
@@ -526,8 +527,8 @@ const Type *CheckCastPPNode::Value( PhaseTransform *phase ) const {
   // // If either input is an 'interface', return destination type
   // assert (in_oop == NULL || in_oop->klass() != NULL, "");
   // assert (my_oop == NULL || my_oop->klass() != NULL, "");
-  // if( (in_oop && in_oop->klass()->klass_part()->is_interface())
-  //   ||(my_oop && my_oop->klass()->klass_part()->is_interface()) ) {
+  // if( (in_oop && in_oop->klass()->is_interface())
+  //   ||(my_oop && my_oop->klass()->is_interface()) ) {
   //   TypePtr::PTR  in_ptr = in->isa_ptr() ? in->is_ptr()->_ptr : TypePtr::BotPTR;
   //   // Preserve cast away nullness for interfaces
   //   if( in_ptr == TypePtr::NotNull && my_oop && my_oop->_ptr == TypePtr::BotPTR ) {
@@ -604,7 +605,7 @@ const Type *EncodePNode::Value( PhaseTransform *phase ) const {
   if (t == Type::TOP) return Type::TOP;
   if (t == TypePtr::NULL_PTR) return TypeNarrowOop::NULL_PTR;
 
-  assert(t->isa_oopptr(), "only oopptr here");
+  assert(t->isa_oop_ptr() || UseCompressedKlassPointers && t->isa_klassptr(), "only oopptr here");
   return t->make_narrowoop();
 }
 

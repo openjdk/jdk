@@ -45,26 +45,23 @@
 
 PSYoungGen*  ParallelScavengeHeap::_young_gen = NULL;
 PSOldGen*    ParallelScavengeHeap::_old_gen = NULL;
-PSPermGen*   ParallelScavengeHeap::_perm_gen = NULL;
 PSAdaptiveSizePolicy* ParallelScavengeHeap::_size_policy = NULL;
 PSGCAdaptivePolicyCounters* ParallelScavengeHeap::_gc_policy_counters = NULL;
 ParallelScavengeHeap* ParallelScavengeHeap::_psh = NULL;
 GCTaskManager* ParallelScavengeHeap::_gc_task_manager = NULL;
 
 static void trace_gen_sizes(const char* const str,
-                            size_t pg_min, size_t pg_max,
                             size_t og_min, size_t og_max,
                             size_t yg_min, size_t yg_max)
 {
   if (TracePageSizes) {
     tty->print_cr("%s:  " SIZE_FORMAT "," SIZE_FORMAT " "
                   SIZE_FORMAT "," SIZE_FORMAT " "
-                  SIZE_FORMAT "," SIZE_FORMAT " "
                   SIZE_FORMAT,
-                  str, pg_min / K, pg_max / K,
+                  str,
                   og_min / K, og_max / K,
                   yg_min / K, yg_max / K,
-                  (pg_max + og_max + yg_max) / K);
+                  (og_max + yg_max) / K);
   }
 }
 
@@ -79,25 +76,15 @@ jint ParallelScavengeHeap::initialize() {
   size_t yg_max_size = _collector_policy->max_young_gen_size();
   size_t og_min_size = _collector_policy->min_old_gen_size();
   size_t og_max_size = _collector_policy->max_old_gen_size();
-  // Why isn't there a min_perm_gen_size()?
-  size_t pg_min_size = _collector_policy->perm_gen_size();
-  size_t pg_max_size = _collector_policy->max_perm_gen_size();
 
   trace_gen_sizes("ps heap raw",
-                  pg_min_size, pg_max_size,
                   og_min_size, og_max_size,
                   yg_min_size, yg_max_size);
 
-  // The ReservedSpace ctor used below requires that the page size for the perm
-  // gen is <= the page size for the rest of the heap (young + old gens).
   const size_t og_page_sz = os::page_size_for_region(yg_min_size + og_min_size,
                                                      yg_max_size + og_max_size,
                                                      8);
-  const size_t pg_page_sz = MIN2(os::page_size_for_region(pg_min_size,
-                                                          pg_max_size, 16),
-                                 og_page_sz);
 
-  const size_t pg_align = set_alignment(_perm_gen_alignment,  pg_page_sz);
   const size_t og_align = set_alignment(_old_gen_alignment,   og_page_sz);
   const size_t yg_align = set_alignment(_young_gen_alignment, og_page_sz);
 
@@ -121,55 +108,20 @@ jint ParallelScavengeHeap::initialize() {
     align_size_down(_collector_policy->old_gen_size(), og_align);
   og_cur_size = MAX2(og_cur_size, og_min_size);
 
-  pg_min_size = align_size_up(pg_min_size, pg_align);
-  pg_max_size = align_size_up(pg_max_size, pg_align);
-  size_t pg_cur_size = pg_min_size;
-
   trace_gen_sizes("ps heap rnd",
-                  pg_min_size, pg_max_size,
                   og_min_size, og_max_size,
                   yg_min_size, yg_max_size);
 
-  const size_t total_reserved = pg_max_size + og_max_size + yg_max_size;
-  char* addr = Universe::preferred_heap_base(total_reserved, Universe::UnscaledNarrowOop);
+  const size_t heap_size = og_max_size + yg_max_size;
 
-  // The main part of the heap (old gen + young gen) can often use a larger page
-  // size than is needed or wanted for the perm gen.  Use the "compound
-  // alignment" ReservedSpace ctor to avoid having to use the same page size for
-  // all gens.
-
-  ReservedHeapSpace heap_rs(pg_max_size, pg_align, og_max_size + yg_max_size,
-                            og_align, addr);
-
-  if (UseCompressedOops) {
-    if (addr != NULL && !heap_rs.is_reserved()) {
-      // Failed to reserve at specified address - the requested memory
-      // region is taken already, for example, by 'java' launcher.
-      // Try again to reserver heap higher.
-      addr = Universe::preferred_heap_base(total_reserved, Universe::ZeroBasedNarrowOop);
-      ReservedHeapSpace heap_rs0(pg_max_size, pg_align, og_max_size + yg_max_size,
-                                 og_align, addr);
-      if (addr != NULL && !heap_rs0.is_reserved()) {
-        // Failed to reserve at specified address again - give up.
-        addr = Universe::preferred_heap_base(total_reserved, Universe::HeapBasedNarrowOop);
-        assert(addr == NULL, "");
-        ReservedHeapSpace heap_rs1(pg_max_size, pg_align, og_max_size + yg_max_size,
-                                   og_align, addr);
-        heap_rs = heap_rs1;
-      } else {
-        heap_rs = heap_rs0;
-      }
-    }
-  }
+  ReservedSpace heap_rs = Universe::reserve_heap(heap_size, og_align);
 
   MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtJavaHeap);
 
-  os::trace_page_sizes("ps perm", pg_min_size, pg_max_size, pg_page_sz,
-                       heap_rs.base(), pg_max_size);
   os::trace_page_sizes("ps main", og_min_size + yg_min_size,
                        og_max_size + yg_max_size, og_page_sz,
-                       heap_rs.base() + pg_max_size,
-                       heap_rs.size() - pg_max_size);
+                       heap_rs.base(),
+                       heap_rs.size());
   if (!heap_rs.is_reserved()) {
     vm_shutdown_during_initialization(
       "Could not reserve enough space for object heap");
@@ -194,11 +146,6 @@ jint ParallelScavengeHeap::initialize() {
   const size_t init_young_size = align_size_up(4 * M, yg_align);
   yg_cur_size = MAX2(MIN2(init_young_size, yg_max_size), yg_cur_size);
 
-  // Split the reserved space into perm gen and the main heap (everything else).
-  // The main heap uses a different alignment.
-  ReservedSpace perm_rs = heap_rs.first_part(pg_max_size);
-  ReservedSpace main_rs = heap_rs.last_part(pg_max_size, og_align);
-
   // Make up the generations
   // Calculate the maximum size that a generation can grow.  This
   // includes growth into the other generation.  Note that the
@@ -208,7 +155,7 @@ jint ParallelScavengeHeap::initialize() {
   double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
   double max_gc_minor_pause_sec = ((double) MaxGCMinorPauseMillis)/1000.0;
 
-  _gens = new AdjoiningGenerations(main_rs,
+  _gens = new AdjoiningGenerations(heap_rs,
                                    og_cur_size,
                                    og_min_size,
                                    og_max_size,
@@ -232,13 +179,6 @@ jint ParallelScavengeHeap::initialize() {
                              max_gc_minor_pause_sec,
                              GCTimeRatio
                              );
-
-  _perm_gen = new PSPermGen(perm_rs,
-                            pg_align,
-                            pg_cur_size,
-                            pg_cur_size,
-                            pg_max_size,
-                            "perm", 2);
 
   assert(!UseAdaptiveGCBoundary ||
     (old_gen()->virtual_space()->high_boundary() ==
@@ -273,7 +213,7 @@ void ParallelScavengeHeap::post_initialize() {
 void ParallelScavengeHeap::update_counters() {
   young_gen()->update_counters();
   old_gen()->update_counters();
-  perm_gen()->update_counters();
+  MetaspaceCounters::update_performance_counters();
 }
 
 size_t ParallelScavengeHeap::capacity() const {
@@ -291,17 +231,8 @@ bool ParallelScavengeHeap::is_maximal_no_gc() const {
 }
 
 
-size_t ParallelScavengeHeap::permanent_capacity() const {
-  return perm_gen()->capacity_in_bytes();
-}
-
-size_t ParallelScavengeHeap::permanent_used() const {
-  return perm_gen()->used_in_bytes();
-}
-
 size_t ParallelScavengeHeap::max_capacity() const {
   size_t estimated = reserved_region().byte_size();
-  estimated -= perm_gen()->reserved().byte_size();
   if (UseAdaptiveSizePolicy) {
     estimated -= _size_policy->max_survivor_size(young_gen()->max_size());
   } else {
@@ -319,10 +250,6 @@ bool ParallelScavengeHeap::is_in(const void* p) const {
     return true;
   }
 
-  if (perm_gen()->is_in(p)) {
-    return true;
-  }
-
   return false;
 }
 
@@ -332,10 +259,6 @@ bool ParallelScavengeHeap::is_in_reserved(const void* p) const {
   }
 
   if (old_gen()->is_in_reserved(p)) {
-    return true;
-  }
-
-  if (perm_gen()->is_in_reserved(p)) {
     return true;
   }
 
@@ -352,7 +275,7 @@ bool ParallelScavengeHeap::is_scavengable(const void* addr) {
 bool ParallelScavengeHeap::is_in_partial_collection(const void *p) {
   assert(is_in_reserved(p) || p == NULL,
     "Does not work if address is non-null and outside of the heap");
-  // The order of the generations is perm (low addr), old, young (high addr)
+  // The order of the generations is old (low addr), young (high addr)
   return p >= old_gen()->reserved().end();
 }
 #endif
@@ -553,6 +476,18 @@ HeapWord* ParallelScavengeHeap::mem_allocate_old_gen(size_t size) {
   return NULL;
 }
 
+void ParallelScavengeHeap::do_full_collection(bool clear_all_soft_refs) {
+  if (UseParallelOldGC) {
+    // The do_full_collection() parameter clear_all_soft_refs
+    // is interpreted here as maximum_compaction which will
+    // cause SoftRefs to be cleared.
+    bool maximum_compaction = clear_all_soft_refs;
+    PSParallelCompact::invoke(maximum_compaction);
+  } else {
+    PSMarkSweep::invoke(clear_all_soft_refs);
+  }
+}
+
 // Failed allocation policy. Must be called from the VM thread, and
 // only at a safepoint! Note that this method has policy for allocation
 // flow, and NOT collection policy. So we do not check for gc collection
@@ -575,7 +510,7 @@ HeapWord* ParallelScavengeHeap::failed_mem_allocate(size_t size) {
   // Second level allocation failure.
   //   Mark sweep and allocate in young generation.
   if (result == NULL && !invoked_full_gc) {
-    invoke_full_gc(false);
+    do_full_collection(false);
     result = young_gen()->allocate(size);
   }
 
@@ -591,7 +526,7 @@ HeapWord* ParallelScavengeHeap::failed_mem_allocate(size_t size) {
   // Fourth level allocation failure. We're running out of memory.
   //   More complete mark sweep and allocate in young generation.
   if (result == NULL) {
-    invoke_full_gc(true);
+    do_full_collection(true);
     result = young_gen()->allocate(size);
   }
 
@@ -599,160 +534,6 @@ HeapWord* ParallelScavengeHeap::failed_mem_allocate(size_t size) {
   //   After more complete mark sweep, allocate in old generation.
   if (result == NULL) {
     result = old_gen()->allocate(size);
-  }
-
-  return result;
-}
-
-//
-// This is the policy loop for allocating in the permanent generation.
-// If the initial allocation fails, we create a vm operation which will
-// cause a collection.
-HeapWord* ParallelScavengeHeap::permanent_mem_allocate(size_t size) {
-  assert(!SafepointSynchronize::is_at_safepoint(), "should not be at safepoint");
-  assert(Thread::current() != (Thread*)VMThread::vm_thread(), "should not be in vm thread");
-  assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
-
-  HeapWord* result;
-
-  uint loop_count = 0;
-  uint gc_count = 0;
-  uint full_gc_count = 0;
-
-  do {
-    // We don't want to have multiple collections for a single filled generation.
-    // To prevent this, each thread tracks the total_collections() value, and if
-    // the count has changed, does not do a new collection.
-    //
-    // The collection count must be read only while holding the heap lock. VM
-    // operations also hold the heap lock during collections. There is a lock
-    // contention case where thread A blocks waiting on the Heap_lock, while
-    // thread B is holding it doing a collection. When thread A gets the lock,
-    // the collection count has already changed. To prevent duplicate collections,
-    // The policy MUST attempt allocations during the same period it reads the
-    // total_collections() value!
-    {
-      MutexLocker ml(Heap_lock);
-      gc_count      = Universe::heap()->total_collections();
-      full_gc_count = Universe::heap()->total_full_collections();
-
-      result = perm_gen()->allocate_permanent(size);
-
-      if (result != NULL) {
-        return result;
-      }
-
-      if (GC_locker::is_active_and_needs_gc()) {
-        // If this thread is not in a jni critical section, we stall
-        // the requestor until the critical section has cleared and
-        // GC allowed. When the critical section clears, a GC is
-        // initiated by the last thread exiting the critical section; so
-        // we retry the allocation sequence from the beginning of the loop,
-        // rather than causing more, now probably unnecessary, GC attempts.
-        JavaThread* jthr = JavaThread::current();
-        if (!jthr->in_critical()) {
-          MutexUnlocker mul(Heap_lock);
-          GC_locker::stall_until_clear();
-          continue;
-        } else {
-          if (CheckJNICalls) {
-            fatal("Possible deadlock due to allocating while"
-                  " in jni critical section");
-          }
-          return NULL;
-        }
-      }
-    }
-
-    if (result == NULL) {
-
-      // Exit the loop if the gc time limit has been exceeded.
-      // The allocation must have failed above (result must be NULL),
-      // and the most recent collection must have exceeded the
-      // gc time limit.  Exit the loop so that an out-of-memory
-      // will be thrown (returning a NULL will do that), but
-      // clear gc_overhead_limit_exceeded so that the next collection
-      // will succeeded if the applications decides to handle the
-      // out-of-memory and tries to go on.
-      const bool limit_exceeded = size_policy()->gc_overhead_limit_exceeded();
-      if (limit_exceeded) {
-        size_policy()->set_gc_overhead_limit_exceeded(false);
-        if (PrintGCDetails && Verbose) {
-          gclog_or_tty->print_cr("ParallelScavengeHeap::permanent_mem_allocate:"
-            " return NULL because gc_overhead_limit_exceeded is set");
-        }
-        assert(result == NULL, "Allocation did not fail");
-        return NULL;
-      }
-
-      // Generate a VM operation
-      VM_ParallelGCFailedPermanentAllocation op(size, gc_count, full_gc_count);
-      VMThread::execute(&op);
-
-      // Did the VM operation execute? If so, return the result directly.
-      // This prevents us from looping until time out on requests that can
-      // not be satisfied.
-      if (op.prologue_succeeded()) {
-        assert(Universe::heap()->is_in_permanent_or_null(op.result()),
-          "result not in heap");
-        // If GC was locked out during VM operation then retry allocation
-        // and/or stall as necessary.
-        if (op.gc_locked()) {
-          assert(op.result() == NULL, "must be NULL if gc_locked() is true");
-          continue;  // retry and/or stall as necessary
-        }
-        // If a NULL results is being returned, an out-of-memory
-        // will be thrown now.  Clear the gc_overhead_limit_exceeded
-        // flag to avoid the following situation.
-        //      gc_overhead_limit_exceeded is set during a collection
-        //      the collection fails to return enough space and an OOM is thrown
-        //      a subsequent GC prematurely throws an out-of-memory because
-        //        the gc_overhead_limit_exceeded counts did not start
-        //        again from 0.
-        if (op.result() == NULL) {
-          size_policy()->reset_gc_overhead_limit_count();
-        }
-        return op.result();
-      }
-    }
-
-    // The policy object will prevent us from looping forever. If the
-    // time spent in gc crosses a threshold, we will bail out.
-    loop_count++;
-    if ((QueuedAllocationWarningCount > 0) &&
-        (loop_count % QueuedAllocationWarningCount == 0)) {
-      warning("ParallelScavengeHeap::permanent_mem_allocate retries %d times \n\t"
-              " size=%d", loop_count, size);
-    }
-  } while (result == NULL);
-
-  return result;
-}
-
-//
-// This is the policy code for permanent allocations which have failed
-// and require a collection. Note that just as in failed_mem_allocate,
-// we do not set collection policy, only where & when to allocate and
-// collect.
-HeapWord* ParallelScavengeHeap::failed_permanent_mem_allocate(size_t size) {
-  assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
-  assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
-  assert(!Universe::heap()->is_gc_active(), "not reentrant");
-  assert(!Heap_lock->owned_by_self(), "this thread should not own the Heap_lock");
-  assert(size > perm_gen()->free_in_words(), "Allocation should fail");
-
-  // We assume (and assert!) that an allocation at this point will fail
-  // unless we collect.
-
-  // First level allocation failure.  Mark-sweep and allocate in perm gen.
-  GCCauseSetter gccs(this, GCCause::_allocation_failure);
-  invoke_full_gc(false);
-  HeapWord* result = perm_gen()->allocate_permanent(size);
-
-  // Second level allocation failure. We're running out of memory.
-  if (result == NULL) {
-    invoke_full_gc(true);
-    result = perm_gen()->allocate_permanent(size);
   }
 
   return result;
@@ -812,44 +593,15 @@ void ParallelScavengeHeap::collect(GCCause::Cause cause) {
   VMThread::execute(&op);
 }
 
-// This interface assumes that it's being called by the
-// vm thread. It collects the heap assuming that the
-// heap lock is already held and that we are executing in
-// the context of the vm thread.
-void ParallelScavengeHeap::collect_as_vm_thread(GCCause::Cause cause) {
-  assert(Thread::current()->is_VM_thread(), "Precondition#1");
-  assert(Heap_lock->is_locked(), "Precondition#2");
-  GCCauseSetter gcs(this, cause);
-  switch (cause) {
-    case GCCause::_heap_inspection:
-    case GCCause::_heap_dump: {
-      HandleMark hm;
-      invoke_full_gc(false);
-      break;
-    }
-    default: // XXX FIX ME
-      ShouldNotReachHere();
-  }
-}
-
-
-void ParallelScavengeHeap::oop_iterate(OopClosure* cl) {
+void ParallelScavengeHeap::oop_iterate(ExtendedOopClosure* cl) {
   Unimplemented();
 }
 
 void ParallelScavengeHeap::object_iterate(ObjectClosure* cl) {
   young_gen()->object_iterate(cl);
   old_gen()->object_iterate(cl);
-  perm_gen()->object_iterate(cl);
 }
 
-void ParallelScavengeHeap::permanent_oop_iterate(OopClosure* cl) {
-  Unimplemented();
-}
-
-void ParallelScavengeHeap::permanent_object_iterate(ObjectClosure* cl) {
-  perm_gen()->object_iterate(cl);
-}
 
 HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {
   if (young_gen()->is_in_reserved(addr)) {
@@ -862,10 +614,6 @@ HeapWord* ParallelScavengeHeap::block_start(const void* addr) const {
     assert(old_gen()->is_in(addr),
            "addr should be in allocated part of old gen");
     return old_gen()->start_array()->object_start((HeapWord*)addr);
-  } else if (perm_gen()->is_in_reserved(addr)) {
-    assert(perm_gen()->is_in(addr),
-           "addr should be in allocated part of perm gen");
-    return perm_gen()->start_array()->object_start((HeapWord*)addr);
   }
   return 0;
 }
@@ -891,7 +639,7 @@ void ParallelScavengeHeap::prepare_for_verify() {
 void ParallelScavengeHeap::print_on(outputStream* st) const {
   young_gen()->print_on(st);
   old_gen()->print_on(st);
-  perm_gen()->print_on(st);
+  MetaspaceAux::print_on(st);
 }
 
 void ParallelScavengeHeap::gc_threads_do(ThreadClosure* tc) const {
@@ -917,11 +665,6 @@ void ParallelScavengeHeap::print_tracing_info() const {
 void ParallelScavengeHeap::verify(bool silent, VerifyOption option /* ignored */) {
   // Why do we need the total_collections()-filter below?
   if (total_collections() > 0) {
-    if (!silent) {
-      gclog_or_tty->print("permanent ");
-    }
-    perm_gen()->verify();
-
     if (!silent) {
       gclog_or_tty->print("tenured ");
     }
@@ -1000,7 +743,6 @@ void ParallelScavengeHeap::record_gen_tops_before_GC() {
   if (ZapUnusedHeapArea) {
     young_gen()->record_spaces_top();
     old_gen()->record_spaces_top();
-    perm_gen()->record_spaces_top();
   }
 }
 
@@ -1010,7 +752,6 @@ void ParallelScavengeHeap::gen_mangle_unused_area() {
     young_gen()->to_space()->mangle_unused_area();
     young_gen()->from_space()->mangle_unused_area();
     old_gen()->object_space()->mangle_unused_area();
-    perm_gen()->object_space()->mangle_unused_area();
   }
 }
 #endif

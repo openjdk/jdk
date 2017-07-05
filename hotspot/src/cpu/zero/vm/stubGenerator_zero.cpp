@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,7 +29,7 @@
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_zero.hpp"
 #include "oops/instanceOop.hpp"
-#include "oops/methodOop.hpp"
+#include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -61,7 +61,7 @@ class StubGenerator: public StubCodeGenerator {
     JavaCallWrapper *call_wrapper,
     intptr_t*        result,
     BasicType        result_type,
-    methodOop        method,
+    Method*          method,
     address          entry_point,
     intptr_t*        parameters,
     int              parameter_words,

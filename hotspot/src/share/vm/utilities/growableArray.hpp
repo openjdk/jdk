@@ -281,6 +281,13 @@ template<class E> class GrowableArray : public GenericGrowableArray {
     return -1;
   }
 
+  int  find_from_end(const E& elem) const {
+    for (int i = _len-1; i >= 0; i--) {
+      if (_data[i] == elem) return i;
+    }
+    return -1;
+  }
+
   int  find(void* token, bool f(void*, E)) const {
     for (int i = 0; i < _len; i++) {
       if (f(token, _data[i])) return i;
@@ -288,7 +295,7 @@ template<class E> class GrowableArray : public GenericGrowableArray {
     return -1;
   }
 
-  int  find_at_end(void* token, bool f(void*, E)) const {
+  int  find_from_end(void* token, bool f(void*, E)) const {
     // start at the end of the array
     for (int i = _len-1; i >= 0; i--) {
       if (f(token, _data[i])) return i;

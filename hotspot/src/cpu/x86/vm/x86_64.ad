@@ -516,6 +516,7 @@ void emit_d32_reloc(CodeBuffer& cbuf, int d32, RelocationHolder const& rspec, in
 #ifdef ASSERT
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d32 != 0 && d32 != (intptr_t) Universe::non_oop_word()) {
+    assert(Universe::heap()->is_in_reserved((address)(intptr_t)d32), "should be real oop");
     assert(oop((intptr_t)d32)->is_oop() && (ScavengeRootsInCode || !oop((intptr_t)d32)->is_scavengable()), "cannot embed scavengable oops in code");
   }
 #endif
@@ -542,6 +543,7 @@ void emit_d64_reloc(CodeBuffer& cbuf, int64_t d64, RelocationHolder const& rspec
 #ifdef ASSERT
   if (rspec.reloc()->type() == relocInfo::oop_type &&
       d64 != 0 && d64 != (int64_t) Universe::non_oop_word()) {
+    assert(Universe::heap()->is_in_reserved((address)d64), "should be real oop");
     assert(oop(d64)->is_oop() && (ScavengeRootsInCode || !oop(d64)->is_scavengable()),
            "cannot embed scavengable oops in code");
   }
@@ -568,9 +570,9 @@ void store_to_stackslot(CodeBuffer &cbuf, int opcode, int rm_field, int disp)
    // rRegI ereg, memory mem) %{    // emit_reg_mem
 void encode_RegMem(CodeBuffer &cbuf,
                    int reg,
-                   int base, int index, int scale, int disp, bool disp_is_oop)
+                   int base, int index, int scale, int disp, relocInfo::relocType disp_reloc)
 {
-  assert(!disp_is_oop, "cannot have disp");
+  assert(disp_reloc == relocInfo::none, "cannot have disp");
   int regenc = reg & 7;
   int baseenc = base & 7;
   int indexenc = index & 7;
@@ -580,7 +582,7 @@ void encode_RegMem(CodeBuffer &cbuf,
     // If no displacement, mode is 0x0; unless base is [RBP] or [R13]
     if (disp == 0 && base != RBP_enc && base != R13_enc) {
       emit_rm(cbuf, 0x0, regenc, baseenc); // *
-    } else if (-0x80 <= disp && disp < 0x80 && !disp_is_oop) {
+    } else if (-0x80 <= disp && disp < 0x80 && disp_reloc == relocInfo::none) {
       // If 8-bit displacement, mode 0x1
       emit_rm(cbuf, 0x1, regenc, baseenc); // *
       emit_d8(cbuf, disp);
@@ -588,7 +590,7 @@ void encode_RegMem(CodeBuffer &cbuf,
       // If 32-bit displacement
       if (base == -1) { // Special flag for absolute address
         emit_rm(cbuf, 0x0, regenc, 0x5); // *
-        if (disp_is_oop) {
+        if (disp_reloc != relocInfo::none) {
           emit_d32_reloc(cbuf, disp, relocInfo::oop_type, RELOC_DISP32);
         } else {
           emit_d32(cbuf, disp);
@@ -596,7 +598,7 @@ void encode_RegMem(CodeBuffer &cbuf,
       } else {
         // Normal base + offset
         emit_rm(cbuf, 0x2, regenc, baseenc); // *
-        if (disp_is_oop) {
+        if (disp_reloc != relocInfo::none) {
           emit_d32_reloc(cbuf, disp, relocInfo::oop_type, RELOC_DISP32);
         } else {
           emit_d32(cbuf, disp);
@@ -611,7 +613,7 @@ void encode_RegMem(CodeBuffer &cbuf,
       emit_rm(cbuf, 0x0, regenc, 0x4); // *
       emit_rm(cbuf, scale, indexenc, baseenc);
     } else {
-      if (-0x80 <= disp && disp < 0x80 && !disp_is_oop) {
+      if (-0x80 <= disp && disp < 0x80 && disp_reloc == relocInfo::none) {
         // If 8-bit displacement, mode 0x1
         emit_rm(cbuf, 0x1, regenc, 0x4); // *
         emit_rm(cbuf, scale, indexenc, baseenc);
@@ -625,7 +627,7 @@ void encode_RegMem(CodeBuffer &cbuf,
           emit_rm(cbuf, 0x2, regenc, 0x4);
           emit_rm(cbuf, scale, indexenc, baseenc); // *
         }
-        if (disp_is_oop) {
+        if (disp_reloc != relocInfo::none) {
           emit_d32_reloc(cbuf, disp, relocInfo::oop_type, RELOC_DISP32);
         } else {
           emit_d32(cbuf, disp);
@@ -1382,8 +1384,8 @@ void emit_java_to_interp(CodeBuffer& cbuf)
   if (base == NULL)  return;  // CodeBuffer::expand failed
   // static stub relocation stores the instruction address of the call
   __ relocate(static_stub_Relocation::spec(mark), RELOC_IMM64);
-  // static stub relocation also tags the methodOop in the code-stream.
-  __ movoop(rbx, (jobject) NULL);  // method is zapped till fixup time
+  // static stub relocation also tags the Method* in the code-stream.
+  __ mov_metadata(rbx, (Metadata*) NULL);  // method is zapped till fixup time
   // This is recognized as unresolved by relocs/nativeinst/ic code
   __ jump(RuntimeAddress(__ pc()));
 
@@ -2044,35 +2046,15 @@ encode %{
     }
   %}
 
-  enc_class Java_Dynamic_Call(method meth)
-  %{
-    // JAVA DYNAMIC CALL
-    // !!!!!
-    // Generate  "movq rax, -1", placeholder instruction to load oop-info
-    // emit_call_dynamic_prologue( cbuf );
-    cbuf.set_insts_mark();
-
-    // movq rax, -1
-    emit_opcode(cbuf, Assembler::REX_W);
-    emit_opcode(cbuf, 0xB8 | RAX_enc);
-    emit_d64_reloc(cbuf,
-                   (int64_t) Universe::non_oop_word(),
-                   oop_Relocation::spec_for_immediate(), RELOC_IMM64);
-    address virtual_call_oop_addr = cbuf.insts_mark();
-    // CALL to fixup routine.  Fixup routine uses ScopeDesc info to determine
-    // who we intended to call.
-    cbuf.set_insts_mark();
-    $$$emit8$primary;
-    emit_d32_reloc(cbuf,
-                   (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
-                   virtual_call_Relocation::spec(virtual_call_oop_addr),
-                   RELOC_DISP32);
+  enc_class Java_Dynamic_Call(method meth) %{
+    MacroAssembler _masm(&cbuf);
+    __ ic_call((address)$meth$$method);
   %}
 
   enc_class Java_Compiled_Call(method meth)
   %{
     // JAVA COMPILED CALL
-    int disp = in_bytes(methodOopDesc:: from_compiled_offset());
+    int disp = in_bytes(Method:: from_compiled_offset());
 
     // XXX XXX offset is 128 is 1.5 NON-PRODUCT !!!
     // assert(-0x80 <= disp && disp < 0x80, "compiled_code_offset isn't small");
@@ -2190,8 +2172,8 @@ encode %{
     }
     emit_opcode(cbuf, 0xB8 | dstenc);
     // This next line should be generated from ADLC
-    if ($src->constant_is_oop()) {
-      emit_d64_reloc(cbuf, $src$$constant, relocInfo::oop_type, RELOC_IMM64);
+    if ($src->constant_reloc() != relocInfo::none) {
+      emit_d64_reloc(cbuf, $src$$constant, $src->constant_reloc(), RELOC_IMM64);
     } else {
       emit_d64(cbuf, $src$$constant);
     }
@@ -2452,9 +2434,9 @@ encode %{
     int index = $mem$$index;
     int scale = $mem$$scale;
     int disp = $mem$$disp;
-    bool disp_is_oop = $mem->disp_is_oop();
+    relocInfo::relocType disp_reloc = $mem->disp_reloc();
 
-    encode_RegMem(cbuf, reg, base, index, scale, disp, disp_is_oop);
+    encode_RegMem(cbuf, reg, base, index, scale, disp, disp_reloc);
   %}
 
   enc_class RM_opc_mem(immI rm_opcode, memory mem)
@@ -2467,11 +2449,11 @@ encode %{
     int scale = $mem$$scale;
     int displace = $mem$$disp;
 
-    bool disp_is_oop = $mem->disp_is_oop(); // disp-as-oop when
+    relocInfo::relocType disp_reloc = $mem->disp_reloc();       // disp-as-oop when
                                             // working with static
                                             // globals
     encode_RegMem(cbuf, rm_byte_opcode, base, index, scale, displace,
-                  disp_is_oop);
+                  disp_reloc);
   %}
 
   enc_class reg_lea(rRegI dst, rRegI src0, immI src1)
@@ -2481,9 +2463,9 @@ encode %{
     int index        = 0x04;            // 0x04 indicates no index
     int scale        = 0x00;            // 0x00 indicates no scale
     int displace     = $src1$$constant; // 0x00 indicates no displacement
-    bool disp_is_oop = false;
+    relocInfo::relocType disp_reloc = relocInfo::none;
     encode_RegMem(cbuf, reg_encoding, base, index, scale, displace,
-                  disp_is_oop);
+                  disp_reloc);
   %}
 
   enc_class neg_reg(rRegI dst)
@@ -3169,7 +3151,7 @@ operand immN0() %{
 
 operand immP31()
 %{
-  predicate(!n->as_Type()->type()->isa_oopptr()
+  predicate(n->as_Type()->type()->reloc() == relocInfo::none
             && (n->get_ptr() >> 31) == 0);
   match(ConP);
 
@@ -6466,8 +6448,8 @@ instruct encodeHeapOop_not_null(rRegN dst, rRegP src, rFlagsReg cr) %{
 %}
 
 instruct decodeHeapOop(rRegP dst, rRegN src, rFlagsReg cr) %{
-  predicate(n->bottom_type()->is_oopptr()->ptr() != TypePtr::NotNull &&
-            n->bottom_type()->is_oopptr()->ptr() != TypePtr::Constant);
+  predicate(n->bottom_type()->is_ptr()->ptr() != TypePtr::NotNull &&
+            n->bottom_type()->is_ptr()->ptr() != TypePtr::Constant);
   match(Set dst (DecodeN src));
   effect(KILL cr);
   format %{ "decode_heap_oop $dst,$src" %}
@@ -6483,8 +6465,8 @@ instruct decodeHeapOop(rRegP dst, rRegN src, rFlagsReg cr) %{
 %}
 
 instruct decodeHeapOop_not_null(rRegP dst, rRegN src, rFlagsReg cr) %{
-  predicate(n->bottom_type()->is_oopptr()->ptr() == TypePtr::NotNull ||
-            n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant);
+  predicate(n->bottom_type()->is_ptr()->ptr() == TypePtr::NotNull ||
+            n->bottom_type()->is_ptr()->ptr() == TypePtr::Constant);
   match(Set dst (DecodeN src));
   effect(KILL cr);
   format %{ "decode_heap_oop_not_null $dst,$src" %}
@@ -10348,7 +10330,7 @@ instruct compP_rReg_mem(rFlagsRegU cr, rRegP op1, memory op2)
 // and raw pointers have no anti-dependencies.
 instruct compP_mem_rReg(rFlagsRegU cr, rRegP op1, memory op2)
 %{
-  predicate(!n->in(2)->in(2)->bottom_type()->isa_oop_ptr());
+  predicate(n->in(2)->in(2)->bottom_type()->reloc() == relocInfo::none);
   match(Set cr (CmpP op1 (LoadP op2)));
 
   format %{ "cmpq    $op1, $op2\t# raw ptr" %}
@@ -10757,8 +10739,8 @@ instruct partialSubtypeCheck(rdi_RegP result,
 
   ins_cost(1100);  // slightly larger than the next version
   format %{ "movq    rdi, [$sub + in_bytes(Klass::secondary_supers_offset())]\n\t"
-            "movl    rcx, [rdi + arrayOopDesc::length_offset_in_bytes()]\t# length to scan\n\t"
-            "addq    rdi, arrayOopDex::base_offset_in_bytes(T_OBJECT)\t# Skip to start of data; set NZ in case count is zero\n\t"
+            "movl    rcx, [rdi + Array<Klass*>::length_offset_in_bytes()]\t# length to scan\n\t"
+            "addq    rdi, Array<Klass*>::base_offset_in_bytes()\t# Skip to start of data; set NZ in case count is zero\n\t"
             "repne   scasq\t# Scan *rdi++ for a match with rax while rcx--\n\t"
             "jne,s   miss\t\t# Missed: rdi not-zero\n\t"
             "movq    [$sub + in_bytes(Klass::secondary_super_cache_offset())], $super\t# Hit: update cache\n\t"
@@ -10780,8 +10762,8 @@ instruct partialSubtypeCheck_vs_Zero(rFlagsReg cr,
 
   ins_cost(1000);
   format %{ "movq    rdi, [$sub + in_bytes(Klass::secondary_supers_offset())]\n\t"
-            "movl    rcx, [rdi + arrayOopDesc::length_offset_in_bytes()]\t# length to scan\n\t"
-            "addq    rdi, arrayOopDex::base_offset_in_bytes(T_OBJECT)\t# Skip to start of data; set NZ in case count is zero\n\t"
+            "movl    rcx, [rdi + Array<Klass*>::length_offset_in_bytes()]\t# length to scan\n\t"
+            "addq    rdi, Array<Klass*>::base_offset_in_bytes()\t# Skip to start of data; set NZ in case count is zero\n\t"
             "repne   scasq\t# Scan *rdi++ for a match with rax while cx-- != 0\n\t"
             "jne,s   miss\t\t# Missed: flags nz\n\t"
             "movq    [$sub + in_bytes(Klass::secondary_super_cache_offset())], $super\t# Hit: update cache\n\t"
@@ -11060,7 +11042,6 @@ instruct CallDynamicJavaDirect(method meth)
   ins_cost(300);
   format %{ "movq    rax, #Universe::non_oop_word()\n\t"
             "call,dynamic " %}
-  opcode(0xE8); /* E8 cd */
   ins_encode(Java_Dynamic_Call(meth), call_epilog);
   ins_pipe(pipe_slow);
   ins_alignment(4);

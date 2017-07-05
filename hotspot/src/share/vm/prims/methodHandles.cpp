@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,49 +124,49 @@ Handle MethodHandles::new_MemberName(TRAPS) {
 }
 
 oop MethodHandles::init_MemberName(oop mname_oop, oop target_oop) {
-  klassOop target_klass = target_oop->klass();
+  Klass* target_klass = target_oop->klass();
   if (target_klass == SystemDictionary::reflect_Field_klass()) {
     oop clazz = java_lang_reflect_Field::clazz(target_oop); // fd.field_holder()
     int slot  = java_lang_reflect_Field::slot(target_oop);  // fd.index()
     int mods  = java_lang_reflect_Field::modifiers(target_oop);
     oop type  = java_lang_reflect_Field::type(target_oop);
     oop name  = java_lang_reflect_Field::name(target_oop);
-    klassOop k = java_lang_Class::as_klassOop(clazz);
-    intptr_t offset = instanceKlass::cast(k)->field_offset(slot);
+    Klass* k = java_lang_Class::as_Klass(clazz);
+    intptr_t offset = InstanceKlass::cast(k)->field_offset(slot);
     return init_field_MemberName(mname_oop, k, accessFlags_from(mods), type, name, offset);
   } else if (target_klass == SystemDictionary::reflect_Method_klass()) {
     oop clazz  = java_lang_reflect_Method::clazz(target_oop);
     int slot   = java_lang_reflect_Method::slot(target_oop);
-    klassOop k = java_lang_Class::as_klassOop(clazz);
+    Klass* k = java_lang_Class::as_Klass(clazz);
     if (k != NULL && Klass::cast(k)->oop_is_instance()) {
-      methodOop m = instanceKlass::cast(k)->method_with_idnum(slot);
+      Method* m = InstanceKlass::cast(k)->method_with_idnum(slot);
       return init_method_MemberName(mname_oop, m, true, k);
     }
   } else if (target_klass == SystemDictionary::reflect_Constructor_klass()) {
     oop clazz  = java_lang_reflect_Constructor::clazz(target_oop);
     int slot   = java_lang_reflect_Constructor::slot(target_oop);
-    klassOop k = java_lang_Class::as_klassOop(clazz);
+    Klass* k = java_lang_Class::as_Klass(clazz);
     if (k != NULL && Klass::cast(k)->oop_is_instance()) {
-      methodOop m = instanceKlass::cast(k)->method_with_idnum(slot);
+      Method* m = InstanceKlass::cast(k)->method_with_idnum(slot);
       return init_method_MemberName(mname_oop, m, false, k);
     }
   } else if (target_klass == SystemDictionary::MemberName_klass()) {
     // Note: This only works if the MemberName has already been resolved.
     oop clazz        = java_lang_invoke_MemberName::clazz(target_oop);
     int flags        = java_lang_invoke_MemberName::flags(target_oop);
-    oop vmtarget     = java_lang_invoke_MemberName::vmtarget(target_oop);
+    Metadata* vmtarget=java_lang_invoke_MemberName::vmtarget(target_oop);
     intptr_t vmindex = java_lang_invoke_MemberName::vmindex(target_oop);
-    klassOop k       = java_lang_Class::as_klassOop(clazz);
+    Klass* k         = java_lang_Class::as_Klass(clazz);
     int ref_kind     = (flags >> REFERENCE_KIND_SHIFT) & REFERENCE_KIND_MASK;
     if (vmtarget == NULL)  return NULL;  // not resolved
     if ((flags & IS_FIELD) != 0) {
-      assert(vmtarget->is_klass(), "field vmtarget is klassOop");
+      assert(vmtarget->is_klass(), "field vmtarget is Klass*");
       int basic_mods = (ref_kind_is_static(ref_kind) ? JVM_ACC_STATIC : 0);
       // FIXME:  how does k (receiver_limit) contribute?
-      return init_field_MemberName(mname_oop, klassOop(vmtarget), accessFlags_from(basic_mods), NULL, NULL, vmindex);
+      return init_field_MemberName(mname_oop, (Klass*)vmtarget, accessFlags_from(basic_mods), NULL, NULL, vmindex);
     } else if ((flags & (IS_METHOD | IS_CONSTRUCTOR)) != 0) {
-      assert(vmtarget->is_method(), "method or constructor vmtarget is methodOop");
-      return init_method_MemberName(mname_oop, methodOop(vmtarget), ref_kind_does_dispatch(ref_kind), k);
+      assert(vmtarget->is_method(), "method or constructor vmtarget is Method*");
+      return init_method_MemberName(mname_oop, (Method*)vmtarget, ref_kind_does_dispatch(ref_kind), k);
     } else {
       return NULL;
     }
@@ -174,12 +174,12 @@ oop MethodHandles::init_MemberName(oop mname_oop, oop target_oop) {
   return NULL;
 }
 
-oop MethodHandles::init_method_MemberName(oop mname_oop, methodOop m, bool do_dispatch,
-                                          klassOop receiver_limit) {
+oop MethodHandles::init_method_MemberName(oop mname_oop, Method* m, bool do_dispatch,
+                                          Klass* receiver_limit) {
   AccessFlags mods = m->access_flags();
   int flags = (jushort)( mods.as_short() & JVM_RECOGNIZED_METHOD_MODIFIERS );
-  int vmindex = methodOopDesc::nonvirtual_vtable_index; // implies never any dispatch
-  klassOop mklass = m->method_holder();
+  int vmindex = Method::nonvirtual_vtable_index; // implies never any dispatch
+  Klass* mklass = m->method_holder();
   if (receiver_limit == NULL)
     receiver_limit = mklass;
   if (m->is_initializer()) {
@@ -198,7 +198,7 @@ oop MethodHandles::init_method_MemberName(oop mname_oop, methodOop m, bool do_di
     flags |= IS_METHOD | (JVM_REF_invokeVirtual << REFERENCE_KIND_SHIFT);
     // it is a miranda method, so m->vtable_index is not what we want
     ResourceMark rm;
-    klassVtable* vt = instanceKlass::cast(receiver_limit)->vtable();
+    klassVtable* vt = InstanceKlass::cast(receiver_limit)->vtable();
     vmindex = vt->index_of_miranda(m->name(), m->signature());
   } else if (!do_dispatch || m->can_be_statically_bound()) {
     flags |= IS_METHOD | (JVM_REF_invokeSpecial << REFERENCE_KIND_SHIFT);
@@ -214,7 +214,7 @@ oop MethodHandles::init_method_MemberName(oop mname_oop, methodOop m, bool do_di
   // Note:  name and type can be lazily computed by resolve_MemberName,
   // if Java code needs them as resolved String and MethodType objects.
   // The clazz must be eagerly stored, because it provides a GC
-  // root to help keep alive the methodOop.
+  // root to help keep alive the Method*.
   // If relevant, the vtable or itable value is stored as vmindex.
   // This is done eagerly, since it is readily available without
   // constructing any new objects.
@@ -238,7 +238,7 @@ Handle MethodHandles::init_method_MemberName(oop mname_oop, CallInfo& info, TRAP
     vmindex = klassItable::compute_itable_index(m());
   } else if (m->can_be_statically_bound()) {
     // LinkResolver reports vtable index even for final methods!
-    vmindex = methodOopDesc::nonvirtual_vtable_index;
+    vmindex = Method::nonvirtual_vtable_index;
   } else {
     vmindex = info.vtable_index();
   }
@@ -247,13 +247,13 @@ Handle MethodHandles::init_method_MemberName(oop mname_oop, CallInfo& info, TRAP
   return Handle(THREAD, res);
 }
 
-oop MethodHandles::init_field_MemberName(oop mname_oop, klassOop field_holder,
+oop MethodHandles::init_field_MemberName(oop mname_oop, Klass* field_holder,
                                          AccessFlags mods, oop type, oop name,
                                          intptr_t offset, bool is_setter) {
   int flags = (jushort)( mods.as_short() & JVM_RECOGNIZED_FIELD_MODIFIERS );
   flags |= IS_FIELD | ((mods.is_static() ? JVM_REF_getStatic : JVM_REF_getField) << REFERENCE_KIND_SHIFT);
   if (is_setter)  flags += ((JVM_REF_putField - JVM_REF_getField) << REFERENCE_KIND_SHIFT);
-  oop vmtarget = field_holder;
+  Metadata* vmtarget = field_holder;
   int vmindex  = offset;  // determines the field uniquely when combined with static bit
   java_lang_invoke_MemberName::set_flags(mname_oop,    flags);
   java_lang_invoke_MemberName::set_vmtarget(mname_oop, vmtarget);
@@ -276,7 +276,7 @@ oop MethodHandles::init_field_MemberName(oop mname_oop, klassOop field_holder,
 
 Handle MethodHandles::init_field_MemberName(oop mname_oop, FieldAccessInfo& info, TRAPS) {
   return Handle();
-#if 0
+#if 0 // FIXME
   KlassHandle field_holder = info.klass();
   intptr_t    field_offset = info.field_offset();
   return init_field_MemberName(mname_oop, field_holder(),
@@ -293,7 +293,7 @@ Handle MethodHandles::init_field_MemberName(oop mname_oop, FieldAccessInfo& info
 // * It has a single formal parameter of type Object[].
 // * It has a return type of Object.
 // * It has the ACC_VARARGS and ACC_NATIVE flags set.
-bool MethodHandles::is_method_handle_invoke_name(klassOop klass, Symbol* name) {
+bool MethodHandles::is_method_handle_invoke_name(Klass* klass, Symbol* name) {
   if (klass == NULL)
     return false;
   // The following test will fail spuriously during bootstrap of MethodHandle itself:
@@ -302,7 +302,7 @@ bool MethodHandles::is_method_handle_invoke_name(klassOop klass, Symbol* name) {
   if (Klass::cast(klass)->name() != vmSymbols::java_lang_invoke_MethodHandle())
     return false;
   Symbol* poly_sig = vmSymbols::object_array_object_signature();
-  methodOop m = instanceKlass::cast(klass)->find_method(name, poly_sig);
+  Method* m = InstanceKlass::cast(klass)->find_method(name, poly_sig);
   if (m == NULL)  return false;
   int required = JVM_ACC_NATIVE | JVM_ACC_VARARGS;
   int flags = m->access_flags().as_int();
@@ -351,7 +351,7 @@ vmIntrinsics::ID MethodHandles::signature_polymorphic_name_id(Symbol* name) {
   }
 
   // Cover the case of invokeExact and any future variants of invokeFoo.
-  klassOop mh_klass = SystemDictionary::well_known_klass(
+  Klass* mh_klass = SystemDictionary::well_known_klass(
                               SystemDictionary::WK_KLASS_ENUM_NAME(MethodHandle_klass) );
   if (mh_klass != NULL && is_method_handle_invoke_name(mh_klass, name))
     return vmIntrinsics::_invokeGeneric;
@@ -361,7 +361,7 @@ vmIntrinsics::ID MethodHandles::signature_polymorphic_name_id(Symbol* name) {
   return vmIntrinsics::_none;
 }
 
-vmIntrinsics::ID MethodHandles::signature_polymorphic_name_id(klassOop klass, Symbol* name) {
+vmIntrinsics::ID MethodHandles::signature_polymorphic_name_id(Klass* klass, Symbol* name) {
   if (klass != NULL &&
       Klass::cast(klass)->name() == vmSymbols::java_lang_invoke_MethodHandle()) {
     vmIntrinsics::ID iid = signature_polymorphic_name_id(name);
@@ -568,7 +568,7 @@ static oop field_signature_type_or_null(Symbol* s) {
       if (s->byte_at(0) == 'L' && s->byte_at(len-1) == ';') {
         TempNewSymbol cname = SymbolTable::probe((const char*)&s->bytes()[1], len-2);
         if (cname == NULL)  return NULL;
-        klassOop wkk = SystemDictionary::find_well_known_klass(cname);
+        Klass* wkk = SystemDictionary::find_well_known_klass(cname);
         if (wkk == NULL)  return NULL;
         return Klass::cast(wkk)->java_mirror();
       }
@@ -577,9 +577,10 @@ static oop field_signature_type_or_null(Symbol* s) {
   return NULL;
 }
 
+
 // An unresolved member name is a mere symbolic reference.
 // Resolving it plants a vmtarget/vmindex in it,
-// which refers dirctly to JVM internals.
+// which refers directly to JVM internals.
 Handle MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
   Handle empty;
   assert(java_lang_invoke_MemberName::is_instance(mname()), "");
@@ -587,7 +588,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
   if (java_lang_invoke_MemberName::vmtarget(mname()) != NULL) {
     // Already resolved.
     DEBUG_ONLY(int vmindex = java_lang_invoke_MemberName::vmindex(mname()));
-    assert(vmindex >= methodOopDesc::nonvirtual_vtable_index, "");
+    assert(vmindex >= Method::nonvirtual_vtable_index, "");
     return mname;
   }
 
@@ -609,13 +610,13 @@ Handle MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
 
   instanceKlassHandle defc;
   {
-    klassOop defc_klassOop = java_lang_Class::as_klassOop(defc_oop());
-    if (defc_klassOop == NULL)  return empty;  // a primitive; no resolution possible
-    if (!Klass::cast(defc_klassOop)->oop_is_instance()) {
-      if (!Klass::cast(defc_klassOop)->oop_is_array())  return empty;
-      defc_klassOop = SystemDictionary::Object_klass();
+    Klass* defc_klass = java_lang_Class::as_Klass(defc_oop());
+    if (defc_klass == NULL)  return empty;  // a primitive; no resolution possible
+    if (!Klass::cast(defc_klass)->oop_is_instance()) {
+      if (!Klass::cast(defc_klass)->oop_is_array())  return empty;
+      defc_klass = SystemDictionary::Object_klass();
     }
-    defc = instanceKlassHandle(THREAD, defc_klassOop);
+    defc = instanceKlassHandle(THREAD, defc_klass);
   }
   if (defc.is_null()) {
     THROW_MSG_(vmSymbols::java_lang_InternalError(), "primitive class", empty);
@@ -705,14 +706,14 @@ Handle MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
     {
       // This is taken from LinkResolver::resolve_field, sans access checks.
       fieldDescriptor fd; // find_field initializes fd if found
-      KlassHandle sel_klass(THREAD, instanceKlass::cast(defc())->find_field(name, type, &fd));
+      KlassHandle sel_klass(THREAD, InstanceKlass::cast(defc())->find_field(name, type, &fd));
       // check if field exists; i.e., if a klass containing the field def has been selected
       if (sel_klass.is_null())  return empty;  // should not happen
       oop type = field_signature_type_or_null(fd.signature());
       oop name = field_name_or_null(fd.name());
       bool is_setter = (ref_kind_is_valid(ref_kind) && ref_kind_is_setter(ref_kind));
       mname = Handle(THREAD,
-                     init_field_MemberName(mname(), sel_klass->as_klassOop(),
+                     init_field_MemberName(mname(), sel_klass(),
                                            fd.access_flags(), type, name, fd.offset(), is_setter));
       return mname;
     }
@@ -729,7 +730,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, TRAPS) {
 // which refers directly to JVM internals.
 void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
   assert(java_lang_invoke_MemberName::is_instance(mname()), "");
-  oop vmtarget = java_lang_invoke_MemberName::vmtarget(mname());
+  Metadata* vmtarget = java_lang_invoke_MemberName::vmtarget(mname());
   int vmindex  = java_lang_invoke_MemberName::vmindex(mname());
   if (vmtarget == NULL) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "nothing to expand");
@@ -752,12 +753,12 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
   case IS_METHOD:
   case IS_CONSTRUCTOR:
     {
-      assert(vmtarget->is_method(), "method or constructor vmtarget is methodOop");
-      methodHandle m(THREAD, methodOop(vmtarget));
+      assert(vmtarget->is_method(), "method or constructor vmtarget is Method*");
+      methodHandle m(THREAD, (Method*)vmtarget);
       DEBUG_ONLY(vmtarget = NULL);  // safety
       if (m.is_null())  break;
       if (!have_defc) {
-        klassOop defc = m->method_holder();
+        Klass* defc = m->method_holder();
         java_lang_invoke_MemberName::set_clazz(mname(), Klass::cast(defc)->java_mirror());
       }
       if (!have_name) {
@@ -774,9 +775,9 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
   case IS_FIELD:
     {
       // This is taken from LinkResolver::resolve_field, sans access checks.
-      assert(vmtarget->is_klass(), "field vmtarget is klassOop");
-      if (!Klass::cast((klassOop) vmtarget)->oop_is_instance())  break;
-      instanceKlassHandle defc(THREAD, (klassOop) vmtarget);
+      assert(vmtarget->is_klass(), "field vmtarget is Klass*");
+      if (!Klass::cast((Klass*) vmtarget)->oop_is_instance())  break;
+      instanceKlassHandle defc(THREAD, (Klass*) vmtarget);
       DEBUG_ONLY(vmtarget = NULL);  // safety
       bool is_static = ((flags & JVM_ACC_STATIC) != 0);
       fieldDescriptor fd; // find_field initializes fd if found
@@ -804,9 +805,9 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
   THROW_MSG(vmSymbols::java_lang_InternalError(), "unrecognized MemberName format");
 }
 
-int MethodHandles::find_MemberNames(klassOop k,
+int MethodHandles::find_MemberNames(Klass* k,
                                     Symbol* name, Symbol* sig,
-                                    int mflags, klassOop caller,
+                                    int mflags, Klass* caller,
                                     int skip, objArrayOop results) {
   DEBUG_ONLY(No_Safepoint_Verifier nsv);
   // this code contains no safepoints!
@@ -855,7 +856,7 @@ int MethodHandles::find_MemberNames(klassOop k,
           return -99;  // caller bug!
         oop type = field_signature_type_or_null(st.signature());
         oop name = field_name_or_null(st.name());
-        oop saved = MethodHandles::init_field_MemberName(result, st.klass()->as_klassOop(),
+        oop saved = MethodHandles::init_field_MemberName(result, st.klass()(),
                                                          st.access_flags(), type, name,
                                                          st.offset());
         if (saved != result)
@@ -892,7 +893,7 @@ int MethodHandles::find_MemberNames(klassOop k,
       // caller will accept either sort; no need to adjust name
     }
     for (MethodStream st(k, local_only, !search_intfc); !st.eos(); st.next()) {
-      methodOop m = st.method();
+      Method* m = st.method();
       Symbol* m_name = m->name();
       if (m_name == clinit_name)
         continue;
@@ -919,7 +920,6 @@ int MethodHandles::find_MemberNames(klassOop k,
   // return number of elements we at leasted wanted to initialize
   return rfill + overflow;
 }
-
 //
 // Here are the native methods in java.lang.invoke.MethodHandleNatives
 // They are the private interface between this JVM and the HotSpot-specific
@@ -928,6 +928,7 @@ int MethodHandles::find_MemberNames(klassOop k,
 // Note:  We use a JVM_ENTRY macro to define each of these, for this is the way
 // that intrinsic (non-JNI) native methods are defined in HotSpot.
 //
+
 JVM_ENTRY(jint, MHN_getConstant(JNIEnv *env, jobject igcls, jint which)) {
   switch (which) {
   case MethodHandles::GC_COUNT_GWT:
@@ -1033,10 +1034,10 @@ JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh,
   // access checks on behalf of the given caller.  But, we can verify this.
   if (VerifyMethodHandles && caller_jh != NULL &&
       java_lang_invoke_MemberName::clazz(mname()) != NULL) {
-    klassOop reference_klass = java_lang_Class::as_klassOop(java_lang_invoke_MemberName::clazz(mname()));
+    Klass* reference_klass = java_lang_Class::as_Klass(java_lang_invoke_MemberName::clazz(mname()));
     if (reference_klass != NULL) {
       // Emulate LinkResolver::check_klass_accessability.
-      klassOop caller = java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(caller_jh));
+      Klass* caller = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(caller_jh));
       if (!Reflection::verify_class_access(caller,
                                            reference_klass,
                                            true)) {
@@ -1107,22 +1108,19 @@ JVM_ENTRY(jobject, MHN_getMemberVMInfo(JNIEnv *env, jobject igcls, jobject mname
   if (mname_jh == NULL)  return NULL;
   Handle mname(THREAD, JNIHandles::resolve_non_null(mname_jh));
   intptr_t vmindex  = java_lang_invoke_MemberName::vmindex(mname());
-  Handle   vmtarget = java_lang_invoke_MemberName::vmtarget(mname());
+  Metadata* vmtarget = java_lang_invoke_MemberName::vmtarget(mname());
   objArrayHandle result = oopFactory::new_objArray(SystemDictionary::Object_klass(), 2, CHECK_NULL);
   jvalue vmindex_value; vmindex_value.j = (long)vmindex;
   oop x = java_lang_boxing_object::create(T_LONG, &vmindex_value, CHECK_NULL);
   result->obj_at_put(0, x);
   x = NULL;
-  if (vmtarget.is_null() || vmtarget->is_instance()) {
-    x = vmtarget();
+  if (vmtarget == NULL) {
+    x = NULL;
   } else if (vmtarget->is_klass()) {
-    x = Klass::cast((klassOop) vmtarget())->java_mirror();
-  } else {
+    x = Klass::cast((Klass*) vmtarget)->java_mirror();
+  } else if (vmtarget->is_method()) {
     Handle mname2 = MethodHandles::new_MemberName(CHECK_NULL);
-    if (vmtarget->is_method())
-      x = MethodHandles::init_method_MemberName(mname2(), methodOop(vmtarget()), false, NULL);
-    else
-      x = MethodHandles::init_MemberName(mname2(), vmtarget());
+    x = MethodHandles::init_method_MemberName(mname2(), (Method*)vmtarget, false, NULL);
   }
   result->obj_at_put(1, x);
   return JNIHandles::make_local(env, result());
@@ -1137,7 +1135,7 @@ JVM_ENTRY(jint, MHN_getMembers(JNIEnv *env, jobject igcls,
                                jclass clazz_jh, jstring name_jh, jstring sig_jh,
                                int mflags, jclass caller_jh, jint skip, jobjectArray results_jh)) {
   if (clazz_jh == NULL || results_jh == NULL)  return -1;
-  KlassHandle k(THREAD, java_lang_Class::as_klassOop(JNIHandles::resolve_non_null(clazz_jh)));
+  KlassHandle k(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz_jh)));
 
   objArrayHandle results(THREAD, (objArrayOop) JNIHandles::resolve(results_jh));
   if (results.is_null() || !results->is_objArray())  return -1;
@@ -1157,7 +1155,7 @@ JVM_ENTRY(jint, MHN_getMembers(JNIEnv *env, jobject igcls,
   if (caller_jh != NULL) {
     oop caller_oop = JNIHandles::resolve_non_null(caller_jh);
     if (!java_lang_Class::is_instance(caller_oop))  return -1;
-    caller = KlassHandle(THREAD, java_lang_Class::as_klassOop(caller_oop));
+    caller = KlassHandle(THREAD, java_lang_Class::as_Klass(caller_oop));
   }
 
   if (name != NULL && sig != NULL && results.not_null()) {

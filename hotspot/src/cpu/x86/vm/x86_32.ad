@@ -367,7 +367,7 @@ void store_to_stackslot(CodeBuffer &cbuf, int opcode, int rm_field, int disp) {
 }
 
    // rRegI ereg, memory mem) %{    // emit_reg_mem
-void encode_RegMem( CodeBuffer &cbuf, int reg_encoding, int base, int index, int scale, int displace, bool displace_is_oop ) {
+void encode_RegMem( CodeBuffer &cbuf, int reg_encoding, int base, int index, int scale, int displace, relocInfo::relocType disp_reloc ) {
   // There is no index & no scale, use form without SIB byte
   if ((index == 0x4) &&
       (scale == 0) && (base != ESP_enc)) {
@@ -377,7 +377,7 @@ void encode_RegMem( CodeBuffer &cbuf, int reg_encoding, int base, int index, int
     }
     else {                    // If 8-bit displacement, mode 0x1
       if ((displace >= -128) && (displace <= 127)
-          && !(displace_is_oop) ) {
+          && (disp_reloc == relocInfo::none) ) {
         emit_rm(cbuf, 0x1, reg_encoding, base);
         emit_d8(cbuf, displace);
       }
@@ -385,16 +385,16 @@ void encode_RegMem( CodeBuffer &cbuf, int reg_encoding, int base, int index, int
         if (base == -1) { // Special flag for absolute address
           emit_rm(cbuf, 0x0, reg_encoding, 0x5);
           // (manual lies; no SIB needed here)
-          if ( displace_is_oop ) {
-            emit_d32_reloc(cbuf, displace, relocInfo::oop_type, 1);
+          if ( disp_reloc != relocInfo::none ) {
+            emit_d32_reloc(cbuf, displace, disp_reloc, 1);
           } else {
             emit_d32      (cbuf, displace);
           }
         }
         else {                // Normal base + offset
           emit_rm(cbuf, 0x2, reg_encoding, base);
-          if ( displace_is_oop ) {
-            emit_d32_reloc(cbuf, displace, relocInfo::oop_type, 1);
+          if ( disp_reloc != relocInfo::none ) {
+            emit_d32_reloc(cbuf, displace, disp_reloc, 1);
           } else {
             emit_d32      (cbuf, displace);
           }
@@ -410,7 +410,7 @@ void encode_RegMem( CodeBuffer &cbuf, int reg_encoding, int base, int index, int
     }
     else {                    // If 8-bit displacement, mode 0x1
       if ((displace >= -128) && (displace <= 127)
-          && !(displace_is_oop) ) {
+          && (disp_reloc == relocInfo::none) ) {
         emit_rm(cbuf, 0x1, reg_encoding, 0x4);
         emit_rm(cbuf, scale, index, base);
         emit_d8(cbuf, displace);
@@ -423,8 +423,8 @@ void encode_RegMem( CodeBuffer &cbuf, int reg_encoding, int base, int index, int
           emit_rm(cbuf, 0x2, reg_encoding, 0x4);
           emit_rm(cbuf, scale, index, base);
         }
-        if ( displace_is_oop ) {
-          emit_d32_reloc(cbuf, displace, relocInfo::oop_type, 1);
+        if ( disp_reloc != relocInfo::none ) {
+          emit_d32_reloc(cbuf, displace, disp_reloc, 1);
         } else {
           emit_d32      (cbuf, displace);
         }
@@ -689,7 +689,7 @@ static int impl_helper( CodeBuffer *cbuf, bool do_size, bool is_load, int offset
                         int opcode, const char *op_str, int size, outputStream* st ) {
   if( cbuf ) {
     emit_opcode  (*cbuf, opcode );
-    encode_RegMem(*cbuf, Matcher::_regEncode[reg], ESP_enc, 0x4, 0, offset, false);
+    encode_RegMem(*cbuf, Matcher::_regEncode[reg], ESP_enc, 0x4, 0, offset, relocInfo::none);
 #ifndef PRODUCT
   } else if( !do_size ) {
     if( size != 0 ) st->print("\n\t");
@@ -1090,7 +1090,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf, PhaseRegAlloc *ra_, bo
     }
     if( cbuf ) {
       emit_opcode  (*cbuf, op );
-      encode_RegMem(*cbuf, 0x0, ESP_enc, 0x4, 0, offset, false);
+      encode_RegMem(*cbuf, 0x0, ESP_enc, 0x4, 0, offset, relocInfo::none);
       emit_opcode  (*cbuf, 0xDD );           // FSTP   ST(i)
       emit_d8      (*cbuf, 0xD8+Matcher::_regEncode[dst_first] );
 #ifndef PRODUCT
@@ -1260,8 +1260,8 @@ void emit_java_to_interp(CodeBuffer &cbuf ) {
   if (base == NULL)  return;  // CodeBuffer::expand failed
   // static stub relocation stores the instruction address of the call
   __ relocate(static_stub_Relocation::spec(mark), RELOC_IMM32);
-  // static stub relocation also tags the methodOop in the code-stream.
-  __ movoop(rbx, (jobject)NULL);  // method is zapped till fixup time
+  // static stub relocation also tags the Method* in the code-stream.
+  __ mov_metadata(rbx, (Metadata*)NULL);  // method is zapped till fixup time
   // This is recognized as unresolved by relocs/nativeInst/ic code
   __ jump(RuntimeAddress(__ pc()));
 
@@ -1891,26 +1891,15 @@ encode %{
   %}
 
   enc_class Java_Dynamic_Call (method meth) %{    // JAVA DYNAMIC CALL
-    // !!!!!
-    // Generate  "Mov EAX,0x00", placeholder instruction to load oop-info
-    // emit_call_dynamic_prologue( cbuf );
-    cbuf.set_insts_mark();
-    emit_opcode(cbuf, 0xB8 + EAX_enc);        // mov    EAX,-1
-    emit_d32_reloc(cbuf, (int)Universe::non_oop_word(), oop_Relocation::spec_for_immediate(), RELOC_IMM32);
-    address  virtual_call_oop_addr = cbuf.insts_mark();
-    // CALL to fixup routine.  Fixup routine uses ScopeDesc info to determine
-    // who we intended to call.
-    cbuf.set_insts_mark();
-    $$$emit8$primary;
-    emit_d32_reloc(cbuf, ($meth$$method - (int)(cbuf.insts_end()) - 4),
-                virtual_call_Relocation::spec(virtual_call_oop_addr), RELOC_IMM32 );
+    MacroAssembler _masm(&cbuf);
+    __ ic_call((address)$meth$$method);
   %}
 
   enc_class Java_Compiled_Call (method meth) %{    // JAVA COMPILED CALL
-    int disp = in_bytes(methodOopDesc::from_compiled_offset());
+    int disp = in_bytes(Method::from_compiled_offset());
     assert( -128 <= disp && disp <= 127, "compiled_code_offset isn't small");
 
-    // CALL *[EAX+in_bytes(methodOopDesc::from_compiled_code_entry_point_offset())]
+    // CALL *[EAX+in_bytes(Method::from_compiled_code_entry_point_offset())]
     cbuf.set_insts_mark();
     $$$emit8$primary;
     emit_rm(cbuf, 0x01, $secondary, EAX_enc );  // R/M byte
@@ -2127,8 +2116,8 @@ encode %{
     int index = $mem$$index;
     int scale = $mem$$scale;
     int displace = $mem$$disp;
-    bool disp_is_oop = $mem->disp_is_oop();
-    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, disp_is_oop);
+    relocInfo::relocType disp_reloc = $mem->disp_reloc();
+    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, disp_reloc);
   %}
 
   enc_class RegMem_Hi(eRegL ereg, memory mem) %{    // emit_reg_mem
@@ -2137,8 +2126,8 @@ encode %{
     int index = $mem$$index;
     int scale = $mem$$scale;
     int displace = $mem$$disp + 4;      // Offset is 4 further in memory
-    assert( !$mem->disp_is_oop(), "Cannot add 4 to oop" );
-    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, false/*disp_is_oop*/);
+    assert( $mem->disp_reloc() == relocInfo::none, "Cannot add 4 to oop" );
+    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, relocInfo::none);
   %}
 
   enc_class move_long_small_shift( eRegL dst, immI_1_31 cnt ) %{
@@ -2192,8 +2181,8 @@ encode %{
     int index    = $mem$$index;
     int scale    = $mem$$scale;
     int displace = $mem$$disp + $disp_for_half$$constant;
-    bool disp_is_oop = false;
-    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, disp_is_oop);
+    relocInfo::relocType disp_reloc = relocInfo::none;
+    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, disp_reloc);
   %}
 
   // !!!!! Special Custom Code used by MemMove, and stack access instructions !!!!!
@@ -2207,8 +2196,8 @@ encode %{
     int index    = $mem$$index;
     int scale    = $mem$$scale;
     int displace = $mem$$disp;
-    assert( !$mem->disp_is_oop(), "No oops here because no relo info allowed" );
-    encode_RegMem(cbuf, rm_byte_opcode, base, index, scale, displace, false);
+    assert( $mem->disp_reloc() == relocInfo::none, "No oops here because no reloc info allowed" );
+    encode_RegMem(cbuf, rm_byte_opcode, base, index, scale, displace, relocInfo::none);
   %}
 
   enc_class RMopc_Mem (immI rm_opcode, memory mem) %{
@@ -2217,8 +2206,8 @@ encode %{
     int index    = $mem$$index;
     int scale    = $mem$$scale;
     int displace = $mem$$disp;
-    bool disp_is_oop = $mem->disp_is_oop(); // disp-as-oop when working with static globals
-    encode_RegMem(cbuf, rm_byte_opcode, base, index, scale, displace, disp_is_oop);
+    relocInfo::relocType disp_reloc = $mem->disp_reloc(); // disp-as-oop when working with static globals
+    encode_RegMem(cbuf, rm_byte_opcode, base, index, scale, displace, disp_reloc);
   %}
 
   enc_class RegLea (rRegI dst, rRegI src0, immI src1 ) %{    // emit_reg_lea
@@ -2227,8 +2216,8 @@ encode %{
     int index        = 0x04;            // 0x04 indicates no index
     int scale        = 0x00;            // 0x00 indicates no scale
     int displace     = $src1$$constant; // 0x00 indicates no displacement
-    bool disp_is_oop = false;
-    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, disp_is_oop);
+    relocInfo::relocType disp_reloc = relocInfo::none;
+    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, disp_reloc);
   %}
 
   enc_class min_enc (rRegI dst, rRegI src) %{    // MIN
@@ -2263,7 +2252,7 @@ encode %{
     int index = $mem$$index;
     int scale = $mem$$scale;
     int displace = $mem$$disp;
-    bool disp_is_oop = $mem->disp_is_oop(); // disp-as-oop when working with static globals
+    relocInfo::relocType disp_reloc = $mem->disp_reloc(); // disp-as-oop when working with static globals
     if( $src$$reg != FPR1L_enc ) {
       reg_encoding = 0x3;  // Store & pop
       emit_opcode( cbuf, 0xD9 ); // FLD (i.e., push it)
@@ -2271,7 +2260,7 @@ encode %{
     }
     cbuf.set_insts_mark();       // Mark start of opcode for reloc info in mem operand
     emit_opcode(cbuf,$primary);
-    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, disp_is_oop);
+    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, disp_reloc);
   %}
 
   enc_class neg_reg(rRegI dst) %{
@@ -2321,8 +2310,8 @@ encode %{
     int index = $mem$$index;
     int scale = $mem$$scale;
     int displace = $mem$$disp;
-    bool disp_is_oop = $mem->disp_is_oop();
-    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, disp_is_oop);
+    relocInfo::relocType disp_reloc = $mem->disp_reloc();
+    encode_RegMem(cbuf, reg_encoding, base, index, scale, displace, disp_reloc);
     // ADD $p,$tmp
     emit_opcode(cbuf,0x03);
     emit_rm(cbuf, 0x3, $p$$reg, tmpReg);
@@ -3645,8 +3634,8 @@ encode %{
     int index    = $mem$$index;
     int scale    = $mem$$scale;
     int displace = $mem$$disp;
-    bool disp_is_oop = $mem->disp_is_oop(); // disp-as-oop when working with static globals
-    encode_RegMem(cbuf, rm_byte_opcode, base, index, scale, displace, disp_is_oop);
+    relocInfo::relocType disp_reloc = $mem->disp_reloc(); // disp-as-oop when working with static globals
+    encode_RegMem(cbuf, rm_byte_opcode, base, index, scale, displace, disp_reloc);
     store_to_stackslot( cbuf, 0x0DF, 0x07, $dst$$disp );
   %}
 
@@ -3663,8 +3652,8 @@ encode %{
     int index    = $mem$$index;
     int scale    = $mem$$scale;
     int displace = $mem$$disp;
-    bool disp_is_oop = $mem->disp_is_oop(); // disp-as-oop when working with static globals
-    encode_RegMem(cbuf, rm_byte_opcode, base, index, scale, displace, disp_is_oop);
+    relocInfo::relocType disp_reloc = $mem->disp_reloc(); // disp-as-oop when working with static globals
+    encode_RegMem(cbuf, rm_byte_opcode, base, index, scale, displace, disp_reloc);
   %}
 
   // Safepoint Poll.  This polls the safepoint page, and causes an
@@ -5817,8 +5806,8 @@ instruct popCountL_mem(rRegI dst, memory mem, rRegI tmp, eFlagsReg cr) %{
   ins_encode %{
     //__ popcntl($dst$$Register, $mem$$Address$$first);
     //__ popcntl($tmp$$Register, $mem$$Address$$second);
-    __ popcntl($dst$$Register, Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp, false));
-    __ popcntl($tmp$$Register, Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp + 4, false));
+    __ popcntl($dst$$Register, Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp, relocInfo::none));
+    __ popcntl($tmp$$Register, Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp + 4, relocInfo::none));
     __ addl($dst$$Register, $tmp$$Register);
   %}
   ins_pipe(ialu_reg);
@@ -6185,8 +6174,8 @@ instruct loadL(eRegL dst, load_long_memory mem) %{
             "MOV    $dst.hi,$mem+4" %}
 
   ins_encode %{
-    Address Amemlo = Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp, false);
-    Address Amemhi = Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp + 4, false);
+    Address Amemlo = Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp, relocInfo::none);
+    Address Amemhi = Address::make_raw($mem$$base, $mem$$index, $mem$$scale, $mem$$disp + 4, relocInfo::none);
     __ movl($dst$$Register, Amemlo);
     __ movl(HIGH_FROM_LOW($dst$$Register), Amemhi);
   %}
@@ -11795,7 +11784,7 @@ instruct compP_eReg_mem(eFlagsRegU cr, eRegP op1, memory op2) %{
 // Only works because non-oop pointers must be raw pointers
 // and raw pointers have no anti-dependencies.
 instruct compP_mem_eReg( eFlagsRegU cr, eRegP op1, memory op2 ) %{
-  predicate( !n->in(2)->in(2)->bottom_type()->isa_oop_ptr() );
+  predicate( n->in(2)->in(2)->bottom_type()->reloc() == relocInfo::none );
   match(Set cr (CmpP op1 (LoadP op2)));
 
   format %{ "CMPu   $op1,$op2" %}

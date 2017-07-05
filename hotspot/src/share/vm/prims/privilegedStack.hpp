@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,17 +32,18 @@
 
 class PrivilegedElement VALUE_OBJ_CLASS_SPEC {
  private:
-  klassOop  _klass;                // klass for method
+  Klass*    _klass;                // klass for method
   oop       _privileged_context;   // context for operation
   intptr_t*     _frame_id;             // location on stack
   PrivilegedElement* _next;        // Link to next one on stack
  public:
   void initialize(vframeStream* vf, oop context, PrivilegedElement* next, TRAPS);
   void oops_do(OopClosure* f);
+  void classes_do(KlassClosure* f);
   intptr_t* frame_id() const           { return _frame_id; }
   oop  privileged_context() const  { return _privileged_context; }
-  oop  class_loader() const        { return instanceKlass::cast(_klass)->class_loader(); }
-  oop  protection_domain() const   { return instanceKlass::cast(_klass)->protection_domain(); }
+  oop  class_loader() const        { return InstanceKlass::cast(_klass)->class_loader(); }
+  oop  protection_domain() const   { return InstanceKlass::cast(_klass)->protection_domain(); }
   PrivilegedElement *next() const  { return _next; }
 
   // debugging (used for find)

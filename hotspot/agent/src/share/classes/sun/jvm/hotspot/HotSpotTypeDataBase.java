@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
   private static final int C_INT8_SIZE  = 1;
   private static final int C_INT32_SIZE = 4;
   private static final int C_INT64_SIZE = 8;
+  private static int pointerSize = UNINITIALIZED_SIZE;
 
   private static final boolean DEBUG;
   static {
@@ -185,6 +186,9 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
         long size             = entryAddr.getCIntegerAt(typeEntrySizeOffset, C_INT64_SIZE, true);
 
         createType(typeName, superclassName, isOopType, isIntegerType, isUnsigned, size);
+        if (pointerSize == UNINITIALIZED_SIZE && typeName.equals("void*")) {
+          pointerSize = (int)size;
+        }
       }
 
       entryAddr = entryAddr.addOffsetTo(typeEntryArrayStride);
@@ -678,7 +682,11 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
       }
     }
     result = new BasicPointerType(this, typeName, targetType);
-    result.setSize(UNINITIALIZED_SIZE);
+    if (pointerSize == UNINITIALIZED_SIZE && !typeName.equals("void*")) {
+      // void* must be declared early so that other pointer types can use that to set their size.
+      throw new InternalError("void* type hasn't been seen when parsing " + typeName);
+    }
+    result.setSize(pointerSize);
     addType(result);
     return result;
   }
@@ -731,8 +739,10 @@ public class HotSpotTypeDataBase extends BasicTypeDataBase {
                                            "had its size redefined (old was " + curType.getSize() + ", new is " + size + ").");
             }
 
+            if (!typeNameIsPointerType(typeName)) {
             System.err.println("Warning: the type \"" + typeName + "\" (declared in the remote VM in VMStructs::localHotSpotVMTypes) " +
                                "had its size declared as " + size + " twice. Continuing.");
+        }
         }
 
     }

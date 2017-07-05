@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.types.*;
 
-public class ciMethod extends ciObject {
+public class ciMethod extends ciMetadata {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -61,7 +61,7 @@ public class ciMethod extends ciObject {
   }
 
   public Method method() {
-    return (Method)getOop();
+    return (Method)getMetadata();
   }
 
   public int interpreterThrowoutCount() {
@@ -75,7 +75,7 @@ public class ciMethod extends ciObject {
   public int instructionsSize() {
     if (instructionsSizeField == null) {
       // XXX
-      Method method = (Method)getOop();
+      Method method = method();
       NMethod nm = method.getNativeMethod();
       if (nm != null) return (int)nm.codeEnd().minus(nm.getVerifiedEntryPoint());
       return 0;
@@ -84,7 +84,7 @@ public class ciMethod extends ciObject {
   }
 
   public void printShortName(PrintStream st) {
-    Method method = (Method)getOop();
+    Method method = method();
     st.printf(" %s::%s", method.getMethodHolder().getName().asString().replace('/', '.'),
               method.getName().asString());
   }

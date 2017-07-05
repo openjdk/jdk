@@ -48,15 +48,19 @@ Symbol* SymbolTable::allocate_symbol(const u1* name, int len, bool c_heap, TRAPS
   assert (len <= Symbol::max_length(), "should be checked by caller");
 
   Symbol* sym;
-  // Allocate symbols in the C heap when dumping shared spaces in case there
-  // are temporary symbols we can remove.
-  if (c_heap || DumpSharedSpaces) {
+
+  if (c_heap) {
     // refcount starts as 1
+    assert(!DumpSharedSpaces, "never allocate to C heap");
     sym = new (len, THREAD) Symbol(name, len, 1);
+    assert(sym != NULL, "new should call vm_exit_out_of_memory if C_HEAP is exhausted");
+  } else {
+    if (DumpSharedSpaces) {
+      sym = new (len, ClassLoaderData::the_null_class_loader_data(), THREAD) Symbol(name, len, -1);
   } else {
     sym = new (len, arena(), THREAD) Symbol(name, len, -1);
   }
-  assert(sym != NULL, "new should call vm_exit_out_of_memory if C_HEAP is exhausted");
+  }
   return sym;
 }
 
@@ -102,7 +106,7 @@ void SymbolTable::unlink() {
         break;
       }
       Symbol* s = entry->literal();
-      memory_total += s->object_size();
+      memory_total += s->size();
       total++;
       assert(s != NULL, "just checking");
       // If reference count is zero, remove.
@@ -302,7 +306,7 @@ Symbol* SymbolTable::lookup_only_unicode(const jchar* name, int utf16_length,
   }
 }
 
-void SymbolTable::add(Handle class_loader, constantPoolHandle cp,
+void SymbolTable::add(ClassLoaderData* loader_data, constantPoolHandle cp,
                       int names_count,
                       const char** names, int* lengths, int* cp_indices,
                       unsigned int* hashValues, TRAPS) {
@@ -310,13 +314,13 @@ void SymbolTable::add(Handle class_loader, constantPoolHandle cp,
   MutexLocker ml(SymbolTable_lock, THREAD);
 
   SymbolTable* table = the_table();
-  bool added = table->basic_add(class_loader, cp, names_count, names, lengths,
+  bool added = table->basic_add(loader_data, cp, names_count, names, lengths,
                                 cp_indices, hashValues, CHECK);
   if (!added) {
     // do it the hard way
     for (int i=0; i<names_count; i++) {
       int index = table->hash_to_index(hashValues[i]);
-      bool c_heap = class_loader() != NULL;
+      bool c_heap = !loader_data->is_the_null_class_loader_data();
       Symbol* sym = table->basic_add(index, (u1*)names[i], lengths[i], hashValues[i], c_heap, CHECK);
       cp->symbol_at_put(cp_indices[i], sym);
     }
@@ -383,7 +387,7 @@ Symbol* SymbolTable::basic_add(int index_arg, u1 *name, int len,
 
 // This version of basic_add adds symbols in batch from the constant pool
 // parsing.
-bool SymbolTable::basic_add(Handle class_loader, constantPoolHandle cp,
+bool SymbolTable::basic_add(ClassLoaderData* loader_data, constantPoolHandle cp,
                             int names_count,
                             const char** names, int* lengths,
                             int* cp_indices, unsigned int* hashValues,
@@ -421,7 +425,7 @@ bool SymbolTable::basic_add(Handle class_loader, constantPoolHandle cp,
     } else {
       // Create a new symbol.  The null class loader is never unloaded so these
       // are allocated specially in a permanent arena.
-      bool c_heap = class_loader() != NULL;
+      bool c_heap = !loader_data->is_the_null_class_loader_data();
       Symbol* sym = allocate_symbol((const u1*)names[i], lengths[i], c_heap, CHECK_(false));
       assert(sym->equals(names[i], lengths[i]), "symbol must be properly initialized");  // why wouldn't it be???
       HashtableEntry<Symbol*, mtSymbol>* entry = new_entry(hashValue, sym);
@@ -490,7 +494,7 @@ void SymbolTable::print_histogram() {
   for (i = 0; i < the_table()->table_size(); i++) {
     HashtableEntry<Symbol*, mtSymbol>* p = the_table()->bucket(i);
     for ( ; p != NULL; p = p->next()) {
-      memory_total += p->literal()->object_size();
+      memory_total += p->literal()->size();
       count++;
       int counter = p->literal()->utf8_length();
       total += counter;
@@ -695,10 +699,10 @@ oop StringTable::intern(Handle string_or_null, jchar* name,
 
   Handle string;
   // try to reuse the string if possible
-  if (!string_or_null.is_null() && (!JavaObjectsInPerm || string_or_null()->is_perm())) {
+  if (!string_or_null.is_null()) {
     string = string_or_null;
   } else {
-    string = java_lang_String::create_tenured_from_unicode(name, len, CHECK_NULL);
+    string = java_lang_String::create_from_unicode(name, len, CHECK_NULL);
   }
 
   // Grab the StringTable_lock before getting the_table() because it could
@@ -797,7 +801,6 @@ void StringTable::verify() {
     for ( ; p != NULL; p = p->next()) {
       oop s = p->literal();
       guarantee(s != NULL, "interned string is NULL");
-      guarantee(s->is_perm() || !JavaObjectsInPerm, "interned string not in permspace");
       unsigned int h = java_lang_String::hash_string(s);
       guarantee(p->hash() == h, "broken hash in string table entry");
       guarantee(the_table()->hash_to_index(h) == i,

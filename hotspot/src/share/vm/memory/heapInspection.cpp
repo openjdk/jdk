@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "memory/genCollectedHeap.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/klassOop.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #ifndef SERIALGC
@@ -48,14 +47,9 @@ int KlassInfoEntry::compare(KlassInfoEntry* e1, KlassInfoEntry* e2) {
 void KlassInfoEntry::print_on(outputStream* st) const {
   ResourceMark rm;
   const char* name;;
-  if (_klass->klass_part()->name() != NULL) {
-    name = _klass->klass_part()->external_name();
+  if (_klass->name() != NULL) {
+    name = _klass->external_name();
   } else {
-    if (_klass == Universe::klassKlassObj())             name = "<klassKlass>";             else
-    if (_klass == Universe::arrayKlassKlassObj())        name = "<arrayKlassKlass>";        else
-    if (_klass == Universe::objArrayKlassKlassObj())     name = "<objArrayKlassKlass>";     else
-    if (_klass == Universe::instanceKlassKlassObj())     name = "<instanceKlassKlass>";     else
-    if (_klass == Universe::typeArrayKlassKlassObj())    name = "<typeArrayKlassKlass>";    else
     if (_klass == Universe::boolArrayKlassObj())         name = "<boolArrayKlass>";         else
     if (_klass == Universe::charArrayKlassObj())         name = "<charArrayKlass>";         else
     if (_klass == Universe::singleArrayKlassObj())       name = "<singleArrayKlass>";       else
@@ -64,12 +58,6 @@ void KlassInfoEntry::print_on(outputStream* st) const {
     if (_klass == Universe::shortArrayKlassObj())        name = "<shortArrayKlass>";        else
     if (_klass == Universe::intArrayKlassObj())          name = "<intArrayKlass>";          else
     if (_klass == Universe::longArrayKlassObj())         name = "<longArrayKlass>";         else
-    if (_klass == Universe::methodKlassObj())            name = "<methodKlass>";            else
-    if (_klass == Universe::constMethodKlassObj())       name = "<constMethodKlass>";       else
-    if (_klass == Universe::methodDataKlassObj())        name = "<methodDataKlass>";        else
-    if (_klass == Universe::constantPoolKlassObj())      name = "<constantPoolKlass>";      else
-    if (_klass == Universe::constantPoolCacheKlassObj()) name = "<constantPoolCacheKlass>"; else
-    if (_klass == Universe::compiledICHolderKlassObj())  name = "<compiledICHolderKlass>";  else
       name = "<no name>";
   }
   // simplify the formatting (ILP32 vs LP64) - always cast the numbers to 64-bit
@@ -79,7 +67,7 @@ void KlassInfoEntry::print_on(outputStream* st) const {
                name);
 }
 
-KlassInfoEntry* KlassInfoBucket::lookup(const klassOop k) {
+KlassInfoEntry* KlassInfoBucket::lookup(Klass* const k) {
   KlassInfoEntry* elt = _list;
   while (elt != NULL) {
     if (elt->is_equal(k)) {
@@ -135,12 +123,12 @@ KlassInfoTable::~KlassInfoTable() {
   }
 }
 
-uint KlassInfoTable::hash(klassOop p) {
-  assert(Universe::heap()->is_in_permanent((HeapWord*)p), "all klasses in permgen");
+uint KlassInfoTable::hash(Klass* p) {
+  assert(p->is_metadata(), "all klasses are metadata");
   return (uint)(((uintptr_t)p - (uintptr_t)_ref) >> 2);
 }
 
-KlassInfoEntry* KlassInfoTable::lookup(const klassOop k) {
+KlassInfoEntry* KlassInfoTable::lookup(Klass* const k) {
   uint         idx = hash(k) % _size;
   assert(_buckets != NULL, "Allocation failure should have been caught");
   KlassInfoEntry*  e   = _buckets[idx].lookup(k);
@@ -153,7 +141,7 @@ KlassInfoEntry* KlassInfoTable::lookup(const klassOop k) {
 // Return false if the entry could not be recorded on account
 // of running out of space required to create a new entry.
 bool KlassInfoTable::record_instance(const oop obj) {
-  klassOop      k = obj->klass();
+  Klass*        k = obj->klass();
   KlassInfoEntry* elt = lookup(k);
   // elt may be NULL if it's a new klass for which we
   // could not allocate space for a new entry in the hashtable.
@@ -243,39 +231,16 @@ class RecordInstanceClosure : public ObjectClosure {
 
 void HeapInspection::heap_inspection(outputStream* st, bool need_prologue) {
   ResourceMark rm;
-  HeapWord* ref;
-
+  // Get some random number for ref (the hash key)
+  HeapWord* ref = (HeapWord*) Universe::boolArrayKlassObj();
   CollectedHeap* heap = Universe::heap();
   bool is_shared_heap = false;
-  switch (heap->kind()) {
-    case CollectedHeap::G1CollectedHeap:
-    case CollectedHeap::GenCollectedHeap: {
-      is_shared_heap = true;
-      SharedHeap* sh = (SharedHeap*)heap;
-      if (need_prologue) {
-        sh->gc_prologue(false /* !full */); // get any necessary locks, etc.
-      }
-      ref = sh->perm_gen()->used_region().start();
-      break;
-    }
-#ifndef SERIALGC
-    case CollectedHeap::ParallelScavengeHeap: {
-      ParallelScavengeHeap* psh = (ParallelScavengeHeap*)heap;
-      ref = psh->perm_gen()->object_space()->used_region().start();
-      break;
-    }
-#endif // SERIALGC
-    default:
-      ShouldNotReachHere(); // Unexpected heap kind for this op
-  }
+
   // Collect klass instance info
   KlassInfoTable cit(KlassInfoTable::cit_size, ref);
   if (!cit.allocation_failed()) {
     // Iterate over objects in the heap
     RecordInstanceClosure ric(&cit);
-    // If this operation encounters a bad object when using CMS,
-    // consider using safe_object_iterate() which avoids perm gen
-    // objects that may contain bad references.
     Universe::heap()->object_iterate(&ric);
 
     // Report if certain classes are not counted because of
@@ -308,11 +273,11 @@ void HeapInspection::heap_inspection(outputStream* st, bool need_prologue) {
 
 class FindInstanceClosure : public ObjectClosure {
  private:
-  klassOop _klass;
+  Klass* _klass;
   GrowableArray<oop>* _result;
 
  public:
-  FindInstanceClosure(klassOop k, GrowableArray<oop>* result) : _klass(k), _result(result) {};
+  FindInstanceClosure(Klass* k, GrowableArray<oop>* result) : _klass(k), _result(result) {};
 
   void do_object(oop obj) {
     if (obj->is_a(_klass)) {
@@ -321,7 +286,7 @@ class FindInstanceClosure : public ObjectClosure {
   }
 };
 
-void HeapInspection::find_instances_at_safepoint(klassOop k, GrowableArray<oop>* result) {
+void HeapInspection::find_instances_at_safepoint(Klass* k, GrowableArray<oop>* result) {
   assert(SafepointSynchronize::is_at_safepoint(), "all threads are stopped");
   assert(Heap_lock->is_locked(), "should have the Heap_lock");
 
@@ -331,7 +296,7 @@ void HeapInspection::find_instances_at_safepoint(klassOop k, GrowableArray<oop>*
   // Iterate over objects in the heap
   FindInstanceClosure fic(k, result);
   // If this operation encounters a bad object when using CMS,
-  // consider using safe_object_iterate() which avoids perm gen
+  // consider using safe_object_iterate() which avoids metadata
   // objects that may contain bad references.
   Universe::heap()->object_iterate(&fic);
 }

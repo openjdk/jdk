@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ BiasedLockingCounters BiasedLocking::_counters;
 static GrowableArray<Handle>*  _preserved_oop_stack  = NULL;
 static GrowableArray<markOop>* _preserved_mark_stack = NULL;
 
-static void enable_biased_locking(klassOop k) {
+static void enable_biased_locking(Klass* k) {
   Klass::cast(k)->set_prototype_header(markOopDesc::biased_locking_prototype());
 }
 
@@ -276,7 +276,7 @@ static HeuristicsResult update_heuristics(oop o, bool allow_rebias) {
   // 2. Revoke the biases of all objects in the heap of this type
   //    and don't allow rebiasing of these objects. Disable
   //    allocation of objects of that type with the bias bit set.
-  Klass* k = o->blueprint();
+  Klass* k = o->klass();
   jlong cur_time = os::javaTimeMillis();
   jlong last_bulk_revocation_time = k->last_biased_lock_bulk_revocation_time();
   int revocation_count = k->biased_lock_revocation_count();
@@ -330,10 +330,10 @@ static BiasedLocking::Condition bulk_revoke_or_rebias_at_safepoint(oop o,
   }
 
   jlong cur_time = os::javaTimeMillis();
-  o->blueprint()->set_last_biased_lock_bulk_revocation_time(cur_time);
+  o->klass()->set_last_biased_lock_bulk_revocation_time(cur_time);
 
 
-  klassOop k_o = o->klass();
+  Klass* k_o = o->klass();
   Klass* klass = Klass::cast(k_o);
 
   if (bulk_rebias) {
