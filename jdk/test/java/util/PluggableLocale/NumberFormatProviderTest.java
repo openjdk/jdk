@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.util.*;
 import sun.util.*;
 import sun.util.resources.*;
 
+import com.foo.FooNumberFormat;
+
 public class NumberFormatProviderTest extends ProviderTest {
 
     com.foo.NumberFormatProviderImpl nfp = new com.foo.NumberFormatProviderImpl();
@@ -43,6 +45,7 @@ public class NumberFormatProviderTest extends ProviderTest {
     NumberFormatProviderTest() {
         availableLocalesTest();
         objectValidityTest();
+        messageFormatTest();
     }
 
     void availableLocalesTest() {
@@ -72,14 +75,10 @@ public class NumberFormatProviderTest extends ProviderTest {
             }
 
             // result object
-            String resultCur =
-                ((DecimalFormat)NumberFormat.getCurrencyInstance(target)).toPattern();
-            String resultInt =
-                ((DecimalFormat)NumberFormat.getIntegerInstance(target)).toPattern();
-            String resultNum =
-                ((DecimalFormat)NumberFormat.getNumberInstance(target)).toPattern();
-            String resultPer =
-                ((DecimalFormat)NumberFormat.getPercentInstance(target)).toPattern();
+            String resultCur = getPattern(NumberFormat.getCurrencyInstance(target));
+            String resultInt = getPattern(NumberFormat.getIntegerInstance(target));
+            String resultNum = getPattern(NumberFormat.getNumberInstance(target));
+            String resultPer = getPattern(NumberFormat.getPercentInstance(target));
 
             // provider's object (if any)
             String providersCur = null;
@@ -87,21 +86,21 @@ public class NumberFormatProviderTest extends ProviderTest {
             String providersNum = null;
             String providersPer = null;
             if (providerloc.contains(target)) {
-                DecimalFormat dfCur = (DecimalFormat)nfp.getCurrencyInstance(target);
+                NumberFormat dfCur = nfp.getCurrencyInstance(target);
                 if (dfCur != null) {
-                    providersCur = dfCur.toPattern();
+                    providersCur = getPattern(dfCur);
                 }
-                DecimalFormat dfInt = (DecimalFormat)nfp.getIntegerInstance(target);
+                NumberFormat dfInt = nfp.getIntegerInstance(target);
                 if (dfInt != null) {
-                    providersInt = dfInt.toPattern();
+                    providersInt = getPattern(dfInt);
                 }
-                DecimalFormat dfNum = (DecimalFormat)nfp.getNumberInstance(target);
+                NumberFormat dfNum = nfp.getNumberInstance(target);
                 if (dfNum != null) {
-                    providersNum = dfNum.toPattern();
+                    providersNum = getPattern(dfNum);
                 }
-                DecimalFormat dfPer = (DecimalFormat)nfp.getPercentInstance(target);
+                NumberFormat dfPer = nfp.getPercentInstance(target);
                 if (dfPer != null) {
-                    providersPer = dfPer.toPattern();
+                    providersPer = getPattern(dfPer);
                 }
             }
 
@@ -170,6 +169,37 @@ public class NumberFormatProviderTest extends ProviderTest {
                 } else {
                     df.setMinimumFractionDigits(Math.min(digits, oldMinDigits));
                     df.setMaximumFractionDigits(digits);
+                }
+            }
+        }
+    }
+
+    private static String getPattern(NumberFormat nf) {
+        if (nf instanceof DecimalFormat) {
+            return ((DecimalFormat)nf).toPattern();
+        }
+        if (nf instanceof FooNumberFormat) {
+            return ((FooNumberFormat)nf).toPattern();
+        }
+        return null;
+    }
+
+    private static final String[] NUMBER_PATTERNS = {
+        "num={0,number}",
+        "num={0,number,currency}",
+        "num={0,number,percent}",
+        "num={0,number,integer}"
+    };
+
+    void messageFormatTest() {
+        for (Locale target : providerloc) {
+            for (String pattern : NUMBER_PATTERNS) {
+                MessageFormat mf = new MessageFormat(pattern, target);
+                String toPattern = mf.toPattern();
+                if (!pattern.equals(toPattern)) {
+                    throw new RuntimeException("MessageFormat.toPattern: got '"
+                                               + toPattern
+                                               + "', expected '" + pattern + "'");
                 }
             }
         }

@@ -27,6 +27,7 @@ package sun.java2d.loops;
 
 import java.awt.image.BufferedImage;
 import java.awt.AlphaComposite;
+import java.util.HashMap;
 
 /**
  * A CompositeType object provides a chained description of a type of
@@ -51,6 +52,11 @@ import java.awt.AlphaComposite;
  * the indicated algorithm if all of the more specific searches fail.
  */
 public final class CompositeType {
+
+    private static int unusedUID = 1;
+    private static final HashMap<String,Integer> compositeUIDMap =
+        new HashMap<String,Integer>(100);
+
     /*
      * CONSTANTS USED BY ALL PRIMITIVES TO DESCRIBE THE COMPOSITING
      * ALGORITHMS THEY CAN PERFORM
@@ -153,6 +159,22 @@ public final class CompositeType {
         SrcOverNoEa   = SrcOver.deriveSubType(DESC_SRC_OVER_NO_EA);
 
     /*
+     * A special CompositeType for the case where we are filling in
+     * SrcOverNoEa mode with an opaque color.  In that case then the
+     * best loop for us to use would be a SrcNoEa loop, but what if
+     * there is no such loop?  In that case then we would end up
+     * backing off to a Src loop (which should still be fine) or an
+     * AnyAlpha loop which would be slower than a SrcOver loop in
+     * most cases.
+     * The fix is to use the following chain which looks for loops
+     * in the following order:
+     *    SrcNoEa, Src, SrcOverNoEa, SrcOver, AnyAlpha
+     */
+    public static final CompositeType
+        OpaqueSrcOverNoEa = SrcOverNoEa.deriveSubType(DESC_SRC)
+                                       .deriveSubType(DESC_SRC_NO_EA);
+
+    /*
      * END OF CompositeType OBJECTS FOR THE VARIOUS CONSTANTS
      */
 
@@ -210,7 +232,6 @@ public final class CompositeType {
         }
     }
 
-    private static int unusedUID = 1;
     private int uniqueID;
     private String desc;
     private CompositeType next;
@@ -218,14 +239,20 @@ public final class CompositeType {
     private CompositeType(CompositeType parent, String desc) {
         next = parent;
         this.desc = desc;
-        this.uniqueID = makeUniqueID();
+        this.uniqueID = makeUniqueID(desc);
     }
 
-    private synchronized static final int makeUniqueID() {
-        if (unusedUID > 255) {
-            throw new InternalError("composite type id overflow");
+    public synchronized static final int makeUniqueID(String desc) {
+        Integer i = compositeUIDMap.get(desc);
+
+        if (i == null) {
+            if (unusedUID > 255) {
+                throw new InternalError("composite type id overflow");
+            }
+            i = unusedUID++;
+            compositeUIDMap.put(desc, i);
         }
-        return unusedUID++;
+        return i;
     }
 
     public int getUniqueID() {

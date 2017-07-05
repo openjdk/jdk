@@ -424,6 +424,8 @@ class ZipFile implements ZipConstants, Closeable {
      */
     private void releaseInflater(Inflater inf) {
         synchronized (inflaters) {
+            if (inf.ended())
+                return;
             inf.reset();
             inflaters.add(inf);
         }
@@ -543,7 +545,7 @@ class ZipFile implements ZipConstants, Closeable {
 
             if (streams.size() !=0) {
                 Set<InputStream> copy = streams;
-                streams = new HashSet<InputStream>();
+                streams = new HashSet<>();
                 for (InputStream is: copy)
                     is.close();
             }
