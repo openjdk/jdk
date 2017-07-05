@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "classfile/classFileParser.hpp"
 #include "classfile/stackMapTable.hpp"
 #include "classfile/verifier.hpp"
+#include "memory/resourceArea.hpp"
 
 // Keep these in a separate file to prevent inlining
 

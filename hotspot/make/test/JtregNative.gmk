@@ -1,0 +1,81 @@
+#
+# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# This file builds the native component of the JTReg tests for Hotspot.
+# It also covers the test-image part, where the built files are copied to the
+# test image.
+################################################################################
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include TestFilesCompilation.gmk
+
+################################################################################
+# Targets for building the native tests themselves.
+################################################################################
+
+# Add more directories here when needed.
+BUILD_HOTSPOT_JTREG_NATIVE_SRC := \
+    $(HOTSPOT_TOPDIR)/test/native_sanity \
+    #
+
+BUILD_HOTSPOT_JTREG_OUTPUT_DIR := $(BUILD_OUTPUT)/support/test/hotspot/jtreg/native
+
+BUILD_HOTSPOT_JTREG_IMAGE_DIR := $(TEST_IMAGE_DIR)/hotspot/jtreg
+
+$(eval $(call SetupTestFilesCompilation, BUILD_HOTSPOT_JTREG_LIBRARIES, \
+    TYPE := LIBRARY, \
+    SOURCE_DIRS := $(BUILD_HOTSPOT_JTREG_NATIVE_SRC), \
+    OUTPUT_DIR := $(BUILD_HOTSPOT_JTREG_OUTPUT_DIR), \
+))
+
+$(eval $(call SetupTestFilesCompilation, BUILD_HOTSPOT_JTREG_EXECUTABLES, \
+    TYPE := PROGRAM, \
+    SOURCE_DIRS := $(BUILD_HOTSPOT_JTREG_NATIVE_SRC), \
+    OUTPUT_DIR := $(BUILD_HOTSPOT_JTREG_OUTPUT_DIR), \
+))
+
+build-test-hotspot-jtreg-native: $(BUILD_HOTSPOT_JTREG_LIBRARIES) $(BUILD_HOTSPOT_JTREG_EXECUTABLES)
+
+################################################################################
+# Targets for building test-image.
+################################################################################
+
+# Copy to hotspot jtreg test image
+$(eval $(call SetupCopyFiles,COPY_HOTSPOT_JTREG_NATIVE, \
+    SRC := $(BUILD_HOTSPOT_JTREG_OUTPUT_DIR), \
+    DEST := $(TEST_IMAGE_DIR)/hotspot/jtreg/native, \
+    FILES := $(BUILD_HOTSPOT_JTREG_LIBRARIES) $(BUILD_HOTSPOT_JTREG_EXECUTABLES), \
+    FLATTEN := true))
+
+test-image-hotspot-jtreg-native: $(COPY_HOTSPOT_JTREG_NATIVE)
+
+all: build-test-hotspot-jtreg-native
+test-image: test-image-hotspot-jtreg-native
+
+.PHONY: default all build-test-hotspot-jtreg-native test-image-hotspot-jtreg-native test-image

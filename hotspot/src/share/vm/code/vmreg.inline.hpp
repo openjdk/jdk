@@ -42,5 +42,8 @@
 #ifdef TARGET_ARCH_ppc
 # include "vmreg_ppc.inline.hpp"
 #endif
+#ifdef TARGET_ARCH_aarch64
+# include "vmreg_aarch64.inline.hpp"
+#endif
 
 #endif // SHARE_VM_CODE_VMREG_INLINE_HPP

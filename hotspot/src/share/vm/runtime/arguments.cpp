@@ -1162,7 +1162,8 @@ void Arguments::set_tiered_flags() {
   }
   // Increase the code cache size - tiered compiles a lot more.
   if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
-    FLAG_SET_ERGO(uintx, ReservedCodeCacheSize, ReservedCodeCacheSize * 5);
+    FLAG_SET_ERGO(uintx, ReservedCodeCacheSize,
+                  MIN2(CODE_CACHE_DEFAULT_LIMIT, ReservedCodeCacheSize * 5));
   }
   // Enable SegmentedCodeCache if TieredCompilation is enabled and ReservedCodeCacheSize >= 240M
   if (FLAG_IS_DEFAULT(SegmentedCodeCache) && ReservedCodeCacheSize >= 240*M) {
@@ -2475,11 +2476,11 @@ bool Arguments::check_vm_args_consistency() {
                 "Invalid ReservedCodeCacheSize=%dK. Must be at least %uK.\n", ReservedCodeCacheSize/K,
                 min_code_cache_size/K);
     status = false;
-  } else if (ReservedCodeCacheSize > 2*G) {
-    // Code cache size larger than MAXINT is not supported.
+  } else if (ReservedCodeCacheSize > CODE_CACHE_SIZE_LIMIT) {
+    // Code cache size larger than CODE_CACHE_SIZE_LIMIT is not supported.
     jio_fprintf(defaultStream::error_stream(),
                 "Invalid ReservedCodeCacheSize=%dM. Must be at most %uM.\n", ReservedCodeCacheSize/M,
-                (2*G)/M);
+                CODE_CACHE_SIZE_LIMIT/M);
     status = false;
   } else if (NonNMethodCodeHeapSize < min_code_cache_size){
     jio_fprintf(defaultStream::error_stream(),
@@ -3838,12 +3839,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 
 #ifdef _ALLBSD_SOURCE  // UseLargePages is not yet supported on BSD.
   UNSUPPORTED_OPTION(UseLargePages, "-XX:+UseLargePages");
-#endif
-
-#if INCLUDE_ALL_GCS
-  #if (defined JAVASE_EMBEDDED || defined ARM)
-    UNSUPPORTED_OPTION(UseG1GC, "G1 GC");
-  #endif
 #endif
 
   ArgumentsExt::report_unsupported_options();

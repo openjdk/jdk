@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ $(GENERATED)/sa-jdi.jar: $(AGENT_FILES)
 # are in AGENT_FILES, so use the shell to expand them.
 # Be extra carefull to not produce too long command lines in the shell!
 	$(foreach file,$(AGENT_FILES),$(shell ls -1 $(file) >> $(AGENT_FILES_LIST)))
-	$(QUIETLY) $(COMPILE.JAVAC) -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -d $(SA_CLASSDIR) @$(AGENT_FILES_LIST)
+	$(QUIETLY) $(COMPILE.JAVAC) -h $(GENERATED) -classpath $(SA_CLASSPATH) -sourcepath $(AGENT_SRC_DIR) -d $(SA_CLASSDIR) @$(AGENT_FILES_LIST)
 	$(QUIETLY) $(COMPILE.RMIC)  -classpath $(SA_CLASSDIR) -d $(SA_CLASSDIR) sun.jvm.hotspot.debugger.remote.RemoteDebuggerServer
 	$(QUIETLY) echo "$(SA_BUILD_VERSION_PROP)" > $(SA_PROPERTIES)
 	$(QUIETLY) rm -f $(SA_CLASSDIR)/sun/jvm/hotspot/utilities/soql/sa.js
@@ -97,8 +97,6 @@ $(GENERATED)/sa-jdi.jar: $(AGENT_FILES)
 	$(QUIETLY) $(CP) -r $(AGENT_SRC_DIR)/images/* $(SA_CLASSDIR)/
 	$(QUIETLY) $(RUN.JAR) cf $@ -C $(SA_CLASSDIR)/ .
 	$(QUIETLY) $(RUN.JAR) uf $@ -C $(AGENT_SRC_DIR) META-INF/services/com.sun.jdi.connect.Connector
-	$(QUIETLY) $(RUN.JAVAH) -classpath $(SA_CLASSDIR) -d $(GENERATED) -jni sun.jvm.hotspot.debugger.proc.ProcDebuggerLocal
-	$(QUIETLY) $(RUN.JAVAH) -classpath $(SA_CLASSDIR) -d $(GENERATED) -jni sun.jvm.hotspot.asm.Disassembler
 
 clean:
 	rm -rf $(SA_CLASSDIR)

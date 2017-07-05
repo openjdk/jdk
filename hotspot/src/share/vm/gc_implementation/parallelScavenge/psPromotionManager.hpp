@@ -203,6 +203,12 @@ class PSPromotionManager VALUE_OBJ_CLASS_SPEC {
 
   inline void process_popped_location_depth(StarTask p);
 
+  static bool should_scavenge(oop* p, bool check_to_space = false);
+  static bool should_scavenge(narrowOop* p, bool check_to_space = false);
+
+  template <class T, bool promote_immediately>
+  void copy_and_push_safe_barrier(T* p);
+
   template <class T> inline void claim_or_forward_depth(T* p);
 
   TASKQUEUE_STATS_ONLY(inline void record_steal(StarTask& p);)
