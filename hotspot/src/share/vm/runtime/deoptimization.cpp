@@ -1840,6 +1840,7 @@ const char* Deoptimization::_trap_reason_name[] = {
   "speculate_class_check",
   "speculate_null_check",
   "rtm_state_change",
+  "unstable_if",
   "tenured"
 };
 const char* Deoptimization::_trap_action_name[] = {

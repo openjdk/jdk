@@ -160,13 +160,13 @@ const Type *CMoveNode::Value( PhaseTransform *phase ) const {
 // from the inputs we do not need to specify it here.
 CMoveNode *CMoveNode::make( Compile *C, Node *c, Node *bol, Node *left, Node *right, const Type *t ) {
   switch( t->basic_type() ) {
-    case T_INT:     return new (C) CMoveINode( bol, left, right, t->is_int() );
-    case T_FLOAT:   return new (C) CMoveFNode( bol, left, right, t );
-    case T_DOUBLE:  return new (C) CMoveDNode( bol, left, right, t );
-    case T_LONG:    return new (C) CMoveLNode( bol, left, right, t->is_long() );
-    case T_OBJECT:  return new (C) CMovePNode( c, bol, left, right, t->is_oopptr() );
-    case T_ADDRESS: return new (C) CMovePNode( c, bol, left, right, t->is_ptr() );
-    case T_NARROWOOP: return new (C) CMoveNNode( c, bol, left, right, t );
+    case T_INT:     return new CMoveINode( bol, left, right, t->is_int() );
+    case T_FLOAT:   return new CMoveFNode( bol, left, right, t );
+    case T_DOUBLE:  return new CMoveDNode( bol, left, right, t );
+    case T_LONG:    return new CMoveLNode( bol, left, right, t->is_long() );
+    case T_OBJECT:  return new CMovePNode( c, bol, left, right, t->is_oopptr() );
+    case T_ADDRESS: return new CMovePNode( c, bol, left, right, t->is_ptr() );
+    case T_NARROWOOP: return new CMoveNNode( c, bol, left, right, t );
     default:
     ShouldNotReachHere();
     return NULL;
@@ -233,9 +233,9 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 #ifndef PRODUCT
   if( PrintOpto ) tty->print_cr("CMOV to I2B");
 #endif
-  Node *n = new (phase->C) Conv2BNode( cmp->in(1) );
+  Node *n = new Conv2BNode( cmp->in(1) );
   if( flip )
-  n = new (phase->C) XorINode( phase->transform(n), phase->intcon(1) );
+  n = new XorINode( phase->transform(n), phase->intcon(1) );
 
   return n;
 }
@@ -289,9 +289,9 @@ Node *CMoveFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
      sub->in(2) != X ||
      phase->type(sub->in(1)) != TypeF::ZERO ) return NULL;
 
-  Node *abs = new (phase->C) AbsFNode( X );
+  Node *abs = new AbsFNode( X );
   if( flip )
-  abs = new (phase->C) SubFNode(sub->in(1), phase->transform(abs));
+  abs = new SubFNode(sub->in(1), phase->transform(abs));
 
   return abs;
 }
@@ -345,9 +345,9 @@ Node *CMoveDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
      sub->in(2) != X ||
      phase->type(sub->in(1)) != TypeD::ZERO ) return NULL;
 
-  Node *abs = new (phase->C) AbsDNode( X );
+  Node *abs = new AbsDNode( X );
   if( flip )
-  abs = new (phase->C) SubDNode(sub->in(1), phase->transform(abs));
+  abs = new SubDNode(sub->in(1), phase->transform(abs));
 
   return abs;
 }

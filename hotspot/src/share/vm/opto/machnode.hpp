@@ -60,7 +60,10 @@ class State;
 class MachOper : public ResourceObj {
 public:
   // Allocate right next to the MachNodes in the same arena
-  void *operator new( size_t x, Compile* C ) throw() { return C->node_arena()->Amalloc_D(x); }
+  void *operator new(size_t x) throw() {
+    Compile* C = Compile::current();
+    return C->node_arena()->Amalloc_D(x);
+  }
 
   // Opcode
   virtual uint opcode() const = 0;

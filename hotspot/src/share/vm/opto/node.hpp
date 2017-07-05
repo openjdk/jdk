@@ -208,14 +208,12 @@ public:
   // field is a local cache of a value defined in some "program fragment" for
   // which these Nodes are just a part of.
 
-  // New Operator that takes a Compile pointer, this will eventually
-  // be the "new" New operator.
-  inline void* operator new( size_t x, Compile* C) throw() {
+  inline void* operator new(size_t x) throw() {
+    Compile* C = Compile::current();
     Node* n = (Node*)C->node_arena()->Amalloc_D(x);
 #ifdef ASSERT
     n->_in = (Node**)n; // magic cookie for assertion check
 #endif
-    n->_out = (Node**)C;
     return (void*)n;
   }
 
@@ -259,7 +257,7 @@ private:
   // Puts initial values in all Node fields except _idx.
   // Returns the initial value for _idx, which cannot
   // be initialized by assignment.
-  inline int Init(int req, Compile* C);
+  inline int Init(int req);
 
 //----------------- input edge handling
 protected:

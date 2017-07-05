@@ -109,10 +109,10 @@ Node *Parse::fetch_interpreter_state(int index,
   // doubles on Sparc.  Intel can handle them just fine directly.
   Node *l;
   switch (bt) {                // Signature is flattened
-  case T_INT:     l = new (C) LoadINode(ctl, mem, adr, TypeRawPtr::BOTTOM, TypeInt::INT,        MemNode::unordered); break;
-  case T_FLOAT:   l = new (C) LoadFNode(ctl, mem, adr, TypeRawPtr::BOTTOM, Type::FLOAT,         MemNode::unordered); break;
-  case T_ADDRESS: l = new (C) LoadPNode(ctl, mem, adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM,  MemNode::unordered); break;
-  case T_OBJECT:  l = new (C) LoadPNode(ctl, mem, adr, TypeRawPtr::BOTTOM, TypeInstPtr::BOTTOM, MemNode::unordered); break;
+  case T_INT:     l = new LoadINode(ctl, mem, adr, TypeRawPtr::BOTTOM, TypeInt::INT,        MemNode::unordered); break;
+  case T_FLOAT:   l = new LoadFNode(ctl, mem, adr, TypeRawPtr::BOTTOM, Type::FLOAT,         MemNode::unordered); break;
+  case T_ADDRESS: l = new LoadPNode(ctl, mem, adr, TypeRawPtr::BOTTOM, TypeRawPtr::BOTTOM,  MemNode::unordered); break;
+  case T_OBJECT:  l = new LoadPNode(ctl, mem, adr, TypeRawPtr::BOTTOM, TypeInstPtr::BOTTOM, MemNode::unordered); break;
   case T_LONG:
   case T_DOUBLE: {
     // Since arguments are in reverse order, the argument address 'adr'
@@ -120,12 +120,12 @@ Node *Parse::fetch_interpreter_state(int index,
     adr = basic_plus_adr(local_addrs_base, local_addrs, -(index+1)*wordSize);
     if (Matcher::misaligned_doubles_ok) {
       l = (bt == T_DOUBLE)
-        ? (Node*)new (C) LoadDNode(ctl, mem, adr, TypeRawPtr::BOTTOM, Type::DOUBLE, MemNode::unordered)
-        : (Node*)new (C) LoadLNode(ctl, mem, adr, TypeRawPtr::BOTTOM, TypeLong::LONG, MemNode::unordered);
+        ? (Node*)new LoadDNode(ctl, mem, adr, TypeRawPtr::BOTTOM, Type::DOUBLE, MemNode::unordered)
+        : (Node*)new LoadLNode(ctl, mem, adr, TypeRawPtr::BOTTOM, TypeLong::LONG, MemNode::unordered);
     } else {
       l = (bt == T_DOUBLE)
-        ? (Node*)new (C) LoadD_unalignedNode(ctl, mem, adr, TypeRawPtr::BOTTOM, MemNode::unordered)
-        : (Node*)new (C) LoadL_unalignedNode(ctl, mem, adr, TypeRawPtr::BOTTOM, MemNode::unordered);
+        ? (Node*)new LoadD_unalignedNode(ctl, mem, adr, TypeRawPtr::BOTTOM, MemNode::unordered)
+        : (Node*)new LoadL_unalignedNode(ctl, mem, adr, TypeRawPtr::BOTTOM, MemNode::unordered);
     }
     break;
   }
@@ -149,11 +149,11 @@ Node* Parse::check_interpreter_type(Node* l, const Type* type,
   if (type == TypePtr::NULL_PTR ||
       (tp != NULL && !tp->klass()->is_loaded())) {
     // Value must be null, not a real oop.
-    Node* chk = _gvn.transform( new (C) CmpPNode(l, null()) );
-    Node* tst = _gvn.transform( new (C) BoolNode(chk, BoolTest::eq) );
+    Node* chk = _gvn.transform( new CmpPNode(l, null()) );
+    Node* tst = _gvn.transform( new BoolNode(chk, BoolTest::eq) );
     IfNode* iff = create_and_map_if(control(), tst, PROB_MAX, COUNT_UNKNOWN);
-    set_control(_gvn.transform( new (C) IfTrueNode(iff) ));
-    Node* bad_type = _gvn.transform( new (C) IfFalseNode(iff) );
+    set_control(_gvn.transform( new IfTrueNode(iff) ));
+    Node* bad_type = _gvn.transform( new IfFalseNode(iff) );
     bad_type_exit->control()->add_req(bad_type);
     l = null();
   }
@@ -220,7 +220,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   Node *monitors_addr = basic_plus_adr(osr_buf, osr_buf, (max_locals+mcnt*2-1)*wordSize);
   for (index = 0; index < mcnt; index++) {
     // Make a BoxLockNode for the monitor.
-    Node *box = _gvn.transform(new (C) BoxLockNode(next_monitor()));
+    Node *box = _gvn.transform(new BoxLockNode(next_monitor()));
 
 
     // Displaced headers and locked objects are interleaved in the
@@ -235,7 +235,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
 
     // Build a bogus FastLockNode (no code will be generated) and push the
     // monitor into our debug info.
-    const FastLockNode *flock = _gvn.transform(new (C) FastLockNode( 0, lock_object, box ))->as_FastLock();
+    const FastLockNode *flock = _gvn.transform(new FastLockNode( 0, lock_object, box ))->as_FastLock();
     map()->push_monitor(flock);
 
     // If the lock is our method synchronization lock, tuck it away in
@@ -325,7 +325,7 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   // Now that the interpreter state is loaded, make sure it will match
   // at execution time what the compiler is expecting now:
   SafePointNode* bad_type_exit = clone_map();
-  bad_type_exit->set_control(new (C) RegionNode(1));
+  bad_type_exit->set_control(new RegionNode(1));
 
   assert(osr_block->flow()->jsrs()->size() == 0, "should be no jsrs live at osr point");
   for (index = 0; index < max_locals; index++) {
@@ -383,8 +383,8 @@ void Parse::load_interpreter_state(Node* osr_buf) {
 
 //------------------------------Parse------------------------------------------
 // Main parser constructor.
-Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, Parse* parent)
-  : _exits(caller), _parent(parent)
+Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
+  : _exits(caller)
 {
   // Init some variables
   _caller = caller;
@@ -399,6 +399,9 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses, Pars
   _entry_bci = InvocationEntryBci;
   _tf = NULL;
   _block = NULL;
+  _first_return = true;
+  _replaced_nodes_for_exceptions = false;
+  _new_idx = C->unique();
   debug_only(_block_count = -1);
   debug_only(_blocks = (Block*)-1);
 #ifndef PRODUCT
@@ -661,7 +664,7 @@ void Parse::do_all_blocks() {
           add_predicate();
           // Add new region for back branches.
           int edges = block->pred_count() - block->preds_parsed() + 1; // +1 for original region
-          RegionNode *r = new (C) RegionNode(edges+1);
+          RegionNode *r = new RegionNode(edges+1);
           _gvn.set_type(r, Type::CONTROL);
           record_for_igvn(r);
           r->init_req(edges, control());
@@ -728,14 +731,14 @@ void Parse::build_exits() {
   _exits.clean_stack(_exits.sp());
   _exits.sync_jvms();
 
-  RegionNode* region = new (C) RegionNode(1);
+  RegionNode* region = new RegionNode(1);
   record_for_igvn(region);
   gvn().set_type_bottom(region);
   _exits.set_control(region);
 
   // Note:  iophi and memphi are not transformed until do_exits.
-  Node* iophi  = new (C) PhiNode(region, Type::ABIO);
-  Node* memphi = new (C) PhiNode(region, Type::MEMORY, TypePtr::BOTTOM);
+  Node* iophi  = new PhiNode(region, Type::ABIO);
+  Node* memphi = new PhiNode(region, Type::MEMORY, TypePtr::BOTTOM);
   gvn().set_type_bottom(iophi);
   gvn().set_type_bottom(memphi);
   _exits.set_i_o(iophi);
@@ -752,7 +755,7 @@ void Parse::build_exits() {
       ret_type = TypeOopPtr::BOTTOM;
     }
     int         ret_size = type2size[ret_type->basic_type()];
-    Node*       ret_phi  = new (C) PhiNode(region, ret_type);
+    Node*       ret_phi  = new PhiNode(region, ret_type);
     gvn().set_type_bottom(ret_phi);
     _exits.ensure_stack(ret_size);
     assert((int)(tf()->range()->cnt() - TypeFunc::Parms) == ret_size, "good tf range");
@@ -770,7 +773,7 @@ JVMState* Compile::build_start_state(StartNode* start, const TypeFunc* tf) {
   int        arg_size = tf->domain()->cnt();
   int        max_size = MAX2(arg_size, (int)tf->range()->cnt());
   JVMState*  jvms     = new (this) JVMState(max_size - TypeFunc::Parms);
-  SafePointNode* map  = new (this) SafePointNode(max_size, NULL);
+  SafePointNode* map  = new SafePointNode(max_size, NULL);
   record_for_igvn(map);
   assert(arg_size == TypeFunc::Parms + (is_osr_compilation() ? 1 : method()->arg_size()), "correct arg_size");
   Node_Notes* old_nn = default_node_notes();
@@ -784,7 +787,7 @@ JVMState* Compile::build_start_state(StartNode* start, const TypeFunc* tf) {
   }
   uint i;
   for (i = 0; i < (uint)arg_size; i++) {
-    Node* parm = initial_gvn()->transform(new (this) ParmNode(start, i));
+    Node* parm = initial_gvn()->transform(new ParmNode(start, i));
     map->init_req(i, parm);
     // Record all these guys for later GVN.
     record_for_igvn(parm);
@@ -815,7 +818,7 @@ Node_Notes* Parse::make_node_notes(Node_Notes* caller_nn) {
 //--------------------------return_values--------------------------------------
 void Compile::return_values(JVMState* jvms) {
   GraphKit kit(jvms);
-  Node* ret = new (this) ReturnNode(TypeFunc::Parms,
+  Node* ret = new ReturnNode(TypeFunc::Parms,
                              kit.control(),
                              kit.i_o(),
                              kit.reset_memory(),
@@ -843,7 +846,7 @@ void Compile::rethrow_exceptions(JVMState* jvms) {
   // Load my combined exception state into the kit, with all phis transformed:
   SafePointNode* ex_map = kit.combine_and_pop_all_exception_states();
   Node* ex_oop = kit.use_exception_state(ex_map);
-  RethrowNode* exit = new (this) RethrowNode(kit.control(),
+  RethrowNode* exit = new RethrowNode(kit.control(),
                                       kit.i_o(), kit.reset_memory(),
                                       kit.frameptr(), kit.returnadr(),
                                       // like a return but with exception input
@@ -901,6 +904,10 @@ void Parse::throw_to_exit(SafePointNode* ex_map) {
   for (uint i = 0; i < TypeFunc::Parms; i++) {
     caller.map()->set_req(i, ex_map->in(i));
   }
+  if (ex_map->has_replaced_nodes()) {
+    _replaced_nodes_for_exceptions = true;
+  }
+  caller.map()->transfer_replaced_nodes_from(ex_map, _new_idx);
   // ...and the exception:
   Node*          ex_oop        = saved_ex_oop(ex_map);
   SafePointNode* caller_ex_map = caller.make_exception_state(ex_oop);
@@ -991,7 +998,7 @@ void Parse::do_exits() {
   bool do_synch = method()->is_synchronized() && GenerateSynchronizationCode;
 
   // record exit from a method if compiled while Dtrace is turned on.
-  if (do_synch || C->env()->dtrace_method_probes()) {
+  if (do_synch || C->env()->dtrace_method_probes() || _replaced_nodes_for_exceptions) {
     // First move the exception list out of _exits:
     GraphKit kit(_exits.transfer_exceptions_into_jvms());
     SafePointNode* normal_map = kit.map();  // keep this guy safe
@@ -1016,6 +1023,9 @@ void Parse::do_exits() {
       if (C->env()->dtrace_method_probes()) {
         kit.make_dtrace_method_exit(method());
       }
+      if (_replaced_nodes_for_exceptions) {
+        kit.map()->apply_replaced_nodes();
+      }
       // Done with exception-path processing.
       ex_map = kit.make_exception_state(ex_oop);
       assert(ex_jvms->same_calls_as(ex_map->jvms()), "sanity");
@@ -1035,6 +1045,7 @@ void Parse::do_exits() {
       _exits.add_exception_state(ex_map);
     }
   }
+  _exits.map()->apply_replaced_nodes();
 }
 
 //-----------------------------create_entry_map-------------------------------
@@ -1048,6 +1059,9 @@ SafePointNode* Parse::create_entry_map() {
     C->record_method_not_compilable_all_tiers("too many local variables");
     return NULL;
   }
+
+  // clear current replaced nodes that are of no use from here on (map was cloned in build_exits).
+  _caller->map()->delete_replaced_nodes();
 
   // If this is an inlined method, we may have to do a receiver null check.
   if (_caller->has_method() && is_normal_parse() && !method()->is_static()) {
@@ -1065,13 +1079,15 @@ SafePointNode* Parse::create_entry_map() {
 
   // Create an initial safepoint to hold JVM state during parsing
   JVMState* jvms = new (C) JVMState(method(), _caller->has_method() ? _caller : NULL);
-  set_map(new (C) SafePointNode(len, jvms));
+  set_map(new SafePointNode(len, jvms));
   jvms->set_map(map());
   record_for_igvn(map());
   assert(jvms->endoff() == len, "correct jvms sizing");
 
   SafePointNode* inmap = _caller->map();
   assert(inmap != NULL, "must have inmap");
+  // In case of null check on receiver above
+  map()->transfer_replaced_nodes_from(inmap, _new_idx);
 
   uint i;
 
@@ -1578,7 +1594,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       // later lazily.
       int edges = target->pred_count();
       if (edges < pnum)  edges = pnum;  // might be a new path!
-      RegionNode *r = new (C) RegionNode(edges+1);
+      RegionNode *r = new RegionNode(edges+1);
       gvn().set_type(r, Type::CONTROL);
       record_for_igvn(r);
       // zap all inputs to NULL for debugging (done in Node(uint) constructor)
@@ -1700,6 +1716,8 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
       assert(control() == r, "");
       set_control(r->nonnull_req());
     }
+
+    map()->merge_replaced_nodes_with(newin);
 
     // newin has been subsumed into the lazy merge, and is now dead.
     set_block(save_block);
@@ -1973,19 +1991,19 @@ void Parse::call_register_finalizer() {
   Node* access_flags_addr = basic_plus_adr(klass, klass, in_bytes(Klass::access_flags_offset()));
   Node* access_flags = make_load(NULL, access_flags_addr, TypeInt::INT, T_INT, MemNode::unordered);
 
-  Node* mask  = _gvn.transform(new (C) AndINode(access_flags, intcon(JVM_ACC_HAS_FINALIZER)));
-  Node* check = _gvn.transform(new (C) CmpINode(mask, intcon(0)));
-  Node* test  = _gvn.transform(new (C) BoolNode(check, BoolTest::ne));
+  Node* mask  = _gvn.transform(new AndINode(access_flags, intcon(JVM_ACC_HAS_FINALIZER)));
+  Node* check = _gvn.transform(new CmpINode(mask, intcon(0)));
+  Node* test  = _gvn.transform(new BoolNode(check, BoolTest::ne));
 
   IfNode* iff = create_and_map_if(control(), test, PROB_MAX, COUNT_UNKNOWN);
 
-  RegionNode* result_rgn = new (C) RegionNode(3);
+  RegionNode* result_rgn = new RegionNode(3);
   record_for_igvn(result_rgn);
 
-  Node *skip_register = _gvn.transform(new (C) IfFalseNode(iff));
+  Node *skip_register = _gvn.transform(new IfFalseNode(iff));
   result_rgn->init_req(1, skip_register);
 
-  Node *needs_register = _gvn.transform(new (C) IfTrueNode(iff));
+  Node *needs_register = _gvn.transform(new IfTrueNode(iff));
   set_control(needs_register);
   if (stopped()) {
     // There is no slow path.
@@ -2039,9 +2057,9 @@ void Parse::rtm_deopt() {
     // or with ProfileRTM (cmp->in(2)) otherwise so that
     // the check will fold.
     Node* profile_state = makecon(TypeInt::make(ProfileRTM));
-    Node* opq   = _gvn.transform( new (C) Opaque3Node(C, rtm_state, Opaque3Node::RTM_OPT) );
-    Node* chk   = _gvn.transform( new (C) CmpINode(opq, profile_state) );
-    Node* tst   = _gvn.transform( new (C) BoolNode(chk, BoolTest::eq) );
+    Node* opq   = _gvn.transform( new Opaque3Node(C, rtm_state, Opaque3Node::RTM_OPT) );
+    Node* chk   = _gvn.transform( new CmpINode(opq, profile_state) );
+    Node* tst   = _gvn.transform( new BoolNode(chk, BoolTest::eq) );
     // Branch to failure if state was changed
     { BuildCutout unless(this, tst, PROB_ALWAYS);
       uncommon_trap(Deoptimization::Reason_rtm_state_change,
@@ -2066,10 +2084,10 @@ void Parse::decrement_age() {
   Node* mc_adr = makecon(adr_type);
   Node* cnt_adr = basic_plus_adr(mc_adr, mc_adr, in_bytes(MethodCounters::nmethod_age_offset()));
   Node* cnt = make_load(control(), cnt_adr, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
-  Node* decr = _gvn.transform(new (C) SubINode(cnt, makecon(TypeInt::ONE)));
+  Node* decr = _gvn.transform(new SubINode(cnt, makecon(TypeInt::ONE)));
   store_to_memory(control(), cnt_adr, decr, T_INT, adr_type, MemNode::unordered);
-  Node *chk   = _gvn.transform(new (C) CmpINode(decr, makecon(TypeInt::ZERO)));
-  Node* tst   = _gvn.transform(new (C) BoolNode(chk, BoolTest::gt));
+  Node *chk   = _gvn.transform(new CmpINode(decr, makecon(TypeInt::ZERO)));
+  Node* tst   = _gvn.transform(new BoolNode(chk, BoolTest::gt));
   { BuildCutout unless(this, tst, PROB_ALWAYS);
     uncommon_trap(Deoptimization::Reason_tenured,
                   Deoptimization::Action_make_not_entrant);
@@ -2124,10 +2142,17 @@ void Parse::return_current(Node* value) {
         // sharpen the type eagerly; this eases certain assert checking
         if (tp->higher_equal(TypeInstPtr::NOTNULL))
           tr = tr->join_speculative(TypeInstPtr::NOTNULL)->is_instptr();
-        value = _gvn.transform(new (C) CheckCastPPNode(0,value,tr));
+        value = _gvn.transform(new CheckCastPPNode(0,value,tr));
       }
     }
     phi->add_req(value);
+  }
+
+  if (_first_return) {
+    _exits.map()->transfer_replaced_nodes_from(map(), _new_idx);
+    _first_return = false;
+  } else {
+    _exits.map()->merge_replaced_nodes_with(map());
   }
 
   stop_and_kill_map();          // This CFG path dies here
@@ -2159,7 +2184,7 @@ void Parse::add_safepoint() {
   kill_dead_locals();
 
   // Clone the JVM State
-  SafePointNode *sfpnt = new (C) SafePointNode(parms, NULL);
+  SafePointNode *sfpnt = new SafePointNode(parms, NULL);
 
   // Capture memory state BEFORE a SafePoint.  Since we can block at a
   // SafePoint we need our GC state to be safe; i.e. we need all our current

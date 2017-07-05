@@ -1291,16 +1291,18 @@ LEAF(Invoke, StateSplit)
 LEAF(NewInstance, StateSplit)
  private:
   ciInstanceKlass* _klass;
+  bool _is_unresolved;
 
  public:
   // creation
-  NewInstance(ciInstanceKlass* klass, ValueStack* state_before)
+  NewInstance(ciInstanceKlass* klass, ValueStack* state_before, bool is_unresolved)
   : StateSplit(instanceType, state_before)
-  , _klass(klass)
+  , _klass(klass), _is_unresolved(is_unresolved)
   {}
 
   // accessors
   ciInstanceKlass* klass() const                 { return _klass; }
+  bool is_unresolved() const                     { return _is_unresolved; }
 
   virtual bool needs_exception_state() const     { return false; }
 
