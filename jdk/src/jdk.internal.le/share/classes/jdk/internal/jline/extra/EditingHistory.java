@@ -48,7 +48,9 @@ public abstract class EditingHistory implements History {
     private History currentDelegate;
 
     protected EditingHistory(ConsoleReader in, Iterable<? extends String> originalHistory) {
-        this.fullHistory = new MemoryHistory();
+        MemoryHistory fullHistory = new MemoryHistory();
+        fullHistory.setIgnoreDuplicates(false);
+        this.fullHistory = fullHistory;
         this.currentDelegate = fullHistory;
         bind(in, CTRL_UP,
              (Runnable) () -> moveHistoryToSnippet(in, ((EditingHistory) in.getHistory())::previousSnippet));

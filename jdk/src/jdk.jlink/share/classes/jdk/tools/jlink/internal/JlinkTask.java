@@ -86,6 +86,9 @@ public class JlinkTask {
             task.options.help = true;
         }, "--help", "-h"),
         new Option<JlinkTask>(true, (task, opt, arg) -> {
+            // if used multiple times, the last one wins!
+            // So, clear previous values, if any.
+            task.options.modulePath.clear();
             String[] dirs = arg.split(File.pathSeparator);
             int i = 0;
             Arrays.stream(dirs)
@@ -93,6 +96,9 @@ public class JlinkTask {
                   .forEach(task.options.modulePath::add);
         }, "--module-path", "-p"),
         new Option<JlinkTask>(true, (task, opt, arg) -> {
+            // if used multiple times, the last one wins!
+            // So, clear previous values, if any.
+            task.options.limitMods.clear();
             for (String mn : arg.split(",")) {
                 if (mn.isEmpty()) {
                     throw taskHelper.newBadArgs("err.mods.must.be.specified",

@@ -153,6 +153,24 @@ size_t MmapArrayAllocator<E, F>::size_for(size_t length) {
 }
 
 template <class E, MEMFLAGS F>
+E* MmapArrayAllocator<E, F>::allocate_or_null(size_t length) {
+  size_t size = size_for(length);
+  int alignment = os::vm_allocation_granularity();
+
+  char* addr = os::reserve_memory(size, NULL, alignment, F);
+  if (addr == NULL) {
+    return NULL;
+  }
+
+  if (os::commit_memory(addr, size, !ExecMem, "Allocator (commit)")) {
+    return (E*)addr;
+  } else {
+    os::release_memory(addr, size);
+    return NULL;
+  }
+}
+
+template <class E, MEMFLAGS F>
 E* MmapArrayAllocator<E, F>::allocate(size_t length) {
   size_t size = size_for(length);
   int alignment = os::vm_allocation_granularity();

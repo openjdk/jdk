@@ -30,6 +30,8 @@
 #include "memory/virtualspace.hpp"
 #include "utilities/bitMap.hpp"
 
+class WorkGang;
+
 // Virtual space management helper for a virtual space with an OS page allocation
 // granularity.
 // (De-)Allocation requests are always OS page aligned by passing a page index
@@ -116,6 +118,8 @@ class G1PageBasedVirtualSpace VALUE_OBJ_CLASS_SPEC {
 
   // Uncommit the given area of pages starting at start being size_in_pages large.
   void uncommit(size_t start_page, size_t size_in_pages);
+
+  void pretouch(size_t start_page, size_t size_in_pages, WorkGang* pretouch_gang = NULL);
 
   // Initialize the given reserved space with the given base address and the size
   // actually used.

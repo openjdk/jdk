@@ -24,9 +24,11 @@
  */
 package java.rmi.server;
 
+import java.io.ObjectInputFilter;
 import java.rmi.*;
 import sun.rmi.server.UnicastServerRef;
 import sun.rmi.server.UnicastServerRef2;
+import sun.rmi.transport.LiveRef;
 
 /**
  * Used for exporting a remote object with JRMP and obtaining a stub
@@ -38,11 +40,11 @@ import sun.rmi.server.UnicastServerRef2;
  * generated stubs is deprecated. This includes the API in this class that
  * requires the use of static stubs, as well as the runtime support for
  * loading static stubs.  Generating stubs dynamically is preferred, using one
- * of the five non-deprecated ways of exporting objects as listed below. Do
+ * of the non-deprecated ways of exporting objects as listed below. Do
  * not run {@code rmic} to generate static stub classes. It is unnecessary, and
  * it is also deprecated.</em>
  *
- * <p>There are six ways to export remote objects:
+ * <p>There are eight ways to export remote objects:
  *
  * <ol>
  *
@@ -67,12 +69,19 @@ import sun.rmi.server.UnicastServerRef2;
  * {@link #exportObject(Remote, int, RMIClientSocketFactory, RMIServerSocketFactory)
  * exportObject(Remote, port, csf, ssf)} method.
  *
+ * <li>Calling the
+ * {@link #exportObject(Remote, int, ObjectInputFilter) exportObject(Remote, port, filter)} method.
+ *
+ * <li>Calling the
+ * {@link #exportObject(Remote, int, RMIClientSocketFactory, RMIServerSocketFactory, ObjectInputFilter)
+ * exportObject(Remote, port, csf, ssf, filter)} method.
+ *
  * </ol>
  *
  * <p>The fourth technique, {@link #exportObject(Remote)},
  * always uses statically generated stubs and is deprecated.
  *
- * <p>The other five techniques all use the following approach: if the
+ * <p>The other techniques all use the following approach: if the
  * {@code java.rmi.server.ignoreStubClasses} property is {@code true}
  * (case insensitive) or if a static stub cannot be found, stubs are generated
  * dynamically using {@link java.lang.reflect.Proxy Proxy} objects. Otherwise,
@@ -129,6 +138,22 @@ import sun.rmi.server.UnicastServerRef2;
  * will be thrown.
  *
  * </ul>
+ *
+ * <p>
+ * Exported remote objects receive method invocations from the stubs
+ * as described in the RMI specification. Each invocation's operation and
+ * parameters are unmarshaled using a custom {@link java.io.ObjectInputStream}.
+ * If an {@link ObjectInputFilter} is provided and is not {@code null} when the object
+ * is exported, it is used to filter the parameters as they are unmarshaled from the stream.
+ * The filter is used for all invocations and all parameters regardless of
+ * the method being invoked or the parameter values.
+ * If no filter is provided or is {@code null} for the exported object then the
+ * {@code ObjectInputStream} default filter, if any, is used. The default filter is
+ * configured with {@link ObjectInputFilter.Config#setSerialFilter(ObjectInputFilter)
+ * ObjectInputFilter.Config.setSerialFilter}.
+ * If the filter rejects any of the parameters, the {@code InvalidClassException}
+ * thrown by {@code ObjectInputStream} is reported as the cause of an
+ * {@link UnmarshalException}.
  *
  * @implNote
  * Depending upon which constructor or static method is used for exporting an
@@ -344,6 +369,58 @@ public class UnicastRemoteObject extends RemoteServer {
     {
 
         return exportObject(obj, new UnicastServerRef2(port, csf, ssf));
+    }
+
+    /**
+     * Exports the remote object to make it available to receive incoming
+     * calls, using the particular supplied port
+     * and {@linkplain ObjectInputFilter filter}.
+     *
+     * <p>The object is exported with a server socket
+     * created using the {@link RMISocketFactory} class.
+     *
+     * @param obj the remote object to be exported
+     * @param port the port to export the object on
+     * @param filter an ObjectInputFilter applied when deserializing invocation arguments;
+     *               may be {@code null}
+     * @return remote object stub
+     * @exception RemoteException if export fails
+     * @since 9
+     */
+    public static Remote exportObject(Remote obj, int port,
+                                      ObjectInputFilter filter)
+            throws RemoteException
+    {
+        return exportObject(obj, new UnicastServerRef(new LiveRef(port), filter));
+    }
+
+    /**
+     * Exports the remote object to make it available to receive incoming
+     * calls, using a transport specified by the given socket factory
+     * and {@linkplain ObjectInputFilter filter}.
+     *
+     * <p>Either socket factory may be {@code null}, in which case
+     * the corresponding client or server socket creation method of
+     * {@link RMISocketFactory} is used instead.
+     *
+     * @param obj the remote object to be exported
+     * @param port the port to export the object on
+     * @param csf the client-side socket factory for making calls to the
+     * remote object
+     * @param ssf the server-side socket factory for receiving remote calls
+     * @param filter an ObjectInputFilter applied when deserializing invocation arguments;
+     *               may be {@code null}
+     * @return remote object stub
+     * @exception RemoteException if export fails
+     * @since 9
+     */
+    public static Remote exportObject(Remote obj, int port,
+                                      RMIClientSocketFactory csf,
+                                      RMIServerSocketFactory ssf,
+                                      ObjectInputFilter filter)
+        throws RemoteException
+    {
+        return exportObject(obj, new UnicastServerRef2(port, csf, ssf, filter));
     }
 
     /**
