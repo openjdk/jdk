@@ -25,6 +25,7 @@
 package java.net.http;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -59,8 +60,7 @@ final class WSBuilder implements WebSocket.Builder {
     private final LinkedHashMap<String, List<String>> headers = new LinkedHashMap<>();
     private final WebSocket.Listener listener;
     private Collection<String> subprotocols = Collections.emptyList();
-    private long timeout;
-    private TimeUnit timeUnit;
+    private Duration timeout;
 
     WSBuilder(URI uri, HttpClient client, WebSocket.Listener listener) {
         checkURI(requireNonNull(uri, "uri"));
@@ -93,13 +93,8 @@ final class WSBuilder implements WebSocket.Builder {
     }
 
     @Override
-    public WebSocket.Builder connectTimeout(long timeout, TimeUnit unit) {
-        if (timeout < 0) {
-            throw new IllegalArgumentException("Negative timeout: " + timeout);
-        }
-        requireNonNull(unit, "unit");
-        this.timeout = timeout;
-        this.timeUnit = unit;
+    public WebSocket.Builder connectTimeout(Duration timeout) {
+        this.timeout = requireNonNull(timeout, "timeout");
         return this;
     }
 
@@ -139,9 +134,7 @@ final class WSBuilder implements WebSocket.Builder {
         return new ArrayList<>(subprotocols);
     }
 
-    long getTimeout() { return timeout; }
-
-    TimeUnit getTimeUnit() { return timeUnit; }
+    Duration getConnectTimeout() { return timeout; }
 
     private static Collection<String> checkSubprotocols(String mostPreferred,
                                                         String... lesserPreferred) {

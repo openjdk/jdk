@@ -300,8 +300,9 @@ class MulticastSocket extends DatagramSocket {
      *
      * @param mcastaddr is the multicast address to join
      *
-     * @exception IOException if there is an error joining
-     * or when the address is not a multicast address.
+     * @exception IOException if there is an error joining, or when the address
+     *            is not a multicast address, or the platform does not support
+     *            multicasting
      * @exception  SecurityException  if a security manager exists and its
      * {@code checkMulticast} method doesn't allow the join.
      *
@@ -384,8 +385,9 @@ class MulticastSocket extends DatagramSocket {
      *       {@link MulticastSocket#setInterface(InetAddress)} or
      *       {@link MulticastSocket#setNetworkInterface(NetworkInterface)}
      *
-     * @exception IOException if there is an error joining
-     * or when the address is not a multicast address.
+     * @exception IOException if there is an error joining, or when the address
+     *            is not a multicast address, or the platform does not support
+     *            multicasting
      * @exception  SecurityException  if a security manager exists and its
      * {@code checkMulticast} method doesn't allow the join.
      * @throws  IllegalArgumentException if mcastaddr is null or is a

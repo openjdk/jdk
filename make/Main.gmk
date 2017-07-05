@@ -301,13 +301,16 @@ ALL_TARGETS += $(JMOD_TARGETS)
 ################################################################################
 # Images targets
 
-# Stores the tips for each repository. This file is be used when constructing the jdk image and can be
-# used to track the exact sources used to build that image.
+# Stores the tips for each repository. This file is be used when constructing
+# the jdk image and can be used to track the exact sources used to build that
+# image.
 source-tips: $(SUPPORT_OUTPUTDIR)/source_tips
 $(SUPPORT_OUTPUTDIR)/source_tips: FRC
 	$(call MakeDir, $(@D))
-	@$(RM) $@
-	@$(call GetSourceTips)
+	$(call GetSourceTips)
+
+create-hgtip-files:
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f CreateHgtipFiles.gmk)
 
 BOOTCYCLE_TARGET := product-images
 bootcycle-images:
@@ -337,8 +340,8 @@ profiles:
 mac-bundles-jdk:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f MacBundles.gmk)
 
-ALL_TARGETS += source-tips bootcycle-images zip-security zip-source \
-    jrtfs-jar jimages profiles mac-bundles-jdk
+ALL_TARGETS += source-tips create-hgtip-files bootcycle-images zip-security \
+     zip-source jrtfs-jar jimages profiles mac-bundles-jdk
 
 ################################################################################
 # Docs targets

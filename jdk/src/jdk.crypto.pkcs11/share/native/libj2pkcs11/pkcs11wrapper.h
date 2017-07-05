@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -159,6 +159,7 @@
 #include "pkcs-11v2-20a3.h"
 #include <jni.h>
 #include <jni_util.h>
+#include <stdarg.h>
 
 #define MAX_STACK_BUFFER_LEN (4 * 1024)
 #define MAX_HEAP_BUFFER_LEN (64 * 1024)
@@ -216,6 +217,10 @@
 #define TRACE_INTEND
 #define TRACE_UNINTEND
 #endif
+
+/* debug output */
+extern jboolean debug;
+void printDebug(const char *format, ...);
 
 #define CK_ASSERT_OK 0L
 

@@ -3895,8 +3895,7 @@ public final class Formatter implements Closeable, Flushable {
                 TimeZone tz = t.getTimeZone();
                 sb.append(tz.getDisplayName((t.get(Calendar.DST_OFFSET) != 0),
                                            TimeZone.SHORT,
-                                           Objects.requireNonNullElse(l,
-                                               Locale.getDefault(Locale.Category.FORMAT))));
+                                           Objects.requireNonNullElse(l, Locale.US)));
                 break;
             }
 
@@ -3904,8 +3903,7 @@ public final class Formatter implements Closeable, Flushable {
             case DateTime.NAME_OF_DAY_ABBREV:     // 'a'
             case DateTime.NAME_OF_DAY:          { // 'A'
                 int i = t.get(Calendar.DAY_OF_WEEK);
-                Locale lt = Objects.requireNonNullElse(l,
-                                               Locale.getDefault(Locale.Category.FORMAT));
+                Locale lt = Objects.requireNonNullElse(l, Locale.US);
                 DateFormatSymbols dfs = DateFormatSymbols.getInstance(lt);
                 if (c == DateTime.NAME_OF_DAY)
                     sb.append(dfs.getWeekdays()[i]);
@@ -3917,8 +3915,7 @@ public final class Formatter implements Closeable, Flushable {
             case DateTime.NAME_OF_MONTH_ABBREV_X: // 'h' -- same b
             case DateTime.NAME_OF_MONTH:        { // 'B'
                 int i = t.get(Calendar.MONTH);
-                Locale lt = Objects.requireNonNullElse(l,
-                                               Locale.getDefault(Locale.Category.FORMAT));
+                Locale lt = Objects.requireNonNullElse(l, Locale.US);
                 DateFormatSymbols dfs = DateFormatSymbols.getInstance(lt);
                 if (c == DateTime.NAME_OF_MONTH)
                     sb.append(dfs.getMonths()[i]);

@@ -157,7 +157,7 @@ public class ConfigurationTest {
      *
      * The test consists of three configurations:
      * - Configuration cf1: m1, m2 requires public m1
-     * - Configuration cf2: m3 requires m1
+     * - Configuration cf2: m3 requires m2
      */
     public void testRequiresPublic2() {
 
@@ -219,7 +219,7 @@ public class ConfigurationTest {
      *
      * The test consists of three configurations:
      * - Configuration cf1: m1
-     * - Configuration cf2: m2 requires public m3, m3 requires m2
+     * - Configuration cf2: m2 requires public m1, m3 requires m2
      */
     public void testRequiresPublic3() {
 
@@ -283,7 +283,7 @@ public class ConfigurationTest {
      * The test consists of three configurations:
      * - Configuration cf1: m1
      * - Configuration cf2: m2 requires public m1
-     * - Configuraiton cf3: m3 requires m3
+     * - Configuraiton cf3: m3 requires m2
      */
     public void testRequiresPublic4() {
 
@@ -657,8 +657,8 @@ public class ConfigurationTest {
      * Basic test of binding services with configurations.
      *
      * Configuration cf1: p@1.0 provides p.S
+     * Test configuration cf2: m1 uses p.S, p@2.0 provides p.S
      * Test configuration cf2: m1 uses p.S
-     * Test configuration cf2: m1 uses p.S, p@2.0 uses p.S
      */
     public void testServiceBindingWithConfigurations3() {
 
@@ -896,7 +896,7 @@ public class ConfigurationTest {
 
         Configuration cf2 = resolveRequires(cf1, finder, "m1");
         assertTrue(cf2.modules().size() == 1);
-        assertTrue(cf1.findModule("m1").isPresent());
+        assertTrue(cf2.findModule("m1").isPresent());
     }
 
 
@@ -1305,7 +1305,7 @@ public class ConfigurationTest {
 
 
     /**
-     * Test "provides p.S" where p is not local
+     * Test "provides p.S with q.T" where q.T is not local
      */
     @Test(expectedExceptions = { ResolutionException.class })
     public void testProviderPackageNotLocal() {

@@ -32,7 +32,6 @@ import java.nio.file.PathMatcher;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -143,11 +142,8 @@ public final class OrderResourcesPlugin implements TransformerPlugin {
     }
 
     @Override
-    public Set<Category> getType() {
-        Set<Category> set = new HashSet<>();
-        set.add(Category.SORTER);
-
-        return Collections.unmodifiableSet(set);
+    public Category getType() {
+        return Category.SORTER;
     }
 
     @Override
