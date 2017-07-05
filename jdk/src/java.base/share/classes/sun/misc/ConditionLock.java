@@ -34,7 +34,7 @@ package sun.misc;
  * with the lock() and unlock() methods. However if there is a thread
  * waiting for the state variable to become a particular value and you
  * simply call Unlock(), that thread will not be able to acquire the
- * lock until the state variable equals its desired value. <p>
+ * lock until the state variable equals its desired value.
  *
  * @author      Peter King
  */

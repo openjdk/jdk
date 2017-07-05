@@ -55,16 +55,16 @@ import java.text.Normalizer;
  * In Unicode, this can be encoded as a single character (the
  * "composed" form):
  *
- * <p>
+ * <pre>
  *      00C1    LATIN CAPITAL LETTER A WITH ACUTE
- * </p>
+ * </pre>
  *
  * or as two separate characters (the "decomposed" form):
  *
- * <p>
+ * <pre>
  *      0041    LATIN CAPITAL LETTER A
  *      0301    COMBINING ACUTE ACCENT
- * </p>
+ * </pre>
  *
  * To a user of your program, however, both of these sequences should be
  * treated as the same "user-level" character "A with acute accent".  When you
@@ -76,17 +76,17 @@ import java.text.Normalizer;
  *
  * Similarly, the string "ffi" can be encoded as three separate letters:
  *
- * <p>
+ * <pre>
  *      0066    LATIN SMALL LETTER F
  *      0066    LATIN SMALL LETTER F
  *      0069    LATIN SMALL LETTER I
- * </p>
+ * </pre>
  *
  * or as the single character
  *
- * <p>
+ * <pre>
  *      FB03    LATIN SMALL LIGATURE FFI
- * </p>
+ * </pre>
  *
  * The ffi ligature is not a distinct semantic character, and strictly speaking
  * it shouldn't be in Unicode at all, but it was included for compatibility
@@ -555,12 +555,12 @@ public final class NormalizerBase implements Cloneable {
     //-------------------------------------------------------------------------
 
     /**
-     * Creates a new <tt>Normalizer</tt> object for iterating over the
+     * Creates a new {@code Normalizer} object for iterating over the
      * normalized form of a given string.
      * <p>
-     * The <tt>options</tt> parameter specifies which optional
-     * <tt>Normalizer</tt> features are to be enabled for this object.
-     * <p>
+     * The {@code options} parameter specifies which optional
+     * {@code Normalizer} features are to be enabled for this object.
+     *
      * @param str  The string to be normalized.  The normalization
      *              will start at the beginning of the string.
      *
@@ -579,9 +579,9 @@ public final class NormalizerBase implements Cloneable {
     }
 
     /**
-     * Creates a new <tt>Normalizer</tt> object for iterating over the
+     * Creates a new {@code Normalizer} object for iterating over the
      * normalized form of the given text.
-     * <p>
+     *
      * @param iter  The input text to be normalized.  The normalization
      *              will start at the beginning of the string.
      *
@@ -592,9 +592,9 @@ public final class NormalizerBase implements Cloneable {
     }
 
     /**
-     * Creates a new <tt>Normalizer</tt> object for iterating over the
+     * Creates a new {@code Normalizer} object for iterating over the
      * normalized form of the given text.
-     * <p>
+     *
      * @param iter  The input text to be normalized.  The normalization
      *              will start at the beginning of the string.
      *
@@ -615,13 +615,13 @@ public final class NormalizerBase implements Cloneable {
     }
 
     /**
-     * Clones this <tt>Normalizer</tt> object.  All properties of this
+     * Clones this {@code Normalizer} object.  All properties of this
      * object are duplicated in the new object, including the cloning of any
      * {@link CharacterIterator} that was passed in to the constructor
      * or to {@link #setText(CharacterIterator) setText}.
      * However, the text storage underlying
-     * the <tt>CharacterIterator</tt> is not duplicated unless the
-     * iterator's <tt>clone</tt> method does so.
+     * the {@code CharacterIterator} is not duplicated unless the
+     * iterator's {@code clone} method does so.
      * @stable ICU 2.8
      */
     public Object clone() {
@@ -791,7 +791,7 @@ public final class NormalizerBase implements Cloneable {
     //-------------------------------------------------------------------------
 
     /**
-     * Return the current character in the normalized text->
+     * Return the current character in the normalized text.
      * @return The codepoint as an int
      * @stable ICU 2.8
      */
@@ -872,10 +872,10 @@ public final class NormalizerBase implements Cloneable {
      * while {@link #next} and {@link #previous} iterate through characters
      * in the normalized <em>output</em>.  This means that there is not
      * necessarily a one-to-one correspondence between characters returned
-     * by <tt>next</tt> and <tt>previous</tt> and the indices passed to and
-     * returned from <tt>setIndex</tt> and {@link #getIndex}.
-     * <p>
-     * @param index the desired index in the input text->
+     * by {@code next} and {@code previous} and the indices passed to and
+     * returned from {@code setIndex} and {@link #getIndex}.
+     *
+     * @param index the desired index in the input text.
      *
      * @return   the first normalized character that is the result of iterating
      *            forward starting at the given index.
@@ -894,8 +894,8 @@ public final class NormalizerBase implements Cloneable {
 
     /**
      * Retrieve the index of the start of the input text. This is the begin
-     * index of the <tt>CharacterIterator</tt> or the start (i.e. 0) of the
-     * <tt>String</tt> over which this <tt>Normalizer</tt> is iterating
+     * index of the {@code CharacterIterator} or the start (i.e. 0) of the
+     * {@code String} over which this {@code Normalizer} is iterating
      * @deprecated ICU 2.2. Use startIndex() instead.
      * @return The codepoint as an int
      * @see #startIndex
@@ -907,8 +907,8 @@ public final class NormalizerBase implements Cloneable {
 
     /**
      * Retrieve the index of the end of the input text.  This is the end index
-     * of the <tt>CharacterIterator</tt> or the length of the <tt>String</tt>
-     * over which this <tt>Normalizer</tt> is iterating
+     * of the {@code CharacterIterator} or the length of the {@code String}
+     * over which this {@code Normalizer} is iterating
      * @deprecated ICU 2.2. Use endIndex() instead.
      * @return The codepoint as an int
      * @see #endIndex
@@ -927,9 +927,9 @@ public final class NormalizerBase implements Cloneable {
      * <b>Note:</b> This method sets the position in the <em>input</em>, while
      * {@link #next} and {@link #previous} iterate through characters in the
      * <em>output</em>.  This means that there is not necessarily a one-to-one
-     * correspondence between characters returned by <tt>next</tt> and
-     * <tt>previous</tt> and the indices passed to and returned from
-     * <tt>setIndex</tt> and {@link #getIndex}.
+     * correspondence between characters returned by {@code next} and
+     * {@code previous} and the indices passed to and returned from
+     * {@code setIndex} and {@link #getIndex}.
      * @return The current iteration position
      * @stable ICU 2.8
      */
@@ -942,9 +942,9 @@ public final class NormalizerBase implements Cloneable {
     }
 
     /**
-     * Retrieve the index of the end of the input text->  This is the end index
-     * of the <tt>CharacterIterator</tt> or the length of the <tt>String</tt>
-     * over which this <tt>Normalizer</tt> is iterating
+     * Retrieve the index of the end of the input text. This is the end index
+     * of the {@code CharacterIterator} or the length of the {@code String}
+     * over which this {@code Normalizer} is iterating
      * @return The current iteration position
      * @stable ICU 2.8
      */
@@ -963,9 +963,9 @@ public final class NormalizerBase implements Cloneable {
      * return previously buffers characters in the old normalization mode
      * until the iteration is able to re-sync at the next base character.
      * It is safest to call {@link #setText setText()}, {@link #first},
-     * {@link #last}, etc. after calling <tt>setMode</tt>.
-     * <p>
-     * @param newMode the new mode for this <tt>Normalizer</tt>.
+     * {@link #last}, etc. after calling {@code setMode}.
+     *
+     * @param newMode the new mode for this {@code Normalizer}.
      * The supported modes are:
      * <ul>
      *  <li>{@link #COMPOSE}        - Unicode canonical decompositiion
@@ -985,7 +985,7 @@ public final class NormalizerBase implements Cloneable {
         mode = newMode;
     }
     /**
-     * Return the basic operation performed by this <tt>Normalizer</tt>
+     * Return the basic operation performed by this {@code Normalizer}
      *
      * @see #setMode
      * @stable ICU 2.8
@@ -995,8 +995,8 @@ public final class NormalizerBase implements Cloneable {
     }
 
     /**
-     * Set the input text over which this <tt>Normalizer</tt> will iterate.
-     * The iteration position is set to the beginning of the input text->
+     * Set the input text over which this {@code Normalizer} will iterate.
+     * The iteration position is set to the beginning of the input text.
      * @param newText   The new string to be normalized.
      * @stable ICU 2.8
      */
@@ -1011,8 +1011,8 @@ public final class NormalizerBase implements Cloneable {
     }
 
     /**
-     * Set the input text over which this <tt>Normalizer</tt> will iterate.
-     * The iteration position is set to the beginning of the input text->
+     * Set the input text over which this {@code Normalizer} will iterate.
+     * The iteration position is set to the beginning of the input text.
      * @param newText   The new string to be normalized.
      * @stable ICU 2.8
      */
@@ -1571,7 +1571,7 @@ public final class NormalizerBase implements Cloneable {
     //
 
     /**
-     * Creates a new <tt>Normalizer</tt> object for iterating over the
+     * Creates a new {@code Normalizer} object for iterating over the
      * normalized form of a given string.
      *
      * @param str  The string to be normalized.  The normalization
@@ -1646,7 +1646,6 @@ public final class NormalizerBase implements Cloneable {
      * perform further tests to arrive at a true/false result.
      * @param str       the input string to be checked to see if it is normalized
      * @param form      the normalization form
-     * @param options   the optional features to be enabled.
      */
     public static boolean isNormalized(String str, Normalizer.Form form) {
         return isNormalized(str, form, UNICODE_LATEST);

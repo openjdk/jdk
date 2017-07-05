@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,15 @@
 package javax.xml.stream.XMLStreamWriterTest;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 import javax.xml.XMLConstants;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import javax.xml.transform.stream.StreamResult;
 
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import com.sun.xml.internal.stream.writers.XMLStreamWriterImpl;
 
 /*
  * @summary Test the writing of Namespaces.
@@ -80,15 +76,10 @@ public class NamespaceTest {
     private void resetWriter() {
         // reset the Writer
         try {
-            xmlStreamWriter.flush();
-            xmlStreamWriter.close();
-            ((XMLStreamWriterImpl) xmlStreamWriter).reset();
             byteArrayOutputStream.reset();
-            ((XMLStreamWriterImpl) xmlStreamWriter).setOutput(new StreamResult(byteArrayOutputStream), "utf-8");
+            xmlStreamWriter = xmlOutputFactory.createXMLStreamWriter(byteArrayOutputStream, "utf-8");
         } catch (XMLStreamException xmlStreamException) {
             Assert.fail(xmlStreamException.toString());
-        } catch (IOException ioException) {
-            Assert.fail(ioException.toString());
         }
     }
 

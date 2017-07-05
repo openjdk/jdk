@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1BLOCKOFFSETTABLE_INLINE_HPP
 
 #include "gc_implementation/g1/g1BlockOffsetTable.hpp"
-#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/heapRegion.inline.hpp"
 #include "memory/space.hpp"
 
@@ -46,17 +45,6 @@ G1BlockOffsetTable::block_start_const(const void* addr) const {
     return NULL;
   }
 }
-
-#define check_index(index, msg)                                                \
-  assert((index) < (_reserved.word_size() >> LogN_words),                      \
-         err_msg("%s - index: "SIZE_FORMAT", _vs.committed_size: "SIZE_FORMAT, \
-                 msg, (index), (_reserved.word_size() >> LogN_words)));        \
-  assert(G1CollectedHeap::heap()->is_in_exact(address_for_index_raw(index)),   \
-         err_msg("Index "SIZE_FORMAT" corresponding to "PTR_FORMAT             \
-                 " (%u) is not in committed area.",                            \
-                 (index),                                                      \
-                 p2i(address_for_index_raw(index)),                            \
-                 G1CollectedHeap::heap()->addr_to_region(address_for_index_raw(index))));
 
 u_char G1BlockOffsetSharedArray::offset_array(size_t index) const {
   check_index(index, "index out of range");
@@ -118,8 +106,6 @@ G1BlockOffsetSharedArray::address_for_index(size_t index) const {
                  p2i(result), p2i(_reserved.start()), p2i(_reserved.end())));
   return result;
 }
-
-#undef check_index
 
 inline size_t
 G1BlockOffsetArray::block_size(const HeapWord* p) const {

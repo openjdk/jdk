@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class Bug7143711Test {
 
     }
 
-    @Test
+    @Test(enabled=false) //skipped due to bug JDK-8080097
     public void testTransform_DOM_withSM() {
         System.out.println("Transform using DOM Source;  Security Manager is set:");
 
@@ -89,7 +89,7 @@ public class Bug7143711Test {
             TransformerFactory factory = TransformerFactory.newInstance("com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl",
                     TransformerFactory.class.getClassLoader());
             factory.setFeature(ORACLE_FEATURE_SERVICE_MECHANISM, true);
-            if (((com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl) factory).useServicesMechnism()) {
+            if ((boolean) factory.getFeature(ORACLE_FEATURE_SERVICE_MECHANISM)) {
                 Assert.fail("should not override in secure mode");
             }
 

@@ -453,6 +453,8 @@ CompileWrapper::CompileWrapper(Compile* compile) : _compile(compile) {
   assert(compile == Compile::current(), "sanity");
 
   compile->set_type_dict(NULL);
+  compile->set_clone_map(new Dict(cmpkey, hashkey, _compile->comp_arena()));
+  compile->clone_map().set_clone_idx(0);
   compile->set_type_hwm(NULL);
   compile->set_type_last_size(0);
   compile->set_last_tf(NULL, NULL);
@@ -462,6 +464,7 @@ CompileWrapper::CompileWrapper(Compile* compile) : _compile(compile) {
   Type::Initialize(compile);
   _compile->set_scratch_buffer_blob(NULL);
   _compile->begin_method();
+  _compile->clone_map().set_debug(_compile->has_method() && _compile->method_has_option(_compile->clone_map().debug_option_name));
 }
 CompileWrapper::~CompileWrapper() {
   _compile->end_method();
@@ -1091,6 +1094,24 @@ void Compile::Init(int aliaslevel) {
   set_do_scheduling(OptoScheduling);
   set_do_count_invocations(false);
   set_do_method_data_update(false);
+
+  set_do_vector_loop(false);
+
+  bool do_vector = false;
+  if (AllowVectorizeOnDemand) {
+    if (has_method() && (method()->has_option("Vectorize") || method()->has_option("VectorizeDebug"))) {
+      set_do_vector_loop(true);
+    } else if (has_method() && method()->name() != 0 &&
+               method()->intrinsic_id() == vmIntrinsics::_forEachRemaining) {
+      set_do_vector_loop(true);
+    }
+#ifndef PRODUCT
+    if (do_vector_loop() && Verbose) {
+      tty->print("Compile::Init: do vectorized loops (SIMD like) for method %s\n",  method()->name()->as_quoted_ascii());
+    }
+#endif
+  }
+
   set_age_code(has_method() && method()->profile_aging());
   set_rtm_state(NoRTM); // No RTM lock eliding by default
   method_has_option_value("MaxNodeLimit", _max_node_limit);
@@ -3089,6 +3110,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
   case Op_AddReductionVF:
   case Op_AddReductionVD:
   case Op_MulReductionVI:
+  case Op_MulReductionVL:
   case Op_MulReductionVF:
   case Op_MulReductionVD:
     break;
@@ -4333,4 +4355,64 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
 bool Compile::randomized_select(int count) {
   assert(count > 0, "only positive");
   return (os::random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
+}
+
+const char*   CloneMap::debug_option_name = "CloneMapDebug";
+CloneMap&     Compile::clone_map()                 { return _clone_map; }
+void          Compile::set_clone_map(Dict* d)      { _clone_map._dict = d; }
+
+void NodeCloneInfo::dump() const {
+  tty->print(" {%d:%d} ", idx(), gen());
+}
+
+void CloneMap::clone(Node* old, Node* nnn, int gen) {
+  uint64_t val = value(old->_idx);
+  NodeCloneInfo cio(val);
+  assert(val != 0, "old node should be in the map");
+  NodeCloneInfo cin(cio.idx(), gen + cio.gen());
+  insert(nnn->_idx, cin.get());
+#ifndef PRODUCT
+  if (is_debug()) {
+    tty->print_cr("CloneMap::clone inserted node %d info {%d:%d} into CloneMap", nnn->_idx, cin.idx(), cin.gen());
+  }
+#endif
+}
+
+void CloneMap::verify_insert_and_clone(Node* old, Node* nnn, int gen) {
+  NodeCloneInfo cio(value(old->_idx));
+  if (cio.get() == 0) {
+    cio.set(old->_idx, 0);
+    insert(old->_idx, cio.get());
+#ifndef PRODUCT
+    if (is_debug()) {
+      tty->print_cr("CloneMap::verify_insert_and_clone inserted node %d info {%d:%d} into CloneMap", old->_idx, cio.idx(), cio.gen());
+    }
+#endif
+  }
+  clone(old, nnn, gen);
+}
+
+int CloneMap::max_gen() const {
+  int g = 0;
+  DictI di(_dict);
+  for(; di.test(); ++di) {
+    int t = gen(di._key);
+    if (g < t) {
+      g = t;
+#ifndef PRODUCT
+      if (is_debug()) {
+        tty->print_cr("CloneMap::max_gen() update max=%d from %d", g, _2_node_idx_t(di._key));
+      }
+#endif
+    }
+  }
+  return g;
+}
+
+void CloneMap::dump(node_idx_t key) const {
+  uint64_t val = value(key);
+  if (val != 0) {
+    NodeCloneInfo ni(val);
+    ni.dump();
+  }
 }

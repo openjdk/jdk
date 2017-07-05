@@ -32,7 +32,7 @@
  * @run main TestLVT
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import java.util.*;
 
 public class TestLVT {

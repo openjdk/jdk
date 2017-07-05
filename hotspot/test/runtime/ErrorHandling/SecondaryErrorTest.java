@@ -38,9 +38,9 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.regex.Pattern;
 
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.Platform;
-import com.oracle.java.testlibrary.ProcessTools;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.Platform;
+import jdk.test.lib.ProcessTools;
 
 public class SecondaryErrorTest {
 

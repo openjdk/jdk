@@ -161,9 +161,6 @@ public:
   // Remove the current reference from the list
   void remove();
 
-  // Make the Reference object active again.
-  void make_active();
-
   // Make the referent alive.
   inline void make_referent_alive() {
     if (UseCompressedOops) {
@@ -200,9 +197,6 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   size_t total_count(DiscoveredList lists[]);
 
  protected:
-  // Compatibility with pre-4965777 JDK's
-  static bool _pending_list_uses_discovered_field;
-
   // The SoftReference master timestamp clock
   static jlong _soft_ref_timestamp_clock;
 
@@ -420,13 +414,6 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   // whether discovery is atomic wrt other collectors
   bool discovery_is_atomic() const { return _discovery_is_atomic; }
   void set_atomic_discovery(bool atomic) { _discovery_is_atomic = atomic; }
-
-  // whether the JDK in which we are embedded is a pre-4965777 JDK,
-  // and thus whether or not it uses the discovered field to chain
-  // the entries in the pending list.
-  static bool pending_list_uses_discovered_field() {
-    return _pending_list_uses_discovered_field;
-  }
 
   // whether discovery is done by multiple threads same-old-timeously
   bool discovery_is_mt() const { return _discovery_is_mt; }

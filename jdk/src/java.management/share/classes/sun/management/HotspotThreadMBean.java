@@ -40,12 +40,11 @@ public interface HotspotThreadMBean {
     public int getInternalThreadCount();
 
     /**
-     * Returns a <tt>Map</tt> of the name of all VM internal threads
+     * Returns a {@code Map} of the name of all VM internal threads
      * to the thread CPU time in nanoseconds.  The returned value is
      * of nanoseconds precision but not necessarily nanoseconds accuracy.
-     * <p>
      *
-     * @return a <tt>Map</tt> object of the name of all VM internal threads
+     * @return a {@code Map} object of the name of all VM internal threads
      * to the thread CPU time in nanoseconds.
      *
      * @throws java.lang.UnsupportedOperationException if the Java virtual

@@ -83,7 +83,6 @@ ACCEPTED_BIN_DIFF="
 ./bin/jcmd
 ./bin/jconsole
 ./bin/jdb
-./bin/jhat
 ./bin/jimage
 ./bin/jinfo
 ./bin/jjs
@@ -163,7 +162,6 @@ ACCEPTED_BIN_DIFF="
 ./bin/jcmd
 ./bin/jconsole
 ./bin/jdb
-./bin/jhat
 ./bin/jimage
 ./bin/jinfo
 ./bin/jjs
@@ -284,7 +282,6 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/jcmd
 ./bin/jconsole
 ./bin/jdb
-./bin/jhat
 ./bin/jimage
 ./bin/jinfo
 ./bin/jjs
@@ -420,7 +417,6 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/jcmd
 ./bin/jconsole
 ./bin/jdb
-./bin/jhat
 ./bin/jimage
 ./bin/jinfo
 ./bin/jjs
@@ -499,7 +495,6 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./bin/jcmd.exe
 ./bin/jconsole.exe
 ./bin/jdb.exe
-./bin/jhat.exe
 ./bin/jimage.exe
 ./bin/jinfo.exe
 ./bin/jjs.exe
@@ -579,7 +574,6 @@ ACCEPTED_BIN_DIFF="
 ./bin/jcmd
 ./bin/jconsole
 ./bin/jdb
-./bin/jhat
 ./bin/jimage
 ./bin/jinfo
 ./bin/jjs

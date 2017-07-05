@@ -979,7 +979,7 @@ public:
 
   void set_refine_cte_cl_concurrency(bool concurrent);
 
-  RefToScanQueue *task_queue(int i) const;
+  RefToScanQueue *task_queue(uint i) const;
 
   // A set of cards where updates happened during the GC
   DirtyCardQueueSet& dirty_card_queue_set() { return _dirty_card_queue_set; }

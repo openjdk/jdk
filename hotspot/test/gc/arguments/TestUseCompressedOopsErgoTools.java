@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import java.lang.management.ManagementFactory;
 import sun.hotspot.WhiteBox;
 

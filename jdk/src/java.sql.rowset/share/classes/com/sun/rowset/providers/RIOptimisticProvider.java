@@ -36,7 +36,7 @@ import com.sun.rowset.internal.*;
  * The reference implementation of a JDBC Rowset synchronization provider
  * providing optimistic synchronization with a relational datastore
  * using any JDBC technology-enabled driver.
- * <p>
+ *
  * <h3>1.0 Backgroud</h3>
  * This synchronization provider is registered with the
  * <code>SyncFactory</code> by default as the

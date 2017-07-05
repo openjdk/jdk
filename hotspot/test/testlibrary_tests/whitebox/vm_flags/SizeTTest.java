@@ -33,7 +33,7 @@
  * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions SizeTTest
  * @summary testing of WB::set/getSizeTVMFlag()
  */
-import com.oracle.java.testlibrary.Platform;
+import jdk.test.lib.Platform;
 
 public class SizeTTest {
     private static final String FLAG_NAME = "ArrayAllocatorMallocLimit";

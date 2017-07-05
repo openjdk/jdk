@@ -29,7 +29,7 @@
  * @run main LimitSharedSizes
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 public class LimitSharedSizes {
     static enum Region {

@@ -160,10 +160,12 @@ implements CertAttrSet<String> {
         if (certPolicies == null) {
             return "";
         }
-        StringBuilder sb = new StringBuilder(super.toString());
-        sb.append("CertificatePolicies [\n");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(super.toString())
+            .append("CertificatePolicies [\n");
         for (PolicyInformation info : certPolicies) {
-            sb.append(info.toString());
+            sb.append(info);
         }
         sb.append("]\n");
         return sb.toString();

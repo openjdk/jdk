@@ -719,7 +719,7 @@ public final class Locale implements Cloneable, Serializable {
      * created and cached.
      *
      * @param language lowercase 2 to 8 language code.
-     * @param country uppercase two-letter ISO-3166 code and numric-3 UN M.49 area code.
+     * @param country uppercase two-letter ISO-3166 code and numeric-3 UN M.49 area code.
      * @param variant vendor and browser specific code. See class description.
      * @return the <code>Locale</code> instance requested
      * @exception NullPointerException if any argument is null.
@@ -1236,7 +1236,7 @@ public final class Locale implements Cloneable, Serializable {
     /**
      * Package private method returning the Locale's LocaleExtensions,
      * used by ResourceBundle.
-     * @return locale exnteions of this Locale,
+     * @return locale extensions of this Locale,
      *         or {@code null} if no extensions are defined
      */
      LocaleExtensions getLocaleExtensions() {
@@ -2609,7 +2609,7 @@ public final class Locale implements Cloneable, Serializable {
          * href="./Locale.html#def_locale_extension">well-formed</a> or an exception
          * is thrown.
          *
-         * <p>Attribute comparision for removal is case-insensitive.
+         * <p>Attribute comparison for removal is case-insensitive.
          *
          * @param attribute the attribute
          * @return This builder.

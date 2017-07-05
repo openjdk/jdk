@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.regex.Pattern;
 
-import com.oracle.java.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 /**
  * Utility tool aimed to verify presence or absence of specified uncommon trap
  * in compilation log.

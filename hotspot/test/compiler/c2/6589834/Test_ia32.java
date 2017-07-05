@@ -31,7 +31,7 @@
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build ClassFileInstaller sun.hotspot.WhiteBox com.oracle.java.testlibrary.*
+ * @build ClassFileInstaller sun.hotspot.WhiteBox jdk.test.lib.*
  *        Test_ia32 InlinedArrayCloneTestCase
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -44,7 +44,7 @@
 
 import java.lang.reflect.Method;
 
-import com.oracle.java.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 import sun.hotspot.WhiteBox;
 
 public class Test_ia32 {

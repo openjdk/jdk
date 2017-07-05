@@ -77,6 +77,9 @@ int VectorNode::opcode(int sopc, BasicType bt) {
     case T_INT:    return Op_MulVI;
     }
     ShouldNotReachHere();
+  case Op_MulL:
+    assert(bt == T_LONG, "must be");
+    return Op_MulVL;
   case Op_MulF:
     assert(bt == T_FLOAT, "must be");
     return Op_MulVF;
@@ -267,6 +270,7 @@ VectorNode* VectorNode::make(int opc, Node* n1, Node* n2, uint vlen, BasicType b
 
   case Op_MulVS: return new MulVSNode(n1, n2, vt);
   case Op_MulVI: return new MulVINode(n1, n2, vt);
+  case Op_MulVL: return new MulVLNode(n1, n2, vt);
   case Op_MulVF: return new MulVFNode(n1, n2, vt);
   case Op_MulVD: return new MulVDNode(n1, n2, vt);
 
@@ -463,6 +467,10 @@ int ReductionNode::opcode(int opc, BasicType bt) {
       assert(bt == T_INT, "must be");
       vopc = Op_MulReductionVI;
       break;
+    case Op_MulL:
+      assert(bt == T_LONG, "must be");
+      vopc = Op_MulReductionVL;
+      break;
     case Op_MulF:
       assert(bt == T_FLOAT, "must be");
       vopc = Op_MulReductionVF;
@@ -492,6 +500,7 @@ ReductionNode* ReductionNode::make(int opc, Node *ctrl, Node* n1, Node* n2, Basi
   case Op_AddReductionVF: return new AddReductionVFNode(ctrl, n1, n2);
   case Op_AddReductionVD: return new AddReductionVDNode(ctrl, n1, n2);
   case Op_MulReductionVI: return new MulReductionVINode(ctrl, n1, n2);
+  case Op_MulReductionVL: return new MulReductionVLNode(ctrl, n1, n2);
   case Op_MulReductionVF: return new MulReductionVFNode(ctrl, n1, n2);
   case Op_MulReductionVD: return new MulReductionVDNode(ctrl, n1, n2);
   }
