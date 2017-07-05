@@ -261,6 +261,7 @@ class TemplateTable: AllStatic {
   static void invokespecial(int byte_no);
   static void invokestatic(int byte_no);
   static void invokeinterface(int byte_no);
+  static void invokedynamic(int byte_no);
   static void fast_invokevfinal(int byte_no);
 
   static void getfield_or_static(int byte_no, bool is_static);

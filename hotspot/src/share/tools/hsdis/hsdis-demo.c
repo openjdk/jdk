@@ -53,7 +53,7 @@ int main(int ac, char** av) {
       else if (!strncmp(arg, "-options=", 9))
         options = arg+9;
       else
-        { printf("Usage: %s [-xml] [name...]\n"); exit(2); }
+        { printf("Usage: %s [-xml] [name...]\n", av[0]); exit(2); }
       continue;
     }
     greet(arg);
@@ -76,26 +76,14 @@ void end_of_file() { }
 
 #include "dlfcn.h"
 
-#ifdef HOTSPOT_LIB_ARCH
-#define LIBARCH HOTSPOT_LIB_ARCH
-#endif
-#ifdef HOTSPOT_OS
-#define OS HOTSPOT_OS
-#endif
-
 #define DECODE_INSTRUCTIONS_NAME "decode_instructions"
 #define HSDIS_NAME               "hsdis"
 static void* decode_instructions_pv = 0;
 static const char* hsdis_path[] = {
-  HSDIS_NAME".so",
-#ifdef OS
-  "bin/"OS"/"HSDIS_NAME".so",
-#endif
-#ifdef LIBARCH
-  HSDIS_NAME"-"LIBARCH".so",
-#ifdef OS
-  "bin/"OS"/"HSDIS_NAME"-"LIBARCH".so",
-#endif
+  HSDIS_NAME"-"LIBARCH LIB_EXT,
+  "./" HSDIS_NAME"-"LIBARCH LIB_EXT,
+#ifdef TARGET_DIR
+  TARGET_DIR"/"HSDIS_NAME"-"LIBARCH LIB_EXT,
 #endif
   NULL
 };
@@ -112,7 +100,7 @@ static const char* load_decode_instructions() {
     for (dllib = NULL; dllib == NULL; ) {
       const char* next_lib = (*next_in_path++);
       if (next_lib == NULL)
-        return "cannot find plugin "HSDIS_NAME".so";
+        return "cannot find plugin "HSDIS_NAME LIB_EXT;
       dllib = dlopen(next_lib, RTLD_LAZY);
     }
   }

@@ -659,15 +659,21 @@ void JvmtiClassFileReconstituter::copy_bytecodes(methodHandle mh,
       case Bytecodes::_invokevirtual   :  // fall through
       case Bytecodes::_invokespecial   :  // fall through
       case Bytecodes::_invokestatic    :  // fall through
+      case Bytecodes::_invokedynamic   :  // fall through
       case Bytecodes::_invokeinterface :
         assert(len == 3 || (code == Bytecodes::_invokeinterface && len ==5),
                "sanity check");
+        int cpci = Bytes::get_native_u2(bcp+1);
+        bool is_invokedynamic = (EnableInvokeDynamic && code == Bytecodes::_invokedynamic);
+        if (is_invokedynamic)
+          cpci = Bytes::get_native_u4(bcp+1);
         // cache cannot be pre-fetched since some classes won't have it yet
         ConstantPoolCacheEntry* entry =
-          mh->constants()->cache()->entry_at(Bytes::get_native_u2(bcp+1));
+          mh->constants()->cache()->main_entry_at(cpci);
         int i = entry->constant_pool_index();
         assert(i < mh->constants()->length(), "sanity check");
         Bytes::put_Java_u2((address)(p+1), (u2)i);     // java byte ordering
+        if (is_invokedynamic)  *(p+3) = *(p+4) = 0;
         break;
       }
     }

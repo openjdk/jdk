@@ -1524,6 +1524,11 @@ void GraphBuilder::invoke(Bytecodes::Code code) {
     code = Bytecodes::_invokespecial;
   }
 
+  if (code == Bytecodes::_invokedynamic) {
+    BAILOUT("invokedynamic NYI"); // FIXME
+    return;
+  }
+
   // NEEDS_CLEANUP
   // I've added the target-is_loaded() test below but I don't really understand
   // how klass->is_loaded() can be true and yet target->is_loaded() is false.
@@ -2431,8 +2436,8 @@ BlockEnd* GraphBuilder::iterate_bytecodes_for_block(int bci) {
       case Bytecodes::_invokevirtual  : // fall through
       case Bytecodes::_invokespecial  : // fall through
       case Bytecodes::_invokestatic   : // fall through
+      case Bytecodes::_invokedynamic  : // fall through
       case Bytecodes::_invokeinterface: invoke(code); break;
-      case Bytecodes::_xxxunusedxxx   : ShouldNotReachHere(); break;
       case Bytecodes::_new            : new_instance(s.get_index_big()); break;
       case Bytecodes::_newarray       : new_type_array(); break;
       case Bytecodes::_anewarray      : new_object_array(); break;
@@ -2571,6 +2576,7 @@ void GraphBuilder::initialize() {
     , Bytecodes::_invokevirtual
     , Bytecodes::_invokespecial
     , Bytecodes::_invokestatic
+    , Bytecodes::_invokedynamic
     , Bytecodes::_invokeinterface
     , Bytecodes::_new
     , Bytecodes::_newarray
