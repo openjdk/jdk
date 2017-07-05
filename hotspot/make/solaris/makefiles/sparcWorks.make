@@ -22,18 +22,22 @@
 #  
 #
 
-# Compiler-specific flags for sparcworks.
+# If a SPEC is not set already, then use these defaults.
+ifeq ($(SPEC),)
+  # Compiler-specific flags for sparcworks.
+  CC	= cc
+  CXX	= CC
 
-# tell make which C and C++ compilers to use
-CC	= cc
-CXX	= CC
+  # Note that this 'as' is an older version of the Sun Studio 'fbe', and will
+  #   use the older style options. The 'fbe' options will match 'cc' and 'CC'.
+  AS	= /usr/ccs/bin/as
 
-# Note that this 'as' is an older version of the Sun Studio 'fbe', and will
-#   use the older style options. The 'fbe' options will match 'cc' and 'CC'.
-AS	= /usr/ccs/bin/as
+  NM    = /usr/ccs/bin/nm
+  NAWK  = /bin/nawk
 
-NM	= /usr/ccs/bin/nm
-NAWK    = /bin/nawk
+  MCS	= /usr/ccs/bin/mcs
+  STRIP	= /usr/ccs/bin/strip
+endif
 
 REORDER_FLAG = -xF
 
@@ -556,9 +560,6 @@ LINK_INTO = LIBJVM
 else
 #LINK_INTO = LIBJVM
 endif
-
-MCS	= /usr/ccs/bin/mcs
-STRIP	= /usr/ccs/bin/strip
 
 # Solaris platforms collect lots of redundant file-ident lines,
 # to the point of wasting a significant percentage of file space.

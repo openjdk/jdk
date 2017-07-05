@@ -251,6 +251,15 @@ frame os::get_sender_for_C_frame(frame* fr) {
   return frame(fr->sender_sp(), frame::unpatchable, fr->sender_pc());
 }
 
+// Returns an estimate of the current stack pointer. Result must be guaranteed to
+// point into the calling threads stack, and be no lower than the current stack
+// pointer.
+address os::current_stack_pointer() {
+  volatile int dummy;
+  address sp = (address)&dummy + 8;     // %%%% need to confirm if this is right
+  return sp;
+}
+
 frame os::current_frame() {
   intptr_t* sp = StubRoutines::Sparc::flush_callers_register_windows_func()();
   frame myframe(sp, frame::unpatchable,
@@ -815,3 +824,8 @@ add_func_t*          os::atomic_add_func          = os::atomic_add_bootstrap;
    __asm__ __volatile__ ("wr %%g0, 0, %%fprs \n\t" : : :);
   }
 #endif //defined(__sparc) && defined(COMPILER2)
+
+#ifndef PRODUCT
+void os::verify_stack_alignment() {
+}
+#endif
