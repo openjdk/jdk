@@ -26,9 +26,11 @@
 #include "incls/_c1_Canonicalizer.cpp.incl"
 
 
-static void do_print_value(Value* vp) {
-  (*vp)->print_line();
-}
+class PrintValueVisitor: public ValueVisitor {
+  void visit(Value* vp) {
+    (*vp)->print_line();
+  }
+};
 
 void Canonicalizer::set_canonical(Value x) {
   assert(x != NULL, "value must exist");
@@ -37,10 +39,11 @@ void Canonicalizer::set_canonical(Value x) {
   // in the instructions).
   if (canonical() != x) {
     if (PrintCanonicalization) {
-      canonical()->input_values_do(do_print_value);
+      PrintValueVisitor do_print_value;
+      canonical()->input_values_do(&do_print_value);
       canonical()->print_line();
       tty->print_cr("canonicalized to:");
-      x->input_values_do(do_print_value);
+      x->input_values_do(&do_print_value);
       x->print_line();
       tty->cr();
     }
@@ -202,7 +205,7 @@ void Canonicalizer::do_StoreField     (StoreField*      x) {
     // limit this optimization to current block
     if (value != NULL && in_current_block(conv)) {
       set_canonical(new StoreField(x->obj(), x->offset(), x->field(), value, x->is_static(),
-                                   x->lock_stack(), x->state_before(), x->is_loaded(), x->is_initialized()));
+                                       x->lock_stack(), x->state_before(), x->is_loaded(), x->is_initialized()));
       return;
     }
   }

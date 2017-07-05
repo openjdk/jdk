@@ -93,6 +93,7 @@ public class VM {
   /** alignment constants */
   private boolean      isLP64;
   private int          bytesPerLong;
+  private int          objectAlignmentInBytes;
   private int          minObjAlignmentInBytes;
   private int          logMinObjAlignmentInBytes;
   private int          heapWordSize;
@@ -313,15 +314,21 @@ public class VM {
       isLP64 = debugger.getMachineDescription().isLP64();
     }
     bytesPerLong = db.lookupIntConstant("BytesPerLong").intValue();
-    minObjAlignmentInBytes = db.lookupIntConstant("MinObjAlignmentInBytes").intValue();
-    // minObjAlignment = db.lookupIntConstant("MinObjAlignment").intValue();
-    logMinObjAlignmentInBytes = db.lookupIntConstant("LogMinObjAlignmentInBytes").intValue();
     heapWordSize = db.lookupIntConstant("HeapWordSize").intValue();
     oopSize  = db.lookupIntConstant("oopSize").intValue();
 
     intxType = db.lookupType("intx");
     uintxType = db.lookupType("uintx");
     boolType = (CIntegerType) db.lookupType("bool");
+
+    minObjAlignmentInBytes = getObjectAlignmentInBytes();
+    if (minObjAlignmentInBytes == 8) {
+      logMinObjAlignmentInBytes = 3;
+    } else if (minObjAlignmentInBytes == 16) {
+      logMinObjAlignmentInBytes = 4;
+    } else {
+      throw new RuntimeException("Object alignment " + minObjAlignmentInBytes + " not yet supported");
+    }
 
     if (isCompressedOopsEnabled()) {
       // Size info for oops within java objects is fixed
@@ -492,10 +499,6 @@ public class VM {
   }
 
   /** Get minimum object alignment in bytes. */
-  public int getMinObjAlignment() {
-    return minObjAlignmentInBytes;
-  }
-
   public int getMinObjAlignmentInBytes() {
     return minObjAlignmentInBytes;
   }
@@ -752,6 +755,14 @@ public class VM {
              (flag.getBool()? Boolean.TRUE: Boolean.FALSE);
     }
     return compressedOopsEnabled.booleanValue();
+  }
+
+  public int getObjectAlignmentInBytes() {
+    if (objectAlignmentInBytes == 0) {
+        Flag flag = getCommandLineFlag("ObjectAlignmentInBytes");
+        objectAlignmentInBytes = (flag == null) ? 8 : (int)flag.getIntx();
+    }
+    return objectAlignmentInBytes;
   }
 
   // returns null, if not available.

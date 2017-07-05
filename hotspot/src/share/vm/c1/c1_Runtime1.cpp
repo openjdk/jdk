@@ -60,7 +60,6 @@ void StubAssembler::set_num_rt_args(int args) {
 
 // Implementation of Runtime1
 
-bool      Runtime1::_is_initialized = false;
 CodeBlob* Runtime1::_blobs[Runtime1::number_of_ids];
 const char *Runtime1::_blob_names[] = {
   RUNTIME1_STUBS(STUB_NAME, LAST_STUB_NAME)
@@ -89,8 +88,6 @@ int Runtime1::_throw_array_store_exception_count = 0;
 int Runtime1::_throw_count = 0;
 #endif
 
-BufferBlob* Runtime1::_buffer_blob  = NULL;
-
 // Simple helper to see if the caller of a runtime stub which
 // entered the VM has been deoptimized
 
@@ -117,43 +114,14 @@ static void deopt_caller() {
 }
 
 
-BufferBlob* Runtime1::get_buffer_blob() {
-  // Allocate code buffer space only once
-  BufferBlob* blob = _buffer_blob;
-  if (blob == NULL) {
-    // setup CodeBuffer.  Preallocate a BufferBlob of size
-    // NMethodSizeLimit plus some extra space for constants.
-    int code_buffer_size = desired_max_code_buffer_size() + desired_max_constant_size();
-    blob = BufferBlob::create("Compiler1 temporary CodeBuffer",
-                              code_buffer_size);
-    guarantee(blob != NULL, "must create initial code buffer");
-    _buffer_blob = blob;
-  }
-  return _buffer_blob;
-}
-
-void Runtime1::setup_code_buffer(CodeBuffer* code, int call_stub_estimate) {
-  // Preinitialize the consts section to some large size:
-  int locs_buffer_size = 20 * (relocInfo::length_limit + sizeof(relocInfo));
-  char* locs_buffer = NEW_RESOURCE_ARRAY(char, locs_buffer_size);
-  code->insts()->initialize_shared_locs((relocInfo*)locs_buffer,
-                                        locs_buffer_size / sizeof(relocInfo));
-  code->initialize_consts_size(desired_max_constant_size());
-  // Call stubs + deopt/exception handler
-  code->initialize_stubs_size((call_stub_estimate * LIR_Assembler::call_stub_size) +
-                              LIR_Assembler::exception_handler_size +
-                              LIR_Assembler::deopt_handler_size);
-}
-
-
-void Runtime1::generate_blob_for(StubID id) {
+void Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
   assert(0 <= id && id < number_of_ids, "illegal stub id");
   ResourceMark rm;
   // create code buffer for code storage
-  CodeBuffer code(get_buffer_blob()->instructions_begin(),
-                  get_buffer_blob()->instructions_size());
+  CodeBuffer code(buffer_blob->instructions_begin(),
+                  buffer_blob->instructions_size());
 
-  setup_code_buffer(&code, 0);
+  Compilation::setup_code_buffer(&code, 0);
 
   // create assembler for code generation
   StubAssembler* sasm = new StubAssembler(&code, name_for(id), id);
@@ -204,35 +172,28 @@ void Runtime1::generate_blob_for(StubID id) {
 }
 
 
-void Runtime1::initialize() {
-  // Warning: If we have more than one compilation running in parallel, we
-  //          need a lock here with the current setup (lazy initialization).
-  if (!is_initialized()) {
-    _is_initialized = true;
-
-    // platform-dependent initialization
-    initialize_pd();
-    // generate stubs
-    for (int id = 0; id < number_of_ids; id++) generate_blob_for((StubID)id);
-    // printing
+void Runtime1::initialize(BufferBlob* blob) {
+  // platform-dependent initialization
+  initialize_pd();
+  // generate stubs
+  for (int id = 0; id < number_of_ids; id++) generate_blob_for(blob, (StubID)id);
+  // printing
 #ifndef PRODUCT
-    if (PrintSimpleStubs) {
-      ResourceMark rm;
-      for (int id = 0; id < number_of_ids; id++) {
-        _blobs[id]->print();
-        if (_blobs[id]->oop_maps() != NULL) {
-          _blobs[id]->oop_maps()->print();
-        }
+  if (PrintSimpleStubs) {
+    ResourceMark rm;
+    for (int id = 0; id < number_of_ids; id++) {
+      _blobs[id]->print();
+      if (_blobs[id]->oop_maps() != NULL) {
+        _blobs[id]->oop_maps()->print();
       }
     }
-#endif
   }
+#endif
 }
 
 
 CodeBlob* Runtime1::blob_for(StubID id) {
   assert(0 <= id && id < number_of_ids, "illegal stub id");
-  if (!is_initialized()) initialize();
   return _blobs[id];
 }
 

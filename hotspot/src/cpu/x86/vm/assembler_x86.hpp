@@ -135,6 +135,9 @@ REGISTER_DECLARATION(Register, r15_thread, r15); // callee-saved
 
 #endif // _LP64
 
+// JSR 292 fixed register usages:
+REGISTER_DECLARATION(Register, rbp_mh_SP_save, rbp);
+
 // Address is an abstraction used to represent a memory location
 // using any of the amd64 addressing modes with one object.
 //

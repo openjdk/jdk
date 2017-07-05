@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ typedef struct Nmethod_t {
   int32_t  scopes_data_beg;     /* _scopes_data_offset */
   int32_t  scopes_data_end;
   int32_t  oops_beg;            /* _oops_offset */
-  int32_t  oops_len;            /* _oops_length */
+  int32_t  oops_end;
   int32_t  scopes_pcs_beg;      /* _scopes_pcs_offset */
   int32_t  scopes_pcs_end;
 
@@ -597,9 +597,9 @@ static int nmethod_info(Nmethod_t *N)
   CHECK_FAIL(err);
 
   /* Oops */
-  err = ps_pread(J->P, nm + OFFSET_CodeBlob_oops_offset, &N->oops_beg, SZ32);
+  err = ps_pread(J->P, nm + OFFSET_nmethod_oops_offset, &N->oops_beg, SZ32);
   CHECK_FAIL(err);
-  err = ps_pread(J->P, nm + OFFSET_CodeBlob_oops_length, &N->oops_len, SZ32);
+  err = ps_pread(J->P, nm + OFFSET_nmethod_scopes_data_offset, &N->oops_end, SZ32);
   CHECK_FAIL(err);
 
   /* scopes_pcs */
@@ -624,8 +624,8 @@ static int nmethod_info(Nmethod_t *N)
       fprintf(stderr, "\t nmethod_info: orig_pc_offset: %#x \n",
                        N->orig_pc_offset);
 
-      fprintf(stderr, "\t nmethod_info: oops_beg: %#x, oops_len: %#x\n",
-                       N->oops_beg, N->oops_len);
+      fprintf(stderr, "\t nmethod_info: oops_beg: %#x, oops_end: %#x\n",
+                       N->oops_beg, N->oops_end);
 
       fprintf(stderr, "\t nmethod_info: scopes_data_beg: %#x, scopes_data_end: %#x\n",
                        N->scopes_data_beg, N->scopes_data_end);
@@ -959,8 +959,8 @@ static int scopeDesc_chain(Nmethod_t *N) {
     err = scope_desc_at(N, decode_offset, vf);
     CHECK_FAIL(err);
 
-    if (vf->methodIdx > N->oops_len) {
-      fprintf(stderr, "\t scopeDesc_chain: (methodIdx > oops_len) !\n");
+    if (vf->methodIdx > ((N->oops_end - N->oops_beg) / POINTER_SIZE)) {
+      fprintf(stderr, "\t scopeDesc_chain: (methodIdx > oops length) !\n");
       return -1;
     }
     err = read_pointer(N->J, N->nm + N->oops_beg + (vf->methodIdx-1)*POINTER_SIZE,
