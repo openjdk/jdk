@@ -1,0 +1,70 @@
+#
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include LibCommon.gmk
+
+################################################################################
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  LIBPREF_SRC_DIRS := $(JDK_TOPDIR)/src/java.prefs/macosx/native/libprefs
+else
+  LIBPREF_SRC_DIRS := $(JDK_TOPDIR)/src/java.prefs/$(OPENJDK_TARGET_OS_API_DIR)/native/libprefs
+endif
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBPREFS, \
+    LIBRARY := prefs, \
+    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+    SRC := $(LIBPREF_SRC_DIRS), \
+    LANG := C, \
+    OPTIMIZATION := HIGH, \
+    CFLAGS := $(CFLAGS_JDKLIB) $(addprefix -I, $(LIBPREF_SRC_DIRS)) \
+        $(LIBJAVA_HEADER_FLAGS), \
+    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libprefs/mapfile-vers, \
+    LDFLAGS := $(LDFLAGS_JDKLIB) \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LDFLAGS_SUFFIX_linux := -ljvm -ljava, \
+    LDFLAGS_SUFFIX_solaris := -ljvm -ljava -lc, \
+    LDFLAGS_SUFFIX_aix := -ljvm -ljava, \
+    LDFLAGS_SUFFIX_windows := advapi32.lib jvm.lib $(WIN_JAVA_LIB), \
+    LDFLAGS_SUFFIX_macosx := -ljvm -framework CoreFoundation -framework Foundation, \
+    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
+    RC_FLAGS := $(RC_FLAGS) \
+        -D "JDK_FNAME=prefs.dll" \
+        -D "JDK_INTERNAL_NAME=prefs" \
+        -D "JDK_FTYPE=0x2L", \
+    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libprefs, \
+    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+
+$(BUILD_LIBPREFS): $(BUILD_LIBJAVA)
+
+PREFS_LIBRARIES += $(BUILD_LIBPREFS)
+
+################################################################################
+
+java.prefs: $(PREFS_LIBRARIES)
+
+all: java.prefs
+
+.PHONY: all java.prefs

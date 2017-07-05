@@ -39,7 +39,7 @@ GENSRC_X11WRAPPERS :=
 # Also put verification offset file here as well.
 GENSRC_X11WRAPPERS_TMP := $(JDK_OUTPUTDIR)/gensrc_x11wrappers
 # Put the generated Java classes used to interface X11 from awt here.
-GENSRC_X11WRAPPERS_DST := $(JDK_OUTPUTDIR)/gensrc/sun/awt/X11
+GENSRC_X11WRAPPERS_DST := $(JDK_OUTPUTDIR)/gensrc/java.desktop/sun/awt/X11
 
 # The pre-calculated offset file are stored here:
 GENSRC_SIZER_DIR := $(JDK_TOPDIR)/make/data/x11wrappergen
@@ -69,7 +69,7 @@ $(GENSRC_X11WRAPPERS_TMP)/sizes.%: $(GENSRC_SIZER_DIR)/sizes.%
 
 # Run the tool on the offset files copied from the source repository to generate several Java classes
 # used in awt.
-$(JDK_OUTPUTDIR)/gensrc/_the.generated.x11: $(GENSRC_X11_SIZES_USED) $(BUILD_TOOLS)
+$(JDK_OUTPUTDIR)/gensrc/_the.generated.x11: $(GENSRC_X11_SIZES_USED) $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $(GENSRC_X11WRAPPERS_DST)
 	$(TOOL_WRAPPERGENERATOR) $(GENSRC_X11WRAPPERS_DST) $(GENSRC_SIZER_DIR)/xlibtypes.txt "gen" $(GENSRC_X11WRAPPERS_TMP)/sizes
 	$(TOUCH) $@
@@ -81,7 +81,7 @@ ifneq ($(COMPILE_TYPE), cross)
   # can compare it with the version in the source code repository.
 
   # Generate the C code for the program that will output the offset file.
-  $(GENSRC_X11WRAPPERS_TMP)/sizer.%.c: $(GENSRC_SIZER_DIR)/xlibtypes.txt $(BUILD_TOOLS)
+  $(GENSRC_X11WRAPPERS_TMP)/sizer.%.c: $(GENSRC_SIZER_DIR)/xlibtypes.txt $(BUILD_TOOLS_JDK)
 	$(ECHO) "Generating X11 wrapper ($*-bit version)"
 	$(MKDIR) -p $(@D)
 	$(TOOL_WRAPPERGENERATOR) $(@D) $(GENSRC_SIZER_DIR)/xlibtypes.txt "sizer" $*
@@ -91,20 +91,23 @@ ifneq ($(COMPILE_TYPE), cross)
     MEMORY_MODEL_FLAG="$(COMPILER_TARGET_BITS_FLAG)$*"
   endif
 
+  SIZER_CFLAGS := -I$(JDK_OUTPUTDIR)/include \
+      -I$(JDK_TOPDIR)/src/java.base/share/native/include \
+      -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_EXPORT_DIR)/native/include \
+      -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
+      -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libjava \
+      -I$(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_API_DIR)/native/common/sun/awt \
+      -I$(JDK_TOPDIR)/src/java.desktop/share/native/common/sun/awt/debug \
+      -I$(JDK_TOPDIR)/src/java.desktop/share/native/libawt/sun/awt/image/cvutils \
+      #
+
   # Compile the C code into an executable.
   $(GENSRC_X11WRAPPERS_TMP)/sizer.%.exe: $(GENSRC_X11WRAPPERS_TMP)/sizer.%.c
 	$(MKDIR) -p $(@D)
 	(cd $(@D) && $(CC) $(MEMORY_MODEL_FLAG) -o $@ $< \
 	    $(X_CFLAGS) \
 	    $(X_LIBS) \
-	    -I$(JDK_OUTPUTDIR)/include \
-	    -I$(JDK_TOPDIR)/src/share/javavm/export \
-	    -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_EXPORT_DIR)/javavm/export \
-	    -I$(JDK_TOPDIR)/src/share/native/common \
-	    -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/common \
-	    -I$(JDK_TOPDIR)/src/solaris/native/sun/awt \
-	    -I$(JDK_TOPDIR)/src/share/native/sun/awt/debug \
-	    -I$(JDK_TOPDIR)/src/share/native/sun/awt/image/cvutils -lc)
+	    $(SIZER_CFLAGS) -lc)
 
   .PRECIOUS: $(GENSRC_X11WRAPPERS_TMP)/sizer.%.exe $(GENSRC_X11WRAPPERS_TMP)/sizer.%.c
 
@@ -119,3 +122,5 @@ ifneq ($(COMPILE_TYPE), cross)
 
   GENSRC_X11WRAPPERS += $(GENSRC_X11WRAPPERS_TMP)/sizes.$(OPENJDK_TARGET_CPU_BITS).verification
 endif
+
+GENSRC_JAVA_DESKTOP += $(GENSRC_X11WRAPPERS)

@@ -23,19 +23,12 @@
 # questions.
 #
 
-LIBNET_SRC_DIRS := $(JDK_TOPDIR)/src/share/native/java/net \
-    $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/java/net \
-    $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/net/ \
-    $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/net/dns \
-    $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/net/spi
+LIBNET_SRC_DIRS := $(JDK_TOPDIR)/src/java.base/share/native/libnet \
+    $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libnet
+LIBNET_CFLAGS += -I$(JDK_OUTPUTDIR)/gensrc_headers/java.base \
+    $(LIBJAVA_HEADER_FLAGS)
 
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  LIBNET_SRC_DIRS += $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/net/www/protocol/http/ntlm
-else
-  LIBNET_SRC_DIRS += $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/net/sdp
-endif
-
-LIBNET_CFLAGS := $(foreach dir, $(LIBNET_SRC_DIRS), -I$(dir))
+LIBNET_CFLAGS += $(foreach dir, $(LIBNET_SRC_DIRS), -I$(dir))
 
 LIBNET_EXCLUDE_FILES :=
 ifneq ($(OPENJDK_TARGET_OS), solaris)
@@ -52,14 +45,6 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), aix)
   LIBNET_SRC_DIRS += $(JDK_TOPDIR)/src/aix/native/java/net/
-endif
-
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  LIBNET_EXCLUDE_FILES += PlainSocketImpl.c PlainDatagramSocketImpl.c SdpSupport.c
-else
-  LIBNET_EXCLUDE_FILES += TwoStacksPlainSocketImpl.c DualStackPlainSocketImpl.c \
-      TwoStacksPlainDatagramSocketImpl.c DualStackPlainDatagramSocketImpl.c \
-      NTLMAuthSequence.c NetworkInterface_winXP.c
 endif
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBNET, \
@@ -81,7 +66,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNET, \
     LDFLAGS_SUFFIX_windows := ws2_32.lib jvm.lib secur32.lib iphlpapi.lib \
         delayimp.lib $(WIN_JAVA_LIB) advapi32.lib \
         -DELAYLOAD:secur32.dll -DELAYLOAD:iphlpapi.dll, \
-    VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
+    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=net.dll" \
         -D "JDK_INTERNAL_NAME=net" \
@@ -91,18 +76,5 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNET, \
 
 $(BUILD_LIBNET): $(BUILD_LIBJAVA)
 
-BUILD_LIBRARIES += $(BUILD_LIBNET)
+BASE_LIBRARIES += $(BUILD_LIBNET)
 
-$(JDK_OUTPUTDIR)/lib/net.properties: $(JDK_TOPDIR)/src/share/lib/net.properties
-	$(ECHO) $(LOG_INFO) Copying $(@F)
-	$(call install-file)
-
-COPY_FILES += $(JDK_OUTPUTDIR)/lib/net.properties
-
-ifeq ($(OPENJDK_TARGET_OS), solaris)
-  $(JDK_OUTPUTDIR)/lib/sdp/sdp.conf.template: $(JDK_TOPDIR)/src/${OPENJDK_TARGET_OS_API_DIR}/lib/sdp/sdp.conf.template
-	$(ECHO) $(LOG_INFO) Copying $(@F)
-	$(call install-file)
-
-  COPY_FILES += $(JDK_OUTPUTDIR)/lib/sdp/sdp.conf.template
-endif
