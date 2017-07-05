@@ -230,6 +230,7 @@ public final class TransformerImpl extends Transformer
     // Catalog is enabled by default
     boolean _useCatalog = true;
 
+    int _cdataChunkSize = JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT;
 
     /**
      * This class wraps an ErrorListener into a MessageHandler in order to
@@ -284,6 +285,9 @@ public final class TransformerImpl extends Transformer
         _readerManager.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, _accessExternalDTD);
         _readerManager.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, _isSecureProcessing);
         _readerManager.setProperty(XalanConstants.SECURITY_MANAGER, _securityManager);
+        _cdataChunkSize = JdkXmlUtils.getValue(_tfactory.getAttribute(JdkXmlUtils.CDATA_CHUNK_SIZE),
+                JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT);
+        _readerManager.setProperty(JdkXmlUtils.CDATA_CHUNK_SIZE, _cdataChunkSize);
 
         _useCatalog = _tfactory.getFeature(XMLConstants.USE_CATALOG);
         if (_useCatalog) {

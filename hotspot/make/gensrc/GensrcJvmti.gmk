@@ -130,8 +130,6 @@ $(JVMTI_OUTPUTDIR)/jvmtiEnvRecommended.cpp: $(JVMTI_SRCDIR)/jvmtiEnv.cpp \
 TARGETS += $(JVMTI_OUTPUTDIR)/jvmtiEnvRecommended.cpp
 
 ################################################################################
-# Disable copy of jvmti.h from hotspot until this has been cleared up. The file
-# is currently being copied from the jdk repository. See JDK-8167078.
 # Copy jvmti.h to include dir
 
 # The file is the same regardless of jvm variant. Only let one do the copy.

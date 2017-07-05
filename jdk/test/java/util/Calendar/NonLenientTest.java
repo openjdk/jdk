@@ -28,7 +28,10 @@
  * @library /java/text/testlib
  */
 
-import java.util.*;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Locale;
+import java.util.TimeZone;
 
 import static java.util.Calendar.*;
 
@@ -129,7 +132,6 @@ public class NonLenientTest extends IntlTest {
         validate(cal, "6th Sunday in Jan 2003");
     }
 
-
     /**
      * 4726030: GregorianCalendar doesn't check invalid dates in non-lenient
      */
@@ -146,34 +148,34 @@ public class NonLenientTest extends IntlTest {
      */
     public void Test4147269() {
         Koyomi calendar = getNonLenient();
-        Date date = (new GregorianCalendar(1996,0,3)).getTime();
+        Date date = (new GregorianCalendar(1996, 0, 3)).getTime();
 
-        for (int field = 0; field < Calendar.FIELD_COUNT; field++) {
+        for (int field = 0; field < FIELD_COUNT; field++) {
             calendar.setTime(date);
             int max = calendar.getActualMaximum(field);
-            int value = max+1;
+            int value = max + 1;
             calendar.set(field, value);
             try {
                 calendar.computeTime(); // call method under test
-                errln("Test failed with field " + calendar.getFieldName(field)
-                      + "\n\tdate before:  " + date
-                      + "\n\tdate after:   " + calendar.getTime()
-                      + "\n\tvalue: " + value + "  (max = " + max +")");
+                errln("Test failed with field " + Koyomi.getFieldName(field)
+                        + "\n\tdate before:  " + date
+                        + "\n\tdate after:   " + calendar.getTime()
+                        + "\n\tvalue: " + value + "  (max = " + max + ")");
             } catch (IllegalArgumentException e) {
             }
         }
 
-        for (int field = 0; field < Calendar.FIELD_COUNT; field++) {
+        for (int field = 0; field < FIELD_COUNT; field++) {
             calendar.setTime(date);
             int min = calendar.getActualMinimum(field);
-            int value = min-1;
+            int value = min - 1;
             calendar.set(field, value);
             try {
                 calendar.computeTime(); // call method under test
-                errln("Test failed with field " + calendar.getFieldName(field)
-                      + "\n\tdate before:  " + date
-                      + "\n\tdate after:   " + calendar.getTime()
-                      + "\n\tvalue: " + value + "  (min = " + min +")");
+                errln("Test failed with field " + Koyomi.getFieldName(field)
+                        + "\n\tdate before:  " + date
+                        + "\n\tdate after:   " + calendar.getTime()
+                        + "\n\tvalue: " + value + "  (min = " + min + ")");
             } catch (IllegalArgumentException e) {
             }
         }
@@ -194,17 +196,17 @@ public class NonLenientTest extends IntlTest {
         // In non-lenient, calendar field values that have beeb set by
         // user shouldn't be modified.
         int[] afterFields = cal.getFields();
-        for (int i = 0; i < Calendar.FIELD_COUNT; i++) {
+        for (int i = 0; i < FIELD_COUNT; i++) {
             if (cal.isSet(i) && originalFields[i] != afterFields[i]) {
-                errln("    complete() modified fields[" + cal.getFieldName(i) + "] got "
-                      + afterFields[i] + ", expected " + originalFields[i]);
+                errln("    complete() modified fields[" + Koyomi.getFieldName(i) + "] got "
+                        + afterFields[i] + ", expected " + originalFields[i]);
             }
         }
         // In non-lenient, set state of fields shouldn't be modified.
         int afterSetFields = cal.getSetStateFields();
         if (setFields != afterSetFields) {
             errln("    complate() modified set states: before 0x" + toHex(setFields)
-                  + ", after 0x"+ toHex(afterSetFields));
+                    + ", after 0x" + toHex(afterSetFields));
         }
     }
 

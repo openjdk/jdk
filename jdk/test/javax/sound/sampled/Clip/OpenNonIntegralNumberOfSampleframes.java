@@ -97,7 +97,8 @@ public final class OpenNonIntegralNumberOfSampleframes {
                 System.err.println("af = " + af);
                 System.err.println("bufferSize = " + bufferSize);
                 throw new RuntimeException("Expected exception is not thrown");
-            } catch (final LineUnavailableException ignored) {
+            } catch (IllegalArgumentException
+                    | LineUnavailableException ignored) {
                 // the test is not applicable
             }
         }

@@ -304,6 +304,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
      *
      * @param e the mouse event
      */
+    @SuppressWarnings("deprecation")
     protected void positionCaret(MouseEvent e) {
         Point pt = new Point(e.getX(), e.getY());
         Position.Bias[] biasRet = new Position.Bias[1];
@@ -323,6 +324,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
      *
      * @param e the mouse event
      */
+    @SuppressWarnings("deprecation")
     protected void moveCaret(MouseEvent e) {
         Point pt = new Point(e.getX(), e.getY());
         Position.Bias[] biasRet = new Position.Bias[1];
@@ -615,6 +617,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
      * @param g the graphics context
      * @see #damage
      */
+    @SuppressWarnings("deprecation")
     public void paint(Graphics g) {
         if(isVisible()) {
             try {
@@ -959,6 +962,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
      * @see #isActive
      * @see Caret#setVisible
      */
+    @SuppressWarnings("deprecation")
     public void setVisible(boolean e) {
         // focus lost notification can come in later after the
         // caret has been deinstalled, in which case the component
@@ -1301,6 +1305,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
      * event thread so that calling <code>modelToView</code>
      * is safe.
      */
+    @SuppressWarnings("deprecation")
     void repaintNewCaret() {
         if (component != null) {
             TextUI mapper = component.getUI();
@@ -1664,6 +1669,7 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
          *
          * @param e the action event
          */
+        @SuppressWarnings("deprecation")
         public void actionPerformed(ActionEvent e) {
             if (width == 0 || height == 0) {
                 // setVisible(true) will cause a scroll, only do this if the

@@ -408,6 +408,7 @@ public class RepaintManager
      *
      * @see JComponent#repaint
      */
+    @SuppressWarnings("deprecation")
     private void addDirtyRegion0(Container c, int x, int y, int w, int h) {
         /* Special cases we don't have to bother with.
          */
@@ -521,10 +522,12 @@ public class RepaintManager
      * @see JApplet#repaint
      * @since 1.6
      */
+    @SuppressWarnings("deprecation")
     public void addDirtyRegion(Applet applet, int x, int y, int w, int h) {
         addDirtyRegion0(applet, x, y, w, h);
     }
 
+    @SuppressWarnings("deprecation")
     void scheduleHeavyWeightPaints() {
         Map<Container,Rectangle> hws;
 

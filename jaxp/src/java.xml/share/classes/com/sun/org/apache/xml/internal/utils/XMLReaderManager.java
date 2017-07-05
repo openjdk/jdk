@@ -81,6 +81,8 @@ public class XMLReaderManager {
     private boolean _useCatalog;
     private CatalogFeatures _catalogFeatures;
 
+    private int _cdataChunkSize;
+
     /**
      * Hidden constructor
      */
@@ -173,13 +175,12 @@ public class XMLReaderManager {
             }
         }
 
-        try {
-            //reader is cached, but this property might have been reset
-            reader.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, _accessExternalDTD);
-        } catch (SAXException se) {
-            XMLSecurityManager.printWarning(reader.getClass().getName(),
-                    XMLConstants.ACCESS_EXTERNAL_DTD, se);
-        }
+        //reader is cached, but this property might have been reset
+        JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, XMLConstants.ACCESS_EXTERNAL_DTD,
+                _accessExternalDTD, true);
+
+        JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkXmlUtils.CDATA_CHUNK_SIZE,
+                _cdataChunkSize, false);
 
         String lastProperty = "";
         try {
@@ -278,7 +279,8 @@ public class XMLReaderManager {
             _xmlSecurityManager = (XMLSecurityManager)value;
         } else if (JdkXmlFeatures.CATALOG_FEATURES.equals(name)) {
             _catalogFeatures = (CatalogFeatures)value;
+        } else if (JdkXmlUtils.CDATA_CHUNK_SIZE.equals(name)) {
+            _cdataChunkSize = JdkXmlUtils.getValue(value, _cdataChunkSize);
         }
-
     }
 }

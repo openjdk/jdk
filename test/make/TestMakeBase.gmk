@@ -226,10 +226,11 @@ $(eval $(call assert-equals, $(VARDEP_TEST_VAR2_old), $(VARDEP_TEST_VAR2), \
     Wrong contents in vardeps file))
 
 # Test with a variable value containing some problematic characters
-VARDEP_TEST_VAR3 := foo '""' "''" bar \$$ORIGIN
+VARDEP_TEST_VAR3 := foo '""' "''" bar \$$ORIGIN &\#x00a9
 VARDEP_VALUE_FILE := $(call DependOnVariable, VARDEP_TEST_VAR3)
 -include $(VARDEP_VALUE_FILE)
-$(eval $(call assert-equals, $(VARDEP_TEST_VAR3_old), $(VARDEP_TEST_VAR3), \
+$(eval $(call assert-equals, $(call EscapeHash,$(VARDEP_TEST_VAR3_old)), \
+    $(call EscapeHash,$(VARDEP_TEST_VAR3)), \
     Wrong contents in vardep file))
 
 TEST_TARGETS += test-vardep
