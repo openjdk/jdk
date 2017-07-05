@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,8 @@
  * java.rmi.ConnectException or ConnectIOException, not a MarshalException.
  * @author Peter Jones
  *
- * @build HandshakeFailure
+ * @library ../../testlibrary
+ * @build HandshakeFailure TestLibrary
  * @run main/othervm HandshakeFailure
  */
 
@@ -44,7 +45,7 @@ import java.rmi.registry.Registry;
 
 public class HandshakeFailure {
 
-    private static final int PORT = 2020;
+    private static final int PORT = TestLibrary.getUnusedRandomPort();
     private static final int TIMEOUT = 10000;
 
     public static void main(String[] args) throws Exception {

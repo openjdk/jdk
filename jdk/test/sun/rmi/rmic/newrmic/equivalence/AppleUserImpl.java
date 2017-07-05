@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import java.rmi.RemoteException;
 import java.rmi.Naming;
 import java.rmi.server.UnicastRemoteObject;
 import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.Random;
 import java.util.ArrayList;
 import java.util.Date;
@@ -249,11 +250,12 @@ public class AppleUserImpl
         }
 
         synchronized (user) {
+            int port = -1;
             // create new registry and bind new AppleUserImpl in registry
             try {
-                LocateRegistry.createRegistry(1099); //TestLibrary.REGISTRY_PORT);
-                Naming.rebind("rmi://localhost:1099/AppleUser",user);
-                              //TestLibrary.REGISTRY_PORT + "/AppleUser", user);
+                Registry registry = TestLibrary.createRegistryOnUnusedPort();
+                port = TestLibrary.getRegistryPort(registry);
+                Naming.rebind("rmi://localhost:" + port + "/AppleUser",user);
             } catch (RemoteException e) {
                 //TestLibrary.bomb("Failed to bind AppleUser", e);
             } catch (java.net.MalformedURLException e) {
@@ -263,10 +265,9 @@ public class AppleUserImpl
             // start the other server if available
             try {
                 Class app = Class.forName("ApplicationServer");
-                server = new Thread((Runnable) app.newInstance());
-                logger.log(Level.INFO, "Starting application server " +
-                    "in same process");
-                server.start();
+                java.lang.reflect.Constructor appConstructor =
+                        app.getDeclaredConstructor(new Class[] {Integer.TYPE});
+                server = new Thread((Runnable) appConstructor.newInstance(port));
             } catch (ClassNotFoundException e) {
                 // assume the other server is running in a separate process
                 logger.log(Level.INFO, "Application server must be " +

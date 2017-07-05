@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
  * @build Test
  * @build TestImpl
  * @build TestImpl_Stub
+ * @build TestLibrary
  * @run main/othervm/policy=security.policy/timeout=360 DGCDeadLock
  */
 
@@ -53,7 +54,7 @@ import java.rmi.*;
 import java.io.*;
 
 public class DGCDeadLock implements Runnable {
-
+    private static final int REGISTRY_PORT = TestLibrary.getUnusedRandomPort();
     final static public int HOLD_TARGET_TIME = 25000;
     public static int TEST_FAIL_TIME = HOLD_TARGET_TIME + 30000;
     public static boolean finished = false;
@@ -75,7 +76,9 @@ public class DGCDeadLock implements Runnable {
                 TestParams.defaultPolicy +
                 " -Djava.rmi.dgc.leaseValue=500000" +
                 "  -Dsun.rmi.dgc.checkInterval=" +
-                (HOLD_TARGET_TIME - 5000) + "";
+                (HOLD_TARGET_TIME - 5000) +
+                "   -Drmi.registry.port=" + REGISTRY_PORT +
+                "" ;
 
             testImplVM = new JavaVM("TestImpl", options, "");
             testImplVM.start();
@@ -112,7 +115,7 @@ public class DGCDeadLock implements Runnable {
 
             // create a test client
             Test foo = (Test) Naming.lookup("rmi://:" +
-                                            TestLibrary.REGISTRY_PORT +
+                                            REGISTRY_PORT +
                                             "/Foo");
             echo = foo.echo("Hello world");
             System.err.println("Test object created.");
@@ -131,7 +134,7 @@ public class DGCDeadLock implements Runnable {
 
             //import "Bar"
             Test bar = (Test) Naming.lookup("rmi://:" +
-                                            TestLibrary.REGISTRY_PORT +
+                                            REGISTRY_PORT +
                                             "/Bar");
 
             /* infinite loop to show the liveness of Client,

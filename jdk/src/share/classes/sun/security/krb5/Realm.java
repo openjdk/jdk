@@ -46,24 +46,29 @@ import sun.security.krb5.internal.util.KerberosString;
  * <xmp>
  * Realm ::= GeneralString
  * </xmp>
+ * This class is immutable.
  */
 public class Realm implements Cloneable {
-    private String realm;
+    private final String realm; // not null nor empty
     private static boolean DEBUG = Krb5.DEBUG;
-
-    private Realm() {
-    }
 
     public Realm(String name) throws RealmException {
         realm = parseRealm(name);
     }
 
-    public Object clone() {
-        Realm new_realm = new Realm();
-        if (realm != null) {
-            new_realm.realm = new String(realm);
+    public static Realm getDefault() throws RealmException {
+        try {
+            return new Realm(Config.getInstance().getDefaultRealm());
+        } catch (RealmException re) {
+            throw re;
+        } catch (KrbException ke) {
+            throw new RealmException(ke);
         }
-        return new_realm;
+    }
+
+    // Immutable class, no need to clone
+    public Object clone() {
+        return this;
     }
 
     public boolean equals(Object obj) {
@@ -76,21 +81,11 @@ public class Realm implements Cloneable {
         }
 
         Realm that = (Realm)obj;
-        if (this.realm != null && that.realm != null ) {
-            return this.realm.equals(that.realm);
-        } else {
-            return (this.realm == null && that.realm == null);
-        }
+        return this.realm.equals(that.realm);
     }
 
     public int hashCode() {
-        int result = 17 ;
-
-        if( realm != null ) {
-            result = 37 * result + realm.hashCode();
-        }
-
-        return result;
+        return realm.hashCode();
     }
 
     /**
@@ -116,6 +111,7 @@ public class Realm implements Cloneable {
         return realm;
     }
 
+    // Extract realm from a string like dummy@REALM
     public static String parseRealmAtSeparator(String name)
         throws RealmException {
         if (name == null) {
@@ -128,8 +124,12 @@ public class Realm implements Cloneable {
         while (i < temp.length()) {
             if (temp.charAt(i) == PrincipalName.NAME_REALM_SEPARATOR) {
                 if (i == 0 || temp.charAt(i - 1) != '\\') {
-                    if (i + 1 < temp.length())
+                    if (i + 1 < temp.length()) {
                         result = temp.substring(i + 1, temp.length());
+                    } else {
+                        throw new IllegalArgumentException
+                                ("empty realm part not allowed");
+                    }
                     break;
                 }
             }
@@ -219,7 +219,8 @@ public class Realm implements Cloneable {
      * @return an instance of Realm.
      *
      */
-    public static Realm parse(DerInputStream data, byte explicitTag, boolean optional) throws Asn1Exception, IOException, RealmException {
+    public static Realm parse(DerInputStream data, byte explicitTag, boolean optional)
+            throws Asn1Exception, IOException, RealmException {
         if ((optional) && (((byte)data.peekByte() & (byte)0x1F) != explicitTag)) {
             return null;
         }

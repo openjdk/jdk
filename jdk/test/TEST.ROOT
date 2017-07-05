@@ -9,4 +9,4 @@ keys=2d dnd i18n
 othervm.dirs=java/rmi sun/rmi javax/management
 
 # Tests that cannot run concurrently
-exclusiveAccess.dirs=java/rmi sun/rmi sun/management/jmxremote sun/tools/jstatd
+exclusiveAccess.dirs=java/rmi/Naming sun/management/jmxremote sun/tools/jstatd

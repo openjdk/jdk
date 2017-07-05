@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,13 @@
  * @bug 4387038
  * @summary Ensure that java.rmi.Naming.lookup functions properly for names
  *          containing embedded ':' characters.
+ *
+ * @library ../testlibrary
+ * @build TestLibrary
+ * @run main LookupNameWithColon
  */
 
 import java.rmi.Naming;
-import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
 public class LookupNameWithColon {
@@ -38,15 +41,12 @@ public class LookupNameWithColon {
             "multiple:colons:in:name"
         };
 
-        Registry reg;
-        try {
-            reg = LocateRegistry.createRegistry(Registry.REGISTRY_PORT);
-        } catch (Exception ex) {
-            reg = LocateRegistry.getRegistry();
-        }
+        Registry reg = TestLibrary.createRegistryOnUnusedPort();
+        int port = TestLibrary.getRegistryPort(reg);
+
         for (int i = 0; i < names.length; i++) {
             reg.rebind(names[i], reg);
-            Naming.lookup("rmi://localhost/" + names[i]);
+            Naming.lookup("rmi://localhost:" + port + "/" + names[i]);
         }
     }
 }

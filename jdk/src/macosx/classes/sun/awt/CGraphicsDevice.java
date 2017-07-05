@@ -48,6 +48,9 @@ public class CGraphicsDevice extends GraphicsDevice {
 
     private static AWTPermission fullScreenExclusivePermission;
 
+    // Save/restore DisplayMode for the Full Screen mode
+    private DisplayMode originalMode;
+
     public CGraphicsDevice(int displayID) {
         this.displayID = displayID;
         configs = new GraphicsConfiguration[] {
@@ -124,18 +127,22 @@ public class CGraphicsDevice extends GraphicsDevice {
         }
 
         boolean fsSupported = isFullScreenSupported();
+
         if (fsSupported && old != null) {
             // enter windowed mode (and restore original display mode)
             exitFullScreenExclusive(old);
-
-            // TODO: restore display mode
+            if (originalMode != null) {
+                setDisplayMode(originalMode);
+                originalMode = null;
+            }
         }
 
         super.setFullScreenWindow(w);
 
         if (fsSupported && w != null) {
-            // TODO: save current display mode
-
+            if (isDisplayChangeSupported()) {
+                originalMode = getDisplayMode();
+            }
             // enter fullscreen mode
             enterFullScreenExclusive(w);
         }
