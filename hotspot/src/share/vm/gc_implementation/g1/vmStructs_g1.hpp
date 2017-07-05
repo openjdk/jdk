@@ -57,9 +57,10 @@
   nonstatic_field(G1MonitoringSupport, _old_committed,      size_t)           \
   nonstatic_field(G1MonitoringSupport, _old_used,           size_t)           \
                                                                               \
-  nonstatic_field(HeapRegionSetBase,   _length,             uint)             \
-  nonstatic_field(HeapRegionSetBase,   _region_num,         uint)             \
-  nonstatic_field(HeapRegionSetBase,   _total_used_bytes,   size_t)           \
+  nonstatic_field(HeapRegionSetBase,   _count,          HeapRegionSetCount)   \
+                                                                              \
+  nonstatic_field(HeapRegionSetCount,  _length,         uint)                 \
+  nonstatic_field(HeapRegionSetCount,  _capacity,       size_t)               \
 
 
 #define VM_TYPES_G1(declare_type, declare_toplevel_type)                      \
@@ -71,6 +72,7 @@
   declare_type(HeapRegion, ContiguousSpace)                                   \
   declare_toplevel_type(HeapRegionSeq)                                        \
   declare_toplevel_type(HeapRegionSetBase)                                    \
+  declare_toplevel_type(HeapRegionSetCount)                                   \
   declare_toplevel_type(G1MonitoringSupport)                                  \
                                                                               \
   declare_toplevel_type(G1CollectedHeap*)                                     \

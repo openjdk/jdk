@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,6 @@ PerfCounter*  RuntimeService::_sync_time_ticks = NULL;
 PerfCounter*  RuntimeService::_total_safepoints = NULL;
 PerfCounter*  RuntimeService::_safepoint_time_ticks = NULL;
 PerfCounter*  RuntimeService::_application_time_ticks = NULL;
-PerfCounter*  RuntimeService::_thread_interrupt_signaled_count = NULL;
-PerfCounter*  RuntimeService::_interrupted_before_count = NULL;
-PerfCounter*  RuntimeService::_interrupted_during_count = NULL;
 
 void RuntimeService::init() {
   // Make sure the VM version is initialized
@@ -69,26 +66,6 @@ void RuntimeService::init() {
     // create performance counters for jvm_version and its capabilities
     PerfDataManager::create_constant(SUN_RT, "jvmVersion", PerfData::U_None,
                                      (jlong) Abstract_VM_Version::jvm_version(), CHECK);
-
-    // I/O interruption related counters
-
-    // thread signaling via os::interrupt()
-
-    _thread_interrupt_signaled_count =
-                PerfDataManager::create_counter(SUN_RT,
-                 "threadInterruptSignaled", PerfData::U_Events, CHECK);
-
-    // OS_INTRPT via "check before" in _INTERRUPTIBLE
-
-    _interrupted_before_count =
-                PerfDataManager::create_counter(SUN_RT, "interruptedBeforeIO",
-                                                PerfData::U_Events, CHECK);
-
-    // OS_INTRPT via "check during" in _INTERRUPTIBLE
-
-    _interrupted_during_count =
-                PerfDataManager::create_counter(SUN_RT, "interruptedDuringIO",
-                                                PerfData::U_Events, CHECK);
 
     // The capabilities counter is a binary representation of the VM capabilities in string.
     // This string respresentation simplifies the implementation of the client side
@@ -179,24 +156,6 @@ jlong RuntimeService::safepoint_time_ms() {
 jlong RuntimeService::application_time_ms() {
   return UsePerfData ?
     Management::ticks_to_ms(_application_time_ticks->get_value()) : -1;
-}
-
-void RuntimeService::record_interrupted_before_count() {
-  if (UsePerfData) {
-    _interrupted_before_count->inc();
-  }
-}
-
-void RuntimeService::record_interrupted_during_count() {
-  if (UsePerfData) {
-    _interrupted_during_count->inc();
-  }
-}
-
-void RuntimeService::record_thread_interrupt_signaled_count() {
-  if (UsePerfData) {
-    _thread_interrupt_signaled_count->inc();
-  }
 }
 
 #endif // INCLUDE_MANAGEMENT

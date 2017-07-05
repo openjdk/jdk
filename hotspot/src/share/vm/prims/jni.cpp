@@ -3878,10 +3878,12 @@ void TestMetachunk_test();
 void TestVirtualSpaceNode_test();
 void TestNewSize_test();
 void TestKlass_test();
+void TestBitMap_test();
 #if INCLUDE_ALL_GCS
 void TestOldFreeSpaceCalculation_test();
 void TestG1BiasedArray_test();
 void TestBufferingOopClosure_test();
+void TestCodeCacheRemSet_test();
 #endif
 
 void execute_internal_vm_tests() {
@@ -3902,6 +3904,7 @@ void execute_internal_vm_tests() {
     run_unit_test(test_loggc_filename());
     run_unit_test(TestNewSize_test());
     run_unit_test(TestKlass_test());
+    run_unit_test(TestBitMap_test());
 #if INCLUDE_VM_STRUCTS
     run_unit_test(VMStructs::test());
 #endif
@@ -3910,6 +3913,7 @@ void execute_internal_vm_tests() {
     run_unit_test(TestG1BiasedArray_test());
     run_unit_test(HeapRegionRemSet::test_prt());
     run_unit_test(TestBufferingOopClosure_test());
+    run_unit_test(TestCodeCacheRemSet_test());
 #endif
     tty->print_cr("All internal VM tests passed");
   }
@@ -3999,7 +4003,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
     }
 
 #ifndef PRODUCT
-  #ifndef TARGET_OS_FAMILY_windows
+  #ifndef CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED
     #define CALL_TEST_FUNC_WITH_WRAPPER_IF_NEEDED(f) f()
   #endif
 

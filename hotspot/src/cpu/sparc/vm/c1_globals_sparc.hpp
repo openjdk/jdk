@@ -66,6 +66,4 @@ define_pd_global(bool, OptimizeSinglePrecision,      false);
 define_pd_global(bool, CSEArrayLength,               true );
 define_pd_global(bool, TwoOperandLIRForm,            false);
 
-define_pd_global(intx, SafepointPollOffset,          0    );
-
 #endif // CPU_SPARC_VM_C1_GLOBALS_SPARC_HPP
