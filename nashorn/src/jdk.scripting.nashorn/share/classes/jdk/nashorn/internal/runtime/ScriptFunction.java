@@ -31,8 +31,12 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,7 +47,7 @@ import java.util.concurrent.atomic.LongAdder;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.internal.dynalink.support.Guards;
+import jdk.internal.dynalink.linker.support.Guards;
 import jdk.nashorn.internal.codegen.ApplySpecialization;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
@@ -122,6 +126,9 @@ public class ScriptFunction extends ScriptObject {
 
     // Marker object for lazily initialized prototype object
     private static final Object LAZY_PROTOTYPE = new Object();
+
+    private static final AccessControlContext GET_LOOKUP_PERMISSION_CONTEXT =
+            AccessControlContextFactory.createAccessControlContext(CallSiteDescriptor.GET_LOOKUP_PERMISSION_NAME);
 
     private static PropertyMap createStrictModeMap(final PropertyMap map) {
         final int flags = Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE;
@@ -806,7 +813,7 @@ public class ScriptFunction extends ScriptObject {
     }
 
     /**
-     * dyn:call call site signature: (callee, thiz, [args...]) generated method
+     * StandardOperation.CALL call site signature: (callee, thiz, [args...]) generated method
      * signature: (callee, thiz, [args...])
      *
      * cases:
@@ -914,7 +921,7 @@ public class ScriptFunction extends ScriptObject {
         } else if (data.isBuiltin() && "extend".equals(data.getName())) {
             // NOTE: the only built-in named "extend" is NativeJava.extend. As a special-case we're binding the
             // current lookup as its "this" so it can do security-sensitive creation of adapter classes.
-            boundHandle = MH.dropArguments(MH.bindTo(callHandle, desc.getLookup()), 0, type.parameterType(0), type.parameterType(1));
+            boundHandle = MH.dropArguments(MH.bindTo(callHandle, getLookupPrivileged(desc)), 0, type.parameterType(0), type.parameterType(1));
         } else if (scopeCall && needsWrappedThis()) {
             // Make a handle that drops the passed "this" argument and substitutes either Global or Undefined
             // (this, args...) => ([this], args...)
@@ -953,6 +960,12 @@ public class ScriptFunction extends ScriptObject {
                         guard,
                 spsArray,
                 exceptionGuard);
+    }
+
+    private static Lookup getLookupPrivileged(final CallSiteDescriptor desc) {
+        // NOTE: we'd rather not make NashornCallSiteDescriptor.getLookupPrivileged public.
+        return AccessController.doPrivileged((PrivilegedAction<Lookup>)()->desc.getLookup(),
+                GET_LOOKUP_PERMISSION_CONTEXT);
     }
 
     private GuardedInvocation createApplyOrCallCall(final boolean isApply, final CallSiteDescriptor desc, final LinkRequest request, final Object[] args) {

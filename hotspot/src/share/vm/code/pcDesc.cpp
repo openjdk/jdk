@@ -29,8 +29,6 @@
 #include "code/scopeDesc.hpp"
 #include "memory/resourceArea.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 PcDesc::PcDesc(int pc_offset, int scope_decode_offset, int obj_decode_offset) {
   _pc_offset           = pc_offset;
   _scope_decode_offset = scope_decode_offset;
@@ -45,7 +43,7 @@ address PcDesc::real_pc(const nmethod* code) const {
 void PcDesc::print(nmethod* code) {
 #ifndef PRODUCT
   ResourceMark rm;
-  tty->print_cr("PcDesc(pc=0x%lx offset=%x bits=%x):", real_pc(code), pc_offset(), _flags);
+  tty->print_cr("PcDesc(pc=" PTR_FORMAT " offset=%x bits=%x):", p2i(real_pc(code)), pc_offset(), _flags);
 
   if (scope_decode_offset() == DebugInformationRecorder::serialized_null) {
     return;

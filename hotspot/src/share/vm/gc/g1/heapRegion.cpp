@@ -165,7 +165,7 @@ void HeapRegion::hr_clear(bool par, bool clear_space, bool locked) {
   assert(_end == orig_end(),
          "we should have already filtered out humongous regions");
   assert(!in_collection_set(),
-         err_msg("Should not clear heap region %u in the collection set", hrm_index()));
+         "Should not clear heap region %u in the collection set", hrm_index());
 
   set_allocation_context(AllocationContext::system());
   set_young_index_in_cset(-1);
@@ -292,9 +292,9 @@ void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
   record_timestamp();
 
   assert(mr.end() == orig_end(),
-         err_msg("Given region end address " PTR_FORMAT " should match exactly "
-                 "bottom plus one region size, i.e. " PTR_FORMAT,
-                 p2i(mr.end()), p2i(orig_end())));
+         "Given region end address " PTR_FORMAT " should match exactly "
+         "bottom plus one region size, i.e. " PTR_FORMAT,
+         p2i(mr.end()), p2i(orig_end()));
 }
 
 CompactibleSpace* HeapRegion::next_compaction_space() const {
@@ -327,7 +327,7 @@ void HeapRegion::note_self_forwarding_removal_end(bool during_initial_mark,
                                                   bool during_conc_mark,
                                                   size_t marked_bytes) {
   assert(marked_bytes <= used(),
-         err_msg("marked: " SIZE_FORMAT " used: " SIZE_FORMAT, marked_bytes, used()));
+         "marked: " SIZE_FORMAT " used: " SIZE_FORMAT, marked_bytes, used());
   _prev_top_at_mark_start = top();
   _prev_marked_bytes = marked_bytes;
 }

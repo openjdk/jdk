@@ -146,8 +146,9 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
         }
         try {
             return new PrincipalName(
+                    type,
                     result.toArray(new String[result.size()]),
-                    type);
+                    Realm.getDefault());
         } catch (RealmException re) {
             return null;
         }

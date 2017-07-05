@@ -78,7 +78,7 @@ cp ${TESTSRC}/Test7005594.sh .
 
 ${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} -d . Test7005594.java
 
-${TESTJAVA}/bin/java ${TESTOPTS} -Xmx1600m -Xms1600m -XX:+IgnoreUnrecognizedVMOptions -XX:-ZapUnusedHeapArea -Xcomp -XX:CompileOnly=Test7005594.test Test7005594 > test.out 2>&1
+${TESTJAVA}/bin/java ${TESTOPTS} -Xmx1600m -Xms1600m -XX:+IgnoreUnrecognizedVMOptions -XX:-ZapUnusedHeapArea -Xcomp -XX:CompileOnly=Test7005594.test -XX:CompileCommand=quiet Test7005594 > test.out 2>&1
 
 result=$?
 

@@ -199,6 +199,9 @@ class SharedRuntime: AllStatic {
   static address continuation_for_implicit_exception(JavaThread* thread,
                                                      address faulting_pc,
                                                      ImplicitExceptionKind exception_kind);
+#if INCLUDE_JVMCI
+  static address deoptimize_for_implicit_exception(JavaThread* thread, address pc, nmethod* nm, int deopt_reason);
+#endif
 
   // Shared stub locations
   static address get_poll_stub(address pc);
@@ -417,6 +420,12 @@ class SharedRuntime: AllStatic {
                                                       const VMRegPair *regs,
                                                       AdapterFingerPrint* fingerprint);
 
+  static void gen_i2c_adapter(MacroAssembler *_masm,
+                              int total_args_passed,
+                              int comp_args_on_stack,
+                              const BasicType *sig_bt,
+                              const VMRegPair *regs);
+
   // OSR support
 
   // OSR_migration_begin will extract the jvm state from an interpreter
@@ -475,6 +484,7 @@ class SharedRuntime: AllStatic {
   // A compiled caller has just called the interpreter, but compiled code
   // exists.  Patch the caller so he no longer calls into the interpreter.
   static void fixup_callers_callsite(Method* moop, address ret_pc);
+  static bool should_fixup_call_destination(address destination, address entry_point, address caller_pc, Method* moop, CodeBlob* cb);
 
   // Slow-path Locking and Unlocking
   static void complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, JavaThread* thread);
@@ -673,9 +683,9 @@ class AdapterHandlerLibrary: public AllStatic {
   static void create_native_wrapper(methodHandle method);
   static AdapterHandlerEntry* get_adapter(methodHandle method);
 
-  static void print_handler(CodeBlob* b) { print_handler_on(tty, b); }
-  static void print_handler_on(outputStream* st, CodeBlob* b);
-  static bool contains(CodeBlob* b);
+  static void print_handler(const CodeBlob* b) { print_handler_on(tty, b); }
+  static void print_handler_on(outputStream* st, const CodeBlob* b);
+  static bool contains(const CodeBlob* b);
 #ifndef PRODUCT
   static void print_statistics();
 #endif // PRODUCT

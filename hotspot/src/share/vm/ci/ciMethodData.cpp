@@ -122,7 +122,7 @@ void ciMethodData::load_extra_data() {
       // An empty slot or ArgInfoData entry marks the end of the trap data
       return;
     default:
-      fatal(err_msg("bad tag = %d", dp_dst->tag()));
+      fatal("bad tag = %d", dp_dst->tag());
     }
   }
 }
@@ -289,7 +289,7 @@ ciProfileData* ciMethodData::bci_to_extra_data(int bci, ciMethod* m, bool& two_f
       break;
     }
     default:
-      fatal(err_msg("bad tag = %d", dp->tag()));
+      fatal("bad tag = %d", dp->tag());
     }
   }
   return NULL;
@@ -578,7 +578,7 @@ void ciMethodData::dump_replay_data_extra_data_helper(outputStream* out, int rou
       break;
     }
     default:
-      fatal(err_msg("bad tag = %d", dp->tag()));
+      fatal("bad tag = %d", dp->tag());
     }
   }
 }
@@ -690,7 +690,7 @@ void ciMethodData::print_data_on(outputStream* st) {
       data = new ciSpeculativeTrapData(dp);
       break;
     default:
-      fatal(err_msg("unexpected tag %d", dp->tag()));
+      fatal("unexpected tag %d", dp->tag());
     }
     st->print("%d", dp_to_di(data->dp()));
     st->fill_to(6);

@@ -389,7 +389,7 @@ class Assembler : public AbstractAssembler  {
 
   static void assert_signed_range(intptr_t x, int nbits) {
     assert(nbits == 32 || (-(1 << nbits-1) <= x  &&  x < ( 1 << nbits-1)),
-           err_msg("value out of range: x=" INTPTR_FORMAT ", nbits=%d", x, nbits));
+           "value out of range: x=" INTPTR_FORMAT ", nbits=%d", x, nbits);
   }
 
   static void assert_signed_word_disp_range(intptr_t x, int nbits) {

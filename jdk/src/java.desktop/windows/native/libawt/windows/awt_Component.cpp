@@ -4058,14 +4058,19 @@ HWND AwtComponent::GetProxyFocusOwner()
     return (HWND)NULL;
 }
 
-/* Call DefWindowProc for the focus proxy, if any */
+/* Redirects message to the focus proxy, if any */
 void AwtComponent::CallProxyDefWindowProc(UINT message, WPARAM wParam,
     LPARAM lParam, LRESULT &retVal, MsgRouting &mr)
 {
     if (mr != mrConsume)  {
         HWND proxy = GetProxyFocusOwner();
         if (proxy != NULL && ::IsWindowEnabled(proxy)) {
-            retVal = ComCtl32Util::GetInstance().DefWindowProc(NULL, proxy, message, wParam, lParam);
+            if (proxy != GetHWnd()) {
+                retVal = ::SendMessage(proxy, message, wParam, lParam);
+            } else {
+                retVal = ComCtl32Util::GetInstance().DefWindowProc(NULL,
+                                                proxy, message, wParam, lParam);
+            }
             mr = mrConsume;
         }
     }

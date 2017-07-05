@@ -30,12 +30,9 @@
 
 #ifdef __solaris__
 #include <sys/systeminfo.h>
-#include <strings.h>
 #endif
 
-#if defined(__linux__) || defined(_ALLBSD_SOURCE)
 #include <string.h>
-#endif
 
 #include "jni.h"
 

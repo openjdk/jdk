@@ -25,6 +25,7 @@
 package javax.swing;
 
 
+import java.beans.*;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Enumeration;
@@ -36,10 +37,6 @@ import java.util.Set;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.peer.LightweightPeer;
-import java.beans.PropertyChangeListener;
-import java.beans.VetoableChangeListener;
-import java.beans.VetoableChangeSupport;
-import java.beans.Transient;
 
 import java.applet.Applet;
 
@@ -176,6 +173,7 @@ import sun.swing.UIClientPropertyKey;
  * @author Arnaud Weber
  * @since 1.2
  */
+@JavaBean(defaultProperty = "UIClassID")
 @SuppressWarnings("serial") // Same-version serialization only
 public abstract class JComponent extends Container implements Serializable,
                                               TransferHandler.HasGetTransferHandler
@@ -479,11 +477,10 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @param value whether or not the JPopupMenu is inherited
      * @see #setComponentPopupMenu
-     * @beaninfo
-     *        bound: true
-     *  description: Whether or not the JPopupMenu is inherited
      * @since 1.5
      */
+    @BeanProperty(description
+            = "Whether or not the JPopupMenu is inherited")
     public void setInheritsPopupMenu(boolean value) {
         boolean oldValue = getFlag(INHERITS_POPUP_MENU);
         setFlag(INHERITS_POPUP_MENU, value);
@@ -519,12 +516,10 @@ public abstract class JComponent extends Container implements Serializable,
      * @param popup - the popup that will be assigned to this component
      *                may be null
      * @see #getComponentPopupMenu
-     * @beaninfo
-     *        bound: true
-     *    preferred: true
-     *  description: Popup to show
      * @since 1.5
      */
+    @BeanProperty(preferred = true, description
+            = "Popup to show")
     public void setComponentPopupMenu(JPopupMenu popup) {
         if(popup != null) {
             enableEvents(AWTEvent.MOUSE_EVENT_MASK);
@@ -649,12 +644,9 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #updateUI
      * @see UIManager#getLookAndFeel
      * @see UIManager#getUI
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *    attribute: visualUpdate true
-     *  description: The component's look and feel delegate.
      */
+    @BeanProperty(hidden = true, visualUpdate = true, description
+            = "The component's look and feel delegate.")
     protected void setUI(ComponentUI newUI) {
         /* We do not check that the UI instance is different
          * before allowing the switch in order to enable the
@@ -718,10 +710,9 @@ public abstract class JComponent extends Container implements Serializable,
      * @return the <code>UIDefaults</code> key for a
      *          <code>ComponentUI</code> subclass
      * @see UIDefaults#getUI
-     * @beaninfo
-     *      expert: true
-     * description: UIClassID
      */
+    @BeanProperty(bound = false, expert = true, description
+            = "UIClassID")
     public String getUIClassID() {
         return uiClassID;
     }
@@ -1265,6 +1256,7 @@ public abstract class JComponent extends Container implements Serializable,
      *  @return  true if the component is currently painting a tile,
      *          false otherwise
      */
+    @BeanProperty(bound = false)
     public boolean isPaintingTile() {
         return getFlag(IS_PAINTING_TILE);
     }
@@ -1295,6 +1287,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #print
      * @since 1.6
      */
+    @BeanProperty(bound = false)
     public final boolean isPaintingForPrint() {
         return getFlag(IS_PRINTING);
     }
@@ -1319,6 +1312,7 @@ public abstract class JComponent extends Container implements Serializable,
      *   <code>Container.setFocusCycleRoot(boolean)</code>.
      */
     @Deprecated
+    @BeanProperty(bound = false)
     public boolean isManagingFocus() {
         return false;
     }
@@ -1589,11 +1583,9 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #getVerifyInputWhenFocusTarget
      *
      * @since 1.3
-     * @beaninfo
-     *       bound: true
-     * description: Whether the Component verifies input before accepting
-     *              focus.
      */
+    @BeanProperty(description
+            = "Whether the Component verifies input before accepting focus.")
     public void setVerifyInputWhenFocusTarget(boolean
                                               verifyInputWhenFocusTarget) {
         boolean oldVerifyInputWhenFocusTarget =
@@ -1641,11 +1633,9 @@ public abstract class JComponent extends Container implements Serializable,
      * Sets the preferred size of this component.
      * If <code>preferredSize</code> is <code>null</code>, the UI will
      * be asked for the preferred size.
-     * @beaninfo
-     *   preferred: true
-     *       bound: true
-     * description: The preferred size of the component.
      */
+    @BeanProperty(preferred = true, description
+            = "The preferred size of the component.")
     public void setPreferredSize(Dimension preferredSize) {
         super.setPreferredSize(preferredSize);
     }
@@ -1685,10 +1675,9 @@ public abstract class JComponent extends Container implements Serializable,
      * @param maximumSize a <code>Dimension</code> containing the
      *          desired maximum allowable size
      * @see #getMaximumSize
-     * @beaninfo
-     *       bound: true
-     * description: The maximum size of the component.
      */
+    @BeanProperty(description
+            = "The maximum size of the component.")
     public void setMaximumSize(Dimension maximumSize) {
         super.setMaximumSize(maximumSize);
     }
@@ -1726,10 +1715,9 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @param minimumSize the new minimum size of this component
      * @see #getMinimumSize
-     * @beaninfo
-     *       bound: true
-     * description: The minimum size of the component.
      */
+    @BeanProperty(description
+            = "The minimum size of the component.")
     public void setMinimumSize(Dimension minimumSize) {
         super.setMinimumSize(minimumSize);
     }
@@ -1793,12 +1781,9 @@ public abstract class JComponent extends Container implements Serializable,
      * @param border the border to be rendered for this component
      * @see Border
      * @see CompoundBorder
-     * @beaninfo
-     *        bound: true
-     *    preferred: true
-     *    attribute: visualUpdate true
-     *  description: The component's border.
      */
+    @BeanProperty(preferred = true, visualUpdate = true, description
+            = "The component's border.")
     public void setBorder(Border border) {
         Border         oldBorder = this.border;
 
@@ -1831,6 +1816,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @return the value of the insets property
      * @see #setBorder
      */
+    @BeanProperty(expert = true)
     public Insets getInsets() {
         if (border != null) {
             return border.getBorderInsets(this);
@@ -1849,8 +1835,6 @@ public abstract class JComponent extends Container implements Serializable,
      * @param insets the <code>Insets</code> object, which can be reused
      * @return the <code>Insets</code> object
      * @see #getInsets
-     * @beaninfo
-     *   expert: true
      */
     public Insets getInsets(Insets insets) {
         if (insets == null) {
@@ -1892,9 +1876,9 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @param alignmentY  the new vertical alignment
      * @see #getAlignmentY
-     * @beaninfo
-     *   description: The preferred vertical alignment of the component.
      */
+    @BeanProperty(description
+            = "The preferred vertical alignment of the component.")
     public void setAlignmentY(float alignmentY) {
         this.alignmentY = validateAlignment(alignmentY);
         isAlignmentYSet = true;
@@ -1921,9 +1905,9 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @param alignmentX  the new horizontal alignment
      * @see #getAlignmentX
-     * @beaninfo
-     *   description: The preferred horizontal alignment of the component.
      */
+    @BeanProperty(description
+            = "The preferred horizontal alignment of the component.")
     public void setAlignmentX(float alignmentX) {
         this.alignmentX = validateAlignment(alignmentX);
         isAlignmentXSet = true;
@@ -1939,10 +1923,9 @@ public abstract class JComponent extends Container implements Serializable,
      * @param inputVerifier the new input verifier
      * @since 1.3
      * @see InputVerifier
-     * @beaninfo
-     *       bound: true
-     * description: The component's input verifier.
      */
+    @BeanProperty(description
+            = "The component's input verifier.")
     public void setInputVerifier(InputVerifier inputVerifier) {
         InputVerifier oldInputVerifier = (InputVerifier)getClientProperty(
                                          JComponent_INPUT_VERIFIER);
@@ -1967,6 +1950,7 @@ public abstract class JComponent extends Container implements Serializable,
      * then invoke operations on that object to draw on the component.
      * @return this components graphics context
      */
+    @BeanProperty(bound = false)
     public Graphics getGraphics() {
         if (DEBUG_GRAPHICS_LOADED && shouldDebugGraphics() != 0) {
             DebugGraphics graphics = new DebugGraphics(super.getGraphics(),
@@ -1993,15 +1977,13 @@ public abstract class JComponent extends Container implements Serializable,
       * <li>A value of 0 causes no changes to the debugging options.
       * </ul>
       * <code>debugOptions</code> is bitwise OR'd into the current value
-      *
-      * @beaninfo
-      *   preferred: true
-      *        enum: NONE_OPTION DebugGraphics.NONE_OPTION
-      *              LOG_OPTION DebugGraphics.LOG_OPTION
-      *              FLASH_OPTION DebugGraphics.FLASH_OPTION
-      *              BUFFERED_OPTION DebugGraphics.BUFFERED_OPTION
-      * description: Diagnostic options for graphics operations.
       */
+    @BeanProperty(bound = false, preferred = true, enumerationValues = {
+            "DebugGraphics.NONE_OPTION",
+            "DebugGraphics.LOG_OPTION",
+            "DebugGraphics.FLASH_OPTION",
+            "DebugGraphics.BUFFERED_OPTION"}, description
+            = "Diagnostic options for graphics operations.")
     public void setDebugGraphicsOptions(int debugOptions) {
         DebugGraphics.setDebugOptions(this, debugOptions);
     }
@@ -2278,6 +2260,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @return an array of <code>KeyStroke</code> objects
      * @see #registerKeyboardAction
      */
+    @BeanProperty(bound = false)
     public KeyStroke[] getRegisteredKeyStrokes() {
         int[] counts = new int[3];
         KeyStroke[][] strokes = new KeyStroke[3][];
@@ -2616,6 +2599,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #getBaseline(int, int)
      * @since 1.6
      */
+    @BeanProperty(bound = false)
     public BaselineResizeBehavior getBaselineResizeBehavior() {
         if (ui != null) {
             return ui.getBaselineResizeBehavior(this);
@@ -2666,10 +2650,8 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @param aFlag  true to make the component visible; false to
      *          make it invisible
-     *
-     * @beaninfo
-     *    attribute: visualUpdate true
      */
+    @BeanProperty(hidden = true, visualUpdate = true)
     public void setVisible(boolean aFlag) {
         if (aFlag != isVisible()) {
             super.setVisible(aFlag);
@@ -2699,13 +2681,9 @@ public abstract class JComponent extends Container implements Serializable,
      * @param enabled true if this component should be enabled, false otherwise
      * @see java.awt.Component#isEnabled
      * @see java.awt.Component#isLightweight
-     *
-     * @beaninfo
-     *    preferred: true
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: The enabled state of the component.
      */
+    @BeanProperty(expert = true, preferred = true, visualUpdate = true, description
+            = "The enabled state of the component.")
     public void setEnabled(boolean enabled) {
         boolean oldEnabled = isEnabled();
         super.setEnabled(enabled);
@@ -2722,13 +2700,9 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @param fg  the desired foreground <code>Color</code>
      * @see java.awt.Component#getForeground
-     *
-     * @beaninfo
-     *    preferred: true
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: The foreground color of the component.
      */
+    @BeanProperty(preferred = true, visualUpdate = true, description
+            = "The foreground color of the component.")
     public void setForeground(Color fg) {
         Color oldFg = getForeground();
         super.setForeground(fg);
@@ -2752,13 +2726,9 @@ public abstract class JComponent extends Container implements Serializable,
      * @param bg the desired background <code>Color</code>
      * @see java.awt.Component#getBackground
      * @see #setOpaque
-     *
-     * @beaninfo
-     *    preferred: true
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: The background color of the component.
      */
+    @BeanProperty(preferred = true, visualUpdate = true, description
+            = "The background color of the component.")
     public void setBackground(Color bg) {
         Color oldBg = getBackground();
         super.setBackground(bg);
@@ -2773,13 +2743,9 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @param font the desired <code>Font</code> for this component
      * @see java.awt.Component#getFont
-     *
-     * @beaninfo
-     *    preferred: true
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: The font for the component.
      */
+    @BeanProperty(preferred = true, visualUpdate = true, description
+            = "The font for the component.")
     public void setFont(Font font) {
         Font oldFont = getFont();
         super.setFont(font);
@@ -3028,10 +2994,9 @@ public abstract class JComponent extends Container implements Serializable,
      * @param text  the string to display; if the text is <code>null</code>,
      *              the tool tip is turned off for this component
      * @see #TOOL_TIP_TEXT_KEY
-     * @beaninfo
-     *   preferred: true
-     * description: The text to display in a tool tip.
      */
+    @BeanProperty(bound = false, preferred = true, description
+            = "The text to display in a tool tip.")
     public void setToolTipText(String text) {
         String oldText = getToolTipText();
         putClientProperty(TOOL_TIP_TEXT_KEY, text);
@@ -3190,11 +3155,9 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #getAutoscrolls
      * @see JViewport
      * @see JScrollPane
-     *
-     * @beaninfo
-     *      expert: true
-     * description: Determines if this component automatically scrolls its contents when dragged.
      */
+    @BeanProperty(bound = false, expert = true, description
+            = "Determines if this component automatically scrolls its contents when dragged.")
     public void setAutoscrolls(boolean autoscrolls) {
         setFlag(AUTOSCROLLS_SET, true);
         if (this.autoscrolls != autoscrolls) {
@@ -3254,11 +3217,9 @@ public abstract class JComponent extends Container implements Serializable,
      * @see TransferHandler
      * @see #getTransferHandler
      * @since 1.4
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *  description: Mechanism for transfer of data to and from the component
      */
+    @BeanProperty(hidden = true, description
+            = "Mechanism for transfer of data to and from the component")
     public void setTransferHandler(TransferHandler newHandler) {
         TransferHandler oldHandler = (TransferHandler)getClientProperty(
                                       JComponent_TRANSFER_HANDLER);
@@ -4208,8 +4169,6 @@ public abstract class JComponent extends Container implements Serializable,
      *         or if any keystroke already maps to another focus traversal
      *         operation for this Component
      * @since 1.5
-     * @beaninfo
-     *       bound: true
      */
     public void
         setFocusTraversalKeys(int id, Set<? extends AWTKeyStroke> keystrokes)
@@ -4336,6 +4295,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @return the current x coordinate of the component's origin
      */
+    @BeanProperty(bound = false)
     public int getX() { return super.getX(); }
 
 
@@ -4348,6 +4308,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @return the current y coordinate of the component's origin
      */
+    @BeanProperty(bound = false)
     public int getY() { return super.getY(); }
 
 
@@ -4360,6 +4321,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @return the current width of this component
      */
+    @BeanProperty(bound = false)
     public int getWidth() { return super.getWidth(); }
 
 
@@ -4372,6 +4334,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @return the current height of this component
      */
+    @BeanProperty(bound = false)
     public int getHeight() { return super.getHeight(); }
 
     /**
@@ -4405,11 +4368,9 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @param isOpaque  true if this component should be opaque
      * @see #isOpaque
-     * @beaninfo
-     *        bound: true
-     *       expert: true
-     *  description: The component's opacity
      */
+    @BeanProperty(expert = true, description
+            = "The component's opacity")
     public void setOpaque(boolean isOpaque) {
         boolean oldValue = getFlag(IS_OPAQUE);
         setFlag(IS_OPAQUE, isOpaque);
@@ -4520,6 +4481,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @return the visible rectangle
      */
+    @BeanProperty(bound = false)
     public Rectangle getVisibleRect() {
         Rectangle visibleRect = new Rectangle();
 
@@ -4628,6 +4590,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @since 1.4
      */
+    @BeanProperty(bound = false)
     public synchronized VetoableChangeListener[] getVetoableChangeListeners() {
         if (vetoableChangeSupport == null) {
             return new VetoableChangeListener[0];
@@ -4645,6 +4608,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @return the top-level <code>Container</code> that this component is in,
      *          or <code>null</code> if not in any container
      */
+    @BeanProperty(bound = false)
     public Container getTopLevelAncestor() {
         for(Container p = this; p != null; p = p.getParent()) {
             if(p instanceof Window || p instanceof Applet) {
@@ -4711,6 +4675,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @since 1.4
      */
+    @BeanProperty(bound = false)
     public AncestorListener[] getAncestorListeners() {
         AncestorNotifier ancestorNotifier = getAncestorNotifier();
         if (ancestorNotifier == null) {
@@ -4943,6 +4908,7 @@ public abstract class JComponent extends Container implements Serializable,
      *
      * @return always returns true
      */
+    @BeanProperty(bound = false)
     public boolean isOptimizedDrawingEnabled() {
         return true;
     }
@@ -5392,6 +5358,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @return the <code>JRootPane</code> that contains this component,
      *          or <code>null</code> if no <code>JRootPane</code> is found
      */
+    @BeanProperty(bound = false)
     public JRootPane getRootPane() {
         return SwingUtilities.getRootPane(this);
     }

@@ -42,7 +42,8 @@ class PcDesc VALUE_OBJ_CLASS_SPEC {
   enum {
     PCDESC_reexecute               = 1 << 0,
     PCDESC_is_method_handle_invoke = 1 << 1,
-    PCDESC_return_oop              = 1 << 2
+    PCDESC_return_oop              = 1 << 2,
+    PCDESC_rethrow_exception       = 1 << 3
   };
 
   int _flags;
@@ -71,6 +72,8 @@ class PcDesc VALUE_OBJ_CLASS_SPEC {
   };
 
   // Flags
+  bool     rethrow_exception()              const { return (_flags & PCDESC_rethrow_exception) != 0; }
+  void set_rethrow_exception(bool z)              { set_flag(PCDESC_rethrow_exception, z); }
   bool     should_reexecute()              const { return (_flags & PCDESC_reexecute) != 0; }
   void set_should_reexecute(bool z)              { set_flag(PCDESC_reexecute, z); }
 
