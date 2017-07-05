@@ -22,14 +22,13 @@
  */
 
 /* @test
- * @bug 4313887
+ * @bug 4313887 7006126
  * @summary Unit test for java.nio.file.spi.FileSystemProvider
  * @build TestProvider SetDefaultProvider
  * @run main/othervm -Djava.nio.file.spi.DefaultFileSystemProvider=TestProvider SetDefaultProvider
  */
 
 import java.nio.file.*;
-import java.nio.file.spi.*;
 
 public class SetDefaultProvider {
     public static void main(String[] args) throws Exception {

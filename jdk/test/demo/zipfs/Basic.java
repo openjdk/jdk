@@ -48,9 +48,9 @@ public class Basic {
         if (!found)
             throw new RuntimeException("'jar' provider not installed");
 
-        // Test: FileSystems#newFileSystem(FileRef)
+        // Test: FileSystems#newFileSystem(Path)
         Map<String,?> env = new HashMap<String,Object>();
-        FileSystems.newFileSystem(zipfile, env, null).close();
+        FileSystems.newFileSystem(zipfile, null).close();
 
         // Test: FileSystems#newFileSystem(URI)
         URI uri = new URI("jar", zipfile.toUri().toString(), null);
@@ -69,14 +69,11 @@ public class Basic {
 
         // Test: DirectoryStream
         found = false;
-        DirectoryStream<Path> stream = fs.getPath("/").newDirectoryStream();
-        try {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(fs.getPath("/"))) {
             for (Path entry: stream) {
                 found = entry.toString().equals("/META-INF/");
                 if (found) break;
             }
-        } finally {
-            stream.close();
         }
 
         if (!found)
@@ -84,21 +81,21 @@ public class Basic {
 
         // Test: copy file from zip file to current (scratch) directory
         Path source = fs.getPath("/META-INF/services/java.nio.file.spi.FileSystemProvider");
-        if (source.exists()) {
-            Path target = Paths.get(source.getName().toString());
-            source.copyTo(target, StandardCopyOption.REPLACE_EXISTING);
+        if (Files.exists(source)) {
+            Path target = Paths.get(source.getFileName().toString());
+            Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
             try {
-                long s1 = Attributes.readBasicFileAttributes(source).size();
-                long s2 = Attributes.readBasicFileAttributes(target).size();
+                long s1 = Files.readAttributes(source, BasicFileAttributes.class).size();
+                long s2 = Files.readAttributes(target, BasicFileAttributes.class).size();
                 if (s2 != s1)
                     throw new RuntimeException("target size != source size");
             } finally {
-                target.delete();
+                Files.delete(target);
             }
         }
 
         // Test: FileStore
-        FileStore store = fs.getPath("/").getFileStore();
+        FileStore store = Files.getFileStore(fs.getPath("/"));
         if (!store.supportsFileAttributeView("basic"))
             throw new RuntimeException("BasicFileAttributeView should be supported");
 
@@ -107,7 +104,7 @@ public class Basic {
         if (fs.isOpen())
             throw new RuntimeException("FileSystem should be closed");
         try {
-            fs.getPath("/missing").checkAccess(AccessMode.READ);
+            fs.provider().checkAccess(fs.getPath("/missing"), AccessMode.READ);
         } catch (ClosedFileSystemException x) { }
     }
 
@@ -125,9 +122,9 @@ public class Basic {
         public FileVisitResult preVisitDirectory(Path dir,
                                                  BasicFileAttributes attrs)
         {
-            if (dir.getName() != null) {
+            if (dir.getFileName() != null) {
                 indent();
-                System.out.println(dir.getName() + "/");
+                System.out.println(dir.getFileName() + "/");
                 indent++;
             }
             return FileVisitResult.CONTINUE;
@@ -138,7 +135,7 @@ public class Basic {
                                          BasicFileAttributes attrs)
         {
             indent();
-            System.out.print(file.getName());
+            System.out.print(file.getFileName());
             if (attrs.isRegularFile())
                 System.out.format(" (%d)", attrs.size());
             System.out.println();
@@ -151,7 +148,7 @@ public class Basic {
         {
             if (exc != null)
                 super.postVisitDirectory(dir, exc);
-            if (dir.getName() != null)
+            if (dir.getFileName() != null)
                 indent--;
             return FileVisitResult.CONTINUE;
         }

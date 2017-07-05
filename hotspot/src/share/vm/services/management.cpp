@@ -38,6 +38,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
+#include "runtime/serviceThread.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/heapDumper.hpp"
 #include "services/lowMemoryDetector.hpp"
@@ -112,8 +113,8 @@ void Management::init() {
 }
 
 void Management::initialize(TRAPS) {
-  // Start the low memory detector thread
-  LowMemoryDetector::initialize();
+  // Start the service thread
+  ServiceThread::initialize();
 
   if (ManagementServer) {
     ResourceMark rm(THREAD);

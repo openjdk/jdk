@@ -36,6 +36,12 @@
 #ifdef TARGET_ARCH_zero
 # include "register_zero.hpp"
 #endif
+#ifdef TARGET_ARCH_arm
+# include "register_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "register_ppc.hpp"
+#endif
 
 class JavaThread;
 
@@ -137,6 +143,12 @@ class RegisterMap : public StackObj {
 #endif
 #ifdef TARGET_ARCH_zero
 # include "registerMap_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_arm
+# include "registerMap_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "registerMap_ppc.hpp"
 #endif
 
 };

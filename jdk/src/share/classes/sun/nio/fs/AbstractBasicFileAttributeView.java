@@ -54,30 +54,6 @@ abstract class AbstractBasicFileAttributeView
     }
 
     @Override
-    public Object getAttribute(String attribute) throws IOException {
-        BasicFileAttributes attrs = readAttributes();
-        if (attribute.equals(SIZE_NAME))
-            return attrs.size();
-        if (attribute.equals(CREATION_TIME_NAME))
-            return attrs.creationTime();
-        if (attribute.equals(LAST_ACCESS_TIME_NAME))
-            return attrs.lastAccessTime();
-        if (attribute.equals(LAST_MODIFIED_TIME_NAME))
-            return attrs.lastModifiedTime();
-        if (attribute.equals(FILE_KEY_NAME))
-            return attrs.fileKey();
-        if (attribute.equals(IS_DIRECTORY_NAME))
-            return attrs.isDirectory();
-        if (attribute.equals(IS_REGULAR_FILE_NAME))
-            return attrs.isRegularFile();
-        if (attribute.equals(IS_SYMBOLIC_LINK_NAME))
-            return attrs.isSymbolicLink();
-        if (attribute.equals(IS_OTHER_NAME))
-            return attrs.isOther();
-        return null;
-    }
-
-    @Override
     public void setAttribute(String attribute, Object value)
         throws IOException
     {
@@ -101,8 +77,8 @@ abstract class AbstractBasicFileAttributeView
      * Used to build a map of attribute name/values.
      */
     static class AttributesBuilder {
-        private Set<String> set = new HashSet<String>();
-        private Map<String,Object> map = new HashMap<String,Object>();
+        private Set<String> set = new HashSet<>();
+        private Map<String,Object> map = new HashMap<>();
         private boolean copyAll;
 
         private AttributesBuilder(String[] attributes) {
@@ -172,7 +148,7 @@ abstract class AbstractBasicFileAttributeView
     }
 
     @Override
-    public Map<String,?> readAttributes(String[] attributes) throws IOException {
+    public Map<String,Object> readAttributes(String[] attributes) throws IOException {
         AttributesBuilder builder = AttributesBuilder.create(attributes);
         addBasicAttributesToBuilder(readAttributes(), builder);
         return builder.unmodifiableMap();

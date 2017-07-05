@@ -32,7 +32,7 @@ import java.util.Arrays;
  *
  * @see PiscesRenderer#render
  */
-public final class PiscesCache {
+final class PiscesCache {
 
     final int bboxX0, bboxY0, bboxX1, bboxY1;
 

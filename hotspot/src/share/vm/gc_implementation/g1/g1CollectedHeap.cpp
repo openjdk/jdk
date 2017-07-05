@@ -546,8 +546,11 @@ HeapRegion* G1CollectedHeap::new_region_work(size_t word_size,
     res = new_region_try_secondary_free_list(word_size);
   }
   if (res == NULL && do_expand) {
-    expand(word_size * HeapWordSize);
-    res = _free_list.remove_head_or_null();
+    if (expand(word_size * HeapWordSize)) {
+      // The expansion succeeded and so we should have at least one
+      // region on the free list.
+      res = _free_list.remove_head();
+    }
   }
   if (res != NULL) {
     if (G1PrintHeapRegions) {
@@ -631,9 +634,22 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
   if (first == -1) {
     // The only thing we can do now is attempt expansion.
     if (fs + x_size >= num_regions) {
-      expand((num_regions - fs) * HeapRegion::GrainBytes);
-      first = humongous_obj_allocate_find_first(num_regions, word_size);
-      assert(first != -1, "this should have worked");
+      // If the number of regions we're trying to allocate for this
+      // object is at most the number of regions in the free suffix,
+      // then the call to humongous_obj_allocate_find_first() above
+      // should have succeeded and we wouldn't be here.
+      //
+      // We should only be trying to expand when the free suffix is
+      // not sufficient for the object _and_ we have some expansion
+      // room available.
+      assert(num_regions > fs, "earlier allocation should have succeeded");
+
+      if (expand((num_regions - fs) * HeapRegion::GrainBytes)) {
+        first = humongous_obj_allocate_find_first(num_regions, word_size);
+        // If the expansion was successful then the allocation
+        // should have been successful.
+        assert(first != -1, "this should have worked");
+      }
     }
   }
 
@@ -1647,16 +1663,17 @@ resize_if_necessary_after_full_collection(size_t word_size) {
   if (capacity_after_gc < minimum_desired_capacity) {
     // Don't expand unless it's significant
     size_t expand_bytes = minimum_desired_capacity - capacity_after_gc;
-    expand(expand_bytes);
-    if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("  "
-                             "  expanding:"
-                             "  max_heap_size: %6.1fK"
-                             "  minimum_desired_capacity: %6.1fK"
-                             "  expand_bytes: %6.1fK",
-                             (double) max_heap_size / (double) K,
-                             (double) minimum_desired_capacity / (double) K,
-                             (double) expand_bytes / (double) K);
+    if (expand(expand_bytes)) {
+      if (PrintGC && Verbose) {
+        gclog_or_tty->print_cr("  "
+                               "  expanding:"
+                               "  max_heap_size: %6.1fK"
+                               "  minimum_desired_capacity: %6.1fK"
+                               "  expand_bytes: %6.1fK",
+                               (double) max_heap_size / (double) K,
+                               (double) minimum_desired_capacity / (double) K,
+                               (double) expand_bytes / (double) K);
+      }
     }
 
     // No expansion, now see if we want to shrink
@@ -1757,66 +1774,84 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
 
   verify_region_sets_optional();
 
-  size_t expand_bytes = word_size * HeapWordSize;
-  if (expand_bytes < MinHeapDeltaBytes) {
-    expand_bytes = MinHeapDeltaBytes;
+  size_t expand_bytes = MAX2(word_size * HeapWordSize, MinHeapDeltaBytes);
+  if (expand(expand_bytes)) {
+    verify_region_sets_optional();
+    return attempt_allocation_at_safepoint(word_size,
+                                          false /* expect_null_cur_alloc_region */);
   }
-  expand(expand_bytes);
-
-  verify_region_sets_optional();
-
-  return attempt_allocation_at_safepoint(word_size,
-                                     false /* expect_null_cur_alloc_region */);
+  return NULL;
 }
 
-// FIXME: both this and shrink could probably be more efficient by
-// doing one "VirtualSpace::expand_by" call rather than several.
-void G1CollectedHeap::expand(size_t expand_bytes) {
+bool G1CollectedHeap::expand(size_t expand_bytes) {
   size_t old_mem_size = _g1_storage.committed_size();
-  // We expand by a minimum of 1K.
-  expand_bytes = MAX2(expand_bytes, (size_t)K);
-  size_t aligned_expand_bytes =
-    ReservedSpace::page_align_size_up(expand_bytes);
+  size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
   aligned_expand_bytes = align_size_up(aligned_expand_bytes,
                                        HeapRegion::GrainBytes);
-  expand_bytes = aligned_expand_bytes;
-  while (expand_bytes > 0) {
-    HeapWord* base = (HeapWord*)_g1_storage.high();
-    // Commit more storage.
-    bool successful = _g1_storage.expand_by(HeapRegion::GrainBytes);
-    if (!successful) {
-        expand_bytes = 0;
-    } else {
-      expand_bytes -= HeapRegion::GrainBytes;
-      // Expand the committed region.
-      HeapWord* high = (HeapWord*) _g1_storage.high();
-      _g1_committed.set_end(high);
+
+  if (Verbose && PrintGC) {
+    gclog_or_tty->print("Expanding garbage-first heap from %ldK by %ldK",
+                           old_mem_size/K, aligned_expand_bytes/K);
+  }
+
+  HeapWord* old_end = (HeapWord*)_g1_storage.high();
+  bool successful = _g1_storage.expand_by(aligned_expand_bytes);
+  if (successful) {
+    HeapWord* new_end = (HeapWord*)_g1_storage.high();
+
+    // Expand the committed region.
+    _g1_committed.set_end(new_end);
+
+    // Tell the cardtable about the expansion.
+    Universe::heap()->barrier_set()->resize_covered_region(_g1_committed);
+
+    // And the offset table as well.
+    _bot_shared->resize(_g1_committed.word_size());
+
+    expand_bytes = aligned_expand_bytes;
+    HeapWord* base = old_end;
+
+    // Create the heap regions for [old_end, new_end)
+    while (expand_bytes > 0) {
+      HeapWord* high = base + HeapRegion::GrainWords;
+
       // Create a new HeapRegion.
       MemRegion mr(base, high);
       bool is_zeroed = !_g1_max_committed.contains(base);
       HeapRegion* hr = new HeapRegion(_bot_shared, mr, is_zeroed);
 
-      // Now update max_committed if necessary.
-      _g1_max_committed.set_end(MAX2(_g1_max_committed.end(), high));
-
       // Add it to the HeapRegionSeq.
       _hrs->insert(hr);
       _free_list.add_as_tail(hr);
+
       // And we used up an expansion region to create it.
       _expansion_regions--;
-      // Tell the cardtable about it.
-      Universe::heap()->barrier_set()->resize_covered_region(_g1_committed);
-      // And the offset table as well.
-      _bot_shared->resize(_g1_committed.word_size());
+
+      expand_bytes -= HeapRegion::GrainBytes;
+      base += HeapRegion::GrainWords;
+    }
+    assert(base == new_end, "sanity");
+
+    // Now update max_committed if necessary.
+    _g1_max_committed.set_end(MAX2(_g1_max_committed.end(), new_end));
+
+  } else {
+    // The expansion of the virtual storage space was unsuccessful.
+    // Let's see if it was because we ran out of swap.
+    if (G1ExitOnExpansionFailure &&
+        _g1_storage.uncommitted_size() >= aligned_expand_bytes) {
+      // We had head room...
+      vm_exit_out_of_memory(aligned_expand_bytes, "G1 heap expansion");
     }
   }
 
   if (Verbose && PrintGC) {
     size_t new_mem_size = _g1_storage.committed_size();
-    gclog_or_tty->print_cr("Expanding garbage-first heap from %ldK by %ldK to %ldK",
-                           old_mem_size/K, aligned_expand_bytes/K,
+    gclog_or_tty->print_cr("...%s, expanded to %ldK",
+                           (successful ? "Successful" : "Failed"),
                            new_mem_size/K);
   }
+  return successful;
 }
 
 void G1CollectedHeap::shrink_helper(size_t shrink_bytes)
@@ -2088,7 +2123,10 @@ jint G1CollectedHeap::initialize() {
   HeapRegionRemSet::init_heap(max_regions());
 
   // Now expand into the initial heap size.
-  expand(init_byte_size);
+  if (!expand(init_byte_size)) {
+    vm_exit_during_initialization("Failed to allocate initial heap.");
+    return JNI_ENOMEM;
+  }
 
   // Perform any initialization actions delegated to the policy.
   g1_policy()->init();
@@ -2744,7 +2782,7 @@ size_t G1CollectedHeap::large_typearray_limit() {
 }
 
 size_t G1CollectedHeap::max_capacity() const {
-  return g1_reserved_obj_bytes();
+  return _g1_reserved.byte_size();
 }
 
 jlong G1CollectedHeap::millis_since_last_gc() {
@@ -3538,7 +3576,12 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         size_t expand_bytes = g1_policy()->expansion_amount();
         if (expand_bytes > 0) {
           size_t bytes_before = capacity();
-          expand(expand_bytes);
+          if (!expand(expand_bytes)) {
+            // We failed to expand the heap so let's verify that
+            // committed/uncommitted amount match the backing store
+            assert(capacity() == _g1_storage.committed_size(), "committed size mismatch");
+            assert(max_capacity() == _g1_storage.reserved_size(), "reserved size mismatch");
+          }
         }
       }
 
@@ -3762,7 +3805,7 @@ void G1CollectedHeap::get_gc_alloc_regions() {
 
     if (alloc_region == NULL) {
       // we will get a new GC alloc region
-      alloc_region = new_gc_alloc_region(ap, 0);
+      alloc_region = new_gc_alloc_region(ap, HeapRegion::GrainWords);
     } else {
       // the region was retained from the last collection
       ++_gc_alloc_region_counts[ap];
@@ -5311,7 +5354,7 @@ size_t G1CollectedHeap::n_regions() {
 
 size_t G1CollectedHeap::max_regions() {
   return
-    (size_t)align_size_up(g1_reserved_obj_bytes(), HeapRegion::GrainBytes) /
+    (size_t)align_size_up(max_capacity(), HeapRegion::GrainBytes) /
     HeapRegion::GrainBytes;
 }
 

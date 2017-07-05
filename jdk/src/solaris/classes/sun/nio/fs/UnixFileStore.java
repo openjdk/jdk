@@ -103,28 +103,50 @@ abstract class UnixFileStore
         return entry.isReadOnly();
     }
 
+    // uses statvfs to read the file system information
+    private UnixFileStoreAttributes readAttributes() throws IOException {
+        try {
+            return UnixFileStoreAttributes.get(file);
+        } catch (UnixException x) {
+            x.rethrowAsIOException(file);
+            return null;    // keep compile happy
+        }
+    }
+
     @Override
-    @SuppressWarnings("unchecked")
+    public long getTotalSpace() throws IOException {
+        UnixFileStoreAttributes attrs = readAttributes();
+        return attrs.blockSize() * attrs.totalBlocks();
+    }
+
+    @Override
+    public long getUsableSpace() throws IOException {
+       UnixFileStoreAttributes attrs = readAttributes();
+       return attrs.blockSize() * attrs.availableBlocks();
+    }
+
+    @Override
+    public long getUnallocatedSpace() throws IOException {
+        UnixFileStoreAttributes attrs = readAttributes();
+        return attrs.blockSize() * attrs.freeBlocks();
+    }
+
+    @Override
     public <V extends FileStoreAttributeView> V getFileStoreAttributeView(Class<V> view)
     {
         if (view == null)
             throw new NullPointerException();
-        if (view == FileStoreSpaceAttributeView.class)
-            return (V) new UnixFileStoreSpaceAttributeView(this);
         return (V) null;
     }
 
     @Override
     public Object getAttribute(String attribute) throws IOException {
-        if (attribute.equals("space:totalSpace"))
-            return new UnixFileStoreSpaceAttributeView(this)
-                .readAttributes().totalSpace();
-        if (attribute.equals("space:usableSpace"))
-            return new UnixFileStoreSpaceAttributeView(this)
-                 .readAttributes().usableSpace();
-        if (attribute.equals("space:unallocatedSpace"))
-            return new UnixFileStoreSpaceAttributeView(this)
-                 .readAttributes().unallocatedSpace();
+        if (attribute.equals("totalSpace"))
+            return getTotalSpace();
+        if (attribute.equals("usableSpace"))
+            return getUsableSpace();
+        if (attribute.equals("unallocatedSpace"))
+            return getUnallocatedSpace();
         throw new UnsupportedOperationException("'" + attribute + "' not recognized");
     }
 
@@ -181,50 +203,6 @@ abstract class UnixFileStore
         return sb.toString();
     }
 
-    private static class UnixFileStoreSpaceAttributeView
-        implements FileStoreSpaceAttributeView
-    {
-        private final UnixFileStore fs;
-
-        UnixFileStoreSpaceAttributeView(UnixFileStore fs) {
-            this.fs = fs;
-        }
-
-        @Override
-        public String name() {
-            return "space";
-        }
-
-        @Override
-        public FileStoreSpaceAttributes readAttributes()
-            throws IOException
-        {
-            UnixPath file = fs.file();
-            final UnixFileStoreAttributes attrs;
-            try {
-                attrs = UnixFileStoreAttributes.get(file);
-            } catch (UnixException x) {
-                x.rethrowAsIOException(file);
-                return null;    // keep compile happy
-            }
-
-            return new FileStoreSpaceAttributes() {
-                @Override
-                public long totalSpace() {
-                    return attrs.blockSize() * attrs.totalBlocks();
-                }
-                @Override
-                public long usableSpace() {
-                    return attrs.blockSize() * attrs.availableBlocks();
-                }
-                @Override
-                public long unallocatedSpace() {
-                    return attrs.blockSize() * attrs.freeBlocks();
-                }
-            };
-        }
-    }
-
     // -- fstypes.properties --
 
     private static final Object loadLock = new Object();
@@ -277,11 +255,8 @@ abstract class UnixFileStore
         String fstypes = System.getProperty("java.home") + "/lib/fstypes.properties";
         Path file = Paths.get(fstypes);
         try {
-            ReadableByteChannel rbc = file.newByteChannel();
-            try {
+            try (ReadableByteChannel rbc = Files.newByteChannel(file)) {
                 result.load(Channels.newReader(rbc, "UTF-8"));
-            } finally {
-                rbc.close();
             }
         } catch (IOException x) {
         }

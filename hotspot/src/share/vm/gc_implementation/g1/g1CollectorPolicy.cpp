@@ -2011,7 +2011,7 @@ size_t G1CollectorPolicy::expansion_amount() {
     // space, whichever is smaller, bounded below by a minimum
     // expansion (unless that's all that's left.)
     const size_t min_expand_bytes = 1*M;
-    size_t reserved_bytes = _g1->g1_reserved_obj_bytes();
+    size_t reserved_bytes = _g1->max_capacity();
     size_t committed_bytes = _g1->capacity();
     size_t uncommitted_bytes = reserved_bytes - committed_bytes;
     size_t expand_bytes;

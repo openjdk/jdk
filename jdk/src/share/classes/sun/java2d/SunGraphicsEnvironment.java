@@ -95,6 +95,22 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
                             String line = br.readLine();
                             if (line.indexOf("OpenSolaris") >= 0) {
                                 isOpenSolaris = true;
+                            } else {
+                                /* We are using isOpenSolaris as meaning
+                                 * we know the Solaris commercial fonts aren't
+                                 * present. "Solaris Next" (03/10) did not
+                                 * include these even though its was not
+                                 * OpenSolaris. Need to revisit how this is
+                                 * handled but for now as in 6ux, we'll use
+                                 * the test for a standard font resource as
+                                 * being an indicator as to whether we need
+                                 * to treat this as OpenSolaris from a font
+                                 * config perspective.
+                                 */
+                                String courierNew =
+                                    "/usr/openwin/lib/X11/fonts/TrueType/CourierNew.ttf";
+                                File courierFile = new File(courierNew);
+                                isOpenSolaris = !courierFile.exists();
                             }
                             fis.close();
                         }
