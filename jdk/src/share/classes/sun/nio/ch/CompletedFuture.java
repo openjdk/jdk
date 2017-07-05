@@ -25,7 +25,7 @@
 
 package sun.nio.ch;
 
-import java.nio.channels.AsynchronousChannel;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.ExecutionException;
 import java.io.IOException;
@@ -35,39 +35,35 @@ import java.io.IOException;
  * completed.
  */
 
-final class CompletedFuture<V,A>
-    extends AbstractFuture<V,A>
-{
+final class CompletedFuture<V> implements Future<V> {
     private final V result;
     private final Throwable exc;
 
-    private CompletedFuture(AsynchronousChannel channel,
-                            V result,
-                            Throwable exc,
-                            A attachment)
-    {
-        super(channel, attachment);
+    private CompletedFuture(V result, Throwable exc) {
         this.result = result;
         this.exc = exc;
     }
 
     @SuppressWarnings("unchecked")
-    static <V,A> CompletedFuture<V,A> withResult(AsynchronousChannel channel,
-                                                 V result,
-                                                 A attachment)
-    {
-        return new CompletedFuture<V,A>(channel, result, null, attachment);
+    static <V> CompletedFuture<V> withResult(V result) {
+        return new CompletedFuture<V>(result, null);
     }
 
     @SuppressWarnings("unchecked")
-    static <V,A> CompletedFuture<V,A> withFailure(AsynchronousChannel channel,
-                                                  Throwable exc,
-                                                  A attachment)
-    {
+    static <V> CompletedFuture<V> withFailure(Throwable exc) {
         // exception must be IOException or SecurityException
         if (!(exc instanceof IOException) && !(exc instanceof SecurityException))
             exc = new IOException(exc);
-        return new CompletedFuture(channel, null, exc, attachment);
+        return new CompletedFuture(null, exc);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <V> CompletedFuture<V> withResult(V result, Throwable exc) {
+        if (exc == null) {
+            return withResult(result);
+        } else {
+            return withFailure(exc);
+        }
     }
 
     @Override
@@ -99,15 +95,5 @@ final class CompletedFuture<V,A>
     @Override
     public boolean cancel(boolean mayInterruptIfRunning) {
         return false;
-    }
-
-    @Override
-    Throwable exception() {
-        return exc;
-    }
-
-    @Override
-    V value() {
-        return result;
     }
 }

@@ -76,6 +76,15 @@ public class ISO2022_CN_CNS extends ISO2022 implements HistoricallyNamedCharset
             } catch (Exception e) { }
         }
 
+        private byte[] bb = new byte[4];
+        public boolean canEncode(char c) {
+            int n = 0;
+            return (c <= '\u007f' ||
+                    (n = ((EUC_TW.Encoder)ISOEncoder).toEUC(c, bb)) == 2 ||
+                    (n == 4 && bb[0] == SS2 &&
+                     (bb[1] == PLANE2 || bb[1] == PLANE3)));
+        }
+
         /*
          * Since ISO2022-CN-CNS possesses a CharsetEncoder
          * without the corresponding CharsetDecoder half the

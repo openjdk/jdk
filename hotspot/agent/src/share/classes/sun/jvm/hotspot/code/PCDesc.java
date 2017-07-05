@@ -82,6 +82,7 @@ public class PCDesc extends VMObject {
       tty.print(" ");
       sd.getMethod().printValueOn(tty);
       tty.print("  @" + sd.getBCI());
+      tty.print("  reexecute=" + sd.getReexecute());
       tty.println();
     }
   }

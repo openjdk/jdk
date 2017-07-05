@@ -25,13 +25,11 @@
 
 package build.tools.jdwpgen;
 
-import java.util.*;
 import java.io.*;
 
 class Main {
 
     static String specSource;
-    static Map nameMap = new HashMap();
     static boolean genDebug = true;
 
     static void usage() {
@@ -43,7 +41,6 @@ class Main {
         System.err.println("-doc <doc_output>");
         System.err.println("-jdi <java_output>");
         System.err.println("-include <include_file_output>");
-        System.exit(1);
     }
 
     public static void main(String args[]) throws IOException {
@@ -66,6 +63,7 @@ class Main {
                 } else {
                     System.err.println("Invalid option: " + arg);
                     usage();
+                    return;
                 }
             } else {
                 specSource = arg;
@@ -75,6 +73,7 @@ class Main {
         if (reader == null) {
             System.err.println("<spec_input> must be specified");
             usage();
+            return;
         }
 
         Parse parse = new Parse(reader);

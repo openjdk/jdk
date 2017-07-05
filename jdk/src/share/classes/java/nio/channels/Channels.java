@@ -182,7 +182,6 @@ public final class Channels {
     }
 
     /**
-     * {@note new}
      * Constructs a stream that reads bytes from the given channel.
      *
      * <p> The stream will not be buffered, and it will not support the {@link
@@ -258,7 +257,6 @@ public final class Channels {
     }
 
     /**
-     * {@note new}
      * Constructs a stream that writes bytes to the given channel.
      *
      * <p> The stream will not be buffered. The stream will be safe for access
