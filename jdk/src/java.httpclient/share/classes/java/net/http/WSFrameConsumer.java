@@ -214,7 +214,7 @@ final class WSFrameConsumer implements WSFrame.Consumer {
                 if (!(binaryNonEmpty && !textData.hasRemaining())) {
                     // If there's a binary data, that result in no text, then we
                     // don't deliver anything
-                    output.onText(part, new WSDisposableText(textData));
+                    output.onText(part, textData);
                 }
             }
         }

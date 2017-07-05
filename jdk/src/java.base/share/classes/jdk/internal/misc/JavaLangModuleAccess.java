@@ -99,7 +99,6 @@ public interface JavaLangModuleAccess {
                                          String osName,
                                          String osArch,
                                          String osVersion,
-                                         Set<String> conceals,
                                          Set<String> packages,
                                          ModuleHashes hashes);
 
