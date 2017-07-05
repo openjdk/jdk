@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,9 @@ void VMRegImpl::set_regName() {
 
   XMMRegister xreg = ::as_XMMRegister(0);
   for ( ; i < ConcreteRegisterImpl::max_xmm ; ) {
-    regName[i++] = xreg->name();
-    regName[i++] = xreg->name();
+    for (int j = 0 ; j < 8 ; j++) {
+      regName[i++] = xreg->name();
+    }
     xreg = xreg->successor();
   }
   for ( ; i < ConcreteRegisterImpl::number_of_registers ; i ++ ) {
