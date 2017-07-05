@@ -768,6 +768,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
   // match new_top.
   assert(hr == NULL ||
          (hr->end() == new_end && hr->top() == new_top), "sanity");
+  check_bitmaps("Humongous Region Allocation", first_hr);
 
   assert(first_hr->used() == word_size * HeapWordSize, "invariant");
   _summary_bytes_used += first_hr->used();
@@ -1326,6 +1327,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
       verify_before_gc();
 
+      check_bitmaps("Full GC Start");
       pre_full_gc_dump(gc_timer);
 
       COMPILER2_PRESENT(DerivedPointerTable::clear());
@@ -1498,6 +1500,18 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       verify_region_sets_optional();
 
       verify_after_gc();
+
+      // Clear the previous marking bitmap, if needed for bitmap verification.
+      // Note we cannot do this when we clear the next marking bitmap in
+      // ConcurrentMark::abort() above since VerifyDuringGC verifies the
+      // objects marked during a full GC against the previous bitmap.
+      // But we need to clear it before calling check_bitmaps below since
+      // the full GC has compacted objects and updated TAMS but not updated
+      // the prev bitmap.
+      if (G1VerifyBitmaps) {
+        ((CMBitMap*) concurrent_mark()->prevMarkBitMap())->clearAll();
+      }
+      check_bitmaps("Full GC End");
 
       // Start a new incremental collection set for the next pause
       assert(g1_policy()->collection_set() == NULL, "must be");
@@ -3978,6 +3992,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       increment_gc_time_stamp();
 
       verify_before_gc();
+      check_bitmaps("GC Start");
 
       COMPILER2_PRESENT(DerivedPointerTable::clear());
 
@@ -4223,6 +4238,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         increment_gc_time_stamp();
 
         verify_after_gc();
+        check_bitmaps("GC End");
 
         assert(!ref_processor_stw()->discovery_enabled(), "Postcondition");
         ref_processor_stw()->verify_no_references_recorded();
@@ -5945,6 +5961,11 @@ void G1CollectedHeap::free_region(HeapRegion* hr,
   assert(!hr->is_empty(), "the region should not be empty");
   assert(free_list != NULL, "pre-condition");
 
+  if (G1VerifyBitmaps) {
+    MemRegion mr(hr->bottom(), hr->end());
+    concurrent_mark()->clearRangePrevBitmap(mr);
+  }
+
   // Clear the card counts for this region.
   // Note: we only need to do this if the region is not young
   // (since we don't refine cards in young regions).
@@ -6079,7 +6100,87 @@ void G1CollectedHeap::verify_dirty_young_list(HeapRegion* head) {
 void G1CollectedHeap::verify_dirty_young_regions() {
   verify_dirty_young_list(_young_list->first_region());
 }
-#endif
+
+bool G1CollectedHeap::verify_no_bits_over_tams(const char* bitmap_name, CMBitMapRO* bitmap,
+                                               HeapWord* tams, HeapWord* end) {
+  guarantee(tams <= end,
+            err_msg("tams: "PTR_FORMAT" end: "PTR_FORMAT, tams, end));
+  HeapWord* result = bitmap->getNextMarkedWordAddress(tams, end);
+  if (result < end) {
+    gclog_or_tty->cr();
+    gclog_or_tty->print_cr("## wrong marked address on %s bitmap: "PTR_FORMAT,
+                           bitmap_name, result);
+    gclog_or_tty->print_cr("## %s tams: "PTR_FORMAT" end: "PTR_FORMAT,
+                           bitmap_name, tams, end);
+    return false;
+  }
+  return true;
+}
+
+bool G1CollectedHeap::verify_bitmaps(const char* caller, HeapRegion* hr) {
+  CMBitMapRO* prev_bitmap = concurrent_mark()->prevMarkBitMap();
+  CMBitMapRO* next_bitmap = (CMBitMapRO*) concurrent_mark()->nextMarkBitMap();
+
+  HeapWord* bottom = hr->bottom();
+  HeapWord* ptams  = hr->prev_top_at_mark_start();
+  HeapWord* ntams  = hr->next_top_at_mark_start();
+  HeapWord* end    = hr->end();
+
+  bool res_p = verify_no_bits_over_tams("prev", prev_bitmap, ptams, end);
+
+  bool res_n = true;
+  // We reset mark_in_progress() before we reset _cmThread->in_progress() and in this window
+  // we do the clearing of the next bitmap concurrently. Thus, we can not verify the bitmap
+  // if we happen to be in that state.
+  if (mark_in_progress() || !_cmThread->in_progress()) {
+    res_n = verify_no_bits_over_tams("next", next_bitmap, ntams, end);
+  }
+  if (!res_p || !res_n) {
+    gclog_or_tty->print_cr("#### Bitmap verification failed for "HR_FORMAT,
+                           HR_FORMAT_PARAMS(hr));
+    gclog_or_tty->print_cr("#### Caller: %s", caller);
+    return false;
+  }
+  return true;
+}
+
+void G1CollectedHeap::check_bitmaps(const char* caller, HeapRegion* hr) {
+  if (!G1VerifyBitmaps) return;
+
+  guarantee(verify_bitmaps(caller, hr), "bitmap verification");
+}
+
+class G1VerifyBitmapClosure : public HeapRegionClosure {
+private:
+  const char* _caller;
+  G1CollectedHeap* _g1h;
+  bool _failures;
+
+public:
+  G1VerifyBitmapClosure(const char* caller, G1CollectedHeap* g1h) :
+    _caller(caller), _g1h(g1h), _failures(false) { }
+
+  bool failures() { return _failures; }
+
+  virtual bool doHeapRegion(HeapRegion* hr) {
+    if (hr->continuesHumongous()) return false;
+
+    bool result = _g1h->verify_bitmaps(_caller, hr);
+    if (!result) {
+      _failures = true;
+    }
+    return false;
+  }
+};
+
+void G1CollectedHeap::check_bitmaps(const char* caller) {
+  if (!G1VerifyBitmaps) return;
+
+  G1VerifyBitmapClosure cl(caller, this);
+  heap_region_iterate(&cl);
+  guarantee(!cl.failures(), "bitmap verification");
+}
+#endif // PRODUCT
 
 void G1CollectedHeap::cleanUpCardTable() {
   G1SATBCardTableModRefBS* ct_bs = g1_barrier_set();
@@ -6464,6 +6565,7 @@ HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
     if (new_alloc_region != NULL) {
       set_region_short_lived_locked(new_alloc_region);
       _hr_printer.alloc(new_alloc_region, G1HRPrinter::Eden, young_list_full);
+      check_bitmaps("Mutator Region Allocation", new_alloc_region);
       return new_alloc_region;
     }
   }
@@ -6530,8 +6632,10 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size,
       if (survivor) {
         new_alloc_region->set_survivor();
         _hr_printer.alloc(new_alloc_region, G1HRPrinter::Survivor);
+        check_bitmaps("Survivor Region Allocation", new_alloc_region);
       } else {
         _hr_printer.alloc(new_alloc_region, G1HRPrinter::Old);
+        check_bitmaps("Old Region Allocation", new_alloc_region);
       }
       bool during_im = g1_policy()->during_initial_mark_pause();
       new_alloc_region->note_start_of_copying(during_im);

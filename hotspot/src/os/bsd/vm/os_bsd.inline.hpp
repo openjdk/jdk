@@ -287,7 +287,11 @@ inline int os::set_sock_opt(int fd, int level, int optname,
 }
 
 inline bool os::supports_monotonic_clock() {
+#ifdef __APPLE__
+  return true;
+#else
   return Bsd::_clock_gettime != NULL;
+#endif
 }
 
 #endif // OS_BSD_VM_OS_BSD_INLINE_HPP
