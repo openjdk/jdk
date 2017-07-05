@@ -223,49 +223,150 @@ void NativeMovConstReg::print() {
 
 //-------------------------------------------------------------------
 
-#ifndef AMD64
+int NativeMovRegMem::instruction_start() const {
+  int off = 0;
+  u_char instr_0 = ubyte_at(off);
 
-void NativeMovRegMem::copy_instruction_to(address new_instruction_address) {
-  int inst_size = instruction_size;
-
-  // See if there's an instruction size prefix override.
-  if ( *(address(this))   == instruction_operandsize_prefix &&
-       *(address(this)+1) != instruction_code_xmm_code ) { // Not SSE instr
-    inst_size += 1;
+  // First check to see if we have a (prefixed or not) xor
+  if ( instr_0 >= instruction_prefix_wide_lo &&      // 0x40
+       instr_0 <= instruction_prefix_wide_hi) { // 0x4f
+    off++;
+    instr_0 = ubyte_at(off);
   }
-  if ( *(address(this)) == instruction_extended_prefix ) inst_size += 1;
 
-  for (int i = 0; i < instruction_size; i++) {
-    *(new_instruction_address + i) = *(address(this) + i);
+  if (instr_0 == instruction_code_xor) {
+    off += 2;
+    instr_0 = ubyte_at(off);
   }
+
+  // Now look for the real instruction and the many prefix/size specifiers.
+
+  if (instr_0 == instruction_operandsize_prefix ) {  // 0x66
+    off++; // Not SSE instructions
+    instr_0 = ubyte_at(off);
+  }
+
+  if ( instr_0 == instruction_code_xmm_ss_prefix ||      // 0xf3
+       instr_0 == instruction_code_xmm_sd_prefix) { // 0xf2
+    off++;
+    instr_0 = ubyte_at(off);
+  }
+
+  if ( instr_0 >= instruction_prefix_wide_lo &&      // 0x40
+       instr_0 <= instruction_prefix_wide_hi) { // 0x4f
+    off++;
+    instr_0 = ubyte_at(off);
+  }
+
+
+  if (instr_0 == instruction_extended_prefix ) {  // 0x0f
+    off++;
+  }
+
+  return off;
+}
+
+address NativeMovRegMem::instruction_address() const {
+  return addr_at(instruction_start());
+}
+
+address NativeMovRegMem::next_instruction_address() const {
+  address ret = instruction_address() + instruction_size;
+  u_char instr_0 =  *(u_char*) instruction_address();
+  switch (instr_0) {
+  case instruction_operandsize_prefix:
+
+    fatal("should have skipped instruction_operandsize_prefix");
+    break;
+
+  case instruction_extended_prefix:
+    fatal("should have skipped instruction_extended_prefix");
+    break;
+
+  case instruction_code_mem2reg_movslq: // 0x63
+  case instruction_code_mem2reg_movzxb: // 0xB6
+  case instruction_code_mem2reg_movsxb: // 0xBE
+  case instruction_code_mem2reg_movzxw: // 0xB7
+  case instruction_code_mem2reg_movsxw: // 0xBF
+  case instruction_code_reg2mem:        // 0x89 (q/l)
+  case instruction_code_mem2reg:        // 0x8B (q/l)
+  case instruction_code_reg2memb:       // 0x88
+  case instruction_code_mem2regb:       // 0x8a
+
+  case instruction_code_float_s:        // 0xd9 fld_s a
+  case instruction_code_float_d:        // 0xdd fld_d a
+
+  case instruction_code_xmm_load:       // 0x10
+  case instruction_code_xmm_store:      // 0x11
+  case instruction_code_xmm_lpd:        // 0x12
+    {
+      // If there is an SIB then instruction is longer than expected
+      u_char mod_rm = *(u_char*)(instruction_address() + 1);
+      if ((mod_rm & 7) == 0x4) {
+        ret++;
+      }
+    }
+  case instruction_code_xor:
+    fatal("should have skipped xor lead in");
+    break;
+
+  default:
+    fatal("not a NativeMovRegMem");
+  }
+  return ret;
+
+}
+
+int NativeMovRegMem::offset() const{
+  int off = data_offset + instruction_start();
+  u_char mod_rm = *(u_char*)(instruction_address() + 1);
+  // nnnn(r12|rsp) isn't coded as simple mod/rm since that is
+  // the encoding to use an SIB byte. Which will have the nnnn
+  // field off by one byte
+  if ((mod_rm & 7) == 0x4) {
+    off++;
+  }
+  return int_at(off);
+}
+
+void NativeMovRegMem::set_offset(int x) {
+  int off = data_offset + instruction_start();
+  u_char mod_rm = *(u_char*)(instruction_address() + 1);
+  // nnnn(r12|rsp) isn't coded as simple mod/rm since that is
+  // the encoding to use an SIB byte. Which will have the nnnn
+  // field off by one byte
+  if ((mod_rm & 7) == 0x4) {
+    off++;
+  }
+  set_int_at(off, x);
 }
 
 void NativeMovRegMem::verify() {
   // make sure code pattern is actually a mov [reg+offset], reg instruction
   u_char test_byte = *(u_char*)instruction_address();
-  if ( ! ( (test_byte == instruction_code_reg2memb)
-      || (test_byte == instruction_code_mem2regb)
-      || (test_byte == instruction_code_mem2regl)
-      || (test_byte == instruction_code_reg2meml)
-      || (test_byte == instruction_code_mem2reg_movzxb )
-      || (test_byte == instruction_code_mem2reg_movzxw )
-      || (test_byte == instruction_code_mem2reg_movsxb )
-      || (test_byte == instruction_code_mem2reg_movsxw )
-      || (test_byte == instruction_code_float_s)
-      || (test_byte == instruction_code_float_d)
-      || (test_byte == instruction_code_long_volatile) ) )
-  {
-    u_char byte1 = ((u_char*)instruction_address())[1];
-    u_char byte2 = ((u_char*)instruction_address())[2];
-    if ((test_byte != instruction_code_xmm_ss_prefix &&
-         test_byte != instruction_code_xmm_sd_prefix &&
-         test_byte != instruction_operandsize_prefix) ||
-        byte1 != instruction_code_xmm_code ||
-        (byte2 != instruction_code_xmm_load &&
-         byte2 != instruction_code_xmm_lpd  &&
-         byte2 != instruction_code_xmm_store)) {
+  switch (test_byte) {
+    case instruction_code_reg2memb:  // 0x88 movb a, r
+    case instruction_code_reg2mem:   // 0x89 movl a, r (can be movq in 64bit)
+    case instruction_code_mem2regb:  // 0x8a movb r, a
+    case instruction_code_mem2reg:   // 0x8b movl r, a (can be movq in 64bit)
+      break;
+
+    case instruction_code_mem2reg_movslq: // 0x63 movsql r, a
+    case instruction_code_mem2reg_movzxb: // 0xb6 movzbl r, a (movzxb)
+    case instruction_code_mem2reg_movzxw: // 0xb7 movzwl r, a (movzxw)
+    case instruction_code_mem2reg_movsxb: // 0xbe movsbl r, a (movsxb)
+    case instruction_code_mem2reg_movsxw: // 0xbf  movswl r, a (movsxw)
+      break;
+
+    case instruction_code_float_s:   // 0xd9 fld_s a
+    case instruction_code_float_d:   // 0xdd fld_d a
+    case instruction_code_xmm_load:  // 0x10 movsd xmm, a
+    case instruction_code_xmm_store: // 0x11 movsd a, xmm
+    case instruction_code_xmm_lpd:   // 0x12 movlpd xmm, a
+      break;
+
+    default:
           fatal ("not a mov [reg+offs], reg instruction");
-    }
   }
 }
 
@@ -279,7 +380,14 @@ void NativeMovRegMem::print() {
 void NativeLoadAddress::verify() {
   // make sure code pattern is actually a mov [reg+offset], reg instruction
   u_char test_byte = *(u_char*)instruction_address();
-  if ( ! (test_byte == instruction_code) ) {
+#ifdef _LP64
+  if ( (test_byte == instruction_prefix_wide ||
+        test_byte == instruction_prefix_wide_extended) ) {
+    test_byte = *(u_char*)(instruction_address() + 1);
+  }
+#endif // _LP64
+  if ( ! ((test_byte == lea_instruction_code)
+          LP64_ONLY(|| (test_byte == mov64_instruction_code) ))) {
     fatal ("not a lea reg, [reg+offs] instruction");
   }
 }
@@ -288,8 +396,6 @@ void NativeLoadAddress::verify() {
 void NativeLoadAddress::print() {
   tty->print_cr("0x%x: lea [reg + %x], reg", instruction_address(), offset());
 }
-
-#endif // !AMD64
 
 //--------------------------------------------------------------------------------
 

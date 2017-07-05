@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6346729
+ * @bug 6346729 6705893
  * @summary Create JavaScript engine and check language and engine version
  */
 
@@ -37,9 +37,10 @@ public class VersionTest  {
 
         public static void main(String[] args) throws Exception {
             ScriptEngineManager manager = new ScriptEngineManager();
-            ScriptEngine jsengine = manager.getEngineByName("js");
+            ScriptEngine jsengine = Helper.getJsEngine(manager);
             if (jsengine == null) {
-                throw new RuntimeException("no js engine found");
+                System.out.println("Warning: No js engine found; test vacuously passes.");
+                return;
             }
             String langVersion = jsengine.getFactory().getLanguageVersion();
             if (! langVersion.equals(JS_LANG_VERSION)) {

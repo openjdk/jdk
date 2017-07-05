@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ void jar::init(unpacker* u_) {
 // Write data to the ZIP output stream.
 void jar::write_data(void* buff, int len) {
   while (len > 0) {
-    int rc = fwrite(buff, 1, len, jarfp);
+    int rc = (int)fwrite(buff, 1, len, jarfp);
     if (rc <= 0) {
       fprintf(u->errstrm, "Error: write on output file failed err=%d\n",errno);
       exit(1); // Called only from the native standalone unpacker
@@ -98,17 +98,17 @@ void jar::write_data(void* buff, int len) {
 
 void jar::add_to_jar_directory(const char* fname, bool store, int modtime,
                                int len, int clen, uLong crc) {
-  uint fname_length = strlen(fname);
+  uint fname_length = (uint)strlen(fname);
   ushort header[23];
   if (modtime == 0)  modtime = default_modtime;
   uLong dostime = get_dostime(modtime);
 
-  header[0] = SWAP_BYTES(0x4B50);
-  header[1] = SWAP_BYTES(0x0201);
-  header[2] = SWAP_BYTES(0xA);
+  header[0] = (ushort)SWAP_BYTES(0x4B50);
+  header[1] = (ushort)SWAP_BYTES(0x0201);
+  header[2] = (ushort)SWAP_BYTES(0xA);
 
   // required version
-  header[3] = SWAP_BYTES(0xA);
+  header[3] = (ushort)SWAP_BYTES(0xA);
 
   // flags 02 = maximum  sub-compression flag
   header[4] = ( store ) ? 0x0 : SWAP_BYTES(0x2);
@@ -117,23 +117,23 @@ void jar::add_to_jar_directory(const char* fname, bool store, int modtime,
   header[5] = ( store ) ? 0x0 : SWAP_BYTES(0x08);
 
   // Last modified date and time.
-  header[6] = GET_INT_LO(dostime);
-  header[7] = GET_INT_HI(dostime);
+  header[6] = (ushort)GET_INT_LO(dostime);
+  header[7] = (ushort)GET_INT_HI(dostime);
 
   // CRC
-  header[8] = GET_INT_LO(crc);
-  header[9] = GET_INT_HI(crc);
+  header[8] = (ushort)GET_INT_LO(crc);
+  header[9] = (ushort)GET_INT_HI(crc);
 
   // Compressed length:
-  header[10] = GET_INT_LO(clen);
-  header[11] = GET_INT_HI(clen);
+  header[10] = (ushort)GET_INT_LO(clen);
+  header[11] = (ushort)GET_INT_HI(clen);
 
   // Uncompressed length.
-  header[12] = GET_INT_LO(len);
-  header[13] = GET_INT_HI(len);
+  header[12] = (ushort)GET_INT_LO(len);
+  header[13] = (ushort)GET_INT_HI(len);
 
   // Filename length
-  header[14] = SWAP_BYTES(fname_length);
+  header[14] = (ushort)SWAP_BYTES(fname_length);
   // So called "extra field" length.
   header[15] = 0;
   // So called "comment" length.
@@ -146,8 +146,8 @@ void jar::add_to_jar_directory(const char* fname, bool store, int modtime,
   header[19] = 0;
   header[20] = 0;
   // Offset within ZIP file.
-  header[21] = GET_INT_LO(output_file_offset);
-  header[22] = GET_INT_HI(output_file_offset);
+  header[21] = (ushort)GET_INT_LO(output_file_offset);
+  header[22] = (ushort)GET_INT_HI(output_file_offset);
 
   // Copy the whole thing into the central directory.
   central_directory.append(header, sizeof(header));
@@ -160,17 +160,17 @@ void jar::add_to_jar_directory(const char* fname, bool store, int modtime,
 
 void jar::write_jar_header(const char* fname, bool store, int modtime,
                            int len, int clen, uint crc) {
-  uint fname_length = strlen(fname);
+  uint fname_length = (uint)strlen(fname);
   ushort header[15];
   if (modtime == 0)  modtime = default_modtime;
   uLong dostime = get_dostime(modtime);
 
   // ZIP LOC magic.
-  header[0] = SWAP_BYTES(0x4B50);
-  header[1] = SWAP_BYTES(0x0403);
+  header[0] = (ushort)SWAP_BYTES(0x4B50);
+  header[1] = (ushort)SWAP_BYTES(0x0403);
 
   // Version
-  header[2] = SWAP_BYTES(0xA);
+  header[2] = (ushort)SWAP_BYTES(0xA);
 
   // flags 02 = maximum  sub-compression flag
   header[3] = ( store ) ? 0x0 : SWAP_BYTES(0x2);
@@ -179,31 +179,31 @@ void jar::write_jar_header(const char* fname, bool store, int modtime,
   header[4] = ( store ) ? 0x0 : SWAP_BYTES(0x08);
 
   // Last modified date and time.
-  header[5] = GET_INT_LO(dostime);
-  header[6] = GET_INT_HI(dostime);
+  header[5] = (ushort)GET_INT_LO(dostime);
+  header[6] = (ushort)GET_INT_HI(dostime);
 
   // CRC
-  header[7] = GET_INT_LO(crc);
-  header[8] = GET_INT_HI(crc);
+  header[7] = (ushort)GET_INT_LO(crc);
+  header[8] = (ushort)GET_INT_HI(crc);
 
   // Compressed length:
-  header[9] = GET_INT_LO(clen);
-  header[10] = GET_INT_HI(clen);
+  header[9] = (ushort)GET_INT_LO(clen);
+  header[10] = (ushort)GET_INT_HI(clen);
 
   // Uncompressed length.
-  header[11] = GET_INT_LO(len);
-  header[12] = GET_INT_HI(len);
+  header[11] = (ushort)GET_INT_LO(len);
+  header[12] = (ushort)GET_INT_HI(len);
 
   // Filename length
-  header[13] = SWAP_BYTES(fname_length);
+  header[13] = (ushort)SWAP_BYTES(fname_length);
   // So called "extra field" length.
   header[14] = 0;
 
   // Write the LOC header to the output file.
-  write_data(header, sizeof(header));
+  write_data(header, (int)sizeof(header));
 
   // Copy the fname to the header.
-  write_data((char*)fname, fname_length);
+  write_data((char*)fname, (int)fname_length);
 }
 
 static const char marker_comment[] = ZIP_ARCHIVE_MARKER_COMMENT;
@@ -214,32 +214,32 @@ void jar::write_central_directory() {
   ushort header[11];
 
   // Create the End of Central Directory structure.
-  header[0] = SWAP_BYTES(0x4B50);
-  header[1] = SWAP_BYTES(0x0605);
+  header[0] = (ushort)SWAP_BYTES(0x4B50);
+  header[1] = (ushort)SWAP_BYTES(0x0605);
   // disk numbers
   header[2] = 0;
   header[3] = 0;
   // Number of entries in central directory.
-  header[4] = SWAP_BYTES(central_directory_count);
-  header[5] = SWAP_BYTES(central_directory_count);
+  header[4] = (ushort)SWAP_BYTES(central_directory_count);
+  header[5] = (ushort)SWAP_BYTES(central_directory_count);
   // Size of the central directory}
-  header[6] = GET_INT_LO(central_directory.size());
-  header[7] = GET_INT_HI(central_directory.size());
+  header[6] = (ushort)GET_INT_LO((int)central_directory.size());
+  header[7] = (ushort)GET_INT_HI((int)central_directory.size());
   // Offset of central directory within disk.
-  header[8] = GET_INT_LO(output_file_offset);
-  header[9] = GET_INT_HI(output_file_offset);
+  header[8] = (ushort)GET_INT_LO(output_file_offset);
+  header[9] = (ushort)GET_INT_HI(output_file_offset);
   // zipfile comment length;
-  header [10] = SWAP_BYTES(mc.len);
+  header [10] = (ushort)SWAP_BYTES((int)mc.len);
 
   // Write the central directory.
-  printcr(2, "Central directory at %d\n", output_file_offset);
+  PRINTCR((2, "Central directory at %d\n", output_file_offset));
   write_data(central_directory.b);
 
   // Write the End of Central Directory structure.
-  printcr(2, "end-of-directory at %d\n", output_file_offset);
-  write_data(header, sizeof(header));
+  PRINTCR((2, "end-of-directory at %d\n", output_file_offset));
+  write_data(header, (int)sizeof(header));
 
-  printcr(2, "writing zip comment\n");
+  PRINTCR((2, "writing zip comment\n"));
   // Write the comment.
   write_data(mc);
 }
@@ -249,7 +249,7 @@ void jar::write_central_directory() {
 // Open a Jar file and initialize.
 void jar::openJarFile(const char* fname) {
   if (!jarfp) {
-    printcr(1, "jar::openJarFile: opening %s\n",fname);
+    PRINTCR((1, "jar::openJarFile: opening %s\n",fname));
     jarfp = fopen(fname, "wb");
     if (!jarfp) {
       fprintf(u->errstrm, "Error: Could not open jar file: %s\n",fname);
@@ -262,25 +262,25 @@ void jar::openJarFile(const char* fname) {
 void jar::addJarEntry(const char* fname,
                       bool deflate_hint, int modtime,
                       bytes& head, bytes& tail) {
-  int len = head.len + tail.len;
+  int len = (int)(head.len + tail.len);
   int clen = 0;
 
-  uint crc = get_crc32(0L,Z_NULL,0);
+  uint crc = get_crc32(0,Z_NULL,0);
   if (head.len != 0)
-    crc = get_crc32(crc, (uchar *)head.ptr, head.len);
+    crc = get_crc32(crc, (uchar *)head.ptr, (uint)head.len);
   if (tail.len != 0)
-    crc = get_crc32(crc, (uchar *)tail.ptr, tail.len);
+    crc = get_crc32(crc, (uchar *)tail.ptr, (uint)tail.len);
 
   bool deflate = (deflate_hint && len > 0);
 
   if (deflate) {
     if (deflate_bytes(head, tail) == false) {
-      printcr(2, "Reverting to store fn=%s\t%d -> %d\n",
-              fname, len, deflated.size());
+      PRINTCR((2, "Reverting to store fn=%s\t%d -> %d\n",
+              fname, len, deflated.size()));
       deflate = false;
     }
   }
-  clen = (deflate) ? deflated.size() : len;
+  clen = (int)((deflate) ? deflated.size() : len);
   add_to_jar_directory(fname, !deflate, modtime, len, clen, crc);
   write_jar_header(    fname, !deflate, modtime, len, clen, crc);
 
@@ -306,7 +306,7 @@ void jar::closeJarFile(bool central) {
     if (central) write_central_directory();
     fflush(jarfp);
     fclose(jarfp);
-    printcr(2, "jar::closeJarFile:closed jar-file\n");
+    PRINTCR((2, "jar::closeJarFile:closed jar-file\n"));
   }
   reset();
 }
@@ -338,6 +338,7 @@ uLong jar::get_dostime(int modtime) {
     default_modtime = modtime;  // catch a reasonable default
   time_t t = modtime;
   struct tm sbuf;
+  (void)memset((void*)&sbuf,0, sizeof(sbuf));
   struct tm* s = gmtime_r(&t, &sbuf);
   modtime_cache = modtime;
   dostime_cache = dostime(s->tm_year + 1900, s->tm_mon + 1, s->tm_mday,
@@ -355,7 +356,7 @@ uLong jar::get_dostime(int modtime) {
    input data
 */
 bool jar::deflate_bytes(bytes& head, bytes& tail) {
-  int len = head.len + tail.len;
+  int len = (int)(head.len + tail.len);
 
   z_stream zs;
   BYTES_OF(zs).clear();
@@ -368,26 +369,26 @@ bool jar::deflate_bytes(bytes& head, bytes& tail) {
   if (error != Z_OK) {
     switch (error) {
     case Z_MEM_ERROR:
-      printcr(2, "Error: deflate error : Out of memory \n");
+      PRINTCR((2, "Error: deflate error : Out of memory \n"));
       break;
     case Z_STREAM_ERROR:
-      printcr(2,"Error: deflate error : Invalid compression level \n");
+      PRINTCR((2,"Error: deflate error : Invalid compression level \n"));
       break;
     case Z_VERSION_ERROR:
-      printcr(2,"Error: deflate error : Invalid version\n");
+      PRINTCR((2,"Error: deflate error : Invalid version\n"));
       break;
     default:
-      printcr(2,"Error: Internal deflate error error = %d\n", error);
+      PRINTCR((2,"Error: Internal deflate error error = %d\n", error));
     }
     return false;
   }
 
   deflated.empty();
   zs.next_out  = (uchar*) deflated.grow(len + (len/2));
-  zs.avail_out = deflated.size();
+  zs.avail_out = (int)deflated.size();
 
   zs.next_in = (uchar*)head.ptr;
-  zs.avail_in = head.len;
+  zs.avail_in = (int)head.len;
 
   bytes* first = &head;
   bytes* last  = &tail;
@@ -400,28 +401,28 @@ bool jar::deflate_bytes(bytes& head, bytes& tail) {
 
   if (first != null && error == Z_OK) {
     zs.next_in = (uchar*) first->ptr;
-    zs.avail_in = first->len;
+    zs.avail_in = (int)first->len;
     error = deflate(&zs, Z_NO_FLUSH);
   }
   if (error == Z_OK) {
     zs.next_in = (uchar*) last->ptr;
-    zs.avail_in = last->len;
+    zs.avail_in = (int)last->len;
     error = deflate(&zs, Z_FINISH);
   }
   if (error == Z_STREAM_END) {
-    if (len > zs.total_out ) {
-      printcr(2, "deflate compressed data %d -> %d\n", len, zs.total_out);
+    if (len > (int)zs.total_out ) {
+      PRINTCR((2, "deflate compressed data %d -> %d\n", len, zs.total_out));
       deflated.b.len = zs.total_out;
       deflateEnd(&zs);
       return true;
     }
-    printcr(2, "deflate expanded data %d -> %d\n", len, zs.total_out);
+    PRINTCR((2, "deflate expanded data %d -> %d\n", len, zs.total_out));
     deflateEnd(&zs);
     return false;
   }
 
   deflateEnd(&zs);
-  printcr(2, "Error: deflate error deflate did not finish error=%d\n",error);
+  PRINTCR((2, "Error: deflate error deflate did not finish error=%d\n",error));
   return false;
 }
 
@@ -486,7 +487,7 @@ void gunzip::init(unpacker* u_) {
   BYTES_OF(*this).clear();
   u = u_;
   assert(u->gzin == null);  // once only, please
-  read_input_fn = (void*)(intptr_t)u->read_input_fn;
+  read_input_fn = (void*)u->read_input_fn;
   zstream = NEW(z_stream, 1);
   u->gzin = this;
   u->read_input_fn = read_input_via_gzip;
@@ -555,7 +556,7 @@ void gunzip::read_fixed_field(char* buf, size_t buflen) {
   if (aborting())  return;
   jlong nr = ((unpacker::read_input_fn_t)read_input_fn)
     (u, buf, buflen, buflen);
-  if (nr != buflen)
+  if ((size_t)nr != buflen)
     u->abort("short stream header");
 }
 

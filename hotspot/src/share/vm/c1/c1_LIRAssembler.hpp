@@ -75,9 +75,9 @@ class LIR_Assembler: public CompilationResourceObj {
   void emit_stubs(CodeStubList* stub_list);
 
   // addresses
-  static Address as_Address(LIR_Address* addr);
-  static Address as_Address_lo(LIR_Address* addr);
-  static Address as_Address_hi(LIR_Address* addr);
+  Address as_Address(LIR_Address* addr);
+  Address as_Address_lo(LIR_Address* addr);
+  Address as_Address_hi(LIR_Address* addr);
 
   // debug information
   void add_call_info(int pc_offset, CodeEmitInfo* cinfo);

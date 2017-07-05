@@ -329,7 +329,7 @@ extern jint NET_Wait(JNIEnv *env, jint fd, jint flags, jint timeout);
 JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByName0_XP
     (JNIEnv *env, jclass cls, jstring name);
 
-JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex_XP
+JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByIndex0_XP
   (JNIEnv *env, jclass cls, jint index);
 
 JNIEXPORT jobject JNICALL Java_java_net_NetworkInterface_getByInetAddress0_XP

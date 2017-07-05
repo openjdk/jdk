@@ -38,8 +38,13 @@
     nof_xmm_regs = pd_nof_xmm_regs_frame_map,
     nof_caller_save_xmm_regs = pd_nof_caller_save_xmm_regs_frame_map,
     first_available_sp_in_frame = 0,
+#ifndef _LP64
     frame_pad_in_bytes = 8,
     nof_reg_args = 2
+#else
+    frame_pad_in_bytes = 16,
+    nof_reg_args = 6
+#endif // _LP64
   };
 
  private:
@@ -65,17 +70,49 @@
   static LIR_Opr rax_oop_opr;
   static LIR_Opr rdx_oop_opr;
   static LIR_Opr rcx_oop_opr;
+#ifdef _LP64
 
-  static LIR_Opr rax_rdx_long_opr;
-  static LIR_Opr rbx_rcx_long_opr;
+  static LIR_Opr  r8_opr;
+  static LIR_Opr  r9_opr;
+  static LIR_Opr r10_opr;
+  static LIR_Opr r11_opr;
+  static LIR_Opr r12_opr;
+  static LIR_Opr r13_opr;
+  static LIR_Opr r14_opr;
+  static LIR_Opr r15_opr;
+
+  static LIR_Opr  r8_oop_opr;
+  static LIR_Opr  r9_oop_opr;
+
+  static LIR_Opr r11_oop_opr;
+  static LIR_Opr r12_oop_opr;
+  static LIR_Opr r13_oop_opr;
+  static LIR_Opr r14_oop_opr;
+
+#endif // _LP64
+
+  static LIR_Opr long0_opr;
+  static LIR_Opr long1_opr;
   static LIR_Opr fpu0_float_opr;
   static LIR_Opr fpu0_double_opr;
   static LIR_Opr xmm0_float_opr;
   static LIR_Opr xmm0_double_opr;
 
+#ifdef _LP64
+  static LIR_Opr as_long_opr(Register r) {
+    return LIR_OprFact::double_cpu(cpu_reg2rnr(r), cpu_reg2rnr(r));
+  }
+  static LIR_Opr as_pointer_opr(Register r) {
+    return LIR_OprFact::double_cpu(cpu_reg2rnr(r), cpu_reg2rnr(r));
+  }
+#else
   static LIR_Opr as_long_opr(Register r, Register r2) {
     return LIR_OprFact::double_cpu(cpu_reg2rnr(r), cpu_reg2rnr(r2));
   }
+  static LIR_Opr as_pointer_opr(Register r) {
+    return LIR_OprFact::single_cpu(cpu_reg2rnr(r));
+  }
+#endif // _LP64
 
   // VMReg name for spilled physical FPU stack slot n
   static VMReg fpu_regname (int n);

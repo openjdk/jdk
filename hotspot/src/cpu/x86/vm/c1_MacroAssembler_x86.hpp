@@ -94,16 +94,17 @@
   // Note: NEVER push values directly, but only through following push_xxx functions;
   //       This helps us to track the rsp changes compared to the entry rsp (->_rsp_offset)
 
-  void push_jint (jint i)     { _rsp_offset++; pushl(i); }
+  void push_jint (jint i)     { _rsp_offset++; push(i); }
   void push_oop  (jobject o)  { _rsp_offset++; pushoop(o); }
-  void push_addr (Address a)  { _rsp_offset++; pushl(a); }
-  void push_reg  (Register r) { _rsp_offset++; pushl(r); }
-  void pop       (Register r) { _rsp_offset--; popl (r); assert(_rsp_offset >= 0, "stack offset underflow"); }
+  // Seems to always be in wordSize
+  void push_addr (Address a)  { _rsp_offset++; pushptr(a); }
+  void push_reg  (Register r) { _rsp_offset++; push(r); }
+  void pop_reg   (Register r) { _rsp_offset--; pop(r); assert(_rsp_offset >= 0, "stack offset underflow"); }
 
   void dec_stack (int nof_words) {
     _rsp_offset -= nof_words;
     assert(_rsp_offset >= 0, "stack offset underflow");
-    addl(rsp, wordSize * nof_words);
+    addptr(rsp, wordSize * nof_words);
   }
 
   void dec_stack_after_call (int nof_words) {

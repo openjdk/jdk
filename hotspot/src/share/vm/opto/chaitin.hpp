@@ -156,6 +156,8 @@ public:
 
   // Alive if non-zero, dead if zero
   bool alive() const { return _def != NULL; }
+  bool is_multidef() const { return _def == NodeSentinel; }
+  bool is_singledef() const { return _def != NodeSentinel; }
 
 #ifndef PRODUCT
   void dump( ) const;
@@ -320,7 +322,8 @@ class PhaseChaitin : public PhaseRegAlloc {
   uint split_DEF( Node *def, Block *b, int loc, uint max, Node **Reachblock, Node **debug_defs, GrowableArray<uint> splits, int slidx );
   uint split_USE( Node *def, Block *b, Node *use, uint useidx, uint max, bool def_down, bool cisc_sp, GrowableArray<uint> splits, int slidx );
   int clone_projs( Block *b, uint idx, Node *con, Node *copy, uint &maxlrg );
-  Node *split_Rematerialize( Node *def, Block *b, uint insidx, uint &maxlrg, GrowableArray<uint> splits, int slidx, uint *lrg2reach, Node **Reachblock, bool walkThru );
+  Node *split_Rematerialize(Node *def, Block *b, uint insidx, uint &maxlrg, GrowableArray<uint> splits,
+                            int slidx, uint *lrg2reach, Node **Reachblock, bool walkThru);
   // True if lidx is used before any real register is def'd in the block
   bool prompt_use( Block *b, uint lidx );
   Node *get_spillcopy_wide( Node *def, Node *use, uint uidx );
