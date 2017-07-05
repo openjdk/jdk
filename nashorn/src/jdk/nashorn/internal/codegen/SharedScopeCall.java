@@ -116,9 +116,10 @@ class SharedScopeCall {
     /**
      * Generate the invoke instruction for this shared scope call.
      * @param method the method emitter
+     * @return the method emitter
      */
-    public void generateInvoke(final MethodEmitter method) {
-        method.invokestatic(compileUnit.getUnitClassName(), methodName, getStaticSignature());
+    public MethodEmitter generateInvoke(final MethodEmitter method) {
+        return method.invokestatic(compileUnit.getUnitClassName(), methodName, getStaticSignature());
     }
 
     /**

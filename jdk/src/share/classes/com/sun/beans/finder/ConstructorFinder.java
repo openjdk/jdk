@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,45 +85,5 @@ public final class ConstructorFinder extends AbstractFinder<Constructor<?>> {
      */
     private ConstructorFinder(Class<?>[] args) {
         super(args);
-    }
-
-    /**
-     * Returns an array of {@code Class} objects
-     * that represent the formal parameter types of the constructor.
-     * Returns an empty array if the constructor takes no parameters.
-     *
-     * @param constructor  the object that represents constructor
-     * @return the parameter types of the constructor
-     */
-    @Override
-    protected Class<?>[] getParameters(Constructor<?> constructor) {
-        return constructor.getParameterTypes();
-    }
-
-    /**
-     * Returns {@code true} if and only if the constructor
-     * was declared to take a variable number of arguments.
-     *
-     * @param constructor  the object that represents constructor
-     * @return {@code true} if the constructor was declared
-     *         to take a variable number of arguments;
-     *         {@code false} otherwise
-     */
-    @Override
-    protected boolean isVarArgs(Constructor<?> constructor) {
-        return constructor.isVarArgs();
-    }
-
-    /**
-     * Checks validness of the constructor.
-     * The valid constructor should be public.
-     *
-     * @param constructor  the object that represents constructor
-     * @return {@code true} if the constructor is valid,
-     *         {@code false} otherwise
-     */
-    @Override
-    protected boolean isValid(Constructor<?> constructor) {
-        return Modifier.isPublic(constructor.getModifiers());
     }
 }

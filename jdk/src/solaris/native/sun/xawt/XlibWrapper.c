@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1264,8 +1264,8 @@ static int ToolkitErrorHandler(Display * dpy, XErrorEvent * event) {
     if (jvm != NULL) {
         env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
         if (env) {
-            return JNU_CallStaticMethodByName(env, NULL, "sun/awt/X11/XToolkit", "globalErrorHandler", "(JJ)I",
-                                              ptr_to_jlong(dpy), ptr_to_jlong(event)).i;
+            return JNU_CallStaticMethodByName(env, NULL, "sun/awt/X11/XErrorHandlerUtil",
+                "globalErrorHandler", "(JJ)I", ptr_to_jlong(dpy), ptr_to_jlong(event)).i;
         }
     }
     return 0;

@@ -25,6 +25,8 @@
  * @test
  * @bug 8012586
  * @summary verify that modal dialog will appeared above fullscreen window under Metacity WM.
+ * @library ../../regtesthelpers
+ * @build Util
  * @run main FullscreenDialogModality
  * @run main/othervm FullscreenDialogModality
  * @author vkravets

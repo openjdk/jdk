@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class General {
 
 
     /* Generate a filename unique to this run */
-    private static String gensym() {
+    protected static String gensym() {
         return "x." + ++gensymCounter;
     }
 
@@ -127,9 +127,9 @@ public class General {
         }
         for (int i = 0; i < dl.length; i++) {
             File f = new File(d, dl[i]);
-            if (f.isDirectory() && f.canRead()) {
+            if (f.isDirectory()) {
                 String[] dl2 = f.list();
-                if (dl2.length >= 250) {
+                if (dl2 == null || dl2.length >= 250) {
                     /* Heuristic to avoid scanning huge directories */
                     continue;
                 }
@@ -277,8 +277,8 @@ public class General {
     {
         check(ans, ask + slash);
         checkNames(depth, create,
-                   ans.endsWith(File.separator) ? ans : ans + File.separator,
-                   ask + slash);
+                   ans,
+                   ask);
     }
 
 
@@ -308,13 +308,16 @@ public class General {
                                   String ans, String ask)
         throws Exception
     {
+        ans = ans.endsWith(File.separator) ? ans : ans + File.separator;
+        ask = ask.endsWith(File.separator) ? ask : ask + File.separator;
+
         int d = depth - 1;
         File f = new File(ans);
         String n;
 
         /* Normal name */
         if (f.exists()) {
-            if (f.isDirectory() && f.canRead()) {
+            if (f.isDirectory() && f.list() != null) {
                 if ((n = findSomeFile(ans, create)) != null)
                     checkSlashes(d, create, ans + n, ask + n);
                 if ((n = findSomeDir(ans, create)) != null)

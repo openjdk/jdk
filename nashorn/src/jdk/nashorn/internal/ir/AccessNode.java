@@ -60,7 +60,7 @@ public final class AccessNode extends BaseNode {
      * @param visitor IR navigating visitor.
      */
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterAccessNode(this)) {
             return visitor.leaveAccessNode(
                 setBase(base.accept(visitor)).
@@ -109,7 +109,6 @@ public final class AccessNode extends BaseNode {
         }
         return new AccessNode(this, base, property, isFunction(), hasCallSiteType());
     }
-
 
     private AccessNode setProperty(final IdentNode property) {
         if (this.property == property) {

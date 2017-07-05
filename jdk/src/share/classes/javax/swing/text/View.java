@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1174,6 +1174,7 @@ public abstract class View implements SwingConstants {
         // formed by added elements (i.e. they will be updated
         // by initialization.
         index0 = Math.max(index0, 0);
+        index1 = getViewIndex(elem.getDocument().getLength(), Position.Bias.Forward);
         for (int i = index0; i <= index1; i++) {
             if (! ((i >= hole0) && (i <= hole1))) {
                 v = getView(i);

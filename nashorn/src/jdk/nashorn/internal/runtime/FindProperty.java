@@ -153,5 +153,24 @@ public final class FindProperty {
         return prototype.isScope();
     }
 
+    /**
+     * Get the property value from self as object.
+     *
+     * @return the property value
+     */
+    public Object getObjectValue() {
+        return property.getObjectValue(getGetterReceiver(), getOwner());
+    }
+
+    /**
+     * Set the property value in self.
+     *
+     * @param value the new value
+     * @param strict strict flag
+     */
+    public void setObjectValue(final Object value, final boolean strict) {
+        property.setObjectValue(getSetterReceiver(), getOwner(), value, strict);
+    }
+
 }
 

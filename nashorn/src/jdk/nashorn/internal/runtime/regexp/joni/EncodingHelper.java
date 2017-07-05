@@ -95,20 +95,6 @@ public class EncodingHelper {
        return s;
     }
 
-    /* onigenc_with_ascii_strncmp */
-    public static int strNCmp(char[] chars1, int p1, int end, char[] chars2, int p2, int n) {
-        while (n-- > 0) {
-            if (p1 >= end) return chars2[p2];
-            int c = chars1[p1];
-            int x = chars2[p2] - c;
-            if (x != 0) return x;
-
-            p2++;
-            p1++;
-        }
-        return 0;
-    }
-
     public static int mbcToCode(byte[] bytes, int p, int end) {
         int code = 0;
         for (int i = p; i < end; i++) {

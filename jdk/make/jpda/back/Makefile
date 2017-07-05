@@ -31,6 +31,8 @@ BUILDDIR = ../..
 LIBRARY = jdwp
 PRODUCT = jpda
 
+LIBRARY_SUPPORTS_FULL_DEBUG_SYMBOLS=1
+
 FILES_m = mapfile-vers
 
 include $(BUILDDIR)/common/Defs.gmk

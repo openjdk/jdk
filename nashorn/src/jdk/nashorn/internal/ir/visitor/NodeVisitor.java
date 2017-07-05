@@ -60,23 +60,18 @@ import jdk.nashorn.internal.ir.WithNode;
 
 /**
  * Visitor used to navigate the IR.
+ * @param <T> lexical context class used by this visitor
  */
-public abstract class NodeVisitor {
-    private final LexicalContext lc;
-
-    /**
-     * Constructor
-     */
-    public NodeVisitor() {
-        this(new LexicalContext());
-    }
+public abstract class NodeVisitor<T extends LexicalContext> {
+    /** lexical context in use */
+    protected final T lc;
 
     /**
      * Constructor
      *
      * @param lc a custom lexical context
      */
-    public NodeVisitor(final LexicalContext lc) {
+    public NodeVisitor(final T lc) {
         this.lc = lc;
     }
 
@@ -84,7 +79,7 @@ public abstract class NodeVisitor {
      * Get the lexical context of this node visitor
      * @return lexical context
      */
-    public LexicalContext getLexicalContext() {
+    public T getLexicalContext() {
         return lc;
     }
 

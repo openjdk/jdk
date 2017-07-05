@@ -60,10 +60,10 @@ public abstract class LexicalContextNode extends Statement {
      *
      * @return new node or same node depending on state change
      */
-    protected abstract Node accept(final LexicalContext lc, final NodeVisitor visitor);
+    protected abstract Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor);
 
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         final LexicalContext lc = visitor.getLexicalContext();
         lc.push(this);
         final LexicalContextNode newNode = (LexicalContextNode)accept(lc, visitor);

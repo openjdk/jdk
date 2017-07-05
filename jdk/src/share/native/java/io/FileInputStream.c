@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,8 @@ Java_java_io_FileInputStream_available(JNIEnv *env, jobject this) {
     if (IO_Available(fd, &ret)) {
         if (ret > INT_MAX) {
             ret = (jlong) INT_MAX;
+        } else if (ret < 0) {
+            ret = 0;
         }
         return jlong_to_jint(ret);
     }

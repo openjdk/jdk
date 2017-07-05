@@ -99,7 +99,7 @@ public final class Compiler {
 
     private boolean strict;
 
-    private CodeInstaller<ScriptEnvironment> installer;
+    private final CodeInstaller<ScriptEnvironment> installer;
 
     private final TemporarySymbols temporarySymbols = new TemporarySymbols();
 
@@ -219,6 +219,7 @@ public final class Compiler {
         CompilationPhase.CONSTANT_FOLDING_PHASE,
         CompilationPhase.LOWERING_PHASE,
         CompilationPhase.ATTRIBUTION_PHASE,
+        CompilationPhase.RANGE_ANALYSIS_PHASE,
         CompilationPhase.SPLITTING_PHASE,
         CompilationPhase.TYPE_FINALIZATION_PHASE,
         CompilationPhase.BYTECODE_GENERATION_PHASE);
@@ -384,6 +385,8 @@ public final class Compiler {
         if (info) {
             final StringBuilder sb = new StringBuilder();
             sb.append("Compile job for '").
+                append(newFunctionNode.getSource()).
+                append(':').
                 append(newFunctionNode.getName()).
                 append("' finished");
 
@@ -487,7 +490,7 @@ public final class Compiler {
         }
 
         if (sb != null) {
-            LOG.info(sb);
+            LOG.fine(sb);
         }
 
         return rootClass;

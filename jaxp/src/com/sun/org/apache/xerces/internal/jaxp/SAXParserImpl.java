@@ -242,10 +242,6 @@ public class SAXParserImpl extends javax.xml.parsers.SAXParser
                 String feature = (String) entry.getKey();
                 boolean value = ((Boolean) entry.getValue()).booleanValue();
                 xmlReader.setFeature0(feature, value);
-                if (feature.equals(XMLConstants.FEATURE_SECURE_PROCESSING) && value) {
-                    xmlReader.setProperty0(ACCESS_EXTERNAL_DTD, "");
-                    xmlReader.setProperty0(ACCESS_EXTERNAL_SCHEMA, "");
-                }
             }
         }
     }

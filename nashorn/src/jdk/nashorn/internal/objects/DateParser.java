@@ -32,6 +32,7 @@ import static java.lang.Character.SPACE_SEPARATOR;
 import static java.lang.Character.UPPERCASE_LETTER;
 
 import java.util.HashMap;
+import java.util.Locale;
 
 /**
  * JavaScript date parser. This class first tries to parse a date string
@@ -486,7 +487,7 @@ public class DateParser {
         while (pos < limit && isAsciiLetter(string.charAt(pos))) {
             pos++;
         }
-        final String key = string.substring(start, pos).toLowerCase();
+        final String key = string.substring(start, pos).toLowerCase(Locale.ENGLISH);
         final Name name = names.get(key);
         // then advance to end of name
         while (pos < length && isAsciiLetter(string.charAt(pos))) {
@@ -683,7 +684,7 @@ public class DateParser {
 
         Name(final String name, final int type, final int value) {
             assert name != null;
-            assert name.equals(name.toLowerCase());
+            assert name.equals(name.toLowerCase(Locale.ENGLISH));
 
             this.name = name;
             // use first three characters as lookup key
