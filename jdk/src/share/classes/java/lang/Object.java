@@ -58,9 +58,8 @@ public class Object {
      *
      * @return The {@code Class} object that represents the runtime
      *         class of this object.
-     * @see    <a href="http://java.sun.com/docs/books/jls/">The Java
-     *         Language Specification, Third Edition (15.8.2 Class
-     *         Literals)</a>
+     * @see    Class Literals, section 15.8.2 of
+     *         <cite>The Java&trade; Language Specification</cite>.
      */
     public final native Class<?> getClass();
 

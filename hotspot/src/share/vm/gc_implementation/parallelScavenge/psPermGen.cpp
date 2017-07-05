@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,12 +119,6 @@ void PSPermGen::compute_new_size(size_t used_before_collection) {
                            heap->total_collections(),
                            size_before, _virtual_space->committed_size());
   }
-}
-
-
-
-void PSPermGen::move_and_update(ParCompactionManager* cm) {
-  PSParallelCompact::move_and_update(cm, PSParallelCompact::perm_space_id);
 }
 
 void PSPermGen::precompact() {

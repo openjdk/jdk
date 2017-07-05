@@ -225,7 +225,6 @@ AwtFileDialog::Show(void *p)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     jobject peer;
-    WCHAR unicodeChar = L' ';
     LPTSTR fileBuffer = NULL;
     LPTSTR currentDirectory = NULL;
     jint mode = 0;
@@ -263,7 +262,7 @@ AwtFileDialog::Show(void *p)
         HWND hwndOwner = awtParent ? awtParent->GetHWnd() : NULL;
 
         if (title == NULL || env->GetStringLength(title)==0) {
-            title = JNU_NewStringPlatform(env, &unicodeChar);
+            title = JNU_NewStringPlatform(env, L" ");
         }
 
         JavaStringBuffer titleBuffer(env, title);

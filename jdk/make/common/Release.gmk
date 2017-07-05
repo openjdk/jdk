@@ -885,12 +885,18 @@ else
 ABS_DB_PATH  :=$(call FullPath,$(CLOSED_SHARE_SRC)/db)
 DB_ZIP_LIST = $(shell $(LS) $(ABS_DB_PATH)/*.zip 2>/dev/null)
 
+# Java DB image. Move the Java DB demo directory into the JDK's demo
+# dir and in the process, rename it to db.  Also remove index.html,
+# since it presumes docs are co-located. Also remove register.html (no
+# longer relevant).
 initial-image-jdk-db: $(DB_ZIP_LIST)
 	$(MKDIR) -p $(JDK_IMAGE_DIR)/db
 	for d in $(DB_ZIP_LIST); do \
           ($(CD) $(JDK_IMAGE_DIR)/db && $(UNZIP) -o $$d); \
 	done
-
+	$(RM) -rf $(DEMODIR)/db
+	$(MV) $(JDK_IMAGE_DIR)/db/demo $(DEMODIR)/db
+	$(RM) $(JDK_IMAGE_DIR)/db/index.html $(JDK_IMAGE_DIR)/db/register.html
 endif
 
 # Standard jdk image

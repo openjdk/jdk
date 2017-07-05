@@ -39,7 +39,7 @@ package java.lang;
  *
  * @author  Frank Yellin
  * @see     java.lang.Error
- * @jls3 11.2 Compile-Time Checking of Exceptions
+ * @jls 11.2 Compile-Time Checking of Exceptions
  * @since   JDK1.0
  */
 public class Exception extends Throwable {

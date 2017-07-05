@@ -80,7 +80,7 @@ public class DriverManager {
 
 
     // List of registered JDBC drivers
-    private final static CopyOnWriteArrayList<Driver> registeredDrivers = new CopyOnWriteArrayList<Driver>();
+    private final static CopyOnWriteArrayList<DriverInfo> registeredDrivers = new CopyOnWriteArrayList<DriverInfo>();
     private static volatile int loginTimeout = 0;
     private static volatile java.io.PrintWriter logWriter = null;
     private static volatile java.io.PrintStream logStream = null;
@@ -265,22 +265,22 @@ public class DriverManager {
 
         // Walk through the loaded registeredDrivers attempting to locate someone
         // who understands the given URL.
-        for (Driver aDriver : registeredDrivers) {
+        for (DriverInfo aDriver : registeredDrivers) {
             // If the caller does not have permission to load the driver then
             // skip it.
-            if(isDriverAllowed(aDriver, callerCL)) {
+            if(isDriverAllowed(aDriver.driver, callerCL)) {
                 try {
-                    if(aDriver.acceptsURL(url)) {
+                    if(aDriver.driver.acceptsURL(url)) {
                         // Success!
-                        println("getDriver returning " + aDriver.getClass().getName());
-                    return (aDriver);
+                        println("getDriver returning " + aDriver.driver.getClass().getName());
+                    return (aDriver.driver);
                     }
 
                 } catch(SQLException sqe) {
                     // Drop through and try the next driver.
                 }
             } else {
-                println("    skipping: " + aDriver.getClass().getName());
+                println("    skipping: " + aDriver.driver.getClass().getName());
             }
 
         }
@@ -305,7 +305,7 @@ public class DriverManager {
 
         /* Register the driver if it has not already been added to our list */
         if(driver != null) {
-            registeredDrivers.addIfAbsent(driver);
+            registeredDrivers.addIfAbsent(new DriverInfo(driver));
         } else {
             // This is for compatibility with the original DriverManager
             throw new NullPointerException();
@@ -333,9 +333,10 @@ public class DriverManager {
         ClassLoader callerCL = DriverManager.getCallerClassLoader();
         println("DriverManager.deregisterDriver: " + driver);
 
-        if(registeredDrivers.contains(driver)) {
+        DriverInfo aDriver = new DriverInfo(driver);
+        if(registeredDrivers.contains(aDriver)) {
             if (isDriverAllowed(driver, callerCL)) {
-                 registeredDrivers.remove(driver);
+                 registeredDrivers.remove(aDriver);
             } else {
                 // If the caller does not have permission to load the driver then
                 // throw a SecurityException.
@@ -363,11 +364,11 @@ public class DriverManager {
         ClassLoader callerCL = DriverManager.getCallerClassLoader();
 
         // Walk through the loaded registeredDrivers.
-        for(Driver aDriver : registeredDrivers) {
+        for(DriverInfo aDriver : registeredDrivers) {
             // If the caller does not have permission to load the driver then
             // skip it.
-            if(isDriverAllowed(aDriver, callerCL)) {
-                result.addElement(aDriver);
+            if(isDriverAllowed(aDriver.driver, callerCL)) {
+                result.addElement(aDriver.driver);
             } else {
                 println("    skipping: " + aDriver.getClass().getName());
             }
@@ -482,8 +483,8 @@ public class DriverManager {
     private static void loadInitialDrivers() {
         String drivers;
         try {
-            drivers = (String)  AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
+            drivers = AccessController.doPrivileged(new PrivilegedAction<String>() {
+                public String run() {
                     return System.getProperty("jdbc.drivers");
                 }
             });
@@ -495,8 +496,8 @@ public class DriverManager {
         // exposed as a java.sql.Driver.class service.
         // ServiceLoader.load() replaces the sun.misc.Providers()
 
-        AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
 
                 ServiceLoader<Driver> loadedDrivers = ServiceLoader.load(Driver.class);
                 Iterator driversIterator = loadedDrivers.iterator();
@@ -569,16 +570,16 @@ public class DriverManager {
         // Remember the first exception that gets raised so we can reraise it.
         SQLException reason = null;
 
-        for(Driver aDriver : registeredDrivers) {
+        for(DriverInfo aDriver : registeredDrivers) {
             // If the caller does not have permission to load the driver then
             // skip it.
-            if(isDriverAllowed(aDriver, callerCL)) {
+            if(isDriverAllowed(aDriver.driver, callerCL)) {
                 try {
-                    println("    trying " + aDriver.getClass().getName());
-                    Connection con = aDriver.connect(url, info);
+                    println("    trying " + aDriver.driver.getClass().getName());
+                    Connection con = aDriver.driver.connect(url, info);
                     if (con != null) {
                         // Success!
-                        println("getConnection returning " + aDriver.getClass().getName());
+                        println("getConnection returning " + aDriver.driver.getClass().getName());
                         return (con);
                     }
                 } catch (SQLException ex) {
@@ -606,4 +607,30 @@ public class DriverManager {
     /* Returns the caller's class loader, or null if none */
     private static native ClassLoader getCallerClassLoader();
 
+}
+
+/*
+ * Wrapper class for registered Drivers in order to not expose Driver.equals()
+ * to avoid the capture of the Driver it being compared to as it might not
+ * normally have access.
+ */
+class DriverInfo {
+
+    final Driver driver;
+    DriverInfo(Driver driver) {
+        this.driver = driver;
+    }
+
+    public boolean equals(Object other) {
+        return (other instanceof DriverInfo)
+                && this.driver == ((DriverInfo) other).driver;
+    }
+
+    public int hashCode() {
+        return driver.hashCode();
+    }
+
+    public String toString() {
+        return ("driver[className="  + driver + "]");
+    }
 }

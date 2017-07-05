@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,22 @@
  * @test
  * @bug 4518797
  * @summary Make sure that hashCode() and read/writeObject() are thread-safe.
- * @run main/timeout=200 Bug4518797
+ * @run main Bug4518797 10
  */
 
 import java.util.*;
 import java.io.*;
 
+// Usage: java Bug4518797 [duration]
 public class Bug4518797 {
     static volatile boolean runrun = true;
     static volatile String message = null;
 
     public static void main(String[] args) {
+        int duration = 180;
+        if (args.length == 1) {
+            duration = Math.max(5, Integer.parseInt(args[0]));
+        }
         final Locale loc = new Locale("ja", "US");
         final int hashcode = loc.hashCode();
 
@@ -84,7 +89,7 @@ public class Bug4518797 {
         t1.start();
         t2.start();
         try {
-            for (int i = 0; runrun && i < 180; i++) {
+            for (int i = 0; runrun && i < duration; i++) {
                 Thread.sleep(1000);
             }
             runrun = false;
