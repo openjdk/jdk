@@ -392,10 +392,12 @@ Java_sun_java2d_opengl_GLXSurfaceData_initPbuffer
     attrlist[3] = height;
 
     errorOccurredFlag = JNI_FALSE;
-    EXEC_WITH_XERROR_HANDLER(env, "sun/awt/X11/XErrorHandler$GLXBadAllocHandler",
-        "()Lsun/awt/X11/XErrorHandler$GLXBadAllocHandler;", JNI_TRUE,
-        errorHandlerRef, errorOccurredFlag,
-        pbuffer = j2d_glXCreatePbuffer(awt_display, glxinfo->fbconfig, attrlist));
+    WITH_XERROR_HANDLER(env, "sun/awt/X11/XErrorHandler$GLXBadAllocHandler",
+        "()Lsun/awt/X11/XErrorHandler$GLXBadAllocHandler;", JNI_TRUE, errorHandlerRef);
+    pbuffer = j2d_glXCreatePbuffer(awt_display, glxinfo->fbconfig, attrlist);
+    XSync(awt_display, False);
+    RESTORE_XERROR_HANDLER(env, JNI_FALSE);
+    GET_HANDLER_ERROR_OCCURRED_FLAG(env, errorHandlerRef, errorOccurredFlag);
 
     if ((pbuffer == 0) || errorOccurredFlag) {
         J2dRlsTraceLn(J2D_TRACE_ERROR,

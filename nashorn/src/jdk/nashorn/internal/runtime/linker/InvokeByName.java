@@ -83,7 +83,7 @@ public class InvokeByName {
      */
     public InvokeByName(final String name, final Class<?> targetClass, final Class<?> rtype, final Class<?>... ptypes) {
         this.name = name;
-        getter  = Bootstrap.createDynamicInvoker("dyn:getMethod|getProp|getItem:" + name, Object.class, targetClass);
+        getter  = Bootstrap.createDynamicInvoker("dyn:getMethod|getProp|getElem:" + name, Object.class, targetClass);
 
         final Class<?>[] finalPtypes;
         final int plength = ptypes.length;

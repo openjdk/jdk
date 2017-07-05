@@ -747,7 +747,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             GuardWithCatch gguard = new GuardWithCatch(gtarget, exType, gcatcher);
             if (gtarget == null || gcatcher == null)  throw new InternalError();
             MethodHandle ginvoker = GuardWithCatch.VARARGS_INVOKE.bindReceiver(gguard);
-            return makeCollectArguments(ginvoker, ValueConversions.varargsArray(nargs), 0, false);
+            MethodHandle gcollect = makeCollectArguments(ginvoker, ValueConversions.varargsArray(nargs), 0, false);
+            return makePairwiseConvert(gcollect, type, 2);
         }
     }
 

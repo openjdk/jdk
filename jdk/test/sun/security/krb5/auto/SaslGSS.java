@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8012082
+ * @bug 8012082 8019267
  * @summary SASL: auth-conf negotiated, but unencrypted data is accepted,
   *         reset to unencrypt
  * @compile -XDignore.symbol.file SaslGSS.java
@@ -37,9 +37,16 @@ import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.RealmCallback;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslServer;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.ietf.jgss.*;
 import sun.security.jgss.GSSUtil;
 
@@ -79,14 +86,28 @@ public class SaslGSS {
                     }
                 });
 
-        // Handshake
+        ByteArrayOutputStream bout = new ByteArrayOutputStream();
+        PrintStream oldErr = System.err;
+        System.setErr(new PrintStream(bout));
+
+        Logger.getLogger("javax.security.sasl").setLevel(Level.ALL);
+        Handler h = new ConsoleHandler();
+        h.setLevel(Level.ALL);
+        Logger.getLogger("javax.security.sasl").addHandler(h);
+
         byte[] token = new byte[0];
-        token = sc.initSecContext(token, 0, token.length);
-        token = ss.evaluateResponse(token);
-        token = sc.unwrap(token, 0, token.length, new MessageProp(0, false));
-        token[0] = (byte)(((token[0] & 4) != 0) ? 4 : 2);
-        token = sc.wrap(token, 0, token.length, new MessageProp(0, false));
-        ss.evaluateResponse(token);
+
+        try {
+            // Handshake
+            token = sc.initSecContext(token, 0, token.length);
+            token = ss.evaluateResponse(token);
+            token = sc.unwrap(token, 0, token.length, new MessageProp(0, false));
+            token[0] = (byte)(((token[0] & 4) != 0) ? 4 : 2);
+            token = sc.wrap(token, 0, token.length, new MessageProp(0, false));
+            ss.evaluateResponse(token);
+        } finally {
+            System.setErr(oldErr);
+        }
 
         // Talk
         // 1. Client sends a auth-int message
@@ -102,5 +123,15 @@ public class SaslGSS {
         if (!qop.getPrivacy()) {
             throw new Exception();
         }
+
+        for (String s: bout.toString().split("\\n")) {
+            if (s.contains("KRB5SRV04") && s.contains("NULL")) {
+                return;
+            }
+        }
+        System.out.println("=======================");
+        System.out.println(bout.toString());
+        System.out.println("=======================");
+        throw new Exception("Haven't seen KRB5SRV04 with NULL");
     }
 }

@@ -74,7 +74,7 @@ import sun.util.locale.LocaleObjectCache;
  *
  * <p>
  * This allows you to write programs that can:
- * <UL type=SQUARE>
+ * <UL>
  * <LI> be easily localized, or translated, into different languages
  * <LI> handle multiple locales at once
  * <LI> be easily modified later to support even more locales
@@ -184,7 +184,7 @@ import sun.util.locale.LocaleObjectCache;
  * subclass.  Your subclasses must override two methods: <code>handleGetObject</code>
  * and <code>getKeys()</code>.
  *
- * <h4>ResourceBundle.Control</h4>
+ * <h3>ResourceBundle.Control</h3>
  *
  * The {@link ResourceBundle.Control} class provides information necessary
  * to perform the bundle loading process by the <code>getBundle</code>
@@ -195,7 +195,7 @@ import sun.util.locale.LocaleObjectCache;
  * {@link #getBundle(String, Locale, ClassLoader, Control) getBundle}
  * factory method for details.
  *
- * <p><a name="modify_default_behavior">For the {@code getBundle} factory
+ * <p><a name="modify_default_behavior">For the {@code getBundle} factory</a>
  * methods that take no {@link Control} instance, their <a
  * href="#default_behavior"> default behavior</a> of resource bundle loading
  * can be modified with <em>installed</em> {@link
@@ -206,7 +206,7 @@ import sun.util.locale.LocaleObjectCache;
  * more than one service provider installed for supporting the same base name,
  * the first one returned from {@link ServiceLoader} will be used.
  *
- * <h4>Cache Management</h4>
+ * <h3>Cache Management</h3>
  *
  * Resource bundle instances created by the <code>getBundle</code> factory
  * methods are cached by default, and the factory methods return the same
@@ -222,7 +222,7 @@ import sun.util.locale.LocaleObjectCache;
  * Control#needsReload(String, Locale, String, ClassLoader, ResourceBundle,
  * long) ResourceBundle.Control.needsReload} for details.
  *
- * <h4>Example</h4>
+ * <h3>Example</h3>
  *
  * The following is a very simple example of a <code>ResourceBundle</code>
  * subclass, <code>MyResources</code>, that manages two resources (for a larger number of
@@ -878,8 +878,8 @@ public abstract class ResourceBundle {
      * description of <a href="#modify_default_behavior">modifying the default
      * behavior</a>.
      *
-     * <p><a name="default_behavior"/>The following describes the default
-     * behavior.
+     * <p><a name="default_behavior">The following describes the default
+     * behavior</a>.
      *
      * <p><code>getBundle</code> uses the base name, the specified locale, and
      * the default locale (obtained from {@link java.util.Locale#getDefault()
@@ -974,8 +974,8 @@ public abstract class ResourceBundle {
      * <p>If still no result bundle is found, the base name alone is looked up. If
      * this still fails, a <code>MissingResourceException</code> is thrown.
      *
-     * <p><a name="parent_chain"/> Once a result resource bundle has been found,
-     * its <em>parent chain</em> is instantiated.  If the result bundle already
+     * <p><a name="parent_chain"> Once a result resource bundle has been found,
+     * its <em>parent chain</em> is instantiated</a>.  If the result bundle already
      * has a parent (perhaps because it was returned from a cache) the chain is
      * complete.
      *
@@ -1004,8 +1004,8 @@ public abstract class ResourceBundle {
      * path name (using "/") instead of a fully qualified class name (using
      * ".").
      *
-     * <p><a name="default_behavior_example"/>
-     * <strong>Example:</strong>
+     * <p><a name="default_behavior_example">
+     * <strong>Example:</strong></a>
      * <p>
      * The following class and property files are provided:
      * <pre>
@@ -1026,7 +1026,7 @@ public abstract class ResourceBundle {
      * <p>Calling <code>getBundle</code> with the locale arguments below will
      * instantiate resource bundles as follows:
      *
-     * <table>
+     * <table summary="getBundle() locale to resource bundle mapping">
      * <tr><td>Locale("fr", "CH")</td><td>MyResources_fr_CH.class, parent MyResources_fr.properties, parent MyResources.class</td></tr>
      * <tr><td>Locale("fr", "FR")</td><td>MyResources_fr.properties, parent MyResources.class</td></tr>
      * <tr><td>Locale("de", "DE")</td><td>MyResources_en.properties, parent MyResources.class</td></tr>
@@ -1106,45 +1106,45 @@ public abstract class ResourceBundle {
      * <code>control.newBundle</code>.
      *
      * <table style="width: 50%; text-align: left; margin-left: 40px;"
-     *  border="0" cellpadding="2" cellspacing="2">
-     * <tbody><code>
+     *  border="0" cellpadding="2" cellspacing="2" summary="locale-format combinations for newBundle">
+     * <tbody>
      * <tr>
      * <td
-     * style="vertical-align: top; text-align: left; font-weight: bold; width: 50%;">Locale<br>
+     * style="vertical-align: top; text-align: left; font-weight: bold; width: 50%;"><code>Locale</code><br>
      * </td>
      * <td
-     * style="vertical-align: top; text-align: left; font-weight: bold; width: 50%;">format<br>
+     * style="vertical-align: top; text-align: left; font-weight: bold; width: 50%;"><code>format</code><br>
      * </td>
      * </tr>
      * <tr>
-     * <td style="vertical-align: top; width: 50%;">Locale("de", "DE")<br>
+     * <td style="vertical-align: top; width: 50%;"><code>Locale("de", "DE")</code><br>
      * </td>
-     * <td style="vertical-align: top; width: 50%;">java.class<br>
-     * </td>
-     * </tr>
-     * <tr>
-     * <td style="vertical-align: top; width: 50%;">Locale("de", "DE")</td>
-     * <td style="vertical-align: top; width: 50%;">java.properties<br>
+     * <td style="vertical-align: top; width: 50%;"><code>java.class</code><br>
      * </td>
      * </tr>
      * <tr>
-     * <td style="vertical-align: top; width: 50%;">Locale("de")</td>
-     * <td style="vertical-align: top; width: 50%;">java.class</td>
-     * </tr>
-     * <tr>
-     * <td style="vertical-align: top; width: 50%;">Locale("de")</td>
-     * <td style="vertical-align: top; width: 50%;">java.properties</td>
-     * </tr>
-     * <tr>
-     * <td style="vertical-align: top; width: 50%;">Locale("")<br>
+     * <td style="vertical-align: top; width: 50%;"><code>Locale("de", "DE")</code></td>
+     * <td style="vertical-align: top; width: 50%;"><code>java.properties</code><br>
      * </td>
-     * <td style="vertical-align: top; width: 50%;">java.class</td>
      * </tr>
      * <tr>
-     * <td style="vertical-align: top; width: 50%;">Locale("")</td>
-     * <td style="vertical-align: top; width: 50%;">java.properties</td>
+     * <td style="vertical-align: top; width: 50%;"><code>Locale("de")</code></td>
+     * <td style="vertical-align: top; width: 50%;"><code>java.class</code></td>
      * </tr>
-     * </code></tbody>
+     * <tr>
+     * <td style="vertical-align: top; width: 50%;"><code>Locale("de")</code></td>
+     * <td style="vertical-align: top; width: 50%;"><code>java.properties</code></td>
+     * </tr>
+     * <tr>
+     * <td style="vertical-align: top; width: 50%;"><code>Locale("")</code><br>
+     * </td>
+     * <td style="vertical-align: top; width: 50%;"><code>java.class</code></td>
+     * </tr>
+     * <tr>
+     * <td style="vertical-align: top; width: 50%;"><code>Locale("")</code></td>
+     * <td style="vertical-align: top; width: 50%;"><code>java.properties</code></td>
+     * </tr>
+     * </tbody>
      * </table>
      * </li>
      *
@@ -2199,11 +2199,11 @@ public abstract class ResourceBundle {
          * one by one as below:
          *
          * <ul>
-         * <li> [<em>L</em>, <em>C</em>, <em>V</em>]
-         * <li> [<em>L</em>, <em>C</em>]
-         * <li> [<em>L</em>]
-         * <li> <code>Locale.ROOT</code>
-         * </ul>
+         * <li> [<em>L</em>, <em>C</em>, <em>V</em>] </li>
+         * <li> [<em>L</em>, <em>C</em>] </li>
+         * <li> [<em>L</em>] </li>
+         * <li> <code>Locale.ROOT</code> </li>
+         * </ul></li>
          *
          * <li>For an input <code>Locale</code> with a non-empty script value,
          * append candidate <code>Locale</code>s by omitting the final component
@@ -2211,14 +2211,14 @@ public abstract class ResourceBundle {
          * <code>Locale</code> with country and variant restored:
          *
          * <ul>
-         * <li> [<em>L</em>, <em>S</em>, <em>C</em>, <em>V</em>]
-         * <li> [<em>L</em>, <em>S</em>, <em>C</em>]
-         * <li> [<em>L</em>, <em>S</em>]
-         * <li> [<em>L</em>, <em>C</em>, <em>V</em>]
-         * <li> [<em>L</em>, <em>C</em>]
-         * <li> [<em>L</em>]
-         * <li> <code>Locale.ROOT</code>
-         * </ul>
+         * <li> [<em>L</em>, <em>S</em>, <em>C</em>, <em>V</em>]</li>
+         * <li> [<em>L</em>, <em>S</em>, <em>C</em>]</li>
+         * <li> [<em>L</em>, <em>S</em>]</li>
+         * <li> [<em>L</em>, <em>C</em>, <em>V</em>]</li>
+         * <li> [<em>L</em>, <em>C</em>]</li>
+         * <li> [<em>L</em>]</li>
+         * <li> <code>Locale.ROOT</code></li>
+         * </ul></li>
          *
          * <li>For an input <code>Locale</code> with a variant value consisting
          * of multiple subtags separated by underscore, generate candidate
@@ -2228,16 +2228,16 @@ public abstract class ResourceBundle {
          * the variant consists of two subtags <em>V1</em> and <em>V2</em>:
          *
          * <ul>
-         * <li> [<em>L</em>, <em>S</em>, <em>C</em>, <em>V1</em>, <em>V2</em>]
-         * <li> [<em>L</em>, <em>S</em>, <em>C</em>, <em>V1</em>]
-         * <li> [<em>L</em>, <em>S</em>, <em>C</em>]
-         * <li> [<em>L</em>, <em>S</em>]
-         * <li> [<em>L</em>, <em>C</em>, <em>V1</em>, <em>V2</em>]
-         * <li> [<em>L</em>, <em>C</em>, <em>V1</em>]
-         * <li> [<em>L</em>, <em>C</em>]
-         * <li> [<em>L</em>]
-         * <li> <code>Locale.ROOT</code>
-         * </ul>
+         * <li> [<em>L</em>, <em>S</em>, <em>C</em>, <em>V1</em>, <em>V2</em>]</li>
+         * <li> [<em>L</em>, <em>S</em>, <em>C</em>, <em>V1</em>]</li>
+         * <li> [<em>L</em>, <em>S</em>, <em>C</em>]</li>
+         * <li> [<em>L</em>, <em>S</em>]</li>
+         * <li> [<em>L</em>, <em>C</em>, <em>V1</em>, <em>V2</em>]</li>
+         * <li> [<em>L</em>, <em>C</em>, <em>V1</em>]</li>
+         * <li> [<em>L</em>, <em>C</em>]</li>
+         * <li> [<em>L</em>]</li>
+         * <li> <code>Locale.ROOT</code></li>
+         * </ul></li>
          *
          * <li>Special cases for Chinese.  When an input <code>Locale</code> has the
          * language "zh" (Chinese) and an empty script value, either "Hans" (Simplified) or
@@ -2248,21 +2248,21 @@ public abstract class ResourceBundle {
          * is empty, no script is supplied.  For example, for <code>Locale("zh", "CN")
          * </code>, the candidate list will be:
          * <ul>
-         * <li> [<em>L</em>("zh"), <em>S</em>("Hans"), <em>C</em>("CN")]
-         * <li> [<em>L</em>("zh"), <em>S</em>("Hans")]
-         * <li> [<em>L</em>("zh"), <em>C</em>("CN")]
-         * <li> [<em>L</em>("zh")]
-         * <li> <code>Locale.ROOT</code>
+         * <li> [<em>L</em>("zh"), <em>S</em>("Hans"), <em>C</em>("CN")]</li>
+         * <li> [<em>L</em>("zh"), <em>S</em>("Hans")]</li>
+         * <li> [<em>L</em>("zh"), <em>C</em>("CN")]</li>
+         * <li> [<em>L</em>("zh")]</li>
+         * <li> <code>Locale.ROOT</code></li>
          * </ul>
          *
          * For <code>Locale("zh", "TW")</code>, the candidate list will be:
          * <ul>
-         * <li> [<em>L</em>("zh"), <em>S</em>("Hant"), <em>C</em>("TW")]
-         * <li> [<em>L</em>("zh"), <em>S</em>("Hant")]
-         * <li> [<em>L</em>("zh"), <em>C</em>("TW")]
-         * <li> [<em>L</em>("zh")]
-         * <li> <code>Locale.ROOT</code>
-         * </ul>
+         * <li> [<em>L</em>("zh"), <em>S</em>("Hant"), <em>C</em>("TW")]</li>
+         * <li> [<em>L</em>("zh"), <em>S</em>("Hant")]</li>
+         * <li> [<em>L</em>("zh"), <em>C</em>("TW")]</li>
+         * <li> [<em>L</em>("zh")]</li>
+         * <li> <code>Locale.ROOT</code></li>
+         * </ul></li>
          *
          * <li>Special cases for Norwegian.  Both <code>Locale("no", "NO",
          * "NY")</code> and <code>Locale("nn", "NO")</code> represent Norwegian
@@ -2270,10 +2270,10 @@ public abstract class ResourceBundle {
          * list is generated up to [<em>L</em>("nn")], and then the following
          * candidates are added:
          *
-         * <ul><li> [<em>L</em>("no"), <em>C</em>("NO"), <em>V</em>("NY")]
-         * <li> [<em>L</em>("no"), <em>C</em>("NO")]
-         * <li> [<em>L</em>("no")]
-         * <li> <code>Locale.ROOT</code>
+         * <ul><li> [<em>L</em>("no"), <em>C</em>("NO"), <em>V</em>("NY")]</li>
+         * <li> [<em>L</em>("no"), <em>C</em>("NO")]</li>
+         * <li> [<em>L</em>("no")]</li>
+         * <li> <code>Locale.ROOT</code></li>
          * </ul>
          *
          * If the locale is exactly <code>Locale("no", "NO", "NY")</code>, it is first
@@ -2290,20 +2290,18 @@ public abstract class ResourceBundle {
          * candidate list:
          *
          * <ul>
-         * <li> [<em>L</em>("nb"), <em>C</em>("NO"), <em>V</em>("POSIX")]
-         * <li> [<em>L</em>("no"), <em>C</em>("NO"), <em>V</em>("POSIX")]
-         * <li> [<em>L</em>("nb"), <em>C</em>("NO")]
-         * <li> [<em>L</em>("no"), <em>C</em>("NO")]
-         * <li> [<em>L</em>("nb")]
-         * <li> [<em>L</em>("no")]
-         * <li> <code>Locale.ROOT</code>
+         * <li> [<em>L</em>("nb"), <em>C</em>("NO"), <em>V</em>("POSIX")]</li>
+         * <li> [<em>L</em>("no"), <em>C</em>("NO"), <em>V</em>("POSIX")]</li>
+         * <li> [<em>L</em>("nb"), <em>C</em>("NO")]</li>
+         * <li> [<em>L</em>("no"), <em>C</em>("NO")]</li>
+         * <li> [<em>L</em>("nb")]</li>
+         * <li> [<em>L</em>("no")]</li>
+         * <li> <code>Locale.ROOT</code></li>
          * </ul>
          *
          * <code>Locale("no", "NO", "POSIX")</code> would generate the same list
          * except that locales with "no" would appear before the corresponding
          * locales with "nb".</li>
-         *
-         * </li>
          * </ol>
          *
          * <p>The default implementation uses an {@link ArrayList} that

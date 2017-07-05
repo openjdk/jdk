@@ -984,6 +984,7 @@ public class Arrays {
      * {@link ForkJoinPool#commonPool() ForkJoin common pool} is used to
      * execute any parallel tasks.
      *
+     * @param <T> the class of the objects to be sorted
      * @param a the array to be sorted
      *
      * @throws ClassCastException if the array contains elements that are not
@@ -1035,6 +1036,7 @@ public class Arrays {
      * array. The {@link ForkJoinPool#commonPool() ForkJoin common pool} is
      * used to execute any parallel tasks.
      *
+     * @param <T> the class of the objects to be sorted
      * @param a the array to be sorted
      * @param fromIndex the index of the first element (inclusive) to be
      *        sorted
@@ -1087,6 +1089,7 @@ public class Arrays {
      * {@link ForkJoinPool#commonPool() ForkJoin common pool} is used to
      * execute any parallel tasks.
      *
+     * @param <T> the class of the objects to be sorted
      * @param a the array to be sorted
      * @param cmp the comparator to determine the order of the array.  A
      *        {@code null} value indicates that the elements'
@@ -1138,6 +1141,7 @@ public class Arrays {
      * array. The {@link ForkJoinPool#commonPool() ForkJoin common pool} is
      * used to execute any parallel tasks.
      *
+     * @param <T> the class of the objects to be sorted
      * @param a the array to be sorted
      * @param fromIndex the index of the first element (inclusive) to be
      *        sorted
@@ -1412,6 +1416,7 @@ public class Arrays {
      * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
      * January 1993.
      *
+     * @param <T> the class of the objects to be sorted
      * @param a the array to be sorted
      * @param c the comparator to determine the order of the array.  A
      *        {@code null} value indicates that the elements'
@@ -1475,6 +1480,7 @@ public class Arrays {
      * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
      * January 1993.
      *
+     * @param <T> the class of the objects to be sorted
      * @param a the array to be sorted
      * @param fromIndex the index of the first element (inclusive) to be
      *        sorted
@@ -1569,6 +1575,7 @@ public class Arrays {
      * Parallel prefix computation is usually more efficient than
      * sequential loops for large arrays.
      *
+     * @param <T> the class of the objects in the array
      * @param array the array, which is modified in-place by this method
      * @param op a side-effect-free, associative function to perform the
      * cumulation
@@ -1585,6 +1592,7 @@ public class Arrays {
      * Performs {@link #parallelPrefix(Object[], BinaryOperator)}
      * for the given subrange of the array.
      *
+     * @param <T> the class of the objects in the array
      * @param array the array
      * @param fromIndex the index of the first element, inclusive
      * @param toIndex the index of the last element, exclusive
@@ -2437,6 +2445,7 @@ public class Arrays {
      * elements equal to the specified object, there is no guarantee which one
      * will be found.
      *
+     * @param <T> the class of the objects in the array
      * @param a the array to be searched
      * @param key the value to be searched for
      * @param c the comparator by which the array is ordered.  A
@@ -2472,6 +2481,7 @@ public class Arrays {
      * If the range contains multiple elements equal to the specified object,
      * there is no guarantee which one will be found.
      *
+     * @param <T> the class of the objects in the array
      * @param a the array to be searched
      * @param fromIndex the index of the first element (inclusive) to be
      *          searched
@@ -3143,6 +3153,7 @@ public class Arrays {
      * is greater than that of the original array.
      * The resulting array is of exactly the same class as the original array.
      *
+     * @param <T> the class of the objects in the array
      * @param original the array to be copied
      * @param newLength the length of the copy to be returned
      * @return a copy of the original array, truncated or padded with nulls
@@ -3166,6 +3177,8 @@ public class Arrays {
      * is greater than that of the original array.
      * The resulting array is of the class <tt>newType</tt>.
      *
+     * @param <U> the class of the objects in the original array
+     * @param <T> the class of the objects in the returned array
      * @param original the array to be copied
      * @param newLength the length of the copy to be returned
      * @param newType the class of the copy to be returned
@@ -3396,6 +3409,7 @@ public class Arrays {
      * <p>
      * The resulting array is of exactly the same class as the original array.
      *
+     * @param <T> the class of the objects in the array
      * @param original the array from which a range is to be copied
      * @param from the initial index of the range to be copied, inclusive
      * @param to the final index of the range to be copied, exclusive.
@@ -3428,6 +3442,8 @@ public class Arrays {
      * of the returned array will be <tt>to - from</tt>.
      * The resulting array is of the class <tt>newType</tt>.
      *
+     * @param <U> the class of the objects in the original array
+     * @param <T> the class of the objects in the returned array
      * @param original the array from which a range is to be copied
      * @param from the initial index of the range to be copied, inclusive
      * @param to the final index of the range to be copied, exclusive.
@@ -3760,6 +3776,7 @@ public class Arrays {
      *     List&lt;String&gt; stooges = Arrays.asList("Larry", "Moe", "Curly");
      * </pre>
      *
+     * @param <T> the class of the objects in the array
      * @param a the array by which the list will be backed
      * @return a list view of the specified array
      */
@@ -4966,7 +4983,7 @@ public class Arrays {
      * @since 1.8
      */
     public static <T> Stream<T> stream(T[] array, int startInclusive, int endExclusive) {
-        return StreamSupport.stream(spliterator(array, startInclusive, endExclusive));
+        return StreamSupport.stream(spliterator(array, startInclusive, endExclusive), false);
     }
 
     /**
@@ -4996,7 +5013,7 @@ public class Arrays {
      * @since 1.8
      */
     public static IntStream stream(int[] array, int startInclusive, int endExclusive) {
-        return StreamSupport.intStream(spliterator(array, startInclusive, endExclusive));
+        return StreamSupport.intStream(spliterator(array, startInclusive, endExclusive), false);
     }
 
     /**
@@ -5026,7 +5043,7 @@ public class Arrays {
      * @since 1.8
      */
     public static LongStream stream(long[] array, int startInclusive, int endExclusive) {
-        return StreamSupport.longStream(spliterator(array, startInclusive, endExclusive));
+        return StreamSupport.longStream(spliterator(array, startInclusive, endExclusive), false);
     }
 
     /**
@@ -5056,6 +5073,6 @@ public class Arrays {
      * @since 1.8
      */
     public static DoubleStream stream(double[] array, int startInclusive, int endExclusive) {
-        return StreamSupport.doubleStream(spliterator(array, startInclusive, endExclusive));
+        return StreamSupport.doubleStream(spliterator(array, startInclusive, endExclusive), false);
     }
 }

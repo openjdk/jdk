@@ -49,7 +49,7 @@ public class TemporarySymbols {
      * @param node the node
      * @return the node that is guaranteed to have a symbol.
      */
-    public Node ensureSymbol(final LexicalContext lc, final Type type, final Node node) {
+    public Expression ensureSymbol(final LexicalContext lc, final Type type, final Expression node) {
         final Symbol symbol = node.getSymbol();
         if (symbol != null) {
             return node;

@@ -29,12 +29,6 @@ public interface OPCode {
     final int EXACT4                        = 5;            /* single byte, N = 4 */
     final int EXACT5                        = 6;            /* single byte, N = 5 */
     final int EXACTN                        = 7;            /* single byte */
-    final int EXACTMB2N1                    = 8;            /* mb-length = 2 N = 1 */
-    final int EXACTMB2N2                    = 9;            /* mb-length = 2 N = 2 */
-    final int EXACTMB2N3                    = 10;           /* mb-length = 2 N = 3 */
-    final int EXACTMB2N                     = 11;           /* mb-length = 2 */
-    final int EXACTMB3N                     = 12;           /* mb-length = 3 */
-    final int EXACTMBN                      = 13;           /* other length */
 
     final int EXACT1_IC                     = 14;           /* single byte, N = 1, ignore case */
     final int EXACTN_IC                     = 15;           /* single byte,        ignore case */
@@ -124,29 +118,5 @@ public interface OPCode {
       /* no need: IS_DYNAMIC_OPTION() == 0 */
     final int SET_OPTION_PUSH               = 86;           /* set option and push recover option */
     final int SET_OPTION                    = 87;           /* set option */
-
-    // single byte versions
-    final int ANYCHAR_SB                    = 88;           /* "."  */
-    final int ANYCHAR_ML_SB                 = 89;           /* "."  multi-line */
-    final int ANYCHAR_STAR_SB               = 90;           /* ".*" */
-    final int ANYCHAR_ML_STAR_SB            = 91;           /* ".*" multi-line */
-    final int ANYCHAR_STAR_PEEK_NEXT_SB     = 92;
-    final int ANYCHAR_ML_STAR_PEEK_NEXT_SB  = 93;
-    final int STATE_CHECK_ANYCHAR_STAR_SB   = 94;
-    final int STATE_CHECK_ANYCHAR_ML_STAR_SB= 95;
-
-    final int CCLASS_SB                     = 96;
-    final int CCLASS_NOT_SB                 = 97;
-    final int WORD_SB                       = 98;
-    final int NOT_WORD_SB                   = 99;
-    final int WORD_BOUND_SB                 = 100;
-    final int NOT_WORD_BOUND_SB             = 101;
-    final int WORD_BEGIN_SB                 = 102;
-    final int WORD_END_SB                   = 103;
-
-    final int LOOK_BEHIND_SB                = 104;
-
-    final int EXACT1_IC_SB                  = 105;           /* single byte, N = 1, ignore case */
-    final int EXACTN_IC_SB                  = 106;           /* single byte,        ignore case */
 
 }

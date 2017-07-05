@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;
@@ -37,9 +36,6 @@ import jdk.nashorn.internal.parser.TokenType;
  * Nodes are used to compose Abstract Syntax Trees.
  */
 public abstract class Node implements Cloneable {
-    /** Node symbol. */
-    private Symbol symbol;
-
     /** Start of source range. */
     protected final int start;
 
@@ -81,31 +77,8 @@ public abstract class Node implements Cloneable {
      */
     protected Node(final Node node) {
         this.token  = node.token;
-        this.symbol = node.symbol;
         this.start  = node.start;
         this.finish = node.finish;
-    }
-
-    /**
-     * Check if the node has a type. The default behavior is to go into the symbol
-     * and check the symbol type, but there may be overrides, for example in
-     * getters that require a different type than the internal representation
-     *
-     * @return true if a type exists
-     */
-    public boolean hasType() {
-        return getSymbol() != null;
-    }
-
-    /**
-     * Returns the type of the node. Typically this is the symbol type. No types
-     * are stored in the node itself, unless it implements TypeOverride
-     *
-     * @return the type of the node.
-     */
-    public Type getType() {
-        assert hasType() : this + " has no type";
-        return symbol.getSymbolType();
     }
 
     /**
@@ -235,16 +208,6 @@ public abstract class Node implements Cloneable {
         return start;
     }
 
-    /**
-     * Return the Symbol the compiler has assigned to this Node. The symbol
-     * is the place where it's expression value is stored after evaluation
-     *
-     * @return the symbol
-     */
-    public Symbol getSymbol() {
-        return symbol;
-    }
-
     @Override
     protected Object clone() {
         try {
@@ -253,24 +216,6 @@ public abstract class Node implements Cloneable {
             throw new AssertionError(e);
         }
     }
-
-    /**
-     * Assign a symbol to this node. See {@link Node#getSymbol()} for explanation
-     * of what a symbol is
-     *
-     * @param lc lexical context
-     * @param symbol the symbol
-     * @return new node
-     */
-    public Node setSymbol(final LexicalContext lc, final Symbol symbol) {
-        if (this.symbol == symbol) {
-            return this;
-        }
-        final Node newNode = (Node)clone();
-        newNode.symbol = symbol;
-        return newNode;
-    }
-
 
     @Override
     public final boolean equals(final Object other) {

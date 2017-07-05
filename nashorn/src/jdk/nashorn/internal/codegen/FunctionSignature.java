@@ -31,8 +31,8 @@ import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
 
@@ -63,7 +63,7 @@ public final class FunctionSignature {
      * @param retType   what is the return type
      * @param args      argument list of AST Nodes
      */
-    public FunctionSignature(final boolean hasSelf, final boolean hasCallee, final Type retType, final List<? extends Node> args) {
+    public FunctionSignature(final boolean hasSelf, final boolean hasCallee, final Type retType, final List<? extends Expression> args) {
         this(hasSelf, hasCallee, retType, FunctionSignature.typeArray(args));
     }
 
@@ -167,7 +167,7 @@ public final class FunctionSignature {
      *
      * @return the array of types
      */
-    private static Type[] typeArray(final List<? extends Node> args) {
+    private static Type[] typeArray(final List<? extends Expression> args) {
         if (args == null) {
             return null;
         }
@@ -175,7 +175,7 @@ public final class FunctionSignature {
         final Type[] typeArray = new Type[args.size()];
 
         int pos = 0;
-        for (final Node arg : args) {
+        for (final Expression arg : args) {
             typeArray[pos++] = arg.getType();
         }
 

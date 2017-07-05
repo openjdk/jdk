@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ public class TestRSAKeyLength extends PKCS11Test {
         main(new TestRSAKeyLength());
     }
     public void main(Provider p) throws Exception {
-        boolean isValidKeyLength[] = { true, true, false, false };
+        boolean isValidKeyLength[] = { true, true, true, false, false };
         String algos[] = { "SHA1withRSA", "SHA224withRSA", "SHA256withRSA",
                            "SHA384withRSA", "SHA512withRSA" };
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", p);
@@ -45,6 +45,10 @@ public class TestRSAKeyLength extends PKCS11Test {
         PrivateKey privKey = kp.getPrivate();
         PublicKey pubKey = kp.getPublic();
 
+        if (algos.length != isValidKeyLength.length) {
+            throw new Exception("Internal Error: number of test algos" +
+                " and results length mismatch!");
+        }
         for (int i = 0; i < algos.length; i++) {
             Signature sig = Signature.getInstance(algos[i], p);
             System.out.println("Testing RSA signature " + algos[i]);

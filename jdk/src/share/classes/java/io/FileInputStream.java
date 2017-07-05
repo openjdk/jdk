@@ -331,7 +331,7 @@ class FileInputStream extends InputStream
      * object associated with this file input stream.
      *
      * <p> The initial {@link java.nio.channels.FileChannel#position()
-     * </code>position<code>} of the returned channel will be equal to the
+     * position} of the returned channel will be equal to the
      * number of bytes read from the file so far.  Reading bytes from this
      * stream will increment the channel's position.  Changing the channel's
      * position, either explicitly or by reading, will change this stream's

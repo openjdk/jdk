@@ -48,7 +48,7 @@ Object.defineProperty(this, "importPackage", {
         var _packages = [];
         var global = this;
         var oldNoSuchProperty = global.__noSuchProperty__;
-        global.__noSuchProperty__ = function(name) {
+        var __noSuchProperty__ = function(name) {
             'use strict';
             for (var i in _packages) {
                 try {
@@ -68,6 +68,11 @@ Object.defineProperty(this, "importPackage", {
                 }
             }
         }
+
+        Object.defineProperty(global, "__noSuchProperty__", {
+            writable: true, configurable: true, enumerable: false,
+            value: __noSuchProperty__
+        });
 
         var prefix = "[JavaPackage ";
         return function() {

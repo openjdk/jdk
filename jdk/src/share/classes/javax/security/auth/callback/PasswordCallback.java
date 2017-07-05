@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,8 @@ package javax.security.auth.callback;
 
 /**
  * <p> Underlying security services instantiate and pass a
- * <code>PasswordCallback</code> to the <code>handle</code>
- * method of a <code>CallbackHandler</code> to retrieve password information.
+ * {@code PasswordCallback} to the {@code handle}
+ * method of a {@code CallbackHandler} to retrieve password information.
  *
  * @see javax.security.auth.callback.CallbackHandler
  */
@@ -53,7 +53,7 @@ public class PasswordCallback implements Callback, java.io.Serializable {
     private char[] inputPassword;
 
     /**
-     * Construct a <code>PasswordCallback</code> with a prompt
+     * Construct a {@code PasswordCallback} with a prompt
      * and a boolean specifying whether the password should be displayed
      * as it is being typed.
      *
@@ -64,8 +64,8 @@ public class PasswordCallback implements Callback, java.io.Serializable {
      * @param echoOn true if the password should be displayed
      *                  as it is being typed.
      *
-     * @exception IllegalArgumentException if <code>prompt</code> is null or
-     *                  if <code>prompt</code> has a length of 0.
+     * @exception IllegalArgumentException if {@code prompt} is null or
+     *                  if {@code prompt} has a length of 0.
      */
     public PasswordCallback(String prompt, boolean echoOn) {
         if (prompt == null || prompt.length() == 0)

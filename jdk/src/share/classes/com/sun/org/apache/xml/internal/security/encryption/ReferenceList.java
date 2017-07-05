@@ -2,27 +2,27 @@
  * reserved comment block
  * DO NOT REMOVE OR ALTER!
  */
-/*
- * Copyright  2003-2004 The Apache Software Foundation.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License. You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied. See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package com.sun.org.apache.xml.internal.security.encryption;
 
-
 import java.util.Iterator;
-
 
 /**
  * <code>ReferenceList</code> is an element that contains pointers from a key
@@ -45,10 +45,12 @@ import java.util.Iterator;
  * @see Reference
  */
 public interface ReferenceList {
-        /** DATA TAG */
-    public static final int DATA_REFERENCE = 0x00000001;
+
+    /** DATA TAG */
+    int DATA_REFERENCE = 0x00000001;
+
     /** KEY TAG */
-    public static final int KEY_REFERENCE  = 0x00000002;
+    int KEY_REFERENCE  = 0x00000002;
 
     /**
      * Adds a reference to this reference list.
@@ -57,21 +59,21 @@ public interface ReferenceList {
      * @throws IllegalAccessException if the <code>Reference</code> is not an
      *   instance of <code>DataReference</code> or <code>KeyReference</code>.
      */
-    public void add(Reference reference);
+    void add(Reference reference);
 
     /**
      * Removes a reference from the <code>ReferenceList</code>.
      *
      * @param reference the reference to remove.
      */
-    public void remove(Reference reference);
+    void remove(Reference reference);
 
     /**
      * Returns the size of the <code>ReferenceList</code>.
      *
      * @return the size of the <code>ReferenceList</code>.
      */
-    public int size();
+    int size();
 
     /**
      * Indicates if the <code>ReferenceList</code> is empty.
@@ -79,29 +81,29 @@ public interface ReferenceList {
      * @return <code><b>true</b></code> if the <code>ReferenceList</code> is
      *     empty, else <code><b>false</b></code>.
      */
-    public boolean isEmpty();
+    boolean isEmpty();
 
     /**
      * Returns an <code>Iterator</code> over all the <code>Reference</code>s
-     * contatined in this <code>ReferenceList</code>.
+     * contained in this <code>ReferenceList</code>.
      *
      * @return Iterator.
      */
-    public Iterator<Reference> getReferences();
+    Iterator<Reference> getReferences();
 
     /**
      * <code>DataReference</code> factory method. Returns a
      * <code>DataReference</code>.
      * @param uri
-     * @return
+     * @return a <code>DataReference</code>.
      */
-    public Reference newDataReference(String uri);
+    Reference newDataReference(String uri);
 
     /**
      * <code>KeyReference</code> factory method. Returns a
      * <code>KeyReference</code>.
      * @param uri
-     * @return
+     * @return a <code>KeyReference</code>.
      */
-    public Reference newKeyReference(String uri);
+    Reference newKeyReference(String uri);
 }
