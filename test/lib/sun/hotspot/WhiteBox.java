@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.hotspot;
 import java.lang.reflect.Executable;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.security.BasicPermission;
@@ -249,6 +250,23 @@ public class WhiteBox {
       throw new RuntimeException(name + " not found");
     }
     return offset;
+  }
+  public native Boolean getMethodBooleanOption(Executable method, String name);
+  public native Long    getMethodIntxOption(Executable method, String name);
+  public native Long    getMethodUintxOption(Executable method, String name);
+  public native Double  getMethodDoubleOption(Executable method, String name);
+  public native String  getMethodStringOption(Executable method, String name);
+  private final List<BiFunction<Executable,String,Object>> methodOptionGetters
+      = Arrays.asList(this::getMethodBooleanOption, this::getMethodIntxOption,
+          this::getMethodUintxOption, this::getMethodDoubleOption,
+          this::getMethodStringOption);
+
+  public Object getMethodOption(Executable method, String name) {
+    return methodOptionGetters.stream()
+                              .map(f -> f.apply(method, name))
+                              .filter(x -> x != null)
+                              .findAny()
+                              .orElse(null);
   }
 
   // Safepoint Checking

@@ -41,6 +41,7 @@ import java.util.concurrent.TimeUnit;
  * @library /lib/testlibrary/jsr292 /lib/testlibrary/
  * @compile CatchExceptionTest.java
  * @run main/othervm -esa test.java.lang.invoke.MethodHandles.CatchExceptionTest
+ * @key intermittent
  */
 public class CatchExceptionTest {
     private static final List<Class<?>> ARGS_CLASSES;

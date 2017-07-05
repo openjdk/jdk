@@ -2,7 +2,7 @@
 # It also contains test-suite configuration information.
 
 # The list of keywords supported in the entire test suite
-keys=2d dnd i18n
+keys=2d dnd i18n intermittent
 
 # Tests that must run in othervm mode
 othervm.dirs=java/awt java/beans javax/accessibility javax/imageio javax/sound javax/print javax/management com/sun/awt sun/awt sun/java2d sun/pisces javax/xml/jaxp/testng/validation

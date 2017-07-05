@@ -26,6 +26,7 @@
  * @run main/othervm LdapTimeoutTest
  * @bug 7094377 8000487 6176036 7056489
  * @summary Timeout tests for ldap
+ * @key intermittent
  */
 
 import java.net.Socket;

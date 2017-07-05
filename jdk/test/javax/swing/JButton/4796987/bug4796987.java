@@ -27,14 +27,15 @@
  * @summary XP Only: JButton.setBorderPainted() does not work with XP L&F
  * @author Alexander Scherbatiy
  * @library ../../regtesthelpers
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
  * @build Util
  * @run main bug4796987
  */
 
+import jdk.testlibrary.OSInfo;
 import java.awt.*;
 import javax.swing.*;
-import sun.awt.OSInfo;
-import sun.awt.SunToolkit;
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
 public class bug4796987 {
@@ -51,7 +52,6 @@ public class bug4796987 {
     }
 
     private static void testButtonBorder() throws Exception {
-        SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
         Robot robot = new Robot();
         robot.setAutoDelay(50);
 
@@ -62,7 +62,7 @@ public class bug4796987 {
             }
         });
 
-        toolkit.realSync();
+        robot.waitForIdle();
         Thread.sleep(500);
 
         Point p1 = Util.getCenterPoint(button1);

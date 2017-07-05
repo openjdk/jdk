@@ -34,6 +34,7 @@
 #include "memory/resourceArea.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"

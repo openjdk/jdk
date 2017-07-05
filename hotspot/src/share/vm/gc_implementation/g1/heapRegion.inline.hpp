@@ -196,4 +196,8 @@ inline void HeapRegion::note_end_of_copying(bool during_initial_mark) {
   }
 }
 
+inline bool HeapRegion::in_collection_set() const {
+  return G1CollectedHeap::heap()->is_in_cset(this);
+}
+
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,6 @@ public class TextInputCallback implements Callback, java.io.Serializable {
     /**
      * Construct a {@code TextInputCallback} with a prompt.
      *
-     * <p>
-     *
      * @param prompt the prompt used to request the information.
      *
      * @exception IllegalArgumentException if {@code prompt} is null
@@ -73,9 +71,7 @@ public class TextInputCallback implements Callback, java.io.Serializable {
      * Construct a {@code TextInputCallback} with a prompt
      * and default input value.
      *
-     * <p>
-     *
-     * @param prompt the prompt used to request the information. <p>
+     * @param prompt the prompt used to request the information.
      *
      * @param defaultText the text to be used as the default text displayed
      *                  with the prompt.
@@ -97,8 +93,6 @@ public class TextInputCallback implements Callback, java.io.Serializable {
     /**
      * Get the prompt.
      *
-     * <p>
-     *
      * @return the prompt.
      */
     public String getPrompt() {
@@ -107,8 +101,6 @@ public class TextInputCallback implements Callback, java.io.Serializable {
 
     /**
      * Get the default text.
-     *
-     * <p>
      *
      * @return the default text, or null if this {@code TextInputCallback}
      *          was not instantiated with {@code defaultText}.
@@ -120,8 +112,6 @@ public class TextInputCallback implements Callback, java.io.Serializable {
     /**
      * Set the retrieved text.
      *
-     * <p>
-     *
      * @param text the retrieved text, which may be null.
      *
      * @see #getText
@@ -132,8 +122,6 @@ public class TextInputCallback implements Callback, java.io.Serializable {
 
     /**
      * Get the retrieved text.
-     *
-     * <p>
      *
      * @return the retrieved text, which may be null.
      *
