@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,27 +21,30 @@
  * questions.
  */
 
-
-package sun.awt.windows;
-
-import java.awt.Image;
-import java.awt.Component;
-
-/**
- * This sun-private class exists solely to get a handle to
- * the back buffer associated with a Component.  If that
- * Component has a BufferStrategy with >1 buffer, then the
- * Image subclass associated with that buffer will be returned.
- * Note: the class is used by the JAWT3d.
+/*
+ * @test
+ * @bug 8055289
+ * @library /testlibrary
+ * @build UnsafeMallocLimit
+ * @run main/othervm -Xmx32m -XX:NativeMemoryTracking=summary UnsafeMallocLimit
  */
-public final class WBufferStrategy {
 
-    private static native void initIDs(Class <?> componentClass);
+import com.oracle.java.testlibrary.*;
+import sun.misc.Unsafe;
 
-    static {
-        initIDs(Component.class);
+public class UnsafeMallocLimit {
+
+    public static void main(String args[]) throws Exception {
+        if (Platform.is32bit()) {
+            Unsafe unsafe = Utils.getUnsafe();
+            try {
+                unsafe.allocateMemory(1 << 30);
+                throw new RuntimeException("Did not get expected OOME");
+            } catch (OutOfMemoryError e) {
+                // Expected exception
+            }
+        } else {
+            System.out.println("Test only valid on 32-bit platforms");
+        }
     }
-
-    public static native Image getDrawBuffer(Component comp);
-
 }

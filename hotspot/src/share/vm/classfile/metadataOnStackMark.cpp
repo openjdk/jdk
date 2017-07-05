@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ NOT_PRODUCT(bool MetadataOnStackMark::_is_active = false;)
 // Walk metadata on the stack and mark it so that redefinition doesn't delete
 // it.  Class unloading also walks the previous versions and might try to
 // delete it, so this class is used by class unloading also.
-MetadataOnStackMark::MetadataOnStackMark() {
+MetadataOnStackMark::MetadataOnStackMark(bool has_redefined_a_class) {
   assert(SafepointSynchronize::is_at_safepoint(), "sanity check");
   NOT_PRODUCT(_is_active = true;)
   if (_marked_objects == NULL) {
@@ -49,7 +49,7 @@ MetadataOnStackMark::MetadataOnStackMark() {
   }
 
   Threads::metadata_do(Metadata::mark_on_stack);
-  if (JvmtiExport::has_redefined_a_class()) {
+  if (has_redefined_a_class) {
     CodeCache::alive_nmethods_do(nmethod::mark_on_stack);
   }
   CompileBroker::mark_on_stack();

@@ -52,6 +52,7 @@
 #include "oops/typeArrayKlass.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/methodHandles.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/fieldType.hpp"
 #include "runtime/handles.inline.hpp"
@@ -2274,7 +2275,11 @@ methodHandle SystemDictionary::find_method_handle_intrinsic(vmIntrinsics::ID iid
     m = Method::make_method_handle_intrinsic(iid, signature, CHECK_(empty));
     CompileBroker::compile_method(m, InvocationEntryBci, CompLevel_highest_tier,
                                   methodHandle(), CompileThreshold, "MH", CHECK_(empty));
-
+    // Check if we need to have compiled code but we don't.
+    if (!Arguments::is_interpreter_only() && !m->has_compiled_code()) {
+      THROW_MSG_(vmSymbols::java_lang_VirtualMachineError(),
+                 "out of space in CodeCache for method handle intrinsic", empty);
+    }
     // Now grab the lock.  We might have to throw away the new method,
     // if a racing thread has managed to install one at the same time.
     {
@@ -2288,6 +2293,9 @@ methodHandle SystemDictionary::find_method_handle_intrinsic(vmIntrinsics::ID iid
   }
 
   assert(spe != NULL && spe->method() != NULL, "");
+  assert(Arguments::is_interpreter_only() || (spe->method()->has_compiled_code() &&
+         spe->method()->code()->entry_point() == spe->method()->from_compiled_entry()),
+         "MH intrinsic invariant");
   return spe->method();
 }
 

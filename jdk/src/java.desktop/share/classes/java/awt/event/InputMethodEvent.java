@@ -418,7 +418,8 @@ public class InputMethodEvent extends AWTEvent {
     private void readObject(ObjectInputStream s) throws ClassNotFoundException, IOException {
         s.defaultReadObject();
         if (when == 0) {
-            when = getMostRecentEventTimeForSource(this.source);
+            // Can't use getMostRecentEventTimeForSource because source is always null during deserialization
+            when = EventQueue.getMostRecentEventTime();
         }
     }
 

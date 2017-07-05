@@ -55,7 +55,6 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
    */
     private final static int AWT_MULTICLICK_SMUDGE = 4;
     // ButtonXXX events stuff
-    static int rbutton = 0;
     static int lastX = 0, lastY = 0;
     static long lastTime = 0;
     static long lastButton = 0;
@@ -632,23 +631,6 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
         return res;
     }
 
-    /**
-     * Returns true if this event is disabled and shouldn't be passed to Java.
-     * Default implementation returns false for all events.
-     */
-    static int getRightButtonNumber() {
-        if (rbutton == 0) { // not initialized yet
-            XToolkit.awtLock();
-            try {
-                rbutton = XlibWrapper.XGetPointerMapping(XToolkit.getDisplay(), XlibWrapper.ibuffer, 3);
-            }
-            finally {
-                XToolkit.awtUnlock();
-            }
-        }
-        return rbutton;
-    }
-
     static int getMouseMovementSmudge() {
         //TODO: It's possible to read corresponding settings
         return AWT_MULTICLICK_SMUDGE;
@@ -716,11 +698,7 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
             /*
                Check for popup trigger !!
             */
-            if (lbutton == getRightButtonNumber() || lbutton > 2) {
-                popupTrigger = true;
-            } else {
-                popupTrigger = false;
-            }
+            popupTrigger = (lbutton == 3);
         }
 
         button = XConstants.buttons[lbutton - 1];

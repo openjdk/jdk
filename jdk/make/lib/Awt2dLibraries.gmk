@@ -217,10 +217,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       -I$(JDK_OUTPUTDIR)/gensrc_headers/java.base \
       #
   LIBAWT_EXFILES += \
-      sun/java2d/d3d/D3DPipeline.cpp \
       sun/java2d/d3d/D3DShaderGen.c \
       sun/awt/image/cvutils/img_colors.c \
-      sun/windows/WBufferStrategy.cpp \
       #
 
   LIBAWT_LANG := C++

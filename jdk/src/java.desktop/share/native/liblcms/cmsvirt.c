@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2011 Marti Maria Saguer
+//  Copyright (c) 1998-2014 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -1019,7 +1019,7 @@ typedef struct {
 
 static const cmsAllowedLUT AllowedLUTTypes[] = {
 
-    { FALSE, 0,              cmsSigLut16Type,    4,  { cmsSigMatrixElemType,  cmsSigCurveSetElemType, cmsSigCLutElemType, cmsSigCurveSetElemType}},
+    { FALSE, 0,              cmsSigLut16Type,    4,  { cmsSigMatrixElemType,   cmsSigCurveSetElemType, cmsSigCLutElemType, cmsSigCurveSetElemType}},
     { FALSE, 0,              cmsSigLut16Type,    3,  { cmsSigCurveSetElemType, cmsSigCLutElemType, cmsSigCurveSetElemType}},
     { FALSE, 0,              cmsSigLut16Type,    2,  { cmsSigCurveSetElemType, cmsSigCLutElemType}},
     { TRUE , 0,              cmsSigLutAtoBType,  1,  { cmsSigCurveSetElemType }},
@@ -1150,7 +1150,7 @@ cmsHPROFILE CMSEXPORT cmsTransform2DeviceLink(cmsHTRANSFORM hTransform, cmsFloat
     if (AllowedLUT == NULL) {
 
         // Try to optimize
-        _cmsOptimizePipeline(&LUT, xform ->RenderingIntent, &FrmIn, &FrmOut, &dwFlags);
+        _cmsOptimizePipeline(ContextID, &LUT, xform ->RenderingIntent, &FrmIn, &FrmOut, &dwFlags);
         AllowedLUT = FindCombination(LUT, Version >= 4.0, DestinationTag);
 
     }
@@ -1159,7 +1159,7 @@ cmsHPROFILE CMSEXPORT cmsTransform2DeviceLink(cmsHTRANSFORM hTransform, cmsFloat
     if (AllowedLUT == NULL) {
 
         dwFlags |= cmsFLAGS_FORCE_CLUT;
-        _cmsOptimizePipeline(&LUT, xform ->RenderingIntent, &FrmIn, &FrmOut, &dwFlags);
+        _cmsOptimizePipeline(ContextID, &LUT, xform ->RenderingIntent, &FrmIn, &FrmOut, &dwFlags);
 
         // Put identity curves if needed
         if (cmsPipelineGetPtrToFirstStage(LUT) ->Type != cmsSigCurveSetElemType)

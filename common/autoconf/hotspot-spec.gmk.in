@@ -97,8 +97,6 @@ ifeq ($(JVM_INTERPRETER), cpp)
 endif
 
 HOTSPOT_MAKE_ARGS:=@HOTSPOT_MAKE_ARGS@ @STATIC_CXX_SETTING@
-# This is used from the libjvm build for C/C++ code.
-HOTSPOT_BUILD_JOBS:=$(JOBS)
 # Control wether Hotspot runs Queens test after building
 TEST_IN_BUILD=@TEST_IN_BUILD@
 

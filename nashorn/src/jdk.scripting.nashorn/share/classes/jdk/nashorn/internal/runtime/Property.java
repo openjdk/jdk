@@ -101,7 +101,7 @@ public abstract class Property implements Serializable {
     private final int slot;
 
     /** SwitchPoint that is invalidated when property is changed, optional */
-    protected SwitchPoint changeCallback;
+    protected transient SwitchPoint changeCallback;
 
     private static final long serialVersionUID = 2099814273074501176L;
 
