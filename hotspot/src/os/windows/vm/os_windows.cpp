@@ -1608,6 +1608,15 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
   if (nl != NULL) *nl = '\0';
 }
 
+int os::log_vsnprintf(char* buf, size_t len, const char* fmt, va_list args) {
+  int ret = vsnprintf(buf, len, fmt, args);
+  // Get the correct buffer size if buf is too small
+  if (ret < 0) {
+    return _vscprintf(fmt, args);
+  }
+  return ret;
+}
+
 void os::print_os_info_brief(outputStream* st) {
   os::print_os_info(st);
 }

@@ -28,6 +28,7 @@
  * @summary Synchronous signals during error reporting may terminate or hang VM process
  * @library /testlibrary
  * @author Thomas Stuefe (SAP)
+ * @requires os.family != "mac"
  * @modules java.base/sun.misc
  *          java.management
  */

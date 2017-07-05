@@ -38,7 +38,7 @@ import com.sun.management.HotSpotDiagnosticMXBean;
  * @bug 6455258
  * @summary Sanity test for com.sun.management.HotSpotDiagnosticMXBean.dumpHeap method
  * @library /lib/testlibrary
- * @library /../../test/lib/share/classes
+ * @library /test/lib/share/classes
  * @build jdk.testlibrary.*
  * @build jdk.test.lib.hprof.*
  * @build jdk.test.lib.hprof.module.*

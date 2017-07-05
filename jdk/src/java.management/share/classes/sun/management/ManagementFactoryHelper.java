@@ -39,9 +39,13 @@ import java.security.PrivilegedExceptionAction;
 
 import jdk.internal.misc.JavaNioAccess;
 import jdk.internal.misc.SharedSecrets;
-import sun.util.logging.LoggingSupport;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.security.PrivilegedAction;
 
 /**
  * ManagementFactoryHelper provides static factory methods to create
@@ -141,11 +145,15 @@ public class ManagementFactoryHelper {
     }
 
     public static PlatformLoggingMXBean getPlatformLoggingMXBean() {
-        if (LoggingSupport.isAvailable()) {
+        if (LoggingMXBeanSupport.isAvailable()) {
             return PlatformLoggingImpl.instance;
         } else {
             return null;
         }
+    }
+
+    public static boolean isPlatformLoggingMXBeanAvailable() {
+        return LoggingMXBeanSupport.isAvailable();
     }
 
     /**
@@ -165,8 +173,44 @@ public class ManagementFactoryHelper {
         extends PlatformLoggingMXBean, java.util.logging.LoggingMXBean {
     }
 
+    // This is a trick: if java.util.logging is not present then
+    // attempting to access something that implements
+    // java.util.logging.LoggingMXBean will trigger a CNFE.
+    // So we cannot directly call any static method or access any static field
+    // on PlatformLoggingImpl, as we would risk raising a CNFE.
+    // Instead we use this intermediate LoggingMXBeanSupport class to determine
+    // whether java.util.logging is present, and load the actual LoggingMXBean
+    // implementation.
+    //
+    static final class LoggingMXBeanSupport {
+        final static Object loggingImpl =
+                AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            @Override
+            public Object run() {
+                try {
+                    // create a LoggingProxyImpl instance when
+                    // java.util.logging classes exist
+                    Class<?> c = Class.forName("java.util.logging.Logging", true, null);
+                    Constructor<?> cons = c.getDeclaredConstructor();
+                    cons.setAccessible(true);
+                    return cons.newInstance();
+                } catch (ClassNotFoundException cnf) {
+                    return null;
+                } catch (NoSuchMethodException | InstantiationException
+                        | IllegalAccessException | InvocationTargetException e) {
+                    throw new AssertionError(e);
+                }
+            }});
+
+        static boolean isAvailable() {
+            return loggingImpl != null;
+        }
+    }
+
     static class PlatformLoggingImpl implements LoggingMXBean
     {
+        final static java.util.logging.LoggingMXBean impl =
+                (java.util.logging.LoggingMXBean) LoggingMXBeanSupport.loggingImpl;
         final static PlatformLoggingMXBean instance = new PlatformLoggingImpl();
         final static String LOGGING_MXBEAN_NAME = "java.util.logging:type=Logging";
 
@@ -188,22 +232,22 @@ public class ManagementFactoryHelper {
 
         @Override
         public java.util.List<String> getLoggerNames() {
-            return LoggingSupport.getLoggerNames();
+            return impl.getLoggerNames();
         }
 
         @Override
         public String getLoggerLevel(String loggerName) {
-            return LoggingSupport.getLoggerLevel(loggerName);
+            return impl.getLoggerLevel(loggerName);
         }
 
         @Override
         public void setLoggerLevel(String loggerName, String levelName) {
-            LoggingSupport.setLoggerLevel(loggerName, levelName);
+            impl.setLoggerLevel(loggerName, levelName);
         }
 
         @Override
         public String getParentLoggerName(String loggerName) {
-            return LoggingSupport.getParentLoggerName(loggerName);
+            return impl.getParentLoggerName(loggerName);
         }
     }
 

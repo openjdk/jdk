@@ -34,7 +34,6 @@ SUNWprivate_1.1 {
                 jio_snprintf;
                 jio_vfprintf;
                 jio_vsnprintf;
-                fork1;
                 numa_warn;
                 numa_error;
 

@@ -550,7 +550,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             if (swap) {
                 method.swap();
             }
-            for (int i = 0; i < depth; i++) {
+            if (depth > 1) {
+                method.load(depth);
+                method.invoke(ScriptObject.GET_PROTO_DEPTH);
+            } else {
                 method.invoke(ScriptObject.GET_PROTO);
             }
             if (swap) {
@@ -1379,7 +1382,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return;
         }
         method.loadCompilerConstant(SCOPE);
-        for(int i = 0; i < count; ++i) {
+        if (count > 1) {
+            method.load(count);
+            method.invoke(ScriptObject.GET_PROTO_DEPTH);
+        } else {
             method.invoke(ScriptObject.GET_PROTO);
         }
         method.storeCompilerConstant(SCOPE);
@@ -3317,9 +3323,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         if (needsScope) {
             method.loadCompilerConstant(SCOPE);
-        }
-
-        if (needsScope) {
             loadExpressionUnbounded(init);
             // block scoped variables need a DECLARE flag to signal end of temporal dead zone (TDZ)
             final int flags = getScopeCallSiteFlags(identSymbol) | (varNode.isBlockScoped() ? CALLSITE_DECLARE : 0);

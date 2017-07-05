@@ -550,19 +550,6 @@ else
 #LINK_INTO = LIBJVM
 endif
 
-# Solaris platforms collect lots of redundant file-ident lines,
-# to the point of wasting a significant percentage of file space.
-# (The text is stored in ELF .comment sections, contributed by
-# all "#pragma ident" directives in header and source files.)
-# This command "compresses" the .comment sections simply by
-# removing repeated lines.  The data can be extracted from
-# binaries in the field by using "mcs -p libjvm.so" or the older
-# command "what libjvm.so".
-LINK_LIB.CXX/POST_HOOK += $(MCS) -c $@ || exit 1;
-# (The exit 1 is necessary to cause a build failure if the command fails and
-# multiple commands are strung together, and the final semicolon is necessary
-# since the hook must terminate itself as a valid command.)
-
 # Also, strip debug and line number information (worth about 1.7Mb).
 # If we can create .debuginfo files, then the VM is stripped in vm.make
 # and this macro is not used.
