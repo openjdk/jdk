@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 /* @test
+ * @bug 4286936 8143100
  * @summary Unit test for server-socket channels
  * @library ..
  */
@@ -130,7 +131,7 @@ public class Basic {
         Client client = new Client(port, block);
         server.start();
         client.start();
-        if ((server.finish(2000) & client.finish(100)) == 0)
+        if ((server.finish(0) & client.finish(0)) == 0)
             throw new Exception("Failure");
         log.println();
     }
