@@ -26,12 +26,16 @@
 package sun.tools.jar;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.zip.*;
 import java.util.jar.*;
 import java.util.jar.Manifest;
 import java.text.MessageFormat;
 import sun.misc.JarIndex;
+import static sun.misc.JarIndex.INDEX_NAME;
+import static java.util.jar.JarFile.MANIFEST_NAME;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /**
  * This class implements a simple utility for creating files in the JAR
@@ -58,7 +62,6 @@ class Main {
     // Directories specified by "-C" operation.
     Set<String> paths = new HashSet<String>();
 
-    CRC32 crc32 = new CRC32();
     /*
      * cflag: create
      * uflag: update
@@ -71,10 +74,8 @@ class Main {
      */
     boolean cflag, uflag, xflag, tflag, vflag, flag0, Mflag, iflag;
 
-    static final String MANIFEST = JarFile.MANIFEST_NAME;
     static final String MANIFEST_DIR = "META-INF/";
     static final String VERSION = "1.0";
-    static final String INDEX = JarIndex.INDEX_NAME;
 
     private static ResourceBundle rsrc;
 
@@ -126,9 +127,21 @@ class Main {
         this.program = program;
     }
 
+    /**
+     * Creates a new empty temporary file in the same directory as the
+     * specified file.  A variant of File.createTempFile.
+     */
+    private static File createTempFileInSameDirectoryAs(File file)
+        throws IOException {
+        File dir = file.getParentFile();
+        if (dir == null)
+            dir = new File(".");
+        return File.createTempFile("jartmp", null, dir);
+    }
+
     private boolean ok;
 
-    /*
+    /**
      * Starts main program with the specified arguments.
      */
     public synchronized boolean run(String args[]) {
@@ -161,7 +174,7 @@ class Main {
                     }
                     addVersion(manifest);
                     addCreatedBy(manifest);
-                    if (isAmbigousMainClass(manifest)) {
+                    if (isAmbiguousMainClass(manifest)) {
                         if (in != null) {
                             in.close();
                         }
@@ -195,9 +208,7 @@ class Main {
                 FileOutputStream out;
                 if (fname != null) {
                     inputFile = new File(fname);
-                    String path = inputFile.getParent();
-                    tmpFile = File.createTempFile("tmp", null,
-                              new File((path == null) ? "." : path));
+                    tmpFile = createTempFileInSameDirectoryAs(inputFile);
                     in = new FileInputStream(inputFile);
                     out = new FileOutputStream(tmpFile);
                 } else {
@@ -208,7 +219,8 @@ class Main {
                 InputStream manifest = (!Mflag && (mname != null)) ?
                     (new FileInputStream(mname)) : null;
                 expand(null, files, true);
-                boolean updateOk = update(in, new BufferedOutputStream(out), manifest, null);
+                boolean updateOk = update(in, new BufferedOutputStream(out),
+                                          manifest, null);
                 if (ok) {
                     ok = updateOk;
                 }
@@ -270,8 +282,8 @@ class Main {
         return ok;
     }
 
-    /*
-     * Parse command line arguments.
+    /**
+     * Parses command line arguments.
      */
     boolean parseArgs(String args[]) {
         /* Preprocess and expand @file arguments */
@@ -405,7 +417,7 @@ class Main {
         return true;
     }
 
-    /*
+    /**
      * Expands list of files to process into full list of all files that
      * can be found by recursively descending directories.
      */
@@ -442,7 +454,7 @@ class Main {
         }
     }
 
-    /*
+    /**
      * Creates a new JAR file.
      */
     void create(OutputStream out, Manifest manifest)
@@ -461,7 +473,7 @@ class Main {
             e.setSize(0);
             e.setCrc(0);
             zos.putNextEntry(e);
-            e = new ZipEntry(MANIFEST);
+            e = new ZipEntry(MANIFEST_NAME);
             e.setTime(System.currentTimeMillis());
             if (flag0) {
                 crc32Manifest(e, manifest);
@@ -476,8 +488,32 @@ class Main {
         zos.close();
     }
 
-    /*
-     * update an existing jar file.
+    private char toUpperCaseASCII(char c) {
+        return (c < 'a' || c > 'z') ? c : (char) (c + 'A' - 'a');
+    }
+
+    /**
+     * Compares two strings for equality, ignoring case.  The second
+     * argument must contain only upper-case ASCII characters.
+     * We don't want case comparison to be locale-dependent (else we
+     * have the notorious "turkish i bug").
+     */
+    private boolean equalsIgnoreCase(String s, String upper) {
+        assert upper.toUpperCase(java.util.Locale.ENGLISH).equals(upper);
+        int len;
+        if ((len = s.length()) != upper.length())
+            return false;
+        for (int i = 0; i < len; i++) {
+            char c1 = s.charAt(i);
+            char c2 = upper.charAt(i);
+            if (c1 != c2 && toUpperCaseASCII(c1) != c2)
+                return false;
+        }
+        return true;
+    }
+
+    /**
+     * Updates an existing jar file.
      */
     boolean update(InputStream in, OutputStream out,
                    InputStream newManifest,
@@ -487,8 +523,6 @@ class Main {
         ZipOutputStream zos = new JarOutputStream(out);
         ZipEntry e = null;
         boolean foundManifest = false;
-        byte[] buf = new byte[1024];
-        int n = 0;
         boolean updateOk = true;
 
         if (jarIndex != null) {
@@ -499,10 +533,9 @@ class Main {
         while ((e = zis.getNextEntry()) != null) {
             String name = e.getName();
 
-            boolean isManifestEntry = name.toUpperCase(
-                                            java.util.Locale.ENGLISH).
-                                        equals(MANIFEST);
-            if ((name.toUpperCase().equals(INDEX) && jarIndex != null)
+            boolean isManifestEntry = equalsIgnoreCase(name, MANIFEST_NAME);
+
+            if ((jarIndex != null && equalsIgnoreCase(name, INDEX_NAME))
                 || (Mflag && isManifestEntry)) {
                 continue;
             } else if (isManifestEntry && ((newManifest != null) ||
@@ -513,9 +546,9 @@ class Main {
                     // might need it below, and we can't re-read the same data
                     // twice.
                     FileInputStream fis = new FileInputStream(mname);
-                    boolean ambigous = isAmbigousMainClass(new Manifest(fis));
+                    boolean ambiguous = isAmbiguousMainClass(new Manifest(fis));
                     fis.close();
-                    if (ambigous) {
+                    if (ambiguous) {
                         return false;
                     }
                 }
@@ -539,9 +572,7 @@ class Main {
                         e2.setCrc(e.getCrc());
                     }
                     zos.putNextEntry(e2);
-                    while ((n = zis.read(buf, 0, buf.length)) != -1) {
-                        zos.write(buf, 0, n);
-                    }
+                    copy(zis, zos);
                 } else { // replace with the new files
                     File f = entryMap.get(name);
                     addFile(zos, f);
@@ -558,7 +589,7 @@ class Main {
         if (!foundManifest) {
             if (newManifest != null) {
                 Manifest m = new Manifest(newManifest);
-                updateOk = !isAmbigousMainClass(m);
+                updateOk = !isAmbiguousMainClass(m);
                 if (updateOk) {
                     updateManifest(m, zos);
                 }
@@ -575,23 +606,16 @@ class Main {
     private void addIndex(JarIndex index, ZipOutputStream zos)
         throws IOException
     {
-        ZipEntry e = new ZipEntry(INDEX);
+        ZipEntry e = new ZipEntry(INDEX_NAME);
         e.setTime(System.currentTimeMillis());
         if (flag0) {
-            e.setMethod(ZipEntry.STORED);
-            File ifile = File.createTempFile("index", null, new File("."));
-            BufferedOutputStream bos = new BufferedOutputStream
-                (new FileOutputStream(ifile));
-            index.write(bos);
-            crc32File(e, ifile);
-            bos.close();
-            ifile.delete();
+            CRC32OutputStream os = new CRC32OutputStream();
+            index.write(os);
+            os.updateEntry(e);
         }
         zos.putNextEntry(e);
         index.write(zos);
-        if (vflag) {
-            // output(getMsg("out.update.manifest"));
-        }
+        zos.closeEntry();
     }
 
     private void updateManifest(Manifest m, ZipOutputStream zos)
@@ -602,10 +626,9 @@ class Main {
         if (ename != null) {
             addMainClass(m, ename);
         }
-        ZipEntry e = new ZipEntry(MANIFEST);
+        ZipEntry e = new ZipEntry(MANIFEST_NAME);
         e.setTime(System.currentTimeMillis());
         if (flag0) {
-            e.setMethod(ZipEntry.STORED);
             crc32Manifest(e, m);
         }
         zos.putNextEntry(e);
@@ -620,7 +643,8 @@ class Main {
         name = name.replace(File.separatorChar, '/');
         String matchPath = "";
         for (String path : paths) {
-            if (name.startsWith(path) && (path.length() > matchPath.length())) {
+            if (name.startsWith(path)
+                && (path.length() > matchPath.length())) {
                 matchPath = path;
             }
         }
@@ -658,7 +682,7 @@ class Main {
         global.put(Attributes.Name.MAIN_CLASS, mainApp);
     }
 
-    private boolean isAmbigousMainClass(Manifest m) {
+    private boolean isAmbiguousMainClass(Manifest m) {
         if (ename != null) {
             Attributes global = m.getMainAttributes();
             if ((global.get(Attributes.Name.MAIN_CLASS) != null)) {
@@ -670,7 +694,7 @@ class Main {
         return false;
     }
 
-    /*
+    /**
      * Adds a new file entry to the ZIP output stream.
      */
     void addFile(ZipOutputStream zos, File file) throws IOException {
@@ -684,7 +708,7 @@ class Main {
 
         if (name.equals("") || name.equals(".") || name.equals(zname)) {
             return;
-        } else if ((name.equals(MANIFEST_DIR) || name.equals(MANIFEST))
+        } else if ((name.equals(MANIFEST_DIR) || name.equals(MANIFEST_NAME))
                    && !Mflag) {
             if (vflag) {
                 output(formatMsg("out.ignore.entry", name));
@@ -704,19 +728,11 @@ class Main {
             e.setSize(0);
             e.setCrc(0);
         } else if (flag0) {
-            e.setSize(size);
-            e.setMethod(ZipEntry.STORED);
             crc32File(e, file);
         }
         zos.putNextEntry(e);
         if (!isDir) {
-            byte[] buf = new byte[8192];
-            int len;
-            InputStream is = new BufferedInputStream(new FileInputStream(file));
-            while ((len = is.read(buf, 0, buf.length)) != -1) {
-                zos.write(buf, 0, len);
-            }
-            is.close();
+            copy(file, zos);
         }
         zos.closeEntry();
         /* report how much compression occurred. */
@@ -737,39 +753,83 @@ class Main {
         }
     }
 
-    /*
-     * compute the crc32 of a file.  This is necessary when the ZipOutputStream
-     * is in STORED mode.
+    /**
+     * A buffer for use only by copy(InputStream, OutputStream).
+     * Not as clean as allocating a new buffer as needed by copy,
+     * but significantly more efficient.
      */
-    private void crc32Manifest(ZipEntry e, Manifest m) throws IOException {
-        crc32.reset();
-        CRC32OutputStream os = new CRC32OutputStream(crc32);
-        m.write(os);
-        e.setSize((long) os.n);
-        e.setCrc(crc32.getValue());
+    private byte[] copyBuf = new byte[8192];
+
+    /**
+     * Copies all bytes from the input stream to the output stream.
+     * Does not close or flush either stream.
+     *
+     * @param from the input stream to read from
+     * @param to the output stream to write to
+     * @throws IOException if an I/O error occurs
+     */
+    private void copy(InputStream from, OutputStream to) throws IOException {
+        int n;
+        while ((n = from.read(copyBuf)) != -1)
+            to.write(copyBuf, 0, n);
     }
 
-    /*
-     * compute the crc32 of a file.  This is necessary when the ZipOutputStream
-     * is in STORED mode.
+    /**
+     * Copies all bytes from the input file to the output stream.
+     * Does not close or flush the output stream.
+     *
+     * @param from the input file to read from
+     * @param to the output stream to write to
+     * @throws IOException if an I/O error occurs
+     */
+    private void copy(File from, OutputStream to) throws IOException {
+        InputStream in = new FileInputStream(from);
+        try {
+            copy(in, to);
+        } finally {
+            in.close();
+        }
+    }
+
+    /**
+     * Copies all bytes from the input stream to the output file.
+     * Does not close the input stream.
+     *
+     * @param from the input stream to read from
+     * @param to the output file to write to
+     * @throws IOException if an I/O error occurs
+     */
+    private void copy(InputStream from, File to) throws IOException {
+        OutputStream out = new FileOutputStream(to);
+        try {
+            copy(from, out);
+        } finally {
+            out.close();
+        }
+    }
+
+    /**
+     * Computes the crc32 of a Manifest.  This is necessary when the
+     * ZipOutputStream is in STORED mode.
+     */
+    private void crc32Manifest(ZipEntry e, Manifest m) throws IOException {
+        CRC32OutputStream os = new CRC32OutputStream();
+        m.write(os);
+        os.updateEntry(e);
+    }
+
+    /**
+     * Computes the crc32 of a File.  This is necessary when the
+     * ZipOutputStream is in STORED mode.
      */
     private void crc32File(ZipEntry e, File f) throws IOException {
-        InputStream is = new BufferedInputStream(new FileInputStream(f));
-        byte[] buf = new byte[8192];
-        crc32.reset();
-        int r = 0;
-        int nread = 0;
-        long len = f.length();
-        while ((r = is.read(buf)) != -1) {
-            nread += r;
-            crc32.update(buf, 0, r);
-        }
-        is.close();
-        if (nread != (int) len) {
+        CRC32OutputStream os = new CRC32OutputStream();
+        copy(f, os);
+        if (os.n != f.length()) {
             throw new JarException(formatMsg(
                         "error.incorrect.length", f.getPath()));
         }
-        e.setCrc(crc32.getValue());
+        os.updateEntry(e);
     }
 
     void replaceFSC(String files[]) {
@@ -780,6 +840,7 @@ class Main {
         }
     }
 
+    @SuppressWarnings("serial")
     Set<ZipEntry> newDirSet() {
         return new HashSet<ZipEntry>() {
             public boolean add(ZipEntry e) {
@@ -797,7 +858,7 @@ class Main {
         }
     }
 
-    /*
+    /**
      * Extracts specified entries from JAR file.
      */
     void extract(InputStream in, String files[]) throws IOException {
@@ -827,7 +888,7 @@ class Main {
         updateLastModifiedTime(dirs);
     }
 
-    /*
+    /**
      * Extracts specified entries from JAR file, via ZipFile.
      */
     void extract(String fname, String files[]) throws IOException {
@@ -853,7 +914,7 @@ class Main {
         updateLastModifiedTime(dirs);
     }
 
-    /*
+    /**
      * Extracts next entry from JAR file, creating directories as needed.  If
      * the entry is for a directory which doesn't exist prior to this
      * invocation, returns that entry, otherwise returns null.
@@ -888,19 +949,13 @@ class Main {
                         "error.create.dir", d.getPath()));
                 }
             }
-            OutputStream os = new FileOutputStream(f);
-            byte[] b = new byte[8192];
-            int len;
             try {
-                while ((len = is.read(b, 0, b.length)) != -1) {
-                    os.write(b, 0, len);
-                }
+                copy(is, f);
             } finally {
                 if (is instanceof ZipInputStream)
                     ((ZipInputStream)is).closeEntry();
                 else
                     is.close();
-                os.close();
             }
             if (vflag) {
                 if (e.getMethod() == ZipEntry.DEFLATED) {
@@ -919,7 +974,7 @@ class Main {
         return rc;
     }
 
-    /*
+    /**
      * Lists contents of JAR file.
      */
     void list(InputStream in, String files[]) throws IOException {
@@ -937,7 +992,7 @@ class Main {
         }
     }
 
-    /*
+    /**
      * Lists contents of JAR file, via ZipFile.
      */
     void list(String fname, String files[]) throws IOException {
@@ -950,32 +1005,38 @@ class Main {
     }
 
     /**
-     * Output the class index table to the INDEX.LIST file of the
+     * Outputs the class index table to the INDEX.LIST file of the
      * root jar file.
      */
     void dumpIndex(String rootjar, JarIndex index) throws IOException {
-        File scratchFile = File.createTempFile("scratch", null, new File("."));
         File jarFile = new File(rootjar);
-        boolean updateOk = update(new FileInputStream(jarFile),
-                                  new FileOutputStream(scratchFile),
-                                  null, index);
-        jarFile.delete();
-        if (!scratchFile.renameTo(jarFile)) {
-            scratchFile.delete();
-            throw new IOException(getMsg("error.write.file"));
+        Path jarPath = jarFile.toPath();
+        Path tmpPath = createTempFileInSameDirectoryAs(jarFile).toPath();
+        try {
+            if (update(jarPath.newInputStream(),
+                       tmpPath.newOutputStream(),
+                       null, index)) {
+                try {
+                    tmpPath.moveTo(jarPath, REPLACE_EXISTING);
+                } catch (IOException e) {
+                    throw new IOException(getMsg("error.write.file"), e);
+                }
+            }
+        } finally {
+            tmpPath.deleteIfExists();
         }
-        scratchFile.delete();
     }
 
-    private Hashtable jarTable = new Hashtable();
-    /*
-     * Generate the transitive closure of the Class-Path attribute for
+    private HashSet<String> jarPaths = new HashSet<String>();
+
+    /**
+     * Generates the transitive closure of the Class-Path attribute for
      * the specified jar file.
      */
-    Vector getJarPath(String jar) throws IOException {
-        Vector files = new Vector();
+    List<String> getJarPath(String jar) throws IOException {
+        List<String> files = new ArrayList<String>();
         files.add(jar);
-        jarTable.put(jar, jar);
+        jarPaths.add(jar);
 
         // take out the current path
         String path = jar.substring(0, Math.max(0, jar.lastIndexOf('/') + 1));
@@ -998,7 +1059,7 @@ class Main {
                             if (!ajar.endsWith("/")) {  // it is a jar file
                                 ajar = path.concat(ajar);
                                 /* check on cyclic dependency */
-                                if (jarTable.get(ajar) == null) {
+                                if (! jarPaths.contains(ajar)) {
                                     files.addAll(getJarPath(ajar));
                                 }
                             }
@@ -1012,10 +1073,10 @@ class Main {
     }
 
     /**
-     * Generate class index file for the specified root jar file.
+     * Generates class index file for the specified root jar file.
      */
     void genIndex(String rootjar, String[] files) throws IOException {
-        Vector jars = getJarPath(rootjar);
+        List<String> jars = getJarPath(rootjar);
         int njars = jars.size();
         String[] jarfiles;
 
@@ -1027,12 +1088,12 @@ class Main {
             }
             njars = jars.size();
         }
-        jarfiles = (String[])jars.toArray(new String[njars]);
+        jarfiles = jars.toArray(new String[njars]);
         JarIndex index = new JarIndex(jarfiles);
         dumpIndex(rootjar, index);
     }
 
-    /*
+    /**
      * Prints entry information, if requested.
      */
     void printEntry(ZipEntry e, String[] files) throws IOException {
@@ -1049,7 +1110,7 @@ class Main {
         }
     }
 
-    /*
+    /**
      * Prints entry information.
      */
     void printEntry(ZipEntry e) throws IOException {
@@ -1067,21 +1128,21 @@ class Main {
         }
     }
 
-    /*
-     * Print usage message and die.
+    /**
+     * Prints usage message.
      */
     void usageError() {
         error(getMsg("usage"));
     }
 
-    /*
+    /**
      * A fatal exception has been caught.  No recovery possible
      */
     void fatalError(Exception e) {
         e.printStackTrace();
     }
 
-    /*
+    /**
      * A fatal condition has been detected; message is "s".
      * No recovery possible
      */
@@ -1103,39 +1164,43 @@ class Main {
         err.println(s);
     }
 
-    /*
+    /**
      * Main routine to start program.
      */
     public static void main(String args[]) {
         Main jartool = new Main(System.out, System.err, "jar");
         System.exit(jartool.run(args) ? 0 : 1);
     }
-}
 
-/*
- * an OutputStream that doesn't send its output anywhere, (but could).
- * It's here to find the CRC32 of a manifest, necessary for STORED only
- * mode in ZIP.
- */
-final class CRC32OutputStream extends java.io.OutputStream {
-    CRC32 crc;
-    int n = 0;
-    CRC32OutputStream(CRC32 crc) {
-        this.crc = crc;
-    }
+    /**
+     * An OutputStream that doesn't send its output anywhere, (but could).
+     * It's here to find the CRC32 of an input file, necessary for STORED
+     * mode in ZIP.
+     */
+    private static class CRC32OutputStream extends java.io.OutputStream {
+        final CRC32 crc = new CRC32();
+        long n = 0;
 
-    public void write(int r) throws IOException {
-        crc.update(r);
-        n++;
-    }
+        CRC32OutputStream() {}
 
-    public void write(byte[] b) throws IOException {
-        crc.update(b, 0, b.length);
-        n += b.length;
-    }
+        public void write(int r) throws IOException {
+            crc.update(r);
+            n++;
+        }
 
-    public void write(byte[] b, int off, int len) throws IOException {
-        crc.update(b, off, len);
-        n += len - off;
+        public void write(byte[] b, int off, int len) throws IOException {
+            crc.update(b, off, len);
+            n += len;
+        }
+
+        /**
+         * Updates a ZipEntry which describes the data read by this
+         * output stream, in STORED mode.
+         */
+        public void updateEntry(ZipEntry e) {
+            e.setMethod(ZipEntry.STORED);
+            e.setSize(n);
+            e.setCrc(crc.getValue());
+        }
     }
 }

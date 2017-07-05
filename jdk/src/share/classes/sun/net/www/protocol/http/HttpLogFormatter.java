@@ -49,8 +49,7 @@ public class HttpLogFormatter extends java.util.logging.SimpleFormatter {
 
     @Override
     public String format(LogRecord record) {
-        if (!"sun.net.www.protocol.http.HttpURLConnection".equalsIgnoreCase(record.getSourceClassName())
-                && !"sun.net.www.http.HttpClient".equalsIgnoreCase(record.getSourceClassName())) {
+        if (!"sun.net.www.http.HttpCapture".equalsIgnoreCase(record.getSourceClassName())) {
             // Don't change format for stuff that doesn't concern us
             return super.format(record);
         }
