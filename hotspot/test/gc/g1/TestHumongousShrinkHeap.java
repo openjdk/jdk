@@ -51,23 +51,29 @@ public class TestHumongousShrinkHeap {
     private static final int REGION_SIZE = 1024 * 1024; // 1M
     private static final int LISTS_COUNT = 10;
     private static final int HUMON_SIZE = Math.round(.9f * REGION_SIZE);
-    private static final long AVAILABLE_MEMORY
-                              = Runtime.getRuntime().freeMemory();
-    private static final int HUMON_COUNT
-                             = (int) ((AVAILABLE_MEMORY / HUMON_SIZE)
-            / LISTS_COUNT);
 
+    private static final long TOTAL_MEMORY = Runtime.getRuntime().totalMemory();
+    private static final long MAX_MEMORY = Runtime.getRuntime().maxMemory();
+
+    private static final int HUMON_COUNT = (int) ((TOTAL_MEMORY / HUMON_SIZE) / LISTS_COUNT);
 
     public static void main(String[] args) {
         if (HUMON_COUNT == 0) {
             System.out.println("Skipped. Heap is too small");
             return;
         }
-        System.out.format("Running with %s max heap size. "
-                + "Will allocate humongous object of %s size %d times.%n",
-                MemoryUsagePrinter.humanReadableByteCount(AVAILABLE_MEMORY, false),
-                MemoryUsagePrinter.humanReadableByteCount(HUMON_SIZE, false),
-                HUMON_COUNT
+
+        if (TOTAL_MEMORY + REGION_SIZE * HUMON_COUNT > MAX_MEMORY) {
+            System.out.println("Skipped. Initial heap size is to close to max heap size.");
+            return;
+        }
+
+        System.out.format("Running with %s initial heap size of %s maximum heap size. "
+                          + "Will allocate humongous object of %s size %d times.%n",
+                          MemoryUsagePrinter.humanReadableByteCount(TOTAL_MEMORY, false),
+                          MemoryUsagePrinter.humanReadableByteCount(MAX_MEMORY, false),
+                          MemoryUsagePrinter.humanReadableByteCount(HUMON_SIZE, false),
+                          HUMON_COUNT
         );
         new TestHumongousShrinkHeap().test();
     }

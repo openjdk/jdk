@@ -44,6 +44,7 @@ define_pd_global(bool, ImplicitNullChecks,          true);  // Generate code for
 define_pd_global(bool, TrapBasedNullChecks,         false); // Not needed on sparc.
 define_pd_global(bool, UncommonNullCast,            true);  // Uncommon-trap NULLs passed to check cast
 
+define_pd_global(uintx, CodeCacheSegmentSize, 64 TIERED_ONLY(+64)); // Tiered compilation has large code-entry alignment.
 define_pd_global(intx, CodeEntryAlignment,    32);
 // The default setting 16/16 seems to work best.
 // (For _228_jack 16/16 is 2% better than 4/4, 16/4, 32/32, 32/16, or 16/32.)

@@ -26,6 +26,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 
 /**
@@ -172,6 +173,133 @@ public interface ResolvedJavaMethod extends JavaMethod, InvokeTarget, ModifiersP
      * Returns the constant pool of this method.
      */
     ConstantPool getConstantPool();
+
+    /**
+     * A {@code Parameter} provides information about method parameters.
+     */
+    public static class Parameter implements AnnotatedElement {
+        private final String name;
+        private final ResolvedJavaMethod method;
+        private final int modifiers;
+        private final int index;
+
+        /**
+         * Constructor for {@code Parameter}.
+         *
+         * @param name the name of the parameter
+         * @param modifiers the modifier flags for the parameter
+         * @param method the method which defines this parameter
+         * @param index the index of the parameter
+         */
+        public Parameter(String name,
+                        int modifiers,
+                        ResolvedJavaMethod method,
+                        int index) {
+            this.name = name;
+            this.modifiers = modifiers;
+            this.method = method;
+            this.index = index;
+        }
+
+        /**
+         * Gets the name of the parameter.
+         */
+        public String getName() {
+            return name;
+        }
+
+        /**
+         * Gets the method declaring the parameter.
+         */
+        public ResolvedJavaMethod getDeclaringMethod() {
+            return method;
+        }
+
+        /**
+         * Get the modifier flags for the parameter
+         */
+        public int getModifiers() {
+            return modifiers;
+        }
+
+        /**
+         * Gets the kind of the parameter.
+         */
+        public JavaKind getKind() {
+            return method.getSignature().getParameterKind(index);
+        }
+
+        /**
+         * Gets the formal type of the parameter.
+         */
+        public Type getParameterizedType() {
+            return method.getGenericParameterTypes()[index];
+        }
+
+        /**
+         * Gets the type of the parameter.
+         */
+        public JavaType getType() {
+            return method.getSignature().getParameterType(index, method.getDeclaringClass());
+        }
+
+        /**
+         * Determines if the parameter represents a variable argument list.
+         */
+        public boolean isVarArgs() {
+            return method.isVarArgs() && index == method.getSignature().getParameterCount(false) - 1;
+        }
+
+        public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
+            return method.getParameterAnnotations(annotationClass)[index];
+        }
+
+        public Annotation[] getAnnotations() {
+            return method.getParameterAnnotations()[index];
+        }
+
+        public Annotation[] getDeclaredAnnotations() {
+            return getAnnotations();
+        }
+
+        @Override
+        public String toString() {
+            Type type = getParameterizedType();
+            String typename = type.getTypeName();
+            if (isVarArgs()) {
+                typename = typename.replaceFirst("\\[\\]$", "...");
+            }
+
+            final StringBuilder sb = new StringBuilder(Modifier.toString(getModifiers()));
+            if (sb.length() != 0) {
+                sb.append(' ');
+            }
+            return sb.append(typename).append(' ').append(getName()).toString();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof Parameter) {
+                Parameter other = (Parameter) obj;
+                return (other.method.equals(method) && other.index == index);
+            }
+            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return method.hashCode() ^ index;
+        }
+    }
+
+    /**
+     * Returns an array of {@code Parameter} objects that represent all the parameters to this
+     * method. Returns an array of length 0 if this method has no parameters. Returns {@code null}
+     * if the parameter information is unavailable.
+     */
+    default Parameter[] getParameters() {
+        return null;
+    }
 
     /**
      * Returns an array of arrays that represent the annotations on the formal parameters, in
