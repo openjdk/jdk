@@ -23,10 +23,9 @@
 
 package p1;
 
+import java.io.InputStream;
 import java.io.IOException;
 import java.lang.module.ModuleDescriptor;
-import java.lang.reflect.Layer;
-import java.lang.reflect.Module;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -35,7 +34,37 @@ import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Set;
 
+import jdk.internal.module.ClassFileAttributes;
+import jdk.internal.module.ClassFileAttributes.ModuleTargetAttribute;
+import jdk.internal.module.ClassFileConstants;
+import jdk.internal.org.objectweb.asm.Attribute;
+import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.internal.org.objectweb.asm.ClassVisitor;
+import jdk.internal.org.objectweb.asm.Opcodes;
+
 public class Main {
+    private static boolean hasModuleTarget(InputStream in) throws IOException {
+        ModuleTargetAttribute[] modTargets = new ModuleTargetAttribute[1];
+        ClassVisitor cv = new ClassVisitor(Opcodes.ASM5) {
+            @Override
+            public void visitAttribute(Attribute attr) {
+                if (attr instanceof ModuleTargetAttribute) {
+                    modTargets[0] = (ModuleTargetAttribute)attr;
+                }
+            }
+        };
+
+        // prototype of attributes that should be parsed
+        Attribute[] attrs = new Attribute[] {
+            new ModuleTargetAttribute()
+        };
+
+        // parse module-info.class
+        ClassReader cr = new ClassReader(in);
+        cr.accept(cv, attrs, 0);
+        return modTargets[0] != null && modTargets[0].targetPlatform() != null;
+    }
+
     public static void main(String... args) throws Exception {
         // load another package
         p2.T.test();
@@ -44,12 +73,13 @@ public class Main {
         validate(Main.class.getModule());
 
         // validate the Moduletarget attribute for java.base
-        ModuleDescriptor md = Layer.boot().findModule("java.base").get()
-                                   .getDescriptor();
-        if (!md.osName().isPresent() || !md.osArch().isPresent() ||
-                !md.osVersion().isPresent()) {
-            throw new RuntimeException("java.base: " + md.osName() + " " +
-                    md.osArch() + " " + md.osVersion());
+        FileSystem fs = FileSystems.newFileSystem(URI.create("jrt:/"),
+                                                  Collections.emptyMap());
+        Path path = fs.getPath("/", "modules", "java.base", "module-info.class");
+        try (InputStream in = Files.newInputStream(path)) {
+            if (! hasModuleTarget(in)) {
+                throw new RuntimeException("Missing ModuleTarget for java.base");
+            }
         }
     }
 
@@ -67,9 +97,9 @@ public class Main {
         checkPackages(md.packages(), "p1", "p2");
         checkPackages(md1.packages(), "p1", "p2");
 
-        // check ModuleTarget attribute
-        checkModuleTargetAttribute(md);
-        checkModuleTargetAttribute(md1);
+        try (InputStream in = Files.newInputStream(path)) {
+            checkModuleTargetAttribute(in, "p1");
+        }
     }
 
     static void checkPackages(Set<String> pkgs, String... expected) {
@@ -78,10 +108,9 @@ public class Main {
         }
     }
 
-    static void checkModuleTargetAttribute(ModuleDescriptor md) {
-        if (md.osName().isPresent() || md.osArch().isPresent() ||
-                md.osVersion().isPresent()) {
-            throw new RuntimeException(md.osName() + " " + md.osArch() + " " + md.osVersion());
+    static void checkModuleTargetAttribute(InputStream in, String modName) throws IOException {
+        if (hasModuleTarget(in)) {
+            throw new RuntimeException("ModuleTarget present for " + modName);
         }
     }
 }

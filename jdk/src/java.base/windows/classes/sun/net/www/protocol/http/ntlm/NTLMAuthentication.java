@@ -31,6 +31,7 @@ import java.net.PasswordAuthentication;
 import java.net.UnknownHostException;
 import java.net.URL;
 import java.util.Objects;
+import java.util.Properties;
 import sun.net.www.HeaderParser;
 import sun.net.www.protocol.http.AuthenticationInfo;
 import sun.net.www.protocol.http.AuthScheme;
@@ -51,12 +52,16 @@ public class NTLMAuthentication extends AuthenticationInfo {
         NTLMAuthenticationCallback.getNTLMAuthenticationCallback();
 
     private String hostname;
-    private static String defaultDomain; /* Domain to use if not specified by user */
-
+    /* Domain to use if not specified by user */
+    private static final String defaultDomain;
+    /* Whether cache is enabled for NTLM */
+    private static final boolean ntlmCache;
     static {
-        defaultDomain = GetPropertyAction
-                .privilegedGetProperty("http.auth.ntlm.domain", "domain");
-    };
+        Properties props = GetPropertyAction.privilegedGetProperties();
+        defaultDomain = props.getProperty("http.auth.ntlm.domain", "domain");
+        String ntlmCacheProp = props.getProperty("jdk.ntlm.cache", "true");
+        ntlmCache = Boolean.parseBoolean(ntlmCacheProp);
+    }
 
     private void init0() {
 
@@ -134,6 +139,11 @@ public class NTLMAuthentication extends AuthenticationInfo {
               "",
               Objects.requireNonNull(authenticatorKey));
         init (pw);
+    }
+
+    @Override
+    protected boolean useAuthCache() {
+        return ntlmCache && super.useAuthCache();
     }
 
     /**

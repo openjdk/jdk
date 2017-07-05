@@ -23,9 +23,9 @@
 
 package sampleapi;
 
-import java.io.File;
-
-import sampleapi.SampleApi.Fault;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class SampleApiDefaultRunner {
 
@@ -132,12 +132,12 @@ public class SampleApiDefaultRunner {
             return 1;
         }
 
-        File resDir = new File(resDirName);
-        File outDir = new File(outDirName);
-        outDir.mkdirs();
+        Path resDir = Paths.get(resDirName);
+        Path outDir = Paths.get(outDirName);
+        Files.createDirectories(outDir);
         SampleApi apiGen = new SampleApi();
 
-        apiGen.generate(resDir, outDir);
+        apiGen.load(resDir).generate(outDir);
 
         return 0;
     }
