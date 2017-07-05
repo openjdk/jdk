@@ -77,23 +77,23 @@ public class InvokeMH {
         Object o; String s; int i;  // for return type testing
 
         // next five must have sig = (*,*)*
-        o = mh_SiO.invokeGeneric((Object)"world", (Object)123);
-        mh_SiO.invokeGeneric((Object)"mundus", (Object)456);
+        o = mh_SiO.invoke((Object)"world", (Object)123);
+        mh_SiO.invoke((Object)"mundus", (Object)456);
         Object k = "kosmos";
-        o = mh_SiO.invokeGeneric(k, 789);
-        o = mh_SiO.invokeGeneric(null, 000);
-        o = mh_SiO.invokeGeneric("arda", -123);
+        o = mh_SiO.invoke(k, 789);
+        o = mh_SiO.invoke(null, 000);
+        o = mh_SiO.invoke("arda", -123);
 
         // sig = ()String
-        o = mh_vS.invokeGeneric();
+        o = mh_vS.invoke();
 
         // sig = ()int
-        i = (int) mh_vi.invokeGeneric();
-        o = (int) mh_vi.invokeGeneric();
-        mh_vi.invokeGeneric();
+        i = (int) mh_vi.invoke();
+        o = (int) mh_vi.invoke();
+        mh_vi.invoke();
 
         // sig = ()void
-        mh_vv.invokeGeneric();
-        o = mh_vv.invokeGeneric();
+        mh_vv.invoke();
+        o = mh_vv.invoke();
     }
 }
