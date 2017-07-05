@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -597,7 +597,7 @@ public class Basic {
     static class MacOSX {
         public static boolean is() { return is; }
         private static final String osName = System.getProperty("os.name");
-        private static final boolean is = osName.startsWith("Mac OS");
+        private static final boolean is = osName.contains("OS X");
     }
 
     static class True {

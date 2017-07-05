@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class GetXSpace {
     private static final String dfFormat;
     static {
         if (name.equals("SunOS") || name.equals("Linux")
-                || name.startsWith("Mac OS")) {
+                || name.contains("OS X")) {
             // FileSystem Total Used Available Use% MountedOn
             dfFormat = "([^\\s]+)\\s+(\\d+)\\s+\\d+\\s+(\\d+)\\s+\\d+%\\s+([^\\s]+)";
         } else if (name.startsWith("Windows")) {

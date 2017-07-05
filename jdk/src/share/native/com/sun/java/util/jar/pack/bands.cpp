@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,9 +188,13 @@ void band::setIndexByTag(byte tag) {
 entry* band::getRefCommon(cpindex* ix_, bool nullOKwithCaller) {
   CHECK_0;
   assert(ix_->ixTag == ixTag
-         || (ixTag == CONSTANT_Literal
-             && ix_->ixTag >= CONSTANT_Integer
-             && ix_->ixTag <= CONSTANT_String));
+         || ((ixTag == CONSTANT_All ||
+              ixTag == CONSTANT_LoadableValue ||
+              ixTag == CONSTANT_AnyMember)
+         || (ixTag == CONSTANT_FieldSpecific &&
+              ix_->ixTag >= CONSTANT_Integer  &&
+              ix_->ixTag <= CONSTANT_String))
+         );
   int n = vs[0].getInt() - nullOK;
   // Note: band-local nullOK means null encodes as 0.
   // But nullOKwithCaller means caller is willing to tolerate a null.
@@ -270,22 +274,15 @@ int band::getIntCount(int tag) {
 #define NO_INDEX            0
 
 struct band_init {
-#ifndef PRODUCT
   int         bn;
   const char* name;
-#endif
   int   defc;
   int   index;
 };
 
-#ifdef PRODUCT
-#define BAND_INIT(name, cspec, ix) \
-  { cspec, ix }
-#else
 #define BAND_INIT(name, cspec, ix) \
   { e_##name,  #name, /*debug only*/ \
     cspec, ix }
-#endif
 
 const band_init all_band_inits[] = {
 //BAND_INIT(archive_magic, BYTE1_spec, 0),
@@ -314,6 +311,14 @@ const band_init all_band_inits[] = {
   BAND_INIT(cp_Method_desc, UDELTA5_spec, INDEX(CONSTANT_NameandType)),
   BAND_INIT(cp_Imethod_class, DELTA5_spec, INDEX(CONSTANT_Class)),
   BAND_INIT(cp_Imethod_desc, UDELTA5_spec, INDEX(CONSTANT_NameandType)),
+  BAND_INIT(cp_MethodHandle_refkind, DELTA5_spec, 0),
+  BAND_INIT(cp_MethodHandle_member, UDELTA5_spec, INDEX(CONSTANT_AnyMember)),
+  BAND_INIT(cp_MethodType, UDELTA5_spec, INDEX(CONSTANT_Signature)),
+  BAND_INIT(cp_BootstrapMethod_ref, DELTA5_spec, INDEX(CONSTANT_MethodHandle)),
+  BAND_INIT(cp_BootstrapMethod_arg_count, UDELTA5_spec, 0),
+  BAND_INIT(cp_BootstrapMethod_arg, DELTA5_spec, INDEX(CONSTANT_LoadableValue)),
+  BAND_INIT(cp_InvokeDynamic_spec, DELTA5_spec, INDEX(CONSTANT_BootstrapMethod)),
+  BAND_INIT(cp_InvokeDynamic_desc, UDELTA5_spec, INDEX(CONSTANT_NameandType)),
   BAND_INIT(attr_definition_headers, BYTE1_spec, 0),
   BAND_INIT(attr_definition_name, UNSIGNED5_spec, INDEX(CONSTANT_Utf8)),
   BAND_INIT(attr_definition_layout, UNSIGNED5_spec, INDEX(CONSTANT_Utf8)),
@@ -333,7 +338,7 @@ const band_init all_band_inits[] = {
   BAND_INIT(field_attr_count, UNSIGNED5_spec, 0),
   BAND_INIT(field_attr_indexes, UNSIGNED5_spec, 0),
   BAND_INIT(field_attr_calls, UNSIGNED5_spec, 0),
-  BAND_INIT(field_ConstantValue_KQ, UNSIGNED5_spec, INDEX(CONSTANT_Literal)),
+  BAND_INIT(field_ConstantValue_KQ, UNSIGNED5_spec, INDEX(CONSTANT_FieldSpecific)),
   BAND_INIT(field_Signature_RS, UNSIGNED5_spec, INDEX(CONSTANT_Signature)),
   BAND_INIT(field_metadata_bands, -1, -1),
   BAND_INIT(field_attr_bands, -1, -1),
@@ -415,10 +420,12 @@ const band_init all_band_inits[] = {
   BAND_INIT(bc_longref, DELTA5_spec, INDEX(CONSTANT_Long)),
   BAND_INIT(bc_doubleref, DELTA5_spec, INDEX(CONSTANT_Double)),
   BAND_INIT(bc_stringref, DELTA5_spec, INDEX(CONSTANT_String)),
+  BAND_INIT(bc_loadablevalueref, DELTA5_spec, INDEX(CONSTANT_LoadableValue)),
   BAND_INIT(bc_classref, UNSIGNED5_spec, NULL_OR_INDEX(CONSTANT_Class)),
   BAND_INIT(bc_fieldref, DELTA5_spec, INDEX(CONSTANT_Fieldref)),
   BAND_INIT(bc_methodref, UNSIGNED5_spec, INDEX(CONSTANT_Methodref)),
   BAND_INIT(bc_imethodref, DELTA5_spec, INDEX(CONSTANT_InterfaceMethodref)),
+  BAND_INIT(bc_indyref, DELTA5_spec, INDEX(CONSTANT_InvokeDynamic)),
   BAND_INIT(bc_thisfield, UNSIGNED5_spec, SUB_INDEX(CONSTANT_Fieldref)),
   BAND_INIT(bc_superfield, UNSIGNED5_spec, SUB_INDEX(CONSTANT_Fieldref)),
   BAND_INIT(bc_thismethod, UNSIGNED5_spec, SUB_INDEX(CONSTANT_Methodref)),
@@ -471,7 +478,7 @@ void band::initIndexes(unpacker* u) {
   for (int i = 0; i < BAND_LIMIT; i++) {
     band* scan = &tmp_all_bands[i];
     uint tag = scan->ixTag;  // Cf. #define INDEX(tag) above
-    if (tag != 0 && tag != CONSTANT_Literal && (tag & SUBINDEX_BIT) == 0) {
+    if (tag != 0 && tag != CONSTANT_FieldSpecific && (tag & SUBINDEX_BIT) == 0) {
       scan->setIndex(u->cp.getIndex(tag));
     }
   }
