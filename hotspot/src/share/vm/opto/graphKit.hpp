@@ -763,3 +763,16 @@ class BuildCutout: public PreserveJVMState {
   BuildCutout(GraphKit* kit, Node* p, float prob, float cnt = COUNT_UNKNOWN);
   ~BuildCutout();
 };
+
+// Helper class to preserve the original _reexecute bit and _sp and restore
+// them back
+class PreserveReexecuteState: public StackObj {
+ protected:
+  GraphKit*                 _kit;
+  uint                      _sp;
+  JVMState::ReexecuteState  _reexecute;
+
+ public:
+  PreserveReexecuteState(GraphKit* kit);
+  ~PreserveReexecuteState();
+};

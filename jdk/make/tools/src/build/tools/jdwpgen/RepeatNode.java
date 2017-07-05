@@ -30,7 +30,7 @@ import java.io.*;
 
 class RepeatNode extends AbstractTypeNode {
 
-    Node member;
+    Node member = null;
 
     void constrain(Context ctx) {
         super.constrain(ctx);

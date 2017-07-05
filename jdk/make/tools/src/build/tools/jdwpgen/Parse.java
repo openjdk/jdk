@@ -146,8 +146,12 @@ class Parse {
                             Node node = (Node)proto.getClass().newInstance();
                             node.set(kind, list, izer.lineno());
                             return node;
-                        } catch (Exception exc) {
+                        } catch (InstantiationException exc) {
                             error(exc.toString());
+                            return null;
+                        } catch (IllegalAccessException exc) {
+                            error(exc.toString());
+                            return null;
                         }
                     }
                 } else {
@@ -166,6 +170,6 @@ class Parse {
     void error(String errmsg) {
         System.err.println(Main.specSource + ":" + izer.lineno() +
                            ": " + errmsg);
-        System.exit(1);
+        throw new RuntimeException("Error: " + errmsg);
     }
 }

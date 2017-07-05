@@ -1591,7 +1591,7 @@ jint G1CollectedHeap::initialize() {
 
   JavaThread::dirty_card_queue_set().initialize(DirtyCardQ_CBL_mon,
                                                 DirtyCardQ_FL_lock,
-                                                G1DirtyCardQueueMax,
+                                                G1UpdateBufferQueueMaxLength,
                                                 Shared_DirtyCardQ_lock);
 
   if (G1DeferredRSUpdate) {
@@ -1637,6 +1637,9 @@ size_t G1CollectedHeap::capacity() const {
 
 void G1CollectedHeap::iterate_dirty_card_closure(bool concurrent,
                                                  int worker_i) {
+  // Clean cards in the hot card cache
+  concurrent_g1_refine()->clean_up_cache(worker_i, g1_rem_set());
+
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   int n_completed_buffers = 0;
   while (dcqs.apply_closure_to_completed_buffer(worker_i, 0, true)) {
@@ -1645,9 +1648,6 @@ void G1CollectedHeap::iterate_dirty_card_closure(bool concurrent,
   g1_policy()->record_update_rs_processed_buffers(worker_i,
                                                   (double) n_completed_buffers);
   dcqs.clear_n_completed_buffers();
-  // Finish up the queue...
-  if (worker_i == 0) concurrent_g1_refine()->clean_up_cache(worker_i,
-                                                            g1_rem_set());
   assert(!dcqs.completed_buffers_exist_dirty(), "Completed buffers exist!");
 }
 
@@ -2414,8 +2414,6 @@ void G1CollectedHeap::gc_threads_do(ThreadClosure* tc) const {
 }
 
 void G1CollectedHeap::print_tracing_info() const {
-  concurrent_g1_refine()->print_final_card_counts();
-
   // We'll overload this to mean "trace GC pause statistics."
   if (TraceGen0Time || TraceGen1Time) {
     // The "G1CollectorPolicy" is keeping track of these stats, so delegate
@@ -2844,6 +2842,11 @@ G1CollectedHeap::do_collection_pause_at_safepoint() {
 
   if (PrintHeapAtGC) {
     Universe::print_heap_after_gc();
+  }
+  if (G1SummarizeRSetStats &&
+      (G1SummarizeRSetStatsPeriod > 0) &&
+      (total_collections() % G1SummarizeRSetStatsPeriod == 0)) {
+    g1_rem_set()->print_summary_info();
   }
 }
 
@@ -4106,6 +4109,8 @@ void G1CollectedHeap::evacuate_collection_set() {
 
   g1_rem_set()->prepare_for_oops_into_collection_set_do();
   concurrent_g1_refine()->set_use_cache(false);
+  concurrent_g1_refine()->clear_hot_cache_claimed_index();
+
   int n_workers = (ParallelGCThreads > 0 ? workers()->total_workers() : 1);
   set_par_threads(n_workers);
   G1ParTask g1_par_task(this, n_workers, _task_queues);
@@ -4138,6 +4143,7 @@ void G1CollectedHeap::evacuate_collection_set() {
   }
   g1_rem_set()->cleanup_after_oops_into_collection_set_do();
 
+  concurrent_g1_refine()->clear_hot_cache();
   concurrent_g1_refine()->set_use_cache(true);
 
   finalize_for_evac_failure();

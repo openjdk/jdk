@@ -103,7 +103,7 @@ public abstract class SunJSSE extends java.security.Provider {
 
     // standard constructor
     protected SunJSSE() {
-        super("SunJSSE", 1.6d, info);
+        super("SunJSSE", 1.7d, info);
         subclassCheck();
         if (Boolean.TRUE.equals(fips)) {
             throw new ProviderException

@@ -30,7 +30,7 @@ import java.io.*;
 
 class SelectNode extends AbstractGroupNode implements TypeNode {
 
-    AbstractSimpleTypeNode typeNode;
+    AbstractSimpleTypeNode typeNode = null;
 
     void prune() {
         super.prune();

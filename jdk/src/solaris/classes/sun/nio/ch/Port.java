@@ -49,7 +49,7 @@ abstract class Port extends AsynchronousChannelGroupImpl {
      * Implemented by clients registered with this port.
      */
     interface PollableChannel extends Closeable {
-        void onEvent(int events);
+        void onEvent(int events, boolean mayInvokeDirect);
     }
 
     // maps fd to "pollable" channel
@@ -121,7 +121,7 @@ abstract class Port extends AsynchronousChannelGroupImpl {
     final Object attachForeignChannel(final Channel channel, FileDescriptor fd) {
         int fdVal = IOUtil.fdVal(fd);
         register(fdVal, new PollableChannel() {
-            public void onEvent(int events) { }
+            public void onEvent(int events, boolean mayInvokeDirect) { }
             public void close() throws IOException {
                 channel.close();
             }

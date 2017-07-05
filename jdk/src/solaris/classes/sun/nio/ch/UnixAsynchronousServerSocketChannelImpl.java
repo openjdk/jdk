@@ -59,10 +59,13 @@ class UnixAsynchronousServerSocketChannelImpl
     private final Object updateLock = new Object();
 
     // pending accept
-    private PendingFuture<AsynchronousSocketChannel,Object> pendingAccept;
+    private boolean acceptPending;
+    private CompletionHandler<AsynchronousSocketChannel,Object> acceptHandler;
+    private Object acceptAttachment;
+    private PendingFuture<AsynchronousSocketChannel,Object> acceptFuture;
 
     // context for permission check when security manager set
-    private AccessControlContext acc;
+    private AccessControlContext acceptAcc;
 
 
     UnixAsynchronousServerSocketChannelImpl(Port port)
@@ -83,15 +86,6 @@ class UnixAsynchronousServerSocketChannelImpl
         port.register(fdVal, this);
     }
 
-    // returns and clears the result of a pending accept
-    private PendingFuture<AsynchronousSocketChannel,Object> grabPendingAccept() {
-        synchronized (updateLock) {
-            PendingFuture<AsynchronousSocketChannel,Object> result = pendingAccept;
-            pendingAccept = null;
-            return result;
-        }
-    }
-
     @Override
     void implClose() throws IOException {
         // remove the mapping
@@ -101,17 +95,27 @@ class UnixAsynchronousServerSocketChannelImpl
         nd.close(fd);
 
         // if there is a pending accept then complete it
-        final PendingFuture<AsynchronousSocketChannel,Object> result =
-            grabPendingAccept();
-        if (result != null) {
-            // discard the stack trace as otherwise it may appear that implClose
-            // has thrown the exception.
-            AsynchronousCloseException x = new AsynchronousCloseException();
-            x.setStackTrace(new StackTraceElement[0]);
-            result.setFailure(x);
+        CompletionHandler<AsynchronousSocketChannel,Object> handler;
+        Object att;
+        PendingFuture<AsynchronousSocketChannel,Object> future;
+        synchronized (updateLock) {
+            if (!acceptPending)
+                return;  // no pending accept
+            acceptPending = false;
+            handler = acceptHandler;
+            att = acceptAttachment;
+            future = acceptFuture;
+        }
 
+        // discard the stack trace as otherwise it may appear that implClose
+        // has thrown the exception.
+        AsynchronousCloseException x = new AsynchronousCloseException();
+        x.setStackTrace(new StackTraceElement[0]);
+        if (handler == null) {
+            future.setFailure(x);
+        } else {
             // invoke by submitting task rather than directly
-            Invoker.invokeIndirectly(result.handler(), result);
+            Invoker.invokeIndirectly(this, handler, att, null, x);
         }
     }
 
@@ -124,15 +128,17 @@ class UnixAsynchronousServerSocketChannelImpl
      * Invoked by event handling thread when listener socket is polled
      */
     @Override
-    public void onEvent(int events) {
-        PendingFuture<AsynchronousSocketChannel,Object> result = grabPendingAccept();
-        if (result == null)
-            return; // may have been grabbed by asynchronous close
+    public void onEvent(int events, boolean mayInvokeDirect) {
+        synchronized (updateLock) {
+            if (!acceptPending)
+                return;  // may have been grabbed by asynchronous close
+            acceptPending = false;
+        }
 
         // attempt to accept connection
         FileDescriptor newfd = new FileDescriptor();
         InetSocketAddress[] isaa = new InetSocketAddress[1];
-        boolean accepted = false;
+        Throwable exc = null;
         try {
             begin();
             int n = accept0(this.fd, newfd, isaa);
@@ -140,49 +146,52 @@ class UnixAsynchronousServerSocketChannelImpl
             // spurious wakeup, is this possible?
             if (n == IOStatus.UNAVAILABLE) {
                 synchronized (updateLock) {
-                    this.pendingAccept = result;
+                    acceptPending = true;
                 }
                 port.startPoll(fdVal, Port.POLLIN);
                 return;
             }
 
-            // connection accepted
-            accepted = true;
-
         } catch (Throwable x) {
             if (x instanceof ClosedChannelException)
                 x = new AsynchronousCloseException();
-            enableAccept();
-            result.setFailure(x);
+            exc = x;
         } finally {
             end();
         }
 
         // Connection accepted so finish it when not holding locks.
         AsynchronousSocketChannel child = null;
-        if (accepted) {
+        if (exc == null) {
             try {
-                child = finishAccept(newfd, isaa[0], acc);
-                enableAccept();
-                result.setResult(child);
+                child = finishAccept(newfd, isaa[0], acceptAcc);
             } catch (Throwable x) {
-                enableAccept();
                 if (!(x instanceof IOException) && !(x instanceof SecurityException))
                     x = new IOException(x);
-                result.setFailure(x);
+                exc = x;
             }
         }
 
-        // if an async cancel has already cancelled the operation then
-        // close the new channel so as to free resources
-        if (child != null && result.isCancelled()) {
-            try {
-                child.close();
-            } catch (IOException ignore) { }
-        }
+        // copy field befores accept is re-renabled
+        CompletionHandler<AsynchronousSocketChannel,Object> handler = acceptHandler;
+        Object att = acceptAttachment;
+        PendingFuture<AsynchronousSocketChannel,Object> future = acceptFuture;
 
-        // invoke the handler
-        Invoker.invoke(result.handler(), result);
+        // re-enable accepting and invoke handler
+        enableAccept();
+
+        if (handler == null) {
+            future.setResult(child, exc);
+            // if an async cancel has already cancelled the operation then
+            // close the new channel so as to free resources
+            if (child != null && future.isCancelled()) {
+                try {
+                    child.close();
+                } catch (IOException ignore) { }
+            }
+        } else {
+            Invoker.invoke(this, handler, att, child, exc);
+        }
     }
 
     /**
@@ -234,16 +243,18 @@ class UnixAsynchronousServerSocketChannelImpl
     }
 
     @Override
-    @SuppressWarnings("unchecked")
-    public <A> Future<AsynchronousSocketChannel> accept(A attachment,
-        final CompletionHandler<AsynchronousSocketChannel,? super A> handler)
+    Future<AsynchronousSocketChannel> implAccept(Object att,
+        CompletionHandler<AsynchronousSocketChannel,Object> handler)
     {
         // complete immediately if channel is closed
         if (!isOpen()) {
-            CompletedFuture<AsynchronousSocketChannel,A> result = CompletedFuture
-                .withFailure(this, new ClosedChannelException(), attachment);
-            Invoker.invokeIndirectly(handler, result);
-            return result;
+            Throwable e = new ClosedChannelException();
+            if (handler == null) {
+                return CompletedFuture.withFailure(e);
+            } else {
+                Invoker.invoke(this, handler, att, null, e);
+                return null;
+            }
         }
         if (localAddress == null)
             throw new NotYetBoundException();
@@ -258,25 +269,31 @@ class UnixAsynchronousServerSocketChannelImpl
             throw new AcceptPendingException();
 
         // attempt accept
-        AbstractFuture<AsynchronousSocketChannel,A> result = null;
         FileDescriptor newfd = new FileDescriptor();
         InetSocketAddress[] isaa = new InetSocketAddress[1];
+        Throwable exc = null;
         try {
             begin();
 
             int n = accept0(this.fd, newfd, isaa);
             if (n == IOStatus.UNAVAILABLE) {
-                // no connection to accept
-                result = new PendingFuture<AsynchronousSocketChannel,A>(this, handler, attachment);
 
                 // need calling context when there is security manager as
                 // permission check may be done in a different thread without
                 // any application call frames on the stack
-                synchronized (this) {
-                    this.acc = (System.getSecurityManager() == null) ?
+                PendingFuture<AsynchronousSocketChannel,Object> result = null;
+                synchronized (updateLock) {
+                    if (handler == null) {
+                        this.acceptHandler = null;
+                        result = new PendingFuture<AsynchronousSocketChannel,Object>(this);
+                        this.acceptFuture = result;
+                    } else {
+                        this.acceptHandler = handler;
+                        this.acceptAttachment = att;
+                    }
+                    this.acceptAcc = (System.getSecurityManager() == null) ?
                         null : AccessController.getContext();
-                    this.pendingAccept =
-                        (PendingFuture<AsynchronousSocketChannel,Object>)result;
+                    this.acceptPending = true;
                 }
 
                 // register for connections
@@ -287,25 +304,30 @@ class UnixAsynchronousServerSocketChannelImpl
             // accept failed
             if (x instanceof ClosedChannelException)
                 x = new AsynchronousCloseException();
-            result = CompletedFuture.withFailure(this, x, attachment);
+            exc = x;
         } finally {
             end();
         }
 
-        // connection accepted immediately
-        if (result == null) {
+        AsynchronousSocketChannel child = null;
+        if (exc == null) {
+            // connection accepted immediately
             try {
-                AsynchronousSocketChannel ch = finishAccept(newfd, isaa[0], null);
-                result = CompletedFuture.withResult(this, ch, attachment);
+                child = finishAccept(newfd, isaa[0], null);
             } catch (Throwable x) {
-                result = CompletedFuture.withFailure(this, x, attachment);
+                exc = x;
             }
         }
 
-        // re-enable accepting and invoke handler
+        // re-enable accepting before invoking handler
         enableAccept();
-        Invoker.invokeIndirectly(handler, result);
-        return result;
+
+        if (handler == null) {
+            return CompletedFuture.withResult(child, exc);
+        } else {
+            Invoker.invokeIndirectly(this, handler, att, child, exc);
+            return null;
+        }
     }
 
     // -- Native methods --

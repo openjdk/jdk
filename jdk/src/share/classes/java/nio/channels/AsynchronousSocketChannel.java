@@ -274,14 +274,11 @@ public abstract class AsynchronousSocketChannel
     /**
      * Connects this channel.
      *
-     * <p> This method initiates an operation to connect this channel, returning
-     * a {@code Future} representing the pending result of the operation. If
-     * the connection is successfully established then the {@code Future}'s
-     * {@link Future#get() get} method will return {@code null}. If the
-     * connection cannot be established then the channel is closed. In that case,
-     * invoking the {@code get} method throws {@link
-     * java.util.concurrent.ExecutionException} with an {@code IOException} as
-     * the cause.
+     * <p> This method initiates an operation to connect this channel. The
+     * {@code handler} parameter is a completion handler that is invoked when
+     * the connection is successfully established or connection cannot be
+     * established. If the connection cannot be established then the channel is
+     * closed.
      *
      * <p> This method performs exactly the same security checks as the {@link
      * java.net.Socket} class.  That is, if a security manager has been
@@ -294,9 +291,7 @@ public abstract class AsynchronousSocketChannel
      * @param   attachment
      *          The object to attach to the I/O operation; can be {@code null}
      * @param   handler
-     *          The handler for consuming the result; can be {@code null}
-     *
-     * @return  A {@code Future} object representing the pending result
+     *          The handler for consuming the result
      *
      * @throws  UnresolvedAddressException
      *          If the given remote address is not fully resolved
@@ -307,23 +302,26 @@ public abstract class AsynchronousSocketChannel
      * @throws  ConnectionPendingException
      *          If a connection operation is already in progress on this channel
      * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
+     *          If the channel group has terminated
      * @throws  SecurityException
      *          If a security manager has been installed
      *          and it does not permit access to the given remote endpoint
      *
      * @see #getRemoteAddress
      */
-    public abstract <A> Future<Void> connect(SocketAddress remote,
-                                             A attachment,
-                                             CompletionHandler<Void,? super A> handler);
+    public abstract <A> void connect(SocketAddress remote,
+                                     A attachment,
+                                     CompletionHandler<Void,? super A> handler);
 
     /**
      * Connects this channel.
      *
-     * <p> This method is equivalent to invoking {@link
-     * #connect(SocketAddress,Object,CompletionHandler)} with the {@code attachment}
-     * and handler parameters set to {@code null}.
+     * <p> This method initiates an operation to connect this channel. This
+     * method behaves in exactly the same manner as the {@link
+     * #connect(SocketAddress, Object, CompletionHandler)} method except that
+     * instead of specifying a completion handler, this method returns a {@code
+     * Future} representing the pending result. The {@code Future}'s {@link
+     * Future#get() get} method returns {@code null} on successful completion.
      *
      * @param   remote
      *          The remote address to which this channel is to be connected
@@ -342,18 +340,17 @@ public abstract class AsynchronousSocketChannel
      *          If a security manager has been installed
      *          and it does not permit access to the given remote endpoint
      */
-    public final Future<Void> connect(SocketAddress remote) {
-        return connect(remote, null, null);
-    }
+    public abstract Future<Void> connect(SocketAddress remote);
 
     /**
      * Reads a sequence of bytes from this channel into the given buffer.
      *
-     * <p> This method initiates the reading of a sequence of bytes from this
-     * channel into the given buffer, returning a {@code Future} representing
-     * the pending result of the operation. The {@code Future}'s {@link
-     * Future#get() get} method returns the number of bytes read or {@code -1}
-     * if all bytes have been read and channel has reached end-of-stream.
+     * <p> This method initiates an asynchronous read operation to read a
+     * sequence of bytes from this channel into the given buffer. The {@code
+     * handler} parameter is a completion handler that is invoked when the read
+     * operation completes (or fails). The result passed to the completion
+     * handler is the number of bytes read or {@code -1} if no bytes could be
+     * read because the channel has reached end-of-stream.
      *
      * <p> If a timeout is specified and the timeout elapses before the operation
      * completes then the operation completes with the exception {@link
@@ -376,9 +373,7 @@ public abstract class AsynchronousSocketChannel
      * @param   attachment
      *          The object to attach to the I/O operation; can be {@code null}
      * @param   handler
-     *          The handler for consuming the result; can be {@code null}
-     *
-     * @return  A {@code Future} object representing the pending result
+     *          The handler for consuming the result
      *
      * @throws  IllegalArgumentException
      *          If the {@code timeout} parameter is negative or the buffer is
@@ -388,13 +383,13 @@ public abstract class AsynchronousSocketChannel
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
      * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
+     *          If the channel group has terminated
      */
-    public abstract <A> Future<Integer> read(ByteBuffer dst,
-                                             long timeout,
-                                             TimeUnit unit,
-                                             A attachment,
-                                             CompletionHandler<Integer,? super A> handler);
+    public abstract <A> void read(ByteBuffer dst,
+                                  long timeout,
+                                  TimeUnit unit,
+                                  A attachment,
+                                  CompletionHandler<Integer,? super A> handler);
 
     /**
      * @throws  IllegalArgumentException        {@inheritDoc}
@@ -402,14 +397,14 @@ public abstract class AsynchronousSocketChannel
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
      * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
+     *          If the channel group has terminated
      */
     @Override
-    public final <A> Future<Integer> read(ByteBuffer dst,
-                                          A attachment,
-                                          CompletionHandler<Integer,? super A> handler)
+    public final <A> void read(ByteBuffer dst,
+                               A attachment,
+                               CompletionHandler<Integer,? super A> handler)
     {
-        return read(dst, 0L, TimeUnit.MILLISECONDS, attachment, handler);
+        read(dst, 0L, TimeUnit.MILLISECONDS, attachment, handler);
     }
 
     /**
@@ -419,16 +414,18 @@ public abstract class AsynchronousSocketChannel
      *          If this channel is not yet connected
      */
     @Override
-    public final Future<Integer> read(ByteBuffer dst) {
-        return read(dst, 0L, TimeUnit.MILLISECONDS, null, null);
-    }
+    public abstract Future<Integer> read(ByteBuffer dst);
 
     /**
      * Reads a sequence of bytes from this channel into a subsequence of the
      * given buffers. This operation, sometimes called a <em>scattering read</em>,
      * is often useful when implementing network protocols that group data into
      * segments consisting of one or more fixed-length headers followed by a
-     * variable-length body.
+     * variable-length body. The {@code handler} parameter is a completion
+     * handler that is invoked when the read operation completes (or fails). The
+     * result passed to the completion handler is the number of bytes read or
+     * {@code -1} if no bytes could be read because the channel has reached
+     * end-of-stream.
      *
      * <p> This method initiates a read of up to <i>r</i> bytes from this channel,
      * where <i>r</i> is the total number of bytes remaining in the specified
@@ -456,11 +453,6 @@ public abstract class AsynchronousSocketChannel
      * I/O operation is performed with the maximum number of buffers allowed by
      * the operating system.
      *
-     * <p> The return value from this method is a {@code Future} representing
-     * the pending result of the operation. The {@code Future}'s {@link
-     * Future#get() get} method returns the number of bytes read or {@code -1L}
-     * if all bytes have been read and the channel has reached end-of-stream.
-     *
      * <p> If a timeout is specified and the timeout elapses before the operation
      * completes then it completes with the exception {@link
      * InterruptedByTimeoutException}. Where a timeout occurs, and the
@@ -485,9 +477,7 @@ public abstract class AsynchronousSocketChannel
      * @param   attachment
      *          The object to attach to the I/O operation; can be {@code null}
      * @param   handler
-     *          The handler for consuming the result; can be {@code null}
-     *
-     * @return  A {@code Future} object representing the pending result
+     *          The handler for consuming the result
      *
      * @throws  IndexOutOfBoundsException
      *          If the pre-conditions for the {@code offset}  and {@code length}
@@ -500,23 +490,24 @@ public abstract class AsynchronousSocketChannel
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
      * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
+     *          If the channel group has terminated
      */
-    public abstract <A> Future<Long> read(ByteBuffer[] dsts,
-                                          int offset,
-                                          int length,
-                                          long timeout,
-                                          TimeUnit unit,
-                                          A attachment,
-                                          CompletionHandler<Long,? super A> handler);
+    public abstract <A> void read(ByteBuffer[] dsts,
+                                  int offset,
+                                  int length,
+                                  long timeout,
+                                  TimeUnit unit,
+                                  A attachment,
+                                  CompletionHandler<Long,? super A> handler);
 
     /**
      * Writes a sequence of bytes to this channel from the given buffer.
      *
-     * <p> This method initiates the writing of a sequence of bytes to this channel
-     * from the given buffer, returning a {@code Future} representing the
-     * pending result of the operation. The {@code Future}'s {@link Future#get()
-     * get} method will return the number of bytes written.
+     * <p> This method initiates an asynchronous write operation to write a
+     * sequence of bytes to this channel from the given buffer. The {@code
+     * handler} parameter is a completion handler that is invoked when the write
+     * operation completes (or fails). The result passed to the completion
+     * handler is the number of bytes written.
      *
      * <p> If a timeout is specified and the timeout elapses before the operation
      * completes then it completes with the exception {@link
@@ -539,9 +530,7 @@ public abstract class AsynchronousSocketChannel
      * @param   attachment
      *          The object to attach to the I/O operation; can be {@code null}
      * @param   handler
-     *          The handler for consuming the result; can be {@code null}
-     *
-     * @return  A {@code Future} object representing the pending result
+     *          The handler for consuming the result
      *
      * @throws  IllegalArgumentException
      *          If the {@code timeout} parameter is negative
@@ -550,28 +539,28 @@ public abstract class AsynchronousSocketChannel
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
      * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
+     *          If the channel group has terminated
      */
-    public abstract <A> Future<Integer> write(ByteBuffer src,
-                                              long timeout,
-                                              TimeUnit unit,
-                                              A attachment,
-                                              CompletionHandler<Integer,? super A> handler);
+    public abstract <A> void write(ByteBuffer src,
+                                   long timeout,
+                                   TimeUnit unit,
+                                   A attachment,
+                                   CompletionHandler<Integer,? super A> handler);
 
     /**
      * @throws  WritePendingException          {@inheritDoc}
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
      * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
+     *          If the channel group has terminated
      */
     @Override
-    public final <A> Future<Integer> write(ByteBuffer src,
-                                           A attachment,
-                                           CompletionHandler<Integer,? super A> handler)
+    public final <A> void write(ByteBuffer src,
+                                A attachment,
+                                CompletionHandler<Integer,? super A> handler)
 
     {
-        return write(src, 0L, TimeUnit.MILLISECONDS, attachment, handler);
+        write(src, 0L, TimeUnit.MILLISECONDS, attachment, handler);
     }
 
     /**
@@ -580,16 +569,16 @@ public abstract class AsynchronousSocketChannel
      *          If this channel is not yet connected
      */
     @Override
-    public final Future<Integer> write(ByteBuffer src) {
-        return write(src, 0L, TimeUnit.MILLISECONDS, null, null);
-    }
+    public abstract Future<Integer> write(ByteBuffer src);
 
     /**
      * Writes a sequence of bytes to this channel from a subsequence of the given
      * buffers. This operation, sometimes called a <em>gathering write</em>, is
      * often useful when implementing network protocols that group data into
      * segments consisting of one or more fixed-length headers followed by a
-     * variable-length body.
+     * variable-length body. The {@code handler} parameter is a completion
+     * handler that is invoked when the write operation completes (or fails).
+     * The result passed to the completion handler is the number of bytes written.
      *
      * <p> This method initiates a write of up to <i>r</i> bytes to this channel,
      * where <i>r</i> is the total number of bytes remaining in the specified
@@ -616,10 +605,6 @@ public abstract class AsynchronousSocketChannel
      * remaining), exceeds this limit, then the I/O operation is performed with
      * the maximum number of buffers allowed by the operating system.
      *
-     * <p> The return value from this method is a {@code Future} representing
-     * the pending result of the operation. The {@code Future}'s {@link
-     * Future#get() get} method will return the number of bytes written.
-     *
      * <p> If a timeout is specified and the timeout elapses before the operation
      * completes then it completes with the exception {@link
      * InterruptedByTimeoutException}. Where a timeout occurs, and the
@@ -644,9 +629,7 @@ public abstract class AsynchronousSocketChannel
      * @param   attachment
      *          The object to attach to the I/O operation; can be {@code null}
      * @param   handler
-     *          The handler for consuming the result; can be {@code null}
-     *
-     * @return  A {@code Future} object representing the pending result
+     *          The handler for consuming the result
      *
      * @throws  IndexOutOfBoundsException
      *          If the pre-conditions for the {@code offset}  and {@code length}
@@ -658,13 +641,13 @@ public abstract class AsynchronousSocketChannel
      * @throws  NotYetConnectedException
      *          If this channel is not yet connected
      * @throws  ShutdownChannelGroupException
-     *          If a handler is specified, and the channel group is shutdown
+     *          If the channel group has terminated
      */
-    public abstract <A> Future<Long> write(ByteBuffer[] srcs,
-                                           int offset,
-                                           int length,
-                                           long timeout,
-                                           TimeUnit unit,
-                                           A attachment,
-                                           CompletionHandler<Long,? super A> handler);
+    public abstract <A> void write(ByteBuffer[] srcs,
+                                   int offset,
+                                   int length,
+                                   long timeout,
+                                   TimeUnit unit,
+                                   A attachment,
+                                   CompletionHandler<Long,? super A> handler);
 }
