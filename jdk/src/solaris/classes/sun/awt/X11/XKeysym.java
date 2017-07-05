@@ -101,10 +101,15 @@ public class XKeysym {
         // Otherwise, it is [1].
         int ndx = XToolkit.isXsunServer() &&
                   ! XToolkit.isXKBenabled() ? 2 : 1;
+        // Even if XKB is enabled, we have another problem: some symbol tables (e.g. cz) force
+        // a regular comma instead of KP_comma for a decimal separator. Result is,
+        // bugs like 6454041. So, we will try for keypadness  a keysym with ndx==0 as well.
         XToolkit.awtLock();
         try {
-            return XlibWrapper.IsKeypadKey(
-                XlibWrapper.XKeycodeToKeysym(ev.get_display(), ev.get_keycode(), ndx ) );
+            return (XlibWrapper.IsKeypadKey(
+                XlibWrapper.XKeycodeToKeysym(ev.get_display(), ev.get_keycode(), ndx ) ) ||
+                   XlibWrapper.IsKeypadKey(
+                XlibWrapper.XKeycodeToKeysym(ev.get_display(), ev.get_keycode(), 0 ) ));
         } finally {
             XToolkit.awtUnlock();
         }

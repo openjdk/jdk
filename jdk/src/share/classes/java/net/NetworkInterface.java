@@ -25,7 +25,6 @@
 
 package java.net;
 
-import java.net.SocketException;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
 import sun.security.action.*;

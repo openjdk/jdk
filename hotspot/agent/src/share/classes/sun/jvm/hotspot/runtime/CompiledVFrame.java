@@ -206,6 +206,16 @@ public class CompiledVFrame extends JavaVFrame {
           Assert.that( loc.isRegister(), "ints always saved to stack in 1 word" );
         }
         return new StackValue(valueAddr.getJLongAt(0) & 0xFFFFFFFF);
+      } else if (loc.holdsNarrowOop()) {  // Holds an narrow oop?
+        if (loc.isRegister() && VM.getVM().isBigEndian()) {
+          // The callee has no clue whether the register holds an narrow oop,
+          // long or is unused.  He always saves a long.  Here we know
+          // a long was saved, but we only want an narrow oop back.  Narrow the
+          // saved long to the narrow oop that the JVM wants.
+          return new StackValue(valueAddr.getCompOopHandleAt(VM.getVM().getIntSize()));
+        } else {
+          return new StackValue(valueAddr.getCompOopHandleAt(0));
+        }
       } else if( loc.holdsOop() ) {  // Holds an oop?
         return new StackValue(valueAddr.getOopHandleAt(0));
       } else if( loc.holdsDouble() ) {

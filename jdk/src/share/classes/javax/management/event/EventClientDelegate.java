@@ -721,7 +721,10 @@ public class EventClientDelegate implements EventClientDelegateMBean {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             try {
-                ObjectInstance oi = (ObjectInstance) AccessController.doPrivileged(
+                final String serverName = getMBeanServerName();
+
+                ObjectInstance oi = (ObjectInstance)
+                    AccessController.doPrivileged(
                         new PrivilegedExceptionAction<Object>() {
                     public Object run()
                     throws InstanceNotFoundException {
@@ -731,6 +734,7 @@ public class EventClientDelegate implements EventClientDelegateMBean {
 
                 String classname = oi.getClassName();
                 MBeanPermission perm = new MBeanPermission(
+                        serverName,
                         classname,
                         null,
                         name,
@@ -744,6 +748,20 @@ public class EventClientDelegate implements EventClientDelegateMBean {
             }
         }
         return true;
+    }
+
+    private String getMBeanServerName() {
+        if (mbeanServerName != null) return mbeanServerName;
+        else return (mbeanServerName = getMBeanServerName(mbeanServer));
+    }
+
+    private static String getMBeanServerName(final MBeanServer server) {
+        final PrivilegedAction<String> action = new PrivilegedAction<String>() {
+            public String run() {
+                return Util.getMBeanServerSecurityName(server);
+            }
+        };
+        return AccessController.doPrivileged(action);
     }
 
     // ------------------------------------

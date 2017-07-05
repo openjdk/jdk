@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,10 +73,12 @@ package java.util.zip;
 public
 class Inflater {
     private long strm;
-    private byte[] buf = new byte[0];
+    private byte[] buf = defaultBuf;
     private int off, len;
     private boolean finished;
     private boolean needDict;
+
+    private static final byte[] defaultBuf = new byte[0];
 
     static {
         /* Zip library is loaded from System.initializeSystemClass */
@@ -318,6 +320,7 @@ class Inflater {
     public synchronized void reset() {
         ensureOpen();
         reset(strm);
+        buf = defaultBuf;
         finished = false;
         needDict = false;
         off = len = 0;

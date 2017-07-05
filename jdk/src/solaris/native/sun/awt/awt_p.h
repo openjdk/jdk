@@ -79,7 +79,7 @@
 
 #ifndef XAWT
 #include "GLXGraphicsConfig.h"
-#include <sun_awt_motif_MComponentPeer.h>
+//#include <sun_awt_motif_MComponentPeer.h>
 #endif
 
 #ifndef HEADLESS

@@ -32,6 +32,7 @@ import java.io.RandomAccessFile;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
+import java.nio.BufferPoolMXBean;
 import java.nio.channels.*;
 import java.nio.channels.spi.*;
 import java.util.ArrayList;
@@ -43,9 +44,11 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import javax.management.ObjectName;
+import javax.management.MalformedObjectNameException;
+
 import sun.misc.Cleaner;
 import sun.security.action.GetPropertyAction;
-
 
 public class FileChannelImpl
     extends FileChannel
@@ -681,14 +684,26 @@ public class FileChannelImpl
     private static class Unmapper
         implements Runnable
     {
+        // keep track of mapped buffer usage
+        static volatile int count;
+        static volatile long totalSize;
+        static volatile long totalCapacity;
 
         private long address;
         private long size;
+        private int cap;
 
-        private Unmapper(long address, long size) {
+        private Unmapper(long address, long size, int cap) {
             assert (address != 0);
             this.address = address;
             this.size = size;
+            this.cap = cap;
+
+            synchronized (Unmapper.class) {
+                count++;
+                totalSize += size;
+                totalCapacity += cap;
+            }
         }
 
         public void run() {
@@ -696,8 +711,13 @@ public class FileChannelImpl
                 return;
             unmap0(address, size);
             address = 0;
-        }
 
+            synchronized (Unmapper.class) {
+                count--;
+                totalSize -= size;
+                totalCapacity -= cap;
+            }
+        }
     }
 
     private static void unmap(MappedByteBuffer bb) {
@@ -786,7 +806,7 @@ public class FileChannelImpl
             assert (IOStatus.checkAll(addr));
             assert (addr % allocationGranularity == 0);
             int isize = (int)size;
-            Unmapper um = new Unmapper(addr, size + pagePosition);
+            Unmapper um = new Unmapper(addr, size + pagePosition, isize);
             if ((!writable) || (imode == MAP_RO))
                 return Util.newMappedByteBufferR(isize, addr + pagePosition, um);
             else
@@ -797,6 +817,49 @@ public class FileChannelImpl
         }
     }
 
+    /**
+     * Returns the management interface for mapped buffers
+     */
+    public static BufferPoolMXBean getMappedBufferPoolMXBean() {
+        return LazyInitialization.mappedBufferPoolMXBean;
+    }
+
+    // Lazy initialization of management interface
+    private static class LazyInitialization {
+        static final BufferPoolMXBean mappedBufferPoolMXBean = mappedBufferPoolMXBean();
+
+        private static BufferPoolMXBean mappedBufferPoolMXBean() {
+            final String pool = "mapped";
+            final ObjectName obj;
+            try {
+                obj = new ObjectName("java.nio:type=BufferPool,name=" + pool);
+            } catch (MalformedObjectNameException x) {
+                throw new AssertionError(x);
+            }
+            return new BufferPoolMXBean() {
+                @Override
+                public ObjectName getObjectName() {
+                    return obj;
+                }
+                @Override
+                public String getName() {
+                    return pool;
+                }
+                @Override
+                public long getCount() {
+                    return Unmapper.count;
+                }
+                @Override
+                public long getTotalCapacity() {
+                    return Unmapper.totalCapacity;
+                }
+                @Override
+                public long getMemoryUsed() {
+                    return Unmapper.totalSize;
+                }
+            };
+        }
+    }
 
     // -- Locks --
 
