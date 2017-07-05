@@ -70,7 +70,7 @@ public class MultiReleaseJarSecurity {
 
     @Test
     public void testCertsAndSigners() throws IOException {
-        try (JarFile jf = new JarFile(signedmultirelease, true, ZipFile.OPEN_READ, JarFile.Release.RUNTIME)) {
+        try (JarFile jf = new JarFile(signedmultirelease, true, ZipFile.OPEN_READ, Runtime.version())) {
             CertsAndSigners vcas = new CertsAndSigners(jf, jf.getJarEntry("version/Version.class"));
             CertsAndSigners rcas = new CertsAndSigners(jf, jf.getJarEntry("META-INF/versions/" + MAJOR_VERSION + "/version/Version.class"));
             Assert.assertTrue(Arrays.equals(rcas.getCertificates(), vcas.getCertificates()));

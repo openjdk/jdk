@@ -1276,6 +1276,8 @@ public final class StrictMath {
      * @return (<i>a</i>&nbsp;&times;&nbsp;<i>b</i>&nbsp;+&nbsp;<i>c</i>)
      * computed, as if with unlimited range and precision, and rounded
      * once to the nearest {@code double} value
+     *
+     * @since 9
      */
     public static double fma(double a, double b, double c) {
         return Math.fma(a, b, c);
@@ -1328,6 +1330,8 @@ public final class StrictMath {
      * @return (<i>a</i>&nbsp;&times;&nbsp;<i>b</i>&nbsp;+&nbsp;<i>c</i>)
      * computed, as if with unlimited range and precision, and rounded
      * once to the nearest {@code float} value
+     *
+     * @since 9
      */
     public static float fma(float a, float b, float c) {
         return Math.fma(a, b, c);

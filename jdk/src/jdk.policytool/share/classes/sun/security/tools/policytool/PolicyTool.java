@@ -1376,10 +1376,6 @@ class ToolWindow extends JFrame {
         ToolDialog ed = new ToolDialog
                 (PolicyTool.getMessage("Error"), tool, this, true);
 
-        // find where the PolicyTool gui is
-        Point location = ((w == null) ?
-                getLocationOnScreen() : w.getLocationOnScreen());
-        //ed.setBounds(location.x + 50, location.y + 50, 600, 100);
         ed.setLayout(new GridBagLayout());
 
         JLabel label = new JLabel(error);

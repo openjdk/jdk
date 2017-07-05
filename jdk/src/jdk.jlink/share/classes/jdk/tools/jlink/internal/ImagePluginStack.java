@@ -400,6 +400,14 @@ public final class ImagePluginStack {
         }
 
         @Override
+        public Optional<ModuleEntry> findEntryInContext(String path, ModuleEntry context) {
+            Objects.requireNonNull(path);
+            Objects.requireNonNull(context);
+            Optional<ModuleEntry> res = pool.findEntryInContext(path, context);
+            return res.map(this::getUncompressed);
+        }
+
+        @Override
         public boolean contains(ModuleEntry res) {
             return pool.contains(res);
         }

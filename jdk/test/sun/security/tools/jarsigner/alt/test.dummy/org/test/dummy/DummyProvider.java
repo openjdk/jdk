@@ -21,22 +21,22 @@
  * questions.
  */
 
-/*
- *
- *
- * @bug 4906490
- * @summary Dummy security service provider.
- *          It is cited by the AltProviderPath.sh script.
- */
 package org.test.dummy;
 
-import java.util.*;
 import java.security.*;
 
 public class DummyProvider extends Provider {
     public DummyProvider() {
-        super("Dummy", 0.1, "Dummy Provider");
+        super("Dummy", 0.1, "Dummy Provider with nothing");
+    }
 
+    @Override
+    public Provider configure(String configArg) {
+        return new DummyProvider(configArg);
+    }
+
+    private DummyProvider(String arg) {
+        super("Dummy", 0.2, "Dummy Provider with " + arg);
         //
         // KeyStore
         //

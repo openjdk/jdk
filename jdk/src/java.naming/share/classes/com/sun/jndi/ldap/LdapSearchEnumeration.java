@@ -199,15 +199,15 @@ final class LdapSearchEnumeration
     }
 
     @Override
-    protected LdapSearchEnumeration getReferredResults(
+    protected AbstractLdapNamingEnumeration<? extends NameClassPair> getReferredResults(
             LdapReferralContext refCtx) throws NamingException {
         // repeat the original operation at the new context
-        return (LdapSearchEnumeration)refCtx.search(
+        return (AbstractLdapNamingEnumeration<? extends NameClassPair>)refCtx.search(
                 searchArgs.name, searchArgs.filter, searchArgs.cons);
     }
 
     @Override
-    protected void update(AbstractLdapNamingEnumeration<SearchResult> ne) {
+    protected void update(AbstractLdapNamingEnumeration<? extends NameClassPair> ne) {
         super.update(ne);
 
         // Update search-specific variables

@@ -175,9 +175,18 @@ bool SystemDictionary::is_parallelDefine(Handle class_loader) {
    return false;
 }
 
-/**
- * Returns true if the passed class loader is the platform class loader.
- */
+// Returns true if the passed class loader is the builtin application class loader
+// or a custom system class loader. A customer system class loader can be
+// specified via -Djava.system.class.loader.
+bool SystemDictionary::is_system_class_loader(Handle class_loader) {
+  if (class_loader.is_null()) {
+    return false;
+  }
+  return (class_loader->klass() == SystemDictionary::jdk_internal_loader_ClassLoaders_AppClassLoader_klass() ||
+          class_loader() == _java_system_loader);
+}
+
+// Returns true if the passed class loader is the platform class loader.
 bool SystemDictionary::is_platform_class_loader(Handle class_loader) {
   if (class_loader.is_null()) {
     return false;

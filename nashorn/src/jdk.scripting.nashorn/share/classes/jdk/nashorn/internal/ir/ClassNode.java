@@ -42,6 +42,7 @@ public class ClassNode extends Expression {
     private final PropertyNode constructor;
     private final List<PropertyNode> classElements;
     private final int line;
+    private final boolean isStatement;
 
     /**
      * Constructor.
@@ -53,15 +54,17 @@ public class ClassNode extends Expression {
      * @param classHeritage class heritage
      * @param constructor constructor
      * @param classElements class elements
+     * @param isStatement is this a statement or an expression?
      */
     public ClassNode(final int line, final long token, final int finish, final IdentNode ident, final Expression classHeritage, final PropertyNode constructor,
-                     final List<PropertyNode> classElements) {
+                     final List<PropertyNode> classElements, final boolean isStatement) {
         super(token, finish);
         this.line = line;
         this.ident = ident;
         this.classHeritage = classHeritage;
         this.constructor = constructor;
         this.classElements = classElements;
+        this.isStatement = isStatement;
     }
 
     /**
@@ -98,6 +101,15 @@ public class ClassNode extends Expression {
      */
     public List<PropertyNode> getClassElements() {
         return Collections.unmodifiableList(classElements);
+    }
+
+    /**
+     * Returns if this class was a statement or an expression
+     *
+     * @return true if this class was a statement
+     */
+    public boolean isStatement() {
+        return isStatement;
     }
 
     /**
