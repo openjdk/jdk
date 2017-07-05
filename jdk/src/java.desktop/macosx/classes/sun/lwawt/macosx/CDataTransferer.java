@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -28,12 +29,13 @@ package sun.lwawt.macosx;
 import java.awt.*;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.util.*;
-import java.util.regex.*;
 
 import java.awt.datatransfer.*;
 import sun.awt.datatransfer.*;
@@ -127,49 +129,31 @@ public class CDataTransferer extends DataTransferer {
                                  long format, Transferable transferable) throws IOException {
 
         if (format == CF_URL && URL.class.equals(flavor.getRepresentationClass())) {
-            String charset = Charset.defaultCharset().name();
-            if (transferable != null && transferable.isDataFlavorSupported(javaTextEncodingFlavor)) {
-                try {
-                    charset = new String((byte[]) transferable.getTransferData(javaTextEncodingFlavor), "UTF-8");
-                } catch (UnsupportedFlavorException cannotHappen) {
-                }
+            String[] strings = dragQueryFile(bytes);
+            if(strings == null || strings.length == 0) {
+                return null;
             }
-            String xml = new String(bytes, charset);
-            // macosx pasteboard returns a property list that consists of one URL
-            // let's extract it.
-            return new URL(extractURL(xml));
-        }
-
-        if (format == CF_STRING) {
+            return new URL(strings[0]);
+        } else if(isUriListFlavor(flavor)) {
+            // dragQueryFile works fine with files and url,
+            // it parses and extracts values from property list.
+            // maxosx always returns property list for
+            // CF_URL and CF_FILE
+            String[] strings = dragQueryFile(bytes);
+            if(strings == null) {
+                return null;
+            }
+            bytes = String.join(System.getProperty("line.separator"),
+                    strings).getBytes();
+            // now we extracted uri from xml, now we should treat it as
+            // regular string that allows to translate data to target represantation
+            // class by base method
+            format = CF_STRING;
+        } else if (format == CF_STRING) {
             bytes = Normalizer.normalize(new String(bytes, "UTF8"), Form.NFC).getBytes("UTF8");
         }
 
         return super.translateBytes(bytes, flavor, format, transferable);
-    }
-
-    /**
-     * Macosx pasteboard returns xml document that contains one URL, for exmple:
-     * <pre>
-     *     {@code
-     * <?xml version=\"1.0\" encoding=\"UTF-8\"?>
-     * <!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">
-     * <plist version=\"1.0\">
-     *      <array>
-     *          <string>file:///path_to_file</string>
-     *          <string></string>
-     *      </array>
-     * </plist>
-     *     }
-     * </pre>
-     */
-    private String extractURL(String xml) {
-        Pattern urlExtractorPattern = Pattern.compile("<string>(.*)</string>");
-        Matcher matcher = urlExtractorPattern.matcher(xml);
-        if (matcher.find()) {
-            return matcher.group(1);
-        } else {
-            return null;
-        }
     }
 
     @Override
@@ -247,6 +231,7 @@ public class CDataTransferer extends DataTransferer {
         return nativeDragQueryFile(bytes);
     }
 
+
     @Override
     protected Image platformImageBytesToImage(byte[] bytes, long format) throws IOException {
         return CImage.getCreator().createImageFromPlatformImageBytes(bytes);
@@ -271,11 +256,18 @@ public class CDataTransferer extends DataTransferer {
         }
         try {
             DataFlavor df = new DataFlavor(nat);
-            if (df.getPrimaryType().equals("text") && df.getSubType().equals("uri-list")) {
+            if (isUriListFlavor(df)) {
                 return true;
             }
         } catch (Exception e) {
             // Not a MIME format.
+        }
+        return false;
+    }
+
+    private boolean isUriListFlavor(DataFlavor df) {
+        if (df.getPrimaryType().equals("text") && df.getSubType().equals("uri-list")) {
+            return true;
         }
         return false;
     }

@@ -225,6 +225,7 @@ class Symbol : public MetaspaceObj {
 
   // Printing
   void print_symbol_on(outputStream* st = NULL) const;
+  void print_utf8_on(outputStream* st) const;
   void print_on(outputStream* st) const;         // First level print
   void print_value_on(outputStream* st) const;   // Second level print.
 
