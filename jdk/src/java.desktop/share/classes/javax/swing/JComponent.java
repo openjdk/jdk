@@ -126,7 +126,7 @@ import sun.swing.UIClientPropertyKey;
  *     that includes double buffering and support for borders.
  *     For more information see <a
  * href="http://www.oracle.com/technetwork/java/painting-140037.html#swing">Painting</a> and
- * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/border.htmll">How
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/border.html">How
  *     to Use Borders</a>,
  *     both of which are sections in <em>The Java Tutorial</em>.
  * </ul>

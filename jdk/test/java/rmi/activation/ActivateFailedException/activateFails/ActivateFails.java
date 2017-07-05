@@ -33,7 +33,7 @@
  * @library ../../../testlibrary
  * @build TestLibrary RMID ActivationLibrary
  *     ActivateMe ActivateFails_Stub ShutdownThread
- * @run main/othervm/policy=security.policy/timeout=240 ActivateFails
+ * @run main/othervm/java.security.policy=security.policy/timeout=240 ActivateFails
  */
 
 import java.rmi.*;

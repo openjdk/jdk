@@ -337,6 +337,20 @@ public final class Bootstrap {
 
     /**
      * Returns a dynamic invoker for a specified dynamic operation using the public lookup. Similar to
+     * {@link #createDynamicInvoker(String, Class, Class...)} but with an additional parameter to
+     * set the call site flags of the dynamic invoker.
+     * @param opDesc Dynalink dynamic operation descriptor.
+     * @param flags the call site flags for the operation
+     * @param rtype the return type for the operation
+     * @param ptypes the parameter types for the operation
+     * @return MethodHandle for invoking the operation.
+     */
+    public static MethodHandle createDynamicInvoker(final String opDesc, final int flags, final Class<?> rtype, final Class<?>... ptypes) {
+        return bootstrap(MethodHandles.publicLookup(), opDesc, MethodType.methodType(rtype, ptypes), flags).dynamicInvoker();
+    }
+
+    /**
+     * Returns a dynamic invoker for a specified dynamic operation using the public lookup. Similar to
      * {@link #createDynamicInvoker(String, Class, Class...)} but with return and parameter types composed into a
      * method type in the signature. See the discussion of that method for details.
      * @param opDesc Dynalink dynamic operation descriptor.
