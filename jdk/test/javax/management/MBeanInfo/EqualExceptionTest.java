@@ -26,7 +26,7 @@
  * @bug 5071110
  * @summary Test whether an null descriptor will cause an NullPointerException.
  * @author Shanliang JIANG
- * @modules java.management
+ *
  * @run clean EqualExceptionTest
  * @run build EqualExceptionTest
  * @run main EqualExceptionTest

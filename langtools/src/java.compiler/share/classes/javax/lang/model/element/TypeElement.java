@@ -75,8 +75,9 @@ public interface TypeElement extends Element, Parameterizable, QualifiedNameable
      * originating source of information about the type.  For example,
      * if the information about the type is originating from a source
      * file, the elements will be returned in source code order.
-     * (However, in that case the the ordering of elements, such as a
-     * default constructor, is not specified.)
+     * (However, in that case the the ordering of {@linkplain
+     * Elements.Origin#MANDATED implicitly declared} elements, such as
+     * default constructors, is not specified.)
      *
      * @return the enclosed elements in proper order, or an empty list if none
      *

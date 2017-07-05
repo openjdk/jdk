@@ -27,7 +27,7 @@
  * @summary Test that the releaseMBeanServer(MBeanServer mbeanServer) method
  *          throws IllegalArgumentException as expected
  * @author Luis-Miguel Alventosa
- * @modules java.management
+ *
  * @run clean ReleaseMBeanServerTest
  * @run build ReleaseMBeanServerTest
  * @run main ReleaseMBeanServerTest

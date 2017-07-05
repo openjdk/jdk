@@ -26,7 +26,6 @@
  * @bug 6601652
  * @summary Test exception when SortedMap or SortedSet has non-null Comparator
  * @author Eamonn McManus
- * @modules java.management
  */
 
 import java.util.SortedMap;

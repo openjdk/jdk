@@ -118,6 +118,7 @@ public class Lint
             if (source.compareTo(Source.JDK1_9) >= 0) {
                 values.add(LintCategory.DEP_ANN);
             }
+            values.add(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC);
             values.add(LintCategory.OPENS);
             values.add(LintCategory.MODULE);
             values.add(LintCategory.REMOVAL);
@@ -252,6 +253,16 @@ public class Lint
          * Warn about use of deprecated-for-removal items.
          */
         REMOVAL("removal"),
+
+        /**
+         * Warn about use of automatic modules in the requires clauses.
+         */
+        REQUIRES_AUTOMATIC("requires-automatic"),
+
+        /**
+         * Warn about automatic modules in requires transitive.
+         */
+        REQUIRES_TRANSITIVE_AUTOMATIC("requires-transitive-automatic"),
 
         /**
          * Warn about Serializable classes that do not provide a serial version ID.

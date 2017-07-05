@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import java.awt.event.ActionListener;
  * @summary IPv6 Nameservers in resolv.conf throws NumberFormatException
  * @modules java.desktop
  *          jdk.naming.dns/com.sun.jndi.dns
- * @compile --add-modules jdk.naming.dns IPv6NameserverPlatformParsingTest.java
  * @run main/manual Test6991580
  */
 
