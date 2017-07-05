@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3245,6 +3245,15 @@ intptr_t java_lang_invoke_MemberName::vmindex(oop mname) {
 void java_lang_invoke_MemberName::set_vmindex(oop mname, intptr_t index) {
   assert(is_instance(mname), "wrong type");
   mname->address_field_put(_vmindex_offset, (address) index);
+}
+
+bool java_lang_invoke_MemberName::equals(oop mn1, oop mn2) {
+  if (mn1 == mn2) {
+     return true;
+  }
+  return (vmtarget(mn1) == vmtarget(mn2) && flags(mn1) == flags(mn2) &&
+          vmindex(mn1) == vmindex(mn2) &&
+          clazz(mn1) == clazz(mn2));
 }
 
 oop java_lang_invoke_LambdaForm::vmentry(oop lform) {

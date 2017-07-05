@@ -237,6 +237,7 @@ public class Main {
         if (!parseArgs(args)) {
             return false;
         }
+        File tmpFile = null;
         try {
             if (cflag || uflag) {
                 if (fname != null) {
@@ -303,8 +304,8 @@ public class Main {
                         ? "tmpjar"
                         : fname.substring(fname.indexOf(File.separatorChar) + 1);
 
-                File tmpfile = createTemporaryFile(tmpbase, ".jar");
-                try (OutputStream out = new FileOutputStream(tmpfile)) {
+                tmpFile = createTemporaryFile(tmpbase, ".jar");
+                try (OutputStream out = new FileOutputStream(tmpFile)) {
                     create(new BufferedOutputStream(out, 4096), manifest);
                 }
                 if (nflag) {
@@ -313,16 +314,16 @@ public class Main {
                         Packer packer = Pack200.newPacker();
                         Map<String, String> p = packer.properties();
                         p.put(Packer.EFFORT, "1"); // Minimal effort to conserve CPU
-                        try (JarFile jarFile = new JarFile(tmpfile.getCanonicalPath());
+                        try (JarFile jarFile = new JarFile(tmpFile.getCanonicalPath());
                              OutputStream pack = new FileOutputStream(packFile))
                         {
                             packer.pack(jarFile, pack);
                         }
-                        if (tmpfile.exists()) {
-                            tmpfile.delete();
+                        if (tmpFile.exists()) {
+                            tmpFile.delete();
                         }
-                        tmpfile = createTemporaryFile(tmpbase, ".jar");
-                        try (OutputStream out = new FileOutputStream(tmpfile);
+                        tmpFile = createTemporaryFile(tmpbase, ".jar");
+                        try (OutputStream out = new FileOutputStream(tmpFile);
                              JarOutputStream jos = new JarOutputStream(out))
                         {
                             Unpacker unpacker = Pack200.newUnpacker();
@@ -332,9 +333,9 @@ public class Main {
                         Files.deleteIfExists(packFile.toPath());
                     }
                 }
-                validateAndClose(tmpfile);
+                validateAndClose(tmpFile);
             } else if (uflag) {
-                File inputFile = null, tmpFile = null;
+                File inputFile = null;
                 if (fname != null) {
                     inputFile = new File(fname);
                     tmpFile = createTempFileInSameDirectoryAs(inputFile);
@@ -425,6 +426,9 @@ public class Main {
         } catch (Throwable t) {
             t.printStackTrace();
             ok = false;
+        } finally {
+            if (tmpFile != null && tmpFile.exists())
+                tmpFile.delete();
         }
         out.flush();
         err.flush();

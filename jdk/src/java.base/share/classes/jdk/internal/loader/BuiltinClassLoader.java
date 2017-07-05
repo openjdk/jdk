@@ -425,7 +425,7 @@ public class BuiltinClassLoader
      * Returns a URL to a resource on the class path.
      */
     private URL findResourceOnClassPath(String name) {
-        if (ucp != null) {
+        if (hasClassPath()) {
             if (System.getSecurityManager() == null) {
                 return ucp.findResource(name, false);
             } else {
@@ -442,7 +442,7 @@ public class BuiltinClassLoader
      * Returns the URLs of all resources of the given name on the class path.
      */
     private Enumeration<URL> findResourcesOnClassPath(String name) {
-        if (ucp != null) {
+        if (hasClassPath()) {
             if (System.getSecurityManager() == null) {
                 return ucp.findResources(name, false);
             } else {
@@ -481,7 +481,7 @@ public class BuiltinClassLoader
         } else {
 
             // search class path
-            if (ucp != null) {
+            if (hasClassPath()) {
                 c = findClassOnClassPathOrNull(cn);
             }
 
@@ -514,7 +514,7 @@ public class BuiltinClassLoader
         }
 
         // search class path
-        if (ucp != null) {
+        if (hasClassPath()) {
             return findClassOnClassPathOrNull(cn);
         }
 
@@ -569,7 +569,7 @@ public class BuiltinClassLoader
                     }
 
                     // check class path
-                    if (c == null && ucp != null && VM.isModuleSystemInited()) {
+                    if (c == null && hasClassPath() && VM.isModuleSystemInited()) {
                         c = findClassOnClassPathOrNull(cn);
                     }
                 }
@@ -867,6 +867,14 @@ public class BuiltinClassLoader
                 implVersion,
                 implVendor,
                 sealBase);
+    }
+
+    /**
+     * Returns {@code true} if there is a class path associated with this
+     * class loader.
+     */
+    boolean hasClassPath() {
+        return ucp != null;
     }
 
     /**
