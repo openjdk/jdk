@@ -141,6 +141,18 @@ import static sun.invoke.util.Wrapper.isWrapperType;
         this.markerInterfaces = markerInterfaces;
         this.additionalBridges = additionalBridges;
 
+        if (samMethodName.isEmpty() ||
+                samMethodName.indexOf('.') >= 0 ||
+                samMethodName.indexOf(';') >= 0 ||
+                samMethodName.indexOf('[') >= 0 ||
+                samMethodName.indexOf('/') >= 0 ||
+                samMethodName.indexOf('<') >= 0 ||
+                samMethodName.indexOf('>') >= 0) {
+            throw new LambdaConversionException(String.format(
+                    "Method name '%s' is not legal",
+                    samMethodName));
+        }
+
         if (!samBase.isInterface()) {
             throw new LambdaConversionException(String.format(
                     "Functional interface %s is not an interface",
@@ -275,25 +287,39 @@ import static sun.invoke.util.Wrapper.isWrapperType;
                 (implKind == MethodHandleInfo.REF_newInvokeSpecial)
                   ? implDefiningClass
                   : implMethodType.returnType();
-        Class<?> samReturnType = samMethodType.returnType();
         if (!isAdaptableToAsReturn(actualReturnType, expectedType)) {
             throw new LambdaConversionException(
                     String.format("Type mismatch for lambda return: %s is not convertible to %s",
                                   actualReturnType, expectedType));
         }
-        if (!isAdaptableToAsReturnStrict(expectedType, samReturnType)) {
-            throw new LambdaConversionException(
-                    String.format("Type mismatch for lambda expected return: %s is not convertible to %s",
-                                  expectedType, samReturnType));
-        }
+
+        // Check descriptors of generated methods
+        checkDescriptor(samMethodType);
         for (MethodType bridgeMT : additionalBridges) {
-            if (!isAdaptableToAsReturnStrict(expectedType, bridgeMT.returnType())) {
-                throw new LambdaConversionException(
-                        String.format("Type mismatch for lambda expected return: %s is not convertible to %s",
-                                      expectedType, bridgeMT.returnType()));
+            checkDescriptor(bridgeMT);
+        }
+    }
+
+    /** Validate that the given descriptor's types are compatible with {@code instantiatedMethodType} **/
+    private void checkDescriptor(MethodType descriptor) throws LambdaConversionException {
+        for (int i = 0; i < instantiatedMethodType.parameterCount(); i++) {
+            Class<?> instantiatedParamType = instantiatedMethodType.parameterType(i);
+            Class<?> descriptorParamType = descriptor.parameterType(i);
+            if (!descriptorParamType.isAssignableFrom(instantiatedParamType)) {
+                String msg = String.format("Type mismatch for instantiated parameter %d: %s is not a subtype of %s",
+                                           i, instantiatedParamType, descriptorParamType);
+                throw new LambdaConversionException(msg);
             }
         }
-     }
+
+        Class<?> instantiatedReturnType = instantiatedMethodType.returnType();
+        Class<?> descriptorReturnType = descriptor.returnType();
+        if (!isAdaptableToAsReturnStrict(instantiatedReturnType, descriptorReturnType)) {
+            String msg = String.format("Type mismatch for lambda expected return: %s is not convertible to %s",
+                                       instantiatedReturnType, descriptorReturnType);
+            throw new LambdaConversionException(msg);
+        }
+    }
 
     /**
      * Check type adaptability for parameter types.
@@ -345,8 +371,8 @@ import static sun.invoke.util.Wrapper.isWrapperType;
                || !fromType.equals(void.class) && isAdaptableTo(fromType, toType, false);
     }
     private boolean isAdaptableToAsReturnStrict(Class<?> fromType, Class<?> toType) {
-        if (fromType.equals(void.class)) return toType.equals(void.class);
-        return isAdaptableTo(fromType, toType, true);
+        if (fromType.equals(void.class) || toType.equals(void.class)) return fromType.equals(toType);
+        else return isAdaptableTo(fromType, toType, true);
     }
 
 
