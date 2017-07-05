@@ -56,6 +56,7 @@ class AppOutputStream extends OutputStream {
     /**
      * Write the data out, NOW.
      */
+    @Override
     synchronized public void write(byte b[], int off, int len)
             throws IOException {
         if (b == null) {
@@ -131,6 +132,7 @@ class AppOutputStream extends OutputStream {
     /**
      * Write one byte now.
      */
+    @Override
     synchronized public void write(int i) throws IOException {
         oneByte[0] = (byte)i;
         write(oneByte, 0, 1);
@@ -139,6 +141,7 @@ class AppOutputStream extends OutputStream {
     /*
      * Socket close is already synchronized, no need to block here.
      */
+    @Override
     public void close() throws IOException {
         c.close();
     }

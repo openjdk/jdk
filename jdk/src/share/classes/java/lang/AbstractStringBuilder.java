@@ -177,11 +177,10 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
         ensureCapacityInternal(newLength);
 
         if (count < newLength) {
-            for (; count < newLength; count++)
-                value[count] = '\0';
-        } else {
-            count = newLength;
+            Arrays.fill(value, count, newLength, '\0');
         }
+
+        count = newLength;
     }
 
     /**
@@ -1308,8 +1307,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      *            {@code null}.
      */
     public int indexOf(String str, int fromIndex) {
-        return String.indexOf(value, 0, count,
-                              str.toCharArray(), 0, str.length(), fromIndex);
+        return String.indexOf(value, 0, count, str, fromIndex);
     }
 
     /**
@@ -1352,8 +1350,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      *          {@code null}.
      */
     public int lastIndexOf(String str, int fromIndex) {
-        return String.lastIndexOf(value, 0, count,
-                              str.toCharArray(), 0, str.length(), fromIndex);
+        return String.lastIndexOf(value, 0, count, str, fromIndex);
     }
 
     /**

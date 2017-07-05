@@ -111,6 +111,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         }
     }
 
+    @Override
     public boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters) {
 
@@ -139,6 +140,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         return permitted;
     }
 
+    @Override
     public boolean permits(Set<CryptoPrimitive> primitives, Key key) {
 
         boolean permitted = true;
@@ -162,6 +164,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
         return permitted;
     }
 
+    @Override
     public boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, Key key, AlgorithmParameters parameters) {
 
@@ -204,6 +207,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             }
         }
 
+        @Override
         public boolean permits(Set<CryptoPrimitive> primitives,
                 String algorithm, AlgorithmParameters parameters) {
 
@@ -237,10 +241,12 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             return false;
         }
 
+        @Override
         final public boolean permits(Set<CryptoPrimitive> primitives, Key key) {
             return true;
         }
 
+        @Override
         final public boolean permits(Set<CryptoPrimitive> primitives,
                 String algorithm, Key key, AlgorithmParameters parameters) {
 

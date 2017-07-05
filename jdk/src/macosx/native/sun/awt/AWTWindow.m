@@ -160,6 +160,10 @@ AWT_NS_WINDOW_IMPLEMENTATION
         BOOL resizable = IS(bits, RESIZABLE);
         [self updateMinMaxSize:resizable];
         [self.nsWindow setShowsResizeIndicator:resizable];
+        // Zoom button should be disabled, if the window is not resizable,
+        // otherwise button should be restored to initial state.
+        BOOL zoom = resizable && IS(bits, ZOOMABLE);
+        [[self.nsWindow standardWindowButton:NSWindowZoomButton] setEnabled:zoom];
     }
 
     if (IS(mask, HAS_SHADOW)) {
@@ -445,12 +449,13 @@ AWT_ASSERT_APPKIT_THREAD;
 
     NSRect frame = ConvertNSScreenRect(env, [self.nsWindow frame]);
 
-    static JNF_MEMBER_CACHE(jm_deliverMoveResizeEvent, jc_CPlatformWindow, "deliverMoveResizeEvent", "(IIII)V");
+    static JNF_MEMBER_CACHE(jm_deliverMoveResizeEvent, jc_CPlatformWindow, "deliverMoveResizeEvent", "(IIIIZ)V");
     JNFCallVoidMethod(env, platformWindow, jm_deliverMoveResizeEvent,
                       (jint)frame.origin.x,
                       (jint)frame.origin.y,
                       (jint)frame.size.width,
-                      (jint)frame.size.height);
+                      (jint)frame.size.height,
+                      (jboolean)[self.nsWindow inLiveResize]);
     (*env)->DeleteLocalRef(env, platformWindow);
 }
 
@@ -784,7 +789,7 @@ AWT_ASSERT_NOT_APPKIT_THREAD;
 
         // calls methods on NSWindow to change other properties, based on the mask
         if (mask & MASK(_METHOD_PROP_BITMASK)) {
-            [window setPropertiesForStyleBits:bits mask:mask];
+            [window setPropertiesForStyleBits:newBits mask:mask];
         }
 
         window.styleBits = newBits;

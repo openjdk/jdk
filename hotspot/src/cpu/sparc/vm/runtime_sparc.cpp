@@ -24,8 +24,7 @@
 
 #include "precompiled.hpp"
 #ifdef COMPILER2
-#include "asm/assembler.hpp"
-#include "assembler_sparc.inline.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/vmreg.hpp"
 #include "interpreter/interpreter.hpp"

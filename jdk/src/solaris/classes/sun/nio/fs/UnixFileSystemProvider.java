@@ -509,4 +509,24 @@ public abstract class UnixFileSystemProvider
         };
     }
 
+    /**
+     * Returns a {@code FileTypeDetector} that chains the given array of file
+     * type detectors. When the {@code implProbeContentType} method is invoked
+     * then each of the detectors is invoked in turn, the result from the
+     * first to detect the file type is returned.
+     */
+    final FileTypeDetector chain(final AbstractFileTypeDetector... detectors) {
+        return new AbstractFileTypeDetector() {
+            @Override
+            protected String implProbeContentType(Path file) throws IOException {
+                for (AbstractFileTypeDetector detector : detectors) {
+                    String result = detector.implProbeContentType(file);
+                    if (result != null && !result.isEmpty()) {
+                        return result;
+                    }
+                }
+                return null;
+            }
+        };
+    }
 }

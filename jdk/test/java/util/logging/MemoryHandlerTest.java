@@ -48,7 +48,7 @@ public class MemoryHandlerTest {
         File fname = new File(tstSrc, LM_PROP_FNAME);
         String prop = fname.getCanonicalPath();
         System.setProperty(CFG_FILE_PROP, prop);
-        LogManager logMgr = LogManager.getLogManager();
+        LogManager.getLogManager();
         // create a logger
         logger = Logger.getLogger(MemoryHandlerTest.class.getName());
         // don't have parent handlers get log messages

@@ -47,14 +47,14 @@ SharkBuilder::SharkBuilder(SharkCodeBuffer* code_buffer)
 // Helpers for accessing structures
 Value* SharkBuilder::CreateAddressOfStructEntry(Value*      base,
                                                 ByteSize    offset,
-                                                const Type* type,
+                                                Type* type,
                                                 const char* name) {
   return CreateBitCast(CreateStructGEP(base, in_bytes(offset)), type, name);
 }
 
 LoadInst* SharkBuilder::CreateValueOfStructEntry(Value*      base,
                                                  ByteSize    offset,
-                                                 const Type* type,
+                                                 Type* type,
                                                  const char* name) {
   return CreateLoad(
     CreateAddressOfStructEntry(
@@ -71,7 +71,7 @@ LoadInst* SharkBuilder::CreateArrayLength(Value* arrayoop) {
 }
 
 Value* SharkBuilder::CreateArrayAddress(Value*      arrayoop,
-                                        const Type* element_type,
+                                        Type* element_type,
                                         int         element_bytes,
                                         ByteSize    base_offset,
                                         Value*      index,
@@ -114,7 +114,7 @@ Value* SharkBuilder::CreateArrayAddress(Value*      arrayoop,
 
 // Helpers for creating intrinsics and external functions.
 
-const Type* SharkBuilder::make_type(char type, bool void_ok) {
+Type* SharkBuilder::make_type(char type, bool void_ok) {
   switch (type) {
     // Primitive types
   case 'c':
@@ -146,6 +146,8 @@ const Type* SharkBuilder::make_type(char type, bool void_ok) {
     return PointerType::getUnqual(SharkType::monitor_type());
   case 'O':
     return SharkType::oop_type();
+  case 'K':
+    return SharkType::klass_type();
 
     // Miscellaneous
   case 'v':
@@ -159,14 +161,14 @@ const Type* SharkBuilder::make_type(char type, bool void_ok) {
   }
 }
 
-const FunctionType* SharkBuilder::make_ftype(const char* params,
+FunctionType* SharkBuilder::make_ftype(const char* params,
                                              const char* ret) {
-  std::vector<const Type*> param_types;
+  std::vector<Type*> param_types;
   for (const char* c = params; *c; c++)
     param_types.push_back(make_type(*c, false));
 
   assert(strlen(ret) == 1, "should be");
-  const Type *return_type = make_type(*ret, true);
+  Type *return_type = make_type(*ret, true);
 
   return FunctionType::get(return_type, param_types, false);
 }
@@ -274,7 +276,7 @@ Value* SharkBuilder::d2l() {
 }
 
 Value* SharkBuilder::is_subtype_of() {
-  return make_function((address) SharkRuntime::is_subtype_of, "OO", "c");
+  return make_function((address) SharkRuntime::is_subtype_of, "KK", "c");
 }
 
 Value* SharkBuilder::current_time_millis() {
@@ -352,79 +354,14 @@ Value* SharkBuilder::check_special_condition_for_native_trans() {
     "T", "v");
 }
 
-// Low-level non-VM calls
-
-// The ARM-specific code here is to work around unimplemented
-// atomic exchange and memory barrier intrinsics in LLVM.
-//
-// Delegating to external functions for these would normally
-// incur a speed penalty, but Linux on ARM is a special case
-// in that atomic operations on that platform are handled by
-// external functions anyway.  It would be *preferable* for
-// the calls to be hidden away in LLVM, but it's not hurting
-// performance so having the calls here is acceptable.
-//
-// If you are building Shark on a platform without atomic
-// exchange and/or memory barrier intrinsics then it is only
-// acceptable to mimic this approach if your platform cannot
-// perform these operations without delegating to a function.
-
-#ifdef ARM
-static jint zero_cmpxchg_int(volatile jint *ptr, jint oldval, jint newval) {
-  return Atomic::cmpxchg(newval, ptr, oldval);
-}
-#endif // ARM
-
-Value* SharkBuilder::cmpxchg_int() {
-  return make_function(
-#ifdef ARM
-    (address) zero_cmpxchg_int,
-#else
-    "llvm.atomic.cmp.swap.i32.p0i32",
-#endif // ARM
-    "Iii", "i");
-}
-
-#ifdef ARM
-static intptr_t zero_cmpxchg_ptr(volatile intptr_t* ptr,
-                                 intptr_t           oldval,
-                                 intptr_t           newval) {
-  return Atomic::cmpxchg_ptr(newval, ptr, oldval);
-}
-#endif // ARM
-
-Value* SharkBuilder::cmpxchg_ptr() {
-  return make_function(
-#ifdef ARM
-    (address) zero_cmpxchg_ptr,
-#else
-    "llvm.atomic.cmp.swap.i" LP64_ONLY("64") NOT_LP64("32") ".p0i" LP64_ONLY("64") NOT_LP64("32"),
-#endif // ARM
-    "Xxx", "x");
-}
-
 Value* SharkBuilder::frame_address() {
   return make_function("llvm.frameaddress", "i", "C");
 }
 
-Value* SharkBuilder::memory_barrier() {
-  return make_function(
-#ifdef ARM
-    (address) 0xffff0fa0, // __kernel_dmb
-#else
-    "llvm.memory.barrier",
-#endif // ARM
-    "11111", "v");
-}
-
 Value* SharkBuilder::memset() {
-#if SHARK_LLVM_VERSION >= 28
   // LLVM 2.8 added a fifth isVolatile field for memset
   // introduced with LLVM r100304
-  return make_function("llvm.memset.i32", "Cciii", "v");
-#else
-  return make_function("llvm.memset.i32", "Ccii", "v");
-#endif
+  return make_function("llvm.memset.p0i8.i32", "Cciii", "v");
 }
 
 Value* SharkBuilder::unimplemented() {
@@ -441,43 +378,16 @@ Value* SharkBuilder::dump() {
 
 // Public interface to low-level non-VM calls
 
-CallInst* SharkBuilder::CreateCmpxchgInt(Value* exchange_value,
-                                         Value* dst,
-                                         Value* compare_value) {
-  return CreateCall3(cmpxchg_int(), dst, compare_value, exchange_value);
-}
-
-CallInst* SharkBuilder::CreateCmpxchgPtr(Value* exchange_value,
-                                         Value* dst,
-                                         Value* compare_value) {
-  return CreateCall3(cmpxchg_ptr(), dst, compare_value, exchange_value);
-}
-
 CallInst* SharkBuilder::CreateGetFrameAddress() {
   return CreateCall(frame_address(), LLVMValue::jint_constant(0));
-}
-
-CallInst *SharkBuilder::CreateMemoryBarrier(int flags) {
-  Value *args[] = {
-    LLVMValue::bit_constant((flags & BARRIER_LOADLOAD) ? 1 : 0),
-    LLVMValue::bit_constant((flags & BARRIER_LOADSTORE) ? 1 : 0),
-    LLVMValue::bit_constant((flags & BARRIER_STORELOAD) ? 1 : 0),
-    LLVMValue::bit_constant((flags & BARRIER_STORESTORE) ? 1 : 0),
-    LLVMValue::bit_constant(1)};
-
-  return CreateCall(memory_barrier(), args, args + 5);
 }
 
 CallInst* SharkBuilder::CreateMemset(Value* dst,
                                      Value* value,
                                      Value* len,
                                      Value* align) {
-#if SHARK_LLVM_VERSION >= 28
   return CreateCall5(memset(), dst, value, len, align,
                      LLVMValue::jint_constant(0));
-#else
-  return CreateCall4(memset(), dst, value, len, align);
-#endif
 }
 
 CallInst* SharkBuilder::CreateUnimplemented(const char* file, int line) {
@@ -510,11 +420,7 @@ CallInst* SharkBuilder::CreateDump(Value* value) {
   if (isa<PointerType>(value->getType()))
     value = CreatePtrToInt(value, SharkType::intptr_type());
   else if (value->getType()->
-#if SHARK_LLVM_VERSION >= 27
            isIntegerTy()
-#else
-           isInteger()
-#endif
            )
     value = CreateIntCast(value, SharkType::intptr_type(), false);
   else
@@ -563,9 +469,19 @@ Value* SharkBuilder::CreateInlineOop(jobject object, const char* name) {
     name);
 }
 
+Value* SharkBuilder::CreateInlineMetadata(Metadata* metadata, llvm::PointerType* type, const char* name) {
+  assert(metadata != NULL, "inlined metadata must not be NULL");
+  assert(metadata->is_metadata(), "sanity check");
+  return CreateLoad(
+    CreateIntToPtr(
+      code_buffer_address(code_buffer()->inline_Metadata(metadata)),
+      PointerType::getUnqual(type)),
+    name);
+}
+
 Value* SharkBuilder::CreateInlineData(void*       data,
                                       size_t      size,
-                                      const Type* type,
+                                      Type* type,
                                       const char* name) {
   return CreateIntToPtr(
     code_buffer_address(code_buffer()->inline_data(data, size)),
@@ -599,4 +515,12 @@ BasicBlock* SharkBuilder::GetBlockInsertionPoint() const {
 BasicBlock* SharkBuilder::CreateBlock(BasicBlock* ip, const char* name) const {
   return BasicBlock::Create(
     SharkContext::current(), name, GetInsertBlock()->getParent(), ip);
+}
+
+LoadInst* SharkBuilder::CreateAtomicLoad(Value* ptr, unsigned align, AtomicOrdering ordering, SynchronizationScope synchScope, bool isVolatile, const char* name) {
+  return Insert(new LoadInst(ptr, name, isVolatile, align, ordering, synchScope), name);
+}
+
+StoreInst* SharkBuilder::CreateAtomicStore(Value* val, Value* ptr, unsigned align, AtomicOrdering ordering, SynchronizationScope synchScope, bool isVolatile, const char* name) {
+  return Insert(new StoreInst(val, ptr, isVolatile, align, ordering, synchScope), name);
 }

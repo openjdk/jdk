@@ -28,7 +28,9 @@
 
 package com.sun.jmx.snmp.IPAcl;
 
+import java.net.InetAddress;
 import java.util.Hashtable;
+import java.util.Vector;
 
 class JDMAclBlock extends SimpleNode {
   JDMAclBlock(int id) {
@@ -51,11 +53,13 @@ class JDMAclBlock extends SimpleNode {
    * Do no need to go through this part of the tree for
    * building TrapEntry.
    */
-   public void buildTrapEntries(Hashtable dest) {}
+   @Override
+   public void buildTrapEntries(Hashtable<InetAddress, Vector<String>> dest) {}
 
   /**
    * Do no need to go through this part of the tree for
    * building InformEntry.
    */
-   public void buildInformEntries(Hashtable dest) {}
+    @Override
+   public void buildInformEntries(Hashtable<InetAddress, Vector<String>> dest) {}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.reflect.generics.reflectiveObjects;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -190,6 +191,25 @@ public class TypeVariableImpl<D extends GenericDeclaration>
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
         Objects.requireNonNull(annotationClass);
         return null;
+    }
+
+    public <T extends Annotation> T getDeclaredAnnotation(Class<T> annotationClass) {
+        Objects.requireNonNull(annotationClass);
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Annotation> T[] getAnnotations(Class<T> annotationClass) {
+        Objects.requireNonNull(annotationClass);
+        // safe because annotationClass is the class for T
+        return (T[])Array.newInstance(annotationClass, 0);
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T extends Annotation> T[] getDeclaredAnnotations(Class<T> annotationClass) {
+        Objects.requireNonNull(annotationClass);
+        // safe because annotationClass is the class for T
+        return (T[])Array.newInstance(annotationClass, 0);
     }
 
     public Annotation[] getAnnotations() {
