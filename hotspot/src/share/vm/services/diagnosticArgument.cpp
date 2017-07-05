@@ -43,6 +43,47 @@ void GenDCmdArgument::read_value(const char* str, size_t len, TRAPS) {
   set_is_set(true);
 }
 
+void GenDCmdArgument::to_string(jlong l, char* buf, size_t len) {
+  jio_snprintf(buf, len, INT64_FORMAT, l);
+}
+
+void GenDCmdArgument::to_string(bool b, char* buf, size_t len) {
+  jio_snprintf(buf, len, b ? "true" : "false");
+}
+
+void GenDCmdArgument::to_string(NanoTimeArgument n, char* buf, size_t len) {
+  jio_snprintf(buf, len, INT64_FORMAT, n._nanotime);
+}
+
+void GenDCmdArgument::to_string(MemorySizeArgument m, char* buf, size_t len) {
+  jio_snprintf(buf, len, INT64_FORMAT, m._size);
+}
+
+void GenDCmdArgument::to_string(char* c, char* buf, size_t len) {
+  jio_snprintf(buf, len, "%s", c);
+}
+
+void GenDCmdArgument::to_string(StringArrayArgument* f, char* buf, size_t len) {
+  int length = f->array()->length();
+  size_t written = 0;
+  buf[0] = 0;
+  for (int i = 0; i < length; i++) {
+    char* next_str = f->array()->at(i);
+    size_t next_size = strlen(next_str);
+    //Check if there's room left to write next element
+    if (written + next_size > len) {
+      return;
+    }
+    //Actually write element
+    strcat(buf, next_str);
+    written += next_size;
+    //Check if there's room left for the comma
+    if (i < length-1 && len - written > 0) {
+      strcat(buf, ",");
+    }
+  }
+}
+
 template <> void DCmdArgument<jlong>::parse_value(const char* str,
                                                   size_t len, TRAPS) {
     if (str == NULL || sscanf(str, INT64_FORMAT, &_value) != 1) {

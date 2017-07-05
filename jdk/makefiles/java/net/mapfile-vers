@@ -1,0 +1,109 @@
+#
+# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# Define public interface.
+
+SUNWprivate_1.1 {
+	global:
+		JNI_OnLoad;
+		Java_java_net_PlainSocketImpl_socketListen;
+		Java_java_net_PlainDatagramSocketImpl_getTTL;
+		Java_java_net_PlainDatagramSocketImpl_init;
+		Java_java_net_SocketOutputStream_socketWrite0;
+		Java_java_net_PlainSocketImpl_socketCreate;
+		Java_java_net_PlainSocketImpl_socketAvailable;
+		Java_java_net_PlainDatagramSocketImpl_join;
+		Java_java_net_PlainDatagramSocketImpl_socketGetOption;
+		Java_java_net_InetAddress_init;
+		Java_java_net_Inet4Address_init;
+		Java_java_net_Inet6Address_init;
+		Java_java_net_PlainDatagramSocketImpl_setTTL;
+		Java_java_net_PlainDatagramSocketImpl_socketSetOption;
+		Java_java_net_PlainDatagramSocketImpl_bind0;
+		Java_java_net_PlainSocketImpl_socketAccept;
+		Java_java_net_DatagramPacket_init;
+		Java_java_net_PlainDatagramSocketImpl_leave;
+		Java_java_net_SocketInputStream_socketRead0;
+		Java_java_net_InetAddressImplFactory_isIPv6Supported;
+		Java_java_net_Inet4AddressImpl_getLocalHostName;
+		Java_java_net_Inet4AddressImpl_lookupAllHostAddr;
+		Java_java_net_Inet4AddressImpl_getHostByAddr;
+		Java_java_net_Inet4AddressImpl_isReachable0;
+		Java_java_net_Inet6AddressImpl_getLocalHostName;
+		Java_java_net_Inet6AddressImpl_lookupAllHostAddr;
+		Java_java_net_Inet6AddressImpl_getHostByAddr;
+		Java_java_net_Inet6AddressImpl_isReachable0;
+		Java_java_net_NetworkInterface_init;
+		Java_java_net_NetworkInterface_getByName0;
+		Java_java_net_NetworkInterface_getByIndex0;
+		Java_java_net_NetworkInterface_getByInetAddress0;
+		Java_java_net_NetworkInterface_getAll;
+		Java_java_net_NetworkInterface_isUp0;
+		Java_java_net_NetworkInterface_isLoopback0;
+		Java_java_net_NetworkInterface_isP2P0;
+		Java_java_net_NetworkInterface_supportsMulticast0;
+		Java_java_net_NetworkInterface_getMacAddr0;
+		Java_java_net_NetworkInterface_getMTU0;
+		Java_java_net_PlainDatagramSocketImpl_send;
+		Java_java_net_PlainSocketImpl_socketClose0;
+		Java_java_net_SocketOutputStream_init;
+		Java_java_net_PlainDatagramSocketImpl_peek;
+		Java_java_net_PlainDatagramSocketImpl_peekData;
+		Java_java_net_PlainSocketImpl_socketSetOption;
+		Java_java_net_PlainSocketImpl_socketSendUrgentData;
+		Java_java_net_PlainDatagramSocketImpl_datagramSocketCreate;
+		Java_java_net_PlainSocketImpl_socketGetOption;
+		Java_java_net_PlainDatagramSocketImpl_receive0;
+		Java_java_net_PlainDatagramSocketImpl_connect0;
+		Java_java_net_PlainDatagramSocketImpl_disconnect0;
+		Java_java_net_PlainDatagramSocketImpl_datagramSocketClose;
+		Java_java_net_PlainSocketImpl_initProto;
+		Java_java_net_PlainSocketImpl_socketBind;
+		Java_java_net_PlainSocketImpl_socketShutdown;
+		Java_java_net_SocketInputStream_init;
+		Java_java_net_PlainSocketImpl_socketConnect;
+		Java_java_net_PlainDatagramSocketImpl_getTimeToLive;
+		Java_java_net_PlainDatagramSocketImpl_setTimeToLive;
+		Java_sun_net_dns_ResolverConfigurationImpl_localDomain0;
+		Java_sun_net_dns_ResolverConfigurationImpl_fallbackDomain0;
+		Java_sun_net_sdp_SdpSupport_convert0;
+		Java_sun_net_sdp_SdpSupport_create0;
+		Java_sun_net_spi_DefaultProxySelector_init;
+		Java_sun_net_spi_DefaultProxySelector_getSystemProxy;
+		NET_AllocSockaddr;
+		NET_SockaddrToInetAddress;
+                NET_SockaddrEqualsInetAddress;
+		NET_InetAddressToSockaddr;
+		NET_GetPortFromSockaddr;
+		NET_SetSockOpt;
+		NET_GetSockOpt;
+		NET_Bind;
+		NET_MapSocketOption;
+		NET_Wait;
+                ipv6_available;
+
+	local:
+		*;
+};

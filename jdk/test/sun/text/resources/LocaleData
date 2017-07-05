@@ -574,7 +574,6 @@ FormatData/es_PA/DateTimePatterns/8={1} {0}
 FormatData/es_PA/NumberElements/0=.
 FormatData/es_PA/NumberElements/1=,
 FormatData/es_PA/NumberElements/2=;
-CurrencyNames/es_PE/PEN=S/
 FormatData/es_PE/NumberPatterns/0=#,##0.###;-#,##0.###
 # FormatData/es_PE/NumberPatterns/1=S/#,##0.00;S/-#,##0.00 # Changed; see bug 4122840
 FormatData/es_PE/NumberPatterns/2=#,##0%
@@ -7027,3 +7026,6 @@ CurrencyNames//xsu=Sucre
 CurrencyNames//xua=ADB Unit of Account
 LocaleNames//SS=South Sudan
 LocaleNames/en/SS=South Sudan
+
+# bug 7028073
+CurrencyNames/es_PE/PEN=S/.

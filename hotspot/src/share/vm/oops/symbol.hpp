@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "utilities/utf8.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 
 // A Symbol is a canonicalized string.
 // All Symbols reside in global SymbolTable and are reference counted.
@@ -95,7 +96,7 @@
 // TempNewSymbol (passed in as a parameter) so the reference count on its symbol
 // will be decremented when it goes out of scope.
 
-class Symbol : public CHeapObj {
+class Symbol : public ResourceObj {
   friend class VMStructs;
   friend class SymbolTable;
   friend class MoveSymbols;
@@ -111,7 +112,7 @@ class Symbol : public CHeapObj {
   };
 
   static int object_size(int length) {
-    size_t size = heap_word_size(sizeof(Symbol) + length);
+    size_t size = heap_word_size(sizeof(Symbol) + (length > 0 ? length - 1 : 0));
     return align_object_size(size);
   }
 
@@ -120,28 +121,25 @@ class Symbol : public CHeapObj {
     _body[index] = value;
   }
 
-  Symbol(const u1* name, int length);
-  void* operator new(size_t size, int len);
+  Symbol(const u1* name, int length, int refcount);
+  void* operator new(size_t size, int len, TRAPS);
+  void* operator new(size_t size, int len, Arena* arena, TRAPS);
 
  public:
   // Low-level access (used with care, since not GC-safe)
   const jbyte* base() const { return &_body[0]; }
 
-  int object_size() { return object_size(utf8_length()); }
+  int object_size()         { return object_size(utf8_length()); }
 
   // Returns the largest size symbol we can safely hold.
-  static int max_length() {
-    return max_symbol_length;
-  }
+  static int max_length()   { return max_symbol_length; }
 
-  int identity_hash() {
-    return _identity_hash;
-  }
+  int identity_hash()       { return _identity_hash; }
 
   // Reference counting.  See comments above this class for when to use.
-  int refcount() const { return _refcount; }
-  void increment_refcount();
-  void decrement_refcount();
+  int refcount() const      { return _refcount; }
+  inline void increment_refcount();
+  inline void decrement_refcount();
 
   int byte_at(int index) const {
     assert(index >=0 && index < _length, "symbol index overflow");
@@ -219,5 +217,27 @@ class Symbol : public CHeapObj {
 int Symbol::fast_compare(Symbol* other) const {
  return (((uintptr_t)this < (uintptr_t)other) ? -1
    : ((uintptr_t)this == (uintptr_t) other) ? 0 : 1);
+}
+
+inline void Symbol::increment_refcount() {
+  // Only increment the refcount if positive.  If negative either
+  // overflow has occurred or it is a permanent symbol in a read only
+  // shared archive.
+  if (_refcount >= 0) {
+    Atomic::inc(&_refcount);
+    NOT_PRODUCT(Atomic::inc(&_total_count);)
+  }
+}
+
+inline void Symbol::decrement_refcount() {
+  if (_refcount >= 0) {
+    Atomic::dec(&_refcount);
+#ifdef ASSERT
+    if (_refcount < 0) {
+      print();
+      assert(false, "reference count underflow for symbol");
+    }
+#endif
+  }
 }
 #endif // SHARE_VM_OOPS_SYMBOL_HPP

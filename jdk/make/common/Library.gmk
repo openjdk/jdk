@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -167,17 +167,23 @@ else # LIBRARY
 # build it into $(OBJDIR) so that the other generated files get put 
 # there, then copy just the DLL (and MAP file) to the requested directory.
 #
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
+  MAP_OPTION="-map:$(OBJDIR)/$(LIBRARY).map"
+endif
+
 $(ACTUAL_LIBRARY):: $(OBJDIR)/$(LIBRARY).lcf
 	@$(prep-target)
 	@$(MKDIR) -p $(OBJDIR)
 	$(LINK) -dll -out:$(OBJDIR)/$(@F) \
-	  -map:$(OBJDIR)/$(LIBRARY).map \
+	  $(MAP_OPTION) \
 	  $(LFLAGS) @$(OBJDIR)/$(LIBRARY).lcf \
 	  $(OTHER_LCF) $(LDLIBS)
 	$(CP) $(OBJDIR)/$(@F) $@
 	@$(call binary_file_verification,$@)
+ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 	$(CP) $(OBJDIR)/$(LIBRARY).map $(@D)
 	$(CP) $(OBJDIR)/$(LIBRARY).pdb $(@D)
+endif
 
 endif # LIBRARY
 

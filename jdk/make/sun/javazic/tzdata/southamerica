@@ -840,6 +840,19 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 # oficial agency about time in Brazil, and she confirmed that the old rule is
 # still in force.
 
+# From Guilherme Bernardes Rodrigues (2011-10-14)
+# It's official, the President signed a decree that includes Bahia in summer
+# time.
+#	 [ and in a second message (same day): ]
+# I found the decree.
+#
+# DECRETO No- 7.584, DE 13 DE OUTUBRO DE 2011
+# Link :
+# <a href="http://www.in.gov.br/visualiza/index.jsp?data=13/10/2011&jornal=1000&pagina=6&totalArquivos=6">
+# http://www.in.gov.br/visualiza/index.jsp?data=13/10/2011&jornal=1000&pagina=6&totalArquivos=6
+# </a>
+
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 # Decree <a href="http://pcdsh01.on.br/HV20466.htm">20,466</a> (1931-10-01)
 # Decree <a href="http://pcdsh01.on.br/HV21896.htm">21,896</a> (1932-01-10)
@@ -1076,10 +1089,8 @@ Zone America/Maceio	-2:22:52 -	LMT	1914
 # of America/Salvador.
 Zone America/Bahia	-2:34:04 -	LMT	1914
 			-3:00	Brazil	BR%sT	2003 Sep 24
-			-3:00	-	BRT
-# as noted above, not yet in operation.
-#			-3:00	-	BRT	2011 Oct 16
-#			-3:00	Brazil	BR%sT
+			-3:00	-	BRT	2011 Oct 16
+			-3:00	Brazil	BR%sT
 #
 # Goias (GO), Distrito Federal (DF), Minas Gerais (MG),
 # Espirito Santo (ES), Rio de Janeiro (RJ), Sao Paulo (SP), Parana (PR),
@@ -1229,6 +1240,28 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # August, not in October as they have since 1968. This is a pilot plan
 # which will be reevaluated in 2012.
 
+# From Mauricio Parada (2012-02-22), translated by Glenn Eychaner (2012-02-23):
+# As stated in the website of the Chilean Energy Ministry
+# http://www.minenergia.cl/ministerio/noticias/generales/gobierno-anuncia-fechas-de-cambio-de.html
+# The Chilean Government has decided to postpone the entrance into winter time
+# (to leave DST) from March 11 2012 to April 28th 2012. The decision has not
+# been yet formalized but it will within the next days.
+# Quote from the website communication:
+#
+# 6. For the year 2012, the dates of entry into winter time will be as follows:
+# a. Saturday April 28, 2012, clocks should go back 60 minutes; that is, at
+# 23:59:59, instead of passing to 0:00, the time should be adjusted to be 23:00
+# of the same day.
+# b. Saturday, September 1, 2012, clocks should go forward 60 minutes; that is,
+# at 23:59:59, instead of passing to 0:00, the time should be adjusted to be
+# 01:00 on September 2.
+#
+# Note that...this is yet another "temporary" change that will be reevaluated
+# AGAIN in 2013.
+
+# NOTE: ChileAQ rules for Antarctic bases are stored separately in the
+# 'antarctica' file.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Chile	1927	1932	-	Sep	 1	0:00	1:00	S
 Rule	Chile	1928	1932	-	Apr	 1	0:00	0	-
@@ -1259,8 +1292,6 @@ Rule	Chile	1998	only	-	Mar	Sun>=9	3:00u	0	-
 Rule	Chile	1998	only	-	Sep	27	4:00u	1:00	S
 Rule	Chile	1999	only	-	Apr	 4	3:00u	0	-
 Rule	Chile	1999	2010	-	Oct	Sun>=9	4:00u	1:00	S
-Rule	Chile	2011	only	-	Aug	Sun>=16	4:00u	1:00	S
-Rule	Chile	2012	max	-	Oct	Sun>=9	4:00u	1:00	S
 Rule	Chile	2000	2007	-	Mar	Sun>=9	3:00u	0	-
 # N.B.: the end of March 29 in Chile is March 30 in Universal time,
 # which is used below in specifying the transition.
@@ -1268,7 +1299,11 @@ Rule	Chile	2008	only	-	Mar	30	3:00u	0	-
 Rule	Chile	2009	only	-	Mar	Sun>=9	3:00u	0	-
 Rule	Chile	2010	only	-	Apr	Sun>=1	3:00u	0	-
 Rule	Chile	2011	only	-	May	Sun>=2	3:00u	0	-
-Rule	Chile	2012	max	-	Mar	Sun>=9	3:00u	0	-
+Rule	Chile	2011	only	-	Aug	Sun>=16	4:00u	1:00	S
+Rule	Chile	2012	only	-	Apr	Sun>=23	3:00u	0	-
+Rule	Chile	2012	only	-	Sep	Sun>=2	4:00u	1:00	S
+Rule	Chile	2013	max	-	Mar	Sun>=9	3:00u	0	-
+Rule	Chile	2013	max	-	Oct	Sun>=9	4:00u	1:00	S
 # IATA SSIM anomalies: (1992-02) says 1992-03-14;
 # (1996-09) says 1998-03-08.  Ignore these.
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
@@ -1414,6 +1449,21 @@ Zone Pacific/Galapagos	-5:58:24 -	LMT	1931 # Puerto Baquerizo Moreno
 # will not revert to local mean time, but clocks will remain on Summer
 # time (UTC/GMT - 3 hours) throughout the whole of 2011.  Any long term
 # change to local time following the trial period will be notified.
+#
+# From Andrew Newman (2012-02-24)
+# A letter from Justin McPhee, Chief Executive,
+# Cable & Wireless Falkland Islands (dated 2012-02-22)
+# states...
+#   The current Atlantic/Stanley entry under South America expects the
+#   clocks to go back to standard Falklands Time (FKT) on the 15th April.
+#   The database entry states that in 2011 Stanley was staying on fixed
+#   summer time on a trial basis only.  FIG need to contact IANA and/or
+#   the maintainers of the database to inform them we're adopting
+#   the same policy this year and suggest recommendations for future years.
+#
+# For now we will assume permanent summer time for the Falklands
+# until advised differently (to apply for 2012 and beyond, after the 2011
+# experiment was apparently successful.)
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Falk	1937	1938	-	Sep	lastSun	0:00	1:00	S
 Rule	Falk	1938	1942	-	Mar	Sun>=19	0:00	0	-
@@ -1426,14 +1476,14 @@ Rule	Falk	1984	only	-	Sep	16	0:00	1:00	S
 Rule	Falk	1985	2000	-	Sep	Sun>=9	0:00	1:00	S
 Rule	Falk	1986	2000	-	Apr	Sun>=16	0:00	0	-
 Rule	Falk	2001	2010	-	Apr	Sun>=15	2:00	0	-
-Rule	Falk	2012	max	-	Apr	Sun>=15	2:00	0	-
-Rule	Falk	2001	max	-	Sep	Sun>=1	2:00	1:00	S
+Rule	Falk	2001	2010	-	Sep	Sun>=1	2:00	1:00	S
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Atlantic/Stanley	-3:51:24 -	LMT	1890
 			-3:51:24 -	SMT	1912 Mar 12  # Stanley Mean Time
 			-4:00	Falk	FK%sT	1983 May     # Falkland Is Time
 			-3:00	Falk	FK%sT	1985 Sep 15
-			-4:00	Falk	FK%sT
+			-4:00	Falk	FK%sT	2010 Sep 5 02:00
+			-3:00	-	FKST
 
 # French Guiana
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]

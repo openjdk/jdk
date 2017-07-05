@@ -1,3 +1,5 @@
+package build.tools.generatecharacter;
+
 import java.util.regex.*;
 import java.util.*;
 import java.io.*;

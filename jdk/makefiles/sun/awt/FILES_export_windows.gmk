@@ -1,0 +1,252 @@
+#
+# Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# FILES_export definitions for Win32
+
+FILES_export = \
+	java/awt/AlphaComposite.java \
+	java/awt/MouseInfo.java \
+        java/awt/Graphics.java \
+        java/awt/Color.java \
+        java/awt/Image.java \
+        java/awt/Rectangle.java \
+        java/awt/Event.java \
+        java/awt/Font.java \
+        java/awt/FontMetrics.java \
+        java/awt/Toolkit.java \
+        java/awt/Component.java \
+        java/awt/Container.java \
+        java/awt/Canvas.java \
+        java/awt/Button.java \
+        java/awt/List.java \
+	java/awt/Adjustable.java \
+        java/awt/Scrollbar.java \
+        java/awt/ScrollPane.java \
+        java/awt/ScrollPaneAdjustable.java \
+        java/awt/Transparency.java \
+	java/awt/Window.java \
+        java/awt/TextField.java \
+        java/awt/Label.java \
+        java/awt/Choice.java \
+        java/awt/TextComponent.java \
+        java/awt/TextArea.java \
+        java/awt/MenuBar.java \
+        java/awt/Menu.java \
+	java/awt/Dialog.java \
+	java/awt/FileDialog.java \
+        java/awt/MenuItem.java \
+	java/awt/MenuComponent.java \
+        java/awt/Checkbox.java \
+        java/awt/CheckboxGroup.java \
+        java/awt/CheckboxMenuItem.java \
+        java/awt/Frame.java \
+	java/awt/Insets.java \
+	java/awt/Cursor.java \
+	java/awt/Dimension.java \
+	java/awt/PopupMenu.java \
+        java/awt/AWTEvent.java \
+        java/awt/AWTException.java \
+        java/awt/AWTKeyStroke.java \
+        java/awt/KeyboardFocusManager.java \
+	java/awt/DisplayMode.java \
+        java/awt/TrayIcon.java \
+	java/awt/datatransfer/StringSelection.java \
+	java/awt/datatransfer/Transferable.java \
+	java/awt/dnd/DnDConstants.java \
+	java/awt/event/ActionEvent.java \
+	java/awt/event/AdjustmentEvent.java \
+	java/awt/event/ComponentEvent.java \
+	java/awt/event/FocusEvent.java \
+	java/awt/event/ItemEvent.java \
+	java/awt/event/InputEvent.java \
+	java/awt/event/InvocationEvent.java \
+	java/awt/event/KeyEvent.java \
+	java/awt/event/MouseEvent.java \
+	java/awt/event/MouseWheelEvent.java \
+	java/awt/event/WindowEvent.java \
+	java/awt/event/InputMethodEvent.java \
+	java/awt/im/InputMethodHighlight.java \
+	java/awt/im/spi/InputMethod.java \
+	java/awt/font/TextHitInfo.java \
+	java/text/AttributedCharacterIterator.java \
+	java/text/AttributedString.java \
+        java/awt/geom/PathIterator.java \
+	java/awt/image/AffineTransformOp.java \
+	java/awt/image/ImageConsumer.java \
+	java/awt/image/ImageObserver.java \
+        java/awt/image/BufferedImage.java \
+        java/awt/image/ColorModel.java \
+        java/awt/image/ConvolveOp.java \
+        java/awt/image/DirectColorModel.java \
+        java/awt/image/IndexColorModel.java \
+        java/awt/image/Raster.java \
+        java/awt/color/ColorSpace.java \
+        java/awt/color/ICC_Profile.java \
+	java/awt/peer/ComponentPeer.java \
+	java/awt/peer/MenuComponentPeer.java \
+        java/io/InputStream.java
+
+FILES_export2 = \
+	sun/awt/im/InputMethodContext.java \
+	sun/awt/EmbeddedFrame.java \
+	sun/awt/KeyboardFocusManagerPeerImpl.java \
+	sun/awt/windows/WEmbeddedFrame.java \
+	sun/awt/windows/WEmbeddedFramePeer.java \
+	sun/awt/Win32FontManager.java \
+        sun/awt/Win32GraphicsEnvironment.java \
+        sun/awt/Win32GraphicsDevice.java \
+        sun/awt/Win32GraphicsConfig.java \
+        sun/java2d/SunGraphicsEnvironment.java \
+        sun/java2d/SunGraphics2D.java \
+        sun/java2d/SurfaceData.java \
+        sun/awt/image/IntegerComponentRaster.java \
+        sun/awt/image/ImagingLib.java \
+	sun/awt/image/BufImgSurfaceData.java \
+	sun/awt/image/DataBufferNative.java \
+        sun/awt/shell/Win32ShellFolder2.java \
+	sun/java2d/windows/GDIBlitLoops.java \
+	sun/java2d/windows/GDIRenderer.java \
+	sun/java2d/windows/GDIWindowSurfaceData.java \
+        sun/java2d/windows/WindowsFlags.java \
+	sun/java2d/loops/Blit.java \
+	sun/java2d/loops/BlitBg.java \
+	sun/java2d/loops/ScaledBlit.java \
+	sun/java2d/loops/FillRect.java \
+	sun/java2d/loops/FillSpans.java \
+	sun/java2d/loops/FillParallelogram.java \
+	sun/java2d/loops/DrawParallelogram.java \
+        sun/java2d/loops/DrawGlyphList.java \
+        sun/java2d/loops/DrawGlyphListAA.java \
+        sun/java2d/loops/DrawGlyphListLCD.java \
+	sun/java2d/loops/DrawLine.java \
+	sun/java2d/loops/DrawRect.java \
+	sun/java2d/loops/DrawPolygons.java \
+        sun/java2d/loops/DrawPath.java \
+        sun/java2d/loops/FillPath.java \
+	sun/java2d/loops/MaskBlit.java \
+	sun/java2d/loops/MaskFill.java \
+	sun/java2d/loops/TransformHelper.java \
+	sun/java2d/loops/GraphicsPrimitiveMgr.java \
+        sun/java2d/loops/GraphicsPrimitive.java \
+        sun/java2d/cmm/CMSManager.java \
+        sun/java2d/cmm/PCMM.java \
+        sun/java2d/cmm/ColorTransform.java \
+        sun/awt/ScrollPaneWheelScroller.java \
+        sun/awt/datatransfer/DataTransferer.java \
+	sun/awt/datatransfer/SunClipboard.java \
+	sun/awt/dnd/SunDragSourceContextPeer.java \
+        sun/awt/windows/WToolkitThreadBlockedHandler.java
+
+FILES_export3 = \
+        java/awt/CheckboxMenuItem.java \
+        java/awt/Menu.java \
+	java/awt/MenuBar.java \
+	java/awt/MenuComponent.java \
+        java/awt/MenuItem.java \
+	sun/awt/PlatformFont.java \
+	sun/awt/FontDescriptor.java \
+	sun/awt/CharsetString.java \
+	java/awt/image/DataBuffer.java \
+        sun/awt/image/GifImageDecoder.java \
+	sun/awt/image/ImageRepresentation.java \
+	sun/awt/windows/WCustomCursor.java \
+	sun/awt/windows/WDefaultFontCharset.java \
+	sun/awt/windows/WButtonPeer.java \
+	sun/awt/windows/WCanvasPeer.java \
+	sun/awt/windows/WCheckboxPeer.java \
+	sun/awt/windows/WCheckboxMenuItemPeer.java \
+	sun/awt/windows/WChoicePeer.java \
+	sun/awt/windows/WClipboard.java \
+	sun/awt/windows/WColor.java \
+	sun/awt/windows/WDataTransferer.java \
+	sun/awt/windows/WDesktopPeer.java \
+	sun/awt/windows/WDesktopProperties.java \
+	sun/awt/windows/WDialogPeer.java \
+	sun/awt/windows/WDragSourceContextPeer.java \
+	sun/awt/windows/WDropTargetContextPeer.java \
+	sun/awt/windows/WFileDialogPeer.java \
+	sun/awt/windows/WFontPeer.java \
+	sun/awt/windows/WFontMetrics.java \
+	sun/awt/windows/WFramePeer.java \
+	sun/awt/windows/WGlobalCursorManager.java \
+	sun/awt/windows/WInputMethod.java \
+	sun/awt/windows/WInputMethodDescriptor.java \
+        sun/awt/windows/WComponentPeer.java \
+        sun/awt/windows/WLabelPeer.java \
+        sun/awt/windows/WListPeer.java \
+	sun/awt/windows/WMenuBarPeer.java \
+	sun/awt/windows/WMenuItemPeer.java \
+	sun/awt/windows/WMenuPeer.java \
+	sun/awt/windows/WObjectPeer.java \
+	sun/awt/windows/WPopupMenuPeer.java \
+	sun/awt/windows/WPrintDialog.java \
+	sun/awt/windows/WPrintDialogPeer.java \
+	sun/awt/windows/WPrinterJob.java \
+        sun/awt/windows/WRobotPeer.java \
+        sun/awt/windows/WScrollbarPeer.java \
+        sun/awt/windows/WScrollPanePeer.java \
+        sun/awt/windows/WTextAreaPeer.java \
+        sun/awt/windows/WTextComponentPeer.java \
+        sun/awt/windows/WTextFieldPeer.java \
+	sun/awt/windows/WPanelPeer.java \
+        sun/awt/windows/WToolkit.java \
+        sun/awt/windows/WWindowPeer.java \
+        sun/awt/windows/ThemeReader.java \
+	sun/awt/windows/WBufferStrategy.java \
+	sun/awt/windows/WTrayIconPeer.java \
+	sun/awt/image/ImagingLib.java \
+	sun/awt/ExtendedKeyCodes.java \
+        sun/java2d/pipe/hw/AccelSurface.java \
+        sun/java2d/pipe/hw/AccelDeviceEventNotifier.java \
+        sun/java2d/pipe/hw/ContextCapabilities.java \
+        sun/java2d/pipe/BufferedContext.java \
+        sun/java2d/pipe/BufferedMaskBlit.java \
+        sun/java2d/pipe/BufferedOpCodes.java \
+        sun/java2d/pipe/BufferedPaints.java \
+        sun/java2d/pipe/BufferedRenderPipe.java \
+        sun/java2d/pipe/BufferedTextPipe.java \
+        sun/java2d/pipe/RenderBuffer.java \
+	sun/java2d/pipe/ShapeSpanIterator.java \
+	sun/java2d/pipe/SpanClipRenderer.java \
+	sun/java2d/pipe/RegionIterator.java \
+	sun/java2d/opengl/OGLBlitLoops.java \
+	sun/java2d/opengl/OGLContext.java \
+	sun/java2d/opengl/OGLMaskFill.java \
+	sun/java2d/opengl/OGLPaints.java \
+	sun/java2d/opengl/OGLRenderQueue.java \
+	sun/java2d/opengl/OGLRenderer.java \
+	sun/java2d/opengl/OGLSurfaceData.java \
+	sun/java2d/opengl/OGLTextRenderer.java \
+	sun/java2d/opengl/WGLGraphicsConfig.java \
+	sun/java2d/opengl/WGLSurfaceData.java \
+	sun/java2d/d3d/D3DBlitLoops.java \
+	sun/java2d/d3d/D3DGraphicsDevice.java \
+	sun/java2d/d3d/D3DSurfaceData.java \
+	sun/java2d/d3d/D3DMaskFill.java \
+	sun/java2d/d3d/D3DPaints.java \
+	sun/java2d/d3d/D3DRenderQueue.java \
+	sun/java2d/d3d/D3DRenderer.java \
+	sun/java2d/d3d/D3DTextRenderer.java \
+	sun/java2d/d3d/D3DContext.java
