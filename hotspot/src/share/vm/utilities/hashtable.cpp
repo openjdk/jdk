@@ -32,8 +32,10 @@
 #include "utilities/hashtable.inline.hpp"
 
 
+#ifndef USDT2
 HS_DTRACE_PROBE_DECL4(hs_private, hashtable__new_entry,
   void*, unsigned int, void*, void*);
+#endif /* !USDT2 */
 
 // This is a generic hashtable, designed to be used for the symbol
 // and string tables.
@@ -73,8 +75,13 @@ template <class T> HashtableEntry<T>* Hashtable<T>::new_entry(unsigned int hashV
 
   entry = (HashtableEntry<T>*)BasicHashtable::new_entry(hashValue);
   entry->set_literal(obj);
+#ifndef USDT2
   HS_DTRACE_PROBE4(hs_private, hashtable__new_entry,
     this, hashValue, obj, entry);
+#else /* USDT2 */
+  HS_PRIVATE_HASHTABLE_NEW_ENTRY(
+    this, hashValue, (uintptr_t) obj, entry);
+#endif /* USDT2 */
   return entry;
 }
 

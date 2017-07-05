@@ -721,12 +721,7 @@ const Type *ConvF2DNode::Value( PhaseTransform *phase ) const {
   if( t == Type::TOP ) return Type::TOP;
   if( t == Type::FLOAT ) return Type::DOUBLE;
   const TypeF *tf = t->is_float_constant();
-#ifndef IA64
   return TypeD::make( (double)tf->getf() );
-#else
-  float x = tf->getf();
-  return TypeD::make( (x == 0.0f) ? (double)x : (double)x + ia64_double_zero );
-#endif
 }
 
 //=============================================================================

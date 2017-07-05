@@ -669,6 +669,11 @@ static bool assign_distribution(processorid_t* id_array,
   return true;
 }
 
+void os::set_native_thread_name(const char *name) {
+  // Not yet implemented.
+  return;
+}
+
 bool os::distribute_processes(uint length, uint* distribution) {
   bool result = false;
   // Find the processor id's of all the available CPUs.
