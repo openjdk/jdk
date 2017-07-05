@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
 
 package sun.security.provider.certpath;
 
-import java.util.Set;
-
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.cert.*;
+import java.util.Set;
 
 /**
  * This class specifies the set of parameters used as input for the Sun
@@ -120,8 +119,9 @@ public class SunCertPathBuilderParameters extends PKIXBuilderParameters {
      *
      * @return a formatted string describing the parameters.
      */
+    @Override
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("[\n");
         sb.append(super.toString());
         sb.append("  Build Forward Flag: " + String.valueOf(buildForward) + "\n");

@@ -37,6 +37,8 @@ import sun.java2d.loops.XORComposite;
 import static sun.java2d.pipe.BufferedOpCodes.*;
 import static sun.java2d.pipe.BufferedRenderPipe.BYTES_PER_SPAN;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * Base context class for managing state in a single-threaded rendering
  * environment.  Each state-setting operation (e.g. SET_COLOR) is added to
@@ -47,6 +49,8 @@ import static sun.java2d.pipe.BufferedRenderPipe.BYTES_PER_SPAN;
  *
  * @see RenderQueue
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public abstract class BufferedContext {
 
     /*

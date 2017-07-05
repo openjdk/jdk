@@ -27,6 +27,8 @@ package sun.java2d.pipe;
 
 import sun.misc.Unsafe;
 
+import javax.tools.annotation.GenerateNativeHeader;
+
 /**
  * The RenderBuffer class is a simplified, high-performance, Unsafe wrapper
  * used for buffering rendering operations in a single-threaded rendering
@@ -42,6 +44,8 @@ import sun.misc.Unsafe;
  * single-threaded rendering.  For example, there is no put(double[]) method
  * because we currently have no need for such a method in the STR classes.
  */
+/* No native methods here, but the constants are needed in the supporting JNI code */
+@GenerateNativeHeader
 public class RenderBuffer {
 
     /**

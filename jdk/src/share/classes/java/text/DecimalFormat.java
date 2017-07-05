@@ -2051,7 +2051,7 @@ public class DecimalFormat extends NumberFormat {
      * @return FieldPosition array of the resulting fields.
      */
     private FieldPosition[] expandAffix(String pattern) {
-        ArrayList positions = null;
+        ArrayList<FieldPosition> positions = null;
         int stringIndex = 0;
         for (int i=0; i<pattern.length(); ) {
             char c = pattern.charAt(i++);
@@ -2071,7 +2071,7 @@ public class DecimalFormat extends NumberFormat {
                     }
                     if (string.length() > 0) {
                         if (positions == null) {
-                            positions = new ArrayList(2);
+                            positions = new ArrayList<>(2);
                         }
                         FieldPosition fp = new FieldPosition(Field.CURRENCY);
                         fp.setBeginIndex(stringIndex);
@@ -2098,7 +2098,7 @@ public class DecimalFormat extends NumberFormat {
                 }
                 if (fieldID != null) {
                     if (positions == null) {
-                        positions = new ArrayList(2);
+                        positions = new ArrayList<>(2);
                     }
                     FieldPosition fp = new FieldPosition(fieldID, field);
                     fp.setBeginIndex(stringIndex);
@@ -2109,7 +2109,7 @@ public class DecimalFormat extends NumberFormat {
             stringIndex++;
         }
         if (positions != null) {
-            return (FieldPosition[])positions.toArray(EmptyFieldPositionArray);
+            return positions.toArray(EmptyFieldPositionArray);
         }
         return EmptyFieldPositionArray;
     }

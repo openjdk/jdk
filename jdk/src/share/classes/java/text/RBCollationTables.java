@@ -112,8 +112,8 @@ final class RBCollationTables {
         void fillInTables(boolean f2ary,
                           boolean swap,
                           UCompactIntArray map,
-                          Vector cTbl,
-                          Vector eTbl,
+                          Vector<Vector<EntryPair>> cTbl,
+                          Vector<int[]> eTbl,
                           IntHashtable cFlgs,
                           short mso,
                           short mto) {
@@ -155,18 +155,18 @@ final class RBCollationTables {
      *  table.
      *  @param ch the starting character of the contracting string
      */
-    Vector getContractValues(int ch)
+    Vector<EntryPair> getContractValues(int ch)
     {
         int index = mapping.elementAt(ch);
         return getContractValuesImpl(index - CONTRACTCHARINDEX);
     }
 
     //get contract values from contractTable by index
-    private Vector getContractValuesImpl(int index)
+    private Vector<EntryPair> getContractValuesImpl(int index)
     {
         if (index >= 0)
         {
-            return (Vector)contractTable.elementAt(index);
+            return contractTable.elementAt(index);
         }
         else // not found
         {
@@ -202,7 +202,7 @@ final class RBCollationTables {
             // this could cause a performance problem, but in practise that
             // rarely happens
             for (int i = 0; i < expandTable.size(); i++) {
-                int[] valueList = (int [])expandTable.elementAt(i);
+                int[] valueList = expandTable.elementAt(i);
                 int length = valueList.length;
 
                 if (length > result && valueList[length-1] == order) {
@@ -220,7 +220,7 @@ final class RBCollationTables {
      *  @param idx the index of the expanding string value list
      */
     final int[] getExpandValueList(int order) {
-        return (int[])expandTable.elementAt(order - EXPANDCHARINDEX);
+        return expandTable.elementAt(order - EXPANDCHARINDEX);
     }
 
     /**
@@ -260,9 +260,9 @@ final class RBCollationTables {
         }
     }
 
-    final static int getEntry(Vector list, String name, boolean fwd) {
+    final static int getEntry(Vector<EntryPair> list, String name, boolean fwd) {
         for (int i = 0; i < list.size(); i++) {
-            EntryPair pair = (EntryPair)list.elementAt(i);
+            EntryPair pair = list.elementAt(i);
             if (pair.fwd == fwd && pair.entryName.equals(name)) {
                 return i;
             }
@@ -294,8 +294,8 @@ final class RBCollationTables {
     private boolean seAsianSwapping = false;
 
     private UCompactIntArray mapping = null;
-    private Vector contractTable = null;
-    private Vector expandTable = null;
+    private Vector<Vector<EntryPair>> contractTable = null;
+    private Vector<int[]> expandTable = null;
     private IntHashtable contractFlags = null;
 
     private short maxSecOrder = 0;
