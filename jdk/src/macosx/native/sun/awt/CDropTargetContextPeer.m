@@ -61,7 +61,6 @@ static CDropTarget* GetCDropTarget(jlong jdroptarget) {
 JNIEXPORT jlong JNICALL Java_sun_lwawt_macosx_CDropTargetContextPeer_startTransfer
   (JNIEnv *env, jobject jthis, jlong jdroptarget, jlong jformat)
 {
-    AWT_ASSERT_NOT_APPKIT_THREAD;
 
     jlong result = (jlong) 0L;
 

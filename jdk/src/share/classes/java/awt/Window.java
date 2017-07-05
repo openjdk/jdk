@@ -1200,6 +1200,7 @@ public class Window extends Container implements Accessible {
             }
         }
     }
+        boolean fireWindowClosedEvent = isDisplayable();
         DisposeAction action = new DisposeAction();
         if (EventQueue.isDispatchThread()) {
             action.run();
@@ -1220,7 +1221,9 @@ public class Window extends Container implements Accessible {
         // Execute outside the Runnable because postWindowEvent is
         // synchronized on (this). We don't need to synchronize the call
         // on the EventQueue anyways.
-        postWindowEvent(WindowEvent.WINDOW_CLOSED);
+        if (fireWindowClosedEvent) {
+            postWindowEvent(WindowEvent.WINDOW_CLOSED);
+        }
     }
 
     /*

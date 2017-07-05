@@ -36,6 +36,7 @@ import sun.awt.image.BufImgSurfaceData;
 import sun.java2d.loops.GraphicsPrimitive;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.SurfaceData;
+import sun.java2d.pipe.Region;
 
 /**
  * MaskFill
@@ -194,10 +195,13 @@ public class MaskFill extends GraphicsPrimitive
             // REMIND: This is not pretty.  It would be nicer if we
             // passed a "FillData" object to the Pixel loops, instead
             // of a SunGraphics2D parameter...
+            Region clip = sg2d.clipRegion;
+            sg2d.clipRegion = null;
             int pixel = sg2d.pixel;
             sg2d.pixel = tmpData.pixelFor(sg2d.getColor());
             fillop.FillRect(sg2d, tmpData, 0, 0, w, h);
             sg2d.pixel = pixel;
+            sg2d.clipRegion = clip;
 
             maskop.MaskBlit(tmpData, sData, comp, null,
                             0, 0, x, y, w, h,

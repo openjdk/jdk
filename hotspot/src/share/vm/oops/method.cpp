@@ -74,7 +74,7 @@ Method* Method::allocate(ClassLoaderData* loader_data,
 
   int size = Method::size(access_flags.is_native());
 
-  return new (loader_data, size, false, THREAD) Method(cm, access_flags, size);
+  return new (loader_data, size, false, MetaspaceObj::MethodType, THREAD) Method(cm, access_flags, size);
 }
 
 Method::Method(ConstMethod* xconst, AccessFlags access_flags, int size) {

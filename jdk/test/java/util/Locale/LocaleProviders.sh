@@ -1,3 +1,4 @@
+#!/bin/sh
 #
 # Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -20,11 +21,10 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-#!/bin/sh
 #
 # @test
 # @bug 6336885 7196799 7197573 7198834 8000245 8000615 8001440 8010666
-#      8013086 8013233
+#      8013086 8013233 8013903
 # @summary tests for "java.locale.providers" system property
 # @compile -XDignore.symbol.file LocaleProviders.java
 # @run shell/timeout=600 LocaleProviders.sh
@@ -297,6 +297,20 @@ METHODNAME=bug8013086Test
 PREFLIST="JRE,SPI -Djava.ext.dirs=${SPIDIR}"
 PARAM1=ja
 PARAM2=JP
+PARAM3=
+runTest
+
+# testing 8013903 fix. (Windows only)
+METHODNAME=bug8013903Test
+PREFLIST=HOST,JRE
+PARAM1=
+PARAM2=
+PARAM3=
+runTest
+METHODNAME=bug8013903Test
+PREFLIST=HOST
+PARAM1=
+PARAM2=
 PARAM3=
 runTest
 

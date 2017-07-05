@@ -539,12 +539,11 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
 
     // compute full expression stack limit
 
-    const int extra_stack = 0; //6815692//Method::extra_stack_words();
     __ movptr(rdx, Address(rbx, Method::const_offset()));
     __ load_unsigned_short(rdx, Address(rdx, ConstMethod::max_stack_offset())); // get size of expression stack in words
     __ negptr(rdx);                                                       // so we can subtract in next step
     // Allocate expression stack
-    __ lea(rsp, Address(rsp, rdx, Address::times_ptr, -extra_stack));
+    __ lea(rsp, Address(rsp, rdx, Address::times_ptr, -Method::extra_stack_words()));
     __ movptr(STATE(_stack_limit), rsp);
   }
 
@@ -692,10 +691,9 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
   // Always give one monitor to allow us to start interp if sync method.
   // Any additional monitors need a check when moving the expression stack
   const int one_monitor = frame::interpreter_frame_monitor_size() * wordSize;
-  const int extra_stack = 0; //6815692//Method::extra_stack_entries();
   __ movptr(rax, Address(rbx, Method::const_offset()));
   __ load_unsigned_short(rax, Address(rax, ConstMethod::max_stack_offset())); // get size of expression stack in words
-  __ lea(rax, Address(noreg, rax, Interpreter::stackElementScale(), extra_stack + one_monitor));
+  __ lea(rax, Address(noreg, rax, Interpreter::stackElementScale(), one_monitor+Method::extra_stack_words()));
   __ lea(rax, Address(rax, rdx, Interpreter::stackElementScale(), overhead_size));
 
 #ifdef ASSERT
@@ -2265,8 +2263,7 @@ int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
   const int overhead_size = sizeof(BytecodeInterpreter)/wordSize +
     ( frame::sender_sp_offset - frame::link_offset) + 2;
 
-  const int extra_stack = 0; //6815692//Method::extra_stack_entries();
-  const int method_stack = (method->max_locals() + method->max_stack() + extra_stack) *
+  const int method_stack = (method->max_locals() + method->max_stack()) *
                            Interpreter::stackElementWords;
   return overhead_size + method_stack + stub_code;
 }
@@ -2331,8 +2328,7 @@ void BytecodeInterpreter::layout_interpreterState(interpreterState to_fill,
   // Need +1 here because stack_base points to the word just above the first expr stack entry
   // and stack_limit is supposed to point to the word just below the last expr stack entry.
   // See generate_compute_interpreter_state.
-  int extra_stack = 0; //6815692//Method::extra_stack_entries();
-  to_fill->_stack_limit = stack_base - (method->max_stack() + extra_stack + 1);
+  to_fill->_stack_limit = stack_base - (method->max_stack() + 1);
   to_fill->_monitor_base = (BasicObjectLock*) monitor_base;
 
   to_fill->_self_link = to_fill;
@@ -2380,8 +2376,7 @@ int AbstractInterpreter::layout_activation(Method* method,
                                                 monitor_size);
 
   // Now with full size expression stack
-  int extra_stack = 0; //6815692//Method::extra_stack_entries();
-  int full_frame_size = short_frame_size + (method->max_stack() + extra_stack) * BytesPerWord;
+  int full_frame_size = short_frame_size + method->max_stack() * BytesPerWord;
 
   // and now with only live portion of the expression stack
   short_frame_size = short_frame_size + tempcount * BytesPerWord;

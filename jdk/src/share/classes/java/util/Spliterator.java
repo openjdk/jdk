@@ -394,9 +394,9 @@ public interface Spliterator<T> {
      * Convenience method that returns {@link #estimateSize()} if this
      * Spliterator is {@link #SIZED}, else {@code -1}.
      * @implSpec
-     * The default returns the result of {@code estimateSize()} if the
-     * Spliterator reports a characteristic of {@code SIZED}, and {@code -1}
-     * otherwise.
+     * The default implementation returns the result of {@code estimateSize()}
+     * if the Spliterator reports a characteristic of {@code SIZED}, and
+     * {@code -1} otherwise.
      *
      * @return the exact size, if known, else {@code -1}.
      */

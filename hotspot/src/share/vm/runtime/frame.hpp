@@ -411,7 +411,7 @@ class frame VALUE_OBJ_CLASS_SPEC {
   oop* oopmapreg_to_location(VMReg reg, const RegisterMap* regmap) const;
 
   // Oops-do's
-  void oops_compiled_arguments_do(Symbol* signature, bool has_receiver, const RegisterMap* reg_map, OopClosure* f);
+  void oops_compiled_arguments_do(Symbol* signature, bool has_receiver, bool has_appendix, const RegisterMap* reg_map, OopClosure* f);
   void oops_interpreted_do(OopClosure* f, CLDToOopClosure* cld_f, const RegisterMap* map, bool query_oop_map_cache = true);
 
  private:
