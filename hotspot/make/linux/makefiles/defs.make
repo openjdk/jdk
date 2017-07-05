@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -192,6 +192,8 @@ ifneq ($(OBJCOPY),)
 endif
 EXPORT_SERVER_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/server
 EXPORT_CLIENT_DIR = $(EXPORT_JRE_LIB_ARCH_DIR)/client
+
+EXPORT_LIST += $(EXPORT_JRE_LIB_DIR)/wb.jar
 
 ifndef BUILD_CLIENT_ONLY
 EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt

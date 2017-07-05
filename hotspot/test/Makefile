@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -225,6 +225,24 @@ internalvmtests: prep $(PRODUCT_HOME)
 	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -XX:+ExecuteInternalVMTests -version
 
 PHONY_LIST += internalvmtests
+
+################################################################
+
+# wbapitest (make sure the whitebox testing api classes work
+
+wbapitest: prep $(JT_HOME) $(PRODUCT_HOME) $(JTREG)
+	$(JTREG) -a -v:fail,error               \
+          $(JTREG_KEY_OPTION)                   \
+          $(EXTRA_JTREG_OPTIONS)                \
+          -r:$(ABS_TEST_OUTPUT_DIR)/JTreport    \
+          -w:$(ABS_TEST_OUTPUT_DIR)/JTwork      \
+          -jdk:$(PRODUCT_HOME)                  \
+          $(JAVA_OPTIONS:%=-vmoption:%)         \
+          $(TEST_ROOT)/sanity                   \
+	  || $(BUNDLE_UP_FAILED)
+	$(BUNDLE_UP)
+
+PHONY_LIST += wbapitest
 
 ################################################################
 

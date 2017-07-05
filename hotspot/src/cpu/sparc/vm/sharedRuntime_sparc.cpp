@@ -3325,7 +3325,7 @@ static void gen_new_frame(MacroAssembler* masm, bool deopt) {
   // make sure that the frames are aligned properly
 #ifndef _LP64
   __ btst(wordSize*2-1, SP);
-  __ breakpoint_trap(Assembler::notZero);
+  __ breakpoint_trap(Assembler::notZero, Assembler::ptr_cc);
 #endif
   #endif
 
@@ -3407,7 +3407,7 @@ static void make_new_frames(MacroAssembler* masm, bool deopt) {
 #ifdef ASSERT
   // make sure that there is at least one entry in the array
   __ tst(O4array_size);
-  __ breakpoint_trap(Assembler::zero);
+  __ breakpoint_trap(Assembler::zero, Assembler::icc);
 #endif
 
   // Now push the new interpreter frames
