@@ -312,7 +312,7 @@ class QueryParser {
             if (e > 0)
                 ss = s.substring(0, e);
             ss = ss.replace("0", "").replace(".", "");
-            if (!ss.isEmpty())
+            if (!ss.equals(""))
                 throw new NumberFormatException("Underflow: " + s);
         }
         return d;

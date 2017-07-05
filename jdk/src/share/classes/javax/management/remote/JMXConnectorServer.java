@@ -26,17 +26,21 @@
 
 package javax.management.remote;
 
+import com.sun.jmx.remote.util.EnvHelp;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import java.util.NoSuchElementException;
+import javax.management.MBeanInfo;  // for javadoc
 import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanRegistration;
 import javax.management.MBeanServer;
 import javax.management.Notification;
 import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
+import javax.management.event.EventClientDelegate;
 
 /**
  * <p>Superclass of every connector server.  A connector server is
@@ -75,6 +79,48 @@ public abstract class JMXConnectorServer
     public static final String AUTHENTICATOR =
         "jmx.remote.authenticator";
 
+     /**
+      * <p>Name of the attribute that specifies whether this connector
+      * server can delegate notification handling to the
+      * {@linkplain javax.management.event Event Service}.
+      * The value associated with
+      * this attribute, if any, is a String, which must be equal,
+      * ignoring case, to {@code "true"} or {@code "false"}.</p>
+      *
+      * <p>Not all connector servers will understand this attribute, but the
+      * standard {@linkplain javax.management.remote.rmi.RMIConnectorServer
+      * RMI Connector Server} does.</p>
+      *
+      * <p>If this attribute is not present, then the system property of the
+      * same name (<code>{@value}</code>) is consulted. If that is not set
+      * either, then the Event Service is used if the connector server
+      * supports it.</p>
+      *
+      * @since 1.7
+      */
+     public static final String DELEGATE_TO_EVENT_SERVICE =
+         "jmx.remote.delegate.event.service";
+
+     /**
+      * <p>Name of the attribute that specifies whether this connector
+      * server simulates the existence of the {@link EventClientDelegate}
+      * MBean. The value associated with this attribute, if any, must
+      * be a string that is equal to {@code "true"} or {@code "false"},
+      * ignoring case. If it is {@code "true"}, then the connector server
+      * will simulate an EventClientDelegate MBean, as described in {@link
+      * EventClientDelegate#newForwarder}. This MBean is needed for {@link
+      * javax.management.event.EventClient EventClient} to function correctly.</p>
+      *
+      * <p>Not all connector servers will understand this attribute, but the
+      * standard {@linkplain javax.management.remote.rmi.RMIConnectorServer
+      * RMI Connector Server} does.  For a connector server that understands
+      * this attribute, the default value is {@code "true"}.</p>
+      *
+      * @since 1.7
+      */
+     public static final String EVENT_CLIENT_DELEGATE_FORWARDER =
+         "jmx.remote.event.client.delegate.forwarder";
+
     /**
      * <p>Constructs a connector server that will be registered as an
      * MBean in the MBean server it is attached to.  This constructor
@@ -89,34 +135,274 @@ public abstract class JMXConnectorServer
     /**
      * <p>Constructs a connector server that is attached to the given
      * MBean server.  A connector server that is created in this way
-     * can be registered in a different MBean server.</p>
+     * can be registered in a different MBean server, or not registered
+     * in any MBean server.</p>
      *
      * @param mbeanServer the MBean server that this connector server
      * is attached to.  Null if this connector server will be attached
      * to an MBean server by being registered in it.
      */
     public JMXConnectorServer(MBeanServer mbeanServer) {
-        this.mbeanServer = mbeanServer;
+        insertUserMBeanServer(mbeanServer);
     }
 
     /**
      * <p>Returns the MBean server that this connector server is
-     * attached to.</p>
+     * attached to, or the first in a chain of user-added
+     * {@link MBeanServerForwarder}s, if any.</p>
      *
      * @return the MBean server that this connector server is attached
      * to, or null if it is not yet attached to an MBean server.
+     *
+     * @see #setMBeanServerForwarder
+     * @see #getSystemMBeanServer
      */
     public synchronized MBeanServer getMBeanServer() {
-        return mbeanServer;
+        return userMBeanServer;
     }
 
-    public synchronized void setMBeanServerForwarder(MBeanServerForwarder mbsf)
-    {
+    public synchronized void setMBeanServerForwarder(MBeanServerForwarder mbsf) {
         if (mbsf == null)
             throw new IllegalArgumentException("Invalid null argument: mbsf");
 
-        if (mbeanServer !=  null) mbsf.setMBeanServer(mbeanServer);
-        mbeanServer = mbsf;
+        if (userMBeanServer != null)
+            mbsf.setMBeanServer(userMBeanServer);
+        insertUserMBeanServer(mbsf);
+    }
+
+    /**
+     * <p>Remove a forwarder from the chain of forwarders.  The forwarder can
+     * be in the system chain or the user chain.  On successful return from
+     * this method, the first occurrence in the chain of an object that is
+     * {@linkplain Object#equals equal} to {@code mbsf} will have been
+     * removed.</p>
+     * @param mbsf the forwarder to remove
+     * @throws NoSuchElementException if there is no occurrence of {@code mbsf}
+     * in the chain.
+     * @throws IllegalArgumentException if {@code mbsf} is null.
+     */
+    public synchronized void removeMBeanServerForwarder(MBeanServerForwarder mbsf) {
+        if (mbsf == null)
+            throw new IllegalArgumentException("Invalid null argument: mbsf");
+
+        MBeanServerForwarder prev = null;
+        MBeanServer curr = systemMBeanServer;
+        while (curr instanceof MBeanServerForwarder && !mbsf.equals(curr)) {
+            prev = (MBeanServerForwarder) curr;
+            curr = prev.getMBeanServer();
+        }
+        if (!(curr instanceof MBeanServerForwarder))
+            throw new NoSuchElementException("MBeanServerForwarder not in chain");
+        MBeanServerForwarder deleted = (MBeanServerForwarder) curr;
+        MBeanServer next = deleted.getMBeanServer();
+        if (prev != null)
+            prev.setMBeanServer(next);
+        if (systemMBeanServer == deleted)
+            systemMBeanServer = next;
+        if (userMBeanServer == deleted)
+            userMBeanServer = next;
+    }
+
+    /*
+     * Set userMBeanServer to mbs and arrange for the end of the chain of
+     * system MBeanServerForwarders to point to it.  See the comment before
+     * the systemMBeanServer and userMBeanServer field declarations.
+     */
+    private void insertUserMBeanServer(MBeanServer mbs) {
+        MBeanServerForwarder lastSystemMBSF = null;
+        for (MBeanServer mbsi = systemMBeanServer;
+             mbsi != userMBeanServer;
+             mbsi = lastSystemMBSF.getMBeanServer()) {
+            lastSystemMBSF = (MBeanServerForwarder) mbsi;
+        }
+        userMBeanServer = mbs;
+        if (lastSystemMBSF == null)
+            systemMBeanServer = mbs;
+        else
+            lastSystemMBSF.setMBeanServer(mbs);
+    }
+
+    /**
+     * <p>Returns the first item in the chain of system and then user
+     * forwarders.  In the simplest case, a {@code JMXConnectorServer}
+     * is connected directly to an {@code MBeanServer}.  But there can
+     * also be a chain of {@link MBeanServerForwarder}s between the two.
+     * This chain consists of two sub-chains: first the <em>system chain</em>
+     * and then the <em>user chain</em>.  Incoming requests are given to the
+     * first forwarder in the system chain.  Each forwarder can handle
+     * a request itself, or more usually forward it to the next forwarder,
+     * perhaps with some extra behavior such as logging or security
+     * checking before or after the forwarding.  The last forwarder in
+     * the system chain is followed by the first forwarder in the user
+     * chain.</p>
+     *
+     * <p>The <em>system chain</em> is usually
+     * defined by a connector server based on the environment Map;
+     * see {@link JMXConnectorServerFactory#newJMXConnectorServer}.  Allowing the
+     * connector server to define its forwarders in this way ensures that
+     * they are in the correct order - some forwarders need to be inserted
+     * before others for correct behavior.  It is possible to modify the
+     * system chain, for example using {@link #setSystemMBeanServerForwarder} or
+     * {@link #removeMBeanServerForwarder}, but in that case the system
+     * chain is no longer guaranteed to be correct.</p>
+     *
+     * <p>The <em>user chain</em> is defined by calling {@link
+     * #setMBeanServerForwarder} to insert forwarders at the head of the user
+     * chain.</p>
+     *
+     * <p>If there are no forwarders in either chain, then both
+     * {@link #getMBeanServer()} and {@code getSystemMBeanServer()} will
+     * return the {@code MBeanServer} for this connector server.  If there
+     * are forwarders in the user chain but not the system chain, then
+     * both methods will return the first forwarder in the user chain.
+     * If there are forwarders in the system chain but not the user chain,
+     * then {@code getSystemMBeanServer()} will return the first forwarder
+     * in the system chain, and {@code getMBeanServer()} will return the
+     * {@code MBeanServer} for this connector server.  Finally, if there
+     * are forwarders in each chain then {@code getSystemMBeanServer()}
+     * will return the first forwarder in the system chain, and {@code
+     * getMBeanServer()} will return the first forwarder in the user chain.</p>
+     *
+     * <p>This code illustrates how the chains can be traversed:</p>
+     *
+     * <pre>
+     * JMXConnectorServer cs;
+     * System.out.println("system chain:");
+     * MBeanServer mbs = cs.getSystemMBeanServer();
+     * while (true) {
+     *     if (mbs == cs.getMBeanServer())
+     *         System.out.println("user chain:");
+     *     if (!(mbs instanceof MBeanServerForwarder))
+     *         break;
+     *     MBeanServerForwarder mbsf = (MBeanServerForwarder) mbs;
+     *     System.out.println("--forwarder: " + mbsf);
+     *     mbs = mbsf.getMBeanServer();
+     * }
+     * System.out.println("--MBean Server");
+     * </pre>
+     *
+     * @return the first item in the system chain of forwarders.
+     *
+     * @see #setSystemMBeanServerForwarder
+     */
+    public synchronized MBeanServer getSystemMBeanServer() {
+        return systemMBeanServer;
+    }
+
+    /**
+     * <p>Inserts an object that intercepts requests for the MBean server
+     * that arrive through this connector server.  This object will be
+     * supplied as the <code>MBeanServer</code> for any new connection
+     * created by this connector server.  Existing connections are
+     * unaffected.</p>
+     *
+     * <p>This method can be called more than once with different
+     * {@link MBeanServerForwarder} objects.  The result is a chain
+     * of forwarders.  The last forwarder added is the first in the chain.</p>
+     *
+     * <p>This method modifies the system chain of {@link MBeanServerForwarder}s.
+     * Usually user code should change the user chain instead, via
+     * {@link #setMBeanServerForwarder}.</p>
+     *
+     * <p>Not all connector servers support a system chain of forwarders.
+     * Calling this method on a connector server that does not will produce an
+     * {@link UnsupportedOperationException}.</p>
+     *
+     * <p>Suppose {@code mbs} is the result of {@link #getSystemMBeanServer()}
+     * before calling this method.  If {@code mbs} is not null, then
+     * {@code mbsf.setMBeanServer(mbs)} will be called.  If doing so
+     * produces an exception, this method throws the same exception without
+     * any other effect.  If {@code mbs} is null, or if the call to
+     * {@code mbsf.setMBeanServer(mbs)} succeeds, then this method will
+     * return normally and {@code getSystemMBeanServer()} will then return
+     * {@code mbsf}.</p>
+     *
+     * <p>The result of {@link #getMBeanServer()} is unchanged by this method.</p>
+     *
+     * @param mbsf the new <code>MBeanServerForwarder</code>.
+     *
+     * @throws IllegalArgumentException if the call to {@link
+     * MBeanServerForwarder#setMBeanServer mbsf.setMBeanServer} fails
+     * with <code>IllegalArgumentException</code>, or if
+     * <code>mbsf</code> is null.
+     *
+     * @throws UnsupportedOperationException if
+     * {@link #supportsSystemMBeanServerForwarder} returns false.
+     *
+     * @see #getSystemMBeanServer()
+     */
+    public synchronized void setSystemMBeanServerForwarder(
+            MBeanServerForwarder mbsf) {
+        if (mbsf == null)
+            throw new IllegalArgumentException("Invalid null argument: mbsf");
+        mustSupportSystemMBSF();
+
+        if (systemMBeanServer != null)
+            mbsf.setMBeanServer(systemMBeanServer);
+        systemMBeanServer = mbsf;
+    }
+
+    /**
+     * <p>Returns true if this connector server supports a system chain of
+     * {@link MBeanServerForwarder}s.  The default implementation of this
+     * method returns false.  Connector servers that do support the system
+     * chain must override this method to return true.
+     *
+     * @return true if this connector server supports the system chain of
+     * forwarders.
+     */
+    public boolean supportsSystemMBeanServerForwarder() {
+        return false;
+    }
+
+    private void mustSupportSystemMBSF() {
+        if (!supportsSystemMBeanServerForwarder()) {
+            throw new UnsupportedOperationException(
+                    "System MBeanServerForwarder not supported by this " +
+                    "connector server");
+        }
+    }
+
+    /**
+     * <p>Install {@link MBeanServerForwarder}s in the system chain
+     * based on the attributes in the given {@code Map}.  A connector
+     * server that {@linkplain #supportsSystemMBeanServerForwarder supports}
+     * a system chain of {@code MBeanServerForwarder}s can call this method
+     * to add forwarders to that chain based on the contents of {@code env}.
+     * In order:</p>
+     *
+     * <ul>
+     *
+     * <li>If {@link #EVENT_CLIENT_DELEGATE_FORWARDER} is absent, or is
+     * present with the value {@code "true"}, then a forwarder with the
+     * functionality of {@link EventClientDelegate#newForwarder} is inserted
+     * at the start of the system chain.</li>
+     *
+     * </ul>
+     *
+     * <p>For {@code EVENT_CLIENT_DELEGATE_FORWARDER}, if the
+     * attribute is absent from the {@code Map} and a system property
+     * of the same name is defined, then the value of the system
+     * property is used as if it were in the {@code Map}.
+     *
+     * <p>Attributes in {@code env} that are not listed above are ignored
+     * by this method.</p>
+     *
+     * @throws UnsupportedOperationException if {@link
+     * #supportsSystemMBeanServerForwarder} is false.
+     */
+    protected void installStandardForwarders(Map<String, ?> env) {
+        mustSupportSystemMBSF();
+
+        // Remember that forwarders must be added in reverse order!
+
+        boolean ecd = EnvHelp.computeBooleanFromString(
+                env, EVENT_CLIENT_DELEGATE_FORWARDER, false, true);
+
+        if (ecd) {
+            MBeanServerForwarder mbsf = EventClientDelegate.newForwarder();
+            setSystemMBeanServerForwarder(mbsf);
+        }
     }
 
     public String[] getConnectionIds() {
@@ -359,8 +645,8 @@ public abstract class JMXConnectorServer
                                                ObjectName name) {
         if (mbs == null || name == null)
             throw new NullPointerException("Null MBeanServer or ObjectName");
-        if (mbeanServer == null) {
-            mbeanServer = mbs;
+        if (userMBeanServer == null) {
+            insertUserMBeanServer(mbs);
             myName = name;
         }
         return name;
@@ -394,10 +680,53 @@ public abstract class JMXConnectorServer
         myName = null;
     }
 
-    /**
-     * The MBeanServer used by this server to execute a client request.
+    /*
+     * Fields describing the chains of forwarders (MBeanServerForwarders).
+     * In the general case, the forwarders look something like this:
+     *
+     * systemMBeanServer          userMBeanServer
+     * |                          |
+     * v                          v
+     * mbsf1 -> mbsf2 -> mbsf3 -> mbsf4 -> mbsf5 -> mbs
+     *
+     * Here, each mbsfi is an MBeanServerForwarder, and the arrows
+     * illustrate its getMBeanServer() method.  The last MBeanServerForwarder
+     * can point to an MBeanServer that is not instanceof MBeanServerForwarder,
+     * here mbs.
+     *
+     * Initially, the chain can be empty if this JMXConnectorServer was
+     * constructed without an MBeanServer.  In this case, both systemMBS
+     * and userMBS will be null.  If there is initially an MBeanServer,
+     * then both systemMBS and userMBS will point to it.
+     *
+     * Whenever userMBS is changed, the system chain must be updated. If there
+     * are forwarders in the system chain (between systemMBS and userMBS in the
+     * picture above), then the last one must point to the old value of userMBS
+     * (possibly null). It must be updated to point to the new value. If there
+     * are no forwarders in the system chain, then systemMBS must be updated to
+     * the new value of userMBS. The invariant is that starting from systemMBS
+     * and repeatedly calling MBSF.getMBeanServer() you will end up at
+     * userMBS.  The implication is that you will not see any MBeanServer
+     * object on the way that is not also an MBeanServerForwarder.
+     *
+     * The method insertUserMBeanServer contains the logic to change userMBS
+     * and adjust the system chain appropriately.
+     *
+     * If userMBS is null and this JMXConnectorServer is registered in an
+     * MBeanServer, then userMBS becomes that MBeanServer, and the system
+     * chain must be updated as just described.
+     *
+     * When systemMBS is updated, there is no effect on userMBS. The system
+     * chain may contain forwarders even though the user chain is empty
+     * (there is no MBeanServer). In that case an attempt to forward an
+     * incoming request through the chain will fall off the end and fail with a
+     * NullPointerException. Usually a connector server will refuse to start()
+     * if it is not attached to an MBS, so this situation should not arise.
      */
-    private MBeanServer mbeanServer = null;
+
+    private MBeanServer userMBeanServer;
+
+    private MBeanServer systemMBeanServer;
 
     /**
      * The name used to registered this server in an MBeanServer.

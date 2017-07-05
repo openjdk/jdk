@@ -162,10 +162,9 @@ bool ASParNewGeneration::resize_generation(size_t eden_size,
     // Grow the generation
     size_t change = desired_size - orig_size;
     assert(change % alignment == 0, "just checking");
-    if (!virtual_space()->expand_by(change)) {
+    if (expand(change)) {
       return false; // Error if we fail to resize!
     }
-
     size_changed = true;
   } else if (desired_size < orig_size) {
     size_t desired_change = orig_size - desired_size;
@@ -222,7 +221,9 @@ void ASParNewGeneration::reset_survivors_after_shrink() {
     // Was there a shrink of the survivor space?
     if (new_end < to()->end()) {
       MemRegion mr(to()->bottom(), new_end);
-      to()->initialize(mr, false /* clear */);
+      to()->initialize(mr,
+                       SpaceDecorator::DontClear,
+                       SpaceDecorator::DontMangle);
     }
   }
 }
@@ -322,9 +323,7 @@ void ASParNewGeneration::resize_spaces(size_t requested_eden_size,
                        pointer_delta(from_start, eden_start, sizeof(char)));
     }
 
-// tty->print_cr("eden_size before: " SIZE_FORMAT, eden_size);
     eden_size = align_size_down(eden_size, alignment);
-// tty->print_cr("eden_size after: " SIZE_FORMAT, eden_size);
     eden_end = eden_start + eden_size;
     assert(eden_end >= eden_start, "addition overflowed")
 
@@ -501,11 +500,31 @@ void ASParNewGeneration::resize_spaces(size_t requested_eden_size,
   size_t old_from = from()->capacity();
   size_t old_to   = to()->capacity();
 
+  // If not clearing the spaces, do some checking to verify that
+  // the spaces are already mangled.
+
+  // Must check mangling before the spaces are reshaped.  Otherwise,
+  // the bottom or end of one space may have moved into another
+  // a failure of the check may not correctly indicate which space
+  // is not properly mangled.
+  if (ZapUnusedHeapArea) {
+    HeapWord* limit = (HeapWord*) virtual_space()->high();
+    eden()->check_mangled_unused_area(limit);
+    from()->check_mangled_unused_area(limit);
+      to()->check_mangled_unused_area(limit);
+  }
+
   // The call to initialize NULL's the next compaction space
-  eden()->initialize(edenMR, true);
+  eden()->initialize(edenMR,
+                     SpaceDecorator::Clear,
+                     SpaceDecorator::DontMangle);
   eden()->set_next_compaction_space(from());
-    to()->initialize(toMR  , true);
-  from()->initialize(fromMR, false);     // Note, not cleared!
+    to()->initialize(toMR  ,
+                     SpaceDecorator::Clear,
+                     SpaceDecorator::DontMangle);
+  from()->initialize(fromMR,
+                     SpaceDecorator::DontClear,
+                     SpaceDecorator::DontMangle);
 
   assert(from()->top() == old_from_top, "from top changed!");
 

@@ -156,7 +156,8 @@ public class NotificationAccessControllerTest {
                            List<Notification> received,
                            List<ObjectName> expected) {
         if (received.size() != size) {
-            echo("Error: expecting " + size + " notifications");
+            echo("Error: expecting " + size + " notifications, got " +
+                    received.size());
             return 1;
         } else {
             for (Notification n : received) {

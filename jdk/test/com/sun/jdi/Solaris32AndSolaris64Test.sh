@@ -25,7 +25,7 @@
 
 #
 #   @test       Solaris32AndSolaris64Test.sh
-#   @bug        4478312 4780570 4913748
+#   @bug        4478312 4780570 4913748 6730273
 #   @summary    Test debugging with mixed 32/64bit VMs.
 #   @author     Tim Bell
 #   Based on test/java/awt/TEMPLATE/AutomaticShellTest.sh
@@ -177,8 +177,14 @@ filename=$TESTCLASSES/@debuggeeVMOptions
 if [ ! -r ${filename} ] ; then
     filename=$TESTCLASSES/../@debuggeeVMOptions
 fi
+# Remove -d32, -d64 if present, and remove -XX:[+-]UseCompressedOops 
+# if present since it is illegal in 32 bit mode.
 if [ -r ${filename} ] ; then
-    DEBUGGEEFLAGS=`cat ${filename} | sed -e 's/-d32//g' -e 's/-d64//g'`
+    DEBUGGEEFLAGS=`cat ${filename} | sed \
+                        -e 's/-d32//g' \
+                        -e 's/-d64//g' \
+                        -e 's/-XX:.UseCompressedOops//g' \
+                        `
 fi
 
 #

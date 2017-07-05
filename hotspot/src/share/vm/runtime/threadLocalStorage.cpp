@@ -42,8 +42,13 @@ void ThreadLocalStorage::set_thread(Thread* thread) {
 }
 
 void ThreadLocalStorage::init() {
-  assert(ThreadLocalStorage::thread_index() == -1, "More than one attempt to initialize threadLocalStorage");
+  assert(!is_initialized(),
+         "More than one attempt to initialize threadLocalStorage");
   pd_init();
   set_thread_index(os::allocate_thread_local_storage());
   generate_code_for_get_thread();
+}
+
+bool ThreadLocalStorage::is_initialized() {
+    return (thread_index() != -1);
 }
