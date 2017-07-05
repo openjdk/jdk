@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ class MetalBumps implements Icon {
     private static BumpBuffer createBuffer(GraphicsConfiguration gc,
                                            Color topColor, Color shadowColor, Color backColor) {
         AppContext context = AppContext.getAppContext();
+        @SuppressWarnings("unchecked")
         List<BumpBuffer> buffers = (List<BumpBuffer>) context.get(METAL_BUMPS);
         if (buffers == null) {
             buffers = new ArrayList<BumpBuffer>();

@@ -211,7 +211,7 @@ public class ContextManager {
     }
 
     private void setCurrentFrameIndex(ThreadInfo tinfo, int index) {
-        tinfo.setUserObject(new Integer(index));
+        tinfo.setUserObject(index);
         //### In fact, the value may not have changed at this point.
         //### We need to signal that the user attempted to change it,
         //### however, so that the selection can be "warped" to the

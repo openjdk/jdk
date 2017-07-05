@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -609,7 +609,7 @@ public class BasicMenuUI extends BasicMenuItemUI
             MenuElement path[] = e.getPath();
             if (key == Character.toLowerCase(e.getKeyChar())) {
                 JPopupMenu popupMenu = ((JMenu)menuItem).getPopupMenu();
-                ArrayList newList = new ArrayList(Arrays.asList(path));
+                ArrayList<MenuElement> newList = new ArrayList<>(Arrays.asList(path));
                 newList.add(popupMenu);
                 MenuElement subs[] = popupMenu.getSubElements();
                 MenuElement sub =
@@ -619,7 +619,7 @@ public class BasicMenuUI extends BasicMenuItemUI
                 }
                 MenuSelectionManager manager = e.getMenuSelectionManager();
                 MenuElement newPath[] = new MenuElement[0];;
-                newPath = (MenuElement[]) newList.toArray(newPath);
+                newPath = newList.toArray(newPath);
                 manager.setSelectedPath(newPath);
                 e.consume();
             }

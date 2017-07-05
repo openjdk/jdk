@@ -2474,7 +2474,6 @@ void PSParallelCompact::adjust_roots() {
   FlatProfiler::oops_do(adjust_pointer_closure());
   Management::oops_do(adjust_pointer_closure());
   JvmtiExport::oops_do(adjust_pointer_closure());
-  // SO_AllClasses
   SystemDictionary::oops_do(adjust_pointer_closure());
   ClassLoaderDataGraph::oops_do(adjust_pointer_closure(), adjust_klass_closure(), true);
 
@@ -2483,7 +2482,8 @@ void PSParallelCompact::adjust_roots() {
   // Global (weak) JNI handles
   JNIHandles::weak_oops_do(&always_true, adjust_pointer_closure());
 
-  CodeCache::oops_do(adjust_pointer_closure());
+  CodeBlobToOopClosure adjust_from_blobs(adjust_pointer_closure(), CodeBlobToOopClosure::FixRelocations);
+  CodeCache::blobs_do(&adjust_from_blobs);
   StringTable::oops_do(adjust_pointer_closure());
   ref_processor()->weak_oops_do(adjust_pointer_closure());
   // Roots were visited so references into the young gen in roots

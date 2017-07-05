@@ -794,3 +794,11 @@ void
 SplashReconfigure(Splash * splash) {
     sendctl(splash, SPLASHCTL_RECONFIGURE);
 }
+
+SPLASHEXPORT char*
+SplashGetScaledImageName(const char* jarName, const char* fileName,
+                           float *scaleFactor)
+{
+    *scaleFactor = 1;
+    return NULL;
+}

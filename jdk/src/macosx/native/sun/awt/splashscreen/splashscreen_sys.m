@@ -125,6 +125,39 @@ done:
     return buf;
 }
 
+char* SplashGetScaledImageName(const char* jar, const char* file,
+                               float *scaleFactor) {
+    NSAutoreleasePool *pool = [NSAutoreleasePool new];
+    *scaleFactor = 1;
+    char* scaledFile = nil;
+    float screenScaleFactor = [SplashNSScreen() backingScaleFactor];
+    
+    if (screenScaleFactor > 1) {
+        NSString *fileName = [NSString stringWithUTF8String: file];
+        NSUInteger length = [fileName length];
+        NSRange range = [fileName rangeOfString: @"."
+                                        options:NSBackwardsSearch];
+        NSUInteger dotIndex = range.location;
+        NSString *fileName2x = nil;
+        
+        if (dotIndex == NSNotFound) {
+            fileName2x = [fileName stringByAppendingString: @"@2x"];
+        } else {
+            fileName2x = [fileName substringToIndex: dotIndex];
+            fileName2x = [fileName2x stringByAppendingString: @"@2x"];
+            fileName2x = [fileName2x stringByAppendingString:
+                          [fileName substringFromIndex: dotIndex]];
+        }
+        
+        if ((fileName2x != nil) && (jar || [[NSFileManager defaultManager]
+                    fileExistsAtPath: fileName2x])){
+            *scaleFactor = 2;
+            scaledFile = strdup([fileName2x UTF8String]);
+        }
+    }
+    [pool drain];
+    return scaledFile;
+}
 
 void
 SplashInitPlatform(Splash * splash) {
@@ -132,7 +165,7 @@ SplashInitPlatform(Splash * splash) {
 
     splash->maskRequired = 0;
 
-
+    
     //TODO: the following is too much of a hack but should work in 90% cases.
     //      besides we don't use device-dependant drawing, so probably
     //      that's very fine indeed
@@ -225,7 +258,15 @@ SplashRedrawWindow(Splash * splash) {
         [image setBackgroundColor: [NSColor clearColor]];
 
         [image addRepresentation: rep];
-
+        float scaleFactor = splash->scaleFactor;
+        if (scaleFactor > 0 && scaleFactor != 1) {
+            [image setScalesWhenResized:YES];
+            NSSize size = [image size];
+            size.width /= scaleFactor;
+            size.height /= scaleFactor;
+            [image setSize: size];
+        }
+        
         NSImageView * view = [[NSImageView alloc] init];
 
         [view setImage: image];

@@ -1410,7 +1410,7 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
             if (logger.isLoggable(Level.FINEST)) {
                 logger.log(Level.FINEST,
                     "DIGEST33:Expecting sequence num: {0}",
-                    new Integer(peerSeqNum));
+                    peerSeqNum);
                 traceOutput(DP_CLASS_NAME, "unwrap", "DIGEST34:incoming: ",
                     encryptedMsg);
             }

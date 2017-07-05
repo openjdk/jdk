@@ -99,5 +99,5 @@ public interface TreeNode
      *
      * @return              the children of the receiver as an {@code Enumeration}
      */
-    Enumeration children();
+    Enumeration<TreeNode> children();
 }

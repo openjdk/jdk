@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,16 @@
  *
  */
 
+#include "runtime/os.hpp"
+
 #ifndef OS_POSIX_VM_OS_POSIX_HPP
 #define OS_POSIX_VM_OS_POSIX_HPP
+
+// File conventions
+static const char* file_separator() { return "/"; }
+static const char* line_separator() { return "\n"; }
+static const char* path_separator() { return ":"; }
+
 class Posix {
   friend class os;
 

@@ -67,7 +67,6 @@ import sun.awt.AWTAccessor;
 import sun.awt.ConstrainableGraphics;
 import sun.awt.SubRegionShowable;
 import sun.awt.SunToolkit;
-import sun.awt.WindowClosingListener;
 import sun.awt.CausedFocusEvent;
 import sun.awt.EmbeddedFrame;
 import sun.awt.dnd.SunDropTargetEvent;
@@ -543,8 +542,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
     transient MouseMotionListener mouseMotionListener;
     transient MouseWheelListener mouseWheelListener;
     transient InputMethodListener inputMethodListener;
-
-    transient RuntimeException windowClosingException = null;
 
     /** Internal, constants for serialization */
     final static String actionListenerK = "actionL";
@@ -4959,16 +4956,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
               }
               break;
 
-          case WindowEvent.WINDOW_CLOSING:
-              if (toolkit instanceof WindowClosingListener) {
-                  windowClosingException = ((WindowClosingListener)
-                                            toolkit).windowClosingNotify((WindowEvent)e);
-                  if (checkWindowClosingException()) {
-                      return;
-                  }
-              }
-              break;
-
           default:
               break;
         }
@@ -5019,21 +5006,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
                       break;
                   default:
                       break;
-                }
-            }
-        }
-
-        /*
-         * 8. Special handling for 4061116 : Hook for browser to close modal
-         *    dialogs.
-         */
-        if (id == WindowEvent.WINDOW_CLOSING && !e.isConsumed()) {
-            if (toolkit instanceof WindowClosingListener) {
-                windowClosingException =
-                    ((WindowClosingListener)toolkit).
-                    windowClosingDelivered((WindowEvent)e);
-                if (checkWindowClosingException()) {
-                    return;
                 }
             }
         }
@@ -5141,20 +5113,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 }
                 return true;
             }
-        }
-        return false;
-    }
-
-    boolean checkWindowClosingException() {
-        if (windowClosingException != null) {
-            if (this instanceof Dialog) {
-                ((Dialog)this).interruptBlocking();
-            } else {
-                windowClosingException.fillInStackTrace();
-                windowClosingException.printStackTrace();
-                windowClosingException = null;
-            }
-            return true;
         }
         return false;
     }

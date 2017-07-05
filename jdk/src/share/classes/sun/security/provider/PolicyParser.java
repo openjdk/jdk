@@ -1405,7 +1405,7 @@ public class PolicyParser {
             super("line " + line + ": " + msg);
             MessageFormat form = new MessageFormat
                 (ResourcesMgr.getString("line.number.msg"));
-            Object[] source = {new Integer(line), msg};
+            Object[] source = {line, msg};
             i18nMessage = form.format(source);
         }
 
@@ -1414,7 +1414,7 @@ public class PolicyParser {
                 "], found [" + actual + "]");
             MessageFormat form = new MessageFormat(ResourcesMgr.getString
                 ("line.number.expected.expect.found.actual."));
-            Object[] source = {new Integer(line), expect, actual};
+            Object[] source = {line, expect, actual};
             i18nMessage = form.format(source);
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,22 +34,14 @@ import javax.security.auth.Subject;
 
 import javax.management.remote.SubjectDelegationPermission;
 
-import com.sun.jmx.remote.util.CacheMap;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 
 public class SubjectDelegator {
-    private static final int PRINCIPALS_CACHE_SIZE = 10;
-    private static final int ACC_CACHE_SIZE = 10;
-
-    private CacheMap<Subject, Principal[]> principalsCache;
-    private CacheMap<Subject, AccessControlContext> accCache;
-
     /* Return the AccessControlContext appropriate to execute an
        operation on behalf of the delegatedSubject.  If the
        authenticatedAccessControlContext does not have permission to
        delegate to that subject, throw SecurityException.  */
-    public synchronized AccessControlContext
+    public AccessControlContext
         delegatedContext(AccessControlContext authenticatedACC,
                          Subject delegatedSubject,
                          boolean removeCallerContext)
@@ -58,56 +50,14 @@ public class SubjectDelegator {
         if (System.getSecurityManager() != null && authenticatedACC == null) {
             throw new SecurityException("Illegal AccessControlContext: null");
         }
-        if (principalsCache == null || accCache == null) {
-            principalsCache =
-                    new CacheMap<>(PRINCIPALS_CACHE_SIZE);
-            accCache =
-                    new CacheMap<>(ACC_CACHE_SIZE);
-        }
-
-        // Retrieve the principals for the given
-        // delegated subject from the cache
-        //
-        Principal[] delegatedPrincipals = principalsCache.get(delegatedSubject);
-
-        // Convert the set of principals stored in the
-        // delegated subject into an array of principals
-        // and store it in the cache
-        //
-        if (delegatedPrincipals == null) {
-            delegatedPrincipals =
-                delegatedSubject.getPrincipals().toArray(new Principal[0]);
-            principalsCache.put(delegatedSubject, delegatedPrincipals);
-        }
-
-        // Retrieve the access control context for the
-        // given delegated subject from the cache
-        //
-        AccessControlContext delegatedACC = accCache.get(delegatedSubject);
-
-        // Build the access control context to be used
-        // when executing code as the delegated subject
-        // and store it in the cache
-        //
-        if (delegatedACC == null) {
-            if (removeCallerContext) {
-                delegatedACC =
-                    JMXSubjectDomainCombiner.getDomainCombinerContext(
-                                                              delegatedSubject);
-            } else {
-                delegatedACC =
-                    JMXSubjectDomainCombiner.getContext(delegatedSubject);
-            }
-            accCache.put(delegatedSubject, delegatedACC);
-        }
 
         // Check if the subject delegation permission allows the
         // authenticated subject to assume the identity of each
         // principal in the delegated subject
         //
-        final Principal[] dp = delegatedPrincipals;
-        final Collection<Permission> permissions = new ArrayList<>(dp.length);
-        for(Principal p : dp) {
+        Collection<Principal> ps = getSubjectPrincipals(delegatedSubject);
+        final Collection<Permission> permissions = new ArrayList<>(ps.size());
+        for(Principal p : ps) {
             final String pname = p.getClass().getName() + "." + p.getName();
             permissions.add(new SubjectDelegationPermission(pname));
         }
@@ -122,7 +72,15 @@ public class SubjectDelegator {
             };
         AccessController.doPrivileged(action, authenticatedACC);
 
-        return delegatedACC;
+        return getDelegatedAcc(delegatedSubject, removeCallerContext);
+    }
+
+    private AccessControlContext getDelegatedAcc(Subject delegatedSubject, boolean removeCallerContext) {
+        if (removeCallerContext) {
+            return JMXSubjectDomainCombiner.getDomainCombinerContext(delegatedSubject);
+        } else {
+            return JMXSubjectDomainCombiner.getContext(delegatedSubject);
+        }
     }
 
     /**
@@ -137,11 +95,9 @@ public class SubjectDelegator {
     public static synchronized boolean
         checkRemoveCallerContext(Subject subject) {
         try {
-            final Principal[] dp =
-                subject.getPrincipals().toArray(new Principal[0]);
-            for (int i = 0 ; i < dp.length ; i++) {
+            for (Principal p : getSubjectPrincipals(subject)) {
                 final String pname =
-                    dp[i].getClass().getName() + "." + dp[i].getName();
+                    p.getClass().getName() + "." + p.getName();
                 final Permission sdp =
                     new SubjectDelegationPermission(pname);
                 AccessController.checkPermission(sdp);
@@ -150,5 +106,20 @@ public class SubjectDelegator {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Retrieves the {@linkplain Subject} principals
+     * @param subject The subject
+     * @return If the {@code Subject} is immutable it will return the principals directly.
+     *         If the {@code Subject} is mutable it will create an unmodifiable copy.
+     */
+    private static Collection<Principal> getSubjectPrincipals(Subject subject) {
+        if (subject.isReadOnly()) {
+            return subject.getPrincipals();
+        }
+
+        List<Principal> principals = Arrays.asList(subject.getPrincipals().toArray(new Principal[0]));
+        return Collections.unmodifiableList(principals);
     }
 }

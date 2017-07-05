@@ -241,7 +241,7 @@ public class TTY implements EventNotifier {
                 }
                 if (line != null) {
                     MessageOutput.println("source line number and line",
-                                          new Object [] {new Integer(loc.lineNumber()),
+                                          new Object [] {loc.lineNumber(),
                                                          line});
                 }
             }

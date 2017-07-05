@@ -70,7 +70,7 @@ public interface ComboPopup {
      * This method is highly implementation specific and should not be used
      * for general list manipulation.
      */
-    public JList getList();
+    public JList<Object> getList();
 
     /**
      * Returns a mouse listener that will be added to the combo box or null.
