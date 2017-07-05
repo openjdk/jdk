@@ -26,6 +26,8 @@
 /**
  * Defines the Java Architecture for XML Binding (JAXB) API.
  *
+ * @uses javax.xml.bind.JAXBContextFactory
+ *
  * @moduleGraph
  * @since 9
  */

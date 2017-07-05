@@ -554,7 +554,6 @@ needs_charsets = \
   java/nio/charset/Charset/NIOCharsetAvailabilityTest.java \
   java/nio/charset/Charset/RegisteredCharsets.java \
   java/nio/charset/CharsetEncoder/Flush.java \
-  java/nio/charset/coders/CheckSJISMappingProp.sh \
   java/nio/charset/coders/ResetISO2022JP.java \
   java/util/Locale/InternationalBAT.java \
   java/util/Locale/LocaleProviders.sh \

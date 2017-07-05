@@ -45,8 +45,7 @@
  * Platform Debugger Architecture documentation</a> for this release and the <a
  * href="http://java.sun.com/products/jpda">Java Platform Debugger Architecture
  * website</a>.
- * <p style="font-size:larger">
- * <b>Global Exceptions:</b>
+ * <h3>Global Exceptions</h3>
  * <p>
  * This section documents exceptions which apply to the entire API and are thus
  * not documented on individual methods.
@@ -103,6 +102,21 @@
  *   unloaded.
  * </blockquote>
  *
+ * <h3>jdb</h3>
+ *
+ * <em>{@index jdb jdb tool}</em> is a simple command-line debugger provided
+ * in this module.
+ *
+ * <dl style="font-family:'DejaVu Sans', Arial, Helvetica, sans serif">
+ * <dt class="simpleTagLabel">Tool Guides:
+ * <dd>{@extLink jdb_tool_reference jdb}
+ * </dl>
+ *
+ * @provides com.sun.jdi.connect.Connector
+ *
+ * @uses com.sun.jdi.connect.Connector
+ * @uses com.sun.jdi.connect.spi.TransportService
+ *
  * @moduleGraph
  * @since 9
  */
@@ -127,4 +141,3 @@ module jdk.jdi {
         com.sun.tools.jdi.SocketListeningConnector,
         com.sun.tools.jdi.SunCommandLineLauncher;
 }
-

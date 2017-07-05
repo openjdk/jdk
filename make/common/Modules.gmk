@@ -175,10 +175,13 @@ DOCS_MODULES += \
     jdk.policytool \
     jdk.rmic \
     jdk.scripting.nashorn \
+    jdk.scripting.nashorn.shell \
     jdk.sctp \
     jdk.security.auth \
     jdk.security.jgss \
+    jdk.xml.bind \
     jdk.xml.dom \
+    jdk.xml.ws \
     jdk.zipfs \
     #
 
