@@ -25,7 +25,6 @@
 
 package sun.security.provider.certpath;
 
-import java.io.IOException;
 import java.math.BigInteger;
 import java.util.*;
 import java.security.AccessController;
@@ -335,10 +334,11 @@ class OCSPChecker extends PKIXCertPathChecker {
                 (issuerCert, currCertImpl.getSerialNumberObject());
             response = OCSP.check(Collections.singletonList(certId), uri,
                 responderCert, pkixParams.getDate());
-        } catch (IOException ioe) {
-            // should allow this to pass if network failures are acceptable
+        } catch (Exception e) {
+            // Wrap all exceptions in CertPathValidatorException so that
+            // we can fallback to CRLs, if enabled.
             throw new CertPathValidatorException
-                ("Unable to send OCSP request", ioe);
+                ("Unable to send OCSP request", e);
         }
 
         RevocationStatus rs = (RevocationStatus) response.getSingleResponse(certId);

@@ -1229,6 +1229,7 @@ void Arguments::set_ergonomics_flags() {
     }
   }
 
+#ifndef ZERO
 #ifdef _LP64
   // Check that UseCompressedOops can be set with the max heap size allocated
   // by ergonomics.
@@ -1254,6 +1255,7 @@ void Arguments::set_ergonomics_flags() {
   // Also checks that certain machines are slower with compressed oops
   // in vm_version initialization code.
 #endif // _LP64
+#endif // !ZERO
 }
 
 void Arguments::set_parallel_gc_flags() {
