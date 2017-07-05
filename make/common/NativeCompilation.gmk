@@ -250,8 +250,7 @@ endef
 #   CFLAGS the compiler flags to be used, used both for C and C++.
 #   CXXFLAGS the compiler flags to be used for c++, if set overrides CFLAGS.
 #   LDFLAGS the linker flags to be used, used both for C and C++.
-#   LDFLAGS_SUFFIX the linker flags to be added last on the commandline
-#       typically the libraries linked to.
+#   LIBS the libraries to link to
 #   ARFLAGS the archiver flags to be used
 #   OBJECT_DIR the directory where we store the object files
 #   LIBRARY the resulting library file
@@ -610,9 +609,9 @@ define SetupNativeCompilationBody
   endif
 
   # Pickup extra OPENJDK_TARGET_OS_TYPE and/or OPENJDK_TARGET_OS dependent variables
-  # for LDFLAGS and LDFLAGS_SUFFIX
+  # for LDFLAGS and LIBS
   $1_EXTRA_LDFLAGS:=$$($1_LDFLAGS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LDFLAGS_$(OPENJDK_TARGET_OS))
-  $1_EXTRA_LDFLAGS_SUFFIX:=$$($1_LDFLAGS_SUFFIX_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LDFLAGS_SUFFIX_$(OPENJDK_TARGET_OS))
+  $1_EXTRA_LIBS:=$$($1_LIBS_$(OPENJDK_TARGET_OS_TYPE)) $$($1_LIBS_$(OPENJDK_TARGET_OS))
   ifneq (,$$($1_REAL_MAPFILE))
     $1_EXTRA_LDFLAGS += $(call SET_SHARED_LIBRARY_MAPFILE,$$($1_REAL_MAPFILE))
   endif
@@ -689,10 +688,10 @@ define SetupNativeCompilationBody
       $1_EXTRA_LDFLAGS += "-implib:$$($1_OBJECT_DIR)/$$($1_LIBRARY).lib"
     endif
 
-    $1_EXTRA_LDFLAGS_SUFFIX += $(GLOBAL_LDFLAGS_SUFFIX)
+    $1_EXTRA_LIBS += $(GLOBAL_LIBS)
 
     $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
-        $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX) $$($1_CREATE_DEBUGINFO_CMDS) \
+        $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_CREATE_DEBUGINFO_CMDS) \
         $$($1_STRIP_CMD)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
@@ -704,7 +703,7 @@ define SetupNativeCompilationBody
 		    $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
 		    $(LD_OUT_OPTION)$$@ \
 		    $$($1_EXPECTED_OBJS) $$($1_RES) \
-		    $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)) ; \
+		    $$($1_LIBS) $$($1_EXTRA_LIBS)) ; \
 		$$($1_CREATE_DEBUGINFO_CMDS)
 		$$($1_STRIP_CMD)
                 # Touch target to make sure it has a later time stamp than the debug
@@ -716,8 +715,8 @@ define SetupNativeCompilationBody
   endif
 
   ifneq (,$$($1_STATIC_LIBRARY))
-    $1_VARDEPS := $$($1_AR) $$($1_ARFLAGS) $$($1_LDFLAGS_SUFFIX) \
-        $$($1_EXTRA_LDFLAGS_SUFFIX)
+    $1_VARDEPS := $$($1_AR) $$($1_ARFLAGS) $$($1_LIBS) \
+        $$($1_EXTRA_LIBS)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
 
@@ -726,15 +725,15 @@ define SetupNativeCompilationBody
 	$(ECHO) $(LOG_INFO) "Archiving $$($1_STATIC_LIBRARY)"
 	$(call LogFailures, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link.log, $$($1_SAFE_NAME)_link, \
 	    $$($1_AR) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_EXPECTED_OBJS) \
-	        $$($1_RES) $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX))
+	        $$($1_RES) $$($1_LIBS) $$($1_EXTRA_LIBS))
   endif
 
   ifneq (,$$($1_PROGRAM))
     # A executable binary has been specified, setup the target for it.
-    $1_EXTRA_LDFLAGS_SUFFIX += $(GLOBAL_LDFLAGS_SUFFIX)
+    $1_EXTRA_LIBS += $(GLOBAL_LIBS)
 
     $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
-        $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX) $$($1_MT) \
+        $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_MT) \
         $$($1_CODESIGN) $$($1_CREATE_DEBUGINFO_CMDS) $$($1_MANIFEST_VERSION) \
         $$($1_STRIP_CMD)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
@@ -747,7 +746,7 @@ define SetupNativeCompilationBody
 		    $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
 		        $(EXE_OUT_OPTION)$$($1_TARGET) \
 		        $$($1_EXPECTED_OBJS) $$($1_RES) \
-		        $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX))
+		        $$($1_LIBS) $$($1_EXTRA_LIBS))
                 ifeq ($(OPENJDK_TARGET_OS), windows)
                   ifneq ($$($1_MANIFEST), )
 		    $$($1_MT) -nologo -manifest $$($1_MANIFEST) -identity:"$$($1_PROGRAM).exe, version=$$($1_MANIFEST_VERSION)" -outputresource:$$@;#1

@@ -28,6 +28,8 @@
  * @author Robert Field, Sun Microsystems
  *
  * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.management
+ *          java.instrument
  * @run shell/timeout=240 MakeJAR2.sh NativeMethodPrefixAgent NativeMethodPrefixApp 'Can-Retransform-Classes: true' 'Can-Set-Native-Method-Prefix: true'
  * @run main/othervm -javaagent:NativeMethodPrefixAgent.jar NativeMethodPrefixApp
  */

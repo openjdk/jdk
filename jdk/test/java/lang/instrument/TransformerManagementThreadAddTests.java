@@ -27,7 +27,6 @@
  * @summary multi-thread test to exercise sync and contention for adds to transformer registry
  * @author Gabriel Adauto, Wily Technology
  *
- * @modules java.instrument
  * @run build TransformerManagementThreadAddTests
  * @run shell MakeJAR.sh redefineAgent
  * @run main/othervm -javaagent:redefineAgent.jar TransformerManagementThreadAddTests TransformerManagementThreadAddTests

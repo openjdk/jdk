@@ -27,7 +27,6 @@
  * @summary test that redefineClasses and isRedefineClassesSupported behave correctly when redefine is not enabled
  * @author Robert Field, Sun Microsystems -- as modified from the work of Gabriel Adauto, Wily Technology
  *
- * @modules java.instrument
  * @run build RedefineClassesDisabledTest
  * @run shell RedefineSetUp.sh
  * @run shell MakeJAR.sh basicAgent
