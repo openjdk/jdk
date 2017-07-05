@@ -42,7 +42,6 @@ public interface ResourcePrevisitor {
      * @param resources Read only resources.
      * @param strings StringTable instance. Add string to the StringTable to track string
      * usage.
-     * @throws PluginException
      */
     public void previsit(ModulePool resources, StringTable strings);
 }

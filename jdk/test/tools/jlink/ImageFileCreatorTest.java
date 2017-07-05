@@ -37,7 +37,7 @@ import java.util.stream.Stream;
 import jdk.tools.jlink.internal.Archive;
 import jdk.tools.jlink.internal.ImageFileCreator;
 import jdk.tools.jlink.internal.ImagePluginStack;
-import jdk.tools.jlink.plugin.ExecutableImage;
+import jdk.tools.jlink.internal.ExecutableImage;
 import jdk.tools.jlink.builder.ImageBuilder;
 import jdk.tools.jlink.plugin.ModulePool;
 
@@ -220,7 +220,7 @@ public class ImageFileCreatorTest {
         };
 
         ImagePluginStack stack = new ImagePluginStack(noopBuilder, Collections.emptyList(),
-                null, Collections.emptyList());
+                null);
 
         ImageFileCreator.create(archives, ByteOrder.nativeOrder(), stack);
     }

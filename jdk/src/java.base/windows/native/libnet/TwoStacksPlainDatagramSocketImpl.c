@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1713,8 +1713,8 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1,
             in.s_addr = htonl(getInetAddress_addr(env, value));
             if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF,
                                (const char*)&in, sizeof(in)) < 0) {
-                NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                 "Error setting socket option");
+                JNU_ThrowByNameWithMessageAndLastError
+                    (env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
             }
             return;
         }
@@ -1741,7 +1741,7 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1,
             }
             index = (*env)->GetIntField(env, value, ni_indexID);
 
-            if ( isAdapterIpv6Enabled(env, index) != 0 ) {
+            if (isAdapterIpv6Enabled(env, index) != 0) {
                 if (setsockopt(fd1, IPPROTO_IPV6, IPV6_MULTICAST_IF,
                                (const char*)&index, sizeof(index)) < 0) {
                     if (errno == EINVAL && index > 0) {
@@ -1749,8 +1749,8 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1,
                             "IPV6_MULTICAST_IF failed (interface has IPv4 "
                             "address only?)");
                     } else {
-                        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                   "Error setting socket option");
+                        JNU_ThrowByNameWithMessageAndLastError
+                            (env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
                     }
                     return;
                 }
@@ -1758,13 +1758,13 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1,
             /* If there are any IPv4 addresses on this interface then
              * repeat the operation on the IPv4 fd */
 
-            if (getInet4AddrFromIf (env, value, &in) < 0) {
+            if (getInet4AddrFromIf(env, value, &in) < 0) {
                 return;
             }
             if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF,
                                (const char*)&in, sizeof(in)) < 0) {
-                NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                                 "Error setting socket option");
+                JNU_ThrowByNameWithMessageAndLastError
+                    (env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
             }
             return;
         } else {
@@ -1781,8 +1781,8 @@ static void setMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1,
 
             if (setsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF,
                                (const char*)&in, sizeof(in)) < 0) {
-                NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                               "Error setting socket option");
+                JNU_ThrowByNameWithMessageAndLastError
+                    (env, JNU_JAVANETPKG "SocketException", "Error setting socket option");
             }
             return;
         }
@@ -1932,8 +1932,8 @@ static jobject getIPv4NetworkInterface (JNIEnv *env, jobject this, int fd, jint 
         int len = sizeof(struct in_addr);
         if (getsockopt(fd, IPPROTO_IP, IP_MULTICAST_IF,
                            (char *)inP, &len) < 0) {
-            NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                             "Error getting socket option");
+            JNU_ThrowByNameWithMessageAndLastError
+                (env, JNU_JAVANETPKG "SocketException", "Error getting socket option");
             return NULL;
         }
 
@@ -2056,8 +2056,8 @@ jobject getMulticastInterface(JNIEnv *env, jobject this, int fd, int fd1, jint o
         {
             if (getsockopt(fd1, IPPROTO_IPV6, IPV6_MULTICAST_IF,
                                (char*)&index, &len) < 0) {
-                NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                               "Error getting socket option");
+                JNU_ThrowByNameWithMessageAndLastError
+                    (env, JNU_JAVANETPKG "SocketException", "Error getting socket option");
                 return NULL;
             }
         }
@@ -2288,8 +2288,8 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_socketLocalAddress(JNIEnv *env, j
     }
 
     if (getsockname(fd, (struct sockaddr *)&him, &len) == -1) {
-        NET_ThrowByNameWithLastError(env, JNU_JAVANETPKG "SocketException",
-                       "Error getting socket name");
+        JNU_ThrowByNameWithMessageAndLastError
+            (env, JNU_JAVANETPKG "SocketException", "Error getting socket name");
         return NULL;
     }
     iaObj = NET_SockaddrToInetAddress(env, (struct sockaddr *)&him, &port);

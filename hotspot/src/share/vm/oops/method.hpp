@@ -246,7 +246,7 @@ class Method : public Metadata {
   int code_size() const                  { return constMethod()->code_size(); }
 
   // method size in words
-  int method_size() const                { return sizeof(Method)/wordSize + is_native() ? 2 : 0; }
+  int method_size() const                { return sizeof(Method)/wordSize + ( is_native() ? 2 : 0 ); }
 
   // constant pool for Klass* holding this method
   ConstantPool* constants() const              { return constMethod()->constants(); }

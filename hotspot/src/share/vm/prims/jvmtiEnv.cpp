@@ -319,15 +319,7 @@ jvmtiError
 JvmtiEnv::GetObjectSize(jobject object, jlong* size_ptr) {
   oop mirror = JNIHandles::resolve_external_guard(object);
   NULL_CHECK(mirror, JVMTI_ERROR_INVALID_OBJECT);
-
-  if (mirror->klass() == SystemDictionary::Class_klass() &&
-      !java_lang_Class::is_primitive(mirror)) {
-    Klass* k = java_lang_Class::as_Klass(mirror);
-    assert(k != NULL, "class for non-primitive mirror must exist");
-    *size_ptr = (jlong)k->size() * wordSize;
-  } else {
-    *size_ptr = (jlong)mirror->size() * wordSize;
-    }
+  *size_ptr = (jlong)mirror->size() * wordSize;
   return JVMTI_ERROR_NONE;
 } /* end GetObjectSize */
 
