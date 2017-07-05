@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -409,6 +409,7 @@ public abstract class FontMetrics implements java.io.Serializable {
      * @see       #charsWidth(char[], int, int)
      * @see       #stringWidth(String)
      */
+    @SuppressWarnings("deprecation")
     public int bytesWidth(byte data[], int off, int len) {
         return stringWidth(new String(data, 0, off, len));
     }

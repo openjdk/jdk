@@ -2230,11 +2230,11 @@ public class BasicTableUI extends TableUI
                     for (int col = 0; col < cols.length; col++) {
                         Object obj = table.getValueAt(rows[row], cols[col]);
                         String val = ((obj == null) ? "" : obj.toString());
-                        plainStr.append(val + "\t");
-                        htmlStr.append("  <td>" + val + "</td>\n");
+                        plainStr.append(val).append('\t');
+                        htmlStr.append("  <td>").append(val).append("</td>\n");
                     }
                     // we want a newline at the end of each line and not a tab
-                    plainStr.deleteCharAt(plainStr.length() - 1).append("\n");
+                    plainStr.deleteCharAt(plainStr.length() - 1).append('\n');
                     htmlStr.append("</tr>\n");
                 }
 

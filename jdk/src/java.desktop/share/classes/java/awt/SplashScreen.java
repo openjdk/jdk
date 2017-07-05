@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,6 +203,7 @@ public final class SplashScreen {
      * @return URL for the current splash screen image file
      * @throws IllegalStateException if the splash screen has already been closed
      */
+    @SuppressWarnings("deprecation")
     public URL getImageURL() throws IllegalStateException {
         synchronized (SplashScreen.class) {
             checkVisible();

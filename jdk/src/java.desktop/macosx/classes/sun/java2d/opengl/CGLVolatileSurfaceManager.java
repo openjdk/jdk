@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,7 @@ public class CGLVolatileSurfaceManager extends VolatileSurfaceManager {
      * Create a pbuffer-based SurfaceData object (or init the backbuffer
      * of an existing window if this is a double buffered GraphicsConfig)
      */
+    @SuppressWarnings("deprecation")
     protected SurfaceData initAcceleratedSurface() {
         SurfaceData sData = null;
         Component comp = vImg.getComponent();

@@ -225,6 +225,7 @@ final class ListHelper implements XScrollbarClient {
         return index == focusedIndex;
     }
 
+    @SuppressWarnings("deprecation")
     void setFont(Font newFont) {
         if (newFont != font) {
             font = newFont;

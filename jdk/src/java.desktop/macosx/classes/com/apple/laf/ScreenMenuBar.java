@@ -246,6 +246,7 @@ public class ScreenMenuBar extends MenuBar implements ContainerListener, ScreenM
             fSubmenus.remove(menu);
     }
 
+    @SuppressWarnings("deprecation")
     public Menu add(final Menu m, final int index) {
         synchronized (getTreeLock()) {
             if (m.getParent() != null) {

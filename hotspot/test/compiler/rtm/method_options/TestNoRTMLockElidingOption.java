@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify that NoRTMLockEliding option could be applied to
  *          specified method and that such method will not use rtm.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestNoRTMLockElidingOption
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

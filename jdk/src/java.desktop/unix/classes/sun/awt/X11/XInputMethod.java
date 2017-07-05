@@ -137,6 +137,7 @@ public class XInputMethod extends X11InputMethod {
         XToolkit.awtUnlock();
     }
 
+    @SuppressWarnings("deprecation")
     long getCurrentParentWindow() {
         return ((XWindow)clientComponentWindow.getPeer()).getContentWindow();
     }

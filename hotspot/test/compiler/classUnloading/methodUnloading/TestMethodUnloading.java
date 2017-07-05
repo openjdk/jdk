@@ -31,7 +31,7 @@ import java.net.URLClassLoader;
  * @test MethodUnloadingTest
  * @bug 8029443
  * @summary "Tests the unloading of methods to to class unloading"
- * @library /testlibrary /testlibrary/whitebox
+ * @library /testlibrary /../../test/lib
  * @build TestMethodUnloading
  * @build WorkerClass
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

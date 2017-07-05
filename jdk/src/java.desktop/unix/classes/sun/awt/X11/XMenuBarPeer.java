@@ -163,6 +163,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
         postPaintEvent();
     }
 
+    @SuppressWarnings("deprecation")
     public void addHelpMenu(Menu m) {
         XMenuPeer mp = (XMenuPeer)m.getPeer();
         synchronized(getMenuTreeLock()) {
@@ -179,6 +180,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
     /**
      * called from XFramePeer.setMenuBar
      */
+    @SuppressWarnings("deprecation")
     public void init(Frame frame) {
         this.target = frame;
         this.framePeer = (XFramePeer)frame.getPeer();

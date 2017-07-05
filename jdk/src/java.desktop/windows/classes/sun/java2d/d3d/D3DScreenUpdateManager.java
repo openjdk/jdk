@@ -523,6 +523,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      * @param comp component to check for hw children
      * @return true if Component has heavyweight children
      */
+    @SuppressWarnings("deprecation")
     private static boolean hasHWChildren(Component comp) {
         if (comp instanceof Container) {
             for (Component c : ((Container)comp).getComponents()) {
