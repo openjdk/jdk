@@ -22,15 +22,14 @@
  */
 
 /**
- *  @test
- *  @bug 4195445 6204179
- *  @summary JDWP, JDI: Add return value to Method Exit Event
- *  @author Jim Holmlund
+ * @test
+ * @bug 4195445 6204179
+ * @summary JDWP, JDI: Add return value to Method Exit Event
+ * @author Jim Holmlund
  *
- *  @modules jdk.jdi
- *  @run build TestScaffold VMConnection TargetListener TargetAdapter
- *  @run compile -g MethodExitReturnValuesTest.java
- *  @run driver MethodExitReturnValuesTest
+ * @run build TestScaffold VMConnection TargetListener TargetAdapter
+ * @run compile -g MethodExitReturnValuesTest.java
+ * @run driver MethodExitReturnValuesTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

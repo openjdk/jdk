@@ -142,7 +142,7 @@ public abstract class AbstractTypeVisitor6<R, P> implements TypeVisitor<R, P> {
      *
      * @implSpec The default implementation of this method in {@code
      * AbstractTypeVisitor6} will always throw {@code
-     * UnknownTypeException}.  This behavior is not required of a
+     * new UnknownTypeException(t, p)}.  This behavior is not required of a
      * subclass.
      *
      * @param t  {@inheritDoc}

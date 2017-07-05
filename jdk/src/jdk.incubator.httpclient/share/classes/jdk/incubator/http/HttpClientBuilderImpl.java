@@ -40,7 +40,7 @@ class HttpClientBuilderImpl extends HttpClient.Builder {
     HttpClient.Redirect followRedirects;
     ProxySelector proxy;
     Authenticator authenticator;
-    HttpClient.Version version = HttpClient.Version.HTTP_1_1;
+    HttpClient.Version version;
     Executor executor;
     // Security parameters
     SSLContext sslContext;
