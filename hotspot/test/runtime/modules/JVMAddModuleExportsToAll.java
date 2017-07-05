@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.lang.reflect.Module;
 import static jdk.test.lib.Asserts.*;
 
 /*
@@ -31,7 +30,7 @@ import static jdk.test.lib.Asserts.*;
  * @compile p2/c2.java
  * @compile p1/c1.java
  * @build sun.hotspot.WhiteBox
- * @compile/module=java.base java/lang/reflect/ModuleHelper.java
+ * @compile/module=java.base java/lang/ModuleHelper.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI JVMAddModuleExportsToAll
@@ -43,28 +42,28 @@ public class JVMAddModuleExportsToAll {
     // and then test that a class in the unnamed module can access a package in
     // a named module that has been exported unqualifiedly.
     public static void main(String args[]) throws Throwable {
-        Object m1, m2, m3;
+        Object m1x, m2x, m3x;
 
-        // Get the java.lang.reflect.Module object for module java.base.
+        // Get the java.lang.Module object for module java.base.
         Class jlObject = Class.forName("java.lang.Object");
-        Object jlObject_jlrM = jlObject.getModule();
-        assertNotNull(jlObject_jlrM, "jlrModule object of java.lang.Object should not be null");
+        Object jlObject_jlM = jlObject.getModule();
+        assertNotNull(jlObject_jlM, "jlModule object of java.lang.Object should not be null");
 
         // Get the class loader for JVMAddModuleExportsToAll and assume it's also used to
         // load class p2.c2.
         ClassLoader this_cldr = JVMAddModuleExportsToAll.class.getClassLoader();
 
         // Define a module for p3.
-        m1 = ModuleHelper.ModuleObject("module1", this_cldr, new String[] { "p3" });
-        assertNotNull(m1, "Module should not be null");
-        ModuleHelper.DefineModule(m1, "9.0", "m1/there", new String[] { "p3" });
-        ModuleHelper.AddReadsModule(m1, jlObject_jlrM);
+        m1x = ModuleHelper.ModuleObject("module_one", this_cldr, new String[] { "p3" });
+        assertNotNull(m1x, "Module should not be null");
+        ModuleHelper.DefineModule(m1x, "9.0", "m1x/there", new String[] { "p3" });
+        ModuleHelper.AddReadsModule(m1x, jlObject_jlM);
 
         // Define a module for p2.
-        m2 = ModuleHelper.ModuleObject("module2", this_cldr, new String[] { "p2" });
-        assertNotNull(m2, "Module should not be null");
-        ModuleHelper.DefineModule(m2, "9.0", "m2/there", new String[] { "p2" });
-        ModuleHelper.AddReadsModule(m2, jlObject_jlrM);
+        m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
+        assertNotNull(m2x, "Module should not be null");
+        ModuleHelper.DefineModule(m2x, "9.0", "m2x/there", new String[] { "p2" });
+        ModuleHelper.AddReadsModule(m2x, jlObject_jlM);
 
         try {
             ModuleHelper.AddModuleExportsToAll((Module)null, "p2");
@@ -74,13 +73,13 @@ public class JVMAddModuleExportsToAll {
         }
 
         try {
-            ModuleHelper.AddModuleExportsToAll(m2, null);
+            ModuleHelper.AddModuleExportsToAll(m2x, null);
             throw new RuntimeException("Failed to get the expected NPE for null package");
         } catch(NullPointerException e) {
             // Expected
         }
 
-        try { // Expect IAE when passing a ClassLoader object instead of a java.lang.reflect.Module object.
+        try { // Expect IAE when passing a ClassLoader object instead of a java.lang.Module object.
             ModuleHelper.AddModuleExportsToAll(this_cldr, "p2");
             throw new RuntimeException("Failed to get the expected IAE for bad module");
         } catch(IllegalArgumentException e) {
@@ -88,26 +87,26 @@ public class JVMAddModuleExportsToAll {
         }
 
         try {
-            ModuleHelper.AddModuleExportsToAll(m2, "p3");
+            ModuleHelper.AddModuleExportsToAll(m2x, "p3");
             throw new RuntimeException("Failed to get the expected IAE for package that is in another module");
         } catch(IllegalArgumentException e) {
             // Expected
         }
 
         try {
-            ModuleHelper.AddModuleExportsToAll(m2, "p4");
+            ModuleHelper.AddModuleExportsToAll(m2x, "p4");
             throw new RuntimeException("Failed to get the expected IAE for package not in any module");
         } catch(IllegalArgumentException e) {
             // Expected
         }
 
-        // Export package p2 in m2 unqualifiedly. Then, do a qualified export
-        // of p2 in m2 to m3.  This should not affect the unqualified export.
-        m3 = ModuleHelper.ModuleObject("module3", this_cldr, new String[] { "p4" });
-        assertNotNull(m3, "Module m3 should not be null");
-        ModuleHelper.DefineModule(m3, "9.0", "m3/there", new String[] { "p4" });
-        ModuleHelper.AddModuleExportsToAll(m2, "p2");
-        ModuleHelper.AddModuleExports(m2, "p2", m3);
+        // Export package p2 in m2x unqualifiedly. Then, do a qualified export
+        // of p2 in m2x to m3x.  This should not affect the unqualified export.
+        m3x = ModuleHelper.ModuleObject("module_three", this_cldr, new String[] { "p4" });
+        assertNotNull(m3x, "Module m3x should not be null");
+        ModuleHelper.DefineModule(m3x, "9.0", "m3x/there", new String[] { "p4" });
+        ModuleHelper.AddModuleExportsToAll(m2x, "p2");
+        ModuleHelper.AddModuleExports(m2x, "p2", m3x);
 
         // p1.c1's ctor tries to call a method in p2.c2.  This should succeed because
         // p1 is in an unnamed module and p2.c2 is exported unqualifiedly.

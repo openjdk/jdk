@@ -62,7 +62,7 @@ bool Modules::verify_package_name(const char* package_name) {
 }
 
 static char* get_module_name(oop module, TRAPS) {
-  oop name_oop = java_lang_reflect_Module::name(module);
+  oop name_oop = java_lang_Module::name(module);
   if (name_oop == NULL) {
     THROW_MSG_NULL(vmSymbols::java_lang_NullPointerException(), "Null module name");
   }
@@ -98,11 +98,11 @@ static PackageEntryTable* get_package_entry_table(Handle h_loader, TRAPS) {
 
 static ModuleEntry* get_module_entry(jobject module, TRAPS) {
   Handle module_h(THREAD, JNIHandles::resolve(module));
-  if (!java_lang_reflect_Module::is_instance(module_h())) {
+  if (!java_lang_Module::is_instance(module_h())) {
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(),
-                   "module is not an instance of type java.lang.reflect.Module");
+                   "module is not an instance of type java.lang.Module");
   }
-  return java_lang_reflect_Module::module_entry(module_h(), CHECK_NULL);
+  return java_lang_Module::module_entry(module_h(), CHECK_NULL);
 }
 
 static PackageEntry* get_package_entry(ModuleEntry* module_entry, const char* package_name, TRAPS) {
@@ -181,7 +181,7 @@ static void define_javabase_module(jobject module, jstring version,
   }
 
   // Validate java_base's loader is the boot loader.
-  oop loader = java_lang_reflect_Module::loader(module_handle());
+  oop loader = java_lang_Module::loader(module_handle());
   if (loader != NULL) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Class loader must be the boot class loader");
@@ -234,7 +234,7 @@ static void define_javabase_module(jobject module, jstring version,
   // Only the thread that actually defined the base module will get here,
   // so no locking is needed.
 
-  // Patch any previously loaded class's module field with java.base's java.lang.reflect.Module.
+  // Patch any previously loaded class's module field with java.base's java.lang.Module.
   ModuleEntryTable::patch_javabase_entries(module_handle);
 
   log_debug(modules)("define_javabase_module(): Definition of module: "
@@ -284,9 +284,9 @@ void Modules::define_module(jobject module, jstring version,
   }
 
   Handle module_handle(THREAD, JNIHandles::resolve(module));
-  if (!java_lang_reflect_Module::is_instance(module_handle())) {
+  if (!java_lang_Module::is_instance(module_handle())) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "module is not an instance of type java.lang.reflect.Module");
+              "module is not an instance of type java.lang.Module");
   }
 
   char* module_name = get_module_name(module_handle(), CHECK);
@@ -303,7 +303,7 @@ void Modules::define_module(jobject module, jstring version,
 
   const char* module_version = get_module_version(version);
 
-  oop loader = java_lang_reflect_Module::loader(module_handle());
+  oop loader = java_lang_Module::loader(module_handle());
   // Make sure loader is not the jdk.internal.reflect.DelegatingClassLoader.
   if (loader != java_lang_ClassLoader::non_reflection_class_loader(loader)) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
@@ -325,7 +325,8 @@ void Modules::define_module(jobject module, jstring version,
     // Only modules defined to either the boot or platform class loader, can define a "java/" package.
     if (!h_loader.is_null() &&
         !SystemDictionary::is_platform_class_loader(h_loader) &&
-        strncmp(package_name, JAVAPKG, JAVAPKG_LEN) == 0) {
+        (strncmp(package_name, JAVAPKG, JAVAPKG_LEN) == 0 &&
+          (package_name[JAVAPKG_LEN] == '/' || package_name[JAVAPKG_LEN] == '\0'))) {
       const char* class_loader_name = SystemDictionary::loader_name(h_loader());
       size_t pkg_len = strlen(package_name);
       char* pkg_name = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, pkg_len);
@@ -423,8 +424,8 @@ void Modules::define_module(jobject module, jstring version,
           pkg_list->at(y)->decrement_refcount();
         }
 
-        // Store pointer to ModuleEntry record in java.lang.reflect.Module object.
-        java_lang_reflect_Module::set_module_entry(module_handle(), module_entry);
+        // Store pointer to ModuleEntry record in java.lang.Module object.
+        java_lang_Module::set_module_entry(module_handle(), module_entry);
       }
     }
   }  // Release the lock
@@ -466,20 +467,20 @@ void Modules::set_bootloader_unnamed_module(jobject module, TRAPS) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Null module object");
   }
   Handle module_handle(THREAD, JNIHandles::resolve(module));
-  if (!java_lang_reflect_Module::is_instance(module_handle())) {
+  if (!java_lang_Module::is_instance(module_handle())) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "module is not an instance of type java.lang.reflect.Module");
+              "module is not an instance of type java.lang.Module");
   }
 
   // Ensure that this is an unnamed module
-  oop name = java_lang_reflect_Module::name(module_handle());
+  oop name = java_lang_Module::name(module_handle());
   if (name != NULL) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
-              "boot loader's unnamed module's java.lang.reflect.Module has a name");
+              "boot loader's unnamed module's java.lang.Module has a name");
   }
 
   // Validate java_base's loader is the boot loader.
-  oop loader = java_lang_reflect_Module::loader(module_handle());
+  oop loader = java_lang_Module::loader(module_handle());
   if (loader != NULL) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
               "Class loader must be the boot class loader");
@@ -491,12 +492,12 @@ void Modules::set_bootloader_unnamed_module(jobject module, TRAPS) {
   // Ensure the boot loader's PackageEntryTable has been created
   ModuleEntryTable* module_table = get_module_entry_table(h_loader, CHECK);
 
-  // Set java.lang.reflect.Module for the boot loader's unnamed module
+  // Set java.lang.Module for the boot loader's unnamed module
   ModuleEntry* unnamed_module = module_table->unnamed_module();
   assert(unnamed_module != NULL, "boot loader's unnamed ModuleEntry not defined");
   unnamed_module->set_module(ClassLoaderData::the_null_class_loader_data()->add_handle(module_handle));
-  // Store pointer to the ModuleEntry in the unnamed module's java.lang.reflect.Module object.
-  java_lang_reflect_Module::set_module_entry(module_handle(), unnamed_module);
+  // Store pointer to the ModuleEntry in the unnamed module's java.lang.Module object.
+  java_lang_Module::set_module_entry(module_handle(), unnamed_module);
 }
 
 void Modules::add_module_exports(jobject from_module, const char* package_name, jobject to_module, TRAPS) {
@@ -626,13 +627,13 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
   oop module = java_lang_Class::module(mirror);
 
   assert(module != NULL, "java.lang.Class module field not set");
-  assert(java_lang_reflect_Module::is_instance(module), "module is not an instance of type java.lang.reflect.Module");
+  assert(java_lang_Module::is_instance(module), "module is not an instance of type java.lang.Module");
 
   if (log_is_enabled(Debug, modules)) {
     ResourceMark rm(THREAD);
     outputStream* logst = Log(modules)::debug_stream();
     Klass* klass = java_lang_Class::as_Klass(mirror);
-    oop module_name = java_lang_reflect_Module::name(module);
+    oop module_name = java_lang_Module::name(module);
     if (module_name != NULL) {
       logst->print("get_module(): module ");
       java_lang_String::print(module_name, tty);
@@ -748,7 +749,8 @@ void Modules::add_module_package(jobject module, const char* package_name, TRAPS
   // Only modules defined to either the boot or platform class loader, can define a "java/" package.
   if (!loader_data->is_the_null_class_loader_data() &&
       !loader_data->is_platform_class_loader_data() &&
-      strncmp(package_name, JAVAPKG, JAVAPKG_LEN) == 0) {
+      (strncmp(package_name, JAVAPKG, JAVAPKG_LEN) == 0 &&
+        (package_name[JAVAPKG_LEN] == '/' || package_name[JAVAPKG_LEN] == '\0'))) {
     const char* class_loader_name = SystemDictionary::loader_name(loader_data);
     size_t pkg_len = strlen(package_name);
     char* pkg_name = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, pkg_len);
