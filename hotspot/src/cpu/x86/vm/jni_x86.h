@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,14 +38,9 @@
 
   #define JNICALL
   typedef int jint;
-#if defined(_LP64) && !defined(__APPLE__)
+#if defined(_LP64)
   typedef long jlong;
 #else
-  /*
-   * On _LP64 __APPLE__ "long" and "long long" are both 64 bits,
-   * but we use the "long long" typedef to avoid complaints from
-   * the __APPLE__ compiler about fprintf formats.
-   */
   typedef long long jlong;
 #endif
 

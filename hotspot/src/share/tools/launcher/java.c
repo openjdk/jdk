@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -808,7 +808,7 @@ CheckJvmType(int *pargc, char ***argv, jboolean speculative) {
 static int
 parse_stack_size(const char *s, jlong *result) {
   jlong n = 0;
-  int args_read = sscanf(s, jlong_format_specifier(), &n);
+  int args_read = sscanf(s, JLONG_FORMAT, &n);
   if (args_read != 1) {
     return 0;
   }

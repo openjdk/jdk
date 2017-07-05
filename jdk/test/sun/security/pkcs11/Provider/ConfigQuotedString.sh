@@ -41,9 +41,13 @@ fi
 if [ "${TESTJAVA}" = "" ] ; then
     TESTJAVA="/net/radiant/export1/charlie/mustang/build/solaris-sparc"
 fi
+if [ "${COMPILEJAVA}" = "" ]; then
+    COMPILEJAVA="${TESTJAVA}"
+fi
 echo TESTSRC=${TESTSRC}
 echo TESTCLASSES=${TESTCLASSES}
 echo TESTJAVA=${TESTJAVA}
+echo COMPILEJAVA=${COMPILEJAVA}
 echo ""
 
 # let java test exit if platform unsupported
@@ -92,7 +96,7 @@ esac
 
 # compile test
 
-${TESTJAVA}${FS}bin${FS}javac \
+${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
         -classpath ${TESTSRC}${FS}.. \
         -d ${TESTCLASSES} \
         ${TESTSRC}${FS}ConfigQuotedString.java

@@ -288,6 +288,9 @@ sun/security/mscapi/ShortRSAKey1024.sh                          windows-all
 # 8000897, vm crash
 sun/security/provider/DSA/TestAlgParameterGenerator.java        generic-all
 
+# 7144048, performance issue
+sun/security/ssl/com/sun/net/ssl/internal/ssl/SSLEngineImpl/SSLEngineDeadlock.java generic-all
+
 ############################################################################
 
 # jdk_sound
@@ -318,11 +321,11 @@ sun/jvmstat/monitor/MonitoredVm/CR6672135.java                  generic-all
 tools/pack200/CommandLineTests.java                             generic-all
 tools/pack200/Pack200Test.java                                  generic-all
 
+# 8001163
+tools/pack200/AttributeTests.java                               generic-all
+
 # 7150569
 tools/launcher/UnicodeTest.java                                 macosx-all
-
-# 8005252
-tools/pack200/AttributeTests.java                               generic-all
 
 ############################################################################
 

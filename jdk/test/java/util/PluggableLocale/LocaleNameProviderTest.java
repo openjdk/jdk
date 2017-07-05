@@ -49,7 +49,7 @@ public class LocaleNameProviderTest extends ProviderTest {
 
         for (Locale target: availloc) {
             // pure JRE implementation
-            OpenListResourceBundle rb = LocaleProviderAdapter.forJRE().getLocaleData().getLocaleNames(target);
+            OpenListResourceBundle rb = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forJRE()).getLocaleData().getLocaleNames(target);
             boolean jreSupportsTarget = jreimplloc.contains(target);
 
             for (Locale test: testloc) {

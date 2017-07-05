@@ -36,6 +36,7 @@ import java.applet.Applet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.lang.reflect.InvocationTargetException;
 import test.java.awt.regtesthelpers.Util;
+import sun.awt.OSInfo;
 
 public class SubMenuShowTest extends Applet {
     Robot robot;
@@ -86,6 +87,11 @@ public class SubMenuShowTest extends Applet {
         frame.setVisible(true);
         Util.waitForIdle(robot);
 
+        boolean isMacOSX = (OSInfo.getOSType() == OSInfo.OSType.MACOSX);
+        if (isMacOSX) {
+            robot.keyPress(KeyEvent.VK_CONTROL);
+            robot.delay(20);
+        }
         robot.keyPress(KeyEvent.VK_ALT);
         robot.delay(20);
         robot.keyPress(KeyEvent.VK_F);
@@ -93,6 +99,10 @@ public class SubMenuShowTest extends Applet {
         robot.keyRelease(KeyEvent.VK_F);
         robot.delay(20);
         robot.keyRelease(KeyEvent.VK_ALT);
+        if (isMacOSX) {
+            robot.keyRelease(KeyEvent.VK_CONTROL);
+            robot.delay(20);
+        }
         Util.waitForIdle(robot);
 
         robot.keyPress(KeyEvent.VK_M);

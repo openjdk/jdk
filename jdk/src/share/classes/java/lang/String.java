@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Formatter;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -871,6 +872,8 @@ public final class String
         if (srcBegin > srcEnd) {
             throw new StringIndexOutOfBoundsException(srcEnd - srcBegin);
         }
+        Objects.requireNonNull(dst);
+
         int j = dstBegin;
         int n = srcEnd;
         int i = srcBegin;
@@ -2112,7 +2115,6 @@ public final class String
      *
      * @param s the sequence to search for
      * @return true if this string contains {@code s}, false otherwise
-     * @throws NullPointerException if {@code s} is {@code null}
      * @since 1.5
      */
     public boolean contains(CharSequence s) {
@@ -2219,8 +2221,6 @@ public final class String
      * @param  target The sequence of char values to be replaced
      * @param  replacement The replacement sequence of char values
      * @return  The resulting string
-     * @throws NullPointerException if {@code target} or
-     *         {@code replacement} is {@code null}.
      * @since 1.5
      */
     public String replace(CharSequence target, CharSequence replacement) {
@@ -2833,9 +2833,6 @@ public final class String
      *          href="../util/Formatter.html#detail">Details</a> section of the
      *          formatter class specification.
      *
-     * @throws  NullPointerException
-     *          If the {@code format} is {@code null}
-     *
      * @return  A formatted string
      *
      * @see  java.util.Formatter
@@ -2865,8 +2862,8 @@ public final class String
      *         limited by the maximum dimension of a Java array as defined by
      *         <cite>The Java&trade; Virtual Machine Specification</cite>.
      *         The behaviour on a
-     *         {@code null} argument depends on the <a
-     *         href="../util/Formatter.html#syntax">conversion</a>.
+     *         {@code null} argument depends on the
+     *         <a href="../util/Formatter.html#syntax">conversion</a>.
      *
      * @throws  java.util.IllegalFormatException
      *          If a format string contains an illegal syntax, a format
@@ -2876,9 +2873,6 @@ public final class String
      *          formatting errors, see the <a
      *          href="../util/Formatter.html#detail">Details</a> section of the
      *          formatter class specification
-     *
-     * @throws  NullPointerException
-     *          If the {@code format} is {@code null}
      *
      * @return  A formatted string
      *

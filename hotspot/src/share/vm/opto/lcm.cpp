@@ -175,6 +175,7 @@ void Block::implicit_null_check(PhaseCFG *cfg, Node *proj, Node *val, int allowe
     case Op_StrEquals:
     case Op_StrIndexOf:
     case Op_AryEq:
+    case Op_EncodeISOArray:
       // Not a legit memory op for implicit null check regardless of
       // embedded loads
       continue;

@@ -80,10 +80,10 @@ Java_sun_lwawt_macosx_CMenuComponent_nativeDispose
 {
 JNF_COCOA_ENTER(env);
 
-    [JNFRunLoop performOnMainThread:@selector(disposer)
-                                 on:((id)jlong_to_ptr(menuItemObj))
-                         withObject:nil
-                      waitUntilDone:NO];
+    [ThreadUtilities performOnMainThread:@selector(disposer)
+                                      on:((id)jlong_to_ptr(menuItemObj))
+                              withObject:nil
+                           waitUntilDone:NO];
 
 JNF_COCOA_EXIT(env);
 }

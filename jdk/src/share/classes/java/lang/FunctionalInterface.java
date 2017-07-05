@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,9 @@ package java.lang;
 import java.lang.annotation.*;
 
 /**
- * Indicates that an interface type declaration is intended to be a
- * <i>functional interface</i> as defined by the Java Language
- * Specification.
+ * An informative annotation type used to indicate that an interface
+ * type declaration is intended to be a <i>functional interface</i> as
+ * defined by the Java Language Specification.
  *
  * Conceptually, a functional interface has exactly one abstract
  * method.  Since {@linkplain java.lang.reflect.Method#isDefault()
@@ -51,6 +51,11 @@ import java.lang.annotation.*;
  * <li> The type is an interface type and not an annotation type, enum, or class.
  * <li> The annotated type satisfies the requirements of a functional interface.
  * </ul>
+ *
+ * <p>However, the compiler will treat any interface meeting the
+ * definition of a functional interface as a functional interface
+ * regardless of whether or not a {@code FunctionalInterface}
+ * annotation is present on the interface declaration.
  *
  * @jls 4.3.2. The Class Object
  * @jls 9.8 Functional Interfaces

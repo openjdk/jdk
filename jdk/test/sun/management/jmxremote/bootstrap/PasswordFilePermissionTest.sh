@@ -90,7 +90,7 @@ createPasswordFile ${PASSWD}
 
 # Compile test 
 
-${TESTJAVA}/bin/javac -d ${TESTCLASSES} ${TESTCLASSES}/Null.java
+${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d ${TESTCLASSES} ${TESTCLASSES}/Null.java
 
 
 JAVA=${TESTJAVA}/bin/java

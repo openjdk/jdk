@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,21 +42,27 @@ public interface Destroyable {
      * <code>IllegalStateException</code> being thrown.
      *
      * <p>
+     * The default implementation throws {@code DestroyFailedException}.
      *
      * @exception DestroyFailedException if the destroy operation fails. <p>
      *
      * @exception SecurityException if the caller does not have permission
      *          to destroy this <code>Object</code>.
      */
-    void destroy() throws DestroyFailedException;
+    public default void destroy() throws DestroyFailedException {
+        throw new DestroyFailedException();
+    }
 
     /**
      * Determine if this <code>Object</code> has been destroyed.
      *
      * <p>
+     * The default implementation returns false.
      *
      * @return true if this <code>Object</code> has been destroyed,
      *          false otherwise.
      */
-    boolean isDestroyed();
+    public default boolean isDestroyed() {
+        return false;
+    }
 }

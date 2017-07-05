@@ -40,14 +40,19 @@ then
 fi
 echo "TESTJAVA=${TESTJAVA}"
 
+if [ "${COMPILEJAVA}" = "" ]; then
+  COMPILEJAVA="${TESTJAVA}"
+fi
+echo "COMPILEJAVA=${COMPILEJAVA}"
+
 if [ "${TESTCLASSES}" = "" ]
 then
   echo "TESTCLASSES not set.  Test cannot execute.  Failed."
   exit 1
 fi
 
-JAVAC="${TESTJAVA}/bin/javac"
-JAR="${TESTJAVA}/bin/jar"
+JAVAC="${COMPILEJAVA}/bin/javac"
+JAR="${COMPILEJAVA}/bin/jar"
 
 rm -rf ${TESTCLASSES}/test1
 rm -rf ${TESTCLASSES}/test2
@@ -59,15 +64,15 @@ mkdir -p ${TESTCLASSES}/serverRoot
 cd ${TESTSRC}/test1/com/foo
 cp * ${TESTCLASSES}/test1/com/foo
 cd ${TESTCLASSES}/test1
-${JAVAC} com/foo/*.java
-${JAR} cvf ../test1.jar com/foo/*.class com/foo/Resource*
+${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} com/foo/*.java
+${JAR} ${TESTTOOLVMOPTS} cvf ../test1.jar com/foo/*.class com/foo/Resource*
 
 cd ${TESTSRC}/test2/com/foo
 cp * ${TESTCLASSES}/test2/com/foo
 cd ${TESTCLASSES}/test2
-${JAVAC} com/foo/*.java
-${JAR} cvf ../test2.jar com/foo/*.class com/foo/Resource*
+${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} com/foo/*.java
+${JAR} ${TESTTOOLVMOPTS} cvf ../test2.jar com/foo/*.class com/foo/Resource*
 
 cp ${TESTSRC}/serverRoot/Test.java ${TESTCLASSES}/serverRoot
 cd ${TESTCLASSES}/serverRoot
-${JAVAC} Test.java
+${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} Test.java

@@ -77,7 +77,11 @@ package java.lang;
  * the capacity, it is not necessary to allocate a new internal
  * buffer array. If the internal buffer overflows, it is
  * automatically made larger.
- *
+ * <p>
+ * Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
+ * <p>
  * As of  release JDK 5, this class has been supplemented with an equivalent
  * class designed for use by a single thread, {@link StringBuilder}.  The
  * {@code StringBuilder} class should generally be used in preference to
@@ -123,7 +127,6 @@ package java.lang;
      * {@code 16} plus the length of the string argument.
      *
      * @param   str   the initial contents of the buffer.
-     * @exception NullPointerException if {@code str} is {@code null}
      */
     public StringBuffer(String str) {
         super(str.length() + 16);
@@ -141,7 +144,6 @@ package java.lang;
      * {@code 16} is returned.
      *
      * @param      seq   the sequence to copy.
-     * @exception NullPointerException if {@code seq} is {@code null}
      * @since 1.5
      */
     public StringBuffer(CharSequence seq) {
@@ -228,7 +230,6 @@ package java.lang;
     }
 
     /**
-     * @throws NullPointerException {@inheritDoc}
      * @throws IndexOutOfBoundsException {@inheritDoc}
      */
     @Override
@@ -584,7 +585,6 @@ package java.lang;
     }
 
     /**
-     * @throws NullPointerException {@inheritDoc}
      * @since      1.4
      */
     @Override
@@ -594,7 +594,6 @@ package java.lang;
     }
 
     /**
-     * @throws NullPointerException {@inheritDoc}
      * @since      1.4
      */
     @Override
@@ -603,7 +602,6 @@ package java.lang;
     }
 
     /**
-     * @throws NullPointerException {@inheritDoc}
      * @since      1.4
      */
     @Override
@@ -613,7 +611,6 @@ package java.lang;
     }
 
     /**
-     * @throws NullPointerException {@inheritDoc}
      * @since      1.4
      */
     @Override

@@ -30,11 +30,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.TimeZoneNameProvider;
 import sun.util.calendar.ZoneInfo;
-import sun.util.resources.OpenListResourceBundle;
-import sun.util.resources.TimeZoneNamesBundle;
 
 /**
  * Utility class that deals with the localized time zone names
@@ -45,15 +44,17 @@ import sun.util.resources.TimeZoneNamesBundle;
 public final class TimeZoneNameUtility {
 
     /**
-     * cache to hold time zone resource bundles. Keyed by Locale
-     */
-    private static ConcurrentHashMap<Locale, SoftReference<TimeZoneNamesBundle>> cachedBundles =
-        new ConcurrentHashMap<>();
-
-    /**
      * cache to hold time zone localized strings. Keyed by Locale
      */
     private static ConcurrentHashMap<Locale, SoftReference<String[][]>> cachedZoneData =
+        new ConcurrentHashMap<>();
+
+    /**
+     * Cache for managing display names per timezone per locale
+     * The structure is:
+     *     Map(key=id, value=SoftReference(Map(key=locale, value=displaynames)))
+     */
+    private static final Map<String, SoftReference<Map<Locale, String[]>>> cachedDisplayNames =
         new ConcurrentHashMap<>();
 
     /**
@@ -82,9 +83,9 @@ public final class TimeZoneNameUtility {
         }
 
         // Performs per-ID retrieval.
+        Set<String> zoneIDs = LocaleProviderAdapter.forJRE().getLocaleResources(locale).getZoneIDs();
         List<String[]> zones = new LinkedList<>();
-        OpenListResourceBundle rb = getBundle(locale);
-        for (String key : rb.keySet()) {
+        for (String key : zoneIDs) {
             String[] names = retrieveDisplayNamesImpl(key, locale);
             if (names != null) {
                 zones.add(names);
@@ -137,20 +138,31 @@ public final class TimeZoneNameUtility {
     private static String[] retrieveDisplayNamesImpl(String id, Locale locale) {
         LocaleServiceProviderPool pool =
             LocaleServiceProviderPool.getPool(TimeZoneNameProvider.class);
-        return pool.getLocalizedObject(TimeZoneNameArrayGetter.INSTANCE, locale, id);
-    }
 
-    private static TimeZoneNamesBundle getBundle(Locale locale) {
-        TimeZoneNamesBundle rb;
-        SoftReference<TimeZoneNamesBundle> data = cachedBundles.get(locale);
-
-        if (data == null || ((rb = data.get()) == null)) {
-            rb = LocaleProviderAdapter.forJRE().getLocaleData().getTimeZoneNames(locale);
-            data = new SoftReference<>(rb);
-            cachedBundles.put(locale, data);
+        SoftReference<Map<Locale, String[]>> ref = cachedDisplayNames.get(id);
+        if (ref != null) {
+            Map<Locale, String[]> perLocale = ref.get();
+            if (perLocale != null) {
+                String[] names = perLocale.get(locale);
+                if (names != null) {
+                    return names;
+                }
+                names = pool.getLocalizedObject(TimeZoneNameArrayGetter.INSTANCE, locale, id);
+                if (names != null) {
+                    perLocale.put(locale, names);
+                }
+                return names;
+            }
         }
 
-        return rb;
+        String[] names = pool.getLocalizedObject(TimeZoneNameArrayGetter.INSTANCE, locale, id);
+        if (names != null) {
+            Map<Locale, String[]> perLocale = new ConcurrentHashMap<>();
+            perLocale.put(locale, names);
+            ref = new SoftReference<>(perLocale);
+            cachedDisplayNames.put(id, ref);
+        }
+        return names;
     }
 
     /**

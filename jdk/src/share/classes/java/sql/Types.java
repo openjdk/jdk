@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,6 +308,16 @@ public class Types {
      * @since 1.6
      */
     public static final int SQLXML = 2009;
+
+    //--------------------------JDBC 4.2 -----------------------------
+
+    /**
+     * The constant in the Java programming language, sometimes referred to
+     * as a type code, that identifies the generic SQL type {@code REF CURSOR}.
+     *
+     * @since 1.8
+     */
+    public static final int REF_CURSOR = 2012;
 
     // Prevent instantiation
     private Types() {}
