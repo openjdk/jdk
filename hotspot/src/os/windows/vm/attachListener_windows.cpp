@@ -62,7 +62,7 @@ class Win32AttachOperation;
 class Win32AttachListener: AllStatic {
  private:
   enum {
-    preallocate_count = 4                   // number of preallocated operations
+    max_enqueued_operations = 4
   };
 
   // protects the preallocated list and the operation list
@@ -83,9 +83,12 @@ class Win32AttachListener: AllStatic {
   static void set_tail(Win32AttachOperation* tail)          { _tail = tail; }
 
 
-  // used to wakeup the listener
-  static HANDLE _wakeup;
-  static HANDLE wakeup()                                    { return _wakeup; }
+  // A semaphore is used for communication about enqueued operations.
+  // The maximum count for the semaphore object will be set to "max_enqueued_operations".
+  // The state of a semaphore is signaled when its count is greater than
+  // zero (there are operations enqueued), and nonsignaled when it is zero.
+  static HANDLE _enqueued_ops_semaphore;
+  static HANDLE enqueued_ops_semaphore() { return _enqueued_ops_semaphore; }
 
  public:
   enum {
@@ -110,7 +113,7 @@ class Win32AttachListener: AllStatic {
 
 // statics
 HANDLE Win32AttachListener::_mutex;
-HANDLE Win32AttachListener::_wakeup;
+HANDLE Win32AttachListener::_enqueued_ops_semaphore;
 Win32AttachOperation* Win32AttachListener::_avail;
 Win32AttachOperation* Win32AttachListener::_head;
 Win32AttachOperation* Win32AttachListener::_tail;
@@ -155,20 +158,19 @@ class Win32AttachOperation: public AttachOperation {
 };
 
 
-// preallocate the required number of operations
+// Preallocate the maximum number of operations that can be enqueued.
 int Win32AttachListener::init() {
   _mutex = (void*)::CreateMutex(NULL, FALSE, NULL);
   guarantee(_mutex != (HANDLE)NULL, "mutex creation failed");
 
-  _wakeup = ::CreateSemaphore(NULL, 0, 1, NULL);
-  guarantee(_wakeup != (HANDLE)NULL, "semaphore creation failed");
+  _enqueued_ops_semaphore = ::CreateSemaphore(NULL, 0, max_enqueued_operations, NULL);
+  guarantee(_enqueued_ops_semaphore != (HANDLE)NULL, "semaphore creation failed");
 
   set_head(NULL);
   set_tail(NULL);
-
-  // preallocate a few operations
   set_available(NULL);
-  for (int i=0; i<preallocate_count; i++) {
+
+  for (int i=0; i<max_enqueued_operations; i++) {
     Win32AttachOperation* op = new Win32AttachOperation();
     op->set_next(available());
     set_available(op);
@@ -221,8 +223,12 @@ int Win32AttachListener::enqueue(char* cmd, char* arg0, char* arg1, char* arg2, 
     op->set_arg(2, arg2);
     op->set_pipe(pipename);
 
-    // wakeup the thread waiting for operations
-    ::ReleaseSemaphore(wakeup(), 1, NULL);
+    // Increment number of enqueued operations.
+    // Side effect: Semaphore will be signaled and will release
+    // any blocking waiters (i.e. the AttachListener thread).
+    BOOL not_exceeding_semaphore_maximum_count =
+      ::ReleaseSemaphore(enqueued_ops_semaphore(), 1, NULL);
+    guarantee(not_exceeding_semaphore_maximum_count, "invariant");
   }
   ::ReleaseMutex(mutex());
 
@@ -230,10 +236,12 @@ int Win32AttachListener::enqueue(char* cmd, char* arg0, char* arg1, char* arg2, 
 }
 
 
-// dequeue the operation from the head of the operation list. If
+// dequeue the operation from the head of the operation list.
 Win32AttachOperation* Win32AttachListener::dequeue() {
   for (;;) {
-    DWORD res = ::WaitForSingleObject(wakeup(), INFINITE);
+    DWORD res = ::WaitForSingleObject(enqueued_ops_semaphore(), INFINITE);
+    // returning from WaitForSingleObject will have decreased
+    // the current count of the semaphore by 1.
     guarantee(res == WAIT_OBJECT_0, "wait failed");
 
     res = ::WaitForSingleObject(mutex(), INFINITE);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include <winsock2.h>           /* needed for htonl */
 #include <iprtrmib.h>
 #include <assert.h>
+#include <limits.h>
 
 #include "java_net_NetworkInterface.h"
 #include "jni_util.h"
@@ -70,7 +71,7 @@ void printnifs (netif *netifPP, char *str) {
 
 #endif
 
-static int bufsize = 1024;
+static int bufsize = 4096;
 
 /*
  * return an array of IP_ADAPTER_ADDRESSES containing one element
@@ -102,7 +103,11 @@ static int getAdapters (JNIEnv *env, IP_ADAPTER_ADDRESSES **adapters) {
     ret = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
 
     if (ret == ERROR_BUFFER_OVERFLOW) {
-        IP_ADAPTER_ADDRESSES * newAdapterInfo =
+        IP_ADAPTER_ADDRESSES * newAdapterInfo = NULL;
+        if (len  < (ULONG_MAX - bufsize)) {
+            len = len + bufsize;
+        }
+        newAdapterInfo =
             (IP_ADAPTER_ADDRESSES *) realloc (adapterInfo, len);
         if (newAdapterInfo == NULL) {
             free(adapterInfo);
@@ -113,7 +118,6 @@ static int getAdapters (JNIEnv *env, IP_ADAPTER_ADDRESSES **adapters) {
 
         adapterInfo = newAdapterInfo;
 
-        bufsize = len;
         ret = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
     }
 
@@ -176,7 +180,11 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
     flags |= GAA_FLAG_INCLUDE_PREFIX;
     val = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
     if (val == ERROR_BUFFER_OVERFLOW) {
-        IP_ADAPTER_ADDRESSES * newAdapterInfo =
+        IP_ADAPTER_ADDRESSES * newAdapterInfo = NULL;
+        if (len  < (ULONG_MAX - bufsize)) {
+            len = len + bufsize;
+        }
+        newAdapterInfo =
                 (IP_ADAPTER_ADDRESSES *) realloc (adapterInfo, len);
         if (newAdapterInfo == NULL) {
             free(adapterInfo);
@@ -187,7 +195,6 @@ IP_ADAPTER_ADDRESSES *getAdapter (JNIEnv *env,  jint index) {
 
         adapterInfo = newAdapterInfo;
 
-        bufsize = len;
         val = GetAdaptersAddresses(AF_UNSPEC, flags, NULL, adapterInfo, &len);
     }
 

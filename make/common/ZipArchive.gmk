@@ -45,15 +45,8 @@ endif
 #   SUFFIXES
 #   EXTRA_DEPS
 #   ZIP_OPTIONS extra options to pass to zip
-define SetupZipArchive
-  $(if $(16),$(error Internal makefile error: Too many arguments to SetupZipArchive, please update ZipArchive.gmk))
-  $(call EvalDebugWrapper,$(strip $1),$(call SetupZipArchiveInner,$(strip $1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15)))
-endef
-
-define SetupZipArchiveInner
-  $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $(strip $($i)),$1_$(strip $($i)))$(NEWLINE))
-  $(call LogSetupMacroEntry,SetupZipArchive($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
-  $(if $(16),$(error Internal makefile error: Too many arguments to SetupZipArchive, please update JavaCompilation.gmk))
+SetupZipArchive = $(NamedParamsMacroTemplate)
+define SetupZipArchiveBody
 
   # To avoid running find over too large sets of files, which causes make to crash
   # on some configurations (cygwin), use INCLUDES and INCLUDE_FILES to build a set
