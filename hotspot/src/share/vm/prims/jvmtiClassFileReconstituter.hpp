@@ -41,11 +41,11 @@ class JvmtiConstantPoolReconstituter : public StackObj {
   instanceKlassHandle  ikh()     { return _ikh; };
   constantPoolHandle   cpool()   { return _cpool; };
 
-  u2 symbol_to_cpool_index(symbolOop sym) {
+  u2 symbol_to_cpool_index(Symbol* sym) {
     return _symmap->symbol_to_value(sym);
   }
 
-  u2 class_symbol_to_cpool_index(symbolOop sym) {
+  u2 class_symbol_to_cpool_index(Symbol* sym) {
     return _classmap->symbol_to_value(sym);
   }
 

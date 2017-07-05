@@ -120,6 +120,7 @@ BasicType MethodHandleChain::compute_bound_arg_type(oop target, methodOop m, int
       if (cur_slot == arg_slot)
         return T_OBJECT;
     }
+    ResourceMark rm(THREAD);
     for (SignatureStream ss(m->signature()); !ss.is_done(); ss.next()) {
       BasicType bt = ss.type();
       cur_slot -= type2size[bt];
@@ -961,9 +962,9 @@ MethodHandleCompiler::make_invoke(methodOop m, vmIntrinsics::ID iid,
     m = vmIntrinsics::method_for(iid);
   }
 
-  klassOop  klass     = m->method_holder();
-  symbolOop name      = m->name();
-  symbolOop signature = m->signature();
+  klassOop  klass   = m->method_holder();
+  Symbol* name      = m->name();
+  Symbol* signature = m->signature();
 
   if (tailcall) {
     // Actually, in order to make these methods more recognizable,
@@ -1141,7 +1142,7 @@ constantPoolHandle MethodHandleCompiler::get_constant_pool(TRAPS) const {
   for (int i = 1; i < _constants.length(); i++) {
     ConstantValue* cv = _constants.at(i);
     switch (cv->tag()) {
-    case JVM_CONSTANT_Utf8:        cpool->symbol_at_put(       i, cv->symbol_oop()                     ); break;
+    case JVM_CONSTANT_Utf8:        cpool->symbol_at_put(       i, cv->symbol()                         ); break;
     case JVM_CONSTANT_Integer:     cpool->int_at_put(          i, cv->get_jint()                       ); break;
     case JVM_CONSTANT_Float:       cpool->float_at_put(        i, cv->get_jfloat()                     ); break;
     case JVM_CONSTANT_Long:        cpool->long_at_put(         i, cv->get_jlong()                      ); break;
@@ -1331,7 +1332,7 @@ public:
   virtual ArgToken make_invoke(methodOop m, vmIntrinsics::ID iid,
                                Bytecodes::Code op, bool tailcall,
                                int argc, ArgToken* argv, TRAPS) {
-    symbolOop name, sig;
+    Symbol* name, sig;
     if (m != NULL) {
       name = m->name();
       sig  = m->signature();

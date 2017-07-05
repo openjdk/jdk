@@ -31,8 +31,9 @@
 #include "utilities/hashtable.hpp"
 #include "utilities/hashtable.inline.hpp"
 
+
 HS_DTRACE_PROBE_DECL4(hs_private, hashtable__new_entry,
-  void*, unsigned int, oop, void*);
+  void*, unsigned int, void*, void*);
 
 // This is a generic hashtable, designed to be used for the symbol
 // and string tables.
@@ -67,59 +68,14 @@ BasicHashtableEntry* BasicHashtable::new_entry(unsigned int hashValue) {
 }
 
 
-HashtableEntry* Hashtable::new_entry(unsigned int hashValue, oop obj) {
-  HashtableEntry* entry;
+template <class T> HashtableEntry<T>* Hashtable<T>::new_entry(unsigned int hashValue, T obj) {
+  HashtableEntry<T>* entry;
 
-  entry = (HashtableEntry*)BasicHashtable::new_entry(hashValue);
-  entry->set_literal(obj);   // clears literal string field
+  entry = (HashtableEntry<T>*)BasicHashtable::new_entry(hashValue);
+  entry->set_literal(obj);
   HS_DTRACE_PROBE4(hs_private, hashtable__new_entry,
     this, hashValue, obj, entry);
   return entry;
-}
-
-
-// GC support
-
-void Hashtable::unlink(BoolObjectClosure* is_alive) {
-  // Readers of the table are unlocked, so we should only be removing
-  // entries at a safepoint.
-  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
-  for (int i = 0; i < table_size(); ++i) {
-    for (HashtableEntry** p = bucket_addr(i); *p != NULL; ) {
-      HashtableEntry* entry = *p;
-      if (entry->is_shared()) {
-        break;
-      }
-      assert(entry->literal() != NULL, "just checking");
-      if (is_alive->do_object_b(entry->literal())) {
-        p = entry->next_addr();
-      } else {
-        *p = entry->next();
-        free_entry(entry);
-      }
-    }
-  }
-}
-
-
-void Hashtable::oops_do(OopClosure* f) {
-  for (int i = 0; i < table_size(); ++i) {
-    HashtableEntry** p = bucket_addr(i);
-    HashtableEntry* entry = bucket(i);
-    while (entry != NULL) {
-      f->do_oop(entry->literal_addr());
-
-      // Did the closure remove the literal from the table?
-      if (entry->literal() == NULL) {
-        assert(!entry->is_shared(), "immutable hashtable entry?");
-        *p = entry->next();
-        free_entry(entry);
-      } else {
-        p = entry->next_addr();
-      }
-      entry = (HashtableEntry*)HashtableEntry::make_ptr(*p);
-    }
-  }
 }
 
 
@@ -156,11 +112,7 @@ void BasicHashtable::copy_table(char** top, char* end) {
                               *p != NULL;
                                p = (*p)->next_addr()) {
       if (*top + entry_size() > end) {
-        warning("\nThe shared miscellaneous data space is not large "
-                "enough to \npreload requested classes.  Use "
-                "-XX:SharedMiscDataSize= to increase \nthe initial "
-                "size of the miscellaneous data space.\n");
-        exit(2);
+        report_out_of_shared_space(SharedMiscData);
       }
       *p = (BasicHashtableEntry*)memcpy(*top, *p, entry_size());
       *top += entry_size();
@@ -181,15 +133,15 @@ void BasicHashtable::copy_table(char** top, char* end) {
 
 // Reverse the order of elements in the hash buckets.
 
-void Hashtable::reverse(void* boundary) {
+template <class T> void Hashtable<T>::reverse(void* boundary) {
 
   for (int i = 0; i < table_size(); ++i) {
-    HashtableEntry* high_list = NULL;
-    HashtableEntry* low_list = NULL;
-    HashtableEntry* last_low_entry = NULL;
-    HashtableEntry* p = bucket(i);
+    HashtableEntry<T>* high_list = NULL;
+    HashtableEntry<T>* low_list = NULL;
+    HashtableEntry<T>* last_low_entry = NULL;
+    HashtableEntry<T>* p = bucket(i);
     while (p != NULL) {
-      HashtableEntry* next = p->next();
+      HashtableEntry<T>* next = p->next();
       if ((void*)p->literal() >= boundary) {
         p->set_next(high_list);
         high_list = p;
@@ -223,11 +175,7 @@ void BasicHashtable::copy_buckets(char** top, char* end) {
   *top += sizeof(intptr_t);
 
   if (*top + len > end) {
-    warning("\nThe shared miscellaneous data space is not large "
-            "enough to \npreload requested classes.  Use "
-            "-XX:SharedMiscDataSize= to increase \nthe initial "
-            "size of the miscellaneous data space.\n");
-    exit(2);
+    report_out_of_shared_space(SharedMiscData);
   }
   _buckets = (HashtableBucket*)memcpy(*top, _buckets, len);
   *top += len;
@@ -236,11 +184,11 @@ void BasicHashtable::copy_buckets(char** top, char* end) {
 
 #ifndef PRODUCT
 
-void Hashtable::print() {
+template <class T> void Hashtable<T>::print() {
   ResourceMark rm;
 
   for (int i = 0; i < table_size(); i++) {
-    HashtableEntry* entry = bucket(i);
+    HashtableEntry<T>* entry = bucket(i);
     while(entry != NULL) {
       tty->print("%d : ", i);
       entry->literal()->print();
@@ -277,3 +225,10 @@ void BasicHashtable::verify_lookup_length(double load) {
 }
 
 #endif
+
+// Explicitly instantiate these types
+template class Hashtable<constantPoolOop>;
+template class Hashtable<Symbol*>;
+template class Hashtable<klassOop>;
+template class Hashtable<oop>;
+

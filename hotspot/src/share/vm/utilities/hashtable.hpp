@@ -27,7 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
-#include "oops/symbolOop.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/handles.hpp"
 
 // This is a generic hashtable, designed to be used for the symbol
@@ -96,16 +96,16 @@ public:
 
 
 
-class HashtableEntry : public BasicHashtableEntry {
+template <class T> class HashtableEntry : public BasicHashtableEntry {
   friend class VMStructs;
 private:
-  oop               _literal;          // ref to item in table.
+  T               _literal;          // ref to item in table.
 
 public:
   // Literal
-  oop literal() const                   { return _literal; }
-  oop* literal_addr()                   { return &_literal; }
-  void set_literal(oop s)               { _literal = s; }
+  T literal() const                   { return _literal; }
+  T* literal_addr()                   { return &_literal; }
+  void set_literal(T s)               { _literal = s; }
 
   HashtableEntry* next() const {
     return (HashtableEntry*)BasicHashtableEntry::next();
@@ -159,6 +159,8 @@ public:
   // Reverse the order of elements in each of the buckets.
   void reverse();
 
+  static unsigned int hash_symbol(const char* s, int len);
+
 private:
   // Instance variables
   int               _table_size;
@@ -205,7 +207,7 @@ public:
 };
 
 
-class Hashtable : public BasicHashtable {
+template <class T> class Hashtable : public BasicHashtable {
   friend class VMStructs;
 
 public:
@@ -216,15 +218,8 @@ public:
                    HashtableBucket* buckets, int number_of_entries)
     : BasicHashtable(table_size, entry_size, buckets, number_of_entries) { }
 
-  // Invoke "f->do_oop" on the locations of all oops in the table.
-  void oops_do(OopClosure* f);
-
   // Debugging
   void print()               PRODUCT_RETURN;
-
-  // GC support
-  //   Delete pointers to otherwise-unreachable objects.
-  void unlink(BoolObjectClosure* cl);
 
   // Reverse the order of elements in each of the buckets. Hashtable
   // entries which refer to objects at a lower address than 'boundary'
@@ -234,45 +229,43 @@ public:
 
 protected:
 
-  static unsigned int hash_symbol(const char* s, int len);
-
-  unsigned int compute_hash(symbolHandle name) {
+  unsigned int compute_hash(Symbol* name) {
     return (unsigned int) name->identity_hash();
   }
 
-  int index_for(symbolHandle name) {
+  int index_for(Symbol* name) {
     return hash_to_index(compute_hash(name));
   }
 
   // Table entry management
-  HashtableEntry* new_entry(unsigned int hashValue, oop obj);
+  HashtableEntry<T>* new_entry(unsigned int hashValue, T obj);
 
   // The following method is MT-safe and may be used with caution.
-  HashtableEntry* bucket(int i) {
-    return (HashtableEntry*)BasicHashtable::bucket(i);
+  HashtableEntry<T>* bucket(int i) {
+    return (HashtableEntry<T>*)BasicHashtable::bucket(i);
   }
 
   // The following method is not MT-safe and must be done under lock.
-  HashtableEntry** bucket_addr(int i) {
-    return (HashtableEntry**)BasicHashtable::bucket_addr(i);
+  HashtableEntry<T>** bucket_addr(int i) {
+    return (HashtableEntry<T>**)BasicHashtable::bucket_addr(i);
   }
 };
 
 
 //  Verions of hashtable where two handles are used to compute the index.
 
-class TwoOopHashtable : public Hashtable {
+template <class T> class TwoOopHashtable : public Hashtable<T> {
   friend class VMStructs;
 protected:
   TwoOopHashtable(int table_size, int entry_size)
-    : Hashtable(table_size, entry_size) {}
+    : Hashtable<T>(table_size, entry_size) {}
 
   TwoOopHashtable(int table_size, int entry_size, HashtableBucket* t,
                   int number_of_entries)
-    : Hashtable(table_size, entry_size, t, number_of_entries) {}
+    : Hashtable<T>(table_size, entry_size, t, number_of_entries) {}
 
 public:
-  unsigned int compute_hash(symbolHandle name, Handle loader) {
+  unsigned int compute_hash(Symbol* name, Handle loader) {
     // Be careful with identity_hash(), it can safepoint and if this
     // were one expression, the compiler could choose to unhandle each
     // oop before calling identity_hash() for either of them.  If the first
@@ -282,7 +275,7 @@ public:
     return name_hash ^ loader_hash;
   }
 
-  int index_for(symbolHandle name, Handle loader) {
+  int index_for(Symbol* name, Handle loader) {
     return hash_to_index(compute_hash(name, loader));
   }
 };

@@ -1355,7 +1355,7 @@ JvmtiEnvBase::check_top_frame(JavaThread* current_thread, JavaThread* java_threa
   }
 
   // Get information about method return type
-  symbolHandle signature(current_thread, jvf->method()->signature());
+  Symbol* signature = jvf->method()->signature();
 
   ResultTypeFinder rtf(signature);
   TosState fr_tos = as_TosState(rtf.type());

@@ -79,15 +79,15 @@ ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with(NULL) {
   constantPoolHandle cpool(thread, klass->get_instanceKlass()->constants());
 
   // Get the field's name, signature, and type.
-  symbolHandle name  (thread, cpool->name_ref_at(index));
-  _name = ciEnv::current(thread)->get_object(name())->as_symbol();
+  Symbol* name  = cpool->name_ref_at(index);
+  _name = ciEnv::current(thread)->get_symbol(name);
 
   int nt_index = cpool->name_and_type_ref_index_at(index);
   int sig_index = cpool->signature_ref_index_at(nt_index);
-  symbolHandle signature (thread, cpool->symbol_at(sig_index));
-  _signature = ciEnv::current(thread)->get_object(signature())->as_symbol();
+  Symbol* signature = cpool->symbol_at(sig_index);
+  _signature = ciEnv::current(thread)->get_symbol(signature);
 
-  BasicType field_type = FieldType::basic_type(signature());
+  BasicType field_type = FieldType::basic_type(signature);
 
   // If the field is a pointer type, get the klass of the
   // field.
@@ -100,7 +100,7 @@ ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with(NULL) {
     _type = ciType::make(field_type);
   }
 
-  _name = (ciSymbol*)ciEnv::current(thread)->get_object(name());
+  _name = (ciSymbol*)ciEnv::current(thread)->get_symbol(name);
 
   // Get the field's declared holder.
   //
@@ -130,7 +130,7 @@ ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with(NULL) {
   // Perform the field lookup.
   fieldDescriptor field_desc;
   klassOop canonical_holder =
-    loaded_decl_holder->find_field(name(), signature(), &field_desc);
+    loaded_decl_holder->find_field(name, signature, &field_desc);
   if (canonical_holder == NULL) {
     // Field lookup failed.  Will be detected by will_link.
     _holder = declared_holder;
@@ -150,8 +150,8 @@ ciField::ciField(fieldDescriptor *fd): _known_to_link_with(NULL) {
 
   // Get the field's name, signature, and type.
   ciEnv* env = CURRENT_ENV;
-  _name = env->get_object(fd->name())->as_symbol();
-  _signature = env->get_object(fd->signature())->as_symbol();
+  _name = env->get_symbol(fd->name());
+  _signature = env->get_symbol(fd->signature());
 
   BasicType field_type = fd->field_type();
 

@@ -223,8 +223,8 @@
 // JVM_CONSTANT_UnresolvedClass and JVM_CONSTANT_UnresolvedString
 // entries. During this conversion process, the UTF8 values that are
 // indirectly referenced by the JVM_CONSTANT_ClassIndex and
-// JVM_CONSTANT_StringIndex entries are changed into symbolOops and the
-// entries are modified to refer to the symbolOops. This optimization
+// JVM_CONSTANT_StringIndex entries are changed into Symbol*s and the
+// entries are modified to refer to the Symbol*s. This optimization
 // eliminates one level of indirection for those two CP entry types and
 // gets the entries ready for verification. During class file parsing
 // it is also possible for JVM_CONSTANT_UnresolvedString entries to be

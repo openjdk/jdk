@@ -530,7 +530,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
 
             case JVM_CONSTANT_Class:
                buf.cell("JVM_CONSTANT_Class");
-               Klass klass = (Klass) cpool.getObjAt(index);
+               Klass klass = (Klass) cpool.getObjAtRaw(index);
                if (klass instanceof InstanceKlass) {
                   buf.cell(genKlassLink((InstanceKlass) klass));
                } else {
@@ -555,7 +555,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
             case JVM_CONSTANT_String:
                buf.cell("JVM_CONSTANT_String");
                buf.cell("\"" +
-                 escapeHTMLSpecialChars(OopUtilities.stringOopToString(cpool.getObjAt(index))) + "\"");
+                 escapeHTMLSpecialChars(OopUtilities.stringOopToString(cpool.getObjAtRaw(index))) + "\"");
                break;
 
             case JVM_CONSTANT_Fieldref:
@@ -672,11 +672,11 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
             buf.beginTag("ul");
             for (int exp = 0; exp < exceptions.length; exp++) {
                short cpIndex = (short) exceptions[exp].getClassCPIndex();
-               Oop obj = cpool.getObjAt(cpIndex);
-               if (obj instanceof Symbol) {
-                  buf.li(((Symbol)obj).asString().replace('/', '.'));
+               ConstantPool.CPSlot obj = cpool.getSlotAt(cpIndex);
+               if (obj.isMetaData()) {
+                 buf.li((obj.getSymbol()).asString().replace('/', '.'));
                } else {
-                  buf.li(genKlassLink((InstanceKlass)obj));
+                 buf.li(genKlassLink((InstanceKlass)obj.getOop()));
                }
             }
             buf.endTag("ul");
@@ -756,7 +756,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                              } else if (instr instanceof BytecodeLoadConstant) {
                                 BytecodeLoadConstant ldc = (BytecodeLoadConstant) instr;
                                 if (ldc.isKlassConstant()) {
-                                   Oop oop = ldc.getKlass();
+                                   Object oop = ldc.getKlass();
                                    if (oop instanceof Klass) {
                                       buf.append("<a href='");
                                       buf.append(genKlassHref((InstanceKlass) oop));
@@ -803,13 +803,13 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
                buf.cell(Integer.toString(exceptionTable.getIntAt(e + 1)));
                buf.cell(Integer.toString(exceptionTable.getIntAt(e + 2)));
                short cpIndex = (short) exceptionTable.getIntAt(e + 3);
-               Oop obj = cpIndex == 0? null : cpool.getObjAt(cpIndex);
+               ConstantPool.CPSlot obj = cpIndex == 0? null : cpool.getSlotAt(cpIndex);
                if (obj == null) {
                   buf.cell("Any");
-               } else if (obj instanceof Symbol) {
-                  buf.cell(((Symbol)obj).asString().replace('/', '.'));
+               } else if (obj.isMetaData()) {
+                 buf.cell(obj.getSymbol().asString().replace('/', '.'));
                } else {
-                  buf.cell(genKlassLink((InstanceKlass)obj));
+                 buf.cell(genKlassLink((InstanceKlass)obj.getOop()));
                }
                buf.endTag("tr");
             }

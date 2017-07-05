@@ -31,7 +31,7 @@
 // Useful entry points shared by JNI and JVM interface.
 // We do not allow real JNI or JVM entry point to call each other.
 
-jclass find_class_from_class_loader(JNIEnv* env, symbolHandle name, jboolean init, Handle loader, Handle protection_domain, jboolean throwError, TRAPS);
+jclass find_class_from_class_loader(JNIEnv* env, Symbol* name, jboolean init, Handle loader, Handle protection_domain, jboolean throwError, TRAPS);
 
 void trace_class_resolution(klassOop to_class);
 

@@ -139,7 +139,6 @@ class Universe: AllStatic {
 
   static klassOop _objectArrayKlassObj;
 
-  static klassOop _symbolKlassObj;
   static klassOop _methodKlassObj;
   static klassOop _constMethodKlassObj;
   static klassOop _methodDataKlassObj;
@@ -197,8 +196,6 @@ class Universe: AllStatic {
   // The object used as an exception dummy when exceptions are thrown for
   // the vm thread.
   static oop          _vm_exception;
-
-  static oop          _emptySymbol;                   // Canonical empty string ("") symbol
 
   // The particular choice of collected heap.
   static CollectedHeap* _collectedHeap;
@@ -273,7 +270,6 @@ class Universe: AllStatic {
     return _typeArrayKlassObjs[t];
   }
 
-  static klassOop symbolKlassObj()                    { return _symbolKlassObj;            }
   static klassOop methodKlassObj()                    { return _methodKlassObj;            }
   static klassOop constMethodKlassObj()               { return _constMethodKlassObj;         }
   static klassOop methodDataKlassObj()                { return _methodDataKlassObj;        }
@@ -287,9 +283,8 @@ class Universe: AllStatic {
   static klassOop compiledICHolderKlassObj()          { return _compiledICHolderKlassObj;  }
   static klassOop systemObjArrayKlassObj()            { return _systemObjArrayKlassObj;    }
 
-  // Known objects in tbe VM
-  static oop int_mirror()                   { return check_mirror(_int_mirror);
-}
+  // Known objects in the VM
+  static oop int_mirror()                   { return check_mirror(_int_mirror); }
   static oop float_mirror()                 { return check_mirror(_float_mirror); }
   static oop double_mirror()                { return check_mirror(_double_mirror); }
   static oop byte_mirror()                  { return check_mirror(_byte_mirror); }
@@ -327,7 +322,6 @@ class Universe: AllStatic {
   static oop          arithmetic_exception_instance() { return _arithmetic_exception_instance; }
   static oop          virtual_machine_error_instance() { return _virtual_machine_error_instance; }
   static oop          vm_exception()                  { return _vm_exception; }
-  static oop          emptySymbol()                   { return _emptySymbol; }
 
   // OutOfMemoryError support. Returns an error with the required message. The returned error
   // may or may not have a backtrace. If error has a backtrace then the stack trace is already

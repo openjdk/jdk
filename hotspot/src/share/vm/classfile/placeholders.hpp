@@ -34,35 +34,36 @@ class PlaceholderEntry;
 // being loaded, as well as arrays of primitives.
 //
 
-class PlaceholderTable : public TwoOopHashtable {
+class PlaceholderTable : public TwoOopHashtable<Symbol*> {
   friend class VMStructs;
 
 public:
   PlaceholderTable(int table_size);
 
-  PlaceholderEntry* new_entry(int hash, symbolOop name, oop loader, bool havesupername, symbolOop supername);
+  PlaceholderEntry* new_entry(int hash, Symbol* name, oop loader, bool havesupername, Symbol* supername);
+  void free_entry(PlaceholderEntry* entry);
 
   PlaceholderEntry* bucket(int i) {
-    return (PlaceholderEntry*)Hashtable::bucket(i);
+    return (PlaceholderEntry*)Hashtable<Symbol*>::bucket(i);
   }
 
   PlaceholderEntry** bucket_addr(int i) {
-    return (PlaceholderEntry**)Hashtable::bucket_addr(i);
+    return (PlaceholderEntry**)Hashtable<Symbol*>::bucket_addr(i);
   }
 
   void add_entry(int index, PlaceholderEntry* new_entry) {
-    Hashtable::add_entry(index, (HashtableEntry*)new_entry);
+    Hashtable<Symbol*>::add_entry(index, (HashtableEntry<Symbol*>*)new_entry);
   }
 
-  void add_entry(int index, unsigned int hash, symbolHandle name,
-                Handle loader, bool havesupername, symbolHandle supername);
+  void add_entry(int index, unsigned int hash, Symbol* name,
+                Handle loader, bool havesupername, Symbol* supername);
 
-// This returns a symbolOop to match type for SystemDictionary
-  symbolOop find_entry(int index, unsigned int hash,
-                       symbolHandle name, Handle loader);
+  // This returns a Symbol* to match type for SystemDictionary
+  Symbol* find_entry(int index, unsigned int hash,
+                       Symbol* name, Handle loader);
 
   PlaceholderEntry* get_entry(int index, unsigned int hash,
-                       symbolHandle name, Handle loader);
+                       Symbol* name, Handle loader);
 
 // caller to create a placeholder entry must enumerate an action
 // caller claims ownership of that action
@@ -84,22 +85,22 @@ public:
   // If no entry exists, add a placeholder entry and push SeenThread
   // If entry exists, reuse entry and push SeenThread for classloadAction
   PlaceholderEntry* find_and_add(int index, unsigned int hash,
-                                 symbolHandle name, Handle loader,
-                                 classloadAction action, symbolHandle supername,
+                                 Symbol* name, Handle loader,
+                                 classloadAction action, Symbol* supername,
                                  Thread* thread);
 
   void remove_entry(int index, unsigned int hash,
-                    symbolHandle name, Handle loader);
+                    Symbol* name, Handle loader);
 
 // Remove placeholder information
   void find_and_remove(int index, unsigned int hash,
-                       symbolHandle name, Handle loader, Thread* thread);
+                       Symbol* name, Handle loader, Thread* thread);
 
   // GC support.
   void oops_do(OopClosure* f);
 
   // JVMTI support
-  void entries_do(void f(symbolOop, oop));
+  void entries_do(void f(Symbol*, oop));
 
 #ifndef PRODUCT
   void print();
@@ -151,14 +152,14 @@ public:
 // on store ordering here.
 // The system dictionary is the only user of this class.
 
-class PlaceholderEntry : public HashtableEntry {
+class PlaceholderEntry : public HashtableEntry<Symbol*> {
   friend class VMStructs;
 
 
  private:
   oop               _loader;        // initiating loader
   bool              _havesupername; // distinguish between null supername, and unknown
-  symbolOop         _supername;
+  Symbol*           _supername;
   Thread*           _definer;       // owner of define token
   klassOop          _instanceKlass; // instanceKlass from successful define
   SeenThread*       _superThreadQ;  // doubly-linked queue of Threads loading a superclass for this class
@@ -173,8 +174,7 @@ class PlaceholderEntry : public HashtableEntry {
 
  public:
   // Simple accessors, used only by SystemDictionary
-  symbolOop          klass()               const { return (symbolOop)literal(); }
-  symbolOop*         klass_addr()          { return (symbolOop*)literal_addr(); }
+  Symbol*            klassname()           const { return literal(); }
 
   oop                loader()              const { return _loader; }
   void               set_loader(oop loader) { _loader = loader; }
@@ -183,9 +183,11 @@ class PlaceholderEntry : public HashtableEntry {
   bool               havesupername()       const { return _havesupername; }
   void               set_havesupername(bool havesupername) { _havesupername = havesupername; }
 
-  symbolOop          supername()           const { return _supername; }
-  void               set_supername(symbolOop supername) { _supername = supername; }
-  symbolOop*         supername_addr()      { return &_supername; }
+  Symbol*            supername()           const { return _supername; }
+  void               set_supername(Symbol* supername) {
+    _supername = supername;
+    if (_supername != NULL) _supername->increment_refcount();
+  }
 
   Thread*            definer()             const {return _definer; }
   void               set_definer(Thread* definer) { _definer = definer; }
@@ -204,17 +206,17 @@ class PlaceholderEntry : public HashtableEntry {
   void               set_defineThreadQ(SeenThread* SeenThread) { _defineThreadQ = SeenThread; }
 
   PlaceholderEntry* next() const {
-    return (PlaceholderEntry*)HashtableEntry::next();
+    return (PlaceholderEntry*)HashtableEntry<Symbol*>::next();
   }
 
   PlaceholderEntry** next_addr() {
-    return (PlaceholderEntry**)HashtableEntry::next_addr();
+    return (PlaceholderEntry**)HashtableEntry<Symbol*>::next_addr();
   }
 
   // Test for equality
   // Entries are unique for class/classloader name pair
-  bool equals(symbolOop class_name, oop class_loader) const {
-    return (klass() == class_name && loader() == class_loader);
+  bool equals(Symbol* class_name, oop class_loader) const {
+    return (klassname() == class_name && loader() == class_loader);
   }
 
   SeenThread* actionToQueue(PlaceholderTable::classloadAction action) {

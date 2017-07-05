@@ -52,8 +52,8 @@ void LowMemoryDetector::initialize() {
   JavaValue result(T_VOID);
   JavaCalls::call_special(&result, thread_oop,
                           klass,
-                          vmSymbolHandles::object_initializer_name(),
-                          vmSymbolHandles::threadgroup_string_void_signature(),
+                          vmSymbols::object_initializer_name(),
+                          vmSymbols::threadgroup_string_void_signature(),
                           thread_group,
                           string,
                           CHECK);
@@ -377,8 +377,8 @@ void SensorInfo::trigger(int count, TRAPS) {
 
     JavaCalls::call_virtual(&result,
                             sensorKlass,
-                            vmSymbolHandles::trigger_name(),
-                            vmSymbolHandles::trigger_method_signature(),
+                            vmSymbols::trigger_name(),
+                            vmSymbols::trigger_method_signature(),
                             &args,
                             CHECK);
   }
@@ -403,8 +403,8 @@ void SensorInfo::clear(int count, TRAPS) {
     args.push_int((int) count);
     JavaCalls::call_virtual(&result,
                             sensorKlass,
-                            vmSymbolHandles::clear_name(),
-                            vmSymbolHandles::int_void_signature(),
+                            vmSymbols::clear_name(),
+                            vmSymbols::int_void_signature(),
                             &args,
                             CHECK);
   }
