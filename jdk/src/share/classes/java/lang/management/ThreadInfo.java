@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,13 +33,13 @@ import static java.lang.Thread.State.*;
 /**
  * Thread information. <tt>ThreadInfo</tt> contains the information
  * about a thread including:
- * <h4>General thread information</h4>
+ * <h3>General thread information</h3>
  * <ul>
  *   <li>Thread ID.</li>
  *   <li>Name of the thread.</li>
  * </ul>
  *
- * <h4>Execution information</h4>
+ * <h3>Execution information</h3>
  * <ul>
  *   <li>Thread state.</li>
  *   <li>The object upon which the thread is blocked due to:
@@ -652,7 +652,7 @@ public class ThreadInfo {
      * The given <tt>CompositeData</tt> must contain the following attributes
      * unless otherwise specified below:
      * <blockquote>
-     * <table border>
+     * <table border summary="The attributes and their types the given CompositeData contains">
      * <tr>
      *   <th align=left>Attribute Name</th>
      *   <th align=left>Type</th>
@@ -722,7 +722,7 @@ public class ThreadInfo {
      *       Each element is a <tt>CompositeData</tt> representing
      *       StackTraceElement containing the following attributes:
      *       <blockquote>
-     *       <table cellspacing=1 cellpadding=0>
+     *       <table cellspacing=1 cellpadding=0 summary="The attributes and their types the given CompositeData contains">
      *       <tr>
      *         <th align=left>Attribute Name</th>
      *         <th align=left>Type</th>

@@ -48,7 +48,7 @@
  *
  * {@link java.util.concurrent.Executor} is a simple standardized
  * interface for defining custom thread-like subsystems, including
- * thread pools, asynchronous IO, and lightweight task frameworks.
+ * thread pools, asynchronous I/O, and lightweight task frameworks.
  * Depending on which concrete Executor class is being used, tasks may
  * execute in a newly created thread, an existing task-execution thread,
  * or the thread calling {@link java.util.concurrent.Executor#execute
@@ -102,8 +102,10 @@
  * <h2>Queues</h2>
  *
  * The {@link java.util.concurrent.ConcurrentLinkedQueue} class
- * supplies an efficient scalable thread-safe non-blocking FIFO
- * queue.
+ * supplies an efficient scalable thread-safe non-blocking FIFO queue.
+ * The {@link java.util.concurrent.ConcurrentLinkedDeque} class is
+ * similar, but additionally supports the {@link java.util.Deque}
+ * interface.
  *
  * <p>Five implementations in {@code java.util.concurrent} support
  * the extended {@link java.util.concurrent.BlockingQueue}
@@ -117,7 +119,7 @@
  * for producer-consumer, messaging, parallel tasking, and
  * related concurrent designs.
  *
- * <p> Extended interface {@link java.util.concurrent.TransferQueue},
+ * <p>Extended interface {@link java.util.concurrent.TransferQueue},
  * and implementation {@link java.util.concurrent.LinkedTransferQueue}
  * introduce a synchronous {@code transfer} method (along with related
  * features) in which a producer may optionally block awaiting its
@@ -216,9 +218,9 @@
  * it may (or may not) reflect any updates since the iterator was
  * created.
  *
- * <h2><a name="MemoryVisibility">Memory Consistency Properties</a></h2>
+ * <h2 id="MemoryVisibility">Memory Consistency Properties</h2>
  *
- * <a href="http://docs.oracle.com/javase/specs/jls/se7/html/index.html">
+ * <a href="http://docs.oracle.com/javase/specs/jls/se7/html/jls-17.html#jls-17.4.5">
  * Chapter 17 of the Java Language Specification</a> defines the
  * <i>happens-before</i> relation on memory operations such as reads and
  * writes of shared variables.  The results of a write by one thread are

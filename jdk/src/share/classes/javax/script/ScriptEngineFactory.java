@@ -196,18 +196,17 @@ public interface ScriptEngineFactory {
 
 
     /**
-     * Returns A valid scripting language executable progam with given statements.
+     * Returns a valid scripting language executable progam with given statements.
      * For instance an implementation for a PHP engine might be:
      * <p>
      * <pre>{@code
      * public String getProgram(String... statements) {
-     *      $retval = "<?\n";
+     *      String retval = "<?\n";
      *      int len = statements.length;
      *      for (int i = 0; i < len; i++) {
-     *          $retval += statements[i] + ";\n";
+     *          retval += statements[i] + ";\n";
      *      }
-     *      $retval += "?>";
-     *
+     *      return retval += "?>";
      * }
      * }</pre>
      *

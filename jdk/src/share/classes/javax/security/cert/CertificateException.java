@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,11 @@ package javax.security.cert;
 /**
  * This exception indicates one of a variety of certificate problems.
  *
- * <p><em>Note: The classes in the package <code>javax.security.cert</code>
+ * <p><em>Note: The classes in the package {@code javax.security.cert}
  * exist for compatibility with earlier versions of the
  * Java Secure Sockets Extension (JSSE). New applications should instead
  * use the standard Java SE certificate classes located in
- * <code>java.security.cert</code>.</em></p>
+ * {@code java.security.cert}.</em></p>
  *
  * @author Hemma Prafullchandra
  * @since 1.4

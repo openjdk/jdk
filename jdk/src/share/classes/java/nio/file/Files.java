@@ -3269,9 +3269,10 @@ public final class Files {
             }
         };
 
-        return new DelegatingCloseableStream<>(ds,
-            StreamSupport.stream(Spliterators.spliteratorUnknownSize(it,
-                                                                     Spliterator.DISTINCT)));
+        Stream<Path> s = StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(it, Spliterator.DISTINCT),
+                false);
+        return new DelegatingCloseableStream<>(ds, s);
     }
 
     /**
@@ -3358,9 +3359,12 @@ public final class Files {
         throws IOException
     {
         FileTreeIterator iterator = new FileTreeIterator(start, maxDepth, options);
-        return new DelegatingCloseableStream<>(iterator,
-            StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT))
-                   .map(entry -> entry.file()));
+
+        Stream<Path> s = StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT),
+                false).
+                map(entry -> entry.file());
+        return new DelegatingCloseableStream<>(iterator, s);
     }
 
     /**
@@ -3455,10 +3459,13 @@ public final class Files {
         throws IOException
     {
         FileTreeIterator iterator = new FileTreeIterator(start, maxDepth, options);
-        return new DelegatingCloseableStream<>(iterator,
-            StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT))
-                   .filter(entry -> matcher.test(entry.file(), entry.attributes()))
-                   .map(entry -> entry.file()));
+
+        Stream<Path> s = StreamSupport.stream(
+                Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT),
+                false).
+                filter(entry -> matcher.test(entry.file(), entry.attributes())).
+                map(entry -> entry.file());
+        return new DelegatingCloseableStream<>(iterator, s);
     }
 
     /**

@@ -102,7 +102,7 @@ SUNWprivate_1.1 {
 		Java_sun_security_pkcs11_Secmod_nssGetLibraryHandle;
 		Java_sun_security_pkcs11_Secmod_nssLoadLibrary;
 		Java_sun_security_pkcs11_Secmod_nssVersionCheck;
-		Java_sun_security_pkcs11_Secmod_nssInit;
+		Java_sun_security_pkcs11_Secmod_nssInitialize;
 		Java_sun_security_pkcs11_Secmod_nssGetModuleList;
 
 	local:

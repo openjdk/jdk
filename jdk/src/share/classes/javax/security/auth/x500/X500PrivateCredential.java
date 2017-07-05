@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import java.security.cert.X509Certificate;
 import javax.security.auth.Destroyable;
 
 /**
- * <p> This class represents an <code>X500PrivateCredential</code>.
+ * <p> This class represents an {@code X500PrivateCredential}.
  * It associates an X.509 certificate, corresponding private key and the
  * KeyStore alias used to reference that exact key pair in the KeyStore.
  * This enables looking up the private credentials for an X.500 principal
@@ -48,8 +48,8 @@ public final class X500PrivateCredential implements Destroyable {
      * <p>
      * @param cert X509Certificate
      * @param key  PrivateKey for the certificate
-     * @exception IllegalArgumentException if either <code>cert</code> or
-     * <code>key</code> is null
+     * @exception IllegalArgumentException if either {@code cert} or
+     * {@code key} is null
      *
      */
 
@@ -68,8 +68,8 @@ public final class X500PrivateCredential implements Destroyable {
      * @param cert X509Certificate
      * @param key  PrivateKey for the certificate
      * @param alias KeyStore alias
-     * @exception IllegalArgumentException if either <code>cert</code>,
-     * <code>key</code> or <code>alias</code> is null
+     * @exception IllegalArgumentException if either {@code cert},
+     * {@code key} or {@code alias} is null
      *
      */
     public X500PrivateCredential(X509Certificate cert, PrivateKey key,
