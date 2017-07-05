@@ -27,9 +27,6 @@ package javax.security.auth.login;
 
 import javax.security.auth.AuthPermission;
 
-import java.io.*;
-import java.util.*;
-import java.net.URI;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
@@ -38,7 +35,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.Security;
-import java.security.SecurityPermission;
+import java.util.Objects;
 
 import sun.security.jca.GetInstance;
 
@@ -191,16 +188,9 @@ import sun.security.jca.GetInstance;
 public abstract class Configuration {
 
     private static Configuration configuration;
-    private static ClassLoader contextClassLoader;
 
-    static {
-        contextClassLoader = AccessController.doPrivileged
-                (new PrivilegedAction<ClassLoader>() {
-                public ClassLoader run() {
-                    return Thread.currentThread().getContextClassLoader();
-                }
-        });
-    };
+    private final java.security.AccessControlContext acc =
+            java.security.AccessController.getContext();
 
     private static void checkPermission(String type) {
         SecurityManager sm = System.getSecurityManager();
@@ -253,17 +243,26 @@ public abstract class Configuration {
 
                 try {
                     final String finalClass = config_class;
-                    configuration = AccessController.doPrivileged
-                        (new PrivilegedExceptionAction<Configuration>() {
-                        public Configuration run() throws ClassNotFoundException,
-                                            InstantiationException,
-                                            IllegalAccessException {
-                            return (Configuration)Class.forName
-                                    (finalClass,
-                                    true,
-                                    contextClassLoader).newInstance();
-                        }
-                    });
+                    Configuration untrustedImpl = AccessController.doPrivileged(
+                            new PrivilegedExceptionAction<Configuration>() {
+                                public Configuration run() throws ClassNotFoundException,
+                                        InstantiationException,
+                                        IllegalAccessException {
+                                    Class<? extends Configuration> implClass = Class.forName(
+                                            finalClass, false,
+                                            Thread.currentThread().getContextClassLoader()
+                                    ).asSubclass(Configuration.class);
+                                    return implClass.newInstance();
+                                }
+                            });
+                    AccessController.doPrivileged(
+                            new PrivilegedExceptionAction<Void>() {
+                                public Void run() {
+                                    setConfiguration(untrustedImpl);
+                                    return null;
+                                }
+                            }, Objects.requireNonNull(untrustedImpl.acc)
+                    );
                 } catch (PrivilegedActionException e) {
                     Exception ee = e.getException();
                     if (ee instanceof InstantiationException) {

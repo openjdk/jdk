@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,11 +167,16 @@ public final class Context extends Thread {
                     turn.notifyAll();
                 }
                 /* If we've had all our turns, break out of this loop */
-                if ( thread_turns == turns_taken ) {
+                if (thread_turns == turns_taken) {
+                    System.out.println("Loop end: thread got " + turns_taken
+                            + " turns, expected " + thread_turns);
                     break;
                 }
             }
-        } catch (InterruptedException intEx) { /* skip */ }
+        } catch (InterruptedException intEx) {
+            System.out.println("Got an InterruptedException:" + intEx);
+            /* skip */
+        }
 
         /* Make sure we got all our turns */
         if ( thread_turns != turns_taken ) {

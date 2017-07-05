@@ -622,7 +622,7 @@ bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
   // this check for all access permissions.
   InstanceKlass *sk = InstanceKlass::cast(super);
   if (sk->has_miranda_methods()) {
-    if (sk->lookup_method_in_all_interfaces(name, signature) != NULL) {
+    if (sk->lookup_method_in_all_interfaces(name, signature, false) != NULL) {
       return false;  // found a matching miranda; we do not need a new entry
     }
   }
@@ -743,7 +743,7 @@ void klassVtable::add_new_mirandas_to_lists(
       if (is_miranda(im, class_methods, default_methods, super)) { // is it a miranda at all?
         InstanceKlass *sk = InstanceKlass::cast(super);
         // check if it is a duplicate of a super's miranda
-        if (sk->lookup_method_in_all_interfaces(im->name(), im->signature()) == NULL) {
+        if (sk->lookup_method_in_all_interfaces(im->name(), im->signature(), false) == NULL) {
           new_mirandas->append(im);
         }
         if (all_mirandas != NULL) {
@@ -1085,6 +1085,8 @@ void klassItable::initialize_itable_for_interface(int method_table_offset, Klass
     Method* m = methods->at(i);
     methodHandle target;
     if (m->has_itable_index()) {
+      // This search must match the runtime resolution, i.e. selection search for invokeinterface
+      // to correctly enforce loader constraints for interface method inheritance
       LinkResolver::lookup_instance_method_in_klasses(target, _klass, m->name(), m->signature(), CHECK);
     }
     if (target == NULL || !target->is_public() || target->is_abstract()) {

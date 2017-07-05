@@ -26,11 +26,13 @@
 
 package sun.reflect.misc;
 
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import sun.reflect.Reflection;
+import sun.security.util.SecurityConstants;
 
 public final class ReflectUtil {
 
@@ -115,6 +117,40 @@ public final class ReflectUtil {
             queryClass = queryClass.getSuperclass();
         }
         return false;
+    }
+
+    /**
+     * Does a conservative approximation of member access check. Use this if
+     * you don't have an actual 'userland' caller Class/ClassLoader available.
+     * This might be more restrictive than a precise member access check where
+     * you have a caller, but should never allow a member access that is
+     * forbidden.
+     *
+     * @param m the {@code Member} about to be accessed
+     */
+    public static void conservativeCheckMemberAccess(Member m) throws SecurityException{
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm == null)
+            return;
+
+        // Check for package access on the declaring class.
+        //
+        // In addition, unless the member and the declaring class are both
+        // public check for access declared member permissions.
+        //
+        // This is done regardless of ClassLoader relations between the {@code
+        // Member m} and any potential caller.
+
+        final Class<?> declaringClass = m.getDeclaringClass();
+
+        checkPackageAccess(declaringClass);
+
+        if (Modifier.isPublic(m.getModifiers()) &&
+                Modifier.isPublic(declaringClass.getModifiers()))
+            return;
+
+        // Check for declared member access.
+        sm.checkPermission(SecurityConstants.CHECK_MEMBER_ACCESS_PERMISSION);
     }
 
     /**

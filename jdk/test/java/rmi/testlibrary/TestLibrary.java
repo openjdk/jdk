@@ -86,13 +86,13 @@ public class TestLibrary {
      * FIXED_PORT_MIN or above FIXED_PORT_MAX, then adjust
      * FIXED_PORT_MIN/MAX appropriately.
      */
-    public final static int FIXED_PORT_MIN = 64001;
-    public final static int FIXED_PORT_MAX = 64010;
-    public final static int RMIDVIAINHERITEDCHANNEL_ACTIVATION_PORT = 64001;
-    public final static int RMIDVIAINHERITEDCHANNEL_REGISTRY_PORT = 64002;
-    public final static int INHERITEDCHANNELNOTSERVERSOCKET_ACTIVATION_PORT = 64003;
-    public final static int INHERITEDCHANNELNOTSERVERSOCKET_REGISTRY_PORT = 64004;
-    public final static int READTEST_REGISTRY_PORT = 64005;
+    public final static int FIXED_PORT_MIN = 60001;
+    public final static int FIXED_PORT_MAX = 60010;
+    public final static int RMIDVIAINHERITEDCHANNEL_ACTIVATION_PORT = 60001;
+    public final static int RMIDVIAINHERITEDCHANNEL_REGISTRY_PORT = 60002;
+    public final static int INHERITEDCHANNELNOTSERVERSOCKET_ACTIVATION_PORT = 60003;
+    public final static int INHERITEDCHANNELNOTSERVERSOCKET_REGISTRY_PORT = 60004;
+    public final static int READTEST_REGISTRY_PORT = 60005;
     private final static int MAX_SERVER_SOCKET_TRIES = 2*(FIXED_PORT_MAX-FIXED_PORT_MIN+1);
 
     static void mesg(Object mesg) {

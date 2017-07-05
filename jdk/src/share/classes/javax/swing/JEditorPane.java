@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,9 +160,9 @@ import javax.accessibility.*;
  * the character set specified in the <code>ChangedCharSetException</code>
  * (which is an <code>IOException</code>).
  * </ol>
- * <p>
+ *
  * <dl>
- * <dt><b><font size=+1>Newlines</font></b>
+ * <dt><b>Newlines</b>
  * <dd>
  * For a discussion on how newlines are handled, see
  * <a href="text/DefaultEditorKit.html">DefaultEditorKit</a>.

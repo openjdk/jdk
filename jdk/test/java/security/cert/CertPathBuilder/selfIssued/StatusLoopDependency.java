@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+//
+// Security properties, once set, cannot revert to unset.  To avoid
+// conflicts with tests running in the same VM isolate this test by
+// running it in otherVM mode.
+//
 
 /**
  * @test
@@ -283,6 +289,10 @@ public final class StatusLoopDependency {
 
 
     public static void main(String[] args) throws Exception {
+        // MD5 is used in this test case, don't disable MD5 algorithm.
+        Security.setProperty(
+                "jdk.certpath.disabledAlgorithms", "MD2, RSA keySize < 1024");
+
         CertPathBuilder builder = CertPathBuilder.getInstance("PKIX");
 
         X509CertSelector selector = generateSelector(args[0]);

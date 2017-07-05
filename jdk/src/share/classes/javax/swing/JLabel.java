@@ -855,7 +855,6 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      *           <code>RIGHT</code>,
      *           <code>LEADING</code>, or
      *           <code>TRAILING</code> (the default).
-     * @exception IllegalArgumentException
      *
      * @see SwingConstants
      * @beaninfo

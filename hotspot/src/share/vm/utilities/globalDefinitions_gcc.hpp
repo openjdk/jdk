@@ -174,6 +174,7 @@ typedef uint64_t julong;
 
 inline jint    jint_cast   (jfloat  x)           { return *(jint*   )&x; }
 inline jlong   jlong_cast  (jdouble x)           { return *(jlong*  )&x; }
+inline julong  julong_cast (jdouble x)           { return *(julong* )&x; }
 
 inline jfloat  jfloat_cast (jint    x)           { return *(jfloat* )&x; }
 inline jdouble jdouble_cast(jlong   x)           { return *(jdouble*)&x; }

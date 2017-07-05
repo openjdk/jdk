@@ -24,7 +24,7 @@
  /*
  * @test
  * @key nmt
- * @summary Running with NMT detail should not result in an error or warning
+ * @summary Running with NMT detail should not result in an error
  * @library /testlibrary
  */
 
@@ -39,7 +39,6 @@ public class CommandLineDetail {
       "-version");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldNotContain("error");
-    output.shouldNotContain("warning");
     output.shouldHaveExitValue(0);
   }
 }

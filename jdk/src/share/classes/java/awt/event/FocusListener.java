@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,11 +51,13 @@ public interface FocusListener extends EventListener {
 
     /**
      * Invoked when a component gains the keyboard focus.
+     * @param e the event to be processed
      */
     public void focusGained(FocusEvent e);
 
     /**
      * Invoked when a component loses the keyboard focus.
+     * @param e the event to be processed
      */
     public void focusLost(FocusEvent e);
 }

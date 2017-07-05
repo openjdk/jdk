@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6838333 8005566
+ * @bug 4313887 6838333 8005566 8032220
  * @summary Unit test for miscellenous methods in java.nio.file.Files
  * @library ..
  */
@@ -76,6 +76,11 @@ public class Misc {
             createDirectories(file.resolve("y"));
             throw new RuntimeException("failure expected");
         } catch (IOException x) { }
+
+        // the root directory always exists
+        Path root = Paths.get("/");
+        Files.createDirectories(root);
+        Files.createDirectories(root.toAbsolutePath());
     }
 
     /**

@@ -46,13 +46,17 @@ public class SpreadNullArg {
       mh_spread_target =
         MethodHandles.lookup().findStatic(SpreadNullArg.class, "target_spread_arg", mt_ref_arg);
       result = (int) mh_spreadInvoker.invokeExact(mh_spread_target, (Object[]) null);
-    } catch(NullPointerException e) {
-      // Expected exception - do nothing!
-    } catch(Throwable e) {
+      throw new Error("Expected IllegalArgumentException was not thrown");
+    } catch (IllegalArgumentException e) {
+      System.out.println("Expected exception : " + e);
+    } catch (Throwable e) {
       throw new Error(e);
     }
 
-    if (result != 42) throw new Error("Expected NullPointerException was not thrown");
+    if (result != 42) {
+      throw new Error("result [" + result
+        + "] != 42 : Expected IllegalArgumentException was not thrown?");
+    }
   }
 
   public static int target_spread_arg(Integer i1) {

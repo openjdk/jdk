@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -415,11 +415,49 @@ public interface List<E> extends Collection<E> {
     }
 
     /**
-     * Sorts this list using the supplied {@code Comparator} to compare elements.
+     * Sorts this list according to the order induced by the specified
+     * {@link Comparator}.
+     *
+     * <p>All elements in this list must be <i>mutually comparable</i> using the
+     * specified comparator (that is, {@code c.compare(e1, e2)} must not throw
+     * a {@code ClassCastException} for any elements {@code e1} and {@code e2}
+     * in the list).
+     *
+     * <p>If the specified comparator is {@code null} then all elements in this
+     * list must implement the {@link Comparable} interface and the elements'
+     * {@linkplain Comparable natural ordering} should be used.
+     *
+     * <p>This list must be modifiable, but need not be resizable.
      *
      * @implSpec
-     * The default implementation is equivalent to, for this {@code list}:
-     * <pre>Collections.sort(list, c)</pre>
+     * The default implementation obtains an array containing all elements in
+     * this list, sorts the array, and iterates over this list resetting each
+     * element from the corresponding position in the array. (This avoids the
+     * n<sup>2</sup> log(n) performance that would result from attempting
+     * to sort a linked list in place.)
+     *
+     * @implNote
+     * This implementation is a stable, adaptive, iterative mergesort that
+     * requires far fewer than n lg(n) comparisons when the input array is
+     * partially sorted, while offering the performance of a traditional
+     * mergesort when the input array is randomly ordered.  If the input array
+     * is nearly sorted, the implementation requires approximately n
+     * comparisons.  Temporary storage requirements vary from a small constant
+     * for nearly sorted input arrays to n/2 object references for randomly
+     * ordered input arrays.
+     *
+     * <p>The implementation takes equal advantage of ascending and
+     * descending order in its input array, and can take advantage of
+     * ascending and descending order in different parts of the same
+     * input array.  It is well-suited to merging two or more sorted arrays:
+     * simply concatenate the arrays and sort the resulting array.
+     *
+     * <p>The implementation was adapted from Tim Peters's list sort for Python
+     * (<a href="http://svn.python.org/projects/python/trunk/Objects/listsort.txt">
+     * TimSort</a>).  It uses techniques from Peter McIlroy's "Optimistic
+     * Sorting and Information Theoretic Complexity", in Proceedings of the
+     * Fourth Annual ACM-SIAM Symposium on Discrete Algorithms, pp 467-474,
+     * January 1993.
      *
      * @param c the {@code Comparator} used to compare list elements.
      *          A {@code null} value indicates that the elements'
@@ -434,8 +472,15 @@ public interface List<E> extends Collection<E> {
      *         contract
      * @since 1.8
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     default void sort(Comparator<? super E> c) {
-        Collections.sort(this, c);
+        Object[] a = this.toArray();
+        Arrays.sort(a, (Comparator) c);
+        ListIterator<E> i = this.listIterator();
+        for (Object e : a) {
+            i.next();
+            i.set((E) e);
+        }
     }
 
     /**
