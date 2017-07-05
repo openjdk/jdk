@@ -53,8 +53,6 @@
   template(java_lang_Object,                          "java/lang/Object")                         \
   template(java_lang_Class,                           "java/lang/Class")                          \
   template(java_lang_String,                          "java/lang/String")                         \
-  template(java_lang_StringValue,                     "java/lang/StringValue")                    \
-  template(java_lang_StringCache,                     "java/lang/StringValue$StringCache")        \
   template(java_lang_Thread,                          "java/lang/Thread")                         \
   template(java_lang_ThreadGroup,                     "java/lang/ThreadGroup")                    \
   template(java_lang_Cloneable,                       "java/lang/Cloneable")                      \
@@ -106,7 +104,6 @@
   template(java_util_Vector,                          "java/util/Vector")                         \
   template(java_util_AbstractList,                    "java/util/AbstractList")                   \
   template(java_util_Hashtable,                       "java/util/Hashtable")                      \
-  template(java_util_HashMap,                         "java/util/HashMap")                        \
   template(java_lang_Compiler,                        "java/lang/Compiler")                       \
   template(sun_misc_Signal,                           "sun/misc/Signal")                          \
   template(java_lang_AssertionStatusDirectives,       "java/lang/AssertionStatusDirectives")      \
@@ -367,8 +364,6 @@
   template(offset_name,                               "offset")                                   \
   template(count_name,                                "count")                                    \
   template(hash_name,                                 "hash")                                     \
-  template(frontCacheEnabled_name,                    "frontCacheEnabled")                        \
-  template(stringCacheEnabled_name,                   "stringCacheEnabled")                       \
   template(numberOfLeadingZeros_name,                 "numberOfLeadingZeros")                     \
   template(numberOfTrailingZeros_name,                "numberOfTrailingZeros")                    \
   template(bitCount_name,                             "bitCount")                                 \

@@ -102,6 +102,20 @@ class win32 {
   static LONG WINAPI serialize_fault_filter(struct _EXCEPTION_POINTERS* e);
 };
 
+/*
+ * Crash protection for the watcher thread. Wrap the callback
+ * with a __try { call() }
+ * To be able to use this - don't take locks, don't rely on destructors,
+ * don't make OS library calls, don't allocate memory, don't print,
+ * don't call code that could leave the heap / memory in an inconsistent state,
+ * or anything else where we are not in control if we suddenly jump out.
+ */
+class WatcherThreadCrashProtection : public StackObj {
+public:
+  WatcherThreadCrashProtection();
+  bool call(os::CrashProtectionCallback& cb);
+};
+
 class PlatformEvent : public CHeapObj<mtInternal> {
   private:
     double CachePad [4] ;   // increase odds that _Event is sole occupant of cache line

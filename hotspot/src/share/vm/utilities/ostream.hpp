@@ -28,6 +28,8 @@
 #include "memory/allocation.hpp"
 #include "runtime/timer.hpp"
 
+DEBUG_ONLY(class ResourceMark;)
+
 // Output streams for printing
 //
 // Printing guidelines:
@@ -177,6 +179,7 @@ class stringStream : public outputStream {
   size_t buffer_pos;
   size_t buffer_length;
   bool   buffer_fixed;
+  DEBUG_ONLY(ResourceMark* rm;)
  public:
   stringStream(size_t initial_bufsize = 256);
   stringStream(char* fixed_buffer, size_t fixed_buffer_size);
