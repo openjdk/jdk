@@ -677,11 +677,6 @@ void GenCollectedHeap::do_collection(bool  full,
 #ifdef TRACESPINNING
   ParallelTaskTerminator::print_termination_counts();
 #endif
-
-  if (ExitAfterGCNum > 0 && total_collections() == ExitAfterGCNum) {
-    tty->print_cr("Stopping after GC #%d", ExitAfterGCNum);
-    vm_exit(-1);
-  }
 }
 
 HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {

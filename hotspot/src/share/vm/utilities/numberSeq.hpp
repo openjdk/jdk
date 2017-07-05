@@ -93,7 +93,6 @@ protected:
 
 public:
   NumberSeq(double alpha = DEFAULT_ALPHA_VALUE);
-  NumberSeq(NumberSeq* total, int n_parts, NumberSeq** parts);
 
   virtual void add(double val);
   virtual double maximum() const { return _maximum; }

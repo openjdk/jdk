@@ -67,7 +67,7 @@ class fieldDescriptor VALUE_OBJ_CLASS_SPEC {
   oop loader() const;
   // Offset (in words) of field from start of instanceOop / klassOop
   int offset() const                   { return field()->offset(); }
-  Symbol* generic_signature() const    { return field()->generic_signature(_cp); }
+  Symbol* generic_signature() const;
   int index() const                    { return _index; }
   typeArrayOop annotations() const;
 
