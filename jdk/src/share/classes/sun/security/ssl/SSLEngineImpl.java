@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -547,6 +547,8 @@ final public class SSLEngineImpl extends SSLEngine {
 
         // ... create decompressor
 
+        CipherBox oldCipher = readCipher;
+
         try {
             readCipher = handshaker.newReadCipher();
             readMAC = handshaker.newReadMAC();
@@ -555,6 +557,16 @@ final public class SSLEngineImpl extends SSLEngine {
             throw (SSLException)new SSLException
                                 ("Algorithm missing:  ").initCause(e);
         }
+
+        /*
+         * Dispose of any intermediate state in the underlying cipher.
+         * For PKCS11 ciphers, this will release any attached sessions,
+         * and thus make finalization faster.
+         *
+         * Since MAC's doFinal() is called for every SSL/TLS packet, it's
+         * not necessary to do the same with MAC's.
+         */
+        oldCipher.dispose();
     }
 
     /*
@@ -572,6 +584,8 @@ final public class SSLEngineImpl extends SSLEngine {
 
         // ... create compressor
 
+        CipherBox oldCipher = writeCipher;
+
         try {
             writeCipher = handshaker.newWriteCipher();
             writeMAC = handshaker.newWriteMAC();
@@ -580,6 +594,9 @@ final public class SSLEngineImpl extends SSLEngine {
             throw (SSLException)new SSLException
                                 ("Algorithm missing:  ").initCause(e);
         }
+
+        // See comment above.
+        oldCipher.dispose();
     }
 
     /*
@@ -1231,6 +1248,9 @@ final public class SSLEngineImpl extends SSLEngine {
             break;
         }
 
+        // See comment in changeReadCiphers()
+        writeCipher.dispose();
+
         connectionState = cs_CLOSED;
     }
 
@@ -1271,6 +1291,10 @@ final public class SSLEngineImpl extends SSLEngine {
 
         closeOutboundInternal();
         inboundDone = true;
+
+        // See comment in changeReadCiphers()
+        readCipher.dispose();
+
         connectionState = cs_CLOSED;
     }
 
@@ -1456,6 +1480,10 @@ final public class SSLEngineImpl extends SSLEngine {
         writer.closeOutbound();
 
         connectionState = cs_CLOSED;
+
+        // See comment in changeReadCiphers()
+        readCipher.dispose();
+        writeCipher.dispose();
 
         if (cause instanceof RuntimeException) {
             throw (RuntimeException)cause;
