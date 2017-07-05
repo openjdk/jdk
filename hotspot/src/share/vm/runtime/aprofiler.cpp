@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ void AllocationProfiler::print(size_t cutoff) {
   assert(!is_active(), "AllocationProfiler cannot be active while printing profile");
 
   tty->cr();
-  tty->print_cr("Allocation profile (sizes in bytes, cutoff = %ld bytes):", cutoff * BytesPerWord);
+  tty->print_cr("Allocation profile (sizes in bytes, cutoff = " SIZE_FORMAT " bytes):", cutoff * BytesPerWord);
   tty->cr();
 
   // Print regular instance klasses and basic type array klasses

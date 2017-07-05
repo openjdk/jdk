@@ -368,6 +368,12 @@ void print_statistics() {
   if (CITime) {
     CompileBroker::print_times();
   }
+
+  if (PrintCodeCache) {
+    MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    CodeCache::print();
+  }
+
 #ifdef COMPILER2
   if (PrintPreciseBiasedLockingStatistics) {
     OptoRuntime::print_named_counters();
@@ -541,6 +547,10 @@ void before_exit(JavaThread * thread) {
     _before_exit_status = BEFORE_EXIT_DONE;
     BeforeExit_lock->notify_all();
   }
+
+  // Shutdown NMT before exit. Otherwise,
+  // it will run into trouble when system destroys static variables.
+  MemTracker::shutdown(MemTracker::NMT_normal);
 
   #undef BEFORE_EXIT_NOT_RUN
   #undef BEFORE_EXIT_RUNNING

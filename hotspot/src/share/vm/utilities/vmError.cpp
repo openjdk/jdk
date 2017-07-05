@@ -702,7 +702,7 @@ void VMError::report(outputStream* st) {
 
      if (_verbose && Universe::is_fully_initialized()) {
        // print code cache information before vm abort
-       CodeCache::print_bounds(st);
+       CodeCache::print_summary(st);
        st->cr();
      }
 

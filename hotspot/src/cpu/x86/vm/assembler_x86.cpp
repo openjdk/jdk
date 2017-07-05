@@ -2263,6 +2263,18 @@ void Assembler::packuswb(XMMRegister dst, XMMRegister src) {
   emit_simd_arith(0x67, dst, src, VEX_SIMD_66);
 }
 
+void Assembler::vpackuswb(XMMRegister dst, XMMRegister nds, XMMRegister src, bool vector256) {
+  assert(VM_Version::supports_avx() && !vector256 || VM_Version::supports_avx2(), "256 bit integer vectors requires AVX2");
+  emit_vex_arith(0x67, dst, nds, src, VEX_SIMD_66, vector256);
+}
+
+void Assembler::vpermq(XMMRegister dst, XMMRegister src, int imm8, bool vector256) {
+    int encode = simd_prefix_and_encode(dst, xnoreg, src, VEX_SIMD_66, VEX_OPCODE_0F_3A, true, vector256);
+    emit_int8(0x00);
+    emit_int8(0xC0 | encode);
+    emit_int8(imm8);
+}
+
 void Assembler::pcmpestri(XMMRegister dst, Address src, int imm8) {
   assert(VM_Version::supports_sse4_2(), "");
   InstructionMark im(this);
@@ -2475,7 +2487,7 @@ void Assembler::vptest(XMMRegister dst, Address src) {
   assert(dst != xnoreg, "sanity");
   int dst_enc = dst->encoding();
   // swap src<->dst for encoding
-  vex_prefix(src, dst_enc, dst_enc, VEX_SIMD_66, VEX_OPCODE_0F_38, false, vector256);
+  vex_prefix(src, 0, dst_enc, VEX_SIMD_66, VEX_OPCODE_0F_38, false, vector256);
   emit_int8(0x17);
   emit_operand(dst, src);
 }

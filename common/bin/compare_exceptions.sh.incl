@@ -887,6 +887,17 @@ ACCEPTED_SMALL_SIZE_DIFF="
 ./jre/bin/unpack200.exe
 "
 
+# jabswitch.exe is compiled and linked with incremental turned on in the old
+# build. This makes no sense, so it's turned off in the new build.
+ACCEPTED_SIZE_DIFF="
+./bin/jabswitch.exe
+./jre/bin/jabswitch.exe
+"
+ACCEPTED_DIS_DIFF="
+./bin/jabswitch.exe
+./jre/bin/jabswitch.exe
+"
+
 # On windows, there are unavoidable allignment issues making
 # a perfect disasm diff impossible. Filter out the following:
 # * Random parts of C++ symbols (this is a bit greedy, but does the trick)

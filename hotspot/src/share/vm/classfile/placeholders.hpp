@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public:
  };
 
   // find_and_add returns probe pointer - old or new
-  // If no entry exists, add a placeholder entry and push SeenThread
+  // If no entry exists, add a placeholder entry and push SeenThread for classloadAction
   // If entry exists, reuse entry and push SeenThread for classloadAction
   PlaceholderEntry* find_and_add(int index, unsigned int hash,
                                  Symbol* name, ClassLoaderData* loader_data,
@@ -92,9 +92,11 @@ public:
   void remove_entry(int index, unsigned int hash,
                     Symbol* name, ClassLoaderData* loader_data);
 
-// Remove placeholder information
+  // find_and_remove first removes SeenThread for classloadAction
+  // If all queues are empty and definer is null, remove the PlacheholderEntry completely
   void find_and_remove(int index, unsigned int hash,
-                       Symbol* name, ClassLoaderData* loader_data, Thread* thread);
+                       Symbol* name, ClassLoaderData* loader_data,
+                       classloadAction action, Thread* thread);
 
   // GC support.
   void classes_do(KlassClosure* f);
