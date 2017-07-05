@@ -32,7 +32,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 
-G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id)
+G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id, size_t young_cset_length)
   : _g1h(g1h),
     _refs(g1h->task_queue(worker_id)),
     _dcq(&g1h->dirty_card_queue_set()),
@@ -51,8 +51,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id)
   // non-young regions (where the age is -1)
   // We also add a few elements at the beginning and at the end in
   // an attempt to eliminate cache contention
-  uint real_length = 1 + _g1h->g1_policy()->young_cset_region_length();
-  uint array_length = PADDING_ELEM_NUM +
+  size_t real_length = 1 + young_cset_length;
+  size_t array_length = PADDING_ELEM_NUM +
                       real_length +
                       PADDING_ELEM_NUM;
   _surviving_young_words_base = NEW_C_HEAP_ARRAY(size_t, array_length, mtGC);
@@ -60,7 +60,7 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id)
     vm_exit_out_of_memory(array_length * sizeof(size_t), OOM_MALLOC_ERROR,
                           "Not enough space for young surv histo.");
   _surviving_young_words = _surviving_young_words_base + PADDING_ELEM_NUM;
-  memset(_surviving_young_words, 0, (size_t) real_length * sizeof(size_t));
+  memset(_surviving_young_words, 0, real_length * sizeof(size_t));
 
   _plab_allocator = G1PLABAllocator::create_allocator(_g1h->allocator());
 
@@ -71,13 +71,21 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id)
   _dest[InCSetState::Old]          = InCSetState::Old;
 }
 
-G1ParScanThreadState::~G1ParScanThreadState() {
+// Pass locally gathered statistics to global state.
+void G1ParScanThreadState::flush(size_t* surviving_young_words) {
+  _dcq.flush();
   // Update allocation statistics.
   _plab_allocator->flush_and_retire_stats();
+  _g1h->g1_policy()->record_age_table(&_age_table);
+
+  uint length = _g1h->g1_policy()->young_cset_region_length();
+  for (uint region_index = 0; region_index < length; region_index++) {
+    surviving_young_words[region_index] += _surviving_young_words[region_index];
+  }
+}
+
+G1ParScanThreadState::~G1ParScanThreadState() {
   delete _plab_allocator;
-  _g1h->g1_policy()->record_thread_age_table(&_age_table);
-  // Update heap statistics.
-  _g1h->update_surviving_young_words(_surviving_young_words);
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base);
 }
 
@@ -312,6 +320,42 @@ oop G1ParScanThreadState::copy_to_survivor_space(InCSetState const state,
     _plab_allocator->undo_allocation(dest_state, obj_ptr, word_sz, context);
     return forward_ptr;
   }
+}
+
+G1ParScanThreadState* G1ParScanThreadStateSet::state_for_worker(uint worker_id) {
+  assert(worker_id < _n_workers, "out of bounds access");
+  return _states[worker_id];
+}
+
+void G1ParScanThreadStateSet::add_cards_scanned(uint worker_id, size_t cards_scanned) {
+  assert(worker_id < _n_workers, "out of bounds access");
+  _cards_scanned[worker_id] += cards_scanned;
+}
+
+size_t G1ParScanThreadStateSet::total_cards_scanned() const {
+  assert(_flushed, "thread local state from the per thread states should have been flushed");
+  return _total_cards_scanned;
+}
+
+const size_t* G1ParScanThreadStateSet::surviving_young_words() const {
+  assert(_flushed, "thread local state from the per thread states should have been flushed");
+  return _surviving_young_words_total;
+}
+
+void G1ParScanThreadStateSet::flush() {
+  assert(!_flushed, "thread local state from the per thread states should be flushed once");
+  assert(_total_cards_scanned == 0, "should have been cleared");
+
+  for (uint worker_index = 0; worker_index < _n_workers; ++worker_index) {
+    G1ParScanThreadState* pss = _states[worker_index];
+
+    _total_cards_scanned += _cards_scanned[worker_index];
+
+    pss->flush(_surviving_young_words_total);
+    delete pss;
+    _states[worker_index] = NULL;
+  }
+  _flushed = true;
 }
 
 oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markOop m) {
