@@ -187,6 +187,8 @@ class AdaptiveSizePolicy : public CHeapObj {
   julong _young_gen_change_for_minor_throughput;
   julong _old_gen_change_for_major_throughput;
 
+  static const uint GCWorkersPerJavaThread  = 2;
+
   // Accessors
 
   double gc_pause_goal_sec() const { return _gc_pause_goal_sec; }
@@ -331,12 +333,39 @@ class AdaptiveSizePolicy : public CHeapObj {
   // Return true if the policy suggested a change.
   bool tenuring_threshold_change() const;
 
+  static bool _debug_perturbation;
+
  public:
   AdaptiveSizePolicy(size_t init_eden_size,
                      size_t init_promo_size,
                      size_t init_survivor_size,
                      double gc_pause_goal_sec,
                      uint gc_cost_ratio);
+
+  // Return number default  GC threads to use in the next GC.
+  static int calc_default_active_workers(uintx total_workers,
+                                         const uintx min_workers,
+                                         uintx active_workers,
+                                         uintx application_workers);
+
+  // Return number of GC threads to use in the next GC.
+  // This is called sparingly so as not to change the
+  // number of GC workers gratuitously.
+  //   For ParNew collections
+  //   For PS scavenge and ParOld collections
+  //   For G1 evacuation pauses (subject to update)
+  // Other collection phases inherit the number of
+  // GC workers from the calls above.  For example,
+  // a CMS parallel remark uses the same number of GC
+  // workers as the most recent ParNew collection.
+  static int calc_active_workers(uintx total_workers,
+                                 uintx active_workers,
+                                 uintx application_workers);
+
+  // Return number of GC threads to use in the next concurrent GC phase.
+  static int calc_active_conc_workers(uintx total_workers,
+                                      uintx active_workers,
+                                      uintx application_workers);
 
   bool is_gc_cms_adaptive_size_policy() {
     return kind() == _gc_cms_adaptive_size_policy;

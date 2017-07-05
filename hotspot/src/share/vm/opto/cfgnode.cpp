@@ -460,8 +460,11 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Is it dead loop?
     // If it is LoopNopde it had 2 (+1 itself) inputs and
     // one of them was cut. The loop is dead if it was EntryContol.
-    assert(!this->is_Loop() || cnt_orig == 3, "Loop node should have 3 inputs");
-    if (this->is_Loop() && del_it == LoopNode::EntryControl ||
+    // Loop node may have only one input because entry path
+    // is removed in PhaseIdealLoop::Dominators().
+    assert(!this->is_Loop() || cnt_orig <= 3, "Loop node should have 3 or less inputs");
+    if (this->is_Loop() && (del_it == LoopNode::EntryControl ||
+                            del_it == 0 && is_unreachable_region(phase)) ||
        !this->is_Loop() && has_phis && is_unreachable_region(phase)) {
       // Yes,  the region will be removed during the next step below.
       // Cut the backedge input and remove phis since no data paths left.
@@ -1585,14 +1588,17 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Only one not-NULL unique input path is left.
     // Determine if this input is backedge of a loop.
     // (Skip new phis which have no uses and dead regions).
-    if( outcnt() > 0 && r->in(0) != NULL ) {
+    if (outcnt() > 0 && r->in(0) != NULL) {
       // First, take the short cut when we know it is a loop and
       // the EntryControl data path is dead.
-      assert(!r->is_Loop() || r->req() == 3, "Loop node should have 3 inputs");
+      // Loop node may have only one input because entry path
+      // is removed in PhaseIdealLoop::Dominators().
+      assert(!r->is_Loop() || r->req() <= 3, "Loop node should have 3 or less inputs");
+      bool is_loop = (r->is_Loop() && r->req() == 3);
       // Then, check if there is a data loop when phi references itself directly
       // or through other data nodes.
-      if( r->is_Loop() && !phase->eqv_uncast(uin, in(LoopNode::EntryControl)) ||
-         !r->is_Loop() && is_unsafe_data_reference(uin) ) {
+      if (is_loop && !phase->eqv_uncast(uin, in(LoopNode::EntryControl)) ||
+         !is_loop && is_unsafe_data_reference(uin)) {
         // Break this data loop to avoid creation of a dead loop.
         if (can_reshape) {
           return top;

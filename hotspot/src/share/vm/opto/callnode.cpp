@@ -1071,8 +1071,11 @@ SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp,
   init_class_id(Class_SafePointScalarObject);
 }
 
-bool SafePointScalarObjectNode::pinned() const { return true; }
-bool SafePointScalarObjectNode::depends_only_on_test() const { return false; }
+// Do not allow value-numbering for SafePointScalarObject node.
+uint SafePointScalarObjectNode::hash() const { return NO_HASH; }
+uint SafePointScalarObjectNode::cmp( const Node &n ) const {
+  return (&n == this); // Always fail except on self
+}
 
 uint SafePointScalarObjectNode::ideal_reg() const {
   return 0; // No matching to machine instruction
@@ -1096,7 +1099,6 @@ SafePointScalarObjectNode::clone(int jvms_adj, Dict* sosn_map) const {
   if (cached != NULL) {
     return (SafePointScalarObjectNode*)cached;
   }
-  Compile* C = Compile::current();
   SafePointScalarObjectNode* res = (SafePointScalarObjectNode*)Node::clone();
   res->_first_index += jvms_adj;
   sosn_map->Insert((void*)this, (void*)res);
@@ -1142,6 +1144,8 @@ uint AllocateArrayNode::size_of() const { return sizeof(*this); }
 
 Node* AllocateArrayNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (remove_dead_region(phase, can_reshape))  return this;
+  // Don't bother trying to transform a dead node
+  if (in(0) && in(0)->is_top())  return NULL;
 
   const Type* type = phase->type(Ideal_length());
   if (type->isa_int() && type->is_int()->_hi < 0) {
@@ -1522,13 +1526,16 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // perform any generic optimizations first (returns 'this' or NULL)
   Node *result = SafePointNode::Ideal(phase, can_reshape);
+  if (result != NULL)  return result;
+  // Don't bother trying to transform a dead node
+  if (in(0) && in(0)->is_top())  return NULL;
 
   // Now see if we can optimize away this lock.  We don't actually
   // remove the locking here, we simply set the _eliminate flag which
   // prevents macro expansion from expanding the lock.  Since we don't
   // modify the graph, the value returned from this function is the
   // one computed above.
-  if (result == NULL && can_reshape && EliminateLocks && !is_eliminated()) {
+  if (can_reshape && EliminateLocks && (!is_eliminated() || is_coarsened())) {
     //
     // If we are locking an unescaped object, the lock/unlock is unnecessary
     //
@@ -1537,8 +1544,16 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if (cgr != NULL)
       es = cgr->escape_state(obj_node());
     if (es != PointsToNode::UnknownEscape && es != PointsToNode::GlobalEscape) {
-      // Mark it eliminated to update any counters
-      this->set_eliminated();
+      if (!is_eliminated()) {
+        // Mark it eliminated to update any counters
+        this->set_eliminated();
+      } else {
+        assert(is_coarsened(), "sanity");
+        // The lock could be marked eliminated by lock coarsening
+        // code during first IGVN before EA. Clear coarsened flag
+        // to eliminate all associated locks/unlocks.
+        this->clear_coarsened();
+      }
       return result;
     }
 
@@ -1546,7 +1561,7 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Try lock coarsening
     //
     PhaseIterGVN* iter = phase->is_IterGVN();
-    if (iter != NULL) {
+    if (iter != NULL && !is_eliminated()) {
 
       GrowableArray<AbstractLockNode*>   lock_ops;
 
@@ -1602,7 +1617,7 @@ Node *LockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           lock->set_eliminated();
           lock->set_coarsened();
         }
-      } else if (result != NULL && ctrl->is_Region() &&
+      } else if (ctrl->is_Region() &&
                  iter->_worklist.member(ctrl)) {
         // We weren't able to find any opportunities but the region this
         // lock is control dependent on hasn't been processed yet so put
@@ -1623,7 +1638,10 @@ uint UnlockNode::size_of() const { return sizeof(*this); }
 Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // perform any generic optimizations first (returns 'this' or NULL)
-  Node * result = SafePointNode::Ideal(phase, can_reshape);
+  Node *result = SafePointNode::Ideal(phase, can_reshape);
+  if (result != NULL)  return result;
+  // Don't bother trying to transform a dead node
+  if (in(0) && in(0)->is_top())  return NULL;
 
   // Now see if we can optimize away this unlock.  We don't actually
   // remove the unlocking here, we simply set the _eliminate flag which
@@ -1631,7 +1649,7 @@ Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // modify the graph, the value returned from this function is the
   // one computed above.
   // Escape state is defined after Parse phase.
-  if (result == NULL && can_reshape && EliminateLocks && !is_eliminated()) {
+  if (can_reshape && EliminateLocks && (!is_eliminated() || is_coarsened())) {
     //
     // If we are unlocking an unescaped object, the lock/unlock is unnecessary.
     //
@@ -1640,8 +1658,16 @@ Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if (cgr != NULL)
       es = cgr->escape_state(obj_node());
     if (es != PointsToNode::UnknownEscape && es != PointsToNode::GlobalEscape) {
-      // Mark it eliminated to update any counters
-      this->set_eliminated();
+      if (!is_eliminated()) {
+        // Mark it eliminated to update any counters
+        this->set_eliminated();
+      } else {
+        assert(is_coarsened(), "sanity");
+        // The lock could be marked eliminated by lock coarsening
+        // code during first IGVN before EA. Clear coarsened flag
+        // to eliminate all associated locks/unlocks.
+        this->clear_coarsened();
+      }
     }
   }
   return result;

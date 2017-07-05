@@ -81,7 +81,7 @@ class BCEscapeAnalyzer : public ResourceObj {
   bool is_arg_stack(ArgumentMap vars);
   void clear_bits(ArgumentMap vars, VectorSet &bs);
   void set_method_escape(ArgumentMap vars);
-  void set_global_escape(ArgumentMap vars);
+  void set_global_escape(ArgumentMap vars, bool merge = false);
   void set_dirty(ArgumentMap vars);
   void set_modified(ArgumentMap vars, int offs, int size);
 

@@ -33,6 +33,7 @@
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/virtualspace.hpp"
+#include "runtime/vmThread.hpp"
 
 void CardTableModRefBS::non_clean_card_iterate_parallel_work(Space* sp, MemRegion mr,
                                                              OopsInGenClosure* cl,
@@ -41,6 +42,11 @@ void CardTableModRefBS::non_clean_card_iterate_parallel_work(Space* sp, MemRegio
   assert(n_threads > 0, "Error: expected n_threads > 0");
   assert((n_threads == 1 && ParallelGCThreads == 0) ||
          n_threads <= (int)ParallelGCThreads,
+         "# worker threads != # requested!");
+  assert(!Thread::current()->is_VM_thread() || (n_threads == 1), "There is only 1 VM thread");
+  assert(UseDynamicNumberOfGCThreads ||
+         !FLAG_IS_DEFAULT(ParallelGCThreads) ||
+         n_threads == (int)ParallelGCThreads,
          "# worker threads != # requested!");
   // Make sure the LNC array is valid for the space.
   jbyte**   lowest_non_clean;
@@ -52,6 +58,8 @@ void CardTableModRefBS::non_clean_card_iterate_parallel_work(Space* sp, MemRegio
 
   int n_strides = n_threads * ParGCStridesPerThread;
   SequentialSubTasksDone* pst = sp->par_seq_tasks();
+  // Sets the condition for completion of the subtask (how many threads
+  // need to finish in order to be done).
   pst->set_n_threads(n_threads);
   pst->set_n_tasks(n_strides);
 

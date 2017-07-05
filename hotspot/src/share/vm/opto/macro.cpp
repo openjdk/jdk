@@ -81,7 +81,7 @@ void PhaseMacroExpand::copy_call_debug_info(CallNode *oldcall, CallNode * newcal
       uint old_unique = C->unique();
       Node* new_in = old_sosn->clone(jvms_adj, sosn_map);
       if (old_unique != C->unique()) {
-        new_in->set_req(0, newcall->in(0)); // reset control edge
+        new_in->set_req(0, C->root()); // reset control edge
         new_in = transform_later(new_in); // Register new node.
       }
       old_in = new_in;
@@ -565,7 +565,6 @@ bool PhaseMacroExpand::can_eliminate_allocation(AllocateNode *alloc, GrowableArr
   if (res == NULL) {
     // All users were eliminated.
   } else if (!res->is_CheckCastPP()) {
-    alloc->_is_scalar_replaceable = false;  // don't try again
     NOT_PRODUCT(fail_eliminate = "Allocation does not have unique CheckCastPP";)
     can_eliminate = false;
   } else {
@@ -719,7 +718,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
                                                  alloc,
 #endif
                                                  first_ind, nfields);
-    sobj->init_req(0, sfpt->in(TypeFunc::Control));
+    sobj->init_req(0, C->root());
     transform_later(sobj);
 
     // Scan object's fields adding an input to the safepoint for each field.
@@ -762,10 +761,10 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
 
       Node *field_val = value_from_mem(mem, basic_elem_type, field_type, field_addr_type, alloc);
       if (field_val == NULL) {
-        // we weren't able to find a value for this field,
-        // give up on eliminating this allocation
-        alloc->_is_scalar_replaceable = false;  // don't try again
-        // remove any extra entries we added to the safepoint
+        // We weren't able to find a value for this field,
+        // give up on eliminating this allocation.
+
+        // Remove any extra entries we added to the safepoint.
         uint last = sfpt->req() - 1;
         for (int k = 0;  k < j; k++) {
           sfpt->del_req(last--);
@@ -1804,9 +1803,9 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
   #ifndef PRODUCT
   if (PrintEliminateLocks) {
     if (alock->is_Lock()) {
-      tty->print_cr("++++ Eliminating: %d Lock", alock->_idx);
+      tty->print_cr("++++ Eliminated: %d Lock", alock->_idx);
     } else {
-      tty->print_cr("++++ Eliminating: %d Unlock", alock->_idx);
+      tty->print_cr("++++ Eliminated: %d Unlock", alock->_idx);
     }
   }
   #endif
@@ -2165,11 +2164,12 @@ void PhaseMacroExpand::expand_unlock_node(UnlockNode *unlock) {
   _igvn.replace_node(_memproj_fallthrough, mem_phi);
 }
 
-//------------------------------expand_macro_nodes----------------------
-//  Returns true if a failure occurred.
-bool PhaseMacroExpand::expand_macro_nodes() {
+//---------------------------eliminate_macro_nodes----------------------
+// Eliminate scalar replaced allocations and associated locks.
+void PhaseMacroExpand::eliminate_macro_nodes() {
   if (C->macro_count() == 0)
-    return false;
+    return;
+
   // First, attempt to eliminate locks
   int cnt = C->macro_count();
   for (int i=0; i < cnt; i++) {
@@ -2189,14 +2189,6 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       debug_only(int old_macro_count = C->macro_count(););
       if (n->is_AbstractLock()) {
         success = eliminate_locking_node(n->as_AbstractLock());
-      } else if (n->Opcode() == Op_LoopLimit) {
-        // Remove it from macro list and put on IGVN worklist to optimize.
-        C->remove_macro_node(n);
-        _igvn._worklist.push(n);
-        success = true;
-      } else if (n->Opcode() == Op_Opaque1 || n->Opcode() == Op_Opaque2) {
-        _igvn.replace_node(n, n->in(1));
-        success = true;
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
@@ -2220,17 +2212,49 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         assert(!n->as_AbstractLock()->is_eliminated(), "sanity");
         break;
       default:
-        assert(false, "unknown node type in macro list");
+        assert(n->Opcode() == Op_LoopLimit ||
+               n->Opcode() == Op_Opaque1   ||
+               n->Opcode() == Op_Opaque2, "unknown node type in macro list");
       }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
     }
   }
+}
+
+//------------------------------expand_macro_nodes----------------------
+//  Returns true if a failure occurred.
+bool PhaseMacroExpand::expand_macro_nodes() {
+  // Last attempt to eliminate macro nodes.
+  eliminate_macro_nodes();
+
   // Make sure expansion will not cause node limit to be exceeded.
   // Worst case is a macro node gets expanded into about 50 nodes.
   // Allow 50% more for optimization.
   if (C->check_node_count(C->macro_count() * 75, "out of nodes before macro expansion" ) )
     return true;
+
+  // Eliminate Opaque and LoopLimit nodes. Do it after all loop optimizations.
+  bool progress = true;
+  while (progress) {
+    progress = false;
+    for (int i = C->macro_count(); i > 0; i--) {
+      Node * n = C->macro_node(i-1);
+      bool success = false;
+      debug_only(int old_macro_count = C->macro_count(););
+      if (n->Opcode() == Op_LoopLimit) {
+        // Remove it from macro list and put on IGVN worklist to optimize.
+        C->remove_macro_node(n);
+        _igvn._worklist.push(n);
+        success = true;
+      } else if (n->Opcode() == Op_Opaque1 || n->Opcode() == Op_Opaque2) {
+        _igvn.replace_node(n, n->in(1));
+        success = true;
+      }
+      assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
+      progress = progress || success;
+    }
+  }
 
   // expand "macro" nodes
   // nodes are removed from the macro list as they are processed
@@ -2265,5 +2289,6 @@ bool PhaseMacroExpand::expand_macro_nodes() {
 
   _igvn.set_delay_transform(false);
   _igvn.optimize();
+  if (C->failing())  return true;
   return false;
 }
