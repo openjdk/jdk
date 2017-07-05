@@ -128,9 +128,9 @@ CORE_PKGS =                                      \
   java.text                                      \
   java.text.spi                                  \
   java.time                                      \
-  java.time.temporal                             \
-  java.time.calendar                             \
+  java.time.chrono                               \
   java.time.format                               \
+  java.time.temporal                             \
   java.time.zone                                 \
   java.util                                      \
   java.util.concurrent                           \

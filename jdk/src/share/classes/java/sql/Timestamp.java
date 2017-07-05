@@ -25,6 +25,8 @@
 
 package java.sql;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.StringTokenizer;
 
 /**
@@ -485,7 +487,6 @@ public class Timestamp extends java.util.Date {
             }
         }
         return i;
-
     }
 
     /**
@@ -530,4 +531,89 @@ public class Timestamp extends java.util.Date {
 
     static final long serialVersionUID = 2745179027874758501L;
 
+    private static final int MILLIS_PER_SECOND = 1000;
+
+    /**
+     * Obtains an instance of {@code Timestamp} from a {@code LocalDateTime}
+     * object, with the same year, month, day of month, hours, minutes,
+     * seconds and nanos date-time value as the provided {@code LocalDateTime}.
+     * <p>
+     * The provided {@code LocalDateTime} is interpreted as the local
+     * date-time in the local time zone.
+     *
+     * @param dateTime a {@code LocalDateTime} to convert
+     * @return a {@code Timestamp} object
+     * @exception NullPointerException if {@code dateTime} is null.
+     * @since 1.8
+     */
+    @SuppressWarnings("deprecation")
+    public static Timestamp valueOf(LocalDateTime dateTime) {
+        return new Timestamp(dateTime.getYear() - 1900,
+                             dateTime.getMonthValue() - 1,
+                             dateTime.getDayOfMonth(),
+                             dateTime.getHour(),
+                             dateTime.getMinute(),
+                             dateTime.getSecond(),
+                             dateTime.getNano());
+    }
+
+    /**
+     * Converts this {@code Timestamp} object to a {@code LocalDateTime}.
+     * <p>
+     * The conversion creates a {@code LocalDateTime} that represents the
+     * same year, month, day of month, hours, minutes, seconds and nanos
+     * date-time value as this {@code Timestamp} in the local time zone.
+     *
+     * @return a {@code LocalDateTime} object representing the same date-time value
+     * @since 1.8
+     */
+    @SuppressWarnings("deprecation")
+    public LocalDateTime toLocalDateTime() {
+        return LocalDateTime.of(getYear() + 1900,
+                                getMonth() + 1,
+                                getDate(),
+                                getHours(),
+                                getMinutes(),
+                                getSeconds(),
+                                getNanos());
+    }
+
+    /**
+     * Obtains an instance of {@code Timestamp} from an {@link Instant} object.
+     * <p>
+     * {@code Instant} can store points on the time-line further in the future
+     * and further in the past than {@code Date}. In this scenario, this method
+     * will throw an exception.
+     *
+     * @param instant  the instant to convert
+     * @return an {@code Timestamp} representing the same point on the time-line as
+     *  the provided instant
+     * @exception NullPointerException if {@code instant} is null.
+     * @exception IllegalArgumentException if the instant is too large to
+     *  represent as a {@code Timesamp}
+     * @since 1.8
+     */
+    public static Timestamp from(Instant instant) {
+        try {
+            Timestamp stamp = new Timestamp(instant.getEpochSecond() * MILLIS_PER_SECOND);
+            stamp.nanos = instant.getNano();
+            return stamp;
+        } catch (ArithmeticException ex) {
+            throw new IllegalArgumentException(ex);
+        }
+    }
+
+    /**
+     * Converts this {@code Timestamp} object to an {@code Instant}.
+     * <p>
+     * The conversion creates an {@code Instant} that represents the same
+     * point on the time-line as this {@code Timestamp}.
+     *
+     * @return an instant representing the same point on the time-line
+     * @since 1.8
+     */
+    @Override
+    public Instant toInstant() {
+        return Instant.ofEpochSecond(super.getTime() / MILLIS_PER_SECOND, nanos);
+    }
 }

@@ -79,13 +79,13 @@
  * Refer to the {@code java.time.format} package for customization options.
  * </p>
  * <p>
- * The {@code java.time.temporal} package also contains the calendar neutral API
- * {@link java.time.temporal.ChronoLocalDate ChronoLocalDate},
- * {@link java.time.temporal.ChronoLocalDateTime ChronoLocalDateTime},
- * {@link java.time.temporal.ChronoZonedDateTime ChronoZonedDateTime} and
- * {@link java.time.temporal.Era Era}.
+ * The {@code java.time.chrono} package contains the calendar neutral API
+ * {@link java.time.chrono.ChronoLocalDate ChronoLocalDate},
+ * {@link java.time.chrono.ChronoLocalDateTime ChronoLocalDateTime},
+ * {@link java.time.chrono.ChronoZonedDateTime ChronoZonedDateTime} and
+ * {@link java.time.chrono.Era Era}.
  * This is intended for use by applications that need to use localized calendars.
- * It is recommended that applications use the ISO-8601 dates and time classes from
+ * It is recommended that applications use the ISO-8601 date and time classes from
  * this package across system boundaries, such as to the database or across the network.
  * The calendar neutral API should be reserved for interactions with users.
  * </p>
@@ -135,29 +135,25 @@
  * This stores a single day-of-week in isolation, such as 'TUESDAY'.
  * </p>
  * <p>
- * {@link java.time.temporal.Year} stores a year on its own.
+ * {@link java.time.Year} stores a year on its own.
  * This stores a single year in isolation, such as '2010'.
  * </p>
  * <p>
- * {@link java.time.temporal.YearMonth} stores a year and month without a day or time.
+ * {@link java.time.YearMonth} stores a year and month without a day or time.
  * This stores a year and month, such as '2010-12' and could be used for a credit card expiry.
  * </p>
  * <p>
- * {@link java.time.temporal.MonthDay} stores a month and day without a year or time.
+ * {@link java.time.MonthDay} stores a month and day without a year or time.
  * This stores a month and day-of-month, such as '--12-03' and
  * could be used to store an annual event like a birthday without storing the year.
  * </p>
  * <p>
- * {@link java.time.temporal.OffsetTime} stores a time and offset from UTC without a date.
+ * {@link java.time.OffsetTime} stores a time and offset from UTC without a date.
  * This stores a date like '11:30+01:00'.
  * The {@link java.time.ZoneOffset ZoneOffset} is of the form '+01:00'.
  * </p>
  * <p>
- * {@link java.time.temporal.OffsetDate} stores a date and offset from UTC without a time.
- * This stores a time like '2010-12-03+01:00'.
- * </p>
- * <p>
- * {@link java.time.temporal.OffsetDateTime} stores a date and time and offset from UTC.
+ * {@link java.time.OffsetDateTime} stores a date and time and offset from UTC.
  * This stores a date-time like '2010-12-03T11:30+01:00'.
  * This is sometimes found in XML messages and other forms of persistence,
  * but contains less information than a full time-zone.
@@ -206,7 +202,7 @@
  * with the time-zone added at the user interface (UI) layer.
  * </p>
  * <p>
- * The offset-based date-time types, {@code OffsetDate}, {@code OffsetTime} and {@code OffsetDateTime},
+ * The offset-based date-time types {@code OffsetTime} and {@code OffsetDateTime},
  * are intended primarily for use with network protocols and database access.
  * For example, most databases cannot automatically store a time-zone like 'Europe/Paris', but
  * they can store an offset like '+02:00'.
@@ -261,7 +257,7 @@
  * <p>
  * There are, however, some limited use cases where users believe they need to store and use
  * dates in arbitrary calendar systems throughout the application.
- * This is supported by {@link java.time.temporal.ChronoLocalDate}, however it is vital to read
+ * This is supported by {@link java.time.chrono.ChronoLocalDate}, however it is vital to read
  * all the associated warnings in the Javadoc of that interface before using it.
  * In summary, applications that require general interoperation between multiple calendar systems
  * typically need to be written in a very different way to those only using the ISO calendar,

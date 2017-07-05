@@ -70,7 +70,14 @@ import javax.accessibility.*;
  * of all JavaBeans<sup><font size="-2">TM</font></sup>
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
- *
+ * <p>
+ * <strong>Warning:</strong>
+ * By default, pressing the Tab key does not transfer focus from a <code>
+ * JMenuBar</code> which is added to a container together with other Swing
+ * components, because the <code>focusTraversalKeysEnabled</code> property
+ * of <code>JMenuBar</code> is set to <code>false</code>. To resolve this,
+ * you should call the <code>JMenuBar.setFocusTraversalKeysEnabled(true)</code>
+ * method.
  * @beaninfo
  *   attribute: isContainer true
  * description: A container for holding and displaying menus.

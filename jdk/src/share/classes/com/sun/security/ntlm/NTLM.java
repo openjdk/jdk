@@ -136,10 +136,10 @@ class NTLM {
 
         int readInt(int offset) throws NTLMException {
             try {
-                return internal[offset] & 0xff +
-                        (internal[offset+1] & 0xff << 8) +
-                        (internal[offset+2] & 0xff << 16) +
-                        (internal[offset+3] & 0xff << 24);
+                return (internal[offset] & 0xff) +
+                        ((internal[offset+1] & 0xff) << 8) +
+                        ((internal[offset+2] & 0xff) << 16) +
+                        ((internal[offset+3] & 0xff) << 24);
             } catch (ArrayIndexOutOfBoundsException ex) {
                 throw new NTLMException(NTLMException.PACKET_READ_ERROR,
                         "Input message incorrect size");
@@ -148,8 +148,8 @@ class NTLM {
 
         int readShort(int offset) throws NTLMException {
             try {
-                return internal[offset] & 0xff +
-                        (internal[offset+1] & 0xff << 8);
+                return (internal[offset] & 0xff) +
+                        ((internal[offset+1] & 0xff << 8));
             } catch (ArrayIndexOutOfBoundsException ex) {
                 throw new NTLMException(NTLMException.PACKET_READ_ERROR,
                         "Input message incorrect size");

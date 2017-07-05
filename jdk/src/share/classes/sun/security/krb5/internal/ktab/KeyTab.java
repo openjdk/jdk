@@ -46,6 +46,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.Vector;
+import sun.security.jgss.krb5.ServiceCreds;
 
 /**
  * This class represents key table. The key table functions deal with storing
@@ -265,6 +266,15 @@ public class KeyTab implements KeyTabConstants {
             if (entry != null)
                 entries.addElement(entry);
         }
+    }
+
+    /**
+     * Returns a principal name in this keytab. Used by
+     * {@link ServiceCreds#getKKeys()}.
+     */
+    public PrincipalName getOneName() {
+        int size = entries.size();
+        return size > 0 ? entries.elementAt(size-1).service : null;
     }
 
     /**

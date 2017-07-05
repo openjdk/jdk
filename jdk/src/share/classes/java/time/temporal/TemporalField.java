@@ -62,8 +62,8 @@
 package java.time.temporal;
 
 import java.time.DateTimeException;
-import java.time.format.DateTimeBuilder;
 import java.util.Comparator;
+import java.util.Map;
 
 /**
  * A field of date-time, such as month-of-year or hour-of-minute.
@@ -72,7 +72,7 @@ import java.util.Comparator;
  * meaningful for humans. Implementations of this interface represent those fields.
  * <p>
  * The most commonly used units are defined in {@link ChronoField}.
- * Further fields are supplied in {@link ISOFields}, {@link WeekFields} and {@link JulianFields}.
+ * Further fields are supplied in {@link IsoFields}, {@link WeekFields} and {@link JulianFields}.
  * Fields can also be written by application code by implementing this interface.
  * <p>
  * The field works using double dispatch. Client code calls methods on a date-time like
@@ -83,7 +83,8 @@ import java.util.Comparator;
  * <h3>Specification for implementors</h3>
  * This interface must be implemented with care to ensure other classes operate correctly.
  * All implementations that can be instantiated must be final, immutable and thread-safe.
- * It is recommended to use an enum where possible.
+ * Implementations should be {@code Serializable} where possible.
+ * An enum is as effective implementation choice.
  *
  * @since 1.8
  */
@@ -174,7 +175,7 @@ public interface TemporalField extends Comparator<TemporalAccessor> {
      * The second is to use {@link TemporalAccessor#isSupported(TemporalField)}:
      * <pre>
      *   // these two lines are equivalent, but the second approach is recommended
-     *   temporal = thisField.doIsSupported(temporal);
+     *   temporal = thisField.isSupportedBy(temporal);
      *   temporal = temporal.isSupported(thisField);
      * </pre>
      * It is recommended to use the second approach, {@code isSupported(TemporalField)},
@@ -186,7 +187,7 @@ public interface TemporalField extends Comparator<TemporalAccessor> {
      * @param temporal  the temporal object to query, not null
      * @return true if the date-time can be queried for this field, false if not
      */
-    boolean doIsSupported(TemporalAccessor temporal);
+    boolean isSupportedBy(TemporalAccessor temporal);
 
     /**
      * Get the range of valid values for this field using the temporal object to
@@ -204,7 +205,7 @@ public interface TemporalField extends Comparator<TemporalAccessor> {
      * The second is to use {@link TemporalAccessor#range(TemporalField)}:
      * <pre>
      *   // these two lines are equivalent, but the second approach is recommended
-     *   temporal = thisField.doRange(temporal);
+     *   temporal = thisField.rangeRefinedBy(temporal);
      *   temporal = temporal.range(thisField);
      * </pre>
      * It is recommended to use the second approach, {@code range(TemporalField)},
@@ -218,7 +219,7 @@ public interface TemporalField extends Comparator<TemporalAccessor> {
      * @return the range of valid values for this field, not null
      * @throws DateTimeException if the range for the field cannot be obtained
      */
-    ValueRange doRange(TemporalAccessor temporal);
+    ValueRange rangeRefinedBy(TemporalAccessor temporal);
 
     /**
      * Gets the value of this field from the specified temporal object.
@@ -231,7 +232,7 @@ public interface TemporalField extends Comparator<TemporalAccessor> {
      * (or {@link TemporalAccessor#get(TemporalField)}):
      * <pre>
      *   // these two lines are equivalent, but the second approach is recommended
-     *   temporal = thisField.doGet(temporal);
+     *   temporal = thisField.getFrom(temporal);
      *   temporal = temporal.getLong(thisField);
      * </pre>
      * It is recommended to use the second approach, {@code getLong(TemporalField)},
@@ -244,8 +245,9 @@ public interface TemporalField extends Comparator<TemporalAccessor> {
      * @param temporal  the temporal object to query, not null
      * @return the value of this field, not null
      * @throws DateTimeException if a value for the field cannot be obtained
+     * @throws ArithmeticException if numeric overflow occurs
      */
-    long doGet(TemporalAccessor temporal);
+    long getFrom(TemporalAccessor temporal);
 
     /**
      * Returns a copy of the specified temporal object with the value of this field set.
@@ -266,7 +268,7 @@ public interface TemporalField extends Comparator<TemporalAccessor> {
      * The second is to use {@link Temporal#with(TemporalField, long)}:
      * <pre>
      *   // these two lines are equivalent, but the second approach is recommended
-     *   temporal = thisField.doWith(temporal);
+     *   temporal = thisField.adjustInto(temporal);
      *   temporal = temporal.with(thisField);
      * </pre>
      * It is recommended to use the second approach, {@code with(TemporalField)},
@@ -285,21 +287,45 @@ public interface TemporalField extends Comparator<TemporalAccessor> {
      * @param newValue the new value of the field
      * @return the adjusted temporal object, not null
      * @throws DateTimeException if the field cannot be set
+     * @throws ArithmeticException if numeric overflow occurs
      */
-    <R extends Temporal> R doWith(R temporal, long newValue);
+    <R extends Temporal> R adjustInto(R temporal, long newValue);
 
     /**
-     * Resolves the date/time information in the builder
+     * Resolves this field to provide a simpler alternative.
      * <p>
-     * This method is invoked during the resolve of the builder.
-     * Implementations should combine the associated field with others to form
-     * objects like {@code LocalDate}, {@code LocalTime} and {@code LocalDateTime}
+     * This method is invoked during the resolve phase of parsing.
+     * It is designed to allow application defined fields to be simplified into
+     * more standard fields, such as those on {@code ChronoField}.
+     * <p>
+     * The method will only be invoked if the specified temporal supports this field.
+     * The value of this field is provided.
+     * <p>
+     * The temporal must be queried using the methods of {@code TemporalAccessor},
+     * not using {@code getFrom}, {@code isSupportedBy} or {@code rangeRefinedBy}.
+     * Before querying any field, implementations must ensure it is supported, as
+     * exceptions of this type would negatively affect the calculation of a parsed result.
+     * <p>
+     * If this field can resolve, it must return a map, if not it must return null.
+     * The returned map contains the changes to be made to the temporal, expressed
+     * as field-value pairs. If the value for a field is null, the field is to be
+     * removed from the temporal. A null key must not be added to the result map.
+     * <p>
+     * If the result is non-null, this field will be removed from the temporal.
+     * This field should not be added to the result map.
+     * <p>
+     * The default implementation must return null.
      *
-     * @param builder  the builder to resolve, not null
-     * @param value  the value of the associated field
-     * @return true if builder has been changed, false otherwise
-     * @throws DateTimeException if unable to resolve
+     * @param temporal  the temporal to resolve, not null
+     * @param value  the value of this field
+     * @return a map of fields to update in the temporal, with a mapping to null
+     *  indicating a deletion. The whole map must be null if no resolving occurred
+     * @throws DateTimeException if resolving results in an error. This must not be thrown
+     *  by querying a field on the temporal without first checking if it is supported
+     * @throws ArithmeticException if numeric overflow occurs
      */
-    boolean resolve(DateTimeBuilder builder, long value);
+    public default Map<TemporalField, Long> resolve(TemporalAccessor temporal, long value) {
+        return null;
+    }
 
 }

@@ -456,7 +456,10 @@ public:
 //  Exponentiate a double
 class ExpDNode : public Node {
 public:
-  ExpDNode( Node *c, Node *in1 ) : Node(c, in1) {}
+  ExpDNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
+    init_flags(Flag_is_expensive);
+    C->add_expensive_node(this);
+  }
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }
@@ -489,7 +492,10 @@ public:
 // Raise a double to a double power
 class PowDNode : public Node {
 public:
-  PowDNode(Node *c, Node *in1, Node *in2  ) : Node(c, in1, in2) {}
+  PowDNode(Compile* C, Node *c, Node *in1, Node *in2 ) : Node(c, in1, in2) {
+    init_flags(Flag_is_expensive);
+    C->add_expensive_node(this);
+  }
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }
   virtual uint ideal_reg() const { return Op_RegD; }

@@ -59,15 +59,14 @@
  */
 package test.java.time.format;
 
-import java.time.format.*;
-
 import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.YEAR;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
 import java.text.ParsePosition;
-import java.time.format.DateTimeBuilder;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalField;
 
 import org.testng.annotations.DataProvider;
@@ -95,7 +94,7 @@ public class TestReducedParser extends AbstractTestPrinterParser {
     @Test(dataProvider="error")
     public void test_parse_error(TemporalField field, int width, int baseValue, String text, int pos, Class<?> expected) {
         try {
-            getFormatter0(field, width, baseValue).parseToBuilder(text, new ParsePosition(pos));
+            getFormatter0(field, width, baseValue).parseUnresolved(text, new ParsePosition(pos));
         } catch (RuntimeException ex) {
             assertTrue(expected.isInstance(ex));
         }
@@ -104,9 +103,9 @@ public class TestReducedParser extends AbstractTestPrinterParser {
     //-----------------------------------------------------------------------
     public void test_parse_fieldRangeIgnored() throws Exception {
         ParsePosition pos = new ParsePosition(0);
-        DateTimeBuilder dtb = getFormatter0(DAY_OF_YEAR, 3, 10).parseToBuilder("456", pos);
+        TemporalAccessor parsed = getFormatter0(DAY_OF_YEAR, 3, 10).parseUnresolved("456", pos);
         assertEquals(pos.getIndex(), 3);
-        assertParsed(dtb, DAY_OF_YEAR, 456L);  // parsed dayOfYear=456
+        assertParsed(parsed, DAY_OF_YEAR, 456L);  // parsed dayOfYear=456
     }
 
     //-----------------------------------------------------------------------
@@ -165,12 +164,12 @@ public class TestReducedParser extends AbstractTestPrinterParser {
     @Test(dataProvider="Parse")
     public void test_parse(TemporalField field, int width, int baseValue, String input, int pos, int parseLen, Integer parseVal) {
         ParsePosition ppos = new ParsePosition(pos);
-        DateTimeBuilder dtb = getFormatter0(field, width, baseValue).parseToBuilder(input, ppos);
+        TemporalAccessor parsed = getFormatter0(field, width, baseValue).parseUnresolved(input, ppos);
         if (ppos.getErrorIndex() != -1) {
             assertEquals(ppos.getErrorIndex(), parseLen);
         } else {
             assertEquals(ppos.getIndex(), parseLen);
-            assertParsed(dtb, YEAR, parseVal != null ? (long) parseVal : null);
+            assertParsed(parsed, YEAR, parseVal != null ? (long) parseVal : null);
         }
     }
 
@@ -178,20 +177,21 @@ public class TestReducedParser extends AbstractTestPrinterParser {
     public void test_parseLenient(TemporalField field, int width, int baseValue, String input, int pos, int parseLen, Integer parseVal) {
         setStrict(false);
         ParsePosition ppos = new ParsePosition(pos);
-        DateTimeBuilder dtb = getFormatter0(field, width, baseValue).parseToBuilder(input, ppos);
+        TemporalAccessor parsed = getFormatter0(field, width, baseValue).parseUnresolved(input, ppos);
         if (ppos.getErrorIndex() != -1) {
             assertEquals(ppos.getErrorIndex(), parseLen);
         } else {
             assertEquals(ppos.getIndex(), parseLen);
-            assertParsed(dtb, YEAR, parseVal != null ? (long) parseVal : null);
+            assertParsed(parsed, YEAR, parseVal != null ? (long) parseVal : null);
         }
     }
 
-    private void assertParsed(DateTimeBuilder dtb, TemporalField field, Long value) {
+    private void assertParsed(TemporalAccessor parsed, TemporalField field, Long value) {
         if (value == null) {
-            assertEquals(dtb, null);
+            assertEquals(parsed, null);
         } else {
-            assertEquals(dtb.getLong(field), (long)value);
+            assertEquals(parsed.isSupported(field), true);
+            assertEquals(parsed.getLong(field), (long) value);
         }
     }
 

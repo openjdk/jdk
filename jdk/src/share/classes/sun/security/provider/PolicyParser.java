@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,7 @@ import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.Principal;
 import java.text.MessageFormat;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Vector;
-import java.util.StringTokenizer;
+import java.util.*;
 import javax.security.auth.x500.X500Principal;
 
 import sun.security.util.Debug;
@@ -97,6 +92,7 @@ public class PolicyParser {
 
 
     private Vector<GrantEntry> grantEntries;
+    private Map<String, DomainEntry> domainEntries;
 
     // Convenience variables for parsing
     private static final Debug debug = Debug.getInstance("parser",
@@ -195,9 +191,10 @@ public class PolicyParser {
          */
 
         lookahead = st.nextToken();
+        GrantEntry ge = null;
         while (lookahead != StreamTokenizer.TT_EOF) {
             if (peek("grant")) {
-                GrantEntry ge = parseGrantEntry();
+                ge = parseGrantEntry();
                 // could be null if we couldn't expand a property
                 if (ge != null)
                     add(ge);
@@ -209,6 +206,24 @@ public class PolicyParser {
                 // only one keystore passwordURL per policy file, others will be
                 // ignored
                 parseStorePassURL();
+            } else if (ge == null && keyStoreUrlString == null &&
+                storePassURL == null && peek("domain")) {
+                if (domainEntries == null) {
+                    domainEntries = new TreeMap<>();
+                }
+                DomainEntry de = parseDomainEntry();
+                if (de != null) {
+                    String domainName = de.getName();
+                    if (!domainEntries.containsKey(domainName)) {
+                        domainEntries.put(domainName, de);
+                    } else {
+                        MessageFormat form =
+                            new MessageFormat(ResourcesMgr.getString(
+                                "duplicate.keystore.domain.name"));
+                        Object[] source = {domainName};
+                        throw new ParsingException(form.format(source));
+                    }
+                }
             } else {
                 // error?
             }
@@ -302,6 +317,10 @@ public class PolicyParser {
      */
     public Enumeration<GrantEntry> grantElements(){
         return grantEntries.elements();
+    }
+
+    public Collection<DomainEntry> getDomainEntries() {
+        return domainEntries.values();
     }
 
     /**
@@ -633,6 +652,67 @@ public class PolicyParser {
         return e;
     }
 
+    /**
+     * parse a domain entry
+     */
+    private DomainEntry parseDomainEntry()
+        throws ParsingException, IOException
+    {
+        boolean ignoreEntry = false;
+        DomainEntry domainEntry;
+        String name = null;
+        Map<String, String> properties = new HashMap<>();
+
+        match("domain");
+        name = match("domain name");
+
+        while(!peek("{")) {
+            // get the domain properties
+            properties = parseProperties("{");
+        }
+        match("{");
+        domainEntry = new DomainEntry(name, properties);
+
+        while(!peek("}")) {
+
+            match("keystore");
+            name = match("keystore name");
+            // get the keystore properties
+            if (!peek("}")) {
+                properties = parseProperties(";");
+            }
+            match(";");
+            domainEntry.add(new KeyStoreEntry(name, properties));
+        }
+        match("}");
+
+        return (ignoreEntry == true) ? null : domainEntry;
+    }
+
+    /*
+     * Return a collection of domain properties or keystore properties.
+     */
+    private Map<String, String> parseProperties(String terminator)
+        throws ParsingException, IOException {
+
+        Map<String, String> properties = new HashMap<>();
+        String key;
+        String value;
+        while (!peek(terminator)) {
+            key = match("property name");
+            match("=");
+
+            try {
+                value = expand(match("quoted string"));
+            } catch (PropertyExpander.ExpandException peee) {
+                throw new IOException(peee.getLocalizedMessage());
+            }
+            properties.put(key.toLowerCase(), value);
+        }
+
+        return properties;
+    }
+
     // package-private: used by PolicyFile for static policy
     static String[] parseExtDirs(String codebase, int start) {
 
@@ -708,6 +788,10 @@ public class PolicyParser {
             if (expect.equalsIgnoreCase("*"))
                 found = true;
             break;
+        case ';':
+            if (expect.equalsIgnoreCase(";"))
+                found = true;
+            break;
         default:
 
         }
@@ -737,6 +821,11 @@ public class PolicyParser {
                 value = st.sval;
                 lookahead = st.nextToken();
             } else if (expect.equalsIgnoreCase("principal type")) {
+                value = st.sval;
+                lookahead = st.nextToken();
+            } else if (expect.equalsIgnoreCase("domain name") ||
+                       expect.equalsIgnoreCase("keystore name") ||
+                       expect.equalsIgnoreCase("property name")) {
                 value = st.sval;
                 lookahead = st.nextToken();
             } else {
@@ -787,6 +876,12 @@ public class PolicyParser {
                 lookahead = st.nextToken();
             else
                 throw new ParsingException(st.lineno(), expect, "*");
+            break;
+        case '=':
+            if (expect.equalsIgnoreCase("="))
+                lookahead = st.nextToken();
+            else
+                throw new ParsingException(st.lineno(), expect, "=");
             break;
         default:
             throw new ParsingException(st.lineno(), expect,
@@ -1182,6 +1277,108 @@ public class PolicyParser {
                 out.print('"');
             }
             out.println(";");
+        }
+    }
+
+    /**
+     * Each domain entry in the keystore domain configuration file is
+     * represented by a DomainEntry object.
+     */
+    static class DomainEntry {
+        private final String name;
+        private final Map<String, String> properties;
+        private final Map<String, KeyStoreEntry> entries;
+
+        DomainEntry(String name, Map<String, String> properties) {
+            this.name = name;
+            this.properties = properties;
+            entries = new HashMap<>();
+        }
+
+        String getName() {
+            return name;
+        }
+
+        Map<String, String> getProperties() {
+            return properties;
+        }
+
+        Collection<KeyStoreEntry> getEntries() {
+            return entries.values();
+        }
+
+        void add(KeyStoreEntry entry) throws ParsingException {
+            String keystoreName = entry.getName();
+            if (!entries.containsKey(keystoreName)) {
+                entries.put(keystoreName, entry);
+            } else {
+                MessageFormat form = new MessageFormat(ResourcesMgr.getString(
+                    "duplicate.keystore.name"));
+                Object[] source = {keystoreName};
+                throw new ParsingException(form.format(source));
+            }
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder s =
+                new StringBuilder("\ndomain ").append(name);
+
+            if (properties != null) {
+                for (Map.Entry<String, String> property :
+                    properties.entrySet()) {
+                    s.append("\n        ").append(property.getKey()).append('=')
+                        .append(property.getValue());
+                }
+            }
+            s.append(" {\n");
+
+            if (entries != null) {
+                for (KeyStoreEntry entry : entries.values()) {
+                    s.append(entry).append("\n");
+                }
+            }
+            s.append("}");
+
+            return s.toString();
+        }
+    }
+
+    /**
+     * Each keystore entry in the keystore domain configuration file is
+     * represented by a KeyStoreEntry object.
+     */
+
+    static class KeyStoreEntry {
+        private final String name;
+        private final Map<String, String> properties;
+
+        KeyStoreEntry(String name, Map<String, String> properties) {
+            this.name = name;
+            this.properties = properties;
+        }
+
+        String getName() {
+            return name;
+        }
+
+        Map<String, String>  getProperties() {
+            return properties;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder s = new StringBuilder("\n    keystore ").append(name);
+            if (properties != null) {
+                for (Map.Entry<String, String> property :
+                    properties.entrySet()) {
+                    s.append("\n        ").append(property.getKey()).append('=')
+                        .append(property.getValue());
+                }
+            }
+            s.append(";");
+
+            return s.toString();
         }
     }
 

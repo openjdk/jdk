@@ -1203,6 +1203,9 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
         if (dead->is_macro()) {
           C->remove_macro_node(dead);
         }
+        if (dead->is_expensive()) {
+          C->remove_expensive_node(dead);
+        }
 
         if (recurse) {
           continue;
