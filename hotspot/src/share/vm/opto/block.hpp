@@ -48,13 +48,12 @@ class Block_Array : public ResourceObj {
   friend class VMStructs;
   uint _size;                   // allocated size, as opposed to formal limit
   debug_only(uint _limit;)      // limit to formal domain
+  Arena *_arena;                // Arena to allocate in
 protected:
   Block **_blocks;
   void grow( uint i );          // Grow array node to fit
 
 public:
-  Arena *_arena;                // Arena to allocate in
-
   Block_Array(Arena *a) : _arena(a), _size(OptoBlockListSize) {
     debug_only(_limit=0);
     _blocks = NEW_ARENA_ARRAY( a, Block *, OptoBlockListSize );
@@ -77,7 +76,7 @@ class Block_List : public Block_Array {
 public:
   uint _cnt;
   Block_List() : Block_Array(Thread::current()->resource_area()), _cnt(0) {}
-  void push( Block *b ) { map(_cnt++,b); }
+  void push( Block *b ) {  map(_cnt++,b); }
   Block *pop() { return _blocks[--_cnt]; }
   Block *rpop() { Block *b = _blocks[0]; _blocks[0]=_blocks[--_cnt]; return b;}
   void remove( uint i );
@@ -284,15 +283,15 @@ class Block : public CFGElement {
   // helper function that adds caller save registers to MachProjNode
   void add_call_kills(MachProjNode *proj, RegMask& regs, const char* save_policy, bool exclude_soe);
   // Schedule a call next in the block
-  uint sched_call(Matcher &matcher, Block_Array &bbs, uint node_cnt, Node_List &worklist, GrowableArray<int> &ready_cnt, MachCallNode *mcall, VectorSet &next_call);
+  uint sched_call(Matcher &matcher, PhaseCFG* cfg, uint node_cnt, Node_List &worklist, GrowableArray<int> &ready_cnt, MachCallNode *mcall, VectorSet &next_call);
 
   // Perform basic-block local scheduling
   Node *select(PhaseCFG *cfg, Node_List &worklist, GrowableArray<int> &ready_cnt, VectorSet &next_call, uint sched_slot);
-  void set_next_call( Node *n, VectorSet &next_call, Block_Array &bbs );
-  void needed_for_next_call(Node *this_call, VectorSet &next_call, Block_Array &bbs);
+  void set_next_call( Node *n, VectorSet &next_call, PhaseCFG* cfg);
+  void needed_for_next_call(Node *this_call, VectorSet &next_call, PhaseCFG* cfg);
   bool schedule_local(PhaseCFG *cfg, Matcher &m, GrowableArray<int> &ready_cnt, VectorSet &next_call);
   // Cleanup if any code lands between a Call and his Catch
-  void call_catch_cleanup(Block_Array &bbs, Compile *C);
+  void call_catch_cleanup(PhaseCFG* cfg, Compile *C);
   // Detect implicit-null-check opportunities.  Basically, find NULL checks
   // with suitable memory ops nearby.  Use the memory op to do the NULL check.
   // I can generate a memory op if there is not one nearby.
@@ -331,15 +330,15 @@ class Block : public CFGElement {
 
   // Use frequency calculations and code shape to predict if the block
   // is uncommon.
-  bool is_uncommon( Block_Array &bbs ) const;
+  bool is_uncommon(PhaseCFG* cfg) const;
 
 #ifndef PRODUCT
   // Debugging print of basic block
   void dump_bidx(const Block* orig, outputStream* st = tty) const;
-  void dump_pred(const Block_Array *bbs, Block* orig, outputStream* st = tty) const;
-  void dump_head( const Block_Array *bbs, outputStream* st = tty ) const;
+  void dump_pred(const PhaseCFG* cfg, Block* orig, outputStream* st = tty) const;
+  void dump_head(const PhaseCFG* cfg, outputStream* st = tty) const;
   void dump() const;
-  void dump( const Block_Array *bbs ) const;
+  void dump(const PhaseCFG* cfg) const;
 #endif
 };
 
@@ -349,6 +348,12 @@ class Block : public CFGElement {
 class PhaseCFG : public Phase {
   friend class VMStructs;
  private:
+  // Arena for the blocks to be stored in
+  Arena* _block_arena;
+
+  // Map nodes to owning basic block
+  Block_Array _node_to_block_mapping;
+
   // Build a proper looking cfg.  Return count of basic blocks
   uint build_cfg();
 
@@ -371,21 +376,41 @@ class PhaseCFG : public Phase {
 
   Block* insert_anti_dependences(Block* LCA, Node* load, bool verify = false);
   void verify_anti_dependences(Block* LCA, Node* load) {
-    assert(LCA == _bbs[load->_idx], "should already be scheduled");
+    assert(LCA == get_block_for_node(load), "should already be scheduled");
     insert_anti_dependences(LCA, load, true);
   }
 
  public:
-  PhaseCFG( Arena *a, RootNode *r, Matcher &m );
+  PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher);
 
   uint _num_blocks;             // Count of basic blocks
   Block_List _blocks;           // List of basic blocks
   RootNode *_root;              // Root of whole program
-  Block_Array _bbs;             // Map Nodes to owning Basic Block
   Block *_broot;                // Basic block of root
   uint _rpo_ctr;
   CFGLoop* _root_loop;
   float _outer_loop_freq;       // Outmost loop frequency
+
+
+  // set which block this node should reside in
+  void map_node_to_block(const Node* node, Block* block) {
+    _node_to_block_mapping.map(node->_idx, block);
+  }
+
+  // removes the mapping from a node to a block
+  void unmap_node_from_block(const Node* node) {
+    _node_to_block_mapping.map(node->_idx, NULL);
+  }
+
+  // get the block in which this node resides
+  Block* get_block_for_node(const Node* node) const {
+    return _node_to_block_mapping[node->_idx];
+  }
+
+  // does this node reside in a block; return true
+  bool has_block(const Node* node) const {
+    return (_node_to_block_mapping.lookup(node->_idx) != NULL);
+  }
 
   // Per node latency estimation, valid only during GCM
   GrowableArray<uint> *_node_latency;
@@ -405,7 +430,7 @@ class PhaseCFG : public Phase {
   void Estimate_Block_Frequency();
 
   // Global Code Motion.  See Click's PLDI95 paper.  Place Nodes in specific
-  // basic blocks; i.e. _bbs now maps _idx for all Nodes to some Block.
+  // basic blocks; i.e. _node_to_block_mapping now maps _idx for all Nodes to some Block.
   void GlobalCodeMotion( Matcher &m, uint unique, Node_List &proj_list );
 
   // Compute the (backwards) latency of a node from the uses
@@ -454,7 +479,7 @@ class PhaseCFG : public Phase {
   // Insert a node into a block, and update the _bbs
   void insert( Block *b, uint idx, Node *n ) {
     b->_nodes.insert( idx, n );
-    _bbs.map( n->_idx, b );
+    map_node_to_block(n, b);
   }
 
 #ifndef PRODUCT
@@ -543,7 +568,7 @@ class CFGLoop : public CFGElement {
     _child(NULL),
     _exit_prob(1.0f) {}
   CFGLoop* parent() { return _parent; }
-  void push_pred(Block* blk, int i, Block_List& worklist, Block_Array& node_to_blk);
+  void push_pred(Block* blk, int i, Block_List& worklist, PhaseCFG* cfg);
   void add_member(CFGElement *s) { _members.push(s); }
   void add_nested_loop(CFGLoop* cl);
   Block* head() {

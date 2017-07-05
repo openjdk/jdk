@@ -306,6 +306,6 @@ class ExceptionMark {
 // which preserves pre-existing exceptions and does not allow new
 // exceptions.
 
-#define EXCEPTION_MARK                           Thread* THREAD; ExceptionMark __em(THREAD);
+#define EXCEPTION_MARK                           Thread* THREAD = NULL; ExceptionMark __em(THREAD);
 
 #endif // SHARE_VM_UTILITIES_EXCEPTIONS_HPP

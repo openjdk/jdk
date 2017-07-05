@@ -83,9 +83,6 @@ $(foreach i,2 3 4 5 6 7 8 9 10 11 12 13 14 15, $(if $($i),$1_$(strip $($i)))$(NE
 $(call LogSetupMacroEntry,SetupIdlCompilation($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
 $(if $(16),$(error Internal makefile error: Too many arguments to SetupIdlCompilation, please update IdlCompilation.gmk))
 
-# Remove any relative addressing in the paths.
-$1_SRC := $$(abspath $$($1_SRC))
-$1_BIN := $$(abspath $$($1_BIN))
 # Find all existing java files and existing class files.
 $$(eval $$(call MakeDir,$$($1_BIN)))
 $1_SRCS     := $$(shell find $$($1_SRC) -name "*.idl")

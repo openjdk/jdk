@@ -26,7 +26,7 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build SetForceInlineMethodTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI SetForceInlineMethodTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,TestCase$Helper::* SetForceInlineMethodTest
  * @summary testing of WB::testSetForceInlineMethod()
  * @author igor.ignatyev@oracle.com
  */

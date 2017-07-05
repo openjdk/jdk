@@ -26,7 +26,7 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build EnqueueMethodForCompilationTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI EnqueueMethodForCompilationTest
+ * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,TestCase$Helper::* EnqueueMethodForCompilationTest
  * @summary testing of WB::enqueueMethodForCompilation()
  * @author igor.ignatyev@oracle.com
  */
