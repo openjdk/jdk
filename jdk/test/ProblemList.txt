@@ -300,9 +300,6 @@ sun/security/provider/SecureRandom/StrongSecureRandom.java      macosx-10.10
 # 8074580
 sun/security/pkcs11/rsa/TestKeyPairGenerator.java               generic-all
 
-# 8139860
-com/oracle/security/ucrypto/TestRSA.java			solaris-all
-
 ############################################################################
 
 # jdk_sound

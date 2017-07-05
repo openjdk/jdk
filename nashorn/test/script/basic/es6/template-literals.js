@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,26 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8003881
- * @summary tests Lambda expression with a a security manager at top level
- * @modules jdk.compiler
- * @compile -XDignore.symbol.file LambdaAccessControlTest.java LUtils.java
+/**
+ * JDK-8134941: Implement ES6 template literal support
  *
- * @run main/othervm LambdaAccessControlTest
+ * @test
+ * @option --language=es6
  */
 
-public class LambdaAccessControlTest extends LUtils {
-    public static void main(String... args) {
-        System.setSecurityManager(new SecurityManager());
-        JJ<Integer> iii = (new CC())::impl;
-        System.out.printf(">>> %s\n", iii.foo(44));
-        iii = DD::impl;
-        System.out.printf(">>> %s\n", iii.foo(44));
-        return;
-    }
+function tag(template) {
+  return JSON.stringify([template, template.raw, Array.prototype.slice.call(arguments, 1)]);
 }
-/*
- * support classes for the test
- */
-interface II<T> {  Object foo(T x); }
-interface JJ<R extends Number> extends II<R> { }
-class CC {  String impl(int i) { return "impl:"+i; }}
-class DD {  static String impl(int i) { return "impl:"+i; }}
+
+var i;
+print(`a\x62\u0063\n${i = 0, ++i}${++i} $ {\$$\
+${{toString: function(){return '}';}}}
+${`ne${`st`}e`}d`);
+print(tag`a\x62\u0063\n${i = 0, ++i}${++i} $ {\$$\
+${{toString: function(){return '}';}}}
+${`ne${`st`}e`}d`);
+
+if (eval("`\r`") !== "\n" || eval("`\r\n`") !== "\n") {
+  throw "expected LF";
+}
+

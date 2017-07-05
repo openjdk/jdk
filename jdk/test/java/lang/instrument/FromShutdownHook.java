@@ -26,7 +26,6 @@
  * @bug 5050487
  * @summary Check that Instrumentation methods can execute from a runtime
  *          shutdown hook
- * @modules java.instrument
  * @run build FromShutdownHook
  * @run shell MakeJAR.sh basicAgent
  * @run main/othervm -javaagent:basicAgent.jar FromShutdownHook FromShutdownHook

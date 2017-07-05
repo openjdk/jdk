@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,10 @@ import static jdk.nashorn.internal.parser.TokenType.RBRACE;
 import static jdk.nashorn.internal.parser.TokenType.RBRACKET;
 import static jdk.nashorn.internal.parser.TokenType.RPAREN;
 import static jdk.nashorn.internal.parser.TokenType.SEMICOLON;
+import static jdk.nashorn.internal.parser.TokenType.TEMPLATE;
+import static jdk.nashorn.internal.parser.TokenType.TEMPLATE_HEAD;
+import static jdk.nashorn.internal.parser.TokenType.TEMPLATE_MIDDLE;
+import static jdk.nashorn.internal.parser.TokenType.TEMPLATE_TAIL;
 import static jdk.nashorn.internal.parser.TokenType.TERNARY;
 import static jdk.nashorn.internal.parser.TokenType.WHILE;
 
@@ -64,6 +68,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.Namespace;
@@ -1926,9 +1931,9 @@ loop:
      *      Literal
      *      ArrayLiteral
      *      ObjectLiteral
+     *      RegularExpressionLiteral
+     *      TemplateLiteral
      *      ( Expression )
-     *
-     *  See 11.1
      *
      * Parse primary expression.
      * @return Expression node.
@@ -1989,6 +1994,9 @@ loop:
             expect(RPAREN);
 
             return expression;
+        case TEMPLATE:
+        case TEMPLATE_HEAD:
+            return templateLiteral();
 
         default:
             // In this context some operator tokens mark the start of a literal.
@@ -2387,6 +2395,8 @@ loop:
     }
 
     /**
+     * Parse left hand side expression.
+     *
      * LeftHandSideExpression :
      *      NewExpression
      *      CallExpression
@@ -2396,10 +2406,8 @@ loop:
      *      CallExpression Arguments
      *      CallExpression [ Expression ]
      *      CallExpression . IdentifierName
+     *      CallExpression TemplateLiteral
      *
-     * See 11.2
-     *
-     * Parse left hand side expression.
      * @return Expression node.
      */
     private Expression leftHandSideExpression() {
@@ -2426,7 +2434,7 @@ loop:
             callToken = token;
 
             switch (type) {
-            case LPAREN:
+            case LPAREN: {
                 // Get NEW or FUNCTION arguments.
                 final List<Expression> arguments = optimizeList(argumentList());
 
@@ -2434,8 +2442,8 @@ loop:
                 lhs = new CallNode(callLine, callToken, finish, lhs, arguments, false);
 
                 break;
-
-            case LBRACKET:
+            }
+            case LBRACKET: {
                 next();
 
                 // Get array index.
@@ -2447,8 +2455,8 @@ loop:
                 lhs = new IndexNode(callToken, finish, lhs, rhs);
 
                 break;
-
-            case PERIOD:
+            }
+            case PERIOD: {
                 next();
 
                 final IdentNode property = getIdentifierName();
@@ -2457,7 +2465,16 @@ loop:
                 lhs = new AccessNode(callToken, finish, lhs, property.getName());
 
                 break;
+            }
+            case TEMPLATE:
+            case TEMPLATE_HEAD: {
+                // tagged template literal
+                final List<Expression> arguments = templateLiteralArgumentList();
 
+                lhs = new CallNode(callLine, callToken, finish, lhs, arguments, false);
+
+                break;
+            }
             default:
                 break loop;
             }
@@ -2516,16 +2533,16 @@ loop:
     }
 
     /**
+     * Parse member expression.
+     *
      * MemberExpression :
      *      PrimaryExpression
      *      FunctionExpression
      *      MemberExpression [ Expression ]
      *      MemberExpression . IdentifierName
+     *      MemberExpression TemplateLiteral
      *      new MemberExpression Arguments
      *
-     * See 11.2
-     *
-     * Parse member expression.
      * @return Expression node.
      */
     private Expression memberExpression() {
@@ -2579,6 +2596,16 @@ loop:
 
                 // Create property access node.
                 lhs = new AccessNode(callToken, finish, lhs, property.getName());
+
+                break;
+            }
+            case TEMPLATE:
+            case TEMPLATE_HEAD: {
+                // tagged template literal
+                final int callLine = line;
+                final List<Expression> arguments = templateLiteralArgumentList();
+
+                lhs = new CallNode(callLine, callToken, finish, lhs, arguments, false);
 
                 break;
             }
@@ -3035,6 +3062,20 @@ loop:
         final ParserState parserState = (ParserState)data.getEndParserState();
         assert parserState != null;
 
+        if (k < stream.last() && start < parserState.position && parserState.position <= Token.descPosition(stream.get(stream.last()))) {
+            // RBRACE is already in the token stream, so fast forward to it
+            for (; k < stream.last(); k++) {
+                long nextToken = stream.get(k + 1);
+                if (Token.descPosition(nextToken) == parserState.position && Token.descType(nextToken) == RBRACE) {
+                    token = stream.get(k);
+                    type = Token.descType(token);
+                    next();
+                    assert type == RBRACE && start == parserState.position;
+                    return true;
+                }
+            }
+        }
+
         stream.reset();
         lexer = parserState.createLexer(source, lexer, stream, scripting && !env._no_syntax_extensions, env._es6);
         line = parserState.line;
@@ -3423,6 +3464,79 @@ loop:
             }
             break;
         }
+    }
+
+    /**
+     * Parse untagged template literal as string concatenation.
+     */
+    private Expression templateLiteral() {
+        assert type == TEMPLATE || type == TEMPLATE_HEAD;
+        final boolean noSubstitutionTemplate = type == TEMPLATE;
+        long lastLiteralToken = token;
+        LiteralNode<?> literal = getLiteral();
+        if (noSubstitutionTemplate) {
+            return literal;
+        }
+
+        Expression concat = literal;
+        TokenType lastLiteralType;
+        do {
+            Expression expression = expression();
+            if (type != TEMPLATE_MIDDLE && type != TEMPLATE_TAIL) {
+                throw error(AbstractParser.message("unterminated.template.expression"), token);
+            }
+            concat = new BinaryNode(Token.recast(lastLiteralToken, TokenType.ADD), concat, expression);
+            lastLiteralType = type;
+            lastLiteralToken = token;
+            literal = getLiteral();
+            concat = new BinaryNode(Token.recast(lastLiteralToken, TokenType.ADD), concat, literal);
+        } while (lastLiteralType == TEMPLATE_MIDDLE);
+        return concat;
+    }
+
+    /**
+     * Parse tagged template literal as argument list.
+     * @return argument list for a tag function call (template object, ...substitutions)
+     */
+    private List<Expression> templateLiteralArgumentList() {
+        assert type == TEMPLATE || type == TEMPLATE_HEAD;
+        final ArrayList<Expression> argumentList = new ArrayList<>();
+        final ArrayList<Expression> rawStrings = new ArrayList<>();
+        final ArrayList<Expression> cookedStrings = new ArrayList<>();
+        argumentList.add(null); // filled at the end
+
+        final long templateToken = token;
+        final boolean hasSubstitutions = type == TEMPLATE_HEAD;
+        addTemplateLiteralString(rawStrings, cookedStrings);
+
+        if (hasSubstitutions) {
+            TokenType lastLiteralType;
+            do {
+                Expression expression = expression();
+                if (type != TEMPLATE_MIDDLE && type != TEMPLATE_TAIL) {
+                    throw error(AbstractParser.message("unterminated.template.expression"), token);
+                }
+                argumentList.add(expression);
+
+                lastLiteralType = type;
+                addTemplateLiteralString(rawStrings, cookedStrings);
+            } while (lastLiteralType == TEMPLATE_MIDDLE);
+        }
+
+        final LiteralNode<Expression[]> rawStringArray = LiteralNode.newInstance(templateToken, finish, rawStrings);
+        final LiteralNode<Expression[]> cookedStringArray = LiteralNode.newInstance(templateToken, finish, cookedStrings);
+        final RuntimeNode templateObject = new RuntimeNode(templateToken, finish, RuntimeNode.Request.GET_TEMPLATE_OBJECT, rawStringArray, cookedStringArray);
+        argumentList.set(0, templateObject);
+        return optimizeList(argumentList);
+    }
+
+    private void addTemplateLiteralString(final ArrayList<Expression> rawStrings, final ArrayList<Expression> cookedStrings) {
+        final long stringToken = token;
+        final String rawString = lexer.valueOfRawString(stringToken);
+        final String cookedString = (String) getValue();
+        next();
+        rawStrings.add(LiteralNode.newInstance(stringToken, finish, rawString));
+        cookedStrings.add(LiteralNode.newInstance(stringToken, finish, cookedString));
     }
 
     @Override

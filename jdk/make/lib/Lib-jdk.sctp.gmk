@@ -49,10 +49,9 @@ ifeq ($(OPENJDK_TARGET_OS_TYPE), unix)
         MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libsctp/mapfile-vers, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
-        LDFLAGS_SUFFIX_linux := -lpthread $(LIBDL) -ljava -ljvm, \
-        LDFLAGS_SUFFIX_unix := -lnio -lnet, \
-        LDFLAGS_SUFFIX_solaris := -lsocket -ljava -ljvm -lc, \
-        LDFLAGS_SUFFIX_macosx := -ljava -ljvm, \
+        LIBS_unix := -lnio -lnet -ljava -ljvm, \
+        LIBS_linux := -lpthread $(LIBDL), \
+        LIBS_solaris := -lsocket -lc, \
         OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libsctp, \
         DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
