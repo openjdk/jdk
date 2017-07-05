@@ -3170,6 +3170,7 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
       break;
 
     case vmIntrinsics::_getClass      :
+    case vmIntrinsics::_isInstance    :
       if (!InlineClassNatives) return false;
       preserves_state = true;
       break;
@@ -3191,13 +3192,6 @@ bool GraphBuilder::try_inline_intrinsics(ciMethod* callee) {
     case vmIntrinsics::_dpow          : // fall through
       if (!InlineMathNatives) return false;
       cantrap = false;
-      preserves_state = true;
-      break;
-
-    // sun/misc/AtomicLong.attemptUpdate
-    case vmIntrinsics::_attemptUpdate :
-      if (!VM_Version::supports_cx8()) return false;
-      if (!InlineAtomicLong) return false;
       preserves_state = true;
       break;
 

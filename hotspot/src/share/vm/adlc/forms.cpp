@@ -261,7 +261,6 @@ Form::DataType Form::is_load_from_memory(const char *opType) const {
   if( strcmp(opType,"LoadL")==0 )  return Form::idealL;
   if( strcmp(opType,"LoadL_unaligned")==0 )  return Form::idealL;
   if( strcmp(opType,"LoadPLocked")==0 )  return Form::idealP;
-  if( strcmp(opType,"LoadLLocked")==0 )  return Form::idealL;
   if( strcmp(opType,"LoadP")==0 )  return Form::idealP;
   if( strcmp(opType,"LoadN")==0 )  return Form::idealN;
   if( strcmp(opType,"LoadRange")==0 )  return Form::idealI;
