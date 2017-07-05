@@ -3109,21 +3109,21 @@ ConcurrentMarkSweepGeneration::prepare_for_verify() {
 }
 
 void
-ConcurrentMarkSweepGeneration::verify(bool allow_dirty /* ignored */) {
+ConcurrentMarkSweepGeneration::verify() {
   // Locks are normally acquired/released in gc_prologue/gc_epilogue, but those
   // are not called when the heap is verified during universe initialization and
   // at vm shutdown.
   if (freelistLock()->owned_by_self()) {
-    cmsSpace()->verify(false /* ignored */);
+    cmsSpace()->verify();
   } else {
     MutexLockerEx fll(freelistLock(), Mutex::_no_safepoint_check_flag);
-    cmsSpace()->verify(false /* ignored */);
+    cmsSpace()->verify();
   }
 }
 
-void CMSCollector::verify(bool allow_dirty /* ignored */) {
-  _cmsGen->verify(allow_dirty);
-  _permGen->verify(allow_dirty);
+void CMSCollector::verify() {
+  _cmsGen->verify();
+  _permGen->verify();
 }
 
 #ifndef PRODUCT

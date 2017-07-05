@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -816,7 +816,8 @@ class SocketChannelImpl
             // channel from using the old fd, which might be recycled in the
             // meantime and allocated to an entirely different channel.
             //
-            nd.preClose(fd);
+            if (state != ST_KILLED)
+                nd.preClose(fd);
 
             // Signal native threads, if needed.  If a target thread is not
             // currently blocked in an I/O operation then no harm is done since

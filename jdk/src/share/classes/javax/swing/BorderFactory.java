@@ -371,7 +371,7 @@ public class BorderFactory
     /**
      * Creates a new titled border with the specified title,
      * the default border type (determined by the current look and feel),
-     * the default text position (sitting on the top line),
+     * the default text position (determined by the current look and feel),
      * the default justification (leading), and the default
      * font and text color (determined by the current look and feel).
      *
@@ -385,7 +385,7 @@ public class BorderFactory
     /**
      * Creates a new titled border with an empty title,
      * the specified border object,
-     * the default text position (sitting on the top line),
+     * the default text position (determined by the current look and feel),
      * the default justification (leading), and the default
      * font and text color (determined by the current look and feel).
      *
@@ -400,7 +400,7 @@ public class BorderFactory
 
     /**
      * Adds a title to an existing border,
-     * with default positioning (sitting on the top line),
+     * with default positioning (determined by the current look and feel),
      * default justification (leading) and the default
      * font and text color (determined by the current look and feel).
      *
@@ -439,7 +439,8 @@ public class BorderFactory
      *<li><code>TitledBorder.ABOVE_BOTTOM</code>
      *<li><code>TitledBorder.BOTTOM</code> (sitting on the bottom line)
      *<li><code>TitledBorder.BELOW_BOTTOM</code>
-     *<li><code>TitledBorder.DEFAULT_POSITION</code> (top)
+     *<li><code>TitledBorder.DEFAULT_POSITION</code> (the title position
+     *  is determined by the current look and feel)
      *</ul>
      * @return the <code>TitledBorder</code> object
      */
@@ -477,7 +478,8 @@ public class BorderFactory
      *<li><code>TitledBorder.ABOVE_BOTTOM</code>
      *<li><code>TitledBorder.BOTTOM</code> (sitting on the bottom line)
      *<li><code>TitledBorder.BELOW_BOTTOM</code>
-     *<li><code>TitledBorder.DEFAULT_POSITION</code> (top)
+     *<li><code>TitledBorder.DEFAULT_POSITION</code> (the title position
+     *  is determined by the current look and feel)
      *</ul>
      * @param titleFont           a Font object specifying the title font
      * @return the TitledBorder object
@@ -516,7 +518,8 @@ public class BorderFactory
      *<li><code>TitledBorder.ABOVE_BOTTOM</code>
      *<li><code>TitledBorder.BOTTOM</code> (sitting on the bottom line)
      *<li><code>TitledBorder.BELOW_BOTTOM</code>
-     *<li><code>TitledBorder.DEFAULT_POSITION</code> (top)
+     *<li><code>TitledBorder.DEFAULT_POSITION</code> (the title position
+     *  is determined by the current look and feel)
      *</ul>
      * @param titleFont   a <code>Font</code> object specifying the title font
      * @param titleColor  a <code>Color</code> object specifying the title color

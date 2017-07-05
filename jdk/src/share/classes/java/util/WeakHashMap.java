@@ -186,7 +186,7 @@ public class WeakHashMap<K,V>
 
     @SuppressWarnings("unchecked")
     private Entry<K,V>[] newTable(int n) {
-        return (Entry<K,V>[]) new Entry[n];
+        return (Entry<K,V>[]) new Entry<?,?>[n];
     }
 
     /**
