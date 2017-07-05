@@ -66,9 +66,6 @@ final class ResourcePoolConfiguration {
 
         md.version().ifPresent(builder::version);
         md.mainClass().ifPresent(builder::mainClass);
-        md.osName().ifPresent(builder::osName);
-        md.osArch().ifPresent(builder::osArch);
-        md.osVersion().ifPresent(builder::osVersion);
 
         return builder.build();
     }

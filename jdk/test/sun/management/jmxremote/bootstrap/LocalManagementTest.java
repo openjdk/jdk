@@ -32,13 +32,17 @@ import jdk.testlibrary.Utils;
 
 /**
  * @test
- * @library /lib/testlibrary
  * @bug 5016507 6173612 6319776 6342019 6484550 8004926
  * @summary Start a managed VM and test that a management tool can connect
  *          without connection or username/password details.
  *          TestManager will attempt a connection to the address obtained from
  *          both agent properties and jvmstat buffer.
- * @modules jdk.management.agent/jdk.internal.agent
+ *
+ * @library /lib/testlibrary
+ * @modules java.management
+ *          jdk.attach
+ *          jdk.management.agent/jdk.internal.agent
+ *
  * @build jdk.testlibrary.* TestManager TestApplication
  * @run main/othervm/timeout=300 LocalManagementTest
  */

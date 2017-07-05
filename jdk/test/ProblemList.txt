@@ -180,8 +180,6 @@ java/nio/channels/Selector/Wakeup.java                          6963118 windows-
 
 java/nio/channels/DatagramChannel/ChangingAddress.java          7141822 macosx-all
 
-java/nio/channels/Selector/OutOfBand.java                       7132677 macosx-all
-
 java/nio/file/WatchService/Basic.java                           7158947 solaris-all Solaris 11
 java/nio/file/WatchService/MayFlies.java                        7158947 solaris-all Solaris 11
 java/nio/file/WatchService/LotsOfEvents.java                    7158947 solaris-all Solaris 11
@@ -215,9 +213,8 @@ sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      8026393 generic-
 javax/net/ssl/DTLS/PacketLossRetransmission.java                8169086 macosx-x64
 javax/net/ssl/DTLS/RespondToRetransmit.java                     8169086 macosx-x64
 
-sun/security/krb5/auto/Basic.java                               8176296 generic-all
-
 sun/security/ssl/X509KeyManager/PreferredKey.java               8176354 generic-all
+
 ############################################################################
 
 # jdk_sound
@@ -292,6 +289,7 @@ com/sun/jdi/sde/SourceDebugExtensionTest.java                   8158066 windows-
 
 java/util/BitSet/BitSetStreamTest.java                          8079538 generic-all
 
+jdk/internal/util/jar/TestVersionedStream.java                  8177640 windows-all
 
 ############################################################################
 

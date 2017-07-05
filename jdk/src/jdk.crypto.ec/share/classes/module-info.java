@@ -26,6 +26,7 @@
 /**
  * The SunEC security provider.
  *
+ * @moduleGraph
  * @since 9
  */
 module jdk.crypto.ec {
