@@ -35,6 +35,8 @@
 #include "ClassDefinitionTables.h"
 #include "LESwaps.h"
 
+U_NAMESPACE_BEGIN
+
 le_int32 ClassDefinitionTable::getGlyphClass(LEGlyphID glyphID) const
 {
     switch(SWAPW(classFormat)) {
@@ -139,3 +141,5 @@ le_bool ClassDefFormat2Table::hasGlyphClass(le_int32 glyphClass) const
 
     return FALSE;
 }
+
+U_NAMESPACE_END

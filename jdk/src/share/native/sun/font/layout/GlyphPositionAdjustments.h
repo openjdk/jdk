@@ -32,16 +32,23 @@
 #ifndef __GLYPHPOSITIONADJUSTMENTS_H
 #define __GLYPHPOSITIONADJUSTMENTS_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "OpenTypeTables.h"
+
+U_NAMESPACE_BEGIN
 
 class LEGlyphStorage;
 class LEFontInstance;
 
-class GlyphPositionAdjustments
+class GlyphPositionAdjustments : public UMemory
 {
 private:
-    class Adjustment {
+    class Adjustment : public UMemory {
     public:
 
         inline Adjustment();
@@ -78,7 +85,7 @@ private:
         // allow copying of this class because all of its fields are simple types
     };
 
-    class EntryExitPoint
+    class EntryExitPoint : public UMemory
     {
     public:
         inline EntryExitPoint();
@@ -144,14 +151,11 @@ public:
     inline void adjustXAdvance(le_int32 index, float xAdjustment);
     inline void adjustYAdvance(le_int32 index, float yAdjustment);
 
-    void setEntryPoint(le_int32 index, LEPoint &newEntryPoint,
-        le_bool baselineIsLogicalEnd);
-    void setExitPoint(le_int32 index, LEPoint &newExitPoint,
-        le_bool baselineIsLogicalEnd);
+    void setEntryPoint(le_int32 index, LEPoint &newEntryPoint, le_bool baselineIsLogicalEnd);
+    void setExitPoint(le_int32 index, LEPoint &newExitPoint, le_bool baselineIsLogicalEnd);
     void setCursiveGlyph(le_int32 index, le_bool baselineIsLogicalEnd);
 
-    void applyCursiveAdjustments(LEGlyphStorage &glyphStorage, le_bool rightToLeft,
-        const LEFontInstance *fontInstance);
+    void applyCursiveAdjustments(LEGlyphStorage &glyphStorage, le_bool rightToLeft, const LEFontInstance *fontInstance);
 };
 
 inline GlyphPositionAdjustments::Adjustment::Adjustment()
@@ -160,10 +164,8 @@ inline GlyphPositionAdjustments::Adjustment::Adjustment()
     // nothing else to do!
 }
 
-inline GlyphPositionAdjustments::Adjustment::Adjustment(float xPlace, float yPlace,
-    float xAdv, float yAdv, le_int32 baseOff)
-  : xPlacement(xPlace), yPlacement(yPlace), xAdvance(xAdv), yAdvance(yAdv),
-    baseOffset(baseOff)
+inline GlyphPositionAdjustments::Adjustment::Adjustment(float xPlace, float yPlace, float xAdv, float yAdv, le_int32 baseOff)
+  : xPlacement(xPlace), yPlacement(yPlace), xAdvance(xAdv), yAdvance(yAdv), baseOffset(baseOff)
 {
     // nothing else to do!
 }
@@ -246,7 +248,7 @@ inline void GlyphPositionAdjustments::Adjustment::adjustYAdvance(float yAdjustme
 inline GlyphPositionAdjustments::EntryExitPoint::EntryExitPoint()
     : fFlags(0)
 {
-    fEntryPoint.fX = fEntryPoint.fY = fExitPoint.fX = fEntryPoint.fY = 0;
+    fEntryPoint.fX = fEntryPoint.fY = fExitPoint.fX = fExitPoint.fY = 0;
 }
 
 inline GlyphPositionAdjustments::EntryExitPoint::~EntryExitPoint()
@@ -264,12 +266,10 @@ inline le_bool GlyphPositionAdjustments::EntryExitPoint::baselineIsLogicalEnd() 
     return (fFlags & EEF_BASELINE_IS_LOGICAL_END) != 0;
 }
 
-inline void GlyphPositionAdjustments::EntryExitPoint::setEntryPoint(
-    LEPoint &newEntryPoint, le_bool baselineIsLogicalEnd)
+inline void GlyphPositionAdjustments::EntryExitPoint::setEntryPoint(LEPoint &newEntryPoint, le_bool baselineIsLogicalEnd)
 {
     if (baselineIsLogicalEnd) {
-        fFlags |= (EEF_HAS_ENTRY_POINT | EEF_IS_CURSIVE_GLYPH |
-        EEF_BASELINE_IS_LOGICAL_END);
+        fFlags |= (EEF_HAS_ENTRY_POINT | EEF_IS_CURSIVE_GLYPH | EEF_BASELINE_IS_LOGICAL_END);
     } else {
         fFlags |= (EEF_HAS_ENTRY_POINT | EEF_IS_CURSIVE_GLYPH);
     }
@@ -277,12 +277,10 @@ inline void GlyphPositionAdjustments::EntryExitPoint::setEntryPoint(
     fEntryPoint = newEntryPoint;
 }
 
-inline void GlyphPositionAdjustments::EntryExitPoint::setExitPoint(
-    LEPoint &newExitPoint, le_bool baselineIsLogicalEnd)
+inline void GlyphPositionAdjustments::EntryExitPoint::setExitPoint(LEPoint &newExitPoint, le_bool baselineIsLogicalEnd)
 {
     if (baselineIsLogicalEnd) {
-        fFlags |= (EEF_HAS_EXIT_POINT | EEF_IS_CURSIVE_GLYPH |
-            EEF_BASELINE_IS_LOGICAL_END);
+        fFlags |= (EEF_HAS_EXIT_POINT | EEF_IS_CURSIVE_GLYPH | EEF_BASELINE_IS_LOGICAL_END);
     } else {
         fFlags |= (EEF_HAS_EXIT_POINT | EEF_IS_CURSIVE_GLYPH);
     }
@@ -290,8 +288,7 @@ inline void GlyphPositionAdjustments::EntryExitPoint::setExitPoint(
     fExitPoint  = newExitPoint;
 }
 
-inline void GlyphPositionAdjustments::EntryExitPoint::setCursiveGlyph(
-    le_bool baselineIsLogicalEnd)
+inline void GlyphPositionAdjustments::EntryExitPoint::setCursiveGlyph(le_bool baselineIsLogicalEnd)
 {
     if (baselineIsLogicalEnd) {
         fFlags |= (EEF_IS_CURSIVE_GLYPH | EEF_BASELINE_IS_LOGICAL_END);
@@ -386,4 +383,5 @@ inline le_bool GlyphPositionAdjustments::hasCursiveGlyphs() const
     return fEntryExitPoints != NULL;
 }
 
+U_NAMESPACE_END
 #endif

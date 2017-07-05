@@ -33,7 +33,7 @@ import java.awt.event.MouseEvent;
 
 import java.io.IOException;
 
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 import sun.misc.Unsafe;
 
@@ -43,8 +43,8 @@ import sun.misc.Unsafe;
  * @since 1.5
  */
 class XDnDDropTargetProtocol extends XDropTargetProtocol {
-    private static final Logger logger =
-        Logger.getLogger("sun.awt.X11.xembed.xdnd.XDnDDropTargetProtocol");
+    private static final PlatformLogger logger =
+        PlatformLogger.getLogger("sun.awt.X11.xembed.xdnd.XDnDDropTargetProtocol");
 
     private static final Unsafe unsafe = XlibWrapper.unsafe;
 
@@ -999,7 +999,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
             if (sourceFormats != null && sourceFormats.length > 3) {
                 data1 |= XDnDConstants.XDND_DATA_TYPES_BIT;
             }
-            if (logger.isLoggable(Level.FINEST)) {
+            if (logger.isLoggable(PlatformLogger.FINEST)) {
                 logger.finest("         "
                               + " entryVersion=" + version
                               + " sourceProtocolVersion=" +
@@ -1058,7 +1058,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
     public boolean forwardEventToEmbedded(long embedded, long ctxt,
                                           int eventID) {
-        if (logger.isLoggable(Level.FINEST)) {
+        if (logger.isLoggable(PlatformLogger.FINEST)) {
             logger.finest("        ctxt=" + ctxt +
                           " type=" + (ctxt != 0 ?
                                       getMessageType(new
@@ -1086,7 +1086,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                 long data3 = Native.getLong(ctxt + size + 2 * Native.getLongSize());
                 long data4 = Native.getLong(ctxt + size + 3 * Native.getLongSize());
 
-                if (logger.isLoggable(Level.FINEST)) {
+                if (logger.isLoggable(PlatformLogger.FINEST)) {
                     logger.finest("         1 "
                                   + " embedded=" + embedded
                                   + " source=" + xclient.get_data(0)
@@ -1120,7 +1120,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
 
                                 if (XToolkit.saved_error != null &&
                                     XToolkit.saved_error.get_error_code() != XConstants.Success) {
-                                    if (logger.isLoggable(Level.WARNING)) {
+                                    if (logger.isLoggable(PlatformLogger.WARNING)) {
                                         logger.warning("Cannot set XdndTypeList on the proxy window");
                                     }
                                 }
@@ -1128,7 +1128,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                                 XToolkit.awtUnlock();
                             }
                         } else {
-                            if (logger.isLoggable(Level.WARNING)) {
+                            if (logger.isLoggable(PlatformLogger.WARNING)) {
                                 logger.warning("Cannot read XdndTypeList from the source window");
                             }
                         }
@@ -1143,7 +1143,7 @@ class XDnDDropTargetProtocol extends XDropTargetProtocol {
                 overXEmbedClient = true;
             }
 
-            if (logger.isLoggable(Level.FINEST)) {
+            if (logger.isLoggable(PlatformLogger.FINEST)) {
                 logger.finest("         2 "
                               + " embedded=" + embedded
                               + " xclient=" + xclient);

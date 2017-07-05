@@ -25,6 +25,7 @@
 
 #include <awt.h>
 #include <sun_awt_Win32GraphicsEnvironment.h>
+#include <sun_awt_Win32FontManager.h>
 #include "awt_Canvas.h"
 #include "awt_Win32GraphicsDevice.h"
 #include "Devices.h"
@@ -173,14 +174,14 @@ Java_sun_awt_Win32GraphicsEnvironment_getDefaultScreen(JNIEnv *env,
 }
 
 /*
- * Class:     sun_awt_Win32GraphicsEnvironment
+ * Class:     sun_awt_Win32FontManager
  * Method:    registerFontWithPlatform
  * Signature: (Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL
-Java_sun_awt_Win32GraphicsEnvironment_registerFontWithPlatform(JNIEnv *env,
-                                                              jclass cl,
-                                                              jstring fontName)
+Java_sun_awt_Win32FontManager_registerFontWithPlatform(JNIEnv *env,
+                                                       jclass cl,
+                                                       jstring fontName)
 {
     LPTSTR file = (LPTSTR)JNU_GetStringPlatformChars(env, fontName, JNI_FALSE);
     if (file) {
@@ -191,16 +192,16 @@ Java_sun_awt_Win32GraphicsEnvironment_registerFontWithPlatform(JNIEnv *env,
 
 
 /*
- * Class:     sun_awt_Win32GraphicsEnvironment
+ * Class:     sun_awt_Win32FontManagerEnvironment
  * Method:    deRegisterFontWithPlatform
  * Signature: (Ljava/lang/String;)V
  *
  * This method intended for future use.
  */
 JNIEXPORT void JNICALL
-Java_sun_awt_Win32GraphicsEnvironment_deRegisterFontWithPlatform(JNIEnv *env,
-                                                              jclass cl,
-                                                              jstring fontName)
+Java_sun_awt_Win32FontManager_deRegisterFontWithPlatform(JNIEnv *env,
+                                                         jclass cl,
+                                                         jstring fontName)
 {
     LPTSTR file = (LPTSTR)JNU_GetStringPlatformChars(env, fontName, JNI_FALSE);
     if (file) {
@@ -223,7 +224,7 @@ Java_sun_awt_Win32GraphicsEnvironment_deRegisterFontWithPlatform(JNIEnv *env,
 
 
 JNIEXPORT jstring JNICALL
-Java_sun_awt_Win32GraphicsEnvironment_getEUDCFontFile(JNIEnv *env, jclass cl) {
+Java_sun_awt_Win32FontManager_getEUDCFontFile(JNIEnv *env, jclass cl) {
     int    rc;
     HKEY   key;
     DWORD  type;

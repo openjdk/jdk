@@ -2032,6 +2032,23 @@ void Matcher::find_shared( Node *n ) {
         n->del_req(3);
         break;
       }
+      case Op_StrEquals: {
+        Node *pair1 = new (C, 3) BinaryNode(n->in(2),n->in(3));
+        n->set_req(2,pair1);
+        n->set_req(3,n->in(4));
+        n->del_req(4);
+        break;
+      }
+      case Op_StrComp:
+      case Op_StrIndexOf: {
+        Node *pair1 = new (C, 3) BinaryNode(n->in(2),n->in(3));
+        n->set_req(2,pair1);
+        Node *pair2 = new (C, 3) BinaryNode(n->in(4),n->in(5));
+        n->set_req(3,pair2);
+        n->del_req(5);
+        n->del_req(4);
+        break;
+      }
       default:
         break;
       }

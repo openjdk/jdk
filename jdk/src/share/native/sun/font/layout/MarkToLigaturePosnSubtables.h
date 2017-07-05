@@ -32,12 +32,19 @@
 #ifndef __MARKTOLIGATUREPOSITIONINGSUBTABLES_H
 #define __MARKTOLIGATUREPOSITIONINGSUBTABLES_H
 
+/**
+ * \file
+ * \internal
+ */
+
 #include "LETypes.h"
 #include "LEFontInstance.h"
 #include "OpenTypeTables.h"
 #include "GlyphPositioningTables.h"
 #include "AttachmentPosnSubtables.h"
 #include "GlyphIterator.h"
+
+U_NAMESPACE_BEGIN
 
 struct MarkToLigaturePositioningSubtable : AttachmentPositioningSubtable
 {
@@ -62,4 +69,6 @@ struct LigatureArray
     Offset ligatureAttachTableOffsetArray[ANY_NUMBER];
 };
 
+U_NAMESPACE_END
 #endif
+

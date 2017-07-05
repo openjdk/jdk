@@ -480,12 +480,14 @@ void ParNewGenTask::work(int i) {
 
   par_scan_state.start_strong_roots();
   gch->gen_process_strong_roots(_gen->level(),
-                                true, // Process younger gens, if any,
-                                      // as strong roots.
-                                false,// not collecting perm generation.
+                                true,  // Process younger gens, if any,
+                                       // as strong roots.
+                                false, // no scope; this is parallel code
+                                false, // not collecting perm generation.
                                 SharedHeap::SO_AllClasses,
-                                &par_scan_state.older_gen_closure(),
-                                &par_scan_state.to_space_root_closure());
+                                &par_scan_state.to_space_root_closure(),
+                                true,   // walk *all* scavengable nmethods
+                                &par_scan_state.older_gen_closure());
   par_scan_state.end_strong_roots();
 
   // "evacuate followers".
@@ -799,15 +801,16 @@ void ParNewGeneration::collect(bool   full,
   ParNewGenTask tsk(this, _next_gen, reserved().end(), &thread_state_set);
   int n_workers = workers->total_workers();
   gch->set_par_threads(n_workers);
-  gch->change_strong_roots_parity();
   gch->rem_set()->prepare_for_younger_refs_iterate(true);
   // It turns out that even when we're using 1 thread, doing the work in a
   // separate thread causes wide variance in run times.  We can't help this
   // in the multi-threaded case, but we special-case n=1 here to get
   // repeatable measurements of the 1-thread overhead of the parallel code.
   if (n_workers > 1) {
+    GenCollectedHeap::StrongRootsScope srs(gch);
     workers->run_task(&tsk);
   } else {
+    GenCollectedHeap::StrongRootsScope srs(gch);
     tsk.work(0);
   }
   thread_state_set.reset();

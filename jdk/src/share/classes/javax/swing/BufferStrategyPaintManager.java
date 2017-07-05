@@ -32,7 +32,6 @@ import java.lang.reflect.*;
 import java.lang.ref.WeakReference;
 import java.security.AccessController;
 import java.util.*;
-import java.util.logging.*;
 
 import com.sun.java.swing.SwingUtilities3;
 
@@ -41,6 +40,7 @@ import sun.java2d.SunGraphics2D;
 import sun.security.action.GetPropertyAction;
 import sun.java2d.pipe.hw.ExtendedBufferCapabilities;
 import sun.awt.SunToolkit;
+import sun.util.logging.PlatformLogger;
 
 /**
  * A PaintManager implementation that uses a BufferStrategy for
@@ -78,7 +78,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
     private static Method COMPONENT_CREATE_BUFFER_STRATEGY_METHOD;
     private static Method COMPONENT_GET_BUFFER_STRATEGY_METHOD;
 
-    private static final Logger LOGGER = Logger.getLogger(
+    private static final PlatformLogger LOGGER = PlatformLogger.getLogger(
                            "javax.swing.BufferStrategyPaintManager");
 
     /**
@@ -222,9 +222,9 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
     }
 
     private void dispose(java.util.List<BufferInfo> bufferInfos) {
-        if (LOGGER.isLoggable(Level.FINER)) {
-            LOGGER.log(Level.FINER, "BufferStrategyPaintManager disposed",
-                       new RuntimeException());
+        if (LOGGER.isLoggable(PlatformLogger.FINER)) {
+            LOGGER.finer("BufferStrategyPaintManager disposed",
+                         new RuntimeException());
         }
         if (bufferInfos != null) {
             for (BufferInfo bufferInfo : bufferInfos) {
@@ -305,7 +305,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
             }
         }
         // Invalid root, do what Swing has always done.
-        if (LOGGER.isLoggable(Level.FINER)) {
+        if (LOGGER.isLoggable(PlatformLogger.FINER)) {
             LOGGER.finer("prepare failed");
         }
         return super.paint(paintingComponent, bufferComponent, g, x, y, w, h);
@@ -335,7 +335,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
             }
             accumulate(x + xOffset + deltaX, y + yOffset + deltaY, w, h);
         } else {
-            if (LOGGER.isLoggable(Level.FINER)) {
+            if (LOGGER.isLoggable(PlatformLogger.FINER)) {
                 LOGGER.finer("copyArea: prepare failed or not in sync");
             }
             // Prepare failed, or not in sync. By calling super.copyArea
@@ -363,7 +363,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                 }
             }
         }
-        if (LOGGER.isLoggable(Level.FINEST)) {
+        if (LOGGER.isLoggable(PlatformLogger.FINEST)) {
             LOGGER.finest("beginPaint");
         }
         // Reset the area that needs to be painted.
@@ -371,7 +371,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
     }
 
     public void endPaint() {
-        if (LOGGER.isLoggable(Level.FINEST)) {
+        if (LOGGER.isLoggable(PlatformLogger.FINEST)) {
             LOGGER.finest("endPaint: region " + accumulatedX + " " +
                        accumulatedY + " " +  accumulatedMaxX + " " +
                        accumulatedMaxY);
@@ -420,7 +420,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                 contentsLost = bufferStrategy.contentsLost();
             }
             if (contentsLost) {
-                if (LOGGER.isLoggable(Level.FINER)) {
+                if (LOGGER.isLoggable(PlatformLogger.FINER)) {
                     LOGGER.finer("endPaint: contents lost");
                 }
                 // Shown region was bogus, mark buffer as out of sync.
@@ -514,7 +514,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                 contentsLost = true;
                 bufferInfo = new BufferInfo(root);
                 bufferInfos.add(bufferInfo);
-                if (LOGGER.isLoggable(Level.FINER)) {
+                if (LOGGER.isLoggable(PlatformLogger.FINER)) {
                     LOGGER.finer("prepare: new BufferInfo: " + root);
                 }
             }
@@ -525,7 +525,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                     bsg = bufferStrategy.getDrawGraphics();
                     if (bufferStrategy.contentsRestored()) {
                         contentsLost = true;
-                        if (LOGGER.isLoggable(Level.FINER)) {
+                        if (LOGGER.isLoggable(PlatformLogger.FINER)) {
                             LOGGER.finer(
                                 "prepare: contents restored in prepare");
                         }
@@ -539,7 +539,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                 if (bufferInfo.getContentsLostDuringExpose()) {
                     contentsLost = true;
                     bufferInfo.setContentsLostDuringExpose(false);
-                    if (LOGGER.isLoggable(Level.FINER)) {
+                    if (LOGGER.isLoggable(PlatformLogger.FINER)) {
                         LOGGER.finer("prepare: contents lost on expose");
                     }
                 }
@@ -642,7 +642,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
             if (biRoot == null) {
                 // Window gc'ed
                 bufferInfos.remove(counter);
-                if (LOGGER.isLoggable(Level.FINER)) {
+                if (LOGGER.isLoggable(PlatformLogger.FINER)) {
                     LOGGER.finer("BufferInfo pruned, root null");
                 }
             }
@@ -748,7 +748,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                 if (bs != null) {
                     weakBS = new WeakReference<BufferStrategy>(bs);
                 }
-                if (LOGGER.isLoggable(Level.FINER)) {
+                if (LOGGER.isLoggable(PlatformLogger.FINER)) {
                     LOGGER.finer("getBufferStrategy: created bs: " + bs);
                 }
             }
@@ -806,7 +806,7 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
             BufferStrategy bs = null;
             if (SwingUtilities3.isVsyncRequested(root)) {
                 bs = createBufferStrategy(root, true);
-                if (LOGGER.isLoggable(Level.FINER)) {
+                if (LOGGER.isLoggable(PlatformLogger.FINER)) {
                     LOGGER.finer("createBufferStrategy: using vsynced strategy");
                 }
             }
@@ -848,9 +848,9 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                                             invoke(root);
                 } catch (InvocationTargetException ite) {
                     // Type is not supported
-                    if (LOGGER.isLoggable(Level.FINER)) {
-                        LOGGER.log(Level.FINER, "createBufferStratety failed",
-                                   ite);
+                    if (LOGGER.isLoggable(PlatformLogger.FINER)) {
+                        LOGGER.finer("createBufferStratety failed",
+                                     ite);
                     }
                 } catch (IllegalArgumentException iae) {
                     assert false;
@@ -864,9 +864,9 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
                     bs = ((Window)root).getBufferStrategy();
                 } catch (AWTException e) {
                     // Type not supported
-                    if (LOGGER.isLoggable(Level.FINER)) {
-                        LOGGER.log(Level.FINER, "createBufferStratety failed",
-                                   e);
+                    if (LOGGER.isLoggable(PlatformLogger.FINER)) {
+                        LOGGER.finer("createBufferStratety failed",
+                                     e);
                     }
                 }
             }
@@ -878,8 +878,8 @@ class BufferStrategyPaintManager extends RepaintManager.PaintManager {
          */
         public void dispose() {
             Container root = getRoot();
-            if (LOGGER.isLoggable(Level.FINER)) {
-                LOGGER.log(Level.FINER, "disposed BufferInfo for: " + root);
+            if (LOGGER.isLoggable(PlatformLogger.FINER)) {
+                LOGGER.finer("disposed BufferInfo for: " + root);
             }
             if (root != null) {
                 root.removeComponentListener(this);

@@ -52,12 +52,13 @@ import javax.swing.border.Border;
 import com.sun.java.swing.plaf.motif.*;
 import java.awt.im.InputMethodRequests;
 
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
+
 import sun.awt.CausedFocusEvent;
 import sun.awt.ComponentAccessor;
 
 public class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
-    private static final Logger log = Logger.getLogger("sun.awt.X11.XTextField");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XTextField");
 
     String text;
     XAWTTextField xtext;
@@ -256,7 +257,7 @@ public class XTextFieldPeer extends XComponentPeer implements TextFieldPeer {
     }
 
     public void setBackground(Color c) {
-        if (log.isLoggable(Level.FINE)) log.fine("target="+ target + ", old=" + background + ", new=" + c);
+        if (log.isLoggable(PlatformLogger.FINE)) log.fine("target="+ target + ", old=" + background + ", new=" + c);
         background = c;
         if (xtext != null) {
             xtext.setBackground(c);

@@ -33,7 +33,7 @@ import sun.awt.*;
 
 import java.util.ArrayList;
 import java.util.Vector;
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 import sun.java2d.SurfaceData;
 import sun.java2d.SunGraphics2D;
 
@@ -49,7 +49,7 @@ abstract public class XBaseMenuWindow extends XWindow {
      *
      ************************************************/
 
-    private static Logger log = Logger.getLogger("sun.awt.X11.XBaseMenuWindow");
+    private static PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XBaseMenuWindow");
 
     /*
      * Colors are calculated using MotifColorUtilities class
@@ -330,7 +330,7 @@ abstract public class XBaseMenuWindow extends XWindow {
                 items.add(mp);
             }
         } else {
-            if (log.isLoggable(Level.FINE)) {
+            if (log.isLoggable(PlatformLogger.FINE)) {
                 log.fine("WARNING: Attempt to add menu item without a peer");
             }
         }
@@ -351,7 +351,7 @@ abstract public class XBaseMenuWindow extends XWindow {
             if (index < items.size()) {
                 items.remove(index);
             } else {
-                if (log.isLoggable(Level.FINE)) {
+                if (log.isLoggable(PlatformLogger.FINE)) {
                     log.fine("WARNING: Attempt to remove non-existing menu item, index : " + index + ", item count : " + items.size());
                 }
             }
@@ -386,7 +386,7 @@ abstract public class XBaseMenuWindow extends XWindow {
             XMenuPeer showingSubmenu = getShowingSubmenu();
             int newSelectedIndex = (item != null) ? items.indexOf(item) : -1;
             if (this.selectedIndex != newSelectedIndex) {
-                if (log.isLoggable(Level.FINEST)) {
+                if (log.isLoggable(PlatformLogger.FINEST)) {
                     log.finest("Selected index changed, was : " + this.selectedIndex + ", new : " + newSelectedIndex);
                 }
                 this.selectedIndex = newSelectedIndex;
@@ -426,7 +426,7 @@ abstract public class XBaseMenuWindow extends XWindow {
         try {
             synchronized(getMenuTreeLock()) {
                 if (showingSubmenu != submenuToShow) {
-                    if (log.isLoggable(Level.FINER)) {
+                    if (log.isLoggable(PlatformLogger.FINER)) {
                         log.finest("Changing showing submenu");
                     }
                     if (showingSubmenu != null) {
@@ -1122,7 +1122,7 @@ abstract public class XBaseMenuWindow extends XWindow {
      * that grabs input focus
      */
     void doHandleJavaKeyEvent(KeyEvent event) {
-        if (log.isLoggable(Level.FINER)) log.finer(event.toString());
+        if (log.isLoggable(PlatformLogger.FINER)) log.finer(event.toString());
         if (event.getID() != KeyEvent.KEY_PRESSED) {
             return;
         }

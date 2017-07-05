@@ -32,11 +32,11 @@ import java.awt.image.BufferedImage;
 import javax.swing.plaf.basic.BasicGraphicsUtils;
 import java.awt.geom.AffineTransform;
 
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 
 class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
 
-    private static final Logger log = Logger.getLogger("sun.awt.X11.XCheckboxPeer");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XCheckboxPeer");
 
     private static final Insets focusInsets = new Insets(0,0,0,0);
     private static final Insets borderInsets = new Insets(2,2,2,2);
@@ -172,7 +172,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
             Checkbox cb = (Checkbox) e.getSource();
 
             if (cb.contains(e.getX(), e.getY())) {
-                if (log.isLoggable(Level.FINER)) {
+                if (log.isLoggable(PlatformLogger.FINER)) {
                     log.finer("mousePressed() on " + target.getName() + " : armed = " + armed + ", pressed = " + pressed
                               + ", selected = " + selected + ", enabled = " + isEnabled());
                 }
@@ -190,7 +190,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
     }
 
     public void mouseReleased(MouseEvent e) {
-        if (log.isLoggable(Level.FINER)) {
+        if (log.isLoggable(PlatformLogger.FINER)) {
             log.finer("mouseReleased() on " + target.getName() + ": armed = " + armed + ", pressed = " + pressed
                       + ", selected = " + selected + ", enabled = " + isEnabled());
         }
@@ -215,7 +215,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
     }
 
     public void mouseEntered(MouseEvent e) {
-        if (log.isLoggable(Level.FINER)) {
+        if (log.isLoggable(PlatformLogger.FINER)) {
             log.finer("mouseEntered() on " + target.getName() + ": armed = " + armed + ", pressed = " + pressed
                       + ", selected = " + selected + ", enabled = " + isEnabled());
         }
@@ -226,7 +226,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
     }
 
     public void mouseExited(MouseEvent e) {
-        if (log.isLoggable(Level.FINER)) {
+        if (log.isLoggable(PlatformLogger.FINER)) {
             log.finer("mouseExited() on " + target.getName() + ": armed = " + armed + ", pressed = " + pressed
                       + ", selected = " + selected + ", enabled = " + isEnabled());
         }

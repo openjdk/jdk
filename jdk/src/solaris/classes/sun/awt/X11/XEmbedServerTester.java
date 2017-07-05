@@ -28,7 +28,7 @@ package sun.awt.X11;
 //import static sun.awt.X11.XEmbed.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.logging.*;
+import sun.util.logging.PlatformLogger;
 import static sun.awt.X11.XConstants.*;
 import java.util.LinkedList;
 
@@ -37,7 +37,7 @@ import java.util.LinkedList;
  * specification and references.
  */
 public class XEmbedServerTester implements XEventDispatcher {
-    private static final Logger xembedLog = Logger.getLogger("sun.awt.X11.xembed.XEmbedServerTester");
+    private static final PlatformLogger xembedLog = PlatformLogger.getLogger("sun.awt.X11.xembed.XEmbedServerTester");
     private final Object EVENT_LOCK = new Object();
     static final int SYSTEM_EVENT_MASK = 0x8000;
     int my_version, server_version;
@@ -544,7 +544,7 @@ public class XEmbedServerTester implements XEventDispatcher {
             try {
                 EVENT_LOCK.wait(3000);
             } catch (InterruptedException ie) {
-                xembedLog.log(Level.WARNING, "Event wait interrupted", ie);
+                xembedLog.warning("Event wait interrupted", ie);
             }
             eventWaited = -1;
             if (checkEventList(position, event) == -1) {
@@ -634,7 +634,7 @@ public class XEmbedServerTester implements XEventDispatcher {
         if (ev.get_type() == ClientMessage) {
             XClientMessageEvent msg = ev.get_xclient();
             if (msg.get_message_type() == xembed.XEmbed.getAtom()) {
-                if (xembedLog.isLoggable(Level.FINE)) xembedLog.fine("Embedded message: " + XEmbedHelper.msgidToString((int)msg.get_data(1)));
+                if (xembedLog.isLoggable(PlatformLogger.FINE)) xembedLog.fine("Embedded message: " + XEmbedHelper.msgidToString((int)msg.get_data(1)));
                 switch ((int)msg.get_data(1)) {
                   case XEmbedHelper.XEMBED_EMBEDDED_NOTIFY: // Notification about embedding protocol start
                       xembedActive = true;

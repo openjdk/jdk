@@ -34,6 +34,8 @@
 #include "LEGlyphStorage.h"
 #include "LEFontInstance.h"
 
+U_NAMESPACE_BEGIN
+
 #define CHECK_ALLOCATE_ARRAY(array, type, size) \
     if (array == NULL) { \
         array = (type *) new type[size]; \
@@ -185,3 +187,5 @@ LEPoint *GlyphPositionAdjustments::EntryExitPoint::getExitPoint(LEPoint &exitPoi
 
     return NULL;
 }
+
+U_NAMESPACE_END

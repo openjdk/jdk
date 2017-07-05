@@ -29,7 +29,9 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import javax.swing.plaf.FontUIResource;
 import java.util.StringTokenizer;
-import sun.font.FontManager;
+
+import sun.font.FontConfigManager;
+import sun.font.FontUtilities;
 
 /**
  * @author Shannon Hickey
@@ -193,13 +195,13 @@ class PangoFonts {
         }
 
         String fcFamilyLC = family.toLowerCase();
-        if (FontManager.mapFcName(fcFamilyLC) != null) {
+        if (FontUtilities.mapFcName(fcFamilyLC) != null) {
             /* family is a Fc/Pango logical font which we need to expand. */
-           return FontManager.getFontConfigFUIR(fcFamilyLC, style, size);
+           return FontUtilities.getFontConfigFUIR(fcFamilyLC, style, size);
         } else {
             /* It's a physical font which we will create with a fallback */
             Font font = new FontUIResource(family, style, size);
-            return FontManager.getCompositeFontUIResource(font);
+            return FontUtilities.getCompositeFontUIResource(font);
         }
     }
 

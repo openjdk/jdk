@@ -668,7 +668,7 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   __ add(obj.result(), offset.result(), addr);
 
   if (type == objectType) {  // Write-barrier needed for Object fields.
-    pre_barrier(obj.result(), false, NULL);
+    pre_barrier(addr, false, NULL);
   }
 
   if (type == objectType)
@@ -896,7 +896,7 @@ void LIRGenerator::do_NewTypeArray(NewTypeArray* x) {
   LIR_Opr len = length.result();
   BasicType elem_type = x->elt_type();
 
-  __ oop2reg(ciTypeArrayKlass::make(elem_type)->encoding(), klass_reg);
+  __ oop2reg(ciTypeArrayKlass::make(elem_type)->constant_encoding(), klass_reg);
 
   CodeStub* slow_path = new NewTypeArrayStub(klass_reg, len, reg, info);
   __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, elem_type, klass_reg, slow_path);

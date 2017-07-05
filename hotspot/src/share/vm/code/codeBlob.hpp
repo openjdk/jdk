@@ -175,6 +175,8 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
                             OopClosure* keep_alive,
                             bool unloading_occurred);
   virtual void oops_do(OopClosure* f) = 0;
+  // (All CodeBlob subtypes other than NMethod currently have
+  // an empty oops_do() method.
 
   // OopMap for frame
   OopMapSet* oop_maps() const                    { return _oop_maps; }

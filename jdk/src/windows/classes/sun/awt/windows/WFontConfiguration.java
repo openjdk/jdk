@@ -29,6 +29,8 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import sun.awt.FontDescriptor;
 import sun.awt.FontConfiguration;
+import sun.font.FontManager;
+import sun.font.SunFontManager;
 import sun.java2d.SunGraphicsEnvironment;
 import java.nio.charset.*;
 
@@ -37,16 +39,16 @@ public class WFontConfiguration extends FontConfiguration {
     // whether compatibility fallbacks for TimesRoman and Co. are used
     private boolean useCompatibilityFallbacks;
 
-    public WFontConfiguration(SunGraphicsEnvironment environment) {
-        super(environment);
+    public WFontConfiguration(SunFontManager fm) {
+        super(fm);
         useCompatibilityFallbacks = "windows-1252".equals(encoding);
         initTables(encoding);
     }
 
-    public WFontConfiguration(SunGraphicsEnvironment environment,
+    public WFontConfiguration(SunFontManager fm,
                               boolean preferLocaleFonts,
                               boolean preferPropFonts) {
-        super(environment, preferLocaleFonts, preferPropFonts);
+        super(fm, preferLocaleFonts, preferPropFonts);
         useCompatibilityFallbacks = "windows-1252".equals(encoding);
     }
 
