@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,6 +186,9 @@ class Events : AllStatic {
   // Deoptization related messages
   static StringEventLog* _deopt_messages;
 
+  // Redefinition related messages
+  static StringEventLog* _redefinitions;
+
  public:
   static void print_all(outputStream* out);
 
@@ -197,6 +200,8 @@ class Events : AllStatic {
 
   // Log exception related message
   static void log_exception(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+
+  static void log_redefinition(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
   static void log_deopt_message(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
 
@@ -218,6 +223,15 @@ inline void Events::log_exception(Thread* thread, const char* format, ...) {
     va_list ap;
     va_start(ap, format);
     _exceptions->logv(thread, format, ap);
+    va_end(ap);
+  }
+}
+
+inline void Events::log_redefinition(Thread* thread, const char* format, ...) {
+  if (LogEvents) {
+    va_list ap;
+    va_start(ap, format);
+    _redefinitions->logv(thread, format, ap);
     va_end(ap);
   }
 }

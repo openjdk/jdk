@@ -724,6 +724,26 @@ uint CallNode::match_edge(uint idx) const {
 //
 bool CallNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
   assert((t_oop != NULL), "sanity");
+  if (is_call_to_arraycopystub()) {
+    const TypeTuple* args = _tf->domain();
+    Node* dest = NULL;
+    // Stubs that can be called once an ArrayCopyNode is expanded have
+    // different signatures. Look for the second pointer argument,
+    // that is the destination of the copy.
+    for (uint i = TypeFunc::Parms, j = 0; i < args->cnt(); i++) {
+      if (args->field_at(i)->isa_ptr()) {
+        j++;
+        if (j == 2) {
+          dest = in(i);
+          break;
+        }
+      }
+    }
+    if (!dest->is_top() && may_modify_arraycopy_helper(phase->type(dest)->is_oopptr(), t_oop, phase)) {
+      return true;
+    }
+    return false;
+  }
   if (t_oop->is_known_instance()) {
     // The instance_id is set only for scalar-replaceable allocations which
     // are not passed as arguments according to Escape Analysis.
@@ -810,7 +830,7 @@ Node *CallNode::result_cast() {
 }
 
 
-void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj) {
+void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj, bool do_asserts) {
   projs->fallthrough_proj      = NULL;
   projs->fallthrough_catchproj = NULL;
   projs->fallthrough_ioproj    = NULL;
@@ -873,17 +893,18 @@ void CallNode::extract_projections(CallProjections* projs, bool separate_io_proj
     }
   }
 
-  // The resproj may not exist because the result couuld be ignored
+  // The resproj may not exist because the result could be ignored
   // and the exception object may not exist if an exception handler
   // swallows the exception but all the other must exist and be found.
   assert(projs->fallthrough_proj      != NULL, "must be found");
-  assert(Compile::current()->inlining_incrementally() || projs->fallthrough_catchproj != NULL, "must be found");
-  assert(Compile::current()->inlining_incrementally() || projs->fallthrough_memproj   != NULL, "must be found");
-  assert(Compile::current()->inlining_incrementally() || projs->fallthrough_ioproj    != NULL, "must be found");
-  assert(Compile::current()->inlining_incrementally() || projs->catchall_catchproj    != NULL, "must be found");
+  do_asserts = do_asserts && !Compile::current()->inlining_incrementally();
+  assert(!do_asserts || projs->fallthrough_catchproj != NULL, "must be found");
+  assert(!do_asserts || projs->fallthrough_memproj   != NULL, "must be found");
+  assert(!do_asserts || projs->fallthrough_ioproj    != NULL, "must be found");
+  assert(!do_asserts || projs->catchall_catchproj    != NULL, "must be found");
   if (separate_io_proj) {
-    assert(Compile::current()->inlining_incrementally() || projs->catchall_memproj    != NULL, "must be found");
-    assert(Compile::current()->inlining_incrementally() || projs->catchall_ioproj     != NULL, "must be found");
+    assert(!do_asserts || projs->catchall_memproj    != NULL, "must be found");
+    assert(!do_asserts || projs->catchall_ioproj     != NULL, "must be found");
   }
 }
 
@@ -909,6 +930,12 @@ Node *CallNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return SafePointNode::Ideal(phase, can_reshape);
 }
 
+bool CallNode::is_call_to_arraycopystub() const {
+  if (_name != NULL && strstr(_name, "arraycopy") != 0) {
+    return true;
+  }
+  return false;
+}
 
 //=============================================================================
 uint CallJavaNode::size_of() const { return sizeof(*this); }
@@ -1007,14 +1034,6 @@ void CallRuntimeNode::calling_convention( BasicType* sig_bt, VMRegPair *parm_reg
 
 
 //=============================================================================
-bool CallLeafNode::is_call_to_arraycopystub() const {
-  if (_name != NULL && strstr(_name, "arraycopy") != 0) {
-    return true;
-  }
-  return false;
-}
-
-
 #ifndef PRODUCT
 void CallLeafNode::dump_spec(outputStream *st) const {
   st->print("# ");
@@ -1930,26 +1949,3 @@ bool CallNode::may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeO
   return true;
 }
 
-bool CallLeafNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
-  if (is_call_to_arraycopystub()) {
-    const TypeTuple* args = _tf->domain();
-    Node* dest = NULL;
-    // Stubs that can be called once an ArrayCopyNode is expanded have
-    // different signatures. Look for the second pointer argument,
-    // that is the destination of the copy.
-    for (uint i = TypeFunc::Parms, j = 0; i < args->cnt(); i++) {
-      if (args->field_at(i)->isa_ptr()) {
-        j++;
-        if (j == 2) {
-          dest = in(i);
-          break;
-        }
-      }
-    }
-    if (!dest->is_top() && may_modify_arraycopy_helper(phase->type(dest)->is_oopptr(), t_oop, phase)) {
-      return true;
-    }
-    return false;
-  }
-  return CallNode::may_modify(t_oop, phase);
-}
