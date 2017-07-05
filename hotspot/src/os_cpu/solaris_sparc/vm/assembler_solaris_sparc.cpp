@@ -28,18 +28,6 @@
 #include <sys/trap.h>          // For trap numbers
 #include <v9/sys/psr_compat.h> // For V8 compatibility
 
-bool MacroAssembler::needs_explicit_null_check(intptr_t offset) {
-  // The first page of virtual addresses is unmapped on SPARC.
-  // Thus, any access the VM makes through a null pointer with an offset of
-  // less than 4K will get a recognizable SIGSEGV, which the signal handler
-  // will transform into a NullPointerException.
-  // (Actually, the first 64K or so is unmapped, but it's simpler
-  // to depend only on the first 4K or so.)
-
-  bool offset_in_first_page = 0 <= offset && offset < os::vm_page_size();
-  return !offset_in_first_page;
-}
-
 void MacroAssembler::read_ccr_trap(Register ccr_save) {
   // Execute a trap to get the PSR, mask and shift
   // to get the condition codes.

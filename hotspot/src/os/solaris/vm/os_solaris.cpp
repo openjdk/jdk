@@ -2965,10 +2965,21 @@ static bool solaris_mprotect(char* addr, size_t bytes, int prot) {
   return retVal == 0;
 }
 
-// Protect memory (make it read-only. (Used to pass readonly pages through
+// Protect memory (Used to pass readonly pages through
 // JNI GetArray<type>Elements with empty arrays.)
-bool os::protect_memory(char* addr, size_t bytes) {
-  return solaris_mprotect(addr, bytes, PROT_READ);
+bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
+                        bool is_committed) {
+  unsigned int p = 0;
+  switch (prot) {
+  case MEM_PROT_NONE: p = PROT_NONE; break;
+  case MEM_PROT_READ: p = PROT_READ; break;
+  case MEM_PROT_RW:   p = PROT_READ|PROT_WRITE; break;
+  case MEM_PROT_RWX:  p = PROT_READ|PROT_WRITE|PROT_EXEC; break;
+  default:
+    ShouldNotReachHere();
+  }
+  // is_committed is unused.
+  return solaris_mprotect(addr, bytes, p);
 }
 
 // guard_memory and unguard_memory only happens within stack guard pages.
