@@ -159,7 +159,7 @@ inline intptr_t** frame::interpreter_frame_locals_addr() const {
 
 inline intptr_t* frame::interpreter_frame_bcx_addr() const {
   assert(is_interpreted_frame(), "must be interpreted");
-  return (jint*) &(get_interpreterState()->_bcp);
+  return (intptr_t*) &(get_interpreterState()->_bcp);
 }
 
 
@@ -179,7 +179,7 @@ inline methodOop* frame::interpreter_frame_method_addr() const {
 
 inline intptr_t* frame::interpreter_frame_mdx_addr() const {
   assert(is_interpreted_frame(), "must be interpreted");
-  return (jint*) &(get_interpreterState()->_mdx);
+  return (intptr_t*) &(get_interpreterState()->_mdx);
 }
 
 // top of expression stack

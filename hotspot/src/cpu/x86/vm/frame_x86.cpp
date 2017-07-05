@@ -217,7 +217,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
 
 void frame::patch_pc(Thread* thread, address pc) {
   if (TracePcPatching) {
-    tty->print_cr("patch_pc at address  0x%x [0x%x -> 0x%x] ", &((address *)sp())[-1], ((address *)sp())[-1], pc);
+    tty->print_cr("patch_pc at address" INTPTR_FORMAT " [" INTPTR_FORMAT " -> " INTPTR_FORMAT "] ",
+                  &((address *)sp())[-1], ((address *)sp())[-1], pc);
   }
   ((address *)sp())[-1] = pc;
   _cb = CodeCache::find_blob(pc);
