@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 8016474
  * @summary The bug only happens with C1 and G1 using a different ObjectAlignmentInBytes than KlassAlignmentInBytes (which is 8)
+ * @modules java.base/sun.misc
  * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=32 GetUnsafeObjectG1PreBarrier
  */
 

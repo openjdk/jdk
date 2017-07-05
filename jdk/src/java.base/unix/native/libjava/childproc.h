@@ -101,7 +101,6 @@ typedef struct _ChildStuff
     const char **envv;
     const char *pdir;
     int redirectErrorStream;
-    void *clone_stack;
 } ChildStuff;
 
 /* following used in addition when mode is SPAWN */
