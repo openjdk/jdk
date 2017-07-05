@@ -426,18 +426,7 @@ int objArrayKlass::oop_adjust_pointers(oop obj) {
 }
 
 #ifndef SERIALGC
-void objArrayKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
-  assert(!pm->depth_first(), "invariant");
-  assert(obj->is_objArray(), "obj must be obj array");
-  ObjArrayKlass_OOP_ITERATE( \
-    objArrayOop(obj), p, \
-    if (PSScavenge::should_scavenge(p)) { \
-      pm->claim_or_forward_breadth(p); \
-    })
-}
-
 void objArrayKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
-  assert(pm->depth_first(), "invariant");
   assert(obj->is_objArray(), "obj must be obj array");
   ObjArrayKlass_OOP_ITERATE( \
     objArrayOop(obj), p, \

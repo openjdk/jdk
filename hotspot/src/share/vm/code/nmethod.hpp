@@ -177,6 +177,10 @@ class nmethod : public CodeBlob {
   // Protected by Patching_lock
   unsigned char _state;                      // {alive, not_entrant, zombie, unloaded)
 
+#ifdef ASSERT
+  bool _oops_are_stale;  // indicates that it's no longer safe to access oops section
+#endif
+
   enum { alive        = 0,
          not_entrant  = 1, // uncommon trap has happened but activations may still exist
          zombie       = 2,
@@ -434,6 +438,7 @@ class nmethod : public CodeBlob {
   oop*  oop_addr_at(int index) const {  // for GC
     // relocation indexes are biased by 1 (because 0 is reserved)
     assert(index > 0 && index <= oops_size(), "must be a valid non-zero index");
+    assert(!_oops_are_stale, "oops are stale");
     return &oops_begin()[index - 1];
   }
 

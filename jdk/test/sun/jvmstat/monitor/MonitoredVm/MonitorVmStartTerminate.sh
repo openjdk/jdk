@@ -23,6 +23,7 @@
 
 #
 # @test
+# @ignore until 6543856 is fixed
 # @bug 4990825
 # @summary attach to external but local JVM processes
 # @library ../../testlibrary

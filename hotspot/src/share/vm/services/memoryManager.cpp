@@ -166,17 +166,6 @@ GCStatInfo::~GCStatInfo() {
   FREE_C_HEAP_ARRAY(MemoryUsage*, _after_gc_usage_array);
 }
 
-void GCStatInfo::copy_stat(GCStatInfo* stat) {
-  set_index(stat->gc_index());
-  set_start_time(stat->start_time());
-  set_end_time(stat->end_time());
-  assert(_usage_array_size == stat->usage_array_size(), "Must have same array size");
-  for (int i = 0; i < _usage_array_size; i++) {
-    set_before_gc_usage(i, stat->before_gc_usage_for_pool(i));
-    set_after_gc_usage(i, stat->after_gc_usage_for_pool(i));
-  }
-}
-
 void GCStatInfo::set_gc_usage(int pool_index, MemoryUsage usage, bool before_gc) {
   MemoryUsage* gc_usage_array;
   if (before_gc) {
@@ -187,67 +176,129 @@ void GCStatInfo::set_gc_usage(int pool_index, MemoryUsage usage, bool before_gc)
   gc_usage_array[pool_index] = usage;
 }
 
+void GCStatInfo::clear() {
+  _index = 0;
+  _start_time = 0L;
+  _end_time = 0L;
+  size_t len = _usage_array_size * sizeof(MemoryUsage);
+  memset(_before_gc_usage_array, 0, len);
+  memset(_after_gc_usage_array, 0, len);
+}
+
+
 GCMemoryManager::GCMemoryManager() : MemoryManager() {
   _num_collections = 0;
   _last_gc_stat = NULL;
+  _last_gc_lock = new Mutex(Mutex::leaf, "_last_gc_lock", true);
+  _current_gc_stat = NULL;
   _num_gc_threads = 1;
 }
 
 GCMemoryManager::~GCMemoryManager() {
   delete _last_gc_stat;
+  delete _last_gc_lock;
+  delete _current_gc_stat;
 }
 
 void GCMemoryManager::initialize_gc_stat_info() {
   assert(MemoryService::num_memory_pools() > 0, "should have one or more memory pools");
   _last_gc_stat = new GCStatInfo(MemoryService::num_memory_pools());
+  _current_gc_stat = new GCStatInfo(MemoryService::num_memory_pools());
+  // tracking concurrent collections we need two objects: one to update, and one to
+  // hold the publicly available "last (completed) gc" information.
 }
 
-void GCMemoryManager::gc_begin() {
-  assert(_last_gc_stat != NULL, "Just checking");
-  _accumulated_timer.start();
-  _num_collections++;
-  _last_gc_stat->set_index(_num_collections);
-  _last_gc_stat->set_start_time(Management::timestamp());
+void GCMemoryManager::gc_begin(bool recordGCBeginTime, bool recordPreGCUsage,
+                               bool recordAccumulatedGCTime) {
+  assert(_last_gc_stat != NULL && _current_gc_stat != NULL, "Just checking");
+  if (recordAccumulatedGCTime) {
+    _accumulated_timer.start();
+  }
+  // _num_collections now increases in gc_end, to count completed collections
+  if (recordGCBeginTime) {
+    _current_gc_stat->set_index(_num_collections+1);
+    _current_gc_stat->set_start_time(Management::timestamp());
+  }
 
-  // Keep memory usage of all memory pools
-  for (int i = 0; i < MemoryService::num_memory_pools(); i++) {
-    MemoryPool* pool = MemoryService::get_memory_pool(i);
-    MemoryUsage usage = pool->get_memory_usage();
-    _last_gc_stat->set_before_gc_usage(i, usage);
-    HS_DTRACE_PROBE8(hotspot, mem__pool__gc__begin,
-      name(), strlen(name()),
-      pool->name(), strlen(pool->name()),
-      usage.init_size(), usage.used(),
-      usage.committed(), usage.max_size());
+  if (recordPreGCUsage) {
+    // Keep memory usage of all memory pools
+    for (int i = 0; i < MemoryService::num_memory_pools(); i++) {
+      MemoryPool* pool = MemoryService::get_memory_pool(i);
+      MemoryUsage usage = pool->get_memory_usage();
+      _current_gc_stat->set_before_gc_usage(i, usage);
+      HS_DTRACE_PROBE8(hotspot, mem__pool__gc__begin,
+        name(), strlen(name()),
+        pool->name(), strlen(pool->name()),
+        usage.init_size(), usage.used(),
+        usage.committed(), usage.max_size());
+    }
   }
 }
 
-void GCMemoryManager::gc_end() {
-  _accumulated_timer.stop();
-  _last_gc_stat->set_end_time(Management::timestamp());
-
-  int i;
-  // keep the last gc statistics for all memory pools
-  for (i = 0; i < MemoryService::num_memory_pools(); i++) {
-    MemoryPool* pool = MemoryService::get_memory_pool(i);
-    MemoryUsage usage = pool->get_memory_usage();
-
-    HS_DTRACE_PROBE8(hotspot, mem__pool__gc__end,
-      name(), strlen(name()),
-      pool->name(), strlen(pool->name()),
-      usage.init_size(), usage.used(),
-      usage.committed(), usage.max_size());
-
-    _last_gc_stat->set_after_gc_usage(i, usage);
+// A collector MUST, even if it does not complete for some reason,
+// make a TraceMemoryManagerStats object where countCollection is true,
+// to ensure the current gc stat is placed in _last_gc_stat.
+void GCMemoryManager::gc_end(bool recordPostGCUsage,
+                             bool recordAccumulatedGCTime,
+                             bool recordGCEndTime, bool countCollection) {
+  if (recordAccumulatedGCTime) {
+    _accumulated_timer.stop();
+  }
+  if (recordGCEndTime) {
+    _current_gc_stat->set_end_time(Management::timestamp());
   }
 
-  // Set last collection usage of the memory pools managed by this collector
-  for (i = 0; i < num_memory_pools(); i++) {
-    MemoryPool* pool = get_memory_pool(i);
-    MemoryUsage usage = pool->get_memory_usage();
+  if (recordPostGCUsage) {
+    int i;
+    // keep the last gc statistics for all memory pools
+    for (i = 0; i < MemoryService::num_memory_pools(); i++) {
+      MemoryPool* pool = MemoryService::get_memory_pool(i);
+      MemoryUsage usage = pool->get_memory_usage();
 
-    // Compare with GC usage threshold
-    pool->set_last_collection_usage(usage);
-    LowMemoryDetector::detect_after_gc_memory(pool);
+      HS_DTRACE_PROBE8(hotspot, mem__pool__gc__end,
+        name(), strlen(name()),
+        pool->name(), strlen(pool->name()),
+        usage.init_size(), usage.used(),
+        usage.committed(), usage.max_size());
+
+      _current_gc_stat->set_after_gc_usage(i, usage);
+    }
+
+    // Set last collection usage of the memory pools managed by this collector
+    for (i = 0; i < num_memory_pools(); i++) {
+      MemoryPool* pool = get_memory_pool(i);
+      MemoryUsage usage = pool->get_memory_usage();
+
+      // Compare with GC usage threshold
+      pool->set_last_collection_usage(usage);
+      LowMemoryDetector::detect_after_gc_memory(pool);
+    }
   }
+  if (countCollection) {
+    _num_collections++;
+    // alternately update two objects making one public when complete
+    {
+      MutexLockerEx ml(_last_gc_lock, Mutex::_no_safepoint_check_flag);
+      GCStatInfo *tmp = _last_gc_stat;
+      _last_gc_stat = _current_gc_stat;
+      _current_gc_stat = tmp;
+      // reset the current stat for diagnosability purposes
+      _current_gc_stat->clear();
+    }
+  }
+}
+
+size_t GCMemoryManager::get_last_gc_stat(GCStatInfo* dest) {
+  MutexLockerEx ml(_last_gc_lock, Mutex::_no_safepoint_check_flag);
+  if (_last_gc_stat->gc_index() != 0) {
+    dest->set_index(_last_gc_stat->gc_index());
+    dest->set_start_time(_last_gc_stat->start_time());
+    dest->set_end_time(_last_gc_stat->end_time());
+    assert(dest->usage_array_size() == _last_gc_stat->usage_array_size(),
+           "Must have same array size");
+    size_t len = dest->usage_array_size() * sizeof(MemoryUsage);
+    memcpy(dest->before_gc_usage_array(), _last_gc_stat->before_gc_usage_array(), len);
+    memcpy(dest->after_gc_usage_array(), _last_gc_stat->after_gc_usage_array(), len);
+  }
+  return _last_gc_stat->gc_index();
 }

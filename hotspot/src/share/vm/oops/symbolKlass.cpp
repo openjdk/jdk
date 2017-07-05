@@ -184,10 +184,6 @@ int symbolKlass::oop_adjust_pointers(oop obj) {
 
 
 #ifndef SERIALGC
-void symbolKlass::oop_copy_contents(PSPromotionManager* pm, oop obj) {
-  assert(obj->is_symbol(), "should be symbol");
-}
-
 void symbolKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
   assert(obj->is_symbol(), "should be symbol");
 }

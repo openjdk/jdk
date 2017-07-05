@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,8 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
                                      "\u4e2d\u90e8\u30e8\u30fc\u30ed\u30c3\u30d1\u590f\u6642\u9593", "CEST"};
         String CHAST[] = new String[] {"\u30c1\u30e3\u30bf\u30e0\u6a19\u6e96\u6642", "CHAST",
                                        "\u30c1\u30e3\u30bf\u30e0\u590f\u6642\u9593", "CHADT"};
+        String CHUT[] = new String[] {"Chuuk Time", "CHUT",
+                                      "Chuuk Summer Time", "CHUST"};
         String CIT[] = new String[] {"\u4e2d\u592e\u30a4\u30f3\u30c9\u30cd\u30b7\u30a2\u6642\u9593", "CIT",
                                      "\u4e2d\u592e\u30a4\u30f3\u30c9\u30cd\u30b7\u30a2\u590f\u6642\u9593", "CIST"};
         String CLT[] = new String[] {"\u30c1\u30ea\u6642\u9593", "CLT",
@@ -153,6 +155,8 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
                                           "\u30d4\u30c8\u30b1\u30eb\u30f3\u5cf6\u590f\u6642\u9593", "PDT"};
         String PKT[] = new String[] {"\u30d1\u30ad\u30b9\u30bf\u30f3\u6642\u9593", "PKT",
                                      "\u30d1\u30ad\u30b9\u30bf\u30f3\u590f\u6642\u9593", "PKST"};
+        String PONT[] = new String[] {"Pohnpei Time", "PONT",
+                                      "Pohnpei Summer Time", "PONST"};
         String PST[] = new String[] {"\u592a\u5e73\u6d0b\u6a19\u6e96\u6642", "PST",
                                      "\u592a\u5e73\u6d0b\u590f\u6642\u9593", "PDT"};
         String RST[] = new String[] {"\u6771\u90e8\u6a19\u6e96\u6642", "EST",
@@ -169,8 +173,6 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
                                           "\u6771\u90e8\u590f\u6642\u9593 (\u30bf\u30b9\u30de\u30cb\u30a2)", "EST"};
         String TMT[] = new String[] {"\u30c8\u30eb\u30af\u30e1\u30cb\u30b9\u30bf\u30f3\u6642\u9593", "TMT",
                                      "\u30c8\u30eb\u30af\u30e1\u30cb\u30b9\u30bf\u30f3\u590f\u6642\u9593", "TMST"};
-        String TRUT[] = new String[] {"\u30c8\u30e9\u30c3\u30af\u6642\u9593", "TRUT",
-                                      "\u30c8\u30e9\u30c3\u30af\u590f\u6642\u9593", "TRUST"};
         String ULAT[]= new String[] {"\u30a6\u30e9\u30fc\u30f3\u30d0\u30fc\u30c8\u30eb\u6642\u9593", "ULAT",
                                      "\u30a6\u30e9\u30fc\u30f3\u30d0\u30fc\u30c8\u30eb\u590f\u6642\u9593", "ULAST"};
         String WART[] = new String[] {"\u897f\u30a2\u30eb\u30bc\u30f3\u30c1\u30f3\u6642\u9593", "WART",
@@ -309,6 +311,7 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"America/Atikokan", EST},
             {"America/Atka", HAST},
             {"America/Bahia", BRT},
+            {"America/Bahia_Banderas", CST},
             {"America/Barbados", AST},
             {"America/Belem", BRT},
             {"America/Belize", CST},
@@ -446,10 +449,13 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"America/Winnipeg", CST},
             {"America/Yakutat", AKST},
             {"America/Yellowknife", MST},
+            {"Antarctica/Casey", WST_AUS},
             {"Antarctica/Davis", new String[] {"\u30c7\u30a4\u30d3\u30b9\u6642\u9593", "DAVT",
                                                "\u30c7\u30a4\u30d3\u30b9\u590f\u6642\u9593", "DAVST"}},
             {"Antarctica/DumontDUrville", new String[] {"\u30c7\u30e5\u30e2\u30f3\u30c7\u30e5\u30eb\u30f4\u30a3\u30eb\u6642\u9593", "DDUT",
                                                         "\u30c7\u30e5\u30e2\u30f3\u30c7\u30e5\u30eb\u30f4\u30a3\u30eb\u590f\u6642\u9593", "DDUST"}},
+            {"Antarctica/Macquarie", new String[] {"Macquarie Island Time", "MIST",
+                                                   "Macquarie Island Summer Time", "MIST"}},
             {"Antarctica/Mawson", new String[] {"\u30e2\u30fc\u30bd\u30f3\u6642\u9593", "MAWT",
                                                 "\u30e2\u30fc\u30bd\u30f3\u590f\u6642\u9593", "MAWST"}},
             {"Antarctica/McMurdo", NZST},
@@ -752,6 +758,7 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"Pacific/Apia", WST_SAMOA},
             {"Pacific/Auckland", NZST},
             {"Pacific/Chatham", CHAST},
+            {"Pacific/Chuuk", CHUT},
             {"Pacific/Easter", EASTER},
             {"Pacific/Efate", new String[] {"\u30d0\u30cc\u30a2\u30c4\u6642\u9593", "VUT",
                                             "\u30d0\u30cc\u30a2\u30c4\u590f\u6642\u9593", "VUST"}},
@@ -790,8 +797,8 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
             {"Pacific/Palau", new String[] {"\u30d1\u30e9\u30aa\u6642\u9593", "PWT",
                                             "\u30d1\u30e9\u30aa\u590f\u6642\u9593", "PWST"}},
             {"Pacific/Pitcairn", PITCAIRN},
-            {"Pacific/Ponape", new String[] {"\u30dd\u30ca\u30da\u6642\u9593", "PONT",
-                                             "\u30dd\u30ca\u30da\u590f\u6642\u9593", "PONST"}},
+            {"Pacific/Pohnpei", PONT},
+            {"Pacific/Ponape", PONT},
             {"Pacific/Port_Moresby", new String[] {"\u30d1\u30d7\u30a2\u30cb\u30e5\u30fc\u30ae\u30cb\u30a2\u6642\u9593", "PGT",
                                                    "\u30d1\u30d7\u30a2\u30cb\u30e5\u30fc\u30ae\u30cb\u30a2\u590f\u6642\u9593", "PGST"}},
             {"Pacific/Rarotonga", new String[] {"\u30af\u30c3\u30af\u8af8\u5cf6\u6642\u9593", "CKT",
@@ -804,12 +811,12 @@ public final class TimeZoneNames_ja extends TimeZoneNamesBundle {
                                              "\u30ae\u30eb\u30d0\u30fc\u30c8\u8af8\u5cf6\u590f\u6642\u9593", "GILST"}},
             {"Pacific/Tongatapu", new String[] {"\u30c8\u30f3\u30ac\u6642\u9593", "TOT",
                                                 "\u30c8\u30f3\u30ac\u590f\u6642\u9593", "TOST"}},
-            {"Pacific/Truk", TRUT},
+            {"Pacific/Truk", CHUT},
             {"Pacific/Wake", new String[] {"\u30a6\u30a7\u30fc\u30af\u6642\u9593", "WAKT",
                                            "\u30a6\u30a7\u30fc\u30af\u590f\u6642\u9593", "WAKST"}},
             {"Pacific/Wallis", new String[] {"\u30ef\u30ea\u30b9\u53ca\u3073\u30d5\u30c4\u30ca\u6642\u9593", "WFT",
                                              "\u30ef\u30ea\u30b9\u53ca\u3073\u30d5\u30c4\u30ca\u590f\u6642\u9593", "WFST"}},
-            {"Pacific/Yap", TRUT},
+            {"Pacific/Yap", CHUT},
             {"Poland", CET},
             {"PRC", CTT},
             {"PST8PDT", PST},

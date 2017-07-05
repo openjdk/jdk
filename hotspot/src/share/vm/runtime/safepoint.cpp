@@ -782,6 +782,9 @@ void ThreadSafepointState::examine_state_of_thread() {
 
   JavaThreadState state = _thread->thread_state();
 
+  // Save the state at the start of safepoint processing.
+  _orig_thread_state = state;
+
   // Check for a thread that is suspended. Note that thread resume tries
   // to grab the Threads_lock which we own here, so a thread cannot be
   // resumed during safepoint synchronization.

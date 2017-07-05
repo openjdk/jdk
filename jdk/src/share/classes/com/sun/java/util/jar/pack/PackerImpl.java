@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
 
 package com.sun.java.util.jar.pack;
 
+import com.sun.java.util.jar.pack.Attribute.Layout;
 import java.util.*;
 import java.util.jar.*;
-import java.util.zip.*;
 import java.io.*;
 import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 
 
 /*
@@ -41,30 +40,21 @@ import java.beans.PropertyChangeEvent;
  */
 
 
-public class PackerImpl implements Pack200.Packer {
+public class PackerImpl  extends TLGlobals implements Pack200.Packer {
 
     /**
      * Constructs a Packer object and sets the initial state of
      * the packer engines.
      */
-    public PackerImpl() {
-        _props = new PropMap();
-        //_props.getProperty() consults defaultProps invisibly.
-        //_props.putAll(defaultProps);
-    }
-
-
-    // Private stuff.
-    final PropMap _props;
+    public PackerImpl() {}
 
     /**
      * Get the set of options for the pack and unpack engines.
      * @return A sorted association of option key strings to option values.
      */
-    public SortedMap properties() {
-        return _props;
+    public SortedMap<String, String> properties() {
+        return props;
     }
-
 
     //Driver routines
 
@@ -78,21 +68,22 @@ public class PackerImpl implements Pack200.Packer {
      */
     public void pack(JarFile in, OutputStream out) throws IOException {
         assert(Utils.currentInstance.get() == null);
-        TimeZone tz = (_props.getBoolean(Utils.PACK_DEFAULT_TIMEZONE)) ? null :
-            TimeZone.getDefault();
+        TimeZone tz = (props.getBoolean(Utils.PACK_DEFAULT_TIMEZONE))
+                      ? null
+                      : TimeZone.getDefault();
         try {
             Utils.currentInstance.set(this);
             if (tz != null) TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
 
-            if ("0".equals(_props.getProperty(Pack200.Packer.EFFORT))) {
+            if ("0".equals(props.getProperty(Pack200.Packer.EFFORT))) {
                 Utils.copyJarFile(in, out);
             } else {
                 (new DoPack()).run(in, out);
-                in.close();
             }
         } finally {
             Utils.currentInstance.set(null);
             if (tz != null) TimeZone.setDefault(tz);
+            in.close();
         }
     }
 
@@ -112,21 +103,20 @@ public class PackerImpl implements Pack200.Packer {
      */
     public void pack(JarInputStream in, OutputStream out) throws IOException {
         assert(Utils.currentInstance.get() == null);
-        TimeZone tz = (_props.getBoolean(Utils.PACK_DEFAULT_TIMEZONE)) ? null :
+        TimeZone tz = (props.getBoolean(Utils.PACK_DEFAULT_TIMEZONE)) ? null :
             TimeZone.getDefault();
         try {
             Utils.currentInstance.set(this);
             if (tz != null) TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-            if ("0".equals(_props.getProperty(Pack200.Packer.EFFORT))) {
+            if ("0".equals(props.getProperty(Pack200.Packer.EFFORT))) {
                 Utils.copyJarFile(in, out);
             } else {
                 (new DoPack()).run(in, out);
-                in.close();
             }
         } finally {
             Utils.currentInstance.set(null);
             if (tz != null) TimeZone.setDefault(tz);
-
+            in.close();
         }
     }
     /**
@@ -134,7 +124,7 @@ public class PackerImpl implements Pack200.Packer {
      * @param listener  An object to be invoked when a property is changed.
      */
     public void addPropertyChangeListener(PropertyChangeListener listener) {
-        _props.addListener(listener);
+        props.addListener(listener);
     }
 
     /**
@@ -142,7 +132,7 @@ public class PackerImpl implements Pack200.Packer {
      * @param listener  The PropertyChange listener to be removed.
      */
     public void removePropertyChangeListener(PropertyChangeListener listener) {
-        _props.removeListener(listener);
+        props.removeListener(listener);
     }
 
 
@@ -151,11 +141,11 @@ public class PackerImpl implements Pack200.Packer {
 
     // The packer worker.
     private class DoPack {
-        final int verbose = _props.getInteger(Utils.DEBUG_VERBOSE);
+        final int verbose = props.getInteger(Utils.DEBUG_VERBOSE);
 
         {
-            _props.setInteger(Pack200.Packer.PROGRESS, 0);
-            if (verbose > 0) Utils.log.info(_props.toString());
+            props.setInteger(Pack200.Packer.PROGRESS, 0);
+            if (verbose > 0) Utils.log.info(props.toString());
         }
 
         // Here's where the bits are collected before getting packed:
@@ -163,7 +153,7 @@ public class PackerImpl implements Pack200.Packer {
 
         final String unknownAttrCommand;
         {
-            String uaMode = _props.getProperty(Pack200.Packer.UNKNOWN_ATTRIBUTE, Pack200.Packer.PASS);
+            String uaMode = props.getProperty(Pack200.Packer.UNKNOWN_ATTRIBUTE, Pack200.Packer.PASS);
             if (!(Pack200.Packer.STRIP.equals(uaMode) ||
                   Pack200.Packer.PASS.equals(uaMode) ||
                   Pack200.Packer.ERROR.equals(uaMode))) {
@@ -191,13 +181,12 @@ public class PackerImpl implements Pack200.Packer {
             };
             for (int i = 0; i < ctypes.length; i++) {
                 String pfx = keys[i];
-                Map map = _props.prefixMap(pfx);
-                for (Iterator j = map.keySet().iterator(); j.hasNext(); ) {
-                    String key = (String) j.next();
+                Map<String, String> map = props.prefixMap(pfx);
+                for (String key : map.keySet()) {
                     assert(key.startsWith(pfx));
                     String name = key.substring(pfx.length());
-                    String layout = _props.getProperty(key);
-                    Object lkey = Attribute.keyForLookup(ctypes[i], name);
+                    String layout = props.getProperty(key);
+                    Layout lkey = Attribute.keyForLookup(ctypes[i], name);
                     if (Pack200.Packer.STRIP.equals(layout) ||
                         Pack200.Packer.PASS.equals(layout) ||
                         Pack200.Packer.ERROR.equals(layout)) {
@@ -222,25 +211,25 @@ public class PackerImpl implements Pack200.Packer {
         }
 
         final boolean keepFileOrder
-            = _props.getBoolean(Pack200.Packer.KEEP_FILE_ORDER);
+            = props.getBoolean(Pack200.Packer.KEEP_FILE_ORDER);
         final boolean keepClassOrder
-            = _props.getBoolean(Utils.PACK_KEEP_CLASS_ORDER);
+            = props.getBoolean(Utils.PACK_KEEP_CLASS_ORDER);
 
         final boolean keepModtime
-            = Pack200.Packer.KEEP.equals(_props.getProperty(Pack200.Packer.MODIFICATION_TIME));
+            = Pack200.Packer.KEEP.equals(props.getProperty(Pack200.Packer.MODIFICATION_TIME));
         final boolean latestModtime
-            = Pack200.Packer.LATEST.equals(_props.getProperty(Pack200.Packer.MODIFICATION_TIME));
+            = Pack200.Packer.LATEST.equals(props.getProperty(Pack200.Packer.MODIFICATION_TIME));
         final boolean keepDeflateHint
-            = Pack200.Packer.KEEP.equals(_props.getProperty(Pack200.Packer.DEFLATE_HINT));
+            = Pack200.Packer.KEEP.equals(props.getProperty(Pack200.Packer.DEFLATE_HINT));
         {
             if (!keepModtime && !latestModtime) {
-                int modtime = _props.getTime(Pack200.Packer.MODIFICATION_TIME);
+                int modtime = props.getTime(Pack200.Packer.MODIFICATION_TIME);
                 if (modtime != Constants.NO_MODTIME) {
                     pkg.default_modtime = modtime;
                 }
             }
             if (!keepDeflateHint) {
-                boolean deflate_hint = _props.getBoolean(Pack200.Packer.DEFLATE_HINT);
+                boolean deflate_hint = props.getBoolean(Pack200.Packer.DEFLATE_HINT);
                 if (deflate_hint) {
                     pkg.default_options |= Constants.AO_DEFLATE_HINT;
                 }
@@ -254,10 +243,10 @@ public class PackerImpl implements Pack200.Packer {
         final long segmentLimit;
         {
             long limit;
-            if (_props.getProperty(Pack200.Packer.SEGMENT_LIMIT, "").equals(""))
+            if (props.getProperty(Pack200.Packer.SEGMENT_LIMIT, "").equals(""))
                 limit = -1;
             else
-                limit = _props.getLong(Pack200.Packer.SEGMENT_LIMIT);
+                limit = props.getLong(Pack200.Packer.SEGMENT_LIMIT);
             limit = Math.min(Integer.MAX_VALUE, limit);
             limit = Math.max(-1, limit);
             if (limit == -1)
@@ -265,10 +254,10 @@ public class PackerImpl implements Pack200.Packer {
             segmentLimit = limit;
         }
 
-        final List passFiles;  // parsed pack.pass.file options
+        final List<String> passFiles;  // parsed pack.pass.file options
         {
             // Which class files will be passed through?
-            passFiles = _props.getProperties(Pack200.Packer.PASS_FILE_PFX);
+            passFiles = props.getProperties(Pack200.Packer.PASS_FILE_PFX);
             for (ListIterator i = passFiles.listIterator(); i.hasNext(); ) {
                 String file = (String) i.next();
                 if (file == null) { i.remove(); continue; }
@@ -283,28 +272,28 @@ public class PackerImpl implements Pack200.Packer {
         {
             // Fill in permitted range of major/minor version numbers.
             int ver;
-            if ((ver = _props.getInteger(Utils.COM_PREFIX+"min.class.majver")) != 0)
+            if ((ver = props.getInteger(Utils.COM_PREFIX+"min.class.majver")) != 0)
                 pkg.min_class_majver = (short) ver;
-            if ((ver = _props.getInteger(Utils.COM_PREFIX+"min.class.minver")) != 0)
+            if ((ver = props.getInteger(Utils.COM_PREFIX+"min.class.minver")) != 0)
                 pkg.min_class_minver = (short) ver;
-            if ((ver = _props.getInteger(Utils.COM_PREFIX+"max.class.majver")) != 0)
+            if ((ver = props.getInteger(Utils.COM_PREFIX+"max.class.majver")) != 0)
                 pkg.max_class_majver = (short) ver;
-            if ((ver = _props.getInteger(Utils.COM_PREFIX+"max.class.minver")) != 0)
+            if ((ver = props.getInteger(Utils.COM_PREFIX+"max.class.minver")) != 0)
                 pkg.max_class_minver = (short) ver;
-            if ((ver = _props.getInteger(Utils.COM_PREFIX+"package.minver")) != 0)
+            if ((ver = props.getInteger(Utils.COM_PREFIX+"package.minver")) != 0)
                 pkg.package_minver = (short) ver;
-            if ((ver = _props.getInteger(Utils.COM_PREFIX+"package.majver")) != 0)
+            if ((ver = props.getInteger(Utils.COM_PREFIX+"package.majver")) != 0)
                 pkg.package_majver = (short) ver;
         }
 
         {
             // Hook for testing:  Forces use of special archive modes.
-            int opt = _props.getInteger(Utils.COM_PREFIX+"archive.options");
+            int opt = props.getInteger(Utils.COM_PREFIX+"archive.options");
             if (opt != 0)
                 pkg.default_options |= opt;
         }
 
-        // (Done collecting options from _props.)
+        // (Done collecting options from props.)
 
         boolean isClassFile(String name) {
             if (!name.endsWith(".class"))  return false;
@@ -423,16 +412,18 @@ public class PackerImpl implements Pack200.Packer {
                 Package.File file = null;
                 // (5078608) : discount the resource files in META-INF
                 // from segment computation.
-                long inflen = (isMetaInfFile(name)) ?  0L :
-                                inFile.getInputLength();
+                long inflen = (isMetaInfFile(name))
+                              ? 0L
+                              : inFile.getInputLength();
 
                 if ((segmentSize += inflen) > segmentLimit) {
                     segmentSize -= inflen;
                     int nextCount = -1;  // don't know; it's a stream
                     flushPartial(out, nextCount);
                 }
-                if (verbose > 1)
+                if (verbose > 1) {
                     Utils.log.fine("Reading " + name);
+                }
 
                 assert(je.isDirectory() == name.endsWith("/"));
 
@@ -450,18 +441,18 @@ public class PackerImpl implements Pack200.Packer {
         }
 
         void run(JarFile in, OutputStream out) throws IOException {
-            List inFiles = scanJar(in);
+            List<InFile> inFiles = scanJar(in);
 
             if (verbose > 0)
                 Utils.log.info("Reading " + inFiles.size() + " files...");
 
             int numDone = 0;
-            for (Iterator i = inFiles.iterator(); i.hasNext(); ) {
-                InFile inFile = (InFile) i.next();
+            for (InFile inFile : inFiles) {
                 String name      = inFile.name;
                 // (5078608) : discount the resource files completely from segmenting
-                long inflen = (isMetaInfFile(name)) ? 0L :
-                                inFile.getInputLength() ;
+                long inflen = (isMetaInfFile(name))
+                               ? 0L
+                               : inFile.getInputLength() ;
                 if ((segmentSize += inflen) > segmentLimit) {
                     segmentSize -= inflen;
                     // Estimate number of remaining segments:
@@ -530,11 +521,11 @@ public class PackerImpl implements Pack200.Packer {
         }
 
         void flushPartial(OutputStream out, int nextCount) throws IOException {
-            if (pkg.files.size() == 0 && pkg.classes.size() == 0) {
+            if (pkg.files.isEmpty() && pkg.classes.isEmpty()) {
                 return;  // do not flush an empty segment
             }
             flushPackage(out, Math.max(1, nextCount));
-            _props.setInteger(Pack200.Packer.PROGRESS, 25);
+            props.setInteger(Pack200.Packer.PROGRESS, 25);
             // In case there will be another segment:
             makeNextPackage();
             segmentCount += 1;
@@ -543,10 +534,10 @@ public class PackerImpl implements Pack200.Packer {
         }
 
         void flushAll(OutputStream out) throws IOException {
-            _props.setInteger(Pack200.Packer.PROGRESS, 50);
+            props.setInteger(Pack200.Packer.PROGRESS, 50);
             flushPackage(out, 0);
             out.flush();
-            _props.setInteger(Pack200.Packer.PROGRESS, 100);
+            props.setInteger(Pack200.Packer.PROGRESS, 100);
             segmentCount += 1;
             segmentTotalSize += segmentSize;
             segmentSize = 0;
@@ -582,11 +573,11 @@ public class PackerImpl implements Pack200.Packer {
             pkg.trimStubs();
 
             // Do some stripping, maybe.
-            if (_props.getBoolean(Utils.COM_PREFIX+"strip.debug"))        pkg.stripAttributeKind("Debug");
-            if (_props.getBoolean(Utils.COM_PREFIX+"strip.compile"))      pkg.stripAttributeKind("Compile");
-            if (_props.getBoolean(Utils.COM_PREFIX+"strip.constants"))    pkg.stripAttributeKind("Constant");
-            if (_props.getBoolean(Utils.COM_PREFIX+"strip.exceptions"))   pkg.stripAttributeKind("Exceptions");
-            if (_props.getBoolean(Utils.COM_PREFIX+"strip.innerclasses")) pkg.stripAttributeKind("InnerClasses");
+            if (props.getBoolean(Utils.COM_PREFIX+"strip.debug"))        pkg.stripAttributeKind("Debug");
+            if (props.getBoolean(Utils.COM_PREFIX+"strip.compile"))      pkg.stripAttributeKind("Compile");
+            if (props.getBoolean(Utils.COM_PREFIX+"strip.constants"))    pkg.stripAttributeKind("Constant");
+            if (props.getBoolean(Utils.COM_PREFIX+"strip.exceptions"))   pkg.stripAttributeKind("Exceptions");
+            if (props.getBoolean(Utils.COM_PREFIX+"strip.innerclasses")) pkg.stripAttributeKind("InnerClasses");
 
             // Must choose an archive version; PackageWriter does not.
             if (pkg.package_majver <= 0)  pkg.choosePackageVersion();
@@ -606,11 +597,10 @@ public class PackerImpl implements Pack200.Packer {
             }
         }
 
-        List scanJar(JarFile jf) throws IOException {
+        List<InFile> scanJar(JarFile jf) throws IOException {
             // Collect jar entries, preserving order.
-            List inFiles = new ArrayList();
-            for (Enumeration e = jf.entries(); e.hasMoreElements(); ) {
-                JarEntry je = (JarEntry) e.nextElement();
+            List<InFile> inFiles = new ArrayList<>();
+            for (JarEntry je : Collections.list(jf.entries())) {
                 InFile inFile = new InFile(jf, je);
                 assert(je.isDirectory() == inFile.name.endsWith("/"));
                 inFiles.add(inFile);
