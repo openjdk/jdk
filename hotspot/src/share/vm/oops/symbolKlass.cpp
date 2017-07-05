@@ -213,6 +213,8 @@ void symbolKlass::oop_print_on(oop obj, outputStream* st) {
   st->print("'");
 }
 
+#endif //PRODUCT
+
 void symbolKlass::oop_print_value_on(oop obj, outputStream* st) {
   symbolOop sym = symbolOop(obj);
   st->print("'");
@@ -221,8 +223,6 @@ void symbolKlass::oop_print_value_on(oop obj, outputStream* st) {
   }
   st->print("'");
 }
-
-#endif //PRODUCT
 
 const char* symbolKlass::internal_name() const {
   return "{symbol}";

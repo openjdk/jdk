@@ -425,7 +425,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
   assert(exception.not_null(), "NULL exceptions should be handled by throw_exception");
   assert(exception->is_oop(), "just checking");
   // Check that exception is a subclass of Throwable, otherwise we have a VerifyError
-  if (!(exception->is_a(SystemDictionary::throwable_klass()))) {
+  if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {
     if (ExitVMOnVerifyError) vm_exit(-1);
     ShouldNotReachHere();
   }

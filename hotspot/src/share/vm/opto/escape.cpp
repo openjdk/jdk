@@ -1916,7 +1916,7 @@ void ConnectionGraph::process_call_arguments(CallNode *call, PhaseTransform *pha
           Node *arg = call->in(i)->uncast();
 
           if (at->isa_oopptr() != NULL &&
-              ptnode_adr(arg->_idx)->escape_state() < PointsToNode::ArgEscape) {
+              ptnode_adr(arg->_idx)->escape_state() < PointsToNode::GlobalEscape) {
 
             bool global_escapes = false;
             bool fields_escapes = false;

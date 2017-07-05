@@ -100,6 +100,7 @@ class CallGenerator : public ResourceObj {
 
   // How to generate vanilla out-of-line call sites:
   static CallGenerator* for_direct_call(ciMethod* m, bool separate_io_projs = false);   // static, special
+  static CallGenerator* for_dynamic_call(ciMethod* m);   // invokedynamic
   static CallGenerator* for_virtual_call(ciMethod* m, int vtable_index);  // virtual, interface
 
   // How to generate a replace a direct call with an inline version
@@ -115,6 +116,12 @@ class CallGenerator : public ResourceObj {
                                            CallGenerator* if_missed,
                                            CallGenerator* if_hit,
                                            float hit_prob);
+
+  // How to make a call that optimistically assumes a MethodHandle target:
+  static CallGenerator* for_predicted_dynamic_call(ciMethodHandle* predicted_method_handle,
+                                                   CallGenerator* if_missed,
+                                                   CallGenerator* if_hit,
+                                                   float hit_prob);
 
   // How to make a call that gives up and goes back to the interpreter:
   static CallGenerator* for_uncommon_trap(ciMethod* m,

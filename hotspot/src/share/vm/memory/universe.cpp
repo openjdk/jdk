@@ -291,7 +291,7 @@ void Universe::genesis(TRAPS) {
 
     SystemDictionary::initialize(CHECK);
 
-    klassOop ok = SystemDictionary::object_klass();
+    klassOop ok = SystemDictionary::Object_klass();
 
     _the_null_string            = StringTable::intern("null", CHECK);
     _the_min_jint_string       = StringTable::intern("-2147483648", CHECK);
@@ -299,9 +299,9 @@ void Universe::genesis(TRAPS) {
     if (UseSharedSpaces) {
       // Verify shared interfaces array.
       assert(_the_array_interfaces_array->obj_at(0) ==
-             SystemDictionary::cloneable_klass(), "u3");
+             SystemDictionary::Cloneable_klass(), "u3");
       assert(_the_array_interfaces_array->obj_at(1) ==
-             SystemDictionary::serializable_klass(), "u3");
+             SystemDictionary::Serializable_klass(), "u3");
 
       // Verify element klass for system obj array klass
       assert(objArrayKlass::cast(_systemObjArrayKlassObj)->element_klass() == ok, "u1");
@@ -320,8 +320,8 @@ void Universe::genesis(TRAPS) {
       assert(Klass::cast(systemObjArrayKlassObj())->super() == ok, "u3");
     } else {
       // Set up shared interfaces array.  (Do this before supers are set up.)
-      _the_array_interfaces_array->obj_at_put(0, SystemDictionary::cloneable_klass());
-      _the_array_interfaces_array->obj_at_put(1, SystemDictionary::serializable_klass());
+      _the_array_interfaces_array->obj_at_put(0, SystemDictionary::Cloneable_klass());
+      _the_array_interfaces_array->obj_at_put(1, SystemDictionary::Serializable_klass());
 
       // Set element klass for system obj array klass
       objArrayKlass::cast(_systemObjArrayKlassObj)->set_element_klass(ok);
@@ -365,7 +365,7 @@ void Universe::genesis(TRAPS) {
   // Initialize _objectArrayKlass after core bootstraping to make
   // sure the super class is set up properly for _objectArrayKlass.
   _objectArrayKlassObj = instanceKlass::
-    cast(SystemDictionary::object_klass())->array_klass(1, CHECK);
+    cast(SystemDictionary::Object_klass())->array_klass(1, CHECK);
   // Add the class to the class hierarchy manually to make sure that
   // its vtable is initialized after core bootstrapping is completed.
   Klass::cast(_objectArrayKlassObj)->append_to_sibling_list();
@@ -426,11 +426,11 @@ void Universe::genesis(TRAPS) {
     while (i < size) {
       if (!UseConcMarkSweepGC) {
         // Allocate dummy in old generation
-        oop dummy = instanceKlass::cast(SystemDictionary::object_klass())->allocate_instance(CHECK);
+        oop dummy = instanceKlass::cast(SystemDictionary::Object_klass())->allocate_instance(CHECK);
         dummy_array->obj_at_put(i++, dummy);
       }
       // Allocate dummy in permanent generation
-      oop dummy = instanceKlass::cast(SystemDictionary::object_klass())->allocate_permanent_instance(CHECK);
+      oop dummy = instanceKlass::cast(SystemDictionary::Object_klass())->allocate_permanent_instance(CHECK);
       dummy_array->obj_at_put(i++, dummy);
     }
     {
@@ -540,7 +540,7 @@ void Universe::fixup_mirrors(TRAPS) {
   // but we cannot do that for classes created before java.lang.Class is loaded. Here we simply
   // walk over permanent objects created so far (mostly classes) and fixup their mirrors. Note
   // that the number of objects allocated at this point is very small.
-  assert(SystemDictionary::class_klass_loaded(), "java.lang.Class should be loaded");
+  assert(SystemDictionary::Class_klass_loaded(), "java.lang.Class should be loaded");
   FixupMirrorClosure blk;
   Universe::heap()->permanent_object_iterate(&blk);
 }
@@ -556,7 +556,7 @@ void Universe::run_finalizers_on_exit() {
   if (TraceReferenceGC) tty->print_cr("Callback to run finalizers on exit");
   {
     PRESERVE_EXCEPTION_MARK;
-    KlassHandle finalizer_klass(THREAD, SystemDictionary::finalizer_klass());
+    KlassHandle finalizer_klass(THREAD, SystemDictionary::Finalizer_klass());
     JavaValue result(T_VOID);
     JavaCalls::call_static(
       &result,
@@ -950,7 +950,7 @@ bool universe_post_init() {
   { ResourceMark rm;
     Interpreter::initialize();      // needed for interpreter entry points
     if (!UseSharedSpaces) {
-      KlassHandle ok_h(THREAD, SystemDictionary::object_klass());
+      KlassHandle ok_h(THREAD, SystemDictionary::Object_klass());
       Universe::reinitialize_vtable_of(ok_h, CHECK_false);
       Universe::reinitialize_itables(CHECK_false);
     }
@@ -960,7 +960,7 @@ bool universe_post_init() {
   instanceKlassHandle k_h;
   if (!UseSharedSpaces) {
     // Setup preallocated empty java.lang.Class array
-    Universe::_the_empty_class_klass_array = oopFactory::new_objArray(SystemDictionary::class_klass(), 0, CHECK_false);
+    Universe::_the_empty_class_klass_array = oopFactory::new_objArray(SystemDictionary::Class_klass(), 0, CHECK_false);
     // Setup preallocated OutOfMemoryError errors
     k = SystemDictionary::resolve_or_fail(vmSymbolHandles::java_lang_OutOfMemoryError(), true, CHECK_false);
     k_h = instanceKlassHandle(THREAD, k);
@@ -1027,8 +1027,8 @@ bool universe_post_init() {
   // Setup static method for registering finalizers
   // The finalizer klass must be linked before looking up the method, in
   // case it needs to get rewritten.
-  instanceKlass::cast(SystemDictionary::finalizer_klass())->link_class(CHECK_false);
-  methodOop m = instanceKlass::cast(SystemDictionary::finalizer_klass())->find_method(
+  instanceKlass::cast(SystemDictionary::Finalizer_klass())->link_class(CHECK_false);
+  methodOop m = instanceKlass::cast(SystemDictionary::Finalizer_klass())->find_method(
                                   vmSymbols::register_method_name(),
                                   vmSymbols::register_method_signature());
   if (m == NULL || !m->is_static()) {
@@ -1036,7 +1036,7 @@ bool universe_post_init() {
       "java.lang.ref.Finalizer.register", false);
   }
   Universe::_finalizer_register_cache->init(
-    SystemDictionary::finalizer_klass(), m, CHECK_false);
+    SystemDictionary::Finalizer_klass(), m, CHECK_false);
 
   // Resolve on first use and initialize class.
   // Note: No race-condition here, since a resolve will always return the same result
@@ -1053,14 +1053,14 @@ bool universe_post_init() {
   Universe::_reflect_invoke_cache->init(k_h(), m, CHECK_false);
 
   // Setup method for registering loaded classes in class loader vector
-  instanceKlass::cast(SystemDictionary::classloader_klass())->link_class(CHECK_false);
-  m = instanceKlass::cast(SystemDictionary::classloader_klass())->find_method(vmSymbols::addClass_name(), vmSymbols::class_void_signature());
+  instanceKlass::cast(SystemDictionary::ClassLoader_klass())->link_class(CHECK_false);
+  m = instanceKlass::cast(SystemDictionary::ClassLoader_klass())->find_method(vmSymbols::addClass_name(), vmSymbols::class_void_signature());
   if (m == NULL || m->is_static()) {
     THROW_MSG_(vmSymbols::java_lang_NoSuchMethodException(),
       "java.lang.ClassLoader.addClass", false);
   }
   Universe::_loader_addClass_cache->init(
-    SystemDictionary::classloader_klass(), m, CHECK_false);
+    SystemDictionary::ClassLoader_klass(), m, CHECK_false);
 
   // The folowing is initializing converter functions for serialization in
   // JVM.cpp. If we clean up the StrictMath code above we may want to find

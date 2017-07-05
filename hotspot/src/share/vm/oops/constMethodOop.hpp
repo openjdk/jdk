@@ -258,6 +258,11 @@ public:
   LocalVariableTableElement* localvariable_table_start() const;
 
   // byte codes
+  void    set_code(address code) {
+    if (code_size() > 0) {
+      memcpy(code_base(), code, code_size());
+    }
+  }
   address code_base() const            { return (address) (this+1); }
   address code_end() const             { return code_base() + code_size(); }
   bool    contains(address bcp) const  { return code_base() <= bcp
