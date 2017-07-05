@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -333,19 +333,29 @@ inline void MacroAssembler::store_heap_oop_not_null(Register d, RegisterOrConsta
   }
 }
 
-inline void MacroAssembler::load_heap_oop(Register d, RegisterOrConstant offs, Register s1) {
+inline void MacroAssembler::load_heap_oop(Register d, RegisterOrConstant offs, Register s1, Label *is_null) {
   if (UseCompressedOops) {
     lwz(d, offs, s1);
-    decode_heap_oop(d);
+    if (is_null != NULL) {
+      cmpwi(CCR0, d, 0);
+      beq(CCR0, *is_null);
+      decode_heap_oop_not_null(d);
+    } else {
+      decode_heap_oop(d);
+    }
   } else {
     ld(d, offs, s1);
+    if (is_null != NULL) {
+      cmpdi(CCR0, d, 0);
+      beq(CCR0, *is_null);
+    }
   }
 }
 
 inline Register MacroAssembler::encode_heap_oop_not_null(Register d, Register src) {
   Register current = (src != noreg) ? src : d; // Oop to be compressed is in d if no src provided.
   if (Universe::narrow_oop_base_overlaps()) {
-    sub(d, current, R30);
+    sub_const_optimized(d, current, Universe::narrow_oop_base(), R0);
     current = d;
   }
   if (Universe::narrow_oop_shift() != 0) {
@@ -358,7 +368,7 @@ inline Register MacroAssembler::encode_heap_oop_not_null(Register d, Register sr
 inline Register MacroAssembler::decode_heap_oop_not_null(Register d, Register src) {
   if (Universe::narrow_oop_base_disjoint() && src != noreg && src != d &&
       Universe::narrow_oop_shift() != 0) {
-    mr(d, R30);
+    load_const_optimized(d, Universe::narrow_oop_base(), R0);
     rldimi(d, src, Universe::narrow_oop_shift(), 32-Universe::narrow_oop_shift());
     return d;
   }
@@ -369,7 +379,7 @@ inline Register MacroAssembler::decode_heap_oop_not_null(Register d, Register sr
     current = d;
   }
   if (Universe::narrow_oop_base() != NULL) {
-    add(d, current, R30);
+    add_const_optimized(d, current, Universe::narrow_oop_base(), R0);
     current = d;
   }
   return current; // Decoded oop is in this register.
@@ -377,11 +387,19 @@ inline Register MacroAssembler::decode_heap_oop_not_null(Register d, Register sr
 
 inline void MacroAssembler::decode_heap_oop(Register d) {
   Label isNull;
+  bool use_isel = false;
   if (Universe::narrow_oop_base() != NULL) {
     cmpwi(CCR0, d, 0);
-    beq(CCR0, isNull);
+    if (VM_Version::has_isel()) {
+      use_isel = true;
+    } else {
+      beq(CCR0, isNull);
+    }
   }
   decode_heap_oop_not_null(d);
+  if (use_isel) {
+    isel_0(d, CCR0, Assembler::equal);
+  }
   bind(isNull);
 }
 

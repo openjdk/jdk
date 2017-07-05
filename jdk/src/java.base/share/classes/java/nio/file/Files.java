@@ -2851,7 +2851,10 @@ public final class Files {
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method is invoked to check write access to the file.
+     *          method is invoked to check write access to the file. The {@link
+     *          SecurityManager#checkDelete(String) checkDelete} method is
+     *          invoked to check delete access if the file is opened with the
+     *          {@code DELETE_ON_CLOSE} option.
      *
      * @see #write(Path,Iterable,Charset,OpenOption[])
      */
@@ -2893,7 +2896,10 @@ public final class Files {
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method is invoked to check write access to the file.
+     *          method is invoked to check write access to the file. The {@link
+     *          SecurityManager#checkDelete(String) checkDelete} method is
+     *          invoked to check delete access if the file is opened with the
+     *          {@code DELETE_ON_CLOSE} option.
      *
      * @since 1.8
      */
@@ -3290,7 +3296,10 @@ public final class Files {
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method is invoked to check write access to the file.
+     *          method is invoked to check write access to the file. The {@link
+     *          SecurityManager#checkDelete(String) checkDelete} method is
+     *          invoked to check delete access if the file is opened with the
+     *          {@code DELETE_ON_CLOSE} option.
      */
     public static Path write(Path path, byte[] bytes, OpenOption... options)
         throws IOException
@@ -3350,7 +3359,10 @@ public final class Files {
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method is invoked to check write access to the file.
+     *          method is invoked to check write access to the file. The {@link
+     *          SecurityManager#checkDelete(String) checkDelete} method is
+     *          invoked to check delete access if the file is opened with the
+     *          {@code DELETE_ON_CLOSE} option.
      */
     public static Path write(Path path, Iterable<? extends CharSequence> lines,
                              Charset cs, OpenOption... options)
@@ -3398,7 +3410,10 @@ public final class Files {
      * @throws  SecurityException
      *          In the case of the default provider, and a security manager is
      *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
-     *          method is invoked to check write access to the file.
+     *          method is invoked to check write access to the file. The {@link
+     *          SecurityManager#checkDelete(String) checkDelete} method is
+     *          invoked to check delete access if the file is opened with the
+     *          {@code DELETE_ON_CLOSE} option.
      *
      * @since 1.8
      */

@@ -677,9 +677,6 @@ class CommandLineFlags {
   product(bool, PrintVMQWaitTime, false,                                    \
           "Print out the waiting time in VM operation queue")               \
                                                                             \
-  develop(bool, NoYieldsInMicrolock, false,                                 \
-          "Disable yields in microlock")                                    \
-                                                                            \
   develop(bool, TraceOopMapGeneration, false,                               \
           "Show OopMapGeneration")                                          \
                                                                             \
@@ -936,8 +933,8 @@ class CommandLineFlags {
   product(bool, ShowMessageBoxOnError, false,                               \
           "Keep process alive on VM fatal error")                           \
                                                                             \
-  product(bool, CreateMinidumpOnCrash, false,                               \
-          "Create minidump on VM fatal error")                              \
+  product(bool, CreateCoredumpOnCrash, true,                                \
+          "Create core/mini dump on VM fatal error")                        \
                                                                             \
   product_pd(bool, UseOSErrorReporting,                                     \
           "Let VM fatal error propagate to the OS (ie. WER on Windows)")    \
@@ -1157,9 +1154,6 @@ class CommandLineFlags {
           "Convert yield to a sleep of MinSleepInterval to simulate Win32 " \
           "behavior")                                                       \
                                                                             \
-  product(bool, UseBoundThreads, true,                                      \
-          "Bind user level threads to kernel threads (for Solaris only)")   \
-                                                                            \
   develop(bool, UseDetachedThreads, true,                                   \
           "Use detached threads that are recycled upon termination "        \
           "(for Solaris only)")                                             \
@@ -1341,9 +1335,6 @@ class CommandLineFlags {
                                                                             \
   product(intx, TraceRedefineClasses, 0,                                    \
           "Trace level for JVMTI RedefineClasses")                          \
-                                                                            \
-  develop(bool, StressMethodComparator, false,                              \
-          "Run the MethodComparator on all loaded methods")                 \
                                                                             \
   /* change to false by default sometime after Mustang */                   \
   product(bool, VerifyMergedCPBytecodes, true,                              \
@@ -1963,7 +1954,7 @@ class CommandLineFlags {
           "collection")                                                     \
                                                                             \
   develop(uintx, PromotionFailureALotCount, 1000,                           \
-          "Number of promotion failures occurring at ParGCAllocBuffer "     \
+          "Number of promotion failures occurring at PLAB "     \
           "refill attempts (ParNew) or promotion attempts "                 \
           "(other young collectors)")                                       \
                                                                             \
@@ -2235,6 +2226,9 @@ class CommandLineFlags {
           "When +ReduceInitialCardMarks, explicitly defer any that "        \
           "may arise from new_pre_store_barrier")                           \
                                                                             \
+  product(bool, UseCondCardMark, false,                                     \
+          "Check for already marked card before updating card table")       \
+                                                                            \
   diagnostic(bool, VerifyRememberedSets, false,                             \
           "Verify GC remembered sets")                                      \
                                                                             \
@@ -2292,9 +2286,6 @@ class CommandLineFlags {
   develop(intx, ConcGCYieldTimeout, 0,                                      \
           "If non-zero, assert that GC threads yield within this "          \
           "number of milliseconds")                                         \
-                                                                            \
-  notproduct(bool, TraceMarkSweep, false,                                   \
-          "Trace mark sweep")                                               \
                                                                             \
   product(bool, PrintReferenceGC, false,                                    \
           "Print times spent handling reference objects during GC "         \
@@ -3447,10 +3438,6 @@ class CommandLineFlags {
   product(bool, ThreadPriorityVerbose, false,                               \
           "Print priority changes")                                         \
                                                                             \
-  product(intx, DefaultThreadPriority, -1,                                  \
-          "The native priority at which threads run if not elsewhere "      \
-          "specified (-1 means no change)")                                 \
-                                                                            \
   product(intx, CompilerThreadPriority, -1,                                 \
           "The native priority at which compiler threads should run "       \
           "(-1 means no change)")                                           \
@@ -3912,7 +3899,14 @@ class CommandLineFlags {
           "Enable event-based tracing")                                     \
                                                                             \
   product(bool, UseLockedTracing, false,                                    \
-          "Use locked-tracing when doing event-based tracing")
+          "Use locked-tracing when doing event-based tracing")              \
+                                                                            \
+  diagnostic(bool, UseUnalignedAccesses, false,                             \
+          "Use unaligned memory accesses in sun.misc.Unsafe")               \
+                                                                            \
+  product_pd(bool, PreserveFramePointer,                                    \
+             "Use the FP register for holding the frame pointer "           \
+             "and not as a general purpose register.")
 
 /*
  *  Macros for factoring of globals

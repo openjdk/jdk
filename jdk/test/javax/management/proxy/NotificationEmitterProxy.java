@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @summary Test that we can create proxies which are NotificationEmitters.
  * @bug 6411747
  * @author Daniel Fuchs
+ * @modules java.management
  * @run clean NotificationEmitterProxy
  * @run build NotificationEmitterProxy
  * @run main NotificationEmitterProxy

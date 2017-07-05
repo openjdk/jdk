@@ -23,10 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/freeBlockDictionary.hpp"
 #include "memory/freeList.hpp"
 #include "memory/metachunk.hpp"
-#include "memory/sharedHeap.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/vmThread.hpp"

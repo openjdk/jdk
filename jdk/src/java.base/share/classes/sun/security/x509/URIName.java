@@ -52,10 +52,10 @@ import sun.security.util.*;
  * <p>
  * [RFC1738] In general, URLs are written as follows:
  * <pre>
- * <scheme>:<scheme-specific-part>
+ * {@code <scheme>:<scheme-specific-part>}
  * </pre>
- * A URL contains the name of the scheme being used (<scheme>) followed
- * by a colon and then a string (the <scheme-specific-part>) whose
+ * A URL contains the name of the scheme being used ({@code <scheme>}) followed
+ * by a colon and then a string (the {@code <scheme-specific-part>}) whose
  * interpretation depends on the scheme.
  * <p>
  * While the syntax for the rest of the URL may vary depending on the
@@ -63,13 +63,13 @@ import sun.security.util.*;
  * of an IP-based protocol to a specified host on the Internet use a
  * common syntax for the scheme-specific data:
  * <pre>
- * //<user>:<password>@<host>:<port>/<url-path>
+ * {@code //<user>:<password>@<host>:<port>/<url-path>}
  * </pre>
  * [RFC2732] specifies that an IPv6 address contained inside a URL
  * must be enclosed in square brackets (to allow distinguishing the
  * colons that separate IPv6 components from the colons that separate
  * scheme-specific data.
- * <p>
+ *
  * @author Amit Kapoor
  * @author Hemma Prafullchandra
  * @author Sean Mullan
@@ -246,7 +246,7 @@ public class URIName implements GeneralNameInterface {
     /**
      * Return the scheme name portion of a URIName
      *
-     * @returns scheme portion of full name
+     * @return scheme portion of full name
      */
     public String getScheme() {
         return uri.getScheme();
@@ -255,7 +255,7 @@ public class URIName implements GeneralNameInterface {
     /**
      * Return the host name or IP address portion of the URIName
      *
-     * @returns host name or IP address portion of full name
+     * @return host name or IP address portion of full name
      */
     public String getHost() {
         return host;
@@ -266,7 +266,7 @@ public class URIName implements GeneralNameInterface {
      * DNSName, then this host object does not include any
      * initial "." on the name.
      *
-     * @returns host name as DNSName or IPAddressName
+     * @return host name as DNSName or IPAddressName
      */
     public Object getHostObject() {
         if (hostIP != null) {
@@ -308,9 +308,9 @@ public class URIName implements GeneralNameInterface {
      * abc.def.xyz.com.  However, the constraint ".xyz.com" is not satisfied
      * by "xyz.com".  When the constraint does not begin with a period, it
      * specifies a host.
-     * <p>
+     *
      * @param inputName to be checked for being constrained
-     * @returns constraint type above
+     * @return constraint type above
      * @throws UnsupportedOperationException if name is not exact match, but
      *  narrowing and widening are not supported for this name type.
      */
@@ -377,7 +377,7 @@ public class URIName implements GeneralNameInterface {
      * NameConstraints minimum and maximum bounds and for calculating
      * path lengths in name subtrees.
      *
-     * @returns distance of name from root
+     * @return distance of name from root
      * @throws UnsupportedOperationException if not supported for this name type
      */
     public int subtreeDepth() throws UnsupportedOperationException {

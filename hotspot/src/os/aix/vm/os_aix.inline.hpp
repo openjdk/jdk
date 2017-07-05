@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ inline void* os::thread_local_storage_at(int index) {
   return pthread_getspecific((pthread_key_t)index);
 }
 
-// File names are case-sensitive on windows only
+// File names are case-sensitive on windows only.
 inline int os::file_name_strcmp(const char* s1, const char* s2) {
   return strcmp(s1, s2);
 }
@@ -53,17 +53,18 @@ inline bool os::uses_stack_guard_pages() {
   return true;
 }
 
+// Whether or not calling code should/can commit/uncommit stack pages
+// before guarding them. Answer for AIX is definitly no, because memory
+// is automatically committed on touch.
 inline bool os::allocate_stack_guard_pages() {
   assert(uses_stack_guard_pages(), "sanity check");
-  return true;
+  return false;
 }
-
 
 // On Aix, reservations are made on a page by page basis, nothing to do.
 inline void os::pd_split_reserved_memory(char *base, size_t size,
                                          size_t split, bool realloc) {
 }
-
 
 // Bang the shadow pages if they need to be touched to be mapped.
 inline void os::bang_stack_shadow_pages() {
@@ -75,15 +76,13 @@ inline void os::dll_unload(void *lib) {
 
 inline const int os::default_file_open_flags() { return 0;}
 
-inline DIR* os::opendir(const char* dirname)
-{
+inline DIR* os::opendir(const char* dirname) {
   assert(dirname != NULL, "just checking");
   return ::opendir(dirname);
 }
 
-inline int os::readdir_buf_size(const char *path)
-{
-  // according to aix sys/limits, NAME_MAX must be retrieved at runtime. */
+inline int os::readdir_buf_size(const char *path) {
+  // According to aix sys/limits, NAME_MAX must be retrieved at runtime.
   const long my_NAME_MAX = pathconf(path, _PC_NAME_MAX);
   return my_NAME_MAX + sizeof(dirent) + 1;
 }
@@ -104,8 +103,7 @@ inline int os::ftruncate(int fd, jlong length) {
   return ::ftruncate64(fd, length);
 }
 
-inline struct dirent* os::readdir(DIR* dirp, dirent *dbuf)
-{
+inline struct dirent* os::readdir(DIR* dirp, dirent *dbuf) {
   dirent* p;
   int status;
   assert(dirp != NULL, "just checking");
@@ -174,11 +172,11 @@ inline int os::send(int fd, char* buf, size_t nBytes, uint flags) {
   RESTARTABLE_RETURN_INT(::send(fd, buf, nBytes, flags));
 }
 
-inline int os::raw_send(int fd, char* buf, size_t nBytes, uint flags) {
+inline int os::raw_send(int fd, char *buf, size_t nBytes, uint flags) {
   return os::send(fd, buf, nBytes, flags);
 }
 
-inline int os::connect(int fd, struct sockaddr* him, socklen_t len) {
+inline int os::connect(int fd, struct sockaddr *him, socklen_t len) {
   RESTARTABLE_RETURN_INT(::connect(fd, him, len));
 }
 

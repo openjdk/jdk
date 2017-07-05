@@ -237,7 +237,7 @@ public class OtherName implements GeneralNameInterface {
      * certification path verification.
      *
      * @param inputName to be checked for being constrained
-     * @returns constraint type above
+     * @return constraint type above
      * @throws UnsupportedOperationException if name is same type, but
      *         comparison operations are not supported for this name type.
      */
@@ -258,7 +258,7 @@ public class OtherName implements GeneralNameInterface {
      * Return subtree depth of this name for purposes of determining
      * NameConstraints minimum and maximum bounds.
      *
-     * @returns distance of name from root
+     * @return distance of name from root
      * @throws UnsupportedOperationException if not supported for this name type
      */
     public int subtreeDepth() {

@@ -41,15 +41,6 @@
   develop(intx, G1MarkingVerboseLevel, 0,                                   \
           "Level (0-4) of verboseness of the marking code")                 \
                                                                             \
-  develop(bool, G1PrintReachableAtInitialMark, false,                       \
-          "Reachable object dump at the initial mark pause")                \
-                                                                            \
-  develop(bool, G1VerifyDuringGCPrintReachable, false,                      \
-          "If conc mark verification fails, dump reachable objects")        \
-                                                                            \
-  develop(ccstr, G1PrintReachableBaseFile, NULL,                            \
-          "The base file name for the reachable object dumps")              \
-                                                                            \
   develop(bool, G1TraceMarkStackOverflow, false,                            \
           "If true, extra debugging code for CM restart for ovflw.")        \
                                                                             \
@@ -98,9 +89,6 @@
           "the percentage of retained entries is over this threshold "      \
           "the buffer will be enqueued for processing. A value of 0 "       \
           "specifies that mutator threads should not do such filtering.")   \
-                                                                            \
-  develop(bool, G1SATBPrintStubs, false,                                    \
-          "If true, print generated stubs for the SATB barrier")            \
                                                                             \
   experimental(intx, G1ExpandByPercentOfAvailable, 20,                      \
           "When expanding, % of uncommitted space to claim.")               \

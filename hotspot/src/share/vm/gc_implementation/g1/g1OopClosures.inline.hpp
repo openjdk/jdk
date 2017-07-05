@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -172,7 +172,7 @@ inline void G1UpdateRSOrPushRefOopClosure::do_oop_nv(T* p) {
   oopDesc* o = obj;
 #endif // CHECK_UNHANDLED_OOPS
   assert((intptr_t)o % MinObjAlignmentInBytes == 0, "not oop aligned");
-  assert(Universe::heap()->is_in_reserved(obj), "must be in heap");
+  assert(_g1->is_in_reserved(obj), "must be in heap");
 #endif // ASSERT
 
   assert(_from != NULL, "from region must be non-NULL");

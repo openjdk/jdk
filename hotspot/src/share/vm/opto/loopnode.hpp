@@ -872,6 +872,9 @@ public:
   // Unroll the loop body one step - make each trip do 2 iterations.
   void do_unroll( IdealLoopTree *loop, Node_List &old_new, bool adjust_min_trip );
 
+  // Mark vector reduction candidates before loop unrolling
+  void mark_reductions( IdealLoopTree *loop );
+
   // Return true if exp is a constant times an induction var
   bool is_scaled_iv(Node* exp, Node* iv, int* p_scale);
 

@@ -754,14 +754,9 @@ OopMapSet* Runtime1::generate_handle_exception(StubID id, StubAssembler *sasm) {
     // WIN64_ONLY: No need to add frame::arg_reg_save_area_bytes to SP
     // since we do a leave anyway.
 
-    // Pop the return address since we are possibly changing SP (restoring from BP).
+    // Pop the return address.
     __ leave();
     __ pop(rcx);
-
-    // Restore SP from BP if the exception PC is a method handle call site.
-    NOT_LP64(__ get_thread(thread);)
-    __ cmpl(Address(thread, JavaThread::is_method_handle_return_offset()), 0);
-    __ cmovptr(Assembler::notEqual, rsp, rbp_mh_SP_save);
     __ jmp(rcx);  // jump to exception handler
     break;
   default:  ShouldNotReachHere();
@@ -831,11 +826,6 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   // rdx has been destroyed by the call, so it must be set again
   // the pop is also necessary to simulate the effect of a ret(0)
   __ pop(exception_pc);
-
-  // Restore SP from BP if the exception PC is a method handle call site.
-  NOT_LP64(__ get_thread(thread);)
-  __ cmpl(Address(thread, JavaThread::is_method_handle_return_offset()), 0);
-  __ cmovptr(Assembler::notEqual, rsp, rbp_mh_SP_save);
 
   // continue at exception handler (return address removed)
   // note: do *not* remove arguments when unwinding the

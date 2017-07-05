@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,8 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import javax.management.*;
 import javax.management.openmbean.*;
 import static javax.management.openmbean.SimpleType.*;
-import com.sun.management.VMOption;
 
 /**
  * A mapped mxbean type maps a Java type to an open type.
@@ -113,7 +111,7 @@ public abstract class MappedMXBeanType {
         return mt;
     }
 
-    static synchronized MappedMXBeanType getMappedType(Type t)
+    public static synchronized MappedMXBeanType getMappedType(Type t)
             throws OpenDataException {
         MappedMXBeanType mt = convertedTypes.get(t);
         if (mt == null) {
@@ -152,7 +150,7 @@ public abstract class MappedMXBeanType {
     }
 
     // Return the mapped open type
-    OpenType<?> getOpenType() {
+    public OpenType<?> getOpenType() {
         return openType;
     }
 
@@ -177,10 +175,10 @@ public abstract class MappedMXBeanType {
     // return name of the class or the generic type
     abstract String getName();
 
-    abstract Object toOpenTypeData(Object javaTypeData)
+    public abstract Object toOpenTypeData(Object javaTypeData)
         throws OpenDataException;
 
-    abstract Object toJavaTypeData(Object openTypeData)
+    public abstract Object toJavaTypeData(Object openTypeData)
         throws OpenDataException, InvalidObjectException;
 
     // Basic Types - Classes that do not require data conversion
@@ -208,11 +206,11 @@ public abstract class MappedMXBeanType {
             return basicType.getName();
         }
 
-        Object toOpenTypeData(Object data) throws OpenDataException {
+        public Object toOpenTypeData(Object data) throws OpenDataException {
             return data;
         }
 
-        Object toJavaTypeData(Object data)
+        public Object toJavaTypeData(Object data)
             throws OpenDataException, InvalidObjectException {
 
             return data;
@@ -243,11 +241,11 @@ public abstract class MappedMXBeanType {
             return enumClass.getName();
         }
 
-        Object toOpenTypeData(Object data) throws OpenDataException {
+        public Object toOpenTypeData(Object data) throws OpenDataException {
             return ((Enum) data).name();
         }
 
-        Object toJavaTypeData(Object data)
+        public Object toJavaTypeData(Object data)
             throws OpenDataException, InvalidObjectException {
 
             try {
@@ -315,7 +313,7 @@ public abstract class MappedMXBeanType {
             return arrayClass.getName();
         }
 
-        Object toOpenTypeData(Object data) throws OpenDataException {
+        public Object toOpenTypeData(Object data) throws OpenDataException {
             // If the base element type is a basic type
             // return the data as no conversion is needed.
             // Primitive types are not converted to wrappers.
@@ -340,7 +338,7 @@ public abstract class MappedMXBeanType {
         }
 
 
-        Object toJavaTypeData(Object data)
+        public Object toJavaTypeData(Object data)
             throws OpenDataException, InvalidObjectException {
 
             // If the base element type is a basic type
@@ -457,7 +455,7 @@ public abstract class MappedMXBeanType {
             return typeName;
         }
 
-        Object toOpenTypeData(Object data) throws OpenDataException {
+        public Object toOpenTypeData(Object data) throws OpenDataException {
             final List<Object> list = (List<Object>) data;
 
             final Object[] openArray = (Object[])
@@ -470,7 +468,7 @@ public abstract class MappedMXBeanType {
             return openArray;
         }
 
-        Object toJavaTypeData(Object data)
+        public Object toJavaTypeData(Object data)
             throws OpenDataException, InvalidObjectException {
 
             final Object[] openArray = (Object[]) data;
@@ -538,7 +536,7 @@ public abstract class MappedMXBeanType {
             return typeName;
         }
 
-        Object toOpenTypeData(Object data) throws OpenDataException {
+        public Object toOpenTypeData(Object data) throws OpenDataException {
             final Map<Object,Object> map = (Map<Object,Object>) data;
             final TabularType tabularType = (TabularType) openType;
             final TabularData table = new TabularDataSupport(tabularType);
@@ -556,7 +554,7 @@ public abstract class MappedMXBeanType {
             return table;
         }
 
-        Object toJavaTypeData(Object data)
+        public Object toJavaTypeData(Object data)
             throws OpenDataException, InvalidObjectException {
 
             final TabularData td = (TabularData) data;
@@ -605,8 +603,9 @@ public abstract class MappedMXBeanType {
     //
     static class CompositeDataMXBeanType extends MappedMXBeanType {
         final Class<?> javaClass;
-        final boolean isCompositeData;
+        boolean isCompositeData = false;
         Method fromMethod = null;
+        Method toMethod = null;
 
         CompositeDataMXBeanType(Class<?> c) throws OpenDataException {
             this.javaClass = c;
@@ -624,6 +623,26 @@ public abstract class MappedMXBeanType {
                 // that has no from method to be embeded in another class.
             }
 
+            // check if a static "toCompositeData" method exists
+            try {
+                toMethod = AccessController.doPrivileged(new PrivilegedExceptionAction<Method>() {
+                    public Method run() throws NoSuchMethodException {
+                        Method m = javaClass.getDeclaredMethod("toCompositeData", javaClass);
+                        if (m != null
+                                && CompositeData.class.isAssignableFrom(m.getReturnType())
+                                && Modifier.isStatic(m.getModifiers())) {
+                            m.setAccessible(true);
+                            return m;
+                        } else {
+                            return null;
+                        }
+                    }
+                });
+            } catch (PrivilegedActionException e) {
+                // ignore NoSuchMethodException since we allow classes
+                // that has no from method to be embeded in another class.
+            }
+
             if (COMPOSITE_DATA_CLASS.isAssignableFrom(c)) {
                 // c implements CompositeData - set openType to null
                 // defer generating the CompositeType
@@ -636,16 +655,16 @@ public abstract class MappedMXBeanType {
                 // Make a CompositeData containing all the getters
                 final Method[] methods =
                     AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
-                        public Method[] run() {
-                            return javaClass.getMethods();
-                        }
-                    });
+                            public Method[] run() {
+                                return javaClass.getMethods();
+                            }
+                        });
                 final List<String> names = new ArrayList<>();
                 final List<OpenType<?>> types = new ArrayList<>();
 
                 /* Select public methods that look like "T getX()" or "boolean
-                   isX()", where T is not void and X is not the empty
-                   string.  Exclude "Class getClass()" inherited from Object.  */
+                 isX()", where T is not void and X is not the empty
+                 string.  Exclude "Class getClass()" inherited from Object.  */
                 for (int i = 0; i < methods.length; i++) {
                     final Method method = methods[i];
                     final String name = method.getName();
@@ -676,10 +695,10 @@ public abstract class MappedMXBeanType {
 
                 final String[] nameArray = names.toArray(new String[0]);
                 openType = new CompositeType(c.getName(),
-                                             c.getName(),
-                                             nameArray, // field names
-                                             nameArray, // field descriptions
-                                             types.toArray(new OpenType<?>[0]));
+                        c.getName(),
+                        nameArray, // field names
+                        nameArray, // field descriptions
+                        types.toArray(new OpenType<?>[0]));
             }
         }
 
@@ -691,7 +710,23 @@ public abstract class MappedMXBeanType {
             return javaClass.getName();
         }
 
-        Object toOpenTypeData(Object data) throws OpenDataException {
+        public Object toOpenTypeData(Object data) throws OpenDataException {
+            if (toMethod != null) {
+                try {
+                    return toMethod.invoke(null, data);
+                } catch (IllegalAccessException e) {
+                    // should never reach here
+                    throw new AssertionError(e);
+                } catch (InvocationTargetException e) {
+                    final OpenDataException ode
+                            = new OpenDataException("Failed to invoke "
+                                    + toMethod.getName() + " to convert " + javaClass.getName()
+                                    + " to CompositeData");
+                    ode.initCause(e);
+                    throw ode;
+                }
+            }
+
             if (data instanceof MemoryUsage) {
                 return MemoryUsageCompositeData.toCompositeData((MemoryUsage) data);
             }
@@ -712,10 +747,6 @@ public abstract class MappedMXBeanType {
                     toCompositeData((MemoryNotificationInfo) data);
             }
 
-            if (data instanceof VMOption) {
-                return VMOptionCompositeData.toCompositeData((VMOption) data);
-            }
-
             if (isCompositeData) {
                 // Classes that implement CompositeData
                 //
@@ -732,7 +763,7 @@ public abstract class MappedMXBeanType {
                 " is not supported for platform MXBeans");
         }
 
-        Object toJavaTypeData(Object data)
+        public Object toJavaTypeData(Object data)
             throws OpenDataException, InvalidObjectException {
 
             if (fromMethod == null) {

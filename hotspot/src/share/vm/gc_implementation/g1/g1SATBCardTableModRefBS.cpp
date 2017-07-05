@@ -206,7 +206,7 @@ G1SATBCardTableLoggingModRefBS::write_ref_field_static(void* field,
   if (new_val == NULL) return;
   // Otherwise, log it.
   G1SATBCardTableLoggingModRefBS* g1_bs =
-    barrier_set_cast<G1SATBCardTableLoggingModRefBS>(Universe::heap()->barrier_set());
+    barrier_set_cast<G1SATBCardTableLoggingModRefBS>(G1CollectedHeap::heap()->barrier_set());
   g1_bs->write_ref_field_work(field, new_val);
 }
 

@@ -1465,63 +1465,26 @@ JVM_ENTRY(jclass, JVM_GetDeclaringClass(JNIEnv *env, jclass ofClass))
 }
 JVM_END
 
-// should be in InstanceKlass.cpp, but is here for historical reasons
-Klass* InstanceKlass::compute_enclosing_class_impl(instanceKlassHandle k,
-                                                     bool* inner_is_member,
-                                                     TRAPS) {
-  Thread* thread = THREAD;
-  InnerClassesIterator iter(k);
-  if (iter.length() == 0) {
-    // No inner class info => no declaring class
+JVM_ENTRY(jstring, JVM_GetSimpleBinaryName(JNIEnv *env, jclass cls))
+{
+  oop mirror = JNIHandles::resolve_non_null(cls);
+  if (java_lang_Class::is_primitive(mirror) ||
+      !java_lang_Class::as_Klass(mirror)->oop_is_instance()) {
     return NULL;
   }
-
-  constantPoolHandle i_cp(thread, k->constants());
-
-  bool found = false;
-  Klass* ok;
-  instanceKlassHandle outer_klass;
-  *inner_is_member = false;
-
-  // Find inner_klass attribute
-  for (; !iter.done() && !found; iter.next()) {
-    int ioff = iter.inner_class_info_index();
-    int ooff = iter.outer_class_info_index();
-    int noff = iter.inner_name_index();
-    if (ioff != 0) {
-      // Check to see if the name matches the class we're looking for
-      // before attempting to find the class.
-      if (i_cp->klass_name_at_matches(k, ioff)) {
-        Klass* inner_klass = i_cp->klass_at(ioff, CHECK_NULL);
-        found = (k() == inner_klass);
-        if (found && ooff != 0) {
-          ok = i_cp->klass_at(ooff, CHECK_NULL);
-          outer_klass = instanceKlassHandle(thread, ok);
-          *inner_is_member = true;
-        }
-      }
+  instanceKlassHandle k(THREAD, InstanceKlass::cast(java_lang_Class::as_Klass(mirror)));
+  int ooff = 0, noff = 0;
+  if (InstanceKlass::find_inner_classes_attr(k, &ooff, &noff, THREAD)) {
+    if (noff != 0) {
+      constantPoolHandle i_cp(thread, k->constants());
+      Symbol* name = i_cp->symbol_at(noff);
+      Handle str = java_lang_String::create_from_symbol(name, CHECK_NULL);
+      return (jstring) JNIHandles::make_local(env, str());
     }
   }
-
-  if (found && outer_klass.is_null()) {
-    // It may be anonymous; try for that.
-    int encl_method_class_idx = k->enclosing_method_class_index();
-    if (encl_method_class_idx != 0) {
-      ok = i_cp->klass_at(encl_method_class_idx, CHECK_NULL);
-      outer_klass = instanceKlassHandle(thread, ok);
-      *inner_is_member = false;
-    }
-  }
-
-  // If no inner class attribute found for this class.
-  if (outer_klass.is_null())  return NULL;
-
-  // Throws an exception if outer klass has not declared k as an inner klass
-  // We need evidence that each klass knows about the other, or else
-  // the system could allow a spoof of an inner class to gain access rights.
-  Reflection::check_for_inner_class(outer_klass, k, *inner_is_member, CHECK_NULL);
-  return outer_klass();
+  return NULL;
 }
+JVM_END
 
 JVM_ENTRY(jstring, JVM_GetClassSignature(JNIEnv *env, jclass cls))
   assert (cls != NULL, "illegal class");

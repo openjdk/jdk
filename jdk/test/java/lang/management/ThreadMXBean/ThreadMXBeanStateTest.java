@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
  *
  * @library ../../Thread
  * @library /lib/testlibrary
+ * @modules java.management
  * @build jdk.testlibrary.*
  * @build ThreadMXBeanStateTest ThreadStateController
  * @run main ThreadMXBeanStateTest
@@ -64,60 +65,61 @@ public class ThreadMXBeanStateTest {
         Thread.currentThread().getState();
         ThreadStateController thread = new ThreadStateController("StateChanger", globalLock);
         thread.setDaemon(true);
-
-        // before myThread starts
-        thread.checkThreadState(NEW);
-
-        thread.start();
-        thread.transitionTo(RUNNABLE);
-        thread.checkThreadState(RUNNABLE);
-        checkLockInfo(thread, RUNNABLE, null, null);
-
-        thread.suspend();
-        ThreadStateController.pause(10);
-        thread.checkThreadState(RUNNABLE);
-        checkSuspendedThreadState(thread, RUNNABLE);
-        thread.resume();
-
-        synchronized (globalLock) {
-            thread.transitionTo(BLOCKED);
-            thread.checkThreadState(BLOCKED);
-            checkLockInfo(thread, BLOCKED,
-                          globalLock, Thread.currentThread());
-        }
-
-        thread.transitionTo(WAITING);
-        thread.checkThreadState(WAITING);
-        checkLockInfo(thread, Thread.State.WAITING,
-                      globalLock, null);
-
-        thread.transitionTo(TIMED_WAITING);
-        thread.checkThreadState(TIMED_WAITING);
-        checkLockInfo(thread, TIMED_WAITING,
-                      globalLock, null);
-
-
-        thread.transitionToPark(true /* timed park */);
-        thread.checkThreadState(TIMED_WAITING);
-        checkLockInfo(thread, TIMED_WAITING, null, null);
-
-        thread.transitionToPark(false /* indefinite park */);
-        thread.checkThreadState(WAITING);
-        checkLockInfo(thread, WAITING, null, null);
-
-        thread.transitionToSleep();
-        thread.checkThreadState(TIMED_WAITING);
-        checkLockInfo(thread, TIMED_WAITING, null, null);
-
-        thread.transitionTo(TERMINATED);
-        thread.checkThreadState(TERMINATED);
-
         try {
-            System.out.println(thread.getLog());
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-            System.out.println("TEST FAILED: Unexpected exception.");
-            throw new RuntimeException(e);
+            // before myThread starts
+            thread.checkThreadState(NEW);
+
+            thread.start();
+            thread.transitionTo(RUNNABLE);
+            thread.checkThreadState(RUNNABLE);
+            checkLockInfo(thread, RUNNABLE, null, null);
+
+            thread.suspend();
+            ThreadStateController.pause(10);
+            thread.checkThreadState(RUNNABLE);
+            checkSuspendedThreadState(thread, RUNNABLE);
+            thread.resume();
+
+            synchronized (globalLock) {
+                thread.transitionTo(BLOCKED);
+                thread.checkThreadState(BLOCKED);
+                checkLockInfo(thread, BLOCKED,
+                              globalLock, Thread.currentThread());
+            }
+
+            thread.transitionTo(WAITING);
+            thread.checkThreadState(WAITING);
+            checkLockInfo(thread, Thread.State.WAITING,
+                          globalLock, null);
+
+            thread.transitionTo(TIMED_WAITING);
+            thread.checkThreadState(TIMED_WAITING);
+            checkLockInfo(thread, TIMED_WAITING,
+                          globalLock, null);
+
+
+            thread.transitionToPark(true /* timed park */);
+            thread.checkThreadState(TIMED_WAITING);
+            checkLockInfo(thread, TIMED_WAITING, null, null);
+
+            thread.transitionToPark(false /* indefinite park */);
+            thread.checkThreadState(WAITING);
+            checkLockInfo(thread, WAITING, null, null);
+
+            thread.transitionToSleep();
+            thread.checkThreadState(TIMED_WAITING);
+            checkLockInfo(thread, TIMED_WAITING, null, null);
+
+            thread.transitionTo(TERMINATED);
+            thread.checkThreadState(TERMINATED);
+        } finally {
+            try {
+                System.out.println(thread.getLog());
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                System.out.println("TEST FAILED: Unexpected exception.");
+                throw new RuntimeException(e);
+            }
         }
         System.out.println("Test passed.");
     }

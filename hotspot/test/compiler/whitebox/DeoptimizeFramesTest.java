@@ -32,12 +32,12 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xmixed
  *                   -XX:CompileCommand=compileonly,DeoptimizeFramesTest$TestCaseImpl::method
- *                   -XX:+IgnoreUnexpectedVMOptions -XX:-DeoptimizeRandom -XX:-DeoptimizeALot
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeRandom -XX:-DeoptimizeALot
  *                   DeoptimizeFramesTest true
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xmixed
  *                   -XX:CompileCommand=compileonly,DeoptimizeFramesTest$TestCaseImpl::method
- *                   -XX:+IgnoreUnexpectedVMOptions -XX:-DeoptimizeRandom -XX:-DeoptimizeALot
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-DeoptimizeRandom -XX:-DeoptimizeALot
  *                   DeoptimizeFramesTest false
  * @summary testing of WB::deoptimizeFrames()
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * for the test codebase as it is executed by the MLet code using
  * doPrivileged.
  * @author Luis-Miguel Alventosa
+ * @modules java.management
  * @run clean MLetCommand
  * @run build MLetCommand
  * @run main/othervm/policy=policy MLetCommand

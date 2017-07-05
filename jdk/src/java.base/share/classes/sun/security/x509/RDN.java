@@ -95,7 +95,7 @@ public class RDN {
      * preceded by '\'.
      *
      * @param name String form of RDN
-     * @param keyword an additional mapping of keywords to OIDs
+     * @param keywordMap an additional mapping of keywords to OIDs
      * @throws IOException on parsing error
      */
     public RDN(String name, Map<String, String> keywordMap) throws IOException {
@@ -307,7 +307,7 @@ public class RDN {
      * Calculates a hash code value for the object.  Objects
      * which are equal will also have the same hashcode.
      *
-     * @returns int hashCode value
+     * @return int hashCode value
      */
     public int hashCode() {
         return toRFC2253String(true).hashCode();
@@ -316,8 +316,8 @@ public class RDN {
     /*
      * return specified attribute value from RDN
      *
-     * @params oid ObjectIdentifier of attribute to be found
-     * @returns DerValue of attribute value; null if attribute does not exist
+     * @param oid ObjectIdentifier of attribute to be found
+     * @return DerValue of attribute value; null if attribute does not exist
      */
     DerValue findAttribute(ObjectIdentifier oid) {
         for (int i = 0; i < assertion.length; i++) {

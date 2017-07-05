@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "code/debugInfoRec.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
+#include "frame_ppc.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "oops/compiledICHolder.hpp"
@@ -194,8 +195,8 @@ static const RegisterSaver::LiveRegType RegisterSaver_LiveRegs[] = {
   RegisterSaver_LiveIntReg(   R27 ),
   RegisterSaver_LiveIntReg(   R28 ),
   RegisterSaver_LiveIntReg(   R29 ),
-  RegisterSaver_LiveIntReg(   R31 ),
-  RegisterSaver_LiveIntReg(   R30 ), // r30 must be the last register
+  RegisterSaver_LiveIntReg(   R30 ),
+  RegisterSaver_LiveIntReg(   R31 ), // must be the last register (see save/restore functions below)
 };
 
 OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssembler* masm,
@@ -229,29 +230,30 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
 
   BLOCK_COMMENT("push_frame_reg_args_and_save_live_registers {");
 
-  // Save r30 in the last slot of the not yet pushed frame so that we
+  // Save r31 in the last slot of the not yet pushed frame so that we
   // can use it as scratch reg.
-  __ std(R30, -reg_size, R1_SP);
+  __ std(R31, -reg_size, R1_SP);
   assert(-reg_size == register_save_offset - frame_size_in_bytes + ((regstosave_num-1)*reg_size),
          "consistency check");
 
   // save the flags
   // Do the save_LR_CR by hand and adjust the return pc if requested.
-  __ mfcr(R30);
-  __ std(R30, _abi(cr), R1_SP);
+  __ mfcr(R31);
+  __ std(R31, _abi(cr), R1_SP);
   switch (return_pc_location) {
-    case return_pc_is_lr:    __ mflr(R30);           break;
-    case return_pc_is_r4:    __ mr(R30, R4);     break;
+    case return_pc_is_lr:    __ mflr(R31);           break;
+    case return_pc_is_r4:    __ mr(R31, R4);     break;
     case return_pc_is_thread_saved_exception_pc:
-                                 __ ld(R30, thread_(saved_exception_pc)); break;
+                             __ ld(R31, thread_(saved_exception_pc)); break;
     default: ShouldNotReachHere();
   }
-  if (return_pc_adjustment != 0)
-    __ addi(R30, R30, return_pc_adjustment);
-  __ std(R30, _abi(lr), R1_SP);
+  if (return_pc_adjustment != 0) {
+    __ addi(R31, R31, return_pc_adjustment);
+  }
+  __ std(R31, _abi(lr), R1_SP);
 
   // push a new frame
-  __ push_frame(frame_size_in_bytes, R30);
+  __ push_frame(frame_size_in_bytes, R31);
 
   // save all registers (ints and floats)
   offset = register_save_offset;
@@ -261,7 +263,7 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
 
     switch (reg_type) {
       case RegisterSaver::int_reg: {
-        if (reg_num != 30) { // We spilled R30 right at the beginning.
+        if (reg_num != 31) { // We spilled R31 right at the beginning.
           __ std(as_Register(reg_num), offset, R1_SP);
         }
         break;
@@ -272,8 +274,8 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
       }
       case RegisterSaver::special_reg: {
         if (reg_num == SR_CTR_SpecialRegisterEnumValue) {
-          __ mfctr(R30);
-          __ std(R30, offset, R1_SP);
+          __ mfctr(R31);
+          __ std(R31, offset, R1_SP);
         } else {
           Unimplemented();
         }
@@ -321,7 +323,7 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
 
     switch (reg_type) {
       case RegisterSaver::int_reg: {
-        if (reg_num != 30) // R30 restored at the end, it's the tmp reg!
+        if (reg_num != 31) // R31 restored at the end, it's the tmp reg!
           __ ld(as_Register(reg_num), offset, R1_SP);
         break;
       }
@@ -332,8 +334,8 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
       case RegisterSaver::special_reg: {
         if (reg_num == SR_CTR_SpecialRegisterEnumValue) {
           if (restore_ctr) { // Nothing to do here if ctr already contains the next address.
-            __ ld(R30, offset, R1_SP);
-            __ mtctr(R30);
+            __ ld(R31, offset, R1_SP);
+            __ mtctr(R31);
           }
         } else {
           Unimplemented();
@@ -350,10 +352,10 @@ void RegisterSaver::restore_live_registers_and_pop_frame(MacroAssembler* masm,
   __ pop_frame();
 
   // restore the flags
-  __ restore_LR_CR(R30);
+  __ restore_LR_CR(R31);
 
   // restore scratch register's value
-  __ ld(R30, -reg_size, R1_SP);
+  __ ld(R31, -reg_size, R1_SP);
 
   BLOCK_COMMENT("} restore_live_registers_and_pop_frame");
 }
@@ -2021,6 +2023,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ push_frame(frame_size_in_bytes, r_temp_1);          // Push the c2n adapter's frame.
   frame_done_pc = (intptr_t)__ pc();
 
+  __ verify_thread();
+
   // Native nmethod wrappers never take possesion of the oop arguments.
   // So the caller will gc the arguments.
   // The only thing we need an oopMap for is if the call is static.
@@ -2594,7 +2598,7 @@ int Deoptimization::last_frame_adjust(int callee_parameters, int callee_locals) 
 }
 
 uint SharedRuntime::out_preserve_stack_slots() {
-#ifdef COMPILER2
+#if defined(COMPILER1) || defined(COMPILER2)
   return frame::jit_out_preserve_size / VMRegImpl::stack_slot_size;
 #else
   return 0;
@@ -2867,11 +2871,6 @@ void SharedRuntime::generate_deopt_blob() {
   __ std(R0, in_bytes(JavaThread::exception_pc_offset()),  R16_thread);
   __ std(R0, in_bytes(JavaThread::exception_oop_offset()), R16_thread);
   __ BIND(skip_restore_excp);
-
-  // reload narrro_oop_base
-  if (UseCompressedOops && Universe::narrow_oop_base() != 0) {
-    __ load_const_optimized(R30, Universe::narrow_oop_base());
-  }
 
   __ pop_frame();
 

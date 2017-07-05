@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import java.io.IOException;
  * @test
  * @library /lib/testlibrary
  * @bug 6557093
+ * @modules java.management
  * @build jdk.testlibrary.* Dummy AbstractFilePermissionTest
  * @summary Check SSL config file permission for out-of-the-box management
  * @run main/timeout=300 SSLConfigFilePermissionTest

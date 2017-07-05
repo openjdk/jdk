@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,20 +26,18 @@
 package sun.management;
 
 import java.lang.management.ManagementFactory;
-
 import java.lang.management.ThreadInfo;
-
+import java.lang.management.ThreadMXBean;
 import javax.management.ObjectName;
 
 /**
- * Implementation class for the thread subsystem.
- * Standard and committed hotspot-specific metrics if any.
- *
- * ManagementFactory.getThreadMXBean() returns an instance
- * of this class.
+ * Implementation for java.lang.management.ThreadMXBean as well as providing the
+ * supporting method for com.sun.management.ThreadMXBean.
+ * The supporting method for com.sun.management.ThreadMXBean can be moved to
+ * jdk.management in the future.
  */
-class ThreadImpl implements com.sun.management.ThreadMXBean {
 
+public class ThreadImpl implements ThreadMXBean {
     private final VMManagement jvm;
 
     // default for thread contention monitoring is disabled.
@@ -50,32 +48,38 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
     /**
      * Constructor of ThreadImpl class.
      */
-    ThreadImpl(VMManagement vm) {
+    protected ThreadImpl(VMManagement vm) {
         this.jvm = vm;
         this.cpuTimeEnabled = jvm.isThreadCpuTimeEnabled();
         this.allocatedMemoryEnabled = jvm.isThreadAllocatedMemoryEnabled();
     }
 
+    @Override
     public int getThreadCount() {
         return jvm.getLiveThreadCount();
     }
 
+    @Override
     public int getPeakThreadCount() {
         return jvm.getPeakThreadCount();
     }
 
+    @Override
     public long getTotalStartedThreadCount() {
         return jvm.getTotalThreadCount();
     }
 
+    @Override
     public int getDaemonThreadCount() {
         return jvm.getDaemonThreadCount();
     }
 
+    @Override
     public boolean isThreadContentionMonitoringSupported() {
         return jvm.isThreadContentionMonitoringSupported();
     }
 
+    @Override
     public synchronized boolean isThreadContentionMonitoringEnabled() {
        if (!isThreadContentionMonitoringSupported()) {
             throw new UnsupportedOperationException(
@@ -84,18 +88,21 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return contentionMonitoringEnabled;
     }
 
+    @Override
     public boolean isThreadCpuTimeSupported() {
         return jvm.isOtherThreadCpuTimeSupported();
     }
 
+    @Override
     public boolean isCurrentThreadCpuTimeSupported() {
         return jvm.isCurrentThreadCpuTimeSupported();
     }
 
-    public boolean isThreadAllocatedMemorySupported() {
+    protected boolean isThreadAllocatedMemorySupported() {
         return jvm.isThreadAllocatedMemorySupported();
     }
 
+    @Override
     public boolean isThreadCpuTimeEnabled() {
         if (!isThreadCpuTimeSupported() &&
             !isCurrentThreadCpuTimeSupported()) {
@@ -105,7 +112,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return cpuTimeEnabled;
     }
 
-    public boolean isThreadAllocatedMemoryEnabled() {
+    protected boolean isThreadAllocatedMemoryEnabled() {
         if (!isThreadAllocatedMemorySupported()) {
             throw new UnsupportedOperationException(
                 "Thread allocated memory measurement is not supported");
@@ -113,6 +120,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return allocatedMemoryEnabled;
     }
 
+    @Override
     public long[] getAllThreadIds() {
         Util.checkMonitorAccess();
 
@@ -126,6 +134,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return ids;
     }
 
+    @Override
     public ThreadInfo getThreadInfo(long id) {
         long[] ids = new long[1];
         ids[0] = id;
@@ -133,6 +142,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return infos[0];
     }
 
+    @Override
     public ThreadInfo getThreadInfo(long id, int maxDepth) {
         long[] ids = new long[1];
         ids[0] = id;
@@ -140,6 +150,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return infos[0];
     }
 
+    @Override
     public ThreadInfo[] getThreadInfo(long[] ids) {
         return getThreadInfo(ids, 0);
     }
@@ -157,6 +168,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         }
     }
 
+    @Override
     public ThreadInfo[] getThreadInfo(long[] ids, int maxDepth) {
         verifyThreadIds(ids);
 
@@ -164,6 +176,10 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
             throw new IllegalArgumentException(
                 "Invalid maxDepth parameter: " + maxDepth);
         }
+
+        // ids has been verified to be non-null
+        // an empty array of ids should return an empty array of ThreadInfos
+        if (ids.length == 0) return new ThreadInfo[0];
 
         Util.checkMonitorAccess();
 
@@ -176,6 +192,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return infos;
     }
 
+    @Override
     public void setThreadContentionMonitoringEnabled(boolean enable) {
         if (!isThreadContentionMonitoringSupported()) {
             throw new UnsupportedOperationException(
@@ -209,6 +226,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return isThreadCpuTimeEnabled();
     }
 
+    @Override
     public long getCurrentThreadCpuTime() {
         if (verifyCurrentThreadCpuTime()) {
             return getThreadTotalCpuTime0(0);
@@ -216,6 +234,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return -1;
     }
 
+    @Override
     public long getThreadCpuTime(long id) {
         long[] ids = new long[1];
         ids[0] = id;
@@ -247,7 +266,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return isThreadCpuTimeEnabled();
     }
 
-    public long[] getThreadCpuTime(long[] ids) {
+    protected long[] getThreadCpuTime(long[] ids) {
         boolean verified = verifyThreadCpuTime(ids);
 
         int length = ids.length;
@@ -268,6 +287,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return times;
     }
 
+    @Override
     public long getCurrentThreadUserTime() {
         if (verifyCurrentThreadCpuTime()) {
             return getThreadUserCpuTime0(0);
@@ -275,6 +295,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return -1;
     }
 
+    @Override
     public long getThreadUserTime(long id) {
         long[] ids = new long[1];
         ids[0] = id;
@@ -282,7 +303,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return times[0];
     }
 
-    public long[] getThreadUserTime(long[] ids) {
+    protected long[] getThreadUserTime(long[] ids) {
         boolean verified = verifyThreadCpuTime(ids);
 
         int length = ids.length;
@@ -303,6 +324,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return times;
     }
 
+    @Override
     public void setThreadCpuTimeEnabled(boolean enable) {
         if (!isThreadCpuTimeSupported() &&
             !isCurrentThreadCpuTimeSupported()) {
@@ -320,7 +342,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         }
     }
 
-    public long getThreadAllocatedBytes(long id) {
+    protected long getThreadAllocatedBytes(long id) {
         long[] ids = new long[1];
         ids[0] = id;
         final long[] sizes = getThreadAllocatedBytes(ids);
@@ -339,7 +361,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return isThreadAllocatedMemoryEnabled();
     }
 
-    public long[] getThreadAllocatedBytes(long[] ids) {
+    protected long[] getThreadAllocatedBytes(long[] ids) {
         boolean verified = verifyThreadAllocatedMemory(ids);
 
         long[] sizes = new long[ids.length];
@@ -351,7 +373,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return sizes;
     }
 
-    public void setThreadAllocatedMemoryEnabled(boolean enable) {
+    protected void setThreadAllocatedMemoryEnabled(boolean enable) {
         if (!isThreadAllocatedMemorySupported()) {
             throw new UnsupportedOperationException(
                 "Thread allocated memory measurement is not supported.");
@@ -367,6 +389,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         }
     }
 
+    @Override
     public long[] findMonitorDeadlockedThreads() {
         Util.checkMonitorAccess();
 
@@ -383,6 +406,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return ids;
     }
 
+    @Override
     public long[] findDeadlockedThreads() {
         if (!isSynchronizerUsageSupported()) {
             throw new UnsupportedOperationException(
@@ -404,15 +428,18 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         return ids;
     }
 
+    @Override
     public void resetPeakThreadCount() {
         Util.checkControlAccess();
         resetPeakThreadCount0();
     }
 
+    @Override
     public boolean isObjectMonitorUsageSupported() {
         return jvm.isObjectMonitorUsageSupported();
     }
 
+    @Override
     public boolean isSynchronizerUsageSupported() {
         return jvm.isSynchronizerUsageSupported();
     }
@@ -432,14 +459,20 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
         Util.checkMonitorAccess();
     }
 
+    @Override
     public ThreadInfo[] getThreadInfo(long[] ids,
                                       boolean lockedMonitors,
                                       boolean lockedSynchronizers) {
         verifyThreadIds(ids);
+        // ids has been verified to be non-null
+        // an empty array of ids should return an empty array of ThreadInfos
+        if (ids.length == 0) return new ThreadInfo[0];
+
         verifyDumpThreads(lockedMonitors, lockedSynchronizers);
         return dumpThreads0(ids, lockedMonitors, lockedSynchronizers);
     }
 
+    @Override
     public ThreadInfo[] dumpAllThreads(boolean lockedMonitors,
                                        boolean lockedSynchronizers) {
         verifyDumpThreads(lockedMonitors, lockedSynchronizers);
@@ -469,6 +502,7 @@ class ThreadImpl implements com.sun.management.ThreadMXBean {
     // tid == 0 to reset contention times for all threads
     private static native void resetContentionTimes0(long tid);
 
+    @Override
     public ObjectName getObjectName() {
         return Util.newObjectName(ManagementFactory.THREAD_MXBEAN_NAME);
     }

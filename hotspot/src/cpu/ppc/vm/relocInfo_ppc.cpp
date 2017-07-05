@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,12 @@
 
 #include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
-#include "assembler_ppc.inline.hpp"
 #include "code/relocInfo.hpp"
 #include "nativeInst_ppc.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/safepoint.hpp"
 
 void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
-  bool copy_back_to_oop_pool = true;  // TODO: PPC port
   // The following comment is from the declaration of DataRelocation:
   //
   //  "The "o" (displacement) argument is relevant only to split relocations

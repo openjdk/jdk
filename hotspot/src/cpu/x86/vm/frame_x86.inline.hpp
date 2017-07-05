@@ -94,7 +94,7 @@ inline frame::frame(intptr_t* sp, intptr_t* fp) {
   // find_blob call. This is also why we can have no asserts on the validity
   // of the pc we find here. AsyncGetCallTrace -> pd_get_top_frame_for_signal_handler
   // -> pd_last_frame should use a specialized version of pd_last_frame which could
-  // call a specilaized frame constructor instead of this one.
+  // call a specialized frame constructor instead of this one.
   // Then we could use the assert below. However this assert is of somewhat dubious
   // value.
   // assert(_pc != NULL, "no pc?");

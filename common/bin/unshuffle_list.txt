@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -1156,7 +1156,6 @@ jdk/src/java.management/share/classes/com/sun/jmx/defaults : jdk/src/share/class
 jdk/src/java.management/share/classes/com/sun/jmx/interceptor : jdk/src/share/classes/com/sun/jmx/interceptor
 jdk/src/java.management/share/classes/com/sun/jmx/mbeanserver : jdk/src/share/classes/com/sun/jmx/mbeanserver
 jdk/src/java.management/share/classes/com/sun/jmx/remote : jdk/src/share/classes/com/sun/jmx/remote
-jdk/src/java.management/share/classes/com/sun/management : jdk/src/share/classes/com/sun/management
 jdk/src/java.management/share/classes/java/lang/management : jdk/src/share/classes/java/lang/management
 jdk/src/java.management/share/classes/javax/management : jdk/src/share/classes/javax/management
 jdk/src/java.management/share/classes/mgmt-overview.html : jdk/src/share/classes/com/sun/management/mgmt-overview.html
@@ -1429,6 +1428,7 @@ jdk/src/jdk.localedata/share/classes/sun/util/resources/tr : jdk/src/share/class
 jdk/src/jdk.localedata/share/classes/sun/util/resources/uk : jdk/src/share/classes/sun/util/resources/uk
 jdk/src/jdk.localedata/share/classes/sun/util/resources/vi : jdk/src/share/classes/sun/util/resources/vi
 jdk/src/jdk.localedata/share/classes/sun/util/resources/zh : jdk/src/share/classes/sun/util/resources/zh
+jdk/src/jdk.management/share/classes/com/sun/management : jdk/src/share/classes/com/sun/management
 jdk/src/jdk.naming.dns/share/classes/com/sun/jndi/dns : jdk/src/share/classes/com/sun/jndi/dns
 jdk/src/jdk.naming.dns/share/classes/com/sun/jndi/url/dns : jdk/src/share/classes/com/sun/jndi/url/dns
 jdk/src/jdk.naming.dns/share/classes/META-INF/services : jdk/src/share/classes/sun/net/spi/nameservice/dns/META-INF/services

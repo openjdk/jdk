@@ -49,7 +49,7 @@ public class AssertSafepointCheckConsistency1 {
                   "-XX:+UnlockDiagnosticVMOptions",
                   "-XX:+WhiteBoxAPI",
                   "-XX:-TransmitErrorReport",
-                  "-XX:-CreateMinidumpOnCrash",
+                  "-XX:-CreateCoredumpOnCrash",
                   "-Xmx32m",
                   "AssertSafepointCheckConsistency1",
                   "test");
