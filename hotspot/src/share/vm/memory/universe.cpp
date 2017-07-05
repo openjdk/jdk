@@ -1268,10 +1268,6 @@ void Universe::print_heap_after_gc(outputStream* st, bool ignore_extended) {
 }
 
 void Universe::verify(bool silent, VerifyOption option) {
-  if (SharedSkipVerify) {
-    return;
-  }
-
   // The use of _verify_in_progress is a temporary work around for
   // 6320749.  Don't bother with a creating a class to set and clear
   // it since it is only used in this method and the control flow is
