@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -480,33 +480,6 @@ class StableMemoryChecker : public StackObj {
 
 
 // --------------------------------------------------------------------------
-
-
-// Compute the hash value for a java.lang.String object which would
-// contain the characters passed in. This hash value is used for at
-// least two purposes.
-//
-// (a) As the hash value used by the StringTable for bucket selection
-//     and comparison (stored in the HashtableEntry structures).  This
-//     is used in the String.intern() method.
-//
-// (b) As the hash value used by the String object itself, in
-//     String.hashCode().  This value is normally calculate in Java code
-//     in the String.hashCode method(), but is precomputed for String
-//     objects in the shared archive file.
-//
-//     For this reason, THIS ALGORITHM MUST MATCH String.hashCode().
-
-int StringTable::hash_string(jchar* s, int len) {
-  unsigned h = 0;
-  while (len-- > 0) {
-    h = 31*h + (unsigned) *s;
-    s++;
-  }
-  return h;
-}
-
-
 StringTable* StringTable::_the_table = NULL;
 
 oop StringTable::lookup(int index, jchar* name,
@@ -561,7 +534,7 @@ oop StringTable::lookup(Symbol* symbol) {
   ResourceMark rm;
   int length;
   jchar* chars = symbol->as_unicode(length);
-  unsigned int hashValue = hash_string(chars, length);
+  unsigned int hashValue = java_lang_String::hash_string(chars, length);
   int index = the_table()->hash_to_index(hashValue);
   return the_table()->lookup(index, chars, length, hashValue);
 }
@@ -569,7 +542,7 @@ oop StringTable::lookup(Symbol* symbol) {
 
 oop StringTable::intern(Handle string_or_null, jchar* name,
                         int len, TRAPS) {
-  unsigned int hashValue = hash_string(name, len);
+  unsigned int hashValue = java_lang_String::hash_string(name, len);
   int index = the_table()->hash_to_index(hashValue);
   oop string = the_table()->lookup(index, name, len, hashValue);
 
@@ -663,10 +636,7 @@ void StringTable::verify() {
       oop s = p->literal();
       guarantee(s != NULL, "interned string is NULL");
       guarantee(s->is_perm() || !JavaObjectsInPerm, "interned string not in permspace");
-
-      int length;
-      jchar* chars = java_lang_String::as_unicode_string(s, length);
-      unsigned int h = hash_string(chars, length);
+      unsigned int h = java_lang_String::hash_string(s);
       guarantee(p->hash() == h, "broken hash in string table entry");
       guarantee(the_table()->hash_to_index(h) == i,
                 "wrong index in string table");

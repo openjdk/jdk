@@ -231,11 +231,11 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   char* skip_over_field_signature(char* signature, bool void_ok, unsigned int length, TRAPS);
 
   bool is_anonymous() {
-    assert(AnonymousClasses || _host_klass.is_null(), "");
+    assert(EnableInvokeDynamic || _host_klass.is_null(), "");
     return _host_klass.not_null();
   }
   bool has_cp_patch_at(int index) {
-    assert(AnonymousClasses, "");
+    assert(EnableInvokeDynamic, "");
     assert(index >= 0, "oob");
     return (_cp_patches != NULL
             && index < _cp_patches->length()
@@ -258,7 +258,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   // constant pool construction, but in later versions they can.
   // %%% Let's phase out the old is_klass_reference.
   bool is_klass_reference(constantPoolHandle cp, int index) {
-    return ((LinkWellKnownClasses || AnonymousClasses)
+    return ((LinkWellKnownClasses || EnableInvokeDynamic)
             ? cp->tag_at(index).is_klass_or_reference()
             : cp->tag_at(index).is_klass_reference());
   }

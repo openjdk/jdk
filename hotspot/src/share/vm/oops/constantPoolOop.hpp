@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -429,7 +429,7 @@ class constantPoolOopDesc : public oopDesc {
 
   // A "pseudo-string" is an non-string oop that has found is way into
   // a String entry.
-  // Under AnonymousClasses this can happen if the user patches a live
+  // Under EnableInvokeDynamic this can happen if the user patches a live
   // object into a CONSTANT_String entry of an anonymous class.
   // Method oops internally created for method handles may also
   // use pseudo-strings to link themselves to related metaobjects.
@@ -442,7 +442,7 @@ class constantPoolOopDesc : public oopDesc {
   }
 
   void pseudo_string_at_put(int which, oop x) {
-    assert(AnonymousClasses, "");
+    assert(EnableInvokeDynamic, "");
     set_pseudo_string();        // mark header
     assert(tag_at(which).is_string() || tag_at(which).is_unresolved_string(), "Corrupted constant pool");
     string_at_put(which, x);    // this works just fine
