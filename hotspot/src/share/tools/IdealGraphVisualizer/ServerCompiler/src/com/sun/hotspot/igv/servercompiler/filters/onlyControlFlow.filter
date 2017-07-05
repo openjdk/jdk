@@ -1,0 +1,24 @@
+var f = new RemoveFilter("Show only control flow");
+f.addRule(
+  new RemoveFilter.RemoveRule(
+    new InvertSelector(
+      new OrSelector(
+        new OrSelector(
+          new SuccessorSelector(
+            new MatcherSelector(
+              new Properties.StringPropertyMatcher("type", "control")
+            )
+          ),
+	  new MatcherSelector(
+            new Properties.StringPropertyMatcher("type", "control")
+          )
+        ),
+	new MatcherSelector(
+          new Properties.StringPropertyMatcher("name", "Start")
+        )
+      )
+    ), false
+  )
+);
+f.addRule( new RemoveFilter.RemoveRule(new MatcherSelector(new Properties.RegexpPropertyMatcher("name", "Phi|Store.")), false));
+f.apply(graph);

@@ -632,7 +632,7 @@ bool CallNode::may_modify(const TypePtr *addr_t, PhaseTransform *phase) {
   const TypeOopPtr *adrInst_t  = addr_t->isa_oopptr();
 
   // if not an InstPtr or not an instance type, assume the worst
-  if (adrInst_t == NULL || !adrInst_t->is_instance_field()) {
+  if (adrInst_t == NULL || !adrInst_t->is_known_instance_field()) {
     return true;
   }
   Compile *C = phase->C;

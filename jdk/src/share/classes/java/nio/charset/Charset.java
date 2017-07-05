@@ -188,21 +188,22 @@ import sun.security.action.GetPropertyAction;
  * <ul>
  *
  *   <li><p> When decoding, the <tt>UTF-16BE</tt> and <tt>UTF-16LE</tt>
- *   charsets ignore byte-order marks; when encoding, they do not write
+ *   charsets interpret the initial byte-order marks as a <small>ZERO-WIDTH
+ *   NON-BREAKING SPACE</small>; when encoding, they do not write
  *   byte-order marks. </p></li>
+
  *
- *   <li><p> When decoding, the <tt>UTF-16</tt> charset interprets a byte-order
- *   mark to indicate the byte order of the stream but defaults to big-endian
- *   if there is no byte-order mark; when encoding, it uses big-endian byte
- *   order and writes a big-endian byte-order mark. </p></li>
+ *   <li><p> When decoding, the <tt>UTF-16</tt> charset interprets the
+ *   byte-order mark at the beginning of the input stream to indicate the
+ *   byte-order of the stream but defaults to big-endian if there is no
+ *   byte-order mark; when encoding, it uses big-endian byte order and writes
+ *   a big-endian byte-order mark. </p></li>
  *
  * </ul>
  *
- * In any case, when a byte-order mark is read at the beginning of a decoding
- * operation it is omitted from the resulting sequence of characters.  Byte
- * order marks occuring after the first element of an input sequence are not
- * omitted since the same code is used to represent <small>ZERO-WIDTH
- * NON-BREAKING SPACE</small>.
+ * In any case, byte order marks occuring after the first element of an
+ * input sequence are not omitted since the same code is used to represent
+ * <small>ZERO-WIDTH NON-BREAKING SPACE</small>.
  *
  * <p> Every instance of the Java virtual machine has a default charset, which
  * may or may not be one of the standard charsets.  The default charset is

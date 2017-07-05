@@ -215,11 +215,11 @@ public class JavaThread extends Thread {
     if (f == null) return null;
     boolean imprecise = true;
     if (f.isInterpretedFrame() && !f.isInterpretedFrameValid()) {
-      if (DEBUG) {
-        System.out.println("Correcting for invalid interpreter frame");
-      }
-      f = f.sender(regMap);
-      imprecise = false;
+       if (DEBUG) {
+         System.out.println("Correcting for invalid interpreter frame");
+       }
+       f = f.sender(regMap);
+       imprecise = false;
     }
     VFrame vf = VFrame.newVFrame(f, regMap, this, true, imprecise);
     if (vf == null) {
@@ -228,10 +228,7 @@ public class JavaThread extends Thread {
       }
       return null;
     }
-    if (vf.isJavaFrame()) {
-      return (JavaVFrame) vf;
-    }
-    return (JavaVFrame) vf.javaSender();
+    return vf.isJavaFrame() ? (JavaVFrame)vf : vf.javaSender();
   }
 
   /** In this system, a JavaThread is the top-level factory for a

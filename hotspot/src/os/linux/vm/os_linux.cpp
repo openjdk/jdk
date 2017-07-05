@@ -75,8 +75,8 @@ int os::Linux::_page_size = -1;
 bool os::Linux::_is_floating_stack = false;
 bool os::Linux::_is_NPTL = false;
 bool os::Linux::_supports_fast_thread_cpu_time = false;
-char * os::Linux::_glibc_version = NULL;
-char * os::Linux::_libpthread_version = NULL;
+const char * os::Linux::_glibc_version = NULL;
+const char * os::Linux::_libpthread_version = NULL;
 
 static jlong initial_time_count=0;
 
@@ -213,9 +213,9 @@ pid_t os::Linux::gettid() {
 // the system call returns 1.  This causes the VM to act as if it is
 // a single processor and elide locking (see is_MP() call).
 static bool unsafe_chroot_detected = false;
-static char *unstable_chroot_error = "/proc file system not found.\n"
-              "Java may be unstable running multithreaded in a chroot "
-              "environment on Linux when /proc filesystem is not mounted.";
+static const char *unstable_chroot_error = "/proc file system not found.\n"
+                     "Java may be unstable running multithreaded in a chroot "
+                     "environment on Linux when /proc filesystem is not mounted.";
 
 void os::Linux::initialize_system_info() {
   _processor_count = sysconf(_SC_NPROCESSORS_CONF);
@@ -544,26 +544,23 @@ void os::Linux::libpthread_init() {
   if (n > 0) {
      char *str = (char *)malloc(n);
      confstr(_CS_GNU_LIBPTHREAD_VERSION, str, n);
-
      // Vanilla RH-9 (glibc 2.3.2) has a bug that confstr() always tells
      // us "NPTL-0.29" even we are running with LinuxThreads. Check if this
-     // is the case:
+     // is the case. LinuxThreads has a hard limit on max number of threads.
+     // So sysconf(_SC_THREAD_THREADS_MAX) will return a positive value.
+     // On the other hand, NPTL does not have such a limit, sysconf()
+     // will return -1 and errno is not changed. Check if it is really NPTL.
      if (strcmp(os::Linux::glibc_version(), "glibc 2.3.2") == 0 &&
-         strstr(str, "NPTL")) {
-        // LinuxThreads has a hard limit on max number of threads. So
-        // sysconf(_SC_THREAD_THREADS_MAX) will return a positive value.
-        // On the other hand, NPTL does not have such a limit, sysconf()
-        // will return -1 and errno is not changed. Check if it is really
-        // NPTL:
-        if (sysconf(_SC_THREAD_THREADS_MAX) > 0) {
-           free(str);
-           str = "linuxthreads";
-        }
+         strstr(str, "NPTL") &&
+         sysconf(_SC_THREAD_THREADS_MAX) > 0) {
+       free(str);
+       os::Linux::set_libpthread_version("linuxthreads");
+     } else {
+       os::Linux::set_libpthread_version(str);
      }
-     os::Linux::set_libpthread_version(str);
   } else {
-     // glibc before 2.3.2 only has LinuxThreads.
-     os::Linux::set_libpthread_version("linuxthreads");
+    // glibc before 2.3.2 only has LinuxThreads.
+    os::Linux::set_libpthread_version("linuxthreads");
   }
 
   if (strstr(libpthread_version(), "NPTL")) {
@@ -4632,11 +4629,7 @@ extern char** environ;
 // Unlike system(), this function can be called from signal handler. It
 // doesn't block SIGINT et al.
 int os::fork_and_exec(char* cmd) {
-  char * argv[4];
-  argv[0] = "sh";
-  argv[1] = "-c";
-  argv[2] = cmd;
-  argv[3] = NULL;
+  const char * argv[4] = {"sh", "-c", cmd, NULL};
 
   // fork() in LinuxThreads/NPTL is not async-safe. It needs to run
   // pthread_atfork handlers and reset pthread library. All we need is a
@@ -4661,7 +4654,7 @@ int os::fork_and_exec(char* cmd) {
     // IA64 should use normal execve() from glibc to match the glibc fork()
     // above.
     NOT_IA64(syscall(__NR_execve, "/bin/sh", argv, environ);)
-    IA64_ONLY(execve("/bin/sh", argv, environ);)
+    IA64_ONLY(execve("/bin/sh", (char* const*)argv, environ);)
 
     // execve failed
     _exit(-1);

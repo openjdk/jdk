@@ -1072,8 +1072,6 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
       phase->_igvn.add_users_to_worklist(l->fast_out(i));
   }
 
-  phase->C->print_method("After beautify loops", 3);
-
   // Now recursively beautify nested loops
   if( _child ) result |= _child->beautify_loops( phase );
   if( _next  ) result |= _next ->beautify_loops( phase );
@@ -1470,6 +1468,8 @@ PhaseIdealLoop::PhaseIdealLoop( PhaseIterGVN &igvn, const PhaseIdealLoop *verify
       }
       // Reset loop nesting depth
       _ltree_root->set_nest( 0 );
+
+      C->print_method("After beautify loops", 3);
     }
   }
 

@@ -59,6 +59,7 @@ void xmlStream::write(const char* s, size_t len) {
   if (!is_open())  return;
 
   out()->write(s, len);
+  update_position(s, len);
 }
 
 

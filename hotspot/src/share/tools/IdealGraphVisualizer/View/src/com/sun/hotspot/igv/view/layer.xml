@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE filesystem PUBLIC "-//NetBeans//DTD Filesystem 1.1//EN" "http://www.netbeans.org/dtds/filesystem-1_1.dtd">
+<filesystem>
+    <folder name="Actions">
+        <folder name="File">
+            <file name="com-sun-hotspot-igv-view-actions-ExportAction.instance">
+                <attr name="position" intvalue="1100"/>
+            </file>
+        </folder>
+        <folder name="View">
+            <file name="com-sun-hotspot-igv-view-actions-NextDiagramAction.instance"><attr name="position" intvalue="2000"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-PrevDiagramAction.instance"><attr name="position" intvalue="2001"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-ShowAllAction.instance"><attr name="position" intvalue="2001"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-ExtractAction.instance"><attr name="position" intvalue="2001"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-HideAction.instance"><attr name="position" intvalue="2001"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-ZoomInAction.instance"><attr name="position" intvalue="2001"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-ZoomOutAction.instance"><attr name="position" intvalue="2001"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-OverviewAction.instance"><attr name="position" intvalue="2001"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-PredSuccAction.instance"><attr name="position" intvalue="2001"/></file>
+            <file name="com-sun-hotspot-igv-view-actions-EnableBlockLayoutAction.instance"><attr name="position" intvalue="2001"/></file>
+        </folder>
+    </folder>
+    <folder name="Menu">
+        <folder name="View">
+            <file name="com-sun-hotspot-igv-view-actions-PrevDiagramAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-PrevDiagramAction.instance"/>
+            </file>
+            <file name="com-sun-hotspot-igv-view-actions-NextDiagramAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-NextDiagramAction.instance"/>
+            </file>
+            <file name="com-sun-hotspot-igv-view-actions-ShowAllAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ShowAllAction.instance"/>
+            </file>
+            <file name="com-sun-hotspot-igv-view-actions-ExtractAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ExtractAction.instance"/>
+            </file>
+            <file name="com-sun-hotspot-igv-view-actions-HideAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-HideAction.instance"/>
+            </file>
+            <file name="com-sun-hotspot-igv-view-actions-ZoomInAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ZoomInAction.instance"/>
+            </file>
+            <file name="com-sun-hotspot-igv-view-actions-ZoomOutAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/View/com-sun-hotspot-igv-view-actions-ZoomOutAction.instance"/>
+            </file>
+        </folder>
+        <folder name="File">
+            <file name="com-sun-hotspot-igv-view-actions-ExportAction.shadow">
+                <attr name="originalFile" stringvalue="Actions/File/com-sun-hotspot-igv-view-actions-ExportAction.instance"/>
+                <attr name="position" intvalue="600"/>
+            </file>
+        </folder>
+    </folder>
+    <folder name="Toolbars">
+        <folder name="Edit">
+            <attr name="com-sun-hotspot-igv-view-actions-LineGeneratorAction.shadow/com-sun-hotspot-igv-coordinator-actions-OpenGraphAction.shadow" boolvalue="true"/>
+        </folder>
+    </folder>
+</filesystem>
