@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,6 +157,7 @@ public class InputMethodHighlight {
 
     /**
      * Returns whether the text range is selected.
+     * @return whether the text range is selected
      */
     public boolean isSelected() {
         return selected;
@@ -174,6 +175,7 @@ public class InputMethodHighlight {
 
     /**
      * Returns the variation of the text range.
+     * @return the variation of the text range
      */
     public int getVariation() {
         return variation;
@@ -181,6 +183,7 @@ public class InputMethodHighlight {
 
     /**
      * Returns the rendering style attributes for the text range, or null.
+     * @return the rendering style attributes for the text range, or null
      * @since 1.3
      */
     public Map<TextAttribute,?> getStyle() {

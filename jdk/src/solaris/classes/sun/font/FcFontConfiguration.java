@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -441,7 +441,7 @@ public class FcFontConfiguration extends FontConfiguration {
             try {
                 fcVersion = Integer.parseInt(fcVersionStr);
                 if (fcVersion != 0 &&
-                    fcVersion != fcm.getFontConfigVersion()) {
+                    fcVersion != FontConfigManager.getFontConfigVersion()) {
                     return;
                 }
             } catch (Exception e) {

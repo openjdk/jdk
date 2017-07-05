@@ -222,8 +222,8 @@ const char* StatSampler::get_system_property(const char* name, TRAPS) {
  * The list of System Properties that have corresponding PerfData
  * string instrumentation created by retrieving the named property's
  * value from System.getProperty() and unconditionally creating a
- * PerfStringConstant object initialized to the retreived value. This
- * is not an exhustive list of Java properties with corresponding string
+ * PerfStringConstant object initialized to the retrieved value. This
+ * is not an exhaustive list of Java properties with corresponding string
  * instrumentation as the create_system_property_instrumentation() method
  * creates other property based instrumentation conditionally.
  */
@@ -325,7 +325,7 @@ void StatSampler::create_misc_perfdata() {
   // create string instrumentation for various Java properties.
   create_system_property_instrumentation(CHECK);
 
-  // hotspot flags (from .hotspotrc) and args (from command line)
+  // HotSpot flags (from .hotspotrc) and args (from command line)
   //
   PerfDataManager::create_string_constant(JAVA_RT, "vmFlags",
                                           Arguments::jvm_flags(), CHECK);

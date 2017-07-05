@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,9 +88,9 @@ public final class MidiInDeviceProvider extends AbstractMidiDeviceProvider {
     }
 
     MidiDevice[] getDeviceCache() { return devices; }
-    void setDeviceCache(MidiDevice[] devices) { this.devices = devices; }
+    void setDeviceCache(MidiDevice[] devices) { MidiInDeviceProvider.devices = devices; }
     Info[] getInfoCache() { return infos; }
-    void setInfoCache(Info[] infos) { this.infos = infos; }
+    void setInfoCache(Info[] infos) { MidiInDeviceProvider.infos = infos; }
 
 
     // INNER CLASSES

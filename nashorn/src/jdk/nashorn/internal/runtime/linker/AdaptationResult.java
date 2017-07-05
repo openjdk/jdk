@@ -47,7 +47,8 @@ final class AdaptationResult {
         ERROR_NON_PUBLIC_CLASS,
         ERROR_NO_ACCESSIBLE_CONSTRUCTOR,
         ERROR_MULTIPLE_SUPERCLASSES,
-        ERROR_NO_COMMON_LOADER
+        ERROR_NO_COMMON_LOADER,
+        ERROR_FINAL_FINALIZER
     }
 
     static final AdaptationResult SUCCESSFUL_RESULT = new AdaptationResult(Outcome.SUCCESS, "");

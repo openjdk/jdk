@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -235,10 +235,12 @@ public class D3DGraphicsDevice extends Win32GraphicsDevice {
      */
     private static class D3DFSWindowAdapter extends WindowAdapter {
         @Override
+        @SuppressWarnings("static")
         public void windowDeactivated(WindowEvent e) {
             D3DRenderQueue.getInstance().restoreDevices();
         }
         @Override
+        @SuppressWarnings("static")
         public void windowActivated(WindowEvent e) {
             D3DRenderQueue.getInstance().restoreDevices();
         }

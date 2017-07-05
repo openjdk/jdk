@@ -48,8 +48,8 @@ jfieldID IO_handle_fdID;
 
 JNIEXPORT void JNICALL
 Java_java_io_FileDescriptor_initIDs(JNIEnv *env, jclass fdClass) {
-    IO_fd_fdID = (*env)->GetFieldID(env, fdClass, "fd", "I");
-    IO_handle_fdID = (*env)->GetFieldID(env, fdClass, "handle", "J");
+    CHECK_NULL(IO_fd_fdID = (*env)->GetFieldID(env, fdClass, "fd", "I"));
+    CHECK_NULL(IO_handle_fdID = (*env)->GetFieldID(env, fdClass, "handle", "J"));
 }
 
 JNIEXPORT jlong JNICALL

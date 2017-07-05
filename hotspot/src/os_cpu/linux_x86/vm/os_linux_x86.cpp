@@ -49,6 +49,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
@@ -906,6 +907,9 @@ void os::workaround_expand_exec_shield_cs_limit() {
   if ( (codebuf == NULL) || (!os::commit_memory(codebuf, page_size, true)) ) {
     return; // No matter, we tried, best effort.
   }
+
+  MemTracker::record_virtual_memory_type((address)codebuf, mtInternal);
+
   if (PrintMiscellaneous && (Verbose || WizardMode)) {
      tty->print_cr("[CS limit NX emulation work-around, exec code at: %p]", codebuf);
   }

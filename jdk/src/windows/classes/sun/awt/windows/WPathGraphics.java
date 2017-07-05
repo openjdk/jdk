@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ class WPathGraphics extends PathGraphics {
     private static boolean preferGDITextLayout = false;
     static {
         String textLayoutStr =
-            (String)java.security.AccessController.doPrivileged(
+            java.security.AccessController.doPrivileged(
                    new sun.security.action.GetPropertyAction(
                          "sun.java2d.print.enableGDITextLayout"));
 

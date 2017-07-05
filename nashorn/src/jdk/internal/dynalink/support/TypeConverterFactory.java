@@ -94,6 +94,7 @@ import java.util.List;
 import jdk.internal.dynalink.linker.ConversionComparator;
 import jdk.internal.dynalink.linker.ConversionComparator.Comparison;
 import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.GuardedTypeConversion;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkerServices;
 
@@ -134,12 +135,30 @@ public class TypeConverterFactory {
                 @Override
                 protected MethodHandle computeValue(Class<?> targetType) {
                     if(!canAutoConvert(sourceType, targetType)) {
-                        final MethodHandle converter = getTypeConverterNull(sourceType, targetType);
-                        if(converter != null) {
+                        final MethodHandle converter = getCacheableTypeConverter(sourceType, targetType);
+                        if(converter != IDENTITY_CONVERSION) {
                             return converter;
                         }
                     }
                     return IDENTITY_CONVERSION.asType(MethodType.methodType(targetType, sourceType));
+                }
+            };
+        }
+    };
+
+    private final ClassValue<ClassMap<Boolean>> canConvert = new ClassValue<ClassMap<Boolean>>() {
+        @Override
+        protected ClassMap<Boolean> computeValue(final Class<?> sourceType) {
+            return new ClassMap<Boolean>(getClassLoader(sourceType)) {
+                @Override
+                protected Boolean computeValue(Class<?> targetType) {
+                    try {
+                        return getTypeConverterNull(sourceType, targetType) != null;
+                    } catch (RuntimeException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             };
         }
@@ -253,7 +272,7 @@ public class TypeConverterFactory {
      * @return true if there can be a conversion, false if there can not.
      */
     public boolean canConvert(final Class<?> from, final Class<?> to) {
-        return canAutoConvert(from, to) || getTypeConverterNull(from, to) != null;
+        return canAutoConvert(from, to) || canConvert.get(from).get(to).booleanValue();
     }
 
     /**
@@ -294,9 +313,21 @@ public class TypeConverterFactory {
         return TypeUtilities.isMethodInvocationConvertible(fromType, toType);
     }
 
-    /*private*/ MethodHandle getTypeConverterNull(Class<?> sourceType, Class<?> targetType) {
-        final MethodHandle converter = converterMap.get(sourceType).get(targetType);
+    /*private*/ MethodHandle getCacheableTypeConverterNull(Class<?> sourceType, Class<?> targetType) {
+        final MethodHandle converter = getCacheableTypeConverter(sourceType, targetType);
         return converter == IDENTITY_CONVERSION ? null : converter;
+    }
+
+    /*private*/ MethodHandle getTypeConverterNull(Class<?> sourceType, Class<?> targetType) {
+        try {
+            return getCacheableTypeConverterNull(sourceType, targetType);
+        } catch(NotCacheableConverter e) {
+            return e.converter;
+        }
+    }
+
+    /*private*/ MethodHandle getCacheableTypeConverter(Class<?> sourceType, Class<?> targetType) {
+        return converterMap.get(sourceType).get(targetType);
     }
 
     /**
@@ -309,22 +340,44 @@ public class TypeConverterFactory {
      * @return a method handle performing the conversion.
      */
     public MethodHandle getTypeConverter(Class<?> sourceType, Class<?> targetType) {
-        return converterIdentityMap.get(sourceType).get(targetType);
+        try {
+            return converterIdentityMap.get(sourceType).get(targetType);
+        } catch(NotCacheableConverter e) {
+            return e.converter;
+        }
     }
 
     /*private*/ MethodHandle createConverter(Class<?> sourceType, Class<?> targetType) throws Exception {
         final MethodType type = MethodType.methodType(targetType, sourceType);
         final MethodHandle identity = IDENTITY_CONVERSION.asType(type);
         MethodHandle last = identity;
+        boolean cacheable = true;
         for(int i = factories.length; i-- > 0;) {
-            final GuardedInvocation next = factories[i].convertToType(sourceType, targetType);
+            final GuardedTypeConversion next = factories[i].convertToType(sourceType, targetType);
             if(next != null) {
-                next.assertType(type);
-                last = next.compose(last);
+                cacheable = cacheable && next.isCacheable();
+                final GuardedInvocation conversionInvocation = next.getConversionInvocation();
+                conversionInvocation.assertType(type);
+                last = conversionInvocation.compose(last);
             }
         }
-        return last == identity ? IDENTITY_CONVERSION : last;
+        if(last == identity) {
+            return IDENTITY_CONVERSION;
+        }
+        if(cacheable) {
+            return last;
+        }
+        throw new NotCacheableConverter(last);
     }
 
     /*private*/ static final MethodHandle IDENTITY_CONVERSION = MethodHandles.identity(Object.class);
+
+    private static class NotCacheableConverter extends RuntimeException {
+        final MethodHandle converter;
+
+        NotCacheableConverter(final MethodHandle converter) {
+            super("", null, false, false);
+            this.converter = converter;
+        }
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -525,7 +525,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
         if (isEventDisabled(xev)) {
             return;
         }
-        final Component currentSource = (Component)getEventSource();
+        final Component currentSource = getEventSource();
         //This is the only difference from XWindow.handleKeyPress
         //Ancestor's function can invoke handleF10KeyPress here
         handleKeyPress(xkey);

@@ -127,7 +127,7 @@ class PSYoungGen : public CHeapObj<mtGC> {
   void adjust_pointers();
   void compact();
 
-  // Called during/after gc
+  // Called during/after GC
   void swap_spaces();
 
   // Resize generation using suggested free space size and survivor size
@@ -146,14 +146,14 @@ class PSYoungGen : public CHeapObj<mtGC> {
   size_t free_in_words() const;
 
   // The max this generation can grow to
-  size_t max_size() const            { return _reserved.byte_size(); }
+  size_t max_size() const { return _reserved.byte_size(); }
 
   // The max this generation can grow to if the boundary between
   // the generations are allowed to move.
   size_t gen_size_limit() const { return _max_gen_size; }
 
   bool is_maximal_no_gc() const {
-    return true;  // never expands except at a GC
+    return true;  // Never expands except at a GC
   }
 
   // Allocation

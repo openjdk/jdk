@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ package java.awt.image;
  * invalid layout information in the {@link Raster}.
  */
 public class RasterFormatException extends java.lang.RuntimeException {
+    private static final long serialVersionUID = 96598996116164315L;
 
     /**
      * Constructs a new <code>RasterFormatException</code> with the

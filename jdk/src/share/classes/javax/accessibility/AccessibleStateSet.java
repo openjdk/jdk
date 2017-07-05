@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,7 +171,7 @@ public class AccessibleStateSet {
         } else {
             AccessibleState[] stateArray = new AccessibleState[states.size()];
             for (int i = 0; i < stateArray.length; i++) {
-                stateArray[i] = (AccessibleState) states.elementAt(i);
+                stateArray[i] = states.elementAt(i);
             }
             return stateArray;
         }
@@ -187,11 +187,10 @@ public class AccessibleStateSet {
     public String toString() {
         String ret = null;
         if ((states != null) && (states.size() > 0)) {
-            ret = ((AccessibleState) (states.elementAt(0))).toDisplayString();
+            ret = states.elementAt(0).toDisplayString();
             for (int i = 1; i < states.size(); i++) {
                 ret = ret + ","
-                        + ((AccessibleState) (states.elementAt(i))).
-                                              toDisplayString();
+                        + states.elementAt(i).toDisplayString();
             }
         }
         return ret;

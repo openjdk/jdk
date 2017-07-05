@@ -25,6 +25,8 @@
  * @bug 4313887
  * @summary Test library dependencies by invoking Files.probeContentType
  *     before other methods that would cause nio.dll to be loaded.
+ * @build ForceLoad SimpleFileTypeDetector
+ * @run main/othervm ForceLoad
  */
 
 import java.nio.file.*;

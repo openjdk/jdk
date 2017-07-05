@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,12 +308,10 @@ public class Win32PrintJob implements CancelablePrintJob {
             }
         }
 
-        PrinterState prnState = (PrinterState)service.getAttribute(
-                                                  PrinterState.class);
+        PrinterState prnState = service.getAttribute(PrinterState.class);
         if (prnState == PrinterState.STOPPED) {
             PrinterStateReasons prnStateReasons =
-                    (PrinterStateReasons)service.getAttribute(
-                                                 PrinterStateReasons.class);
+                service.getAttribute(PrinterStateReasons.class);
                 if ((prnStateReasons != null) &&
                     (prnStateReasons.containsKey(PrinterStateReason.SHUTDOWN)))
                 {
@@ -321,9 +319,8 @@ public class Win32PrintJob implements CancelablePrintJob {
                 }
         }
 
-        if ((PrinterIsAcceptingJobs)(service.getAttribute(
-                         PrinterIsAcceptingJobs.class)) ==
-                         PrinterIsAcceptingJobs.NOT_ACCEPTING_JOBS) {
+        if (service.getAttribute(PrinterIsAcceptingJobs.class) ==
+            PrinterIsAcceptingJobs.NOT_ACCEPTING_JOBS) {
             throw new PrintException("Printer is not accepting job.");
         }
 

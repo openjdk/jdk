@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,11 +153,11 @@ public class GDIWindowSurfaceData extends SurfaceData {
 
     public void validatePipe(SunGraphics2D sg2d) {
         if (sg2d.antialiasHint != SunHints.INTVAL_ANTIALIAS_ON &&
-            sg2d.paintState <= sg2d.PAINT_ALPHACOLOR &&
-            (sg2d.compositeState <= sg2d.COMP_ISCOPY ||
-             sg2d.compositeState == sg2d.COMP_XOR))
+            sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR &&
+            (sg2d.compositeState <= SunGraphics2D.COMP_ISCOPY ||
+             sg2d.compositeState == SunGraphics2D.COMP_XOR))
         {
-            if (sg2d.clipState == sg2d.CLIP_SHAPE) {
+            if (sg2d.clipState == SunGraphics2D.CLIP_SHAPE) {
                 // Do this to init textpipe correctly; we will override the
                 // other non-text pipes below
                 // REMIND: we should clean this up eventually instead of
@@ -194,10 +194,10 @@ public class GDIWindowSurfaceData extends SurfaceData {
                 }
             }
             sg2d.imagepipe = imagepipe;
-            if (sg2d.transformState >= sg2d.TRANSFORM_TRANSLATESCALE) {
+            if (sg2d.transformState >= SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
                 sg2d.drawpipe = gdiTxPipe;
                 sg2d.fillpipe = gdiTxPipe;
-            } else if (sg2d.strokeState != sg2d.STROKE_THIN){
+            } else if (sg2d.strokeState != SunGraphics2D.STROKE_THIN){
                 sg2d.drawpipe = gdiTxPipe;
                 sg2d.fillpipe = gdiPipe;
             } else {
@@ -220,8 +220,8 @@ public class GDIWindowSurfaceData extends SurfaceData {
     }
 
     public RenderLoops getRenderLoops(SunGraphics2D sg2d) {
-        if (sg2d.paintState <= sg2d.PAINT_ALPHACOLOR &&
-            sg2d.compositeState <= sg2d.COMP_ISCOPY)
+        if (sg2d.paintState <= SunGraphics2D.PAINT_ALPHACOLOR &&
+            sg2d.compositeState <= SunGraphics2D.COMP_ISCOPY)
         {
             return solidloops;
         }
@@ -295,8 +295,8 @@ public class GDIWindowSurfaceData extends SurfaceData {
                             int x, int y, int w, int h, int dx, int dy)
     {
         CompositeType comptype = sg2d.imageComp;
-        if (sg2d.transformState < sg2d.TRANSFORM_TRANSLATESCALE &&
-            sg2d.clipState != sg2d.CLIP_SHAPE &&
+        if (sg2d.transformState < SunGraphics2D.TRANSFORM_TRANSLATESCALE &&
+            sg2d.clipState != SunGraphics2D.CLIP_SHAPE &&
             (CompositeType.SrcOverNoEa.equals(comptype) ||
              CompositeType.SrcNoEa.equals(comptype)))
         {

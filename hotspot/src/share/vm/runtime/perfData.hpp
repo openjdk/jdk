@@ -116,7 +116,7 @@ enum CounterNS {
  *
  * A PerfData subtype is not required to provide an implementation for
  * each variability classification. For example, the String type provides
- * Variable and Constant variablility classifications in the PerfStringVariable
+ * Variable and Constant variability classifications in the PerfStringVariable
  * and PerfStringConstant classes, but does not provide a counter type.
  *
  * Performance data are also described by a unit of measure. Units allow
@@ -172,10 +172,10 @@ enum CounterNS {
  *   foo_counter->inc();
  *
  * Creating a performance counter that holds a variably change long
- * data value with untis specified in U_Bytes in the "com.sun.ci
+ * data value with units specified in U_Bytes in the "com.sun.ci
  * name space.
  *
- *   PerfLongVariable* bar_varible;
+ *   PerfLongVariable* bar_variable;
  *   bar_variable = PerfDataManager::create_long_variable(COM_CI, "bar",
 .*                                                        PerfData::U_Bytes,
  *                                                        optionalInitialValue,
@@ -203,7 +203,7 @@ enum CounterNS {
  *    In this example, the PerfData pointer can be ignored as the caller
  *    is relying on the StatSampler PeriodicTask to sample the given
  *    address at a regular interval. The interval is defined by the
- *    PerfDataSamplingInterval global variable, and is applyied on
+ *    PerfDataSamplingInterval global variable, and is applied on
  *    a system wide basis, not on an per-counter basis.
  *
  * Creating a performance counter in an arbitrary name space that utilizes
@@ -234,7 +234,7 @@ enum CounterNS {
  * the UsePerfData flag. Counters will be created on the c-heap
  * if UsePerfData is false.
  *
- * Until further noice, all PerfData objects should be created and
+ * Until further notice, all PerfData objects should be created and
  * manipulated within a guarded block. The guard variable is
  * UsePerfData, a product flag set to true by default. This flag may
  * be removed from the product in the future.
@@ -586,7 +586,7 @@ class PerfStringVariable : public PerfString {
  *
  * The abstraction is not complete. A more general container class
  * would provide an Iterator abstraction that could be used to
- * traverse the lists. This implementation still relys upon integer
+ * traverse the lists. This implementation still relies upon integer
  * iterators and the at(int index) method. However, the GrowableArray
  * is not directly visible outside this class and can be replaced by
  * some other implementation, as long as that implementation provides

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,6 +303,7 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
     /**
      * Responds to a File Name completion request (e.g. Tab)
      */
+    @SuppressWarnings("serial") // JDK-implementation class
     private class FileNameCompletionAction extends AbstractAction {
         protected FileNameCompletionAction() {
             super("fileNameCompletion");
@@ -538,6 +539,7 @@ public abstract class SynthFileChooserUI extends BasicFileChooserUI implements
     public void clearIconCache() { }
 
     // Copied as SynthBorder is package private in synth
+    @SuppressWarnings("serial") // JDK-implementation clas
     private class UIBorder extends AbstractBorder implements UIResource {
         private Insets _insets;
         UIBorder(Insets insets) {

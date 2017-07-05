@@ -59,6 +59,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
@@ -66,21 +67,23 @@ import jdk.internal.org.objectweb.asm.commons.InstructionAdapter;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.linker.AdaptationResult.Outcome;
 import sun.reflect.CallerSensitive;
 
 /**
  * Generates bytecode for a Java adapter class. Used by the {@link JavaAdapterFactory}.
  * </p><p>
- * For every protected or public constructor in the extended class, the adapter class will have between one to three
+ * For every protected or public constructor in the extended class, the adapter class will have either one or two
  * public constructors (visibility of protected constructors in the extended class is promoted to public).
- * <ul>
- * <li>In every case, a constructor taking a trailing ScriptObject argument preceded by original constructor arguments
- * is always created on the adapter class. When such a constructor is invoked, the passed ScriptObject's member
- * functions are used to implement and/or override methods on the original class, dispatched by name. A single
- * JavaScript function will act as the implementation for all overloaded methods of the same name. When methods on an
- * adapter instance are invoked, the functions are invoked having the ScriptObject passed in the instance constructor as
- * their "this". Subsequent changes to the ScriptObject (reassignment or removal of its functions) are not reflected in
- * the adapter instance; the method implementations are bound to functions at constructor invocation time.
+ * <li>
+ * <li>For adapter classes with instance-level overrides, a constructor taking a trailing ScriptObject argument preceded
+ * by original constructor arguments is always created on the adapter class. When such a constructor is invoked, the
+ * passed ScriptObject's member functions are used to implement and/or override methods on the original class,
+ * dispatched by name. A single JavaScript function will act as the implementation for all overloaded methods of the
+ * same name. When methods on an adapter instance are invoked, the functions are invoked having the ScriptObject passed
+ * in the instance constructor as their "this". Subsequent changes to the ScriptObject (reassignment or removal of its
+ * functions) are not reflected in the adapter instance; the method implementations are bound to functions at
+ * constructor invocation time.
  * {@code java.lang.Object} methods {@code equals}, {@code hashCode}, and {@code toString} can also be overridden. The
  * only restriction is that since every JavaScript object already has a {@code toString} function through the
  * {@code Object.prototype}, the {@code toString} in the adapter is only overridden if the passed ScriptObject has a
@@ -89,16 +92,17 @@ import sun.reflect.CallerSensitive;
  * </li>
  * <li>
  * If the original types collectively have only one abstract method, or have several of them, but all share the
- * same name, an additional constructor is provided for every original constructor; this one takes a ScriptFunction as
- * its last argument preceded by original constructor arguments. This constructor will use the passed function as the
- * implementation for all abstract methods. For consistency, any concrete methods sharing the single abstract method
- * name will also be overridden by the function. When methods on the adapter instance are invoked, the ScriptFunction is
- * invoked with global or UNDEFINED as its "this" depending whether the function is non-strict or not.
+ * same name, an additional constructor for instance-level override adapter is provided for every original constructor;
+ * this one takes a ScriptFunction as its last argument preceded by original constructor arguments. This constructor
+ * will use the passed function as the implementation for all abstract methods. For consistency, any concrete methods
+ * sharing the single abstract method name will also be overridden by the function. When methods on the adapter instance
+ * are invoked, the ScriptFunction is invoked with UNDEFINED or Global as its "this" depending whether the function is
+ * strict or not.
  * </li>
  * <li>
  * If the adapter being generated can have class-level overrides, constructors taking same arguments as the superclass
- * constructors are also created. These constructors simply delegate to the superclass constructor. They are used to
- * create instances of the adapter class with no instance-level overrides.
+ * constructors are created. These constructors simply delegate to the superclass constructor. They are simply used to
+ * create instances of the adapter class, with no instance-level overrides, as they don't have them.
  * </li>
  * </ul>
  * </p><p>
@@ -111,16 +115,20 @@ import sun.reflect.CallerSensitive;
  * source-level script expression <code>new X(a, b) { ... }</code> (which is a proprietary syntax extension Nashorn uses
  * to resemble Java anonymous classes) is actually equivalent to <code>new X(a, b, { ... })</code>.
  * </p><p>
- * It is possible to create two different classes: those that can have both class-level and instance-level overrides,
- * and those that can only have instance-level overrides. When
- * {@link JavaAdapterFactory#getAdapterClassFor(Class[], ScriptObject)} is invoked with non-null {@code classOverrides}
- * parameter, an adapter class is created that can have class-level overrides, and the passed script object will be used
- * as the implementations for its methods, just as in the above case of the constructor taking a script object. Note
- * that in the case of class-level overrides, a new adapter class is created on every invocation, and the implementation
- * object is bound to the class, not to any instance. All created instances will share these functions. Of course, when
- * instances of such a class are being created, they can still take another object (or possibly a function) in their
- * constructor's trailing position and thus provide further instance-specific overrides. The order of invocation is
- * always instance-specified method, then a class-specified method, and finally the superclass method.
+ * It is possible to create two different adapter classes: those that can have class-level overrides, and those that can
+ * have instance-level overrides. When {@link JavaAdapterFactory#getAdapterClassFor(Class[], ScriptObject)} is invoked
+ * with non-null {@code classOverrides} parameter, an adapter class is created that can have class-level overrides, and
+ * the passed script object will be used as the implementations for its methods, just as in the above case of the
+ * constructor taking a script object. Note that in the case of class-level overrides, a new adapter class is created on
+ * every invocation, and the implementation object is bound to the class, not to any instance. All created instances
+ * will share these functions. If it is required to have both class-level overrides and instance-level overrides, the
+ * class-level override adapter class should be subclassed with an instance-override adapter. Since adapters delegate to
+ * super class when an overriding method handle is not specified, this will behave as expected. It is not possible to
+ * have both class-level and instance-level overrides in the same class for security reasons: adapter classes are
+ * defined with a protection domain of their creator code, and an adapter class that has both class and instance level
+ * overrides would need to have two potentially different protection domains: one for class-based behavior and one for
+ * instance-based behavior; since Java classes can only belong to a single protection domain, this could not be
+ * implemented securely.
  */
 final class JavaAdapterBytecodeGenerator {
     static final Type CONTEXT_TYPE       = Type.getType(Context.class);
@@ -171,7 +179,6 @@ final class JavaAdapterBytecodeGenerator {
     private static final int MAX_GENERATED_TYPE_NAME_LENGTH = 255;
 
     private static final String CLASS_INIT = "<clinit>";
-    private static final String STATIC_GLOBAL_FIELD_NAME = "staticGlobal";
 
     // Method name prefix for invoking super-methods
     static final String SUPER_PREFIX = "super$";
@@ -199,6 +206,7 @@ final class JavaAdapterBytecodeGenerator {
     private final Set<MethodInfo> finalMethods = new HashSet<>(EXCLUDED);
     private final Set<MethodInfo> methodInfos = new HashSet<>();
     private boolean autoConvertibleFromFunction = false;
+    private boolean hasExplicitFinalizer = false;
 
     private final ClassWriter cw;
 
@@ -207,8 +215,8 @@ final class JavaAdapterBytecodeGenerator {
      * @param superClass the superclass the adapter will extend.
      * @param interfaces the interfaces the adapter will implement.
      * @param commonLoader the class loader that can see all of superClass, interfaces, and Nashorn classes.
-     * @param classOverride true to generate the bytecode for the adapter that has both class-level and instance-level
-     * overrides, false to generate the bytecode for the adapter that only has instance-level overrides.
+     * @param classOverride true to generate the bytecode for the adapter that has class-level overrides, false to
+     * generate the bytecode for the adapter that has instance-level overrides.
      * @throws AdaptationException if the adapter can not be generated for some reason.
      */
     JavaAdapterBytecodeGenerator(final Class<?> superClass, final List<Class<?>> interfaces,
@@ -230,8 +238,7 @@ final class JavaAdapterBytecodeGenerator {
         superClassName = Type.getInternalName(superClass);
         generatedClassName = getGeneratedClassName(superClass, interfaces);
 
-        cw.visit(Opcodes.V1_7, ACC_PUBLIC | ACC_SUPER | ACC_FINAL, generatedClassName, null, superClassName, getInternalTypeNames(interfaces));
-
+        cw.visit(Opcodes.V1_7, ACC_PUBLIC | ACC_SUPER, generatedClassName, null, superClassName, getInternalTypeNames(interfaces));
         generateGlobalFields();
 
         gatherMethods(superClass);
@@ -244,17 +251,16 @@ final class JavaAdapterBytecodeGenerator {
         generateConstructors();
         generateMethods();
         generateSuperMethods();
+        if (hasExplicitFinalizer) {
+            generateFinalizerMethods();
+        }
         // }
         cw.visitEnd();
     }
 
     private void generateGlobalFields() {
-        cw.visitField(ACC_PRIVATE | ACC_FINAL, GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR, null, null).visitEnd();
+        cw.visitField(ACC_PRIVATE | ACC_FINAL | (classOverride ? ACC_STATIC : 0), GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR, null, null).visitEnd();
         usedFieldNames.add(GLOBAL_FIELD_NAME);
-        if(classOverride) {
-            cw.visitField(ACC_PRIVATE | ACC_FINAL | ACC_STATIC, STATIC_GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR, null, null).visitEnd();
-            usedFieldNames.add(STATIC_GLOBAL_FIELD_NAME);
-        }
     }
 
     JavaAdapterClassLoader createAdapterClassLoader() {
@@ -305,11 +311,9 @@ final class JavaAdapterBytecodeGenerator {
     }
 
     private void generateHandleFields() {
+        final int flags = ACC_PRIVATE | ACC_FINAL | (classOverride ? ACC_STATIC : 0);
         for (final MethodInfo mi: methodInfos) {
-            cw.visitField(ACC_PRIVATE | ACC_FINAL, mi.methodHandleInstanceFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR, null, null).visitEnd();
-            if(classOverride) {
-                cw.visitField(ACC_PRIVATE | ACC_FINAL | ACC_STATIC, mi.methodHandleClassFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR, null, null).visitEnd();
-            }
+            cw.visitField(flags, mi.methodHandleFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR, null, null).visitEnd();
         }
     }
 
@@ -337,7 +341,7 @@ final class JavaAdapterBytecodeGenerator {
                 } else {
                     mv.visitInsn(ACONST_NULL);
                 }
-                mv.putstatic(generatedClassName, mi.methodHandleClassFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
+                mv.putstatic(generatedClassName, mi.methodHandleFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
             }
             initGlobal = new Label();
             mv.goTo(initGlobal);
@@ -351,15 +355,15 @@ final class JavaAdapterBytecodeGenerator {
             mv.aconst(mi.getName());
             mv.aconst(Type.getMethodType(mi.type.toMethodDescriptorString()));
             mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "getHandle", GET_HANDLE_OBJECT_DESCRIPTOR, false);
-            mv.putstatic(generatedClassName, mi.methodHandleClassFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
+            mv.putstatic(generatedClassName, mi.methodHandleFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
         }
 
         if(initGlobal != null) {
             mv.visitLabel(initGlobal);
         }
-        // Assign "staticGlobal = Context.getGlobal()"
+        // Assign "global = Context.getGlobal()"
         invokeGetGlobalWithNullCheck(mv);
-        mv.putstatic(generatedClassName, STATIC_GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
+        mv.putstatic(generatedClassName, GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
 
         endInitMethod(mv);
     }
@@ -390,21 +394,21 @@ final class JavaAdapterBytecodeGenerator {
             // Generate a constructor that just delegates to ctor. This is used with class-level overrides, when we want
             // to create instances without further per-instance overrides.
             generateDelegatingConstructor(ctor);
-        }
+        } else {
+            // Generate a constructor that delegates to ctor, but takes an additional ScriptObject parameter at the
+            // beginning of its parameter list.
+            generateOverridingConstructor(ctor, false);
 
-        // Generate a constructor that delegates to ctor, but takes an additional ScriptObject parameter at the
-        // beginning of its parameter list.
-        generateOverridingConstructor(ctor, false);
-
-        if (samName != null) {
-            if (!autoConvertibleFromFunction && ctor.getParameterTypes().length == 0) {
-                // If the original type only has a single abstract method name, as well as a default ctor, then it can
-                // be automatically converted from JS function.
-                autoConvertibleFromFunction = true;
+            if (samName != null) {
+                if (!autoConvertibleFromFunction && ctor.getParameterTypes().length == 0) {
+                    // If the original type only has a single abstract method name, as well as a default ctor, then it can
+                    // be automatically converted from JS function.
+                    autoConvertibleFromFunction = true;
+                }
+                // If all our abstract methods have a single name, generate an additional constructor, one that takes a
+                // ScriptFunction as its first parameter and assigns it as the implementation for all abstract methods.
+                generateOverridingConstructor(ctor, true);
             }
-            // If all our abstract methods have a single name, generate an additional constructor, one that takes a
-            // ScriptFunction as its first parameter and assigns it as the implementation for all abstract methods.
-            generateOverridingConstructor(ctor, true);
         }
     }
 
@@ -430,7 +434,7 @@ final class JavaAdapterBytecodeGenerator {
     }
 
     /**
-     * Generates a constructor for the adapter class. This constructor will take the same arguments as the supertype
+     * Generates a constructor for the instance adapter class. This constructor will take the same arguments as the supertype
      * constructor passed as the argument here, and delegate to it. However, it will take an additional argument of
      * either ScriptObject or ScriptFunction type (based on the value of the "fromFunction" parameter), and initialize
      * all the method handle fields of the adapter instance with functions from the script object (or the script
@@ -498,7 +502,7 @@ final class JavaAdapterBytecodeGenerator {
                 mv.aconst(Type.getMethodType(mi.type.toMethodDescriptorString()));
                 mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "getHandle", getHandleDescriptor, false);
             }
-            mv.putfield(generatedClassName, mi.methodHandleInstanceFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
+            mv.putfield(generatedClassName, mi.methodHandleFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
         }
 
         // Assign "this.global = Context.getGlobal()"
@@ -536,8 +540,7 @@ final class JavaAdapterBytecodeGenerator {
     private static class MethodInfo {
         private final Method method;
         private final MethodType type;
-        private String methodHandleInstanceFieldName;
-        private String methodHandleClassFieldName;
+        private String methodHandleFieldName;
 
         private MethodInfo(final Class<?> clazz, final String name, final Class<?>... argTypes) throws NoSuchMethodException {
             this(clazz.getDeclaredMethod(name, argTypes));
@@ -567,25 +570,20 @@ final class JavaAdapterBytecodeGenerator {
             return getName().hashCode() ^ type.hashCode();
         }
 
-        void setIsCanonical(final Set<String> usedFieldNames, boolean classOverride) {
-            methodHandleInstanceFieldName = nextName(usedFieldNames);
-            if(classOverride) {
-                methodHandleClassFieldName = nextName(usedFieldNames);
-            }
+        void setIsCanonical(final JavaAdapterBytecodeGenerator self) {
+            methodHandleFieldName = self.nextName(getName());
         }
+    }
 
-        String nextName(final Set<String> usedFieldNames) {
-            int i = 0;
-            final String name = getName();
-            String nextName = name;
-            while (!usedFieldNames.add(nextName)) {
-                final String ordinal = String.valueOf(i++);
-                final int maxNameLen = 255 - ordinal.length();
-                nextName = (name.length() <= maxNameLen ? name : name.substring(0, maxNameLen)).concat(ordinal);
-            }
-            return nextName;
+    private String nextName(final String name) {
+        int i = 0;
+        String nextName = name;
+        while (!usedFieldNames.add(nextName)) {
+            final String ordinal = String.valueOf(i++);
+            final int maxNameLen = 255 - ordinal.length();
+            nextName = (name.length() <= maxNameLen ? name : name.substring(0, maxNameLen)).concat(ordinal);
         }
-
+        return nextName;
     }
 
     private void generateMethods() {
@@ -624,23 +622,19 @@ final class JavaAdapterBytecodeGenerator {
                 methodDesc, null, exceptionNames));
         mv.visitCode();
 
-        final Label instanceHandleDefined = new Label();
-        final Label classHandleDefined = new Label();
+        final Label handleDefined = new Label();
 
         final Type asmReturnType = Type.getType(type.returnType());
 
-        // See if we have instance handle defined
-        mv.visitVarInsn(ALOAD, 0);
-        mv.getfield(generatedClassName, mi.methodHandleInstanceFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
-        // stack: [instanceHandle]
-        jumpIfNonNullKeepOperand(mv, instanceHandleDefined);
-
+        // See if we have overriding method handle defined
         if(classOverride) {
-            // See if we have the static handle
-            mv.getstatic(generatedClassName, mi.methodHandleClassFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
-            // stack: [classHandle]
-            jumpIfNonNullKeepOperand(mv, classHandleDefined);
+            mv.getstatic(generatedClassName, mi.methodHandleFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
+        } else {
+            mv.visitVarInsn(ALOAD, 0);
+            mv.getfield(generatedClassName, mi.methodHandleFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
         }
+        // stack: [handle]
+        jumpIfNonNullKeepOperand(mv, handleDefined);
 
         // No handle is available, fall back to default behavior
         if(Modifier.isAbstract(method.getModifiers())) {
@@ -654,25 +648,17 @@ final class JavaAdapterBytecodeGenerator {
             emitSuperCall(mv, method.getDeclaringClass(), name, methodDesc);
         }
 
-        final Label setupGlobal = new Label();
-
+        mv.visitLabel(handleDefined);
+        // Load the creatingGlobal object
         if(classOverride) {
-            mv.visitLabel(classHandleDefined);
             // If class handle is defined, load the static defining global
-            mv.getstatic(generatedClassName, STATIC_GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
-            // stack: [creatingGlobal := classGlobal, classHandle]
-            mv.goTo(setupGlobal);
+            mv.getstatic(generatedClassName, GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
+        } else {
+            mv.visitVarInsn(ALOAD, 0);
+            mv.getfield(generatedClassName, GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
         }
-
-        mv.visitLabel(instanceHandleDefined);
-        // If instance handle is defined, load the instance defining global
-        mv.visitVarInsn(ALOAD, 0);
-        mv.getfield(generatedClassName, GLOBAL_FIELD_NAME, SCRIPT_OBJECT_TYPE_DESCRIPTOR);
-        // stack: [creatingGlobal := instanceGlobal, instanceHandle]
-
-        // fallthrough to setupGlobal
-
-        // stack: [creatingGlobal, someHandle]
+        // stack: [creatingGlobal, handle]
+        final Label setupGlobal = new Label();
         mv.visitLabel(setupGlobal);
 
         // Determine the first index for a local variable
@@ -685,38 +671,39 @@ final class JavaAdapterBytecodeGenerator {
         final int globalsDifferVar  = nextLocalVar++;
 
         mv.dup();
-        // stack: [creatingGlobal, creatingGlobal, someHandle]
+        // stack: [creatingGlobal, creatingGlobal, handle]
 
         // Emit code for switching to the creating global
         // ScriptObject currentGlobal = Context.getGlobal();
         invokeGetGlobal(mv);
         mv.dup();
+
         mv.visitVarInsn(ASTORE, currentGlobalVar);
-        // stack: [currentGlobal, creatingGlobal, creatingGlobal, someHandle]
+        // stack: [currentGlobal, creatingGlobal, creatingGlobal, handle]
         // if(definingGlobal == currentGlobal) {
         final Label globalsDiffer = new Label();
         mv.ifacmpne(globalsDiffer);
-        // stack: [someGlobal, someHandle]
+        // stack: [creatingGlobal, handle]
         //     globalsDiffer = false
         mv.pop();
-        // stack: [someHandle]
+        // stack: [handle]
         mv.iconst(0); // false
-        // stack: [false, someHandle]
+        // stack: [false, handle]
         final Label invokeHandle = new Label();
         mv.goTo(invokeHandle);
         mv.visitLabel(globalsDiffer);
         // } else {
         //     Context.setGlobal(definingGlobal);
-        // stack: [someGlobal, someHandle]
+        // stack: [creatingGlobal, handle]
         invokeSetGlobal(mv);
-        // stack: [someHandle]
+        // stack: [handle]
         //     globalsDiffer = true
         mv.iconst(1);
-        // stack: [true, someHandle]
+        // stack: [true, handle]
 
         mv.visitLabel(invokeHandle);
         mv.visitVarInsn(ISTORE, globalsDifferVar);
-        // stack: [someHandle]
+        // stack: [handle]
 
         // Load all parameters back on stack for dynamic invocation.
         int varOffset = 1;
@@ -835,7 +822,7 @@ final class JavaAdapterBytecodeGenerator {
         endMethod(mv);
     }
 
-    private void emitSuperCall(final InstructionAdapter mv, final Class owner, final String name, final String methodDesc) {
+    private void emitSuperCall(final InstructionAdapter mv, final Class<?> owner, final String name, final String methodDesc) {
         mv.visitVarInsn(ALOAD, 0);
         int nextParam = 1;
         final Type methodType = Type.getMethodType(methodDesc);
@@ -851,6 +838,42 @@ final class JavaAdapterBytecodeGenerator {
             mv.invokespecial(superClassName, name, methodDesc, false);
         }
         mv.areturn(methodType.getReturnType());
+    }
+
+    private void generateFinalizerMethods() {
+        final String finalizerDelegateName = nextName("access$");
+        generateFinalizerDelegate(finalizerDelegateName);
+        generateFinalizerOverride(finalizerDelegateName);
+    }
+
+    private void generateFinalizerDelegate(final String finalizerDelegateName) {
+        // Generate a delegate that will be invoked from the no-permission trampoline. Note it can be private, as we'll
+        // refer to it with a MethodHandle constant pool entry in the overridden finalize() method (see
+        // generateFinalizerOverride()).
+        final InstructionAdapter mv = new InstructionAdapter(cw.visitMethod(ACC_PRIVATE | ACC_STATIC,
+                finalizerDelegateName, Type.getMethodDescriptor(Type.VOID_TYPE, OBJECT_TYPE), null, null));
+
+        // Simply invoke super.finalize()
+        mv.visitVarInsn(ALOAD, 0);
+        mv.checkcast(Type.getType(generatedClassName));
+        mv.invokespecial(superClassName, "finalize", Type.getMethodDescriptor(Type.VOID_TYPE), false);
+
+        mv.visitInsn(RETURN);
+        endMethod(mv);
+    }
+
+    private void generateFinalizerOverride(final String finalizerDelegateName) {
+        final InstructionAdapter mv = new InstructionAdapter(cw.visitMethod(ACC_PUBLIC, "finalize",
+                VOID_NOARG_METHOD_DESCRIPTOR, null, null));
+        // Overridden finalizer will take a MethodHandle to the finalizer delegating method, ...
+        mv.aconst(new Handle(Opcodes.H_INVOKESTATIC, generatedClassName, finalizerDelegateName,
+                Type.getMethodDescriptor(Type.VOID_TYPE, OBJECT_TYPE)));
+        mv.visitVarInsn(ALOAD, 0);
+        // ...and invoke it through JavaAdapterServices.invokeNoPermissions
+        mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "invokeNoPermissions",
+                Type.getMethodDescriptor(METHOD_HANDLE_TYPE, OBJECT_TYPE), false);
+        mv.visitInsn(RETURN);
+        endMethod(mv);
     }
 
     private static String[] getExceptionNames(final Class<?>[] exceptions) {
@@ -873,16 +896,32 @@ final class JavaAdapterBytecodeGenerator {
      * class.
      * @param type the type defining the methods.
      */
-    private void gatherMethods(final Class<?> type) {
+    private void gatherMethods(final Class<?> type) throws AdaptationException {
         if (Modifier.isPublic(type.getModifiers())) {
             final Method[] typeMethods = type.isInterface() ? type.getMethods() : type.getDeclaredMethods();
 
             for (final Method typeMethod: typeMethods) {
+                final String name = typeMethod.getName();
+                if(name.startsWith(SUPER_PREFIX)) {
+                    continue;
+                }
                 final int m = typeMethod.getModifiers();
                 if (Modifier.isStatic(m)) {
                     continue;
                 }
                 if (Modifier.isPublic(m) || Modifier.isProtected(m)) {
+                    // Is it a "finalize()"?
+                    if(name.equals("finalize") && typeMethod.getParameterCount() == 0) {
+                        if(type != Object.class) {
+                            hasExplicitFinalizer = true;
+                            if(Modifier.isFinal(m)) {
+                                // Must be able to override an explicit finalizer
+                                throw new AdaptationException(Outcome.ERROR_FINAL_FINALIZER, type.getCanonicalName());
+                            }
+                        }
+                        continue;
+                    }
+
                     final MethodInfo mi = new MethodInfo(typeMethod);
                     if (Modifier.isFinal(m) || isCallerSensitive(typeMethod)) {
                         finalMethods.add(mi);
@@ -890,7 +929,7 @@ final class JavaAdapterBytecodeGenerator {
                         if (Modifier.isAbstract(m)) {
                             abstractMethodNames.add(mi.getName());
                         }
-                        mi.setIsCanonical(usedFieldNames, classOverride);
+                        mi.setIsCanonical(this);
                     }
                 }
             }
@@ -911,7 +950,7 @@ final class JavaAdapterBytecodeGenerator {
         }
     }
 
-    private void gatherMethods(final List<Class<?>> classes) {
+    private void gatherMethods(final List<Class<?>> classes) throws AdaptationException {
         for(final Class<?> c: classes) {
             gatherMethods(c);
         }

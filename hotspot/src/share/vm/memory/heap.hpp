@@ -127,8 +127,8 @@ class CodeHeap : public CHeapObj<mtCode> {
   // Heap extents
   bool  reserve(size_t reserved_size, size_t committed_size, size_t segment_size);
   void  release();                               // releases all allocated memory
-  bool  expand_by(size_t size);                  // expands commited memory by size
-  void  shrink_by(size_t size);                  // shrinks commited memory by size
+  bool  expand_by(size_t size);                  // expands committed memory by size
+  void  shrink_by(size_t size);                  // shrinks committed memory by size
   void  clear();                                 // clears all heap contents
 
   // Memory allocation

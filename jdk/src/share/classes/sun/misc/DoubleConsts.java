@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,9 +77,7 @@ public class DoubleConsts {
 
     /**
      * The exponent the smallest positive <code>double</code>
-     * subnormal value would have if it could be normalized.  It is
-     * equal to the value returned by
-     * <code>FpUtils.ilogb(Double.MIN_VALUE)</code>.
+     * subnormal value would have if it could be normalized..
      */
     public static final int     MIN_SUB_EXPONENT = MIN_EXPONENT -
                                                    (SIGNIFICAND_WIDTH - 1);

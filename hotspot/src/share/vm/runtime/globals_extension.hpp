@@ -31,7 +31,7 @@
 
 // Construct enum of Flag_<cmdline-arg> constants.
 
-// Parens left off in the following for the enum decl below.
+// Parenthesis left off in the following for the enum decl below.
 #define FLAG_MEMBER(flag) Flag_##flag
 
 #define RUNTIME_PRODUCT_FLAG_MEMBER(type, name, value, doc)      FLAG_MEMBER(name),

@@ -34,7 +34,7 @@ ARGS=""
 REGARGS=""
 
 case "$OS" in
-  SunOS | Linux | Darwin )
+  SunOS | Linux | Darwin | AIX )
     PS=":"
     FS="/"
     FILEURL="file:"
