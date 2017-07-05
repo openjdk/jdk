@@ -1,14 +1,38 @@
 /*
- *    COMPONENT_NAME:  idl.parser
- *                                                 
- *    ORIGINS: 27
+ * Copyright 1999 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *    THIS PRODUCT CONTAINS RESTRICTED MATERIALS OF IBM                        
- *    5639-D57, (C) COPYRIGHT International Business Machines Corp., 1997, 1998
- *                                        
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
  */
 
-CORBA 2.3 IDL 
+/*
+ *    COMPONENT_NAME:  idl.parser
+ *
+ *    ORIGINS: 27
+ *
+ *    5639-D57, (C) COPYRIGHT International Business Machines Corp., 1997, 1998
+ *
+ */
+
+CORBA 2.3 IDL
 ---------------
 
 (1) <specification>	<definition><specification'>
@@ -83,7 +107,7 @@ CORBA 2.3 IDL
 
 (16) <vad>		e
 			<export> <vad>
-		
+
 (17) <value_dcl>	<value_header> "{" <value_element> <ve> "}"
 
 (17) <ve>		e
@@ -91,9 +115,9 @@ CORBA 2.3 IDL
 
 (18) <value_header>	"custom" "valuetype" <id> <value_inheritance_spec>
 			"valuetype" <id> <value_inheritance_spec>
-			"custom" "valuetype" <id> 
-			"valuetype" <id> 
-			
+			"custom" "valuetype" <id>
+			"valuetype" <id>
+
 (19) <value_inheritance_spec>	<opt_inherits> <opt_supports>
 
 (19) <opt_inherits>	e
@@ -107,7 +131,7 @@ CORBA 2.3 IDL
 			"supports" <interface_name> <interface_name_list>
 
 (19) <interface_name_list>  e
-			"," <interface_name> <interface_name_list> 
+			"," <interface_name> <interface_name_list>
 
 (20) <value_name>	<scoped_name>
 
@@ -121,7 +145,7 @@ CORBA 2.3 IDL
 (23) <init_dcl>		"factory" <id> "(" ")"
 			"factory" <id> "(" <init_param_dcls> ")"
 
-(24) <init_param_dcls>	<init_param_decl> 
+(24) <init_param_dcls>	<init_param_decl>
 			<init_param_decl> "," <init_param_dcls>
 
 (25) <init_param_dcl>	<init_param_attribute> <param_type_spec> <simple_declarator>
@@ -349,7 +373,7 @@ CORBA 2.3 IDL
 
 (87) <op_dcl''>		e
 			<context_expr>
-			<raises_expr> 
+			<raises_expr>
 			<raises_expr> <context_expr>
 
 (88) <op_attribute>	"oneway"
@@ -386,7 +410,7 @@ CORBA 2.3 IDL
 			<wide_string_type>
 			<scoped_name>
 
-(96) <fixed_pt_type>	"fixed" "<" <positive_int_const> "," <positive_int_const> ">" 
+(96) <fixed_pt_type>	"fixed" "<" <positive_int_const> "," <positive_int_const> ">"
 
 (97) <fixed_pt_const_type> "fixed"
 
