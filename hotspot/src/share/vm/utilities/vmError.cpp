@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc_interface/collectedHeap.hpp"
+#include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/init.hpp"
@@ -714,6 +715,13 @@ void VMError::report(outputStream* st) {
      if (_verbose) {
        // VM options
        Arguments::print_on(st);
+       st->cr();
+     }
+
+  STEP(215, "(printing warning if internal testing API used)" )
+
+     if (WhiteBox::used()) {
+       st->print_cr("Unsupported internal testing APIs have been used.");
        st->cr();
      }
 
