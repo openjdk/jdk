@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,18 @@
  * @summary Need to strip leading zeros in TlsPremasterSecret of DHKeyAgreement
  * @library ..
  * @author Pasi Eronen
+ * @run main/othervm TestLeadingZeroesP11
+ * @run main/othervm TestLeadingZeroesP11 sm
  */
 
-import java.io.*;
-import java.security.*;
-import java.security.spec.*;
-import java.security.interfaces.*;
-import javax.crypto.*;
-import javax.crypto.spec.*;
-import javax.crypto.interfaces.*;
+
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
+import javax.crypto.KeyAgreement;
 
 /**
  * Test that leading zeroes are stripped in TlsPremasterSecret case,
@@ -48,9 +51,10 @@ import javax.crypto.interfaces.*;
 public class TestLeadingZeroesP11 extends PKCS11Test {
 
     public static void main(String[] args) throws Exception {
-        main(new TestLeadingZeroesP11());
+        main(new TestLeadingZeroesP11(), args);
     }
 
+    @Override
     public void main(Provider p) throws Exception {
 
         // decode pre-generated keypairs

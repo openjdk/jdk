@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,19 @@
  * @summary KAT test for DH (normal and with secret that has leading a 0x00 byte)
  * @author Andreas Sterbenz
  * @library ..
+ * @run main/othervm TestShort
+ * @run main/othervm TestShort sm
  */
 
 import java.math.BigInteger;
-import java.util.*;
-
-import java.security.*;
-
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.util.Arrays;
+import javax.crypto.KeyAgreement;
+import javax.crypto.spec.DHPrivateKeySpec;
+import javax.crypto.spec.DHPublicKeySpec;
 
 public class TestShort extends PKCS11Test {
 
@@ -83,6 +87,7 @@ public class TestShort extends PKCS11Test {
     + "1a:6a:15:d8:a4:8c:0a:ce:f0:15:03:0c:c2:56:82:a2:75:9b:49:fe:ed:60:c5:6e"
     + ":de:47:55:62:4f:16:20:6d:74:cc:7b:95:93:25:2c:ea");
 
+    @Override
     public void main(Provider provider) throws Exception {
         if (provider.getService("KeyAgreement", "DH") == null) {
             System.out.println("DH not supported, skipping");
@@ -142,7 +147,7 @@ public class TestShort extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new TestShort());
+        main(new TestShort(), args);
     }
 
 }
