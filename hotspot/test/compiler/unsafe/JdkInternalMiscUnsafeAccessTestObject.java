@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,32 +151,32 @@ public class JdkInternalMiscUnsafeAccessTestObject {
 
         // Compare
         {
-            boolean r = UNSAFE.compareAndSwapObject(base, offset, "foo", "bar");
-            assertEquals(r, true, "success compareAndSwap Object");
+            boolean r = UNSAFE.compareAndSetObject(base, offset, "foo", "bar");
+            assertEquals(r, true, "success compareAndSet Object");
             Object x = UNSAFE.getObject(base, offset);
-            assertEquals(x, "bar", "success compareAndSwap Object value");
+            assertEquals(x, "bar", "success compareAndSet Object value");
         }
 
         {
-            boolean r = UNSAFE.compareAndSwapObject(base, offset, "foo", "baz");
-            assertEquals(r, false, "failing compareAndSwap Object");
+            boolean r = UNSAFE.compareAndSetObject(base, offset, "foo", "baz");
+            assertEquals(r, false, "failing compareAndSet Object");
             Object x = UNSAFE.getObject(base, offset);
-            assertEquals(x, "bar", "failing compareAndSwap Object value");
+            assertEquals(x, "bar", "failing compareAndSet Object value");
         }
 
         // Advanced compare
         {
-            Object r = UNSAFE.compareAndExchangeObjectVolatile(base, offset, "bar", "foo");
-            assertEquals(r, "bar", "success compareAndExchangeVolatile Object");
+            Object r = UNSAFE.compareAndExchangeObject(base, offset, "bar", "foo");
+            assertEquals(r, "bar", "success compareAndExchange Object");
             Object x = UNSAFE.getObject(base, offset);
-            assertEquals(x, "foo", "success compareAndExchangeVolatile Object value");
+            assertEquals(x, "foo", "success compareAndExchange Object value");
         }
 
         {
-            Object r = UNSAFE.compareAndExchangeObjectVolatile(base, offset, "bar", "baz");
-            assertEquals(r, "foo", "failing compareAndExchangeVolatile Object");
+            Object r = UNSAFE.compareAndExchangeObject(base, offset, "bar", "baz");
+            assertEquals(r, "foo", "failing compareAndExchange Object");
             Object x = UNSAFE.getObject(base, offset);
-            assertEquals(x, "foo", "failing compareAndExchangeVolatile Object value");
+            assertEquals(x, "foo", "failing compareAndExchange Object value");
         }
 
         {
@@ -210,41 +210,41 @@ public class JdkInternalMiscUnsafeAccessTestObject {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapObject(base, offset, "foo", "bar");
+                success = UNSAFE.weakCompareAndSetObjectPlain(base, offset, "foo", "bar");
             }
-            assertEquals(success, true, "weakCompareAndSwap Object");
+            assertEquals(success, true, "weakCompareAndSetPlain Object");
             Object x = UNSAFE.getObject(base, offset);
-            assertEquals(x, "bar", "weakCompareAndSwap Object value");
+            assertEquals(x, "bar", "weakCompareAndSetPlain Object value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapObjectAcquire(base, offset, "bar", "foo");
+                success = UNSAFE.weakCompareAndSetObjectAcquire(base, offset, "bar", "foo");
             }
-            assertEquals(success, true, "weakCompareAndSwapAcquire Object");
+            assertEquals(success, true, "weakCompareAndSetAcquire Object");
             Object x = UNSAFE.getObject(base, offset);
-            assertEquals(x, "foo", "weakCompareAndSwapAcquire Object");
+            assertEquals(x, "foo", "weakCompareAndSetAcquire Object");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapObjectRelease(base, offset, "foo", "bar");
+                success = UNSAFE.weakCompareAndSetObjectRelease(base, offset, "foo", "bar");
             }
-            assertEquals(success, true, "weakCompareAndSwapRelease Object");
+            assertEquals(success, true, "weakCompareAndSetRelease Object");
             Object x = UNSAFE.getObject(base, offset);
-            assertEquals(x, "bar", "weakCompareAndSwapRelease Object");
+            assertEquals(x, "bar", "weakCompareAndSetRelease Object");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapObjectVolatile(base, offset, "bar", "foo");
+                success = UNSAFE.weakCompareAndSetObject(base, offset, "bar", "foo");
             }
-            assertEquals(success, true, "weakCompareAndSwapVolatile Object");
+            assertEquals(success, true, "weakCompareAndSet Object");
             Object x = UNSAFE.getObject(base, offset);
-            assertEquals(x, "foo", "weakCompareAndSwapVolatile Object");
+            assertEquals(x, "foo", "weakCompareAndSet Object");
         }
 
         UNSAFE.putObject(base, offset, "bar");
@@ -260,4 +260,3 @@ public class JdkInternalMiscUnsafeAccessTestObject {
     }
 
 }
-

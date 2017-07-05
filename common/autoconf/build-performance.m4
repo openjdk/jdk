@@ -417,10 +417,8 @@ AC_DEFUN_ONCE([BPERF_SETUP_SMART_JAVAC],
   AC_SUBST(SJAVAC_SERVER_JAVA)
 
   if test "$MEMORY_SIZE" -gt "3000"; then
-    ADD_JVM_ARG_IF_OK([-d64],SJAVAC_SERVER_JAVA_FLAGS,[$SJAVAC_SERVER_JAVA])
-    if test "$JVM_ARG_OK" = true; then
+    if "$JAVA" -version 2>&1 | $GREP -q "64-Bit"; then
       JVM_64BIT=true
-      JVM_ARG_OK=false
     fi
   fi
 
