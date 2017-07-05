@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,9 @@ class WFramePeer extends WWindowPeer implements FramePeer {
     private static native void initIDs();
 
     // FramePeer implementation
+    @Override
     public native void setState(int state);
+    @Override
     public native int getState();
 
     // sync target and peer
@@ -62,6 +64,7 @@ class WFramePeer extends WWindowPeer implements FramePeer {
             new GetPropertyAction(
             "sun.awt.keepWorkingSetOnMinimize")));
 
+    @Override
     public void setMaximizedBounds(Rectangle b) {
         if (b == null) {
             clearMaximizedBounds();
@@ -123,6 +126,7 @@ class WFramePeer extends WWindowPeer implements FramePeer {
         return ((Frame)target).isUndecorated();
     }
 
+    @Override
     public void reshape(int x, int y, int width, int height) {
         if (((Frame)target).isUndecorated()) {
             super.reshape(x, y, width, height);
@@ -131,6 +135,7 @@ class WFramePeer extends WWindowPeer implements FramePeer {
         }
     }
 
+    @Override
     public Dimension getMinimumSize() {
         Dimension d = new Dimension();
         if (!((Frame)target).isUndecorated()) {
@@ -145,6 +150,7 @@ class WFramePeer extends WWindowPeer implements FramePeer {
     // Note: Because this method calls resize(), which may be overridden
     // by client code, this method must not be executed on the toolkit
     // thread.
+    @Override
     public void setMenuBar(MenuBar mb) {
         WMenuBarPeer mbPeer = (WMenuBarPeer) WToolkit.targetToPeer(mb);
         setMenuBar0(mbPeer);
@@ -170,11 +176,13 @@ class WFramePeer extends WWindowPeer implements FramePeer {
     }
 
     native void createAwtFrame(WComponentPeer parent);
+    @Override
     void create(WComponentPeer parent) {
         preCreate(parent);
         createAwtFrame(parent);
     }
 
+    @Override
     void initialize() {
         super.initialize();
 
@@ -194,14 +202,17 @@ class WFramePeer extends WWindowPeer implements FramePeer {
       InputMethodManager.getInstance().notifyChangeRequest((Component)target);
     }
 
+    @Override
     public void setBoundsPrivate(int x, int y, int width, int height) {
         setBounds(x, y, width, height, SET_BOUNDS);
     }
+    @Override
     public Rectangle getBoundsPrivate() {
         return getBounds();
     }
 
     // TODO: implement it in peers. WLightweightFramePeer may implement lw version.
+    @Override
     public void emulateActivation(boolean activate) {
         synthesizeWmActivate(activate);
     }

@@ -283,4 +283,10 @@ inline int os::set_sock_opt(int fd, int level, int optname,
                             const char* optval, socklen_t optlen) {
   return ::setsockopt(fd, level, optname, optval, optlen);
 }
+
+inline bool os::supports_monotonic_clock() {
+  // mread_real_time() is monotonic on AIX (see os::javaTimeNanos() comments)
+  return true;
+}
+
 #endif // OS_AIX_VM_OS_AIX_INLINE_HPP

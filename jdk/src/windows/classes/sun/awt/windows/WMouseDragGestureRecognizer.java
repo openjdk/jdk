@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,14 @@
 
 package sun.awt.windows;
 
-import java.awt.Toolkit;
 import java.awt.Component;
-
 import java.awt.Point;
 import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DragGestureListener;
 import java.awt.dnd.DragSource;
 import java.awt.dnd.MouseDragGestureRecognizer;
-import java.awt.dnd.DragGestureListener;
-
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 
 import sun.awt.dnd.SunDragSourceContextPeer;
 
@@ -54,7 +49,7 @@ import sun.awt.dnd.SunDragSourceContextPeer;
  * @see java.awt.dnd.DragSource
  */
 
-class WMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
+final class WMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
 
     private static final long serialVersionUID = -3527844310018033570L;
 
@@ -140,6 +135,7 @@ class WMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
      * Invoked when the mouse has been clicked on a component.
      */
 
+    @Override
     public void mouseClicked(MouseEvent e) {
         // do nothing
     }
@@ -148,6 +144,7 @@ class WMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
      * Invoked when a mouse button has been pressed on a component.
      */
 
+    @Override
     public void mousePressed(MouseEvent e) {
         events.clear();
 
@@ -165,6 +162,7 @@ class WMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
      * Invoked when a mouse button has been released on a component.
      */
 
+    @Override
     public void mouseReleased(MouseEvent e) {
         events.clear();
     }
@@ -173,6 +171,7 @@ class WMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
      * Invoked when the mouse enters a component.
      */
 
+    @Override
     public void mouseEntered(MouseEvent e) {
         events.clear();
     }
@@ -181,6 +180,7 @@ class WMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
      * Invoked when the mouse exits a component.
      */
 
+    @Override
     public void mouseExited(MouseEvent e) {
 
         if (!events.isEmpty()) { // gesture pending
@@ -196,6 +196,7 @@ class WMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
      * Invoked when a mouse button is pressed on a component.
      */
 
+    @Override
     public void mouseDragged(MouseEvent e) {
         if (!events.isEmpty()) { // gesture pending
             int dop = mapDragOperationFromModifiers(e);
@@ -225,6 +226,7 @@ class WMouseDragGestureRecognizer extends MouseDragGestureRecognizer {
      * (with no buttons no down).
      */
 
+    @Override
     public void mouseMoved(MouseEvent e) {
         // do nothing
     }

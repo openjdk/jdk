@@ -82,7 +82,7 @@ public class StreamCloser {
                 };
 
                 java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
+                    new java.security.PrivilegedAction<Object>() {
                         public Object run() {
                             /* The thread must be a member of a thread group
                              * which will not get GCed before VM exit.

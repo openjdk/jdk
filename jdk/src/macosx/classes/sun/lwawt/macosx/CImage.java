@@ -31,6 +31,7 @@ import java.awt.image.*;
 
 import java.util.Arrays;
 import java.util.List;
+import sun.awt.image.MultiResolutionImage;
 
 import sun.awt.image.SunWritableRaster;
 
@@ -44,6 +45,7 @@ public class CImage extends CFRetainedResource {
     private static native void nativeCopyNSImageIntoArray(long image, int[] buffer, int w, int h);
     private static native Dimension2D nativeGetNSImageSize(long image);
     private static native void nativeSetNSImageSize(long image, double w, double h);
+    private static native void nativeResizeNSImageRepresentations(long image, double w, double h);
 
     static Creator creator = new Creator();
     static Creator getCreator() {
@@ -145,6 +147,12 @@ public class CImage extends CFRetainedResource {
 
         // This is used to create a CImage from a Image
         public CImage createFromImage(final Image image) {
+            if (image instanceof MultiResolutionImage) {
+                List<Image> resolutionVariants
+                        = ((MultiResolutionImage) image).getResolutionVariants();
+                return createFromImages(resolutionVariants);
+            }
+
             int[] buffer = imageToArray(image, true);
             if (buffer == null) {
                 return null;
@@ -222,5 +230,9 @@ public class CImage extends CFRetainedResource {
     CImage resize(final double w, final double h) {
         if (ptr != 0) nativeSetNSImageSize(ptr, w, h);
         return this;
+    }
+
+    void resizeRepresentations(double w, double h) {
+        if (ptr != 0) nativeResizeNSImageRepresentations(ptr, w, h);
     }
 }

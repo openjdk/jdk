@@ -183,25 +183,21 @@ public abstract class CharacterDecoder {
      * buffer and returns a byte array containing the data.
      * @exception CEFormatException An error has occurred while decoding
      */
-    public byte decodeBuffer(String inputString)[] throws IOException {
-        byte    inputBuffer[] = new byte[inputString.length()];
-        ByteArrayInputStream inStream;
-        ByteArrayOutputStream outStream;
-
-        inputString.getBytes(0, inputString.length(), inputBuffer, 0);
-        inStream = new ByteArrayInputStream(inputBuffer);
-        outStream = new ByteArrayOutputStream();
+    public byte[] decodeBuffer(String inputString) throws IOException {
+        byte inputBuffer[] = inputString.getBytes();
+        ByteArrayInputStream inStream = new ByteArrayInputStream(inputBuffer);
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         decodeBuffer(inStream, outStream);
-        return (outStream.toByteArray());
+        return outStream.toByteArray();
     }
 
     /**
      * Decode the contents of the inputstream into a buffer.
      */
-    public byte decodeBuffer(InputStream in)[] throws IOException {
+    public byte[] decodeBuffer(InputStream in) throws IOException {
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         decodeBuffer(in, outStream);
-        return (outStream.toByteArray());
+        return outStream.toByteArray();
     }
 
     /**

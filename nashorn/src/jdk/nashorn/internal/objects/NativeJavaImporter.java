@@ -60,17 +60,13 @@ public final class NativeJavaImporter extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     private NativeJavaImporter(final Object[] args, final ScriptObject proto, final PropertyMap map) {
         super(proto, map);
         this.args = args;
     }
 
     private NativeJavaImporter(final Object[] args, final Global global) {
-        this(args, global.getJavaImporterPrototype(), getInitialMap());
+        this(args, global.getJavaImporterPrototype(), $nasgenmap$);
     }
 
     private NativeJavaImporter(final Object[] args) {

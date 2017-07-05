@@ -33,6 +33,9 @@ import java.net.URI;
 
 import java.awt.Desktop.Action;
 import java.awt.peer.DesktopPeer;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 
 /**
@@ -42,6 +45,10 @@ import java.awt.peer.DesktopPeer;
  * @see DesktopPeer
  */
 public class XDesktopPeer implements DesktopPeer {
+
+    // supportedActions may be changed from native within an init() call
+    private static final List<Action> supportedActions
+            = new ArrayList<>(Arrays.asList(Action.OPEN, Action.MAIL, Action.BROWSE));
 
     private static boolean nativeLibraryLoaded = false;
     private static boolean initExecuted = false;
@@ -65,11 +72,11 @@ public class XDesktopPeer implements DesktopPeer {
 
     static boolean isDesktopSupported() {
         initWithLock();
-        return nativeLibraryLoaded;
+        return nativeLibraryLoaded && !supportedActions.isEmpty();
     }
 
     public boolean isSupported(Action type) {
-        return type != Action.PRINT && type != Action.EDIT;
+        return supportedActions.contains(type);
     }
 
     public void open(File file) throws IOException {

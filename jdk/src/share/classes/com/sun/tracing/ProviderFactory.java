@@ -5,9 +5,9 @@ import java.util.HashSet;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import sun.security.action.GetPropertyAction;
 
 import sun.tracing.NullProviderFactory;
 import sun.tracing.PrintStreamProviderFactory;
@@ -56,7 +56,7 @@ public abstract class ProviderFactory {
 
         // Try to instantiate a DTraceProviderFactory
         String prop = AccessController.doPrivileged(
-            new GetPropertyAction("com.sun.tracing.dtrace"));
+            (PrivilegedAction<String>) () -> System.getProperty("com.sun.tracing.dtrace"));
 
         if ( (prop == null || !prop.equals("disable")) &&
              DTraceProviderFactory.isSupported() ) {
@@ -65,7 +65,7 @@ public abstract class ProviderFactory {
 
         // Try to instantiate an output stream factory
         prop = AccessController.doPrivileged(
-            new GetPropertyAction("sun.tracing.stream"));
+            (PrivilegedAction<String>) () -> System.getProperty("sun.tracing.stream"));
         if (prop != null) {
             for (String spec : prop.split(",")) {
                 PrintStream ps = getPrintStreamFromSpec(spec);

@@ -36,7 +36,7 @@ import sun.net.util.IPAddressUtil;
 import sun.net.dns.ResolverConfiguration;
 import sun.net.spi.nameservice.*;
 import java.security.AccessController;
-import sun.security.action.*;
+import java.security.PrivilegedAction;
 
 /*
  * A name service provider based on JNDI-DNS.
@@ -231,7 +231,7 @@ public final class DNSNameService implements NameService {
 
         // default domain
         String domain = AccessController.doPrivileged(
-            new GetPropertyAction("sun.net.spi.nameservice.domain"));
+            (PrivilegedAction<String>) () -> System.getProperty("sun.net.spi.nameservice.domain"));
         if (domain != null && domain.length() > 0) {
             domainList = new LinkedList<String>();
             domainList.add(domain);
@@ -239,7 +239,7 @@ public final class DNSNameService implements NameService {
 
         // name servers
         String nameservers = AccessController.doPrivileged(
-            new GetPropertyAction("sun.net.spi.nameservice.nameservers"));
+            (PrivilegedAction<String>) () -> System.getProperty("sun.net.spi.nameservice.nameservers"));
         if (nameservers != null && nameservers.length() > 0) {
             nameProviderUrl = createProviderURL(nameservers);
             if (nameProviderUrl.length() == 0) {

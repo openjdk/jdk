@@ -245,4 +245,320 @@ public class ScopeTest {
         sb.put("x", "newX");
         assertTrue(e.eval("x", ctx).equals("newX"));
     }
+
+    /**
+     * Test multi-threaded access to defined global variables for shared script classes with multiple globals.
+     */
+    @Test
+    public static void multiThreadedVarTest() throws ScriptException, InterruptedException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final Bindings b = e.createBindings();
+        final ScriptContext origContext = e.getContext();
+        final ScriptContext newCtxt = new SimpleScriptContext();
+        newCtxt.setBindings(b, ScriptContext.ENGINE_SCOPE);
+        final String sharedScript = "foo";
+
+        assertEquals(e.eval("var foo = 'original context';", origContext), null);
+        assertEquals(e.eval("var foo = 'new context';", newCtxt), null);
+
+        final Thread t1 = new Thread(new ScriptRunner(e, origContext, sharedScript, "original context", 1000));
+        final Thread t2 = new Thread(new ScriptRunner(e, newCtxt, sharedScript, "new context", 1000));
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+
+        assertEquals(e.eval("var foo = 'newer context';", newCtxt), null);
+        final Thread t3 = new Thread(new ScriptRunner(e, origContext, sharedScript, "original context", 1000));
+        final Thread t4 = new Thread(new ScriptRunner(e, newCtxt, sharedScript, "newer context", 1000));
+
+        t3.start();
+        t4.start();
+        t3.join();
+        t4.join();
+
+        assertEquals(e.eval(sharedScript), "original context");
+        assertEquals(e.eval(sharedScript, newCtxt), "newer context");
+    }
+
+    /**
+     * Test multi-threaded access to undefined global variables for shared script classes with multiple globals.
+     */
+    @Test
+    public static void multiThreadedGlobalTest() throws ScriptException, InterruptedException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final Bindings b = e.createBindings();
+        final ScriptContext origContext = e.getContext();
+        final ScriptContext newCtxt = new SimpleScriptContext();
+        newCtxt.setBindings(b, ScriptContext.ENGINE_SCOPE);
+
+        assertEquals(e.eval("foo = 'original context';", origContext), "original context");
+        assertEquals(e.eval("foo = 'new context';", newCtxt), "new context");
+        final String sharedScript = "foo";
+
+        final Thread t1 = new Thread(new ScriptRunner(e, origContext, sharedScript, "original context", 1000));
+        final Thread t2 = new Thread(new ScriptRunner(e, newCtxt, sharedScript, "new context", 1000));
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+
+        Object obj3 = e.eval("delete foo; foo = 'newer context';", newCtxt);
+        assertEquals(obj3, "newer context");
+        final Thread t3 = new Thread(new ScriptRunner(e, origContext, sharedScript, "original context", 1000));
+        final Thread t4 = new Thread(new ScriptRunner(e, newCtxt, sharedScript, "newer context", 1000));
+
+        t3.start();
+        t4.start();
+        t3.join();
+        t4.join();
+
+        Assert.assertEquals(e.eval(sharedScript), "original context");
+        Assert.assertEquals(e.eval(sharedScript, newCtxt), "newer context");
+    }
+
+    /**
+     * Test multi-threaded access using the postfix ++ operator for shared script classes with multiple globals.
+     */
+    @Test
+    public static void multiThreadedIncTest() throws ScriptException, InterruptedException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final Bindings b = e.createBindings();
+        final ScriptContext origContext = e.getContext();
+        final ScriptContext newCtxt = new SimpleScriptContext();
+        newCtxt.setBindings(b, ScriptContext.ENGINE_SCOPE);
+
+        assertEquals(e.eval("var x = 0;", origContext), null);
+        assertEquals(e.eval("var x = 2;", newCtxt), null);
+        final String sharedScript = "x++;";
+
+        final Thread t1 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    for (int i = 0; i < 1000; i++) {
+                        assertEquals(e.eval(sharedScript, origContext), (double)i);
+                    }
+                } catch (ScriptException se) {
+                    fail(se.toString());
+                }
+            }
+        });
+        final Thread t2 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    for (int i = 2; i < 1000; i++) {
+                        assertEquals(e.eval(sharedScript, newCtxt), (double)i);
+                    }
+                } catch (ScriptException se) {
+                    fail(se.toString());
+                }
+            }
+        });
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+    }
+
+    /**
+     * Test multi-threaded access to primitive prototype properties for shared script classes with multiple globals.
+     */
+    @Test
+    public static void multiThreadedPrimitiveTest() throws ScriptException, InterruptedException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final Bindings b = e.createBindings();
+        final ScriptContext origContext = e.getContext();
+        final ScriptContext newCtxt = new SimpleScriptContext();
+        newCtxt.setBindings(b, ScriptContext.ENGINE_SCOPE);
+
+        Object obj1 = e.eval("String.prototype.foo = 'original context';", origContext);
+        Object obj2 = e.eval("String.prototype.foo = 'new context';", newCtxt);
+        assertEquals(obj1, "original context");
+        assertEquals(obj2, "new context");
+        final String sharedScript = "''.foo";
+
+        final Thread t1 = new Thread(new ScriptRunner(e, origContext, sharedScript, "original context", 1000));
+        final Thread t2 = new Thread(new ScriptRunner(e, newCtxt, sharedScript, "new context", 1000));
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+
+        Object obj3 = e.eval("delete String.prototype.foo; Object.prototype.foo = 'newer context';", newCtxt);
+        assertEquals(obj3, "newer context");
+        final Thread t3 = new Thread(new ScriptRunner(e, origContext, sharedScript, "original context", 1000));
+        final Thread t4 = new Thread(new ScriptRunner(e, newCtxt, sharedScript, "newer context", 1000));
+
+        t3.start();
+        t4.start();
+        t3.join();
+        t4.join();
+
+        Assert.assertEquals(e.eval(sharedScript), "original context");
+        Assert.assertEquals(e.eval(sharedScript, newCtxt), "newer context");
+    }
+
+    /**
+     * Test multi-threaded scope function invocation for shared script classes with multiple globals.
+     */
+    @Test
+    public static void multiThreadedFunctionTest() throws ScriptException, InterruptedException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final Bindings b = e.createBindings();
+        final ScriptContext origContext = e.getContext();
+        final ScriptContext newCtxt = new SimpleScriptContext();
+        newCtxt.setBindings(b, ScriptContext.ENGINE_SCOPE);
+
+        e.eval(new URLReader(ScopeTest.class.getResource("resources/func.js")), origContext);
+        assertEquals(origContext.getAttribute("scopeVar"), 1);
+        assertEquals(e.eval("scopeTest()"), 1);
+
+        e.eval(new URLReader(ScopeTest.class.getResource("resources/func.js")), newCtxt);
+        assertEquals(newCtxt.getAttribute("scopeVar"), 1);
+        assertEquals(e.eval("scopeTest();", newCtxt), 1);
+
+        assertEquals(e.eval("scopeVar = 3;", newCtxt), 3);
+        assertEquals(newCtxt.getAttribute("scopeVar"), 3);
+
+
+        final Thread t1 = new Thread(new ScriptRunner(e, origContext, "scopeTest()", 1, 1000));
+        final Thread t2 = new Thread(new ScriptRunner(e, newCtxt, "scopeTest()", 3, 1000));
+
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+
+    }
+
+    /**
+     * Test multi-threaded access to global getters and setters for shared script classes with multiple globals.
+     */
+    @Test
+    public static void getterSetterTest() throws ScriptException, InterruptedException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final Bindings b = e.createBindings();
+        final ScriptContext origContext = e.getContext();
+        final ScriptContext newCtxt = new SimpleScriptContext();
+        newCtxt.setBindings(b, ScriptContext.ENGINE_SCOPE);
+        final String sharedScript = "accessor1";
+
+        e.eval(new URLReader(ScopeTest.class.getResource("resources/gettersetter.js")), origContext);
+        assertEquals(e.eval("accessor1 = 1;"), 1);
+        assertEquals(e.eval(sharedScript), 1);
+
+        e.eval(new URLReader(ScopeTest.class.getResource("resources/gettersetter.js")), newCtxt);
+        assertEquals(e.eval("accessor1 = 2;", newCtxt), 2);
+        assertEquals(e.eval(sharedScript, newCtxt), 2);
+
+
+        final Thread t1 = new Thread(new ScriptRunner(e, origContext, sharedScript, 1, 1000));
+        final Thread t2 = new Thread(new ScriptRunner(e, newCtxt, sharedScript, 2, 1000));
+
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+
+        assertEquals(e.eval(sharedScript), 1);
+        assertEquals(e.eval(sharedScript, newCtxt), 2);
+        assertEquals(e.eval("v"), 1);
+        assertEquals(e.eval("v", newCtxt), 2);
+    }
+
+    /**
+     * Test multi-threaded access to global getters and setters for shared script classes with multiple globals.
+     */
+    @Test
+    public static void getterSetter2Test() throws ScriptException, InterruptedException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final Bindings b = e.createBindings();
+        final ScriptContext origContext = e.getContext();
+        final ScriptContext newCtxt = new SimpleScriptContext();
+        newCtxt.setBindings(b, ScriptContext.ENGINE_SCOPE);
+        final String sharedScript = "accessor2";
+
+        e.eval(new URLReader(ScopeTest.class.getResource("resources/gettersetter.js")), origContext);
+        assertEquals(e.eval("accessor2 = 1;"), 1);
+        assertEquals(e.eval(sharedScript), 1);
+
+        e.eval(new URLReader(ScopeTest.class.getResource("resources/gettersetter.js")), newCtxt);
+        assertEquals(e.eval("accessor2 = 2;", newCtxt), 2);
+        assertEquals(e.eval(sharedScript, newCtxt), 2);
+
+
+        final Thread t1 = new Thread(new ScriptRunner(e, origContext, sharedScript, 1, 1000));
+        final Thread t2 = new Thread(new ScriptRunner(e, newCtxt, sharedScript, 2, 1000));
+
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+
+        assertEquals(e.eval(sharedScript), 1);
+        assertEquals(e.eval(sharedScript, newCtxt), 2);
+        assertEquals(e.eval("x"), 1);
+        assertEquals(e.eval("x", newCtxt), 2);
+    }
+
+    /**
+     * Test "slow" scopes involving {@code with} and {@code eval} statements for shared script classes with multiple globals.
+     */
+    @Test
+    public static void testSlowScope() throws ScriptException, InterruptedException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+
+        for (int i = 0; i < 100; i++) {
+            final Bindings b = e.createBindings();
+            final ScriptContext ctxt = new SimpleScriptContext();
+            ctxt.setBindings(b, ScriptContext.ENGINE_SCOPE);
+
+            e.eval(new URLReader(ScopeTest.class.getResource("resources/witheval.js")), ctxt);
+            assertEquals(e.eval("a", ctxt), 1);
+            assertEquals(b.get("a"), 1);
+            assertEquals(e.eval("b", ctxt), 3);
+            assertEquals(b.get("b"), 3);
+            assertEquals(e.eval("c", ctxt), 10);
+            assertEquals(b.get("c"), 10);
+        }
+    }
+
+    private static class ScriptRunner implements Runnable {
+
+        final ScriptEngine engine;
+        final ScriptContext context;
+        final String source;
+        final Object expected;
+        final int iterations;
+
+        ScriptRunner(final ScriptEngine engine, final ScriptContext context, final String source, final Object expected, final int iterations) {
+            this.engine = engine;
+            this.context = context;
+            this.source = source;
+            this.expected = expected;
+            this.iterations = iterations;
+        }
+
+        @Override
+        public void run() {
+            try {
+                for (int i = 0; i < iterations; i++) {
+                    assertEquals(engine.eval(source, context), expected);
+                }
+            } catch (ScriptException se) {
+                throw new RuntimeException(se);
+            }
+        }
+    }
+
 }

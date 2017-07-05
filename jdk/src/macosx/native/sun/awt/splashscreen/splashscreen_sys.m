@@ -142,10 +142,9 @@ SplashInitPlatform(Splash * splash) {
     splash->screenFormat.byteOrder = 1 ?  BYTE_ORDER_LSBFIRST : BYTE_ORDER_MSBFIRST;
     splash->screenFormat.depthBytes = 4;
 
-    dispatch_async(dispatch_get_main_queue(), ^(void) {
-            NSApplication * app = [NSApplicationAWT sharedApplication];
-            [NSApplicationAWT runAWTLoopWithApp: app];
-    });
+    [JNFRunLoop performOnMainThreadWaiting:NO withBlock:^() {
+        [NSApplicationAWT runAWTLoopWithApp:[NSApplicationAWT sharedApplication]];
+    }];
 }
 
 void

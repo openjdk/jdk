@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,7 @@ public abstract class FileFont extends PhysicalFont {
         SunFontManager fm = SunFontManager.getInstance();
         fm.deRegisterBadFont(this);
 
-        for (Reference strikeRef : strikeCache.values()) {
+        for (Reference<FontStrike> strikeRef : strikeCache.values()) {
             if (strikeRef != null) {
                 /* NB we know these are all FileFontStrike instances
                  * because the cache is on this FileFont
@@ -261,7 +261,7 @@ public abstract class FileFont extends PhysicalFont {
 
         public void dispose() {
             java.security.AccessController.doPrivileged(
-                 new java.security.PrivilegedAction() {
+                 new java.security.PrivilegedAction<Object>() {
                       public Object run() {
                           if (fontFile != null) {
                               try {

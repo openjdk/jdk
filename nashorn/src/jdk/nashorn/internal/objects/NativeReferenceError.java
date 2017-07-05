@@ -62,10 +62,6 @@ public final class NativeReferenceError extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     @SuppressWarnings("LeakingThisInConstructor")
     private NativeReferenceError(final Object msg, final ScriptObject proto, final PropertyMap map) {
         super(proto, map);
@@ -78,7 +74,7 @@ public final class NativeReferenceError extends ScriptObject {
     }
 
     NativeReferenceError(final Object msg, final Global global) {
-        this(msg, global.getReferenceErrorPrototype(), getInitialMap());
+        this(msg, global.getReferenceErrorPrototype(), $nasgenmap$);
     }
 
     private NativeReferenceError(final Object msg) {

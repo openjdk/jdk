@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.objects;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
@@ -43,10 +44,6 @@ final class NativeArrayBuffer extends ScriptObject {
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
-    static PropertyMap getInitialMap() {
-        return $nasgenmap$;
-    }
-
     @Constructor(arity = 1)
     public static Object constructor(final boolean newObj, final Object self, final Object... args) {
         if (args.length == 0) {
@@ -57,7 +54,7 @@ final class NativeArrayBuffer extends ScriptObject {
     }
 
     protected NativeArrayBuffer(final byte[] byteArray, final Global global) {
-        super(global.getArrayBufferPrototype(), getInitialMap());
+        super(global.getArrayBufferPrototype(), $nasgenmap$);
         this.buffer = byteArray;
     }
 
@@ -127,5 +124,17 @@ final class NativeArrayBuffer extends ScriptObject {
 
     public int getByteLength() {
         return buffer.length;
+    }
+
+    ByteBuffer getBuffer() {
+       return ByteBuffer.wrap(buffer);
+    }
+
+    ByteBuffer getBuffer(final int offset) {
+        return ByteBuffer.wrap(buffer, offset, buffer.length - offset);
+    }
+
+    ByteBuffer getBuffer(final int offset, final int length) {
+        return ByteBuffer.wrap(buffer, offset, length);
     }
 }

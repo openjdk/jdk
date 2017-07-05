@@ -65,7 +65,7 @@ public final class StrikeCache {
 
     static final Unsafe unsafe = Unsafe.getUnsafe();
 
-    static ReferenceQueue refQueue = Disposer.getQueue();
+    static ReferenceQueue<Object> refQueue = Disposer.getQueue();
 
     static ArrayList<GlyphDisposedListener> disposeListeners = new ArrayList<GlyphDisposedListener>(1);
 
@@ -159,7 +159,7 @@ public final class StrikeCache {
         }
 
         java.security.AccessController.doPrivileged(
-                                    new java.security.PrivilegedAction() {
+                                    new java.security.PrivilegedAction<Object>() {
             public Object run() {
 
                /* Allow a client to override the reference type used to
@@ -378,11 +378,11 @@ public final class StrikeCache {
         }
     }
 
-    public static Reference getStrikeRef(FontStrike strike) {
+    public static Reference<FontStrike> getStrikeRef(FontStrike strike) {
         return getStrikeRef(strike, cacheRefTypeWeak);
     }
 
-    public static Reference getStrikeRef(FontStrike strike, boolean weak) {
+    public static Reference<FontStrike> getStrikeRef(FontStrike strike, boolean weak) {
         /* Some strikes may have no disposer as there's nothing
          * for them to free, as they allocated no native resource
          * eg, if they did not allocate resources because of a problem,
@@ -392,9 +392,9 @@ public final class StrikeCache {
          */
         if (strike.disposer == null) {
             if (weak) {
-                return new WeakReference(strike);
+                return new WeakReference<>(strike);
             } else {
-                return new SoftReference(strike);
+                return new SoftReference<>(strike);
             }
         }
 
@@ -410,7 +410,7 @@ public final class StrikeCache {
     }
 
     static class SoftDisposerRef
-        extends SoftReference implements DisposableStrike {
+        extends SoftReference<FontStrike> implements DisposableStrike {
 
         private FontStrikeDisposer disposer;
 
@@ -418,15 +418,16 @@ public final class StrikeCache {
             return disposer;
         }
 
+        @SuppressWarnings("unchecked")
         SoftDisposerRef(FontStrike strike) {
             super(strike, StrikeCache.refQueue);
             disposer = strike.disposer;
-            Disposer.addReference(this, disposer);
+            Disposer.addReference((Reference<Object>)(Reference)this, disposer);
         }
     }
 
     static class WeakDisposerRef
-        extends WeakReference implements DisposableStrike {
+        extends WeakReference<FontStrike> implements DisposableStrike {
 
         private FontStrikeDisposer disposer;
 
@@ -434,10 +435,11 @@ public final class StrikeCache {
             return disposer;
         }
 
+        @SuppressWarnings("unchecked")
         WeakDisposerRef(FontStrike strike) {
             super(strike, StrikeCache.refQueue);
             disposer = strike.disposer;
-            Disposer.addReference(this, disposer);
+            Disposer.addReference((Reference<Object>)(Reference)this, disposer);
         }
     }
 

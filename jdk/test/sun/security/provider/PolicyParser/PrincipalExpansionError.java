@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,56 +25,54 @@
  * @test
  * @bug 4373996
  * @summary parser incorrectly ignores a principal if the principal name
- *      expands to nothing.  this test is a bit complicated.
+ *      expands to nothing.
+ * @run main/manual PrincipalExpansionError
+ */
+
+/*
+ * This test is a bit complicated.
+ * 1) PrincipalExpansionError.java
+ *         the test itself.  this test creates a Subject with a
+ *         SolarisPrincipal("TestPrincipal") and calls doAs
+ *         with a PrincipalExpansionErrorAction.
+ * 2) PrincipalExpansionErrorAction
+ *         this action tries to read the file, /testfile
+ * 3) to run the test:
+ *         a) jtreg -verbose:all -testjdk:<your_jdk>/build/sparc
+ *                 PrincipalExpansionError.java
+ *         b) PrincipalExpansionError is compiled and put into
+ *                 the "test.classes" directory
+ *         c) PrincipalExpansionErrorAction is compiled and put into
+ *                 the "test.classes"/apackage directory
+ *                 (since it belongs to the 'apackage' package
+ *         d) the PrincipalExpansionError shell script moves
+ *                 test.classes/apackage to test.src/apackage.
+ *                 this guarantees that the test will run
+ *                 with codebase test.classes, and the action
+ *                 will run with codebase test.src.
+ *         e) the test is executed.  permissions to read the file,
+ *                 /testfile, were granted to the PrincipalExpansionError.
+ *                 the policy entry for PrincipalExpansionErrorAction
+ *                 running as SolarisPrincipal("TestPrincipal")
+ *                 was also granted the file permission,
+ *                 but it has a bogus second SolarisPrincipal with
+ *                 a name that can't be property-expanded.
  *
- *      1) PrincipalExpansionError.java
- *              the test itself.  this test creates a Subject with a
- *              SolarisPrincipal("TestPrincipal") and calls doAs
- *              with a PrincipalExpansionErrorAction.
- *
- *      2) PrincipalExpansionErrorAction
- *              this action tries to read the file, /testfile
- *
- *      3) to run the test:
- *              a) jtreg -verbose:all -testjdk:<your_jdk>/build/sparc
- *                      PrincipalExpansionError.java
- *              b) PrincipalExpansionError is compiled and put into
- *                      the "test.classes" directory
- *              c) PrincipalExpansionErrorAction is compiled and put into
- *                      the "test.classes"/apackage directory
- *                      (since it belongs to the 'apackage' package
- *              d) the PrincipalExpansionError shell script moves
- *                      test.classes/apackage to test.src/apackage.
- *                      this guarantees that the test will run
- *                      with codebase test.classes, and the action
- *                      will run with codebase test.src.
- *              e) the test is executed.  permissions to read the file,
- *                      /testfile, were granted to the PrincipalExpansionError.
- *                      the policy entry for PrincipalExpansionErrorAction
- *                      running as SolarisPrincipal("TestPrincipal")
- *                      was also granted the file permission,
- *                      but it has a bogus second SolarisPrincipal with
- *                      a name that can't be property-expanded.
- *
- *                      the old behavior of the code would ignore the
- *                      bogus entry and incorrectly grants the file permission
- *                      to SolarisPrincipal("TestPrincipal").
- *                      the new behavior correctly ignores the entire
- *                      policy entry.
- *                      Please note that the jtreg needs to be granted
- *                      allpermissions for this test to succeed. If the codebase
- *                      for jtreg changes, the PrincipalExpansionError.policy
- *                      needs to be updated.
- *
- *              f) original @ tags:
- *                      compile PrincipalExpansionErrorAction.java
- *                      run shell PrincipalExpansionError.sh
- *                      run main/othervm/policy=PrincipalExpansionError.policy
- *                              -Djava.security.debug=access,domain,failure
- *                              PrincipalExpansionError
- *
- * @ignore unable to rely on location or javatest.jar
- *              (so we can grant it AllPermission)
+ *                 the old behavior of the code would ignore the
+ *                 bogus entry and incorrectly grants the file permission
+ *                 to SolarisPrincipal("TestPrincipal").
+ *                 the new behavior correctly ignores the entire
+ *                 policy entry.
+ *                 Please note that the jtreg needs to be granted
+ *                 allpermissions for this test to succeed. If the codebase
+ *                 for jtreg changes, the PrincipalExpansionError.policy
+ *                 needs to be updated.
+ *         f) original @ tags:
+ *                 compile PrincipalExpansionErrorAction.java
+ *                 run shell PrincipalExpansionError.sh
+ *                 run main/othervm/policy=PrincipalExpansionError.policy
+ *                         -Djava.security.debug=access,domain,failure
+ *                         PrincipalExpansionError
  */
 
 import javax.security.auth.*;

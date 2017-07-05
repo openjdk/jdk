@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import java.awt.Toolkit;
 import java.awt.IllegalComponentStateException;
 import java.awt.AWTException;
 import java.awt.AWTEvent;
+import java.awt.Color;
 
 import java.awt.event.InputEvent;
 import java.awt.event.WindowAdapter;
@@ -182,6 +183,57 @@ public final class Util {
             robot.delay(50);
             robot.mouseRelease(InputEvent.BUTTON1_MASK);
         }
+    }
+
+    /**
+     * Tests whether screen pixel has the expected color performing several
+     * attempts. This method is useful for asynchronous window manager where
+     * it's impossible to determine when drawing actually takes place.
+     *
+     * @param x X position of pixel
+     * @param y Y position of pixel
+     * @param color expected color
+     * @param attempts number of attempts to undertake
+     * @param delay delay before each attempt
+     * @param robot a robot to use for retrieving pixel color
+     * @return true if pixel color matches the color expected, otherwise false
+     */
+    public static boolean testPixelColor(int x, int y, final Color color, int attempts, int delay, final Robot robot) {
+        while (attempts-- > 0) {
+            robot.delay(delay);
+            Color screen = robot.getPixelColor(x, y);
+            if (screen.equals(color)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Tests whether the area within boundaries has the expected color
+     * performing several attempts. This method is useful for asynchronous
+     * window manager where it's impossible to determine when drawing actually
+     * takes place.
+     *
+     * @param bounds position of area
+     * @param color expected color
+     * @param attempts number of attempts to undertake
+     * @param delay delay before each attempt
+     * @param robot a robot to use for retrieving pixel color
+     * @return true if area color matches the color expected, otherwise false
+     */
+    public static boolean testBoundsColor(final Rectangle bounds, final Color color, int attempts, int delay, final Robot robot) {
+        int right = bounds.x + bounds.width - 1;
+        int bottom = bounds.y + bounds.height - 1;
+        while (attempts-- > 0) {
+            if (testPixelColor(bounds.x, bounds.y, color, 1, delay, robot)
+                && testPixelColor(right, bounds.y, color, 1, 0, robot)
+                && testPixelColor(right, bottom, color, 1, 0, robot)
+                && testPixelColor(bounds.x, bottom, color, 1, 0, robot)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static void waitForIdle(final Robot robot) {
