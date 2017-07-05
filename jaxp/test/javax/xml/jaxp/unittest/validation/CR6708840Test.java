@@ -23,6 +23,8 @@
 
 package validation;
 
+import static jaxp.library.JAXPTestUtilities.USER_DIR;
+
 import java.io.File;
 import java.io.FileWriter;
 
@@ -122,7 +124,7 @@ public class CR6708840Test {
             Validator schemaValidator = schemaGrammar.newValidator();
 
             Source staxSrc = new StAXSource(staxReader);
-            File resultFile = new File("gMonths.result.xml");
+            File resultFile = new File(USER_DIR + "gMonths.result.xml");
             if (resultFile.exists()) {
                 resultFile.delete();
             }
