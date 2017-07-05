@@ -30,9 +30,10 @@
  * tool by supplying an alternative implementation of
  * {@link com.sun.jarsigner.ContentSigner}.
  *
- * This package has been deprecated.
+ * The classes in this package have been deprecated. New classes should not be
+ * added to this package. Use the {@link jdk.security.jarsigner.JarSigner} API
+ * to sign JAR files.
  */
 
 @jdk.Exported
-@Deprecated
 package com.sun.jarsigner;

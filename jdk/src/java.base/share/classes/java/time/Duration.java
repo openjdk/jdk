@@ -61,6 +61,7 @@
  */
 package java.time;
 
+import static java.time.LocalTime.MINUTES_PER_HOUR;
 import static java.time.LocalTime.NANOS_PER_SECOND;
 import static java.time.LocalTime.SECONDS_PER_DAY;
 import static java.time.LocalTime.SECONDS_PER_HOUR;
@@ -973,7 +974,7 @@ public final class Duration
         if (multiplicand == 1) {
             return this;
         }
-        return create(toSeconds().multiply(BigDecimal.valueOf(multiplicand)));
+        return create(toBigDecimalSeconds().multiply(BigDecimal.valueOf(multiplicand)));
      }
 
     /**
@@ -992,7 +993,7 @@ public final class Duration
         if (divisor == 1) {
             return this;
         }
-        return create(toSeconds().divide(BigDecimal.valueOf(divisor), RoundingMode.DOWN));
+        return create(toBigDecimalSeconds().divide(BigDecimal.valueOf(divisor), RoundingMode.DOWN));
      }
 
     /**
@@ -1001,7 +1002,7 @@ public final class Duration
      *
      * @return the total length of the duration in seconds, with a scale of 9, not null
      */
-    private BigDecimal toSeconds() {
+    private BigDecimal toBigDecimalSeconds() {
         return BigDecimal.valueOf(seconds).add(BigDecimal.valueOf(nanos, 9));
     }
 
@@ -1168,6 +1169,19 @@ public final class Duration
     }
 
     /**
+     * Gets the number of seconds in this duration.
+     * <p>
+     * This returns the total number of whole seconds in the duration.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the whole seconds part of the length of the duration, positive or negative
+     */
+    public long toSeconds() {
+        return seconds;
+    }
+
+    /**
      * Converts this duration to the total length in milliseconds.
      * <p>
      * If this duration is too large to fit in a {@code long} milliseconds, then an
@@ -1201,6 +1215,100 @@ public final class Duration
         return totalNanos;
     }
 
+    /**
+     * Extracts the number of days in the duration.
+     * <p>
+     * This returns the total number of days in the duration by dividing the
+     * number of seconds by 86400.
+     * This is based on the standard definition of a day as 24 hours.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the number of days in the duration, may be negative
+     */
+    public long toDaysPart(){
+        return seconds / SECONDS_PER_DAY;
+    }
+
+    /**
+     * Extracts the number of hours part in the duration.
+     * <p>
+     * This returns the number of remaining hours when dividing {@link #toHours}
+     * by hours in a day.
+     * This is based on the standard definition of a day as 24 hours.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the number of hours part in the duration, may be negative
+     */
+    public int toHoursPart(){
+        return (int) (toHours() % 24);
+    }
+
+    /**
+     * Extracts the number of minutes part in the duration.
+     * <p>
+     * This returns the number of remaining minutes when dividing {@link #toMinutes}
+     * by minutes in an hour.
+     * This is based on the standard definition of an hour as 60 minutes.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the number of minutes parts in the duration, may be negative
+     * may be negative
+     */
+    public int toMinutesPart(){
+        return (int) (toMinutes() % MINUTES_PER_HOUR);
+    }
+
+    /**
+     * Extracts the number of seconds part in the duration.
+     * <p>
+     * This returns the remaining seconds when dividing {@link #toSeconds}
+     * by seconds in a minute.
+     * This is based on the standard definition of a minute as 60 seconds.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the number of seconds parts in the duration, may be negative
+     */
+    public int toSecondsPart(){
+        return (int) (seconds % SECONDS_PER_MINUTE);
+    }
+
+    /**
+     * Extracts the number of milliseconds part of the duration.
+     * <p>
+     * This returns the milliseconds part by dividing the number of nanoseconds by 1,000,000.
+     * The length of the duration is stored using two fields - seconds and nanoseconds.
+     * The nanoseconds part is a value from 0 to 999,999,999 that is an adjustment to
+     * the length in seconds.
+     * The total duration is defined by calling {@link #getNano()} and {@link #getSeconds()}.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the number of milliseconds part of the duration.
+     */
+    public int toMillisPart(){
+        return nanos / 1000_000;
+    }
+
+    /**
+     * Get the nanoseconds part within seconds of the duration.
+     * <p>
+     * The length of the duration is stored using two fields - seconds and nanoseconds.
+     * The nanoseconds part is a value from 0 to 999,999,999 that is an adjustment to
+     * the length in seconds.
+     * The total duration is defined by calling {@link #getNano()} and {@link #getSeconds()}.
+     * <p>
+     * This instance is immutable and unaffected by this method call.
+     *
+     * @return the nanoseconds within the second part of the length of the duration, from 0 to 999,999,999
+     */
+    public int toNanosPart(){
+        return nanos;
+    }
+
     //-----------------------------------------------------------------------
     /**
      * Compares this duration to the specified {@code Duration}.
@@ -1208,7 +1316,7 @@ public final class Duration
      * The comparison is based on the total length of the durations.
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
-     * @param otherDuration  the other duration to compare to, not null
+     * @param otherDuration the other duration to compare to, not null
      * @return the comparator value, negative if less, positive if greater
      */
     @Override
@@ -1226,7 +1334,7 @@ public final class Duration
      * <p>
      * The comparison is based on the total length of the durations.
      *
-     * @param otherDuration  the other duration, null returns false
+     * @param otherDuration the other duration, null returns false
      * @return true if the other duration is equal to this one
      */
     @Override
