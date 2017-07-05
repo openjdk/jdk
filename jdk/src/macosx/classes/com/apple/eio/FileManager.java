@@ -55,7 +55,13 @@ import java.io.*;
  */
 public class FileManager {
     static {
-        java.security.AccessController.doPrivileged((java.security.PrivilegedAction<?>)new sun.security.action.LoadLibraryAction("osx"));
+        java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("osx");
+                    return null;
+                }
+            });
     }
 
     /**

@@ -134,10 +134,16 @@ public class AquaLookAndFeel extends BasicLookAndFeel {
      * @see UIManager#setLookAndFeel
      */
     public void initialize() {
-        java.security.AccessController.doPrivileged((PrivilegedAction<?>)new sun.security.action.LoadLibraryAction("osxui"));
-        java.security.AccessController.doPrivileged(new PrivilegedAction<Object>(){
+        java.security.AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("osxui");
+                    return null;
+                }
+            });
+
+        java.security.AccessController.doPrivileged(new PrivilegedAction<Void>(){
             @Override
-            public Object run() {
+            public Void run() {
                 JRSUIControl.initJRSUI();
                 return null;
             }

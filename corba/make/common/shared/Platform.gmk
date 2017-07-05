@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -275,7 +275,7 @@ ifeq ($(PLATFORM), bsd)
                     echo sparc \
                     ;; \
                 x86_64) \
-                    echo amd64 \
+                    echo x86_64 \
                     ;; \
                 "Power Macintosh") \
                     echo ppc \
@@ -287,12 +287,13 @@ ifeq ($(PLATFORM), bsd)
   ARCH        := $(shell $(archExpr) )
   ARCH_FAMILY := $(ARCH)
 
-  # Darwin x86 builds are i386/amd64 universal.
-  ifeq ($(SYSTEM_UNAME), Darwin)
-    ifneq ($(ARCH), ppc)
-      ARCH=universal
-    endif
-  endif
+  # Darwin builds are currently universal but only include 64-bit
+  # 
+  # ifeq ($(SYSTEM_UNAME), Darwin)
+  #  ifneq ($(ARCH), ppc)
+  #    ARCH=universal
+  #  endif
+  # endif
 
   # i586, sparc, and ppc are 32 bit, amd64 and sparc64 are 64
   ifneq (,$(findstring $(ARCH), i586 sparc ppc universal))

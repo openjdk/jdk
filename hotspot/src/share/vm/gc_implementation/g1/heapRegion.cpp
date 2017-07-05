@@ -510,9 +510,6 @@ HeapRegion::HeapRegion(uint hrs_index,
   _rem_set =  new HeapRegionRemSet(sharedOffsetArray, this);
 
   assert(HeapRegionRemSet::num_par_rem_sets() > 0, "Invariant.");
-  // In case the region is allocated during a pause, note the top.
-  // We haven't done any counting on a brand new region.
-  _top_at_conc_mark_count = bottom();
 }
 
 class NextCompactionHeapRegionClosure: public HeapRegionClosure {
@@ -585,14 +582,12 @@ void HeapRegion::note_self_forwarding_removal_start(bool during_initial_mark,
     // we find to be self-forwarded on the next bitmap. So all
     // objects need to be below NTAMS.
     _next_top_at_mark_start = top();
-    set_top_at_conc_mark_count(bottom());
     _next_marked_bytes = 0;
   } else if (during_conc_mark) {
     // During concurrent mark, all objects in the CSet (including
     // the ones we find to be self-forwarded) are implicitly live.
     // So all objects need to be above NTAMS.
     _next_top_at_mark_start = bottom();
-    set_top_at_conc_mark_count(bottom());
     _next_marked_bytes = 0;
   }
 }
