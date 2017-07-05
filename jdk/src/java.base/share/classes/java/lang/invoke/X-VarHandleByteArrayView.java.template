@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         @ForceInline
         static boolean compareAndSet(ArrayHandle handle, Object oba, int index, $type$ expected, $type$ value) {
             byte[] ba = (byte[]) oba;
-            return UNSAFE.compareAndSwap$RawType$(
+            return UNSAFE.compareAndSet$RawType$(
                     ba,
                     address(ba, index(ba, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
@@ -196,7 +196,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         static $type$ compareAndExchange(ArrayHandle handle, Object oba, int index, $type$ expected, $type$ value) {
             byte[] ba = (byte[]) oba;
             return convEndian(handle.be,
-                              UNSAFE.compareAndExchange$RawType$Volatile(
+                              UNSAFE.compareAndExchange$RawType$(
                                       ba,
                                       address(ba, index(ba, index)),
                                       convEndian(handle.be, expected), convEndian(handle.be, value)));
@@ -225,7 +225,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         @ForceInline
         static boolean weakCompareAndSetPlain(ArrayHandle handle, Object oba, int index, $type$ expected, $type$ value) {
             byte[] ba = (byte[]) oba;
-            return UNSAFE.weakCompareAndSwap$RawType$(
+            return UNSAFE.weakCompareAndSet$RawType$Plain(
                     ba,
                     address(ba, index(ba, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
@@ -234,7 +234,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         @ForceInline
         static boolean weakCompareAndSet(ArrayHandle handle, Object oba, int index, $type$ expected, $type$ value) {
             byte[] ba = (byte[]) oba;
-            return UNSAFE.weakCompareAndSwap$RawType$Volatile(
+            return UNSAFE.weakCompareAndSet$RawType$(
                     ba,
                     address(ba, index(ba, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
@@ -243,7 +243,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         @ForceInline
         static boolean weakCompareAndSetAcquire(ArrayHandle handle, Object oba, int index, $type$ expected, $type$ value) {
             byte[] ba = (byte[]) oba;
-            return UNSAFE.weakCompareAndSwap$RawType$Acquire(
+            return UNSAFE.weakCompareAndSet$RawType$Acquire(
                     ba,
                     address(ba, index(ba, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
@@ -252,7 +252,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         @ForceInline
         static boolean weakCompareAndSetRelease(ArrayHandle handle, Object oba, int index, $type$ expected, $type$ value) {
             byte[] ba = (byte[]) oba;
-            return UNSAFE.weakCompareAndSwap$RawType$Release(
+            return UNSAFE.weakCompareAndSet$RawType$Release(
                     ba,
                     address(ba, index(ba, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
@@ -336,7 +336,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             do {
                 nativeExpectedValue = UNSAFE.get$RawType$Volatile(ba, offset);
                 expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
-            } while (!UNSAFE.weakCompareAndSwap$RawType$Volatile(ba, offset,
+            } while (!UNSAFE.weakCompareAndSet$RawType$(ba, offset,
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue + delta)));
             return expectedValue;
         }
@@ -389,7 +389,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             do {
                 nativeExpectedValue = UNSAFE.get$RawType$Volatile(ba, offset);
                 expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
-            } while (!UNSAFE.weakCompareAndSwap$RawType$Volatile(ba, offset,
+            } while (!UNSAFE.weakCompareAndSet$RawType$(ba, offset,
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue | value)));
             return expectedValue;
         }
@@ -440,7 +440,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             do {
                 nativeExpectedValue = UNSAFE.get$RawType$Volatile(ba, offset);
                 expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
-            } while (!UNSAFE.weakCompareAndSwap$RawType$Volatile(ba, offset,
+            } while (!UNSAFE.weakCompareAndSet$RawType$(ba, offset,
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue & value)));
             return expectedValue;
         }
@@ -491,7 +491,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             do {
                 nativeExpectedValue = UNSAFE.get$RawType$Volatile(ba, offset);
                 expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
-            } while (!UNSAFE.weakCompareAndSwap$RawType$Volatile(ba, offset,
+            } while (!UNSAFE.weakCompareAndSet$RawType$(ba, offset,
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue ^ value)));
             return expectedValue;
         }
@@ -625,7 +625,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         @ForceInline
         static boolean compareAndSet(ByteBufferHandle handle, Object obb, int index, $type$ expected, $type$ value) {
             ByteBuffer bb = (ByteBuffer) obb;
-            return UNSAFE.compareAndSwap$RawType$(
+            return UNSAFE.compareAndSet$RawType$(
                     UNSAFE.getObject(bb, BYTE_BUFFER_HB),
                     address(bb, indexRO(bb, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
@@ -635,7 +635,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         static $type$ compareAndExchange(ByteBufferHandle handle, Object obb, int index, $type$ expected, $type$ value) {
             ByteBuffer bb = (ByteBuffer) obb;
             return convEndian(handle.be,
-                              UNSAFE.compareAndExchange$RawType$Volatile(
+                              UNSAFE.compareAndExchange$RawType$(
                                       UNSAFE.getObject(bb, BYTE_BUFFER_HB),
                                       address(bb, indexRO(bb, index)),
                                       convEndian(handle.be, expected), convEndian(handle.be, value)));
@@ -664,7 +664,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         @ForceInline
         static boolean weakCompareAndSetPlain(ByteBufferHandle handle, Object obb, int index, $type$ expected, $type$ value) {
             ByteBuffer bb = (ByteBuffer) obb;
-            return UNSAFE.weakCompareAndSwap$RawType$(
+            return UNSAFE.weakCompareAndSet$RawType$Plain(
                     UNSAFE.getObject(bb, BYTE_BUFFER_HB),
                     address(bb, indexRO(bb, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
@@ -673,7 +673,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         @ForceInline
         static boolean weakCompareAndSet(ByteBufferHandle handle, Object obb, int index, $type$ expected, $type$ value) {
             ByteBuffer bb = (ByteBuffer) obb;
-            return UNSAFE.weakCompareAndSwap$RawType$Volatile(
+            return UNSAFE.weakCompareAndSet$RawType$(
                     UNSAFE.getObject(bb, BYTE_BUFFER_HB),
                     address(bb, indexRO(bb, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
@@ -682,7 +682,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         @ForceInline
         static boolean weakCompareAndSetAcquire(ByteBufferHandle handle, Object obb, int index, $type$ expected, $type$ value) {
             ByteBuffer bb = (ByteBuffer) obb;
-            return UNSAFE.weakCompareAndSwap$RawType$Acquire(
+            return UNSAFE.weakCompareAndSet$RawType$Acquire(
                     UNSAFE.getObject(bb, BYTE_BUFFER_HB),
                     address(bb, indexRO(bb, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
@@ -691,7 +691,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
         @ForceInline
         static boolean weakCompareAndSetRelease(ByteBufferHandle handle, Object obb, int index, $type$ expected, $type$ value) {
             ByteBuffer bb = (ByteBuffer) obb;
-            return UNSAFE.weakCompareAndSwap$RawType$Release(
+            return UNSAFE.weakCompareAndSet$RawType$Release(
                     UNSAFE.getObject(bb, BYTE_BUFFER_HB),
                     address(bb, indexRO(bb, index)),
                     convEndian(handle.be, expected), convEndian(handle.be, value));
@@ -776,7 +776,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             do {
                 nativeExpectedValue = UNSAFE.get$RawType$Volatile(base, offset);
                 expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
-            } while (!UNSAFE.weakCompareAndSwap$RawType$Volatile(base, offset,
+            } while (!UNSAFE.weakCompareAndSet$RawType$(base, offset,
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue + delta)));
             return expectedValue;
         }
@@ -830,7 +830,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             do {
                 nativeExpectedValue = UNSAFE.get$RawType$Volatile(base, offset);
                 expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
-            } while (!UNSAFE.weakCompareAndSwap$RawType$Volatile(base, offset,
+            } while (!UNSAFE.weakCompareAndSet$RawType$(base, offset,
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue | value)));
             return expectedValue;
         }
@@ -882,12 +882,12 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             do {
                 nativeExpectedValue = UNSAFE.get$RawType$Volatile(base, offset);
                 expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
-            } while (!UNSAFE.weakCompareAndSwap$RawType$Volatile(base, offset,
+            } while (!UNSAFE.weakCompareAndSet$RawType$(base, offset,
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue & value)));
             return expectedValue;
         }
-        
-        
+
+
         @ForceInline
         static $type$ getAndBitwiseXor(ByteBufferHandle handle, Object obb, int index, $type$ value) {
             ByteBuffer bb = (ByteBuffer) obb;
@@ -935,7 +935,7 @@ final class VarHandleByteArrayAs$Type$s extends VarHandleByteArrayBase {
             do {
                 nativeExpectedValue = UNSAFE.get$RawType$Volatile(base, offset);
                 expectedValue = $RawBoxType$.reverseBytes(nativeExpectedValue);
-            } while (!UNSAFE.weakCompareAndSwap$RawType$Volatile(base, offset,
+            } while (!UNSAFE.weakCompareAndSet$RawType$(base, offset,
                     nativeExpectedValue, $RawBoxType$.reverseBytes(expectedValue ^ value)));
             return expectedValue;
         }

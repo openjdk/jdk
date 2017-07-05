@@ -324,15 +324,9 @@ public final class ImagePluginStack {
             }
 
             @Override
-            public String osName() {
+            public String targetPlatform() {
                 initModuleAttributes();
-                return target != null? target.osName() : null;
-            }
-
-            @Override
-            public String osArch() {
-                initModuleAttributes();
-                return target != null? target.osArch() : null;
+                return target != null? target.targetPlatform() : null;
             }
 
             private void initModuleAttributes() {

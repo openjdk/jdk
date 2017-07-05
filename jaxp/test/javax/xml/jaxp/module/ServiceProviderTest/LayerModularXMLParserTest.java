@@ -40,12 +40,11 @@ import java.util.Set;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.Test;
 
-import jdk.testlibrary.CompilerUtils;
+import jdk.test.lib.compiler.CompilerUtils;
 
 /*
  * @test
- * @library /javax/xml/jaxp/libs
- * @build jdk.testlibrary.*
+ * @library /test/lib
  * @run testng LayerModularXMLParserTest
  * @bug 8078820 8156119
  * @summary Tests JAXP lib works with layer and TCCL

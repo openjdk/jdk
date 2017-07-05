@@ -53,7 +53,7 @@ public class ModuleStress {
         //   those loaders never die.
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
              "-Xbootclasspath/a:.",
-             "-Xlog:modules=trace",
+             "-Xlog:module=trace",
              "-version");
 
         OutputAnalyzer oa = new OutputAnalyzer(pb.start());
@@ -88,7 +88,7 @@ public class ModuleStress {
         //   the same loader and thus have the exact same life cycle.
         pb = ProcessTools.createJavaProcessBuilder(
              "-Xbootclasspath/a:.",
-             "-Xlog:modules=trace",
+             "-Xlog:module=trace",
              "ModuleSameCLMain");
 
         oa = new OutputAnalyzer(pb.start());
@@ -102,7 +102,7 @@ public class ModuleStress {
         //   class loaders which could die and thus be unloaded.
         pb = ProcessTools.createJavaProcessBuilder(
              "-Xbootclasspath/a:.",
-             "-Xlog:modules=trace",
+             "-Xlog:module=trace",
              "ModuleNonBuiltinCLMain");
 
         oa = new OutputAnalyzer(pb.start());
@@ -120,7 +120,7 @@ public class ModuleStress {
         pb = ProcessTools.createJavaProcessBuilder(
              "-Djava.system.class.loader=CustomSystemClassLoader",
              "-Xbootclasspath/a:.",
-             "-Xlog:modules=trace",
+             "-Xlog:module=trace",
              "ModuleNonBuiltinCLMain");
 
         oa = new OutputAnalyzer(pb.start());

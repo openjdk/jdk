@@ -43,13 +43,17 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.lang.module.ModuleFinder;
-import java.lang.module.ModuleReference;
+import java.lang.module.Configuration;
+import java.lang.module.FindException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleDescriptor.Exports;
 import java.lang.module.ModuleDescriptor.Opens;
 import java.lang.module.ModuleDescriptor.Provides;
+import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReference;
+import java.lang.module.ResolvedModule;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
@@ -58,14 +62,16 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.text.Normalizer;
 import java.text.MessageFormat;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -83,6 +89,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.misc.VM;
+import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
 
 
@@ -98,6 +105,7 @@ public final class LauncherHelper {
             "javafx.application.Application";
     private static final String JAVAFX_FXHELPER_CLASS_NAME_SUFFIX =
             "sun.launcher.LauncherHelper$FXHelper";
+    private static final String LAUNCHER_AGENT_CLASS = "Launcher-Agent-Class";
     private static final String MAIN_CLASS = "Main-Class";
     private static final String ADD_EXPORTS = "Add-Exports";
     private static final String ADD_OPENS = "Add-Opens";
@@ -408,8 +416,12 @@ public final class LauncherHelper {
         ostream =  (printToStderr) ? System.err : System.out;
     }
 
+    static void initOutput(PrintStream ps) {
+        ostream = ps;
+    }
+
     static String getMainClassFromJar(String jarname) {
-        String mainValue = null;
+        String mainValue;
         try (JarFile jarFile = new JarFile(jarname)) {
             Manifest manifest = jarFile.getManifest();
             if (manifest == null) {
@@ -424,6 +436,22 @@ public final class LauncherHelper {
             mainValue = mainAttrs.getValue(MAIN_CLASS);
             if (mainValue == null) {
                 abort(null, "java.launcher.jar.error3", jarname);
+            }
+
+            // Launcher-Agent-Class (only check for this when Main-Class present)
+            String agentClass = mainAttrs.getValue(LAUNCHER_AGENT_CLASS);
+            if (agentClass != null) {
+                ModuleLayer.boot().findModule("java.instrument").ifPresent(m -> {
+                    try {
+                        String cn = "sun.instrument.InstrumentationImpl";
+                        Class<?> clazz = Class.forName(cn, false, null);
+                        Method loadAgent = clazz.getMethod("loadAgent", String.class);
+                        loadAgent.invoke(null, jarname);
+                    } catch (Throwable e) {
+                        if (e instanceof InvocationTargetException) e = e.getCause();
+                        abort(e, "java.launcher.jar.error4", jarname);
+                    }
+                });
             }
 
             // Add-Exports and Add-Opens
@@ -913,141 +941,350 @@ public final class LauncherHelper {
         }
     }
 
-    private static void formatCommaList(PrintStream out,
-                                        String prefix,
-                                        Collection<?> list)
-    {
-        if (list.isEmpty())
-            return;
-        out.format("%s", prefix);
-        boolean first = true;
-        for (Object ob : list) {
-            if (first) {
-                out.format(" %s", ob);
-                first = false;
-            } else {
-                out.format(", %s", ob);
-            }
-        }
-        out.format("%n");
-    }
-
     /**
      * Called by the launcher to list the observable modules.
-     * If called without any sub-options then the output is a simple list of
-     * the modules. If called with sub-options then the sub-options are the
-     * names of the modules to list (e.g. --list-modules java.base,java.desktop)
      */
-    static void listModules(boolean printToStderr, String optionFlag)
-        throws IOException, ClassNotFoundException
-    {
-        initOutput(printToStderr);
+    static void listModules() {
+        initOutput(System.out);
 
-        ModuleFinder finder = jdk.internal.module.ModuleBootstrap.finder();
-        int colon = optionFlag.indexOf('=');
-        if (colon == -1) {
-            finder.findAll().stream()
-                  .sorted(Comparator.comparing(ModuleReference::descriptor))
-                  .forEach(mref -> describeModule(finder, mref, false));
-        } else {
-            String[] names = optionFlag.substring(colon+1).split(",");
-            for (String name: names) {
-                ModuleReference mref = finder.find(name).orElse(null);
-                if (mref == null) {
-                    System.err.format("%s not found%n", name);
-                    continue;
-                }
-                describeModule(finder, mref, true);
-            }
-        }
+        ModuleBootstrap.limitedFinder().findAll().stream()
+            .sorted(new JrtFirstComparator())
+            .forEach(LauncherHelper::showModule);
     }
 
     /**
-     * Describes the given module.
+     * Called by the launcher to show the resolved modules
      */
-    static void describeModule(ModuleFinder finder,
-                               ModuleReference mref,
-                               boolean verbose)
-    {
-        ModuleDescriptor md = mref.descriptor();
-        ostream.print("module " + midAndLocation(md, mref.location()));
-        if (md.isAutomatic())
-            ostream.print(" automatic");
-        ostream.println();
+    static void showResolvedModules() {
+        initOutput(System.out);
 
-        if (!verbose)
-            return;
+        ModuleLayer bootLayer = ModuleLayer.boot();
+        Configuration cf = bootLayer.configuration();
+
+        cf.modules().stream()
+            .map(ResolvedModule::reference)
+            .sorted(new JrtFirstComparator())
+            .forEach(LauncherHelper::showModule);
+    }
+
+    /**
+     * Called by the launcher to describe a module
+     */
+    static void describeModule(String moduleName) {
+        initOutput(System.out);
+
+        ModuleFinder finder = ModuleBootstrap.limitedFinder();
+        ModuleReference mref = finder.find(moduleName).orElse(null);
+        if (mref == null) {
+            abort(null, "java.launcher.module.error4", moduleName);
+        }
+        ModuleDescriptor md = mref.descriptor();
+
+        // one-line summary
+        showModule(mref);
 
         // unqualified exports (sorted by package)
-        Set<Exports> exports = new TreeSet<>(Comparator.comparing(Exports::source));
-        md.exports().stream().filter(e -> !e.isQualified()).forEach(exports::add);
-        for (Exports e : exports) {
-            String modsAndSource = Stream.concat(toStringStream(e.modifiers()),
-                    Stream.of(e.source()))
+        md.exports().stream()
+            .filter(e -> !e.isQualified())
+            .sorted(Comparator.comparing(Exports::source))
+            .map(e -> Stream.concat(Stream.of(e.source()),
+                                    toStringStream(e.modifiers()))
+                    .collect(Collectors.joining(" ")))
+            .forEach(sourceAndMods -> ostream.format("exports %s%n", sourceAndMods));
+
+        // dependences
+        for (Requires r : md.requires()) {
+            String nameAndMods = Stream.concat(Stream.of(r.name()),
+                                               toStringStream(r.modifiers()))
                     .collect(Collectors.joining(" "));
-            ostream.format("  exports %s%n", modsAndSource);
+            ostream.format("requires %s", nameAndMods);
+            finder.find(r.name())
+                .map(ModuleReference::descriptor)
+                .filter(ModuleDescriptor::isAutomatic)
+                .ifPresent(any -> ostream.print(" automatic"));
+            ostream.println();
         }
 
-        for (Requires d : md.requires()) {
-            ostream.format("  requires %s", d);
-            String suffix = finder.find(d.name())
-                    .map(ModuleReference::descriptor)
-                    .map(any -> any.isAutomatic() ? " automatic" : "")
-                    .orElse(" not found");
-            ostream.println(suffix);
-        }
+        // service use and provides
         for (String s : md.uses()) {
-            ostream.format("  uses %s%n", s);
+            ostream.format("uses %s%n", s);
         }
-
         for (Provides ps : md.provides()) {
-            ostream.format("  provides %s with %s%n", ps.service(),
-                    ps.providers().stream().collect(Collectors.joining(", ")));
+            String names = ps.providers().stream().collect(Collectors.joining(" "));
+            ostream.format("provides %s with %s%n", ps.service(), names);
+
         }
 
         // qualified exports
         for (Exports e : md.exports()) {
             if (e.isQualified()) {
-                String modsAndSource = Stream.concat(toStringStream(e.modifiers()),
-                        Stream.of(e.source()))
-                        .collect(Collectors.joining(" "));
-                ostream.format("  exports %s", modsAndSource);
-                formatCommaList(ostream, " to", e.targets());
+                String who = e.targets().stream().collect(Collectors.joining(" "));
+                ostream.format("qualified exports %s to %s%n", e.source(), who);
             }
         }
 
         // open packages
-        for (Opens obj: md.opens()) {
-            String modsAndSource = Stream.concat(toStringStream(obj.modifiers()),
-                    Stream.of(obj.source()))
+        for (Opens opens: md.opens()) {
+            if (opens.isQualified())
+                ostream.print("qualified ");
+            String sourceAndMods = Stream.concat(Stream.of(opens.source()),
+                                                 toStringStream(opens.modifiers()))
                     .collect(Collectors.joining(" "));
-            ostream.format("  opens %s", modsAndSource);
-            if (obj.isQualified())
-                formatCommaList(ostream, " to", obj.targets());
-            else
-                ostream.println();
+            ostream.format("opens %s", sourceAndMods);
+            if (opens.isQualified()) {
+                String who = opens.targets().stream().collect(Collectors.joining(" "));
+                ostream.format(" to %s", who);
+            }
+            ostream.println();
         }
 
         // non-exported/non-open packages
         Set<String> concealed = new TreeSet<>(md.packages());
         md.exports().stream().map(Exports::source).forEach(concealed::remove);
         md.opens().stream().map(Opens::source).forEach(concealed::remove);
-        concealed.forEach(p -> ostream.format("  contains %s%n", p));
+        concealed.forEach(p -> ostream.format("contains %s%n", p));
     }
 
-    static <T> String toString(Set<T> s) {
-        return toStringStream(s).collect(Collectors.joining(" "));
+    /**
+     * Prints a single line with the module name, version and modifiers
+     */
+    private static void showModule(ModuleReference mref) {
+        ModuleDescriptor md = mref.descriptor();
+        ostream.print(md.toNameAndVersion());
+        mref.location()
+                .filter(uri -> !isJrt(uri))
+                .ifPresent(uri -> ostream.format(" %s", uri));
+        if (md.isOpen())
+            ostream.print(" open");
+        if (md.isAutomatic())
+            ostream.print(" automatic");
+        ostream.println();
     }
 
-    static <T> Stream<String> toStringStream(Set<T> s) {
+    /**
+     * A ModuleReference comparator that considers modules in the run-time
+     * image to be less than modules than not in the run-time image.
+     */
+    private static class JrtFirstComparator implements Comparator<ModuleReference> {
+        private final Comparator<ModuleReference> real;
+
+        JrtFirstComparator() {
+            this.real = Comparator.comparing(ModuleReference::descriptor);
+        }
+
+        @Override
+        public int compare(ModuleReference a, ModuleReference b) {
+            if (isJrt(a)) {
+                return isJrt(b) ? real.compare(a, b) : -1;
+            } else {
+                return isJrt(b) ? 1 : real.compare(a, b);
+            }
+        }
+    }
+
+    private static <T> Stream<String> toStringStream(Set<T> s) {
         return s.stream().map(e -> e.toString().toLowerCase());
     }
 
-    static String midAndLocation(ModuleDescriptor md, Optional<URI> location ) {
-        URI loc = location.orElse(null);
-        if (loc == null || loc.getScheme().equalsIgnoreCase("jrt"))
-            return md.toNameAndVersion();
-        else
-            return md.toNameAndVersion() + " (" + loc + ")";
+    private static boolean isJrt(ModuleReference mref) {
+        return isJrt(mref.location().orElse(null));
+    }
+
+    private static boolean isJrt(URI uri) {
+        return (uri != null && uri.getScheme().equalsIgnoreCase("jrt"));
+    }
+
+    /**
+     * Called by the launcher to validate the modules on the upgrade and
+     * application module paths.
+     *
+     * @return {@code true} if no errors are found
+     */
+    private static boolean validateModules() {
+        initOutput(System.out);
+
+        ModuleValidator validator = new ModuleValidator();
+
+        // upgrade module path
+        String value = System.getProperty("jdk.module.upgrade.path");
+        if (value != null) {
+            Stream.of(value.split(File.pathSeparator))
+                    .map(Paths::get)
+                    .forEach(validator::scan);
+        }
+
+        // system modules
+        ModuleFinder.ofSystem().findAll().stream()
+                .sorted(Comparator.comparing(ModuleReference::descriptor))
+                .forEach(validator::process);
+
+        // application module path
+        value = System.getProperty("jdk.module.path");
+        if (value != null) {
+            Stream.of(value.split(File.pathSeparator))
+                    .map(Paths::get)
+                    .forEach(validator::scan);
+        }
+
+        return !validator.foundErrors();
+    }
+
+    /**
+     * A simple validator to check for errors and conflicts between modules.
+     */
+    static class ModuleValidator {
+        private static final String MODULE_INFO = "module-info.class";
+
+        private Map<String, ModuleReference> nameToModule = new HashMap<>();
+        private Map<String, ModuleReference> packageToModule = new HashMap<>();
+        private boolean errorFound;
+
+        /**
+         * Returns true if at least one error was found
+         */
+        boolean foundErrors() {
+            return errorFound;
+        }
+
+        /**
+         * Prints the module location and name.
+         */
+        private void printModule(ModuleReference mref) {
+            mref.location()
+                .filter(uri -> !isJrt(uri))
+                .ifPresent(uri -> ostream.print(uri + " "));
+            ModuleDescriptor descriptor = mref.descriptor();
+            ostream.print(descriptor.name());
+            if (descriptor.isAutomatic())
+                ostream.print(" automatic");
+            ostream.println();
+        }
+
+        /**
+         * Prints the module location and name, checks if the module is
+         * shadowed by a previously seen module, and finally checks for
+         * package conflicts with previously seen modules.
+         */
+        void process(ModuleReference mref) {
+            printModule(mref);
+
+            String name = mref.descriptor().name();
+            ModuleReference previous = nameToModule.putIfAbsent(name, mref);
+            if (previous != null) {
+                ostream.print(INDENT + "shadowed by ");
+                printModule(previous);
+            } else {
+                // check for package conflicts when not shadowed
+                for (String pkg :  mref.descriptor().packages()) {
+                    previous = packageToModule.putIfAbsent(pkg, mref);
+                    if (previous != null) {
+                        String mn = previous.descriptor().name();
+                        ostream.println(INDENT + "contains " + pkg
+                                        + " conflicts with module " + mn);
+                        errorFound = true;
+                    }
+                }
+            }
+        }
+
+        /**
+         * Scan an element on a module path. The element is a directory
+         * of modules, an exploded module, or a JAR file.
+         */
+        void scan(Path entry) {
+            BasicFileAttributes attrs;
+            try {
+                attrs = Files.readAttributes(entry, BasicFileAttributes.class);
+            } catch (NoSuchFileException ignore) {
+                return;
+            } catch (IOException ioe) {
+                ostream.println(entry + " " + ioe);
+                errorFound = true;
+                return;
+            }
+
+            String fn = entry.getFileName().toString();
+            if (attrs.isRegularFile() && fn.endsWith(".jar")) {
+                // JAR file, explicit or automatic module
+                scanModule(entry).ifPresent(this::process);
+            } else if (attrs.isDirectory()) {
+                Path mi = entry.resolve(MODULE_INFO);
+                if (Files.exists(mi)) {
+                    // exploded module
+                    scanModule(entry).ifPresent(this::process);
+                } else {
+                    // directory of modules
+                    scanDirectory(entry);
+                }
+            }
+        }
+
+        /**
+         * Scan the JAR files and exploded modules in a directory.
+         */
+        private void scanDirectory(Path dir) {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
+                Map<String, Path> moduleToEntry = new HashMap<>();
+
+                for (Path entry : stream) {
+                    BasicFileAttributes attrs;
+                    try {
+                        attrs = Files.readAttributes(entry, BasicFileAttributes.class);
+                    } catch (IOException ioe) {
+                        ostream.println(entry + " " + ioe);
+                        errorFound = true;
+                        continue;
+                    }
+
+                    ModuleReference mref = null;
+
+                    String fn = entry.getFileName().toString();
+                    if (attrs.isRegularFile() && fn.endsWith(".jar")) {
+                        mref = scanModule(entry).orElse(null);
+                    } else if (attrs.isDirectory()) {
+                        Path mi = entry.resolve(MODULE_INFO);
+                        if (Files.exists(mi)) {
+                            mref = scanModule(entry).orElse(null);
+                        }
+                    }
+
+                    if (mref != null) {
+                        String name = mref.descriptor().name();
+                        Path previous = moduleToEntry.putIfAbsent(name, entry);
+                        if (previous != null) {
+                            // same name as other module in the directory
+                            printModule(mref);
+                            ostream.println(INDENT + "contains same module as "
+                                            + previous.getFileName());
+                            errorFound = true;
+                        } else {
+                            process(mref);
+                        }
+                    }
+                }
+            } catch (IOException ioe) {
+                ostream.println(dir + " " + ioe);
+                errorFound = true;
+            }
+        }
+
+        /**
+         * Scan a JAR file or exploded module.
+         */
+        private Optional<ModuleReference> scanModule(Path entry) {
+            ModuleFinder finder = ModuleFinder.of(entry);
+            try {
+                return finder.findAll().stream().findFirst();
+            } catch (FindException e) {
+                ostream.println(entry);
+                ostream.println(INDENT + e.getMessage());
+                Throwable cause = e.getCause();
+                if (cause != null) {
+                    ostream.println(INDENT + cause);
+                }
+                errorFound = true;
+                return Optional.empty();
+            }
+        }
     }
 }
