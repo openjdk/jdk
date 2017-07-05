@@ -28,13 +28,13 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 
-SAMPLE_TARGET_DIR = $(JDK_OUTPUTDIR)/sample
-SAMPLE_SOURCE_DIR = $(JDK_TOPDIR)/src/share/sample
-SAMPLE_CLOSED_SOURCE_DIR = $(JDK_TOPDIR)/src/closed/share/sample
-SAMPLE_SOLARIS_SOURCE_DIR = $(JDK_TOPDIR)/src/solaris/sample
+SAMPLE_TARGET_DIR := $(JDK_OUTPUTDIR)/sample
+SAMPLE_SOURCE_DIR := $(JDK_TOPDIR)/src/sample/share
+SAMPLE_CLOSED_SOURCE_DIR := $(JDK_TOPDIR)/src/closed/sample/share
+SAMPLE_SOLARIS_SOURCE_DIR := $(JDK_TOPDIR)/src/sample/solaris
 
 # Exclude the vm directory
-SAMPLE_FIND_FILTER = -name vm -prune -o
+SAMPLE_FIND_FILTER := -name vm -prune -o
 
 SAMPLE_SOURCE := $(shell $(FIND) $(SAMPLE_SOURCE_DIR) $(SAMPLE_FIND_FILTER) -type f -print)
 SAMPLE_TARGET := $(subst $(SAMPLE_SOURCE_DIR),$(SAMPLE_TARGET_DIR),$(SAMPLE_SOURCE))
