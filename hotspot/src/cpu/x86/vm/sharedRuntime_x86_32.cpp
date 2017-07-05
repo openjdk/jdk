@@ -2381,7 +2381,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   // Save everything in sight.
 
-  map = RegisterSaver::save_live_registers(masm, additional_words, &frame_size_in_words);
+  map = RegisterSaver::save_live_registers(masm, additional_words, &frame_size_in_words, false);
   // Normal deoptimization
   __ push(Deoptimization::Unpack_deopt);
   __ jmp(cont);
@@ -2392,7 +2392,7 @@ void SharedRuntime::generate_deopt_blob() {
   // return address is the pc describes what bci to do re-execute at
 
   // No need to update map as each call to save_live_registers will produce identical oopmap
-  (void) RegisterSaver::save_live_registers(masm, additional_words, &frame_size_in_words);
+  (void) RegisterSaver::save_live_registers(masm, additional_words, &frame_size_in_words, false);
 
   __ push(Deoptimization::Unpack_reexecute);
   __ jmp(cont);
@@ -2428,7 +2428,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Save everything in sight.
 
   // No need to update map as each call to save_live_registers will produce identical oopmap
-  (void) RegisterSaver::save_live_registers(masm, additional_words, &frame_size_in_words);
+  (void) RegisterSaver::save_live_registers(masm, additional_words, &frame_size_in_words, false);
 
   // Now it is safe to overwrite any register
 
@@ -2514,6 +2514,11 @@ void SharedRuntime::generate_deopt_blob() {
   // in the vframeArray.
 
   RegisterSaver::restore_result_registers(masm);
+
+  // Non standard control word may be leaked out through a safepoint blob, and we can
+  // deopt at a poll point with the non standard control word. However, we should make
+  // sure the control word is correct after restore_result_registers.
+  __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
 
   // All of the register save area has been popped of the stack. Only the
   // return address remains.

@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,30 +19,29 @@
  * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
  * CA 95054 USA or visit www.sun.com if you need additional information or
  * have any questions.
- *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_iterator.cpp.incl"
+/**
+ * @test
+ * @bug 6866651
+ * @summary delay dead node elimination in set_req_X to prevent killing the current node when it is in use
+ *
+ * @run main Test
+ */
 
-#ifdef ASSERT
-bool OopClosure::_must_remember_klasses = false;
-#endif
+public class Test {
 
-void ObjectToOopClosure::do_object(oop obj) {
-  obj->oop_iterate(_cl);
+    static int sum() {
+        int s = 0;
+        for (int x = 1, y = 0; x != 0; x++, y--) {
+            s ^= y;
+        }
+        return s;
+    }
+
+    public static void main(final String[] args) {
+        for (int k = 0; k < 2; k++) {
+            System.err.println(String.valueOf(sum()));
+        }
+    }
 }
-
-void VoidClosure::do_void() {
-  ShouldNotCallThis();
-}
-
-#ifdef ASSERT
-bool OopClosure::must_remember_klasses() {
-  return _must_remember_klasses;
-}
-void OopClosure::set_must_remember_klasses(bool v) {
-  _must_remember_klasses = v;
-}
-#endif
-

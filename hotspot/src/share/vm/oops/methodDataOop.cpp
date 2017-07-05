@@ -49,6 +49,12 @@ void DataLayout::initialize(u1 tag, u2 bci, int cell_count) {
   }
 }
 
+void DataLayout::follow_weak_refs(BoolObjectClosure* cl) {
+  ResourceMark m;
+  data_in()->follow_weak_refs(cl);
+}
+
+
 // ==================================================================
 // ProfileData
 //
@@ -145,46 +151,105 @@ void JumpData::print_data_on(outputStream* st) {
 // which are used to store a type profile for the receiver of the check.
 
 void ReceiverTypeData::follow_contents() {
-  for (uint row = 0; row < row_limit(); row++) {
-    if (receiver(row) != NULL) {
-      MarkSweep::mark_and_push(adr_receiver(row));
-    }
-  }
+  // This is a set of weak references that need
+  // to be followed at the end of the strong marking
+  // phase. Memoize this object so it can be visited
+  // in the weak roots processing phase.
+  MarkSweep::revisit_mdo(data());
 }
 
 #ifndef SERIALGC
 void ReceiverTypeData::follow_contents(ParCompactionManager* cm) {
-  for (uint row = 0; row < row_limit(); row++) {
-    if (receiver(row) != NULL) {
-      PSParallelCompact::mark_and_push(cm, adr_receiver(row));
-    }
-  }
+  // This is a set of weak references that need
+  // to be followed at the end of the strong marking
+  // phase. Memoize this object so it can be visited
+  // in the weak roots processing phase.
+  PSParallelCompact::revisit_mdo(cm, data());
 }
 #endif // SERIALGC
 
 void ReceiverTypeData::oop_iterate(OopClosure* blk) {
-  for (uint row = 0; row < row_limit(); row++) {
-    if (receiver(row) != NULL) {
-      blk->do_oop(adr_receiver(row));
-    }
-  }
-}
-
-void ReceiverTypeData::oop_iterate_m(OopClosure* blk, MemRegion mr) {
-  for (uint row = 0; row < row_limit(); row++) {
-    if (receiver(row) != NULL) {
-      oop* adr = adr_receiver(row);
-      if (mr.contains(adr)) {
+  if (blk->should_remember_mdo()) {
+    // This is a set of weak references that need
+    // to be followed at the end of the strong marking
+    // phase. Memoize this object so it can be visited
+    // in the weak roots processing phase.
+    blk->remember_mdo(data());
+  } else { // normal scan
+    for (uint row = 0; row < row_limit(); row++) {
+      if (receiver(row) != NULL) {
+        oop* adr = adr_receiver(row);
         blk->do_oop(adr);
       }
     }
   }
 }
 
+void ReceiverTypeData::oop_iterate_m(OopClosure* blk, MemRegion mr) {
+  // Currently, this interface is called only during card-scanning for
+  // a young gen gc, in which case this object cannot contribute anything,
+  // since it does not contain any references that cross out of
+  // the perm gen. However, for future more general use we allow
+  // the possibility of calling for instance from more general
+  // iterators (for example, a future regionalized perm gen for G1,
+  // or the possibility of moving some references out of perm in
+  // the case of other collectors). In that case, you will need
+  // to relax or remove some of the assertions below.
+#ifdef ASSERT
+  // Verify that none of the embedded oop references cross out of
+  // this generation.
+  for (uint row = 0; row < row_limit(); row++) {
+    if (receiver(row) != NULL) {
+      oop* adr = adr_receiver(row);
+      CollectedHeap* h = Universe::heap();
+      assert(h->is_permanent(adr) && h->is_permanent_or_null(*adr), "Not intra-perm");
+    }
+  }
+#endif // ASSERT
+  assert(!blk->should_remember_mdo(), "Not expected to remember MDO");
+  return;   // Nothing to do, see comment above
+#if 0
+  if (blk->should_remember_mdo()) {
+    // This is a set of weak references that need
+    // to be followed at the end of the strong marking
+    // phase. Memoize this object so it can be visited
+    // in the weak roots processing phase.
+    blk->remember_mdo(data());
+  } else { // normal scan
+    for (uint row = 0; row < row_limit(); row++) {
+      if (receiver(row) != NULL) {
+        oop* adr = adr_receiver(row);
+        if (mr.contains(adr)) {
+          blk->do_oop(adr);
+        } else if ((HeapWord*)adr >= mr.end()) {
+          // Test that the current cursor and the two ends of the range
+          // that we may have skipped iterating over are monotonically ordered;
+          // this is just a paranoid assertion, just in case represetations
+          // should change in the future rendering the short-circuit return
+          // here invalid.
+          assert((row+1 >= row_limit() || adr_receiver(row+1) > adr) &&
+                 (row+2 >= row_limit() || adr_receiver(row_limit()-1) > adr_receiver(row+1)), "Reducing?");
+          break; // remaining should be outside this mr too
+        }
+      }
+    }
+  }
+#endif
+}
+
 void ReceiverTypeData::adjust_pointers() {
   for (uint row = 0; row < row_limit(); row++) {
     if (receiver(row) != NULL) {
       MarkSweep::adjust_pointer(adr_receiver(row));
+    }
+  }
+}
+
+void ReceiverTypeData::follow_weak_refs(BoolObjectClosure* is_alive_cl) {
+  for (uint row = 0; row < row_limit(); row++) {
+    klassOop p = receiver(row);
+    if (p != NULL && !is_alive_cl->do_object_b(p)) {
+      clear_row(row);
     }
   }
 }
@@ -625,30 +690,33 @@ ProfileData* methodDataOopDesc::data_at(int data_index) {
     return NULL;
   }
   DataLayout* data_layout = data_layout_at(data_index);
+  return data_layout->data_in();
+}
 
-  switch (data_layout->tag()) {
+ProfileData* DataLayout::data_in() {
+  switch (tag()) {
   case DataLayout::no_tag:
   default:
     ShouldNotReachHere();
     return NULL;
   case DataLayout::bit_data_tag:
-    return new BitData(data_layout);
+    return new BitData(this);
   case DataLayout::counter_data_tag:
-    return new CounterData(data_layout);
+    return new CounterData(this);
   case DataLayout::jump_data_tag:
-    return new JumpData(data_layout);
+    return new JumpData(this);
   case DataLayout::receiver_type_data_tag:
-    return new ReceiverTypeData(data_layout);
+    return new ReceiverTypeData(this);
   case DataLayout::virtual_call_data_tag:
-    return new VirtualCallData(data_layout);
+    return new VirtualCallData(this);
   case DataLayout::ret_data_tag:
-    return new RetData(data_layout);
+    return new RetData(this);
   case DataLayout::branch_data_tag:
-    return new BranchData(data_layout);
+    return new BranchData(this);
   case DataLayout::multi_branch_data_tag:
-    return new MultiBranchData(data_layout);
+    return new MultiBranchData(this);
   case DataLayout::arg_info_data_tag:
-    return new ArgInfoData(data_layout);
+    return new ArgInfoData(this);
   };
 }
 

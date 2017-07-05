@@ -33,19 +33,15 @@ protected:
   double          _time_slice;
   double          _max_gc_time; // this is per time slice
 
-  double          _conc_overhead_time_sec;
-
 public:
   G1MMUTracker(double time_slice, double max_gc_time);
-
-  void update_conc_overhead(double conc_overhead);
 
   virtual void add_pause(double start, double end, bool gc_thread) = 0;
   virtual double longest_pause(double current_time) = 0;
   virtual double when_sec(double current_time, double pause_time) = 0;
 
   double max_gc_time() {
-    return _max_gc_time - _conc_overhead_time_sec;
+    return _max_gc_time;
   }
 
   inline bool now_max_gc(double current_time) {
