@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,29 +90,16 @@ Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jobject this,
 #if defined(__solaris__)
     rv = connect(fd, 0, 0);
 #else
-    int len;
     SOCKETADDRESS sa;
+    socklen_t len = isIPv6 ? sizeof(struct sockaddr_in6) :
+                             sizeof(struct sockaddr_in);
 
     memset(&sa, 0, sizeof(sa));
-
-#ifdef AF_INET6
-    if (isIPv6) {
 #if defined(_ALLBSD_SOURCE)
-        sa.sa6.sin6_family = AF_INET6;
+    sa.sa.sa_family = isIPv6 ? AF_INET6 : AF_INET;
 #else
-        sa.sa6.sin6_family = AF_UNSPEC;
+    sa.sa.sa_family = AF_UNSPEC;
 #endif
-        len = sizeof(struct sockaddr_in6);
-    } else
-#endif
-    {
-#if defined(_ALLBSD_SOURCE)
-        sa.sa4.sin_family = AF_INET;
-#else
-        sa.sa4.sin_family = AF_UNSPEC;
-#endif
-        len = sizeof(struct sockaddr_in);
-    }
 
     rv = connect(fd, &sa.sa, len);
 
@@ -126,8 +113,9 @@ Java_sun_nio_ch_DatagramChannelImpl_disconnect0(JNIEnv *env, jobject this,
      */
     if (rv < 0 && errno == EAFNOSUPPORT)
         rv = errno = 0;
-#endif
-#endif
+#endif // defined(_ALLBSD_SOURCE) || defined(_AIX)
+
+#endif // defined(__solaris__)
 
     if (rv < 0)
         handleSocketError(env, errno);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,10 +137,15 @@ public class BasicImageReader implements AutoCloseable {
         int headerSize = ImageHeader.getHeaderSize();
 
         // If no memory map then read header from image file
-        if (map == null) {
+        if (headerBuffer == null) {
             headerBuffer = ByteBuffer.allocateDirect(headerSize);
-            channel.read(headerBuffer, 0L);
-            headerBuffer.rewind();
+            if (channel.read(headerBuffer, 0L) == headerSize) {
+                headerBuffer.rewind();
+            } else {
+                throw new IOException("\"" + name + "\" is not an image file");
+            }
+        } else if (headerBuffer.capacity() < headerSize) {
+            throw new IOException("\"" + name + "\" is not an image file");
         }
 
         // Interpret the image file header
@@ -156,6 +161,9 @@ public class BasicImageReader implements AutoCloseable {
         memoryMap = map.asReadOnlyBuffer();
 
         // Interpret the image index
+        if (memoryMap.capacity() < indexSize) {
+            throw new IOException("The image file \"" + name + "\" is corrupted");
+        }
         redirect = intBuffer(memoryMap, header.getRedirectOffset(), header.getRedirectSize());
         offsets = intBuffer(memoryMap, header.getOffsetsOffset(), header.getOffsetsSize());
         locations = slice(memoryMap, header.getLocationsOffset(), header.getLocationsSize());

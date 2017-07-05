@@ -534,6 +534,8 @@ public final class System {
      * @param x object for which the hashCode is to be calculated
      * @return  the hashCode
      * @since   1.1
+     * @see Object#hashCode
+     * @see java.util.Objects#hashCode(Object)
      */
     @HotSpotIntrinsicCandidate
     public static native int identityHashCode(Object x);
@@ -1942,10 +1944,6 @@ public final class System {
      * the application classpath or modulepath.
      */
     private static void initPhase3() {
-        // Initialize publicLookup early, to avoid bootstrapping circularities
-        // with security manager using java.lang.invoke infrastructure.
-        java.lang.invoke.MethodHandles.publicLookup();
-
         // set security manager
         String cn = System.getProperty("java.security.manager");
         if (cn != null) {
@@ -2052,6 +2050,9 @@ public final class System {
             }
             public String fastUUID(long lsb, long msb) {
                 return Long.fastUUID(lsb, msb);
+            }
+            public void invalidatePackageAccessCache() {
+                SecurityManager.invalidatePackageAccessCache();
             }
         });
     }
