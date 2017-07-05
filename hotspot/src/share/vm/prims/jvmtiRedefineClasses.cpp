@@ -1247,12 +1247,12 @@ jvmtiError VM_RedefineClasses::merge_cp_and_rewrite(
   // Constant pools are not easily reused so we allocate a new one
   // each time.
   // merge_cp is created unsafe for concurrent GC processing.  It
-  // should be marked safe before discarding it because, even if
-  // garbage.  If it crosses a card boundary, it may be scanned
+  // should be marked safe before discarding it. Even though
+  // garbage,  if it crosses a card boundary, it may be scanned
   // in order to find the start of the first complete object on the card.
   constantPoolHandle merge_cp(THREAD,
     oopFactory::new_constantPool(merge_cp_length,
-                                 methodOopDesc::IsUnsafeConc,
+                                 oopDesc::IsUnsafeConc,
                                  THREAD));
   int orig_length = old_cp->orig_length();
   if (orig_length == 0) {
@@ -2343,7 +2343,7 @@ void VM_RedefineClasses::set_new_constant_pool(
     // sized constant pool with the klass to save space.
     constantPoolHandle smaller_cp(THREAD,
       oopFactory::new_constantPool(scratch_cp_length,
-                                   methodOopDesc::IsUnsafeConc,
+                                   oopDesc::IsUnsafeConc,
                                    THREAD));
     // preserve orig_length() value in the smaller copy
     int orig_length = scratch_cp->orig_length();

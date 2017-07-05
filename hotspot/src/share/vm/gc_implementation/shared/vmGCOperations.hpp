@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,7 @@ class VM_GC_Operation: public VM_Operation {
 
  public:
   VM_GC_Operation(unsigned int gc_count_before,
+                  GCCause::Cause _cause,
                   unsigned int full_gc_count_before = 0,
                   bool full = false) {
     _full = full;
@@ -92,7 +93,7 @@ class VM_GC_Operation: public VM_Operation {
     _gc_count_before    = gc_count_before;
 
     // A subclass constructor will likely overwrite the following
-    _gc_cause           = GCCause::_no_cause_specified;
+    _gc_cause           = _cause;
 
     _gc_locked = false;
 
@@ -136,6 +137,7 @@ class VM_GC_HeapInspection: public VM_GC_Operation {
   VM_GC_HeapInspection(outputStream* out, bool request_full_gc,
                        bool need_prologue) :
     VM_GC_Operation(0 /* total collections,      dummy, ignored */,
+                    GCCause::_heap_inspection /* GC Cause */,
                     0 /* total full collections, dummy, ignored */,
                     request_full_gc) {
     _out = out;
@@ -160,7 +162,7 @@ class VM_GenCollectForAllocation: public VM_GC_Operation {
   VM_GenCollectForAllocation(size_t size,
                              bool tlab,
                              unsigned int gc_count_before)
-    : VM_GC_Operation(gc_count_before),
+    : VM_GC_Operation(gc_count_before, GCCause::_allocation_failure),
       _size(size),
       _tlab(tlab) {
     _res = NULL;
@@ -182,9 +184,8 @@ class VM_GenCollectFull: public VM_GC_Operation {
                     unsigned int full_gc_count_before,
                     GCCause::Cause gc_cause,
                       int max_level)
-    : VM_GC_Operation(gc_count_before, full_gc_count_before, true /* full */),
-      _max_level(max_level)
-  { _gc_cause = gc_cause; }
+    : VM_GC_Operation(gc_count_before, gc_cause, full_gc_count_before, true /* full */),
+      _max_level(max_level) { }
   ~VM_GenCollectFull() {}
   virtual VMOp_Type type() const { return VMOp_GenCollectFull; }
   virtual void doit();
@@ -199,7 +200,7 @@ class VM_GenCollectForPermanentAllocation: public VM_GC_Operation {
                                       unsigned int gc_count_before,
                                       unsigned int full_gc_count_before,
                                       GCCause::Cause gc_cause)
-    : VM_GC_Operation(gc_count_before, full_gc_count_before, true),
+    : VM_GC_Operation(gc_count_before, gc_cause, full_gc_count_before, true),
       _size(size) {
     _res = NULL;
     _gc_cause = gc_cause;

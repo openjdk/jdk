@@ -8125,6 +8125,17 @@ instruct convP2B( iRegI dst, iRegP src ) %{
 %}
 #endif
 
+instruct cmpLTMask0( iRegI dst, iRegI src, immI0 zero, flagsReg ccr ) %{
+  match(Set dst (CmpLTMask src zero));
+  effect(KILL ccr);
+  size(4);
+  format %{ "SRA    $src,#31,$dst\t# cmpLTMask0" %}
+  ins_encode %{
+    __ sra($src$$Register, 31, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg_imm);
+%}
+
 instruct cmpLTMask_reg_reg( iRegI dst, iRegI p, iRegI q, flagsReg ccr ) %{
   match(Set dst (CmpLTMask p q));
   effect( KILL ccr );
@@ -8144,19 +8155,7 @@ instruct cadd_cmpLTMask( iRegI p, iRegI q, iRegI y, iRegI tmp, flagsReg ccr ) %{
 
   format %{ "SUBcc  $p,$q,$p\t! p' = p-q\n\t"
             "ADD    $p,$y,$tmp\t! g3=p-q+y\n\t"
-            "MOVl   $tmp,$p\t! p' < 0 ? p'+y : p'" %}
-  ins_encode( enc_cadd_cmpLTMask(p, q, y, tmp) );
-  ins_pipe( cadd_cmpltmask );
-%}
-
-instruct cadd_cmpLTMask2( iRegI p, iRegI q, iRegI y, iRegI tmp, flagsReg ccr ) %{
-  match(Set p (AddI (SubI p q) (AndI (CmpLTMask p q) y)));
-  effect( KILL ccr, TEMP tmp);
-  ins_cost(DEFAULT_COST*3);
-
-  format %{ "SUBcc  $p,$q,$p\t! p' = p-q\n\t"
-            "ADD    $p,$y,$tmp\t! g3=p-q+y\n\t"
-            "MOVl   $tmp,$p\t! p' < 0 ? p'+y : p'" %}
+            "MOVlt  $tmp,$p\t! p' < 0 ? p'+y : p'" %}
   ins_encode( enc_cadd_cmpLTMask(p, q, y, tmp) );
   ins_pipe( cadd_cmpltmask );
 %}

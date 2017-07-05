@@ -703,21 +703,19 @@ public class LayerUI<V extends Component>
     }
 
     /**
-     * Adds the specified region to the dirty region list if the component
-     * is showing.  The component will be repainted after all of the
-     * currently pending events have been dispatched.
+     * Paints the specified region in the {@code JLayer} this {@code LayerUI} is set to, immediately.
      * <p/>
      * This method is to be overridden when the dirty region needs to be changed.
+     * The default implementation delegates its functionality to {@link JComponent#paintImmediately(int, int, int, int)}.
      *
-     * @param tm  this parameter is not used
-     * @param x  the x value of the dirty region
-     * @param y  the y value of the dirty region
-     * @param width  the width of the dirty region
-     * @param height  the height of the dirty region
-     * @see java.awt.Component#isShowing
-     * @see RepaintManager#addDirtyRegion
+     * @param x  the x value of the region to be painted
+     * @param y  the y value of the region to be painted
+     * @param w  the width of the region to be painted
+     * @param h  the height of the region to be painted
+     *
+     * @see JComponent#paintImmediately(int, int, int, int)
      */
-    public void repaint(long tm, int x, int y, int width, int height, JLayer<? extends V> l) {
-        RepaintManager.currentManager(l).addDirtyRegion(l, x, y, width, height);
+    public void paintImmediately(int x, int y, int width, int height, JLayer<? extends V> l) {
+        l.paintImmediately(x, y, width, height);
     }
 }

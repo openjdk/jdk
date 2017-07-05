@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,16 @@
  * @test
  * @bug 6894643 6913636
  * @summary Test JSSE Kerberos ciphersuite
- * @run main SSL TLS_KRB5_WITH_RC4_128_SHA
- * @run main SSL TLS_KRB5_WITH_RC4_128_MD5
- * @run main SSL TLS_KRB5_WITH_3DES_EDE_CBC_SHA
- * @run main SSL TLS_KRB5_WITH_3DES_EDE_CBC_MD5
- * @run main SSL TLS_KRB5_WITH_DES_CBC_SHA
- * @run main SSL TLS_KRB5_WITH_DES_CBC_MD5
- * @run main SSL TLS_KRB5_EXPORT_WITH_RC4_40_SHA
- * @run main SSL TLS_KRB5_EXPORT_WITH_RC4_40_MD5
- * @run main SSL TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA
- * @run main SSL TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5
+ * @run main/othervm SSL TLS_KRB5_WITH_RC4_128_SHA
+ * @run main/othervm SSL TLS_KRB5_WITH_RC4_128_MD5
+ * @run main/othervm SSL TLS_KRB5_WITH_3DES_EDE_CBC_SHA
+ * @run main/othervm SSL TLS_KRB5_WITH_3DES_EDE_CBC_MD5
+ * @run main/othervm SSL TLS_KRB5_WITH_DES_CBC_SHA
+ * @run main/othervm SSL TLS_KRB5_WITH_DES_CBC_MD5
+ * @run main/othervm SSL TLS_KRB5_EXPORT_WITH_RC4_40_SHA
+ * @run main/othervm SSL TLS_KRB5_EXPORT_WITH_RC4_40_MD5
+ * @run main/othervm SSL TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA
+ * @run main/othervm SSL TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5
  */
 import java.io.*;
 import java.net.InetAddress;

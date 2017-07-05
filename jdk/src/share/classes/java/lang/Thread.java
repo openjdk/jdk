@@ -254,12 +254,6 @@ class Thread implements Runnable {
      */
     public final static int MAX_PRIORITY = 10;
 
-    /* If stop was called before start */
-    private boolean stopBeforeStart;
-
-    /* Remembered Throwable from stop before start */
-    private Throwable throwableFromStop;
-
     /**
      * Returns a reference to the currently executing thread object.
      *
@@ -706,10 +700,6 @@ class Thread implements Runnable {
                   it will be passed up the call stack */
             }
         }
-
-        if (stopBeforeStart) {
-            stop0(throwableFromStop);
-        }
     }
 
     private native void start0();
@@ -820,12 +810,7 @@ class Thread implements Runnable {
      */
     @Deprecated
     public final void stop() {
-        // If the thread is already dead, return.
-        // A zero status value corresponds to "NEW".
-        if ((threadStatus != 0) && !isAlive()) {
-            return;
-        }
-        stop1(new ThreadDeath());
+        stop(new ThreadDeath());
     }
 
     /**
@@ -879,36 +864,25 @@ class Thread implements Runnable {
      */
     @Deprecated
     public final synchronized void stop(Throwable obj) {
-        stop1(obj);
-    }
+        if (obj == null)
+            throw new NullPointerException();
 
-    /**
-     * Common impl for stop() and stop(Throwable).
-     */
-    private final synchronized void stop1(Throwable th) {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             checkAccess();
             if ((this != Thread.currentThread()) ||
-                (!(th instanceof ThreadDeath))) {
+                (!(obj instanceof ThreadDeath))) {
                 security.checkPermission(SecurityConstants.STOP_THREAD_PERMISSION);
             }
         }
-        // A zero status value corresponds to "NEW"
+        // A zero status value corresponds to "NEW", it can't change to
+        // not-NEW because we hold the lock.
         if (threadStatus != 0) {
             resume(); // Wake up thread if it was suspended; no-op otherwise
-            stop0(th);
-        } else {
-
-            // Must do the null arg check that the VM would do with stop0
-            if (th == null) {
-                throw new NullPointerException();
-            }
-
-            // Remember this stop attempt for if/when start is used
-            stopBeforeStart = true;
-            throwableFromStop = th;
         }
+
+        // The VM can handle all thread states
+        stop0(obj);
     }
 
     /**
