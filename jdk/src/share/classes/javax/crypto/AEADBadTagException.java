@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,50 +21,35 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-/*
- *
- * (C) Copyright IBM Corp. 1998-2004 - All Rights Reserved
- *
- */
-
-#ifndef __FEATURES_H
-#define __FEATURES_H
+package javax.crypto;
 
 /**
- * \file
- * \internal
+ * This exception is thrown when a {@link Cipher} operating in
+ * an AEAD mode (such as GCM/CCM) is unable to verify the supplied
+ * authentication tag.
+ *
+ * @since 1.7
  */
+public class AEADBadTagException extends BadPaddingException {
 
-#include "LETypes.h"
-#include "OpenTypeTables.h"
+    private static final long serialVersionUID = -488059093241685509L;
 
-U_NAMESPACE_BEGIN
+    /**
+     * Constructs a AEADBadTagException with no detail message.
+     */
+    public AEADBadTagException() {
+        super();
+    }
 
-struct FeatureRecord
-{
-    ATag        featureTag;
-    Offset      featureTableOffset;
-};
-
-struct FeatureTable
-{
-    Offset      featureParamsOffset;
-    le_uint16   lookupCount;
-    le_uint16   lookupListIndexArray[ANY_NUMBER];
-};
-
-struct FeatureListTable
-{
-    le_uint16           featureCount;
-    FeatureRecord       featureRecordArray[ANY_NUMBER];
-
-    const FeatureTable  *getFeatureTable(le_uint16 featureIndex, LETag *featureTag) const;
-
-    const FeatureTable *getFeatureTable(LETag featureTag) const;
-};
-
-U_NAMESPACE_END
-#endif
+    /**
+     * Constructs a AEADBadTagException with the specified
+     * detail message.
+     *
+     * @param msg the detail message.
+     */
+    public AEADBadTagException(String msg) {
+        super(msg);
+    }
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@
 void CardTableModRefBS::par_non_clean_card_iterate_work(Space* sp, MemRegion mr,
                                                         DirtyCardToOopClosure* dcto_cl,
                                                         MemRegionClosure* cl,
-                                                        bool clear,
                                                         int n_threads) {
   if (n_threads > 0) {
     assert((n_threads == 1 && ParallelGCThreads == 0) ||
@@ -57,7 +56,7 @@ void CardTableModRefBS::par_non_clean_card_iterate_work(Space* sp, MemRegion mr,
 
     int stride = 0;
     while (!pst->is_task_claimed(/* reference */ stride)) {
-      process_stride(sp, mr, stride, n_strides, dcto_cl, cl, clear,
+      process_stride(sp, mr, stride, n_strides, dcto_cl, cl,
                      lowest_non_clean,
                      lowest_non_clean_base_chunk_index,
                      lowest_non_clean_chunk_size);
@@ -83,7 +82,6 @@ process_stride(Space* sp,
                jint stride, int n_strides,
                DirtyCardToOopClosure* dcto_cl,
                MemRegionClosure* cl,
-               bool clear,
                jbyte** lowest_non_clean,
                uintptr_t lowest_non_clean_base_chunk_index,
                size_t    lowest_non_clean_chunk_size) {
@@ -129,7 +127,7 @@ process_stride(Space* sp,
                              lowest_non_clean_base_chunk_index,
                              lowest_non_clean_chunk_size);
 
-    non_clean_card_iterate_work(chunk_mr, cl, clear);
+    non_clean_card_iterate_work(chunk_mr, cl);
 
     // Find the next chunk of the stride.
     chunk_card_start += CardsPerStrideChunk * n_strides;

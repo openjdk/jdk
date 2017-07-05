@@ -199,9 +199,8 @@ public class MetalComboBoxUI extends BasicComboBoxUI {
     }
 
     /**
-     * This inner class is marked &quot;public&quot; due to a compiler bug.
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <FooUI>.
+     * Instantiate it only within subclasses of {@code MetalComboBoxUI}.
      */
     public class MetalPropertyChangeListener extends BasicComboBoxUI.PropertyChangeHandler {
         public void propertyChange(PropertyChangeEvent e) {
@@ -244,9 +243,8 @@ public class MetalComboBoxUI extends BasicComboBoxUI {
     }
 
     /**
-     * This inner class is marked &quot;public&quot; due to a compiler bug.
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <FooUI>.
+     * Instantiate it only within subclasses of {@code MetalComboBoxUI}.
      */
     public class MetalComboBoxLayoutManager extends BasicComboBoxUI.ComboBoxLayoutManager {
         public void layoutContainer( Container parent ) {
@@ -356,9 +354,8 @@ public class MetalComboBoxUI extends BasicComboBoxUI {
     }
 
     /**
-     * This inner class is marked &quot;public&quot; due to a compiler bug.
      * This class should be treated as a &quot;protected&quot; inner class.
-     * Instantiate it only within subclasses of <FooUI>.
+     * Instantiate it only within subclasses of {@code MetalComboBoxUI}.
      *
      * This class is now obsolete and doesn't do anything and
      * is only included for backwards API compatibility. Do not call or

@@ -1209,6 +1209,38 @@ void LIRGenerator::do_Return(Return* x) {
   set_no_result(x);
 }
 
+// Examble: ref.get()
+// Combination of LoadField and g1 pre-write barrier
+void LIRGenerator::do_Reference_get(Intrinsic* x) {
+
+  const int referent_offset = java_lang_ref_Reference::referent_offset;
+  guarantee(referent_offset > 0, "referent offset not initialized");
+
+  assert(x->number_of_arguments() == 1, "wrong type");
+
+  LIRItem reference(x->argument_at(0), this);
+  reference.load_item();
+
+  // need to perform the null check on the reference objecy
+  CodeEmitInfo* info = NULL;
+  if (x->needs_null_check()) {
+    info = state_for(x);
+  }
+
+  LIR_Address* referent_field_adr =
+    new LIR_Address(reference.result(), referent_offset, T_OBJECT);
+
+  LIR_Opr result = rlock_result(x);
+
+  __ load(referent_field_adr, result, info);
+
+  // Register the value in the referent field with the pre-barrier
+  pre_barrier(LIR_OprFact::illegalOpr /* addr_opr */,
+              result /* pre_val */,
+              false  /* do_load */,
+              false  /* patch */,
+              NULL   /* info */);
+}
 
 // Example: object.getClass ()
 void LIRGenerator::do_getClass(Intrinsic* x) {
@@ -1351,13 +1383,14 @@ LIR_Opr LIRGenerator::load_constant(LIR_Const* c) {
 
 // Various barriers
 
-void LIRGenerator::pre_barrier(LIR_Opr addr_opr, bool patch,  CodeEmitInfo* info) {
+void LIRGenerator::pre_barrier(LIR_Opr addr_opr, LIR_Opr pre_val,
+                               bool do_load, bool patch, CodeEmitInfo* info) {
   // Do the pre-write barrier, if any.
   switch (_bs->kind()) {
 #ifndef SERIALGC
     case BarrierSet::G1SATBCT:
     case BarrierSet::G1SATBCTLogging:
-      G1SATBCardTableModRef_pre_barrier(addr_opr, patch, info);
+      G1SATBCardTableModRef_pre_barrier(addr_opr, pre_val, do_load, patch, info);
       break;
 #endif // SERIALGC
     case BarrierSet::CardTableModRef:
@@ -1398,9 +1431,8 @@ void LIRGenerator::post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val) {
 ////////////////////////////////////////////////////////////////////////
 #ifndef SERIALGC
 
-void LIRGenerator::G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, bool patch,  CodeEmitInfo* info) {
-  if (G1DisablePreBarrier) return;
-
+void LIRGenerator::G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, LIR_Opr pre_val,
+                                                     bool do_load, bool patch, CodeEmitInfo* info) {
   // First we test whether marking is in progress.
   BasicType flag_type;
   if (in_bytes(PtrQueue::byte_width_of_active()) == 4) {
@@ -1419,26 +1451,40 @@ void LIRGenerator::G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, bool patc
   // Read the marking-in-progress flag.
   LIR_Opr flag_val = new_register(T_INT);
   __ load(mark_active_flag_addr, flag_val);
-
-  LIR_PatchCode pre_val_patch_code =
-    patch ? lir_patch_normal : lir_patch_none;
-
-  LIR_Opr pre_val = new_register(T_OBJECT);
-
   __ cmp(lir_cond_notEqual, flag_val, LIR_OprFact::intConst(0));
-  if (!addr_opr->is_address()) {
-    assert(addr_opr->is_register(), "must be");
-    addr_opr = LIR_OprFact::address(new LIR_Address(addr_opr, T_OBJECT));
+
+  LIR_PatchCode pre_val_patch_code = lir_patch_none;
+
+  CodeStub* slow;
+
+  if (do_load) {
+    assert(pre_val == LIR_OprFact::illegalOpr, "sanity");
+    assert(addr_opr != LIR_OprFact::illegalOpr, "sanity");
+
+    if (patch)
+      pre_val_patch_code = lir_patch_normal;
+
+    pre_val = new_register(T_OBJECT);
+
+    if (!addr_opr->is_address()) {
+      assert(addr_opr->is_register(), "must be");
+      addr_opr = LIR_OprFact::address(new LIR_Address(addr_opr, T_OBJECT));
+    }
+    slow = new G1PreBarrierStub(addr_opr, pre_val, pre_val_patch_code, info);
+  } else {
+    assert(addr_opr == LIR_OprFact::illegalOpr, "sanity");
+    assert(pre_val->is_register(), "must be");
+    assert(pre_val->type() == T_OBJECT, "must be an object");
+    assert(info == NULL, "sanity");
+
+    slow = new G1PreBarrierStub(pre_val);
   }
-  CodeStub* slow = new G1PreBarrierStub(addr_opr, pre_val, pre_val_patch_code,
-                                        info);
+
   __ branch(lir_cond_notEqual, T_INT, slow);
   __ branch_destination(slow->continuation());
 }
 
 void LIRGenerator::G1SATBCardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* new_val) {
-  if (G1DisablePostBarrier) return;
-
   // If the "new_val" is a constant NULL, no barrier is necessary.
   if (new_val->is_constant() &&
       new_val->as_constant_ptr()->as_jobject() == NULL) return;
@@ -1662,6 +1708,8 @@ void LIRGenerator::do_StoreField(StoreField* x) {
   if (is_oop) {
     // Do the pre-write barrier, if any.
     pre_barrier(LIR_OprFact::address(address),
+                LIR_OprFact::illegalOpr /* pre_val */,
+                true /* do_load*/,
                 needs_patching,
                 (info ? new CodeEmitInfo(info) : NULL));
   }
@@ -2091,9 +2139,144 @@ void LIRGenerator::do_UnsafeGetObject(UnsafeGetObject* x) {
   off.load_item();
   src.load_item();
 
-  LIR_Opr reg = reg = rlock_result(x, x->basic_type());
+  LIR_Opr reg = rlock_result(x, x->basic_type());
 
   get_Object_unsafe(reg, src.result(), off.result(), type, x->is_volatile());
+
+#ifndef SERIALGC
+  // We might be reading the value of the referent field of a
+  // Reference object in order to attach it back to the live
+  // object graph. If G1 is enabled then we need to record
+  // the value that is being returned in an SATB log buffer.
+  //
+  // We need to generate code similar to the following...
+  //
+  // if (offset == java_lang_ref_Reference::referent_offset) {
+  //   if (src != NULL) {
+  //     if (klass(src)->reference_type() != REF_NONE) {
+  //       pre_barrier(..., reg, ...);
+  //     }
+  //   }
+  // }
+  //
+  // The first non-constant check of either the offset or
+  // the src operand will be done here; the remainder
+  // will take place in the generated code stub.
+
+  if (UseG1GC && type == T_OBJECT) {
+    bool gen_code_stub = true;       // Assume we need to generate the slow code stub.
+    bool gen_offset_check = true;       // Assume the code stub has to generate the offset guard.
+    bool gen_source_check = true;       // Assume the code stub has to check the src object for null.
+
+    if (off.is_constant()) {
+      jlong off_con = (off.type()->is_int() ?
+                        (jlong) off.get_jint_constant() :
+                        off.get_jlong_constant());
+
+
+      if (off_con != (jlong) java_lang_ref_Reference::referent_offset) {
+        // The constant offset is something other than referent_offset.
+        // We can skip generating/checking the remaining guards and
+        // skip generation of the code stub.
+        gen_code_stub = false;
+      } else {
+        // The constant offset is the same as referent_offset -
+        // we do not need to generate a runtime offset check.
+        gen_offset_check = false;
+      }
+    }
+
+    // We don't need to generate stub if the source object is an array
+    if (gen_code_stub && src.type()->is_array()) {
+      gen_code_stub = false;
+    }
+
+    if (gen_code_stub) {
+      // We still need to continue with the checks.
+      if (src.is_constant()) {
+        ciObject* src_con = src.get_jobject_constant();
+
+        if (src_con->is_null_object()) {
+          // The constant src object is null - We can skip
+          // generating the code stub.
+          gen_code_stub = false;
+        } else {
+          // Non-null constant source object. We still have to generate
+          // the slow stub - but we don't need to generate the runtime
+          // null object check.
+          gen_source_check = false;
+        }
+      }
+    }
+
+    if (gen_code_stub) {
+      // Temoraries.
+      LIR_Opr src_klass = new_register(T_OBJECT);
+
+      // Get the thread pointer for the pre-barrier
+      LIR_Opr thread = getThreadPointer();
+
+      CodeStub* stub;
+
+      // We can have generate one runtime check here. Let's start with
+      // the offset check.
+      if (gen_offset_check) {
+        // if (offset == referent_offset) -> slow code stub
+        // If offset is an int then we can do the comparison with the
+        // referent_offset constant; otherwise we need to move
+        // referent_offset into a temporary register and generate
+        // a reg-reg compare.
+
+        LIR_Opr referent_off;
+
+        if (off.type()->is_int()) {
+          referent_off = LIR_OprFact::intConst(java_lang_ref_Reference::referent_offset);
+        } else {
+          assert(off.type()->is_long(), "what else?");
+          referent_off = new_register(T_LONG);
+          __ move(LIR_OprFact::longConst(java_lang_ref_Reference::referent_offset), referent_off);
+        }
+
+        __ cmp(lir_cond_equal, off.result(), referent_off);
+
+        // Optionally generate "src == null" check.
+        stub = new G1UnsafeGetObjSATBBarrierStub(reg, src.result(),
+                                                    src_klass, thread,
+                                                    gen_source_check);
+
+        __ branch(lir_cond_equal, as_BasicType(off.type()), stub);
+      } else {
+        if (gen_source_check) {
+          // offset is a const and equals referent offset
+          // if (source != null) -> slow code stub
+          __ cmp(lir_cond_notEqual, src.result(), LIR_OprFact::oopConst(NULL));
+
+          // Since we are generating the "if src == null" guard here,
+          // there is no need to generate the "src == null" check again.
+          stub = new G1UnsafeGetObjSATBBarrierStub(reg, src.result(),
+                                                    src_klass, thread,
+                                                    false);
+
+          __ branch(lir_cond_notEqual, T_OBJECT, stub);
+        } else {
+          // We have statically determined that offset == referent_offset
+          // && src != null so we unconditionally branch to code stub
+          // to perform the guards and record reg in the SATB log buffer.
+
+          stub = new G1UnsafeGetObjSATBBarrierStub(reg, src.result(),
+                                                    src_klass, thread,
+                                                    false);
+
+          __ branch(lir_cond_always, T_ILLEGAL, stub);
+        }
+      }
+
+      // Continuation point
+      __ branch_destination(stub->continuation());
+    }
+  }
+#endif // SERIALGC
+
   if (x->is_volatile() && os::is_MP()) __ membar_acquire();
 }
 
@@ -2757,6 +2940,10 @@ void LIRGenerator::do_Intrinsic(Intrinsic* x) {
     // sun.misc.AtomicLongCSImpl.attemptUpdate
   case vmIntrinsics::_attemptUpdate:
     do_AttemptUpdate(x);
+    break;
+
+  case vmIntrinsics::_Reference_get:
+    do_Reference_get(x);
     break;
 
   default: ShouldNotReachHere(); break;
