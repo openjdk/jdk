@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,33 +23,54 @@
 
 /*
  * @test
- * @bug 8020968 8147039
+ * @bug 8020968 8147039 8156073
  * @summary Tests for locals and operands
  * @modules java.base/java.lang:open
- * @run testng LocalsAndOperands
+ * @run testng/othervm -Xint -DtestUnused=true LocalsAndOperands
+ * @run testng/othervm -Xcomp LocalsAndOperands
+ * @run testng/othervm -Xcomp -XX:-TieredCompilation LocalsAndOperands
  */
 
 import org.testng.annotations.*;
+import static org.testng.Assert.*;
 import java.lang.StackWalker.StackFrame;
+import static java.lang.StackWalker.Option.*;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.stream.*;
 
 public class LocalsAndOperands {
-    static final boolean debug = true;
+    static final boolean debug = false;
+    static final boolean is32bit;
+    static final boolean testUnused;
 
     static Class<?> liveStackFrameClass;
-    static Class<?> primitiveValueClass;
+    static Class<?> primitiveSlotClass;
+    static Class<?> primitiveSlot32Class;
+    static Class<?> primitiveSlot64Class;
+
     static StackWalker extendedWalker;
     static Method getLocals;
     static Method getOperands;
     static Method getMonitors;
-    static Method primitiveType;
+    static Method primitiveSize;
+    static Method primitiveLongValue;
+    static Method primitiveIntValue;
+    static Method getExtendedWalker;
+
+    private static final long LOWER_LONG_VAL = 4L; // Lower bits
+    private static final long UPPER_LONG_VAL = 0x123400000000L; // Upper bits
+    private static final long NEG_LONG_VAL = Long.MIN_VALUE;
+
+    private static final double LOWER_DOUBLE_VAL = Double.longBitsToDouble(0xABCDL);
+    private static final double UPPER_DOUBLE_VAL = Double.longBitsToDouble(0x432100000000L);
 
     static {
         try {
             liveStackFrameClass = Class.forName("java.lang.LiveStackFrame");
-            primitiveValueClass = Class.forName("java.lang.LiveStackFrame$PrimitiveValue");
+            primitiveSlotClass = Class.forName("java.lang.LiveStackFrame$PrimitiveSlot");
+            primitiveSlot32Class = Class.forName("java.lang.LiveStackFrameInfo$PrimitiveSlot32");
+            primitiveSlot64Class = Class.forName("java.lang.LiveStackFrameInfo$PrimitiveSlot64");
 
             getLocals = liveStackFrameClass.getDeclaredMethod("getLocals");
             getLocals.setAccessible(true);
@@ -60,12 +81,31 @@ public class LocalsAndOperands {
             getMonitors = liveStackFrameClass.getDeclaredMethod("getMonitors");
             getMonitors.setAccessible(true);
 
-            primitiveType = primitiveValueClass.getDeclaredMethod("type");
-            primitiveType.setAccessible(true);
+            primitiveSize = primitiveSlotClass.getDeclaredMethod("size");
+            primitiveSize.setAccessible(true);
 
-            Method method = liveStackFrameClass.getMethod("getStackWalker");
-            method.setAccessible(true);
-            extendedWalker = (StackWalker) method.invoke(null);
+            primitiveLongValue = primitiveSlotClass.getDeclaredMethod("longValue");
+            primitiveLongValue.setAccessible(true);
+
+            primitiveIntValue = primitiveSlotClass.getDeclaredMethod("intValue");
+            primitiveIntValue.setAccessible(true);
+
+            getExtendedWalker = liveStackFrameClass.getMethod("getStackWalker", Set.class);
+            getExtendedWalker.setAccessible(true);
+            extendedWalker = (StackWalker) getExtendedWalker.invoke(null,
+                    EnumSet.noneOf(StackWalker.Option.class));
+
+            String dataModel = System.getProperty("sun.arch.data.model");
+            if ("32".equals(dataModel)) {
+                is32bit = true;
+            } else if ("64".equals(dataModel)) {
+                is32bit= false;
+            } else {
+                throw new RuntimeException("Weird data model:" + dataModel);
+            }
+            System.out.println("VM bits: " + dataModel);
+
+            testUnused = System.getProperty("testUnused") != null;
         } catch (Throwable t) { throw new RuntimeException(t); }
     }
 
@@ -80,47 +120,17 @@ public class LocalsAndOperands {
      * DataProviders *
      *****************/
 
-    /** Calls testLocals() and provides LiveStackFrames for testLocals* methods */
+    /** Calls KnownLocalsTester.testLocals* and provides LiveStackFrames */
     @DataProvider
-    public static StackFrame[][] provider() {
-        return new StackFrame[][] {
-            new Tester().testLocals()
-        };
-    }
-
-    /**
-     * Calls testLocalsKeepAlive() and provides LiveStackFrames for testLocals* methods.
-     * Local variables in testLocalsKeepAlive() are ensured to not become dead.
-     */
-    @DataProvider
-    public static StackFrame[][] keepAliveProvider() {
-        return new StackFrame[][] {
-            new Tester().testLocalsKeepAlive()
-        };
-    }
-
-    /**
-     * Provides StackFrames from a StackWalker without the LOCALS_AND_OPERANDS
-     * option.
-     */
-    @DataProvider
-    public static StackFrame[][] noLocalsProvider() {
-        // Use default StackWalker
-        return new StackFrame[][] {
-            new Tester(StackWalker.getInstance(), true).testLocals()
-        };
-    }
-
-    /**
-     * Calls testLocals() and provides LiveStackFrames for *all* called methods,
-     * including test infrastructure (jtreg, testng, etc)
-     *
-     */
-    @DataProvider
-    public static StackFrame[][] unfilteredProvider() {
-        return new StackFrame[][] {
-            new Tester(extendedWalker, false).testLocals()
-        };
+    public static StackFrame[][] knownLocalsProvider() {
+        List<StackFrame[]> list = new ArrayList<>(3);
+        list.add(new KnownLocalsTester().testLocalsKeepAlive());
+        list.add(new KnownLocalsTester().testLocalsKeepAliveArgs(0xA, 'z',
+                "himom", 0x3FF00000000L + 0xFFFF, Math.PI));
+        if (testUnused) {
+            list.add(new KnownLocalsTester().testLocalsUnused());
+        }
+        return list.toArray(new StackFrame[1][1]);
     }
 
     /****************
@@ -128,135 +138,123 @@ public class LocalsAndOperands {
      ****************/
 
     /**
-     * Check for expected local values and types in the LiveStackFrame
+     * Check for expected local values in the LiveStackFrame
      */
-    @Test(dataProvider = "keepAliveProvider")
+    @Test(dataProvider = "knownLocalsProvider")
     public static void checkLocalValues(StackFrame... frames) {
-        if (debug) {
-            System.out.println("Running checkLocalValues");
-            dumpStackWithLocals(frames);
-        }
-        Arrays.stream(frames).filter(f -> f.getMethodName()
-                                           .equals("testLocalsKeepAlive"))
-                                           .forEach(
-            f -> {
-                Object[] locals = invokeGetLocals(f);
-                for (int i = 0; i < locals.length; i++) {
-                    // Value
-                    String expected = Tester.LOCAL_VALUES[i];
-                    Object observed = locals[i];
-                    if (expected != null /* skip nulls in golden values */ &&
-                            !expected.equals(observed.toString())) {
-                        System.err.println("Local value mismatch:");
-                        if (!debug) { dumpStackWithLocals(frames); }
-                        throw new RuntimeException("local " + i + " value is " +
-                                observed + ", expected " + expected);
-                    }
-
-                    // Type
-                    expected = Tester.LOCAL_TYPES[i];
-                    observed = type(locals[i]);
-                    if (expected != null /* skip nulls in golden values */ &&
-                            !expected.equals(observed)) {
-                        System.err.println("Local type mismatch:");
-                        if (!debug) { dumpStackWithLocals(frames); }
-                        throw new RuntimeException("local " + i + " type is " +
-                                observed + ", expected " + expected);
-                    }
-                }
-            }
-        );
+        dumpFramesIfDebug(frames);
+        try {
+            Stream.of(frames)
+                  .filter(f -> KnownLocalsTester.TEST_METHODS.contains(f.getMethodName()))
+                  .forEach(LocalsAndOperands::checkFrameLocals);
+        } catch (Exception e) { dumpFramesIfNotDebug(frames); throw e; }
     }
 
     /**
-     * Basic sanity check for locals and operands
+     * Check the locals in the given StackFrame against the expected values.
      */
-    @Test(dataProvider = "provider")
-    public static void sanityCheck(StackFrame... frames) {
-        if (debug) {
-            System.out.println("Running sanityCheck");
-        }
-        try {
-            Stream<StackFrame> stream = Arrays.stream(frames);
-            if (debug) {
-                stream.forEach(LocalsAndOperands::printLocals);
+    private static void checkFrameLocals(StackFrame f) {
+        Object[] expectedArray = KnownLocalsTester.LOCAL_VALUES;
+        Object[] locals = invokeGetLocals(f);
+
+        for (int i = 0; i < locals.length; i++) {
+            Object expected = expectedArray[i];
+            Object observed = locals[i];
+
+            if (expected == null) { /* skip nulls in golden values */
+                continue;
+            } else if (expected instanceof KnownLocalsTester.TwoSlotValue) {
+                // confirm integrity of expected values
+                assertEquals(expectedArray[i+1], null,
+                        "Malformed array of expected values - slot after TwoSlotValue should be null");
+                assertLongIsInSlots(locals[i], locals[i+1],
+                        ((KnownLocalsTester.TwoSlotValue)expected).value);
+                i++; // skip following slot
+            } else if (primitiveSlotClass.isInstance(observed)) { // single slot primitive
+                assertTrue(primitiveValueEquals(observed, expected),
+                        "Local value mismatch: local " + i + " value is " +
+                          observed + ", expected " + expected);
+            } else if (expected instanceof Class) {
+                assertTrue(((Class)expected).isInstance(observed),
+                        "Local value mismatch: local " + i + " expected instancof " +
+                          expected + " but got " + observed);
+            } else if (expected instanceof String) {
+                assertEquals(expected, observed, "Local value mismatch: local " +
+                        i + " value is " + observed + ", expected " + expected);
             } else {
-                System.out.println(stream.count() + " frames");
+                throw new RuntimeException("Unrecognized expected local value " +
+                        i + ": " + expected);
             }
-        } catch (Throwable t) {
-            dumpStackWithLocals(frames);
-            throw t;
         }
     }
 
     /**
      * Sanity check for locals and operands, including testng/jtreg frames
+     * using all StackWalker options.
      */
-    @Test(dataProvider = "unfilteredProvider")
-    public static void unfilteredSanityCheck(StackFrame... frames) {
+    @Test
+    public synchronized void fullStackSanityCheck() throws Throwable {
         if (debug) {
-            System.out.println("Running unfilteredSanityCheck");
+            System.out.println("Running fullStackSanityCheck");
         }
-        try {
-            Stream<StackFrame> stream = Arrays.stream(frames);
+        StackWalker sw = (StackWalker) getExtendedWalker.invoke(null,
+                EnumSet.of(SHOW_HIDDEN_FRAMES, SHOW_REFLECT_FRAMES,
+                           RETAIN_CLASS_REFERENCE));
+        sw.forEach(f -> {
             if (debug) {
-                stream.forEach(f -> { System.out.println(f + ": " +
-                        invokeGetLocals(f).length + " locals"); } );
+                printLocals(f);
             } else {
-                System.out.println(stream.count() + " frames");
+                try {
+                    System.out.println("    " + f + ": " +
+                      ((Object[]) getLocals.invoke(f)).length + " locals, " +
+                      ((Object[]) getOperands.invoke(f)).length + " operands, " +
+                      ((Object[]) getMonitors.invoke(f)).length + " monitors");
+                } catch (IllegalAccessException|InvocationTargetException t) {
+                    throw new RuntimeException(t);
+                }
             }
-        } catch (Throwable t) {
-            dumpStackWithLocals(frames);
-            throw t;
-        }
+        });
     }
 
     /**
      * Test that LiveStackFrames are not provided with the default StackWalker
      * options.
      */
-    @Test(dataProvider = "noLocalsProvider")
-    public static void withoutLocalsAndOperands(StackFrame... frames) {
-        for (StackFrame frame : frames) {
-            if (liveStackFrameClass.isInstance(frame)) {
-                throw new RuntimeException("should not be LiveStackFrame");
-            }
-        }
+    @Test
+    public static void noLocalsSanityCheck() {
+        StackWalker sw = StackWalker.getInstance();
+        sw.forEach(f -> {
+            assertFalse(liveStackFrameClass.isInstance(f),
+                        "should not be LiveStackFrame");
+        });
     }
 
-    static class Tester {
+    /**
+     * Class stack-walking methods with a known set of methods and local variables.
+     */
+    static class KnownLocalsTester {
         private StackWalker walker;
-        private boolean filter = true; // Filter out testng/jtreg/etc frames?
 
-        Tester() {
+        KnownLocalsTester() {
             this.walker = extendedWalker;
-        }
-
-        Tester(StackWalker walker, boolean filter) {
-            this.walker = walker;
-            this.filter = filter;
         }
 
         /**
          * Perform stackwalk without keeping local variables alive and return an
          * array of the collected StackFrames
          */
-        private synchronized StackFrame[] testLocals() {
+        private synchronized StackFrame[] testLocalsUnused() {
             // Unused local variables will become dead
-            int x = 10;
-            char c = 'z';
+            int x = 0xA;
+            char c = 'z'; // 0x7A
             String hi = "himom";
-            long l = 1000000L;
-            double d =  3.1415926;
+            long l = 0x3FF00000000L + 0xFFFFL;
+            double d =  Math.PI;
 
-            if (filter) {
-                return walker.walk(s -> s.filter(f -> TEST_METHODS.contains(f
-                        .getMethodName())).collect(Collectors.toList()))
-                        .toArray(new StackFrame[0]);
-            } else {
-                return walker.walk(s -> s.collect(Collectors.toList()))
-                        .toArray(new StackFrame[0]);
-            }
+            return walker.walk(s ->
+                s.filter(f -> TEST_METHODS.contains(f.getMethodName()))
+                 .toArray(StackFrame[]::new)
+            );
         }
 
         /**
@@ -264,64 +262,153 @@ public class LocalsAndOperands {
          * the collected StackFrames
          */
         private synchronized StackFrame[] testLocalsKeepAlive() {
-            int x = 10;
-            char c = 'z';
+            int x = 0xA;
+            char c = 'z'; // 0x7A
             String hi = "himom";
-            long l = 1000000L;
-            double d =  3.1415926;
+            long l = 0x3FF00000000L + 0xFFFFL;
+            double d =  Math.PI;
 
-            List<StackWalker.StackFrame> frames;
-            if (filter) {
-                frames = walker.walk(s -> s.filter(f -> TEST_METHODS.contains(f
-                        .getMethodName())).collect(Collectors.toList()));
-            } else {
-                frames = walker.walk(s -> s.collect(Collectors.toList()));
-            }
+            StackFrame[] frames = walker.walk(s ->
+                s.filter(f -> TEST_METHODS.contains(f.getMethodName()))
+                 .toArray(StackFrame[]::new)
+            );
 
             // Use local variables so they stay alive
-            System.out.println("Stayin' alive: "+x+" "+c+" "+hi+" "+l+" "+d);
-            return frames.toArray(new StackFrame[0]); // FIXME: convert to Array here
+            System.out.println("Stayin' alive: "+this+" "+x+" "+c+" "+hi+" "+l+" "+d);
+            return frames;
         }
 
-        // Expected values for locals in testLocals() & testLocalsKeepAlive()
-        // TODO: use real values instead of Strings, rebuild doubles & floats, etc
-        private final static String[] LOCAL_VALUES = new String[] {
-            null, // skip, LocalsAndOperands$Tester@XXX identity is different each run
-            "10",
-            "122",
+        /**
+         * Perform stackwalk, keeping method arguments alive, and return a list of
+         * the collected StackFrames
+         */
+        private synchronized StackFrame[] testLocalsKeepAliveArgs(int x, char c,
+                                                                  String hi, long l,
+                                                                  double d) {
+            StackFrame[] frames = walker.walk(s ->
+                s.filter(f -> TEST_METHODS.contains(f.getMethodName()))
+                 .toArray(StackFrame[]::new)
+            );
+
+            // Use local variables so they stay alive
+            System.out.println("Stayin' alive: "+this+" "+x+" "+c+" "+hi+" "+l+" "+d);
+            return frames;
+        }
+
+        // An expected two-slot local (i.e. long or double)
+        static class TwoSlotValue {
+            public long value;
+            public TwoSlotValue(long value) { this.value = value; }
+        }
+
+        // Expected values for locals in KnownLocalsTester.testLocals* methods
+        private final static Object[] LOCAL_VALUES = new Object[] {
+            LocalsAndOperands.KnownLocalsTester.class,
+            Integer.valueOf(0xA),
+            Integer.valueOf(0x7A),
             "himom",
-            "0",
-            null, // skip, fix in 8156073
-            null, // skip, fix in 8156073
-            null, // skip, fix in 8156073
-            "0"
+            new TwoSlotValue(0x3FF00000000L + 0xFFFFL),
+            null, // 2nd slot
+            new TwoSlotValue(Double.doubleToRawLongBits(Math.PI)),
+            null, // 2nd slot
+            Integer.valueOf(0)
         };
 
-        // Expected types for locals in testLocals() & testLocalsKeepAlive()
-        // TODO: use real types
-        private final static String[] LOCAL_TYPES = new String[] {
-            null, // skip
-            "I",
-            "I",
-            "java.lang.String",
-            "I",
-            "I",
-            "I",
-            "I",
-            "I"
-        };
-
-        final static Map NUM_LOCALS = Map.of("testLocals", 8,
-                                             "testLocalsKeepAlive",
-                                             LOCAL_VALUES.length);
-        private final static Collection<String> TEST_METHODS = NUM_LOCALS.keySet();
+        private final static List<String> TEST_METHODS =
+                List.of("testLocalsUnused",
+                        "testLocalsKeepAlive",
+                        "testLocalsKeepAliveArgs");
     }
+
+    /* Simpler tests of long & double arguments */
+
+    @Test
+    public static void testUsedLongArg() throws Exception {
+        usedLong(LOWER_LONG_VAL);
+        usedLong(UPPER_LONG_VAL);
+        usedLong(NEG_LONG_VAL);
+    }
+
+    private static void usedLong(long longArg) throws Exception {
+        StackFrame[] frames = extendedWalker.walk(s ->
+            s.filter(f -> "usedLong".equals(f.getMethodName()))
+             .toArray(StackFrame[]::new)
+        );
+        try {
+            dumpFramesIfDebug(frames);
+
+            Object[] locals = (Object[]) getLocals.invoke(frames[0]);
+            assertLongIsInSlots(locals[0], locals[1], longArg);
+            System.out.println("Stayin' alive: " + longArg);
+        } catch (Exception t) {
+            dumpFramesIfNotDebug(frames);
+            throw t;
+        }
+    }
+
+    @Test
+    public static void testUnusedLongArg() throws Exception {
+        if (testUnused) {
+            unusedLong(NEG_LONG_VAL);
+        }
+    }
+
+    private static void unusedLong(long longArg) throws Exception {
+        StackFrame[] frames = extendedWalker.walk(s ->
+            s.filter(f -> "unusedLong".equals(f.getMethodName()))
+             .toArray(StackFrame[]::new)
+        );
+        try {
+            dumpFramesIfDebug(frames);
+
+            final Object[] locals = (Object[]) getLocals.invoke(frames[0]);
+            assertLongIsInSlots(locals[0], locals[1], NEG_LONG_VAL);
+        } catch (Exception t) {
+            dumpFramesIfNotDebug(frames);
+            throw t;
+        }
+    }
+
+    @Test
+    public static void testUsedDoubleArg() throws Exception {
+        usedDouble(LOWER_DOUBLE_VAL);
+        usedDouble(UPPER_DOUBLE_VAL);
+    }
+
+    private static void usedDouble(double doubleArg) throws Exception {
+        StackFrame[] frames = extendedWalker.walk(s ->
+            s.filter(f -> "usedDouble".equals(f.getMethodName()))
+             .toArray(StackFrame[]::new)
+        );
+        try {
+            dumpFramesIfDebug(frames);
+
+            Object[] locals = (Object[]) getLocals.invoke(frames[0]);
+            assertDoubleIsInSlots(locals[0], locals[1], doubleArg);
+            System.out.println("Stayin' alive: " + doubleArg);
+        } catch (Exception t) {
+            dumpFramesIfNotDebug(frames);
+            throw t;
+        }
+    }
+
+    /*******************
+     * Utility Methods *
+     *******************/
 
     /**
      * Print stack trace with locals
      */
     public static void dumpStackWithLocals(StackFrame...frames) {
-        Arrays.stream(frames).forEach(LocalsAndOperands::printLocals);
+        Stream.of(frames).forEach(LocalsAndOperands::printLocals);
+    }
+
+    public static void dumpFramesIfDebug(StackFrame...frames) {
+        if (debug) { dumpStackWithLocals(frames); }
+    }
+
+    public static void dumpFramesIfNotDebug(StackFrame...frames) {
+        if (!debug) { dumpStackWithLocals(frames); }
     }
 
     /**
@@ -329,10 +416,21 @@ public class LocalsAndOperands {
      */
     public static void printLocals(StackWalker.StackFrame frame) {
         try {
-            System.out.println(frame);
+            System.out.println("Locals for: " + frame);
             Object[] locals = (Object[]) getLocals.invoke(frame);
             for (int i = 0; i < locals.length; i++) {
-                System.out.format("  local %d: %s type %s\n", i, locals[i], type(locals[i]));
+                String localStr = null;
+
+                if (primitiveSlot64Class.isInstance(locals[i])) {
+                    localStr = String.format("0x%X",
+                            (Long)primitiveLongValue.invoke(locals[i]));
+                } else if (primitiveSlot32Class.isInstance(locals[i])) {
+                    localStr = String.format("0x%X",
+                            (Integer)primitiveIntValue.invoke(locals[i]));
+                } else if (locals[i] != null) {
+                    localStr = locals[i].toString();
+                }
+                System.out.format("  local %d: %s type %s\n", i, localStr, type(locals[i]));
             }
 
             Object[] operands = (Object[]) getOperands.invoke(frame);
@@ -352,12 +450,87 @@ public class LocalsAndOperands {
         try {
             if (o == null) {
                 return "null";
-            } else if (primitiveValueClass.isInstance(o)) {
-                char c = (char)primitiveType.invoke(o);
-                return String.valueOf(c);
+            } else if (primitiveSlotClass.isInstance(o)) {
+                int s = (int)primitiveSize.invoke(o);
+                return s + "-byte primitive";
             } else {
                 return o.getClass().getName();
             }
         } catch(Exception e) { throw new RuntimeException(e); }
+    }
+
+    /*
+     * Check if the PrimitiveValue "primVal" contains the specified value,
+     * either a Long or an Integer.
+     */
+    static boolean primitiveValueEquals(Object primVal, Object expectedVal) {
+        try {
+            if (expectedVal instanceof Long) {
+                assertFalse(is32bit);
+                assertTrue(primitiveSlot64Class.isInstance(primVal));
+                assertTrue(8 == (int)primitiveSize.invoke(primVal));
+                return Objects.equals(primitiveLongValue.invoke(primVal), expectedVal);
+            } else if (expectedVal instanceof Integer) {
+                int expectedInt = (Integer)expectedVal;
+                if (is32bit) {
+                    assertTrue(primitiveSlot32Class.isInstance(primVal),
+                            "expected a PrimitiveSlot32 on 32-bit VM");
+                    assertTrue(4 == (int)primitiveSize.invoke(primVal));
+                    return expectedInt == (int)primitiveIntValue.invoke(primVal);
+                } else {
+                    assertTrue(primitiveSlot64Class.isInstance(primVal),
+                            "expected a PrimitiveSlot64 on 64-bit VM");
+                    assertTrue(8 == (int)primitiveSize.invoke(primVal));
+                    // Look for int expectedVal in high- or low-order 32 bits
+                    long primValLong = (long)primitiveLongValue.invoke(primVal);
+                    return (int)(primValLong & 0x00000000FFFFFFFFL) == expectedInt ||
+                           (int)(primValLong >>> 32) == expectedInt;
+                }
+            } else {
+                throw new RuntimeException("Called with non-Integer/Long: " + expectedVal);
+            }
+        } catch (IllegalAccessException|InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    /*
+     * Assert that the expected 2-slot long value is stored somewhere in the
+     * pair of slots.
+     * Throw exception if long value isn't in the two slots given.
+     * Accounts for 32 vs 64 bit, but is lax on endianness (accepts either)
+     */
+    static void assertLongIsInSlots(Object primVal0, Object primVal1, long expected) {
+        try {
+            if (is32bit) {
+                int upper = (int)(expected & 0xFFFFFFFFL);
+                int lower = (int)(expected >> 32);
+
+                if (!((primitiveValueEquals(primVal0, upper) &&
+                       primitiveValueEquals(primVal1, lower)) ||
+                      (primitiveValueEquals(primVal0, lower) &&
+                       primitiveValueEquals(primVal1, upper)))) {
+                    throw new RuntimeException(String.format("0x%X and 0x%X of 0x%016X not found in 0x%X and 0x%X",
+                            upper, lower, expected,
+                            (int)primitiveIntValue.invoke(primVal0),
+                            (int)primitiveIntValue.invoke(primVal1)));
+                }
+            } else {
+                if (!(primitiveValueEquals(primVal0, expected) ||
+                      primitiveValueEquals(primVal1, expected))) {
+                    throw new RuntimeException(String.format("0x%016X not found in 0x%016X or 0x%016X",
+                            expected,
+                            (long)primitiveLongValue.invoke(primVal0),
+                            (long)primitiveLongValue.invoke(primVal1)));
+                }
+            }
+        } catch (IllegalAccessException|InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static void assertDoubleIsInSlots(Object primVal0, Object primVal1, double expected) {
+        assertLongIsInSlots(primVal0, primVal1, Double.doubleToRawLongBits(expected));
     }
 }

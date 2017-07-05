@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,7 @@ public class ContentDisposition {
     /**
      * Return the specified parameter value. Returns <code>null</code>
      * if this parameter is absent.
+     * @param name parameter name.
      * @return  parameter value
      * @since           JavaMail 1.2
      */
@@ -123,7 +124,7 @@ public class ContentDisposition {
 
     /**
      * Set the primary type. Overrides existing primary type.
-     * @param   primaryType     primary type
+     * @param   disposition disposition value
      * @since           JavaMail 1.2
      */
     public void setDisposition(String disposition) {
@@ -162,6 +163,7 @@ public class ContentDisposition {
      * @return  RFC2045 style string
      * @since           JavaMail 1.2
      */
+    @Override
     public String toString() {
         if (disposition == null)
             return null;

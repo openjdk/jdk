@@ -23,15 +23,12 @@
 
 /*
  * @test
- *
  * @bug 6427403
- *
  * @summary java.net.MulticastSocket.joinGroup() reports 'socket closed'
- *
  */
 import java.net.*;
 import java.io.*;
-import java.util.*;
+
 public class B6427403 {
     public static void main( String[] args ) throws IOException {
         InetAddress lh = InetAddress.getLocalHost();

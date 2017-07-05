@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,14 @@
 
 package com.apple.eawt;
 
+import java.awt.desktop.QuitEvent;
+import java.awt.desktop.QuitHandler;
 import java.awt.desktop.QuitResponse;
+import java.awt.desktop.QuitStrategy;
 
 /**
  * Used to respond to a request to quit the application.
- * The QuitResponse may be used after the {@link QuitHandler#handleQuitRequestWith(AppEvent.QuitEvent, MacQuitResponse)} method has returned, and may be used from any thread.
+ * The QuitResponse may be used after the {@link QuitHandler#handleQuitRequestWith(QuitEvent, QuitResponse)} method has returned, and may be used from any thread.
  *
  * @see Application#setQuitHandler(QuitHandler)
  * @see QuitHandler
