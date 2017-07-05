@@ -25,21 +25,26 @@
 #------------------------------------------------------------------------
 # CC, CXX & AS
 
-# When cross-compiling the ALT_COMPILER_PATH points
-# to the cross-compilation toolset
-ifdef CROSS_COMPILE_ARCH
-CXX = $(ALT_COMPILER_PATH)/g++
-CC  = $(ALT_COMPILER_PATH)/gcc
-HOSTCXX = g++
-HOSTCC  = gcc
-else
-CXX = g++
-CC  = gcc
-HOSTCXX = $(CXX)
-HOSTCC  = $(CC)
+# If a SPEC is not set already, then use these defaults.
+ifeq ($(SPEC),)
+  # When cross-compiling the ALT_COMPILER_PATH points
+  # to the cross-compilation toolset
+  ifdef CROSS_COMPILE_ARCH
+    CXX = $(ALT_COMPILER_PATH)/g++
+    CC  = $(ALT_COMPILER_PATH)/gcc
+    HOSTCXX = g++
+    HOSTCC  = gcc
+    STRIP = $(ALT_COMPILER_PATH)/strip
+  else
+    CXX = g++
+    CC  = gcc
+    HOSTCXX = $(CXX)
+    HOSTCC  = $(CC)
+    STRIP = strip
+  endif
+  AS  = $(CC) -c
 endif
 
-AS  = $(CC) -c
 
 # -dumpversion in gcc-2.91 shows "egcs-2.91.66". In later version, it only
 # prints the numbers (e.g. "2.95", "3.2.1")
@@ -260,10 +265,4 @@ endif
 # favor code space over speed
 ifdef MINIMIZE_RAM_USAGE
 CFLAGS += -DMINIMIZE_RAM_USAGE
-endif
-
-ifdef CROSS_COMPILE_ARCH
-  STRIP = $(ALT_COMPILER_PATH)/strip
-else
-  STRIP = strip
 endif

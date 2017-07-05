@@ -30,6 +30,12 @@
       movq     %fs:0, %rax 
       .end
 
+  // Get current sp
+      .inline _get_current_sp,0
+      .volatile
+      movq     %rsp, %rax 
+      .end
+
   // Get current fp
       .inline _get_current_fp,0
       .volatile

@@ -38,7 +38,7 @@ ifeq ($(BUILD_DEPLOY), true)
 endif
 
 ifeq ($(BUILD_JDK), true)
-  sanity:: jdk-sanity 
+  sanity:: jdk-sanity
 endif
 
 # Only need these sanity rules when not doing a debug build
@@ -64,7 +64,7 @@ $(ERROR_FILE) $(WARNING_FILE) $(MESSAGE_FILE):
 purge-sanity: $(ERROR_FILE) $(WARNING_FILE) $(MESSAGE_FILE)
 	-@$(RM) $(ERROR_FILE) $(WARNING_FILE) $(MESSAGE_FILE)
 
-pre-sanity: purge-sanity 
+pre-sanity: purge-sanity
 
 # this should be the last rule in any target's sanity rule.
 post-sanity post-sanity-hotspot post-sanity-jdk post-sanity-install post-sanity-deploy:
@@ -132,7 +132,7 @@ endif
 	   "        $* defined. Please unset it and restart your build. \n" \
 	   "" >> $(ERROR_FILE)
 
-# Check the environment variables	
+# Check the environment variables
 environment: $(DO_NOT_SET_LIST:%=%.do_not_set)
 ifeq ($(LANGTOOLS_SRC_AVAILABLE), true)
   ifneq ($(BUILD_LANGTOOLS), true)
@@ -205,7 +205,15 @@ ifeq ($(SPONSORS_SRC_AVAILABLE), true)
   endif
 endif
 ifeq ($(GENERATE_DOCS),false)
-	@$(ECHO) "WARNING: This build does not include running javadoc.\n" \
+	@$(ECHO) "WARNING: This build does not include generating javadoc.\n" \
+	   "" >> $(WARNING_FILE)
+endif
+ifdef NO_DEMOS
+	@$(ECHO) "WARNING: This build and any install images will not include demos.\n" \
+	   "" >> $(WARNING_FILE)
+endif
+ifdef NO_SAMPLES
+	@$(ECHO) "WARNING: This build and any install images will not include samples.\n" \
 	   "" >> $(WARNING_FILE)
 endif
 ifdef NO_IMAGES
@@ -231,7 +239,7 @@ ifneq ($(PLATFORM), windows)
     HOSTNAME := $(shell hostname)
   endif
 endif
-settings:: 
+settings::
 	@$(ECHO) "Build Machine Information:" >> $(MESSAGE_FILE)
 ifeq ($(PLATFORM), windows)
 	@$(ECHO) "   build machine = $(COMPUTERNAME)"  >> $(MESSAGE_FILE)

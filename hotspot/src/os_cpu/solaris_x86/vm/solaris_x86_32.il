@@ -37,6 +37,12 @@
       movl     %gs:0, %eax 
       .end
 
+  // Get current sp
+      .inline _get_current_sp,0
+      .volatile
+      movl     %esp, %eax 
+      .end
+
   // Get current fp
       .inline _get_current_fp,0
       .volatile

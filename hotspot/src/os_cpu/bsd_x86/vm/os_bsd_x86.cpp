@@ -1126,3 +1126,8 @@ void os::setup_fpu() {
                       : "r" (fpu_cntrl) : "memory");
 #endif // !AMD64
 }
+
+#ifndef PRODUCT
+void os::verify_stack_alignment() {
+}
+#endif
