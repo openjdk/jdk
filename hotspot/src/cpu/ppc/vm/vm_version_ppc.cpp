@@ -81,7 +81,7 @@ void VM_Version::initialize() {
             UINTX_FORMAT " on this machine", PowerArchitecturePPC64);
 
   // Power 8: Configure Data Stream Control Register.
-  if (has_mfdscr()) {
+  if (PowerArchitecturePPC64 >= 8 && has_mfdscr()) {
     config_dscr();
   }
 
@@ -698,7 +698,7 @@ void VM_Version::determine_features() {
   // Execute code. Illegal instructions will be replaced by 0 in the signal handler.
   VM_Version::_is_determine_features_test_running = true;
   // We must align the first argument to 16 bytes because of the lqarx check.
-  (*test)(align_up(mid_of_test_area, 16), (uint64_t)0);
+  (*test)(align_up((address)mid_of_test_area, 16), 0);
   VM_Version::_is_determine_features_test_running = false;
 
   // determine which instructions are legal.
