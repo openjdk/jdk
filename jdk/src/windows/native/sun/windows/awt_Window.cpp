@@ -125,6 +125,11 @@ jfieldID AwtWindow::autoRequestFocusID;
 jclass AwtWindow::wwindowPeerCls;
 jmethodID AwtWindow::getActiveWindowsMID;
 
+jfieldID AwtWindow::sysXID;
+jfieldID AwtWindow::sysYID;
+jfieldID AwtWindow::sysWID;
+jfieldID AwtWindow::sysHID;
+
 int AwtWindow::ms_instanceCounter = 0;
 HHOOK AwtWindow::ms_hCBTFilter;
 AwtWindow * AwtWindow::m_grabbedWindow = NULL;
@@ -180,7 +185,6 @@ void AwtWindow::Dispose()
     }
 
     ::RemoveProp(GetHWnd(), ModalBlockerProp);
-    ::RemoveProp(GetHWnd(), ModalSaveWSEXProp);
 
     if (m_grabbedWindow == this) {
         Ungrab();
@@ -330,8 +334,11 @@ LRESULT CALLBACK AwtWindow::CBTFilter(int nCode, WPARAM wParam, LPARAM lParam)
     if (nCode == HCBT_ACTIVATE || nCode == HCBT_SETFOCUS) {
         AwtComponent *comp = AwtComponent::GetComponent((HWND)wParam);
 
-        if (comp != NULL && comp->IsTopLevel() && !((AwtWindow*)comp)->IsFocusableWindow()) {
-            return 1; // Don't change focus/activation.
+        if (comp != NULL && comp->IsTopLevel()) {
+            AwtWindow* win = (AwtWindow*)comp;
+            if (!win->IsFocusableWindow() || win->m_filterFocusAndActivation) {
+                return 1; // Don't change focus/activation.
+            }
         }
     }
     return ::CallNextHookEx(AwtWindow::ms_hCBTFilter, nCode, wParam, lParam);
@@ -1053,6 +1060,8 @@ MsgRouting AwtWindow::WmMove(int x, int y)
 
     (env)->SetIntField(target, AwtComponent::xID, rect.left);
     (env)->SetIntField(target, AwtComponent::yID, rect.top);
+    (env)->SetIntField(peer, AwtWindow::sysXID, rect.left);
+    (env)->SetIntField(peer, AwtWindow::sysYID, rect.top);
     SendComponentEvent(java_awt_event_ComponentEvent_COMPONENT_MOVED);
 
     env->DeleteLocalRef(target);
@@ -1116,6 +1125,11 @@ MsgRouting AwtWindow::WmSize(UINT type, int w, int h)
 
     (env)->SetIntField(target, AwtComponent::widthID, newWidth);
     (env)->SetIntField(target, AwtComponent::heightID, newHeight);
+
+    jobject peer = GetPeer(env);
+    (env)->SetIntField(peer, AwtWindow::sysWID, newWidth);
+    (env)->SetIntField(peer, AwtWindow::sysHID, newHeight);
+
     if (!AwtWindow::IsResizing()) {
         WindowResized();
     }
@@ -1455,20 +1469,17 @@ void AwtWindow::SetModalBlocker(HWND window, HWND blocker) {
     if (!::IsWindow(window)) {
         return;
     }
-    DWORD exStyle = ::GetWindowLong(window, GWL_EXSTYLE);
+
     if (::IsWindow(blocker)) {
-        // save WS_EX_NOACTIVATE and WS_EX_APPWINDOW styles
-        DWORD saveStyle = exStyle & (AWT_WS_EX_NOACTIVATE | WS_EX_APPWINDOW);
-        ::SetProp(window, ModalSaveWSEXProp, reinterpret_cast<HANDLE>(saveStyle));
-        ::SetWindowLong(window, GWL_EXSTYLE, (exStyle | AWT_WS_EX_NOACTIVATE) & ~WS_EX_APPWINDOW);
         ::SetProp(window, ModalBlockerProp, reinterpret_cast<HANDLE>(blocker));
+        ::EnableWindow(window, FALSE);
     } else {
-        // restore WS_EX_NOACTIVATE and WS_EX_APPWINDOW styles
-        DWORD saveStyle = reinterpret_cast<DWORD>(::GetProp(window, ModalSaveWSEXProp));
-        ::SetWindowLong(window, GWL_EXSTYLE,
-                        (exStyle & ~(AWT_WS_EX_NOACTIVATE | WS_EX_APPWINDOW)) | saveStyle);
-        ::RemoveProp(window, ModalSaveWSEXProp);
         ::RemoveProp(window, ModalBlockerProp);
+         AwtComponent *comp = AwtComponent::GetComponent(window);
+         // we don't expect to be called with non-java HWNDs
+         DASSERT(comp && comp->IsTopLevel());
+         // we should not unblock disabled toplevels
+         ::EnableWindow(window, comp->isEnabled());
     }
 }
 
@@ -1754,17 +1765,22 @@ void AwtWindow::_ReshapeFrame(void *param)
             // Fix for 4459064 : do not enforce thresholds for embedded frames
             if (!p->IsEmbeddedFrame())
             {
+                jobject peer = p->GetPeer(env);
                 int minWidth = ::GetSystemMetrics(SM_CXMIN);
                 int minHeight = ::GetSystemMetrics(SM_CYMIN);
                 if (w < minWidth)
                 {
                     env->SetIntField(target, AwtComponent::widthID,
                         w = minWidth);
+                    env->SetIntField(peer, AwtWindow::sysWID,
+                        w);
                 }
                 if (h < minHeight)
                 {
                     env->SetIntField(target, AwtComponent::heightID,
                         h = minHeight);
+                    env->SetIntField(peer, AwtWindow::sysHID,
+                        h);
                 }
             }
             env->DeleteLocalRef(target);
@@ -2147,6 +2163,11 @@ Java_sun_awt_windows_WWindowPeer_initIDs(JNIEnv *env, jclass cls)
     AwtWindow::getActiveWindowsMID =
         env->GetStaticMethodID(cls, "getActiveWindowHandles", "()[J");
     DASSERT(AwtWindow::getActiveWindowsMID != NULL);
+
+    AwtWindow::sysXID = env->GetFieldID(cls, "sysX", "I");
+    AwtWindow::sysYID = env->GetFieldID(cls, "sysY", "I");
+    AwtWindow::sysWID = env->GetFieldID(cls, "sysW", "I");
+    AwtWindow::sysHID = env->GetFieldID(cls, "sysH", "I");
 
     CATCH_BAD_ALLOC;
 }

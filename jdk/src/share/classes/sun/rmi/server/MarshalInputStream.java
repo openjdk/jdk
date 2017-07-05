@@ -59,18 +59,20 @@ public class MarshalInputStream extends ObjectInputStream {
      * as cached at class initialization time.
      */
     private static final boolean useCodebaseOnlyProperty =
-        ((Boolean) java.security.AccessController.doPrivileged(
+        java.security.AccessController.doPrivileged(
             new sun.security.action.GetBooleanAction(
-                "java.rmi.server.useCodebaseOnly"))).booleanValue();
+                "java.rmi.server.useCodebaseOnly")).booleanValue();
 
     /** table to hold sun classes to which access is explicitly permitted */
-    protected static Map permittedSunClasses = new HashMap(3);
+    protected static Map<String, Class<?>> permittedSunClasses
+        = new HashMap<String, Class<?>>(3);
 
     /** if true, don't try superclass first in resolveClass() */
     private boolean skipDefaultResolveClass = false;
 
     /** callbacks to make when done() called: maps Object to Runnable */
-    private final Map doneCallbacks = new HashMap(3);
+    private final Map<Object, Runnable> doneCallbacks
+        = new HashMap<Object, Runnable>(3);
 
     /**
      * if true, load classes (if not available locally) only from the
@@ -130,7 +132,7 @@ public class MarshalInputStream extends ObjectInputStream {
      * with that key.
      */
     public Runnable getDoneCallback(Object key) {
-        return (Runnable) doneCallbacks.get(key);       // not thread-safe
+        return doneCallbacks.get(key);                 // not thread-safe
     }
 
     /**
@@ -153,9 +155,9 @@ public class MarshalInputStream extends ObjectInputStream {
      * the superclass's close method.
      */
     public void done() {
-        Iterator iter = doneCallbacks.values().iterator();
+        Iterator<Runnable> iter = doneCallbacks.values().iterator();
         while (iter.hasNext()) {                        // not thread-safe
-            Runnable callback = (Runnable) iter.next();
+            Runnable callback = iter.next();
             callback.run();
         }
         doneCallbacks.clear();
@@ -276,8 +278,7 @@ public class MarshalInputStream extends ObjectInputStream {
             name = perm.getName();
         }
 
-        Class resolvedClass =
-            (Class) permittedSunClasses.get(className);
+        Class<?> resolvedClass = permittedSunClasses.get(className);
 
         // if class not permitted, throw the SecurityException
         if ((name == null) ||

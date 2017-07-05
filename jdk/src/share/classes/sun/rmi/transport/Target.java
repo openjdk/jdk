@@ -321,7 +321,7 @@ public final class Target {
             Remote obj = getImpl();
             if (obj instanceof Unreferenced) {
                 final Unreferenced unrefObj = (Unreferenced) obj;
-                final Thread t = (Thread)
+                final Thread t =
                     java.security.AccessController.doPrivileged(
                         new NewThreadAction(new Runnable() {
                             public void run() {
@@ -334,8 +334,8 @@ public final class Target {
                  * for threads that may invoke user code (see bugid 4171278).
                  */
                 java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
-                    public Object run() {
+                    new java.security.PrivilegedAction<Void>() {
+                        public Void run() {
                         t.setContextClassLoader(ccl);
                         return null;
                     }

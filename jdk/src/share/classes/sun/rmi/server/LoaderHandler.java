@@ -70,7 +70,7 @@ public final class LoaderHandler {
 
     /** RMI class loader log level */
     static final int logLevel = LogStream.parseLevel(
-        (String) java.security.AccessController.doPrivileged(
+        java.security.AccessController.doPrivileged(
             new GetPropertyAction("sun.rmi.loader.logLevel")));
 
     /* loader system log */
@@ -83,7 +83,7 @@ public final class LoaderHandler {
      */
     private static String codebaseProperty = null;
     static {
-        String prop = (String) java.security.AccessController.doPrivileged(
+        String prop = java.security.AccessController.doPrivileged(
             new GetPropertyAction("java.rmi.server.codebase"));
         if (prop != null && prop.trim().length() > 0) {
             codebaseProperty = prop;
@@ -94,8 +94,8 @@ public final class LoaderHandler {
     private static URL[] codebaseURLs = null;
 
     /** table of class loaders that use codebase property for annotation */
-    private static final Map codebaseLoaders =
-        Collections.synchronizedMap(new IdentityHashMap(5));
+    private static final Map<ClassLoader, Void> codebaseLoaders =
+        Collections.synchronizedMap(new IdentityHashMap<ClassLoader, Void>(5));
     static {
         for (ClassLoader codebaseLoader = ClassLoader.getSystemClassLoader();
              codebaseLoader != null;
@@ -111,10 +111,12 @@ public final class LoaderHandler {
      * references, so this table does not prevent loaders from being
      * garbage collected.
      */
-    private static final HashMap loaderTable = new HashMap(5);
+    private static final HashMap<LoaderKey, LoaderEntry> loaderTable
+        = new HashMap<LoaderKey, LoaderEntry>(5);
 
     /** reference queue for cleared class loader entries */
-    private static final ReferenceQueue refQueue = new ReferenceQueue();
+    private static final ReferenceQueue<Loader> refQueue
+        = new ReferenceQueue<Loader>();
 
     /*
      * Disallow anyone from creating one of these.
@@ -757,7 +759,7 @@ public final class LoaderHandler {
         throws MalformedURLException
     {
         synchronized (pathToURLsCache) {
-            Object[] v = (Object[]) pathToURLsCache.get(path);
+            Object[] v = pathToURLsCache.get(path);
             if (v != null) {
                 return ((URL[])v[0]);
             }
@@ -769,13 +771,14 @@ public final class LoaderHandler {
         }
         synchronized (pathToURLsCache) {
             pathToURLsCache.put(path,
-                                new Object[] {urls, new SoftReference(path)});
+                                new Object[] {urls, new SoftReference<String>(path)});
         }
         return urls;
     }
 
     /** map from weak(key=string) to [URL[], soft(key)] */
-    private static final Map pathToURLsCache = new WeakHashMap(5);
+    private static final Map<String, Object[]> pathToURLsCache
+        = new WeakHashMap<String, Object[]>(5);
 
     /**
      * Convert an array of URL objects into a corresponding string
@@ -853,9 +856,9 @@ public final class LoaderHandler {
              * in the table of RMI class loaders.
              */
             LoaderKey key = new LoaderKey(urls, parent);
-            entry = (LoaderEntry) loaderTable.get(key);
+            entry = loaderTable.get(key);
 
-            if (entry == null || (loader = (Loader) entry.get()) == null) {
+            if (entry == null || (loader = entry.get()) == null) {
                 /*
                  * If entry was in table but it's weak reference was cleared,
                  * remove it from the table and mark it as explicitly cleared,
@@ -876,9 +879,9 @@ public final class LoaderHandler {
                  * necessary to load classes from its codebase URL path.
                  */
                 AccessControlContext acc = getLoaderAccessControlContext(urls);
-                loader = (Loader) java.security.AccessController.doPrivileged(
-                    new java.security.PrivilegedAction() {
-                        public Object run() {
+                loader = java.security.AccessController.doPrivileged(
+                    new java.security.PrivilegedAction<Loader>() {
+                        public Loader run() {
                             return new Loader(urls, parent);
                         }
                     }, acc);
@@ -954,7 +957,7 @@ public final class LoaderHandler {
      * loader key for the loader so that the mapping can be removed from
      * the table efficiently when the weak reference is cleared.
      */
-    private static class LoaderEntry extends WeakReference {
+    private static class LoaderEntry extends WeakReference<Loader> {
 
         public LoaderKey key;
 
@@ -983,10 +986,10 @@ public final class LoaderHandler {
          * getAccessControlContext() in the sun.applet.AppletPanel class.
          */
         // begin with permissions granted to all code in current policy
-        PermissionCollection perms = (PermissionCollection)
+        PermissionCollection perms =
             java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction() {
-                public Object run() {
+                new java.security.PrivilegedAction<PermissionCollection>() {
+                public PermissionCollection run() {
                     CodeSource codesource = new CodeSource(null,
                         (java.security.cert.Certificate[]) null);
                     Policy p = java.security.Policy.getPolicy();

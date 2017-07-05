@@ -167,9 +167,9 @@ public abstract class SelectorProvider {
         synchronized (lock) {
             if (provider != null)
                 return provider;
-            return (SelectorProvider)AccessController
-                .doPrivileged(new PrivilegedAction() {
-                        public Object run() {
+            return AccessController.doPrivileged(
+                new PrivilegedAction<SelectorProvider>() {
+                    public SelectorProvider run() {
                             if (loadProviderFromProperty())
                                 return provider;
                             if (loadProviderAsService())

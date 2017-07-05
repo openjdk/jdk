@@ -52,14 +52,10 @@ class FileSystemPreferences extends AbstractPreferences {
      * Sync interval in seconds.
      */
     private static final int SYNC_INTERVAL = Math.max(1,
-        Integer.parseInt((String)
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    return System.getProperty("java.util.prefs.syncInterval",
-                                              "30");
-                }
-        })));
-
+        Integer.parseInt(
+            AccessController.doPrivileged(
+                new sun.security.action.GetPropertyAction(
+                    "java.util.prefs.syncInterval", "30"))));
 
     /**
      * Returns logger for error messages. Backing store exceptions are logged at
@@ -103,8 +99,8 @@ class FileSystemPreferences extends AbstractPreferences {
     }
 
     private static void setupUserRoot() {
-        AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
                 userRootDir =
                       new File(System.getProperty("java.util.prefs.userRoot",
                       System.getProperty("user.home")), ".java/.userPrefs");
@@ -164,9 +160,9 @@ class FileSystemPreferences extends AbstractPreferences {
     }
 
     private static void setupSystemRoot() {
-        AccessController.doPrivileged( new PrivilegedAction() {
-            public Object run() {
-                String systemPrefsDirName = (String)
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
+                String systemPrefsDirName =
                   System.getProperty("java.util.prefs.systemRoot","/etc/.java");
                 systemRootDir =
                      new File(systemPrefsDirName, ".systemPrefs");
@@ -322,7 +318,7 @@ class FileSystemPreferences extends AbstractPreferences {
      * corresponding disk file (prefsFile) by the sync operation.  The initial
      * value is read *without* acquiring the file-lock.
      */
-    private Map prefsCache = null;
+    private Map<String, String> prefsCache = null;
 
     /**
      * The last modification time of the file backing this node at the time
@@ -358,7 +354,7 @@ class FileSystemPreferences extends AbstractPreferences {
      * log against that map.  The resulting map is then written back
      * to the disk.
      */
-    final List changeLog = new ArrayList();
+    final List<Change> changeLog = new ArrayList<Change>();
 
     /**
      * Represents a change to a preference.
@@ -424,7 +420,7 @@ class FileSystemPreferences extends AbstractPreferences {
      */
     private void replayChanges() {
         for (int i = 0, n = changeLog.size(); i<n; i++)
-            ((Change)changeLog.get(i)).replay();
+            changeLog.get(i).replay();
     }
 
     private static Timer syncTimer = new Timer(true); // Daemon Thread
@@ -438,8 +434,8 @@ class FileSystemPreferences extends AbstractPreferences {
         }, SYNC_INTERVAL*1000, SYNC_INTERVAL*1000);
 
         // Add shutdown hook to flush cached prefs on normal termination
-        AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
                 Runtime.getRuntime().addShutdownHook(new Thread() {
                     public void run() {
                         syncTimer.cancel();
@@ -503,15 +499,15 @@ class FileSystemPreferences extends AbstractPreferences {
         dir  = new File(parent.dir, dirName(name));
         prefsFile = new File(dir, "prefs.xml");
         tmpFile  = new File(dir, "prefs.tmp");
-        AccessController.doPrivileged( new PrivilegedAction() {
-            public Object run() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            public Void run() {
                 newNode = !dir.exists();
                 return null;
             }
         });
         if (newNode) {
             // These 2 things guarantee node will get wrtten at next flush/sync
-            prefsCache = new TreeMap();
+            prefsCache = new TreeMap<String, String>();
             nodeCreate = new NodeCreate();
             changeLog.add(nodeCreate);
         }
@@ -529,7 +525,7 @@ class FileSystemPreferences extends AbstractPreferences {
 
     protected String getSpi(String key) {
         initCacheIfNecessary();
-        return (String) prefsCache.get(key);
+        return prefsCache.get(key);
     }
 
     protected void removeSpi(String key) {
@@ -554,7 +550,7 @@ class FileSystemPreferences extends AbstractPreferences {
             loadCache();
         } catch(Exception e) {
             // assert lastSyncTime == 0;
-            prefsCache = new TreeMap();
+            prefsCache = new TreeMap<String, String>();
         }
     }
 
@@ -568,9 +564,10 @@ class FileSystemPreferences extends AbstractPreferences {
      */
     private void loadCache() throws BackingStoreException {
         try {
-            AccessController.doPrivileged( new PrivilegedExceptionAction() {
-                public Object run() throws BackingStoreException {
-                    Map m = new TreeMap();
+            AccessController.doPrivileged(
+                new PrivilegedExceptionAction<Void>() {
+                public Void run() throws BackingStoreException {
+                    Map<String, String> m = new TreeMap<String, String>();
                     long newLastSyncTime = 0;
                     try {
                         newLastSyncTime = prefsFile.lastModified();
@@ -584,7 +581,7 @@ class FileSystemPreferences extends AbstractPreferences {
                             prefsFile.renameTo( new File(
                                                     prefsFile.getParentFile(),
                                                   "IncorrectFormatPrefs.xml"));
-                            m = new TreeMap();
+                            m = new TreeMap<String, String>();
                         } else if (e instanceof FileNotFoundException) {
                         getLogger().warning("Prefs file removed in background "
                                            + prefsFile.getPath());
@@ -614,8 +611,9 @@ class FileSystemPreferences extends AbstractPreferences {
      */
     private void writeBackCache() throws BackingStoreException {
         try {
-            AccessController.doPrivileged( new PrivilegedExceptionAction() {
-                public Object run() throws BackingStoreException {
+            AccessController.doPrivileged(
+                new PrivilegedExceptionAction<Void>() {
+                public Void run() throws BackingStoreException {
                     try {
                         if (!dir.exists() && !dir.mkdirs())
                             throw new BackingStoreException(dir +
@@ -641,15 +639,14 @@ class FileSystemPreferences extends AbstractPreferences {
 
     protected String[] keysSpi() {
         initCacheIfNecessary();
-        return (String[])
-            prefsCache.keySet().toArray(new String[prefsCache.size()]);
+        return prefsCache.keySet().toArray(new String[prefsCache.size()]);
     }
 
     protected String[] childrenNamesSpi() {
-        return (String[])
-            AccessController.doPrivileged( new PrivilegedAction() {
-                public Object run() {
-                    List result = new ArrayList();
+        return AccessController.doPrivileged(
+            new PrivilegedAction<String[]>() {
+                public String[] run() {
+                    List<String> result = new ArrayList<String>();
                     File[] dirContents = dir.listFiles();
                     if (dirContents != null) {
                         for (int i = 0; i < dirContents.length; i++)
@@ -685,8 +682,9 @@ class FileSystemPreferences extends AbstractPreferences {
      */
     protected void removeNodeSpi() throws BackingStoreException {
         try {
-            AccessController.doPrivileged( new PrivilegedExceptionAction() {
-                public Object run() throws BackingStoreException {
+            AccessController.doPrivileged(
+                new PrivilegedExceptionAction<Void>() {
+                public Void run() throws BackingStoreException {
                     if (changeLog.contains(nodeCreate)) {
                         changeLog.remove(nodeCreate);
                         nodeCreate = null;
@@ -731,8 +729,9 @@ class FileSystemPreferences extends AbstractPreferences {
            if (!lockFile(shared))
                throw(new BackingStoreException("Couldn't get file lock."));
            final Long newModTime =
-                (Long) AccessController.doPrivileged( new PrivilegedAction() {
-               public Object run() {
+                AccessController.doPrivileged(
+                    new PrivilegedAction<Long>() {
+               public Long run() {
                    long nmt;
                    if (isUserNode()) {
                        nmt = userRootModFile.lastModified();
@@ -746,8 +745,8 @@ class FileSystemPreferences extends AbstractPreferences {
            });
            try {
                super.sync();
-               AccessController.doPrivileged( new PrivilegedAction() {
-                   public Object run() {
+               AccessController.doPrivileged(new PrivilegedAction<Void>() {
+                   public Void run() {
                    if (isUserNode()) {
                        userRootModTime = newModTime.longValue() + 1000;
                        userRootModFile.setLastModified(userRootModTime);
@@ -766,8 +765,9 @@ class FileSystemPreferences extends AbstractPreferences {
 
     protected void syncSpi() throws BackingStoreException {
         try {
-            AccessController.doPrivileged( new PrivilegedExceptionAction() {
-                public Object run() throws BackingStoreException {
+            AccessController.doPrivileged(
+                new PrivilegedExceptionAction<Void>() {
+                public Void run() throws BackingStoreException {
                     syncSpiPrivileged();
                     return null;
                 }
@@ -794,7 +794,7 @@ class FileSystemPreferences extends AbstractPreferences {
         } else if (lastSyncTime != 0 && !dir.exists()) {
             // This node was removed in the background.  Playback any changes
             // against a virgin (empty) Map.
-            prefsCache = new TreeMap();
+            prefsCache = new TreeMap<String, String>();
             replayChanges();
         }
         if (!changeLog.isEmpty()) {

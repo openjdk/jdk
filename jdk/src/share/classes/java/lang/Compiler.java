@@ -53,9 +53,9 @@ public final class Compiler  {
 
     static {
         registerNatives();
-        java.security.AccessController.doPrivileged
-            (new java.security.PrivilegedAction() {
-                public Object run() {
+        java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
                     boolean loaded = false;
                     String jit = System.getProperty("java.compiler");
                     if ((jit != null) && (!jit.equals("NONE")) &&

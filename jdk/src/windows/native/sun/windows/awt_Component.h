@@ -392,7 +392,7 @@ public:
                              jint modifiers, jint clickCount,
                              jboolean popupTrigger, jint scrollType,
                              jint scrollAmount, jint wheelRotation,
-                             MSG *msg = NULL);
+                             jdouble preciseWheelRotation, MSG *msg = NULL);
 
     /*
      * Allocate and initialize a new java.awt.event.FocusEvent, and
@@ -785,7 +785,9 @@ private:
     int windowMoveLockPosCX;
     int windowMoveLockPosCY;
 
-private:
+    // 6524352: support finer-resolution
+    static int sm_wheelRotationAmount;
+
     /*
      * The association list of children's IDs and corresponding components.
      * Some components like Choice or List are required their sizes while

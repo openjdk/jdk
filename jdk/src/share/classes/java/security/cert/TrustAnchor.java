@@ -275,7 +275,7 @@ public class TrustAnchor {
             ncBytes = null;
             nc = null;
         } else {
-            ncBytes = (byte []) bytes.clone();
+            ncBytes = bytes.clone();
             // validate DER encoding
             try {
                 nc = new NameConstraintsExtension(Boolean.FALSE, bytes);
@@ -309,7 +309,7 @@ public class TrustAnchor {
      *         or <code>null</code> if not set.
      */
     public final byte [] getNameConstraints() {
-        return (ncBytes == null ? null : (byte []) ncBytes.clone());
+        return ncBytes == null ? null : ncBytes.clone();
     }
 
     /**

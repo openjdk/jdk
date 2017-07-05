@@ -383,7 +383,7 @@ public class ObjectReferenceImpl extends ValueImpl
         List<Value> arguments = method.validateAndPrepareArgumentsForInvoke(
                                                   origArguments);
 
-        ValueImpl[] args = (ValueImpl[])arguments.toArray(new ValueImpl[0]);
+        ValueImpl[] args = arguments.toArray(new ValueImpl[0]);
         JDWP.ObjectReference.InvokeMethod ret;
         try {
             PacketStream stream =
@@ -583,7 +583,7 @@ public class ObjectReferenceImpl extends ValueImpl
         // Validate assignment
         ReferenceType destType = (ReferenceTypeImpl)destination.type();
         ReferenceTypeImpl myType = (ReferenceTypeImpl)referenceType();
-        if (!myType.isAssignableTo((ReferenceType)destType)) {
+        if (!myType.isAssignableTo(destType)) {
             JNITypeParser parser = new JNITypeParser(destType.signature());
             String destTypeName = parser.typeName();
             throw new InvalidTypeException("Can't assign " +

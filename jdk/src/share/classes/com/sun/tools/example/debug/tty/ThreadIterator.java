@@ -30,8 +30,8 @@ import com.sun.jdi.ThreadReference;
 import java.util.List;
 import java.util.Iterator;
 
-class ThreadIterator implements Iterator {
-    Iterator it = null;
+class ThreadIterator implements Iterator<ThreadReference> {
+    Iterator<ThreadReference> it = null;
     ThreadGroupIterator tgi;
 
     ThreadIterator(ThreadGroupReference tg) {
@@ -56,12 +56,12 @@ class ThreadIterator implements Iterator {
         return true;
     }
 
-    public Object next() {
+    public ThreadReference next() {
         return it.next();
     }
 
     public ThreadReference nextThread() {
-        return (ThreadReference)next();
+        return next();
     }
 
     public void remove() {
