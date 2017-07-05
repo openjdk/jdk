@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,10 +153,12 @@ public class HandshakeOutStream extends OutputStream {
      */
 
     void putInt8(int i) throws IOException {
+        checkOverflow(i, Record.OVERFLOW_OF_INT08);
         r.write(i);
     }
 
     void putInt16(int i) throws IOException {
+        checkOverflow(i, Record.OVERFLOW_OF_INT16);
         if (r.availableDataBytes() < 2) {
             flush();
         }
@@ -165,6 +167,7 @@ public class HandshakeOutStream extends OutputStream {
     }
 
     void putInt24(int i) throws IOException {
+        checkOverflow(i, Record.OVERFLOW_OF_INT24);
         if (r.availableDataBytes() < 3) {
             flush();
         }
@@ -191,6 +194,8 @@ public class HandshakeOutStream extends OutputStream {
         if (b == null) {
             putInt8(0);
             return;
+        } else {
+            checkOverflow(b.length, Record.OVERFLOW_OF_INT08);
         }
         putInt8(b.length);
         write(b, 0, b.length);
@@ -200,6 +205,8 @@ public class HandshakeOutStream extends OutputStream {
         if (b == null) {
             putInt16(0);
             return;
+        } else {
+            checkOverflow(b.length, Record.OVERFLOW_OF_INT16);
         }
         putInt16(b.length);
         write(b, 0, b.length);
@@ -209,8 +216,19 @@ public class HandshakeOutStream extends OutputStream {
         if (b == null) {
             putInt24(0);
             return;
+        } else {
+            checkOverflow(b.length, Record.OVERFLOW_OF_INT24);
         }
         putInt24(b.length);
         write(b, 0, b.length);
+    }
+
+    private void checkOverflow(int length, int overflow) {
+        if (length >= overflow) {
+            // internal_error alert will be triggered
+            throw new RuntimeException(
+                    "Field length overflow, the field length (" +
+                    length + ") should be less than " + overflow);
+        }
     }
 }

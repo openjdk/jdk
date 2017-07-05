@@ -62,7 +62,13 @@ class CompileLog : public xmlStream {
 
   intx          thread_id()                      { return _thread_id; }
   const char*   file()                           { return _file; }
+
+  // Optional context marker, to help place actions that occur during
+  // parsing. If there is no log output until the next context string
+  // or reset, context string will be silently ignored
   stringStream* context()                        { return &_context; }
+  void    clear_context()                        { context()->reset(); }
+  void      set_context(const char* format, ...);
 
   void          name(ciSymbol* s);               // name='s'
   void          name(Symbol* s)                  { xmlStream::name(s); }
@@ -71,12 +77,18 @@ class CompileLog : public xmlStream {
   int           identify(ciBaseObject* obj);
   void          clear_identities();
 
+  void inline_fail   (const char* reason);
+  void inline_success(const char* reason);
+
   // virtuals
   virtual void see_tag(const char* tag, bool push);
   virtual void pop_tag(const char* tag);
 
   // make a provisional end of log mark
   void mark_file_end() { _file_end = out()->count(); }
+
+  // Print code cache statistics
+  void code_cache_state();
 
   // copy all logs to the given stream
   static void finish_log(outputStream* out);

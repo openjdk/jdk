@@ -31,7 +31,7 @@
                                                                                    \
 int objArrayOopDesc::oop_iterate_range(OopClosureType* blk, int start, int end) {  \
   SpecializationStats::record_call();                                              \
-  return ((objArrayKlass*)klass())->oop_oop_iterate_range##nv_suffix(this, blk, start, end); \
+  return ((ObjArrayKlass*)klass())->oop_oop_iterate_range##nv_suffix(this, blk, start, end); \
 }
 
 ALL_OOP_OOP_ITERATE_CLOSURES_1(ObjArrayOop_OOP_ITERATE_DEFN)

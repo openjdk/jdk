@@ -370,7 +370,7 @@ public abstract class Format implements Serializable, Cloneable {
      * Delegates should NOT assume that the <code>Format</code> will notify
      * the delegate of fields in any particular order.
      *
-     * @see FieldPosition.Delegate
+     * @see FieldPosition#getFieldDelegate
      * @see CharacterIteratorFieldDelegate
      */
     interface FieldDelegate {

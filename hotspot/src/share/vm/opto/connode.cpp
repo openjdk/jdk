@@ -45,16 +45,17 @@ uint ConNode::hash() const {
 //------------------------------make-------------------------------------------
 ConNode *ConNode::make( Compile* C, const Type *t ) {
   switch( t->basic_type() ) {
-  case T_INT:       return new (C) ConINode( t->is_int() );
-  case T_LONG:      return new (C) ConLNode( t->is_long() );
-  case T_FLOAT:     return new (C) ConFNode( t->is_float_constant() );
-  case T_DOUBLE:    return new (C) ConDNode( t->is_double_constant() );
-  case T_VOID:      return new (C) ConNode ( Type::TOP );
-  case T_OBJECT:    return new (C) ConPNode( t->is_ptr() );
-  case T_ARRAY:     return new (C) ConPNode( t->is_aryptr() );
-  case T_ADDRESS:   return new (C) ConPNode( t->is_ptr() );
-  case T_NARROWOOP: return new (C) ConNNode( t->is_narrowoop() );
-  case T_METADATA:  return new (C) ConPNode( t->is_ptr() );
+  case T_INT:         return new (C) ConINode( t->is_int() );
+  case T_LONG:        return new (C) ConLNode( t->is_long() );
+  case T_FLOAT:       return new (C) ConFNode( t->is_float_constant() );
+  case T_DOUBLE:      return new (C) ConDNode( t->is_double_constant() );
+  case T_VOID:        return new (C) ConNode ( Type::TOP );
+  case T_OBJECT:      return new (C) ConPNode( t->is_ptr() );
+  case T_ARRAY:       return new (C) ConPNode( t->is_aryptr() );
+  case T_ADDRESS:     return new (C) ConPNode( t->is_ptr() );
+  case T_NARROWOOP:   return new (C) ConNNode( t->is_narrowoop() );
+  case T_NARROWKLASS: return new (C) ConNKlassNode( t->is_narrowklass() );
+  case T_METADATA:    return new (C) ConPNode( t->is_ptr() );
     // Expected cases:  TypePtr::NULL_PTR, any is_rawptr()
     // Also seen: AnyPtr(TopPTR *+top); from command line:
     //   r -XX:+PrintOpto -XX:CIStart=285 -XX:+CompileTheWorld -XX:CompileTheWorldStartAt=660
@@ -447,7 +448,7 @@ Node *ConstraintCastNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
 // If not converting int->oop, throw away cast after constant propagation
 Node *CastPPNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
   const Type *t = ccp->type(in(1));
-  if (!t->isa_oop_ptr() || (in(1)->is_DecodeN() && Matcher::gen_narrow_oop_implicit_null_checks())) {
+  if (!t->isa_oop_ptr() || ((in(1)->is_DecodeN()) && Matcher::gen_narrow_oop_implicit_null_checks())) {
     return NULL; // do not transform raw pointers or narrow oops
   }
   return ConstraintCastNode::Ideal_DU_postCCP(ccp);
@@ -607,14 +608,55 @@ const Type *EncodePNode::Value( PhaseTransform *phase ) const {
   if (t == Type::TOP) return Type::TOP;
   if (t == TypePtr::NULL_PTR) return TypeNarrowOop::NULL_PTR;
 
-  assert(t->isa_oop_ptr() || UseCompressedKlassPointers && t->isa_klassptr(), "only oopptr here");
+  assert(t->isa_oop_ptr(), "only oopptr here");
   return t->make_narrowoop();
 }
 
 
-Node *EncodePNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
+Node *EncodeNarrowPtrNode::Ideal_DU_postCCP( PhaseCCP *ccp ) {
   return MemNode::Ideal_common_DU_postCCP(ccp, this, in(1));
 }
+
+Node* DecodeNKlassNode::Identity(PhaseTransform* phase) {
+  const Type *t = phase->type( in(1) );
+  if( t == Type::TOP ) return in(1);
+
+  if (in(1)->is_EncodePKlass()) {
+    // (DecodeNKlass (EncodePKlass p)) -> p
+    return in(1)->in(1);
+  }
+  return this;
+}
+
+const Type *DecodeNKlassNode::Value( PhaseTransform *phase ) const {
+  const Type *t = phase->type( in(1) );
+  if (t == Type::TOP) return Type::TOP;
+  assert(t != TypeNarrowKlass::NULL_PTR, "null klass?");
+
+  assert(t->isa_narrowklass(), "only narrow klass ptr here");
+  return t->make_ptr();
+}
+
+Node* EncodePKlassNode::Identity(PhaseTransform* phase) {
+  const Type *t = phase->type( in(1) );
+  if( t == Type::TOP ) return in(1);
+
+  if (in(1)->is_DecodeNKlass()) {
+    // (EncodePKlass (DecodeNKlass p)) -> p
+    return in(1)->in(1);
+  }
+  return this;
+}
+
+const Type *EncodePKlassNode::Value( PhaseTransform *phase ) const {
+  const Type *t = phase->type( in(1) );
+  if (t == Type::TOP) return Type::TOP;
+  assert (t != TypePtr::NULL_PTR, "null klass?");
+
+  assert(UseCompressedKlassPointers && t->isa_klassptr(), "only klass ptr here");
+  return t->make_narrowklass();
+}
+
 
 //=============================================================================
 //------------------------------Identity---------------------------------------

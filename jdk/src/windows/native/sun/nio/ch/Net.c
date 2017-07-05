@@ -35,6 +35,7 @@
 #include "net_util.h"
 
 #include "sun_nio_ch_Net.h"
+#include "sun_nio_ch_PollArrayWrapper.h"
 
 /**
  * Definitions to allow for building with older SDK include files.
@@ -523,4 +524,50 @@ Java_sun_nio_ch_Net_shutdown(JNIEnv *env, jclass cl, jobject fdo, jint jhow) {
     if (shutdown(fdval(env, fdo), how) == SOCKET_ERROR) {
         NET_ThrowNew(env, WSAGetLastError(), "shutdown");
     }
+}
+
+JNIEXPORT jint JNICALL
+Java_sun_nio_ch_Net_poll(JNIEnv* env, jclass this, jobject fdo, jint events, jlong timeout)
+{
+    int rv;
+    int revents = 0;
+    struct timeval t;
+    int lastError = 0;
+    fd_set rd, wr, ex;
+    jint fd = fdval(env, fdo);
+
+    t.tv_sec = timeout / 1000;
+    t.tv_usec = (timeout % 1000) * 1000;
+
+    FD_ZERO(&rd);
+    FD_ZERO(&wr);
+    FD_ZERO(&ex);
+    if (events & sun_nio_ch_PollArrayWrapper_POLLIN) {
+        FD_SET(fd, &rd);
+    }
+    if (events & sun_nio_ch_PollArrayWrapper_POLLOUT ||
+        events & sun_nio_ch_PollArrayWrapper_POLLCONN) {
+        FD_SET(fd, &wr);
+    }
+    FD_SET(fd, &ex);
+
+    rv = select(fd+1, &rd, &wr, &ex, &t);
+
+    /* save last winsock error */
+    if (rv == SOCKET_ERROR) {
+        handleSocketError(env, lastError);
+        return IOS_THROWN;
+    } else if (rv >= 0) {
+        rv = 0;
+        if (FD_ISSET(fd, &rd)) {
+            rv |= sun_nio_ch_PollArrayWrapper_POLLIN;
+        }
+        if (FD_ISSET(fd, &wr)) {
+            rv |= sun_nio_ch_PollArrayWrapper_POLLOUT;
+        }
+        if (FD_ISSET(fd, &ex)) {
+            rv |= sun_nio_ch_PollArrayWrapper_POLLERR;
+        }
+    }
+    return rv;
 }

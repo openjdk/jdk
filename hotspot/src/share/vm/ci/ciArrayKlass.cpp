@@ -31,7 +31,7 @@
 // ciArrayKlass
 //
 // This class represents a Klass* in the HotSpot virtual machine
-// whose Klass part in an arrayKlass.
+// whose Klass part in an ArrayKlass.
 
 // ------------------------------------------------------------------
 // ciArrayKlass::ciArrayKlass
@@ -39,7 +39,7 @@
 // Loaded array klass.
 ciArrayKlass::ciArrayKlass(KlassHandle h_k) : ciKlass(h_k) {
   assert(get_Klass()->oop_is_array(), "wrong type");
-  _dimension = get_arrayKlass()->dimension();
+  _dimension = get_ArrayKlass()->dimension();
 }
 
 // ------------------------------------------------------------------

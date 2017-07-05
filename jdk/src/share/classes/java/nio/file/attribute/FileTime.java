@@ -310,7 +310,7 @@ public final class FileTime
         private final long days;
 
         /**
-         * The excess (in nanoseconds); can be negative if days <= 0.
+         * The excess (in nanoseconds); can be negative if days &lt;= 0.
          */
         private final long excessNanos;
 
