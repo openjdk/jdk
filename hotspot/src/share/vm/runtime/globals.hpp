@@ -1599,7 +1599,7 @@ public:
           "(ParallelGC only)")                                              \
                                                                             \
   product(bool, ScavengeBeforeFullGC, true,                                 \
-          "Scavenge young generation before each full GC.")                 \
+          "Scavenge youngest generation before each full GC.")              \
                                                                             \
   develop(bool, ScavengeWithObjectsInToSpace, false,                        \
           "Allow scavenges to occur when to-space contains objects")        \
@@ -2097,7 +2097,7 @@ public:
           "promotion failure")                                              \
                                                                             \
   notproduct(bool, PromotionFailureALot, false,                             \
-          "Use promotion failure handling on every young generation "       \
+          "Use promotion failure handling on every youngest generation "    \
           "collection")                                                     \
                                                                             \
   develop(uintx, PromotionFailureALotCount, 1000,                           \
@@ -2181,11 +2181,6 @@ public:
   product(uintx, MaxRAMFraction, 4,                                         \
           "Maximum fraction (1/n) of real memory used for maximum heap "    \
           "size")                                                           \
-          range(1, max_uintx)                                               \
-                                                                            \
-  product(uintx, DefaultMaxRAMFraction, 4,                                  \
-          "Maximum fraction (1/n) of real memory used for maximum heap "    \
-          "size; deprecated: to be renamed to MaxRAMFraction")              \
           range(1, max_uintx)                                               \
                                                                             \
   product(uintx, MinRAMFraction, 2,                                         \

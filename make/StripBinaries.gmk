@@ -38,13 +38,13 @@ $(eval $(call IncludeCustomExtension, , StripBinaries.gmk))
 MODULES_CMDS_STRIPPED := $(SUPPORT_OUTPUTDIR)/modules_cmds-stripped
 MODULES_LIBS_STRIPPED := $(SUPPORT_OUTPUTDIR)/modules_libs-stripped
 
-ifneq ($(POST_STRIP_CMD), )
+ifneq ($(STRIP), )
   define StripRecipe
 	$(ECHO) Stripping $(LOG_INFO) $(patsubst $(OUTPUT_ROOT)/%,%,$<)
 	$(MKDIR) -p $(@D)
 	$(CP) $< $@.tmp
 	$(CHMOD) u+w $@.tmp
-	$(POST_STRIP_CMD) $@.tmp
+	$(STRIP) $(STRIPFLAGS) $@.tmp
 	$(CHMOD) go-w $@.tmp
 	$(MV) $@.tmp $@
   endef

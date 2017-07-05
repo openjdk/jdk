@@ -43,8 +43,8 @@ public final class UlawCodec extends SunCodec {
 
     /* Tables used for U-law decoding */
 
-    private final static byte[] ULAW_TABH = new byte[256];
-    private final static byte[] ULAW_TABL = new byte[256];
+    private static final byte[] ULAW_TABH = new byte[256];
+    private static final byte[] ULAW_TABL = new byte[256];
 
     private static final AudioFormat.Encoding[] ulawEncodings = {AudioFormat.Encoding.ULAW,
                                                                  AudioFormat.Encoding.PCM_SIGNED};

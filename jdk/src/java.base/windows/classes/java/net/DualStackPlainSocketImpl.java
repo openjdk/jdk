@@ -26,8 +26,8 @@ package java.net;
 
 import java.io.IOException;
 import java.io.FileDescriptor;
-import sun.misc.SharedSecrets;
-import sun.misc.JavaIOFileDescriptorAccess;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaIOFileDescriptorAccess;
 
 /**
  * This class defines the plain SocketImpl that is used on Windows platforms

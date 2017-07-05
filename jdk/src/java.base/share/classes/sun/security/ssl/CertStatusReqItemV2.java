@@ -49,7 +49,7 @@ import javax.net.ssl.SSLException;
  *      enum { ocsp(1), ocsp_multi(2), (255) } CertificateStatusType;
  */
 
-final class CertStatusReqItemV2 implements StatusRequest {
+final class CertStatusReqItemV2 {
 
     private final StatusRequestType statReqType;
     private final StatusRequest request;
@@ -144,8 +144,7 @@ final class CertStatusReqItemV2 implements StatusRequest {
      *
      * @return the encoded length of this {@code CertStatusReqItemV2}
      */
-    @Override
-    public int length() {
+    int length() {
         // The length is the the status type (1 byte) + the request length
         // field (2 bytes) + the StatusRequest data length.
         return request.length() + 3;
@@ -159,8 +158,7 @@ final class CertStatusReqItemV2 implements StatusRequest {
      *
      * @throws IOException if any errors occur during the encoding process
      */
-    @Override
-    public void send(HandshakeOutStream s) throws IOException {
+    void send(HandshakeOutStream s) throws IOException {
         s.putInt8(statReqType.id);
         s.putInt16(request.length());
         request.send(s);

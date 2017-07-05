@@ -710,8 +710,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         final long longIndex = ArrayIndex.toLongIndex(index);
         final long oldLength = getArray().length();
         if (longIndex >= oldLength) {
-            setArray(getArray().ensure(longIndex));
-            doesNotHaveEnsureDelete(longIndex, oldLength, false);
+            setArray(getArray().ensure(longIndex).safeDelete(oldLength, longIndex - 1, false));
         }
         setArray(getArray().set(index, value, false));
     }
@@ -2693,11 +2692,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         }
 
         if (newLength > arrayLength) {
-            data = data.ensure(newLength - 1);
-            if (data.canDelete(arrayLength, newLength - 1, false)) {
-               data = data.delete(arrayLength, newLength - 1);
-            }
-            setArray(data);
+            setArray(data.ensure(newLength - 1).safeDelete(arrayLength, newLength - 1, false));
             return;
         }
 
@@ -3118,23 +3113,12 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         return false;
     }
 
-    private void doesNotHaveEnsureDelete(final long longIndex, final long oldLength, final boolean strict) {
-        if (longIndex > oldLength) {
-            ArrayData array = getArray();
-            if (array.canDelete(oldLength, longIndex - 1, strict)) {
-                array = array.delete(oldLength, longIndex - 1);
-            }
-            setArray(array);
-        }
-    }
-
     private void doesNotHave(final int index, final int value, final int callSiteFlags) {
         final long oldLength = getArray().length();
         final long longIndex = ArrayIndex.toLongIndex(index);
         if (!doesNotHaveCheckArrayKeys(longIndex, value, callSiteFlags) && !doesNotHaveEnsureLength(longIndex, oldLength, callSiteFlags)) {
             final boolean strict = isStrictFlag(callSiteFlags);
-            setArray(getArray().set(index, value, strict));
-            doesNotHaveEnsureDelete(longIndex, oldLength, strict);
+            setArray(getArray().set(index, value, strict).safeDelete(oldLength, longIndex - 1, strict));
         }
     }
 
@@ -3143,8 +3127,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         final long longIndex = ArrayIndex.toLongIndex(index);
         if (!doesNotHaveCheckArrayKeys(longIndex, value, callSiteFlags) && !doesNotHaveEnsureLength(longIndex, oldLength, callSiteFlags)) {
             final boolean strict = isStrictFlag(callSiteFlags);
-            setArray(getArray().set(index, value, strict));
-            doesNotHaveEnsureDelete(longIndex, oldLength, strict);
+            setArray(getArray().set(index, value, strict).safeDelete(oldLength, longIndex - 1, strict));
         }
     }
 
@@ -3153,8 +3136,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         final long longIndex = ArrayIndex.toLongIndex(index);
         if (!doesNotHaveCheckArrayKeys(longIndex, value, callSiteFlags) && !doesNotHaveEnsureLength(longIndex, oldLength, callSiteFlags)) {
             final boolean strict = isStrictFlag(callSiteFlags);
-            setArray(getArray().set(index, value, strict));
-            doesNotHaveEnsureDelete(longIndex, oldLength, strict);
+            setArray(getArray().set(index, value, strict).safeDelete(oldLength, longIndex - 1, strict));
         }
     }
 
@@ -3163,8 +3145,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         final long longIndex = ArrayIndex.toLongIndex(index);
         if (!doesNotHaveCheckArrayKeys(longIndex, value, callSiteFlags) && !doesNotHaveEnsureLength(longIndex, oldLength, callSiteFlags)) {
             final boolean strict = isStrictFlag(callSiteFlags);
-            setArray(getArray().set(index, value, strict));
-            doesNotHaveEnsureDelete(longIndex, oldLength, strict);
+            setArray(getArray().set(index, value, strict).safeDelete(oldLength, longIndex - 1, strict));
         }
     }
 

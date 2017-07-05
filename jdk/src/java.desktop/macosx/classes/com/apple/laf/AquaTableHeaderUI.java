@@ -67,7 +67,7 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI {
         super.uninstallDefaults();
     }
 
-    final static RecyclableSingleton<ClientPropertyApplicator<JTableHeader, JTableHeader>> TABLE_HEADER_APPLICATORS = new RecyclableSingleton<ClientPropertyApplicator<JTableHeader, JTableHeader>>() {
+    static final RecyclableSingleton<ClientPropertyApplicator<JTableHeader, JTableHeader>> TABLE_HEADER_APPLICATORS = new RecyclableSingleton<ClientPropertyApplicator<JTableHeader, JTableHeader>>() {
         @Override
         @SuppressWarnings("unchecked")
         protected ClientPropertyApplicator<JTableHeader, JTableHeader> getInstance() {

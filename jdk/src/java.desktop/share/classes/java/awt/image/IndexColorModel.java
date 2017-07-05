@@ -135,7 +135,7 @@ public class IndexColorModel extends ColorModel {
     private static int[] opaqueBits = {8, 8, 8};
     private static int[] alphaBits = {8, 8, 8, 8};
 
-    static private native void initIDs();
+    private static native void initIDs();
     static {
         ColorModel.loadLibraries();
         initIDs();
@@ -634,7 +634,7 @@ public class IndexColorModel extends ColorModel {
      * <code>IndexColorModel</code>.
      * @return the size of the color and alpha component arrays.
      */
-    final public int getMapSize() {
+    public final int getMapSize() {
         return map_size;
     }
 
@@ -650,7 +650,7 @@ public class IndexColorModel extends ColorModel {
      *         <code>IndexColorModel</code> object, or -1 if there
      *         is no such pixel
      */
-    final public int getTransparentPixel() {
+    public final int getTransparentPixel() {
         return transparent_index;
     }
 
@@ -661,7 +661,7 @@ public class IndexColorModel extends ColorModel {
      * @param r the specified array into which the elements of the
      *      array of red color components are copied
      */
-    final public void getReds(byte r[]) {
+    public final void getReds(byte r[]) {
         for (int i = 0; i < map_size; i++) {
             r[i] = (byte) (rgb[i] >> 16);
         }
@@ -674,7 +674,7 @@ public class IndexColorModel extends ColorModel {
      * @param g the specified array into which the elements of the
      *      array of green color components are copied
      */
-    final public void getGreens(byte g[]) {
+    public final void getGreens(byte g[]) {
         for (int i = 0; i < map_size; i++) {
             g[i] = (byte) (rgb[i] >> 8);
         }
@@ -687,7 +687,7 @@ public class IndexColorModel extends ColorModel {
      * @param b the specified array into which the elements of the
      *      array of blue color components are copied
      */
-    final public void getBlues(byte b[]) {
+    public final void getBlues(byte b[]) {
         for (int i = 0; i < map_size; i++) {
             b[i] = (byte) rgb[i];
         }
@@ -700,7 +700,7 @@ public class IndexColorModel extends ColorModel {
      * @param a the specified array into which the elements of the
      *      array of alpha components are copied
      */
-    final public void getAlphas(byte a[]) {
+    public final void getAlphas(byte a[]) {
         for (int i = 0; i < map_size; i++) {
             a[i] = (byte) (rgb[i] >> 24);
         }
@@ -717,7 +717,7 @@ public class IndexColorModel extends ColorModel {
      *        values from this array of color and alpha components
      *        are copied.
      */
-    final public void getRGBs(int rgb[]) {
+    public final void getRGBs(int rgb[]) {
         System.arraycopy(this.rgb, 0, rgb, 0, map_size);
     }
 
@@ -776,7 +776,7 @@ public class IndexColorModel extends ColorModel {
      * @param pixel the specified pixel
      * @return the value of the red color component for the specified pixel
      */
-    final public int getRed(int pixel) {
+    public final int getRed(int pixel) {
         return (rgb[pixel & pixel_mask] >> 16) & 0xff;
     }
 
@@ -791,7 +791,7 @@ public class IndexColorModel extends ColorModel {
      * @param pixel the specified pixel
      * @return the value of the green color component for the specified pixel
      */
-    final public int getGreen(int pixel) {
+    public final int getGreen(int pixel) {
         return (rgb[pixel & pixel_mask] >> 8) & 0xff;
     }
 
@@ -806,7 +806,7 @@ public class IndexColorModel extends ColorModel {
      * @param pixel the specified pixel
      * @return the value of the blue color component for the specified pixel
      */
-    final public int getBlue(int pixel) {
+    public final int getBlue(int pixel) {
         return rgb[pixel & pixel_mask] & 0xff;
     }
 
@@ -819,7 +819,7 @@ public class IndexColorModel extends ColorModel {
      * @param pixel the specified pixel
      * @return the value of the alpha component for the specified pixel
      */
-    final public int getAlpha(int pixel) {
+    public final int getAlpha(int pixel) {
         return (rgb[pixel & pixel_mask] >> 24) & 0xff;
     }
 
@@ -834,7 +834,7 @@ public class IndexColorModel extends ColorModel {
      * @return the color and alpha components of the specified pixel
      * @see ColorModel#getRGBdefault
      */
-    final public int getRGB(int pixel) {
+    public final int getRGB(int pixel) {
         return rgb[pixel & pixel_mask];
     }
 

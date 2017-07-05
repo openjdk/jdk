@@ -139,7 +139,7 @@ public class JViewport extends JComponent implements Accessible
     protected boolean backingStore = false;
 
     /** The view image used for a backing store. */
-    transient protected Image backingStoreImage = null;
+    protected transient Image backingStoreImage = null;
 
     /**
      * The <code>scrollUnderway</code> flag is used for components like

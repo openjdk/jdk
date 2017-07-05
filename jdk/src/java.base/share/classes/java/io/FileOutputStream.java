@@ -27,8 +27,8 @@ package java.io;
 
 import java.nio.channels.FileChannel;
 import java.util.concurrent.atomic.AtomicBoolean;
-import sun.misc.SharedSecrets;
-import sun.misc.JavaIOFileDescriptorAccess;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaIOFileDescriptorAccess;
 import sun.nio.ch.FileChannelImpl;
 
 

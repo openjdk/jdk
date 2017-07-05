@@ -126,12 +126,12 @@ var booleanCls = Java.type("java.lang.Boolean").TYPE;
 
 // private compile method of Context class
 var compileMethod = Context.class.getDeclaredMethod("compile",
-                sourceCls, errorMgrCls, booleanCls);
+                sourceCls, errorMgrCls, booleanCls, booleanCls);
 compileMethod.accessible = true;
 
 var scriptCls = compileMethod.invoke(Context.context,
     Source.sourceFor("test", "print('hello')"),
-    new Context.ThrowErrorManager(), false);
+    new Context.ThrowErrorManager(), false, false);
 
 var SCRIPT_CLASS_NAME_PREFIX = "jdk.nashorn.internal.scripts.Script$";
 print("script class name pattern satisfied? " +

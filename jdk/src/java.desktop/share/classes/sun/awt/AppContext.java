@@ -44,6 +44,8 @@ import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeListener;
 import java.lang.ref.SoftReference;
 
+import jdk.internal.misc.JavaAWTAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.misc.ManagedLocalsThread;
 import sun.util.logging.PlatformLogger;
 import java.util.concurrent.locks.Condition;
@@ -148,8 +150,8 @@ public final class AppContext {
     /*
      * The keys to store EventQueue push/pop lock and condition.
      */
-    public final static Object EVENT_QUEUE_LOCK_KEY = new StringBuilder("EventQueue.Lock");
-    public final static Object EVENT_QUEUE_COND_KEY = new StringBuilder("EventQueue.Condition");
+    public static final Object EVENT_QUEUE_LOCK_KEY = new StringBuilder("EventQueue.Lock");
+    public static final Object EVENT_QUEUE_COND_KEY = new StringBuilder("EventQueue.Condition");
 
     /* A map of AppContexts, referenced by ThreadGroup.
      */
@@ -172,7 +174,7 @@ public final class AppContext {
     private static volatile AppContext mainAppContext = null;
 
     private static class GetAppContextLock {};
-    private final static Object getAppContextLock = new GetAppContextLock();
+    private static final Object getAppContextLock = new GetAppContextLock();
 
     /*
      * The hash map associated with this AppContext.  A private delegate
@@ -839,7 +841,7 @@ public final class AppContext {
 
     // Set up JavaAWTAccess in SharedSecrets
     static {
-        sun.misc.SharedSecrets.setJavaAWTAccess(new sun.misc.JavaAWTAccess() {
+        SharedSecrets.setJavaAWTAccess(new JavaAWTAccess() {
             private boolean hasRootThreadGroup(final AppContext ecx) {
                 return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
                     @Override
@@ -878,13 +880,13 @@ public final class AppContext {
                 // the window of opportunity in which that issue could
                 // happen.
                 if (numAppContexts.get() > 0) {
-                   // Defaults to thread group caching.
-                   // This is probably not required as we only really need
-                   // isolation in a deployed applet environment, in which
-                   // case ecx will not be null when we reach here
-                   // However it helps emulate the deployed environment,
-                   // in tests for instance.
-                   ecx = ecx != null ? ecx : getAppContext();
+                    // Defaults to thread group caching.
+                    // This is probably not required as we only really need
+                    // isolation in a deployed applet environment, in which
+                    // case ecx will not be null when we reach here
+                    // However it helps emulate the deployed environment,
+                    // in tests for instance.
+                    ecx = ecx != null ? ecx : getAppContext();
                 }
 
                 // getAppletContext() may be called when initializing the main
@@ -895,8 +897,8 @@ public final class AppContext {
                 // the root TG as its thread group.
                 // See: JDK-8023258
                 final boolean isMainAppContext = ecx == null
-                    || mainAppContext == ecx
-                    || mainAppContext == null && hasRootThreadGroup(ecx);
+                        || mainAppContext == ecx
+                        || mainAppContext == null && hasRootThreadGroup(ecx);
 
                 return isMainAppContext ? null : ecx;
             }

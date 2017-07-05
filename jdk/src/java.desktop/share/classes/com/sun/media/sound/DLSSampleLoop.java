@@ -31,8 +31,8 @@ package com.sun.media.sound;
  */
 public final class DLSSampleLoop {
 
-    public final static int LOOP_TYPE_FORWARD = 0;
-    public final static int LOOP_TYPE_RELEASE = 1;
+    public static final int LOOP_TYPE_FORWARD = 0;
+    public static final int LOOP_TYPE_RELEASE = 1;
     long type;
     long start;
     long length;

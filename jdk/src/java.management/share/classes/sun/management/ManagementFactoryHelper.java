@@ -36,6 +36,9 @@ import javax.management.RuntimeOperationsException;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+
+import jdk.internal.misc.JavaNioAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.util.logging.LoggingSupport;
 import java.util.ArrayList;
 import java.util.List;
@@ -208,7 +211,7 @@ public class ManagementFactoryHelper {
     public static synchronized List<BufferPoolMXBean> getBufferPoolMXBeans() {
         if (bufferPools == null) {
             bufferPools = new ArrayList<>(2);
-            bufferPools.add(createBufferPoolMXBean(sun.misc.SharedSecrets.getJavaNioAccess()
+            bufferPools.add(createBufferPoolMXBean(SharedSecrets.getJavaNioAccess()
                 .getDirectBufferPool()));
             bufferPools.add(createBufferPoolMXBean(sun.nio.ch.FileChannelImpl
                 .getMappedBufferPool()));
@@ -222,7 +225,7 @@ public class ManagementFactoryHelper {
      * Creates management interface for the given buffer pool.
      */
     private static BufferPoolMXBean
-        createBufferPoolMXBean(final sun.misc.JavaNioAccess.BufferPool pool)
+        createBufferPoolMXBean(final JavaNioAccess.BufferPool pool)
     {
         return new BufferPoolMXBean() {
             private volatile ObjectName objname;  // created lazily

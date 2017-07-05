@@ -87,17 +87,17 @@ public class ServiceDialog extends JDialog implements ActionListener {
     /**
      * Waiting print status (user response pending).
      */
-    public final static int WAITING = 0;
+    public static final int WAITING = 0;
 
     /**
      * Approve print status (user activated "Print" or "OK").
      */
-    public final static int APPROVE = 1;
+    public static final int APPROVE = 1;
 
     /**
      * Cancel print status (user activated "Cancel");
      */
-    public final static int CANCEL = 2;
+    public static final int CANCEL = 2;
 
     private static final String strBundle = "sun.print.resources.serviceui";
     private static final Insets panelInsets = new Insets(6, 6, 6, 6);

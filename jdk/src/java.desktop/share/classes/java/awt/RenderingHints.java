@@ -110,7 +110,7 @@ public class RenderingHints
                 Integer.toHexString(privatekey);
         }
 
-        private synchronized static void recordIdentity(Key k) {
+        private static synchronized void recordIdentity(Key k) {
             Object identity = k.getIdentity();
             Object otherref = identitymap.get(identity);
             if (otherref != null) {

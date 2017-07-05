@@ -35,13 +35,13 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.applet.*;
 
+import jdk.internal.misc.JavaSecurityAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
 import sun.awt.DisplayChangedListener;
 import sun.awt.SunToolkit;
 import sun.java2d.SunGraphicsEnvironment;
-import sun.misc.JavaSecurityAccess;
-import sun.misc.SharedSecrets;
 import sun.security.action.GetPropertyAction;
 
 import com.sun.java.swing.SwingUtilities3;

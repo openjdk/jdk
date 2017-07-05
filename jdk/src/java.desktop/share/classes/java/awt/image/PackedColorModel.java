@@ -240,7 +240,7 @@ public abstract class PackedColorModel extends ColorModel {
      *         <code>PackedColorModel</code> or if <code>index</code> is
      *         less than zero
      */
-    final public int getMask(int index) {
+    public final int getMask(int index) {
         return maskArray[index];
     }
 
@@ -251,7 +251,7 @@ public abstract class PackedColorModel extends ColorModel {
      *         <code>int</code> pixel
      *         representation contain the color or alpha samples.
      */
-    final public int[] getMasks() {
+    public final int[] getMasks() {
         return maskArray.clone();
     }
 
@@ -415,7 +415,7 @@ public abstract class PackedColorModel extends ColorModel {
         return true;
     }
 
-    private final static int[] createBitsArray(int[]colorMaskArray,
+    private static final int[] createBitsArray(int[]colorMaskArray,
                                                int alphaMask) {
         int numColors = colorMaskArray.length;
         int numAlpha = (alphaMask == 0 ? 0 : 1);
@@ -438,7 +438,7 @@ public abstract class PackedColorModel extends ColorModel {
         return arr;
     }
 
-    private final static int[] createBitsArray(int rmask, int gmask, int bmask,
+    private static final int[] createBitsArray(int rmask, int gmask, int bmask,
                                          int amask) {
         int[] arr = new int[3 + (amask == 0 ? 0 : 1)];
         arr[0] = countBits(rmask);
@@ -466,7 +466,7 @@ public abstract class PackedColorModel extends ColorModel {
         return arr;
     }
 
-    private final static int countBits(int mask) {
+    private static final int countBits(int mask) {
         int count = 0;
         if (mask != 0) {
             while ((mask & 1) == 0) {

@@ -49,7 +49,7 @@ public class MotifCheckBoxUI extends MotifRadioButtonUI {
 
     private static final Object MOTIF_CHECK_BOX_UI_KEY = new Object();
 
-    private final static String propertyPrefix = "CheckBox" + ".";
+    private static final String propertyPrefix = "CheckBox" + ".";
 
     private boolean defaults_initialized = false;
 
