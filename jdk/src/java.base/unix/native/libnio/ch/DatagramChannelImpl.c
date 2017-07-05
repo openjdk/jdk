@@ -201,7 +201,7 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
     }
     if (senderAddr == NULL) {
         jobject isa = NULL;
-        int port;
+        int port = 0;
         jobject ia = NET_SockaddrToInetAddress(env, (struct sockaddr *)&sa, &port);
         if (ia != NULL) {
             isa = (*env)->NewObject(env, isa_class, isa_ctorID, ia, port);

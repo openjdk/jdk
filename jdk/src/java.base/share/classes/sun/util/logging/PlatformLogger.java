@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,8 +32,11 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import sun.misc.JavaLangAccess;
@@ -514,11 +517,9 @@ public class PlatformLogger {
 
         private static final String formatString =
             LoggingSupport.getSimpleFormat(false); // don't check logging.properties
-
-        // minimize memory allocation
-        private Date date = new Date();
+        private final ZoneId zoneId = ZoneId.systemDefault();
         private synchronized String format(Level level, String msg, Throwable thrown) {
-            date.setTime(System.currentTimeMillis());
+            ZonedDateTime zdt = ZonedDateTime.now(zoneId);
             String throwable = "";
             if (thrown != null) {
                 StringWriter sw = new StringWriter();
@@ -530,7 +531,7 @@ public class PlatformLogger {
             }
 
             return String.format(formatString,
-                                 date,
+                                 zdt,
                                  getCallerInfo(),
                                  name,
                                  level.name(),

@@ -66,8 +66,10 @@ import java.lang.reflect.Field;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 
 import org.testng.annotations.Test;
+import org.testng.annotations.DataProvider;
 
 /**
  * Test system clock.
@@ -76,6 +78,7 @@ import org.testng.annotations.Test;
 public class TestClock_System {
 
     private static final ZoneId PARIS = ZoneId.of("Europe/Paris");
+    private static final Clock systemUTC = Clock.systemUTC();
 
     public void test_withZone_same() {
         Clock test = Clock.system(PARIS);
@@ -87,6 +90,32 @@ public class TestClock_System {
     public void test_toString() {
         Clock test = Clock.system(PARIS);
         assertEquals(test.toString(), "SystemClock[Europe/Paris]");
+    }
+
+    //-----------------------------------------------------------------------
+    @DataProvider(name="sampleSystemUTC")
+    Object[][] provider_sampleSystemUTC() {
+        return new Object[][] {
+            {"Clock.systemUTC()#1",  Clock.systemUTC()},
+            {"Clock.systemUTC()#2",  Clock.systemUTC()},
+            {"Clock.system(ZoneOffset.UTC)#1",  Clock.system(ZoneOffset.UTC)},
+            {"Clock.system(ZoneOffset.UTC)#2",  Clock.system(ZoneOffset.UTC)}
+        };
+    }
+
+    // Test for 8073394
+    @Test(dataProvider="sampleSystemUTC")
+    public void test_systemUTC(String s, Clock clock) {
+        if (clock != systemUTC) {
+            throw new RuntimeException("Unexpected clock instance for " + s + ": "
+                + "\n\texpected: " + toString(systemUTC)
+                + "\n\tactual:   " + toString(clock));
+        }
+    }
+
+    private static String toString(Clock c) {
+        return c == null ? null :
+               c + " " + c.getClass().getName() + "@" + System.identityHashCode(c);
     }
 
     //-----------------------------------------------------------------------

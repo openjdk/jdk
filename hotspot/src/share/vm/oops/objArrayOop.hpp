@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,15 +78,7 @@ private:
   HeapWord* base() const      { return (HeapWord*) arrayOopDesc::base(T_OBJECT); }
 
   // Accessing
-  oop obj_at(int index) const {
-    // With UseCompressedOops decode the narrow oop in the objArray to an
-    // uncompressed oop.  Otherwise this is simply a "*" operator.
-    if (UseCompressedOops) {
-      return load_decode_heap_oop(obj_at_addr<narrowOop>(index));
-    } else {
-      return load_decode_heap_oop(obj_at_addr<oop>(index));
-    }
-  }
+  oop obj_at(int index) const;
 
   void obj_at_put(int index, oop value) {
     if (UseCompressedOops) {

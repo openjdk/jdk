@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,11 +69,6 @@ inline Klass* oopDesc::klass_or_null() const volatile {
   } else {
     return _metadata._klass;
   }
-}
-
-inline int oopDesc::klass_gap_offset_in_bytes() {
-  assert(UseCompressedClassPointers, "only applicable to compressed klass pointers");
-  return oopDesc::klass_offset_in_bytes() + sizeof(narrowKlass);
 }
 
 inline Klass** oopDesc::klass_addr() {
@@ -602,8 +597,11 @@ inline void oopDesc::follow_contents(void) {
   klass()->oop_follow_contents(this);
 }
 
-// Used by scavengers
+inline bool oopDesc::is_scavengable() const {
+  return Universe::heap()->is_scavengable(this);
+}
 
+// Used by scavengers
 inline bool oopDesc::is_forwarded() const {
   // The extra heap check is needed since the obj might be locked, in which case the
   // mark would point to a stack location and have the sentinel bit cleared

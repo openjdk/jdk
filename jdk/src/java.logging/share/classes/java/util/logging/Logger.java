@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
@@ -1746,8 +1747,7 @@ public class Logger {
      *          does not have LoggingPermission("control").
      */
     public void addHandler(Handler handler) throws SecurityException {
-        // Check for null handler
-        handler.getClass();
+        Objects.requireNonNull(handler);
         checkPermission();
         handlers.add(handler);
     }

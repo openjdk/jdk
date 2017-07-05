@@ -260,10 +260,6 @@ class Arguments : AllStatic {
   static SystemProperty *_java_class_path;
   static SystemProperty *_sun_boot_class_path;
 
-  // Meta-index for knowing what packages are in the boot class path
-  static char* _meta_index_path;
-  static char* _meta_index_dir;
-
   // temporary: to emit warning if the default ext dirs are not empty.
   // remove this variable when the warning is no longer needed.
   static char* _ext_dirs;
@@ -600,16 +596,10 @@ class Arguments : AllStatic {
   static void set_ext_dirs(char *value)     { _ext_dirs = os::strdup_check_oom(value); }
   static void set_sysclasspath(char *value) { _sun_boot_class_path->set_value(value); }
   static void append_sysclasspath(const char *value) { _sun_boot_class_path->append_value(value); }
-  static void set_meta_index_path(char* meta_index_path, char* meta_index_dir) {
-    _meta_index_path = meta_index_path;
-    _meta_index_dir  = meta_index_dir;
-  }
 
   static char* get_java_home() { return _java_home->value(); }
   static char* get_dll_dir() { return _sun_boot_library_path->value(); }
   static char* get_sysclasspath() { return _sun_boot_class_path->value(); }
-  static char* get_meta_index_path() { return _meta_index_path; }
-  static char* get_meta_index_dir()  { return _meta_index_dir;  }
   static char* get_ext_dirs()        { return _ext_dirs;  }
   static char* get_appclasspath() { return _java_class_path->value(); }
   static void  fix_appclasspath();

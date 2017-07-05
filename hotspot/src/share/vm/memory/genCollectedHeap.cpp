@@ -41,7 +41,6 @@
 #include "memory/sharedHeap.hpp"
 #include "memory/space.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.inline2.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/handles.hpp"
