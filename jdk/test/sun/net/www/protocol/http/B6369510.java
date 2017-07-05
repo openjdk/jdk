@@ -63,7 +63,7 @@ public class B6369510
 
             // GET Request
             URL url = new URL("http://" + InetAddress.getLocalHost().getHostName() + ":" + address.getPort() + "/test/");
-            HttpURLConnection uc = (HttpURLConnection)url.openConnection();
+            HttpURLConnection uc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
             int resp = uc.getResponseCode();
             if (resp != 200)
                 throw new RuntimeException("Failed: Response code from GET is not 200 RSP == " + resp);
@@ -71,7 +71,7 @@ public class B6369510
             System.out.println("Response code from GET = 200 OK");
 
             //POST Request
-            uc = (HttpURLConnection)url.openConnection();
+            uc = (HttpURLConnection)url.openConnection(Proxy.NO_PROXY);
             uc.setDoOutput(true);
             uc.setRequestMethod("POST");
             OutputStream os = uc.getOutputStream();

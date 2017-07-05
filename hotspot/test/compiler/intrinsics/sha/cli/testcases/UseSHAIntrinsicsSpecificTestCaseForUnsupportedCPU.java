@@ -1,0 +1,64 @@
+/*
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+import jdk.test.lib.ExitCode;
+import jdk.test.lib.Platform;
+import jdk.test.lib.cli.CommandLineOptionTest;
+import jdk.test.lib.cli.predicate.AndPredicate;
+import jdk.test.lib.cli.predicate.OrPredicate;
+import jdk.test.lib.cli.predicate.NotPredicate;
+import sha.predicate.IntrinsicPredicates;
+
+/**
+ * Test case specific to UseSHA*Intrinsics options targeted to SPARC and AArch64
+ * CPUs which don't support required instruction, but support other SHA-related
+ * instructions.
+ *
+ * For example, CPU support sha1 instruction, but don't support sha256 or
+ * sha512.
+ */
+public class UseSHAIntrinsicsSpecificTestCaseForUnsupportedCPU
+        extends SHAOptionsBase.TestCase {
+    public UseSHAIntrinsicsSpecificTestCaseForUnsupportedCPU(
+            String optionName) {
+        // execute test case on SPARC CPU that support any sha* instructions,
+        // but does not support sha* instruction required by the tested option.
+        super(optionName, new AndPredicate(
+                new OrPredicate(Platform::isSparc, Platform::isAArch64),
+                new AndPredicate(
+                        IntrinsicPredicates.ANY_SHA_INSTRUCTION_AVAILABLE,
+                        new NotPredicate(SHAOptionsBase.getPredicateForOption(
+                                optionName)))));
+    }
+    @Override
+    protected void verifyWarnings() throws Throwable {
+        String shouldPassMessage = String.format("JVM should start with "
+                + "'-XX:+%s' flag, but output should contain warning.",
+                optionName);
+        // Verify that attempt to enable the tested option will cause a warning
+        CommandLineOptionTest.verifySameJVMStartup(new String[] {
+                        SHAOptionsBase.getWarningForUnsupportedCPU(optionName)
+                }, null, shouldPassMessage, shouldPassMessage, ExitCode.OK,
+                CommandLineOptionTest.prepareBooleanFlag(optionName, true));
+    }
+}

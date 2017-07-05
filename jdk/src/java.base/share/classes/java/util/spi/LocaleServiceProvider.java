@@ -112,29 +112,36 @@ import java.util.Locale;
  * provider returns null instead of a name, the lookup will proceed as
  * described above as if the locale was not supported.
  * <p>
- * Starting from JDK8, the search order of locale sensitive services can
+ * The search order of locale sensitive services can
  * be configured by using the "java.locale.providers" system property.
  * This system property declares the user's preferred order for looking up
  * the locale sensitive services separated by a comma. It is only read at
  * the Java runtime startup, so the later call to System.setProperty() won't
  * affect the order.
  * <p>
+ * Java Runtime Environment provides the following four locale providers:
+ * <ul>
+ * <li> "CLDR": A provider based on Unicode Consortium's
+ * <a href="http://cldr.unicode.org/">CLDR Project</a>.
+ * <li> "JRE": represents the locale sensitive services that is compatible
+ * with the prior JDK releases (same with JDK8's "JRE").
+ * <li> "SPI": represents the locale sensitive services implementing the subclasses of
+ * this {@code LocaleServiceProvider} class.
+ * <li> "HOST": A provider that reflects the user's custom settings in the
+ * underlying operating system. This provider may not be available, depending
+ * on the Java Runtime Environment implementation.
+ * </ul>
+ * <p>
  * For example, if the following is specified in the property:
  * <pre>
- * java.locale.providers=SPI,JRE
+ * java.locale.providers=SPI,CLDR,JRE
  * </pre>
- * where "SPI" represents the locale sensitive services implemented in the
- * installed SPI providers, and "JRE" represents the locale sensitive services
- * in the Java Runtime Environment, the locale sensitive services in the SPI
- * providers are looked up first.
+ * the locale sensitive services in the SPI providers are looked up first. If the
+ * desired locale sensitive service is not available, then the runtime looks for CLDR,
+ * JRE in that order.
  * <p>
- * There are two other possible locale sensitive service providers, i.e., "CLDR"
- * which is a provider based on Unicode Consortium's
- * <a href="http://cldr.unicode.org/">CLDR Project</a>, and "HOST" which is a
- * provider that reflects the user's custom settings in the underlying operating
- * system. These two providers may not be available, depending on the Java Runtime
- * Environment implementation. Specifying "JRE,SPI" is identical to the default
- * behavior, which is compatibile with the prior releases.
+ * The default order for looking up the preferred locale providers is "CLDR,JRE,SPI",
+ * so specifying "CLDR,JRE,SPI" is identical to the default behavior.
  *
  * @since        1.6
  */

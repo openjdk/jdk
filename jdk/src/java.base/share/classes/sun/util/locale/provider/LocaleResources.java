@@ -402,11 +402,12 @@ public class LocaleResources {
         if (timeStyle >= 0) {
             if (dateStyle >= 0) {
                 String dateTimePattern = null;
+                int dateTimeStyle = Math.max(dateStyle, timeStyle);
                 if (prefix != null) {
-                    dateTimePattern = getDateTimePattern(prefix, "DateTimePatterns", 0, calType);
+                    dateTimePattern = getDateTimePattern(prefix, "DateTimePatterns", dateTimeStyle, calType);
                 }
                 if (dateTimePattern == null) {
-                    dateTimePattern = getDateTimePattern(null, "DateTimePatterns", 0, calType);
+                    dateTimePattern = getDateTimePattern(null, "DateTimePatterns", dateTimeStyle, calType);
                 }
                 switch (dateTimePattern) {
                 case "{1} {0}":
@@ -416,7 +417,7 @@ public class LocaleResources {
                     pattern = timePattern + " " + datePattern;
                     break;
                 default:
-                    pattern = MessageFormat.format(dateTimePattern, timePattern, datePattern);
+                    pattern = MessageFormat.format(dateTimePattern.replaceAll("'", "''"), timePattern, datePattern);
                     break;
                 }
             } else {
@@ -492,7 +493,10 @@ public class LocaleResources {
             assert prefix != null;
             return null;
         }
-        return ((String[])value)[styleIndex];
+
+        // for DateTimePatterns. CLDR has multiple styles, while JRE has one.
+        String[] styles = (String[])value;
+        return (styles.length > 1 ? styles[styleIndex] : styles[0]);
     }
 
     private static class ResourceReference extends SoftReference<Object> {

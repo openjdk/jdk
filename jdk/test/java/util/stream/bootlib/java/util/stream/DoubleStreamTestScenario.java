@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,10 @@
  */
 package java.util.stream;
 
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.PrimitiveIterator;
+import java.util.Set;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
@@ -40,22 +43,21 @@ import java.util.function.Function;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public enum DoubleStreamTestScenario implements OpTestCase.BaseStreamTestScenario {
 
-    STREAM_FOR_EACH_WITH_CLOSE(false) {
+    STREAM_FOR_EACH(false) {
         <T, S_IN extends BaseStream<T, S_IN>>
-        void _run(TestData<T, S_IN> data, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
-            DoubleStream s = m.apply(data.stream());
+        void run(TestData<T, S_IN> data, S_IN source, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
+            DoubleStream s = m.apply(source);
             if (s.isParallel()) {
                 s = s.sequential();
             }
             s.forEach(b);
-            s.close();
         }
     },
 
     STREAM_TO_ARRAY(false) {
         <T, S_IN extends BaseStream<T, S_IN>>
-        void _run(TestData<T, S_IN> data, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
-            for (double t : m.apply(data.stream()).toArray()) {
+        void run(TestData<T, S_IN> data, S_IN source, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
+            for (double t : m.apply(source).toArray()) {
                 b.accept(t);
             }
         }
@@ -63,8 +65,8 @@ public enum DoubleStreamTestScenario implements OpTestCase.BaseStreamTestScenari
 
     STREAM_ITERATOR(false) {
         <T, S_IN extends BaseStream<T, S_IN>>
-        void _run(TestData<T, S_IN> data, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
-            for (PrimitiveIterator.OfDouble seqIter = m.apply(data.stream()).iterator(); seqIter.hasNext(); )
+        void run(TestData<T, S_IN> data, S_IN source, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
+            for (PrimitiveIterator.OfDouble seqIter = m.apply(source).iterator(); seqIter.hasNext(); )
                 b.accept(seqIter.nextDouble());
         }
     },
@@ -72,8 +74,8 @@ public enum DoubleStreamTestScenario implements OpTestCase.BaseStreamTestScenari
     // Wrap as stream, and spliterate then iterate in pull mode
     STREAM_SPLITERATOR(false) {
         <T, S_IN extends BaseStream<T, S_IN>>
-        void _run(TestData<T, S_IN> data, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
-            for (Spliterator.OfDouble spl = m.apply(data.stream()).spliterator(); spl.tryAdvance(b); ) {
+        void run(TestData<T, S_IN> data, S_IN source, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
+            for (Spliterator.OfDouble spl = m.apply(source).spliterator(); spl.tryAdvance(b); ) {
             }
         }
     },
@@ -81,40 +83,40 @@ public enum DoubleStreamTestScenario implements OpTestCase.BaseStreamTestScenari
     // Wrap as stream, spliterate, then split a few times mixing advances with forEach
     STREAM_SPLITERATOR_WITH_MIXED_TRAVERSE_AND_SPLIT(false) {
         <T, S_IN extends BaseStream<T, S_IN>>
-        void _run(TestData<T, S_IN> data, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
-            SpliteratorTestHelper.mixedTraverseAndSplit(b, m.apply(data.stream()).spliterator());
+        void run(TestData<T, S_IN> data, S_IN source, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
+            SpliteratorTestHelper.mixedTraverseAndSplit(b, m.apply(source).spliterator());
         }
     },
 
     // Wrap as stream, and spliterate then iterate in pull mode
     STREAM_SPLITERATOR_FOREACH(false) {
         <T, S_IN extends BaseStream<T, S_IN>>
-        void _run(TestData<T, S_IN> data, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
-            m.apply(data.stream()).spliterator().forEachRemaining(b);
+        void run(TestData<T, S_IN> data, S_IN source, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
+            m.apply(source).spliterator().forEachRemaining(b);
         }
     },
 
     PAR_STREAM_SEQUENTIAL_FOR_EACH(true) {
         <T, S_IN extends BaseStream<T, S_IN>>
-        void _run(TestData<T, S_IN> data, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
-            m.apply(data.parallelStream()).sequential().forEach(b);
+        void run(TestData<T, S_IN> data, S_IN source, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
+            m.apply(source).sequential().forEach(b);
         }
     },
 
     // Wrap as parallel stream + forEachOrdered
     PAR_STREAM_FOR_EACH_ORDERED(true) {
         <T, S_IN extends BaseStream<T, S_IN>>
-        void _run(TestData<T, S_IN> data, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
+        void run(TestData<T, S_IN> data, S_IN source, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
             // @@@ Want to explicitly select ordered equalator
-            m.apply(data.parallelStream()).forEachOrdered(b);
+            m.apply(source).forEachOrdered(b);
         }
     },
 
     // Wrap as stream, and spliterate then iterate sequentially
     PAR_STREAM_SPLITERATOR(true) {
         <T, S_IN extends BaseStream<T, S_IN>>
-        void _run(TestData<T, S_IN> data, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
-            for (Spliterator.OfDouble spl = m.apply(data.parallelStream()).spliterator(); spl.tryAdvance(b); ) {
+        void run(TestData<T, S_IN> data, S_IN source, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
+            for (Spliterator.OfDouble spl = m.apply(source).spliterator(); spl.tryAdvance(b); ) {
             }
         }
     },
@@ -122,15 +124,15 @@ public enum DoubleStreamTestScenario implements OpTestCase.BaseStreamTestScenari
     // Wrap as stream, and spliterate then iterate sequentially
     PAR_STREAM_SPLITERATOR_FOREACH(true) {
         <T, S_IN extends BaseStream<T, S_IN>>
-        void _run(TestData<T, S_IN> data, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
-            m.apply(data.parallelStream()).spliterator().forEachRemaining(b);
+        void run(TestData<T, S_IN> data, S_IN source, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
+            m.apply(source).spliterator().forEachRemaining(b);
         }
     },
 
     PAR_STREAM_TO_ARRAY(true) {
         <T, S_IN extends BaseStream<T, S_IN>>
-        void _run(TestData<T, S_IN> data, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
-            for (double t : m.apply(data.parallelStream()).toArray())
+        void run(TestData<T, S_IN> data, S_IN source, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
+            for (double t : m.apply(source).toArray())
                 b.accept(t);
         }
     },
@@ -138,8 +140,8 @@ public enum DoubleStreamTestScenario implements OpTestCase.BaseStreamTestScenari
     // Wrap as parallel stream, get the spliterator, wrap as a stream + toArray
     PAR_STREAM_SPLITERATOR_STREAM_TO_ARRAY(true) {
         <T, S_IN extends BaseStream<T, S_IN>>
-        void _run(TestData<T, S_IN> data, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
-            DoubleStream s = m.apply(data.parallelStream());
+        void run(TestData<T, S_IN> data, S_IN source, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
+            DoubleStream s = m.apply(source);
             Spliterator.OfDouble sp = s.spliterator();
             DoubleStream ss = StreamSupport.doubleStream(() -> sp,
                                                          StreamOpFlag.toCharacteristics(OpTestCase.getStreamFlags(s))
@@ -151,20 +153,58 @@ public enum DoubleStreamTestScenario implements OpTestCase.BaseStreamTestScenari
 
     PAR_STREAM_TO_ARRAY_CLEAR_SIZED(true) {
         <T, S_IN extends BaseStream<T, S_IN>>
-        void _run(TestData<T, S_IN> data, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
-            S_IN pipe1 = (S_IN) OpTestCase.chain(data.parallelStream(),
+        void run(TestData<T, S_IN> data, S_IN source, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
+            S_IN pipe1 = (S_IN) OpTestCase.chain(source,
                                                  new FlagDeclaringOp(StreamOpFlag.NOT_SIZED, data.getShape()));
             DoubleStream pipe2 = m.apply(pipe1);
 
             for (double t : pipe2.toArray())
                 b.accept(t);
         }
-    },;
+    },
+
+    // Wrap as parallel stream + forEach synchronizing
+    PAR_STREAM_FOR_EACH(true, false) {
+        <T, S_IN extends BaseStream<T, S_IN>>
+        void run(TestData<T, S_IN> data, S_IN source, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
+            m.apply(source).forEach(e -> {
+                synchronized (data) {
+                    b.accept(e);
+                }
+            });
+        }
+    },
+
+    // Wrap as parallel stream + forEach synchronizing and clear SIZED flag
+    PAR_STREAM_FOR_EACH_CLEAR_SIZED(true, false) {
+        <T, S_IN extends BaseStream<T, S_IN>>
+        void run(TestData<T, S_IN> data, S_IN source, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
+            S_IN pipe1 = (S_IN) OpTestCase.chain(source,
+                                                 new FlagDeclaringOp(StreamOpFlag.NOT_SIZED, data.getShape()));
+            m.apply(pipe1).forEach(e -> {
+                synchronized (data) {
+                    b.accept(e);
+                }
+            });
+        }
+    },
+    ;
+
+    // The set of scenarios that clean the SIZED flag
+    public static final Set<DoubleStreamTestScenario> CLEAR_SIZED_SCENARIOS = Collections.unmodifiableSet(
+            EnumSet.of(PAR_STREAM_TO_ARRAY_CLEAR_SIZED, PAR_STREAM_FOR_EACH_CLEAR_SIZED));
 
     private boolean isParallel;
 
+    private final boolean isOrdered;
+
     DoubleStreamTestScenario(boolean isParallel) {
+        this(isParallel, true);
+    }
+
+    DoubleStreamTestScenario(boolean isParallel, boolean isOrdered) {
         this.isParallel = isParallel;
+        this.isOrdered = isOrdered;
     }
 
     public StreamShape getShape() {
@@ -175,12 +215,18 @@ public enum DoubleStreamTestScenario implements OpTestCase.BaseStreamTestScenari
         return isParallel;
     }
 
+    public boolean isOrdered() {
+        return isOrdered;
+    }
+
     public <T, U, S_IN extends BaseStream<T, S_IN>, S_OUT extends BaseStream<U, S_OUT>>
     void run(TestData<T, S_IN> data, Consumer<U> b, Function<S_IN, S_OUT> m) {
-        _run(data, (DoubleConsumer) b, (Function<S_IN, DoubleStream>) m);
+        try (S_IN source = getStream(data)) {
+            run(data, source, (DoubleConsumer) b, (Function<S_IN, DoubleStream>) m);
+        }
     }
 
     abstract <T, S_IN extends BaseStream<T, S_IN>>
-    void _run(TestData<T, S_IN> data, DoubleConsumer b, Function<S_IN, DoubleStream> m);
+    void run(TestData<T, S_IN> data, S_IN source, DoubleConsumer b, Function<S_IN, DoubleStream> m);
 
 }

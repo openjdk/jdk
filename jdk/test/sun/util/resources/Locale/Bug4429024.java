@@ -23,7 +23,8 @@
 /**
     @test
     @summary checking localised language/country names in finnish
-    @bug 4429024 4964035 6558856
+    @bug 4429024 4964035 6558856 8008577
+    @run main/othervm -Djava.locale.providers=JRE,SPI Bug4429024
 */
 
 import java.util.Locale;
