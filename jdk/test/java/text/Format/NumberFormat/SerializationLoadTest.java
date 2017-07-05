@@ -31,10 +31,13 @@
  * @key randomness
  */
 
-import java.awt.*;
-import java.text.*;
-import java.util.*;
-import java.io.*;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
+import java.util.Random;
 
 public class SerializationLoadTest {
 

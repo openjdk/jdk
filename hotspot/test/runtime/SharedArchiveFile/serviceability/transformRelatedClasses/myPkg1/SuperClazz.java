@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,13 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 6505888
- * @summary Tests CheckedCollection encoding
- * @author Sergey Malenkov
- */
+package myPkg1;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+public class SuperClazz {
+    public static void testParent() {
+        System.out.println("SuperClazz: entering testParent()");
 
-public final class java_util_Collections_CheckedCollection extends AbstractTest<Collection<String>> {
-    public static void main(String[] args) {
-        new java_util_Collections_CheckedCollection().test(true);
-    }
-
-    protected Collection<String> getObject() {
-        List<String> list = Collections.singletonList("string");
-        return Collections.checkedCollection(list, String.class);
-    }
-
-    protected Collection<String> getAnotherObject() {
-        List<String> list = Collections.emptyList();
-        return Collections.checkedCollection(list, String.class);
+        // The line below will be used to check for successful class transformation
+        System.out.println("parent-transform-check: this-should-be-transformed");
     }
 }
