@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,13 @@
  *
  */
 
+#ifndef CPU_SPARC_VM_TEMPLATEINTERPRETERGENERATOR_SPARC_HPP
+#define CPU_SPARC_VM_TEMPLATEINTERPRETERGENERATOR_SPARC_HPP
+
   protected:
 
   void generate_fixed_frame(bool native_call); // template interpreter only
   void generate_stack_overflow_check(Register Rframe_size, Register Rscratch,
                                      Register Rscratch2);
+
+#endif // CPU_SPARC_VM_TEMPLATEINTERPRETERGENERATOR_SPARC_HPP

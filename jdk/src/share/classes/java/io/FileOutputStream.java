@@ -56,7 +56,15 @@ class FileOutputStream extends OutputStream
      */
     private final FileDescriptor fd;
 
-    private FileChannel channel= null;
+    /**
+     * True if the file is opened for append.
+     */
+    private final boolean append;
+
+    /**
+     * The associated channel, initalized lazily.
+     */
+    private FileChannel channel;
 
     private final Object closeLock = new Object();
     private volatile boolean closed = false;
@@ -196,7 +204,9 @@ class FileOutputStream extends OutputStream
         if (name == null) {
             throw new NullPointerException();
         }
-        fd = new FileDescriptor();
+        this.fd = new FileDescriptor();
+        this.append = append;
+
         fd.incrementAndGetUseCount();
         open(name, append);
     }
@@ -232,7 +242,8 @@ class FileOutputStream extends OutputStream
         if (security != null) {
             security.checkWrite(fdObj);
         }
-        fd = fdObj;
+        this.fd = fdObj;
+        this.append = false;
 
         /*
          * FileDescriptor is being shared by streams.
@@ -251,22 +262,36 @@ class FileOutputStream extends OutputStream
         throws FileNotFoundException;
 
     /**
+     * Writes the specified byte to this file output stream.
+     *
+     * @param   b   the byte to be written.
+     * @param   append   {@code true} if the write operation first
+     *     advances the position to the end of file
+     */
+    private native void write(int b, boolean append) throws IOException;
+
+    /**
      * Writes the specified byte to this file output stream. Implements
      * the <code>write</code> method of <code>OutputStream</code>.
      *
      * @param      b   the byte to be written.
      * @exception  IOException  if an I/O error occurs.
      */
-    public native void write(int b) throws IOException;
+    public void write(int b) throws IOException {
+        write(b, append);
+    }
 
     /**
      * Writes a sub array as a sequence of bytes.
      * @param b the data to be written
      * @param off the start offset in the data
      * @param len the number of bytes that are written
+     * @param append {@code true} to first advance the position to the
+     *     end of file
      * @exception IOException If an I/O error has occurred.
      */
-    private native void writeBytes(byte b[], int off, int len) throws IOException;
+    private native void writeBytes(byte b[], int off, int len, boolean append)
+        throws IOException;
 
     /**
      * Writes <code>b.length</code> bytes from the specified byte array
@@ -276,7 +301,7 @@ class FileOutputStream extends OutputStream
      * @exception  IOException  if an I/O error occurs.
      */
     public void write(byte b[]) throws IOException {
-        writeBytes(b, 0, b.length);
+        writeBytes(b, 0, b.length, append);
     }
 
     /**
@@ -289,7 +314,7 @@ class FileOutputStream extends OutputStream
      * @exception  IOException  if an I/O error occurs.
      */
     public void write(byte b[], int off, int len) throws IOException {
-        writeBytes(b, off, len);
+        writeBytes(b, off, len, append);
     }
 
     /**
@@ -372,7 +397,7 @@ class FileOutputStream extends OutputStream
     public FileChannel getChannel() {
         synchronized (this) {
             if (channel == null) {
-                channel = FileChannelImpl.open(fd, false, true, this);
+                channel = FileChannelImpl.open(fd, false, true, append, this);
 
                 /*
                  * Increment fd's use count. Invoking the channel's close()

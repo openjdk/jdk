@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,8 +166,9 @@ public class SerialBlob implements Blob, Serializable, Cloneable {
             length = (int)len;
         }
 
-        if (pos < 1 || length - pos < 0 ) {
-            throw new SerialException("Invalid arguments: position cannot be less that 1");
+        if (pos < 1 || len - pos < 0 ) {
+            throw new SerialException("Invalid arguments: position cannot be "
+                    + "less than 1 or greater than the length of the SerialBlob");
         }
 
         pos--; // correct pos to array index

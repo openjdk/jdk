@@ -22,8 +22,10 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_ciCPCache.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/ciCPCache.hpp"
+#include "ci/ciUtilities.hpp"
+#include "oops/cpCacheOop.hpp"
 
 // ciCPCache
 

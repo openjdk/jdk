@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef OS_CPU_WINDOWS_X86_VM_THREADLS_WINDOWS_X86_HPP
+#define OS_CPU_WINDOWS_X86_VM_THREADLS_WINDOWS_X86_HPP
+
 // Processor dependent parts of ThreadLocalStorage
 
 protected:
@@ -42,3 +45,5 @@ public:
   static inline void set_thread_ptr_offset( int offset ) { _thread_ptr_offset = offset; }
 
   static inline int get_thread_ptr_offset() { return _thread_ptr_offset; }
+
+#endif // OS_CPU_WINDOWS_X86_VM_THREADLS_WINDOWS_X86_HPP

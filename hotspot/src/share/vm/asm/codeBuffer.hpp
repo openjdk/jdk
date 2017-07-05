@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_ASM_CODEBUFFER_HPP
+#define SHARE_VM_ASM_CODEBUFFER_HPP
+
+#include "asm/assembler.hpp"
+#include "code/oopRecorder.hpp"
+#include "code/relocInfo.hpp"
+
 class  CodeComments;
 class  AbstractAssembler;
 class  MacroAssembler;
@@ -550,7 +557,16 @@ class CodeBuffer: public StackObj {
 
 
   // The following header contains architecture-specific implementations
-  #include "incls/_codeBuffer_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "codeBuffer_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "codeBuffer_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "codeBuffer_zero.hpp"
+#endif
+
 };
 
 
@@ -562,3 +578,5 @@ inline bool CodeSection::maybe_expand_to_ensure_remaining(csize_t amount) {
   if (remaining() < amount) { _outer->expand(this, amount); return true; }
   return false;
 }
+
+#endif // SHARE_VM_ASM_CODEBUFFER_HPP

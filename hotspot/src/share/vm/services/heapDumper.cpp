@@ -22,8 +22,26 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_heapDumper.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
+#include "gc_implementation/shared/vmGCOperations.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/universe.hpp"
+#include "oops/objArrayKlass.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/jniHandles.hpp"
+#include "runtime/reflectionUtils.hpp"
+#include "runtime/vframe.hpp"
+#include "runtime/vmThread.hpp"
+#include "runtime/vm_operations.hpp"
+#include "services/heapDumper.hpp"
+#include "services/threadService.hpp"
+#include "utilities/ostream.hpp"
+#ifndef SERIALGC
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
+#endif
 
 /*
  * HPROF binary format - description copied from:

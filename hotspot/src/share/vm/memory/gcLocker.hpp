@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,26 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_MEMORY_GCLOCKER_HPP
+#define SHARE_VM_MEMORY_GCLOCKER_HPP
+
+#include "gc_interface/collectedHeap.hpp"
+#include "memory/genCollectedHeap.hpp"
+#include "memory/universe.hpp"
+#include "oops/oop.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+# include "thread_windows.inline.hpp"
+#endif
 
 // The direct lock/unlock calls do not force a collection if an unlock
 // decrements the count to zero. Avoid calling these if at all possible.
@@ -310,3 +330,5 @@ class No_Alloc_Verifier : public StackObj {
   ~No_Alloc_Verifier() {}
 #endif
 };
+
+#endif // SHARE_VM_MEMORY_GCLOCKER_HPP

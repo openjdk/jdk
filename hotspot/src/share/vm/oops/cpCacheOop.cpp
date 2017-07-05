@@ -22,8 +22,16 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_cpCacheOop.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "interpreter/interpreter.hpp"
+#include "interpreter/rewriter.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/cpCacheOop.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "prims/jvmtiRedefineClassesTrace.hpp"
+#include "runtime/handles.inline.hpp"
 
 
 // Implememtation of ConstantPoolCacheEntry

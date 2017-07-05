@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARNEW_ASPARNEWGENERATION_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARNEW_ASPARNEWGENERATION_HPP
+
+#include "gc_implementation/parNew/parNewGeneration.hpp"
+#include "gc_implementation/shared/adaptiveSizePolicy.hpp"
 
 // A Generation that does parallel young-gen collection extended
 // for adaptive size policy.
@@ -88,3 +94,5 @@ class ASParNewGeneration: public ParNewGeneration {
   // Space boundary invariant checker
   void space_invariants() PRODUCT_RETURN;
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARNEW_ASPARNEWGENERATION_HPP

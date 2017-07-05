@@ -175,15 +175,15 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * @throws NullPointerException {@inheritDoc}
      */
     public int indexOf(Object o) {
-        ListIterator<E> e = listIterator();
+        ListIterator<E> it = listIterator();
         if (o==null) {
-            while (e.hasNext())
-                if (e.next()==null)
-                    return e.previousIndex();
+            while (it.hasNext())
+                if (it.next()==null)
+                    return it.previousIndex();
         } else {
-            while (e.hasNext())
-                if (o.equals(e.next()))
-                    return e.previousIndex();
+            while (it.hasNext())
+                if (o.equals(it.next()))
+                    return it.previousIndex();
         }
         return -1;
     }
@@ -200,15 +200,15 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
      * @throws NullPointerException {@inheritDoc}
      */
     public int lastIndexOf(Object o) {
-        ListIterator<E> e = listIterator(size());
+        ListIterator<E> it = listIterator(size());
         if (o==null) {
-            while (e.hasPrevious())
-                if (e.previous()==null)
-                    return e.nextIndex();
+            while (it.hasPrevious())
+                if (it.previous()==null)
+                    return it.nextIndex();
         } else {
-            while (e.hasPrevious())
-                if (o.equals(e.previous()))
-                    return e.nextIndex();
+            while (it.hasPrevious())
+                if (o.equals(it.previous()))
+                    return it.nextIndex();
         }
         return -1;
     }
@@ -517,7 +517,7 @@ public abstract class AbstractList<E> extends AbstractCollection<E> implements L
 
         ListIterator<E> e1 = listIterator();
         ListIterator e2 = ((List) o).listIterator();
-        while(e1.hasNext() && e2.hasNext()) {
+        while (e1.hasNext() && e2.hasNext()) {
             E o1 = e1.next();
             Object o2 = e2.next();
             if (!(o1==null ? o2==null : o1.equals(o2)))

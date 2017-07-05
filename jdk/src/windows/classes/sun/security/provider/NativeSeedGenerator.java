@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,7 @@ class NativeSeedGenerator extends SeedGenerator {
      */
     private static native boolean nativeGenerateSeed(byte[] result);
 
+    @Override
     void getSeedBytes(byte[] result) {
         // fill array as a side effect
         if (nativeGenerateSeed(result) == false) {
@@ -62,9 +63,4 @@ class NativeSeedGenerator extends SeedGenerator {
         }
     }
 
-    byte getSeedByte() {
-        byte[] b = new byte[1];
-        getSeedBytes(b);
-        return b[0];
-    }
 }

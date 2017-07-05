@@ -3498,8 +3498,8 @@ public class ObjectInputStream
             return ((int[]) array).clone();
         } else if (array instanceof long[]) {
             return ((long[]) array).clone();
-        } else if (array instanceof double[]) {
-            return ((double[]) array).clone();
+        } else if (array instanceof short[]) {
+            return ((short[]) array).clone();
         } else {
             throw new AssertionError();
         }

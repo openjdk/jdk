@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_INLINE_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_INLINE_HPP
 
 inline HeapWord* G1OffsetTableContigSpace::allocate(size_t size) {
   HeapWord* res = ContiguousSpace::allocate(size);
@@ -58,3 +61,5 @@ inline HeapWord*
 G1OffsetTableContigSpace::block_start_const(const void* p) const {
   return _offsets.block_start_const(p);
 }
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_INLINE_HPP

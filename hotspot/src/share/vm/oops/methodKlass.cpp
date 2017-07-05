@@ -22,8 +22,22 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_methodKlass.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "gc_implementation/shared/markSweep.inline.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
+#include "interpreter/interpreter.hpp"
+#include "memory/gcLocker.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.inline.hpp"
+#include "oops/constMethodKlass.hpp"
+#include "oops/klassOop.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/methodKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oop.inline2.hpp"
+#include "oops/symbolOop.hpp"
+#include "runtime/handles.inline.hpp"
 
 klassOop methodKlass::create_klass(TRAPS) {
   methodKlass o;

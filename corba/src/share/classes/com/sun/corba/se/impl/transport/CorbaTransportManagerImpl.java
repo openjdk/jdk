@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import org.omg.CORBA.INTERNAL;
 import org.omg.CORBA.CompletionStatus;
 
 import com.sun.corba.se.pept.transport.Acceptor;
+import com.sun.corba.se.pept.transport.ConnectionCache;
 import com.sun.corba.se.pept.transport.ByteBufferPool;
 import com.sun.corba.se.pept.transport.ContactInfo;
 import com.sun.corba.se.pept.transport.InboundConnectionCache;
@@ -49,6 +50,8 @@ import com.sun.corba.se.spi.ior.ObjectAdapterId;
 import com.sun.corba.se.spi.orb.ORB;
 import com.sun.corba.se.spi.transport.CorbaAcceptor;
 import com.sun.corba.se.spi.transport.CorbaTransportManager;
+import com.sun.corba.se.pept.transport.Connection;
+import com.sun.corba.se.pept.transport.ConnectionCache;
 
 // REVISIT - impl/poa specific:
 import com.sun.corba.se.impl.oa.poa.Policies;
@@ -181,6 +184,12 @@ public class CorbaTransportManagerImpl
         try {
             if (orb.transportDebugFlag) {
                 dprint(".close->");
+            }
+            for (Object cc : outboundConnectionCaches.values()) {
+                ((ConnectionCache)cc).close() ;
+            }
+            for (Object cc : inboundConnectionCaches.values()) {
+                ((ConnectionCache)cc).close() ;
             }
             getSelector(0).close();
         } finally {

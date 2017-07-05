@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_MONITORCHUNK_HPP
+#define SHARE_VM_RUNTIME_MONITORCHUNK_HPP
+
+#include "runtime/synchronizer.hpp"
 
 // Data structure for holding monitors for one activation during
 // deoptimization.
@@ -56,3 +61,5 @@ class MonitorChunk: public CHeapObj {
   // Tells whether the addr point into the monitors.
   bool contains(void* addr) const           { return (addr >= (void*) monitors()) && (addr <  (void*) (monitors() + number_of_monitors())); }
 };
+
+#endif // SHARE_VM_RUNTIME_MONITORCHUNK_HPP

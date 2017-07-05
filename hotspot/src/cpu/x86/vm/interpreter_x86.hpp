@@ -22,6 +22,9 @@
  *
  */
 
+#ifndef CPU_X86_VM_INTERPRETER_X86_HPP
+#define CPU_X86_VM_INTERPRETER_X86_HPP
+
  public:
 
   // Sentinel placed in the code for interpreter returns so
@@ -44,3 +47,5 @@
     assert(i <= 0, "local direction already negated");
     return stackElementWords * i;
   }
+
+#endif // CPU_X86_VM_INTERPRETER_X86_HPP

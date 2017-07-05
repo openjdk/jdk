@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARK_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARK_HPP
+
+#include "gc_implementation/g1/heapRegion.hpp"
+#include "utilities/taskqueue.hpp"
+
 class G1CollectedHeap;
 class CMTask;
 typedef GenericTaskQueue<oop>            CMTaskQueue;
@@ -1120,3 +1126,5 @@ public:
   void increase_objs_found_on_bitmap() { ++_objs_found_on_bitmap; }
 #endif // _MARKING_STATS_
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARK_HPP

@@ -919,7 +919,7 @@ public class Vector<E>
      *         elements (optional), or if the specified collection is null
      * @since 1.2
      */
-    public synchronized boolean retainAll(Collection<?> c)  {
+    public synchronized boolean retainAll(Collection<?> c) {
         return super.retainAll(c);
     }
 

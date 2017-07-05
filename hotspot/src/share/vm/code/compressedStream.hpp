@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CODE_COMPRESSEDSTREAM_HPP
+#define SHARE_VM_CODE_COMPRESSEDSTREAM_HPP
+
+#include "memory/allocation.hpp"
 
 // Simple interface for filing out and filing in basic types
 // Used for writing out and reading in debugging information.
@@ -118,3 +123,5 @@ class CompressedWriteStream : public CompressedStream {
   void write_double(jdouble value);    // write_int(reverse_int(<low,high>))
   void write_long(jlong value);        // write_signed_int(<low,high>)
 };
+
+#endif // SHARE_VM_CODE_COMPRESSEDSTREAM_HPP

@@ -22,6 +22,20 @@
  *
  */
 
+#ifndef SHARE_VM_UTILITIES_WORKGROUP_HPP
+#define SHARE_VM_UTILITIES_WORKGROUP_HPP
+
+#include "utilities/taskqueue.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
+
 // Forward declarations of classes defined here
 
 class WorkGang;
@@ -458,3 +472,5 @@ public:
 
   void release_par_id(int id);
 };
+
+#endif // SHARE_VM_UTILITIES_WORKGROUP_HPP

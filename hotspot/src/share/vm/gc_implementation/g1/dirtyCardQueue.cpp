@@ -22,8 +22,23 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_dirtyCardQueue.cpp.incl"
+#include "precompiled.hpp"
+#include "gc_implementation/g1/dirtyCardQueue.hpp"
+#include "gc_implementation/g1/heapRegionRemSet.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/workgroup.hpp"
+#ifdef TARGET_OS_FAMILY_linux
+# include "thread_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "thread_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "thread_windows.inline.hpp"
+#endif
 
 bool DirtyCardQueue::apply_closure(CardTableEntryClosure* cl,
                                    bool consume,

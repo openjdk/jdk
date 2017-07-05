@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,17 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CLASSFILE_VERIFICATIONTYPE_HPP
+#define SHARE_VM_CLASSFILE_VERIFICATIONTYPE_HPP
+
+#include "classfile/systemDictionary.hpp"
+#include "memory/allocation.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/symbolOop.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/signature.hpp"
 
 enum {
   // As specifed in the JVM spec
@@ -303,3 +314,5 @@ class VerificationType VALUE_OBJ_CLASS_SPEC {
   bool is_reference_assignable_from(
     const VerificationType&, instanceKlassHandle, TRAPS) const;
 };
+
+#endif // SHARE_VM_CLASSFILE_VERIFICATIONTYPE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,23 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_dump.cpp.incl"
+#include "precompiled.hpp"
+#include "classfile/javaClasses.hpp"
+#include "classfile/loaderConstraints.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "gc_implementation/shared/spaceDecorator.hpp"
+#include "memory/classify.hpp"
+#include "memory/filemap.hpp"
+#include "memory/oopFactory.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/oop.inline.hpp"
+#include "runtime/javaCalls.hpp"
+#include "runtime/signature.hpp"
+#include "runtime/vmThread.hpp"
+#include "runtime/vm_operations.hpp"
+#include "utilities/copy.hpp"
 
 
 // Closure to set up the fingerprint field for all methods.
@@ -1350,7 +1365,7 @@ void GenCollectedHeap::preload_and_dump(TRAPS) {
   ResourceMark rm;
 
   // Preload classes to be shared.
-  // Should use some hpi:: method rather than fopen() here. aB.
+  // Should use some os:: method rather than fopen() here. aB.
   // Construct the path to the class list (in jre/lib)
   // Walk up two directories from the location of the VM and
   // optionally tack on "lib" (depending on platform)
@@ -1489,7 +1504,7 @@ void GenCollectedHeap::preload_and_dump(TRAPS) {
 
   } else {
     char errmsg[JVM_MAXPATHLEN];
-    hpi::lasterror(errmsg, JVM_MAXPATHLEN);
+    os::lasterror(errmsg, JVM_MAXPATHLEN);
     tty->print_cr("Loading classlist failed: %s", errmsg);
     exit(1);
   }

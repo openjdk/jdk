@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2010, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,13 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_sharkIntrinsics.cpp.incl"
+#include "precompiled.hpp"
+#include "ci/ciMethod.hpp"
+#include "shark/llvmHeaders.hpp"
+#include "shark/sharkIntrinsics.hpp"
+#include "shark/sharkState.hpp"
+#include "shark/sharkValue.hpp"
+#include "shark/shark_globals.hpp"
 
 using namespace llvm;
 

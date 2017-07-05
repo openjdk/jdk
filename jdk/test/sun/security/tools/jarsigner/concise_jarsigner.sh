@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -79,9 +79,9 @@ $JAR uvf a.jar A5.class A6.class
 $JARSIGNER -verify a.jar
 [ $? = 0 ] || exit $LINENO
 
-# 4(chainNotValidated)+16(hasUnsignedEntry)+32(aliasNotInStore)
+# 4(chainNotValidated)+16(hasUnsignedEntry)
 $JARSIGNER -verify a.jar -strict
-[ $? = 52 ] || exit $LINENO
+[ $? = 20 ] || exit $LINENO
 
 # 16(hasUnsignedEntry)
 $JARSIGNER -verify a.jar -strict -keystore js.jks
@@ -103,27 +103,31 @@ LINES=`$JARSIGNER -verify a.jar -verbose | grep $YEAR | wc -l`
 LINES=`$JARSIGNER -verify a.jar -verbose:grouped | grep $YEAR | wc -l`
 [ $LINES = 12 ] || exit $LINENO
 
-# 3 groups: unrelated, signed, unsigned
+# 4 groups: MANIFST, unrelated, signed, unsigned
 LINES=`$JARSIGNER -verify a.jar -verbose:summary | grep $YEAR | wc -l`
-[ $LINES = 3 ] || exit $LINENO
-
-# 4 groups: unrelated, signed by a1/a2, signed by a2, unsigned
-LINES=`$JARSIGNER -verify a.jar -verbose:summary -certs | grep $YEAR | wc -l`
 [ $LINES = 4 ] || exit $LINENO
 
-# 2*2 for A1/A2, 2 for A3/A4
+# still 4 groups, but MANIFEST group has no other file
+LINES=`$JARSIGNER -verify a.jar -verbose:summary | grep "more)" | wc -l`
+[ $LINES = 3 ] || exit $LINENO
+
+# 5 groups: MANIFEST, unrelated, signed by a1/a2, signed by a2, unsigned
+LINES=`$JARSIGNER -verify a.jar -verbose:summary -certs | grep $YEAR | wc -l`
+[ $LINES = 5 ] || exit $LINENO
+
+# 2 for MANIFEST, 2*2 for A1/A2, 2 for A3/A4
 LINES=`$JARSIGNER -verify a.jar -verbose -certs | grep "\[certificate" | wc -l`
-[ $LINES = 6 ] || exit $LINENO
+[ $LINES = 8 ] || exit $LINENO
 
-# a1,a2 for A1/A2, a2 for A3/A4
+# a1,a2 for MANIFEST, a1,a2 for A1/A2, a2 for A3/A4
 LINES=`$JARSIGNER -verify a.jar -verbose:grouped -certs | grep "\[certificate" | wc -l`
-[ $LINES = 3 ] || exit $LINENO
+[ $LINES = 5 ] || exit $LINENO
 
-# a1,a2 for A1/A2, a2 for A3/A4
+# a1,a2 for MANIFEST, a1,a2 for A1/A2, a2 for A3/A4
 LINES=`$JARSIGNER -verify a.jar -verbose:summary -certs | grep "\[certificate" | wc -l`
-[ $LINES = 3 ] || exit $LINENO
+[ $LINES = 5 ] || exit $LINENO
 
-# 4 groups
+# still 5 groups, but MANIFEST group has no other file
 LINES=`$JARSIGNER -verify a.jar -verbose:summary -certs | grep "more)" | wc -l`
 [ $LINES = 4 ] || exit $LINENO
 

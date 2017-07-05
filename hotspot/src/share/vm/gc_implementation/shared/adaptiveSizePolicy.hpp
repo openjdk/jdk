@@ -22,6 +22,15 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_ADAPTIVESIZEPOLICY_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_ADAPTIVESIZEPOLICY_HPP
+
+#include "gc_implementation/shared/gcUtil.hpp"
+#include "gc_interface/collectedHeap.hpp"
+#include "gc_interface/gcCause.hpp"
+#include "memory/allocation.hpp"
+#include "memory/universe.hpp"
+
 // This class keeps statistical information and computes the
 // size of the heap.
 
@@ -503,3 +512,5 @@ class AdaptiveSizePolicyOutput : StackObj {
     }
   }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_ADAPTIVESIZEPOLICY_HPP

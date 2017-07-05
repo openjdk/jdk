@@ -163,6 +163,10 @@ public interface CorbaConnection
     // REVISIT - MessageMediator parameter?
     public void serverRequestProcessingBegins();
     public void serverRequestProcessingEnds();
+
+    /** Clean up all connection resources.  Used when shutting down an ORB.
+     */
+    public void closeConnectionResources();
 }
 
 // End of file.

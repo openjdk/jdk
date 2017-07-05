@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,9 @@
  * questions.
  *
  */
+
+#ifndef CPU_SPARC_VM_FRAME_SPARC_INLINE_HPP
+#define CPU_SPARC_VM_FRAME_SPARC_INLINE_HPP
 
 // Inline functions for SPARC frames:
 
@@ -295,3 +298,5 @@ inline oop  frame::saved_oop_result(RegisterMap* map) const      {
 inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
   *((oop*) map->location(O0->as_VMReg())) = obj;
 }
+
+#endif // CPU_SPARC_VM_FRAME_SPARC_INLINE_HPP

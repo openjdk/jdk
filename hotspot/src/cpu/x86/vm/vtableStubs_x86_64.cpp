@@ -22,8 +22,19 @@
  *
  */
 
-#include "incls/_precompiled.incl"
-#include "incls/_vtableStubs_x86_64.cpp.incl"
+#include "precompiled.hpp"
+#include "asm/assembler.hpp"
+#include "assembler_x86.inline.hpp"
+#include "code/vtableStubs.hpp"
+#include "interp_masm_x86_64.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/klassVtable.hpp"
+#include "runtime/sharedRuntime.hpp"
+#include "vmreg_x86.inline.hpp"
+#ifdef COMPILER2
+#include "opto/runtime.hpp"
+#endif
 
 // machine-dependent part of VtableStubs: create VtableStub of correct size and
 // initialize its code

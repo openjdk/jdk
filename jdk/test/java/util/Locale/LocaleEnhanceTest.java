@@ -1201,6 +1201,49 @@ public class LocaleEnhanceTest extends LocaleTestFmwk {
         }
     }
 
+    public void testBug7002320() {
+        // forLanguageTag() and Builder.setLanguageTag(String)
+        // should add a location extension for following two cases.
+        //
+        // 1. language/country are "ja"/"JP" and the resolved variant (x-lvariant-*)
+        //    is exactly "JP" and no BCP 47 extensions are available, then add
+        //    a Unicode locale extension "ca-japanese".
+        // 2. language/country are "th"/"TH" and the resolved variant is exactly
+        //    "TH" and no BCP 47 extensions are available, then add a Unicode locale
+        //    extension "nu-thai".
+        //
+        String[][] testdata = {
+            {"ja-JP-x-lvariant-JP", "ja-JP-u-ca-japanese-x-lvariant-JP"},   // special case 1
+            {"ja-JP-x-lvariant-JP-XXX"},
+            {"ja-JP-u-ca-japanese-x-lvariant-JP"},
+            {"ja-JP-u-ca-gregory-x-lvariant-JP"},
+            {"ja-JP-u-cu-jpy-x-lvariant-JP"},
+            {"ja-x-lvariant-JP"},
+            {"th-TH-x-lvariant-TH", "th-TH-u-nu-thai-x-lvariant-TH"},   // special case 2
+            {"th-TH-u-nu-thai-x-lvariant-TH"},
+            {"en-US-x-lvariant-JP"},
+        };
+
+        Builder bldr = new Builder();
+
+        for (String[] data : testdata) {
+            String in = data[0];
+            String expected = (data.length == 1) ? data[0] : data[1];
+
+            // forLanguageTag
+            Locale loc = Locale.forLanguageTag(in);
+            String out = loc.toLanguageTag();
+            assertEquals("Language tag roundtrip by forLanguageTag with input: " + in, expected, out);
+
+            // setLanguageTag
+            bldr.clear();
+            bldr.setLanguageTag(in);
+            loc = bldr.build();
+            out = loc.toLanguageTag();
+            assertEquals("Language tag roundtrip by Builder.setLanguageTag with input: " + in, expected, out);
+        }
+    }
+
     ///
     /// utility asserts
     ///

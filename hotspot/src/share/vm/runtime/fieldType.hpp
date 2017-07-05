@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_RUNTIME_FIELDTYPE_HPP
+#define SHARE_VM_RUNTIME_FIELDTYPE_HPP
+
+#include "memory/allocation.hpp"
+#include "oops/symbolOop.hpp"
 
 // Note: FieldType should be based on the SignatureIterator (or vice versa).
 //       In any case, this structure should be re-thought at some point.
@@ -50,3 +56,5 @@ class FieldType: public AllStatic {
   // Parse field and extract array information. Works for T_ARRAY only.
   static BasicType get_array_info(symbolOop signature, jint* dimension, symbolOop *object_key, TRAPS);
 };
+
+#endif // SHARE_VM_RUNTIME_FIELDTYPE_HPP

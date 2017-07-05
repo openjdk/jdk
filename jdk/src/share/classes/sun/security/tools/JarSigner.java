@@ -658,7 +658,9 @@ public class JarSigner {
                     boolean inScope = (inStoreOrScope & IN_SCOPE) != 0;
 
                     notSignedByAlias |= (inStoreOrScope & NOT_ALIAS) != 0;
-                    aliasNotInStore |= isSigned && (!inStore && !inScope);
+                    if (keystore != null) {
+                        aliasNotInStore |= isSigned && (!inStore && !inScope);
+                    }
 
                     // Only used when -verbose provided
                     StringBuffer sb = null;
@@ -723,7 +725,7 @@ public class JarSigner {
                         if (signatureRelated(name)) {
                             // Entries inside META-INF and other unsigned
                             // entries are grouped separately.
-                            label = "-" + label.substring(1);
+                            label = "-" + label;
                         }
 
                         // The label finally contains 2 parts separated by '|':
@@ -752,7 +754,7 @@ public class JarSigner {
                     List<String> files = s.getValue();
                     String key = s.getKey();
                     if (key.charAt(0) == '-') { // the signature-related group
-                        key = ' ' + key.substring(1);
+                        key = key.substring(1);
                     }
                     int pipe = key.indexOf('|');
                     if (verbose.equals("all")) {
@@ -889,7 +891,7 @@ public class JarSigner {
      * Note: no newline character at the end
      */
     String printCert(String tab, Certificate c, boolean checkValidityPeriod,
-        long now) {
+        long now, boolean checkUsage) {
 
         StringBuilder certStr = new StringBuilder();
         String space = rb.getString("SPACE");
@@ -959,24 +961,26 @@ public class JarSigner {
             }
             certStr.append("]");
 
-            boolean[] bad = new boolean[3];
-            checkCertUsage(x509Cert, bad);
-            if (bad[0] || bad[1] || bad[2]) {
-                String x = "";
-                if (bad[0]) {
-                    x ="KeyUsage";
-                }
-                if (bad[1]) {
-                    if (x.length() > 0) x = x + ", ";
-                    x = x + "ExtendedKeyUsage";
-                }
-                if (bad[2]) {
-                    if (x.length() > 0) x = x + ", ";
-                    x = x + "NetscapeCertType";
-                }
-                certStr.append("\n").append(tab)
+            if (checkUsage) {
+                boolean[] bad = new boolean[3];
+                checkCertUsage(x509Cert, bad);
+                if (bad[0] || bad[1] || bad[2]) {
+                    String x = "";
+                    if (bad[0]) {
+                        x ="KeyUsage";
+                    }
+                    if (bad[1]) {
+                        if (x.length() > 0) x = x + ", ";
+                        x = x + "ExtendedKeyUsage";
+                    }
+                    if (bad[2]) {
+                        if (x.length() > 0) x = x + ", ";
+                        x = x + "NetscapeCertType";
+                    }
+                    certStr.append("\n").append(tab)
                         .append(MessageFormat.format(rb.getString(
                         ".{0}.extension.does.not.support.code.signing."), x));
+                }
             }
         }
         return certStr.toString();
@@ -1335,7 +1339,7 @@ public class JarSigner {
                             certUrl);
                     }
                     System.out.println(rb.getString("TSA.certificate.") +
-                        printCert("", tsaCert, false, 0));
+                        printCert("", tsaCert, false, 0, false));
                 }
                 if (signingMechanism != null) {
                     System.out.println(
@@ -1544,10 +1548,13 @@ public class JarSigner {
             s.append(printTimestamp(tab, timestamp));
             s.append('\n');
         }
-        // display the certificate(s)
+        // display the certificate(s). The first one is end-enity cert and
+        // its KeyUsage should be checked.
+        boolean first = true;
         for (Certificate c : certs) {
-            s.append(printCert(tab, c, true, now));
+            s.append(printCert(tab, c, true, now, first));
             s.append('\n');
+            first = false;
         }
         try {
             CertPath cp = certificateFactory.generateCertPath(certs);
@@ -1847,7 +1854,7 @@ public class JarSigner {
 
             // We don't meant to print anything, the next call
             // checks validity and keyUsage etc
-            printCert("", certChain[0], true, 0);
+            printCert("", certChain[0], true, 0, true);
 
             try {
                 CertPath cp = certificateFactory.generateCertPath(Arrays.asList(certChain));

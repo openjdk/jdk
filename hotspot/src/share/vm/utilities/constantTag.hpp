@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_UTILITIES_CONSTANTTAG_HPP
+#define SHARE_VM_UTILITIES_CONSTANTTAG_HPP
+
+#include "prims/jvm.h"
+#include "utilities/top.hpp"
+
 // constant tags in Java .class files
 
 
@@ -80,7 +86,8 @@ class constantTag VALUE_OBJ_CLASS_SPEC {
 
   bool is_method_type() const              { return _tag == JVM_CONSTANT_MethodType; }
   bool is_method_handle() const            { return _tag == JVM_CONSTANT_MethodHandle; }
-  bool is_invoke_dynamic() const           { return _tag == JVM_CONSTANT_InvokeDynamic; }
+  bool is_invoke_dynamic() const           { return (_tag == JVM_CONSTANT_InvokeDynamic ||
+                                                     _tag == JVM_CONSTANT_InvokeDynamicTrans); }
 
   bool is_loadable_constant() const {
     return ((_tag >= JVM_CONSTANT_Integer && _tag <= JVM_CONSTANT_String) ||
@@ -107,3 +114,5 @@ class constantTag VALUE_OBJ_CLASS_SPEC {
 
   void print_on(outputStream* st) const PRODUCT_RETURN;
 };
+
+#endif // SHARE_VM_UTILITIES_CONSTANTTAG_HPP

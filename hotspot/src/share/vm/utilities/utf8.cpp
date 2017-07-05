@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,8 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_utf8.cpp.incl"
+#include "precompiled.hpp"
+#include "utilities/utf8.hpp"
 
 // Assume the utf8 string is in legal form and has been
 // checked in the class file parser/format checker.

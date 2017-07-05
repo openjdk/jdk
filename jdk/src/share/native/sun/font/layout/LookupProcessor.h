@@ -26,7 +26,7 @@
 /*
  *
  *
- * (C) Copyright IBM Corp. 1998-2005 - All Rights Reserved
+ * (C) Copyright IBM Corp. 1998-2008 - All Rights Reserved
  *
  */
 
@@ -59,21 +59,28 @@ struct LookupTable;
 class LookupProcessor : public UMemory {
 public:
     le_int32 process(LEGlyphStorage &glyphStorage, GlyphPositionAdjustments *glyphPositionAdjustments,
-                 le_bool rightToLeft, const GlyphDefinitionTableHeader *glyphDefinitionTableHeader, const LEFontInstance *fontInstance) const;
+                 le_bool rightToLeft, const GlyphDefinitionTableHeader *glyphDefinitionTableHeader, const LEFontInstance *fontInstance, LEErrorCode& success) const;
 
-    le_uint32 applyLookupTable(const LookupTable *lookupTable, GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const;
+    le_uint32 applyLookupTable(const LookupTable *lookupTable, GlyphIterator *glyphIterator, const LEFontInstance *fontInstance, LEErrorCode& success) const;
 
-    le_uint32 applySingleLookup(le_uint16 lookupTableIndex, GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const;
+    le_uint32 applySingleLookup(le_uint16 lookupTableIndex, GlyphIterator *glyphIterator, const LEFontInstance *fontInstance, LEErrorCode& success) const;
 
     virtual le_uint32 applySubtable(const LookupSubtable *lookupSubtable, le_uint16 subtableType,
-        GlyphIterator *glyphIterator, const LEFontInstance *fontInstance) const = 0;
+        GlyphIterator *glyphIterator, const LEFontInstance *fontInstance, LEErrorCode& success) const = 0;
 
     virtual ~LookupProcessor();
 
 protected:
      LookupProcessor(const char *baseAddress,
-        Offset scriptListOffset, Offset featureListOffset, Offset lookupListOffset,
-        LETag scriptTag, LETag languageTag, const FeatureMap *featureMap, le_int32 featureMapCount, le_bool orderFeatures);
+        Offset scriptListOffset,
+        Offset featureListOffset,
+        Offset lookupListOffset,
+        LETag scriptTag,
+        LETag languageTag,
+        const FeatureMap *featureMap,
+        le_int32 featureMapCount,
+        le_bool orderFeatures,
+        LEErrorCode& success);
 
    LookupProcessor();
 

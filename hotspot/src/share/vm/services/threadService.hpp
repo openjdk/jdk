@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,19 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_SERVICES_THREADSERVICE_HPP
+#define SHARE_VM_SERVICES_THREADSERVICE_HPP
+
+#include "classfile/javaClasses.hpp"
+#include "runtime/handles.hpp"
+#include "runtime/init.hpp"
+#include "runtime/jniHandles.hpp"
+#include "runtime/objectMonitor.hpp"
+#include "runtime/objectMonitor.inline.hpp"
+#include "runtime/perfData.hpp"
+#include "services/management.hpp"
+#include "services/serviceUtil.hpp"
 
 class OopClosure;
 class ThreadDumpResult;
@@ -563,3 +576,5 @@ class JavaThreadSleepState : public JavaThreadStatusChanger {
     }
   }
 };
+
+#endif // SHARE_VM_SERVICES_THREADSERVICE_HPP

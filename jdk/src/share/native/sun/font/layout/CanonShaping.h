@@ -38,7 +38,7 @@ U_NAMESPACE_BEGIN
 
 class LEGlyphStorage;
 
-class CanonShaping /* not : public UObject because all members are static */
+class U_LAYOUT_API CanonShaping /* not : public UObject because all members are static */
 {
 public:
     static const le_uint8 glyphSubstitutionTable[];

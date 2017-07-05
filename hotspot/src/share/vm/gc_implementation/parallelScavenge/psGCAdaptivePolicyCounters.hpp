@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSGCADAPTIVEPOLICYCOUNTERS_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSGCADAPTIVEPOLICYCOUNTERS_HPP
+
+#include "gc_implementation/parallelScavenge/psAdaptiveSizePolicy.hpp"
+#include "gc_implementation/shared/gcAdaptivePolicyCounters.hpp"
+#include "gc_implementation/shared/gcPolicyCounters.hpp"
+
 // PSGCAdaptivePolicyCounters is a holder class for performance counters
 // that track the data and decisions for the ergonomics policy for the
 // parallel scavenge collector.
@@ -200,3 +207,5 @@ class PSGCAdaptivePolicyCounters : public GCAdaptivePolicyCounters {
     return GCPolicyCounters::PSGCAdaptivePolicyCountersKind;
   }
 };
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_PARALLELSCAVENGE_PSGCADAPTIVEPOLICYCOUNTERS_HPP

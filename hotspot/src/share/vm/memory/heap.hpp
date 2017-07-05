@@ -22,6 +22,12 @@
  *
  */
 
+#ifndef SHARE_VM_MEMORY_HEAP_HPP
+#define SHARE_VM_MEMORY_HEAP_HPP
+
+#include "memory/allocation.hpp"
+#include "runtime/virtualspace.hpp"
+
 // Blocks
 
 class HeapBlock VALUE_OBJ_CLASS_SPEC {
@@ -160,3 +166,5 @@ class CodeHeap : public CHeapObj {
   void verify();
   void print()  PRODUCT_RETURN;
 };
+
+#endif // SHARE_VM_MEMORY_HEAP_HPP

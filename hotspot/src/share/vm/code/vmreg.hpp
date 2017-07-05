@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,37 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_CODE_VMREG_HPP
+#define SHARE_VM_CODE_VMREG_HPP
+
+#include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
+#ifdef TARGET_ARCH_x86
+# include "register_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "register_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "register_zero.hpp"
+#endif
+#ifdef COMPILER2
+#include "opto/adlcVMDeps.hpp"
+#include "utilities/ostream.hpp"
+#ifdef TARGET_ARCH_MODEL_x86_32
+# include "adfiles/adGlobals_x86_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_x86_64
+# include "adfiles/adGlobals_x86_64.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_sparc
+# include "adfiles/adGlobals_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_zero
+# include "adfiles/adGlobals_zero.hpp"
+#endif
+#endif
 
 //------------------------------VMReg------------------------------------------
 // The VM uses 'unwarped' stack slots; the compiler uses 'warped' stack slots.
@@ -124,7 +155,16 @@ public:
 
   static void set_regName();
 
-#include "incls/_vmreg_pd.hpp.incl"
+#ifdef TARGET_ARCH_x86
+# include "vmreg_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "vmreg_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "vmreg_zero.hpp"
+#endif
+
 
 };
 
@@ -181,3 +221,5 @@ public:
   VMRegPair(VMReg f) { _second = VMRegImpl::Bad(); _first = f; }
   VMRegPair() { _second = VMRegImpl::Bad(); _first = VMRegImpl::Bad(); }
 };
+
+#endif // SHARE_VM_CODE_VMREG_HPP

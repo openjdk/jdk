@@ -35,6 +35,7 @@ import java.util.ResourceBundle;
 import java.util.MissingResourceException;
 import java.util.Vector;
 import sun.awt.AppContext;
+import sun.awt.CausedFocusEvent;
 import sun.awt.AWTAccessor;
 
 public class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
@@ -252,6 +253,14 @@ public class WFileDialogPeer extends WWindowPeer implements FileDialogPeer {
                                 boolean focusedWindowChangeAllowed) {
         return false;
     }
+
+    public boolean requestFocus
+         (Component lightweightChild, boolean temporary,
+          boolean focusedWindowChangeAllowed, long time, CausedFocusEvent.Cause cause)
+    {
+        return false;
+    }
+
     void start() {}
     public void beginValidate() {}
     public void endValidate() {}

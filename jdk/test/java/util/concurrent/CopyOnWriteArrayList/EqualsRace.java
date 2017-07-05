@@ -66,7 +66,7 @@ public class EqualsRace {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
-    private static abstract class CheckedThread extends Thread {
+    private abstract static class CheckedThread extends Thread {
         public abstract void realRun() throws Throwable;
         public void run() {
             try { realRun(); } catch (Throwable t) { unexpected(t); }}}

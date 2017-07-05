@@ -124,7 +124,7 @@ public class Collections {
      *
      * <p>The implementation takes equal advantage of ascending and
      * descending order in its input array, and can take advantage of
-     * ascending and descending order in different parts of the the same
+     * ascending and descending order in different parts of the same
      * input array.  It is well-suited to merging two or more sorted arrays:
      * simply concatenate the arrays and sort the resulting array.
      *
@@ -184,7 +184,7 @@ public class Collections {
      *
      * <p>The implementation takes equal advantage of ascending and
      * descending order in its input array, and can take advantage of
-     * ascending and descending order in different parts of the the same
+     * ascending and descending order in different parts of the same
      * input array.  It is well-suited to merging two or more sorted arrays:
      * simply concatenate the arrays and sort the resulting array.
      *
@@ -823,7 +823,7 @@ public class Collections {
                     i -= size;
                 displaced = list.set(i, displaced);
                 nMoved ++;
-            } while(i != cycleStart);
+            } while (i != cycleStart);
         }
     }
 
@@ -1452,9 +1452,9 @@ public class Collections {
              * when o is a Map.Entry, and calls o.setValue.
              */
             public boolean containsAll(Collection<?> coll) {
-                Iterator<?> e = coll.iterator();
-                while (e.hasNext())
-                    if (!contains(e.next())) // Invokes safe contains() above
+                Iterator<?> it = coll.iterator();
+                while (it.hasNext())
+                    if (!contains(it.next())) // Invokes safe contains() above
                         return false;
                 return true;
             }
@@ -1482,12 +1482,12 @@ public class Collections {
 
                 UnmodifiableEntry(Map.Entry<? extends K, ? extends V> e) {this.e = e;}
 
-                public K getKey()         {return e.getKey();}
-                public V getValue()  {return e.getValue();}
+                public K getKey()        {return e.getKey();}
+                public V getValue()      {return e.getValue();}
                 public V setValue(V value) {
                     throw new UnsupportedOperationException();
                 }
-                public int hashCode()     {return e.hashCode();}
+                public int hashCode()    {return e.hashCode();}
                 public boolean equals(Object o) {
                     if (!(o instanceof Map.Entry))
                         return false;
@@ -1495,7 +1495,7 @@ public class Collections {
                     return eq(e.getKey(),   t.getKey()) &&
                            eq(e.getValue(), t.getValue());
                 }
-                public String toString()  {return e.toString();}
+                public String toString() {return e.toString();}
             }
         }
     }
@@ -1562,7 +1562,7 @@ public class Collections {
      * <pre>
      *  Collection c = Collections.synchronizedCollection(myCollection);
      *     ...
-     *  synchronized(c) {
+     *  synchronized (c) {
      *      Iterator i = c.iterator(); // Must be in the synchronized block
      *      while (i.hasNext())
      *         foo(i.next());
@@ -1611,19 +1611,19 @@ public class Collections {
         }
 
         public int size() {
-            synchronized(mutex) {return c.size();}
+            synchronized (mutex) {return c.size();}
         }
         public boolean isEmpty() {
-            synchronized(mutex) {return c.isEmpty();}
+            synchronized (mutex) {return c.isEmpty();}
         }
         public boolean contains(Object o) {
-            synchronized(mutex) {return c.contains(o);}
+            synchronized (mutex) {return c.contains(o);}
         }
         public Object[] toArray() {
-            synchronized(mutex) {return c.toArray();}
+            synchronized (mutex) {return c.toArray();}
         }
         public <T> T[] toArray(T[] a) {
-            synchronized(mutex) {return c.toArray(a);}
+            synchronized (mutex) {return c.toArray(a);}
         }
 
         public Iterator<E> iterator() {
@@ -1631,32 +1631,32 @@ public class Collections {
         }
 
         public boolean add(E e) {
-            synchronized(mutex) {return c.add(e);}
+            synchronized (mutex) {return c.add(e);}
         }
         public boolean remove(Object o) {
-            synchronized(mutex) {return c.remove(o);}
+            synchronized (mutex) {return c.remove(o);}
         }
 
         public boolean containsAll(Collection<?> coll) {
-            synchronized(mutex) {return c.containsAll(coll);}
+            synchronized (mutex) {return c.containsAll(coll);}
         }
         public boolean addAll(Collection<? extends E> coll) {
-            synchronized(mutex) {return c.addAll(coll);}
+            synchronized (mutex) {return c.addAll(coll);}
         }
         public boolean removeAll(Collection<?> coll) {
-            synchronized(mutex) {return c.removeAll(coll);}
+            synchronized (mutex) {return c.removeAll(coll);}
         }
         public boolean retainAll(Collection<?> coll) {
-            synchronized(mutex) {return c.retainAll(coll);}
+            synchronized (mutex) {return c.retainAll(coll);}
         }
         public void clear() {
-            synchronized(mutex) {c.clear();}
+            synchronized (mutex) {c.clear();}
         }
         public String toString() {
-            synchronized(mutex) {return c.toString();}
+            synchronized (mutex) {return c.toString();}
         }
         private void writeObject(ObjectOutputStream s) throws IOException {
-            synchronized(mutex) {s.defaultWriteObject();}
+            synchronized (mutex) {s.defaultWriteObject();}
         }
     }
 
@@ -1671,7 +1671,7 @@ public class Collections {
      * <pre>
      *  Set s = Collections.synchronizedSet(new HashSet());
      *      ...
-     *  synchronized(s) {
+     *  synchronized (s) {
      *      Iterator i = s.iterator(); // Must be in the synchronized block
      *      while (i.hasNext())
      *          foo(i.next());
@@ -1709,10 +1709,10 @@ public class Collections {
         }
 
         public boolean equals(Object o) {
-            synchronized(mutex) {return c.equals(o);}
+            synchronized (mutex) {return c.equals(o);}
         }
         public int hashCode() {
-            synchronized(mutex) {return c.hashCode();}
+            synchronized (mutex) {return c.hashCode();}
         }
     }
 
@@ -1728,7 +1728,7 @@ public class Collections {
      * <pre>
      *  SortedSet s = Collections.synchronizedSortedSet(new TreeSet());
      *      ...
-     *  synchronized(s) {
+     *  synchronized (s) {
      *      Iterator i = s.iterator(); // Must be in the synchronized block
      *      while (i.hasNext())
      *          foo(i.next());
@@ -1739,7 +1739,7 @@ public class Collections {
      *  SortedSet s = Collections.synchronizedSortedSet(new TreeSet());
      *  SortedSet s2 = s.headSet(foo);
      *      ...
-     *  synchronized(s) {  // Note: s, not s2!!!
+     *  synchronized (s) {  // Note: s, not s2!!!
      *      Iterator i = s2.iterator(); // Must be in the synchronized block
      *      while (i.hasNext())
      *          foo(i.next());
@@ -1766,7 +1766,7 @@ public class Collections {
     {
         private static final long serialVersionUID = 8695801310862127406L;
 
-        final private SortedSet<E> ss;
+        private final SortedSet<E> ss;
 
         SynchronizedSortedSet(SortedSet<E> s) {
             super(s);
@@ -1778,31 +1778,31 @@ public class Collections {
         }
 
         public Comparator<? super E> comparator() {
-            synchronized(mutex) {return ss.comparator();}
+            synchronized (mutex) {return ss.comparator();}
         }
 
         public SortedSet<E> subSet(E fromElement, E toElement) {
-            synchronized(mutex) {
+            synchronized (mutex) {
                 return new SynchronizedSortedSet<E>(
                     ss.subSet(fromElement, toElement), mutex);
             }
         }
         public SortedSet<E> headSet(E toElement) {
-            synchronized(mutex) {
+            synchronized (mutex) {
                 return new SynchronizedSortedSet<E>(ss.headSet(toElement), mutex);
             }
         }
         public SortedSet<E> tailSet(E fromElement) {
-            synchronized(mutex) {
+            synchronized (mutex) {
                return new SynchronizedSortedSet<E>(ss.tailSet(fromElement),mutex);
             }
         }
 
         public E first() {
-            synchronized(mutex) {return ss.first();}
+            synchronized (mutex) {return ss.first();}
         }
         public E last() {
-            synchronized(mutex) {return ss.last();}
+            synchronized (mutex) {return ss.last();}
         }
     }
 
@@ -1817,7 +1817,7 @@ public class Collections {
      * <pre>
      *  List list = Collections.synchronizedList(new ArrayList());
      *      ...
-     *  synchronized(list) {
+     *  synchronized (list) {
      *      Iterator i = list.iterator(); // Must be in synchronized block
      *      while (i.hasNext())
      *          foo(i.next());
@@ -1863,34 +1863,34 @@ public class Collections {
         }
 
         public boolean equals(Object o) {
-            synchronized(mutex) {return list.equals(o);}
+            synchronized (mutex) {return list.equals(o);}
         }
         public int hashCode() {
-            synchronized(mutex) {return list.hashCode();}
+            synchronized (mutex) {return list.hashCode();}
         }
 
         public E get(int index) {
-            synchronized(mutex) {return list.get(index);}
+            synchronized (mutex) {return list.get(index);}
         }
         public E set(int index, E element) {
-            synchronized(mutex) {return list.set(index, element);}
+            synchronized (mutex) {return list.set(index, element);}
         }
         public void add(int index, E element) {
-            synchronized(mutex) {list.add(index, element);}
+            synchronized (mutex) {list.add(index, element);}
         }
         public E remove(int index) {
-            synchronized(mutex) {return list.remove(index);}
+            synchronized (mutex) {return list.remove(index);}
         }
 
         public int indexOf(Object o) {
-            synchronized(mutex) {return list.indexOf(o);}
+            synchronized (mutex) {return list.indexOf(o);}
         }
         public int lastIndexOf(Object o) {
-            synchronized(mutex) {return list.lastIndexOf(o);}
+            synchronized (mutex) {return list.lastIndexOf(o);}
         }
 
         public boolean addAll(int index, Collection<? extends E> c) {
-            synchronized(mutex) {return list.addAll(index, c);}
+            synchronized (mutex) {return list.addAll(index, c);}
         }
 
         public ListIterator<E> listIterator() {
@@ -1902,7 +1902,7 @@ public class Collections {
         }
 
         public List<E> subList(int fromIndex, int toIndex) {
-            synchronized(mutex) {
+            synchronized (mutex) {
                 return new SynchronizedList<E>(list.subList(fromIndex, toIndex),
                                             mutex);
             }
@@ -1943,7 +1943,7 @@ public class Collections {
         }
 
         public List<E> subList(int fromIndex, int toIndex) {
-            synchronized(mutex) {
+            synchronized (mutex) {
                 return new SynchronizedRandomAccessList<E>(
                     list.subList(fromIndex, toIndex), mutex);
             }
@@ -1975,7 +1975,7 @@ public class Collections {
      *      ...
      *  Set s = m.keySet();  // Needn't be in synchronized block
      *      ...
-     *  synchronized(m) {  // Synchronizing on m, not s!
+     *  synchronized (m) {  // Synchronizing on m, not s!
      *      Iterator i = s.iterator(); // Must be in synchronized block
      *      while (i.hasNext())
      *          foo(i.next());
@@ -2016,32 +2016,32 @@ public class Collections {
         }
 
         public int size() {
-            synchronized(mutex) {return m.size();}
+            synchronized (mutex) {return m.size();}
         }
         public boolean isEmpty() {
-            synchronized(mutex) {return m.isEmpty();}
+            synchronized (mutex) {return m.isEmpty();}
         }
         public boolean containsKey(Object key) {
-            synchronized(mutex) {return m.containsKey(key);}
+            synchronized (mutex) {return m.containsKey(key);}
         }
         public boolean containsValue(Object value) {
-            synchronized(mutex) {return m.containsValue(value);}
+            synchronized (mutex) {return m.containsValue(value);}
         }
         public V get(Object key) {
-            synchronized(mutex) {return m.get(key);}
+            synchronized (mutex) {return m.get(key);}
         }
 
         public V put(K key, V value) {
-            synchronized(mutex) {return m.put(key, value);}
+            synchronized (mutex) {return m.put(key, value);}
         }
         public V remove(Object key) {
-            synchronized(mutex) {return m.remove(key);}
+            synchronized (mutex) {return m.remove(key);}
         }
         public void putAll(Map<? extends K, ? extends V> map) {
-            synchronized(mutex) {m.putAll(map);}
+            synchronized (mutex) {m.putAll(map);}
         }
         public void clear() {
-            synchronized(mutex) {m.clear();}
+            synchronized (mutex) {m.clear();}
         }
 
         private transient Set<K> keySet = null;
@@ -2049,7 +2049,7 @@ public class Collections {
         private transient Collection<V> values = null;
 
         public Set<K> keySet() {
-            synchronized(mutex) {
+            synchronized (mutex) {
                 if (keySet==null)
                     keySet = new SynchronizedSet<K>(m.keySet(), mutex);
                 return keySet;
@@ -2057,7 +2057,7 @@ public class Collections {
         }
 
         public Set<Map.Entry<K,V>> entrySet() {
-            synchronized(mutex) {
+            synchronized (mutex) {
                 if (entrySet==null)
                     entrySet = new SynchronizedSet<Map.Entry<K,V>>(m.entrySet(), mutex);
                 return entrySet;
@@ -2065,7 +2065,7 @@ public class Collections {
         }
 
         public Collection<V> values() {
-            synchronized(mutex) {
+            synchronized (mutex) {
                 if (values==null)
                     values = new SynchronizedCollection<V>(m.values(), mutex);
                 return values;
@@ -2073,16 +2073,16 @@ public class Collections {
         }
 
         public boolean equals(Object o) {
-            synchronized(mutex) {return m.equals(o);}
+            synchronized (mutex) {return m.equals(o);}
         }
         public int hashCode() {
-            synchronized(mutex) {return m.hashCode();}
+            synchronized (mutex) {return m.hashCode();}
         }
         public String toString() {
-            synchronized(mutex) {return m.toString();}
+            synchronized (mutex) {return m.toString();}
         }
         private void writeObject(ObjectOutputStream s) throws IOException {
-            synchronized(mutex) {s.defaultWriteObject();}
+            synchronized (mutex) {s.defaultWriteObject();}
         }
     }
 
@@ -2101,7 +2101,7 @@ public class Collections {
      *      ...
      *  Set s = m.keySet();  // Needn't be in synchronized block
      *      ...
-     *  synchronized(m) {  // Synchronizing on m, not s!
+     *  synchronized (m) {  // Synchronizing on m, not s!
      *      Iterator i = s.iterator(); // Must be in synchronized block
      *      while (i.hasNext())
      *          foo(i.next());
@@ -2114,7 +2114,7 @@ public class Collections {
      *      ...
      *  Set s2 = m2.keySet();  // Needn't be in synchronized block
      *      ...
-     *  synchronized(m) {  // Synchronizing on m, not m2 or s2!
+     *  synchronized (m) {  // Synchronizing on m, not m2 or s2!
      *      Iterator i = s.iterator(); // Must be in synchronized block
      *      while (i.hasNext())
      *          foo(i.next());
@@ -2154,31 +2154,31 @@ public class Collections {
         }
 
         public Comparator<? super K> comparator() {
-            synchronized(mutex) {return sm.comparator();}
+            synchronized (mutex) {return sm.comparator();}
         }
 
         public SortedMap<K,V> subMap(K fromKey, K toKey) {
-            synchronized(mutex) {
+            synchronized (mutex) {
                 return new SynchronizedSortedMap<K,V>(
                     sm.subMap(fromKey, toKey), mutex);
             }
         }
         public SortedMap<K,V> headMap(K toKey) {
-            synchronized(mutex) {
+            synchronized (mutex) {
                 return new SynchronizedSortedMap<K,V>(sm.headMap(toKey), mutex);
             }
         }
         public SortedMap<K,V> tailMap(K fromKey) {
-            synchronized(mutex) {
+            synchronized (mutex) {
                return new SynchronizedSortedMap<K,V>(sm.tailMap(fromKey),mutex);
             }
         }
 
         public K firstKey() {
-            synchronized(mutex) {return sm.firstKey();}
+            synchronized (mutex) {return sm.firstKey();}
         }
         public K lastKey() {
-            synchronized(mutex) {return sm.lastKey();}
+            synchronized (mutex) {return sm.lastKey();}
         }
     }
 
@@ -3317,7 +3317,7 @@ public class Collections {
     {
         private static final long serialVersionUID = 3193687207550431679L;
 
-        final private E element;
+        private final E element;
 
         SingletonSet(E e) {element = e;}
 
@@ -3448,7 +3448,7 @@ public class Collections {
      * @param  o the element to appear repeatedly in the returned list.
      * @return an immutable list consisting of <tt>n</tt> copies of the
      *         specified object.
-     * @throws IllegalArgumentException if n &lt; 0.
+     * @throws IllegalArgumentException if {@code n < 0}
      * @see    List#addAll(Collection)
      * @see    List#addAll(int, Collection)
      */

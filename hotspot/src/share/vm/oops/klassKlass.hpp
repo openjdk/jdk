@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,13 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OOPS_KLASSKLASS_HPP
+#define SHARE_VM_OOPS_KLASSKLASS_HPP
+
+#include "memory/oopFactory.hpp"
+#include "oops/klass.hpp"
+#include "oops/klassOop.hpp"
 
 // A klassKlass serves as the fix point of the klass chain.
 // The klass of klassKlass is itself.
@@ -75,3 +82,5 @@ class klassKlass: public Klass {
   const char* internal_name() const;
   void oop_verify_on(oop obj, outputStream* st);
 };
+
+#endif // SHARE_VM_OOPS_KLASSKLASS_HPP

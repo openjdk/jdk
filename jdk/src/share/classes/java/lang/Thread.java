@@ -209,7 +209,7 @@ class Thread implements Runnable {
      * initialized to indicate thread 'not yet started'
      */
 
-    private int threadStatus = 0;
+    private volatile int threadStatus = 0;
 
 
     private static synchronized long nextThreadID() {

@@ -22,6 +22,22 @@
  *
  */
 
+#ifndef SHARE_VM_INTERPRETER_BYTECODESTREAM_HPP
+#define SHARE_VM_INTERPRETER_BYTECODESTREAM_HPP
+
+#include "interpreter/bytecode.hpp"
+#include "memory/allocation.hpp"
+#include "oops/methodOop.hpp"
+#ifdef TARGET_ARCH_x86
+# include "bytes_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "bytes_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "bytes_zero.hpp"
+#endif
+
 // A BytecodeStream is used for fast iteration over the bytecodes
 // of a methodOop.
 //
@@ -214,3 +230,5 @@ class BytecodeStream: public BaseBytecodeStream {
                                                    return bytecode()->get_index_u4(raw_code()); }
   bool            has_index_u4() const           { return bytecode()->has_index_u4(raw_code()); }
 };
+
+#endif // SHARE_VM_INTERPRETER_BYTECODESTREAM_HPP

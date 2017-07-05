@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,13 @@
  *
  */
 
-#ifndef _JAVA_JVMTI_EVENT_CONTROLLER_H_
-#define _JAVA_JVMTI_EVENT_CONTROLLER_H_
+#ifndef SHARE_VM_PRIMS_JVMTIEVENTCONTROLLER_HPP
+#define SHARE_VM_PRIMS_JVMTIEVENTCONTROLLER_HPP
+
+#include "jvmtifiles/jvmti.h"
+#include "memory/allocation.hpp"
+#include "memory/allocation.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // forward declaration
 class JvmtiEventControllerPrivate;
@@ -237,4 +242,4 @@ public:
   static void vm_death();
 };
 
-#endif   /* _JAVA_JVMTI_EVENT_CONTROLLER_H_ */
+#endif // SHARE_VM_PRIMS_JVMTIEVENTCONTROLLER_HPP

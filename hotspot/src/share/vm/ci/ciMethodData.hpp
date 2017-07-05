@@ -22,6 +22,16 @@
  *
  */
 
+#ifndef SHARE_VM_CI_CIMETHODDATA_HPP
+#define SHARE_VM_CI_CIMETHODDATA_HPP
+
+#include "ci/ciClassList.hpp"
+#include "ci/ciKlass.hpp"
+#include "ci/ciObject.hpp"
+#include "ci/ciUtilities.hpp"
+#include "oops/methodDataOop.hpp"
+#include "oops/oop.inline.hpp"
+
 class ciBitData;
 class ciCounterData;
 class ciJumpData;
@@ -311,3 +321,5 @@ public:
   void print_data_on(outputStream* st);
 #endif
 };
+
+#endif // SHARE_VM_CI_CIMETHODDATA_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  *
  */
+
+#ifndef CPU_X86_VM_INTERPRETERRT_X86_HPP
+#define CPU_X86_VM_INTERPRETERRT_X86_HPP
+
+#include "memory/allocation.hpp"
 
 // native method calls
 
@@ -72,3 +77,5 @@ class SignatureHandlerGenerator: public NativeSignatureIterator {
   static Register to();
   static Register temp();
 };
+
+#endif // CPU_X86_VM_INTERPRETERRT_X86_HPP

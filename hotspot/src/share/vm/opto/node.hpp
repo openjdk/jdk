@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,14 @@
  * questions.
  *
  */
+
+#ifndef SHARE_VM_OPTO_NODE_HPP
+#define SHARE_VM_OPTO_NODE_HPP
+
+#include "libadt/port.hpp"
+#include "libadt/vectset.hpp"
+#include "opto/compile.hpp"
+#include "opto/type.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -73,6 +81,8 @@ class MachCallLeafNode;
 class MachCallNode;
 class MachCallRuntimeNode;
 class MachCallStaticJavaNode;
+class MachConstantBaseNode;
+class MachConstantNode;
 class MachIfNode;
 class MachNode;
 class MachNullCheckNode;
@@ -558,10 +568,12 @@ public:
               DEFINE_CLASS_ID(MachCallDynamicJava,  MachCallJava, 1)
             DEFINE_CLASS_ID(MachCallRuntime,      MachCall, 1)
               DEFINE_CLASS_ID(MachCallLeaf,         MachCallRuntime, 0)
-      DEFINE_CLASS_ID(MachSpillCopy, Mach, 1)
-      DEFINE_CLASS_ID(MachNullCheck, Mach, 2)
-      DEFINE_CLASS_ID(MachIf,        Mach, 3)
-      DEFINE_CLASS_ID(MachTemp,      Mach, 4)
+      DEFINE_CLASS_ID(MachSpillCopy,    Mach, 1)
+      DEFINE_CLASS_ID(MachNullCheck,    Mach, 2)
+      DEFINE_CLASS_ID(MachIf,           Mach, 3)
+      DEFINE_CLASS_ID(MachTemp,         Mach, 4)
+      DEFINE_CLASS_ID(MachConstantBase, Mach, 5)
+      DEFINE_CLASS_ID(MachConstant,     Mach, 6)
 
     DEFINE_CLASS_ID(Proj,  Node, 2)
       DEFINE_CLASS_ID(CatchProj, Proj, 0)
@@ -726,6 +738,8 @@ public:
   DEFINE_CLASS_QUERY(MachCallLeaf)
   DEFINE_CLASS_QUERY(MachCallRuntime)
   DEFINE_CLASS_QUERY(MachCallStaticJava)
+  DEFINE_CLASS_QUERY(MachConstantBase)
+  DEFINE_CLASS_QUERY(MachConstant)
   DEFINE_CLASS_QUERY(MachIf)
   DEFINE_CLASS_QUERY(MachNullCheck)
   DEFINE_CLASS_QUERY(MachReturn)
@@ -1554,3 +1568,5 @@ public:
   virtual void dump_spec(outputStream *st) const;
 #endif
 };
+
+#endif // SHARE_VM_OPTO_NODE_HPP

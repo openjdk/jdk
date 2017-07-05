@@ -22,8 +22,10 @@
  *
  */
 
-# include "incls/_precompiled.incl"
-# include "incls/_invocationCounter.cpp.incl"
+#include "precompiled.hpp"
+#include "interpreter/invocationCounter.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/handles.inline.hpp"
 
 
 // Implementation of InvocationCounter

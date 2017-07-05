@@ -25,7 +25,7 @@
 
 package java.security;
 
-import java.io.Serializable;
+import java.io.*;
 import java.security.cert.CRL;
 import java.security.cert.CertPath;
 import sun.misc.JavaSecurityCodeSignerAccess;
@@ -205,4 +205,10 @@ public final class CodeSigner implements Serializable {
         });
     }
 
+    // Explicitly reset hash code value to -1
+    private void readObject(ObjectInputStream ois)
+        throws IOException, ClassNotFoundException {
+     ois.defaultReadObject();
+     myhash = -1;
+    }
 }

@@ -47,6 +47,8 @@ public class RenderLoops {
     public DrawPath             drawPathLoop;
     public FillPath             fillPathLoop;
     public FillSpans            fillSpansLoop;
+    public FillParallelogram    fillParallelogramLoop;
+    public DrawParallelogram    drawParallelogramLoop;
     public DrawGlyphList        drawGlyphListLoop;
     public DrawGlyphListAA      drawGlyphListAALoop;
     public DrawGlyphListLCD     drawGlyphListLCDLoop;

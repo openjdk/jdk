@@ -22,6 +22,13 @@
  *
  */
 
+#ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1COLLECTORPOLICY_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_G1_G1COLLECTORPOLICY_HPP
+
+#include "gc_implementation/g1/collectionSetChooser.hpp"
+#include "gc_implementation/g1/g1MMUTracker.hpp"
+#include "memory/collectorPolicy.hpp"
+
 // A G1CollectorPolicy makes policy decisions that determine the
 // characteristics of the collector.  Examples include:
 //   * choice of collection set.
@@ -188,6 +195,10 @@ protected:
   size_t _young_list_min_length;
   size_t _young_list_target_length;
   size_t _young_list_fixed_length;
+
+  // The max number of regions we can extend the eden by while the GC
+  // locker is active. This should be >= _young_list_target_length;
+  size_t _young_list_max_length;
 
   size_t _young_cset_length;
   bool   _last_young_gc_full;
@@ -986,11 +997,6 @@ public:
   void record_before_bytes(size_t bytes);
   void record_after_bytes(size_t bytes);
 
-  // Returns "true" if this is a good time to do a collection pause.
-  // The "word_size" argument, if non-zero, indicates the size of an
-  // allocation request that is prompting this query.
-  virtual bool should_do_collection_pause(size_t word_size) = 0;
-
   // Choose a new collection set.  Marks the chosen regions as being
   // "in_collection_set", and links them together.  The head and number of
   // the collection set are available via access methods.
@@ -1109,7 +1115,25 @@ public:
     // do that for any other surv rate groups
   }
 
-  bool should_add_next_region_to_young_list();
+  bool is_young_list_full() {
+    size_t young_list_length = _g1->young_list()->length();
+    size_t young_list_target_length = _young_list_target_length;
+    if (G1FixedEdenSize) {
+      young_list_target_length -= _max_survivor_regions;
+    }
+    return young_list_length >= young_list_target_length;
+  }
+
+  bool can_expand_young_list() {
+    size_t young_list_length = _g1->young_list()->length();
+    size_t young_list_max_length = _young_list_max_length;
+    if (G1FixedEdenSize) {
+      young_list_max_length -= _max_survivor_regions;
+    }
+    return young_list_length < young_list_max_length;
+  }
+
+  void update_region_num(bool young);
 
   bool in_young_gc_mode() {
     return _in_young_gc_mode;
@@ -1220,6 +1244,8 @@ public:
     _survivors_age_table.merge_par(age_table);
   }
 
+  void calculate_max_gc_locker_expansion();
+
   // Calculates survivor space parameters.
   void calculate_survivors_policy();
 
@@ -1263,7 +1289,6 @@ public:
     _collectionSetChooser = new CollectionSetChooser();
   }
   void record_collection_pause_end();
-  bool should_do_collection_pause(size_t word_size);
   // This is not needed any more, after the CSet choosing code was
   // changed to use the pause prediction work. But let's leave the
   // hook in just in case.
@@ -1287,3 +1312,5 @@ inline double variance(int n, double sum_of_squares, double sum) {
 // Local Variables: ***
 // c-indentation-style: gnu ***
 // End: ***
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1COLLECTORPOLICY_HPP
