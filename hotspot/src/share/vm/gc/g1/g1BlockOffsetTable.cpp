@@ -499,18 +499,14 @@ HeapWord* G1BlockOffsetArrayContigSpace::initialize_threshold() {
   return _next_offset_threshold;
 }
 
-void
-G1BlockOffsetArrayContigSpace::set_for_starts_humongous(HeapWord* new_top) {
-  assert(new_top <= _end, "_end should have already been updated");
-
+void G1BlockOffsetArrayContigSpace::set_for_starts_humongous(HeapWord* obj_top) {
   // The first BOT entry should have offset 0.
   reset_bot();
-  alloc_block(_bottom, new_top);
+  alloc_block(_bottom, obj_top);
  }
 
 #ifndef PRODUCT
-void
-G1BlockOffsetArrayContigSpace::print_on(outputStream* out) {
+void G1BlockOffsetArrayContigSpace::print_on(outputStream* out) {
   G1BlockOffsetArray::print_on(out);
   out->print_cr("  next offset threshold: " PTR_FORMAT, p2i(_next_offset_threshold));
   out->print_cr("  next offset index:     " SIZE_FORMAT, _next_offset_index);

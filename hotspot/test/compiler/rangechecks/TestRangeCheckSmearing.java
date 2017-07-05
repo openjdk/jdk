@@ -25,7 +25,7 @@
  * @test
  * @bug 8066103
  * @summary C2's range check smearing allows out of bound array accesses
- * @library /testlibrary /../../test/lib /compiler/whitebox
+ * @library /testlibrary /test/lib /compiler/whitebox
  * @modules java.base/sun.misc
  *          java.management
  * @build TestRangeCheckSmearing

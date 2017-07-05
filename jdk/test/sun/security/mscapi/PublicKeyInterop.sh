@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015 Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 # @test
 # @bug 6888925
+# @requires os.family == "windows"
 # @run shell PublicKeyInterop.sh
 # @summary SunMSCAPI's Cipher can't use RSA public keys obtained from other
 #          sources.

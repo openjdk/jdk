@@ -347,7 +347,7 @@ public:
     HeapWord*            _partial_obj_addr;
     region_sz_t          _partial_obj_size;
     region_sz_t volatile _dc_and_los;
-    bool                 _blocks_filled;
+    bool        volatile _blocks_filled;
 
 #ifdef ASSERT
     size_t               _blocks_filled_count;   // Number of block table fills.
@@ -498,7 +498,9 @@ ParallelCompactData::RegionData::destination_count() const
 inline bool
 ParallelCompactData::RegionData::blocks_filled() const
 {
-  return _blocks_filled;
+  bool result = _blocks_filled;
+  OrderAccess::acquire();
+  return result;
 }
 
 #ifdef ASSERT
@@ -512,6 +514,7 @@ ParallelCompactData::RegionData::blocks_filled_count() const
 inline void
 ParallelCompactData::RegionData::set_blocks_filled()
 {
+  OrderAccess::release();
   _blocks_filled = true;
   // Debug builds count the number of times the table was filled.
   DEBUG_ONLY(Atomic::inc_ptr(&_blocks_filled_count));

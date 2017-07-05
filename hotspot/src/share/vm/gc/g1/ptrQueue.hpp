@@ -40,43 +40,48 @@ class PtrQueueSet;
 class PtrQueue VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
 
-protected:
+  // Noncopyable - not defined.
+  PtrQueue(const PtrQueue&);
+  PtrQueue& operator=(const PtrQueue&);
+
   // The ptr queue set to which this queue belongs.
-  PtrQueueSet* _qset;
+  PtrQueueSet* const _qset;
 
   // Whether updates should be logged.
   bool _active;
 
-  // The buffer.
-  void** _buf;
-  // The index at which an object was last enqueued.  Starts at "_sz"
-  // (indicating an empty buffer) and goes towards zero.
-  size_t _index;
-
-  // The size of the buffer.
-  size_t _sz;
-
   // If true, the queue is permanent, and doesn't need to deallocate
   // its buffer in the destructor (since that obtains a lock which may not
   // be legally locked by then.
-  bool _perm;
+  const bool _permanent;
+
+protected:
+  // The buffer.
+  void** _buf;
+  // The (byte) index at which an object was last enqueued.  Starts at "_sz"
+  // (indicating an empty buffer) and goes towards zero.
+  size_t _index;
+
+  // The (byte) size of the buffer.
+  size_t _sz;
 
   // If there is a lock associated with this buffer, this is that lock.
   Mutex* _lock;
 
   PtrQueueSet* qset() { return _qset; }
-  bool is_permanent() const { return _perm; }
+  bool is_permanent() const { return _permanent; }
 
   // Process queue entries and release resources, if not permanent.
   void flush_impl();
 
-public:
   // Initialize this queue to contain a null buffer, and be part of the
   // given PtrQueueSet.
-  PtrQueue(PtrQueueSet* qset, bool perm = false, bool active = false);
+  PtrQueue(PtrQueueSet* qset, bool permanent = false, bool active = false);
 
   // Requires queue flushed or permanent.
   ~PtrQueue();
+
+public:
 
   // Associate a lock with a ptr queue.
   void set_lock(Mutex* lock) { _lock = lock; }
@@ -129,13 +134,9 @@ public:
 
   bool is_active() { return _active; }
 
-  static int byte_index_to_index(int ind) {
-    assert((ind % oopSize) == 0, "Invariant.");
-    return ind / oopSize;
-  }
-
-  static int index_to_byte_index(int byte_ind) {
-    return byte_ind * oopSize;
+  static size_t byte_index_to_index(size_t ind) {
+    assert((ind % sizeof(void*)) == 0, "Invariant.");
+    return ind / sizeof(void*);
   }
 
   // To support compiler.
@@ -246,26 +247,21 @@ protected:
     return false;
   }
 
-public:
   // Create an empty ptr queue set.
   PtrQueueSet(bool notify_when_complete = false);
+  ~PtrQueueSet();
 
   // Because of init-order concerns, we can't pass these as constructor
   // arguments.
-  void initialize(Monitor* cbl_mon, Mutex* fl_lock,
+  void initialize(Monitor* cbl_mon,
+                  Mutex* fl_lock,
                   int process_completed_threshold,
                   int max_completed_queue,
-                  PtrQueueSet *fl_owner = NULL) {
-    _max_completed_queue = max_completed_queue;
-    _process_completed_threshold = process_completed_threshold;
-    _completed_queue_padding = 0;
-    assert(cbl_mon != NULL && fl_lock != NULL, "Init order issue?");
-    _cbl_mon = cbl_mon;
-    _fl_lock = fl_lock;
-    _fl_owner = (fl_owner != NULL) ? fl_owner : this;
-  }
+                  PtrQueueSet *fl_owner = NULL);
 
-  // Return an empty oop array of size _sz (required to be non-zero).
+public:
+
+  // Return an empty array of size _sz (required to be non-zero).
   void** allocate_buffer();
 
   // Return an empty buffer to the free list.  The "buf" argument is

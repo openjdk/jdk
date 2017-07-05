@@ -19,21 +19,12 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-// This class contains a <clinit> method with signature: ()I.  The JVM should
-// not complain about this because methods named <clinit> that have arguments
-// and/or are not void should be ignored by the JVM.
+import javax.swing.*;
 
-public class ignoredClinit version 51:0
-{
-
-    public static Method "<clinit>":"()I"
-    stack 1 locals 1
-    {
-        iconst_0;
-        ireturn;
-    }
-
-} // end Class ignoredClinit
+public class JNICheck {
+    public static void main(String[] args) throws Exception {
+    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+ }
+}

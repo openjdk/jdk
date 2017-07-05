@@ -774,72 +774,78 @@ err:
 
 // process segments from interpreter (ld.so or ld-linux.so)
 static bool read_interp_segments(struct ps_prochandle* ph) {
-   ELF_EHDR interp_ehdr;
+  ELF_EHDR interp_ehdr;
 
-   if (read_elf_header(ph->core->interp_fd, &interp_ehdr) != true) {
-       print_debug("interpreter is not a valid ELF file\n");
-       return false;
-   }
+  if (read_elf_header(ph->core->interp_fd, &interp_ehdr) != true) {
+    print_debug("interpreter is not a valid ELF file\n");
+    return false;
+  }
 
-   if (read_lib_segments(ph, ph->core->interp_fd, &interp_ehdr, ph->core->ld_base_addr) != true) {
-       print_debug("can't read segments of interpreter\n");
-       return false;
-   }
+  if (read_lib_segments(ph, ph->core->interp_fd, &interp_ehdr, ph->core->ld_base_addr) != true) {
+    print_debug("can't read segments of interpreter\n");
+    return false;
+  }
 
-   return true;
+  return true;
 }
 
 // process segments of a a.out
 static bool read_exec_segments(struct ps_prochandle* ph, ELF_EHDR* exec_ehdr) {
-   int i = 0;
-   ELF_PHDR* phbuf = NULL;
-   ELF_PHDR* exec_php = NULL;
+  int i = 0;
+  ELF_PHDR* phbuf = NULL;
+  ELF_PHDR* exec_php = NULL;
 
-   if ((phbuf = read_program_header_table(ph->core->exec_fd, exec_ehdr)) == NULL)
-      return false;
+  if ((phbuf = read_program_header_table(ph->core->exec_fd, exec_ehdr)) == NULL) {
+    return false;
+  }
 
-   for (exec_php = phbuf, i = 0; i < exec_ehdr->e_phnum; i++) {
-      switch (exec_php->p_type) {
+  for (exec_php = phbuf, i = 0; i < exec_ehdr->e_phnum; i++) {
+    switch (exec_php->p_type) {
 
-         // add mappings for PT_LOAD segments
-         case PT_LOAD: {
-            // add only non-writable segments of non-zero filesz
-            if (!(exec_php->p_flags & PF_W) && exec_php->p_filesz != 0) {
-               if (add_map_info(ph, ph->core->exec_fd, exec_php->p_offset, exec_php->p_vaddr, exec_php->p_filesz) == NULL) goto err;
-            }
-            break;
-         }
+      // add mappings for PT_LOAD segments
+    case PT_LOAD: {
+      // add only non-writable segments of non-zero filesz
+      if (!(exec_php->p_flags & PF_W) && exec_php->p_filesz != 0) {
+        if (add_map_info(ph, ph->core->exec_fd, exec_php->p_offset, exec_php->p_vaddr, exec_php->p_filesz) == NULL) goto err;
+      }
+      break;
+    }
 
-         // read the interpreter and it's segments
-         case PT_INTERP: {
-            char interp_name[BUF_SIZE];
+    // read the interpreter and it's segments
+    case PT_INTERP: {
+      char interp_name[BUF_SIZE + 1];
 
-            pread(ph->core->exec_fd, interp_name, MIN(exec_php->p_filesz, BUF_SIZE), exec_php->p_offset);
-            print_debug("ELF interpreter %s\n", interp_name);
-            // read interpreter segments as well
-            if ((ph->core->interp_fd = pathmap_open(interp_name)) < 0) {
-               print_debug("can't open runtime loader\n");
-               goto err;
-            }
-            break;
-         }
+      // BUF_SIZE is PATH_MAX + NAME_MAX + 1.
+      if (exec_php->p_filesz > BUF_SIZE) {
+        goto err;
+      }
+      pread(ph->core->exec_fd, interp_name, exec_php->p_filesz, exec_php->p_offset);
+      interp_name[exec_php->p_filesz] = '\0';
+      print_debug("ELF interpreter %s\n", interp_name);
+      // read interpreter segments as well
+      if ((ph->core->interp_fd = pathmap_open(interp_name)) < 0) {
+        print_debug("can't open runtime loader\n");
+        goto err;
+      }
+      break;
+    }
 
-         // from PT_DYNAMIC we want to read address of first link_map addr
-         case PT_DYNAMIC: {
-            ph->core->dynamic_addr = exec_php->p_vaddr;
-            print_debug("address of _DYNAMIC is 0x%lx\n", ph->core->dynamic_addr);
-            break;
-         }
+    // from PT_DYNAMIC we want to read address of first link_map addr
+    case PT_DYNAMIC: {
+      ph->core->dynamic_addr = exec_php->p_vaddr;
+      print_debug("address of _DYNAMIC is 0x%lx\n", ph->core->dynamic_addr);
+      break;
+    }
 
-      } // switch
-      exec_php++;
-   } // for
+    } // switch
+    exec_php++;
+  } // for
 
-   free(phbuf);
-   return true;
-err:
-   free(phbuf);
-   return false;
+  free(phbuf);
+  return true;
+ err:
+  free(phbuf);
+  return false;
 }
 
 
