@@ -1,330 +1,271 @@
-." Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
-." DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-."
-." This code is free software; you can redistribute it and/or modify it
-." under the terms of the GNU General Public License version 2 only, as
-." published by the Free Software Foundation.
-."
-." This code is distributed in the hope that it will be useful, but WITHOUT
-." ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-." FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-." version 2 for more details (a copy is included in the LICENSE file that
-." accompanied this code).
-."
-." You should have received a copy of the GNU General Public License version
-." 2 along with this work; if not, write to the Free Software Foundation,
-." Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-."
-." Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-." or visit www.oracle.com if you need additional information or have any
-." questions.
-."
-.TH jdb 1 "10 May 2011"
+'\" t
+.\"  Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+.\"
+.\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+.\"
+.\" This code is free software; you can redistribute it and/or modify it
+.\" under the terms of the GNU General Public License version 2 only, as
+.\" published by the Free Software Foundation.
+.\"
+.\" This code is distributed in the hope that it will be useful, but WITHOUT
+.\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" version 2 for more details (a copy is included in the LICENSE file that
+.\" accompanied this code).
+.\"
+.\" You should have received a copy of the GNU General Public License version
+.\" 2 along with this work; if not, write to the Free Software Foundation,
+.\" Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+.\"
+.\" Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+.\" or visit www.oracle.com if you need additional information or have any
+.\" questions.
+.\"
+.\"     Arch: generic
+.\"     Software: JDK 8
+.\"     Date: 21 November 2013
+.\"     SectDesc: Basic Tools
+.\"     Title: jdb.1
+.\"
+.if n .pl 99999
+.TH jdb 1 "21 November 2013" "JDK 8" "Basic Tools"
+.\" -----------------------------------------------------------------
+.\" * Define some portability stuff
+.\" -----------------------------------------------------------------
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.\" http://bugs.debian.org/507673
+.\" http://lists.gnu.org/archive/html/groff/2009-02/msg00013.html
+.\" ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.\" -----------------------------------------------------------------
+.\" * set default formatting
+.\" -----------------------------------------------------------------
+.\" disable hyphenation
+.nh
+.\" disable justification (adjust text to left margin only)
+.ad l
+.\" -----------------------------------------------------------------
+.\" * MAIN CONTENT STARTS HERE *
+.\" -----------------------------------------------------------------
 
-.LP
-.SH "Name"
-jdb \- The Java Debugger
-.LP
-.LP
-\f3jdb\fP helps you find and fix bugs in Java language programs.
-.LP
-.SH "SYNOPSIS"
-.LP
-.nf
-\f3
-.fl
-\fP\f3jdb\fP [ options ] [ class ] [ arguments ] 
-.fl
-.fi
+.SH NAME    
+jdb \- Finds and fixes bugs in Java platform programs\&.
+.SH SYNOPSIS    
+.sp     
+.nf     
 
-.LP
-.RS 3
-.TP 3
-options 
-Command\-line options, as specified below. 
-.TP 3
-class 
-Name of the class to begin debugging. 
-.TP 3
-arguments 
-Arguments passed to the \f2main()\fP method of \f2class\fP. 
+\fBjdb\fR [\fIoptions\fR] [\fIclassname\fR]  [\fIarguments\fR]
+.fi     
+.sp     
+.TP     
+\fIoptions\fR
+Command-line options\&. See Options\&.
+.TP     
+\fIclass\fRname
+Name of the main class to debug\&.
+.TP     
+\fIarguments\fR
+Arguments passed to the \f3main()\fR method of the class\&.
+.SH DESCRIPTION    
+The Java Debugger (JDB) is a simple command-line debugger for Java classes\&. The \f3jdb\fR command and its options call the JDB\&. The \f3jdb\fR command demonstrates the Java Platform Debugger Architecture (JDBA) and provides inspection and debugging of a local or remote Java Virtual Machine (JVM)\&. See Java Platform Debugger Architecture (JDBA) at http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/jpda/index\&.html
+.SS START\ A\ JDB\ SESSION    
+There are many ways to start a JDB session\&. The most frequently used way is to have JDB launch a new JVM with the main class of the application to be debugged\&. Do this by substituting the \f3jdb\fR command for the \f3java\fR command in the command line\&. For example, if your application\&'s main class is \f3MyClass\fR, then use the following command to debug it under JDB:
+.sp     
+.nf     
+\f3jdb MyClass\fP
+.fi     
+.nf     
+\f3\fP
+.fi     
+.sp     
+When started this way, the \f3jdb\fR command calls a second JVM with the specified parameters, loads the specified class, and stops the JVM before executing that class\&'s first instruction\&.
+.PP
+Another way to use the \f3jdb\fR command is by attaching it to a JVM that is already running\&. Syntax for starting a JVM to which the \f3jdb\fR command attaches when the JVM is running is as follows\&. This loads in-process debugging libraries and specifies the kind of connection to be made\&.
+.sp     
+.nf     
+\f3java \-agentlib:jdwp=transport=dt_socket,server=y,suspend=n MyClass\fP
+.fi     
+.nf     
+\f3\fP
+.fi     
+.sp     
+You can then attach the \f3jdb\fR command to the JVM with the following command:
+.sp     
+.nf     
+\f3jdb \-attach 8000\fP
+.fi     
+.nf     
+\f3\fP
+.fi     
+.sp     
+The \f3MyClass\fR argument is not specified in the \f3jdb\fR command line in this case because the \f3jdb\fR command is connecting to an existing JVM instead of launching a new JVM\&.
+.PP
+There are many other ways to connect the debugger to a JVM, and all of them are supported by the \f3jdb\fR command\&. The Java Platform Debugger Architecture has additional documentation on these connection options\&.
+.SS BASIC\ JDB\ COMMANDS    
+The following is a list of the basic \f3jdb\fR commands\&. The JDB supports other commands that you can list with the \f3-help\fR option\&.
+.TP     
+help or ?
+The \f3help\fR or \f3?\fR commands display the list of recognized commands with a brief description\&.
+.TP     
+run
+After you start JDB and set breakpoints, you can use the \f3run\fR command to execute the debugged application\&. The \f3run\fR command is available only when the \f3jdb\fR command starts the debugged application as opposed to attaching to an existing JVM\&.
+.TP     
+cont
+Continues execution of the debugged application after a breakpoint, exception, or step\&.
+.TP     
+print
+Displays Java objects and primitive values\&. For variables or fields of primitive types, the actual value is printed\&. For objects, a short description is printed\&. See the dump command to find out how to get more information about an object\&.
+
+\fINote:\fR To display local variables, the containing class must have been compiled with the \f3javac -g\fR option\&.
+
+The \f3print\fR command supports many simple Java expressions including those with method invocations, for example:
+.sp     
+.nf     
+\f3print MyClass\&.myStaticField\fP
+.fi     
+.nf     
+\f3print myObj\&.myInstanceField\fP
+.fi     
+.nf     
+\f3print i + j + k (i, j, k are primities and either fields or local variables)\fP
+.fi     
+.nf     
+\f3print myObj\&.myMethod() (if myMethod returns a non\-null)\fP
+.fi     
+.nf     
+\f3print new java\&.lang\&.String("Hello")\&.length()\fP
+.fi     
+.nf     
+\f3\fP
+.fi     
+.sp     
+
+.TP     
+dump
+For primitive values, the \f3dump\fR command is identical to the \f3print\fR command\&. For objects, the \f3dump\fR command prints the current value of each field defined in the object\&. Static and instance fields are included\&. The \f3dump\fR command supports the same set of expressions as the \f3print\fR command\&.
+.TP     
+threads
+List the threads that are currently running\&. For each thread, its name and current status are printed and an index that can be used in other commands\&. In this example, the thread index is 4, the thread is an instance of \f3java\&.lang\&.Thread\fR, the thread name is \f3main\fR, and it is currently running\&.
+.sp     
+.nf     
+\f34\&. (java\&.lang\&.Thread)0x1 main      running\fP
+.fi     
+.nf     
+\f3\fP
+.fi     
+.sp     
+
+.TP     
+thread
+Select a thread to be the current thread\&. Many \f3jdb\fR commands are based on the setting of the current thread\&. The thread is specified with the thread index described in the threads command\&.
+.TP     
+where
+The \f3where\fR command with no arguments dumps the stack of the current thread\&. The \f3where\fR\f3all\fR command dumps the stack of all threads in the current thread group\&. The \f3where\fR\f3threadindex\fR command dumps the stack of the specified thread\&.
+
+If the current thread is suspended either through an event such as a breakpoint or through the \f3suspend\fR command, then local variables and fields can be displayed with the \f3print\fR and \f3dump\fR commands\&. The \f3up\fR and \f3down\fR commands select which stack frame is the current stack frame\&.
+.SS BREAKPOINTS    
+Breakpoints can be set in JDB at line numbers or at the first instruction of a method, for example:
+.TP 0.2i    
+\(bu
+The command \f3stop at MyClass:22\fR sets a breakpoint at the first instruction for line 22 of the source file containing \f3MyClass\fR\&.
+.TP 0.2i    
+\(bu
+The command \f3stop in java\&.lang\&.String\&.length\fR sets a breakpoint at the beginning of the method \f3java\&.lang\&.String\&.length\fR\&.
+.TP 0.2i    
+\(bu
+The command \f3stop in MyClass\&.<clinit>\fR uses \f3<clinit>\fR to identify the static initialization code for \f3MyClass\fR\&.
+.PP
+When a method is overloaded, you must also specify its argument types so that the proper method can be selected for a breakpoint\&. For example, \f3MyClass\&.myMethod(int,java\&.lang\&.String)\fR or \f3MyClass\&.myMethod()\fR\&.
+.PP
+The \f3clear\fR command removes breakpoints using the following syntax: \f3clear MyClass:45\fR\&. Using the \f3clear\fR or \f3stop\fR command with no argument displays a list of all breakpoints currently set\&. The \f3cont\fR command continues execution\&.
+.SS STEPPING    
+The \f3step\fR command advances execution to the next line whether it is in the current stack frame or a called method\&. The \f3next\fR command advances execution to the next line in the current stack frame\&.
+.SS EXCEPTIONS    
+When an exception occurs for which there is not a \f3catch\fR statement anywhere in the throwing thread\&'s call stack, the JVM typically prints an exception trace and exits\&. When running under JDB, however, control returns to JDB at the offending throw\&. You can then use the \f3jdb\fR command to diagnose the cause of the exception\&.
+.PP
+Use the \f3catch\fR command to cause the debugged application to stop at other thrown exceptions, for example: \f3catch java\&.io\&.FileNotFoundException\fR or \f3catch\fR\f3mypackage\&.BigTroubleException\fR\&. Any exception that is an instance of the specified class or subclass stops the application at the point where it is thrown\&.
+.PP
+The \f3ignore\fR command negates the effect of an earlier \f3catch\fR command\&. The \f3ignore\fR command does not cause the debugged JVM to ignore specific exceptions, but only to ignore the debugger\&.
+.SH OPTIONS    
+When you use the \f3jdb\fR command instead of the \f3java\fR command on the command line, the \f3jdb\fR command accepts many of the same options as the \f3java\fR command, including \f3-D\fR, \f3-classpath\fR, and \f3-X\fR options\&. The following list contains additional options that are accepted by the \f3jdb\fR command\&.
+.PP
+Other options are supported to provide alternate mechanisms for connecting the debugger to the JVM it is to debug\&. For additional documentation about these connection alternatives, see Java Platform Debugger Architecture (JPDA) at http://docs\&.oracle\&.com/javase/8/docs/technotes/guides/jpda/index\&.html
+.TP
+-help
+.br
+Displays a help message\&.
+.TP
+-sourcepath \fIdir1:dir2: \&. \&. \&.\fR
+.br
+Uses the specified path to search for source files in the specified path\&. If this option is not specified, then use the default path of dot (\&.)\&.
+.TP
+-attach \fIaddress\fR
+.br
+Attaches the debugger to a running JVM with the default connection mechanism\&.
+.TP
+-listen \fIaddress\fR
+.br
+Waits for a running JVM to connect to the specified address with a standard connector\&.
+.TP
+-launch
+.br
+Starts the debugged application immediately upon startup of JDB\&. The \f3-launch\fR option removes the need for the \f3run\fR command\&. The debugged application is launched and then stopped just before the initial application class is loaded\&. At that point, you can set any necessary breakpoints and use the \f3cont\fR command to continue execution\&.
+.TP
+-listconnectors
+.br
+List the connectors available in this JVM\&.
+.TP
+-connect connector-name:\fIname1=value1\fR
+.br
+Connects to the target JVM with the named connector and listed argument values\&.
+.TP
+-dbgtrace [\fIflags\fR]
+.br
+Prints information for debugging the \f3jdb\fR command\&.
+.TP
+-tclient
+.br
+Runs the application in the Java HotSpot VM client\&.
+.TP
+-tserver
+.br
+Runs the application in the Java HotSpot VM server\&.
+.TP
+-J\fIoption\fR
+.br
+Passes \f3option\fR to the JVM, where option is one of the options described on the reference page for the Java application launcher\&. For example, \f3-J-Xms48m\fR sets the startup memory to 48 MB\&. See java(1)\&.
+.SH OPTIONS\ FORWARDED\ TO\ THE\ DEBUGGER\ PROCESS    
+.TP
+-v -verbose[:\fIclass\fR|gc|jni]
+.br
+Turns on verbose mode\&.
+.TP
+-D\fIname\fR=\fIvalue\fR
+.br
+Sets a system property\&.
+.TP
+-classpath \fIdir\fR
+.br
+Lists directories separated by colons in which to look for classes\&.
+.TP
+-X\fIoption\fR
+.br
+Nonstandard target JVM option\&.
+.SH SEE\ ALSO    
+.TP 0.2i    
+\(bu
+javac(1)
+.TP 0.2i    
+\(bu
+java(1)
+.TP 0.2i    
+\(bu
+javah(1)
+.TP 0.2i    
+\(bu
+javap(1)
 .RE
-
-.LP
-.SH "DESCRIPTION"
-.LP
-.LP
-The Java Debugger, \f3jdb\fP, is a simple command\-line debugger for Java classes. It is a demonstration of the 
-.na
-\f2Java Platform Debugger Architecture\fP @
-.fi
-http://download.oracle.com/javase/7/docs/technotes/guides/jpda/index.html that provides inspection and debugging of a local or remote Java Virtual Machine.
-.LP
-.SS 
-Starting a jdb Session
-.LP
-.LP
-There are many ways to start a jdb session. The most frequently used way is to have \f3jdb\fP launch a new Java Virtual Machine (VM) with the main class of the application to be debugged. This is done by substituting the command \f3jdb\fP for \f3java\fP in the command line. For example, if your application's main class is MyClass, you use the following command to debug it under JDB:
-.LP
-.nf
-\f3
-.fl
- % jdb MyClass 
-.fl
-\fP
-.fi
-
-.LP
-.LP
-When started this way, \f3jdb\fP invokes a second Java VM with any specified parameters, loads the specified class, and stops the VM before executing that class's first instruction.
-.LP
-.LP
-Another way to use \f3jdb\fP is by attaching it to a Java VM that is already running. Syntax for Starting a VM to which jdb will attach when the VM is running is as follows. This loads in\-process debugging libraries and specifies the kind of connection to be made.
-.LP
-.nf
-\f3
-.fl
-\-agentlib:jdwp=transport=dt_socket,server=y,suspend=n
-.fl
-\fP
-.fi
-
-.LP
-.LP
-For example, the following command will run the MyClass application, and allow \f3jdb\fP to connect to it at a later time.
-.LP
-.nf
-\f3
-.fl
- % java \-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=n MyClass
-.fl
-\fP
-.fi
-
-.LP
-.LP
-You can then attach \f3jdb\fP to the VM with the following commmand:
-.LP
-.nf
-\f3
-.fl
- % jdb \-attach 8000 
-.fl
-\fP
-.fi
-
-.LP
-.LP
-Note that "MyClass" is not specified in the \f3jdb\fP command line in this case because \f3jdb\fP is connecting to an existing VM instead of launching a new one.
-.LP
-.LP
-There are many other ways to connect the debugger to a VM, and all of them are supported by \f3jdb\fP. The Java Platform Debugger Architecture has additional 
-.na
-\f2documentation\fP @
-.fi
-http://download.oracle.com/javase/7/docs/technotes/guides/jpda/conninv.html on these connection options. For information on starting a J2SE 1.4.2 or early VM for use with \f3jdb\fP see the 
-.na
-\f21.4.2 documentation\fP @
-.fi
-http://java.sun.com/j2se/1.4.2/docs/guide/jpda/conninv.html
-.LP
-.SS 
-Basic jdb Commands
-.LP
-.LP
-The following is a list of the basic \f3jdb\fP commands. The Java debugger supports other commands which you can list using \f3jdb\fP's \f2help\fP command.
-.LP
-.RS 3
-.TP 3
-help, or ? 
-The most important \f3jdb\fP command, \f2help\fP displays the list of recognized commands with a brief description. 
-.TP 3
-run 
-After starting \f3jdb\fP, and setting any necessary breakpoints, you can use this command to start the execution the debugged application. This command is available only when \f3jdb\fP launches the debugged application (as opposed to attaching to an existing VM). 
-.TP 3
-cont 
-Continues execution of the debugged application after a breakpoint, exception, or step. 
-.TP 3
-print 
-Displays Java objects and primitive values. For variables or fields of primitive types, the actual value is printed. For objects, a short description is printed. See the \f2dump\fP command below for getting more information about an object.
 .br
-.br
-\f2NOTE: To display local variables, the containing class must have been compiled with the \fP\f2javac(1)\fP\f2 \fP\f2\-g\fP option.
-.br
-.br
-\f2print\fP supports many simple Java expressions including those with method invocations, for example: 
-.RS 3
-.TP 2
-o
-\f2print MyClass.myStaticField\fP 
-.TP 2
-o
-\f2print myObj.myInstanceField\fP 
-.TP 2
-o
-\f2print i + j + k\fP \f2(i, j, k are primities and either fields or local variables)\fP 
-.TP 2
-o
-\f2print myObj.myMethod()\fP \f2(if myMethod returns a non\-null)\fP 
-.TP 2
-o
-\f2print new java.lang.String("Hello").length()\fP 
-.RE
-.TP 3
-dump 
-For primitive values, this command is identical to \f2print\fP. For objects, it prints the current value of each field defined in the object. Static and instance fields are included.
-.br
-.br
-The \f2dump\fP command supports the same set of expressions as the \f2print\fP command. 
-.TP 3
-threads 
-List the threads that are currently running. For each thread, its name and current status are printed, as well as an index that can be used for other commands, for example: 
-.nf
-\f3
-.fl
-4. (java.lang.Thread)0x1 main      running
-.fl
-\fP
-.fi
-In this example, the thread index is 4, the thread is an instance of java.lang.Thread, the thread name is "main", and it is currently running, 
-.TP 3
-thread 
-Select a thread to be the current thread. Many \f3jdb\fP commands are based on the setting of the current thread. The thread is specified with the thread index described in the \f2threads\fP command above. 
-.TP 3
-where 
-\f2where\fP with no arguments dumps the stack of the current thread. \f2where all\fP dumps the stack of all threads in the current thread group. \f2where\fP \f2threadindex\fP dumps the stack of the specified thread.
-.br
-.br
-If the current thread is suspended (either through an event such as a breakpoint or through the \f2suspend\fP command), local variables and fields can be displayed with the \f2print\fP and \f2dump\fP commands. The \f2up\fP and \f2down\fP commands select which stack frame is current. 
-.RE
-
-.LP
-.SS 
-Breakpoints
-.LP
-.LP
-Breakpoints can be set in \f3jdb\fP at line numbers or at the first instruction of a method, for example:
-.LP
-.RS 3
-.TP 2
-o
-\f2stop at MyClass:22\fP \f2(sets a breakpoint at the first instruction for line 22 of the source file containing MyClass)\fP 
-.TP 2
-o
-\f2stop in java.lang.String.length\fP \f2(sets a breakpoint at the beginnig of the method \fP\f2java.lang.String.length\fP) 
-.TP 2
-o
-\f2stop in MyClass.<init>\fP \f2(<init> identifies the MyClass constructor)\fP 
-.TP 2
-o
-\f2stop in MyClass.<clinit>\fP \f2(<clinit> identifies the static initialization code for MyClass)\fP 
-.RE
-
-.LP
-.LP
-If a method is overloaded, you must also specify its argument types so that the proper method can be selected for a breakpoint. For example, "\f2MyClass.myMethod(int,java.lang.String)\fP", or "\f2MyClass.myMethod()\fP".
-.LP
-.LP
-The \f2clear\fP command removes breakpoints using a syntax as in "\f2clear\ MyClass:45\fP". Using the \f2clear\fP or command with no argument displays a list of all breakpoints currently set. The \f2cont\fP command continues execution.
-.LP
-.SS 
-Stepping
-.LP
-.LP
-The \f2step\fP commands advances execution to the next line whether it is in the current stack frame or a called method. The \f2next\fP command advances execution to the next line in the current stack frame.
-.LP
-.SS 
-Exceptions
-.LP
-.LP
-When an exception occurs for which there isn't a catch statement anywhere in the throwing thread's call stack, the VM normally prints an exception trace and exits. When running under \f3jdb\fP, however, control returns to \f3jdb\fP at the offending throw. You can then use \f3jdb\fP to diagnose the cause of the exception.
-.LP
-.LP
-Use the \f2catch\fP command to cause the debugged application to stop at other thrown exceptions, for example: "\f2catch java.io.FileNotFoundException\fP" or "\f2catch mypackage.BigTroubleException\fP. Any exception which is an instance of the specifield class (or of a subclass) will stop the application at the point where it is thrown.
-.LP
-.LP
-The \f2ignore\fP command negates the effect of a previous \f2catch\fP command.
-.LP
-.LP
-\f2NOTE: The \fP\f2ignore\fP command does not cause the debugged VM to ignore specific exceptions, only the debugger.
-.LP
-.SH "Command Line Options"
-.LP
-.LP
-When you use \f3jdb\fP in place of the Java application launcher on the command line, \f3jdb\fP accepts many of the same options as the java command, including \f2\-D\fP, \f2\-classpath\fP, and \f2\-X<option>\fP.
-.LP
-.LP
-The following additional options are accepted by \f3jdb\fP:
-.LP
-.RS 3
-.TP 3
-\-help 
-Displays a help message. 
-.TP 3
-\-sourcepath <dir1:dir2:...> 
-Uses the given path in searching for source files in the specified path. If this option is not specified, the default path of "." is used. 
-.TP 3
-\-attach <address> 
-Attaches the debugger to previously running VM using the default connection mechanism. 
-.TP 3
-\-listen <address> 
-Waits for a running VM to connect at the specified address using standard connector. 
-.TP 3
-\-listenany 
-Waits for a running VM to connect at any available address using standard connector. 
-.TP 3
-\-launch 
-Launches the debugged application immediately upon startup of jdb. This option removes the need for using the \f2run\fP command. The debuged application is launched and then stopped just before the initial application class is loaded. At that point you can set any necessary breakpoints and use the \f2cont\fP to continue execution. 
-.TP 3
-\-listconnectors 
-List the connectors available in this VM 
-.TP 3
-\-connect <connector\-name>:<name1>=<value1>,... 
-Connects to target VM using named connector with listed argument values. 
-.TP 3
-\-dbgtrace [flags] 
-Prints info for debugging jdb. 
-.TP 3
-\-tclient 
-Runs the application in the Java HotSpot(tm) VM (Client). 
-.TP 3
-\-tserver 
-Runs the application in the Java HotSpot(tm) VM (Server). 
-.TP 3
-\-Joption 
-Pass \f2option\fP to the Java virtual machine used to run jdb. (Options for the application Java virtual machine are passed to the \f3run\fP command.) For example, \f3\-J\-Xms48m\fP sets the startup memory to 48 megabytes. 
-.RE
-
-.LP
-.LP
-Other options are supported for alternate mechanisms for connecting the debugger and the VM it is to debug. The Java Platform Debugger Architecture has additional 
-.na
-\f2documentation\fP @
-.fi
-http://download.oracle.com/javase/7/docs/technotes/guides/jpda/conninv.html on these connection alternatives.
-.LP
-.SS 
-Options Forwarded to Debuggee Process
-.LP
-.RS 3
-.TP 3
-\-v \-verbose[:class|gc|jni] 
-Turns on verbose mode. 
-.TP 3
-\-D<name>=<value> 
-Sets a system property. 
-.TP 3
-\-classpath <directories separated by ":"> 
-Lists directories in which to look for classes. 
-.TP 3
-\-X<option> 
-Non\-standard target VM option 
-.RE
-
-.LP
-.SH "SEE ALSO"
-.LP
-.LP
-javac(1), java(1), javah(1), javap(1), javadoc(1).
-.LP
- 
+'pl 8.5i
+'bp
