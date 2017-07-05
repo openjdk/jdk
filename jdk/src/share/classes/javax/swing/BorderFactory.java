@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package javax.swing;
 
 import java.awt.Color;
 import java.awt.Font;
-import javax.swing.JComponent;
 import javax.swing.border.*;
 
 /**
@@ -74,10 +73,20 @@ public class BorderFactory
         return new LineBorder(color, thickness);
     }
 
-//    public static Border createLineBorder(Color color, int thickness,
-//                                      boolean drawRounded)  {
-//        return new JLineBorder(color, thickness, drawRounded);
-//    }
+    /**
+     * Creates a line border with the specified color, thickness, and corner shape.
+     *
+     * @param color      the color of the border
+     * @param thickness  the thickness of the border
+     * @param rounded    whether or not border corners should be round
+     * @return the {@code Border} object
+     *
+     * @see LineBorder#LineBorder(Color, int, boolean)
+     * @since 1.7
+     */
+    public static Border createLineBorder(Color color, int thickness, boolean rounded) {
+        return new LineBorder(color, thickness, rounded);
+    }
 
 //// BevelBorder /////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
@@ -180,7 +189,115 @@ public class BorderFactory
         }
         return null;
     }
+
+//// SoftBevelBorder ///////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+    private static Border sharedSoftRaisedBevel;
+    private static Border sharedSoftLoweredBevel;
+
+    /**
+     * Creates a beveled border with a raised edge and softened corners,
+     * using brighter shades of the component's current background color
+     * for highlighting, and darker shading for shadows.
+     * In a raised border, highlights are on top and shadows are underneath.
+     *
+     * @return the {@code Border} object
+     *
+     * @since 1.7
+     */
+    public static Border createRaisedSoftBevelBorder() {
+        if (sharedSoftRaisedBevel == null) {
+            sharedSoftRaisedBevel = new SoftBevelBorder(BevelBorder.RAISED);
+        }
+        return sharedSoftRaisedBevel;
+    }
+
+    /**
+     * Creates a beveled border with a lowered edge and softened corners,
+     * using brighter shades of the component's current background color
+     * for highlighting, and darker shading for shadows.
+     * In a lowered border, shadows are on top and highlights are underneath.
+     *
+     * @return the {@code Border} object
+     *
+     * @since 1.7
+     */
+    public static Border createLoweredSoftBevelBorder() {
+        if (sharedSoftLoweredBevel == null) {
+            sharedSoftLoweredBevel = new SoftBevelBorder(BevelBorder.LOWERED);
+        }
+        return sharedSoftLoweredBevel;
+    }
+
+    /**
+     * Creates a beveled border of the specified type with softened corners,
+     * using brighter shades of the component's current background color
+     * for highlighting, and darker shading for shadows.
+     * The type is either {@link BevelBorder#RAISED} or {@link BevelBorder#LOWERED}.
+     *
+     * @param type  a type of a bevel
+     * @return the {@code Border} object or {@code null}
+     *         if the specified type is not valid
+     *
+     * @see BevelBorder#BevelBorder(int)
+     * @since 1.7
+     */
+    public static Border createSoftBevelBorder(int type) {
+        if (type == BevelBorder.RAISED) {
+            return createRaisedSoftBevelBorder();
+        }
+        if (type == BevelBorder.LOWERED) {
+            return createLoweredSoftBevelBorder();
+        }
+        return null;
+    }
+
+    /**
+     * Creates a beveled border of the specified type with softened corners,
+     * using the specified highlighting and shadowing.
+     * The type is either {@link BevelBorder#RAISED} or {@link BevelBorder#LOWERED}.
+     * The outer edge of the highlight area uses
+     * a brighter shade of the {@code highlight} color.
+     * The inner edge of the shadow area uses
+     * a brighter shade of the {@code shadow} color.
+     *
+     * @param type       a type of a bevel
+     * @param highlight  a basic color of the highlight area
+     * @param shadow     a basic color of the shadow area
+     * @return the {@code Border} object
+     *
+     * @see BevelBorder#BevelBorder(int, Color, Color)
+     * @since 1.7
+     */
+    public static Border createSoftBevelBorder(int type, Color highlight, Color shadow) {
+        return new BevelBorder(type, highlight, shadow);
+    }
+
+    /**
+     * Creates a beveled border of the specified type with softened corners,
+     * using the specified colors for the inner and outer edges
+     * of the highlight and the shadow areas.
+     * The type is either {@link BevelBorder#RAISED} or {@link BevelBorder#LOWERED}.
+     * Note: The shadow inner and outer colors are switched
+     * for a lowered bevel border.
+     *
+     * @param type            a type of a bevel
+     * @param highlightOuter  a color of the outer edge of the highlight area
+     * @param highlightInner  a color of the inner edge of the highlight area
+     * @param shadowOuter     a color of the outer edge of the shadow area
+     * @param shadowInner     a color of the inner edge of the shadow area
+     * @return the {@code Border} object
+     *
+     * @see BevelBorder#BevelBorder(int, Color, Color, Color, Color)
+     * @since 1.7
+     */
+    public static Border createSoftBevelBorder(int type, Color highlightOuter, Color highlightInner, Color shadowOuter, Color shadowInner) {
+        return new BevelBorder(type, highlightOuter, highlightInner, shadowOuter, shadowInner);
+    }
+
 //// EtchedBorder ///////////////////////////////////////////////////////////
+
     static final Border sharedEtchedBorder = new EtchedBorder();
     private static Border sharedRaisedEtchedBorder;
 

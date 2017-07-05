@@ -148,6 +148,7 @@ OTHER_INCLUDES += \
 # Rules
 #
 CLASSDESTDIR = $(TEMPDIR)/classes
+JAVAHFLAGS += -classpath $(CLASSDESTDIR)
 
 include $(BUILDDIR)/common/Mapfile-vers.gmk
 

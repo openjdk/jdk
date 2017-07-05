@@ -108,7 +108,7 @@ public class WrappedPlainView extends BoxView implements TabExpander {
 
         try {
             if (line.isLeaf()) {
-                drawText(line, p0, p1, g, x, y);
+                 drawText(line, p0, p1, g, x, y);
             } else {
                 // this line contains the composed text.
                 int idx = line.getElementIndex(p0);
@@ -239,9 +239,11 @@ public class WrappedPlainView extends BoxView implements TabExpander {
                                                 tabBase, tabBase + currentWidth,
                                                 this, p0);
         } else {
-            p = p0 + Utilities.getTabbedTextOffset(segment, metrics,
-                                                   tabBase, tabBase + currentWidth,
-                                                   this, p0, false);
+            int offset = Utilities.getTabbedTextOffset(segment, metrics,
+                    tabBase, tabBase + currentWidth, this, p0, false);
+            offset = Utilities.adjustOffsetForFractionalMetrics(
+                    segment, metrics, offset, currentWidth);
+            p = p0 + offset;
         }
         SegmentCache.releaseSharedSegment(segment);
         return p;

@@ -42,7 +42,7 @@ public class Test {
 
     // additional test cases may be added to both of these lists:
 
-    private static final Class[][] GOOD = {
+    private static final Class<?>[][] GOOD = {
         { Collection.class },
         { Iterable.class, Collection.class },
         { Iterable.class, Collection.class, List.class },
@@ -51,7 +51,7 @@ public class Test {
           GetArray.class }
     };
 
-    private static final Class[][] BAD = {
+    private static final Class<?>[][] BAD = {
         { Runnable.class, PrivilegedAction.class },
         { GetSerializable.class, GetCloneable.class },
         { GetObject.class, GetSerializable.class, GetCloneable.class }
@@ -60,12 +60,12 @@ public class Test {
     public static void main(String[] args) throws Exception {
         System.err.println("\nRegression test for bug 4838310\n");
 
-        ClassLoader loader = ClassLoader.getSystemClassLoader();
+        ClassLoader loader = Test.class.getClassLoader();
 
         System.err.println("Testing GOOD combinations:");
 
         for (int i = 0; i < GOOD.length; i++) {
-            Class[] interfaces = GOOD[i];
+            Class<?>[] interfaces = GOOD[i];
             System.err.println(Arrays.asList(interfaces));
             Proxy.getProxyClass(loader, interfaces);
             System.err.println("--- OK.");
@@ -74,7 +74,7 @@ public class Test {
         System.err.println("Testing BAD combinations:");
 
         for (int i = 0; i < BAD.length; i++) {
-            Class[] interfaces = BAD[i];
+            Class<?>[] interfaces = BAD[i];
             System.err.println(Arrays.asList(interfaces));
             try {
                 Proxy.getProxyClass(loader, interfaces);

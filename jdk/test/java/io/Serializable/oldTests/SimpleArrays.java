@@ -35,13 +35,14 @@ import java.io.*;
 
 
 public class SimpleArrays {
-    public static void main (String argv[]) {
+    public static void main (String argv[]) throws IOException {
        System.err.println("\nRegression test for testing of " +
            "serialization/deserialization of objects with Arrays types\n");
 
        FileInputStream istream = null;
+       FileOutputStream ostream = null;
        try {
-           FileOutputStream ostream = new FileOutputStream("piotest2.tmp");
+           ostream = new FileOutputStream("piotest2.tmp");
            ObjectOutputStream p = new ObjectOutputStream(ostream);
 
             byte b[] = { 0, 1};
@@ -177,6 +178,9 @@ public class SimpleArrays {
                throw new Error();
            }
            throw new Error();
+       } finally {
+           if (istream != null) istream.close();
+           if (ostream != null) ostream.close();
        }
     }
 }

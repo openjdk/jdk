@@ -286,6 +286,19 @@ public class KRBError implements java.io.Serializable {
                         salt = info.getSalt();
                         if (DEBUG) {
                             System.out.println("\t PA-ETYPE-INFO etype = " + etype);
+                            System.out.println("\t PA-ETYPE-INFO salt = " + salt);
+                        }
+                        while (der.data.available() > 0) {
+                            value = der.data.getDerValue();
+                            info = new ETypeInfo(value);
+                            if (DEBUG) {
+                                etype = info.getEType();
+                                System.out.println("\t salt for " + etype
+                                        + " is " + info.getSalt());
+                            }
+                            if (salt == null || salt.isEmpty()) {
+                                salt = info.getSalt();
+                            }
                         }
                     }
                     break;
@@ -299,6 +312,19 @@ public class KRBError implements java.io.Serializable {
                         s2kparams = info2.getParams();
                         if (DEBUG) {
                             System.out.println("\t PA-ETYPE-INFO2 etype = " + etype);
+                            System.out.println("\t PA-ETYPE-INFO salt = " + salt);
+                        }
+                        while (der.data.available() > 0) {
+                            value = der.data.getDerValue();
+                            info2 = new ETypeInfo2(value);
+                            if (DEBUG) {
+                                etype = info2.getEType();
+                                System.out.println("\t salt for " + etype
+                                        + " is " + info2.getSalt());
+                            }
+                            if (salt == null || salt.isEmpty()) {
+                                salt = info2.getSalt();
+                            }
                         }
                     }
                     break;

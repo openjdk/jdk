@@ -50,6 +50,10 @@ Java_sun_nio_ch_SocketDispatcher_read0(JNIEnv *env, jclass clazz, jobject fdo,
     jint fd = fdval(env, fdo);
     WSABUF buf;
 
+    /* limit size */
+    if (len > MAX_BUFFER_SIZE)
+        len = MAX_BUFFER_SIZE;
+
     /* destination buffer and size */
     buf.buf = (char *)address;
     buf.len = (u_long)len;
@@ -86,6 +90,7 @@ Java_sun_nio_ch_SocketDispatcher_readv0(JNIEnv *env, jclass clazz, jobject fdo,
     jint fd = fdval(env, fdo);
     struct iovec *iovp = (struct iovec *)address;
     WSABUF *bufs = malloc(len * sizeof(WSABUF));
+    jint rem = MAX_BUFFER_SIZE;
 
     if (bufs == 0) {
         JNU_ThrowOutOfMemoryError(env, 0);
@@ -98,8 +103,16 @@ Java_sun_nio_ch_SocketDispatcher_readv0(JNIEnv *env, jclass clazz, jobject fdo,
 
     /* copy iovec into WSABUF */
     for(i=0; i<len; i++) {
+        jint iov_len = iovp[i].iov_len;
+        if (iov_len > rem)
+            iov_len = rem;
         bufs[i].buf = (char *)iovp[i].iov_base;
-        bufs[i].len = (u_long)iovp[i].iov_len;
+        bufs[i].len = (u_long)iov_len;
+        rem -= iov_len;
+        if (rem == 0) {
+            len = i+1;
+            break;
+        }
     }
 
     /* read into the buffers */
@@ -136,6 +149,10 @@ Java_sun_nio_ch_SocketDispatcher_write0(JNIEnv *env, jclass clazz, jobject fdo,
     jint fd = fdval(env, fdo);
     WSABUF buf;
 
+    /* limit size */
+    if (len > MAX_BUFFER_SIZE)
+        len = MAX_BUFFER_SIZE;
+
     /* copy iovec into WSABUF */
     buf.buf = (char *)address;
     buf.len = (u_long)len;
@@ -171,6 +188,7 @@ Java_sun_nio_ch_SocketDispatcher_writev0(JNIEnv *env, jclass clazz,
     jint fd = fdval(env, fdo);
     struct iovec *iovp = (struct iovec *)address;
     WSABUF *bufs = malloc(len * sizeof(WSABUF));
+    jint rem = MAX_BUFFER_SIZE;
 
     if (bufs == 0) {
         JNU_ThrowOutOfMemoryError(env, 0);
@@ -183,8 +201,16 @@ Java_sun_nio_ch_SocketDispatcher_writev0(JNIEnv *env, jclass clazz,
 
     /* copy iovec into WSABUF */
     for(i=0; i<len; i++) {
+        jint iov_len = iovp[i].iov_len;
+        if (iov_len > rem)
+            iov_len = rem;
         bufs[i].buf = (char *)iovp[i].iov_base;
-        bufs[i].len = (u_long)iovp[i].iov_len;
+        bufs[i].len = (u_long)iov_len;
+        rem -= iov_len;
+        if (rem == 0) {
+            len = i+1;
+            break;
+        }
     }
 
     /* read into the buffers */
