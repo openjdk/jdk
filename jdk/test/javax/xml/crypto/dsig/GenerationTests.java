@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4635230 6283345 6303830 6824440 6867348 7094155 8038184
+ * @bug 4635230 6283345 6303830 6824440 6867348 7094155 8038184 8038349
  * @summary Basic unit tests for generating XML Signatures with JSR 105
  * @compile -XDignore.symbol.file KeySelectors.java SignatureValidator.java
  *     X509KeySelector.java GenerationTests.java
@@ -80,9 +80,10 @@ public class GenerationTests {
     private static KeyInfoFactory kifac;
     private static DocumentBuilder db;
     private static CanonicalizationMethod withoutComments;
-    private static SignatureMethod dsaSha1, rsaSha1, rsaSha256, rsaSha384, rsaSha512;
+    private static SignatureMethod dsaSha1, dsaSha256, rsaSha1,
+                                   rsaSha256, rsaSha384, rsaSha512;
     private static DigestMethod sha1, sha256, sha384, sha512;
-    private static KeyInfo dsa, rsa, rsa1024;
+    private static KeyInfo dsa1024, dsa2048, rsa, rsa1024;
     private static KeySelector kvks = new KeySelectors.KeyValueKeySelector();
     private static KeySelector sks;
     private static Key signingKey;
@@ -106,10 +107,13 @@ public class GenerationTests {
         "http://www.w3.org/TR/xml-stylesheet";
     private final static String STYLESHEET_B64 =
         "http://www.w3.org/Signature/2002/04/xml-stylesheet.b64";
+    private final static String DSA_SHA256 =
+        "http://www.w3.org/2009/xmldsig11#dsa-sha256";
 
     public static void main(String args[]) throws Exception {
         setup();
-        test_create_signature_enveloped_dsa();
+        test_create_signature_enveloped_dsa(1024);
+        test_create_signature_enveloped_dsa(2048);
         test_create_signature_enveloping_b64_dsa();
         test_create_signature_enveloping_dsa();
         test_create_signature_enveloping_hmac_sha1_40();
@@ -157,15 +161,18 @@ public class GenerationTests {
         withoutComments = fac.newCanonicalizationMethod
             (CanonicalizationMethod.INCLUSIVE, (C14NMethodParameterSpec)null);
         dsaSha1 = fac.newSignatureMethod(SignatureMethod.DSA_SHA1, null);
+        dsaSha256 = fac.newSignatureMethod(DSA_SHA256, null);
         sha1 = fac.newDigestMethod(DigestMethod.SHA1, null);
         sha256 = fac.newDigestMethod(DigestMethod.SHA256, null);
         sha384 = fac.newDigestMethod
             ("http://www.w3.org/2001/04/xmldsig-more#sha384", null);
         sha512 = fac.newDigestMethod(DigestMethod.SHA512, null);
-        dsa = kifac.newKeyInfo(Collections.singletonList
+        dsa1024 = kifac.newKeyInfo(Collections.singletonList
             (kifac.newKeyValue(validatingKey)));
+        dsa2048 = kifac.newKeyInfo(Collections.singletonList
+            (kifac.newKeyValue(getPublicKey("DSA", 2048))));
         rsa = kifac.newKeyInfo(Collections.singletonList
-            (kifac.newKeyValue(getPublicKey("RSA"))));
+            (kifac.newKeyValue(getPublicKey("RSA", 512))));
         rsa1024 = kifac.newKeyInfo(Collections.singletonList
             (kifac.newKeyValue(getPublicKey("RSA", 1024))));
         rsaSha1 = fac.newSignatureMethod(SignatureMethod.RSA_SHA1, null);
@@ -180,11 +187,25 @@ public class GenerationTests {
         httpUd = new HttpURIDereferencer();
     }
 
-    static void test_create_signature_enveloped_dsa() throws Exception {
-        System.out.println("* Generating signature-enveloped-dsa.xml");
+    static void test_create_signature_enveloped_dsa(int size) throws Exception {
+        System.out.println("* Generating signature-enveloped-dsa-"
+                           + size + ".xml");
+        SignatureMethod sm = null;
+        KeyInfo ki = null;
+        Key privKey;
+        if (size == 1024) {
+            sm = dsaSha1;
+            ki = dsa1024;
+            privKey = signingKey;
+        } else if (size == 2048) {
+            sm = dsaSha256;
+            ki = dsa2048;
+            privKey = getPrivateKey("DSA", 2048);
+        } else throw new RuntimeException("unsupported keysize:" + size);
+
         // create SignedInfo
         SignedInfo si = fac.newSignedInfo
-            (withoutComments, dsaSha1, Collections.singletonList
+            (withoutComments, sm, Collections.singletonList
                 (fac.newReference
                     ("", sha1, Collections.singletonList
                         (fac.newTransform(Transform.ENVELOPED,
@@ -192,7 +213,7 @@ public class GenerationTests {
                  null, null)));
 
         // create XMLSignature
-        XMLSignature sig = fac.newXMLSignature(si, dsa);
+        XMLSignature sig = fac.newXMLSignature(si, ki);
 
         Document doc = db.newDocument();
         Element envelope = doc.createElementNS
@@ -201,12 +222,12 @@ public class GenerationTests {
             "xmlns", "http://example.org/envelope");
         doc.appendChild(envelope);
 
-        DOMSignContext dsc = new DOMSignContext(signingKey, envelope);
+        DOMSignContext dsc = new DOMSignContext(privKey, envelope);
 
         sig.sign(dsc);
-//      StringWriter sw = new StringWriter();
-//      dumpDocument(doc, sw);
-//      System.out.println(sw.toString());
+//        StringWriter sw = new StringWriter();
+//        dumpDocument(doc, sw);
+//        System.out.println(sw.toString());
 
         DOMValidateContext dvc = new DOMValidateContext
             (kvks, envelope.getFirstChild());
@@ -226,21 +247,21 @@ public class GenerationTests {
     static void test_create_signature_enveloping_b64_dsa() throws Exception {
         System.out.println("* Generating signature-enveloping-b64-dsa.xml");
         test_create_signature_enveloping
-            (sha1, dsaSha1, dsa, signingKey, kvks, true);
+            (sha1, dsaSha1, dsa1024, signingKey, kvks, true);
         System.out.println();
     }
 
     static void test_create_signature_enveloping_dsa() throws Exception {
         System.out.println("* Generating signature-enveloping-dsa.xml");
         test_create_signature_enveloping
-            (sha1, dsaSha1, dsa, signingKey, kvks, false);
+            (sha1, dsaSha1, dsa1024, signingKey, kvks, false);
         System.out.println();
     }
 
     static void test_create_signature_enveloping_sha256_dsa() throws Exception {
         System.out.println("* Generating signature-enveloping-sha256-dsa.xml");
         test_create_signature_enveloping
-            (sha256, dsaSha1, dsa, signingKey, kvks, false);
+            (sha256, dsaSha1, dsa1024, signingKey, kvks, false);
         System.out.println();
     }
 
@@ -293,7 +314,7 @@ public class GenerationTests {
     static void test_create_signature_enveloping_rsa() throws Exception {
         System.out.println("* Generating signature-enveloping-rsa.xml");
         test_create_signature_enveloping(sha1, rsaSha1, rsa,
-            getPrivateKey("RSA"), kvks, false);
+            getPrivateKey("RSA", 512), kvks, false);
         System.out.println();
     }
 
@@ -301,7 +322,7 @@ public class GenerationTests {
         throws Exception {
         System.out.println("* Generating signature-enveloping-sha384-rsa_sha256.xml");
         test_create_signature_enveloping(sha384, rsaSha256, rsa,
-            getPrivateKey("RSA"), kvks, false);
+            getPrivateKey("RSA", 512), kvks, false);
         System.out.println();
     }
 
@@ -323,13 +344,13 @@ public class GenerationTests {
 
     static void test_create_signature_external_b64_dsa() throws Exception {
         System.out.println("* Generating signature-external-b64-dsa.xml");
-        test_create_signature_external(dsaSha1, dsa, signingKey, kvks, true);
+        test_create_signature_external(dsaSha1, dsa1024, signingKey, kvks, true);
         System.out.println();
     }
 
     static void test_create_signature_external_dsa() throws Exception {
         System.out.println("* Generating signature-external-dsa.xml");
-        test_create_signature_external(dsaSha1, dsa, signingKey, kvks, false);
+        test_create_signature_external(dsaSha1, dsa1024, signingKey, kvks, false);
         System.out.println();
     }
 
@@ -441,7 +462,7 @@ public class GenerationTests {
 
         // create XMLSignature
         XMLSignature sig = fac.newXMLSignature(si, rsa, objs, "signature", null);
-        DOMSignContext dsc = new DOMSignContext(getPrivateKey("RSA"), doc);
+        DOMSignContext dsc = new DOMSignContext(getPrivateKey("RSA", 512), doc);
 
         sig.sign(dsc);
 
@@ -487,7 +508,7 @@ public class GenerationTests {
         XMLSignature sig = fac.newXMLSignature(si, rsa,
                                                Collections.singletonList(obj),
                                                "signature", null);
-        DOMSignContext dsc = new DOMSignContext(getPrivateKey("RSA"), doc);
+        DOMSignContext dsc = new DOMSignContext(getPrivateKey("RSA", 512), doc);
         dsc.setIdAttributeNS(nc, null, "Id");
 
         sig.sign(dsc);
@@ -530,7 +551,7 @@ public class GenerationTests {
         XMLSignature sig = fac.newXMLSignature(si, rsa,
                                                Collections.singletonList(obj),
                                                "signature", null);
-        DOMSignContext dsc = new DOMSignContext(getPrivateKey("RSA"), doc);
+        DOMSignContext dsc = new DOMSignContext(getPrivateKey("RSA", 512), doc);
         sig.sign(dsc);
     }
 
@@ -1116,6 +1137,16 @@ public class GenerationTests {
         "90670890367185141189796";
     private static final String DSA_X =
         "0527140396812450214498055937934275626078768840117";
+    private static final String DSA_2048_Y =
+        "15119007057343785981993995134621348945077524760182795513668325877793414638620983617627033248732235626178802906346261435991040697338468329634416089753032362617771631199351767336660070462291411472735835843440140283101463231807789628656218830720378705090795271104661936237385140354825159080766174663596286149653433914842868551355716015585570827642835307073681358328172009941968323702291677280809277843998510864653406122348712345584706761165794179850728091522094227603562280855104749858249588234915206290448353957550635709520273178475097150818955098638774564910092913714625772708285992586894795017709678223469405896699928";
+    private static final String DSA_2048_P =
+        "18111848663142005571178770624881214696591339256823507023544605891411707081617152319519180201250440615163700426054396403795303435564101919053459832890139496933938670005799610981765220283775567361483662648340339405220348871308593627647076689407931875483406244310337925809427432681864623551598136302441690546585427193224254314088256212718983105131138772434658820375111735710449331518776858786793875865418124429269409118756812841019074631004956409706877081612616347900606555802111224022921017725537417047242635829949739109274666495826205002104010355456981211025738812433088757102520562459649777989718122219159982614304359";
+    private static final String DSA_2048_Q =
+        "19689526866605154788513693571065914024068069442724893395618704484701";
+    private static final String DSA_2048_G =
+        "2859278237642201956931085611015389087970918161297522023542900348087718063098423976428252369340967506010054236052095950169272612831491902295835660747775572934757474194739347115870723217560530672532404847508798651915566434553729839971841903983916294692452760249019857108409189016993380919900231322610083060784269299257074905043636029708121288037909739559605347853174853410208334242027740275688698461842637641566056165699733710043802697192696426360843173620679214131951400148855611740858610821913573088059404459364892373027492936037789337011875710759208498486908611261954026964574111219599568903257472567764789616958430";
+    private static final String DSA_2048_X =
+        "14562787764977288900757387442281559936279834964901963465277698843172";
     private static final String RSA_MOD =
         "010800185049102889923150759252557522305032794699952150943573164381" +
         "936603255999071981574575044810461362008102247767482738822150129277" +
@@ -1138,33 +1169,32 @@ public class GenerationTests {
         "204903524890556839550490384015324575598723478554854070823335021842" +
         "210112348400928769";
 
-    private static PublicKey getPublicKey(String algo) throws Exception {
-        return getPublicKey(algo, 512);
-    }
-
     private static PublicKey getPublicKey(String algo, int keysize)
         throws Exception {
         KeyFactory kf = KeyFactory.getInstance(algo);
         KeySpec kspec;
         if (algo.equalsIgnoreCase("DSA")) {
-            kspec = new DSAPublicKeySpec(new BigInteger(DSA_Y),
-                                         new BigInteger(DSA_P),
-                                         new BigInteger(DSA_Q),
-                                         new BigInteger(DSA_G));
+            if (keysize == 1024) {
+                kspec = new DSAPublicKeySpec(new BigInteger(DSA_Y),
+                                             new BigInteger(DSA_P),
+                                             new BigInteger(DSA_Q),
+                                             new BigInteger(DSA_G));
+            } else if (keysize == 2048) {
+                kspec = new DSAPublicKeySpec(new BigInteger(DSA_2048_Y),
+                                             new BigInteger(DSA_2048_P),
+                                             new BigInteger(DSA_2048_Q),
+                                             new BigInteger(DSA_2048_G));
+            } else throw new RuntimeException("Unsupported keysize:" + keysize);
         } else if (algo.equalsIgnoreCase("RSA")) {
             if (keysize == 512) {
                 kspec = new RSAPublicKeySpec(new BigInteger(RSA_MOD),
                                              new BigInteger(RSA_PUB));
-            } else {
+            } else if (keysize == 1024) {
                 kspec = new RSAPublicKeySpec(new BigInteger(RSA_1024_MOD),
                                              new BigInteger(RSA_PUB));
-            }
+            } else throw new RuntimeException("Unsupported keysize:" + keysize);
         } else throw new RuntimeException("Unsupported key algorithm " + algo);
         return kf.generatePublic(kspec);
-    }
-
-    private static PrivateKey getPrivateKey(String algo) throws Exception {
-        return getPrivateKey(algo, 512);
     }
 
     private static PrivateKey getPrivateKey(String algo, int keysize)
@@ -1172,9 +1202,15 @@ public class GenerationTests {
         KeyFactory kf = KeyFactory.getInstance(algo);
         KeySpec kspec;
         if (algo.equalsIgnoreCase("DSA")) {
-            kspec = new DSAPrivateKeySpec
-                (new BigInteger(DSA_X), new BigInteger(DSA_P),
-                 new BigInteger(DSA_Q), new BigInteger(DSA_G));
+            if (keysize == 1024) {
+                kspec = new DSAPrivateKeySpec
+                    (new BigInteger(DSA_X), new BigInteger(DSA_P),
+                     new BigInteger(DSA_Q), new BigInteger(DSA_G));
+            } else if (keysize == 2048) {
+                kspec = new DSAPrivateKeySpec
+                    (new BigInteger(DSA_2048_X), new BigInteger(DSA_2048_P),
+                     new BigInteger(DSA_2048_Q), new BigInteger(DSA_2048_G));
+            } else throw new RuntimeException("Unsupported keysize:" + keysize);
         } else if (algo.equalsIgnoreCase("RSA")) {
             if (keysize == 512) {
                 kspec = new RSAPrivateKeySpec

@@ -2904,8 +2904,8 @@ public final class Locale implements Cloneable, Serializable {
                 for (int i = 1; i < subtags.length; i++) {
                     if (isSubtagIllFormed(subtags[i], false)) {
                         isIllFormed = true;
+                        break;
                     }
-                    break;
                 }
             }
             if (isIllFormed) {

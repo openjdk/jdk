@@ -93,7 +93,7 @@ import java.time.temporal.ValueRange;
 import java.util.Objects;
 
 /**
- * A time without time-zone in the ISO-8601 calendar system,
+ * A time without a time-zone in the ISO-8601 calendar system,
  * such as {@code 10:15:30}.
  * <p>
  * {@code LocalTime} is an immutable date-time object that represents a time,
@@ -101,7 +101,7 @@ import java.util.Objects;
  * Time is represented to nanosecond precision.
  * For example, the value "13:45.30.123456789" can be stored in a {@code LocalTime}.
  * <p>
- * It does not store or represent a date or time-zone.
+ * This class does not store or represent a date or time-zone.
  * Instead, it is a description of the local time as seen on a wall clock.
  * It cannot represent an instant on the time-line without additional information
  * such as an offset or time-zone.
@@ -280,7 +280,7 @@ public final class LocalTime
         return ofNanoOfDay(secsOfDay * NANOS_PER_SECOND + now.getNano());
     }
 
-    //------------------------get-----------------------------------------------
+    //-----------------------------------------------------------------------
     /**
      * Obtains an instance of {@code LocalTime} from an hour and minute.
      * <p>
@@ -395,7 +395,7 @@ public final class LocalTime
      * on extracting the {@link ChronoField#NANO_OF_DAY NANO_OF_DAY} field.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
-     * allowing it to be used in queries via method reference, {@code LocalTime::from}.
+     * allowing it to be used as a query via method reference, {@code LocalTime::from}.
      *
      * @param temporal  the temporal object to convert, not null
      * @return the local time, not null
@@ -418,7 +418,7 @@ public final class LocalTime
      * The string must represent a valid time and is parsed using
      * {@link java.time.format.DateTimeFormatter#ISO_LOCAL_TIME}.
      *
-     * @param text the text to parse such as "10:15:30", not null
+     * @param text  the text to parse such as "10:15:30", not null
      * @return the parsed local time, not null
      * @throws DateTimeParseException if the text cannot be parsed
      */
@@ -524,7 +524,7 @@ public final class LocalTime
     /**
      * Checks if the specified unit is supported.
      * <p>
-     * This checks if the specified unit can be added to, or subtracted from, this date-time.
+     * This checks if the specified unit can be added to, or subtracted from, this time.
      * If false, then calling the {@link #plus(long, TemporalUnit)} and
      * {@link #minus(long, TemporalUnit) minus} methods will throw an exception.
      * <p>
@@ -589,7 +589,7 @@ public final class LocalTime
     /**
      * Gets the value of the specified field from this time as an {@code int}.
      * <p>
-     * This queries this time for the value for the specified field.
+     * This queries this time for the value of the specified field.
      * The returned value will always be within the valid range of values for the field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
@@ -597,7 +597,7 @@ public final class LocalTime
      * If the field is a {@link ChronoField} then the query is implemented here.
      * The {@link #isSupported(TemporalField) supported fields} will return valid
      * values based on this time, except {@code NANO_OF_DAY} and {@code MICRO_OF_DAY}
-     * which are too large to fit in an {@code int} and throw a {@code DateTimeException}.
+     * which are too large to fit in an {@code int} and throw a {@code UnsupportedTemporalTypeException}.
      * All other {@code ChronoField} instances will throw an {@code UnsupportedTemporalTypeException}.
      * <p>
      * If the field is not a {@code ChronoField}, then the result of this method
@@ -624,7 +624,7 @@ public final class LocalTime
     /**
      * Gets the value of the specified field from this time as a {@code long}.
      * <p>
-     * This queries this time for the value for the specified field.
+     * This queries this time for the value of the specified field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
      * <p>
@@ -858,7 +858,7 @@ public final class LocalTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code LocalTime} with the hour-of-day value altered.
+     * Returns a copy of this {@code LocalTime} with the hour-of-day altered.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -875,7 +875,7 @@ public final class LocalTime
     }
 
     /**
-     * Returns a copy of this {@code LocalTime} with the minute-of-hour value altered.
+     * Returns a copy of this {@code LocalTime} with the minute-of-hour altered.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -892,7 +892,7 @@ public final class LocalTime
     }
 
     /**
-     * Returns a copy of this {@code LocalTime} with the second-of-minute value altered.
+     * Returns a copy of this {@code LocalTime} with the second-of-minute altered.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -909,7 +909,7 @@ public final class LocalTime
     }
 
     /**
-     * Returns a copy of this {@code LocalTime} with the nano-of-second value altered.
+     * Returns a copy of this {@code LocalTime} with the nano-of-second altered.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -929,7 +929,7 @@ public final class LocalTime
     /**
      * Returns a copy of this {@code LocalTime} with the time truncated.
      * <p>
-     * Truncating the time returns a copy of the original time with fields
+     * Truncation returns a copy of the original time with fields
      * smaller than the specified unit set to zero.
      * For example, truncating with the {@link ChronoUnit#MINUTES minutes} unit
      * will set the second-of-minute and nano-of-second field to zero.
@@ -1059,7 +1059,7 @@ public final class LocalTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code LocalTime} with the specified period in hours added.
+     * Returns a copy of this {@code LocalTime} with the specified number of hours added.
      * <p>
      * This adds the specified number of hours to this time, returning a new time.
      * The calculation wraps around midnight.
@@ -1078,7 +1078,7 @@ public final class LocalTime
     }
 
     /**
-     * Returns a copy of this {@code LocalTime} with the specified period in minutes added.
+     * Returns a copy of this {@code LocalTime} with the specified number of minutes added.
      * <p>
      * This adds the specified number of minutes to this time, returning a new time.
      * The calculation wraps around midnight.
@@ -1103,7 +1103,7 @@ public final class LocalTime
     }
 
     /**
-     * Returns a copy of this {@code LocalTime} with the specified period in seconds added.
+     * Returns a copy of this {@code LocalTime} with the specified number of seconds added.
      * <p>
      * This adds the specified number of seconds to this time, returning a new time.
      * The calculation wraps around midnight.
@@ -1130,7 +1130,7 @@ public final class LocalTime
     }
 
     /**
-     * Returns a copy of this {@code LocalTime} with the specified period in nanoseconds added.
+     * Returns a copy of this {@code LocalTime} with the specified number of nanoseconds added.
      * <p>
      * This adds the specified number of nanoseconds to this time, returning a new time.
      * The calculation wraps around midnight.
@@ -1208,7 +1208,7 @@ public final class LocalTime
 
     //-----------------------------------------------------------------------
     /**
-     * Returns a copy of this {@code LocalTime} with the specified period in hours subtracted.
+     * Returns a copy of this {@code LocalTime} with the specified number of hours subtracted.
      * <p>
      * This subtracts the specified number of hours from this time, returning a new time.
      * The calculation wraps around midnight.
@@ -1223,7 +1223,7 @@ public final class LocalTime
     }
 
     /**
-     * Returns a copy of this {@code LocalTime} with the specified period in minutes subtracted.
+     * Returns a copy of this {@code LocalTime} with the specified number of minutes subtracted.
      * <p>
      * This subtracts the specified number of minutes from this time, returning a new time.
      * The calculation wraps around midnight.
@@ -1238,7 +1238,7 @@ public final class LocalTime
     }
 
     /**
-     * Returns a copy of this {@code LocalTime} with the specified period in seconds subtracted.
+     * Returns a copy of this {@code LocalTime} with the specified number of seconds subtracted.
      * <p>
      * This subtracts the specified number of seconds from this time, returning a new time.
      * The calculation wraps around midnight.
@@ -1253,7 +1253,7 @@ public final class LocalTime
     }
 
     /**
-     * Returns a copy of this {@code LocalTime} with the specified period in nanoseconds subtracted.
+     * Returns a copy of this {@code LocalTime} with the specified number of nanoseconds subtracted.
      * <p>
      * This subtracts the specified number of nanoseconds from this time, returning a new time.
      * The calculation wraps around midnight.
@@ -1470,14 +1470,13 @@ public final class LocalTime
 
     //-----------------------------------------------------------------------
     /**
-     * Compares this {@code LocalTime} to another time.
+     * Compares this time to another time.
      * <p>
      * The comparison is based on the time-line position of the local times within a day.
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param other  the other time to compare to, not null
      * @return the comparator value, negative if less, positive if greater
-     * @throws NullPointerException if {@code other} is null
      */
     @Override
     public int compareTo(LocalTime other) {
@@ -1495,26 +1494,24 @@ public final class LocalTime
     }
 
     /**
-     * Checks if this {@code LocalTime} is after the specified time.
+     * Checks if this time is after the specified time.
      * <p>
      * The comparison is based on the time-line position of the time within a day.
      *
      * @param other  the other time to compare to, not null
      * @return true if this is after the specified time
-     * @throws NullPointerException if {@code other} is null
      */
     public boolean isAfter(LocalTime other) {
         return compareTo(other) > 0;
     }
 
     /**
-     * Checks if this {@code LocalTime} is before the specified time.
+     * Checks if this time is before the specified time.
      * <p>
      * The comparison is based on the time-line position of the time within a day.
      *
      * @param other  the other time to compare to, not null
      * @return true if this point is before the specified time
-     * @throws NullPointerException if {@code other} is null
      */
     public boolean isBefore(LocalTime other) {
         return compareTo(other) < 0;

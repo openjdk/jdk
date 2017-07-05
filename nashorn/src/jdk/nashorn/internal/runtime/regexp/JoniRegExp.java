@@ -44,9 +44,6 @@ public class JoniRegExp extends RegExp {
     /** Compiled Joni Regex */
     private Regex regex;
 
-    /** Matcher */
-    private RegExpMatcher matcher;
-
     /**
      * Construct a Regular expression from the given {@code pattern} and {@code flags} strings.
      *
@@ -95,14 +92,7 @@ public class JoniRegExp extends RegExp {
             return null;
         }
 
-        RegExpMatcher currentMatcher = this.matcher;
-
-        if (currentMatcher == null || input != currentMatcher.getInput()) {
-            currentMatcher = new JoniMatcher(input);
-            this.matcher   = currentMatcher;
-        }
-
-        return currentMatcher;
+        return new JoniMatcher(input);
     }
 
     /**

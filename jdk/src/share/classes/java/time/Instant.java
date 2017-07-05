@@ -530,7 +530,7 @@ public final class Instant
     /**
      * Gets the value of the specified field from this instant as an {@code int}.
      * <p>
-     * This queries this instant for the value for the specified field.
+     * This queries this instant for the value of the specified field.
      * The returned value will always be within the valid range of values for the field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
@@ -571,7 +571,7 @@ public final class Instant
     /**
      * Gets the value of the specified field from this instant as a {@code long}.
      * <p>
-     * This queries this instant for the value for the specified field.
+     * This queries this instant for the value of the specified field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
      * <p>

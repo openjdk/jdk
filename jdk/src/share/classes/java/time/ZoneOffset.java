@@ -89,7 +89,7 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * A time-zone offset from Greenwich/UTC, such as {@code +02:00}.
  * <p>
- * A time-zone offset is the period of time that a time-zone differs from Greenwich/UTC.
+ * A time-zone offset is the amount of time that a time-zone differs from Greenwich/UTC.
  * This is usually a fixed number of hours and minutes.
  * <p>
  * Different parts of the world have different time-zone offsets.
@@ -334,7 +334,7 @@ public final class ZoneOffset
      * on extracting the {@link ChronoField#OFFSET_SECONDS OFFSET_SECONDS} field.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
-     * allowing it to be used in queries via method reference, {@code ZoneOffset::from}.
+     * allowing it to be used as a query via method reference, {@code ZoneOffset::from}.
      *
      * @param temporal  the temporal object to convert, not null
      * @return the zone-offset, not null
@@ -564,7 +564,7 @@ public final class ZoneOffset
     /**
      * Gets the value of the specified field from this offset as an {@code int}.
      * <p>
-     * This queries this offset for the value for the specified field.
+     * This queries this offset for the value of the specified field.
      * The returned value will always be within the valid range of values for the field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
@@ -599,7 +599,7 @@ public final class ZoneOffset
     /**
      * Gets the value of the specified field from this offset as a {@code long}.
      * <p>
-     * This queries this offset for the value for the specified field.
+     * This queries this offset for the value of the specified field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
      * <p>

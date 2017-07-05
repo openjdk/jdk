@@ -1186,6 +1186,30 @@ public:
   void verify_dirty_young_list(HeapRegion* head) PRODUCT_RETURN;
   void verify_dirty_young_regions() PRODUCT_RETURN;
 
+#ifndef PRODUCT
+  // Make sure that the given bitmap has no marked objects in the
+  // range [from,limit). If it does, print an error message and return
+  // false. Otherwise, just return true. bitmap_name should be "prev"
+  // or "next".
+  bool verify_no_bits_over_tams(const char* bitmap_name, CMBitMapRO* bitmap,
+                                HeapWord* from, HeapWord* limit);
+
+  // Verify that the prev / next bitmap range [tams,end) for the given
+  // region has no marks. Return true if all is well, false if errors
+  // are detected.
+  bool verify_bitmaps(const char* caller, HeapRegion* hr);
+#endif // PRODUCT
+
+  // If G1VerifyBitmaps is set, verify that the marking bitmaps for
+  // the given region do not have any spurious marks. If errors are
+  // detected, print appropriate error messages and crash.
+  void check_bitmaps(const char* caller, HeapRegion* hr) PRODUCT_RETURN;
+
+  // If G1VerifyBitmaps is set, verify that the marking bitmaps do not
+  // have any spurious marks. If errors are detected, print
+  // appropriate error messages and crash.
+  void check_bitmaps(const char* caller) PRODUCT_RETURN;
+
   // verify_region_sets() performs verification over the region
   // lists. It will be compiled in the product code to be used when
   // necessary (i.e., during heap verification).
