@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,11 @@
 enum platform_dependent_constants {
   code_size1 =  9000,           // simply increase if too small (assembler will crash if too small)
   code_size2 = 22000            // simply increase if too small (assembler will crash if too small)
+};
+
+// MethodHandles adapters
+enum method_handles_platform_dependent_constants {
+  method_handles_adapters_code_size = 5000
 };
 
 class x86 {

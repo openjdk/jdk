@@ -1,5 +1,5 @@
 /*
- * Copyright 2009-2010 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,30 @@
  *
  */
 
-// ciCPCache
-//
-// This class represents a constant pool cache.
-//
-// Note: This class is called ciCPCache as ciConstantPoolCache is used
-// for something different.
-class ciCPCache : public ciObject {
-public:
-  ciCPCache(constantPoolCacheHandle cpcache) : ciObject(cpcache) {}
+/**
+ * @test
+ * @bug 6932496
+ * @summary incorrect deopt of jsr subroutine on 64 bit c1
+ *
+ * @compile -source 1.5 -target 1.5 -XDjsrlimit=0 Test6932496.java
+ * @run main/othervm -Xcomp -XX:CompileOnly=Test6932496.m Test6932496
+ */
 
-  // What kind of ciObject is this?
-  bool is_cpcache() const { return true; }
+public class Test6932496 {
+    static class A {
+        volatile boolean flag = false;
+    }
 
-  // Get the offset in bytes from the oop to the f1 field of the
-  // requested entry.
-  size_t get_f1_offset(int index);
+    static void m() {
+        try {
+        } finally {
+            A a = new A();
+            a.flag = true;
+        }
+    }
 
-  bool is_f1_null_at(int index);
 
-  void print();
-};
+    static public void main(String[] args) {
+        m();
+    }
+}

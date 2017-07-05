@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -259,10 +259,10 @@ CodeEmitInfo::CodeEmitInfo(CodeEmitInfo* info, bool lock_stack_only)
 }
 
 
-void CodeEmitInfo::record_debug_info(DebugInformationRecorder* recorder, int pc_offset) {
+void CodeEmitInfo::record_debug_info(DebugInformationRecorder* recorder, int pc_offset, bool is_method_handle_invoke) {
   // record the safepoint before recording the debug info for enclosing scopes
   recorder->add_safepoint(pc_offset, _oop_map->deep_copy());
-  _scope_debug_info->record_debug_info(recorder, pc_offset, true/*topmost*/);
+  _scope_debug_info->record_debug_info(recorder, pc_offset, true/*topmost*/, is_method_handle_invoke);
   recorder->end_safepoint(pc_offset);
 }
 

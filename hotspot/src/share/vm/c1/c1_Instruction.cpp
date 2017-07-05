@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,13 +334,14 @@ void Intrinsic::state_values_do(void f(Value*)) {
 
 
 Invoke::Invoke(Bytecodes::Code code, ValueType* result_type, Value recv, Values* args,
-               int vtable_index, ciMethod* target)
+               int vtable_index, ciMethod* target, ValueStack* state_before)
   : StateSplit(result_type)
   , _code(code)
   , _recv(recv)
   , _args(args)
   , _vtable_index(vtable_index)
   , _target(target)
+  , _state_before(state_before)
 {
   set_flag(TargetIsLoadedFlag,   target->is_loaded());
   set_flag(TargetIsFinalFlag,    target_is_loaded() && target->is_final_method());
@@ -355,12 +356,22 @@ Invoke::Invoke(Bytecodes::Code code, ValueType* result_type, Value recv, Values*
   _signature = new BasicTypeList(number_of_arguments() + (has_receiver() ? 1 : 0));
   if (has_receiver()) {
     _signature->append(as_BasicType(receiver()->type()));
+  } else if (is_invokedynamic()) {
+    // Add the synthetic MethodHandle argument to the signature.
+    _signature->append(T_OBJECT);
   }
   for (int i = 0; i < number_of_arguments(); i++) {
     ValueType* t = argument_at(i)->type();
     BasicType bt = as_BasicType(t);
     _signature->append(bt);
   }
+}
+
+
+void Invoke::state_values_do(void f(Value*)) {
+  StateSplit::state_values_do(f);
+  if (state_before() != NULL) state_before()->values_do(f);
+  if (state()        != NULL) state()->values_do(f);
 }
 
 
