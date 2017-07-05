@@ -32,8 +32,8 @@ import sun.lwawt.macosx.CPlatformWindow;
 import sun.swing.SwingAccessor;
 
 class ScreenPopupFactory extends PopupFactory {
-    static final Float TRANSLUCENT = new Float(248f/255f);
-    static final Float OPAQUE = new Float(1.0f);
+    static final Float TRANSLUCENT = 248f/255f;
+    static final Float OPAQUE = 1.0f;
 
     boolean fIsActive = true;
 

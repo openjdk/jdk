@@ -82,7 +82,7 @@ $(IMAGES_OUTPUTDIR)/jmods/$(MODULE).jmod: $(DEPS)
             --os-version $(REQUIRED_OS_VERSION) \
 	    --modulepath $(IMAGES_OUTPUTDIR)/jmods\
             --hash-dependencies '.*' \
-            --exclude '**_the.*' \
+            --exclude '**{_the.*,*.diz,*.debuginfo,*.dSYM/**,*.pdb,*.map}' \
 	    $(JMOD_FLAGS) $(SUPPORT_OUTPUTDIR)/jmods/$(notdir $@)
 	$(MV) $(SUPPORT_OUTPUTDIR)/jmods/$(notdir $@) $@
 

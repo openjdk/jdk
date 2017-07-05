@@ -22,9 +22,11 @@
  */
 
 /* @test
- * @bug 4640544
+ * @bug 4640544 8044773
  * @summary Unit test to check SocketChannel setOption/getOption/options
  *          methods.
+ * @run main SocketOptionTests
+ * @run main/othervm -Djdk.launcher.limitmods=java.base SocketOptionTests
  */
 
 import java.nio.*;

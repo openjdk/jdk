@@ -1403,11 +1403,11 @@ public final class Context {
                 return null;
             }
 
-            if (env._print_ast || functionNode.getFlag(FunctionNode.IS_PRINT_AST)) {
+            if (env._print_ast || functionNode.getDebugFlag(FunctionNode.DEBUG_PRINT_AST)) {
                 getErr().println(new ASTWriter(functionNode));
             }
 
-            if (env._print_parse || functionNode.getFlag(FunctionNode.IS_PRINT_PARSE)) {
+            if (env._print_parse || functionNode.getDebugFlag(FunctionNode.DEBUG_PRINT_PARSE)) {
                 getErr().println(new PrintVisitor(functionNode, true, false));
             }
         }

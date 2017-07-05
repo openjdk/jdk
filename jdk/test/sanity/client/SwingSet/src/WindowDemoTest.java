@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.window.WindowDemo;
 import static com.sun.swingset3.demos.window.WindowDemo.*;
 import static org.jemmy2ext.JemmyExt.*;
@@ -31,6 +32,7 @@ import org.netbeans.jemmy.operators.JButtonOperator;
 import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JLabelOperator;
 import org.netbeans.jemmy.operators.WindowOperator;
+import org.testng.annotations.Listeners;
 
 /*
  * @test
@@ -40,37 +42,37 @@ import org.netbeans.jemmy.operators.WindowOperator;
  *          when the "Show JWindow..." button is clicked.
  *
  * @library /sanity/client/lib/jemmy/src
- * @library /sanity/client/lib/Jemmy2Ext/src
+ * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.window.WindowDemo
  * @run testng WindowDemoTest
  */
+@Listeners(GuiTestListener.class)
 public class WindowDemoTest {
 
     @Test
     public void test() throws Exception {
-        captureDebugInfoOnFail(() -> {
-            new ClassReference(WindowDemo.class.getCanonicalName()).startApplication();
 
-            JFrameOperator frame = new JFrameOperator();
+        new ClassReference(WindowDemo.class.getCanonicalName()).startApplication();
 
-            assertEquals("Only one JWindow is shown", 1, getJWindowCount());
+        JFrameOperator frame = new JFrameOperator();
 
-            WindowOperator window = new WindowOperator(getJWindow());
+        assertEquals("Only one JWindow is shown", 1, getJWindowCount());
 
-            assertTrue("JFrame is showing", frame.isShowing());
-            assertFalse("JFrame is not iconified", isIconified(frame));
-            assertTrue("JWindow is showing", window.isShowing());
+        WindowOperator window = new WindowOperator(getJWindow());
 
-            final String labelText = I_HAVE_NO_SYSTEM_BORDER;
-            JLabelOperator jLabelOperator = new JLabelOperator(window, labelText);
-            assertEquals("JWindow contains the label with corresponding text", labelText, jLabelOperator.getText());
+        assertTrue("JFrame is showing", frame.isShowing());
+        assertFalse("JFrame is not iconified", isIconified(frame));
+        assertTrue("JWindow is showing", window.isShowing());
 
-            new JButtonOperator(frame, SHOW_J_WINDOW).push();
+        final String labelText = I_HAVE_NO_SYSTEM_BORDER;
+        JLabelOperator jLabelOperator = new JLabelOperator(window, labelText);
+        assertEquals("JWindow contains the label with corresponding text", labelText, jLabelOperator.getText());
 
-            assertEquals("Only one JWindow is shown", 1, getJWindowCount());
-        });
+        new JButtonOperator(frame, SHOW_J_WINDOW).push();
+
+        assertEquals("Only one JWindow is shown", 1, getJWindowCount());
     }
 
 }

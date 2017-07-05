@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;
 import java.awt.Image;
 import java.awt.Insets;
-import java.awt.MenuBar;
+import java.awt.event.FocusEvent.Cause;
 import java.awt.Point;
 import java.awt.Event;
 import java.awt.event.PaintEvent;
@@ -178,7 +178,7 @@ public class NullComponentPeer implements LightweightPeer,
 
     public boolean requestFocus
         (Component lightweightChild, boolean temporary,
-         boolean focusedWindowChangeAllowed, long time, CausedFocusEvent.Cause cause) {
+         boolean focusedWindowChangeAllowed, long time, Cause cause) {
         return false;
     }
 

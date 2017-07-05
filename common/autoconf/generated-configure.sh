@@ -1224,9 +1224,9 @@ with_lcms
 with_dxsdk
 with_dxsdk_lib
 with_dxsdk_include
-enable_jtreg_failure_handler
 enable_new_hotspot_build
 enable_hotspot_test_in_build
+enable_jtreg_failure_handler
 with_num_cores
 with_memory_size
 with_jobs
@@ -5070,7 +5070,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1460963400
+DATE_WHEN_GENERATED=1462204427
 
 ###############################################################################
 #
@@ -15492,7 +15492,7 @@ $as_echo "$COMPILE_TYPE" >&6; }
     HOTSPOT_TARGET_CPU_DEFINE=PPC32
   elif test "x$OPENJDK_TARGET_CPU" = xs390; then
     HOTSPOT_TARGET_CPU_DEFINE=S390
-  elif test "x$OPENJDK_TARGET_CPU" = ss390x; then
+  elif test "x$OPENJDK_TARGET_CPU" = xs390x; then
     HOTSPOT_TARGET_CPU_DEFINE=S390
   fi
 
@@ -15648,7 +15648,7 @@ $as_echo "$COMPILE_TYPE" >&6; }
     HOTSPOT_BUILD_CPU_DEFINE=PPC32
   elif test "x$OPENJDK_BUILD_CPU" = xs390; then
     HOTSPOT_BUILD_CPU_DEFINE=S390
-  elif test "x$OPENJDK_BUILD_CPU" = ss390x; then
+  elif test "x$OPENJDK_BUILD_CPU" = xs390x; then
     HOTSPOT_BUILD_CPU_DEFINE=S390
   fi
 
@@ -64274,6 +64274,21 @@ $as_echo_n "checking flags for boot jdk java command for small workloads... " >&
   FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
   if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
     boot_jdk_jvmargs_small="$boot_jdk_jvmargs_small -Xmx512M"
+    JVM_ARG_OK=true
+  else
+    $ECHO "Arg failed:" >&5
+    $ECHO "$OUTPUT" >&5
+    JVM_ARG_OK=false
+  fi
+
+
+  $ECHO "Check if jvm arg is ok: -XX:TieredStopAtLevel=1" >&5
+  $ECHO "Command: $JAVA -XX:TieredStopAtLevel=1 -version" >&5
+  OUTPUT=`$JAVA -XX:TieredStopAtLevel=1 -version 2>&1`
+  FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
+  FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
+  if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
+    boot_jdk_jvmargs_small="$boot_jdk_jvmargs_small -XX:TieredStopAtLevel=1"
     JVM_ARG_OK=true
   else
     $ECHO "Arg failed:" >&5

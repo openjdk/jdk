@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.tabbedpane.TabbedPaneDemo;
 import static com.sun.swingset3.demos.tabbedpane.TabbedPaneDemo.*;
 import static org.jemmy2ext.JemmyExt.getLabeledContainerOperator;
@@ -31,7 +32,7 @@ import org.netbeans.jemmy.operators.ContainerOperator;
 import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JRadioButtonOperator;
 import org.netbeans.jemmy.operators.JTabbedPaneOperator;
-import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
+import org.testng.annotations.Listeners;
 
 /*
  * @test
@@ -40,25 +41,24 @@ import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
  *          positions, opening each tab and verifying the the tab gets selected.
  *
  * @library /sanity/client/lib/jemmy/src
- * @library /sanity/client/lib/Jemmy2Ext/src
+ * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.tabbedpane.TabbedPaneDemo
  * @run testng TabbedPaneDemoTest
  */
+@Listeners(GuiTestListener.class)
 public class TabbedPaneDemoTest {
 
     @Test
     public void test() throws Exception {
-        captureDebugInfoOnFail(() -> {
-            new ClassReference(TabbedPaneDemo.class.getCanonicalName()).startApplication();
+        new ClassReference(TabbedPaneDemo.class.getCanonicalName()).startApplication();
 
-            JFrameOperator mainFrame = new JFrameOperator(DEMO_TITLE);
+        JFrameOperator mainFrame = new JFrameOperator(DEMO_TITLE);
 
-            for (String tp : new String[]{TOP, LEFT, BOTTOM, RIGHT}) {
-                testTabs(mainFrame, tp);
-            }
-        });
+        for (String tp : new String[]{TOP, LEFT, BOTTOM, RIGHT}) {
+            testTabs(mainFrame, tp);
+        }
     }
 
     public void testTabs(JFrameOperator mainFrame, String tabPlacement) throws Exception {

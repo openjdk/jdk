@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import java.lang.reflect.Array;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
@@ -1892,7 +1893,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             MH_tryFinallyExec        = 12,
             MH_tryFinallyVoidExec    = 13,
             MH_decrementCounter      = 14,
-            MH_LIMIT                 = 15;
+            MH_Array_newInstance     = 15,
+            MH_LIMIT                 = 16;
 
     static MethodHandle getConstantHandle(int idx) {
         MethodHandle handle = HANDLES[idx];
@@ -1965,6 +1967,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 case MH_decrementCounter:
                     return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "decrementCounter",
                             MethodType.methodType(int.class, int.class));
+                case MH_Array_newInstance:
+                    return IMPL_LOOKUP.findStatic(Array.class, "newInstance",
+                            MethodType.methodType(Object.class, Class.class, int.class));
             }
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);

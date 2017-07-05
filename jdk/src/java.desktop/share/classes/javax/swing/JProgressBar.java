@@ -478,7 +478,7 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
             if (format == null) {
                 format = NumberFormat.getPercentInstance();
             }
-            return format.format(new Double(getPercentComplete()));
+            return format.format(Double.valueOf(getPercentComplete()));
         }
     }
 

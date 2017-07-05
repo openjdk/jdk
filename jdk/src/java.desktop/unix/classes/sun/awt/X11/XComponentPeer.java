@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,7 +287,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
     @SuppressWarnings("deprecation")
     public final boolean requestFocus(Component lightweightChild, boolean temporary,
                                       boolean focusedWindowChangeAllowed, long time,
-                                      CausedFocusEvent.Cause cause)
+                                      FocusEvent.Cause cause)
     {
         if (XKeyboardFocusManagerPeer.
             processSynchronousLightweightTransfer(target, lightweightChild, temporary,
@@ -527,7 +527,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
 //                       WindowEvent wfg = new WindowEvent(parentWindow, WindowEvent.WINDOW_GAINED_FOCUS);
 //                       parentWindow.dispatchEvent(wfg);
 //                   }
-                  XKeyboardFocusManagerPeer.requestFocusFor(target, CausedFocusEvent.Cause.MOUSE_EVENT);
+                  XKeyboardFocusManagerPeer.requestFocusFor(target, FocusEvent.Cause.MOUSE_EVENT);
               }
               break;
         }

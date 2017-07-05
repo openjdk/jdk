@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.jtregext.GuiTestListener;
 import com.sun.swingset3.demos.textfield.JHistoryTextField;
 import com.sun.swingset3.demos.textfield.TextFieldDemo;
 import static com.sun.swingset3.demos.textfield.TextFieldDemo.*;
@@ -41,6 +42,7 @@ import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JLabelOperator;
 import org.netbeans.jemmy.operators.JPasswordFieldOperator;
 import org.netbeans.jemmy.operators.JTextFieldOperator;
+import org.testng.annotations.Listeners;
 
 /*
  * @test
@@ -49,25 +51,25 @@ import org.netbeans.jemmy.operators.JTextFieldOperator;
  *          checking that app reacts accordingly.
  *
  * @library /sanity/client/lib/jemmy/src
- * @library /sanity/client/lib/Jemmy2Ext/src
+ * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.textfield.TextFieldDemo
  * @run testng TextFieldDemoTest
  */
+@Listeners(GuiTestListener.class)
 public class TextFieldDemoTest {
 
     @Test
     public void test() throws Exception {
-        captureDebugInfoOnFail(() -> {
-            new ClassReference(TextFieldDemo.class.getCanonicalName()).startApplication();
 
-            JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
+        new ClassReference(TextFieldDemo.class.getCanonicalName()).startApplication();
 
-            historyTextField(frame);
-            dateTextField(frame);
-            passwordField(frame);
-        });
+        JFrameOperator frame = new JFrameOperator(DEMO_TITLE);
+
+        historyTextField(frame);
+        dateTextField(frame);
+        passwordField(frame);
     }
 
     private void historyTextField(JFrameOperator jfo) throws Exception {

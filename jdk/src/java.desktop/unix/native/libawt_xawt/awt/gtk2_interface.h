@@ -28,231 +28,10 @@
 #include <stdlib.h>
 #include <jni.h>
 #include <X11/X.h>
-
-#define _G_TYPE_CIC(ip, gt, ct)       ((ct*) ip)
-#define G_TYPE_CHECK_INSTANCE_CAST(instance, g_type, c_type)    (_G_TYPE_CIC ((instance), (g_type), c_type))
-#define GTK_TYPE_FILE_CHOOSER             (fp_gtk_file_chooser_get_type ())
-#define GTK_FILE_CHOOSER(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), GTK_TYPE_FILE_CHOOSER, GtkFileChooser))
-#define fp_g_signal_connect(instance, detailed_signal, c_handler, data) \
-    fp_g_signal_connect_data ((instance), (detailed_signal), (c_handler), (data), NULL, (GConnectFlags) 0)
-#define G_CALLBACK(f) ((GCallback) (f))
-#define G_TYPE_FUNDAMENTAL_SHIFT (2)
-#define G_TYPE_MAKE_FUNDAMENTAL(x) ((GType) ((x) << G_TYPE_FUNDAMENTAL_SHIFT))
-#define G_TYPE_OBJECT G_TYPE_MAKE_FUNDAMENTAL (20)
-#define G_OBJECT(object) (G_TYPE_CHECK_INSTANCE_CAST ((object), G_TYPE_OBJECT, GObject))
-#define GTK_STOCK_CANCEL           "gtk-cancel"
-#define GTK_STOCK_SAVE             "gtk-save"
-#define GTK_STOCK_OPEN             "gtk-open"
-#define GDK_CURRENT_TIME           0L
-
-typedef enum _WidgetType
-{
-    BUTTON,                     /* GtkButton */
-    CHECK_BOX,                  /* GtkCheckButton */
-    CHECK_BOX_MENU_ITEM,        /* GtkCheckMenuItem */
-    COLOR_CHOOSER,              /* GtkColorSelectionDialog */
-    COMBO_BOX,                  /* GtkComboBox */
-    COMBO_BOX_ARROW_BUTTON,     /* GtkComboBoxEntry */
-    COMBO_BOX_TEXT_FIELD,       /* GtkComboBoxEntry */
-    DESKTOP_ICON,               /* GtkLabel */
-    DESKTOP_PANE,               /* GtkContainer */
-    EDITOR_PANE,                /* GtkTextView */
-    FORMATTED_TEXT_FIELD,       /* GtkEntry */
-    HANDLE_BOX,                 /* GtkHandleBox */
-    HPROGRESS_BAR,              /* GtkProgressBar */
-    HSCROLL_BAR,                /* GtkHScrollbar */
-    HSCROLL_BAR_BUTTON_LEFT,    /* GtkHScrollbar */
-    HSCROLL_BAR_BUTTON_RIGHT,   /* GtkHScrollbar */
-    HSCROLL_BAR_TRACK,          /* GtkHScrollbar */
-    HSCROLL_BAR_THUMB,          /* GtkHScrollbar */
-    HSEPARATOR,                 /* GtkHSeparator */
-    HSLIDER,                    /* GtkHScale */
-    HSLIDER_TRACK,              /* GtkHScale */
-    HSLIDER_THUMB,              /* GtkHScale */
-    HSPLIT_PANE_DIVIDER,        /* GtkHPaned */
-    INTERNAL_FRAME,             /* GtkWindow */
-    INTERNAL_FRAME_TITLE_PANE,  /* GtkLabel */
-    IMAGE,                      /* GtkImage */
-    LABEL,                      /* GtkLabel */
-    LIST,                       /* GtkTreeView */
-    MENU,                       /* GtkMenu */
-    MENU_BAR,                   /* GtkMenuBar */
-    MENU_ITEM,                  /* GtkMenuItem */
-    MENU_ITEM_ACCELERATOR,      /* GtkLabel */
-    OPTION_PANE,                /* GtkMessageDialog */
-    PANEL,                      /* GtkContainer */
-    PASSWORD_FIELD,             /* GtkEntry */
-    POPUP_MENU,                 /* GtkMenu */
-    POPUP_MENU_SEPARATOR,       /* GtkSeparatorMenuItem */
-    RADIO_BUTTON,               /* GtkRadioButton */
-    RADIO_BUTTON_MENU_ITEM,     /* GtkRadioMenuItem */
-    ROOT_PANE,                  /* GtkContainer */
-    SCROLL_PANE,                /* GtkScrolledWindow */
-    SPINNER,                    /* GtkSpinButton */
-    SPINNER_ARROW_BUTTON,       /* GtkSpinButton */
-    SPINNER_TEXT_FIELD,         /* GtkSpinButton */
-    SPLIT_PANE,                 /* GtkPaned */
-    TABBED_PANE,                /* GtkNotebook */
-    TABBED_PANE_TAB_AREA,       /* GtkNotebook */
-    TABBED_PANE_CONTENT,        /* GtkNotebook */
-    TABBED_PANE_TAB,            /* GtkNotebook */
-    TABLE,                      /* GtkTreeView */
-    TABLE_HEADER,               /* GtkButton */
-    TEXT_AREA,                  /* GtkTextView */
-    TEXT_FIELD,                 /* GtkEntry */
-    TEXT_PANE,                  /* GtkTextView */
-    TITLED_BORDER,              /* GtkFrame */
-    TOGGLE_BUTTON,              /* GtkToggleButton */
-    TOOL_BAR,                   /* GtkToolbar */
-    TOOL_BAR_DRAG_WINDOW,       /* GtkToolbar */
-    TOOL_BAR_SEPARATOR,         /* GtkSeparatorToolItem */
-    TOOL_TIP,                   /* GtkWindow */
-    TREE,                       /* GtkTreeView */
-    TREE_CELL,                  /* GtkTreeView */
-    VIEWPORT,                   /* GtkViewport */
-    VPROGRESS_BAR,              /* GtkProgressBar */
-    VSCROLL_BAR,                /* GtkVScrollbar */
-    VSCROLL_BAR_BUTTON_UP,      /* GtkVScrollbar */
-    VSCROLL_BAR_BUTTON_DOWN,    /* GtkVScrollbar */
-    VSCROLL_BAR_TRACK,          /* GtkVScrollbar */
-    VSCROLL_BAR_THUMB,          /* GtkVScrollbar */
-    VSEPARATOR,                 /* GtkVSeparator */
-    VSLIDER,                    /* GtkVScale */
-    VSLIDER_TRACK,              /* GtkVScale */
-    VSLIDER_THUMB,              /* GtkVScale */
-    VSPLIT_PANE_DIVIDER,        /* GtkVPaned */
-    WIDGET_TYPE_SIZE
-} WidgetType;
-
-typedef enum _ColorType
-{
-    FOREGROUND,
-    BACKGROUND,
-    TEXT_FOREGROUND,
-    TEXT_BACKGROUND,
-    FOCUS,
-    LIGHT,
-    DARK,
-    MID,
-    BLACK,
-    WHITE
-} ColorType;
-
-typedef enum _Setting
-{
-    GTK_FONT_NAME,
-    GTK_ICON_SIZES,
-    GTK_CURSOR_BLINK,
-    GTK_CURSOR_BLINK_TIME
-} Setting;
-
-/* GTK types, here to eliminate need for GTK headers at compile time */
-
-#ifndef FALSE
-#define FALSE           (0)
-#define TRUE            (!FALSE)
-#endif
+#include "gtk_interface.h"
 
 #define GTK_HAS_FOCUS   (1 << 12)
 #define GTK_HAS_DEFAULT (1 << 14)
-
-
-/* basic types */
-typedef char    gchar;
-typedef short   gshort;
-typedef int     gint;
-typedef long    glong;
-typedef float   gfloat;
-typedef double  gdouble;
-typedef void*   gpointer;
-typedef gint    gboolean;
-
-typedef signed char  gint8;
-typedef signed short gint16;
-typedef signed int   gint32;
-
-typedef unsigned char  guchar;
-typedef unsigned char  guint8;
-typedef unsigned short gushort;
-typedef unsigned short guint16;
-typedef unsigned int   guint;
-typedef unsigned int   guint32;
-typedef unsigned int   gsize;
-typedef unsigned long  gulong;
-
-typedef signed long long   gint64;
-typedef unsigned long long guint64;
-
-/* enumerated constants */
-typedef enum
-{
-  GTK_ARROW_UP,
-  GTK_ARROW_DOWN,
-  GTK_ARROW_LEFT,
-  GTK_ARROW_RIGHT
-} GtkArrowType;
-
-typedef enum {
-  GDK_COLORSPACE_RGB
-} GdkColorspace;
-
-typedef enum
-{
-  GTK_EXPANDER_COLLAPSED,
-  GTK_EXPANDER_SEMI_COLLAPSED,
-  GTK_EXPANDER_SEMI_EXPANDED,
-  GTK_EXPANDER_EXPANDED
-} GtkExpanderStyle;
-
-typedef enum
-{
-  GTK_ICON_SIZE_INVALID,
-  GTK_ICON_SIZE_MENU,
-  GTK_ICON_SIZE_SMALL_TOOLBAR,
-  GTK_ICON_SIZE_LARGE_TOOLBAR,
-  GTK_ICON_SIZE_BUTTON,
-  GTK_ICON_SIZE_DND,
-  GTK_ICON_SIZE_DIALOG
-} GtkIconSize;
-
-typedef enum
-{
-  GTK_ORIENTATION_HORIZONTAL,
-  GTK_ORIENTATION_VERTICAL
-} GtkOrientation;
-
-typedef enum
-{
-  GTK_POS_LEFT,
-  GTK_POS_RIGHT,
-  GTK_POS_TOP,
-  GTK_POS_BOTTOM
-} GtkPositionType;
-
-typedef enum
-{
-  GTK_SHADOW_NONE,
-  GTK_SHADOW_IN,
-  GTK_SHADOW_OUT,
-  GTK_SHADOW_ETCHED_IN,
-  GTK_SHADOW_ETCHED_OUT
-} GtkShadowType;
-
-typedef enum
-{
-  GTK_STATE_NORMAL,
-  GTK_STATE_ACTIVE,
-  GTK_STATE_PRELIGHT,
-  GTK_STATE_SELECTED,
-  GTK_STATE_INSENSITIVE
-} GtkStateType;
-
-typedef enum
-{
-  GTK_TEXT_DIR_NONE,
-  GTK_TEXT_DIR_LTR,
-  GTK_TEXT_DIR_RTL
-} GtkTextDirection;
 
 typedef enum
 {
@@ -270,41 +49,15 @@ typedef enum
   G_PARAM_PRIVATE             = 1 << 5
 } GParamFlags;
 
-typedef enum {
-    GDK_INTERP_NEAREST,
-    GDK_INTERP_TILES,
-    GDK_INTERP_BILINEAR,
-    GDK_INTERP_HYPER
-} GdkInterpType;
-
 /* We define all structure pointers to be void* */
-typedef void GError;
 typedef void GMainContext;
 typedef void GVfs;
-
-typedef struct _GSList GSList;
-struct _GSList
-{
-  gpointer data;
-  GSList *next;
-};
-
-typedef struct _GList GList;
-
-struct _GList
-{
-  gpointer data;
-  GList *next;
-  GList *prev;
-};
 
 typedef void GdkColormap;
 typedef void GdkDrawable;
 typedef void GdkGC;
-typedef void GdkScreen;
 typedef void GdkPixbuf;
 typedef void GdkPixmap;
-typedef void GdkWindow;
 
 typedef void GtkFixed;
 typedef void GtkMenuItem;
@@ -364,7 +117,6 @@ typedef struct {
  * structures. This is a place where getting rid of gtk
  * headers may be dangerous.
  ******************************************************/
-typedef gulong         GType;
 
 typedef struct
 {
@@ -599,69 +351,8 @@ struct _GtkProgressBar
   guint ellipsize : 3;
 };
 
-typedef enum {
-  GTK_RESPONSE_NONE = -1,
-  GTK_RESPONSE_REJECT = -2,
-  GTK_RESPONSE_ACCEPT = -3,
-  GTK_RESPONSE_DELETE_EVENT = -4,
-  GTK_RESPONSE_OK = -5,
-  GTK_RESPONSE_CANCEL = -6,
-  GTK_RESPONSE_CLOSE = -7,
-  GTK_RESPONSE_YES = -8,
-  GTK_RESPONSE_NO = -9,
-  GTK_RESPONSE_APPLY = -10,
-  GTK_RESPONSE_HELP = -11
-} GtkResponseType;
-
-typedef struct _GtkWindow GtkWindow;
-
-typedef struct _GtkFileChooser GtkFileChooser;
-
-typedef enum {
-  GTK_FILE_CHOOSER_ACTION_OPEN,
-  GTK_FILE_CHOOSER_ACTION_SAVE,
-  GTK_FILE_CHOOSER_ACTION_SELECT_FOLDER,
-  GTK_FILE_CHOOSER_ACTION_CREATE_FOLDER
-} GtkFileChooserAction;
-
-typedef struct _GtkFileFilter GtkFileFilter;
-
-typedef enum {
-  GTK_FILE_FILTER_FILENAME = 1 << 0,
-  GTK_FILE_FILTER_URI = 1 << 1,
-  GTK_FILE_FILTER_DISPLAY_NAME = 1 << 2,
-  GTK_FILE_FILTER_MIME_TYPE = 1 << 3
-} GtkFileFilterFlags;
-
-typedef struct {
-  GtkFileFilterFlags contains;
-  const gchar *filename;
-  const gchar *uri;
-  const gchar *display_name;
-  const gchar *mime_type;
-} GtkFileFilterInfo;
-
-typedef gboolean (*GtkFileFilterFunc)(const GtkFileFilterInfo *filter_info,
-    gpointer data);
-
-typedef void (*GDestroyNotify)(gpointer data);
-
-typedef void (*GCallback)(void);
-
-typedef struct _GClosure GClosure;
-
-typedef void (*GClosureNotify)(gpointer data, GClosure *closure);
-
-typedef enum {
-  G_CONNECT_AFTER = 1 << 0, G_CONNECT_SWAPPED = 1 << 1
-} GConnectFlags;
 
 typedef struct _GThreadFunctions GThreadFunctions;
-
-/*
- * Converts java.lang.String object to UTF-8 character string.
- */
-const char *getStrFor(JNIEnv *env, jstring value);
 
 /**
  * Returns :
@@ -670,7 +361,7 @@ const char *getStrFor(JNIEnv *env, jstring value);
  * Please note that the glib_check_version() is available since 2.6,
  * so you should use GLIB_CHECK_VERSION macro instead.
  */
-gchar* (*fp_glib_check_version)(guint required_major, guint required_minor,
+static gchar* (*fp_glib_check_version)(guint required_major, guint required_minor,
                        guint required_micro);
 
 /**
@@ -680,193 +371,96 @@ gchar* (*fp_glib_check_version)(guint required_major, guint required_minor,
 #define GLIB_CHECK_VERSION(major, minor, micro) \
     (fp_glib_check_version && fp_glib_check_version(major, minor, micro) == NULL)
 
-/*
- * Check whether the gtk2 library is available and meets the minimum
- * version requirement.  If the library is already loaded this method has no
- * effect and returns success.
- * Returns FALSE on failure and TRUE on success.
- */
-gboolean gtk2_check_version();
-
 /**
  * Returns :
  * NULL if the GTK+ library is compatible with the given version, or a string
  * describing the version mismatch.
  */
-gchar* (*fp_gtk_check_version)(guint required_major, guint required_minor,
+static gchar* (*fp_gtk_check_version)(guint required_major, guint required_minor,
                        guint required_micro);
-/*
- * Load the gtk2 library.  If the library is already loaded this method has no
- * effect and returns success.
- * Returns FALSE on failure and TRUE on success.
- */
-gboolean gtk2_load(JNIEnv *env);
 
-/*
- * Loads fp_gtk_show_uri function pointer. This initialization is
- * separated because the function is required only
- * for java.awt.Desktop API. The function relies on initialization in
- * gtk2_load, so it must be invoked only after a successful gtk2_load
- * invocation
- */
-gboolean gtk2_show_uri_load(JNIEnv *env);
+static void gtk2_init(GtkApi* gtk);
 
-/*
- * Unload the gtk2 library.  If the library is already unloaded this method has
- * no effect and returns success.
- * Returns FALSE on failure and TRUE on success.
- */
-gboolean gtk2_unload();
+static void (*fp_g_free)(gpointer mem);
+static void (*fp_g_object_unref)(gpointer object);
+static GdkWindow *(*fp_gdk_get_default_root_window) (void);
 
-void gtk2_paint_arrow(WidgetType widget_type, GtkStateType state_type,
-        GtkShadowType shadow_type, const gchar *detail,
-        gint x, gint y, gint width, gint height,
-        GtkArrowType arrow_type, gboolean fill);
-void gtk2_paint_box(WidgetType widget_type, GtkStateType state_type,
-        GtkShadowType shadow_type, const gchar *detail,
-        gint x, gint y, gint width, gint height,
-        gint synth_state, GtkTextDirection dir);
-void gtk2_paint_box_gap(WidgetType widget_type, GtkStateType state_type,
-        GtkShadowType shadow_type, const gchar *detail,
-        gint x, gint y, gint width, gint height,
-        GtkPositionType gap_side, gint gap_x, gint gap_width);
-void gtk2_paint_check(WidgetType widget_type, gint synth_state,
-        const gchar *detail, gint x, gint y, gint width, gint height);
-void gtk2_paint_diamond(WidgetType widget_type, GtkStateType state_type,
-        GtkShadowType shadow_type, const gchar *detail,
-        gint x, gint y, gint width, gint height);
-void gtk2_paint_expander(WidgetType widget_type, GtkStateType state_type,
-        const gchar *detail, gint x, gint y, gint width, gint height,
-        GtkExpanderStyle expander_style);
-void gtk2_paint_extension(WidgetType widget_type, GtkStateType state_type,
-        GtkShadowType shadow_type, const gchar *detail,
-        gint x, gint y, gint width, gint height, GtkPositionType gap_side);
-void gtk2_paint_flat_box(WidgetType widget_type, GtkStateType state_type,
-        GtkShadowType shadow_type, const gchar *detail,
-        gint x, gint y, gint width, gint height, gboolean has_focus);
-void gtk2_paint_focus(WidgetType widget_type, GtkStateType state_type,
-        const char *detail, gint x, gint y, gint width, gint height);
-void gtk2_paint_handle(WidgetType widget_type, GtkStateType state_type,
-        GtkShadowType shadow_type, const gchar *detail,
-        gint x, gint y, gint width, gint height, GtkOrientation orientation);
-void gtk2_paint_hline(WidgetType widget_type, GtkStateType state_type,
-        const gchar *detail, gint x, gint y, gint width, gint height);
-void gtk2_paint_option(WidgetType widget_type, gint synth_state,
-        const gchar *detail, gint x, gint y, gint width, gint height);
-void gtk2_paint_shadow(WidgetType widget_type, GtkStateType state_type,
-        GtkShadowType shadow_type, const gchar *detail,
-        gint x, gint y, gint width, gint height,
-        gint synth_state, GtkTextDirection dir);
-void gtk2_paint_slider(WidgetType widget_type, GtkStateType state_type,
-        GtkShadowType shadow_type, const gchar *detail,
-        gint x, gint y, gint width, gint height, GtkOrientation orientation);
-void gtk2_paint_vline(WidgetType widget_type, GtkStateType state_type,
-        const gchar *detail, gint x, gint y, gint width, gint height);
-void gtk_paint_background(WidgetType widget_type, GtkStateType state_type,
-        gint x, gint y, gint width, gint height);
+static int (*fp_gdk_pixbuf_get_bits_per_sample)(const GdkPixbuf *pixbuf);
+static guchar *(*fp_gdk_pixbuf_get_pixels)(const GdkPixbuf *pixbuf);
+static gboolean (*fp_gdk_pixbuf_get_has_alpha)(const GdkPixbuf *pixbuf);
+static int (*fp_gdk_pixbuf_get_height)(const GdkPixbuf *pixbuf);
+static int (*fp_gdk_pixbuf_get_n_channels)(const GdkPixbuf *pixbuf);
+static int (*fp_gdk_pixbuf_get_rowstride)(const GdkPixbuf *pixbuf);
+static int (*fp_gdk_pixbuf_get_width)(const GdkPixbuf *pixbuf);
+static GdkPixbuf *(*fp_gdk_pixbuf_new_from_file)(const char *filename, GError **error);
+static GdkColorspace (*fp_gdk_pixbuf_get_colorspace)(const GdkPixbuf *pixbuf);
 
-void gtk2_init_painting(JNIEnv *env, gint w, gint h);
-gint gtk2_copy_image(gint *dest, gint width, gint height);
-
-gint gtk2_get_xthickness(JNIEnv *env, WidgetType widget_type);
-gint gtk2_get_ythickness(JNIEnv *env, WidgetType widget_type);
-gint gtk2_get_color_for_state(JNIEnv *env, WidgetType widget_type,
-                              GtkStateType state_type, ColorType color_type);
-jobject gtk2_get_class_value(JNIEnv *env, WidgetType widget_type, jstring key);
-
-GdkPixbuf *gtk2_get_stock_icon(gint widget_type, const gchar *stock_id,
-        GtkIconSize size, GtkTextDirection direction, const char *detail);
-GdkPixbuf *gtk2_get_icon(const gchar *filename, gint size);
-jstring gtk2_get_pango_font_name(JNIEnv *env, WidgetType widget_type);
-
-void flush_gtk_event_loop();
-
-jobject gtk2_get_setting(JNIEnv *env, Setting property);
-
-void gtk2_set_range_value(WidgetType widget_type, jdouble value,
-                          jdouble min, jdouble max, jdouble visible);
-
-void (*fp_g_free)(gpointer mem);
-void (*fp_g_object_unref)(gpointer object);
-GdkWindow *(*fp_gdk_get_default_root_window) (void);
-
-int (*fp_gdk_pixbuf_get_bits_per_sample)(const GdkPixbuf *pixbuf);
-guchar *(*fp_gdk_pixbuf_get_pixels)(const GdkPixbuf *pixbuf);
-gboolean (*fp_gdk_pixbuf_get_has_alpha)(const GdkPixbuf *pixbuf);
-int (*fp_gdk_pixbuf_get_height)(const GdkPixbuf *pixbuf);
-int (*fp_gdk_pixbuf_get_n_channels)(const GdkPixbuf *pixbuf);
-int (*fp_gdk_pixbuf_get_rowstride)(const GdkPixbuf *pixbuf);
-int (*fp_gdk_pixbuf_get_width)(const GdkPixbuf *pixbuf);
-GdkPixbuf *(*fp_gdk_pixbuf_new_from_file)(const char *filename, GError **error);
-GdkColorspace (*fp_gdk_pixbuf_get_colorspace)(const GdkPixbuf *pixbuf);
-
-GdkPixbuf *(*fp_gdk_pixbuf_get_from_drawable)(GdkPixbuf *dest,
+static GdkPixbuf *(*fp_gdk_pixbuf_get_from_drawable)(GdkPixbuf *dest,
         GdkDrawable *src, GdkColormap *cmap, int src_x, int src_y,
         int dest_x, int dest_y, int width, int height);
-GdkPixbuf *(*fp_gdk_pixbuf_scale_simple)(GdkPixbuf *src,
+static GdkPixbuf *(*fp_gdk_pixbuf_scale_simple)(GdkPixbuf *src,
         int dest_width, int dest_heigh, GdkInterpType interp_type);
 
 
-void (*fp_gtk_widget_destroy)(GtkWidget *widget);
-void (*fp_gtk_window_present)(GtkWindow *window);
-void (*fp_gtk_window_move)(GtkWindow *window, gint x, gint y);
-void (*fp_gtk_window_resize)(GtkWindow *window, gint width, gint height);
+static void (*fp_gtk_widget_destroy)(void *widget);
+static void (*fp_gtk_window_present)(GtkWindow *window);
+static void (*fp_gtk_window_move)(GtkWindow *window, gint x, gint y);
+static void (*fp_gtk_window_resize)(GtkWindow *window, gint width, gint height);
 
 /**
  * Function Pointers for GtkFileChooser
  */
-gchar* (*fp_gtk_file_chooser_get_filename)(GtkFileChooser *chooser);
-void (*fp_gtk_widget_hide)(GtkWidget *widget);
-void (*fp_gtk_main_quit)(void);
-GtkWidget* (*fp_gtk_file_chooser_dialog_new)(const gchar *title,
+static gchar* (*fp_gtk_file_chooser_get_filename)(GtkFileChooser *chooser);
+static void (*fp_gtk_widget_hide)(void *widget);
+static void (*fp_gtk_main_quit)(void);
+static void* (*fp_gtk_file_chooser_dialog_new)(const gchar *title,
     GtkWindow *parent, GtkFileChooserAction action,
     const gchar *first_button_text, ...);
-gboolean (*fp_gtk_file_chooser_set_current_folder)(GtkFileChooser *chooser,
+static gboolean (*fp_gtk_file_chooser_set_current_folder)(GtkFileChooser *chooser,
     const gchar *filename);
-gboolean (*fp_gtk_file_chooser_set_filename)(GtkFileChooser *chooser,
+static gboolean (*fp_gtk_file_chooser_set_filename)(GtkFileChooser *chooser,
     const char *filename);
-void (*fp_gtk_file_chooser_set_current_name)(GtkFileChooser *chooser,
+static void (*fp_gtk_file_chooser_set_current_name)(GtkFileChooser *chooser,
     const gchar *name);
-void (*fp_gtk_file_filter_add_custom)(GtkFileFilter *filter,
+static void (*fp_gtk_file_filter_add_custom)(GtkFileFilter *filter,
     GtkFileFilterFlags needed, GtkFileFilterFunc func, gpointer data,
     GDestroyNotify notify);
-void (*fp_gtk_file_chooser_set_filter)(GtkFileChooser *chooser,
+static void (*fp_gtk_file_chooser_set_filter)(GtkFileChooser *chooser,
     GtkFileFilter *filter);
-GType (*fp_gtk_file_chooser_get_type)(void);
-GtkFileFilter* (*fp_gtk_file_filter_new)(void);
-void (*fp_gtk_file_chooser_set_do_overwrite_confirmation)(
+static GType (*fp_gtk_file_chooser_get_type)(void);
+static GtkFileFilter* (*fp_gtk_file_filter_new)(void);
+static void (*fp_gtk_file_chooser_set_do_overwrite_confirmation)(
     GtkFileChooser *chooser, gboolean do_overwrite_confirmation);
-void (*fp_gtk_file_chooser_set_select_multiple)(
+static void (*fp_gtk_file_chooser_set_select_multiple)(
     GtkFileChooser *chooser, gboolean select_multiple);
-gchar* (*fp_gtk_file_chooser_get_current_folder)(GtkFileChooser *chooser);
-GSList* (*fp_gtk_file_chooser_get_filenames)(GtkFileChooser *chooser);
-guint (*fp_gtk_g_slist_length)(GSList *list);
-gulong (*fp_g_signal_connect_data)(gpointer instance,
+static gchar* (*fp_gtk_file_chooser_get_current_folder)(GtkFileChooser *chooser);
+static GSList* (*fp_gtk_file_chooser_get_filenames)(GtkFileChooser *chooser);
+static guint (*fp_gtk_g_slist_length)(GSList *list);
+static gulong (*fp_g_signal_connect_data)(gpointer instance,
     const gchar *detailed_signal, GCallback c_handler, gpointer data,
     GClosureNotify destroy_data, GConnectFlags connect_flags);
-void (*fp_gtk_widget_show)(GtkWidget *widget);
-void (*fp_gtk_main)(void);
-guint (*fp_gtk_main_level)(void);
-gchar* (*fp_g_path_get_dirname) (const gchar *file_name);
-XID (*fp_gdk_x11_drawable_get_xid) (GdkWindow *drawable);
+static void (*fp_gtk_widget_show)(void *widget);
+static void (*fp_gtk_main)(void);
+static guint (*fp_gtk_main_level)(void);
+static gchar* (*fp_g_path_get_dirname) (const gchar *file_name);
+static XID (*fp_gdk_x11_drawable_get_xid) (GdkWindow *drawable);
 
-
-GList* (*fp_g_list_append) (GList *list, gpointer data);
-void (*fp_g_list_free) (GList *list);
-void (*fp_g_list_free_full) (GList *list, GDestroyNotify free_func);
+static GList* (*fp_g_list_append) (GList *list, gpointer data);
+static void (*fp_g_list_free) (GList *list);
+static void (*fp_g_list_free_full) (GList *list, GDestroyNotify free_func);
 
 /**
  * This function is available for GLIB > 2.20, so it MUST be
  * called within GLIB_CHECK_VERSION(2, 20, 0) check.
  */
-gboolean (*fp_g_thread_get_initialized)(void);
+static gboolean (*fp_g_thread_get_initialized)(void);
 
-void (*fp_g_thread_init)(GThreadFunctions *vtable);
-void (*fp_gdk_threads_init)(void);
-void (*fp_gdk_threads_enter)(void);
-void (*fp_gdk_threads_leave)(void);
+static void (*fp_g_thread_init)(GThreadFunctions *vtable);
+static void (*fp_gdk_threads_init)(void);
+static void (*fp_gdk_threads_enter)(void);
+static void (*fp_gdk_threads_leave)(void);
 
-gboolean (*fp_gtk_show_uri)(GdkScreen *screen, const gchar *uri,
+static gboolean (*fp_gtk_show_uri)(GdkScreen *screen, const gchar *uri,
     guint32 timestamp, GError **error);
 
 #endif /* !_GTK2_INTERFACE_H */
