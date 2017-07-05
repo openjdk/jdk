@@ -25,8 +25,11 @@
  * @test
  * @bug 6207928 6328220 6378321 6625723
  * @summary Recursive lock invariant sanity checks
+ * @library /lib/testlibrary/
  * @author Martin Buchholz
  */
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -42,9 +45,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import jdk.testlibrary.Utils;
 
 // I am the Cownt, and I lahve to cownt.
 public class Count {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
     final Random rnd = new Random();
 
     void lock(Lock lock) {
@@ -102,7 +107,7 @@ public class Count {
                     barrier.await();
                 } catch (Throwable t) { unexpected(t); }}});}
         es.shutdown();
-        check(es.awaitTermination(10L, TimeUnit.SECONDS));
+        check(es.awaitTermination(LONG_DELAY_MS, MILLISECONDS));
     }
 
     void testReentrantLocks(final boolean fair,

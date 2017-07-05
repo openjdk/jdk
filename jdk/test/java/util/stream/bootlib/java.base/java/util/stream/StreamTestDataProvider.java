@@ -171,6 +171,8 @@ public class StreamTestDataProvider {
                                             () -> Spliterators.spliterator(Arrays.asList(ints).iterator(), ints.length, 0)));
                 spliterators.add(splitDescr("Iterators.s(Arrays.s(array).iterator()):" + name,
                                             () -> Spliterators.spliteratorUnknownSize(Arrays.asList(ints).iterator(), 0)));
+                spliterators.add(splitDescr("Stream.iterate(0,x->x<l,x->x+1): " + name,
+                                            () -> Stream.iterate(0, x -> x < ints.length, x -> x + 1).spliterator()));
                 // @@@ Add map and collection spliterators when spliterator() is exposed on Collection or Iterable
             }
             spliteratorTestData = spliterators.toArray(new Object[0][]);

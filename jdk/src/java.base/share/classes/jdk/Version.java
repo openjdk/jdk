@@ -28,10 +28,10 @@ package jdk;
 import java.math.BigInteger;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -208,11 +208,10 @@ public final class Version
                                                + s + "'");
 
         // $VNUM is a dot-separated list of integers of arbitrary length
-        version
-            = Collections.unmodifiableList(
-                  Arrays.stream(m.group(VNUM_GROUP).split("\\."))
-                  .map(Integer::parseInt)
-                  .collect(Collectors.toList()));
+        List<Integer> list = new ArrayList<>();
+        for (String i : m.group(VNUM_GROUP).split("\\."))
+            list.add(Integer.parseInt(i));
+        version = Collections.unmodifiableList(list);
 
         pre = Optional.ofNullable(m.group(PRE_GROUP));
 

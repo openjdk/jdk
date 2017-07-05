@@ -49,14 +49,6 @@ final class Streams {
     }
 
     /**
-     * An object instance representing no value, that cannot be an actual
-     * data element of a stream.  Used when processing streams that can contain
-     * {@code null} elements to distinguish between a {@code null} value and no
-     * value.
-     */
-    static final Object NONE = new Object();
-
-    /**
      * An {@code int} range spliterator.
      */
     static final class RangeIntSpliterator implements Spliterator.OfInt {

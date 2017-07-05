@@ -24,10 +24,18 @@
 /*
  * @test
  * @bug 6399443
- * @run main/othervm/timeout=1000 AutoShutdown
  * @summary Check for auto-shutdown and gc of singleThreadExecutors
+ * @library /lib/testlibrary/
+ * @run main/othervm/timeout=1000 AutoShutdown
  * @author Martin Buchholz
  */
+
+import static java.util.concurrent.Executors.defaultThreadFactory;
+import static java.util.concurrent.Executors.newFixedThreadPool;
+import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
@@ -35,15 +43,13 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import static java.util.concurrent.Executors.defaultThreadFactory;
-import static java.util.concurrent.Executors.newFixedThreadPool;
-import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
-import static java.util.concurrent.Executors.newSingleThreadExecutor;
+import jdk.testlibrary.Utils;
 
 public class AutoShutdown {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
 
     static void await(CountDownLatch latch) throws InterruptedException {
-        if (!latch.await(100L, TimeUnit.SECONDS))
+        if (!latch.await(LONG_DELAY_MS, MILLISECONDS))
             throw new AssertionError("timed out waiting for latch");
     }
 
