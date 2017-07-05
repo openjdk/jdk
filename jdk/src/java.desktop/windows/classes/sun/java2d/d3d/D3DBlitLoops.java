@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ import sun.java2d.pipe.RenderQueue;
 import static sun.java2d.pipe.BufferedOpCodes.*;
 import sun.java2d.windows.GDIWindowSurfaceData;
 
-class D3DBlitLoops {
+final class D3DBlitLoops {
 
     static void register() {
         Blit blitIntArgbPreToSurface =
@@ -57,7 +57,9 @@ class D3DBlitLoops {
         Blit blitIntArgbPreToTexture =
             new D3DSwToTextureBlit(SurfaceType.IntArgbPre,
                                    D3DSurfaceData.ST_INT_ARGB_PRE);
-
+        TransformBlit transformBlitIntArgbPreToSurface =
+            new D3DSwToSurfaceTransform(SurfaceType.IntArgbPre,
+                                        D3DSurfaceData.ST_INT_ARGB_PRE);
         GraphicsPrimitive[] primitives = {
             // prevent D3DSurface -> Screen blits
             new D3DSurfaceToGDIWindowSurfaceBlit(),
@@ -123,8 +125,6 @@ class D3DBlitLoops {
 
             new D3DSwToSurfaceTransform(SurfaceType.IntArgb,
                                         D3DSurfaceData.ST_INT_ARGB),
-            new D3DSwToSurfaceTransform(SurfaceType.IntArgbPre,
-                                        D3DSurfaceData.ST_INT_ARGB_PRE),
             new D3DSwToSurfaceTransform(SurfaceType.IntRgb,
                                         D3DSurfaceData.ST_INT_RGB),
             new D3DSwToSurfaceTransform(SurfaceType.IntBgr,
@@ -140,6 +140,9 @@ class D3DBlitLoops {
             // REMIND: we don't have a native sw loop to back this loop up
 //            new D3DSwToSurfaceTransform(SurfaceType.ByteIndexedBm,
 //                                        D3DSurfaceData.ST_BYTE_INDEXED_BM),
+            transformBlitIntArgbPreToSurface,
+
+            new D3DGeneralTransformedBlit(transformBlitIntArgbPreToSurface),
 
             // texture->surface ops
             new D3DTextureToSurfaceBlit(),
@@ -712,11 +715,11 @@ class D3DTextureToSurfaceTransform extends TransformBlit {
  * This general Blit implementation converts any source surface to an
  * intermediate IntArgbPre surface, and then uses the more specific
  * IntArgbPre->D3DSurface/Texture loop to get the intermediate
- * (premultiplied) surface down to D3D.
+ * (premultiplied) surface down to D3D using simple blit.
  */
 class D3DGeneralBlit extends Blit {
 
-    private Blit performop;
+    private final Blit performop;
     private WeakReference<SurfaceData> srcTmp;
 
     D3DGeneralBlit(SurfaceType dstType,
@@ -749,6 +752,49 @@ class D3DGeneralBlit extends Blit {
         // copy IntArgbPre intermediate surface to D3D surface
         performop.Blit(src, dst, comp, clip,
                        0, 0, dx, dy, w, h);
+
+        if (src != cachedSrc) {
+            // cache the intermediate surface
+            srcTmp = new WeakReference<>(src);
+        }
+    }
+}
+
+/**
+ * This general TransformedBlit implementation converts any source surface to an
+ * intermediate IntArgbPre surface, and then uses the more specific
+ * IntArgbPre->D3DSurface/Texture loop to get the intermediate
+ * (premultiplied) surface down to D3D using simple transformBlit.
+ */
+final class D3DGeneralTransformedBlit extends TransformBlit {
+
+    private final TransformBlit performop;
+    private WeakReference<SurfaceData> srcTmp;
+
+    D3DGeneralTransformedBlit(final TransformBlit performop) {
+        super(SurfaceType.Any, CompositeType.AnyAlpha,
+                D3DSurfaceData.D3DSurface);
+        this.performop = performop;
+    }
+
+    @Override
+    public synchronized void Transform(SurfaceData src, SurfaceData dst,
+                                       Composite comp, Region clip,
+                                       AffineTransform at, int hint, int srcx,
+                                       int srcy, int dstx, int dsty, int width,
+                                       int height){
+        Blit convertsrc = Blit.getFromCache(src.getSurfaceType(),
+                                            CompositeType.SrcNoEa,
+                                            SurfaceType.IntArgbPre);
+        // use cached intermediate surface, if available
+        final SurfaceData cachedSrc = srcTmp != null ? srcTmp.get() : null;
+        // convert source to IntArgbPre
+        src = convertFrom(convertsrc, src, srcx, srcy, width, height, cachedSrc,
+                          BufferedImage.TYPE_INT_ARGB_PRE);
+
+        // transform IntArgbPre intermediate surface to D3D surface
+        performop.Transform(src, dst, comp, clip, at, hint, 0, 0, dstx, dsty,
+                            width, height);
 
         if (src != cachedSrc) {
             // cache the intermediate surface

@@ -33,7 +33,7 @@ import java.lang.reflect.InvocationTargetException;
 
 class InstantiationExceptionConstructorAccessorImpl
     extends ConstructorAccessorImpl {
-    private String message;
+    private final String message;
 
     InstantiationExceptionConstructorAccessorImpl(String message) {
         this.message = message;

@@ -294,11 +294,11 @@ public final class KeychainStore extends KeyStoreSpi {
             if (entry instanceof TrustedCertEntry) {
                 return ((TrustedCertEntry)entry).cert;
             } else {
-                if (((KeyEntry)entry).chain == null) {
+                KeyEntry ke = (KeyEntry)entry;
+                if (ke.chain == null || ke.chain.length == 0) {
                     return null;
-                } else {
-                    return ((KeyEntry)entry).chain[0];
                 }
+                return ke.chain[0];
             }
         } else {
             return null;
@@ -618,10 +618,12 @@ public final class KeychainStore extends KeyStoreSpi {
             Object entry = entries.get(alias);
             if (entry instanceof TrustedCertEntry) {
                 certElem = ((TrustedCertEntry)entry).cert;
-            } else if (((KeyEntry)entry).chain != null) {
-                certElem = ((KeyEntry)entry).chain[0];
             } else {
-                continue;
+                KeyEntry ke = (KeyEntry)entry;
+                if (ke.chain == null || ke.chain.length == 0) {
+                    continue;
+                }
+                certElem = ke.chain[0];
             }
             if (certElem.equals(cert)) {
                 return alias;

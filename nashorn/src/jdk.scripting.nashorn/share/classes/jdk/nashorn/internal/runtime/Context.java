@@ -509,11 +509,7 @@ public final class Context {
         }
 
         if (env._persistent_cache) {
-            try {
-                codeStore = newCodeStore(this);
-            } catch (final IOException e) {
-                throw new RuntimeException("Error initializing code cache", e);
-            }
+            codeStore = newCodeStore(this);
         }
 
         // print version info if asked.
@@ -1200,7 +1196,7 @@ public final class Context {
         FunctionNode functionNode = null;
         // We only use the code store here if optimistic types are disabled. With optimistic types, initial compilation
         // just creates a thin wrapper, and actual code is stored per function in RecompilableScriptFunctionData.
-        final boolean useCodeStore = env._persistent_cache && !env._parse_only && !env._optimistic_types;
+        final boolean useCodeStore = codeStore != null && !env._parse_only && !env._optimistic_types;
         final String cacheKey = useCodeStore ? CodeStore.getCacheKey(0, null) : null;
 
         if (useCodeStore) {

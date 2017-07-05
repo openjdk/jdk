@@ -245,7 +245,8 @@ template <> struct StaticAssert<true> {};
 enum SharedSpaceType {
   SharedReadOnly,
   SharedReadWrite,
-  SharedMiscData
+  SharedMiscData,
+  SharedMiscCode
 };
 
 void report_out_of_shared_space(SharedSpaceType space_type);

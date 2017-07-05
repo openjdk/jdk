@@ -804,10 +804,7 @@ nmethod::nmethod(
 #endif // def HAVE_DTRACE_H
 
 void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw () {
-  // With a SegmentedCodeCache, nmethods are allocated on separate heaps and therefore do not share memory
-  // with critical CodeBlobs. We define the allocation as critical to make sure all code heap memory is used.
-  bool is_critical = SegmentedCodeCache;
-  return CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level), is_critical);
+  return CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level));
 }
 
 nmethod::nmethod(

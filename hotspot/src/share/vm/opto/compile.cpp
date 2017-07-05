@@ -535,7 +535,6 @@ void Compile::init_scratch_buffer_blob(int const_size) {
     if (scratch_buffer_blob() == NULL) {
       // Let CompilerBroker disable further compilations.
       record_failure("Not enough space for scratch buffer in CodeCache");
-      CompileBroker::handle_full_code_cache(CodeBlobType::NonNMethod);
       return;
     }
   }

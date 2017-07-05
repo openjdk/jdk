@@ -60,10 +60,10 @@ static jlong* double_quadword(jlong *adr, jlong lo, jlong hi) {
 static jlong fp_signmask_pool[(4+1)*2]; // 4*128bits(data) + 128bits(alignment)
 
 // Static initialization during VM startup.
-static jlong *float_signmask_pool  = double_quadword(&fp_signmask_pool[1*2], CONST64(0x7FFFFFFF7FFFFFFF), CONST64(0x7FFFFFFF7FFFFFFF));
-static jlong *double_signmask_pool = double_quadword(&fp_signmask_pool[2*2], CONST64(0x7FFFFFFFFFFFFFFF), CONST64(0x7FFFFFFFFFFFFFFF));
-static jlong *float_signflip_pool  = double_quadword(&fp_signmask_pool[3*2], CONST64(0x8000000080000000), CONST64(0x8000000080000000));
-static jlong *double_signflip_pool = double_quadword(&fp_signmask_pool[4*2], CONST64(0x8000000000000000), CONST64(0x8000000000000000));
+static jlong *float_signmask_pool  = double_quadword(&fp_signmask_pool[1*2],         CONST64(0x7FFFFFFF7FFFFFFF),         CONST64(0x7FFFFFFF7FFFFFFF));
+static jlong *double_signmask_pool = double_quadword(&fp_signmask_pool[2*2],         CONST64(0x7FFFFFFFFFFFFFFF),         CONST64(0x7FFFFFFFFFFFFFFF));
+static jlong *float_signflip_pool  = double_quadword(&fp_signmask_pool[3*2], (jlong)UCONST64(0x8000000080000000), (jlong)UCONST64(0x8000000080000000));
+static jlong *double_signflip_pool = double_quadword(&fp_signmask_pool[4*2], (jlong)UCONST64(0x8000000000000000), (jlong)UCONST64(0x8000000000000000));
 
 
 
