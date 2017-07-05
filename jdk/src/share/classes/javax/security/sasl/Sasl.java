@@ -395,7 +395,7 @@ public class Sasl {
              * will be thrown.
              */
             ClassLoader cl = p.getClass().getClassLoader();
-            Class implClass;
+            Class<?> implClass;
             implClass = Class.forName(className, true, cl);
             return implClass.newInstance();
         } catch (ClassNotFoundException e) {
@@ -576,7 +576,7 @@ public class Sasl {
             classes.clear();
 
             // Check the keys for each provider.
-            for (Enumeration e = providers[i].keys(); e.hasMoreElements(); ) {
+            for (Enumeration<Object> e = providers[i].keys(); e.hasMoreElements(); ) {
                 String currentKey = (String)e.nextElement();
                 if (currentKey.startsWith(serviceName)) {
                     // We should skip the currentKey if it contains a

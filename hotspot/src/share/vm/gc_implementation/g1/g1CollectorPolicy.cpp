@@ -152,8 +152,12 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   _summary(new Summary()),
 
-#ifndef PRODUCT
   _cur_clear_ct_time_ms(0.0),
+
+  _cur_ref_proc_time_ms(0.0),
+  _cur_ref_enq_time_ms(0.0),
+
+#ifndef PRODUCT
   _min_clear_cc_time_ms(-1.0),
   _max_clear_cc_time_ms(-1.0),
   _cur_clear_cc_time_ms(0.0),
@@ -294,10 +298,10 @@ G1CollectorPolicy::G1CollectorPolicy() :
   }
 
   // Verify PLAB sizes
-  const uint region_size = HeapRegion::GrainWords;
+  const size_t region_size = HeapRegion::GrainWords;
   if (YoungPLABSize > region_size || OldPLABSize > region_size) {
     char buffer[128];
-    jio_snprintf(buffer, sizeof(buffer), "%sPLABSize should be at most %u",
+    jio_snprintf(buffer, sizeof(buffer), "%sPLABSize should be at most "SIZE_FORMAT,
                  OldPLABSize > region_size ? "Old" : "Young", region_size);
     vm_exit_during_initialization(buffer);
   }
@@ -459,14 +463,15 @@ void G1CollectorPolicy::initialize_flags() {
 // ParallelScavengeHeap::initialize()). We might change this in the
 // future, but it's a good start.
 class G1YoungGenSizer : public TwoGenerationCollectorPolicy {
+private:
+  size_t size_to_region_num(size_t byte_size) {
+    return MAX2((size_t) 1, byte_size / HeapRegion::GrainBytes);
+  }
 
 public:
   G1YoungGenSizer() {
     initialize_flags();
     initialize_size_info();
-  }
-  size_t size_to_region_num(size_t byte_size) {
-    return MAX2((size_t) 1, byte_size / HeapRegion::GrainBytes);
   }
   size_t min_young_region_num() {
     return size_to_region_num(_min_gen0_size);
@@ -501,11 +506,10 @@ void G1CollectorPolicy::init() {
 
   if (FLAG_IS_CMDLINE(NewRatio)) {
     if (FLAG_IS_CMDLINE(NewSize) || FLAG_IS_CMDLINE(MaxNewSize)) {
-      gclog_or_tty->print_cr("-XX:NewSize and -XX:MaxNewSize overrides -XX:NewRatio");
+      warning("-XX:NewSize and -XX:MaxNewSize override -XX:NewRatio");
     } else {
       // Treat NewRatio as a fixed size that is only recalculated when the heap size changes
-      size_t heap_regions = sizer.size_to_region_num(_g1->n_regions());
-      update_young_list_size_using_newratio(heap_regions);
+      update_young_list_size_using_newratio(_g1->n_regions());
       _using_new_ratio_calculations = true;
     }
   }
@@ -1479,6 +1483,8 @@ void G1CollectorPolicy::record_collection_pause_end() {
 #endif
     print_stats(1, "Other", other_time_ms);
     print_stats(2, "Choose CSet", _recorded_young_cset_choice_time_ms);
+    print_stats(2, "Ref Proc", _cur_ref_proc_time_ms);
+    print_stats(2, "Ref Enq", _cur_ref_enq_time_ms);
 
     for (int i = 0; i < _aux_num; ++i) {
       if (_cur_aux_times_set[i]) {
@@ -1519,11 +1525,17 @@ void G1CollectorPolicy::record_collection_pause_end() {
   }
 
   if (_last_full_young_gc) {
-    ergo_verbose2(ErgoPartiallyYoungGCs,
-                  "start partially-young GCs",
-                  ergo_format_byte_perc("known garbage"),
-                  _known_garbage_bytes, _known_garbage_ratio * 100.0);
-    set_full_young_gcs(false);
+    if (!last_pause_included_initial_mark) {
+      ergo_verbose2(ErgoPartiallyYoungGCs,
+                    "start partially-young GCs",
+                    ergo_format_byte_perc("known garbage"),
+                    _known_garbage_bytes, _known_garbage_ratio * 100.0);
+      set_full_young_gcs(false);
+    } else {
+      ergo_verbose0(ErgoPartiallyYoungGCs,
+                    "do not start partially-young GCs",
+                    ergo_format_reason("concurrent cycle is about to start"));
+    }
     _last_full_young_gc = false;
   }
 
@@ -2485,6 +2497,13 @@ G1CollectorPolicy::decide_on_conc_mark_initiation() {
       // initiate a new cycle.
 
       set_during_initial_mark_pause();
+      // We do not allow non-full young GCs during marking.
+      if (!full_young_gcs()) {
+        set_full_young_gcs(true);
+        ergo_verbose0(ErgoPartiallyYoungGCs,
+                      "end partially-young GCs",
+                      ergo_format_reason("concurrent cycle is about to start"));
+      }
 
       // And we can now clear initiate_conc_mark_if_possible() as
       // we've already acted on it.

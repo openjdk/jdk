@@ -2069,10 +2069,9 @@ void PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     CodeCache::gc_prologue();
     Threads::gc_prologue();
 
-    NOT_PRODUCT(ref_processor()->verify_no_references_recorded());
     COMPILER2_PRESENT(DerivedPointerTable::clear());
 
-    ref_processor()->enable_discovery();
+    ref_processor()->enable_discovery(true /*verify_disabled*/, true /*verify_no_refs*/);
     ref_processor()->setup_policy(maximum_heap_compaction);
 
     bool marked_for_unloading = false;

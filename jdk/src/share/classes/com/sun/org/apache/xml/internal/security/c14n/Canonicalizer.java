@@ -28,6 +28,7 @@ import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
 
 import com.sun.org.apache.xml.internal.security.exceptions.AlgorithmAlreadyRegisteredException;
 import org.w3c.dom.Document;
@@ -83,7 +84,7 @@ public class Canonicalizer {
         ALGO_ID_C14N11_OMIT_COMMENTS + "#WithComments";
 
     static boolean _alreadyInitialized = false;
-    static Map _canonicalizerHash = null;
+    static Map<String,Class<? extends CanonicalizerSpi>> _canonicalizerHash = null;
 
     protected CanonicalizerSpi canonicalizerSpi = null;
 
@@ -94,7 +95,7 @@ public class Canonicalizer {
     public static void init() {
 
         if (!Canonicalizer._alreadyInitialized) {
-            Canonicalizer._canonicalizerHash = new HashMap(10);
+            Canonicalizer._canonicalizerHash = new HashMap<String, Class<? extends CanonicalizerSpi>>(10);
             Canonicalizer._alreadyInitialized = true;
         }
     }
@@ -109,10 +110,11 @@ public class Canonicalizer {
            throws InvalidCanonicalizerException {
 
         try {
-            Class implementingClass = getImplementingClass(algorithmURI);
+            Class<? extends CanonicalizerSpi> implementingClass =
+                getImplementingClass(algorithmURI);
 
             this.canonicalizerSpi =
-                (CanonicalizerSpi) implementingClass.newInstance();
+                 implementingClass.newInstance();
             this.canonicalizerSpi.reset=true;
         } catch (Exception e) {
             Object exArgs[] = { algorithmURI };
@@ -144,11 +146,12 @@ public class Canonicalizer {
      * @param implementingClass
      * @throws AlgorithmAlreadyRegisteredException
      */
+    @SuppressWarnings("unchecked")
     public static void register(String algorithmURI, String implementingClass)
            throws AlgorithmAlreadyRegisteredException {
 
         // check whether URI is already registered
-        Class registeredClass = getImplementingClass(algorithmURI);
+        Class<? extends CanonicalizerSpi> registeredClass = getImplementingClass(algorithmURI);
 
         if (registeredClass != null)  {
             Object exArgs[] = { algorithmURI, registeredClass };
@@ -158,7 +161,7 @@ public class Canonicalizer {
         }
 
         try {
-            _canonicalizerHash.put(algorithmURI, Class.forName(implementingClass));
+            _canonicalizerHash.put(algorithmURI, (Class<? extends CanonicalizerSpi>) Class.forName(implementingClass));
         } catch (ClassNotFoundException e) {
             throw new RuntimeException("c14n class not found");
         }
@@ -304,7 +307,7 @@ public class Canonicalizer {
      * @return the result of the c14n.
      * @throws CanonicalizationException
      */
-    public byte[] canonicalizeXPathNodeSet(Set xpathNodeSet)
+    public byte[] canonicalizeXPathNodeSet(Set<Node> xpathNodeSet)
            throws CanonicalizationException {
         return this.canonicalizerSpi.engineCanonicalizeXPathNodeSet(xpathNodeSet);
     }
@@ -317,7 +320,7 @@ public class Canonicalizer {
      * @return the result of the c14n.
      * @throws CanonicalizationException
      */
-    public byte[] canonicalizeXPathNodeSet(Set xpathNodeSet,
+    public byte[] canonicalizeXPathNodeSet(Set<Node> xpathNodeSet,
         String inclusiveNamespaces) throws CanonicalizationException {
         return this.canonicalizerSpi.engineCanonicalizeXPathNodeSet(xpathNodeSet,
             inclusiveNamespaces);
@@ -347,8 +350,8 @@ public class Canonicalizer {
      * @param URI
      * @return the name of the class that implements the given URI
      */
-    private static Class getImplementingClass(String URI) {
-        return (Class) _canonicalizerHash.get(URI);
+    private static Class<? extends CanonicalizerSpi> getImplementingClass(String URI) {
+        return _canonicalizerHash.get(URI);
     }
 
     /**

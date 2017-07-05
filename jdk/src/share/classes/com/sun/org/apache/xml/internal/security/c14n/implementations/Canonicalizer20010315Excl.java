@@ -61,9 +61,9 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
       * This Set contains the names (Strings like "xmlns" or "xmlns:foo") of
       * the inclusive namespaces.
       */
-    TreeSet _inclusiveNSSet = new TreeSet();
+    TreeSet<String> _inclusiveNSSet = new TreeSet<String>();
     static final String XMLNS_URI=Constants.NamespaceSpecNS;
-    final SortedSet result = new TreeSet(COMPARE);
+    final SortedSet<Attr> result = new TreeSet<Attr>(COMPARE);
         /**
          * Constructor Canonicalizer20010315Excl
          *
@@ -106,8 +106,7 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
          */
         public byte[] engineCanonicalizeSubTree(Node rootNode,
                         String inclusiveNamespaces,Node excl) throws CanonicalizationException {
-                        this._inclusiveNSSet = (TreeSet)InclusiveNamespaces
-                                        .prefixStr2Set(inclusiveNamespaces);
+                        this._inclusiveNSSet = getInclusiveNameSpace(inclusiveNamespaces);
                         return super.engineCanonicalizeSubTree(rootNode,excl);
         }
         /**
@@ -117,10 +116,10 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
          * @return the rootNode c14n.
          * @throws CanonicalizationException
          */
+        @SuppressWarnings("unchecked")
         public byte[] engineCanonicalize(XMLSignatureInput rootNode,
                         String inclusiveNamespaces) throws CanonicalizationException {
-                        this._inclusiveNSSet = (TreeSet)InclusiveNamespaces
-                                        .prefixStr2Set(inclusiveNamespaces);
+                        this._inclusiveNSSet = getInclusiveNameSpace(inclusiveNamespaces);
                         return super.engineCanonicalize(rootNode);
         }
 
@@ -130,12 +129,12 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
          * @param E
          * @throws CanonicalizationException
          */
-        Iterator handleAttributesSubtree(Element E,NameSpaceSymbTable ns)
+        Iterator<Attr> handleAttributesSubtree(Element E,NameSpaceSymbTable ns)
                         throws CanonicalizationException {
                 // System.out.println("During the traversal, I encountered " +
                 // XMLUtils.getXPath(E));
                 // result will contain the attrs which have to be outputted
-                SortedSet result = this.result;
+                SortedSet<Attr> result = this.result;
             result.clear();
                 NamedNodeMap attrs=null;
 
@@ -145,7 +144,7 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
                 attrsLength = attrs.getLength();
         }
                 //The prefix visibly utilized(in the attribute or in the name) in the element
-                SortedSet visiblyUtilized =(SortedSet) _inclusiveNSSet.clone();
+                SortedSet<String> visiblyUtilized = getNSSetClone();
 
                 for (int i = 0; i < attrsLength; i++) {
                         Attr N = (Attr) attrs.item(i);
@@ -187,9 +186,9 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
                 visiblyUtilized.add(prefix);
 
                 //This can be optimezed by I don't have time
-                Iterator it=visiblyUtilized.iterator();
+                Iterator<String> it=visiblyUtilized.iterator();
                 while (it.hasNext()) {
-                        String s=(String)it.next();
+                        String s=it.next();
                         Attr key=ns.getMapping(s);
                         if (key==null) {
                                 continue;
@@ -207,25 +206,35 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
          * @param inclusiveNamespaces
          * @throws CanonicalizationException
          */
-        public byte[] engineCanonicalizeXPathNodeSet(Set xpathNodeSet,
+        public byte[] engineCanonicalizeXPathNodeSet(Set<Node> xpathNodeSet,
                         String inclusiveNamespaces) throws CanonicalizationException {
 
-
-                        this._inclusiveNSSet = (TreeSet)InclusiveNamespaces
-                                        .prefixStr2Set(inclusiveNamespaces);
+                        this._inclusiveNSSet = getInclusiveNameSpace(inclusiveNamespaces);
                         return super.engineCanonicalizeXPathNodeSet(xpathNodeSet);
 
         }
+
+    @SuppressWarnings("unchecked")
+    private TreeSet<String> getInclusiveNameSpace(String inclusiveNameSpaces) {
+        return (TreeSet<String>)InclusiveNamespaces.prefixStr2Set(inclusiveNameSpaces);
+    }
+
+
+    @SuppressWarnings("unchecked")
+    private SortedSet<String> getNSSetClone() {
+        return (SortedSet<String>) this._inclusiveNSSet.clone();
+    }
+
 
         /**
      * @inheritDoc
          * @param E
          * @throws CanonicalizationException
          */
-        final Iterator handleAttributes(Element E, NameSpaceSymbTable ns)
+        final Iterator<Attr> handleAttributes(Element E, NameSpaceSymbTable ns)
                         throws CanonicalizationException {
                 // result will contain the attrs which have to be outputted
-                SortedSet result = this.result;
+                SortedSet<Attr> result = this.result;
             result.clear();
                 NamedNodeMap attrs = null;
                 int attrsLength = 0;
@@ -234,11 +243,11 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
                 attrsLength = attrs.getLength();
         }
                 //The prefix visibly utilized(in the attribute or in the name) in the element
-                Set visiblyUtilized =null;
+                Set<String> visiblyUtilized =null;
                 //It's the output selected.
                 boolean isOutputElement=isVisibleDO(E,ns.getLevel())==1;
                 if (isOutputElement) {
-                        visiblyUtilized =  (Set) this._inclusiveNSSet.clone();
+                        visiblyUtilized =  getNSSetClone();
                 }
 
                 for (int i = 0; i < attrsLength; i++) {
@@ -272,7 +281,7 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
                         if (!isOutputElement && isVisible(N) && _inclusiveNSSet.contains(NName) && !ns.removeMappingIfRender(NName)) {
                                 Node n=ns.addMappingAndRender(NName,NNodeValue,N);
                                 if (n!=null) {
-                                                result.add(n);
+                                                result.add((Attr)n);
                             if (C14nHelper.namespaceIsRelative(N)) {
                                Object exArgs[] = { E.getTagName(), NName, N.getNodeValue() };
                                throw new CanonicalizationException(
@@ -315,9 +324,9 @@ public abstract class Canonicalizer20010315Excl extends CanonicalizerBase {
                         }
                         //This can be optimezed by I don't have time
                         //visiblyUtilized.addAll(this._inclusiveNSSet);
-                        Iterator it=visiblyUtilized.iterator();
+                        Iterator<String> it=visiblyUtilized.iterator();
                         while (it.hasNext()) {
-                                String s=(String)it.next();
+                                String s=it.next();
                                 Attr key=ns.getMapping(s);
                                 if (key==null) {
                                         continue;

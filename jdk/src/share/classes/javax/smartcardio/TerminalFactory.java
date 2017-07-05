@@ -113,7 +113,7 @@ public final class TerminalFactory {
                 type = "PC/SC";
                 Provider sun = Security.getProvider("SunPCSC");
                 if (sun == null) {
-                    Class clazz = Class.forName("sun.security.smartcardio.SunPCSC");
+                    Class<?> clazz = Class.forName("sun.security.smartcardio.SunPCSC");
                     sun = (Provider)clazz.newInstance();
                 }
                 factory = TerminalFactory.getInstance(type, null, sun);
@@ -131,6 +131,8 @@ public final class TerminalFactory {
     }
 
     private static final class NoneProvider extends Provider {
+
+        private static final long serialVersionUID = 2745808869881593918L;
         final static Provider INSTANCE = new NoneProvider();
         private NoneProvider() {
             super("None", 1.0d, "none");

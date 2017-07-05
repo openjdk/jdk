@@ -219,11 +219,11 @@ public abstract class X509Certificate extends Certificate {
             className = "com.sun.security.cert.internal.x509.X509V1CertImpl";
         }
         try {
-            Class[] params = null;
+            Class<?>[] params = null;
             if (value instanceof InputStream) {
-                params = new Class[] { InputStream.class };
+                params = new Class<?>[] { InputStream.class };
             } else if (value instanceof byte[]) {
-                params = new Class[] { value.getClass() };
+                params = new Class<?>[] { value.getClass() };
             } else
                 throw new CertificateException("Unsupported argument type");
             Class<?> certClass = Class.forName(className);

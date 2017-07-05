@@ -74,19 +74,16 @@ public class InclusiveNamespaces extends ElementProxy
     * @param doc
     * @param prefixes
     */
-   public InclusiveNamespaces(Document doc, Set prefixes) {
+   public InclusiveNamespaces(Document doc, Set<String> prefixes) {
 
       super(doc);
 
       StringBuffer sb = new StringBuffer();
-      SortedSet prefixList = new TreeSet(prefixes);
+      SortedSet<String> prefixList = new TreeSet<String>(prefixes);
 
 
-      Iterator it = prefixList.iterator();
 
-      while (it.hasNext()) {
-         String prefix = (String) it.next();
-
+      for (String prefix : prefixList) {
          if (prefix.equals("xmlns")) {
             sb.append("#default ");
          } else {
@@ -138,9 +135,9 @@ public class InclusiveNamespaces extends ElementProxy
     * @param inclusiveNamespaces
     * @return A set to string
     */
-   public static SortedSet prefixStr2Set(String inclusiveNamespaces) {
+   public static SortedSet<String> prefixStr2Set(String inclusiveNamespaces) {
 
-      SortedSet prefixes = new TreeSet();
+      SortedSet<String> prefixes = new TreeSet<String>();
 
       if ((inclusiveNamespaces == null)
               || (inclusiveNamespaces.length() == 0)) {

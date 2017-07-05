@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,26 @@
 #include "utilities/growableArray.hpp"
 
 // We need to sort heap regions by collection desirability.
+// This sorting is currently done in two "stages". An initial sort is
+// done following a cleanup pause as soon as all of the marked but
+// non-empty regions have been identified and the completely empty
+// ones reclaimed.
+// This gives us a global sort on a GC efficiency metric
+// based on predictive data available at that time. However,
+// any of these regions that are collected will only be collected
+// during a future GC pause, by which time it is possible that newer
+// data might allow us to revise and/or refine the earlier
+// pause predictions, leading to changes in expected gc efficiency
+// order. To somewhat mitigate this obsolescence, more so in the
+// case of regions towards the end of the list, which will be
+// picked later, these pre-sorted regions from the _markedRegions
+// array are not used as is, but a small prefix thereof is
+// insertion-sorted again into a small cache, based on more
+// recent remembered set information. Regions are then drawn
+// from this cache to construct the collection set at each
+// incremental GC.
+// This scheme and/or its implementation may be subject to
+// revision in the future.
 
 class CSetChooserCache VALUE_OBJ_CLASS_SPEC {
 private:
@@ -37,8 +57,8 @@ private:
   } PrivateConstants;
 
   HeapRegion*  _cache[CacheLength];
-  int          _occupancy; // number of region in cache
-  int          _first; // "first" region in the cache
+  int          _occupancy; // number of regions in cache
+  int          _first;     // (index of) "first" region in the cache
 
   // adding CacheLength to deal with negative values
   inline int trim_index(int index) {
@@ -62,7 +82,6 @@ public:
   void clear(void);
   void insert(HeapRegion *hr);
   HeapRegion *remove_first(void);
-  void remove (HeapRegion *hr);
   inline HeapRegion *get_first(void) {
     return _cache[_first];
   }
@@ -102,7 +121,6 @@ public:
 
   void sortMarkedHeapRegions();
   void fillCache();
-  bool addRegionToCache(void);
   void addMarkedHeapRegion(HeapRegion *hr);
 
   // Must be called before calls to getParMarkedHeapRegionChunk.
@@ -121,9 +139,6 @@ public:
   void clearMarkedHeapRegions();
 
   void updateAfterFullCollection();
-
-  // Ensure that "hr" is not a member of the marked region array or the cache
-  void removeRegion(HeapRegion* hr);
 
   bool unmarked_age_1_returned_as_new() { return _unmarked_age_1_returned_as_new; }
 

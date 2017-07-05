@@ -95,7 +95,7 @@ public interface AgreementMethod {
      * Returns aditional information regarding the <code>AgreementMethod</code>.
      * @return
      */
-    Iterator getAgreementMethodInformation();
+    Iterator<Element> getAgreementMethodInformation();
 
     /**
      * Adds additional <code>AgreementMethod</code> information.
