@@ -33,6 +33,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.SwitchPoint;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
 
@@ -48,7 +49,7 @@ final class SetMethodCreator {
     private final FindProperty       find;
     private final CallSiteDescriptor desc;
     private final Class<?>           type;
-    private final boolean            explicitInstanceOfCheck;
+    private final LinkRequest        request;
 
     /**
      * Creates a new property setter method creator.
@@ -56,14 +57,15 @@ final class SetMethodCreator {
      * @param find a result of a {@link ScriptObject#findProperty(String, boolean)} on the object for the property we
      * want to create a setter for. Can be null if the property does not yet exist on the object.
      * @param desc the descriptor of the call site that triggered the property setter lookup
+     * @param request the link request
      */
-    SetMethodCreator(final ScriptObject sobj, final FindProperty find, final CallSiteDescriptor desc, final boolean explicitInstanceOfCheck) {
-        this.sobj = sobj;
-        this.map  = sobj.getMap();
-        this.find = find;
-        this.desc = desc;
-        this.type = desc.getMethodType().parameterType(1);
-        this.explicitInstanceOfCheck = explicitInstanceOfCheck;
+    SetMethodCreator(final ScriptObject sobj, final FindProperty find, final CallSiteDescriptor desc, final LinkRequest request) {
+        this.sobj    = sobj;
+        this.map     = sobj.getMap();
+        this.find    = find;
+        this.desc    = desc;
+        this.type    = desc.getMethodType().parameterType(1);
+        this.request = request;
 
     }
 
@@ -111,6 +113,7 @@ final class SetMethodCreator {
             // getGuard() and getException() either both return null, or neither does. The reason for that is that now
             // getGuard returns a map guard that casts its argument to ScriptObject, and if that fails, we need to
             // relink on ClassCastException.
+            final boolean explicitInstanceOfCheck = NashornGuards.explicitInstanceOfCheck(desc, request);
             return new GuardedInvocation(methodHandle, NashornGuards.getGuard(sobj, property, desc, explicitInstanceOfCheck),
                     (SwitchPoint)null, explicitInstanceOfCheck ? null : ClassCastException.class);
         }
@@ -140,6 +143,7 @@ final class SetMethodCreator {
 
     private SetMethod createExistingPropertySetter() {
         final Property property = find.getProperty();
+        final boolean isStrict  = NashornCallSiteDescriptor.isStrict(desc);
         final MethodHandle methodHandle;
 
         if (NashornCallSiteDescriptor.isDeclaration(desc)) {
@@ -152,7 +156,7 @@ final class SetMethodCreator {
             final PropertyMap oldMap = getMap();
             final Property newProperty = property.removeFlags(Property.NEEDS_DECLARATION);
             final PropertyMap newMap = oldMap.replaceProperty(property, newProperty);
-            final MethodHandle fastSetter = find.replaceProperty(newProperty).getSetter(type, NashornCallSiteDescriptor.isStrict(desc));
+            final MethodHandle fastSetter = find.replaceProperty(newProperty).getSetter(type, isStrict, request);
             final MethodHandle slowSetter = MH.insertArguments(ScriptObject.DECLARE_AND_SET, 1, getName()).asType(fastSetter.type());
 
             // cas map used as guard, if true that means we can do the set fast
@@ -161,14 +165,14 @@ final class SetMethodCreator {
             casMap = MH.asType(casMap, casMap.type().changeParameterType(0, Object.class));
             methodHandle = MH.guardWithTest(casMap, fastSetter, slowSetter);
         } else {
-            methodHandle = find.getSetter(type, NashornCallSiteDescriptor.isStrict(desc));
+            methodHandle = find.getSetter(type, isStrict, request);
         }
 
         assert methodHandle != null;
         assert property     != null;
 
         final MethodHandle boundHandle;
-        if (!property.hasSetterFunction(find.getOwner()) && find.isInherited()) {
+        if (!(property instanceof UserAccessorProperty) && find.isInherited()) {
             boundHandle = ScriptObject.addProtoFilter(methodHandle, find.getProtoChainLength());
         } else {
             boundHandle = methodHandle;

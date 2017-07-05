@@ -660,9 +660,9 @@ class MethodAccessorGenerator extends AccessorGenerator {
         if (!isConstructor) {
             // Box return value if necessary
             if (isPrimitive(returnType)) {
-                cb.opc_invokespecial(ctorIndexForPrimitiveType(returnType),
-                                     typeSizeInStackSlots(returnType),
-                                     0);
+                cb.opc_invokestatic(boxingMethodForPrimitiveType(returnType),
+                                    typeSizeInStackSlots(returnType),
+                                    0);
             } else if (returnType == Void.TYPE) {
                 cb.opc_aconst_null();
             }

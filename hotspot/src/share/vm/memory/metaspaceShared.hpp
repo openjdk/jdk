@@ -41,7 +41,7 @@
 
 #define SET_ESTIMATED_SIZE(type, region)                              \
   Shared ##region## Size  = FLAG_IS_DEFAULT(Shared ##region## Size) ? \
-    (type ## SharedArchiveSize *  region ## RegionPercentage) : Shared ## region ## Size
+    (uintx)(type ## SharedArchiveSize *  region ## RegionPercentage) : Shared ## region ## Size
 
 class FileMapInfo;
 

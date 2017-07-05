@@ -308,7 +308,7 @@ public final class ObjectClassGenerator implements Loggable {
         newEmptyInit(className, classEmitter);
         newAllocate(className, classEmitter);
 
-        return toByteArray(classEmitter);
+        return toByteArray(className, classEmitter);
     }
 
     /**
@@ -341,7 +341,7 @@ public final class ObjectClassGenerator implements Loggable {
         initWithArguments.returnVoid();
         initWithArguments.end();
 
-        return toByteArray(classEmitter);
+        return toByteArray(className, classEmitter);
     }
 
     /**
@@ -484,15 +484,13 @@ public final class ObjectClassGenerator implements Loggable {
      * @param classEmitter Open class emitter.
      * @return Byte codes for the class.
      */
-    private byte[] toByteArray(final ClassEmitter classEmitter) {
+    private byte[] toByteArray(final String className, final ClassEmitter classEmitter) {
         classEmitter.end();
 
         final byte[] code = classEmitter.toByteArray();
         final ScriptEnvironment env = context.getEnv();
 
-        if (env._print_code && env._print_code_dir == null) {
-            env.getErr().println(ClassEmitter.disassemble(code));
-        }
+        DumpBytecode.dumpBytecode(env, log, code, className);
 
         if (env._verify_code) {
             context.verify(code);
@@ -827,5 +825,45 @@ public final class ObjectClassGenerator implements Loggable {
         return MH.findStatic(MethodHandles.lookup(), ObjectClassGenerator.class, name, MH.type(rtype, types));
     }
 
+    /**
+     * Describes the allocator class name and property map for a constructor function with the specified
+     * number of "this" properties that it initializes.
+     *
+     */
+    public static class AllocatorDescriptor {
+        private final String allocatorClassName;
+        private final PropertyMap allocatorMap;
 
+        /**
+         * Creates a new allocator descriptor
+         * @param thisProperties the number of "this" properties that the function initializes
+         */
+        public AllocatorDescriptor(final int thisProperties) {
+            final int paddedFieldCount = getPaddedFieldCount(thisProperties);
+            this.allocatorClassName = Compiler.binaryName(getClassName(paddedFieldCount));
+            this.allocatorMap = PropertyMap.newMap(null, allocatorClassName, 0, paddedFieldCount, 0);
+        }
+
+        /**
+         * Returns the name of the class that the function allocates
+         * @return the name of the class that the function allocates
+         */
+        public String getAllocatorClassName() {
+            return allocatorClassName;
+        }
+
+        /**
+         * Returns the allocator map for the function.
+         * @return the allocator map for the function.
+         */
+        public PropertyMap getAllocatorMap() {
+            return allocatorMap;
+        }
+
+        @Override
+        public String toString() {
+            return "AllocatorDescriptor[allocatorClassName=" + allocatorClassName + ", allocatorMap.size=" +
+                    allocatorMap.size() + "]";
+        }
+    }
 }

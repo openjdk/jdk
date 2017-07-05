@@ -1034,6 +1034,12 @@
       <name>org.w3c.dom.ls</name>
     </export>
     <export>
+      <name>org.w3c.dom.ranges</name>
+    </export>
+    <export>
+      <name>org.w3c.dom.traversal</name>
+    </export>
+    <export>
       <name>org.w3c.dom.views</name>
     </export>
     <export>
@@ -1567,6 +1573,12 @@
     <name>jdk.crypto.pkcs11</name>
     <depend>java.base</depend>
     <depend>jdk.crypto.ec</depend>
+  </module>
+  <module>
+    <name>jdk.deploy.osx</name>
+    <depend>java.base</depend>
+    <depend>java.desktop</depend>
+    <depend>java.scripting</depend>
   </module>
   <module>
     <name>jdk.dev</name>

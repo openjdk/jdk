@@ -33,7 +33,7 @@ class UnsafeStaticShortFieldAccessorImpl extends UnsafeStaticFieldAccessorImpl {
     }
 
     public Object get(Object obj) throws IllegalArgumentException {
-        return new Short(getShort(obj));
+        return Short.valueOf(getShort(obj));
     }
 
     public boolean getBoolean(Object obj) throws IllegalArgumentException {

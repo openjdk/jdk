@@ -32,11 +32,10 @@ import java.lang.invoke.MethodType;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.internal.dynalink.support.Guards;
-import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.runtime.FindProperty;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.UserAccessorProperty;
 
 /**
  * Implements lookup of methods to link for dynamic operations on JavaScript primitive values (booleans, strings, and
@@ -86,15 +85,6 @@ public final class PrimitiveLookup {
                                                     final ScriptObject wrappedReceiver, final MethodHandle wrapFilter,
                                                     final MethodHandle protoFilter) {
         final CallSiteDescriptor desc = request.getCallSiteDescriptor();
-        final String operator = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
-        if ("setProp".equals(operator) || "setElem".equals(operator)) {
-            final MethodType type = desc.getMethodType();
-            MethodHandle method = MH.asType(Lookup.EMPTY_SETTER, MH.type(void.class, Object.class, type.parameterType(1)));
-            if (type.parameterCount() == 3) {
-                method = MH.dropArguments(method, 2, type.parameterType(2));
-            }
-            return new GuardedInvocation(method, guard);
-        }
 
         if(desc.getNameTokenCount() > 2) {
             final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
@@ -102,7 +92,7 @@ public final class PrimitiveLookup {
             if(find == null) {
                 // Give up early, give chance to BeanLinker and NashornBottomLinker to deal with it.
                 return null;
-            } else if (find.isInherited() && !find.getProperty().hasGetterFunction(find.getOwner())) {
+            } else if (find.isInherited() && !(find.getProperty() instanceof UserAccessorProperty)) {
                 // If property is found in the prototype object bind the method handle directly to
                 // the proto filter instead of going through wrapper instantiation below.
                 final ScriptObject proto = wrappedReceiver.getProto();

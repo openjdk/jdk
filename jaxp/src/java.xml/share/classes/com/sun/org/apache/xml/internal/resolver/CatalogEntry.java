@@ -1,16 +1,10 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
- */
-// CatalogEntry.java - Represents Catalog entries
-
-/*
- * Copyright 2001-2004 The Apache Software Foundation or its licensors,
- * as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -53,18 +47,18 @@ import java.util.Vector;
  */
 public class CatalogEntry {
   /** The nextEntry is the ordinal number of the next entry type. */
-  protected static int nextEntry = 0;
+  static int nextEntry = 0;
 
   /**
    * The entryTypes vector maps catalog entry names
    * (e.g., 'BASE' or 'SYSTEM') to their type (1, 2, etc.).
    * Names are case sensitive.
    */
-  protected static Hashtable entryTypes = new Hashtable();
+  static final Hashtable entryTypes = new Hashtable();
 
   /** The entryTypes vector maps catalog entry types to the
       number of arguments they're required to have. */
-  protected static Vector entryArgs = new Vector();
+  static final Vector entryArgs = new Vector();
 
   /**
    * Adds a new catalog entry type.

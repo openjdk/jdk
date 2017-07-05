@@ -35,6 +35,7 @@ import static jdk.nashorn.internal.parser.TokenType.ERROR;
 import static jdk.nashorn.internal.parser.TokenType.ESCSTRING;
 import static jdk.nashorn.internal.parser.TokenType.EXECSTRING;
 import static jdk.nashorn.internal.parser.TokenType.FLOATING;
+import static jdk.nashorn.internal.parser.TokenType.FUNCTION;
 import static jdk.nashorn.internal.parser.TokenType.HEXADECIMAL;
 import static jdk.nashorn.internal.parser.TokenType.LBRACE;
 import static jdk.nashorn.internal.parser.TokenType.LPAREN;
@@ -84,6 +85,9 @@ public class Lexer extends Scanner {
 
     /** Type of last token added. */
     private TokenType last;
+
+    private final boolean pauseOnFunctionBody;
+    private boolean pauseOnNextLeftBrace;
 
     private static final String SPACETAB = " \t";  // ASCII space and tab
     private static final String LFCR     = "\n\r"; // line feed and carriage return (ctrl-m)
@@ -182,20 +186,23 @@ public class Lexer extends Scanner {
      * @param scripting are we in scripting mode
      */
     public Lexer(final Source source, final TokenStream stream, final boolean scripting) {
-        this(source, 0, source.getLength(), stream, scripting);
+        this(source, 0, source.getLength(), stream, scripting, false);
     }
 
     /**
-     * Contructor
+     * Constructor
      *
      * @param source    the source
      * @param start     start position in source from which to start lexing
      * @param len       length of source segment to lex
      * @param stream    token stream to lex
      * @param scripting are we in scripting mode
+     * @param pauseOnFunctionBody if true, lexer will return from {@link #lexify()} when it encounters a
+     * function body. This is used with the feature where the parser is skipping nested function bodies to
+     * avoid reading ahead unnecessarily when we skip the function bodies.
      */
 
-    public Lexer(final Source source, final int start, final int len, final TokenStream stream, final boolean scripting) {
+    public Lexer(final Source source, final int start, final int len, final TokenStream stream, final boolean scripting, final boolean pauseOnFunctionBody) {
         super(source.getContent(), 1, start, len);
         this.source      = source;
         this.stream      = stream;
@@ -203,6 +210,8 @@ public class Lexer extends Scanner {
         this.nested      = false;
         this.pendingLine = 1;
         this.last        = EOL;
+
+        this.pauseOnFunctionBody = pauseOnFunctionBody;
     }
 
     private Lexer(final Lexer lexer, final State state) {
@@ -216,6 +225,7 @@ public class Lexer extends Scanner {
         pendingLine = state.pendingLine;
         linePosition = state.linePosition;
         last = EOL;
+        pauseOnFunctionBody = false;
     }
 
     static class State extends Scanner.State {
@@ -810,6 +820,9 @@ public class Lexer extends Scanner {
         final int length = scanIdentifier();
         // Check to see if it is a keyword.
         final TokenType type = TokenLookup.lookupKeyword(content, start, length);
+        if (type == FUNCTION && pauseOnFunctionBody) {
+            pauseOnNextLeftBrace = true;
+        }
         // Add keyword or identifier token.
         add(type, start);
     }
@@ -1596,6 +1609,9 @@ public class Lexer extends Scanner {
                 // Some operator tokens also mark the beginning of regexp, XML, or here string literals.
                 // We break to let the parser decide what it is.
                 if (canStartLiteral(type)) {
+                    break;
+                } else if (type == LBRACE && pauseOnNextLeftBrace) {
+                    pauseOnNextLeftBrace = false;
                     break;
                 }
             } else if (Character.isJavaIdentifierStart(ch0) || ch0 == '\\' && ch1 == 'u') {
