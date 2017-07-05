@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -317,14 +317,6 @@ void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
 }
 
 
-void C1_MacroAssembler::method_exit(bool restore_frame) {
-  if (restore_frame) {
-    leave();
-  }
-  ret(0);
-}
-
-
 void C1_MacroAssembler::build_frame(int frame_size_in_bytes) {
   // Make sure there is enough stack space for this method's activation.
   // Note that we do this before doing an enter(). This matches the
@@ -333,7 +325,7 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes) {
   // between the two compilers.
   generate_stack_overflow_check(frame_size_in_bytes);
 
-  enter();
+  push(rbp);
 #ifdef TIERED
   // c2 leaves fpu stack dirty. Clean it on entry
   if (UseSSE < 2 ) {
@@ -341,6 +333,12 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes) {
   }
 #endif // TIERED
   decrement(rsp, frame_size_in_bytes); // does not emit code for frame_size == 0
+}
+
+
+void C1_MacroAssembler::remove_frame(int frame_size_in_bytes) {
+  increment(rsp, frame_size_in_bytes);  // Does not emit code for frame_size == 0
+  pop(rbp);
 }
 
 

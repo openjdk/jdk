@@ -1,5 +1,5 @@
 /*
- * Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1998-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,14 +90,15 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
   void flush();
 
   // Typing
-  virtual bool is_buffer_blob() const            { return false; }
-  virtual bool is_nmethod() const                { return false; }
-  virtual bool is_runtime_stub() const           { return false; }
-  virtual bool is_deoptimization_stub() const    { return false; }
-  virtual bool is_uncommon_trap_stub() const     { return false; }
-  virtual bool is_exception_stub() const         { return false; }
-  virtual bool is_safepoint_stub() const         { return false; }
-  virtual bool is_adapter_blob() const           { return false; }
+  virtual bool is_buffer_blob() const                 { return false; }
+  virtual bool is_nmethod() const                     { return false; }
+  virtual bool is_runtime_stub() const                { return false; }
+  virtual bool is_deoptimization_stub() const         { return false; }
+  virtual bool is_uncommon_trap_stub() const          { return false; }
+  virtual bool is_exception_stub() const              { return false; }
+  virtual bool is_safepoint_stub() const              { return false; }
+  virtual bool is_adapter_blob() const                { return false; }
+  virtual bool is_method_handles_adapter_blob() const { return false; }
 
   virtual bool is_compiled_by_c2() const         { return false; }
   virtual bool is_compiled_by_c1() const         { return false; }
@@ -221,6 +222,9 @@ class CodeBlob VALUE_OBJ_CLASS_SPEC {
 
 class BufferBlob: public CodeBlob {
   friend class VMStructs;
+  friend class AdapterBlob;
+  friend class MethodHandlesAdapterBlob;
+
  private:
   // Creation support
   BufferBlob(const char* name, int size);
@@ -236,8 +240,7 @@ class BufferBlob: public CodeBlob {
   static void free(BufferBlob* buf);
 
   // Typing
-  bool is_buffer_blob() const                    { return true; }
-  bool is_adapter_blob() const;
+  virtual bool is_buffer_blob() const            { return true; }
 
   // GC/Verification support
   void preserve_callee_argument_oops(frame fr, const RegisterMap* reg_map, OopClosure* f)  { /* nothing to do */ }
@@ -251,6 +254,40 @@ class BufferBlob: public CodeBlob {
   void verify();
   void print() const                             PRODUCT_RETURN;
   void print_value_on(outputStream* st) const    PRODUCT_RETURN;
+};
+
+
+//----------------------------------------------------------------------------------------------------
+// AdapterBlob: used to hold C2I/I2C adapters
+
+class AdapterBlob: public BufferBlob {
+private:
+  AdapterBlob(int size)                 : BufferBlob("I2C/C2I adapters", size) {}
+  AdapterBlob(int size, CodeBuffer* cb) : BufferBlob("I2C/C2I adapters", size, cb) {}
+
+public:
+  // Creation
+  static AdapterBlob* create(CodeBuffer* cb);
+
+  // Typing
+  virtual bool is_adapter_blob() const { return true; }
+};
+
+
+//----------------------------------------------------------------------------------------------------
+// MethodHandlesAdapterBlob: used to hold MethodHandles adapters
+
+class MethodHandlesAdapterBlob: public BufferBlob {
+private:
+  MethodHandlesAdapterBlob(int size)                 : BufferBlob("MethodHandles adapters", size) {}
+  MethodHandlesAdapterBlob(int size, CodeBuffer* cb) : BufferBlob("MethodHandles adapters", size, cb) {}
+
+public:
+  // Creation
+  static MethodHandlesAdapterBlob* create(int buffer_size);
+
+  // Typing
+  virtual bool is_method_handles_adapter_blob() const { return true; }
 };
 
 

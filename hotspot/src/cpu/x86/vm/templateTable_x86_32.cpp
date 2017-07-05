@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2915,12 +2915,8 @@ void TemplateTable::prepare_invoke(Register method, Register index, int byte_no)
     __ andl(recv, 0xFF);
     // recv count is 0 based?
     Address recv_addr(rsp, recv, Interpreter::stackElementScale(), -Interpreter::expr_offset_in_bytes(1));
-    if (is_invokedynamic) {
-      __ lea(recv, recv_addr);
-    } else {
-      __ movptr(recv, recv_addr);
-      __ verify_oop(recv);
-    }
+    __ movptr(recv, recv_addr);
+    __ verify_oop(recv);
   }
 
   // do null check if needed
