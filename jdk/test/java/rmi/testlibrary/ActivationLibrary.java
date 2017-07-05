@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,20 +40,6 @@ import java.rmi.registry.LocateRegistry;
  * objects.
  */
 public class ActivationLibrary {
-    /** time safeDestroy should wait before failing on shutdown rmid */
-    private static final int SAFE_WAIT_TIME;
-    static {
-        int slopFactor = 1;
-        try {
-            slopFactor = Integer.valueOf(
-                TestLibrary.getExtraProperty("jcov.sleep.multiplier","1"));
-        } catch (NumberFormatException ignore) {}
-        SAFE_WAIT_TIME = 60000 * slopFactor;
-    }
-
-    private static final String SYSTEM_NAME =
-        ActivationSystem.class.getName();
-
     private static void mesg(Object mesg) {
         System.err.println("ACTIVATION_LIBRARY: " + mesg.toString());
     }
@@ -63,20 +49,19 @@ public class ActivationLibrary {
      */
     public static void deactivate(Remote remote,
                                   ActivationID id) {
-        // We do as much as 50 deactivation trials, each separated by
-        // at least 100 milliseconds sleep time (max sleep time of 5 secs).
-        final long deactivateSleepTime = 100;
-        long stopTime = System.currentTimeMillis() + deactivateSleepTime * 50;
-        while (System.currentTimeMillis() < stopTime) {
+        final long POLLTIME_MS = 100L;
+        final long DEACTIVATE_TIME_MS = 30_000L;
+
+        long startTime = System.currentTimeMillis();
+        long deadline = TestLibrary.computeDeadline(startTime, DEACTIVATE_TIME_MS);
+
+        while (System.currentTimeMillis() < deadline) {
             try {
                 if (Activatable.inactive(id) == true) {
                     mesg("inactive successful");
                     return;
                 } else {
-                    mesg("inactive trial failed. Sleeping " +
-                         deactivateSleepTime +
-                         " milliseconds before next trial");
-                    Thread.sleep(deactivateSleepTime);
+                    Thread.sleep(POLLTIME_MS);
                 }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -95,7 +80,8 @@ public class ActivationLibrary {
             }
         }
 
-        mesg("unable to inactivate after several attempts");
+        mesg("unable to inactivate after " +
+            (System.currentTimeMillis() - startTime) + "ms.");
         mesg("unexporting object forcibly instead");
 
         try {

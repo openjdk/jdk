@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 6239400
- * @summary Tests NotificationBuffer doesn't hold locks when adding listeners.
+ * @summary Tests NotificationBuffer doesn't hold locks when adding listeners,
+ *  if test times out then deadlock is suspected.
  * @author Eamonn McManus
  * @run clean NotificationBufferDeadlockTest
  * @run build NotificationBufferDeadlockTest
@@ -38,6 +39,7 @@ import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
+import java.util.concurrent.CountDownLatch;
 import javax.management.*;
 import javax.management.remote.*;
 
@@ -173,9 +175,7 @@ public class NotificationBufferDeadlockTest {
         for (ObjectName name : names)
             mbsc.invoke(name, "send", null, null);
 
-        if (!countListener.waiting(MAX_WAITING_TIME)) {
-            return "did not get " + names.size() + " notifs as expected\n";
-        }
+        countListener.waiting();
 
         if (!sources.containsAll(names))
             return "missing names: " + sources;
@@ -202,13 +202,13 @@ public class NotificationBufferDeadlockTest {
                 }
             };
             t.start();
+            System.out.println("DeadlockTest-addNotificationListener waiting for the sending thread to die...");
             try {
-                t.join(5000L);
+                t.join(); //if times out here then deadlock is suspected
+                System.out.println("DeadlockTest-addNotificationListener OK.");
             } catch (Exception e) {
                 thisFailure = "Join exception: " + e;
             }
-            if (t.isAlive())
-                thisFailure = "Deadlock detected";
         }
 
         public void send() {
@@ -244,9 +244,9 @@ public class NotificationBufferDeadlockTest {
                     }
                 };
                 t.start();
-                t.join(5000);
-                if (t.isAlive())
-                    failure = "Query deadlock detected";
+                System.out.println("CreateDuringQueryInvocationHandler-createMBeanIfQuery waiting for the creating thread to die...");
+                t.join();  // if times out here then deadlock is suspected
+                System.out.println("CreateDuringQueryInvocationHandler-createMBeanIfQuery OK");
             }
         }
 
@@ -264,50 +264,30 @@ public class NotificationBufferDeadlockTest {
 
     private static class MyListener implements NotificationListener {
         public MyListener(int waitNB) {
-            this.waitNB= waitNB;
+            count = new CountDownLatch(waitNB);
         }
 
         public void handleNotification(Notification n, Object h) {
-            System.out.println("MyListener got: "+n.getSource()+" "+n.getType());
+            System.out.println("MyListener got: " + n.getSource() + " " + n.getType());
 
-            synchronized(this) {
-                if (TESTING_TYPE.equals(n.getType())) {
-                    sources.add((ObjectName) n.getSource());
-
-                    if (sources.size() == waitNB) {
-                        this.notifyAll();
-                    }
-                }
+            if (TESTING_TYPE.equals(n.getType())) {
+                sources.add((ObjectName) n.getSource());
+                count.countDown();
             }
         }
 
-        public boolean waiting(long timeout) {
-            final long startTime = System.currentTimeMillis();
-            long toWait = timeout;
-
-            synchronized(this) {
-                while(sources.size() < waitNB && toWait > 0) {
-                    try {
-                        this.wait(toWait);
-                    } catch (InterruptedException ire) {
-                        break;
-                    }
-
-                    toWait = timeout -
-                        (System.currentTimeMillis() - startTime);
-                }
-            }
-
-            return sources.size() == waitNB;
+        public void waiting() throws InterruptedException {
+            System.out.println("MyListener-waiting ...");
+            count.await(); // if times out here then deadlock is suspected
+            System.out.println("MyListener-waiting done!");
         }
 
-        private final int waitNB;
+        private final CountDownLatch count;
     }
 
     static String thisFailure;
     static String failure;
     static int nextNameIndex;
-    static final long MAX_WAITING_TIME = 10000;
 
     private static MyListener countListener;
     private static final List<ObjectName> sources = new Vector();
