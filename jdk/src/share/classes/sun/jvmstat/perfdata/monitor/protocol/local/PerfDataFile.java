@@ -233,8 +233,6 @@ public class PerfDataFile {
      *               does not conform to the expected pattern
      */
     public static int getLocalVmId(File file) {
-        int lvmid = 0;
-
         try {
             // try 1.4.2 and later format first
             return Integer.parseInt(file.getName());
@@ -287,31 +285,13 @@ public class PerfDataFile {
         return tmpDirName + dirNamePrefix + user + File.separator;
     }
 
-    /*
-     * this static initializer would not be necessary if the
-     * Solaris java.io.tmpdir property were set to /tmp by default
-     */
     static {
         /*
-         * Why is java.io.tmpdir on Solaris set to "/var/tmp/" when the
-         * HotSpot JVM os:get_temp_path() method returns "/tmp/"
-         *
-         * Why do Solaris and Windows return a string with a trailing
-         * file separator character where as Linix does not? (this change
-         * seems to have occurred sometime during hopper beta)
+         * For this to work, the target VM and this code need to use
+         * the same directory. Instead of guessing which directory the
+         * VM is using, we will ask.
          */
-        String tmpdir = System.getProperty("java.io.tmpdir");
-
-        if (tmpdir.compareTo("/var/tmp/") == 0) {
-             /*
-              * shared memory files are created in /tmp. Interestingly,
-              * java.io.tmpdir is set to "/var/tmp/" on Solaris and Linux,
-              * but os::get_temp_directory() is set to "/tmp/" on these
-              * platforms. the java.io.logging packages also makes reference
-              * to java.io.tmpdir.
-              */
-             tmpdir = "/tmp/";
-        }
+        String tmpdir = sun.misc.VMSupport.getVMTemporaryDirectory();
 
         /*
          * Assure that the string returned has a trailing File.separator

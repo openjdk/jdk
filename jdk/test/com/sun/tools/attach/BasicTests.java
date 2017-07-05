@@ -38,7 +38,7 @@ import jdk.testlibrary.ProcessThread;
  * @bug 6173612 6273707 6277253 6335921 6348630 6342019 6381757
  * @summary Basic unit tests for the VM attach mechanism.
  * @library /lib/testlibrary
- * @run build Agent BadAgent RedefineAgent Application Shutdown RedefineDummy
+ * @run build Agent BadAgent RedefineAgent Application Shutdown RedefineDummy RunnerUtil
  * @run main BasicTests
  *
  * This test will perform a number of basic attach tests.
@@ -238,19 +238,17 @@ public class BasicTests {
             // Test 6 - list method should list the target VM
             System.out.println(" - Test: VirtualMachine.list");
             List<VirtualMachineDescriptor> l = VirtualMachine.list();
-            if (!l.isEmpty()) {
-                boolean found = false;
-                for (VirtualMachineDescriptor vmd: l) {
-                    if (vmd.id().equals(pid)) {
-                        found = true;
-                        break;
-                    }
+            boolean found = false;
+            for (VirtualMachineDescriptor vmd: l) {
+                if (vmd.id().equals(pid)) {
+                    found = true;
+                    break;
                 }
-                if (found) {
-                    System.out.println(" - " + pid + " found.");
-                } else {
-                    throw new RuntimeException(pid + " not found in VM list");
-                }
+            }
+            if (found) {
+                System.out.println(" - " + pid + " found.");
+            } else {
+                throw new RuntimeException(pid + " not found in VM list");
             }
 
             // test 7 - basic hashCode/equals tests

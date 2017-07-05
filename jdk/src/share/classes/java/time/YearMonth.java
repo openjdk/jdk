@@ -157,9 +157,8 @@ public final class YearMonth
     /**
      * Obtains the current year-month from the system clock in the default time-zone.
      * <p>
-     * This will query the {@link java.time.Clock#systemDefaultZone() system clock} in the default
+     * This will query the {@link Clock#systemDefaultZone() system clock} in the default
      * time-zone to obtain the current year-month.
-     * The zone and offset will be set based on the time-zone in the clock.
      * <p>
      * Using this method will prevent the ability to use an alternate clock for testing
      * because the clock is hard-coded.
@@ -173,7 +172,7 @@ public final class YearMonth
     /**
      * Obtains the current year-month from the system clock in the specified time-zone.
      * <p>
-     * This will query the {@link Clock#system(java.time.ZoneId) system clock} to obtain the current year-month.
+     * This will query the {@link Clock#system(ZoneId) system clock} to obtain the current year-month.
      * Specifying the time-zone avoids dependence on the default time-zone.
      * <p>
      * Using this method will prevent the ability to use an alternate clock for testing
@@ -243,7 +242,7 @@ public final class YearMonth
      * chronology, or can be converted to a {@code LocalDate}.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
-     * allowing it to be used in queries via method reference, {@code YearMonth::from}.
+     * allowing it to be used as a query via method reference, {@code YearMonth::from}.
      *
      * @param temporal  the temporal object to convert, not null
      * @return the year-month, not null
@@ -363,7 +362,7 @@ public final class YearMonth
     /**
      * Checks if the specified unit is supported.
      * <p>
-     * This checks if the specified unit can be added to, or subtracted from, this date-time.
+     * This checks if the specified unit can be added to, or subtracted from, this year-month.
      * If false, then calling the {@link #plus(long, TemporalUnit)} and
      * {@link #minus(long, TemporalUnit) minus} methods will throw an exception.
      * <p>
@@ -430,7 +429,7 @@ public final class YearMonth
     /**
      * Gets the value of the specified field from this year-month as an {@code int}.
      * <p>
-     * This queries this year-month for the value for the specified field.
+     * This queries this year-month for the value of the specified field.
      * The returned value will always be within the valid range of values for the field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
@@ -462,7 +461,7 @@ public final class YearMonth
     /**
      * Gets the value of the specified field from this year-month as a {@code long}.
      * <p>
-     * This queries this year-month for the value for the specified field.
+     * This queries this year-month for the value of the specified field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
      * <p>
@@ -819,7 +818,7 @@ public final class YearMonth
     }
 
     /**
-     * Returns a copy of this year-month with the specified period in years added.
+     * Returns a copy of this {@code YearMonth} with the specified number of years added.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -836,7 +835,7 @@ public final class YearMonth
     }
 
     /**
-     * Returns a copy of this year-month with the specified period in months added.
+     * Returns a copy of this {@code YearMonth} with the specified number of months added.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -906,7 +905,7 @@ public final class YearMonth
     }
 
     /**
-     * Returns a copy of this year-month with the specified period in years subtracted.
+     * Returns a copy of this {@code YearMonth} with the specified number of years subtracted.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -919,7 +918,7 @@ public final class YearMonth
     }
 
     /**
-     * Returns a copy of this year-month with the specified period in months subtracted.
+     * Returns a copy of this {@code YearMonth} with the specified number of months subtracted.
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
@@ -1004,12 +1003,12 @@ public final class YearMonth
      * The result will be negative if the end is before the start.
      * The {@code Temporal} passed to this method is converted to a
      * {@code YearMonth} using {@link #from(TemporalAccessor)}.
-     * For example, the period in years between two year-months can be calculated
+     * For example, the amount in years between two year-months can be calculated
      * using {@code startYearMonth.until(endYearMonth, YEARS)}.
      * <p>
      * The calculation returns a whole number, representing the number of
      * complete units between the two year-months.
-     * For example, the period in decades between 2012-06 and 2032-05
+     * For example, the amount in decades between 2012-06 and 2032-05
      * will only be one decade as it is one month short of two decades.
      * <p>
      * There are two equivalent ways of using this method.
@@ -1134,7 +1133,7 @@ public final class YearMonth
     }
 
     /**
-     * Is this year-month after the specified year-month.
+     * Checks if this year-month is after the specified year-month.
      *
      * @param other  the other year-month to compare to, not null
      * @return true if this is after the specified year-month
@@ -1144,7 +1143,7 @@ public final class YearMonth
     }
 
     /**
-     * Is this year-month before the specified year-month.
+     * Checks if this year-month is before the specified year-month.
      *
      * @param other  the other year-month to compare to, not null
      * @return true if this point is before the specified year-month

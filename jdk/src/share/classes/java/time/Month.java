@@ -202,7 +202,7 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
      * chronology, or can be converted to a {@code LocalDate}.
      * <p>
      * This method matches the signature of the functional interface {@link TemporalQuery}
-     * allowing it to be used in queries via method reference, {@code Month::from}.
+     * allowing it to be used as a query via method reference, {@code Month::from}.
      *
      * @param temporal  the temporal object to convert, not null
      * @return the month-of-year, not null
@@ -315,7 +315,7 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
     /**
      * Gets the value of the specified field from this month-of-year as an {@code int}.
      * <p>
-     * This queries this month for the value for the specified field.
+     * This queries this month for the value of the specified field.
      * The returned value will always be within the valid range of values for the field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
@@ -348,7 +348,7 @@ public enum Month implements TemporalAccessor, TemporalAdjuster {
     /**
      * Gets the value of the specified field from this month-of-year as a {@code long}.
      * <p>
-     * This queries this month for the value for the specified field.
+     * This queries this month for the value of the specified field.
      * If it is not possible to return the value, because the field is not supported
      * or for some other reason, an exception is thrown.
      * <p>

@@ -163,6 +163,7 @@ SUNWprivate_1.1 {
                 JVM_GetStackTraceElement;
                 JVM_GetSystemPackage;
                 JVM_GetSystemPackages;
+                JVM_GetTemporaryDirectory;
                 JVM_GetThreadStateNames;
                 JVM_GetThreadStateValues;
                 JVM_GetVersionInfo;

@@ -46,9 +46,6 @@ public class JdkRegExp extends RegExp {
     /** Java regexp pattern to use for match. We compile to one of these */
     private Pattern pattern;
 
-    /** The matcher */
-    private RegExpMatcher matcher;
-
     /**
      * Construct a Regular expression from the given {@code source} and {@code flags} strings.
      *
@@ -95,14 +92,7 @@ public class JdkRegExp extends RegExp {
             return null; // never matches or similar, e.g. a[]
         }
 
-        RegExpMatcher currentMatcher = this.matcher;
-
-        if (currentMatcher == null || matcher.getInput() != str) {
-            currentMatcher = new DefaultMatcher(str);
-            this.matcher  = currentMatcher;
-        }
-
-        return currentMatcher;
+        return new DefaultMatcher(str);
     }
 
     class DefaultMatcher implements RegExpMatcher {

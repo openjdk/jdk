@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8001533 8004547
+ * @bug 8001533 8004547 8035782
  * @summary Test launching FX application with java -jar
  * Test uses main method and blank main method, a jfx app class and an incorrest
  * jfx app class, a main-class for the manifest, a bogus one and none.
@@ -372,6 +372,11 @@ public class FXLauncherTest extends TestHelper {
                 System.out.println("testing for extraneous jfxrt jar");
                 System.out.println(tr);
                 throw new Exception("jfxrt.jar is being loaded, it should not be!");
+            }
+            if (!tr.notContains("sun.launcher.LauncherHelper$FXHelper")) {
+                System.out.println("testing for extraneous 'sun.launcher.LauncherHelper$FXHelper'");
+                System.out.println(tr);
+                throw new Exception("FXHelper is being loaded, it should not be!");
             }
             for (String p : APP_PARMS) {
                 if (!tr.contains(p)) {
