@@ -119,7 +119,7 @@ public:
 <xsl:apply-templates select="value|structvalue|transition_value|relation" mode="write-fields"/>
 
   void writeEventContent(void) {
-    TraceStream ts(*tty);
+    TraceStream ts;
     ts.print("<xsl:value-of select="@label"/>: [");
 <xsl:apply-templates select="value|structvalue" mode="write-data"/>
     ts.print("]\n");

@@ -89,8 +89,18 @@ void VM_Version::initialize() {
     if (is_niagara_plus()) {
       if (has_blk_init() && (cache_line_size > 0) && UseTLAB &&
           FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
-        // Use BIS instruction for TLAB allocation prefetch.
-        FLAG_SET_DEFAULT(AllocatePrefetchInstr, 1);
+        if (!has_sparc5_instr()) {
+          // Use BIS instruction for TLAB allocation prefetch
+          // on Niagara plus processors other than those based on CoreS4
+          FLAG_SET_DEFAULT(AllocatePrefetchInstr, 1);
+        } else {
+          // On CoreS4 processors use prefetch instruction
+          // to avoid partial RAW issue, also use prefetch style 3
+          FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
+          if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
+            FLAG_SET_DEFAULT(AllocatePrefetchStyle, 3);
+          }
+        }
       }
       if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
         if (AllocatePrefetchInstr == 0) {
@@ -351,7 +361,7 @@ void VM_Version::initialize() {
       FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
     }
   } else if (UseCRC32Intrinsics) {
-    warning("SPARC CRC32 intrinsics require VIS3 insructions support. Intriniscs will be disabled");
+    warning("SPARC CRC32 intrinsics require VIS3 instructions support. Intrinsics will be disabled");
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 

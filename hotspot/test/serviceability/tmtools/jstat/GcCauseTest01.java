@@ -47,7 +47,7 @@ public class GcCauseTest01 {
         JstatGcCauseResults measurement1 = jstatGcTool.measure();
         measurement1.assertConsistency();
 
-        GcProvoker gcProvoker = GcProvoker.createGcProvoker();
+        GcProvoker gcProvoker = new GcProvoker();
 
         // Provoke GC then run the tool again and get the results  asserting that they are reasonable
         gcProvoker.provokeGc();

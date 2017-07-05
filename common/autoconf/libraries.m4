@@ -31,6 +31,7 @@ m4_include([lib-ffi.m4])
 m4_include([lib-freetype.m4])
 m4_include([lib-std.m4])
 m4_include([lib-x11.m4])
+m4_include([lib-elf.m4])
 
 ################################################################################
 # Determine which libraries are needed for this configuration
@@ -90,6 +91,7 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
   LIB_SETUP_BUNDLED_LIBS
   LIB_SETUP_MISC_LIBS
   LIB_SETUP_SOLARIS_STLPORT
+  LIB_SETUP_LIBELF
 ])
 
 ################################################################################

@@ -210,12 +210,12 @@ public:
   // HeapRegions, or re-use existing ones. Returns the number of regions the
   // sequence was expanded by. If a HeapRegion allocation fails, the resulting
   // number of regions might be smaller than what's desired.
-  uint expand_by(uint num_regions, WorkGang* pretouch_workers = NULL);
+  uint expand_by(uint num_regions, WorkGang* pretouch_workers);
 
   // Makes sure that the regions from start to start+num_regions-1 are available
   // for allocation. Returns the number of regions that were committed to achieve
   // this.
-  uint expand_at(uint start, uint num_regions, WorkGang* pretouch_workers = NULL);
+  uint expand_at(uint start, uint num_regions, WorkGang* pretouch_workers);
 
   // Find a contiguous set of empty regions of length num. Returns the start index of
   // that set, or G1_NO_HRM_INDEX.
@@ -234,7 +234,7 @@ public:
   // Allocate the regions that contain the address range specified, committing the
   // regions if necessary. Return false if any of the regions is already committed
   // and not free, and return the number of regions newly committed in commit_count.
-  bool allocate_containing_regions(MemRegion range, size_t* commit_count);
+  bool allocate_containing_regions(MemRegion range, size_t* commit_count, WorkGang* pretouch_workers);
 
   // Apply blk->doHeapRegion() on all committed regions in address order,
   // terminating the iteration early if doHeapRegion() returns true.

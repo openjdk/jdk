@@ -238,72 +238,15 @@ void C1_MacroAssembler::initialize_body(Register obj, Register tmp1, Register tm
                                         int obj_size_in_bytes, int hdr_size_in_bytes) {
   const int index = (obj_size_in_bytes - hdr_size_in_bytes) / HeapWordSize;
 
-  const int cl_size         = VM_Version::L1_data_cache_line_size(),
-            cl_dwords       = cl_size>>3,
-            cl_dw_addr_bits = exact_log2(cl_dwords);
-
-  const Register tmp = R0,
-                 base_ptr = tmp1,
-                 cnt_dwords = tmp2;
-
-  if (index <= 6) {
-    // Use explicit NULL stores.
-    if (index > 0) { li(tmp, 0); }
-    for (int i = 0; i < index; ++i) { std(tmp, hdr_size_in_bytes + i * HeapWordSize, obj); }
-
-  } else if (index < (2<<cl_dw_addr_bits)-1) {
-    // simple loop
-    Label loop;
-
-    li(cnt_dwords, index);
-    addi(base_ptr, obj, hdr_size_in_bytes); // Compute address of first element.
-    li(tmp, 0);
-    mtctr(cnt_dwords);                      // Load counter.
-  bind(loop);
-    std(tmp, 0, base_ptr);                  // Clear 8byte aligned block.
-    addi(base_ptr, base_ptr, 8);
-    bdnz(loop);
-
+  // 2x unrolled loop is shorter with more than 9 HeapWords.
+  if (index <= 9) {
+    clear_memory_unrolled(obj, index, R0, hdr_size_in_bytes);
   } else {
-    // like clear_memory_doubleword
-    Label startloop, fast, fastloop, restloop, done;
+    const Register base_ptr = tmp1,
+                   cnt_dwords = tmp2;
 
-    addi(base_ptr, obj, hdr_size_in_bytes);           // Compute address of first element.
-    load_const_optimized(cnt_dwords, index);
-    rldicl_(tmp, base_ptr, 64-3, 64-cl_dw_addr_bits); // Extract dword offset within first cache line.
-    beq(CCR0, fast);                                  // Already 128byte aligned.
-
-    subfic(tmp, tmp, cl_dwords);
-    mtctr(tmp);                        // Set ctr to hit 128byte boundary (0<ctr<cl_dwords).
-    subf(cnt_dwords, tmp, cnt_dwords); // rest.
-    li(tmp, 0);
-
-  bind(startloop);                     // Clear at the beginning to reach 128byte boundary.
-    std(tmp, 0, base_ptr);             // Clear 8byte aligned block.
-    addi(base_ptr, base_ptr, 8);
-    bdnz(startloop);
-
-  bind(fast);                                  // Clear 128byte blocks.
-    srdi(tmp, cnt_dwords, cl_dw_addr_bits);    // Loop count for 128byte loop (>0).
-    andi(cnt_dwords, cnt_dwords, cl_dwords-1); // Rest in dwords.
-    mtctr(tmp);                                // Load counter.
-
-  bind(fastloop);
-    dcbz(base_ptr);                    // Clear 128byte aligned block.
-    addi(base_ptr, base_ptr, cl_size);
-    bdnz(fastloop);
-
-    cmpdi(CCR0, cnt_dwords, 0);        // size 0?
-    beq(CCR0, done);                   // rest == 0
-    li(tmp, 0);
-    mtctr(cnt_dwords);                 // Load counter.
-
-  bind(restloop);                      // Clear rest.
-    std(tmp, 0, base_ptr);             // Clear 8byte aligned block.
-    addi(base_ptr, base_ptr, 8);
-    bdnz(restloop);
-
-  bind(done);
+    addi(base_ptr, obj, hdr_size_in_bytes); // Compute address of first element.
+    clear_memory_doubleword(base_ptr, cnt_dwords, R0, index);
   }
 }
 

@@ -118,13 +118,8 @@ PHONY_LIST += sanitytest
 # Set up the directory in which the jvm directories live (client/, server/, etc.)
 ifeq ($(PLATFORM),windows)
 JVMS_DIR := $(PRODUCT_HOME)/bin
-else ifeq ($(PLATFORM),bsd)
-JVMS_DIR := $(PRODUCT_HOME)/lib
 else
-# The jvms live in the architecture directory (amd64, sparcv9,
-# etc.). By using a wildcard there's no need to figure out the exact
-# name of that directory.
-JVMS_DIR := $(PRODUCT_HOME)/lib/*
+JVMS_DIR := $(PRODUCT_HOME)/lib
 endif
 
 # Use the existance of a directory as a sign that jvm variant is available

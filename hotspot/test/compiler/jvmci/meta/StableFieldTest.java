@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 8151664
- * @requires (vm.simpleArch == "x64" | vm.simpleArch == "sparcv9" | vm.simpleArch == "aarch64")
+ * @requires vm.jvmci
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.vm.annotation

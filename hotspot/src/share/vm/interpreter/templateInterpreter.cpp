@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "code/codeCacheExtensions.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "interpreter/interp_masm.hpp"
@@ -52,29 +51,10 @@ void TemplateInterpreter::initialize() {
     TraceTime timer("Interpreter generation", TRACETIME_LOG(Info, startuptime));
     int code_size = InterpreterCodeSize;
     NOT_PRODUCT(code_size *= 4;)  // debug uses extra interpreter code space
-#if INCLUDE_JVMTI
-    if (CodeCacheExtensions::saving_generated_interpreter()) {
-      // May requires several versions of the codelets.
-      // Final size will automatically be optimized.
-      code_size *= 2;
-    }
-#endif
     _code = new StubQueue(new InterpreterCodeletInterface, code_size, NULL,
                           "Interpreter");
     TemplateInterpreterGenerator g(_code);
   }
-  if (PrintInterpreter) {
-    if (CodeCacheExtensions::saving_generated_interpreter() &&
-        CodeCacheExtensions::use_pregenerated_interpreter()) {
-      ResourceMark rm;
-      tty->print("Printing the newly generated interpreter first");
-      print();
-      tty->print("Printing the pregenerated interpreter next");
-    }
-  }
-
-  // Install the pregenerated interpreter code before printing it
-  CodeCacheExtensions::complete_step(CodeCacheExtensionsSteps::TemplateInterpreter);
 
   if (PrintInterpreter) {
     ResourceMark rm;

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 
+#include "aot/aotLoader.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
@@ -289,6 +290,15 @@ void G1RootProcessor::process_vm_roots(G1RootClosures* closures,
       JvmtiExport::oops_do(strong_roots);
     }
   }
+
+#if INCLUDE_AOT
+  if (UseAOT) {
+    G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::AOTCodeRoots, worker_i);
+    if (!_process_strong_tasks.is_task_claimed(G1RP_PS_aot_oops_do)) {
+        AOTLoader::oops_do(strong_roots);
+    }
+  }
+#endif
 
   {
     G1GCParPhaseTimesTracker x(phase_times, G1GCPhaseTimes::SystemDictionaryRoots, worker_i);
