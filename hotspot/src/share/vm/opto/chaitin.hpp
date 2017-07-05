@@ -34,10 +34,9 @@
 #include "opto/phase.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
+#include "opto/machnode.hpp"
 
 class LoopTree;
-class MachCallNode;
-class MachSafePointNode;
 class Matcher;
 class PhaseCFG;
 class PhaseLive;
@@ -98,6 +97,12 @@ public:
   }
   // Compute the degree between 2 live ranges
   int compute_degree( LRG &l ) const;
+  bool mask_is_nonempty_and_up() const {
+    return mask().is_UP() && mask_size();
+  }
+  bool is_float_or_vector() const {
+    return _is_float || _is_vector;
+  }
 
 private:
   RegMask _mask;                // Allowed registers for this LRG
@@ -129,6 +134,7 @@ public:
   void SUBTRACT( const RegMask &rm ) { _mask.SUBTRACT(rm); debug_only(_msize_valid=0;)}
   void Clear()   { _mask.Clear()  ; debug_only(_msize_valid=1); _mask_size = 0; }
   void Set_All() { _mask.Set_All(); debug_only(_msize_valid=1); _mask_size = RegMask::CHUNK_SIZE; }
+
   void Insert( OptoReg::Name reg ) { _mask.Insert(reg);  debug_only(_msize_valid=0;) }
   void Remove( OptoReg::Name reg ) { _mask.Remove(reg);  debug_only(_msize_valid=0;) }
   void clear_to_pairs() { _mask.clear_to_pairs(); debug_only(_msize_valid=0;) }
@@ -417,8 +423,8 @@ class PhaseChaitin : public PhaseRegAlloc {
   uint _simplified;             // Linked list head of simplified LRGs
 
   // Helper functions for Split()
-  uint split_DEF( Node *def, Block *b, int loc, uint max, Node **Reachblock, Node **debug_defs, GrowableArray<uint> splits, int slidx );
-  uint split_USE( Node *def, Block *b, Node *use, uint useidx, uint max, bool def_down, bool cisc_sp, GrowableArray<uint> splits, int slidx );
+  uint split_DEF(Node *def, Block *b, int loc, uint max, Node **Reachblock, Node **debug_defs, GrowableArray<uint> splits, int slidx );
+  uint split_USE(MachSpillCopyNode::SpillType spill_type, Node *def, Block *b, Node *use, uint useidx, uint max, bool def_down, bool cisc_sp, GrowableArray<uint> splits, int slidx );
 
   //------------------------------clone_projs------------------------------------
   // After cloning some rematerialized instruction, clone any MachProj's that
@@ -440,7 +446,7 @@ class PhaseChaitin : public PhaseRegAlloc {
                             int slidx, uint *lrg2reach, Node **Reachblock, bool walkThru);
   // True if lidx is used before any real register is def'd in the block
   bool prompt_use( Block *b, uint lidx );
-  Node *get_spillcopy_wide( Node *def, Node *use, uint uidx );
+  Node *get_spillcopy_wide(MachSpillCopyNode::SpillType spill_type, Node *def, Node *use, uint uidx );
   // Insert the spill at chosen location.  Skip over any intervening Proj's or
   // Phis.  Skip over a CatchNode and projs, inserting in the fall-through block
   // instead.  Update high-pressure indices.  Create a new live range.
@@ -483,14 +489,112 @@ private:
   // Same as _ifg->add_vector(reg,live) EXCEPT use the RegMask
   // information to trim the set of interferences.  Return the
   // count of edges added.
-  void interfere_with_live( uint reg, IndexSet *live );
+  void interfere_with_live(uint lid, IndexSet* liveout);
+#ifdef ASSERT
   // Count register pressure for asserts
-  uint count_int_pressure( IndexSet *liveout );
-  uint count_float_pressure( IndexSet *liveout );
+  uint count_int_pressure(IndexSet* liveout);
+  uint count_float_pressure(IndexSet* liveout);
+#endif
 
   // Build the interference graph using virtual registers only.
   // Used for aggressive coalescing.
   void build_ifg_virtual( );
+
+  // used when computing the register pressure for each block in the CFG. This
+  // is done during IFG creation.
+  class Pressure {
+      // keeps track of the register pressure at the current
+      // instruction (used when stepping backwards in the block)
+      uint _current_pressure;
+
+      // keeps track of the instruction index of the first low to high register pressure
+      // transition (starting from the top) in the block
+      // if high_pressure_index == 0 then the whole block is high pressure
+      // if high_pressure_index = b.end_idx() + 1 then the whole block is low pressure
+      uint _high_pressure_index;
+
+      // stores the highest pressure we find
+      uint _final_pressure;
+
+      // number of live ranges that constitute high register pressure
+      const uint _high_pressure_limit;
+    public:
+
+      // lower the register pressure and look for a low to high pressure
+      // transition
+      void lower(LRG& lrg, uint& location) {
+        _current_pressure -= lrg.reg_pressure();
+        if (_current_pressure == _high_pressure_limit) {
+          _high_pressure_index = location;
+        }
+      }
+
+      // raise the pressure and store the pressure if it's the biggest
+      // pressure so far
+      void raise(LRG &lrg) {
+        _current_pressure += lrg.reg_pressure();
+        if (_current_pressure > _final_pressure) {
+          _final_pressure = _current_pressure;
+        }
+      }
+
+      uint high_pressure_index() const {
+        return _high_pressure_index;
+      }
+
+      uint final_pressure() const {
+        return _final_pressure;
+      }
+
+      uint current_pressure() const {
+        return _current_pressure;
+      }
+
+      uint high_pressure_limit() const {
+        return _high_pressure_limit;
+      }
+
+      void lower_high_pressure_index() {
+        _high_pressure_index--;
+      }
+
+      void set_high_pressure_index_to_block_start() {
+        _high_pressure_index = 0;
+      }
+
+      void check_pressure_at_fatproj(uint fatproj_location, RegMask& fatproj_mask) {
+        // this pressure is only valid at this instruction, i.e. we don't need to lower
+        // the register pressure since the fat proj was never live before (going backwards)
+        uint new_pressure = current_pressure() + fatproj_mask.Size();
+        if (new_pressure > final_pressure()) {
+          _final_pressure = new_pressure;
+        }
+
+        // if we were at a low pressure and now and the fat proj is at high pressure, record the fat proj location
+        // as coming from a low to high (to low again)
+        if (current_pressure() <= high_pressure_limit() && new_pressure > high_pressure_limit()) {
+          _high_pressure_index = fatproj_location;
+        }
+      }
+
+      Pressure(uint high_pressure_index, uint high_pressure_limit)
+      : _current_pressure(0)
+      , _high_pressure_index(high_pressure_index)
+      , _high_pressure_limit(high_pressure_limit)
+      , _final_pressure(0) {}
+  };
+
+  void lower_pressure(Block* b, uint location, LRG& lrg, IndexSet* liveout, Pressure& int_pressure, Pressure& float_pressure);
+  void raise_pressure(Block* b, LRG& lrg, Pressure& int_pressure, Pressure& float_pressure);
+  void check_for_high_pressure_transition_at_fatproj(uint& block_reg_pressure, uint location, LRG& lrg, Pressure& pressure, const int op_regtype);
+  void add_input_to_liveout(Block* b, Node* n, IndexSet* liveout, double cost, Pressure& int_pressure, Pressure& float_pressure);
+  void compute_initial_block_pressure(Block* b, IndexSet* liveout, Pressure& int_pressure, Pressure& float_pressure, double cost);
+  bool remove_node_if_not_used(Block* b, uint location, Node* n, uint lid, IndexSet* liveout);
+  void assign_high_score_to_immediate_copies(Block* b, Node* n, LRG& lrg, uint next_inst, uint last_inst);
+  void remove_interference_from_copy(Block* b, uint location, uint lid_copy, IndexSet* liveout, double cost, Pressure& int_pressure, Pressure& float_pressure);
+  void remove_bound_register_from_interfering_live_ranges(LRG& lrg, IndexSet* liveout, uint& must_spill);
+  void check_for_high_pressure_block(Pressure& pressure);
+  void adjust_high_pressure_index(Block* b, uint& hrp_index, Pressure& pressure);
 
   // Build the interference graph using physical registers when available.
   // That is, if 2 live ranges are simultaneously alive but in their
@@ -554,7 +658,7 @@ private:
   // Replace the old node with the current live version of that value
   // and yank the old value if it's dead.
   int replace_and_yank_if_dead( Node *old, OptoReg::Name nreg,
-                                Block *current_block, Node_List& value, Node_List& regnd ) {
+      Block *current_block, Node_List& value, Node_List& regnd ) {
     Node* v = regnd[nreg];
     assert(v->outcnt() != 0, "no dead values");
     old->replace_by(v);
@@ -565,7 +669,7 @@ private:
     return yank_if_dead_recurse(old, old, current_block, value, regnd);
   }
   int yank_if_dead_recurse(Node *old, Node *orig_old, Block *current_block,
-                           Node_List *value, Node_List *regnd);
+      Node_List *value, Node_List *regnd);
   int yank( Node *old, Block *current_block, Node_List *value, Node_List *regnd );
   int elide_copy( Node *n, int k, Block *current_block, Node_List &value, Node_List &regnd, bool can_change_regs );
   int use_prior_register( Node *copy, uint idx, Node *def, Block *current_block, Node_List &value, Node_List &regnd );
@@ -573,8 +677,8 @@ private:
 
   // If nreg already contains the same constant as val then eliminate it
   bool eliminate_copy_of_constant(Node* val, Node* n,
-                                  Block *current_block, Node_List& value, Node_List &regnd,
-                                  OptoReg::Name nreg, OptoReg::Name nreg2);
+      Block *current_block, Node_List& value, Node_List &regnd,
+      OptoReg::Name nreg, OptoReg::Name nreg2);
   // Extend the node to LRG mapping
   void add_reference( const Node *node, const Node *old_node);
 

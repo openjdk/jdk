@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2013 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +20,39 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *  
+ *
  */
 
-provider hs_private {
-  probe hashtable__new_entry(void*, uint32_t, uintptr_t, void*); 
-  probe safepoint__begin();
-  probe safepoint__end();
-  probe cms__initmark__begin();
-  probe cms__initmark__end();
-  probe cms__remark__begin();
-  probe cms__remark__end();
-};
+// no precompiled headers
+#include "runtime/atomic.hpp"
+#include "runtime/handles.inline.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
+#include "runtime/osThread.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/vmThread.hpp"
+#ifdef TARGET_ARCH_ppc
+# include "assembler_ppc.inline.hpp"
+#endif
 
-#pragma D attributes Private/Private/Common provider hs_private provider
-#pragma D attributes Private/Private/Unknown provider hs_private module
-#pragma D attributes Private/Private/Unknown provider hs_private function
-#pragma D attributes Private/Private/Common provider hs_private name
-#pragma D attributes Private/Private/Common provider hs_private args
 
+void OSThread::pd_initialize() {
+  assert(this != NULL, "check");
+  _thread_id        = 0;
+  _pthread_id       = 0;
+  _siginfo = NULL;
+  _ucontext = NULL;
+  _expanding_stack = 0;
+  _alt_sig_stack = NULL;
+
+  _last_cpu_times.sys = _last_cpu_times.user = 0L;
+
+  sigemptyset(&_caller_sigmask);
+
+  _startThread_lock = new Monitor(Mutex::event, "startThread_lock", true);
+  assert(_startThread_lock !=NULL, "check");
+}
+
+void OSThread::pd_destroy() {
+  delete _startThread_lock;
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -330,12 +330,6 @@ void os::Solaris::setup_interruptible(JavaThread* thread) {
   osthread->set_saved_interrupt_thread_state(thread_state);
   thread->frame_anchor()->make_walkable(thread);
   ThreadStateTransition::transition(thread, thread_state, _thread_blocked);
-}
-
-// Version of setup_interruptible() for threads that are already in
-// _thread_blocked. Used by os_sleep().
-void os::Solaris::setup_interruptible_already_blocked(JavaThread* thread) {
-  thread->frame_anchor()->make_walkable(thread);
 }
 
 JavaThread* os::Solaris::setup_interruptible() {
@@ -2232,8 +2226,8 @@ static bool check_addr0(outputStream* st) {
         st->cr();
         status = true;
       }
-      ::close(fd);
     }
+    ::close(fd);
   }
   return status;
 }
@@ -2251,58 +2245,12 @@ void os::print_memory_info(outputStream* st) {
   (void) check_addr0(st);
 }
 
-// Taken from /usr/include/sys/machsig.h  Supposed to be architecture specific
-// but they're the same for all the solaris architectures that we support.
-const char *ill_names[] = { "ILL0", "ILL_ILLOPC", "ILL_ILLOPN", "ILL_ILLADR",
-                          "ILL_ILLTRP", "ILL_PRVOPC", "ILL_PRVREG",
-                          "ILL_COPROC", "ILL_BADSTK" };
-
-const char *fpe_names[] = { "FPE0", "FPE_INTDIV", "FPE_INTOVF", "FPE_FLTDIV",
-                          "FPE_FLTOVF", "FPE_FLTUND", "FPE_FLTRES",
-                          "FPE_FLTINV", "FPE_FLTSUB" };
-
-const char *segv_names[] = { "SEGV0", "SEGV_MAPERR", "SEGV_ACCERR" };
-
-const char *bus_names[] = { "BUS0", "BUS_ADRALN", "BUS_ADRERR", "BUS_OBJERR" };
-
 void os::print_siginfo(outputStream* st, void* siginfo) {
-  st->print("siginfo:");
+  const siginfo_t* si = (const siginfo_t*)siginfo;
 
-  const int buflen = 100;
-  char buf[buflen];
-  siginfo_t *si = (siginfo_t*)siginfo;
-  st->print("si_signo=%s: ", os::exception_name(si->si_signo, buf, buflen));
-  char *err = strerror(si->si_errno);
-  if (si->si_errno != 0 && err != NULL) {
-    st->print("si_errno=%s", err);
-  } else {
-    st->print("si_errno=%d", si->si_errno);
-  }
-  const int c = si->si_code;
-  assert(c > 0, "unexpected si_code");
-  switch (si->si_signo) {
-  case SIGILL:
-    st->print(", si_code=%d (%s)", c, c > 8 ? "" : ill_names[c]);
-    st->print(", si_addr=" PTR_FORMAT, si->si_addr);
-    break;
-  case SIGFPE:
-    st->print(", si_code=%d (%s)", c, c > 9 ? "" : fpe_names[c]);
-    st->print(", si_addr=" PTR_FORMAT, si->si_addr);
-    break;
-  case SIGSEGV:
-    st->print(", si_code=%d (%s)", c, c > 2 ? "" : segv_names[c]);
-    st->print(", si_addr=" PTR_FORMAT, si->si_addr);
-    break;
-  case SIGBUS:
-    st->print(", si_code=%d (%s)", c, c > 3 ? "" : bus_names[c]);
-    st->print(", si_addr=" PTR_FORMAT, si->si_addr);
-    break;
-  default:
-    st->print(", si_code=%d", si->si_code);
-    // no si_addr
-  }
+  os::Posix::print_siginfo_brief(st, si);
 
-  if ((si->si_signo == SIGBUS || si->si_signo == SIGSEGV) &&
+  if (si && (si->si_signo == SIGBUS || si->si_signo == SIGSEGV) &&
       UseSharedSpaces) {
     FileMapInfo* mapinfo = FileMapInfo::current_info();
     if (mapinfo->is_in_shared_space(si->si_addr)) {
@@ -2372,7 +2320,8 @@ static void print_signal_handler(outputStream* st, int sig,
     st->print("[%s]", get_signal_handler_name(handler, buf, buflen));
   }
 
-  st->print(", sa_mask[0]=" PTR32_FORMAT, *(uint32_t*)&sa.sa_mask);
+  st->print(", sa_mask[0]=");
+  os::Posix::print_signal_set_short(st, &sa.sa_mask);
 
   address rh = VMError::get_resetted_sighandler(sig);
   // May be, handler was resetted by VMError?
@@ -2381,7 +2330,8 @@ static void print_signal_handler(outputStream* st, int sig,
     sa.sa_flags = VMError::get_resetted_sigflags(sig);
   }
 
-  st->print(", sa_flags="   PTR32_FORMAT, sa.sa_flags);
+  st->print(", sa_flags=");
+  os::Posix::print_sa_flags(st, sa.sa_flags);
 
   // Check: is it our handler?
   if(handler == CAST_FROM_FN_PTR(address, signalHandler) ||
@@ -2441,13 +2391,14 @@ void os::jvm_path(char *buf, jint buflen) {
     return;
   }
 
-  if (Arguments::created_by_gamma_launcher()) {
-    // Support for the gamma launcher.  Typical value for buf is
-    // "<JAVA_HOME>/jre/lib/<arch>/<vmtype>/libjvm.so".  If "/jre/lib/" appears at
-    // the right place in the string, then assume we are installed in a JDK and
-    // we're done.  Otherwise, check for a JAVA_HOME environment variable and fix
-    // up the path so it looks like libjvm.so is installed there (append a
-    // fake suffix hotspot/libjvm.so).
+  if (Arguments::sun_java_launcher_is_altjvm()) {
+    // Support for the java launcher's '-XXaltjvm=<path>' option. Typical
+    // value for buf is "<JAVA_HOME>/jre/lib/<arch>/<vmtype>/libjvm.so".
+    // If "/jre/lib/" appears at the right place in the string, then
+    // assume we are installed in a JDK and we're done.  Otherwise, check
+    // for a JAVA_HOME environment variable and fix up the path so it
+    // looks like libjvm.so is installed there (append a fake suffix
+    // hotspot/libjvm.so).
     const char *p = buf + strlen(buf) - 1;
     for (int count = 0; p > buf && count < 5; ++count) {
       for (--p; p > buf && *p != '/'; --p)
@@ -3011,7 +2962,7 @@ bool os::get_page_info(char *start, page_info* info) {
 char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found) {
   const uint_t info_types[] = { MEMINFO_VLGRP, MEMINFO_VPAGESIZE };
   const size_t types = sizeof(info_types) / sizeof(info_types[0]);
-  uint64_t addrs[MAX_MEMINFO_CNT], outdata[types * MAX_MEMINFO_CNT];
+  uint64_t addrs[MAX_MEMINFO_CNT], outdata[types * MAX_MEMINFO_CNT + 1];
   uint_t validity[MAX_MEMINFO_CNT];
 
   size_t page_size = MAX2((size_t)os::vm_page_size(), page_expected->size);
@@ -3050,7 +3001,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
       }
     }
 
-    if (i != addrs_count) {
+    if (i < addrs_count) {
       if ((validity[i] & 2) != 0) {
         page_found->lgrp_id = outdata[types * i];
       } else {
@@ -3413,61 +3364,6 @@ bool os::can_execute_large_page_memory() {
   return true;
 }
 
-static int os_sleep(jlong millis, bool interruptible) {
-  const jlong limit = INT_MAX;
-  jlong prevtime;
-  int res;
-
-  while (millis > limit) {
-    if ((res = os_sleep(limit, interruptible)) != OS_OK)
-      return res;
-    millis -= limit;
-  }
-
-  // Restart interrupted polls with new parameters until the proper delay
-  // has been completed.
-
-  prevtime = getTimeMillis();
-
-  while (millis > 0) {
-    jlong newtime;
-
-    if (!interruptible) {
-      // Following assert fails for os::yield_all:
-      // assert(!thread->is_Java_thread(), "must not be java thread");
-      res = poll(NULL, 0, millis);
-    } else {
-      JavaThread *jt = JavaThread::current();
-
-      INTERRUPTIBLE_NORESTART_VM_ALWAYS(poll(NULL, 0, millis), res, jt,
-        os::Solaris::clear_interrupted);
-    }
-
-    // INTERRUPTIBLE_NORESTART_VM_ALWAYS returns res == OS_INTRPT for
-    // thread.Interrupt.
-
-    // See c/r 6751923. Poll can return 0 before time
-    // has elapsed if time is set via clock_settime (as NTP does).
-    // res == 0 if poll timed out (see man poll RETURN VALUES)
-    // using the logic below checks that we really did
-    // sleep at least "millis" if not we'll sleep again.
-    if( ( res == 0 ) || ((res == OS_ERR) && (errno == EINTR))) {
-      newtime = getTimeMillis();
-      assert(newtime >= prevtime, "time moving backwards");
-    /* Doing prevtime and newtime in microseconds doesn't help precision,
-       and trying to round up to avoid lost milliseconds can result in a
-       too-short delay. */
-      millis -= newtime - prevtime;
-      if(millis <= 0)
-        return OS_OK;
-      prevtime = newtime;
-    } else
-      return res;
-  }
-
-  return OS_OK;
-}
-
 // Read calls from inside the vm need to perform state transitions
 size_t os::read(int fd, void *buf, unsigned int nBytes) {
   INTERRUPTIBLE_RETURN_INT_VM(::read(fd, buf, nBytes), os::Solaris::clear_interrupted);
@@ -3475,69 +3371,6 @@ size_t os::read(int fd, void *buf, unsigned int nBytes) {
 
 size_t os::restartable_read(int fd, void *buf, unsigned int nBytes) {
   INTERRUPTIBLE_RETURN_INT(::read(fd, buf, nBytes), os::Solaris::clear_interrupted);
-}
-
-int os::sleep(Thread* thread, jlong millis, bool interruptible) {
-  assert(thread == Thread::current(),  "thread consistency check");
-
-  // TODO-FIXME: this should be removed.
-  // On Solaris machines (especially 2.5.1) we found that sometimes the VM gets into a live lock
-  // situation with a JavaThread being starved out of a lwp. The kernel doesn't seem to generate
-  // a SIGWAITING signal which would enable the threads library to create a new lwp for the starving
-  // thread. We suspect that because the Watcher thread keeps waking up at periodic intervals the kernel
-  // is fooled into believing that the system is making progress. In the code below we block the
-  // the watcher thread while safepoint is in progress so that it would not appear as though the
-  // system is making progress.
-  if (!Solaris::T2_libthread() &&
-      thread->is_Watcher_thread() && SafepointSynchronize::is_synchronizing() && !Arguments::has_profile()) {
-    // We now try to acquire the threads lock. Since this lock is held by the VM thread during
-    // the entire safepoint, the watcher thread will  line up here during the safepoint.
-    Threads_lock->lock_without_safepoint_check();
-    Threads_lock->unlock();
-  }
-
-  if (thread->is_Java_thread()) {
-    // This is a JavaThread so we honor the _thread_blocked protocol
-    // even for sleeps of 0 milliseconds. This was originally done
-    // as a workaround for bug 4338139. However, now we also do it
-    // to honor the suspend-equivalent protocol.
-
-    JavaThread *jt = (JavaThread *) thread;
-    ThreadBlockInVM tbivm(jt);
-
-    jt->set_suspend_equivalent();
-    // cleared by handle_special_suspend_equivalent_condition() or
-    // java_suspend_self() via check_and_wait_while_suspended()
-
-    int ret_code;
-    if (millis <= 0) {
-      thr_yield();
-      ret_code = 0;
-    } else {
-      // The original sleep() implementation did not create an
-      // OSThreadWaitState helper for sleeps of 0 milliseconds.
-      // I'm preserving that decision for now.
-      OSThreadWaitState osts(jt->osthread(), false /* not Object.wait() */);
-
-      ret_code = os_sleep(millis, interruptible);
-    }
-
-    // were we externally suspended while we were waiting?
-    jt->check_and_wait_while_suspended();
-
-    return ret_code;
-  }
-
-  // non-JavaThread from this point on:
-
-  if (millis <= 0) {
-    thr_yield();
-    return 0;
-  }
-
-  OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
-
-  return os_sleep(millis, interruptible);
 }
 
 void os::naked_short_sleep(jlong ms) {
@@ -4181,68 +4014,6 @@ void os::Solaris::SR_handler(Thread* thread, ucontext_t* uc) {
 
   errno = old_errno;
 }
-
-
-void os::interrupt(Thread* thread) {
-  assert(Thread::current() == thread || Threads_lock->owned_by_self(), "possibility of dangling Thread pointer");
-
-  OSThread* osthread = thread->osthread();
-
-  int isInterrupted = osthread->interrupted();
-  if (!isInterrupted) {
-      osthread->set_interrupted(true);
-      OrderAccess::fence();
-      // os::sleep() is implemented with either poll (NULL,0,timeout) or
-      // by parking on _SleepEvent.  If the former, thr_kill will unwedge
-      // the sleeper by SIGINTR, otherwise the unpark() will wake the sleeper.
-      ParkEvent * const slp = thread->_SleepEvent ;
-      if (slp != NULL) slp->unpark() ;
-  }
-
-  // For JSR166:  unpark after setting status but before thr_kill -dl
-  if (thread->is_Java_thread()) {
-    ((JavaThread*)thread)->parker()->unpark();
-  }
-
-  // Handle interruptible wait() ...
-  ParkEvent * const ev = thread->_ParkEvent ;
-  if (ev != NULL) ev->unpark() ;
-
-  // When events are used everywhere for os::sleep, then this thr_kill
-  // will only be needed if UseVMInterruptibleIO is true.
-
-  if (!isInterrupted) {
-    int status = thr_kill(osthread->thread_id(), os::Solaris::SIGinterrupt());
-    assert_status(status == 0, status, "thr_kill");
-
-    // Bump thread interruption counter
-    RuntimeService::record_thread_interrupt_signaled_count();
-  }
-}
-
-
-bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
-  assert(Thread::current() == thread || Threads_lock->owned_by_self(), "possibility of dangling Thread pointer");
-
-  OSThread* osthread = thread->osthread();
-
-  bool res = osthread->interrupted();
-
-  // NOTE that since there is no "lock" around these two operations,
-  // there is the possibility that the interrupted flag will be
-  // "false" but that the interrupt event will be set. This is
-  // intentional. The effect of this is that Object.wait() will appear
-  // to have a spurious wakeup, which is not harmful, and the
-  // possibility is so rare that it is not worth the added complexity
-  // to add yet another lock. It has also been recommended not to put
-  // the interrupted flag into the os::Solaris::Event structure,
-  // because it hides the issue.
-  if (res && clear_interrupted) {
-    osthread->set_interrupted(false);
-  }
-  return res;
-}
-
 
 void os::print_statistics() {
 }

@@ -1106,7 +1106,9 @@ static VMReg int_stk_helper( int i ) {
 
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                          VMRegPair *regs,
+                                         VMRegPair *regs2,
                                          int total_args_passed) {
+    assert(regs2 == NULL, "not needed on sparc");
 
     // Return the number of VMReg stack_slots needed for the args.
     // This value does not include an abi space (like register window
@@ -2084,7 +2086,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // the 1st six register arguments). It's weird see int_stk_helper.
   //
   int out_arg_slots;
-  out_arg_slots = c_calling_convention(out_sig_bt, out_regs, total_c_args);
+  out_arg_slots = c_calling_convention(out_sig_bt, out_regs, NULL, total_c_args);
 
   if (is_critical_native) {
     // Critical natives may have to call out so they need a save area
@@ -2831,7 +2833,7 @@ nmethod *SharedRuntime::generate_dtrace_nmethod(
   // the 1st six register arguments). It's weird see int_stk_helper.
   //
   int out_arg_slots;
-  out_arg_slots = c_calling_convention(out_sig_bt, out_regs, total_c_args);
+  out_arg_slots = c_calling_convention(out_sig_bt, out_regs, NULL, total_c_args);
 
   // Calculate the total number of stack slots we will need.
 

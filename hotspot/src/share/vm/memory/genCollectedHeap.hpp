@@ -414,15 +414,13 @@ public:
                                 bool activate_scope,
                                 SharedHeap::ScanningOption so,
                                 OopsInGenClosure* not_older_gens,
-                                bool do_code_roots,
                                 OopsInGenClosure* older_gens,
                                 KlassClosure* klass_closure);
 
-  // Apply "blk" to all the weak roots of the system.  These include
-  // JNI weak roots, the code cache, system dictionary, symbol table,
-  // string table, and referents of reachable weak refs.
-  void gen_process_weak_roots(OopClosure* root_closure,
-                              CodeBlobClosure* code_roots);
+  // Apply "root_closure" to all the weak roots of the system.
+  // These include JNI weak roots, string table,
+  // and referents of reachable weak refs.
+  void gen_process_weak_roots(OopClosure* root_closure);
 
   // Set the saved marks of generations, if that makes sense.
   // In particular, if any generation might iterate over the oops

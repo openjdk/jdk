@@ -82,6 +82,9 @@ ConstantPool::ConstantPool(Array<u1>* tags) {
 void ConstantPool::deallocate_contents(ClassLoaderData* loader_data) {
   MetadataFactory::free_metadata(loader_data, cache());
   set_cache(NULL);
+  MetadataFactory::free_array<u2>(loader_data, reference_map());
+  set_reference_map(NULL);
+
   MetadataFactory::free_array<jushort>(loader_data, operands());
   set_operands(NULL);
 

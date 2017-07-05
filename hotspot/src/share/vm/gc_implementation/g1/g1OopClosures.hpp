@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,12 +48,8 @@ public:
 class G1ParClosureSuper : public OopsInHeapRegionClosure {
 protected:
   G1CollectedHeap* _g1;
-  G1RemSet* _g1_rem;
-  ConcurrentMark* _cm;
   G1ParScanThreadState* _par_scan_state;
   uint _worker_id;
-  bool _during_initial_mark;
-  bool _mark_in_progress;
 public:
   G1ParClosureSuper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state);
   bool apply_to_weak_ref_discovered_field() { return true; }
@@ -86,13 +82,26 @@ public:
 
 #define G1_PARTIAL_ARRAY_MASK 0x2
 
-template <class T> inline bool has_partial_array_mask(T* ref) {
+inline bool has_partial_array_mask(oop* ref) {
   return ((uintptr_t)ref & G1_PARTIAL_ARRAY_MASK) == G1_PARTIAL_ARRAY_MASK;
 }
 
-template <class T> inline T* set_partial_array_mask(T obj) {
+// We never encode partial array oops as narrowOop*, so return false immediately.
+// This allows the compiler to create optimized code when popping references from
+// the work queue.
+inline bool has_partial_array_mask(narrowOop* ref) {
+  assert(((uintptr_t)ref & G1_PARTIAL_ARRAY_MASK) != G1_PARTIAL_ARRAY_MASK, "Partial array oop reference encoded as narrowOop*");
+  return false;
+}
+
+// Only implement set_partial_array_mask() for regular oops, not for narrowOops.
+// We always encode partial arrays as regular oop, to allow the
+// specialization for has_partial_array_mask() for narrowOops above.
+// This means that unintentional use of this method with narrowOops are caught
+// by the compiler.
+inline oop* set_partial_array_mask(oop obj) {
   assert(((uintptr_t)(void *)obj & G1_PARTIAL_ARRAY_MASK) == 0, "Information loss!");
-  return (T*) ((uintptr_t)(void *)obj | G1_PARTIAL_ARRAY_MASK);
+  return (oop*) ((uintptr_t)(void *)obj | G1_PARTIAL_ARRAY_MASK);
 }
 
 template <class T> inline oop clear_partial_array_mask(T* ref) {
@@ -120,23 +129,10 @@ public:
 
 // Add back base class for metadata
 class G1ParCopyHelper : public G1ParClosureSuper {
-  Klass* _scanned_klass;
-
- public:
-  G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par_scan_state) :
-      _scanned_klass(NULL),
-      G1ParClosureSuper(g1, par_scan_state) {}
-
-  void set_scanned_klass(Klass* k) { _scanned_klass = k; }
-  template <class T> void do_klass_barrier(T* p, oop new_obj);
-};
-
-template <G1Barrier barrier, bool do_mark_object>
-class G1ParCopyClosure : public G1ParCopyHelper {
-  G1ParScanClosure _scanner;
-  template <class T> void do_oop_work(T* p);
-
 protected:
+  Klass* _scanned_klass;
+  ConcurrentMark* _cm;
+
   // Mark the object if it's not already marked. This is used to mark
   // objects pointed to by roots that are guaranteed not to move
   // during the GC (i.e., non-CSet objects). It is MT-safe.
@@ -146,22 +142,26 @@ protected:
   // objects pointed to by roots that have been forwarded during a
   // GC. It is MT-safe.
   void mark_forwarded_object(oop from_obj, oop to_obj);
+ public:
+  G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par_scan_state);
 
-  oop copy_to_survivor_space(oop obj);
+  void set_scanned_klass(Klass* k) { _scanned_klass = k; }
+  template <class T> void do_klass_barrier(T* p, oop new_obj);
+};
+
+template <G1Barrier barrier, bool do_mark_object>
+class G1ParCopyClosure : public G1ParCopyHelper {
+private:
+  template <class T> void do_oop_work(T* p);
 
 public:
   G1ParCopyClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state,
                    ReferenceProcessor* rp) :
-      _scanner(g1, par_scan_state, rp),
       G1ParCopyHelper(g1, par_scan_state) {
     assert(_ref_processor == NULL, "sanity");
   }
 
-  G1ParScanClosure* scanner() { return &_scanner; }
-
-  template <class T> void do_oop_nv(T* p) {
-    do_oop_work(p);
-  }
+  template <class T> void do_oop_nv(T* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
 };

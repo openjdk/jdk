@@ -34,10 +34,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.Writer;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +52,7 @@ import com.sun.jdi.event.EventQueue;
 import com.sun.jdi.event.EventSet;
 import com.sun.jdi.event.ModificationWatchpointEvent;
 import com.sun.jdi.event.VMDeathEvent;
+import com.sun.jdi.event.VMStartEvent;
 import com.sun.jdi.event.VMDisconnectEvent;
 import com.sun.jdi.request.ClassPrepareRequest;
 import com.sun.jdi.request.EventRequest;
@@ -71,24 +68,10 @@ public class FieldMonitor {
   public static void main(String[] args)
       throws IOException, InterruptedException {
 
-    StringBuffer sb = new StringBuffer();
-
-    for (int i=0; i < args.length; i++) {
-        sb.append(' ');
-        sb.append(args[i]);
-    }
     //VirtualMachine vm = launchTarget(sb.toString());
     VirtualMachine vm = launchTarget(CLASS_NAME);
 
     System.out.println("Vm launched");
-    // set watch field on already loaded classes
-    List<ReferenceType> referenceTypes = vm
-        .classesByName(CLASS_NAME);
-    for (ReferenceType refType : referenceTypes) {
-      addFieldWatch(vm, refType);
-    }
-    // watch for loaded classes
-    addClassWatch(vm);
 
     // process events
     EventQueue eventQueue = vm.eventQueue();
@@ -104,13 +87,15 @@ public class FieldMonitor {
     errThread.start();
     outThread.start();
 
-
-    vm.resume();
     boolean connected = true;
+    int watched = 0;
     while (connected) {
       EventSet eventSet = eventQueue.remove();
       for (Event event : eventSet) {
-        if (event instanceof VMDeathEvent
+        System.out.println("FieldMonitor-main receives: "+event);
+        if (event instanceof VMStartEvent) {
+          addClassWatch(vm);
+        } else if (event instanceof VMDeathEvent
             || event instanceof VMDisconnectEvent) {
           // exit
           connected = false;
@@ -122,17 +107,17 @@ public class FieldMonitor {
               .referenceType();
           addFieldWatch(vm, refType);
         } else if (event instanceof ModificationWatchpointEvent) {
+          watched++;
           System.out.println("sleep for 500 ms");
           Thread.sleep(500);
-          System.out.println("resume...");
 
           ModificationWatchpointEvent modEvent = (ModificationWatchpointEvent) event;
           System.out.println("old="
               + modEvent.valueCurrent());
           System.out.println("new=" + modEvent.valueToBe());
-          System.out.println();
         }
       }
+      System.out.println("resume...");
       eventSet.resume();
     }
     // Shutdown begins when event thread terminates
@@ -141,6 +126,10 @@ public class FieldMonitor {
         outThread.join();
     } catch (InterruptedException exc) {
         // we don't interrupt
+    }
+
+    if (watched != 11) { // init + 10 modifications in TestPostFieldModification class
+        throw new Error("Expected to receive 11 times ModificationWatchpointEvent, but got "+watched);
     }
   }
 
