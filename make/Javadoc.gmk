@@ -1,4 +1,4 @@
-# Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ else
     DRAFT_WINDOW_TITLE_MARKER := $(SPACE)[build $(VERSION_BUILD)]
   endif
   EARLYACCESS_TOP := \
-      <div style="background-color: $$(HASH)EEEEEE"><div style="padding: 6px; \
+      <div style="background-color: $(HASH)EEEEEE"><div style="padding: 6px; \
       margin-top: 2px; margin-bottom: 6px; margin-left: 6px; margin-right: \
       6px; text-align: justify; font-size: 80%; font-family: Helvetica, Arial, \
       sans-serif; font-weight: normal;">Please note that the specifications \
@@ -235,10 +235,6 @@ define SetupJavadocGenerationBody
 
   $1_OPTIONS += --add-modules $$(call CommaList, $$($1_MODULES))
 
-  ifneq ($$(LOG_LEVEL), trace)
-    $1_OPTIONS += -quiet
-  endif
-
   ifneq ($$($1_DISABLED_DOCLINT), )
     # Create a string like ",-syntax,-html"
     $1_DOCLINT_EXCEPTIONS := ,$$(call CommaList, $$(addprefix -, $$($1_DISABLED_DOCLINT)))
@@ -291,6 +287,13 @@ define SetupJavadocGenerationBody
   $1_VARDEPS := $$($1_OPTIONS) $$($1_PACKAGES)
   $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
        $$(SUPPORT_OUTPUTDIR)/docs/$1.vardeps)
+
+  # Do not store debug level options in VARDEPS.
+  ifneq ($$(LOG_LEVEL), trace)
+    $1_OPTIONS += -quiet
+  else
+    $1_OPTIONS += -verbose
+  endif
 
   $1_PACKAGE_DEPS := $$(call CacheFind, $$(wildcard $$(foreach p, \
       $$(subst .,/,$$(strip $$($1_PACKAGES))), \

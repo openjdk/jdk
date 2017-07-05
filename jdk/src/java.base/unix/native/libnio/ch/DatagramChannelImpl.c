@@ -181,11 +181,11 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
      */
     senderAddr = (*env)->GetObjectField(env, this, dci_senderAddrID);
     if (senderAddr != NULL) {
-        if (!NET_SockaddrEqualsInetAddress(env, &sa.sa, senderAddr)) {
+        if (!NET_SockaddrEqualsInetAddress(env, &sa, senderAddr)) {
             senderAddr = NULL;
         } else {
             jint port = (*env)->GetIntField(env, this, dci_senderPortID);
-            if (port != NET_GetPortFromSockaddr(&sa.sa)) {
+            if (port != NET_GetPortFromSockaddr(&sa)) {
                 senderAddr = NULL;
             }
         }
@@ -193,7 +193,7 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
     if (senderAddr == NULL) {
         jobject isa = NULL;
         int port = 0;
-        jobject ia = NET_SockaddrToInetAddress(env, &sa.sa, &port);
+        jobject ia = NET_SockaddrToInetAddress(env, &sa, &port);
         if (ia != NULL) {
             isa = (*env)->NewObject(env, isa_class, isa_ctorID, ia, port);
         }
@@ -201,7 +201,7 @@ Java_sun_nio_ch_DatagramChannelImpl_receive0(JNIEnv *env, jobject this,
 
         (*env)->SetObjectField(env, this, dci_senderAddrID, ia);
         (*env)->SetIntField(env, this, dci_senderPortID,
-                            NET_GetPortFromSockaddr(&sa.sa));
+                            NET_GetPortFromSockaddr(&sa));
         (*env)->SetObjectField(env, this, dci_senderID, isa);
     }
     return n;
@@ -215,14 +215,14 @@ Java_sun_nio_ch_DatagramChannelImpl_send0(JNIEnv *env, jobject this,
     jint fd = fdval(env, fdo);
     void *buf = (void *)jlong_to_ptr(address);
     SOCKETADDRESS sa;
-    int sa_len = sizeof(SOCKETADDRESS);
+    int sa_len = 0;
     jint n = 0;
 
     if (len > MAX_PACKET_LEN) {
         len = MAX_PACKET_LEN;
     }
 
-    if (NET_InetAddressToSockaddr(env, destAddress, destPort, &sa.sa,
+    if (NET_InetAddressToSockaddr(env, destAddress, destPort, &sa,
                                   &sa_len, preferIPv6) != 0) {
       return IOS_THROWN;
     }

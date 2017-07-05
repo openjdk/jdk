@@ -222,6 +222,8 @@ endif
 # applies to debug builds.
 ifeq ($(TOOLCHAIN_TYPE), gcc)
   BUILD_LIBAWT_debug_mem.c_CFLAGS := -w
+  # This option improves performance of MaskFill in Java2D by 20% for some gcc
+  LIBAWT_CFLAGS += -fgcse-after-reload
 endif
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBAWT, \

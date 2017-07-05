@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,9 @@ public class TestParams {
     /** name of default security policy for RMID */
     public static final String defaultRmidPolicy;
 
+    /** name of default security policy for RegistryVM */
+    public static final String defaultRegistryPolicy;
+
     /** name of default security policy for activation groups */
     public static final String defaultGroupPolicy;
 
@@ -68,6 +71,9 @@ public class TestParams {
 
         defaultRmidPolicy =
             testSrc + File.separatorChar + "rmid.security.policy";
+
+        defaultRegistryPolicy =
+            testSrc + File.separatorChar + "registry.security.policy";
 
         defaultGroupPolicy =
             testSrc + File.separatorChar + "group.security.policy";
