@@ -657,9 +657,12 @@ JTREG_BASIC_OPTIONS += $(JTREG_IGNORE_OPTION)
 # Multiple by 4 the timeout numbers
 JTREG_TIMEOUT_OPTION =  -timeoutFactor:4
 JTREG_BASIC_OPTIONS += $(JTREG_TIMEOUT_OPTION)
-# Boost the max memory for jtreg to avoid gc thrashing
+# Set the max memory for jtreg control vm
 JTREG_MEMORY_OPTION = -J-Xmx512m
 JTREG_BASIC_OPTIONS += $(JTREG_MEMORY_OPTION)
+# Set the max memory for jtreg target test vms
+JTREG_TESTVM_MEMORY_OPTION = -vmoption:-Xmx512m
+JTREG_TEST_OPTIONS += $(JTREG_TESTVM_MEMORY_OPTION)
 
 # Make sure jtreg exists
 $(JTREG): $(JT_HOME)

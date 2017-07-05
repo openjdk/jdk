@@ -43,5 +43,5 @@ public interface IntFunction<R> {
      * @param value the input value
      * @return the function result
      */
-    public R apply(int value);
+    R apply(int value);
 }

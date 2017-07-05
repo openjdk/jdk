@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8013395
+ * @bug 8013395 8014814
  * @summary Test StringBuffer.toString caching
  */
 
@@ -198,6 +198,28 @@ public class ToStringCache {
         sb.reverse();
         b = sb.toString();
         checkUnequal(a, b);
+
+        // Extra checks that append(null) works correctly
+
+        sb.append((String)null);
+        b = sb.toString();
+        checkUnequal(a, b);
+        a = b;
+
+        sb.append((StringBuffer)null);
+        b = sb.toString();
+        checkUnequal(a, b);
+        a = b;
+
+        sb.append((StringBuilder)null);
+        b = sb.toString();
+        checkUnequal(a, b);
+        a = b;
+
+        sb.append((CharSequence)null);
+        b = sb.toString();
+        checkUnequal(a, b);
+        a = b;
 
         // non-mutating methods
 

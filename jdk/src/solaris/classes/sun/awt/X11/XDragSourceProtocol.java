@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,15 +181,15 @@ abstract class XDragSourceProtocol {
                                    long time) {
         XWindowAttributes wattr = new XWindowAttributes();
         try {
-            XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
+            XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
             int status = XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(),
                                                           targetWindow, wattr.pData);
 
-            XToolkit.RESTORE_XERROR_HANDLER();
+            XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-            if (status == 0 ||
-                (XToolkit.saved_error != null &&
-                 XToolkit.saved_error.get_error_code() != XConstants.Success)) {
+            if ((status == 0) ||
+                ((XErrorHandlerUtil.saved_error != null) &&
+                (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success))) {
                 throw new XException("XGetWindowAttributes failed");
             }
 
@@ -198,15 +198,15 @@ abstract class XDragSourceProtocol {
             wattr.dispose();
         }
 
-        XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
+        XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
         XlibWrapper.XSelectInput(XToolkit.getDisplay(), targetWindow,
                                  targetWindowMask |
                                  XConstants.StructureNotifyMask);
 
-        XToolkit.RESTORE_XERROR_HANDLER();
+        XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
 
-        if (XToolkit.saved_error != null &&
-            XToolkit.saved_error.get_error_code() != XConstants.Success) {
+        if ((XErrorHandlerUtil.saved_error != null) &&
+            (XErrorHandlerUtil.saved_error.get_error_code() != XConstants.Success)) {
             throw new XException("XSelectInput failed");
         }
 
@@ -214,10 +214,10 @@ abstract class XDragSourceProtocol {
     }
 
     protected final void finalizeDrop() {
-        XToolkit.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
+        XErrorHandlerUtil.WITH_XERROR_HANDLER(XErrorHandler.IgnoreBadWindowHandler.getInstance());
         XlibWrapper.XSelectInput(XToolkit.getDisplay(), targetWindow,
                                  targetWindowMask);
-        XToolkit.RESTORE_XERROR_HANDLER();
+        XErrorHandlerUtil.RESTORE_XERROR_HANDLER();
     }
 
     public abstract boolean processProxyModeEvent(XClientMessageEvent xclient,
