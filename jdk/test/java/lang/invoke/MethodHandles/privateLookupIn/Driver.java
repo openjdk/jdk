@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @build test/* m1/* m2/* m3/*
+ * @build test/* m1/* m2/* m3/* Unnamed
  * @run testng/othervm test/p.PrivateLookupInTests
  * @summary Unit tests for MethodHandles.privateLookupIn
  */

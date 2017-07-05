@@ -36,8 +36,8 @@ final class NSEvent {
     static final int SCROLL_PHASE_UNSUPPORTED = 1;
     static final int SCROLL_PHASE_BEGAN = 2;
     static final int SCROLL_PHASE_CONTINUED = 3;
-    static final int SCROLL_MASK_PHASE_CANCELLED = 4;
-    static final int SCROLL_MASK_PHASE_ENDED = 5;
+    static final int SCROLL_PHASE_MOMENTUM_BEGAN = 4;
+    static final int SCROLL_PHASE_ENDED = 5;
 
     private int type;
     private int modifierFlags;
