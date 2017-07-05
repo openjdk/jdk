@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,10 @@
  */
 package jdk.internal.loader;
 
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import jdk.internal.module.Checks;
 
 /**
@@ -34,7 +38,8 @@ public final class ResourceHelper {
     private ResourceHelper() { }
 
     /**
-     * Returns the <em>package name</em> for a resource.
+     * Returns the <em>package name</em> for a resource or the empty package if
+     * the resource name does not contain a slash.
      */
     public static String getPackageName(String name) {
         int index = name.lastIndexOf('/');
@@ -46,19 +51,75 @@ public final class ResourceHelper {
     }
 
     /**
-     * Returns true if the resource is a <em>simple resource</em> that can
-     * never be encapsulated. Resources ending in "{@code .class}" or where
-     * the package name is not a Java identifier are resources that can
-     * never be encapsulated.
+     * Returns true if the resource is a <em>simple resource</em>. Simple
+     * resources can never be encapsulated. Resources ending in "{@code .class}"
+     * or where the package name is not a legal package name can not be
+     * encapsulated.
      */
     public static boolean isSimpleResource(String name) {
         int len = name.length();
         if (len > 6 && name.endsWith(".class")) {
             return true;
         }
-        if (!Checks.isJavaIdentifier(getPackageName(name))) {
+        if (!Checks.isPackageName(getPackageName(name))) {
             return true;
         }
         return false;
     }
+
+    /**
+     * Converts a resource name to a file path. Returns {@code null} if the
+     * resource name cannot be converted into a file path. Resource names
+     * with empty elements, or elements that are "." or ".." are rejected,
+     * as is a resource name that translates to a file path with a root
+     * component.
+     */
+    public static Path toFilePath(String name) {
+        // scan the resource name to eagerly reject obviously invalid names
+        int next;
+        int off = 0;
+        while ((next = name.indexOf('/', off)) != -1) {
+            int len = next - off;
+            if (!mayTranslate(name, off, len)) {
+                return null;
+            }
+            off = next + 1;
+        }
+        int rem = name.length() - off;
+        if (!mayTranslate(name, off, rem)) {
+            return null;
+        }
+
+        // convert to file path
+        Path path;
+        if (File.separatorChar == '/') {
+            path = Paths.get(name);
+        } else {
+            // not allowed to embed file separators
+            if (name.contains(File.separator))
+                return null;
+            path = Paths.get(name.replace('/', File.separatorChar));
+        }
+
+        // file path not allowed to have root component
+        return (path.getRoot() == null) ? path : null;
+    }
+
+    /**
+     * Returns {@code true} if the element in a resource name is a candidate
+     * to translate to the element of a file path.
+     */
+    private static boolean mayTranslate(String name, int off, int len) {
+        if (len <= 2) {
+            if (len == 0)
+                return false;
+            boolean starsWithDot = (name.charAt(off) == '.');
+            if (len == 1 && starsWithDot)
+                return false;
+            if (len == 2 && starsWithDot && (name.charAt(off+1) == '.'))
+                return false;
+        }
+        return true;
+    }
+
 }

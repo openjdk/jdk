@@ -40,7 +40,6 @@ import java.awt.dnd.peer.DragSourceContextPeer;
 import java.awt.font.TextAttribute;
 import java.awt.im.InputMethodHighlight;
 import java.awt.im.spi.InputMethodDescriptor;
-import java.awt.image.ColorModel;
 import java.awt.peer.*;
 import java.beans.PropertyChangeListener;
 import java.security.AccessController;
@@ -108,12 +107,17 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     static UIDefaults uidefaults;
     static final X11GraphicsEnvironment localEnv;
     private static final X11GraphicsDevice device;
-    private static final X11GraphicsConfig config;
     private static final long display;
     static int awt_multiclick_time;
     static boolean securityWarningEnabled;
 
-    private static volatile int screenWidth = -1, screenHeight = -1; // Dimensions of default screen
+    /**
+     * Dimensions of default virtual screen in pixels. These values are used to
+     * limit the maximum size of the window.
+     */
+    private static volatile int maxWindowWidthInPixels = -1;
+    private static volatile int maxWindowHeightInPixels = -1;
+
     static long awt_defaultFg; // Pixel
     private static XMouseInfoPeer xPeer;
 
@@ -122,13 +126,11 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         if (GraphicsEnvironment.isHeadless()) {
             localEnv = null;
             device = null;
-            config = null;
             display = 0;
         } else {
             localEnv = (X11GraphicsEnvironment) GraphicsEnvironment
                 .getLocalGraphicsEnvironment();
             device = (X11GraphicsDevice) localEnv.getDefaultScreenDevice();
-            config = (X11GraphicsConfig) device.getDefaultConfiguration();
             display = device.getDisplay();
             setupModifierMap();
             initIDs();
@@ -652,8 +654,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                 @Override
                 public void displayChanged() {
                     // 7045370: Reset the cached values
-                    XToolkit.screenWidth = -1;
-                    XToolkit.screenHeight = -1;
+                    XToolkit.maxWindowWidthInPixels = -1;
+                    XToolkit.maxWindowHeightInPixels = -1;
                 }
 
                 @Override
@@ -670,7 +672,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
     private static void initScreenSize() {
-        if (screenWidth == -1 || screenHeight == -1) {
+        if (maxWindowWidthInPixels == -1 || maxWindowHeightInPixels == -1) {
             awtLock();
             try {
                 XWindowAttributes pattr = new XWindowAttributes();
@@ -678,8 +680,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                     XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(),
                                                      XToolkit.getDefaultRootWindow(),
                                                      pattr.pData);
-                    screenWidth  = config.scaleDown(pattr.get_width());
-                    screenHeight = config.scaleDown(pattr.get_height());
+                    maxWindowWidthInPixels = pattr.get_width();
+                    maxWindowHeightInPixels = pattr.get_height();
                 } finally {
                     pattr.dispose();
                 }
@@ -689,24 +691,14 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         }
     }
 
-    static int getDefaultScreenWidth() {
+    static int getMaxWindowWidthInPixels() {
         initScreenSize();
-        return screenWidth;
+        return maxWindowWidthInPixels;
     }
 
-    static int getDefaultScreenHeight() {
+    static int getMaxWindowHeightInPixels() {
         initScreenSize();
-        return screenHeight;
-    }
-
-    @Override
-    protected int getScreenWidth() {
-        return getDefaultScreenWidth();
-    }
-
-    @Override
-    protected int getScreenHeight() {
-        return getDefaultScreenHeight();
+        return maxWindowHeightInPixels;
     }
 
     private static Rectangle getWorkArea(long root, int scale)
@@ -1372,20 +1364,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     static native long getDefaultXColormap();
     static native long getDefaultScreenData();
-
-    static ColorModel screenmodel;
-
-    static ColorModel getStaticColorModel() {
-        if (screenmodel == null) {
-            screenmodel = config.getColorModel ();
-        }
-        return screenmodel;
-    }
-
-    @Override
-    public ColorModel getColorModel() {
-        return getStaticColorModel();
-    }
 
     /**
      * Returns a new input method adapter descriptor for native input methods.

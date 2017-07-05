@@ -82,12 +82,11 @@ public class JvmtiGetAllModulesTest {
         Asserts.assertEquals(Layer.boot().modules(), getModulesJVMTI());
 
         // Load a new named module
-        ModuleDescriptor descriptor
-                = ModuleDescriptor.module(MY_MODULE_NAME).build();
+        ModuleDescriptor descriptor = ModuleDescriptor.newModule(MY_MODULE_NAME).build();
         ModuleFinder finder = finderOf(descriptor);
         ClassLoader loader = new ClassLoader() {};
         Configuration parent = Layer.boot().configuration();
-        Configuration cf = parent.resolveRequires(finder, ModuleFinder.of(), Set.of(MY_MODULE_NAME));
+        Configuration cf = parent.resolve(finder, ModuleFinder.of(), Set.of(MY_MODULE_NAME));
         Layer my = Layer.boot().defineModules(cf, m -> loader);
 
         // Verify that the loaded module is indeed reported by JVMTI

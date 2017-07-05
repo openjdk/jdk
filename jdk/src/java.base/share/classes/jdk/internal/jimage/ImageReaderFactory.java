@@ -32,6 +32,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Factory to get ImageReader
@@ -56,20 +57,22 @@ public class ImageReaderFactory {
      */
     public static ImageReader get(Path jimage) throws IOException {
         Objects.requireNonNull(jimage);
-        ImageReader reader = readers.get(jimage);
-        if (reader != null) {
-            return reader;
-        }
-        reader = ImageReader.open(jimage);
-        // potential race with other threads opening the same URL
-        ImageReader r = readers.putIfAbsent(jimage, reader);
-        if (r == null) {
-            return reader;
-        } else {
-            reader.close();
-            return r;
+        try {
+            return readers.computeIfAbsent(jimage, OPENER);
+        } catch (UncheckedIOException io) {
+            throw io.getCause();
         }
     }
+
+    private static Function<Path, ImageReader> OPENER = new Function<Path, ImageReader>() {
+        public ImageReader apply(Path path) {
+            try {
+                return ImageReader.open(path);
+            } catch (IOException io) {
+                throw new UncheckedIOException(io);
+            }
+        }
+    };
 
     /**
      * Returns the {@code ImageReader} to read the image file in this

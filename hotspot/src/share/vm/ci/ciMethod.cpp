@@ -1409,6 +1409,97 @@ void ciMethod::print_impl(outputStream* st) {
   }
 }
 
+// ------------------------------------------------------------------
+
+static BasicType erase_to_word_type(BasicType bt) {
+  if (is_subword_type(bt)) return T_INT;
+  if (bt == T_ARRAY)       return T_OBJECT;
+  return bt;
+}
+
+static bool basic_types_match(ciType* t1, ciType* t2) {
+  if (t1 == t2)  return true;
+  return erase_to_word_type(t1->basic_type()) == erase_to_word_type(t2->basic_type());
+}
+
+bool ciMethod::is_consistent_info(ciMethod* declared_method, ciMethod* resolved_method) {
+  bool invoke_through_mh_intrinsic = declared_method->is_method_handle_intrinsic() &&
+                                  !resolved_method->is_method_handle_intrinsic();
+
+  if (!invoke_through_mh_intrinsic) {
+    // Method name & descriptor should stay the same.
+    // Signatures may reference unloaded types and thus they may be not strictly equal.
+    ciSymbol* declared_signature = declared_method->signature()->as_symbol();
+    ciSymbol* resolved_signature = resolved_method->signature()->as_symbol();
+
+    return (declared_method->name()->equals(resolved_method->name())) &&
+           (declared_signature->equals(resolved_signature));
+  }
+
+  ciMethod* linker = declared_method;
+  ciMethod* target = resolved_method;
+  // Linkers have appendix argument which is not passed to callee.
+  int has_appendix = MethodHandles::has_member_arg(linker->intrinsic_id()) ? 1 : 0;
+  if (linker->arg_size() != (target->arg_size() + has_appendix)) {
+    return false; // argument slot count mismatch
+  }
+
+  ciSignature* linker_sig = linker->signature();
+  ciSignature* target_sig = target->signature();
+
+  if (linker_sig->count() + (linker->is_static() ? 0 : 1) !=
+      target_sig->count() + (target->is_static() ? 0 : 1) + has_appendix) {
+    return false; // argument count mismatch
+  }
+
+  int sbase = 0, rbase = 0;
+  switch (linker->intrinsic_id()) {
+    case vmIntrinsics::_linkToVirtual:
+    case vmIntrinsics::_linkToInterface:
+    case vmIntrinsics::_linkToSpecial: {
+      if (target->is_static()) {
+        return false;
+      }
+      if (linker_sig->type_at(0)->is_primitive_type()) {
+        return false;  // receiver should be an oop
+      }
+      sbase = 1; // skip receiver
+      break;
+    }
+    case vmIntrinsics::_linkToStatic: {
+      if (!target->is_static()) {
+        return false;
+      }
+      break;
+    }
+    case vmIntrinsics::_invokeBasic: {
+      if (target->is_static()) {
+        if (target_sig->type_at(0)->is_primitive_type()) {
+          return false; // receiver should be an oop
+        }
+        rbase = 1; // skip receiver
+      }
+      break;
+    }
+  }
+  assert(target_sig->count() - rbase == linker_sig->count() - sbase - has_appendix, "argument count mismatch");
+  int arg_count = target_sig->count() - rbase;
+  for (int i = 0; i < arg_count; i++) {
+    if (!basic_types_match(linker_sig->type_at(sbase + i), target_sig->type_at(rbase + i))) {
+      return false;
+    }
+  }
+  // Only check the return type if the symbolic info has non-void return type.
+  // I.e. the return value of the resolved method can be dropped.
+  if (!linker->return_type()->is_void() &&
+      !basic_types_match(linker->return_type(), target->return_type())) {
+    return false;
+  }
+  return true; // no mismatch found
+}
+
+// ------------------------------------------------------------------
+
 #if INCLUDE_TRACE
 TraceStructCalleeMethod ciMethod::to_trace_struct() const {
   TraceStructCalleeMethod result;
