@@ -44,9 +44,9 @@ public class GroupOfOne {
         final AsynchronousServerSocketChannel listener =
             AsynchronousServerSocketChannel.open()
                 .bind(new InetSocketAddress(0));
-        listener.accept(null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
+        listener.accept((Void)null, new CompletionHandler<AsynchronousSocketChannel,Void>() {
             public void completed(AsynchronousSocketChannel ch, Void att) {
-                listener.accept(null, this);
+                listener.accept((Void)null, this);
             }
             public void failed(Throwable exc, Void att) {
             }
@@ -81,13 +81,13 @@ public class GroupOfOne {
         // 2. the close/shutdown completes
         final CountDownLatch latch = new CountDownLatch(2);
 
-        ch.connect(sa, null, new CompletionHandler<Void,Void>() {
+        ch.connect(sa, (Void)null, new CompletionHandler<Void,Void>() {
             public void completed(Void result, Void att)  {
                 System.out.println("Connected");
 
                 // initiate I/O operation that does not complete (successfully)
                 ByteBuffer buf = ByteBuffer.allocate(100);
-                ch.read(buf, null, new CompletionHandler<Integer,Void>() {
+                ch.read(buf, (Void)null, new CompletionHandler<Integer,Void>() {
                     public void completed(Integer bytesRead, Void att)  {
                         throw new RuntimeException();
                     }

@@ -1,5 +1,5 @@
 #
-# Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,54 +45,49 @@
 # For OpenJDK, the jar files built here are installed directly into the
 # OpenJDK.
 #
-# For JDK, the binaries use pre-built/pre-signed/pre-obfuscated binary
-# files stored in the closed workspace that are not shipped in the
-# OpenJDK workspaces.  We still build the JDK files here to verify the
-# files compile, and in preparation for possible signing and
-# obfuscation.  Developers working on JCE in JDK must sign the JCE files
-# before testing: obfuscation is optional during development.  The JCE
-# signing key is kept separate from the JDK workspace to prevent its
-# disclosure.  The obfuscation tool has not been licensed for general
-# usage.
-#
+# For JDK, the binaries use pre-built/pre-signed binary files stored in
+# the closed workspace that are not shipped in the OpenJDK workspaces.
+# We still build the JDK files here to verify the files compile, and in
+# preparation for possible signing.  Developers working on JCE in JDK
+# must sign the JCE files before testing.  The JCE signing key is kept
+# separate from the JDK workspace to prevent its disclosure.
+# 
 # SPECIAL NOTE TO JCE/JDK developers:  The source files must eventually
-# be built, obfuscated, signed, and then the resulting jar files MUST BE
-# CHECKED INTO THE CLOSED PART OF THE WORKSPACE*.  This separate step
-# *MUST NOT BE FORGOTTEN*, otherwise a bug fixed in the source code will
-# not be reflected in the shipped binaries.  The "release" target should be
+# be built and signed, and the resulting jar files MUST BE CHECKED INTO
+# THE CLOSED PART OF THE WORKSPACE*.  This separate step *MUST NOT BE
+# FORGOTTEN*, otherwise a bug fixed in the source code will not be
+# reflected in the shipped binaries.  The "release" target should be
 # used to generate the required files.
 #
 # There are a number of targets to help both JDK/OpenJDK developers.
 #
 # Main Targets (JDK/OPENJDK):
 #
-#     all/clobber/clean		The usual.
-#				    If OpenJDK, installs sunjce_provider.jar.
-#				    If JDK, installs prebuilt
-#				    sunjce_provider.jar.
+#     all/clobber/clean        The usual.
+#                                  If OpenJDK, installs sunjce_provider.jar.
+#                                  If JDK, installs prebuilt
+#                                      sunjce_provider.jar.
 #
-#     jar			Builds/installs sunjce_provider.jar
-#				    If OpenJDK, does not sign.
-#				    If JDK, tries to sign.
+#     jar                      Builds/installs sunjce_provider.jar
+#                                  If OpenJDK, does not sign.
+#                                  If JDK, tries to sign.
 #
 # Other lesser-used Targets (JDK/OPENJDK):
 #
-#     build-jar			Builds sunjce_provider.jar
-#				    (does not sign/install)
+#     build-jar                Builds sunjce_provider.jar
+#                                  (does not sign/install)
 #
-#     install-jar		Alias for "jar" above.
+#     install-jar              Alias for "jar" above.
 #
 # Other targets (JDK only):
 #
-#     sign			Alias for sign-jar
-#	  sign-jar		Builds/signs sunjce_provider.jar (no install)
+#     sign                     Alias for sign-jar
+#         sign-jar             Builds/signs sunjce_provider.jar (no install)
 #
-#     obfus			Builds/obfuscates/signs sunjce_provider.jar
+#     release                  Builds all targets in preparation
+#                              for workspace integration.
 #
-#     release			Builds all targets in preparation
-#				for workspace integration.
-#
-#     install-prebuilt		Installs the pre-built jar files
+#     install-prebuilt         Installs the pre-built jar files
 #
 # This makefile was written to support parallel target execution.
 #
@@ -103,7 +98,7 @@ PRODUCT = sun
 
 #
 # The following is for when we need to do postprocessing
-# (signing/obfuscation) against a read-only build.  If the OUTPUTDIR
+# (signing) against a read-only build.  If the OUTPUTDIR
 # isn't writable, the build currently crashes out.
 #
 ifndef OPENJDK
@@ -158,8 +153,8 @@ endif # OPENJDK
 #
 # We use a variety of subdirectories in the $(TEMPDIR) depending on what
 # part of the build we're doing.  Both OPENJDK/JDK builds are initially
-# done in the unsigned area.  When files are signed or obfuscated in JDK,
-# they will be placed in the appropriate areas.
+# done in the unsigned area.  When files are signed in JDK, they will be
+# placed in the appropriate areas.
 #
 UNSIGNED_DIR = $(TEMPDIR)/unsigned
 
@@ -223,61 +218,15 @@ $(SIGNED_DIR)/sunjce_provider.jar:
 endif
 	$(call sign-file, $(UNSIGNED_DIR)/sunjce_provider.jar)
 
-# =====================================================
-# Obfuscate/sign/install the JDK build.  Not needed for OpenJDK.
-#
-
-OBFUS_DIR = $(JCE_BUILD_DIR)/obfus/sunjce
-
-CLOSED_DIR = $(BUILDDIR)/closed/com/sun/crypto/provider
-
-obfus: $(OBFUS_DIR)/sunjce_provider.jar
-	$(release-warning)
-
-ifndef ALT_JCE_BUILD_DIR
-$(OBFUS_DIR)/sunjce_provider.jar: build-jar $(JCE_MANIFEST_FILE) \
-	    $(OBFUS_DIR)/sunjce.dox
-else
-$(OBFUS_DIR)/sunjce_provider.jar: $(JCE_MANIFEST_FILE) $(OBFUS_DIR)/sunjce.dox
-	@if [ ! -d $(CLASSDESTDIR) ] ; then \
-	    $(ECHO) "Couldn't find $(CLASSDESTDIR)"; \
-	    exit 1; \
-	fi
-endif
-	@$(ECHO) ">>>Obfuscating SunJCE Provider..."
-	$(presign)
-	$(preobfus)
-	$(prep-target)
-	$(CD) $(OBFUS_DIR); \
-	$(OBFUSCATOR) -fv sunjce.dox
-	@$(CD) $(OBFUS_DIR); $(java-vm-cleanup)
-	$(BOOT_JAR_CMD) cmf $(JCE_MANIFEST_FILE) $@ \
-	    -C $(OBFUS_DIR)/build com \
-	    $(BOOT_JAR_JFLAGS)
-	$(sign-target)
-	@$(java-vm-cleanup)
-
-$(OBFUS_DIR)/sunjce.dox: $(CLOSED_DIR)/obfus/sunjce.dox
-	@$(ECHO) ">>>Creating sunjce.dox"
-	$(prep-target)
-	$(SED) "s:@@TEMPDIR@@:$(ABS_TEMPDIR):" $< > $@
-
-#
-# The current obfuscator has a limitation in that it currently only
-# supports up to v49 class file format.  Force v49 classfiles in our
-# builds for now.
-#
-TARGET_CLASS_VERSION = 5
-
 
 # =====================================================
-# Create the Release Engineering files.  Obfuscated builds, etc.
+# Create the Release Engineering files.  Signed builds, etc.
 #
 
-release: $(OBFUS_DIR)/sunjce_provider.jar
+release: $(SIGNED_DIR)/sunjce_provider.jar
 	$(RM) $(JCE_BUILD_DIR)/release/sunjce_provider.jar
 	$(MKDIR) -p $(JCE_BUILD_DIR)/release
-	$(CP) $(OBFUS_DIR)/sunjce_provider.jar $(JCE_BUILD_DIR)/release
+	$(CP) $(SIGNED_DIR)/sunjce_provider.jar $(JCE_BUILD_DIR)/release
 	$(release-warning)
 
 endif # OPENJDK
@@ -319,5 +268,5 @@ clobber clean::
 
 .PHONY: build-jar jar install-jar
 ifndef OPENJDK
-.PHONY: sign sign-jar obfus release install-prebuilt
+.PHONY: sign sign-jar release install-prebuilt
 endif

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,10 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
         { false, false, false, false, false, false, true };
     private static final boolean[] ALL_REASONS =
         {true, true, true, true, true, true, true, true, true};
+
+    // Maximum clock skew in milliseconds (15 minutes) allowed when checking
+    // validity of CRLs
+    private static final long MAX_CLOCK_SKEW = 900000;
 
     /**
      * Creates a <code>CrlRevocationChecker</code>.
@@ -281,7 +285,7 @@ class CrlRevocationChecker extends PKIXCertPathChecker {
         try {
             X509CRLSelector sel = new X509CRLSelector();
             sel.setCertificateChecking(currCert);
-            sel.setDateAndTime(mCurrentTime);
+            CertPathHelper.setDateAndTime(sel, mCurrentTime, MAX_CLOCK_SKEW);
 
             for (CertStore mStore : mStores) {
                 for (java.security.cert.CRL crl : mStore.getCRLs(sel)) {
