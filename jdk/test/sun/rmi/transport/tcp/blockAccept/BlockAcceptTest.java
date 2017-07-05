@@ -28,6 +28,7 @@
  * @author Adrian Colley
  *
  * @library ../../../../../java/rmi/testlibrary
+ * @modules java.rmi/sun.rmi.transport.proxy
  * @build TestIface TestImpl TestImpl_Stub
  * @run main/othervm/policy=security.policy/timeout=60 BlockAcceptTest
  */

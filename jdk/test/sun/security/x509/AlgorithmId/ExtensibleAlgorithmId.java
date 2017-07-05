@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 4162868
+ * @modules java.base/sun.security.x509
  * @run main/othervm ExtensibleAlgorithmId
  * @summary Algorithm Name-to-OID mapping needs to be made extensible.
  */

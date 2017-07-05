@@ -23,6 +23,8 @@
 /*
  * @test
  * @bug 6844909 8012679
+ * @modules java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal.crypto
  * @run main/othervm WeakCrypto
  * @run main/othervm WeakCrypto true
  * @run main/othervm WeakCrypto false

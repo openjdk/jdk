@@ -26,6 +26,7 @@
  * @bug 4178326
  * @summary Make sure reading/writing of different DER encoded string
  * types works correctly.
+ * @modules java.base/sun.security.util
  */
 
 import java.io.*;

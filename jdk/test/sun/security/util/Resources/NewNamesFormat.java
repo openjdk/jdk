@@ -24,6 +24,10 @@
 /*
  * @test
  * @bug 6987827
+ * @modules java.base/sun.security.util
+ *          java.base/sun.security.tools.keytool
+ *          jdk.jartool/sun.security.tools.jarsigner
+ *          jdk.policytool/sun.security.tools.policytool
  * @summary security/util/Resources.java needs improvement
  */
 

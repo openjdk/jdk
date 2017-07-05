@@ -24,6 +24,8 @@
  * @test
  * @bug 6867665
  * @bug 6875033
+ * @modules java.security.jgss/sun.security.krb5
+ *          java.security.jgss/sun.security.krb5.internal.ktab
  * @run main/othervm HighestKvno
  * @summary Problem with keytabs with multiple kvno's (key versions)
  */

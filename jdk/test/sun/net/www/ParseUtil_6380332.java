@@ -24,6 +24,7 @@
 /* @test
  * @summary SunTea applet fails to load under Mustang
  * @bug 6380332
+ * @modules java.base/sun.net.www
  */
 
 import sun.net.www.ParseUtil;

@@ -32,6 +32,7 @@
  * @test
  * @bug 7030966
  * @summary Support AEAD CipherSuites
+ * @modules java.base/sun.misc
  * @run main/othervm ShortRSAKeyGCM PKIX TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
  * @run main/othervm ShortRSAKeyGCM PKIX TLS_RSA_WITH_AES_128_GCM_SHA256
  * @run main/othervm ShortRSAKeyGCM PKIX TLS_DHE_RSA_WITH_AES_128_GCM_SHA256

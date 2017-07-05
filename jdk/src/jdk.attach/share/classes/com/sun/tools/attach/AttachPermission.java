@@ -31,7 +31,7 @@ package com.sun.tools.attach;
  * VirtualMachine#attach VirtalMachine.attach} to attach to a target virtual
  * machine.
  * This permission is also checked when an {@link
- * com.sun.tools.attach.spi.AttachProvider AttachProvider} is created. </p>
+ * com.sun.tools.attach.spi.AttachProvider AttachProvider} is created.
  *
  * <p> An <code>AttachPermission</code> object contains a name (also referred
  * to as a "target name") but no actions list; you either have the
@@ -39,7 +39,7 @@ package com.sun.tools.attach;
  * The following table provides a summary description of what the
  * permission allows, and discusses the risks of granting code the
  * permission.
- * <P>
+ *
  * <table border=1 cellpadding=5 summary="Table shows permission
  * target name, what the permission allows, and associated risks">
  * <tr>

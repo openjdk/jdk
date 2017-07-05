@@ -25,6 +25,7 @@
  * @test
  * @bug 6561126
  * @summary keytool should use larger default keysize for keypairs
+ * @modules java.base/sun.security.tools.keytool
  * @compile -XDignore.symbol.file NewSize7.java
  * @run main NewSize7
  */

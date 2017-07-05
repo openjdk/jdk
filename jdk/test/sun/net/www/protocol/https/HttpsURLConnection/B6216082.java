@@ -24,11 +24,12 @@
 /*
  * @test
  * @bug 6216082
- * @library ..
- * @build HttpCallback TestHttpsServer ClosedChannelList HttpTransaction TunnelProxy
  * @summary  Redirect problem with HttpsURLConnection using a proxy
  *     SunJSSE does not support dynamic system properties, no way to re-use
  *     system properties in samevm/agentvm mode.
+ * @modules java.base/sun.net.www
+ * @library ..
+ * @build HttpCallback TestHttpsServer ClosedChannelList HttpTransaction TunnelProxy
  * @run main/othervm B6216082
  */
 

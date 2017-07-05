@@ -26,6 +26,7 @@
  * @bug 8044500
  * @summary Add kinit options and krb5.conf flags that allow users to
  *          obtain renewable tickets and specify ticket lifetimes
+ * @modules java.security.jgss/sun.security.krb5
  * @compile -XDignore.symbol.file Duration.java
  * @run main Duration
  */

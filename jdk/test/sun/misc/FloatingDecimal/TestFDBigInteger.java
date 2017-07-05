@@ -29,6 +29,7 @@ import sun.misc.FDBigInteger;
  * @test
  * @bug 7032154
  * @summary unit testys of sun.misc.FDBigInteger
+ * @modules java.base/sun.misc
  * @author Dmitry Nadezhin
  */
 public class TestFDBigInteger {

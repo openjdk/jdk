@@ -76,7 +76,7 @@ public class LambdaAccessControlDoPrivilegedTest extends LUtils {
         doprivJava.delete();
         doprivClass.delete();
         tr = doExec(JAVA_CMD.getAbsolutePath(),
-                    "-Xbootclasspath/p:foo.jar",
+                    "-Xbootclasspath/a:foo.jar",
                     "-cp", ".", "Bar");
         tr.assertZero("testDoPrivileged fails");
         barJava.delete();

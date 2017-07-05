@@ -27,6 +27,7 @@
  * @summary Test the source class name and method output by the platform
  *          logger.
  *
+ * @modules java.base/sun.util.logging
  * @compile -XDignore.symbol.file SourceClassName.java
  * @run main/othervm SourceClassName
  */

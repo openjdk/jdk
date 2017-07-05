@@ -25,9 +25,9 @@
 
 #include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
-#include "gc_interface/collectedHeap.inline.hpp"
+#include "gc/shared/cardTableModRefBS.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
-#include "memory/cardTableModRefBS.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/biasedLocking.hpp"
@@ -38,9 +38,9 @@
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
-#include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
-#include "gc_implementation/g1/heapRegion.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc/g1/heapRegion.hpp"
 #endif // INCLUDE_ALL_GCS
 
 #ifdef PRODUCT

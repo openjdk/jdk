@@ -26,6 +26,7 @@
  * @bug 5032952
  * @summary non-transient non-serializable instance field in
     serializable class
+ * @modules java.base/sun.security.provider.certpath
  */
 
 import sun.security.provider.certpath.SunCertPathBuilderException;

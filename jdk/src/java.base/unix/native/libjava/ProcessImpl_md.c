@@ -286,12 +286,14 @@ releaseBytes(JNIEnv *env, jbyteArray arr, const char* parr)
         (*env)->ReleaseByteArrayElements(env, arr, (jbyte*) parr, JNI_ABORT);
 }
 
+#define IOE_FORMAT "error=%d, %s"
+
 static void
 throwIOException(JNIEnv *env, int errnum, const char *defaultDetail)
 {
-    static const char * const format = "error=%d, %s";
     const char *detail = defaultDetail;
     char *errmsg;
+    size_t fmtsize;
     jstring s;
 
     if (errnum != 0) {
@@ -300,11 +302,12 @@ throwIOException(JNIEnv *env, int errnum, const char *defaultDetail)
             detail = s;
     }
     /* ASCII Decimal representation uses 2.4 times as many bits as binary. */
-    errmsg = NEW(char, strlen(format) + strlen(detail) + 3 * sizeof(errnum));
+    fmtsize = sizeof(IOE_FORMAT) + strlen(detail) + 3 * sizeof(errnum);
+    errmsg = NEW(char, fmtsize);
     if (errmsg == NULL)
         return;
 
-    sprintf(errmsg, format, errnum, detail);
+    snprintf(errmsg, fmtsize, IOE_FORMAT, errnum, detail);
     s = JNU_NewStringPlatform(env, errmsg);
     if (s != NULL) {
         jobject x = JNU_NewObjectByName(env, "java/io/IOException",
