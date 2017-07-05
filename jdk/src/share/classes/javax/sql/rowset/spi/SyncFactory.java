@@ -53,7 +53,7 @@ import javax.naming.*;
  * per Java VM at any one time. This ensures that there is a single source from which a
  * <code>RowSet</code> implementation can obtain its <code>SyncProvider</code>
  * implementation.
- * <p>
+ *
  * <h3>1.0 Overview</h3>
  * The <code>SyncFactory</code> class provides an internal registry of available
  * synchronization provider implementations (<code>SyncProvider</code> objects).
@@ -92,12 +92,12 @@ import javax.naming.*;
  * the <code>SyncFactory</code> does not contain a reference to this provider,
  * a <code>SyncFactoryException</code> is thrown stating that the synchronization
  * provider could not be found.
- * <p>
+ *
  * <li>If a <code>RowSet</code> implementation is instantiated with a specified
  * provider and the specified provider has been properly registered, the
  * requested provider is supplied. Otherwise a <code>SyncFactoryException</code>
  * is thrown.
- * <p>
+ *
  * <li>If a <code>RowSet</code> object does not specify a
  * <code>SyncProvider</code> implementation and no additional
  * <code>SyncProvider</code> implementations are available, the reference
@@ -143,7 +143,7 @@ import javax.naming.*;
  *     rowset.provider.vendor.2=Fred, Inc.
  *     rowset.provider.version.2=1.0
  * </PRE>
- * <p>
+ *
  * <li><b>Using a JNDI Context</b><BR>
  * Available providers can be registered on a JNDI
  * context, and the <code>SyncFactory</code> will attempt to load

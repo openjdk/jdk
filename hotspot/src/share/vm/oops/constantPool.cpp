@@ -869,18 +869,9 @@ void ConstantPool::unreference_symbols() {
 bool ConstantPool::compare_entry_to(int index1, constantPoolHandle cp2,
        int index2, TRAPS) {
 
-  jbyte t1 = tag_at(index1).value();
-  jbyte t2 = cp2->tag_at(index2).value();
-
-
-  // JVM_CONSTANT_UnresolvedClassInError is equal to JVM_CONSTANT_UnresolvedClass
-  // when comparing
-  if (t1 == JVM_CONSTANT_UnresolvedClassInError) {
-    t1 = JVM_CONSTANT_UnresolvedClass;
-  }
-  if (t2 == JVM_CONSTANT_UnresolvedClassInError) {
-    t2 = JVM_CONSTANT_UnresolvedClass;
-  }
+  // The error tags are equivalent to non-error tags when comparing
+  jbyte t1 = tag_at(index1).non_error_value();
+  jbyte t2 = cp2->tag_at(index2).non_error_value();
 
   if (t1 != t2) {
     // Not the same entry type so there is nothing else to check. Note
@@ -1001,8 +992,8 @@ bool ConstantPool::compare_entry_to(int index1, constantPoolHandle cp2,
 
   case JVM_CONSTANT_MethodType:
   {
-    int k1 = method_type_index_at(index1);
-    int k2 = cp2->method_type_index_at(index2);
+    int k1 = method_type_index_at_error_ok(index1);
+    int k2 = cp2->method_type_index_at_error_ok(index2);
     bool match = compare_entry_to(k1, cp2, k2, CHECK_false);
     if (match) {
       return true;
@@ -1011,11 +1002,11 @@ bool ConstantPool::compare_entry_to(int index1, constantPoolHandle cp2,
 
   case JVM_CONSTANT_MethodHandle:
   {
-    int k1 = method_handle_ref_kind_at(index1);
-    int k2 = cp2->method_handle_ref_kind_at(index2);
+    int k1 = method_handle_ref_kind_at_error_ok(index1);
+    int k2 = cp2->method_handle_ref_kind_at_error_ok(index2);
     if (k1 == k2) {
-      int i1 = method_handle_index_at(index1);
-      int i2 = cp2->method_handle_index_at(index2);
+      int i1 = method_handle_index_at_error_ok(index1);
+      int i2 = cp2->method_handle_index_at_error_ok(index2);
       bool match = compare_entry_to(i1, cp2, i2, CHECK_false);
       if (match) {
         return true;
@@ -1329,14 +1320,6 @@ void ConstantPool::copy_entry_to(constantPoolHandle from_cp, int from_i,
     }
   } break;
 
-  case JVM_CONSTANT_UnresolvedClassInError:
-  {
-    Symbol* k = from_cp->unresolved_klass_at(from_i);
-    to_cp->unresolved_klass_at_put(to_i, k);
-    to_cp->tag_at_put(to_i, JVM_CONSTANT_UnresolvedClassInError);
-  } break;
-
-
   case JVM_CONSTANT_String:
   {
     Symbol* s = from_cp->unresolved_string_at(from_i);
@@ -1352,15 +1335,17 @@ void ConstantPool::copy_entry_to(constantPoolHandle from_cp, int from_i,
   } break;
 
   case JVM_CONSTANT_MethodType:
+  case JVM_CONSTANT_MethodTypeInError:
   {
-    jint k = from_cp->method_type_index_at(from_i);
+    jint k = from_cp->method_type_index_at_error_ok(from_i);
     to_cp->method_type_index_at_put(to_i, k);
   } break;
 
   case JVM_CONSTANT_MethodHandle:
+  case JVM_CONSTANT_MethodHandleInError:
   {
-    int k1 = from_cp->method_handle_ref_kind_at(from_i);
-    int k2 = from_cp->method_handle_index_at(from_i);
+    int k1 = from_cp->method_handle_ref_kind_at_error_ok(from_i);
+    int k2 = from_cp->method_handle_index_at_error_ok(from_i);
     to_cp->method_handle_index_at_put(to_i, k1, k2);
   } break;
 

@@ -72,7 +72,7 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAmount;
-import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.time.temporal.ValueRange;
@@ -308,7 +308,7 @@ final class ChronoPeriodImpl
      */
     private void validateChrono(TemporalAccessor temporal) {
         Objects.requireNonNull(temporal, "temporal");
-        Chronology temporalChrono = temporal.query(TemporalQuery.chronology());
+        Chronology temporalChrono = temporal.query(TemporalQueries.chronology());
         if (temporalChrono != null && chrono.equals(temporalChrono) == false) {
             throw new DateTimeException("Chronology mismatch, expected: " + chrono.getId() + ", actual: " + temporalChrono.getId());
         }

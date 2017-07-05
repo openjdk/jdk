@@ -64,6 +64,7 @@ import sun.management.GcInfoBuilder;
  * @author  Mandy Chung
  * @since   1.5
  */
+@jdk.Exported
 public class GcInfo implements CompositeData, CompositeDataView {
     private final long index;
     private final long startTime;

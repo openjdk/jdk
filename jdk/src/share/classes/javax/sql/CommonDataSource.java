@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 /**
  * Interface that defines the methods which are common between <code>DataSource</code>,
  * <code>XADataSource</code> and <code>ConnectionPoolDataSource</code>.
- *<p>
+ *
  */
 public interface CommonDataSource {
 

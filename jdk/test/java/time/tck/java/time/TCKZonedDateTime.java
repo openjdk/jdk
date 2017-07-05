@@ -126,6 +126,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
@@ -685,7 +686,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
             @SuppressWarnings("unchecked")
             @Override
             public <R> R query(TemporalQuery<R> query) {
-                if (query == TemporalQuery.zoneId()) {
+                if (query == TemporalQueries.zoneId()) {
                     return (R) TEST_DATE_TIME_PARIS.getZone();
                 }
                 return TemporalAccessor.super.query(query);
@@ -709,7 +710,7 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
             @SuppressWarnings("unchecked")
             @Override
             public <R> R query(TemporalQuery<R> query) {
-                if (query == TemporalQuery.zoneId()) {
+                if (query == TemporalQueries.zoneId()) {
                     return (R) TEST_DATE_TIME_PARIS.getZone();
                 }
                 return TemporalAccessor.super.query(query);
@@ -964,32 +965,32 @@ public class TCKZonedDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_query_chrono() {
-        assertEquals(TEST_DATE_TIME.query(TemporalQuery.chronology()), IsoChronology.INSTANCE);
-        assertEquals(TemporalQuery.chronology().queryFrom(TEST_DATE_TIME), IsoChronology.INSTANCE);
+        assertEquals(TEST_DATE_TIME.query(TemporalQueries.chronology()), IsoChronology.INSTANCE);
+        assertEquals(TemporalQueries.chronology().queryFrom(TEST_DATE_TIME), IsoChronology.INSTANCE);
     }
 
     @Test
     public void test_query_zoneId() {
-        assertEquals(TEST_DATE_TIME.query(TemporalQuery.zoneId()), TEST_DATE_TIME.getZone());
-        assertEquals(TemporalQuery.zoneId().queryFrom(TEST_DATE_TIME), TEST_DATE_TIME.getZone());
+        assertEquals(TEST_DATE_TIME.query(TemporalQueries.zoneId()), TEST_DATE_TIME.getZone());
+        assertEquals(TemporalQueries.zoneId().queryFrom(TEST_DATE_TIME), TEST_DATE_TIME.getZone());
     }
 
     @Test
     public void test_query_precision() {
-        assertEquals(TEST_DATE_TIME.query(TemporalQuery.precision()), NANOS);
-        assertEquals(TemporalQuery.precision().queryFrom(TEST_DATE_TIME), NANOS);
+        assertEquals(TEST_DATE_TIME.query(TemporalQueries.precision()), NANOS);
+        assertEquals(TemporalQueries.precision().queryFrom(TEST_DATE_TIME), NANOS);
     }
 
     @Test
     public void test_query_offset() {
-        assertEquals(TEST_DATE_TIME.query(TemporalQuery.offset()), TEST_DATE_TIME.getOffset());
-        assertEquals(TemporalQuery.offset().queryFrom(TEST_DATE_TIME), TEST_DATE_TIME.getOffset());
+        assertEquals(TEST_DATE_TIME.query(TemporalQueries.offset()), TEST_DATE_TIME.getOffset());
+        assertEquals(TemporalQueries.offset().queryFrom(TEST_DATE_TIME), TEST_DATE_TIME.getOffset());
     }
 
     @Test
     public void test_query_zone() {
-        assertEquals(TEST_DATE_TIME.query(TemporalQuery.zone()), TEST_DATE_TIME.getZone());
-        assertEquals(TemporalQuery.zone().queryFrom(TEST_DATE_TIME), TEST_DATE_TIME.getZone());
+        assertEquals(TEST_DATE_TIME.query(TemporalQueries.zone()), TEST_DATE_TIME.getZone());
+        assertEquals(TemporalQueries.zone().queryFrom(TEST_DATE_TIME), TEST_DATE_TIME.getZone());
     }
 
     @Test(expectedExceptions=NullPointerException.class)

@@ -251,7 +251,7 @@ import java.util.logging.Logger;
  *
  * <h1>Usage examples</h1>
  * Here are some examples of usage:
- * <p><blockquote><pre>{@code
+ * <blockquote><pre>{@code
 Object x, y; String s; int i;
 MethodType mt; MethodHandle mh;
 MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -608,7 +608,7 @@ public abstract class MethodHandle {
      * or forced to null if the return type is void.
      * <p>
      * This call is equivalent to the following code:
-     * <p><blockquote><pre>{@code
+     * <blockquote><pre>{@code
      * MethodHandle invoker = MethodHandles.spreadInvoker(this.type(), 0);
      * Object result = invoker.invokeExact(this, arguments);
      * }</pre></blockquote>
@@ -643,9 +643,9 @@ public abstract class MethodHandle {
      * of the argument array.
      * <p>
      * This method is also equivalent to the following code:
-     * <p><blockquote><pre>
-     * {@link #invokeWithArguments(Object...) invokeWithArguments}{@code(arguments.toArray())}
-     * </pre></blockquote>
+     * <blockquote><pre>{@code
+     *   invokeWithArguments(arguments.toArray()
+     * }</pre></blockquote>
      *
      * @param arguments the arguments to pass to the target
      * @return the result returned by the target
@@ -1183,7 +1183,7 @@ assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
 
     /**
      * Makes a <em>fixed arity</em> method handle which is otherwise
-     * equivalent to the the current method handle.
+     * equivalent to the current method handle.
      * <p>
      * If the current method handle is not of
      * {@linkplain #asVarargsCollector variable arity},

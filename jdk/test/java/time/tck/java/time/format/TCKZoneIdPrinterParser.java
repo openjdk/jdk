@@ -71,7 +71,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.TemporalAccessor;
-import java.time.temporal.TemporalQuery;
+import java.time.temporal.TemporalQueries;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -214,9 +214,9 @@ public class TCKZoneIdPrinterParser {
         assertEquals(pos.getErrorIndex(), expectedErrorIndex, "Incorrect error index parsing: " + text);
         assertEquals(pos.getIndex(), expectedIndex, "Incorrect index parsing: " + text);
         if (expected != null) {
-            assertEquals(parsed.query(TemporalQuery.zoneId()), expected, "Incorrect zoneId parsing: " + text);
-            assertEquals(parsed.query(TemporalQuery.offset()), null, "Incorrect offset parsing: " + text);
-            assertEquals(parsed.query(TemporalQuery.zone()), expected, "Incorrect zone parsing: " + text);
+            assertEquals(parsed.query(TemporalQueries.zoneId()), expected, "Incorrect zoneId parsing: " + text);
+            assertEquals(parsed.query(TemporalQueries.offset()), null, "Incorrect offset parsing: " + text);
+            assertEquals(parsed.query(TemporalQueries.zone()), expected, "Incorrect zone parsing: " + text);
         } else {
             assertEquals(parsed, null);
         }
@@ -231,9 +231,9 @@ public class TCKZoneIdPrinterParser {
         assertEquals(pos.getErrorIndex(), expectedErrorIndex >= 0  ? expectedErrorIndex + 3 : expectedErrorIndex, "Incorrect error index parsing: " + prefixText);
         assertEquals(pos.getIndex(), expectedIndex + 3, "Incorrect index parsing: " + prefixText);
         if (expected != null) {
-            assertEquals(parsed.query(TemporalQuery.zoneId()), expected, "Incorrect zoneId parsing: " + prefixText);
-            assertEquals(parsed.query(TemporalQuery.offset()), null, "Incorrect offset parsing: " + prefixText);
-            assertEquals(parsed.query(TemporalQuery.zone()), expected, "Incorrect zone parsing: " + prefixText);
+            assertEquals(parsed.query(TemporalQueries.zoneId()), expected, "Incorrect zoneId parsing: " + prefixText);
+            assertEquals(parsed.query(TemporalQueries.offset()), null, "Incorrect offset parsing: " + prefixText);
+            assertEquals(parsed.query(TemporalQueries.zone()), expected, "Incorrect zone parsing: " + prefixText);
         } else {
             assertEquals(parsed, null);
         }
@@ -247,9 +247,9 @@ public class TCKZoneIdPrinterParser {
         assertEquals(pos.getErrorIndex(), expectedErrorIndex, "Incorrect error index parsing: " + suffixText);
         assertEquals(pos.getIndex(), expectedIndex, "Incorrect index parsing: " + suffixText);
         if (expected != null) {
-            assertEquals(parsed.query(TemporalQuery.zoneId()), expected, "Incorrect zoneId parsing: " + suffixText);
-            assertEquals(parsed.query(TemporalQuery.offset()), null, "Incorrect offset parsing: " + suffixText);
-            assertEquals(parsed.query(TemporalQuery.zone()), expected, "Incorrect zone parsing: " + suffixText);
+            assertEquals(parsed.query(TemporalQueries.zoneId()), expected, "Incorrect zoneId parsing: " + suffixText);
+            assertEquals(parsed.query(TemporalQueries.offset()), null, "Incorrect offset parsing: " + suffixText);
+            assertEquals(parsed.query(TemporalQueries.zone()), expected, "Incorrect zone parsing: " + suffixText);
         } else {
             assertEquals(parsed, null);
         }
@@ -269,9 +269,9 @@ public class TCKZoneIdPrinterParser {
             assertEquals(pos.getIndex(), expectedIndex, "Incorrect index parsing: " + lcText);
             assertEquals(pos.getErrorIndex(), expectedErrorIndex, "Incorrect error index parsing: " + lcText);
             if (expected != null) {
-                assertEquals(parsed.query(TemporalQuery.zoneId()), expected);
-                assertEquals(parsed.query(TemporalQuery.offset()), null);
-                assertEquals(parsed.query(TemporalQuery.zone()), expected);
+                assertEquals(parsed.query(TemporalQueries.zoneId()), expected);
+                assertEquals(parsed.query(TemporalQueries.offset()), null);
+                assertEquals(parsed.query(TemporalQueries.zone()), expected);
             } else {
                 assertEquals(parsed, null);
             }
@@ -286,10 +286,10 @@ public class TCKZoneIdPrinterParser {
         assertEquals(pos.getErrorIndex(), expectedErrorIndex, "Incorrect error index parsing: " + lcText);
         assertEquals(pos.getIndex(), expectedIndex, "Incorrect index parsing: " + lcText);
         if (expected != null) {
-            ZoneId zid = parsed.query(TemporalQuery.zoneId());
-            assertEquals(parsed.query(TemporalQuery.zoneId()), expected, "Incorrect zoneId parsing: " + lcText);
-            assertEquals(parsed.query(TemporalQuery.offset()), null, "Incorrect offset parsing: " + lcText);
-            assertEquals(parsed.query(TemporalQuery.zone()), expected, "Incorrect zone parsing: " + lcText);
+            ZoneId zid = parsed.query(TemporalQueries.zoneId());
+            assertEquals(parsed.query(TemporalQueries.zoneId()), expected, "Incorrect zoneId parsing: " + lcText);
+            assertEquals(parsed.query(TemporalQueries.offset()), null, "Incorrect offset parsing: " + lcText);
+            assertEquals(parsed.query(TemporalQueries.zone()), expected, "Incorrect zone parsing: " + lcText);
         } else {
             assertEquals(parsed, null);
         }

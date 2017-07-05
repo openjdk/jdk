@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,15 +43,17 @@ MAPFILE = $(GAMMADIR)/make/bsd/makefiles/mapfile-vers-product
 SYSDEFS += -DPRODUCT
 VERSION = optimized
 
-# use -g to strip library as -x will discard its symbol table; -x is fine for
-# executables.
-ifdef CROSS_COMPILE_ARCH
-  STRIP = $(ALT_COMPILER_PATH)/strip
-else
-  STRIP = strip
-endif
-STRIP_LIBJVM = $(STRIP) -g $@ || exit 1;
-STRIP_AOUT   = $(STRIP) -x $@ || exit 1;
+ifneq ($(OS_VENDOR), Darwin)
+  # use -g to strip library as -x will discard its symbol table; -x is fine for
+  # executables.
+  ifdef CROSS_COMPILE_ARCH
+    STRIP = $(ALT_COMPILER_PATH)/strip
+  else
+    STRIP = strip
+  endif
+  STRIP_LIBJVM = $(STRIP) -g $@ || exit 1;
+  STRIP_AOUT   = $(STRIP) -x $@ || exit 1;
 
-# Don't strip in VM build; JDK build will strip libraries later
-# LINK_LIB.CXX/POST_HOOK += $(STRIP_$(LINK_INTO))
+  # Don't strip in VM build; JDK build will strip libraries later
+  # LINK_LIB.CXX/POST_HOOK += $(STRIP_$(LINK_INTO))
+endif

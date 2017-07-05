@@ -55,13 +55,18 @@ class Array {
      * </pre>
      * </blockquote>
      *
+     * <p>The number of dimensions of the new array must not
+     * exceed 255.
+     *
      * @param componentType the {@code Class} object representing the
      * component type of the new array
      * @param length the length of the new array
      * @return the new array
      * @exception NullPointerException if the specified
      * {@code componentType} parameter is null
-     * @exception IllegalArgumentException if componentType is {@link Void#TYPE}
+     * @exception IllegalArgumentException if componentType is {@link
+     * Void#TYPE} or if the number of dimensions of the requested array
+     * instance exceed 255.
      * @exception NegativeArraySizeException if the specified {@code length}
      * is negative
      */
@@ -85,8 +90,7 @@ class Array {
      * {@code componentType}.
      *
      * <p>The number of dimensions of the new array must not
-     * exceed the number of array dimensions supported by the
-     * implementation (typically 255).
+     * exceed 255.
      *
      * @param componentType the {@code Class} object representing the component
      * type of the new array
@@ -96,10 +100,9 @@ class Array {
      * @exception NullPointerException if the specified
      * {@code componentType} argument is null
      * @exception IllegalArgumentException if the specified {@code dimensions}
-     * argument is a zero-dimensional array, or if the number of
-     * requested dimensions exceeds the limit on the number of array dimensions
-     * supported by the implementation (typically 255), or if componentType
-     * is {@link Void#TYPE}.
+     * argument is a zero-dimensional array, if componentType is {@link
+     * Void#TYPE}, or if the number of dimensions of the requested array
+     * instance exceed 255.
      * @exception NegativeArraySizeException if any of the components in
      * the specified {@code dimensions} argument is negative.
      */

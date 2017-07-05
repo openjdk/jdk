@@ -113,6 +113,7 @@ import java.time.temporal.Temporal;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -693,13 +694,13 @@ public class TCKLocalDate extends AbstractDateTimeTest {
     @DataProvider(name="query")
     Object[][] data_query() {
         return new Object[][] {
-                {TEST_2007_07_15, TemporalQuery.chronology(), IsoChronology.INSTANCE},
-                {TEST_2007_07_15, TemporalQuery.zoneId(), null},
-                {TEST_2007_07_15, TemporalQuery.precision(), ChronoUnit.DAYS},
-                {TEST_2007_07_15, TemporalQuery.zone(), null},
-                {TEST_2007_07_15, TemporalQuery.offset(), null},
-                {TEST_2007_07_15, TemporalQuery.localDate(), TEST_2007_07_15},
-                {TEST_2007_07_15, TemporalQuery.localTime(), null},
+                {TEST_2007_07_15, TemporalQueries.chronology(), IsoChronology.INSTANCE},
+                {TEST_2007_07_15, TemporalQueries.zoneId(), null},
+                {TEST_2007_07_15, TemporalQueries.precision(), ChronoUnit.DAYS},
+                {TEST_2007_07_15, TemporalQueries.zone(), null},
+                {TEST_2007_07_15, TemporalQueries.offset(), null},
+                {TEST_2007_07_15, TemporalQueries.localDate(), TEST_2007_07_15},
+                {TEST_2007_07_15, TemporalQueries.localTime(), null},
         };
     }
 

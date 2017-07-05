@@ -43,6 +43,7 @@ import javax.swing.event.SwingPropertyChangeSupport;
  *
  * @since 1.6
  */
+@jdk.Exported
 public interface JConsoleContext {
     /**
      * The {@link ConnectionState ConnectionState} bound property name.
@@ -53,6 +54,7 @@ public interface JConsoleContext {
      * Values for the {@linkplain #CONNECTION_STATE_PROPERTY
      * <i>ConnectionState</i>} bound property.
      */
+    @jdk.Exported
     public enum ConnectionState {
         /**
          * The connection has been successfully established.

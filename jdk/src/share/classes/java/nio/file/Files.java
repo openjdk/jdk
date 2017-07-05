@@ -43,9 +43,10 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.DosFileAttributes;
+import java.nio.file.attribute.DosFileAttributes;   // javadoc
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.FileOwnerAttributeView;
@@ -104,8 +105,7 @@ public final class Files {
         return () -> {
             try {
                 c.close();
-            }
-            catch (IOException e) {
+            } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
         };
@@ -2550,7 +2550,7 @@ public final class Files {
      *          checkExec} is invoked to check execute access to the file.
      */
     public static boolean isExecutable(Path path) {
-       return isAccessible(path, AccessMode.EXECUTE);
+        return isAccessible(path, AccessMode.EXECUTE);
     }
 
     // -- Recursive operations --
@@ -2783,6 +2783,37 @@ public final class Files {
     }
 
     /**
+     * Opens a file for reading, returning a {@code BufferedReader} to read text
+     * from the file in an efficient manner. Bytes from the file are decoded into
+     * characters using the {@link StandardCharsets#UTF_8 UTF-8} {@link Charset
+     * charset}.
+     *
+     * <p> This method works as if invoking it were equivalent to evaluating the
+     * expression:
+     * <pre>{@code
+     * Files.newBufferedReader(path, StandardCharsets.UTF_8)
+     * }</pre>
+     *
+     * @param   path
+     *          the path to the file
+     *
+     * @return  a new buffered reader, with default buffer size, to read text
+     *          from the file
+     *
+     * @throws  IOException
+     *          if an I/O error occurs opening the file
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
+     *          method is invoked to check read access to the file.
+     *
+     * @since 1.8
+     */
+    public static BufferedReader newBufferedReader(Path path) throws IOException {
+        return newBufferedReader(path, StandardCharsets.UTF_8);
+    }
+
+    /**
      * Opens or creates a file for writing, returning a {@code BufferedWriter}
      * that may be used to write text to the file in an efficient manner.
      * The {@code options} parameter specifies how the the file is created or
@@ -2825,6 +2856,41 @@ public final class Files {
         CharsetEncoder encoder = cs.newEncoder();
         Writer writer = new OutputStreamWriter(newOutputStream(path, options), encoder);
         return new BufferedWriter(writer);
+    }
+
+    /**
+     * Opens or creates a file for writing, returning a {@code BufferedWriter}
+     * to write text to the file in an efficient manner. The text is encoded
+     * into bytes for writing using the {@link StandardCharsets#UTF_8 UTF-8}
+     * {@link Charset charset}.
+     *
+     * <p> This method works as if invoking it were equivalent to evaluating the
+     * expression:
+     * <pre>{@code
+     * Files.newBufferedWriter(path, StandardCharsets.UTF_8, options)
+     * }</pre>
+     *
+     * @param   path
+     *          the path to the file
+     * @param   options
+     *          options specifying how the file is opened
+     *
+     * @return  a new buffered writer, with default buffer size, to write text
+     *          to the file
+     *
+     * @throws  IOException
+     *          if an I/O error occurs opening or creating the file
+     * @throws  UnsupportedOperationException
+     *          if an unsupported option is specified
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
+     *          method is invoked to check write access to the file.
+     *
+     * @since 1.8
+     */
+    public static BufferedWriter newBufferedWriter(Path path, OpenOption... options) throws IOException {
+        return newBufferedWriter(path, StandardCharsets.UTF_8, options);
     }
 
     /**
@@ -3025,9 +3091,7 @@ public final class Files {
      * @throws  OutOfMemoryError
      *          if an array of the required size cannot be allocated
      */
-    private static byte[] read(InputStream source, int initialSize)
-            throws IOException
-    {
+    private static byte[] read(InputStream source, int initialSize) throws IOException {
         int capacity = initialSize;
         byte[] buf = new byte[capacity];
         int nread = 0;
@@ -3131,9 +3195,7 @@ public final class Files {
      *
      * @see #newBufferedReader
      */
-    public static List<String> readAllLines(Path path, Charset cs)
-        throws IOException
-    {
+    public static List<String> readAllLines(Path path, Charset cs) throws IOException {
         try (BufferedReader reader = newBufferedReader(path, cs)) {
             List<String> result = new ArrayList<>();
             for (;;) {
@@ -3144,6 +3206,37 @@ public final class Files {
             }
             return result;
         }
+    }
+
+    /**
+     * Read all lines from a file. Bytes from the file are decoded into characters
+     * using the {@link StandardCharsets#UTF_8 UTF-8} {@link Charset charset}.
+     *
+     * <p> This method works as if invoking it were equivalent to evaluating the
+     * expression:
+     * <pre>{@code
+     * Files.readAllLines(path, StandardCharsets.UTF_8)
+     * }</pre>
+     *
+     * @param   path
+     *          the path to the file
+     *
+     * @return  the lines from the file as a {@code List}; whether the {@code
+     *          List} is modifiable or not is implementation dependent and
+     *          therefore not specified
+     *
+     * @throws  IOException
+     *          if an I/O error occurs reading from the file or a malformed or
+     *          unmappable byte sequence is read
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
+     *          method is invoked to check read access to the file.
+     *
+     * @since 1.8
+     */
+    public static List<String> readAllLines(Path path) throws IOException {
+        return readAllLines(path, StandardCharsets.UTF_8);
     }
 
     /**
@@ -3260,6 +3353,45 @@ public final class Files {
             }
         }
         return path;
+    }
+
+    /**
+     * Write lines of text to a file. Characters are encoded into bytes using
+     * the {@link StandardCharsets#UTF_8 UTF-8} {@link Charset charset}.
+     *
+     * <p> This method works as if invoking it were equivalent to evaluating the
+     * expression:
+     * <pre>{@code
+     * Files.write(path, lines, StandardCharsets.UTF_8, options);
+     * }</pre>
+     *
+     * @param   path
+     *          the path to the file
+     * @param   lines
+     *          an object to iterate over the char sequences
+     * @param   options
+     *          options specifying how the file is opened
+     *
+     * @return  the path
+     *
+     * @throws  IOException
+     *          if an I/O error occurs writing to or creating the file, or the
+     *          text cannot be encoded as {@code UTF-8}
+     * @throws  UnsupportedOperationException
+     *          if an unsupported option is specified
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, the {@link SecurityManager#checkWrite(String) checkWrite}
+     *          method is invoked to check write access to the file.
+     *
+     * @since 1.8
+     */
+    public static Path write(Path path,
+                             Iterable<? extends CharSequence> lines,
+                             OpenOption... options)
+        throws IOException
+    {
+        return write(path, lines, StandardCharsets.UTF_8, options);
     }
 
     // -- Stream APIs --
@@ -3431,9 +3563,11 @@ public final class Files {
      *          if an I/O error is thrown when accessing the starting file.
      * @since   1.8
      */
-    public static Stream<Path> walk(Path start, int maxDepth,
+    public static Stream<Path> walk(Path start,
+                                    int maxDepth,
                                     FileVisitOption... options)
-            throws IOException {
+        throws IOException
+    {
         FileTreeIterator iterator = new FileTreeIterator(start, maxDepth, options);
         try {
             return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT), false)
@@ -3484,9 +3618,7 @@ public final class Files {
      * @see     #walk(Path, int, FileVisitOption...)
      * @since   1.8
      */
-    public static Stream<Path> walk(Path start,
-                                    FileVisitOption... options)
-            throws IOException {
+    public static Stream<Path> walk(Path start, FileVisitOption... options) throws IOException {
         return walk(start, Integer.MAX_VALUE, options);
     }
 
@@ -3547,7 +3679,8 @@ public final class Files {
                                     int maxDepth,
                                     BiPredicate<Path, BasicFileAttributes> matcher,
                                     FileVisitOption... options)
-            throws IOException {
+        throws IOException
+    {
         FileTreeIterator iterator = new FileTreeIterator(start, maxDepth, options);
         try {
             return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.DISTINCT), false)
@@ -3561,7 +3694,7 @@ public final class Files {
     }
 
     /**
-     * Read all lines from a file as a {@code Stream}.  Unlike {@link
+     * Read all lines from a file as a {@code Stream}. Unlike {@link
      * #readAllLines(Path, Charset) readAllLines}, this method does not read
      * all lines into a {@code List}, but instead populates lazily as the stream
      * is consumed.
@@ -3618,5 +3751,34 @@ public final class Files {
             }
             throw e;
         }
+    }
+
+    /**
+     * Read all lines from a file as a {@code Stream}. Bytes from the file are
+     * decoded into characters using the {@link StandardCharsets#UTF_8 UTF-8}
+     * {@link Charset charset}.
+     *
+     * <p> This method works as if invoking it were equivalent to evaluating the
+     * expression:
+     * <pre>{@code
+     * Files.lines(path, StandardCharsets.UTF_8)
+     * }</pre>
+     *
+     * @param   path
+     *          the path to the file
+     *
+     * @return  the lines from the file as a {@code Stream}
+     *
+     * @throws  IOException
+     *          if an I/O error occurs opening the file
+     * @throws  SecurityException
+     *          In the case of the default provider, and a security manager is
+     *          installed, the {@link SecurityManager#checkRead(String) checkRead}
+     *          method is invoked to check read access to the file.
+     *
+     * @since 1.8
+     */
+    public static Stream<String> lines(Path path) throws IOException {
+        return lines(path, StandardCharsets.UTF_8);
     }
 }

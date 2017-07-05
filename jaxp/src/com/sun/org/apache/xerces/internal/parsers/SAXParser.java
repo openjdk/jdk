@@ -22,6 +22,7 @@ package com.sun.org.apache.xerces.internal.parsers;
 
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
@@ -76,7 +77,7 @@ public class SAXParser
         XMLGRAMMAR_POOL,
     };
 
-    XMLSecurityPropertyManager securityPropertyManager;
+
     //
     // Constructors
     //
@@ -130,11 +131,36 @@ public class SAXParser
      */
     public void setProperty(String name, Object value)
         throws SAXNotRecognizedException, SAXNotSupportedException {
+        /**
+         * It's possible for users to set a security manager through the interface.
+         * If it's the old SecurityManager, convert it to the new XMLSecurityManager
+         */
+        if (name.equals(Constants.SECURITY_MANAGER)) {
+            securityManager = XMLSecurityManager.convert(value, securityManager);
+            super.setProperty(Constants.SECURITY_MANAGER, securityManager);
+            return;
+        }
+        if (name.equals(Constants.XML_SECURITY_PROPERTY_MANAGER)) {
+            if (value == null) {
+                securityPropertyManager = new XMLSecurityPropertyManager();
+            } else {
+                securityPropertyManager = (XMLSecurityPropertyManager)value;
+            }
+            super.setProperty(Constants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
+            return;
+        }
+
+        if (securityManager == null) {
+            securityManager = new XMLSecurityManager(true);
+            super.setProperty(Constants.SECURITY_MANAGER, securityManager);
+        }
+
         if (securityPropertyManager == null) {
             securityPropertyManager = new XMLSecurityPropertyManager();
+            super.setProperty(Constants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
         }
-        int index = securityPropertyManager.getIndex(name);
 
+        int index = securityPropertyManager.getIndex(name);
         if (index > -1) {
             /**
              * this is a direct call to this parser, not a subclass since
@@ -142,9 +168,12 @@ public class SAXParser
              * XMLSecurityPropertyManager
              */
             securityPropertyManager.setValue(index, XMLSecurityPropertyManager.State.APIPROPERTY, (String)value);
-            super.setProperty(Constants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
         } else {
-            super.setProperty(name, value);
+            //check if the property is managed by security manager
+            if (!securityManager.setLimit(name, XMLSecurityManager.State.APIPROPERTY, value)) {
+                //fall back to the default configuration to handle the property
+                super.setProperty(name, value);
+            }
         }
     }
 } // class SAXParser

@@ -47,8 +47,7 @@ import javax.sql.rowset.*;
  * establishing an SQL <code>JOIN</code> relationship. The match column may
  * alternatively be set by supplying it to the appropriate version of the
  * <code>JointRowSet</code> method <code>addRowSet</code>.
- * <P>
- * <p>
+ *
  * <h3>1.0 Overview</h3>
  * Disconnected <code>RowSet</code> objects (<code>CachedRowSet</code> objects
  * and implementations extending the <code>CachedRowSet</code> interface)
@@ -98,7 +97,7 @@ import javax.sql.rowset.*;
  * inner join. The comments for the fields in the
  * <code>JoinRowSet</code> interface explain these <code>JOIN</code> types, which are
  * standard SQL <code>JOIN</code> types.
- * <P>
+ *
  * <h3>2.0 Using a <code>JoinRowSet</code> Object for Creating a <code>JOIN</code></h3>
  * When a <code>JoinRowSet</code> object is created, it is empty.
  * The first <code>RowSet</code> object to be added becomes the basis for the
@@ -193,7 +192,7 @@ import javax.sql.rowset.*;
  * tables. The data in each row in <i>four01k</i> in which the value for the
  * <code>EMP_ID</code> column matches a value for the <code>EMP_ID</code> column
  * in <i>jrs</i> has been added to <i>jrs</i>.
- * <P>
+ *
  * <h3>4.0 <code>JoinRowSet</code> Methods</h3>
  * The <code>JoinRowSet</code> interface supplies several methods for adding
  * <code>RowSet</code> objects and for getting information about the
@@ -217,7 +216,7 @@ import javax.sql.rowset.*;
  *   <LI>A method to make a separate copy of the <code>JoinRowSet</code> object<BR>
  *       This method creates a copy that can be persisted to the data source.
  * </UL>
- * <P>
+ *
  */
 
 public interface JoinRowSet extends WebRowSet {

@@ -379,6 +379,7 @@ import sun.misc.HexDumpEncoder;
  * @author Ram Marti
  */
 
+@jdk.Exported
 public class Krb5LoginModule implements LoginModule {
 
     // initial state

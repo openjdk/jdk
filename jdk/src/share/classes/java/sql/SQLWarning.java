@@ -108,7 +108,7 @@ public class SQLWarning extends SQLException {
      * The <code>cause</code> is not initialized, and may subsequently be
      * initialized by a call to the
      * {@link Throwable#initCause(java.lang.Throwable)} method.
-     * <p>
+     *
      */
     public SQLWarning() {
         super();

@@ -230,7 +230,7 @@ final class JceSecurityManager extends SecurityManager {
     // See  bug 4341369 & 4334690 for more info.
     boolean isCallerTrusted() {
         // Get the caller and its codebase.
-        Class[] context = getClassContext();
+        Class<?>[] context = getClassContext();
         URL callerCodeBase = null;
         int i;
         for (i=0; i<context.length; i++) {
