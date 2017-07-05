@@ -3,9 +3,7 @@
  */
 
 grant {
-  // allow remote objects to be exported on arbitrary ports.
+  permission java.io.FilePermission "..${/}..${/}test.props", "read";
   permission java.net.SocketPermission "*:1024-", "connect,accept,listen";
-
-  // allow exporting object with non-public remote interface
-  permission java.rmi.RMIPermission "exportRemoteInterface.ActivateMe";
+  permission java.util.PropertyPermission "test.*", "read";
 };
