@@ -28,6 +28,8 @@
 
 #include <unistd.h>
 #include <sys/resource.h>
+#include <sys/utsname.h>
+
 
 // Check core dump limit and report possible place where core can be found
 void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* buffer, size_t bufferSize) {
@@ -72,3 +74,59 @@ void os::wait_for_keypress_at_exit(void) {
   // don't do anything on posix platforms
   return;
 }
+
+void os::Posix::print_load_average(outputStream* st) {
+  st->print("load average:");
+  double loadavg[3];
+  os::loadavg(loadavg, 3);
+  st->print("%0.02f %0.02f %0.02f", loadavg[0], loadavg[1], loadavg[2]);
+  st->cr();
+}
+
+void os::Posix::print_rlimit_info(outputStream* st) {
+  st->print("rlimit:");
+  struct rlimit rlim;
+
+  st->print(" STACK ");
+  getrlimit(RLIMIT_STACK, &rlim);
+  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
+  else st->print("%uk", rlim.rlim_cur >> 10);
+
+  st->print(", CORE ");
+  getrlimit(RLIMIT_CORE, &rlim);
+  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
+  else st->print("%uk", rlim.rlim_cur >> 10);
+
+  //Isn't there on solaris
+#ifndef TARGET_OS_FAMILY_solaris
+  st->print(", NPROC ");
+  getrlimit(RLIMIT_NPROC, &rlim);
+  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
+  else st->print("%d", rlim.rlim_cur);
+#endif
+
+  st->print(", NOFILE ");
+  getrlimit(RLIMIT_NOFILE, &rlim);
+  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
+  else st->print("%d", rlim.rlim_cur);
+
+  st->print(", AS ");
+  getrlimit(RLIMIT_AS, &rlim);
+  if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
+  else st->print("%uk", rlim.rlim_cur >> 10);
+  st->cr();
+}
+
+void os::Posix::print_uname_info(outputStream* st) {
+  // kernel
+  st->print("uname:");
+  struct utsname name;
+  uname(&name);
+  st->print(name.sysname); st->print(" ");
+  st->print(name.release); st->print(" ");
+  st->print(name.version); st->print(" ");
+  st->print(name.machine);
+  st->cr();
+}
+
+

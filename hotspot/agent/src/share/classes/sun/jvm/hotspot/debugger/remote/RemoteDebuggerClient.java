@@ -64,7 +64,7 @@ public class RemoteDebuggerClient extends DebuggerBase implements JVMDebugger {
         cachePageSize = 4096;
         cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
         unalignedAccessesOkay = true;
-      } else if (cpu.equals("amd64")) {
+      } else if (cpu.equals("amd64") || cpu.equals("x86_64")) {
         threadFactory = new RemoteAMD64ThreadFactory(this);
         cachePageSize = 4096;
         cacheNumPages = parseCacheNumPagesProperty(cacheSize / cachePageSize);
