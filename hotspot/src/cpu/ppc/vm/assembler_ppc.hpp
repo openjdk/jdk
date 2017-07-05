@@ -706,9 +706,13 @@ class Assembler : public AbstractAssembler {
     TW_OPCODE      = (31u << OPCODE_SHIFT |    4u << 1),
 
     // Atomics.
+    LBARX_OPCODE   = (31u << OPCODE_SHIFT |   52u << 1),
+    LHARX_OPCODE   = (31u << OPCODE_SHIFT |  116u << 1),
     LWARX_OPCODE   = (31u << OPCODE_SHIFT |   20u << 1),
     LDARX_OPCODE   = (31u << OPCODE_SHIFT |   84u << 1),
     LQARX_OPCODE   = (31u << OPCODE_SHIFT |  276u << 1),
+    STBCX_OPCODE   = (31u << OPCODE_SHIFT |  694u << 1),
+    STHCX_OPCODE   = (31u << OPCODE_SHIFT |  726u << 1),
     STWCX_OPCODE   = (31u << OPCODE_SHIFT |  150u << 1),
     STDCX_OPCODE   = (31u << OPCODE_SHIFT |  214u << 1),
     STQCX_OPCODE   = (31u << OPCODE_SHIFT |  182u << 1)
@@ -1796,13 +1800,19 @@ class Assembler : public AbstractAssembler {
   inline void waitrsv(); // >=Power7
 
   // atomics
+  inline void lbarx_unchecked(Register d, Register a, Register b, int eh1 = 0); // >=Power 8
+  inline void lharx_unchecked(Register d, Register a, Register b, int eh1 = 0); // >=Power 8
   inline void lwarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
   inline void ldarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
-  inline void lqarx_unchecked(Register d, Register a, Register b, int eh1 = 0);
+  inline void lqarx_unchecked(Register d, Register a, Register b, int eh1 = 0); // >=Power 8
   inline bool lxarx_hint_exclusive_access();
+  inline void lbarx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
+  inline void lharx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
   inline void lwarx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
   inline void ldarx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
   inline void lqarx(  Register d, Register a, Register b, bool hint_exclusive_access = false);
+  inline void stbcx_( Register s, Register a, Register b);
+  inline void sthcx_( Register s, Register a, Register b);
   inline void stwcx_( Register s, Register a, Register b);
   inline void stdcx_( Register s, Register a, Register b);
   inline void stqcx_( Register s, Register a, Register b);
@@ -2169,12 +2179,18 @@ class Assembler : public AbstractAssembler {
   inline void dcbtstct(Register s2, int ct);
 
   // Atomics: use ra0mem to disallow R0 as base.
+  inline void lbarx_unchecked(Register d, Register b, int eh1);
+  inline void lharx_unchecked(Register d, Register b, int eh1);
   inline void lwarx_unchecked(Register d, Register b, int eh1);
   inline void ldarx_unchecked(Register d, Register b, int eh1);
   inline void lqarx_unchecked(Register d, Register b, int eh1);
+  inline void lbarx( Register d, Register b, bool hint_exclusive_access);
+  inline void lharx( Register d, Register b, bool hint_exclusive_access);
   inline void lwarx( Register d, Register b, bool hint_exclusive_access);
   inline void ldarx( Register d, Register b, bool hint_exclusive_access);
   inline void lqarx( Register d, Register b, bool hint_exclusive_access);
+  inline void stbcx_(Register s, Register b);
+  inline void sthcx_(Register s, Register b);
   inline void stwcx_(Register s, Register b);
   inline void stdcx_(Register s, Register b);
   inline void stqcx_(Register s, Register b);

@@ -26,7 +26,7 @@
  * @bug 8038423 8061715
  * @summary Checks that decommitment occurs for JVM with different
  * G1ConcRSLogCacheSize and ObjectAlignmentInBytes options values
- * @requires vm.gc=="G1" | vm.gc=="null"
+ * @requires vm.gc.G1
  * @requires vm.opt.AggressiveOpts=="false" | vm.opt.AggressiveOpts=="null"
  * @library /testlibrary /test/lib
  * @modules java.base/jdk.internal.misc

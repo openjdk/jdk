@@ -29,8 +29,8 @@
  * @run main/timeout=300 SupportedDHParamGens 768
  * @run main/timeout=300 SupportedDHParamGens 832
  * @run main/timeout=300 SupportedDHParamGens 1024
- * @run main/timeout=300 SupportedDHParamGens 2048
- * @run main/timeout=450 SupportedDHParamGens 3072
+ * @run main/timeout=600 SupportedDHParamGens 2048
+ * @run main/timeout=700 SupportedDHParamGens 3072
  */
 
 import java.math.BigInteger;

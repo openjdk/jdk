@@ -48,7 +48,7 @@ private:
   ciType*          _type;
   int              _offset;
   bool             _is_constant;
-  ciInstanceKlass* _known_to_link_with_put;
+  ciMethod*        _known_to_link_with_put;
   ciInstanceKlass* _known_to_link_with_get;
   ciConstant       _constant_value;
 
@@ -131,8 +131,12 @@ public:
   //      non-constant fields.  These are java.lang.System.in
   //      and java.lang.System.out.  Abomination.
   //
-  // A field is also considered constant if it is marked @Stable
-  // and is non-null (or non-zero, if a primitive).
+  // A field is also considered constant if
+  // - it is marked @Stable and is non-null (or non-zero, if a primitive) or
+  // - it is trusted or
+  // - it is the target field of a CallSite object.
+  //
+  // See ciField::initialize_from() for more details.
   //
   // A user should also check the field value (constant_value().is_valid()), since
   // constant fields of non-initialized classes don't have values yet.
@@ -150,25 +154,28 @@ public:
   ciConstant constant_value_of(ciObject* object);
 
   // Check for link time errors.  Accessing a field from a
-  // certain class via a certain bytecode may or may not be legal.
+  // certain method via a certain bytecode may or may not be legal.
   // This call checks to see if an exception may be raised by
   // an access of this field.
   //
   // Usage note: if the same field is accessed multiple times
   // in the same compilation, will_link will need to be checked
   // at each point of access.
-  bool will_link(ciInstanceKlass* accessing_klass,
+  bool will_link(ciMethod* accessing_method,
                  Bytecodes::Code bc);
 
   // Java access flags
-  bool is_public      () const { return flags().is_public(); }
-  bool is_private     () const { return flags().is_private(); }
-  bool is_protected   () const { return flags().is_protected(); }
-  bool is_static      () const { return flags().is_static(); }
-  bool is_final       () const { return flags().is_final(); }
-  bool is_stable      () const { return flags().is_stable(); }
-  bool is_volatile    () const { return flags().is_volatile(); }
-  bool is_transient   () const { return flags().is_transient(); }
+  bool is_public               () const { return flags().is_public(); }
+  bool is_private              () const { return flags().is_private(); }
+  bool is_protected            () const { return flags().is_protected(); }
+  bool is_static               () const { return flags().is_static(); }
+  bool is_final                () const { return flags().is_final(); }
+  bool is_stable               () const { return flags().is_stable(); }
+  bool is_volatile             () const { return flags().is_volatile(); }
+  bool is_transient            () const { return flags().is_transient(); }
+  // The field is modified outside of instance initializer methods
+  // (or class/initializer methods if the field is static).
+  bool has_initialized_final_update() const { return flags().has_initialized_final_update(); }
 
   bool is_call_site_target() {
     ciInstanceKlass* callsite_klass = CURRENT_ENV->CallSite_klass();

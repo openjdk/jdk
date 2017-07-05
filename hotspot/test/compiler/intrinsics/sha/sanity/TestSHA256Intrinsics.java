@@ -21,18 +21,16 @@
  * questions.
  */
 
-import sha.predicate.IntrinsicPredicates;
-
 /**
  * @test
  * @bug 8035968
  * @summary Verify that SHA-256 intrinsic is actually used.
- * @library /testlibrary /test/lib /compiler/testlibrary ../
+ * @library /testlibrary /test/lib / ../
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @build TestSHA intrinsics.Verifier TestSHA256Intrinsics
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @build TestSHA compiler.testlibrary.intrinsics.Verifier TestSHA256Intrinsics
+ * @run driver ClassFileInstaller sun.hotspot.WhiteBox
+ *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -Xbatch -XX:CompileThreshold=500
  *                   -XX:Tier4InvocationThreshold=500
@@ -66,9 +64,12 @@ import sha.predicate.IntrinsicPredicates;
  *                   -XX:-UseSHA256Intrinsics
  *                   -Dalgorithm=SHA-256 TestSHA256Intrinsics
  * @run main/othervm -DverificationStrategy=VERIFY_INTRINSIC_USAGE
- *                    intrinsics.Verifier positive_224.log positive_256.log
+ *                    compiler.testlibrary.intrinsics.Verifier positive_224.log positive_256.log
  *                    negative_224.log negative_256.log
  */
+
+import compiler.testlibrary.sha.predicate.IntrinsicPredicates;
+
 public class TestSHA256Intrinsics {
     public static void main(String args[]) throws Exception {
         new SHASanityTestBase(IntrinsicPredicates.SHA256_INTRINSICS_AVAILABLE,

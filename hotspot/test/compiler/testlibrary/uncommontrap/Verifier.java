@@ -21,7 +21,7 @@
  * questions.
  */
 
-package uncommontrap;
+package compiler.testlibrary.uncommontrap;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -34,6 +34,7 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 
 import jdk.test.lib.Asserts;
+
 /**
  * Utility tool aimed to verify presence or absence of specified uncommon trap
  * in compilation log.
@@ -78,7 +79,9 @@ public class Verifier {
                 PROPERTIES_FILE_SUFFIX);
 
         Properties properties = new Properties();
-        properties.load(new FileReader(propertiesFile.toFile()));
+        try (FileReader reader = new FileReader(propertiesFile.toFile())) {
+            properties.load(reader);
+        }
 
         if (Boolean.valueOf(properties.getProperty(
                 VERIFICATION_SHOULD_BE_SKIPPED, "false"))) {

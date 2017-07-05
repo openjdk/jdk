@@ -22,7 +22,7 @@
  *
  */
 
-package rtm.predicate;
+package compiler.testlibrary.rtm.predicate;
 
 import sun.hotspot.cpuinfo.CPUInfo;
 

@@ -463,6 +463,29 @@ class SizeTFlagSetting {
   ~SizeTFlagSetting()                           { *flag = val; }
 };
 
+// Helper class for temporarily saving the value of a flag during a scope.
+template <size_t SIZE>
+class FlagGuard {
+  unsigned char _value[SIZE];
+  void* const _addr;
+
+  // Hide operator new, this class should only be allocated on the stack.
+  // NOTE: Cannot include memory/allocation.hpp here due to circular
+  //       dependencies.
+  void* operator new(size_t size) throw();
+  void* operator new [](size_t size) throw();
+
+ public:
+  FlagGuard(void* flag_addr) : _addr(flag_addr) {
+    memcpy(_value, _addr, SIZE);
+  }
+
+  ~FlagGuard() {
+    memcpy(_addr, _value, SIZE);
+  }
+};
+
+#define FLAG_GUARD(f) FlagGuard<sizeof(f)> f ## _guard(&f)
 
 class CommandLineFlags {
 public:
