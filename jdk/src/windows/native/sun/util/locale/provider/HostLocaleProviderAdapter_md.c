@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,7 +196,7 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
             break;
     }
 
-    localeString = getJavaIDFromLangID(langid);
+    localeString = (char *)getJavaIDFromLangID(langid);
     ret = (*env)->NewStringUTF(env, localeString);
     free(localeString);
     return ret;
@@ -366,12 +366,14 @@ JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapte
  */
 JNIEXPORT jboolean JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_isNativeDigit
   (JNIEnv *env, jclass cls, jstring jlangtag) {
-    WCHAR buf[BUFLEN];
+    DWORD num;
     const jchar *langtag = (*env)->GetStringChars(env, jlangtag, JNI_FALSE);
-    int got = getLocaleInfoWrapper(langtag, LOCALE_IDIGITSUBSTITUTION, buf, BUFLEN);
+    int got = getLocaleInfoWrapper(langtag,
+        LOCALE_IDIGITSUBSTITUTION | LOCALE_RETURN_NUMBER,
+        (LPWSTR)&num, sizeof(num));
     (*env)->ReleaseStringChars(env, jlangtag, langtag);
 
-    return got && buf[0] == L'2'; // 2: native digit substitution
+    return got && num == 2; // 2: native digit substitution
 }
 
 /*
@@ -590,22 +592,69 @@ JNIEXPORT jchar JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterI
  */
 JNIEXPORT jint JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getCalendarDataValue
   (JNIEnv *env, jclass cls, jstring jlangtag, jint type) {
-    WCHAR buf[BUFLEN];
+    DWORD num;
     const jchar *langtag = (*env)->GetStringChars(env, jlangtag, JNI_FALSE);
     int got = 0;
 
     switch (type) {
     case sun_util_locale_provider_HostLocaleProviderAdapterImpl_CD_FIRSTDAYOFWEEK:
-        got = getLocaleInfoWrapper(langtag, LOCALE_IFIRSTDAYOFWEEK, buf, BUFLEN);
+        got = getLocaleInfoWrapper(langtag,
+            LOCALE_IFIRSTDAYOFWEEK | LOCALE_RETURN_NUMBER,
+            (LPWSTR)&num, sizeof(num));
         break;
     }
 
     (*env)->ReleaseStringChars(env, jlangtag, langtag);
 
     if (got) {
-        return _wtoi(buf);
+        return num;
     } else {
         return -1;
+    }
+}
+
+/*
+ * Class:     sun_util_locale_provider_HostLocaleProviderAdapterImpl
+ * Method:    getDisplayString
+ * Signature: (Ljava/lang/String;ILjava/lang/String;)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL Java_sun_util_locale_provider_HostLocaleProviderAdapterImpl_getDisplayString
+  (JNIEnv *env, jclass cls, jstring jlangtag, jint type, jstring jvalue) {
+    LCTYPE lcType;
+    jstring jStr;
+    const jchar * pjChar;
+    WCHAR buf[BUFLEN];
+    int got = 0;
+
+    switch (type) {
+        case sun_util_locale_provider_HostLocaleProviderAdapterImpl_DN_CURRENCY_NAME:
+            lcType = LOCALE_SNATIVECURRNAME;
+            jStr = jlangtag;
+            break;
+        case sun_util_locale_provider_HostLocaleProviderAdapterImpl_DN_CURRENCY_SYMBOL:
+            lcType = LOCALE_SCURRENCY;
+            jStr = jlangtag;
+            break;
+        case sun_util_locale_provider_HostLocaleProviderAdapterImpl_DN_LOCALE_LANGUAGE:
+            lcType = LOCALE_SLOCALIZEDLANGUAGENAME;
+            jStr = jvalue;
+            break;
+        case sun_util_locale_provider_HostLocaleProviderAdapterImpl_DN_LOCALE_REGION:
+            lcType = LOCALE_SLOCALIZEDCOUNTRYNAME;
+            jStr = jvalue;
+            break;
+        default:
+            return NULL;
+    }
+
+    pjChar = (*env)->GetStringChars(env, jStr, JNI_FALSE);
+    got = getLocaleInfoWrapper(pjChar, lcType, buf, BUFLEN);
+    (*env)->ReleaseStringChars(env, jStr, pjChar);
+
+    if (got) {
+        return (*env)->NewString(env, buf, wcslen(buf));
+    } else {
+        return NULL;
     }
 }
 
@@ -642,11 +691,13 @@ int getCalendarInfoWrapper(const jchar *langtag, CALID id, LPCWSTR reserved, CAL
 }
 
 jint getCalendarID(const jchar *langtag) {
-    WCHAR type[BUFLEN];
-    int got = getLocaleInfoWrapper(langtag, LOCALE_ICALENDARTYPE, type, BUFLEN);
+    DWORD type;
+    int got = getLocaleInfoWrapper(langtag,
+        LOCALE_ICALENDARTYPE | LOCALE_RETURN_NUMBER,
+        (LPWSTR)&type, sizeof(type));
 
     if (got) {
-        return _wtoi(type);
+        return type;
     } else {
         return 0;
     }
@@ -691,28 +742,37 @@ WCHAR * getNumberPattern(const jchar * langtag, const jint numberStyle) {
 }
 
 void getNumberPart(const jchar * langtag, const jint numberStyle, WCHAR * number) {
-    WCHAR buf[BUFLEN];
+    DWORD digits = 0;
+    DWORD leadingZero = 0;
     WCHAR grouping[BUFLEN];
+    int groupingLen;
     WCHAR fractionPattern[BUFLEN];
     WCHAR * integerPattern = number;
-    int digits;
-    BOOL leadingZero;
     WCHAR * pDest;
-    int groupingLen;
 
     // Get info from Windows
-    if (numberStyle == sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_CURRENCY) {
-        getLocaleInfoWrapper(langtag, LOCALE_ICURRDIGITS, buf, BUFLEN);
-    } else {
-        getLocaleInfoWrapper(langtag, LOCALE_IDIGITS, buf, BUFLEN);
+    switch (numberStyle) {
+        case sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_CURRENCY:
+            getLocaleInfoWrapper(langtag,
+                LOCALE_ICURRDIGITS | LOCALE_RETURN_NUMBER,
+                (LPWSTR)&digits, sizeof(digits));
+            break;
+
+        case sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_INTEGER:
+            break;
+
+        case sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_NUMBER:
+        case sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_PERCENT:
+        default:
+            getLocaleInfoWrapper(langtag,
+                LOCALE_IDIGITS | LOCALE_RETURN_NUMBER,
+                (LPWSTR)&digits, sizeof(digits));
+            break;
     }
-    if (numberStyle == sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_INTEGER) {
-        digits = 0;
-    } else {
-        digits = _wtoi(buf);
-    }
-    getLocaleInfoWrapper(langtag, LOCALE_ILZERO, buf, BUFLEN);
-    leadingZero = _wtoi(buf) != 0;
+
+    getLocaleInfoWrapper(langtag,
+        LOCALE_ILZERO | LOCALE_RETURN_NUMBER,
+        (LPWSTR)&leadingZero, sizeof(leadingZero));
     groupingLen = getLocaleInfoWrapper(langtag, LOCALE_SGROUPING, grouping, BUFLEN);
 
     // fraction pattern
@@ -749,7 +809,7 @@ void getNumberPart(const jchar * langtag, const jint numberStyle, WCHAR * number
         }
     }
 
-    if (leadingZero) {
+    if (leadingZero != 0) {
         *pDest++ = L'0';
     } else {
         *pDest++ = L'#';
@@ -760,28 +820,34 @@ void getNumberPart(const jchar * langtag, const jint numberStyle, WCHAR * number
 }
 
 void getFixPart(const jchar * langtag, const jint numberStyle, BOOL positive, BOOL prefix, WCHAR * ret) {
-    WCHAR buf[BUFLEN];
-    int pattern = 0;
+    DWORD pattern = 0;
     int style = numberStyle;
     int got = 0;
 
     if (positive) {
         if (style == sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_CURRENCY) {
-            got = getLocaleInfoWrapper(langtag, LOCALE_ICURRENCY, buf, BUFLEN);
+            got = getLocaleInfoWrapper(langtag,
+                LOCALE_ICURRENCY | LOCALE_RETURN_NUMBER,
+                (LPWSTR)&pattern, sizeof(pattern));
         } else if (style == sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_PERCENT) {
-            got = getLocaleInfoWrapper(langtag, LOCALE_IPOSITIVEPERCENT, buf, BUFLEN);
+            got = getLocaleInfoWrapper(langtag,
+                LOCALE_IPOSITIVEPERCENT | LOCALE_RETURN_NUMBER,
+                (LPWSTR)&pattern, sizeof(pattern));
         }
     } else {
         if (style == sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_CURRENCY) {
-            got = getLocaleInfoWrapper(langtag, LOCALE_INEGCURR, buf, BUFLEN);
+            got = getLocaleInfoWrapper(langtag,
+                LOCALE_INEGCURR | LOCALE_RETURN_NUMBER,
+                (LPWSTR)&pattern, sizeof(pattern));
         } else if (style == sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_PERCENT) {
-            got = getLocaleInfoWrapper(langtag, LOCALE_INEGATIVEPERCENT, buf, BUFLEN);
+            got = getLocaleInfoWrapper(langtag,
+                LOCALE_INEGATIVEPERCENT | LOCALE_RETURN_NUMBER,
+                (LPWSTR)&pattern, sizeof(pattern));
         } else {
-            got = getLocaleInfoWrapper(langtag, LOCALE_INEGNUMBER, buf, BUFLEN);
+            got = getLocaleInfoWrapper(langtag,
+                LOCALE_INEGNUMBER | LOCALE_RETURN_NUMBER,
+                (LPWSTR)&pattern, sizeof(pattern));
         }
-    }
-    if (got) {
-        pattern = _wtoi(buf);
     }
 
     if (numberStyle == sun_util_locale_provider_HostLocaleProviderAdapterImpl_NF_INTEGER) {

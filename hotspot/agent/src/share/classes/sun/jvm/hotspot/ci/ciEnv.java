@@ -93,10 +93,11 @@ public class ciEnv extends VMObject {
     CompileTask task = task();
     Method method = task.method();
     int entryBci = task.osrBci();
+    int compLevel = task.compLevel();
     Klass holder = method.getMethodHolder();
     out.println("compile " + holder.getName().asString() + " " +
                 OopUtilities.escapeString(method.getName().asString()) + " " +
                 method.getSignature().asString() + " " +
-                entryBci);
+                entryBci + " " + compLevel);
   }
 }

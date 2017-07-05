@@ -43,7 +43,7 @@ GCTaskThread::GCTaskThread(GCTaskManager* manager,
   _time_stamp_index(0)
 {
   if (!os::create_thread(this, os::pgc_thread))
-    vm_exit_out_of_memory(0, "Cannot create GC thread. Out of system resources.");
+    vm_exit_out_of_memory(0, OOM_MALLOC_ERROR, "Cannot create GC thread. Out of system resources.");
 
   if (PrintGCTaskTimeStamps) {
     _time_stamps = NEW_C_HEAP_ARRAY(GCTaskTimeStamp, GCTaskTimeStampEntries, mtGC);

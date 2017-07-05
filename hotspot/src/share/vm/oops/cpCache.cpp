@@ -266,7 +266,8 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
   // the lock, so that when the losing writer returns, he can use the linked
   // cache entry.
 
-  MonitorLockerEx ml(cpool->lock());
+  oop cplock = cpool->lock();
+  ObjectLocker ol(cplock, Thread::current(), cplock != NULL);
   if (!is_f1_null()) {
     return;
   }

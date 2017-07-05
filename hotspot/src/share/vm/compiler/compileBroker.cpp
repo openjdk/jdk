@@ -65,7 +65,7 @@ HS_DTRACE_PROBE_DECL8(hotspot, method__compile__begin,
 HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
   char*, intptr_t, char*, intptr_t, char*, intptr_t, char*, intptr_t, bool);
 
-#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler, method, comp_name)   \
+#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(method, comp_name)             \
   {                                                                      \
     Symbol* klass_name = (method)->klass_name();                         \
     Symbol* name = (method)->name();                                     \
@@ -77,8 +77,7 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
       signature->bytes(), signature->utf8_length());                     \
   }
 
-#define DTRACE_METHOD_COMPILE_END_PROBE(compiler, method,                \
-                                        comp_name, success)              \
+#define DTRACE_METHOD_COMPILE_END_PROBE(method, comp_name, success)      \
   {                                                                      \
     Symbol* klass_name = (method)->klass_name();                         \
     Symbol* name = (method)->name();                                     \
@@ -92,7 +91,7 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
 
 #else /* USDT2 */
 
-#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler, method, comp_name)   \
+#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(method, comp_name)             \
   {                                                                      \
     Symbol* klass_name = (method)->klass_name();                         \
     Symbol* name = (method)->name();                                     \
@@ -104,8 +103,7 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
       (char *) signature->bytes(), signature->utf8_length());            \
   }
 
-#define DTRACE_METHOD_COMPILE_END_PROBE(compiler, method,                \
-                                        comp_name, success)              \
+#define DTRACE_METHOD_COMPILE_END_PROBE(method, comp_name, success)      \
   {                                                                      \
     Symbol* klass_name = (method)->klass_name();                         \
     Symbol* name = (method)->name();                                     \
@@ -120,8 +118,8 @@ HS_DTRACE_PROBE_DECL9(hotspot, method__compile__end,
 
 #else //  ndef DTRACE_ENABLED
 
-#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler, method, comp_name)
-#define DTRACE_METHOD_COMPILE_END_PROBE(compiler, method, comp_name, success)
+#define DTRACE_METHOD_COMPILE_BEGIN_PROBE(method, comp_name)
+#define DTRACE_METHOD_COMPILE_END_PROBE(method, comp_name, success)
 
 #endif // ndef DTRACE_ENABLED
 
@@ -1229,7 +1227,7 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
     if (method->is_not_compilable(comp_level)) return NULL;
 
     if (UseCodeCacheFlushing) {
-      nmethod* saved = CodeCache::find_and_remove_saved_code(method());
+      nmethod* saved = CodeCache::reanimate_saved_code(method());
       if (saved != NULL) {
         method->set_code(method, saved);
         return saved;
@@ -1288,9 +1286,9 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
     method->jmethod_id();
   }
 
-  // If the compiler is shut off due to code cache flushing or otherwise,
+  // If the compiler is shut off due to code cache getting full
   // fail out now so blocking compiles dont hang the java thread
-  if (!should_compile_new_jobs() || (UseCodeCacheFlushing && CodeCache::needs_flushing())) {
+  if (!should_compile_new_jobs()) {
     CompilationPolicy::policy()->delay_compilation(method());
     return NULL;
   }
@@ -1766,8 +1764,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     // Save information about this method in case of failure.
     set_last_compile(thread, method, is_osr, task_level);
 
-    DTRACE_METHOD_COMPILE_BEGIN_PROBE(compiler(task_level), method,
-                                      compiler_name(task_level));
+    DTRACE_METHOD_COMPILE_BEGIN_PROBE(method, compiler_name(task_level));
   }
 
   // Allocate a new set of JNI handles.
@@ -1842,13 +1839,14 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
         }
       }
     }
+    // simulate crash during compilation
+    assert(task->compile_id() != CICrashAt, "just as planned");
   }
   pop_jni_handle_block();
 
   methodHandle method(thread, task->method());
 
-  DTRACE_METHOD_COMPILE_END_PROBE(compiler(task_level), method,
-                                  compiler_name(task_level), task->is_success());
+  DTRACE_METHOD_COMPILE_END_PROBE(method, compiler_name(task_level), task->is_success());
 
   collect_statistics(thread, time, task);
 

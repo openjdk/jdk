@@ -990,7 +990,7 @@ class CMSCollector: public CHeapObj<mtGC> {
 
   // debugging
   void verify();
-  bool verify_after_remark();
+  bool verify_after_remark(bool silent = VerifySilently);
   void verify_ok_to_terminate() const PRODUCT_RETURN;
   void verify_work_stacks_empty() const PRODUCT_RETURN;
   void verify_overflow_empty() const PRODUCT_RETURN;

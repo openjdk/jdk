@@ -537,30 +537,42 @@ class UnixNativeDispatcher {
      */
     static native byte[] strerror(int errnum);
 
-    // indicates if openat, unlinkat, etc. is supported
-    private static final boolean hasAtSysCalls;
-    static boolean supportsAtSysCalls() {
-        return hasAtSysCalls;
+    /**
+     * Capabilities
+     */
+    private static final int SUPPORTS_OPENAT        = 1 << 1;    // syscalls
+    private static final int SUPPORTS_FUTIMES       = 1 << 2;
+    private static final int SUPPORTS_BIRTHTIME     = 1 << 16;   // other features
+    private static final int capabilities;
+
+    /**
+     * Supports openat and other *at calls.
+     */
+    static boolean openatSupported() {
+        return (capabilities & SUPPORTS_OPENAT) != 0;
     }
 
-    static boolean supportsNoFollowLinks() {
-        return UnixConstants.O_NOFOLLOW != 0;
+    /**
+     * Supports futimes or futimesat
+     */
+    static boolean futimesSupported() {
+        return (capabilities & SUPPORTS_FUTIMES) != 0;
     }
 
-    // initialize syscalls and fieldIDs
+    /**
+     * Supports file birth (creation) time attribute
+     */
+    static boolean birthtimeSupported() {
+        return (capabilities & SUPPORTS_BIRTHTIME) != 0;
+    }
+
     private static native int init();
-
-    // flags returned by init to indicate capabilities
-    private static final int HAS_AT_SYSCALLS = 0x1;
-
     static {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 System.loadLibrary("nio");
                 return null;
         }});
-        int flags = init();
-
-        hasAtSysCalls = (flags & HAS_AT_SYSCALLS) > 0;
+        capabilities = init();
     }
 }

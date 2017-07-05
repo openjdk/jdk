@@ -97,6 +97,10 @@ static jfieldID attrs_st_mtime_nsec;
 static jfieldID attrs_st_ctime_sec;
 static jfieldID attrs_st_ctime_nsec;
 
+#ifdef _DARWIN_FEATURE_64_BIT_INODE
+static jfieldID attrs_st_birthtime_sec;
+#endif
+
 static jfieldID attrs_f_frsize;
 static jfieldID attrs_f_blocks;
 static jfieldID attrs_f_bfree;
@@ -171,7 +175,7 @@ static void throwUnixException(JNIEnv* env, int errnum) {
 JNIEXPORT jint JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 {
-    jint flags = 0;
+    jint capabilities = 0;
     jclass clazz;
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/UnixFileAttributes");
@@ -192,6 +196,10 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     attrs_st_mtime_nsec = (*env)->GetFieldID(env, clazz, "st_mtime_nsec", "J");
     attrs_st_ctime_sec = (*env)->GetFieldID(env, clazz, "st_ctime_sec", "J");
     attrs_st_ctime_nsec = (*env)->GetFieldID(env, clazz, "st_ctime_nsec", "J");
+
+#ifdef _DARWIN_FEATURE_64_BIT_INODE
+    attrs_st_birthtime_sec = (*env)->GetFieldID(env, clazz, "st_birthtime_sec", "J");
+#endif
 
     clazz = (*env)->FindClass(env, "sun/nio/fs/UnixFileStoreAttributes");
     if (clazz == NULL) {
@@ -233,14 +241,31 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
         my_fstatat64_func = (fstatat64_func*)&fstatat64_wrapper;
 #endif
 
+    /* supports futimes or futimesat */
+
+#ifdef _ALLBSD_SOURCE
+    capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FUTIMES;
+#else
+    if (my_futimesat_func != NULL)
+        capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_FUTIMES;
+#endif
+
+    /* supports openat, etc. */
+
     if (my_openat64_func != NULL &&  my_fstatat64_func != NULL &&
         my_unlinkat_func != NULL && my_renameat_func != NULL &&
         my_futimesat_func != NULL && my_fdopendir_func != NULL)
     {
-        flags |= sun_nio_fs_UnixNativeDispatcher_HAS_AT_SYSCALLS;
+        capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_OPENAT;
     }
 
-    return flags;
+    /* supports file birthtime */
+
+#ifdef _DARWIN_FEATURE_64_BIT_INODE
+    capabilities |= sun_nio_fs_UnixNativeDispatcher_SUPPORTS_BIRTHTIME;
+#endif
+
+    return capabilities;
 }
 
 JNIEXPORT jbyteArray JNICALL
@@ -404,6 +429,10 @@ static void prepAttributes(JNIEnv* env, struct stat64* buf, jobject attrs) {
     (*env)->SetLongField(env, attrs, attrs_st_atime_sec, (jlong)buf->st_atime);
     (*env)->SetLongField(env, attrs, attrs_st_mtime_sec, (jlong)buf->st_mtime);
     (*env)->SetLongField(env, attrs, attrs_st_ctime_sec, (jlong)buf->st_ctime);
+
+#ifdef _DARWIN_FEATURE_64_BIT_INODE
+    (*env)->SetLongField(env, attrs, attrs_st_birthtime_sec, (jlong)buf->st_birthtime);
+#endif
 
 #if (_POSIX_C_SOURCE >= 200809L) || defined(__solaris__)
     (*env)->SetLongField(env, attrs, attrs_st_atime_nsec, (jlong)buf->st_atim.tv_nsec);

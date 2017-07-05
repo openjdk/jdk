@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,12 +71,21 @@ AWT_ASSERT_APPKIT_THREAD;
 JNF_COCOA_ENTER(env);
 
     // If we are called as a result of user pressing a shorcut, do nothing,
-    // because AVTView has already sent corresponding key event to the Java 
+    // because AVTView has already sent corresponding key event to the Java
     // layer from performKeyEquivalent
     NSEvent *currEvent = [[NSApplication sharedApplication] currentEvent];
     if ([currEvent type] == NSKeyDown) {
         NSString *menuKey = [sender keyEquivalent];
         NSString *eventKey = [currEvent charactersIgnoringModifiers];
+
+        // Apple uses characters from private Unicode range for some of the
+        // keys, so we need to do the same translation here that we do
+        // for the regular key down events
+        if ([eventKey length] == 1) {
+            unichar ch =  NsCharToJavaChar([eventKey characterAtIndex:0], 0);
+            eventKey = [NSString stringWithCharacters: &ch length: 1];
+        }
+
         if ([menuKey isEqualToString:eventKey]) {
             return;
         }

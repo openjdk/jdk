@@ -304,6 +304,11 @@ class CompiledStaticCall: public NativeCall {
   friend CompiledStaticCall* compiledStaticCall_at(address native_call);
   friend CompiledStaticCall* compiledStaticCall_at(Relocation* call_site);
 
+  // Code
+  static void emit_to_interp_stub(CodeBuffer &cbuf);
+  static int to_interp_stub_size();
+  static int reloc_to_interp_stub();
+
   // State
   bool is_clean() const;
   bool is_call_to_compiled() const;

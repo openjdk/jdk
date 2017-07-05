@@ -144,33 +144,28 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
                                     &GenMarkSweep::follow_stack_closure,
                                     NULL);
 
-  // Follow system dictionary roots and unload classes
+
+  // This is the point where the entire marking should have completed.
+  assert(GenMarkSweep::_marking_stack.is_empty(), "Marking should have completed");
+
+  // Unload classes and purge the SystemDictionary.
   bool purged_class = SystemDictionary::do_unloading(&GenMarkSweep::is_alive);
-  assert(GenMarkSweep::_marking_stack.is_empty(),
-         "stack should be empty by now");
 
-  // Follow code cache roots (has to be done after system dictionary,
-  // assumes all live klasses are marked)
+  // Unload nmethods.
   CodeCache::do_unloading(&GenMarkSweep::is_alive, purged_class);
-  GenMarkSweep::follow_stack();
 
-  // Update subklass/sibling/implementor links of live klasses
+  // Prune dead klasses from subklass/sibling/implementor lists.
   Klass::clean_weak_klass_links(&GenMarkSweep::is_alive);
-  assert(GenMarkSweep::_marking_stack.is_empty(),
-         "stack should be empty by now");
 
-  // Visit interned string tables and delete unmarked oops
+  // Delete entries for dead interned strings.
   StringTable::unlink(&GenMarkSweep::is_alive);
+
   // Clean up unreferenced symbols in symbol table.
   SymbolTable::unlink();
-
-  assert(GenMarkSweep::_marking_stack.is_empty(),
-         "stack should be empty by now");
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
     COMPILER2_PRESENT(DerivedPointerTableDeactivate dpt_deact);
-    gclog_or_tty->print(" VerifyDuringGC:(full)[Verifying ");
     Universe::heap()->prepare_for_verify();
     // Note: we can verify only the heap here. When an object is
     // marked, the previous value of the mark word (including
@@ -182,11 +177,13 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
     // fail. At the end of the GC, the orginal mark word values
     // (including hash values) are restored to the appropriate
     // objects.
-    Universe::heap()->verify(/* silent      */ false,
-                             /* option      */ VerifyOption_G1UseMarkWord);
-
-    G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    gclog_or_tty->print_cr("]");
+    if (!VerifySilently) {
+      gclog_or_tty->print(" VerifyDuringGC:(full)[Verifying ");
+    }
+    Universe::heap()->verify(VerifySilently, VerifyOption_G1UseMarkWord);
+    if (!VerifySilently) {
+      gclog_or_tty->print_cr("]");
+    }
   }
 }
 
@@ -308,17 +305,16 @@ void G1MarkSweep::mark_sweep_phase3() {
   sh->process_strong_roots(true,  // activate StrongRootsScope
                            false, // not scavenging.
                            SharedHeap::SO_AllClasses,
-                           &GenMarkSweep::adjust_root_pointer_closure,
+                           &GenMarkSweep::adjust_pointer_closure,
                            NULL,  // do not touch code cache here
                            &GenMarkSweep::adjust_klass_closure);
 
   assert(GenMarkSweep::ref_processor() == g1h->ref_processor_stw(), "Sanity");
-  g1h->ref_processor_stw()->weak_oops_do(&GenMarkSweep::adjust_root_pointer_closure);
+  g1h->ref_processor_stw()->weak_oops_do(&GenMarkSweep::adjust_pointer_closure);
 
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
-  g1h->g1_process_weak_roots(&GenMarkSweep::adjust_root_pointer_closure,
-                             &GenMarkSweep::adjust_pointer_closure);
+  g1h->g1_process_weak_roots(&GenMarkSweep::adjust_pointer_closure);
 
   GenMarkSweep::adjust_marks();
 

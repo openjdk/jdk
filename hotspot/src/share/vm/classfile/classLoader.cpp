@@ -1345,9 +1345,10 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
           tty->print_cr("CompileTheWorld (%d) : %s", _compile_the_world_class_counter, buffer);
           // Preload all classes to get around uncommon traps
           // Iterate over all methods in class
+          int comp_level = CompilationPolicy::policy()->initial_compile_level();
           for (int n = 0; n < k->methods()->length(); n++) {
             methodHandle m (THREAD, k->methods()->at(n));
-            if (CompilationPolicy::can_be_compiled(m)) {
+            if (CompilationPolicy::can_be_compiled(m, comp_level)) {
 
               if (++_codecache_sweep_counter == CompileTheWorldSafepointInterval) {
                 // Give sweeper a chance to keep up with CTW
@@ -1356,7 +1357,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
                 _codecache_sweep_counter = 0;
               }
               // Force compilation
-              CompileBroker::compile_method(m, InvocationEntryBci, CompilationPolicy::policy()->initial_compile_level(),
+              CompileBroker::compile_method(m, InvocationEntryBci, comp_level,
                                             methodHandle(), 0, "CTW", THREAD);
               if (HAS_PENDING_EXCEPTION) {
                 clear_pending_exception_if_not_oom(CHECK);

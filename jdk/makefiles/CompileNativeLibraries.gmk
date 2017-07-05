@@ -63,7 +63,12 @@ WIN_AWT_LIB := $(JDK_OUTPUTDIR)/objs/libawt/awt.lib
 # Use this variable to set DEBUG_SYMBOLS true on windows for all libraries, but
 # not on other platforms.
 ifeq ($(OPENJDK_TARGET_OS), windows)
-    WINDOWS_ONLY := true
+    DEBUG_ALL_BINARIES := true
+endif
+
+# Build everything with debugging on OpenJDK
+ifdef OPENJDK
+    DEBUG_ALL_BINARIES := true
 endif
 
 #
@@ -91,7 +96,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFDLIBM,\
 			-I$(JDK_TOPDIR)/src/share/native/java/lang/fdlibm/include,\
 		CFLAGS_windows_debug:=-DLOGGING,\
 		ARFLAGS:=$(ARFLAGS),\
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libfdlibm))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libfdlibm,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 else
 
@@ -105,7 +111,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFDLIBM_MAC,\
 		CFLAGS:=$(CFLAGS_JDKLIB) \
 			-I$(JDK_TOPDIR)/src/share/native/java/lang/fdlibm/include,\
 		LDFLAGS:=-nostdlib -r -arch x86_64,\
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libfdlibm))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libfdlibm,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBFDLIBM := $(JDK_OUTPUTDIR)/objs/$(LIBRARY_PREFIX)fdlibm$(STATIC_LIBRARY_SUFFIX)
 $(BUILD_LIBFDLIBM) : $(BUILD_LIBFDLIBM_MAC)
@@ -257,7 +264,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA,\
 			  -D "JDK_FTYPE=0x2L",\
 		REORDER:=$(LIBJAVA_REORDER), \
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjava,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBRARIES += $(BUILD_LIBJAVA)
 
@@ -308,7 +315,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMLIB_IMAGE,\
 			  -D "JDK_INTERNAL_NAME=mlib_image" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libmlib_image,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBMLIB_IMAGE) : $(BUILD_LIBJAVA)
 
@@ -431,7 +438,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMLIB_IMAGE_V,\
                          $(BUILD_LIBMLIB_LDLIBS) -ljava -ljvm \
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX_solaris:=-lc,\
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libmlib_image_v))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libmlib_image_v,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBMLIB_IMAGE_V): $(BUILD_LIBJAVA)
 
@@ -739,7 +747,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT,\
 			  -D "JDK_INTERNAL_NAME=awt" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libawt,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBAWT) : $(BUILD_LIBJAVA)
 
@@ -895,7 +903,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_XAWT,\
 			  -D "JDK_FNAME=xawt.dll" \
 			  -D "JDK_INTERNAL_NAME=xawt" \
 			  -D "JDK_FTYPE=0x2L",\
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libawt_xawt))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libawt_xawt,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBAWT_XAWT) : $(BUILD_LIBJAVA)
 
@@ -956,7 +965,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP,\
 			  -D "JDK_INTERNAL_NAME=zip" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libzip,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBZIP) : $(BUILD_LIBJAVA)
 
@@ -986,7 +995,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBUNPACK,\
 			  -D "JDK_FNAME=unpack.dll" \
 			  -D "JDK_INTERNAL_NAME=unpack" \
 			  -D "JDK_FTYPE=0x2L",\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBUNPACK) : $(BUILD_LIBJAVA)
 
@@ -1100,7 +1109,7 @@ ifeq ($(OPENJDK_TARGET_OS),windows)
 			  -D "JDK_INTERNAL_NAME=dt_shmem" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libdt_shmem,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
   BUILD_LIBRARIES += $(BUILD_LIBDT_SHMEM)
 
@@ -1134,7 +1143,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJDWP,\
 			  -D "JDK_INTERNAL_NAME=jdwp" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjdwp,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBJDWP) : $(BUILD_LIBJAVA)
 
@@ -1175,7 +1184,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAAS,\
 			  -D "JDK_INTERNAL_NAME=$(LIBJAAS_NAME)" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjaas,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBJAAS) : $(BUILD_LIBJAVA)
 
@@ -1240,7 +1249,7 @@ BUILD_LIBRARIES += $(BUILD_LIBJSDT)
 			  -D "JDK_INTERNAL_NAME=lcms" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/liblcms,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
     BUILD_LIBRARIES += $(BUILD_LIBLCMS)
 
@@ -1300,7 +1309,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJPEG,\
 			  -D "JDK_FTYPE=0x2L",\
 		REORDER:=$(BUILD_LIBJPEG_REORDER),\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjpeg,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBJPEG) : $(BUILD_LIBJAVA)
 
@@ -1377,7 +1386,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER,\
 			  -D "JDK_INTERNAL_NAME=fontmanager" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libfontmanager,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBFONTMANAGER) : $(BUILD_LIBAWT)
 
@@ -1434,7 +1443,7 @@ ifndef OPENJDK
 			  -D "JDK_INTERNAL_NAME=t2k" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libt2k,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
     # t2k is linked against fontmanager
     $(BUILD_LIBT2K) : $(BUILD_LIBFONTMANAGER)
@@ -1472,7 +1481,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 			  -D "JDK_INTERNAL_NAME=jawt" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjawt,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBJAWT) : $(BUILD_LIBAWT)
 
@@ -1521,7 +1530,8 @@ else # OPENJDK_TARGET_OS not windows
 		LDFLAGS_SUFFIX_solaris:=$(JAWT_LIBS) $(LDFLAGS_JDKLIB_SUFFIX) -lXrender,\
 		LDFLAGS_SUFFIX_macosx:=-Xlinker -rpath -Xlinker @loader_path $(JAWT_LIBS) \
 				       -framework Cocoa $(LDFLAGS_JDKLIB_SUFFIX),\
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjawt))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjawt,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 ifndef BUILD_HEADLESS_ONLY
 $(BUILD_LIBJAWT) : $(BUILD_LIBAWT_XAWT)
@@ -1828,7 +1838,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNET,\
 			  -D "JDK_INTERNAL_NAME=net" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libnet,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBNET) : $(BUILD_LIBJAVA)
 
@@ -1965,7 +1975,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBNIO,\
 			  -D "JDK_INTERNAL_NAME=nio" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libnio,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBRARIES += $(BUILD_LIBNIO)
 
@@ -2002,7 +2012,8 @@ ifeq ($(OPENJDK_TARGET_OS_API),posix)
 		LDFLAGS_SUFFIX_posix:=-lnio -lnet,\
 		LDFLAGS_SUFFIX_solaris:=-lsocket -ljava -ljvm -lc,\
 		LDFLAGS_SUFFIX_macosx:=-ljava -ljvm,\
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libsctp))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libsctp,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
     BUILD_LIBRARIES += $(BUILD_LIBSCTP)
 
@@ -2126,7 +2137,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI,\
 			  -D "JDK_INTERNAL_NAME=jli" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjli,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBRARIES += $(BUILD_LIBJLI)
 
@@ -2143,7 +2154,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 		OPTIMIZATION:=HIGH, \
 		CFLAGS:=$(STATIC_LIBRARY_FLAGS) $(LIBJLI_CFLAGS),\
 		ARFLAGS:=$(ARFLAGS),\
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjli_static))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjli_static,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBRARIES += $(BUILD_LIBJLI_STATIC)
 
@@ -2161,7 +2173,8 @@ else ifeq ($(OPENJDK_TARGET_OS),macosx)
 		OPTIMIZATION:=HIGH, \
 		CFLAGS:=$(CFLAGS_JDKLIB) $(LIBJLI_CFLAGS),\
 		LDFLAGS:=-nostdlib -r,\
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjli_static))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjli_static,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(JDK_OUTPUTDIR)/objs/libjli_static.a : $(BUILD_LIBJLI_STATIC)
 	$(call install-file)
@@ -2192,7 +2205,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJFR,\
 			  -D "JDK_INTERNAL_NAME=jfr" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjfr,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBRARIES += $(BUILD_LIBJFR)
 
@@ -2244,7 +2257,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBKCMS,\
 			  -D "JDK_INTERNAL_NAME=kcms" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libkcms,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBKCMS) : $(BUILD_LIBJAVA)
 
@@ -2279,7 +2292,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBSUNWJDGA, \
 		LDFLAGS:=$(LDFLAGS_JDKLIB) \
 			 $(call SET_SHARED_LIBRARY_ORIGIN), \
 		LDFLAGS_SUFFIX:=-L$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR) -R$(OPENWIN_LIB)$(OPENJDK_TARGET_CPU_ISADIR) -ldga -lX11 $(LIBDL) -lc, \
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libsunwjdga))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libsunwjdga,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBRARIES += $(BUILD_LIBSUNWJDGA)
 
@@ -2369,7 +2383,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_HEADLESS,\
 		LDFLAGS_SUFFIX_linux:=-ljvm -lawt -lm $(LIBDL) -ljava,\
 		LDFLAGS_SUFFIX_solaris:=$(LIBDL) -ljvm -lawt -lm -ljava $(LIBCXX) -lc,\
 		LDFLAGS_SUFFIX_macosx:=-ljvm $(LIBCXX) -lawt $(LIBDL) -ljava,\
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libawt_headless))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libawt_headless,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBAWT_HEADLESS) : $(BUILD_LIBAWT)
 
@@ -2462,7 +2477,7 @@ $(eval $(call SetupNativeCompilation,LIBSPLASHSCREEN,\
 			  -D "JDK_INTERNAL_NAME=splashscreen" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libsplashscreen,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBRARIES += $(LIBSPLASHSCREEN)
 
@@ -2504,7 +2519,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBDCPR,\
 			  -D "JDK_INTERNAL_NAME=dcpr" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libdcpr,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBDCPR) : $(BUILD_LIBJAVA)
 
@@ -2538,7 +2553,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PCSC,\
 			  -D "JDK_INTERNAL_NAME=j2pcsc" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libj2pcsc,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBRARIES += $(BUILD_LIBJ2PCSC)
 
@@ -2561,7 +2576,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2GSS,\
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX:=$(LIBDL),\
 		LDFLAGS_SUFFIX_solaris:=-lc,\
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libj2gss))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libj2gss,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBRARIES += $(BUILD_LIBJ2GSS)
 endif
@@ -2601,7 +2617,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBKRB5,\
 			  -D "JDK_INTERNAL_NAME=$(BUILD_LIBKRB5_NAME)" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libkrb5,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBRARIES += $(BUILD_LIBKRB5)
 endif
@@ -2627,7 +2643,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBSUNMSCAPI,\
 			  -D "JDK_INTERNAL_NAME=sunmscapi" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libsunmscapi,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBRARIES += $(BUILD_LIBSUNMSCAPI)
 endif
@@ -2659,7 +2675,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2PKCS11,\
 			  -D "JDK_INTERNAL_NAME=j2pkcs11" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libj2pkcs11,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBRARIES += $(BUILD_LIBJ2PKCS11)
 
@@ -2705,7 +2721,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBSUNEC,\
 			  -D "JDK_INTERNAL_NAME=sunec" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libsunec,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBRARIES += $(BUILD_LIBSUNEC)
 endif
@@ -2849,7 +2865,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUND,\
 			  -D "JDK_INTERNAL_NAME=jsound" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjsound,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBJSOUND) : $(BUILD_LIBJAVA)
 
@@ -2884,7 +2900,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUNDALSA,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB)\
 			 $(call SET_SHARED_LIBRARY_ORIGIN),\
 		LDFLAGS_SUFFIX:=-lasound -ljava -ljvm,\
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjsoundalsa))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjsoundalsa,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBJSOUNDALSA) : $(BUILD_LIBJAVA)
 
@@ -2917,7 +2934,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJSOUNDDS,\
 			  -D "JDK_INTERNAL_NAME=jsoundds" \
 			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjsoundds,\
-		DEBUG_SYMBOLS:=$(WINDOWS_ONLY)))
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBJSOUNDDS) : $(BUILD_LIBJAVA)
 
@@ -2942,7 +2959,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJ2UCRYPTO,\
 		LDFLAGS:=$(LDFLAGS_JDKLIB),\
 		LDFLAGS_SUFFIX:=$(LIBDL),\
 		LDFLAGS_SUFFIX_solaris:=-lc,\
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libj2ucrypto))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libj2ucrypto,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBJ2UCRYPTO) : $(BUILD_LIBJAVA)
 
@@ -2972,7 +2990,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAPPLESCRIPTENGINE,\
                                 -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
                                 -framework JavaNativeFoundation \
                                 $(LDFLAGS_JDKLIB_SUFFIX),\
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libAppleScriptEngine))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libAppleScriptEngine,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(BUILD_LIBAPPLESCRIPTENGINE) : $(BUILD_LIBJAVA)
 
@@ -3011,7 +3030,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBOSXAPP,\
 	-framework OpenGL \
 	-framework IOSurface \
 	-framework QuartzCore, \
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libosxapp))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libosxapp,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBRARIES += $(BUILD_LIBOSXAPP)
 
@@ -3051,7 +3071,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBOSX,\
     -framework Security \
     -framework SystemConfiguration \
     $(LDFLAGS_JDKLIB_SUFFIX), \
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libosx))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libosx,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBRARIES += $(BUILD_LIBOSX)
 
@@ -3184,7 +3205,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_LWAWT,\
 				       -framework JavaRuntimeSupport \
 				       -framework OpenGL \
 				       -framework QuartzCore -ljava,\
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libawt_lwawt))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libawt_lwawt,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBRARIES += $(BUILD_LIBAWT_LWAWT)
 
@@ -3224,7 +3246,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBOSXUI,\
 				       -framework JavaNativeFoundation \
 				       -framework JavaRuntimeSupport \
 				       -ljava -ljvm,\
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libosxui))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libosxui,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 BUILD_LIBRARIES += $(BUILD_LIBOSXUI)
 
@@ -3264,7 +3287,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJOBJC32,\
                                   -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
                                   -framework JavaNativeFoundation \
                                   -lffi, \
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjobjc32))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjobjc32,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBJOBJC64,\
 		LIBRARY:=JObjC,\
@@ -3288,7 +3312,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJOBJC64,\
                                   -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
                                   -framework JavaNativeFoundation \
                                   -lffi, \
-		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjobjc64))
+		OBJECT_DIR:=$(JDK_OUTPUTDIR)/objs/libjobjc64,\
+		DEBUG_SYMBOLS:=$(DEBUG_ALL_BINARIES)))
 
 $(INSTALL_LIBRARIES_HERE)/$(LIBRARY_PREFIX)JObjC$(SHARED_LIBRARY_SUFFIX): $(BUILD_LIBJOBJC32) $(BUILD_LIBJOBJC64)
 	$(LIPO) -create -output $@ $(BUILD_LIBJOBJC32) $(BUILD_LIBJOBJC64)
