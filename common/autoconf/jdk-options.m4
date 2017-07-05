@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -452,19 +452,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 
     AC_SUBST(ENABLE_INTREE_EC)
   ])
-
-  ###############################################################################
-  #
-  # --enable-rmiconnector-iiop
-  #
-  AC_ARG_ENABLE(rmiconnector-iiop, [AS_HELP_STRING([--enable-rmiconnector-iiop],
-      [enable the JMX RMIConnector iiop transport  @<:@disabled@:>@])])
-  if test "x$enable_rmiconnector_iiop" = "xyes"; then
-    RMICONNECTOR_IIOP=true
-  else
-    RMICONNECTOR_IIOP=false
-  fi
-  AC_SUBST(RMICONNECTOR_IIOP)
 
   ###############################################################################
   #

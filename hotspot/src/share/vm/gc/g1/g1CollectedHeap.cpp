@@ -65,6 +65,7 @@
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
+#include "runtime/init.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -949,6 +950,7 @@ bool G1CollectedHeap::check_archive_addresses(MemRegion* ranges, size_t count) {
 }
 
 bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges, size_t count) {
+  assert(!is_init_completed(), "Expect to be called at JVM init time");
   assert(ranges != NULL, "MemRegion array NULL");
   assert(count != 0, "No MemRegions provided");
   MutexLockerEx x(Heap_lock);
@@ -1037,12 +1039,13 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges, size_t count) {
     }
 
     // Notify mark-sweep of the archive range.
-    G1MarkSweep::mark_range_archive(curr_range);
+    G1MarkSweep::set_range_archive(curr_range, true);
   }
   return true;
 }
 
 void G1CollectedHeap::fill_archive_regions(MemRegion* ranges, size_t count) {
+  assert(!is_init_completed(), "Expect to be called at JVM init time");
   assert(ranges != NULL, "MemRegion array NULL");
   assert(count != 0, "No MemRegions provided");
   MemRegion reserved = _hrm.reserved();
@@ -1123,6 +1126,81 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t word_size,
     dirty_young_block(result, word_size);
   }
   return result;
+}
+
+void G1CollectedHeap::dealloc_archive_regions(MemRegion* ranges, size_t count) {
+  assert(!is_init_completed(), "Expect to be called at JVM init time");
+  assert(ranges != NULL, "MemRegion array NULL");
+  assert(count != 0, "No MemRegions provided");
+  MemRegion reserved = _hrm.reserved();
+  HeapWord* prev_last_addr = NULL;
+  HeapRegion* prev_last_region = NULL;
+  size_t size_used = 0;
+  size_t uncommitted_regions = 0;
+
+  // For each Memregion, free the G1 regions that constitute it, and
+  // notify mark-sweep that the range is no longer to be considered 'archive.'
+  MutexLockerEx x(Heap_lock);
+  for (size_t i = 0; i < count; i++) {
+    HeapWord* start_address = ranges[i].start();
+    HeapWord* last_address = ranges[i].last();
+
+    assert(reserved.contains(start_address) && reserved.contains(last_address),
+           err_msg("MemRegion outside of heap [" PTR_FORMAT ", " PTR_FORMAT "]",
+                   p2i(start_address), p2i(last_address)));
+    assert(start_address > prev_last_addr,
+           err_msg("Ranges not in ascending order: " PTR_FORMAT " <= " PTR_FORMAT ,
+                   p2i(start_address), p2i(prev_last_addr)));
+    size_used += ranges[i].byte_size();
+    prev_last_addr = last_address;
+
+    HeapRegion* start_region = _hrm.addr_to_region(start_address);
+    HeapRegion* last_region = _hrm.addr_to_region(last_address);
+
+    // Check for ranges that start in the same G1 region in which the previous
+    // range ended, and adjust the start address so we don't try to free
+    // the same region again. If the current range is entirely within that
+    // region, skip it.
+    if (start_region == prev_last_region) {
+      start_address = start_region->end();
+      if (start_address > last_address) {
+        continue;
+      }
+      start_region = _hrm.addr_to_region(start_address);
+    }
+    prev_last_region = last_region;
+
+    // After verifying that each region was marked as an archive region by
+    // alloc_archive_regions, set it free and empty and uncommit it.
+    HeapRegion* curr_region = start_region;
+    while (curr_region != NULL) {
+      guarantee(curr_region->is_archive(),
+                err_msg("Expected archive region at index %u", curr_region->hrm_index()));
+      uint curr_index = curr_region->hrm_index();
+      _old_set.remove(curr_region);
+      curr_region->set_free();
+      curr_region->set_top(curr_region->bottom());
+      if (curr_region != last_region) {
+        curr_region = _hrm.next_region_in_heap(curr_region);
+      } else {
+        curr_region = NULL;
+      }
+      _hrm.shrink_at(curr_index, 1);
+      uncommitted_regions++;
+    }
+
+    // Notify mark-sweep that this is no longer an archive range.
+    G1MarkSweep::set_range_archive(ranges[i], false);
+  }
+
+  if (uncommitted_regions != 0) {
+    ergo_verbose1(ErgoHeapSizing,
+                  "attempt heap shrinking",
+                  ergo_format_reason("uncommitted archive regions")
+                  ergo_format_byte("total size"),
+                  HeapRegion::GrainWords * HeapWordSize * uncommitted_regions);
+  }
+  decrease_used(size_used);
 }
 
 HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
@@ -2845,9 +2923,9 @@ size_t G1CollectedHeap::tlab_used(Thread* ignored) const {
 }
 
 // For G1 TLABs should not contain humongous objects, so the maximum TLAB size
-// must be smaller than the humongous object limit.
+// must be equal to the humongous object limit.
 size_t G1CollectedHeap::max_tlab_size() const {
-  return align_size_down(_humongous_object_threshold_in_words - 1, MinObjAlignment);
+  return align_size_down(_humongous_object_threshold_in_words, MinObjAlignment);
 }
 
 size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
@@ -4051,7 +4129,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         g1_policy()->print_collection_set(g1_policy()->inc_cset_head(), gclog_or_tty);
 #endif // YOUNG_LIST_VERBOSE
 
-        g1_policy()->finalize_cset(target_pause_time_ms, evacuation_info);
+        g1_policy()->finalize_cset(target_pause_time_ms);
+
+        evacuation_info.set_collectionset_regions(g1_policy()->cset_region_length());
 
         register_humongous_regions_with_cset();
 
@@ -4175,7 +4255,10 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         // investigate this in CR 7178365.
         double sample_end_time_sec = os::elapsedTime();
         double pause_time_ms = (sample_end_time_sec - sample_start_time_sec) * MILLIUNITS;
-        g1_policy()->record_collection_pause_end(pause_time_ms, evacuation_info);
+        g1_policy()->record_collection_pause_end(pause_time_ms);
+
+        evacuation_info.set_collectionset_used_before(g1_policy()->collection_set_bytes_used_before());
+        evacuation_info.set_bytes_copied(g1_policy()->bytes_copied_during_gc());
 
         MemoryService::track_memory_usage();
 
@@ -4501,8 +4584,7 @@ public:
                  bool only_young, bool claim)
         : _oop_closure(oop_closure),
           _oop_in_klass_closure(oop_closure->g1(),
-                                oop_closure->pss(),
-                                oop_closure->rp()),
+                                oop_closure->pss()),
           _klass_in_cld_closure(&_oop_in_klass_closure, only_young),
           _claim(claim) {
 
@@ -4531,18 +4613,18 @@ public:
       bool only_young = _g1h->collector_state()->gcs_are_young();
 
       // Non-IM young GC.
-      G1ParCopyClosure<G1BarrierNone, G1MarkNone>             scan_only_root_cl(_g1h, pss, rp);
+      G1ParCopyClosure<G1BarrierNone, G1MarkNone>             scan_only_root_cl(_g1h, pss);
       G1CLDClosure<G1MarkNone>                                scan_only_cld_cl(&scan_only_root_cl,
                                                                                only_young, // Only process dirty klasses.
                                                                                false);     // No need to claim CLDs.
       // IM young GC.
       //    Strong roots closures.
-      G1ParCopyClosure<G1BarrierNone, G1MarkFromRoot>         scan_mark_root_cl(_g1h, pss, rp);
+      G1ParCopyClosure<G1BarrierNone, G1MarkFromRoot>         scan_mark_root_cl(_g1h, pss);
       G1CLDClosure<G1MarkFromRoot>                            scan_mark_cld_cl(&scan_mark_root_cl,
                                                                                false, // Process all klasses.
                                                                                true); // Need to claim CLDs.
       //    Weak roots closures.
-      G1ParCopyClosure<G1BarrierNone, G1MarkPromotedFromRoot> scan_mark_weak_root_cl(_g1h, pss, rp);
+      G1ParCopyClosure<G1BarrierNone, G1MarkPromotedFromRoot> scan_mark_weak_root_cl(_g1h, pss);
       G1CLDClosure<G1MarkPromotedFromRoot>                    scan_mark_weak_cld_cl(&scan_mark_weak_root_cl,
                                                                                     false, // Process all klasses.
                                                                                     true); // Need to claim CLDs.
@@ -4582,9 +4664,9 @@ public:
                                       worker_id);
 
       G1ParPushHeapRSClosure push_heap_rs_cl(_g1h, pss);
-      _root_processor->scan_remembered_sets(&push_heap_rs_cl,
-                                            weak_root_cl,
-                                            worker_id);
+      _g1h->g1_rem_set()->oops_into_collection_set_do(&push_heap_rs_cl,
+                                                      weak_root_cl,
+                                                      worker_id);
       double strong_roots_sec = os::elapsedTime() - start_strong_roots_sec;
 
       double term_sec = 0.0;
@@ -5241,9 +5323,9 @@ public:
     G1ParScanThreadState*           pss = _pss[worker_id];
     pss->set_ref_processor(NULL);
 
-    G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, pss, NULL);
+    G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, pss);
 
-    G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(_g1h, pss, NULL);
+    G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(_g1h, pss);
 
     OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
 
@@ -5341,9 +5423,9 @@ public:
     pss->set_ref_processor(NULL);
     assert(pss->queue_is_empty(), "both queue and overflow should be empty");
 
-    G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, pss, NULL);
+    G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, pss);
 
-    G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(_g1h, pss, NULL);
+    G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(_g1h, pss);
 
     OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
 
@@ -5451,9 +5533,9 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadState** per_t
   // closures while we're actually processing the discovered
   // reference objects.
 
-  G1ParScanExtRootClosure        only_copy_non_heap_cl(this, pss, NULL);
+  G1ParScanExtRootClosure        only_copy_non_heap_cl(this, pss);
 
-  G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(this, pss, NULL);
+  G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(this, pss);
 
   OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
 

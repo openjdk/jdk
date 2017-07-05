@@ -184,7 +184,8 @@ static volatile int InitDone        = 0;
 //
 // * The monitor entry list operations avoid locks, but strictly speaking
 //   they're not lock-free.  Enter is lock-free, exit is not.
-//   See http://j2se.east/~dice/PERSIST/040825-LockFreeQueues.html
+//   For a description of 'Methods and apparatus providing non-blocking access
+//   to a resource,' see U.S. Pat. No. 7844973.
 //
 // * The cxq can have multiple concurrent "pushers" but only one concurrent
 //   detaching thread.  This mechanism is immune from the ABA corruption.
@@ -405,9 +406,7 @@ void NOINLINE ObjectMonitor::enter(TRAPS) {
     event.commit();
   }
 
-  if (ObjectMonitor::_sync_ContendedLockAttempts != NULL) {
-    ObjectMonitor::_sync_ContendedLockAttempts->inc();
-  }
+  OM_PERFDATA_OP(ContendedLockAttempts, inc());
 }
 
 
@@ -574,9 +573,9 @@ void NOINLINE ObjectMonitor::EnterI(TRAPS) {
     // That is by design - we trade "lossy" counters which are exposed to
     // races during updates for a lower probe effect.
     TEVENT(Inflated enter - Futile wakeup);
-    if (ObjectMonitor::_sync_FutileWakeups != NULL) {
-      ObjectMonitor::_sync_FutileWakeups->inc();
-    }
+    // This PerfData object can be used in parallel with a safepoint.
+    // See the work around in PerfDataManager::destroy().
+    OM_PERFDATA_OP(FutileWakeups, inc());
     ++nWakeups;
 
     // Assuming this is not a spurious wakeup we'll normally find _succ == Self.
@@ -748,9 +747,9 @@ void NOINLINE ObjectMonitor::ReenterI(Thread * Self, ObjectWaiter * SelfNode) {
     // *must* retry  _owner before parking.
     OrderAccess::fence();
 
-    if (ObjectMonitor::_sync_FutileWakeups != NULL) {
-      ObjectMonitor::_sync_FutileWakeups->inc();
-    }
+    // This PerfData object can be used in parallel with a safepoint.
+    // See the work around in PerfDataManager::destroy().
+    OM_PERFDATA_OP(FutileWakeups, inc());
   }
 
   // Self has acquired the lock -- Unlink Self from the cxq or EntryList .
@@ -1302,9 +1301,7 @@ void ObjectMonitor::ExitEpilog(Thread * Self, ObjectWaiter * Wakee) {
   Trigger->unpark();
 
   // Maintain stats and report events to JVMTI
-  if (ObjectMonitor::_sync_Parks != NULL) {
-    ObjectMonitor::_sync_Parks->inc();
-  }
+  OM_PERFDATA_OP(Parks, inc());
 }
 
 
@@ -1765,9 +1762,7 @@ void ObjectMonitor::notify(TRAPS) {
   }
   DTRACE_MONITOR_PROBE(notify, this, object(), THREAD);
   INotify(THREAD);
-  if (ObjectMonitor::_sync_Notifications != NULL) {
-    ObjectMonitor::_sync_Notifications->inc(1);
-  }
+  OM_PERFDATA_OP(Notifications, inc(1));
 }
 
 
@@ -1792,9 +1787,7 @@ void ObjectMonitor::notifyAll(TRAPS) {
     INotify(THREAD);
   }
 
-  if (tally != 0 && ObjectMonitor::_sync_Notifications != NULL) {
-    ObjectMonitor::_sync_Notifications->inc(tally);
-  }
+  OM_PERFDATA_OP(Notifications, inc(tally));
 }
 
 // -----------------------------------------------------------------------------
@@ -1816,7 +1809,8 @@ void ObjectMonitor::notifyAll(TRAPS) {
 // (duration) or we can fix the count at approximately the duration of
 // a context switch and vary the frequency.   Of course we could also
 // vary both satisfying K == Frequency * Duration, where K is adaptive by monitor.
-// See http://j2se.east/~dice/PERSIST/040824-AdaptiveSpinning.html.
+// For a description of 'Adaptive spin-then-block mutual exclusion in
+// multi-threaded processing,' see U.S. Pat. No. 8046758.
 //
 // This implementation varies the duration "D", where D varies with
 // the success rate of recent spin attempts. (D is capped at approximately

@@ -80,7 +80,9 @@ jbyte CardTableRS::find_unused_youngergenP_card_value() {
         break;
       }
     }
-    if (!seen) return v;
+    if (!seen) {
+      return v;
+    }
   }
   ShouldNotReachHere();
   return 0;
@@ -502,7 +504,7 @@ void CardTableRS::verify_space(Space* s, HeapWord* gen_boundary) {
       //
       // The main point below is that the parallel card scanning code
       // deals correctly with these stale card values. There are two main
-      // cases to consider where we have a stale "younger gen" value and a
+      // cases to consider where we have a stale "young gen" value and a
       // "derivative" case to consider, where we have a stale
       // "cur_younger_gen_and_prev_non_clean" value, as will become
       // apparent in the case analysis below.
