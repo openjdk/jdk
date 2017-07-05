@@ -178,7 +178,7 @@ class SystemModuleFinder implements ModuleFinder {
         ModuleReference mref =
             new ModuleReference(md, uri, readerSupplier, hash);
 
-        // may need a reference to a patched module if -Xpatch specified
+        // may need a reference to a patched module if --patch-module specified
         mref = ModulePatcher.interposeIfNeeded(mref);
 
         return mref;

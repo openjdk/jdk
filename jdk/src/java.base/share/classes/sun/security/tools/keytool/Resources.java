@@ -127,6 +127,10 @@ public class Resources extends java.util.ListResourceBundle {
                 "key bit size"}, //-keysize
         {"keystore.name",
                 "keystore name"}, //-keystore
+        {"access.the.cacerts.keystore",
+                "access the cacerts keystore"}, // -cacerts
+        {"warning.cacerts.option",
+                "Warning: use -cacerts option to access cacerts keystore"},
         {"new.password",
                 "new password"}, //-new
         {"do.not.prompt",
@@ -194,6 +198,8 @@ public class Resources extends java.util.ListResourceBundle {
         {"Command.option.flag.needs.an.argument.", "Command option {0} needs an argument."},
         {"Warning.Different.store.and.key.passwords.not.supported.for.PKCS12.KeyStores.Ignoring.user.specified.command.value.",
                 "Warning:  Different store and key passwords not supported for PKCS12 KeyStores. Ignoring user-specified {0} value."},
+        {"the.keystore.or.storetype.option.cannot.be.used.with.the.cacerts.option",
+            "The -keystore or -storetype option cannot be used with the -cacerts option"},
         {".keystore.must.be.NONE.if.storetype.is.{0}",
                 "-keystore must be NONE if -storetype is {0}"},
         {"Too.many.retries.program.terminated",

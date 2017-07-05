@@ -460,7 +460,7 @@ public class Basic {
             "--no-manifest",
             "-C", barModInfo.toString(), "module-info.class")  // stuff in bar's info
             .assertSuccess();
-        jar("-p",
+        jar("-d",
             "--file=" + modularJar.toString())
             .assertSuccess()
             .resultChecker(r -> {
@@ -499,14 +499,14 @@ public class Basic {
             "--file=" + modularJar.toString(),
             "--main-class=" + FOO.mainClass,
             "--module-version=" + FOO.version,
-            "--modulepath=" + mp.toString(),
+            "--module-path=" + mp.toString(),
             "--hash-modules=" + "bar",
             "--no-manifest",
             "-C", modClasses.toString(), ".")
             .assertSuccess();
 
         java(mp, BAR.moduleName + "/" + BAR.mainClass,
-             "-XaddExports:java.base/jdk.internal.module=bar")
+             "--add-exports", "java.base/jdk.internal.module=bar")
             .assertSuccess()
             .resultChecker(r -> {
                 assertModuleData(r, BAR);
@@ -535,7 +535,7 @@ public class Basic {
             "--file=" + fooJar.toString(),
             "--main-class=" + FOO.mainClass,
             "--module-version=" + FOO.version,
-            "--modulepath=" + mp.toString(),
+            "-p", mp.toString(),  // test short-form
             "--hash-modules=" + "bar",
             "--no-manifest",
             "-C", fooClasses.toString(), ".").assertSuccess();
@@ -550,7 +550,7 @@ public class Basic {
             "-C", barClasses.toString(), ".").assertSuccess();
 
         java(mp, BAR.moduleName + "/" + BAR.mainClass,
-             "-XaddExports:java.base/jdk.internal.module=bar")
+             "--add-exports", "java.base/jdk.internal.module=bar")
             .assertFailure()
             .resultChecker(r -> {
                 // Expect similar output: "java.lang.module.ResolutionException: Hash
@@ -684,7 +684,7 @@ public class Basic {
             "-C", modClasses.toString(), ".")
             .assertSuccess();
 
-        for (String option : new String[]  {"--print-module-descriptor", "-p" }) {
+        for (String option : new String[]  {"--print-module-descriptor", "-d" }) {
             jar(option,
                 "--file=" + modularJar.toString())
                 .assertSuccess()
@@ -711,7 +711,7 @@ public class Basic {
             "-C", modClasses.toString(), ".")
             .assertSuccess();
 
-        for (String option : new String[]  {"--print-module-descriptor", "-p" }) {
+        for (String option : new String[]  {"--print-module-descriptor", "-d" }) {
             jarWithStdin(modularJar.toFile(),
                          option)
                          .assertSuccess()
@@ -815,10 +815,12 @@ public class Basic {
         }
         commands.add("-d");
         commands.add(dest.toString());
-        if (dest.toString().contains("bar"))
-            commands.add("-XaddExports:java.base/jdk.internal.module=bar");
+        if (dest.toString().contains("bar")) {
+            commands.add("--add-exports");
+            commands.add("java.base/jdk.internal.module=bar");
+        }
         if (modulePath != null) {
-            commands.add("-mp");
+            commands.add("--module-path");
             commands.add(modulePath.toString());
         }
         Stream.of(sourceFiles).map(Object::toString).forEach(x -> commands.add(x));
@@ -838,7 +840,7 @@ public class Basic {
             commands.addAll(Arrays.asList(JAVA_OPTIONS.split("\\s+", -1)));
         }
         Stream.of(args).forEach(x -> commands.add(x));
-        commands.add("-mp");
+        commands.add("--module-path");
         commands.add(modulePath.toString());
         commands.add("-m");
         commands.add(entryPoint);

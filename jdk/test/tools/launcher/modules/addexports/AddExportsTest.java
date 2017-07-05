@@ -27,7 +27,7 @@
  * @modules jdk.compiler
  * @build AddExportsTest CompilerUtils jdk.testlibrary.*
  * @run testng AddExportsTest
- * @summary Basic tests for java -XaddExports
+ * @summary Basic tests for java --add-exports
  */
 
 import java.nio.file.Path;
@@ -71,7 +71,7 @@ public class AddExportsTest {
         boolean compiled = CompilerUtils.compile(
                 SRC_DIR.resolve(TEST1_MODULE),
                 MODS_DIR.resolve(TEST1_MODULE),
-                "-XaddExports:java.base/jdk.internal.misc=m1");
+                "--add-exports", "java.base/jdk.internal.misc=m1");
         assertTrue(compiled, "module " + TEST1_MODULE + " did not compile");
 
         // javac -d upgrademods/java.transaction src/java.transaction/**
@@ -80,12 +80,12 @@ public class AddExportsTest {
                 UPGRADE_MODS_DIRS.resolve("java.transaction"));
         assertTrue(compiled, "module java.transaction did not compile");
 
-        // javac -upgrademodulepath upgrademods -d mods/m2 src/m2/**
+        // javac --upgrade-module-path upgrademods -d mods/m2 src/m2/**
         compiled = CompilerUtils.compile(
                 SRC_DIR.resolve(TEST2_MODULE),
                 MODS_DIR.resolve(TEST2_MODULE),
-                "-upgrademodulepath", UPGRADE_MODS_DIRS.toString(),
-                "-XaddExports:java.transaction/javax.transaction.internal=m2");
+                "--upgrade-module-path", UPGRADE_MODS_DIRS.toString(),
+                "--add-exports", "java.transaction/javax.transaction.internal=m2");
         assertTrue(compiled, "module " + TEST2_MODULE + " did not compile");
 
         // javac -d mods/m3 src/m3/**
@@ -107,7 +107,7 @@ public class AddExportsTest {
     public void testSanity() throws Exception {
 
         int exitValue
-            =  executeTestJava("-XaddExports:java.base/jdk.internal.reflect=ALL-UNNAMED",
+            =  executeTestJava("--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED",
                                "-version")
                 .outputTo(System.out)
                 .errorTo(System.out)
@@ -122,12 +122,12 @@ public class AddExportsTest {
      */
     public void testUnnamedModule() throws Exception {
 
-        // java -XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED \
+        // java --add-exports java.base/jdk.internal.misc=ALL-UNNAMED \
         //      -cp mods/$TESTMODULE jdk.test.UsesUnsafe
 
         String classpath = MODS_DIR.resolve(TEST1_MODULE).toString();
         int exitValue
-            = executeTestJava("-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED",
+            = executeTestJava("--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
                               "-cp", classpath,
                               TEST1_MAIN_CLASS)
                 .outputTo(System.out)
@@ -143,13 +143,13 @@ public class AddExportsTest {
      */
     public void testNamedModule() throws Exception {
 
-        //  java -XaddExports:java.base/jdk.internal.misc=test \
-        //       -mp mods -m $TESTMODULE/$MAIN_CLASS
+        //  java --add-exports java.base/jdk.internal.misc=test \
+        //       --module-path mods -m $TESTMODULE/$MAIN_CLASS
 
         String mid = TEST1_MODULE + "/" + TEST1_MAIN_CLASS;
         int exitValue =
-            executeTestJava("-XaddExports:java.base/jdk.internal.misc=" + TEST1_MODULE,
-                            "-mp", MODS_DIR.toString(),
+            executeTestJava("--add-exports", "java.base/jdk.internal.misc=" + TEST1_MODULE,
+                            "--module-path", MODS_DIR.toString(),
                             "-m", mid)
                 .outputTo(System.out)
                 .errorTo(System.out)
@@ -160,17 +160,17 @@ public class AddExportsTest {
 
 
     /**
-     * Test -XaddExports with upgraded module
+     * Test --add-exports with upgraded module
      */
     public void testWithUpgradedModule() throws Exception {
 
-        // java -XaddExports:java.transaction/javax.transaction.internal=m2
-        //      -upgrademodulepath upgrademods -mp mods -m ...
+        // java --add-exports java.transaction/javax.transaction.internal=m2
+        //      --upgrade-module-path upgrademods --module-path mods -m ...
         String mid = TEST2_MODULE + "/" + TEST2_MAIN_CLASS;
         int exitValue = executeTestJava(
-                "-XaddExports:java.transaction/javax.transaction.internal=m2",
-                "-upgrademodulepath", UPGRADE_MODS_DIRS.toString(),
-                "-mp", MODS_DIR.toString(),
+                "--add-exports", "java.transaction/javax.transaction.internal=m2",
+                "--upgrade-module-path", UPGRADE_MODS_DIRS.toString(),
+                "--module-path", MODS_DIR.toString(),
                 "-m", mid)
                 .outputTo(System.out)
                 .errorTo(System.out)
@@ -181,17 +181,17 @@ public class AddExportsTest {
 
 
     /**
-     * Test -XaddExports with module that is added to the set of root modules
-     * with -addmods.
+     * Test --add-exports with module that is added to the set of root modules
+     * with --add-modules.
      */
     public void testWithAddMods() throws Exception {
 
-        // java -XaddExports:m4/jdk.test4=m3 -mp mods -m ...
+        // java --add-exports m4/jdk.test4=m3 --module-path mods -m ...
         String mid = TEST3_MODULE + "/" + TEST3_MAIN_CLASS;
         int exitValue = executeTestJava(
-                "-XaddExports:m4/jdk.test4=m3",
-                "-mp", MODS_DIR.toString(),
-                "-addmods", TEST4_MODULE,
+                "--add-exports", "m4/jdk.test4=m3",
+                "--module-path", MODS_DIR.toString(),
+                "--add-modules", TEST4_MODULE,
                 "-m", mid)
                 .outputTo(System.out)
                 .errorTo(System.out)
@@ -202,13 +202,13 @@ public class AddExportsTest {
 
 
     /**
-     * -XaddExports can only be specified once
+     * --add-exports can only be specified once
      */
     public void testWithDuplicateOption() throws Exception {
 
         int exitValue
-            =  executeTestJava("-XaddExports:java.base/jdk.internal.reflect=ALL-UNNAMED",
-                               "-XaddExports:java.base/jdk.internal.reflect=ALL-UNNAMED",
+            =  executeTestJava("--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED",
+                               "--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED",
                                "-version")
                 .outputTo(System.out)
                 .errorTo(System.out)
@@ -220,14 +220,14 @@ public class AddExportsTest {
 
 
     /**
-     * Exercise -XaddExports with bad values
+     * Exercise --add-exports with bad values
      */
     @Test(dataProvider = "badvalues")
     public void testWithBadValue(String value, String ignore) throws Exception {
 
-        //  -XaddExports:$VALUE -version
+        //  --add-exports $VALUE -version
         int exitValue =
-            executeTestJava("-XaddExports:" + value,
+            executeTestJava("--add-exports", value,
                             "-version")
                 .outputTo(System.out)
                 .errorTo(System.out)

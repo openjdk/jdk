@@ -46,12 +46,12 @@ requires.properties= \
     vm.gc.Parallel \
     vm.gc.ConcMarkSweep
 
-# Tests using jtreg 4.2 b02 features
-requiredVersion=4.2 b02
+# Tests using jtreg 4.2 b03 features
+requiredVersion=4.2 b03
 
 # Path to libraries in the topmost test directory. This is needed so @library
 # does not need ../../ notation to reach them
 external.lib.roots = ../../
 
-# Use new form of -Xpatch
-useNewXpatch=true
+# Use new module options
+useNewOptions=true

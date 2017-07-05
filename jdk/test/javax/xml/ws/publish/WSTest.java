@@ -26,8 +26,7 @@
  * @bug 8146086
  * @summary Publishing two webservices on same port fails with "java.net.BindException: Address already in use"
  * @modules java.xml.ws
- * @compile -addmods java.xml.ws WSTest.java
- * @run main/othervm -addmods java.xml.ws WSTest
+ * @run main/othervm WSTest
  */
 import javax.jws.WebMethod;
 import javax.jws.WebService;

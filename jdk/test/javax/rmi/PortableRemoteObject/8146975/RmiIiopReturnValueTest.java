@@ -25,18 +25,19 @@
  * @test
  * @bug 8146975
  * @summary test RMI-IIOP with value object return
+ * @modules java.corba
  * @library /lib/testlibrary
  * @build jdk.testlibrary.*
- * @compile -addmods java.corba Test.java Test3.java Test4.java
+ * @compile Test.java Test3.java Test4.java
  *    HelloInterface.java HelloServer.java
  *    HelloClient.java HelloImpl.java _HelloImpl_Tie.java _HelloInterface_Stub.java
  *    RmiIiopReturnValueTest.java
- * @run main/othervm -addmods java.corba
+ * @run main/othervm
  *    -Djava.naming.provider.url=iiop://localhost:5050
  *    -Djava.naming.factory.initial=com.sun.jndi.cosnaming.CNCtxFactory
  *    RmiIiopReturnValueTest -port 5049
  * @run main/othervm/secure=java.lang.SecurityManager/policy=jtreg.test.policy
- *    -addmods java.corba -Djava.naming.provider.url=iiop://localhost:5050
+ *    -Djava.naming.provider.url=iiop://localhost:5050
  *    -Djava.naming.factory.initial=com.sun.jndi.cosnaming.CNCtxFactory
  *    RmiIiopReturnValueTest -port 5049
  */
@@ -102,12 +103,12 @@ public class RmiIiopReturnValueTest {
 
     static void startRmiIiopServer() throws Exception {
         System.out.println("\nStarting RmiIiopServer");
-        // java -addmods java.corba -cp .
+        // java --add-modules java.corba -cp .
         // -Djava.naming.factory.initial=com.sun.jndi.cosnaming.CNCtxFactory
         // -Djava.naming.provider.url=iiop://localhost:5050 HelloServer -port 5049
         List<String> commands = new ArrayList<>();
         commands.add(RmiIiopReturnValueTest.JAVA);
-        commands.add("-addmods");
+        commands.add("--add-modules");
         commands.add("java.corba");
         commands.add("-Djava.naming.factory.initial=com.sun.jndi.cosnaming.CNCtxFactory");
         commands.add("-Djava.naming.provider.url=iiop://localhost:5050");

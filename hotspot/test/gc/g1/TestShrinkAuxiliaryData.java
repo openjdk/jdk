@@ -53,7 +53,7 @@ public class TestShrinkAuxiliaryData {
         "-Xlog:gc=debug",
         "-XX:+UnlockDiagnosticVMOptions",
         "-XX:+WhiteBoxAPI",
-        "-XaddExports:java.base/jdk.internal.misc=ALL-UNNAMED",
+        "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED",
         "-Xbootclasspath/a:.",
     };
 

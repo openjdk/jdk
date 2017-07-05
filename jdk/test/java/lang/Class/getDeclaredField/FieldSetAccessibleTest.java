@@ -63,8 +63,8 @@ import jdk.internal.module.Modules;
  *          loads all the classes in the BCL, get their declared fields,
  *          and call setAccessible(false) followed by setAccessible(true);
  * @modules java.base/jdk.internal.module
- * @run main/othervm -Djdk.launcher.addmods=ALL-SYSTEM FieldSetAccessibleTest UNSECURE
- * @run main/othervm -Djdk.launcher.addmods=ALL-SYSTEM FieldSetAccessibleTest SECURE
+ * @run main/othervm --add-modules=ALL-SYSTEM FieldSetAccessibleTest UNSECURE
+ * @run main/othervm --add-modules=ALL-SYSTEM FieldSetAccessibleTest SECURE
  *
  * @author danielfuchs
  */

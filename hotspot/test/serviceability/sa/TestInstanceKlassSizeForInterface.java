@@ -107,9 +107,10 @@ public class TestInstanceKlassSizeForInterface {
         // Grab the pid from the current java process and pass it
         String[] toolArgs = {
             "-XX:+UnlockDiagnosticVMOptions",
-            "-XaddExports:jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
-            "-XaddExports:jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED",
-            "-XaddExports:jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED",
+            "--add-modules=jdk.hotspot.agent",
+            "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
+            "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED",
+            "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED",
             "TestInstanceKlassSizeForInterface",
             Long.toString(ProcessTools.getProcessId())
         };
