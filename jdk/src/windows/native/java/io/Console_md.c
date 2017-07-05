@@ -38,12 +38,10 @@ Java_java_io_Console_istty(JNIEnv *env, jclass cls)
 {
     if (hStdIn == INVALID_HANDLE_VALUE &&
         (hStdIn = GetStdHandle(STD_INPUT_HANDLE)) == INVALID_HANDLE_VALUE) {
-        JNU_ThrowIOExceptionWithLastError(env, "Open Console input failed");
         return JNI_FALSE;
     }
     if (hStdOut == INVALID_HANDLE_VALUE &&
         (hStdOut = GetStdHandle(STD_OUTPUT_HANDLE)) == INVALID_HANDLE_VALUE) {
-        JNU_ThrowIOExceptionWithLastError(env, "Open Console output failed");
         return JNI_FALSE;
     }
     if (GetFileType(hStdIn) != FILE_TYPE_CHAR ||

@@ -1021,7 +1021,6 @@ class StubGenerator: public StubCodeGenerator {
     __ load_klass(rax, rax);  // get klass
     __ testptr(rax, rax);
     __ jcc(Assembler::zero, error); // if klass is NULL it is broken
-    // TODO: Future assert that klass is lower 4g memory for UseCompressedKlassPointers
 
     // return if everything seems ok
     __ bind(exit);

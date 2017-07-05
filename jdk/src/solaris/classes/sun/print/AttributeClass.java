@@ -24,6 +24,7 @@
  */
 package sun.print;
 
+import java.util.Objects;
 import java.io.ByteArrayInputStream;
 
 public class AttributeClass {
@@ -248,11 +249,24 @@ public class AttributeClass {
         return myName;
     }
 
+    @Override
     public boolean equals(Object obj) {
-        return
-            obj != null &&
-            obj instanceof AttributeClass &&
-            obj.toString().equals (((AttributeClass) obj).toString());
+        if (!(obj instanceof AttributeClass)) {
+            return false;
+        }
+        if (this == obj) {
+            return true;
+        }
+
+        AttributeClass acObj = (AttributeClass) obj;
+        return myType == acObj.getType() &&
+               Objects.equals(myName, acObj.getName()) &&
+               Objects.equals(myValue, acObj.getObjectValue());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(myType, myName, myValue);
     }
 
     public String toString() {

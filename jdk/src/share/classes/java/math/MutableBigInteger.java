@@ -1242,6 +1242,9 @@ class MutableBigInteger {
         int r = intLen;
         int s = b.intLen;
 
+        // Clear the quotient
+        quotient.offset = quotient.intLen = 0;
+
         if (r < s) {
             return this;
         } else {
@@ -1276,7 +1279,6 @@ class MutableBigInteger {
             // do schoolbook division on blocks, dividing 2-block numbers by 1-block numbers
             MutableBigInteger qi = new MutableBigInteger();
             MutableBigInteger ri;
-            quotient.offset = quotient.intLen = 0;
             for (int i=t-2; i > 0; i--) {
                 // step 8a: compute (qi,ri) such that z=b*qi+ri
                 ri = z.divide2n1n(bShifted, qi);

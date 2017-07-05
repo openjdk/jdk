@@ -139,8 +139,7 @@ class DatagramPacket {
      *
      * @since 1.4
      */
-    public DatagramPacket(byte buf[], int offset, int length,
-                          SocketAddress address) throws SocketException {
+    public DatagramPacket(byte buf[], int offset, int length, SocketAddress address) {
         setData(buf, offset, length);
         setSocketAddress(address);
     }
@@ -175,8 +174,7 @@ class DatagramPacket {
      * @since 1.4
      * @see     java.net.InetAddress
      */
-    public DatagramPacket(byte buf[], int length,
-                          SocketAddress address) throws SocketException {
+    public DatagramPacket(byte buf[], int length, SocketAddress address) {
         this(buf, 0, length, address);
     }
 

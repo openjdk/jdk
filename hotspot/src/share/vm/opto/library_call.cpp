@@ -213,6 +213,7 @@ class LibraryCallKit : public GraphKit {
   void insert_pre_barrier(Node* base_oop, Node* offset, Node* pre_val, bool need_mem_bar);
   bool inline_unsafe_access(bool is_native_ptr, bool is_store, BasicType type, bool is_volatile);
   bool inline_unsafe_prefetch(bool is_native_ptr, bool is_store, bool is_static);
+  static bool klass_needs_init_guard(Node* kls);
   bool inline_unsafe_allocate();
   bool inline_unsafe_copyMemory();
   bool inline_native_currentThread();
@@ -2892,8 +2893,21 @@ bool LibraryCallKit::inline_unsafe_fence(vmIntrinsics::ID id) {
   }
 }
 
+bool LibraryCallKit::klass_needs_init_guard(Node* kls) {
+  if (!kls->is_Con()) {
+    return true;
+  }
+  const TypeKlassPtr* klsptr = kls->bottom_type()->isa_klassptr();
+  if (klsptr == NULL) {
+    return true;
+  }
+  ciInstanceKlass* ik = klsptr->klass()->as_instance_klass();
+  // don't need a guard for a klass that is already initialized
+  return !ik->is_initialized();
+}
+
 //----------------------------inline_unsafe_allocate---------------------------
-// public native Object sun.mics.Unsafe.allocateInstance(Class<?> cls);
+// public native Object sun.misc.Unsafe.allocateInstance(Class<?> cls);
 bool LibraryCallKit::inline_unsafe_allocate() {
   if (callee()->is_static())  return false;  // caller must have the capability!
 
@@ -2905,16 +2919,19 @@ bool LibraryCallKit::inline_unsafe_allocate() {
   kls = null_check(kls);
   if (stopped())  return true;  // argument was like int.class
 
-  // Note:  The argument might still be an illegal value like
-  // Serializable.class or Object[].class.   The runtime will handle it.
-  // But we must make an explicit check for initialization.
-  Node* insp = basic_plus_adr(kls, in_bytes(InstanceKlass::init_state_offset()));
-  // Use T_BOOLEAN for InstanceKlass::_init_state so the compiler
-  // can generate code to load it as unsigned byte.
-  Node* inst = make_load(NULL, insp, TypeInt::UBYTE, T_BOOLEAN);
-  Node* bits = intcon(InstanceKlass::fully_initialized);
-  Node* test = _gvn.transform(new (C) SubINode(inst, bits));
-  // The 'test' is non-zero if we need to take a slow path.
+  Node* test = NULL;
+  if (LibraryCallKit::klass_needs_init_guard(kls)) {
+    // Note:  The argument might still be an illegal value like
+    // Serializable.class or Object[].class.   The runtime will handle it.
+    // But we must make an explicit check for initialization.
+    Node* insp = basic_plus_adr(kls, in_bytes(InstanceKlass::init_state_offset()));
+    // Use T_BOOLEAN for InstanceKlass::_init_state so the compiler
+    // can generate code to load it as unsigned byte.
+    Node* inst = make_load(NULL, insp, TypeInt::UBYTE, T_BOOLEAN);
+    Node* bits = intcon(InstanceKlass::fully_initialized);
+    test = _gvn.transform(new (C) SubINode(inst, bits));
+    // The 'test' is non-zero if we need to take a slow path.
+  }
 
   Node* obj = new_instance(kls, test);
   set_result(obj);

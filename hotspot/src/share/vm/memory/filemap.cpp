@@ -362,15 +362,12 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
 ReservedSpace FileMapInfo::reserve_shared_memory() {
   struct FileMapInfo::FileMapHeader::space_info* si = &_header._space[0];
   char* requested_addr = si->_base;
-  size_t alignment = os::vm_allocation_granularity();
 
-  size_t size = align_size_up(SharedReadOnlySize + SharedReadWriteSize +
-                              SharedMiscDataSize + SharedMiscCodeSize,
-                              alignment);
+  size_t size = FileMapInfo::shared_spaces_size();
 
   // Reserve the space first, then map otherwise map will go right over some
   // other reserved memory (like the code cache).
-  ReservedSpace rs(size, alignment, false, requested_addr);
+  ReservedSpace rs(size, os::vm_allocation_granularity(), false, requested_addr);
   if (!rs.is_reserved()) {
     fail_continue(err_msg("Unable to reserve shared space at required address " INTPTR_FORMAT, requested_addr));
     return rs;
@@ -557,5 +554,21 @@ void FileMapInfo::print_shared_spaces() {
     gclog_or_tty->print("  %s " INTPTR_FORMAT "-" INTPTR_FORMAT,
                         shared_region_name[i],
                         si->_base, si->_base + si->_used);
+  }
+}
+
+// Unmap mapped regions of shared space.
+void FileMapInfo::stop_sharing_and_unmap(const char* msg) {
+  FileMapInfo *map_info = FileMapInfo::current_info();
+  if (map_info) {
+    map_info->fail_continue(msg);
+    for (int i = 0; i < MetaspaceShared::n_regions; i++) {
+      if (map_info->_header._space[i]._base != NULL) {
+        map_info->unmap_region(i);
+        map_info->_header._space[i]._base = NULL;
+      }
+    }
+  } else if (DumpSharedSpaces) {
+    fail_stop(msg, NULL);
   }
 }

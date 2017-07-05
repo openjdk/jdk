@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,10 @@
 // of B, A's representation is a prefix of B's representation.
 
 typedef juint narrowOop; // Offset instead of address for an oop within a java object
+
+// If compressed klass pointers then use narrowKlass.
+typedef juint  narrowKlass;
+
 typedef void* OopOrNarrowOopStar;
 typedef class   markOopDesc*                markOop;
 

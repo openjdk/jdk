@@ -88,6 +88,6 @@ final class ReflectionCheckLinker implements TypeBasedGuardingDynamicLinker{
     }
 
     private static void checkReflectionPermission(final SecurityManager sm) {
-        sm.checkPermission(new RuntimePermission("nashorn.JavaReflection"));
+        sm.checkPermission(new RuntimePermission(Context.NASHORN_JAVA_REFLECTION));
     }
 }

@@ -37,6 +37,7 @@ class HeapRegion;
 class HeapRegionRemSetIterator;
 class PerRegionTable;
 class SparsePRT;
+class nmethod;
 
 // Essentially a wrapper around SparsePRTCleanupTask. See
 // sparsePRT.hpp for more details.
@@ -191,6 +192,10 @@ private:
   G1BlockOffsetSharedArray* _bosa;
   G1BlockOffsetSharedArray* bosa() const { return _bosa; }
 
+  // A list of code blobs (nmethods) whose code contains pointers into
+  // the region that owns this RSet.
+  GrowableArray<nmethod*>* _strong_code_roots_list;
+
   OtherRegionsTable _other_regions;
 
   enum ParIterState { Unclaimed, Claimed, Complete };
@@ -282,11 +287,13 @@ public:
   }
 
   // The actual # of bytes this hr_remset takes up.
+  // Note also includes the strong code root set.
   size_t mem_size() {
     return _other_regions.mem_size()
       // This correction is necessary because the above includes the second
       // part.
-      + sizeof(this) - sizeof(OtherRegionsTable);
+      + (sizeof(this) - sizeof(OtherRegionsTable))
+      + strong_code_roots_mem_size();
   }
 
   // Returns the memory occupancy of all static data structures associated
@@ -304,6 +311,37 @@ public:
   bool contains_reference(OopOrNarrowOopStar from) const {
     return _other_regions.contains_reference(from);
   }
+
+  // Routines for managing the list of code roots that point into
+  // the heap region that owns this RSet.
+  void add_strong_code_root(nmethod* nm);
+  void remove_strong_code_root(nmethod* nm);
+
+  // During a collection, migrate the successfully evacuated strong
+  // code roots that referenced into the region that owns this RSet
+  // to the RSets of the new regions that they now point into.
+  // Unsuccessfully evacuated code roots are not migrated.
+  void migrate_strong_code_roots();
+
+  // Applies blk->do_code_blob() to each of the entries in
+  // the strong code roots list
+  void strong_code_roots_do(CodeBlobClosure* blk) const;
+
+  // Returns the number of elements in the strong code roots list
+  int strong_code_roots_list_length() {
+    return _strong_code_roots_list->length();
+  }
+
+  // Returns true if the strong code roots contains the given
+  // nmethod.
+  bool strong_code_roots_list_contains(nmethod* nm) {
+    return _strong_code_roots_list->contains(nm);
+  }
+
+  // Returns the amount of memory, in bytes, currently
+  // consumed by the strong code roots.
+  size_t strong_code_roots_mem_size();
+
   void print() const;
 
   // Called during a stop-world phase to perform any deferred cleanups.
