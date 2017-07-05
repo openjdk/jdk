@@ -30,6 +30,15 @@
  */
 
 /*
+ * This source code is provided to illustrate the usage of a given feature
+ * or technique and has been deliberately simplified. Additional steps
+ * required for a production-quality application, such as security checks,
+ * input validation and proper error handling, might not be present in
+ * this sample code.
+ */
+
+
+/*
  * (C) Copyright IBM Corp. 2003, All Rights Reserved.
  * This technology is protected by multiple US and International
  * patents. This notice and attribution to IBM may not be removed.

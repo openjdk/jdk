@@ -404,13 +404,13 @@ void CollectedHeap::resize_all_tlabs() {
 
 void CollectedHeap::pre_full_gc_dump() {
   if (HeapDumpBeforeFullGC) {
-    TraceTime tt("Heap Dump: ", PrintGCDetails, false, gclog_or_tty);
+    TraceTime tt("Heap Dump (before full gc): ", PrintGCDetails, false, gclog_or_tty);
     // We are doing a "major" collection and a heap dump before
     // major collection has been requested.
     HeapDumper::dump_heap();
   }
   if (PrintClassHistogramBeforeFullGC) {
-    TraceTime tt("Class Histogram: ", PrintGCDetails, true, gclog_or_tty);
+    TraceTime tt("Class Histogram (before full gc): ", PrintGCDetails, true, gclog_or_tty);
     VM_GC_HeapInspection inspector(gclog_or_tty, false /* ! full gc */, false /* ! prologue */);
     inspector.doit();
   }
@@ -418,11 +418,11 @@ void CollectedHeap::pre_full_gc_dump() {
 
 void CollectedHeap::post_full_gc_dump() {
   if (HeapDumpAfterFullGC) {
-    TraceTime tt("Heap Dump", PrintGCDetails, false, gclog_or_tty);
+    TraceTime tt("Heap Dump (after full gc): ", PrintGCDetails, false, gclog_or_tty);
     HeapDumper::dump_heap();
   }
   if (PrintClassHistogramAfterFullGC) {
-    TraceTime tt("Class Histogram", PrintGCDetails, true, gclog_or_tty);
+    TraceTime tt("Class Histogram (after full gc): ", PrintGCDetails, true, gclog_or_tty);
     VM_GC_HeapInspection inspector(gclog_or_tty, false /* ! full gc */, false /* ! prologue */);
     inspector.doit();
   }

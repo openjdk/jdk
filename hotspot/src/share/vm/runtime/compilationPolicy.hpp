@@ -59,6 +59,8 @@ public:
   // Profiling
   elapsedTimer* accumulated_time() { return &_accumulated_time; }
   void print_time() PRODUCT_RETURN;
+  // Return initial compile level that is used with Xcomp
+  virtual CompLevel initial_compile_level() = 0;
   virtual int compiler_count(CompLevel comp_level) = 0;
   // main notification entry, return a pointer to an nmethod if the OSR is required,
   // returns NULL otherwise.
@@ -94,6 +96,7 @@ protected:
   void reset_counter_for_back_branch_event(methodHandle method);
 public:
   NonTieredCompPolicy() : _compiler_count(0) { }
+  virtual CompLevel initial_compile_level() { return CompLevel_initial_compile; }
   virtual int compiler_count(CompLevel comp_level);
   virtual void do_safepoint_work();
   virtual void reprofile(ScopeDesc* trap_scope, bool is_osr);

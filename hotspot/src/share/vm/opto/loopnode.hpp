@@ -877,19 +877,13 @@ public:
                                    Deoptimization::DeoptReason reason,
                                    PhaseIdealLoop* loop_phase,
                                    PhaseIterGVN* igvn);
-  static ProjNode*  move_predicate(ProjNode* predicate_proj, Node* new_entry,
-                                   Deoptimization::DeoptReason reason,
-                                   PhaseIdealLoop* loop_phase,
-                                   PhaseIterGVN* igvn);
+
   static Node* clone_loop_predicates(Node* old_entry, Node* new_entry,
-                                         bool move_predicates,
                                          bool clone_limit_check,
                                          PhaseIdealLoop* loop_phase,
                                          PhaseIterGVN* igvn);
   Node* clone_loop_predicates(Node* old_entry, Node* new_entry, bool clone_limit_check);
-  Node*  move_loop_predicates(Node* old_entry, Node* new_entry, bool clone_limit_check);
 
-  void eliminate_loop_predicates(Node* entry);
   static Node* skip_loop_predicates(Node* entry);
 
   // Find a good location to insert a predicate
@@ -1009,7 +1003,7 @@ public:
   Node *has_local_phi_input( Node *n );
   // Mark an IfNode as being dominated by a prior test,
   // without actually altering the CFG (and hence IDOM info).
-  void dominated_by( Node *prevdom, Node *iff, bool flip = false );
+  void dominated_by( Node *prevdom, Node *iff, bool flip = false, bool exclude_loop_predicate = false );
 
   // Split Node 'n' through merge point
   Node *split_thru_region( Node *n, Node *region );

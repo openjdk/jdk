@@ -689,6 +689,7 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
 Node* PhaseIdealLoop::exact_limit( IdealLoopTree *loop ) {
   assert(loop->_head->is_CountedLoop(), "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
+  assert(cl->is_valid_counted_loop(), "");
 
   if (!LoopLimitCheck || ABS(cl->stride_con()) == 1 ||
       cl->limit()->Opcode() == Op_LoopLimit) {
@@ -1167,9 +1168,8 @@ void IdealLoopTree::split_outer_loop( PhaseIdealLoop *phase ) {
   outer = igvn.register_new_node_with_optimizer(outer, _head);
   phase->set_created_loop_node();
 
-  Node* pred = phase->clone_loop_predicates(ctl, outer, true);
   // Outermost loop falls into '_head' loop
-  _head->set_req(LoopNode::EntryControl, pred);
+  _head->set_req(LoopNode::EntryControl, outer);
   _head->del_req(outer_idx);
   // Split all the Phis up between '_head' loop and 'outer' loop.
   for (DUIterator_Fast jmax, j = _head->fast_outs(jmax); j < jmax; j++) {
@@ -1609,14 +1609,13 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   assert(loop->_head->is_CountedLoop(), "");
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
+  if (!cl->is_valid_counted_loop())
+    return;         // skip malformed counted loop
   Node *incr = cl->incr();
   if (incr == NULL)
     return;         // Dead loop?
   Node *init = cl->init_trip();
   Node *phi  = cl->phi();
-  // protect against stride not being a constant
-  if (!cl->stride_is_con())
-    return;
   int stride_con = cl->stride_con();
 
   PhaseGVN *gvn = &_igvn;

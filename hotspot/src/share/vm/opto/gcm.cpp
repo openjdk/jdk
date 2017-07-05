@@ -1137,7 +1137,7 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_List &stack) {
 
     // No uses, just terminate
     if (self->outcnt() == 0) {
-      assert(self->Opcode() == Op_MachProj, "sanity");
+      assert(self->is_MachProj(), "sanity");
       continue;                   // Must be a dead machine projection
     }
 
