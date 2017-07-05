@@ -356,8 +356,7 @@ void DebugInformationRecorder::end_scopes(int pc_offset, bool is_safepoint) {
     // search forward until it finds last.
     // In addition, it does not matter if the last PcDesc
     // is for a safepoint or not.
-    if (_prev_safepoint_pc < prev->pc_offset() &&
-        prev->scope_decode_offset() == last->scope_decode_offset()) {
+    if (_prev_safepoint_pc < prev->pc_offset() && prev->is_same_info(last)) {
       assert(prev == last-1, "sane");
       prev->set_pc_offset(pc_offset);
       _pcs_length -= 1;

@@ -104,11 +104,11 @@ class SolarisAclFileAttributeView
             int uid;
             if (user.isSpecial()) {
                 uid = -1;
-                if (who.getName().equals(UnixUserPrincipals.SPECIAL_OWNER.getName()))
+                if (who == UnixUserPrincipals.SPECIAL_OWNER)
                     flags |= ACE_OWNER;
-                else if (who.getName().equals(UnixUserPrincipals.SPECIAL_GROUP.getName()))
-                    flags |= ACE_GROUP;
-                else if (who.getName().equals(UnixUserPrincipals.SPECIAL_EVERYONE.getName()))
+                else if (who == UnixUserPrincipals.SPECIAL_GROUP)
+                    flags |= (ACE_GROUP | ACE_IDENTIFIER_GROUP);
+                else if (who == UnixUserPrincipals.SPECIAL_EVERYONE)
                     flags |= ACE_EVERYONE;
                 else
                     throw new AssertionError("Unable to map special identifier");
@@ -281,7 +281,7 @@ class SolarisAclFileAttributeView
                 aceFlags.add(AclEntryFlag.DIRECTORY_INHERIT);
             if ((flags & ACE_NO_PROPAGATE_INHERIT_ACE) > 0)
                 aceFlags.add(AclEntryFlag.NO_PROPAGATE_INHERIT);
-            if ((flags & ACE_INHERIT_ONLY_ACE ) > 0)
+            if ((flags & ACE_INHERIT_ONLY_ACE) > 0)
                 aceFlags.add(AclEntryFlag.INHERIT_ONLY);
 
             // build the ACL entry and add it to the list

@@ -99,6 +99,11 @@ inline void Assembler::flush( Register s1, int simm13a) { emit_data( op(arith_op
 inline void Assembler::jmpl( Register s1, Register s2, Register d                          ) { emit_long( op(arith_op) | rd(d) | op3(jmpl_op3) | rs1(s1) | rs2(s2));  has_delay_slot(); }
 inline void Assembler::jmpl( Register s1, int simm13a, Register d, RelocationHolder const& rspec ) { emit_data( op(arith_op) | rd(d) | op3(jmpl_op3) | rs1(s1) | immed(true) | simm(simm13a, 13), rspec);  has_delay_slot(); }
 
+inline void Assembler::ldf(FloatRegisterImpl::Width w, Register s1, RegisterOrConstant s2, FloatRegister d) {
+  if (s2.is_register()) ldf(w, s1, s2.as_register(), d);
+  else                  ldf(w, s1, s2.as_constant(), d);
+}
+
 inline void Assembler::ldf(FloatRegisterImpl::Width w, Register s1, Register s2, FloatRegister d) { emit_long( op(ldst_op) | fd(d, w) | alt_op3(ldf_op3, w) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::ldf(FloatRegisterImpl::Width w, Register s1, int simm13a, FloatRegister d, RelocationHolder const& rspec) { emit_data( op(ldst_op) | fd(d, w) | alt_op3(ldf_op3, w) | rs1(s1) | immed(true) | simm(simm13a, 13), rspec); }
 
@@ -224,6 +229,11 @@ inline void Assembler::sethi( int imm22a, Register d, RelocationHolder const& rs
 
   // pp 222
 
+inline void Assembler::stf(    FloatRegisterImpl::Width w, FloatRegister d, Register s1, RegisterOrConstant s2) {
+  if (s2.is_register()) stf(w, d, s1, s2.as_register());
+  else                  stf(w, d, s1, s2.as_constant());
+}
+
 inline void Assembler::stf(    FloatRegisterImpl::Width w, FloatRegister d, Register s1, Register s2) { emit_long( op(ldst_op) | fd(d, w) | alt_op3(stf_op3, w) | rs1(s1) | rs2(s2) ); }
 inline void Assembler::stf(    FloatRegisterImpl::Width w, FloatRegister d, Register s1, int simm13a) { emit_data( op(ldst_op) | fd(d, w) | alt_op3(stf_op3, w) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
@@ -284,6 +294,7 @@ inline void Assembler::stx(Register d, const Address& a, int offset) {
 
 inline void Assembler::stb(Register d, Register s1, RegisterOrConstant s2) { stb(d, Address(s1, s2)); }
 inline void Assembler::sth(Register d, Register s1, RegisterOrConstant s2) { sth(d, Address(s1, s2)); }
+inline void Assembler::stw(Register d, Register s1, RegisterOrConstant s2) { stw(d, Address(s1, s2)); }
 inline void Assembler::stx(Register d, Register s1, RegisterOrConstant s2) { stx(d, Address(s1, s2)); }
 inline void Assembler::std(Register d, Register s1, RegisterOrConstant s2) { std(d, Address(s1, s2)); }
 inline void Assembler::st( Register d, Register s1, RegisterOrConstant s2) { st( d, Address(s1, s2)); }

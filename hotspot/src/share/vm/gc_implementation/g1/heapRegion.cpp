@@ -722,12 +722,13 @@ void HeapRegion::print_on(outputStream* st) const {
     st->print(" F");
   else
     st->print("  ");
-  st->print(" %d", _gc_time_stamp);
+  st->print(" %5d", _gc_time_stamp);
   G1OffsetTableContigSpace::print_on(st);
 }
 
 void HeapRegion::verify(bool allow_dirty) const {
-  verify(allow_dirty, /* use_prev_marking */ true);
+  bool dummy = false;
+  verify(allow_dirty, /* use_prev_marking */ true, /* failures */ &dummy);
 }
 
 #define OBJ_SAMPLE_INTERVAL 0
@@ -736,8 +737,11 @@ void HeapRegion::verify(bool allow_dirty) const {
 // This really ought to be commoned up into OffsetTableContigSpace somehow.
 // We would need a mechanism to make that code skip dead objects.
 
-void HeapRegion::verify(bool allow_dirty, bool use_prev_marking) const {
+void HeapRegion::verify(bool allow_dirty,
+                        bool use_prev_marking,
+                        bool* failures) const {
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
+  *failures = false;
   HeapWord* p = bottom();
   HeapWord* prev_p = NULL;
   int objs = 0;
@@ -746,8 +750,14 @@ void HeapRegion::verify(bool allow_dirty, bool use_prev_marking) const {
   while (p < top()) {
     size_t size = oop(p)->size();
     if (blocks == BLOCK_SAMPLE_INTERVAL) {
-      guarantee(p == block_start_const(p + (size/2)),
-                "check offset computation");
+      HeapWord* res = block_start_const(p + (size/2));
+      if (p != res) {
+        gclog_or_tty->print_cr("offset computation 1 for "PTR_FORMAT" and "
+                               SIZE_FORMAT" returned "PTR_FORMAT,
+                               p, size, res);
+        *failures = true;
+        return;
+      }
       blocks = 0;
     } else {
       blocks++;
@@ -755,11 +765,34 @@ void HeapRegion::verify(bool allow_dirty, bool use_prev_marking) const {
     if (objs == OBJ_SAMPLE_INTERVAL) {
       oop obj = oop(p);
       if (!g1->is_obj_dead_cond(obj, this, use_prev_marking)) {
-        obj->verify();
-        vl_cl.set_containing_obj(obj);
-        obj->oop_iterate(&vl_cl);
-        if (G1MaxVerifyFailures >= 0
-            && vl_cl.n_failures() >= G1MaxVerifyFailures) break;
+        if (obj->is_oop()) {
+          klassOop klass = obj->klass();
+          if (!klass->is_perm()) {
+            gclog_or_tty->print_cr("klass "PTR_FORMAT" of object "PTR_FORMAT" "
+                                   "not in perm", klass, obj);
+            *failures = true;
+            return;
+          } else if (!klass->is_klass()) {
+            gclog_or_tty->print_cr("klass "PTR_FORMAT" of object "PTR_FORMAT" "
+                                   "not a klass", klass, obj);
+            *failures = true;
+            return;
+          } else {
+            vl_cl.set_containing_obj(obj);
+            obj->oop_iterate(&vl_cl);
+            if (vl_cl.failures()) {
+              *failures = true;
+            }
+            if (G1MaxVerifyFailures >= 0 &&
+                vl_cl.n_failures() >= G1MaxVerifyFailures) {
+              return;
+            }
+          }
+        } else {
+          gclog_or_tty->print_cr(PTR_FORMAT" no an oop", obj);
+          *failures = true;
+          return;
+        }
       }
       objs = 0;
     } else {
@@ -771,21 +804,22 @@ void HeapRegion::verify(bool allow_dirty, bool use_prev_marking) const {
   HeapWord* rend = end();
   HeapWord* rtop = top();
   if (rtop < rend) {
-    guarantee(block_start_const(rtop + (rend - rtop) / 2) == rtop,
-              "check offset computation");
+    HeapWord* res = block_start_const(rtop + (rend - rtop) / 2);
+    if (res != rtop) {
+        gclog_or_tty->print_cr("offset computation 2 for "PTR_FORMAT" and "
+                               PTR_FORMAT" returned "PTR_FORMAT,
+                               rtop, rend, res);
+        *failures = true;
+        return;
+    }
   }
-  if (vl_cl.failures()) {
-    gclog_or_tty->print_cr("Heap:");
-    G1CollectedHeap::heap()->print_on(gclog_or_tty, true /* extended */);
-    gclog_or_tty->print_cr("");
+
+  if (p != top()) {
+    gclog_or_tty->print_cr("end of last object "PTR_FORMAT" "
+                           "does not match top "PTR_FORMAT, p, top());
+    *failures = true;
+    return;
   }
-  if (VerifyDuringGC &&
-      G1VerifyConcMarkPrintReachable &&
-      vl_cl.failures()) {
-    g1->concurrent_mark()->print_prev_bitmap_reachable();
-  }
-  guarantee(!vl_cl.failures(), "region verification failed");
-  guarantee(p == top(), "end of last object must match end of space");
 }
 
 // G1OffsetTableContigSpace code; copied from space.cpp.  Hope this can go

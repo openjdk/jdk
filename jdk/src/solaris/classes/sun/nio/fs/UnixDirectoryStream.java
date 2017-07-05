@@ -235,7 +235,8 @@ class UnixDirectoryStream
         @Override
         public void remove() {
             if (isClosed) {
-                throw new ClosedDirectoryStreamException();
+                throwAsConcurrentModificationException(new
+                    ClosedDirectoryStreamException());
             }
             Path entry;
             synchronized (this) {

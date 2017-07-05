@@ -1502,7 +1502,7 @@ Node *PhaseCCP::transform_once( Node *n ) {
 //---------------------------------saturate------------------------------------
 const Type* PhaseCCP::saturate(const Type* new_type, const Type* old_type,
                                const Type* limit_type) const {
-  const Type* wide_type = new_type->widen(old_type);
+  const Type* wide_type = new_type->widen(old_type, limit_type);
   if (wide_type != new_type) {          // did we widen?
     // If so, we may have widened beyond the limit type.  Clip it back down.
     new_type = wide_type->filter(limit_type);

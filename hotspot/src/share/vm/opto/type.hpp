@@ -168,7 +168,7 @@ public:
   // MEET operation; lower in lattice.
   const Type *meet( const Type *t ) const;
   // WIDEN: 'widens' for Ints and other range types
-  virtual const Type *widen( const Type *old ) const { return this; }
+  virtual const Type *widen( const Type *old, const Type* limit ) const { return this; }
   // NARROW: complement for widen, used by pessimistic phases
   virtual const Type *narrow( const Type *old ) const { return this; }
 
@@ -409,7 +409,7 @@ public:
 
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
-  virtual const Type *widen( const Type *t ) const;
+  virtual const Type *widen( const Type *t, const Type* limit_type ) const;
   virtual const Type *narrow( const Type *t ) const;
   // Do not kill _widen bits.
   virtual const Type *filter( const Type *kills ) const;
@@ -465,7 +465,7 @@ public:
 
   virtual const Type *xmeet( const Type *t ) const;
   virtual const Type *xdual() const;    // Compute dual right now.
-  virtual const Type *widen( const Type *t ) const;
+  virtual const Type *widen( const Type *t, const Type* limit_type ) const;
   virtual const Type *narrow( const Type *t ) const;
   // Do not kill _widen bits.
   virtual const Type *filter( const Type *kills ) const;
