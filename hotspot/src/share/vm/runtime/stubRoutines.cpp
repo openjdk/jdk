@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,9 @@
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
+#include "runtime/logTimer.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "runtime/timer.hpp"
 #include "utilities/copy.hpp"
 #ifdef COMPILER2
 #include "opto/runtime.hpp"
@@ -183,7 +183,7 @@ extern void StubGenerator_generate(CodeBuffer* code, bool all); // only interfac
 void StubRoutines::initialize1() {
   if (_code1 == NULL) {
     ResourceMark rm;
-    TraceTime timer("StubRoutines generation 1", TraceStartupTime);
+    TraceStartupTime timer("StubRoutines generation 1");
     _code1 = BufferBlob::create("StubRoutines (1)", code_size1);
     if (_code1 == NULL) {
       vm_exit_out_of_memory(code_size1, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (1)");
@@ -276,7 +276,7 @@ static void test_safefetchN() {
 void StubRoutines::initialize2() {
   if (_code2 == NULL) {
     ResourceMark rm;
-    TraceTime timer("StubRoutines generation 2", TraceStartupTime);
+    TraceStartupTime timer("StubRoutines generation 2");
     _code2 = BufferBlob::create("StubRoutines (2)", code_size2);
     if (_code2 == NULL) {
       vm_exit_out_of_memory(code_size2, OOM_MALLOC_ERROR, "CodeCache: no room for StubRoutines (2)");
