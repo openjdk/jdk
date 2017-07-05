@@ -24,7 +24,8 @@
 /* @test
  * @bug 4527345
  * @summary Unit test for DatagramChannel's multicast support
- * @build BasicMulticastTests NetworkConfiguration
+ * @library /test/lib
+ * @build BasicMulticastTests
  * @run main BasicMulticastTests
  */
 
@@ -33,6 +34,8 @@ import java.nio.channels.*;
 import java.net.*;
 import java.util.*;
 import java.io.IOException;
+
+import jdk.test.lib.NetworkConfiguration;
 
 public class BasicMulticastTests {
 
@@ -204,14 +207,14 @@ public class BasicMulticastTests {
 
         NetworkConfiguration config = NetworkConfiguration.probe();
 
-        NetworkInterface nif = config.ip4Interfaces().iterator().next();
+        NetworkInterface nif = config.ip4MulticastInterfaces().iterator().next();
         InetAddress anySource = config.ip4Addresses(nif).iterator().next();
         membershipKeyTests(nif, ip4Group, anySource);
         exceptionTests(nif);
 
         // re-run the membership key tests with IPv6 if available
 
-        Iterator<NetworkInterface> iter = config.ip6Interfaces().iterator();
+        Iterator<NetworkInterface> iter = config.ip6MulticastInterfaces().iterator();
         if (iter.hasNext()) {
             nif = iter.next();
             anySource = config.ip6Addresses(nif).iterator().next();

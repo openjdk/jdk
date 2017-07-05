@@ -103,17 +103,18 @@ import sun.util.logging.PlatformLogger;
  *
  * <p>
  * CLDR and LDML identify variants:
- * <table cellpadding="2" summary="Variants of Hijrah Calendars">
+ * <table class="striped">
+ * <caption style="display:none">Variants of Hijrah Calendars</caption>
  * <thead>
- * <tr class="tableSubHeadingColor">
- * <th class="colFirst" style="text-align:left" >Chronology ID</th>
- * <th class="colFirst" style="text-align:left" >Calendar Type</th>
- * <th class="colFirst" style="text-align:left" >Locale extension, see {@link java.util.Locale}</th>
- * <th class="colLast" style="text-align:left" >Description</th>
+ * <tr>
+ * <th style="text-align:left" >Chronology ID</th>
+ * <th style="text-align:left" >Calendar Type</th>
+ * <th style="text-align:left" >Locale extension, see {@link java.util.Locale}</th>
+ * <th style="text-align:left" >Description</th>
  * </tr>
  * </thead>
  * <tbody>
- * <tr class="altColor">
+ * <tr>
  * <td>Hijrah-umalqura</td>
  * <td>islamic-umalqura</td>
  * <td>ca-islamic-umalqura</td>
@@ -147,36 +148,37 @@ import sun.util.logging.PlatformLogger;
  * <p>
  * The Hijrah property resource is a set of properties that describe the calendar.
  * The syntax is defined by {@code java.util.Properties#load(Reader)}.
- * <table cellpadding="2" summary="Configuration of Hijrah Calendar">
+ * <table class="striped">
+ * <caption style="display:none">Configuration of Hijrah Calendar</caption>
  * <thead>
- * <tr class="tableSubHeadingColor">
- * <th class="colFirst" style="text-align:left" > Property Name</th>
- * <th class="colFirst" style="text-align:left" > Property value</th>
- * <th class="colLast" style="text-align:left" > Description </th>
+ * <tr>
+ * <th style="text-align:left" > Property Name</th>
+ * <th style="text-align:left" > Property value</th>
+ * <th style="text-align:left" > Description </th>
  * </tr>
  * </thead>
  * <tbody>
- * <tr class="altColor">
+ * <tr>
  * <td>id</td>
  * <td>Chronology Id, for example, "Hijrah-umalqura"</td>
  * <td>The Id of the calendar in common usage</td>
  * </tr>
- * <tr class="rowColor">
+ * <tr>
  * <td>type</td>
  * <td>Calendar type, for example, "islamic-umalqura"</td>
  * <td>LDML defines the calendar types</td>
  * </tr>
- * <tr class="altColor">
+ * <tr>
  * <td>version</td>
  * <td>Version, for example: "1.8.0_1"</td>
  * <td>The version of the Hijrah variant data</td>
  * </tr>
- * <tr class="rowColor">
+ * <tr>
  * <td>iso-start</td>
  * <td>ISO start date, formatted as {@code yyyy-MM-dd}, for example: "1900-04-30"</td>
  * <td>The ISO date of the first day of the minimum Hijrah year.</td>
  * </tr>
- * <tr class="altColor">
+ * <tr>
  * <td>yyyy - a numeric 4 digit year, for example "1434"</td>
  * <td>The value is a sequence of 12 month lengths,
  * for example: "29 30 29 30 29 30 30 30 29 30 29 29"</td>

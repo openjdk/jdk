@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.test.lib;
+package jdk.test.lib.compiler;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -56,7 +56,7 @@ import javax.tools.ToolProvider;
  *
  * <pre>
  * {@code
- * import jdk.test.lib.InMemoryJavaCompiler;
+ * import jdk.test.lib.compiler.InMemoryJavaCompiler;
  * import jdk.test.lib.ByteClassLoader;
  *
  * class Example {

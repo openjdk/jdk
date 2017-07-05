@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,13 +62,14 @@ import static java.io.ObjectStreamField.*;
  * loaded in this Java VM can be found/created using the lookup method.
  *
  * <p>The algorithm to compute the SerialVersionUID is described in
- * <a href="../../../platform/serialization/spec/class.html#4100">Object
- * Serialization Specification, Section 4.6, Stream Unique Identifiers</a>.
+ * <a href="{@docRoot}/../specs/serialization/class.html#stream-unique-identifiers">
+ *     Object Serialization Specification, Section 4.6, Stream Unique Identifiers</a>.
  *
  * @author      Mike Warres
  * @author      Roger Riggs
  * @see ObjectStreamField
- * @see <a href="../../../platform/serialization/spec/class.html">Object Serialization Specification, Section 4, Class Descriptors</a>
+ * @see <a href="{@docRoot}/../specs/serialization/class.html">
+ *     Object Serialization Specification, Section 4, Class Descriptors</a>
  * @since   1.1
  */
 public class ObjectStreamClass implements Serializable {

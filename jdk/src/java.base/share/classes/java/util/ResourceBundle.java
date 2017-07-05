@@ -1222,12 +1222,15 @@ public abstract class ResourceBundle {
      * <p>Calling <code>getBundle</code> with the locale arguments below will
      * instantiate resource bundles as follows:
      *
-     * <table summary="getBundle() locale to resource bundle mapping">
+     * <table class="borderless">
+     * <caption style="display:none">getBundle() locale to resource bundle mapping</caption>
+     * <tbody>
      * <tr><td>Locale("fr", "CH")</td><td>MyResources_fr_CH.class, parent MyResources_fr.properties, parent MyResources.class</td></tr>
      * <tr><td>Locale("fr", "FR")</td><td>MyResources_fr.properties, parent MyResources.class</td></tr>
      * <tr><td>Locale("de", "DE")</td><td>MyResources_en.properties, parent MyResources.class</td></tr>
      * <tr><td>Locale("en", "US")</td><td>MyResources_en.properties, parent MyResources.class</td></tr>
      * <tr><td>Locale("es", "ES")</td><td>MyResources_es_ES.class, parent MyResources.class</td></tr>
+     * </tbody>
      * </table>
      *
      * <p>The file MyResources_fr_CH.properties is never used because it is
@@ -1311,9 +1314,9 @@ public abstract class ResourceBundle {
      * sequence of locale-format combinations to be used to call
      * <code>control.newBundle</code>.
      *
-     * <table style="width: 50%; text-align: left; margin-left: 40px;"
-     *  border="0" cellpadding="2" cellspacing="2" summary="locale-format combinations for newBundle">
-     * <tbody>
+     * <table class=striped style="width: 50%; text-align: left; margin-left: 40px;">
+     * <caption style="display:none">locale-format combinations for newBundle</caption>
+     * <thead>
      * <tr>
      * <td
      * style="vertical-align: top; text-align: left; font-weight: bold; width: 50%;"><code>Locale</code><br>
@@ -1322,6 +1325,8 @@ public abstract class ResourceBundle {
      * style="vertical-align: top; text-align: left; font-weight: bold; width: 50%;"><code>format</code><br>
      * </td>
      * </tr>
+     * </thead>
+     * <tbody>
      * <tr>
      * <td style="vertical-align: top; width: 50%;"><code>Locale("de", "DE")</code><br>
      * </td>

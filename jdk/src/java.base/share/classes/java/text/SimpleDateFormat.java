@@ -92,18 +92,22 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * <code>'A'</code> to <code>'Z'</code> and from <code>'a'</code> to
  * <code>'z'</code> are reserved):
  * <blockquote>
- * <table border=0 cellspacing=3 cellpadding=0 summary="Chart shows pattern letters, date/time component, presentation, and examples.">
- *     <tr style="background-color: rgb(204, 204, 255);">
+ * <table class="striped">
+ * <caption style="display:none">Chart shows pattern letters, date/time component, presentation, and examples.</caption>
+ * <thead>
+ *     <tr>
  *         <th style="text-align:left">Letter
  *         <th style="text-align:left">Date or Time Component
  *         <th style="text-align:left">Presentation
  *         <th style="text-align:left">Examples
+ * </thead>
+ * <tbody>
  *     <tr>
  *         <td><code>G</code>
  *         <td>Era designator
  *         <td><a href="#text">Text</a>
  *         <td><code>AD</code>
- *     <tr style="background-color: rgb(238, 238, 255);">
+ *     <tr>
  *         <td><code>y</code>
  *         <td>Year
  *         <td><a href="#year">Year</a>
@@ -113,7 +117,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *         <td>Week year
  *         <td><a href="#year">Year</a>
  *         <td><code>2009</code>; <code>09</code>
- *     <tr style="background-color: rgb(238, 238, 255);">
+ *     <tr>
  *         <td><code>M</code>
  *         <td>Month in year (context sensitive)
  *         <td><a href="#month">Month</a>
@@ -123,7 +127,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *         <td>Month in year (standalone form)
  *         <td><a href="#month">Month</a>
  *         <td><code>July</code>; <code>Jul</code>; <code>07</code>
- *     <tr style="background-color: rgb(238, 238, 255);">
+ *     <tr>
  *         <td><code>w</code>
  *         <td>Week in year
  *         <td><a href="#number">Number</a>
@@ -133,7 +137,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *         <td>Week in month
  *         <td><a href="#number">Number</a>
  *         <td><code>2</code>
- *     <tr style="background-color: rgb(238, 238, 255);">
+ *     <tr>
  *         <td><code>D</code>
  *         <td>Day in year
  *         <td><a href="#number">Number</a>
@@ -143,7 +147,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *         <td>Day in month
  *         <td><a href="#number">Number</a>
  *         <td><code>10</code>
- *     <tr style="background-color: rgb(238, 238, 255);">
+ *     <tr>
  *         <td><code>F</code>
  *         <td>Day of week in month
  *         <td><a href="#number">Number</a>
@@ -153,7 +157,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *         <td>Day name in week
  *         <td><a href="#text">Text</a>
  *         <td><code>Tuesday</code>; <code>Tue</code>
- *     <tr style="background-color: rgb(238, 238, 255);">
+ *     <tr>
  *         <td><code>u</code>
  *         <td>Day number of week (1 = Monday, ..., 7 = Sunday)
  *         <td><a href="#number">Number</a>
@@ -163,7 +167,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *         <td>Am/pm marker
  *         <td><a href="#text">Text</a>
  *         <td><code>PM</code>
- *     <tr style="background-color: rgb(238, 238, 255);">
+ *     <tr>
  *         <td><code>H</code>
  *         <td>Hour in day (0-23)
  *         <td><a href="#number">Number</a>
@@ -173,7 +177,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *         <td>Hour in day (1-24)
  *         <td><a href="#number">Number</a>
  *         <td><code>24</code>
- *     <tr style="background-color: rgb(238, 238, 255);">
+ *     <tr>
  *         <td><code>K</code>
  *         <td>Hour in am/pm (0-11)
  *         <td><a href="#number">Number</a>
@@ -183,7 +187,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *         <td>Hour in am/pm (1-12)
  *         <td><a href="#number">Number</a>
  *         <td><code>12</code>
- *     <tr style="background-color: rgb(238, 238, 255);">
+ *     <tr>
  *         <td><code>m</code>
  *         <td>Minute in hour
  *         <td><a href="#number">Number</a>
@@ -193,7 +197,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *         <td>Second in minute
  *         <td><a href="#number">Number</a>
  *         <td><code>55</code>
- *     <tr style="background-color: rgb(238, 238, 255);">
+ *     <tr>
  *         <td><code>S</code>
  *         <td>Millisecond
  *         <td><a href="#number">Number</a>
@@ -203,7 +207,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *         <td>Time zone
  *         <td><a href="#timezone">General time zone</a>
  *         <td><code>Pacific Standard Time</code>; <code>PST</code>; <code>GMT-08:00</code>
- *     <tr style="background-color: rgb(238, 238, 255);">
+ *     <tr>
  *         <td><code>Z</code>
  *         <td>Time zone
  *         <td><a href="#rfc822timezone">RFC 822 time zone</a>
@@ -213,6 +217,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  *         <td>Time zone
  *         <td><a href="#iso8601timezone">ISO 8601 time zone</a>
  *         <td><code>-08</code>; <code>-0800</code>;  <code>-08:00</code>
+ * </tbody>
  * </table>
  * </blockquote>
  * Pattern letters are usually repeated, as their number determines the
@@ -370,43 +375,48 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * the U.S. locale. The given date and time are 2001-07-04 12:08:56 local time
  * in the U.S. Pacific Time time zone.
  * <blockquote>
- * <table border=0 cellspacing=3 cellpadding=0 summary="Examples of date and time patterns interpreted in the U.S. locale">
- *     <tr style="background-color: rgb(204, 204, 255);">
+ * <table class="striped">
+ * <caption style="display:none">Examples of date and time patterns interpreted in the U.S. locale</caption>
+ * <thead>
+ *     <tr>
  *         <th style="text-align:left">Date and Time Pattern
  *         <th style="text-align:left">Result
+ * </thead>
+ * <tbody>
  *     <tr>
  *         <td><code>"yyyy.MM.dd G 'at' HH:mm:ss z"</code>
  *         <td><code>2001.07.04 AD at 12:08:56 PDT</code>
- *     <tr style="background-color: rgb(238, 238, 255);">
+ *     <tr>
  *         <td><code>"EEE, MMM d, ''yy"</code>
  *         <td><code>Wed, Jul 4, '01</code>
  *     <tr>
  *         <td><code>"h:mm a"</code>
  *         <td><code>12:08 PM</code>
- *     <tr style="background-color: rgb(238, 238, 255);">
+ *     <tr>
  *         <td><code>"hh 'o''clock' a, zzzz"</code>
  *         <td><code>12 o'clock PM, Pacific Daylight Time</code>
  *     <tr>
  *         <td><code>"K:mm a, z"</code>
  *         <td><code>0:08 PM, PDT</code>
- *     <tr style="background-color: rgb(238, 238, 255);">
+ *     <tr>
  *         <td><code>"yyyyy.MMMMM.dd GGG hh:mm aaa"</code>
  *         <td><code>02001.July.04 AD 12:08 PM</code>
  *     <tr>
  *         <td><code>"EEE, d MMM yyyy HH:mm:ss Z"</code>
  *         <td><code>Wed, 4 Jul 2001 12:08:56 -0700</code>
- *     <tr style="background-color: rgb(238, 238, 255);">
+ *     <tr>
  *         <td><code>"yyMMddHHmmssZ"</code>
  *         <td><code>010704120856-0700</code>
  *     <tr>
  *         <td><code>"yyyy-MM-dd'T'HH:mm:ss.SSSZ"</code>
  *         <td><code>2001-07-04T12:08:56.235-0700</code>
- *     <tr style="background-color: rgb(238, 238, 255);">
+ *     <tr>
  *         <td><code>"yyyy-MM-dd'T'HH:mm:ss.SSSXXX"</code>
  *         <td><code>2001-07-04T12:08:56.235-07:00</code>
  *     <tr>
  *         <td><code>"YYYY-'W'ww-u"</code>
  *         <td><code>2001-W27-3</code>
+ * </tbody>
  * </table>
  * </blockquote>
  *

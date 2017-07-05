@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,8 +81,12 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * The <a href="MethodHandles.Lookup.html#lookups">Lookup Factory Methods</a>
  * correspond to all major use cases for methods, constructors, and fields.
  * These use cases may be distinguished using small integers as follows:
- * <table border=1 cellpadding=5 summary="reference kinds">
+ * <table class="striped">
+ * <caption style="display:none">reference kinds</caption>
+ * <thead>
  * <tr><th>reference kind</th><th>descriptive name</th><th>scope</th><th>member</th><th>behavior</th></tr>
+ * </thead>
+ * <tbody>
  * <tr>
  *     <td>{@code 1}</td><td>{@code REF_getField}</td><td>{@code class}</td>
  *     <td>{@code FT f;}</td><td>{@code (T) this.f;}</td>
@@ -119,6 +123,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  *     <td>{@code 9}</td><td>{@code REF_invokeInterface}</td><td>{@code interface}</td>
  *     <td>{@code T m(A*);}</td><td>{@code (T) this.m(arg*);}</td>
  * </tr>
+ * </tbody>
  * </table>
  * @since 1.8
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,8 +133,12 @@ public abstract class AsynchronousFileChannel
      * <p> In addition to {@code READ} and {@code WRITE}, the following options
      * may be present:
      *
-     * <table border=1 cellpadding=5 summary="">
+     * <table class="striped">
+     * <caption style="display:none">additional options</caption>
+     * <thead>
      * <tr> <th>Option</th> <th>Description</th> </tr>
+     * </thead>
+     * <tbody>
      * <tr>
      *   <td> {@link StandardOpenOption#TRUNCATE_EXISTING TRUNCATE_EXISTING} </td>
      *   <td> When opening an existing file, the file is first truncated to a
@@ -186,6 +190,7 @@ public abstract class AsynchronousFileChannel
      *   href="../file/package-summary.html#integrity"> Synchronized I/O file
      *   integrity</a>). </td>
      * </tr>
+     * </tbody>
      * </table>
      *
      * <p> An implementation may also support additional options.

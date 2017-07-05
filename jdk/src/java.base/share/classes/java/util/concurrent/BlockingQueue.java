@@ -53,7 +53,7 @@ import java.util.Queue;
  * and the fourth blocks for only a given maximum time limit before giving
  * up.  These methods are summarized in the following table:
  *
- * <table BORDER CELLPADDING=3 CELLSPACING=1>
+ * <table class="plain">
  * <caption>Summary of BlockingQueue methods</caption>
  *  <tr>
  *    <td></td>
