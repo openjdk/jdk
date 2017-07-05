@@ -46,7 +46,7 @@ failed=0
 
 # help help
 rm -f jcmd.out 2>/dev/null
-${JCMD} $appJavaPid help help | awk '{ if (NR>1) print $0;}' > jcmd.out 2>&1
+${JCMD} -J-XX:+UsePerfData $appJavaPid help help | awk '{ if (NR>1) print $0;}' > jcmd.out 2>&1
 echo jcmd.out
 diff -w jcmd.out ${TESTSRC}/help_help.out
 if [ $? != 0 ]; then

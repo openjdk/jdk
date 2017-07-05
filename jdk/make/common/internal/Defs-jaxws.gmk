@@ -34,7 +34,6 @@ IMPORT_RT_PACKAGES += \
      javax/xml/ws \
      javax/jws \
      javax/annotation \
-     com/sun/istack/internal \
      com/sun/xml/internal/bind \
      com/sun/xml/internal/fastinfoset \
      com/sun/xml/internal/messaging \
@@ -42,13 +41,13 @@ IMPORT_RT_PACKAGES += \
      com/sun/xml/internal/txw2 \
      com/sun/xml/internal/ws \
      com/sun/xml/internal/stream/buffer
+
 NOT_USED_PACKAGES += \
      com/sun/tools/internal/txw2
 
 IMPORT_TOOLS_PACKAGES += \
      com/sun/codemodel \
      com/sun/istack/internal/tools \
-     com/sun/istack/internal/ws \
      com/sun/xml/internal/rngom \
      com/sun/xml/internal/xsom \
      com/sun/xml/internal/dtdparser \
@@ -56,6 +55,9 @@ IMPORT_TOOLS_PACKAGES += \
      com/sun/tools/internal/ws \
      com/sun/tools/internal/jxc \
      org/relaxng \
-     META-INF/services/com.sun.mirror.apt.AnnotationProcessorFactory \
-     META-INF/services/com.sun.tools.internal.xjc.Plugin
+     META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin \
+     META-INF/services/com.sun.tools.internal.xjc.Plugin \
+     com/sun/tools/internal/jxc/ap \
+     com/sun/tools/internal/ws/wscompile/plugin/at_generated
+
 

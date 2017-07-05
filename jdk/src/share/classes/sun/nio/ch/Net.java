@@ -33,7 +33,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 
-class Net {                                             // package-private
+public class Net {
 
     private Net() { }
 
@@ -75,7 +75,7 @@ class Net {                                             // package-private
         return canJoin6WithIPv4Group0();
     }
 
-    static InetSocketAddress checkAddress(SocketAddress sa) {
+    public static InetSocketAddress checkAddress(SocketAddress sa) {
         if (sa == null)
             throw new NullPointerException();
         if (!(sa instanceof InetSocketAddress))
@@ -330,7 +330,7 @@ class Net {                                             // package-private
     // Due to oddities SO_REUSEADDR on windows reuse is ignored
     private static native int socket0(boolean preferIPv6, boolean stream, boolean reuse);
 
-    static void bind(FileDescriptor fd, InetAddress addr, int port)
+    public static void bind(FileDescriptor fd, InetAddress addr, int port)
         throws IOException
     {
         bind(UNSPEC, fd, addr, port);
@@ -383,7 +383,7 @@ class Net {                                             // package-private
     private static native InetAddress localInetAddress(FileDescriptor fd)
         throws IOException;
 
-    static InetSocketAddress localAddress(FileDescriptor fd)
+    public static InetSocketAddress localAddress(FileDescriptor fd)
         throws IOException
     {
         return new InetSocketAddress(localInetAddress(fd), localPort(fd));

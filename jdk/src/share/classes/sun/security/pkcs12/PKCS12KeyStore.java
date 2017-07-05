@@ -253,11 +253,25 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         }
 
         try {
-            // Use JCE
-            SecretKey skey = getPBEKey(password);
-            Cipher cipher = Cipher.getInstance(algOid.toString());
-            cipher.init(Cipher.DECRYPT_MODE, skey, algParams);
-            byte[] privateKeyInfo = cipher.doFinal(encryptedKey);
+            byte[] privateKeyInfo;
+            while (true) {
+                try {
+                    // Use JCE
+                    SecretKey skey = getPBEKey(password);
+                    Cipher cipher = Cipher.getInstance(algOid.toString());
+                    cipher.init(Cipher.DECRYPT_MODE, skey, algParams);
+                    privateKeyInfo = cipher.doFinal(encryptedKey);
+                    break;
+                } catch (Exception e) {
+                    if (password.length == 0) {
+                        // Retry using an empty password
+                        // without a NULL terminator.
+                        password = new char[1];
+                        continue;
+                    }
+                    throw e;
+                }
+            }
 
             PKCS8EncodedKeySpec kspec = new PKCS8EncodedKeySpec(privateKeyInfo);
 
@@ -1251,16 +1265,24 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 ObjectIdentifier algOid = in.getOID();
                 AlgorithmParameters algParams = parseAlgParameters(in);
 
-                try {
-                    // Use JCE
-                    SecretKey skey = getPBEKey(password);
-                    Cipher cipher = Cipher.getInstance(algOid.toString());
-                    cipher.init(Cipher.DECRYPT_MODE, skey, algParams);
-                    safeContentsData = cipher.doFinal(safeContentsData);
-
-                } catch (Exception e) {
-                    throw new IOException("failed to decrypt safe"
-                            + " contents entry: " + e, e);
+                while (true) {
+                    try {
+                        // Use JCE
+                        SecretKey skey = getPBEKey(password);
+                        Cipher cipher = Cipher.getInstance(algOid.toString());
+                        cipher.init(Cipher.DECRYPT_MODE, skey, algParams);
+                        safeContentsData = cipher.doFinal(safeContentsData);
+                        break;
+                    } catch (Exception e) {
+                        if (password.length == 0) {
+                            // Retry using an empty password
+                            // without a NULL terminator.
+                            password = new char[1];
+                            continue;
+                        }
+                        throw new IOException(
+                                "failed to decrypt safe contents entry: " + e, e);
+                    }
                 }
             } else {
                 throw new IOException("public key protected PKCS12" +

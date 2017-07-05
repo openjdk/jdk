@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 5030233 6214916 6356475 6571029 6684582 6742159 4459600 6758881 6753938
- *      6894719 6968053 7067922
+ *      6894719 6968053
  * @summary Argument parsing validation.
  * @compile -XDignore.symbol.file Arrrghs.java
  * @run main Arrrghs
@@ -373,21 +373,6 @@ public class Arrrghs extends TestHelper {
         System.out.println(tr);
     }
 
-    /*
-     * a missing manifest entry 7067922, we ignore this test for locales
-     * which are localized, thus the testing is limited to English locales.
-     */
-    static void test7067922() {
-        if (!isEnglishLocale()) {
-            return;
-        }
-        TestResult tr = null;
-        createJar("cvf", "missingmainentry.jar", ".");
-        tr = doExec(javaCmd, "-jar", "missingmainentry.jar");
-        tr.contains("no main manifest attribute");
-        System.out.println(tr);
-    }
-
     /**
      * @param args the command line arguments
      * @throws java.io.FileNotFoundException
@@ -400,7 +385,6 @@ public class Arrrghs extends TestHelper {
         runBasicErrorMessageTests();
         runMainMethodTests();
         test6894719();
-        test7067922();
         runDiagOptionTests();
         if (testExitValue > 0) {
             System.out.println("Total of " + testExitValue + " failed");

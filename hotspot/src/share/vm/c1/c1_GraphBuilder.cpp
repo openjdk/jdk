@@ -1181,6 +1181,11 @@ void GraphBuilder::if_node(Value x, If::Condition cond, Value y, ValueStack* sta
   bool is_bb = tsux->bci() < stream()->cur_bci() || fsux->bci() < stream()->cur_bci();
   Instruction *i = append(new If(x, cond, false, y, tsux, fsux, is_bb ? state_before : NULL, is_bb));
 
+  assert(i->as_Goto() == NULL ||
+         (i->as_Goto()->sux_at(0) == tsux  && i->as_Goto()->is_safepoint() == tsux->bci() < stream()->cur_bci()) ||
+         (i->as_Goto()->sux_at(0) == fsux  && i->as_Goto()->is_safepoint() == fsux->bci() < stream()->cur_bci()),
+         "safepoint state of Goto returned by canonicalizer incorrect");
+
   if (is_profiling()) {
     If* if_node = i->as_If();
     if (if_node != NULL) {
@@ -1303,7 +1308,16 @@ void GraphBuilder::table_switch() {
     // add default successor
     sux->at_put(i, block_at(bci() + sw.default_offset()));
     ValueStack* state_before = has_bb ? copy_state_before() : NULL;
-    append(new TableSwitch(ipop(), sux, sw.low_key(), state_before, has_bb));
+    Instruction* res = append(new TableSwitch(ipop(), sux, sw.low_key(), state_before, has_bb));
+#ifdef ASSERT
+    if (res->as_Goto()) {
+      for (i = 0; i < l; i++) {
+        if (sux->at(i) == res->as_Goto()->sux_at(0)) {
+          assert(res->as_Goto()->is_safepoint() == sw.dest_offset_at(i) < 0, "safepoint state of Goto returned by canonicalizer incorrect");
+        }
+      }
+    }
+#endif
   }
 }
 
@@ -1338,7 +1352,16 @@ void GraphBuilder::lookup_switch() {
     // add default successor
     sux->at_put(i, block_at(bci() + sw.default_offset()));
     ValueStack* state_before = has_bb ? copy_state_before() : NULL;
-    append(new LookupSwitch(ipop(), sux, keys, state_before, has_bb));
+    Instruction* res = append(new LookupSwitch(ipop(), sux, keys, state_before, has_bb));
+#ifdef ASSERT
+    if (res->as_Goto()) {
+      for (i = 0; i < l; i++) {
+        if (sux->at(i) == res->as_Goto()->sux_at(0)) {
+          assert(res->as_Goto()->is_safepoint() == sw.pair_at(i).offset() < 0, "safepoint state of Goto returned by canonicalizer incorrect");
+        }
+      }
+    }
+#endif
   }
 }
 

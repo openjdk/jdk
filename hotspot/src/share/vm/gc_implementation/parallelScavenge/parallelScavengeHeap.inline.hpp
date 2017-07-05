@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,12 @@ inline size_t ParallelScavengeHeap::total_invocations()
 {
   return UseParallelOldGC ? PSParallelCompact::total_invocations() :
     PSMarkSweep::total_invocations();
+}
+
+inline bool ParallelScavengeHeap::should_alloc_in_eden(const size_t size) const
+{
+  const size_t eden_size = young_gen()->eden_space()->capacity_in_words();
+  return size < eden_size / 2;
 }
 
 inline void ParallelScavengeHeap::invoke_scavenge()
