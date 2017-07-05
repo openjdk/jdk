@@ -257,12 +257,14 @@ public:
   int      get_field_holder_index();
   int      get_field_signature_index();
 
-  ciMethod* get_method(bool& will_link, ciSignature* *declared_signature_result);
-  bool      has_appendix();
-  ciObject* get_appendix();
-  ciKlass*  get_declared_method_holder();
-  int       get_method_holder_index();
-  int       get_method_signature_index();
+  ciMethod*     get_method(bool& will_link, ciSignature* *declared_signature_result);
+  bool          has_appendix();
+  ciObject*     get_appendix();
+  bool          has_method_type();
+  ciMethodType* get_method_type();
+  ciKlass*      get_declared_method_holder();
+  int           get_method_holder_index();
+  int           get_method_signature_index();
 
   // Get the resolved references arrays from the constant pool
   ciObjArray* get_resolved_references();
