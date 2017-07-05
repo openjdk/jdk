@@ -616,8 +616,9 @@ bool Block::schedule_local(PhaseCFG *cfg, Matcher &matcher, int *ready_cnt, Vect
           assert(cfg->_bbs[oop_store->_idx]->_dom_depth <= this->_dom_depth, "oop_store must dominate card-mark");
         }
       }
-      if( n->is_Mach() && n->as_Mach()->ideal_Opcode() == Op_MemBarAcquire &&
-          n->req() > TypeFunc::Parms ) {
+      if( n->is_Mach() && n->req() > TypeFunc::Parms &&
+          (n->as_Mach()->ideal_Opcode() == Op_MemBarAcquire ||
+           n->as_Mach()->ideal_Opcode() == Op_MemBarVolatile) ) {
         // MemBarAcquire could be created without Precedent edge.
         // del_req() replaces the specified edge with the last input edge
         // and then removes the last edge. If the specified edge > number of

@@ -121,17 +121,20 @@ public:
   virtual void read_ref_array(MemRegion mr) = 0;
   virtual void read_prim_array(MemRegion mr) = 0;
 
+  // Below length is the # array elements being written
   virtual void write_ref_array_pre(      oop* dst, int length) {}
   virtual void write_ref_array_pre(narrowOop* dst, int length) {}
+  // Below MemRegion mr is expected to be HeapWord-aligned
   inline void write_ref_array(MemRegion mr);
+  // Below count is the # array elements being written, starting
+  // at the address "start", which may not necessarily be HeapWord-aligned
+  inline void write_ref_array(HeapWord* start, size_t count);
 
-  // Static versions, suitable for calling from generated code.
+  // Static versions, suitable for calling from generated code;
+  // count is # array elements being written, starting with "start",
+  // which may not necessarily be HeapWord-aligned.
   static void static_write_ref_array_pre(HeapWord* start, size_t count);
   static void static_write_ref_array_post(HeapWord* start, size_t count);
-  // Narrow oop versions of the above; count is # of array elements being written,
-  // starting with "start", which is HeapWord-aligned.
-  static void static_write_ref_array_pre_narrow(HeapWord* start, size_t count);
-  static void static_write_ref_array_post_narrow(HeapWord* start, size_t count);
 
 protected:
   virtual void write_ref_array_work(MemRegion mr) = 0;

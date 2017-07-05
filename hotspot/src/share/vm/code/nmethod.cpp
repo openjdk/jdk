@@ -414,9 +414,8 @@ int nmethod::total_size() const {
 }
 
 const char* nmethod::compile_kind() const {
-  if (method() == NULL)    return "unloaded";
-  if (is_native_method())  return "c2n";
   if (is_osr_method())     return "osr";
+  if (method() != NULL && is_native_method())  return "c2n";
   return NULL;
 }
 
@@ -1127,6 +1126,9 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
   }
   flags.state = unloaded;
 
+  // Log the unloading.
+  log_state_change();
+
   // The methodOop is gone at this point
   assert(_method == NULL, "Tautology");
 
@@ -1137,8 +1139,6 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
 
 void nmethod::invalidate_osr_method() {
   assert(_entry_bci != InvocationEntryBci, "wrong kind of nmethod");
-  if (_entry_bci != InvalidOSREntryBci)
-    inc_decompile_count();
   // Remove from list of active nmethods
   if (method() != NULL)
     instanceKlass::cast(method()->method_holder())->remove_osr_nmethod(this);
@@ -1146,59 +1146,63 @@ void nmethod::invalidate_osr_method() {
   _entry_bci = InvalidOSREntryBci;
 }
 
-void nmethod::log_state_change(int state) const {
+void nmethod::log_state_change() const {
   if (LogCompilation) {
     if (xtty != NULL) {
       ttyLocker ttyl;  // keep the following output all in one block
-      xtty->begin_elem("make_not_entrant %sthread='" UINTX_FORMAT "'",
-                       (state == zombie ? "zombie='1' " : ""),
-                       os::current_thread_id());
+      if (flags.state == unloaded) {
+        xtty->begin_elem("make_unloaded thread='" UINTX_FORMAT "'",
+                         os::current_thread_id());
+      } else {
+        xtty->begin_elem("make_not_entrant thread='" UINTX_FORMAT "'%s",
+                         os::current_thread_id(),
+                         (flags.state == zombie ? " zombie='1'" : ""));
+      }
       log_identity(xtty);
       xtty->stamp();
       xtty->end_elem();
     }
   }
-  if (PrintCompilation) {
-    print_on(tty, state == zombie ? "made zombie " : "made not entrant ");
+  if (PrintCompilation && flags.state != unloaded) {
+    print_on(tty, flags.state == zombie ? "made zombie " : "made not entrant ");
     tty->cr();
   }
 }
 
 // Common functionality for both make_not_entrant and make_zombie
-void nmethod::make_not_entrant_or_zombie(int state) {
+bool nmethod::make_not_entrant_or_zombie(int state) {
   assert(state == zombie || state == not_entrant, "must be zombie or not_entrant");
 
-  // Code for an on-stack-replacement nmethod is removed when a class gets unloaded.
-  // They never become zombie/non-entrant, so the nmethod sweeper will never remove
-  // them. Instead the entry_bci is set to InvalidOSREntryBci, so the osr nmethod
-  // will never be used anymore. That the nmethods only gets removed when class unloading
-  // happens, make life much simpler, since the nmethods are not just going to disappear
-  // out of the blue.
-  if (is_osr_method()) {
-    if (osr_entry_bci() != InvalidOSREntryBci) {
-      // only log this once
-      log_state_change(state);
-    }
-    invalidate_osr_method();
-    return;
+  // If the method is already zombie there is nothing to do
+  if (is_zombie()) {
+    return false;
   }
-
-  // If the method is already zombie or set to the state we want, nothing to do
-  if (is_zombie() || (state == not_entrant && is_not_entrant())) {
-    return;
-  }
-
-  log_state_change(state);
 
   // Make sure the nmethod is not flushed in case of a safepoint in code below.
   nmethodLocker nml(this);
 
   {
+    // invalidate osr nmethod before acquiring the patching lock since
+    // they both acquire leaf locks and we don't want a deadlock.
+    // This logic is equivalent to the logic below for patching the
+    // verified entry point of regular methods.
+    if (is_osr_method()) {
+      // this effectively makes the osr nmethod not entrant
+      invalidate_osr_method();
+    }
+
     // Enter critical section.  Does not block for safepoint.
     MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+
+    if (flags.state == state) {
+      // another thread already performed this transition so nothing
+      // to do, but return false to indicate this.
+      return false;
+    }
+
     // The caller can be calling the method statically or through an inline
     // cache call.
-    if (!is_not_entrant()) {
+    if (!is_osr_method() && !is_not_entrant()) {
       NativeJump::patch_verified_entry(entry_point(), verified_entry_point(),
                   SharedRuntime::get_handle_wrong_method_stub());
       assert (NativeJump::instruction_size == nmethod::_zombie_instruction_size, "");
@@ -1217,6 +1221,10 @@ void nmethod::make_not_entrant_or_zombie(int state) {
 
     // Change state
     flags.state = state;
+
+    // Log the transition once
+    log_state_change();
+
   } // leave critical region under Patching_lock
 
   if (state == not_entrant) {
@@ -1239,7 +1247,6 @@ void nmethod::make_not_entrant_or_zombie(int state) {
 
   // It's a true state change, so mark the method as decompiled.
   inc_decompile_count();
-
 
   // zombie only - if a JVMTI agent has enabled the CompiledMethodUnload event
   // and it hasn't already been reported for this nmethod then report it now.
@@ -1268,7 +1275,7 @@ void nmethod::make_not_entrant_or_zombie(int state) {
 
   // Check whether method got unloaded at a safepoint before this,
   // if so we can skip the flushing steps below
-  if (method() == NULL) return;
+  if (method() == NULL) return true;
 
   // Remove nmethod from method.
   // We need to check if both the _code and _from_compiled_code_entry_point
@@ -1282,6 +1289,8 @@ void nmethod::make_not_entrant_or_zombie(int state) {
     HandleMark hm;
     method()->clear_code();
   }
+
+  return true;
 }
 
 

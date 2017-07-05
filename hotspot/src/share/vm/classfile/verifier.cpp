@@ -1903,17 +1903,8 @@ void ClassVerifier::verify_invoke_instructions(
   verify_cp_type(index, cp, types, CHECK_VERIFY(this));
 
   // Get method name and signature
-  symbolHandle method_name;
-  symbolHandle method_sig;
-  if (opcode == Bytecodes::_invokedynamic) {
-    int name_index = cp->name_ref_index_at(index);
-    int sig_index  = cp->signature_ref_index_at(index);
-    method_name = symbolHandle(THREAD, cp->symbol_at(name_index));
-    method_sig  = symbolHandle(THREAD, cp->symbol_at(sig_index));
-  } else {
-    method_name = symbolHandle(THREAD, cp->name_ref_at(index));
-    method_sig  = symbolHandle(THREAD, cp->signature_ref_at(index));
-  }
+  symbolHandle method_name(THREAD, cp->name_ref_at(index));
+  symbolHandle method_sig(THREAD, cp->signature_ref_at(index));
 
   if (!SignatureVerifier::is_valid_method_signature(method_sig)) {
     class_format_error(

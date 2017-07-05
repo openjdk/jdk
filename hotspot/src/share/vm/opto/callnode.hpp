@@ -470,6 +470,23 @@ public:
 #endif
 };
 
+
+// Simple container for the outgoing projections of a call.  Useful
+// for serious surgery on calls.
+class CallProjections : public StackObj {
+public:
+  Node* fallthrough_proj;
+  Node* fallthrough_catchproj;
+  Node* fallthrough_memproj;
+  Node* fallthrough_ioproj;
+  Node* catchall_catchproj;
+  Node* catchall_memproj;
+  Node* catchall_ioproj;
+  Node* resproj;
+  Node* exobj;
+};
+
+
 //------------------------------CallNode---------------------------------------
 // Call nodes now subsume the function of debug nodes at callsites, so they
 // contain the functionality of a full scope chain of debug nodes.
@@ -521,6 +538,11 @@ public:
   // or returns NULL if there is no one.
   Node *result_cast();
 
+  // Collect all the interesting edges from a call for use in
+  // replacing the call by something else.  Used by macro expansion
+  // and the late inlining support.
+  void extract_projections(CallProjections* projs, bool separate_io_proj);
+
   virtual uint match_edge(uint idx) const;
 
 #ifndef PRODUCT
@@ -528,6 +550,7 @@ public:
   virtual void        dump_spec(outputStream *st) const;
 #endif
 };
+
 
 //------------------------------CallJavaNode-----------------------------------
 // Make a static or dynamic subroutine call node using Java calling

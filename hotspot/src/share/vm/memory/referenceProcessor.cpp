@@ -299,8 +299,8 @@ void ReferenceProcessor::process_phaseJNI(BoolObjectClosure* is_alive,
 
 
 template <class T>
-static bool enqueue_discovered_ref_helper(ReferenceProcessor* ref,
-                                          AbstractRefProcTaskExecutor* task_executor) {
+bool enqueue_discovered_ref_helper(ReferenceProcessor* ref,
+                                   AbstractRefProcTaskExecutor* task_executor) {
 
   // Remember old value of pending references list
   T* pending_list_addr = (T*)java_lang_ref_Reference::pending_list_addr();

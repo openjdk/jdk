@@ -231,12 +231,13 @@ void Parse::load_interpreter_state(Node* osr_buf) {
 
   // Use the raw liveness computation to make sure that unexpected
   // values don't propagate into the OSR frame.
-  MethodLivenessResult live_locals = method()->raw_liveness_at_bci(osr_bci());
+  MethodLivenessResult live_locals = method()->liveness_at_bci(osr_bci());
   if (!live_locals.is_valid()) {
     // Degenerate or breakpointed method.
     C->record_method_not_compilable("OSR in empty or breakpointed method");
     return;
   }
+  MethodLivenessResult raw_live_locals = method()->raw_liveness_at_bci(osr_bci());
 
   // Extract the needed locals from the interpreter frame.
   Node *locals_addr = basic_plus_adr(osr_buf, osr_buf, (max_locals-1)*wordSize);
@@ -315,6 +316,10 @@ void Parse::load_interpreter_state(Node* osr_buf) {
         // skip type check for dead oops
         continue;
       }
+    }
+    if (type->basic_type() == T_ADDRESS && !raw_live_locals.at(index)) {
+      // Skip type check for dead address locals
+      continue;
     }
     set_local(index, check_interpreter_type(l, type, bad_type_exit));
   }

@@ -60,8 +60,8 @@ public:
   SATBMarkQueueSet();
 
   void initialize(Monitor* cbl_mon, Mutex* fl_lock,
-                  int max_completed_queue = 0,
-                  Mutex* lock = NULL);
+                  int process_completed_threshold,
+                  Mutex* lock);
 
   static void handle_zero_index_for_thread(JavaThread* t);
 
