@@ -38,6 +38,7 @@ class Node_Notes;
 class OptoReg;
 class PhaseCFG;
 class PhaseGVN;
+class PhaseIterGVN;
 class PhaseRegAlloc;
 class PhaseCCP;
 class PhaseCCP_DCE;
@@ -172,6 +173,7 @@ class Compile : public Phase {
   const char*           _failure_reason;        // for record_failure/failing pattern
   GrowableArray<CallGenerator*>* _intrinsics;   // List of intrinsics.
   GrowableArray<Node*>* _macro_nodes;           // List of nodes which need to be expanded before matching.
+  GrowableArray<Node*>* _predicate_opaqs;       // List of Opaque1 nodes for the loop predicates.
   ConnectionGraph*      _congraph;
 #ifndef PRODUCT
   IdealGraphPrinter*    _printer;
@@ -351,7 +353,9 @@ class Compile : public Phase {
   }
 
   int           macro_count()                   { return _macro_nodes->length(); }
+  int           predicate_count()               { return _predicate_opaqs->length();}
   Node*         macro_node(int idx)             { return _macro_nodes->at(idx); }
+  Node*         predicate_opaque1_node(int idx) { return _predicate_opaqs->at(idx);}
   ConnectionGraph* congraph()                   { return _congraph;}
   void add_macro_node(Node * n) {
     //assert(n->is_macro(), "must be a macro node");
@@ -363,7 +367,19 @@ class Compile : public Phase {
     // that the node is in the array before attempting to remove it
     if (_macro_nodes->contains(n))
       _macro_nodes->remove(n);
+    // remove from _predicate_opaqs list also if it is there
+    if (predicate_count() > 0 && _predicate_opaqs->contains(n)){
+      _predicate_opaqs->remove(n);
+    }
   }
+  void add_predicate_opaq(Node * n) {
+    assert(!_predicate_opaqs->contains(n), " duplicate entry in predicate opaque1");
+    assert(_macro_nodes->contains(n), "should have already been in macro list");
+    _predicate_opaqs->append(n);
+  }
+  // remove the opaque nodes that protect the predicates so that the unused checks and
+  // uncommon traps will be eliminated from the graph.
+  void cleanup_loop_predicates(PhaseIterGVN &igvn);
 
   // Compilation environment.
   Arena*            comp_arena()                { return &_comp_arena; }

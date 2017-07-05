@@ -1007,6 +1007,10 @@ public:
     return true;
   }
 
+  virtual bool card_mark_must_follow_store() const {
+    return true;
+  }
+
   bool is_in_young(oop obj) {
     HeapRegion* hr = heap_region_containing(obj);
     return hr != NULL && hr->is_young();

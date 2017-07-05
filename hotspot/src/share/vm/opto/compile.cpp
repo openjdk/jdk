@@ -932,6 +932,7 @@ void Compile::Init(int aliaslevel) {
 
   _intrinsics = NULL;
   _macro_nodes = new GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
+  _predicate_opaqs = new GrowableArray<Node*>(comp_arena(), 8,  0, NULL);
   register_library_intrinsics();
 }
 
@@ -1553,6 +1554,19 @@ void Compile::Finish_Warm() {
   }
 }
 
+//---------------------cleanup_loop_predicates-----------------------
+// Remove the opaque nodes that protect the predicates so that all unused
+// checks and uncommon_traps will be eliminated from the ideal graph
+void Compile::cleanup_loop_predicates(PhaseIterGVN &igvn) {
+  if (predicate_count()==0) return;
+  for (int i = predicate_count(); i > 0; i--) {
+    Node * n = predicate_opaque1_node(i-1);
+    assert(n->Opcode() == Op_Opaque1, "must be");
+    igvn.replace_node(n, n->in(1));
+  }
+  assert(predicate_count()==0, "should be clean!");
+  igvn.optimize();
+}
 
 //------------------------------Optimize---------------------------------------
 // Given a graph, optimize it.
@@ -1594,7 +1608,7 @@ void Compile::Optimize() {
   if((loop_opts_cnt > 0) && (has_loops() || has_split_ifs())) {
     {
       TracePhase t2("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, true );
+      PhaseIdealLoop ideal_loop( igvn, true, UseLoopPredicate);
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 1", 2);
       if (failing())  return;
@@ -1602,7 +1616,7 @@ void Compile::Optimize() {
     // Loop opts pass if partial peeling occurred in previous pass
     if(PartialPeelLoop && major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t3("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, false );
+      PhaseIdealLoop ideal_loop( igvn, false, UseLoopPredicate);
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 2", 2);
       if (failing())  return;
@@ -1610,7 +1624,7 @@ void Compile::Optimize() {
     // Loop opts pass for loop-unrolling before CCP
     if(major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t4("idealLoop", &_t_idealLoop, true);
-      PhaseIdealLoop ideal_loop( igvn, false );
+      PhaseIdealLoop ideal_loop( igvn, false, UseLoopPredicate);
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop 3", 2);
     }
@@ -1648,13 +1662,21 @@ void Compile::Optimize() {
   // peeling, unrolling, etc.
   if(loop_opts_cnt > 0) {
     debug_only( int cnt = 0; );
+    bool loop_predication = UseLoopPredicate;
     while(major_progress() && (loop_opts_cnt > 0)) {
       TracePhase t2("idealLoop", &_t_idealLoop, true);
       assert( cnt++ < 40, "infinite cycle in loop optimization" );
-      PhaseIdealLoop ideal_loop( igvn, true );
+      PhaseIdealLoop ideal_loop( igvn, true, loop_predication);
       loop_opts_cnt--;
       if (major_progress()) print_method("PhaseIdealLoop iterations", 2);
       if (failing())  return;
+      // Perform loop predication optimization during first iteration after CCP.
+      // After that switch it off and cleanup unused loop predicates.
+      if (loop_predication) {
+        loop_predication = false;
+        cleanup_loop_predicates(igvn);
+        if (failing())  return;
+      }
     }
   }
 
