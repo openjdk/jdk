@@ -567,6 +567,7 @@ class Method : public Metadata {
   // checks method and its method holder
   bool is_final_method() const;
   bool is_final_method(AccessFlags class_access_flags) const;
+  bool is_default_method() const;
 
   // true if method needs no dynamic dispatch (final and/or no vtable entry)
   bool can_be_statically_bound() const;
@@ -846,7 +847,7 @@ class Method : public Metadata {
 #endif
 
   // Helper routine used for method sorting
-  static void sort_methods(Array<Method*>* methods, bool idempotent = false);
+  static void sort_methods(Array<Method*>* methods, bool idempotent = false, bool set_idnums = true);
 
   // Deallocation function for redefine classes or if an error occurs
   void deallocate_contents(ClassLoaderData* loader_data);

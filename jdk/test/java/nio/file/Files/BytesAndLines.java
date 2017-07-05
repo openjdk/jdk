@@ -22,7 +22,9 @@
  */
 
 /* @test
- * @bug 7006126 8020669
+ * @bug 7006126 8020669 8024788
+ * @build BytesAndLines PassThroughFileSystem
+ * @run main BytesAndLines
  * @summary Unit test for methods for Files readAllBytes, readAllLines and
  *     and write methods.
  */
@@ -91,6 +93,16 @@ public class BytesAndLines {
             Path pathStat = Paths.get(statFile);
             byte[] data = Files.readAllBytes(pathStat);
             assertTrue(data.length > 0, "Files.readAllBytes('" + statFile + "') failed to read");
+        }
+
+        // test readAllBytes on custom file system
+        Path myfile = PassThroughFileSystem.create().getPath(file.toString());
+        for (int size=0; size<=1024; size+=512) {
+            byte[] b1 = new byte[size];
+            rand.nextBytes(b1);
+            Files.write(myfile, b1);
+            byte[] b2 = Files.readAllBytes(myfile);
+            assertTrue(Arrays.equals(b1, b2), "bytes not equal");
         }
     }
 

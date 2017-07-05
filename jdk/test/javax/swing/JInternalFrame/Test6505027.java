@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,8 +96,10 @@ public class Test6505027 {
         SwingUtilities.convertPointToScreen(point, this.table);
 
         Robot robot = new Robot();
+        robot.setAutoDelay(50);
         robot.mouseMove(point.x + 1, point.y + 1);
         robot.mousePress(InputEvent.BUTTON1_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_MASK);
     }
 
     public static void validate() {

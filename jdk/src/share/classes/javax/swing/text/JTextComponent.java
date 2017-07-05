@@ -84,7 +84,7 @@ import sun.swing.SwingAccessor;
  * support).
  * You can find information on how to use the functionality
  * this class provides in
- * <a href="http://java.sun.com/docs/books/tutorial/uiswing/components/generaltext.html">General Rules for Using Text Components</a>,
+ * <a href="http://docs.oracle.com/javase/tutorial/uiswing/components/generaltext.html">General Rules for Using Text Components</a>,
  * a section in <em>The Java Tutorial.</em>
  *
  * <p>
@@ -281,7 +281,7 @@ import sun.swing.SwingAccessor;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
@@ -1122,7 +1122,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */
@@ -2215,7 +2215,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * <p>
      * This method is thread-safe, although most Swing methods are not. Please
      * see <A
-     * HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">
+     * HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">
      * Concurrency in Swing</A> for more information.
      *
      * <p>
@@ -2473,7 +2473,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * <p>
      * This method is thread-safe, although most Swing methods are not. Please
      * see <A
-     * HREF="http://download.oracle.com/javase/tutorial/uiswing/concurrency/index.html">
+     * HREF="http://docs.oracle.com/javase/tutorial/uiswing/concurrency/index.html">
      * Concurrency in Swing</A> for more information.
      *
      * <p>
@@ -2539,7 +2539,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * future Swing releases. The current serialization support is
      * appropriate for short term storage or RMI between applications running
      * the same version of Swing.  As of 1.4, support for long term storage
-     * of all JavaBeans<sup><font size="-2">TM</font></sup>
+     * of all JavaBeans&trade;
      * has been added to the <code>java.beans</code> package.
      * Please see {@link java.beans.XMLEncoder}.
      */

@@ -28,7 +28,7 @@
 # Now load the spec
 include $(SPEC)
 
-# Load the vital tools for all the makefiles. 
+# Load the vital tools for all the makefiles.
 include $(SRC_ROOT)/common/makefiles/MakeBase.gmk
 
 # Include the corresponding custom file, if present.
@@ -38,19 +38,19 @@ include $(SRC_ROOT)/common/makefiles/MakeBase.gmk
 
 # Remove any build.log from a previous run, if they exist
 ifneq (,$(BUILD_LOG))
-    ifneq (,$(BUILD_LOG_PREVIOUS))
-        # Rotate old log
-        $(shell $(RM) $(BUILD_LOG_PREVIOUS) 2> /dev/null)
-        $(shell $(MV) $(BUILD_LOG) $(BUILD_LOG_PREVIOUS) 2> /dev/null)
-    else
-        $(shell $(RM) $(BUILD_LOG) 2> /dev/null)
-    endif
-    $(shell $(RM) $(OUTPUT_ROOT)/build-trace-time.log 2> /dev/null)
+  ifneq (,$(BUILD_LOG_PREVIOUS))
+    # Rotate old log
+    $(shell $(RM) $(BUILD_LOG_PREVIOUS) 2> /dev/null)
+    $(shell $(MV) $(BUILD_LOG) $(BUILD_LOG_PREVIOUS) 2> /dev/null)
+  else
+    $(shell $(RM) $(BUILD_LOG) 2> /dev/null)
+  endif
+  $(shell $(RM) $(OUTPUT_ROOT)/build-trace-time.log 2> /dev/null)
 endif
 # Remove any javac server logs and port files. This
 # prevents a new make run to reuse the previous servers.
 ifneq (,$(SJAVAC_SERVER_DIR))
-    $(shell $(MKDIR) -p $(SJAVAC_SERVER_DIR) && $(RM) -rf $(SJAVAC_SERVER_DIR)/*)
+  $(shell $(MKDIR) -p $(SJAVAC_SERVER_DIR) && $(RM) -rf $(SJAVAC_SERVER_DIR)/*)
 endif
 
 # Reset the build timers.
@@ -103,8 +103,8 @@ jaxws-only: start-make
 	@$(call TargetExit)
 
 ifeq ($(BUILD_HOTSPOT),true)
-hotspot: hotspot-only
-hotspot-only: start-make
+  hotspot: hotspot-only
+  hotspot-only: start-make
 	@$(call TargetEnter)
 	@($(CD) $(SRC_ROOT)/common/makefiles && $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) -f HotspotWrapper.gmk)
 	@$(call TargetExit)
@@ -149,9 +149,9 @@ profiles-only: start-make
 	@$(call TargetExit)
 
 profiles-oscheck:
-ifneq ($(OPENJDK_TARGET_OS), linux)
-	@echo "Error: The Java SE 8 Compact Profiles are only implemented for Linux at this time" && exit 1
-endif
+        ifneq ($(OPENJDK_TARGET_OS), linux)
+	  @echo "Error: The Java SE 8 Compact Profiles are only implemented for Linux at this time" && exit 1
+        endif
 
 install: images install-only
 install-only: start-make
@@ -202,12 +202,12 @@ clean: clean-langtools clean-corba clean-jaxp clean-jaxws clean-hotspot clean-jd
 dist-clean: clean
 	@($(CD) $(OUTPUT_ROOT) && $(RM) -r *spec.gmk config.* configure-arguments Makefile compare.sh spec.sh tmp javacservers)
 	@$(if $(filter $(CONF_NAME),$(notdir $(OUTPUT_ROOT))), \
-    if test "x`$(LS) $(OUTPUT_ROOT)`" != x; then \
-        $(ECHO) "Warning: Not removing non-empty configuration directory for '$(CONF_NAME)'" ;\
-    else \
-        ($(CD) $(SRC_ROOT) && $(ECHO) "Removing configuration directory for '$(CONF_NAME)'" && $(RM) -r $(OUTPUT_ROOT)) \
-    fi \
-  )
+	  if test "x`$(LS) $(OUTPUT_ROOT)`" != x; then \
+	    $(ECHO) "Warning: Not removing non-empty configuration directory for '$(CONF_NAME)'" ; \
+	  else \
+	    ($(CD) $(SRC_ROOT) && $(ECHO) "Removing configuration directory for '$(CONF_NAME)'" && $(RM) -r $(OUTPUT_ROOT)) \
+	  fi \
+	)
 	@$(ECHO) Cleaned everything, you will have to re-run configure.
 
 clean-langtools:

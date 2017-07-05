@@ -268,8 +268,8 @@ public enum ChronoUnit implements TemporalUnit {
 
     //-----------------------------------------------------------------------
     @Override
-    public long between(Temporal temporal1, Temporal temporal2) {
-        return temporal1.until(temporal2, this);
+    public long between(Temporal temporal1Inclusive, Temporal temporal2Exclusive) {
+        return temporal1Inclusive.until(temporal2Exclusive, this);
     }
 
     //-----------------------------------------------------------------------

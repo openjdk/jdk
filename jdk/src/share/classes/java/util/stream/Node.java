@@ -149,7 +149,9 @@ interface Node<T> {
     /**
      * Copies the content of this {@code Node} into an array, starting at a
      * given offset into the array.  It is the caller's responsibility to ensure
-     * there is sufficient room in the array.
+     * there is sufficient room in the array, otherwise unspecified behaviour
+     * will occur if the array length is less than the number of elements
+     * contained in this node.
      *
      * @param array the array into which to copy the contents of this
      *       {@code Node}
@@ -258,6 +260,12 @@ interface Node<T> {
          */
         @Override
         default T[] asArray(IntFunction<T[]> generator) {
+            if (java.util.stream.Tripwire.ENABLED)
+                java.util.stream.Tripwire.trip(getClass(), "{0} calling Node.OfPrimitive.asArray");
+
+            long size = count();
+            if (size >= Nodes.MAX_ARRAY_SIZE)
+                throw new IllegalArgumentException(Nodes.BAD_SIZE);
             T[] boxed = generator.apply((int) count());
             copyInto(boxed, 0);
             return boxed;

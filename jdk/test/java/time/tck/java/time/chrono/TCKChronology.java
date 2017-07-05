@@ -64,7 +64,6 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
-import java.util.Locale;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
@@ -336,22 +335,6 @@ public class TCKChronology {
     @Test(expectedExceptions = DateTimeException.class)
     public void test_noChrono() {
         Chronology chrono = Chronology.of("FooFoo");
-    }
-
-    //-----------------------------------------------------------------------
-    // serialization; serialize and check each calendar system
-    //-----------------------------------------------------------------------
-    @Test(dataProvider = "calendarNameAndType")
-    public void test_chronoSerializationSingleton(String id, String _calendarType) throws Exception {
-        Chronology original = Chronology.of(id);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(baos);
-        out.writeObject(original);
-        out.close();
-        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
-        ObjectInputStream in = new ObjectInputStream(bais);
-        Chronology ser = (Chronology) in.readObject();
-        assertEquals(ser, original, "Deserialized Chronology is not correct");
     }
 
 }

@@ -188,7 +188,7 @@ import java.lang.NullPointerException;  // for javadoc
  * URI
  *
  * <blockquote>
- * {@code http://java.sun.com/j2se/1.3/docs/guide/collections/designfaq.html#28}
+ * {@code http://docs.oracle.com/javase/1.3/docs/guide/collections/designfaq.html#28}
  * </blockquote>
  *
  * Resolving the relative URI
@@ -227,7 +227,7 @@ import java.lang.NullPointerException;  // for javadoc
  * possible.  For example, relativizing the URI
  *
  * <blockquote>
- * {@code http://java.sun.com/j2se/1.3/docs/guide/index.html}
+ * {@code http://docs.oracle.com/javase/1.3/docs/guide/index.html}
  * </blockquote>
  *
  * against the base URI

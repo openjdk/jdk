@@ -49,7 +49,7 @@ import sun.swing.DefaultLookup;
  * <code>DefaultTreeCellRenderer</code> is not opaque and
  * unless you subclass paint you should not change this.
  * See <a
- href="http://java.sun.com/docs/books/tutorial/uiswing/components/tree.html">How to Use Trees</a>
+ href="http://docs.oracle.com/javase/tutorial/uiswing/components/tree.html">How to Use Trees</a>
  * in <em>The Java Tutorial</em>
  * for examples of customizing node display using this class.
  * <p>
@@ -95,7 +95,7 @@ import sun.swing.DefaultLookup;
  * future Swing releases. The current serialization support is
  * appropriate for short term storage or RMI between applications running
  * the same version of Swing.  As of 1.4, support for long term storage
- * of all JavaBeans<sup><font size="-2">TM</font></sup>
+ * of all JavaBeans&trade;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *

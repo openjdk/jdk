@@ -260,15 +260,6 @@ public interface ComponentPeer {
     ColorModel getColorModel();
 
     /**
-     * Returns the toolkit that is responsible for the component.
-     *
-     * @return the toolkit that is responsible for the component
-     *
-     * @see Component#getToolkit()
-     */
-    Toolkit getToolkit();
-
-    /**
      * Returns a graphics object to paint on the component.
      *
      * @return a graphics object to paint on the component

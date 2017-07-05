@@ -98,7 +98,7 @@ public abstract class PrinterJob {
      * Calling this method is equivalent to calling
      * {@link javax.print.PrintServiceLookup#lookupPrintServices(
      * DocFlavor, AttributeSet)
-     * <code>PrintServiceLookup.lookupPrintServices()</code>}
+     * PrintServiceLookup.lookupPrintServices()}
      * and specifying a Pageable DocFlavor.
      * @return a possibly empty array of 2D print services.
      * @since     1.4
@@ -136,8 +136,8 @@ public abstract class PrinterJob {
      * <code>PrinterJob</code> instances which support print services.
      * Calling this method is equivalent to calling
      * {@link javax.print.StreamPrintServiceFactory#lookupStreamPrintServiceFactories(DocFlavor, String)
-     * <code>StreamPrintServiceFactory.lookupStreamPrintServiceFactories()
-     * </code>} and specifying a Pageable DocFlavor.
+     * StreamPrintServiceFactory.lookupStreamPrintServiceFactories()
+     * } and specifying a Pageable DocFlavor.
      *
      * @param mimeType the required output format, or null to mean any format.
      * @return a possibly empty array of 2D stream print service factories.
@@ -155,7 +155,7 @@ public abstract class PrinterJob {
 
     /**
      * A <code>PrinterJob</code> object should be created using the
-     * static {@link #getPrinterJob() <code>getPrinterJob</code>} method.
+     * static {@link #getPrinterJob() getPrinterJob} method.
      */
     public PrinterJob() {
     }
