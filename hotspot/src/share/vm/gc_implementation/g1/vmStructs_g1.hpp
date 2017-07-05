@@ -26,7 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_VMSTRUCTS_G1_HPP
 
 #include "gc_implementation/g1/heapRegion.hpp"
-#include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "gc_implementation/g1/heapRegionManager.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 
 #define VM_STRUCTS_G1(nonstatic_field, static_field)                          \
@@ -42,10 +42,10 @@
   nonstatic_field(G1HeapRegionTable, _bias,             size_t)               \
   nonstatic_field(G1HeapRegionTable, _shift_by,         uint)                 \
                                                                               \
-  nonstatic_field(HeapRegionSeq,   _regions,            G1HeapRegionTable)    \
-  nonstatic_field(HeapRegionSeq,   _num_committed,      uint)                 \
+  nonstatic_field(HeapRegionManager, _regions,          G1HeapRegionTable)    \
+  nonstatic_field(HeapRegionManager, _num_committed,    uint)                 \
                                                                               \
-  nonstatic_field(G1CollectedHeap, _hrs,                HeapRegionSeq)        \
+  nonstatic_field(G1CollectedHeap, _hrm,                HeapRegionManager)    \
   nonstatic_field(G1CollectedHeap, _summary_bytes_used, size_t)               \
   nonstatic_field(G1CollectedHeap, _g1mm,               G1MonitoringSupport*) \
   nonstatic_field(G1CollectedHeap, _old_set,            HeapRegionSetBase)    \
@@ -72,7 +72,7 @@
                                                                               \
   declare_type(G1OffsetTableContigSpace, CompactibleSpace)                    \
   declare_type(HeapRegion, G1OffsetTableContigSpace)                          \
-  declare_toplevel_type(HeapRegionSeq)                                        \
+  declare_toplevel_type(HeapRegionManager)                                        \
   declare_toplevel_type(HeapRegionSetBase)                                    \
   declare_toplevel_type(HeapRegionSetCount)                                   \
   declare_toplevel_type(G1MonitoringSupport)                                  \
