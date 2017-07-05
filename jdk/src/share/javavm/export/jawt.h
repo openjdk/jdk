@@ -154,7 +154,9 @@ typedef struct jawt_DrawingSurfaceInfo {
     /*
      * Pointer to the platform-specific information.  This can be safely
      * cast to a JAWT_Win32DrawingSurfaceInfo on Windows or a
-     * JAWT_X11DrawingSurfaceInfo on Solaris.  See jawt_md.h for details.
+     * JAWT_X11DrawingSurfaceInfo on Solaris. On Mac OS X this is a
+     * pointer to a NSObject that conforms to the JAWT_SurfaceLayers
+     * protocol. See jawt_md.h for details.
      */
     void* platformInfo;
     /* Cached pointer to the underlying drawing surface */

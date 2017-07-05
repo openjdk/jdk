@@ -869,6 +869,7 @@ SRC_ROOT
 ZERO_ARCHDEF
 DEFINE_CROSS_COMPILE_ARCH
 LP64
+OPENJDK_TARGET_OS_EXPORT_DIR
 OPENJDK_TARGET_OS_API_DIR
 OPENJDK_TARGET_CPU_JLI_CFLAGS
 OPENJDK_TARGET_CPU_OSARCH
@@ -3864,7 +3865,7 @@ fi
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1382540536
+DATE_WHEN_GENERATED=1382702260
 
 ###############################################################################
 #
@@ -7146,6 +7147,13 @@ $as_echo "$COMPILE_TYPE" >&6; }
   fi
   if test "x$OPENJDK_TARGET_OS_API" = xwinapi; then
     OPENJDK_TARGET_OS_API_DIR="windows"
+  fi
+
+
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+      OPENJDK_TARGET_OS_EXPORT_DIR=macosx
+  else
+      OPENJDK_TARGET_OS_EXPORT_DIR=${OPENJDK_TARGET_OS_API_DIR}
   fi
 
 
@@ -29638,7 +29646,7 @@ fi
       -I${JDK_OUTPUTDIR}/include \
       -I${JDK_OUTPUTDIR}/include/$OPENJDK_TARGET_OS \
       -I${JDK_TOPDIR}/src/share/javavm/export \
-      -I${JDK_TOPDIR}/src/$OPENJDK_TARGET_OS_API_DIR/javavm/export \
+      -I${JDK_TOPDIR}/src/$OPENJDK_TARGET_OS_EXPORT_DIR/javavm/export \
       -I${JDK_TOPDIR}/src/share/native/common \
       -I${JDK_TOPDIR}/src/$OPENJDK_TARGET_OS_API_DIR/native/common"
 
@@ -29905,11 +29913,11 @@ $as_echo_n "checking if we should generate debug symbols... " >&6; }
   elif test "x$enable_debug_symbols" = "xno"; then
     ENABLE_DEBUG_SYMBOLS=false
   else
-  # Default is on if objcopy is found
-  if test "x$OBJCOPY" != x; then
-    ENABLE_DEBUG_SYMBOLS=true
-  # MacOS X and Windows don't use objcopy but default is on for those OSes
-  elif test "x$OPENJDK_TARGET_OS" = xmacosx || test "x$OPENJDK_TARGET_OS" = xwindows; then
+    # Default is on if objcopy is found
+    if test "x$OBJCOPY" != x; then
+      ENABLE_DEBUG_SYMBOLS=true
+    # MacOS X and Windows don't use objcopy but default is on for those OSes
+    elif test "x$OPENJDK_TARGET_OS" = xmacosx || test "x$OPENJDK_TARGET_OS" = xwindows; then
       ENABLE_DEBUG_SYMBOLS=true
     else
       ENABLE_DEBUG_SYMBOLS=false
@@ -34245,10 +34253,10 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
     PREV_CXXCFLAGS="$CXXFLAGS"
-    PREV_LDFLAGS="$LDFLAGS"
+    PREV_LIBS="$LIBS"
     PREV_CXX="$CXX"
     CXXFLAGS="$CXXFLAGS $FREETYPE_CFLAGS"
-    LDFLAGS="$LDFLAGS $FREETYPE_LIBS"
+    LIBS="$LIBS $FREETYPE_LIBS"
     CXX="$FIXPATH $CXX"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -34315,7 +34323,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
     CXXCFLAGS="$PREV_CXXFLAGS"
-    LDFLAGS="$PREV_LDFLAGS"
+    LIBS="$PREV_LIBS"
     CXX="$PREV_CXX"
     ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'

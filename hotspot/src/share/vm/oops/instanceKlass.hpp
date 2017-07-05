@@ -1023,6 +1023,7 @@ public:
   // It has to be an object not a Mutex because it's held through java calls.
   oop init_lock() const;
 private:
+  void fence_and_clear_init_lock();
 
   // Static methods that are used to implement member methods where an exposed this pointer
   // is needed due to possible GCs

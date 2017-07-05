@@ -454,40 +454,21 @@ GetJavaProperties(JNIEnv *env)
     /* patches/service packs installed */
     sprops.patch_level = "unknown";
 
-    /* Java 2D properties */
+    /* Java 2D/AWT properties */
 #ifdef MACOSX
-    PreferredToolkit prefToolkit = getPreferredToolkit();
-    switch (prefToolkit) {
-        case CToolkit:
-        case HToolkit:
-            sprops.graphics_env = "sun.awt.CGraphicsEnvironment";
-            break;
-        case XToolkit:
-#endif
+    // Always the same GraphicsEnvironment and Toolkit on Mac OS X
+    sprops.graphics_env = "sun.awt.CGraphicsEnvironment";
+    sprops.awt_toolkit = "sun.lwawt.macosx.LWCToolkit";
+
+    // check if we're in a GUI login session and set java.awt.headless=true if not
+    sprops.awt_headless = isInAquaSession() ? NULL : "true";
+#else
     sprops.graphics_env = "sun.awt.X11GraphicsEnvironment";
-#ifdef MACOSX
-            break;
-    }
-#endif
-    /* AWT properties */
 #ifdef JAVASE_EMBEDDED
     sprops.awt_toolkit = getEmbeddedToolkit();
     if (sprops.awt_toolkit == NULL) // default as below
 #endif
-#ifdef MACOSX
-        switch (prefToolkit) {
-            case CToolkit:
-                sprops.awt_toolkit = "sun.lwawt.macosx.LWCToolkit";
-                break;
-            case XToolkit:
-#endif
     sprops.awt_toolkit = "sun.awt.X11.XToolkit";
-#ifdef MACOSX
-                break;
-            default:
-                sprops.awt_toolkit = "sun.awt.HToolkit";
-                break;
-        }
 #endif
 
     /* This is used only for debugging of font problems. */

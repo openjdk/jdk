@@ -40,8 +40,7 @@ TraceGeneratedNames =     \
     traceEventIds.hpp     \
     traceTypes.hpp
 
-
-!if "$(OPENJDK)" != "true"
+!if EXISTS($(TraceAltSrcDir))
 TraceGeneratedNames = $(TraceGeneratedNames) \
     traceRequestables.hpp \
     traceEventControl.hpp \
@@ -56,7 +55,7 @@ TraceGeneratedFiles = \
 	$(TraceOutDir)/traceEventIds.hpp     \
 	$(TraceOutDir)/traceTypes.hpp
 
-!if "$(OPENJDK)" != "true"
+!if EXISTS($(TraceAltSrcDir))
 TraceGeneratedFiles = $(TraceGeneratedFiles) \
 	$(TraceOutDir)/traceRequestables.hpp \
     $(TraceOutDir)/traceEventControl.hpp \
@@ -68,7 +67,7 @@ XSLT = $(QUIETLY) $(REMOTE) $(RUN_JAVA) -classpath $(JvmtiOutDir) jvmtiGen
 XML_DEPS = $(TraceSrcDir)/trace.xml $(TraceSrcDir)/tracetypes.xml \
     $(TraceSrcDir)/trace.dtd $(TraceSrcDir)/xinclude.mod
 
-!if "$(OPENJDK)" != "true"
+!if EXISTS($(TraceAltSrcDir))
 XML_DEPS = $(XML_DEPS) $(TraceAltSrcDir)/traceevents.xml
 !endif
 
@@ -87,7 +86,7 @@ $(TraceOutDir)/traceTypes.hpp: $(TraceSrcDir)/trace.xml $(TraceSrcDir)/traceType
 	@echo Generating $@
 	@$(XSLT) -IN $(TraceSrcDir)/trace.xml -XSL $(TraceSrcDir)/traceTypes.xsl -OUT $(TraceOutDir)/traceTypes.hpp
 
-!if "$(OPENJDK)" == "true"
+!if !EXISTS($(TraceAltSrcDir))
 
 $(TraceOutDir)/traceEventClasses.hpp: $(TraceSrcDir)/trace.xml $(TraceSrcDir)/traceEventClasses.xsl $(XML_DEPS)
 	@echo Generating OpenJDK $@
