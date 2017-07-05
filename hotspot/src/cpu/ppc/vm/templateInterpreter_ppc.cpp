@@ -668,7 +668,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   address entry = __ pc();
 
-  const bool inc_counter = UseCompiler || CountCompiledCalls;
+  const bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
 
   // -----------------------------------------------------------------------------
   // Allocate a new frame that represents the native callee (i2n frame).
@@ -1118,7 +1118,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 // Generic interpreted method entry to (asm) interpreter.
 //
 address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
-  bool inc_counter = UseCompiler || CountCompiledCalls;
+  bool inc_counter = UseCompiler || CountCompiledCalls || LogTouchedMethods;
   address entry = __ pc();
   // Generate the code to allocate the interpreter stack frame.
   Register Rsize_of_parameters = R4_ARG2, // Written by generate_fixed_frame.

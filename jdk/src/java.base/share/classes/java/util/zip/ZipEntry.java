@@ -29,6 +29,9 @@ import static java.util.zip.ZipUtils.*;
 import java.nio.file.attribute.FileTime;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.ZoneId;
 
 import static java.util.zip.ZipConstants64.*;
 
@@ -193,6 +196,85 @@ class ZipEntry implements ZipConstants, Cloneable {
         }
         return (xdostime != -1) ? extendedDosToJavaTime(xdostime) : -1;
     }
+
+    /**
+     * Sets the last modification time of the entry in local date-time.
+     *
+     * <p> If the entry is output to a ZIP file or ZIP file formatted
+     * output stream the last modification time set by this method will
+     * be stored into the {@code date and time fields} of the zip file
+     * entry and encoded in standard {@code MS-DOS date and time format}.
+     * If the date-time set is out of the range of the standard {@code
+     * MS-DOS date and time format}, the time will also be stored into
+     * zip file entry's extended timestamp fields in {@code optional
+     * extra data} in UTC time. The {@link java.time.ZoneId#systemDefault()
+     * system default TimeZone} is used to convert the local date-time
+     * to UTC time.
+     *
+     * <p> {@code LocalDateTime} uses a precision of nanoseconds, whereas
+     * this class uses a precision of milliseconds. The conversion will
+     * truncate any excess precision information as though the amount in
+     * nanoseconds was subject to integer division by one million.
+     *
+     * @param  time
+     *         The last modification time of the entry in local date-time
+     *
+     * @see #getTimeLocal()
+     * @since 1.9
+     */
+    public void setTimeLocal(LocalDateTime time) {
+        int year = time.getYear() - 1980;
+        if (year < 0) {
+            this.xdostime = DOSTIME_BEFORE_1980;
+        } else {
+            this.xdostime = (year << 25 |
+                time.getMonthValue() << 21 |
+                time.getDayOfMonth() << 16 |
+                time.getHour() << 11 |
+                time.getMinute() << 5 |
+                time.getSecond() >> 1)
+                + ((long)(((time.getSecond() & 0x1) * 1000) +
+                      time.getNano() / 1000_000) << 32);
+        }
+        if (xdostime != DOSTIME_BEFORE_1980 && year <= 0x7f) {
+            this.mtime = null;
+        } else {
+            this.mtime = FileTime.from(
+                ZonedDateTime.of(time, ZoneId.systemDefault()).toInstant());
+        }
+    }
+
+    /**
+     * Returns the last modification time of the entry in local date-time.
+     *
+     * <p> If the entry is read from a ZIP file or ZIP file formatted
+     * input stream, this is the last modification time from the zip
+     * file entry's {@code optional extra data} if the extended timestamp
+     * fields are present. Otherwise, the last modification time is read
+     * from entry's standard MS-DOS formatted {@code date and time fields}.
+     *
+     * <p> The {@link java.time.ZoneId#systemDefault() system default TimeZone}
+     * is used to convert the UTC time to local date-time.
+     *
+     * @return  The last modification time of the entry in local date-time
+     *
+     * @see #setTimeLocal(LocalDateTime)
+     * @since 1.9
+     */
+    public LocalDateTime getTimeLocal() {
+        if (mtime != null) {
+            return LocalDateTime.ofInstant(mtime.toInstant(), ZoneId.systemDefault());
+        }
+        int ms = (int)(xdostime >> 32);
+        return LocalDateTime.of((int)(((xdostime >> 25) & 0x7f) + 1980),
+                             (int)((xdostime >> 21) & 0x0f),
+                             (int)((xdostime >> 16) & 0x1f),
+                             (int)((xdostime >> 11) & 0x1f),
+                             (int)((xdostime >> 5) & 0x3f),
+                             (int)((xdostime << 1) & 0x3e) + ms / 1000,
+                             (ms % 1000) * 1000_000);
+    }
+
 
     /**
      * Sets the last modification time of the entry.
@@ -498,15 +580,15 @@ class ZipEntry implements ZipConstants, Cloneable {
                     // flag its presence or absence. But if mtime is present
                     // in LOC it must be present in CEN as well.
                     if ((flag & 0x1) != 0 && (sz0 + 4) <= sz) {
-                        mtime = unixTimeToFileTime(get32(extra, off + sz0));
+                        mtime = unixTimeToFileTime(get32S(extra, off + sz0));
                         sz0 += 4;
                     }
                     if ((flag & 0x2) != 0 && (sz0 + 4) <= sz) {
-                        atime = unixTimeToFileTime(get32(extra, off + sz0));
+                        atime = unixTimeToFileTime(get32S(extra, off + sz0));
                         sz0 += 4;
                     }
                     if ((flag & 0x4) != 0 && (sz0 + 4) <= sz) {
-                        ctime = unixTimeToFileTime(get32(extra, off + sz0));
+                        ctime = unixTimeToFileTime(get32S(extra, off + sz0));
                         sz0 += 4;
                     }
                     break;

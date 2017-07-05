@@ -436,7 +436,7 @@ public:
 
   // Returns "true" iff no allocations have occurred since the last
   // call to "save_marks".
-  bool no_allocs_since_save_marks(bool include_young);
+  bool no_allocs_since_save_marks();
 
   // Returns true if an incremental collection is likely to fail.
   // We optionally consult the young gen, if asked to do so;
