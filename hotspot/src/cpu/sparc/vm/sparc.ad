@@ -471,9 +471,6 @@ extern bool can_branch_register( Node *bol, Node *cmp );
 source %{
 #define __ _masm.
 
-// Block initializing store
-#define ASI_BLK_INIT_QUAD_LDD_P    0xE2
-
 // tertiary op of a LoadP or StoreP encoding
 #define REGP_OP true
 
@@ -1693,7 +1690,6 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 
 void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   MacroAssembler _masm(&cbuf);
-  Label L;
   Register G5_ic_reg  = reg_to_register_object(Matcher::inline_cache_reg_encode());
   Register temp_reg   = G3;
   assert( G5_ic_reg != temp_reg, "conflicting registers" );
@@ -1835,8 +1831,10 @@ const bool Matcher::convL2FSupported(void) {
 //
 // NOTE: If the platform does not provide any short branch variants, then
 //       this method should return false for offset 0.
-bool Matcher::is_short_branch_offset(int rule, int offset) {
-  return false;
+bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
+  // The passed offset is relative to address of the branch.
+  // Don't need to adjust the offset.
+  return UseCBCond && Assembler::is_simm(offset, 12);
 }
 
 const bool Matcher::isSimpleConstant64(jlong value) {
@@ -2315,60 +2313,23 @@ encode %{
     __ delayed()->nop();
   %}
 
-  enc_class enc_bp( Label labl, cmpOp cmp, flagsReg cc ) %{
+  enc_class enc_bp( label labl, cmpOp cmp, flagsReg cc ) %{
     MacroAssembler _masm(&cbuf);
-    Label &L = *($labl$$label);
+    Label* L = $labl$$label;
     Assembler::Predict predict_taken =
-      cbuf.is_backward_branch(L) ? Assembler::pt : Assembler::pn;
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
 
-    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, L);
+    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
     __ delayed()->nop();
   %}
 
-  enc_class enc_bpl( Label labl, cmpOp cmp, flagsRegL cc ) %{
+  enc_class enc_bpr( label labl, cmpOp_reg cmp, iRegI op1 ) %{
     MacroAssembler _masm(&cbuf);
-    Label &L = *($labl$$label);
+    Label* L = $labl$$label;
     Assembler::Predict predict_taken =
-      cbuf.is_backward_branch(L) ? Assembler::pt : Assembler::pn;
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
 
-    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::xcc, predict_taken, L);
-    __ delayed()->nop();
-  %}
-
-  enc_class enc_bpx( Label labl, cmpOp cmp, flagsRegP cc ) %{
-    MacroAssembler _masm(&cbuf);
-    Label &L = *($labl$$label);
-    Assembler::Predict predict_taken =
-      cbuf.is_backward_branch(L) ? Assembler::pt : Assembler::pn;
-
-    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::ptr_cc, predict_taken, L);
-    __ delayed()->nop();
-  %}
-
-  enc_class enc_fbp( Label labl, cmpOpF cmp, flagsRegF cc ) %{
-    MacroAssembler _masm(&cbuf);
-    Label &L = *($labl$$label);
-    Assembler::Predict predict_taken =
-      cbuf.is_backward_branch(L) ? Assembler::pt : Assembler::pn;
-
-    __ fbp( (Assembler::Condition)($cmp$$cmpcode), false, (Assembler::CC)($cc$$reg), predict_taken, L);
-    __ delayed()->nop();
-  %}
-
-  enc_class enc_ba( Label labl ) %{
-    MacroAssembler _masm(&cbuf);
-    Label &L = *($labl$$label);
-    __ ba(false, L);
-    __ delayed()->nop();
-  %}
-
-  enc_class enc_bpr( Label labl, cmpOp_reg cmp, iRegI op1 ) %{
-    MacroAssembler _masm(&cbuf);
-    Label &L = *$labl$$label;
-    Assembler::Predict predict_taken =
-      cbuf.is_backward_branch(L) ? Assembler::pt : Assembler::pn;
-
-    __ bpr( (Assembler::RCondition)($cmp$$cmpcode), false, predict_taken, as_Register($op1$$reg), L);
+    __ bpr( (Assembler::RCondition)($cmp$$cmpcode), false, predict_taken, as_Register($op1$$reg), *L);
     __ delayed()->nop();
   %}
 
@@ -2855,10 +2816,10 @@ enc_class Fast_Unlock(iRegP oop, iRegP box, o7RegP scratch, iRegP scratch2) %{
     Register    nof_bytes_arg   = reg_to_register_object($cnt$$reg);
     Register    nof_bytes_tmp    = reg_to_register_object($temp$$reg);
     Register    base_pointer_arg = reg_to_register_object($base$$reg);
-
+  
     Label loop;
     __ mov(nof_bytes_arg, nof_bytes_tmp);
-
+  
     // Loop and clear, walking backwards through the array.
     // nof_bytes_tmp (if >0) is always the number of bytes to zero
     __ bind(loop);
@@ -2986,7 +2947,7 @@ enc_class enc_String_Equals(o0RegP str1, o1RegP str2, g3RegI cnt, notemp_iRegI r
     __ brx(Assembler::equal, true, Assembler::pn, Ldone);
     __ delayed()->add(G0, 1, result_reg);
 
-    __ br_on_reg_cond(Assembler::rc_z, true, Assembler::pn, cnt_reg, Ldone);
+    __ cmp_zero_and_br(Assembler::zero, cnt_reg, Ldone, true, Assembler::pn);
     __ delayed()->add(G0, 1, result_reg); // count == 0
 
     //rename registers
@@ -3006,7 +2967,7 @@ enc_class enc_String_Equals(o0RegP str1, o1RegP str2, g3RegI cnt, notemp_iRegI r
     // Compare char[] arrays aligned to 4 bytes.
     __ char_arrays_equals(str1_reg, str2_reg, limit_reg, result_reg,
                           chr1_reg, chr2_reg, Ldone);
-    __ ba(false,Ldone);
+    __ ba(Ldone);
     __ delayed()->add(G0, 1, result_reg);
 
     // char by char compare
@@ -3065,7 +3026,7 @@ enc_class enc_Array_Equals(o0RegP ary1, o1RegP ary2, g3RegP tmp1, notemp_iRegI r
     __ br(Assembler::notEqual, true, Assembler::pn, Ldone);
     __ delayed()->mov(G0, result_reg);     // not equal
 
-    __ br_on_reg_cond(Assembler::rc_z, true, Assembler::pn, tmp1_reg, Ldone);
+    __ cmp_zero_and_br(Assembler::zero, tmp1_reg, Ldone, true, Assembler::pn);
     __ delayed()->add(G0, 1, result_reg); // zero-length arrays are equal
 
     // load array addresses
@@ -3352,10 +3313,10 @@ op_attrib op_cost(1);          // Required cost attribute
 
 //----------Instruction Attributes---------------------------------------------
 ins_attrib ins_cost(DEFAULT_COST); // Required cost attribute
-ins_attrib ins_size(32);       // Required size attribute (in bits)
-ins_attrib ins_pc_relative(0); // Required PC Relative flag
-ins_attrib ins_short_branch(0); // Required flag: is this instruction a
-                                // non-matching short branch variant of some
+ins_attrib ins_size(32);           // Required size attribute (in bits)
+ins_attrib ins_avoid_back_to_back(0); // instruction should not be generated back to back
+ins_attrib ins_short_branch(0);    // Required flag: is this instruction a
+                                   // non-matching short branch variant of some
                                                             // long branch?
 
 //----------OPERANDS-----------------------------------------------------------
@@ -3435,6 +3396,15 @@ operand immU6() %{
 // Integer Immediate: 11-bit
 operand immI11() %{
   predicate(Assembler::is_simm(n->get_int(),11));
+  match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Integer Immediate: 5-bit
+operand immI5() %{
+  predicate(Assembler::is_simm(n->get_int(), 5));
   match(ConI);
   op_cost(0);
   format %{ %}
@@ -3660,6 +3630,15 @@ operand immL0() %{
   match(ConL);
   op_cost(0);
   // formats are generated automatically for constants and base registers
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Integer Immediate: 5-bit
+operand immL5() %{
+  predicate(n->get_long() == (int)n->get_long() && Assembler::is_simm((int)n->get_long(), 5));
+  match(ConL);
+  op_cost(0);
   format %{ %}
   interface(CONST_INTER);
 %}
@@ -5196,6 +5175,42 @@ pipe_class br_reg(Universe br, cmpOp cmp, iRegI op1, label labl) %{
     MS  : R;
 %}
 
+// Compare and branch
+pipe_class cmp_br_reg_reg(Universe br, cmpOp cmp, iRegI src1, iRegI src2, label labl, flagsReg cr) %{
+    instruction_count(2); has_delay_slot;
+    cr    : E(write);
+    src1  : R(read);
+    src2  : R(read);
+    IALU  : R;
+    BR    : R;
+%}
+
+// Compare and branch
+pipe_class cmp_br_reg_imm(Universe br, cmpOp cmp, iRegI src1, immI13 src2, label labl, flagsReg cr) %{
+    instruction_count(2); has_delay_slot;
+    cr    : E(write);
+    src1  : R(read);
+    IALU  : R;
+    BR    : R;
+%}
+
+// Compare and branch using cbcond
+pipe_class cbcond_reg_reg(Universe br, cmpOp cmp, iRegI src1, iRegI src2, label labl) %{
+    single_instruction;
+    src1  : E(read);
+    src2  : E(read);
+    IALU  : R;
+    BR    : R;
+%}
+
+// Compare and branch using cbcond
+pipe_class cbcond_reg_imm(Universe br, cmpOp cmp, iRegI src1, immI5 src2, label labl) %{
+    single_instruction;
+    src1  : E(read);
+    IALU  : R;
+    BR    : R;
+%}
+
 pipe_class br_fcc(Universe br, cmpOpF cc, flagsReg cr, label labl) %{
     single_instruction_with_delay_slot;
     cr    : E(read);
@@ -6251,6 +6266,7 @@ instruct loadConD(regD dst, immD con, o7RegI tmp) %{
 instruct prefetchr( memory mem ) %{
   match( PrefetchRead mem );
   ins_cost(MEMORY_REF_COST);
+  size(4);
 
   format %{ "PREFETCH $mem,0\t! Prefetch read-many" %}
   opcode(Assembler::prefetch_op3);
@@ -6259,9 +6275,9 @@ instruct prefetchr( memory mem ) %{
 %}
 
 instruct prefetchw( memory mem ) %{
-  predicate(AllocatePrefetchStyle != 3 );
   match( PrefetchWrite mem );
   ins_cost(MEMORY_REF_COST);
+  size(4);
 
   format %{ "PREFETCH $mem,2\t! Prefetch write-many (and read)" %}
   opcode(Assembler::prefetch_op3);
@@ -6269,23 +6285,61 @@ instruct prefetchw( memory mem ) %{
   ins_pipe(iload_mem);
 %}
 
-// Use BIS instruction to prefetch.
-instruct prefetchw_bis( memory mem ) %{
-  predicate(AllocatePrefetchStyle == 3);
-  match( PrefetchWrite mem );
-  ins_cost(MEMORY_REF_COST);
+// Prefetch instructions for allocation.
 
-  format %{ "STXA   G0,$mem\t! // Block initializing store" %}
+instruct prefetchAlloc( memory mem ) %{
+  predicate(AllocatePrefetchInstr == 0);
+  match( PrefetchAllocation mem );
+  ins_cost(MEMORY_REF_COST);
+  size(4);
+
+  format %{ "PREFETCH $mem,2\t! Prefetch allocation" %}
+  opcode(Assembler::prefetch_op3);
+  ins_encode( form3_mem_prefetch_write( mem ) );
+  ins_pipe(iload_mem);
+%}
+
+// Use BIS instruction to prefetch for allocation.
+// Could fault, need space at the end of TLAB.
+instruct prefetchAlloc_bis( iRegP dst ) %{
+  predicate(AllocatePrefetchInstr == 1);
+  match( PrefetchAllocation dst );
+  ins_cost(MEMORY_REF_COST);
+  size(4);
+
+  format %{ "STXA   [$dst]\t! // Prefetch allocation using BIS" %}
   ins_encode %{
-     Register base = as_Register($mem$$base);
-     int disp = $mem$$disp;
-     if (disp != 0) {
-       __ add(base, AllocatePrefetchStepSize, base);
-     }
-     __ stxa(G0, base, G0, ASI_BLK_INIT_QUAD_LDD_P);
+    __ stxa(G0, $dst$$Register, G0, Assembler::ASI_ST_BLKINIT_PRIMARY);
   %}
   ins_pipe(istore_mem_reg);
 %}
+
+// Next code is used for finding next cache line address to prefetch.
+#ifndef _LP64
+instruct cacheLineAdr( iRegP dst, iRegP src, immI13 mask ) %{
+  match(Set dst (CastX2P (AndI (CastP2X src) mask)));
+  ins_cost(DEFAULT_COST);
+  size(4);
+
+  format %{ "AND    $src,$mask,$dst\t! next cache line address" %}
+  ins_encode %{
+    __ and3($src$$Register, $mask$$constant, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg_imm);
+%}
+#else
+instruct cacheLineAdr( iRegP dst, iRegP src, immL13 mask ) %{
+  match(Set dst (CastX2P (AndL (CastP2X src) mask)));
+  ins_cost(DEFAULT_COST);
+  size(4);
+
+  format %{ "AND    $src,$mask,$dst\t! next cache line address" %}
+  ins_encode %{
+    __ and3($src$$Register, $mask$$constant, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg_imm);
+%}
+#endif
 
 //----------Store Instructions-------------------------------------------------
 // Store Byte
@@ -6644,8 +6698,7 @@ instruct membar_acquire() %{
 %}
 
 instruct membar_acquire_lock() %{
-  match(MemBarAcquire);
-  predicate(Matcher::prior_fast_lock(n));
+  match(MemBarAcquireLock);
   ins_cost(0);
 
   size(0);
@@ -6665,8 +6718,7 @@ instruct membar_release() %{
 %}
 
 instruct membar_release_lock() %{
-  match(MemBarRelease);
-  predicate(Matcher::post_fast_unlock(n));
+  match(MemBarReleaseLock);
   ins_cost(0);
 
   size(0);
@@ -9220,7 +9272,6 @@ instruct jumpXtnd(iRegX switch_val, o7RegI table) %{
     __ jmp(label_reg, G0);
     __ delayed()->nop();
   %}
-  ins_pc_relative(1);
   ins_pipe(ialu_reg_reg);
 %}
 
@@ -9232,11 +9283,31 @@ instruct branch(label labl) %{
   size(8);
   ins_cost(BRANCH_COST);
   format %{ "BA     $labl" %}
-  // Prim = bits 24-22, Secnd = bits 31-30, Tert = cond
-  opcode(Assembler::br_op2, Assembler::branch_op, Assembler::always);
-  ins_encode( enc_ba( labl ) );
-  ins_pc_relative(1);
+  ins_encode %{
+    Label* L = $labl$$label;
+    __ ba(*L);
+    __ delayed()->nop();
+  %}
   ins_pipe(br);
+%}
+
+// Direct Branch, short with no delay slot
+instruct branch_short(label labl) %{
+  match(Goto);
+  predicate(UseCBCond);
+  effect(USE labl);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "BA     $labl\t! short branch" %}
+  ins_encode %{ 
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ ba_short(*L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_imm);
 %}
 
 // Conditional Direct Branch
@@ -9249,8 +9320,537 @@ instruct branchCon(cmpOp cmp, flagsReg icc, label labl) %{
   format %{ "BP$cmp   $icc,$labl" %}
   // Prim = bits 24-22, Secnd = bits 31-30
   ins_encode( enc_bp( labl, cmp, icc ) );
-  ins_pc_relative(1);
   ins_pipe(br_cc);
+%}
+
+instruct branchConU(cmpOpU cmp, flagsRegU icc, label labl) %{
+  match(If cmp icc);
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "BP$cmp  $icc,$labl" %}
+  // Prim = bits 24-22, Secnd = bits 31-30
+  ins_encode( enc_bp( labl, cmp, icc ) );
+  ins_pipe(br_cc);
+%}
+
+instruct branchConP(cmpOpP cmp, flagsRegP pcc, label labl) %{
+  match(If cmp pcc);
+  effect(USE labl);
+
+  size(8);
+  ins_cost(BRANCH_COST);
+  format %{ "BP$cmp  $pcc,$labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+
+    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::ptr_cc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(br_cc);
+%}
+
+instruct branchConF(cmpOpF cmp, flagsRegF fcc, label labl) %{
+  match(If cmp fcc);
+  effect(USE labl);
+
+  size(8);
+  ins_cost(BRANCH_COST);
+  format %{ "FBP$cmp $fcc,$labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+
+    __ fbp( (Assembler::Condition)($cmp$$cmpcode), false, (Assembler::CC)($fcc$$reg), predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(br_fcc);
+%}
+
+instruct branchLoopEnd(cmpOp cmp, flagsReg icc, label labl) %{
+  match(CountedLoopEnd cmp icc);
+  effect(USE labl);
+
+  size(8);
+  ins_cost(BRANCH_COST);
+  format %{ "BP$cmp   $icc,$labl\t! Loop end" %}
+  // Prim = bits 24-22, Secnd = bits 31-30
+  ins_encode( enc_bp( labl, cmp, icc ) );
+  ins_pipe(br_cc);
+%}
+
+instruct branchLoopEndU(cmpOpU cmp, flagsRegU icc, label labl) %{
+  match(CountedLoopEnd cmp icc);
+  effect(USE labl);
+
+  size(8);
+  ins_cost(BRANCH_COST);
+  format %{ "BP$cmp  $icc,$labl\t! Loop end" %}
+  // Prim = bits 24-22, Secnd = bits 31-30
+  ins_encode( enc_bp( labl, cmp, icc ) );
+  ins_pipe(br_cc);
+%}
+
+// Compare and branch instructions
+instruct cmpI_reg_branch(cmpOp cmp, iRegI op1, iRegI op2, label labl, flagsReg icc) %{
+  match(If cmp (CmpI op1 op2));
+  effect(USE labl, KILL icc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! int\n\t"
+            "BP$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$Register);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_reg);
+%}
+
+instruct cmpI_imm_branch(cmpOp cmp, iRegI op1, immI5 op2, label labl, flagsReg icc) %{
+  match(If cmp (CmpI op1 op2));
+  effect(USE labl, KILL icc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! int\n\t"
+            "BP$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$constant);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_imm);
+%}
+
+instruct cmpU_reg_branch(cmpOpU cmp, iRegI op1, iRegI op2, label labl, flagsRegU icc) %{
+  match(If cmp (CmpU op1 op2));
+  effect(USE labl, KILL icc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! unsigned\n\t"
+            "BP$cmp  $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$Register);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_reg);
+%}
+
+instruct cmpU_imm_branch(cmpOpU cmp, iRegI op1, immI5 op2, label labl, flagsRegU icc) %{
+  match(If cmp (CmpU op1 op2));
+  effect(USE labl, KILL icc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! unsigned\n\t"
+            "BP$cmp  $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$constant);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_imm);
+%}
+
+instruct cmpL_reg_branch(cmpOp cmp, iRegL op1, iRegL op2, label labl, flagsRegL xcc) %{
+  match(If cmp (CmpL op1 op2));
+  effect(USE labl, KILL xcc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! long\n\t"
+            "BP$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$Register);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::xcc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_reg);
+%}
+
+instruct cmpL_imm_branch(cmpOp cmp, iRegL op1, immL5 op2, label labl, flagsRegL xcc) %{
+  match(If cmp (CmpL op1 op2));
+  effect(USE labl, KILL xcc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! long\n\t"
+            "BP$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$constant);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::xcc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_imm);
+%}
+
+// Compare Pointers and branch
+instruct cmpP_reg_branch(cmpOpP cmp, iRegP op1, iRegP op2, label labl, flagsRegP pcc) %{
+  match(If cmp (CmpP op1 op2));
+  effect(USE labl, KILL pcc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! ptr\n\t"
+            "B$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$Register);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::ptr_cc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_reg);
+%}
+
+instruct cmpP_null_branch(cmpOpP cmp, iRegP op1, immP0 null, label labl, flagsRegP pcc) %{
+  match(If cmp (CmpP op1 null));
+  effect(USE labl, KILL pcc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,0\t! ptr\n\t"
+            "B$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, G0);
+    // bpr() is not used here since it has shorter distance.
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::ptr_cc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_reg);
+%}
+
+instruct cmpN_reg_branch(cmpOp cmp, iRegN op1, iRegN op2, label labl, flagsReg icc) %{
+  match(If cmp (CmpN op1 op2));
+  effect(USE labl, KILL icc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! compressed ptr\n\t"
+            "BP$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$Register);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_reg);
+%}
+
+instruct cmpN_null_branch(cmpOp cmp, iRegN op1, immN0 null, label labl, flagsReg icc) %{
+  match(If cmp (CmpN op1 null));
+  effect(USE labl, KILL icc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,0\t! compressed ptr\n\t"
+            "BP$cmp   $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, G0);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_reg);
+%}
+
+// Loop back branch
+instruct cmpI_reg_branchLoopEnd(cmpOp cmp, iRegI op1, iRegI op2, label labl, flagsReg icc) %{
+  match(CountedLoopEnd cmp (CmpI op1 op2));
+  effect(USE labl, KILL icc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! int\n\t"
+            "BP$cmp   $labl\t! Loop end" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$Register);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_reg);
+%}
+
+instruct cmpI_imm_branchLoopEnd(cmpOp cmp, iRegI op1, immI5 op2, label labl, flagsReg icc) %{
+  match(CountedLoopEnd cmp (CmpI op1 op2));
+  effect(USE labl, KILL icc);
+
+  size(12);
+  ins_cost(BRANCH_COST);
+  format %{ "CMP    $op1,$op2\t! int\n\t"
+            "BP$cmp   $labl\t! Loop end" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+    __ cmp($op1$$Register, $op2$$constant);
+    __ bp((Assembler::Condition)($cmp$$cmpcode), false, Assembler::icc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
+  ins_pipe(cmp_br_reg_imm);
+%}
+
+// Short compare and branch instructions
+instruct cmpI_reg_branch_short(cmpOp cmp, iRegI op1, iRegI op2, label labl, flagsReg icc) %{
+  match(If cmp (CmpI op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL icc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CWB$cmp  $op1,$op2,$labl\t! int" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$Register, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_reg);
+%}
+
+instruct cmpI_imm_branch_short(cmpOp cmp, iRegI op1, immI5 op2, label labl, flagsReg icc) %{
+  match(If cmp (CmpI op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL icc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CWB$cmp  $op1,$op2,$labl\t! int" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$constant, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_imm);
+%}
+
+instruct cmpU_reg_branch_short(cmpOpU cmp, iRegI op1, iRegI op2, label labl, flagsRegU icc) %{
+  match(If cmp (CmpU op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL icc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CWB$cmp $op1,$op2,$labl\t! unsigned" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$Register, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_reg);
+%}
+
+instruct cmpU_imm_branch_short(cmpOpU cmp, iRegI op1, immI5 op2, label labl, flagsRegU icc) %{
+  match(If cmp (CmpU op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL icc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CWB$cmp $op1,$op2,$labl\t! unsigned" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$constant, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_imm);
+%}
+
+instruct cmpL_reg_branch_short(cmpOp cmp, iRegL op1, iRegL op2, label labl, flagsRegL xcc) %{
+  match(If cmp (CmpL op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL xcc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CXB$cmp  $op1,$op2,$labl\t! long" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::xcc, $op1$$Register, $op2$$Register, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_reg);
+%}
+
+instruct cmpL_imm_branch_short(cmpOp cmp, iRegL op1, immL5 op2, label labl, flagsRegL xcc) %{
+  match(If cmp (CmpL op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL xcc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CXB$cmp  $op1,$op2,$labl\t! long" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::xcc, $op1$$Register, $op2$$constant, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_imm);
+%}
+
+// Compare Pointers and branch
+instruct cmpP_reg_branch_short(cmpOpP cmp, iRegP op1, iRegP op2, label labl, flagsRegP pcc) %{
+  match(If cmp (CmpP op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL pcc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+#ifdef _LP64
+  format %{ "CXB$cmp $op1,$op2,$labl\t! ptr" %}
+#else
+  format %{ "CWB$cmp $op1,$op2,$labl\t! ptr" %}
+#endif
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::ptr_cc, $op1$$Register, $op2$$Register, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_reg);
+%}
+
+instruct cmpP_null_branch_short(cmpOpP cmp, iRegP op1, immP0 null, label labl, flagsRegP pcc) %{
+  match(If cmp (CmpP op1 null));
+  predicate(UseCBCond);
+  effect(USE labl, KILL pcc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+#ifdef _LP64
+  format %{ "CXB$cmp $op1,0,$labl\t! ptr" %}
+#else
+  format %{ "CWB$cmp $op1,0,$labl\t! ptr" %}
+#endif
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::ptr_cc, $op1$$Register, G0, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_reg);
+%}
+
+instruct cmpN_reg_branch_short(cmpOp cmp, iRegN op1, iRegN op2, label labl, flagsReg icc) %{
+  match(If cmp (CmpN op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL icc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CWB$cmp  $op1,op2,$labl\t! compressed ptr" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$Register, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_reg);
+%}
+
+instruct cmpN_null_branch_short(cmpOp cmp, iRegN op1, immN0 null, label labl, flagsReg icc) %{
+  match(If cmp (CmpN op1 null));
+  predicate(UseCBCond);
+  effect(USE labl, KILL icc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CWB$cmp  $op1,0,$labl\t! compressed ptr" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, G0, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_reg);
+%}
+
+// Loop back branch
+instruct cmpI_reg_branchLoopEnd_short(cmpOp cmp, iRegI op1, iRegI op2, label labl, flagsReg icc) %{
+  match(CountedLoopEnd cmp (CmpI op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL icc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CWB$cmp  $op1,$op2,$labl\t! Loop end" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$Register, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_reg);
+%}
+
+instruct cmpI_imm_branchLoopEnd_short(cmpOp cmp, iRegI op1, immI5 op2, label labl, flagsReg icc) %{
+  match(CountedLoopEnd cmp (CmpI op1 op2));
+  predicate(UseCBCond);
+  effect(USE labl, KILL icc);
+
+  size(4);
+  ins_cost(BRANCH_COST);
+  format %{ "CWB$cmp  $op1,$op2,$labl\t! Loop end" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    assert(__ use_cbcond(*L), "back to back cbcond");
+    __ cbcond((Assembler::Condition)($cmp$$cmpcode), Assembler::icc, $op1$$Register, $op2$$constant, *L);
+  %}
+  ins_short_branch(1);
+  ins_avoid_back_to_back(1);
+  ins_pipe(cbcond_reg_imm);
 %}
 
 // Branch-on-register tests all 64 bits.  We assume that values
@@ -9266,7 +9866,6 @@ instruct branchCon_regI(cmpOp_reg cmp, iRegI op1, immI0 zero, label labl) %{
   ins_cost(BRANCH_COST);
   format %{ "BR$cmp   $op1,$labl" %}
   ins_encode( enc_bpr( labl, cmp, op1 ) );
-  ins_pc_relative(1);
   ins_pipe(br_reg);
 %}
 
@@ -9279,7 +9878,6 @@ instruct branchCon_regP(cmpOp_reg cmp, iRegP op1, immP0 null, label labl) %{
   ins_cost(BRANCH_COST);
   format %{ "BR$cmp   $op1,$labl" %}
   ins_encode( enc_bpr( labl, cmp, op1 ) );
-  ins_pc_relative(1);
   ins_pipe(br_reg);
 %}
 
@@ -9292,72 +9890,9 @@ instruct branchCon_regL(cmpOp_reg cmp, iRegL op1, immL0 zero, label labl) %{
   ins_cost(BRANCH_COST);
   format %{ "BR$cmp   $op1,$labl" %}
   ins_encode( enc_bpr( labl, cmp, op1 ) );
-  ins_pc_relative(1);
   ins_pipe(br_reg);
 %}
 
-instruct branchConU(cmpOpU cmp, flagsRegU icc, label labl) %{
-  match(If cmp icc);
-  effect(USE labl);
-
-  format %{ "BP$cmp  $icc,$labl" %}
-  // Prim = bits 24-22, Secnd = bits 31-30
-  ins_encode( enc_bp( labl, cmp, icc ) );
-  ins_pc_relative(1);
-  ins_pipe(br_cc);
-%}
-
-instruct branchConP(cmpOpP cmp, flagsRegP pcc, label labl) %{
-  match(If cmp pcc);
-  effect(USE labl);
-
-  size(8);
-  ins_cost(BRANCH_COST);
-  format %{ "BP$cmp  $pcc,$labl" %}
-  // Prim = bits 24-22, Secnd = bits 31-30
-  ins_encode( enc_bpx( labl, cmp, pcc ) );
-  ins_pc_relative(1);
-  ins_pipe(br_cc);
-%}
-
-instruct branchConF(cmpOpF cmp, flagsRegF fcc, label labl) %{
-  match(If cmp fcc);
-  effect(USE labl);
-
-  size(8);
-  ins_cost(BRANCH_COST);
-  format %{ "FBP$cmp $fcc,$labl" %}
-  // Prim = bits 24-22, Secnd = bits 31-30
-  ins_encode( enc_fbp( labl, cmp, fcc ) );
-  ins_pc_relative(1);
-  ins_pipe(br_fcc);
-%}
-
-instruct branchLoopEnd(cmpOp cmp, flagsReg icc, label labl) %{
-  match(CountedLoopEnd cmp icc);
-  effect(USE labl);
-
-  size(8);
-  ins_cost(BRANCH_COST);
-  format %{ "BP$cmp   $icc,$labl\t! Loop end" %}
-  // Prim = bits 24-22, Secnd = bits 31-30
-  ins_encode( enc_bp( labl, cmp, icc ) );
-  ins_pc_relative(1);
-  ins_pipe(br_cc);
-%}
-
-instruct branchLoopEndU(cmpOpU cmp, flagsRegU icc, label labl) %{
-  match(CountedLoopEnd cmp icc);
-  effect(USE labl);
-
-  size(8);
-  ins_cost(BRANCH_COST);
-  format %{ "BP$cmp  $icc,$labl\t! Loop end" %}
-  // Prim = bits 24-22, Secnd = bits 31-30
-  ins_encode( enc_bp( labl, cmp, icc ) );
-  ins_pc_relative(1);
-  ins_pipe(br_cc);
-%}
 
 // ============================================================================
 // Long Compare
@@ -9387,9 +9922,14 @@ instruct branchCon_long(cmpOp cmp, flagsRegL xcc, label labl) %{
   size(8);
   ins_cost(BRANCH_COST);
   format %{ "BP$cmp   $xcc,$labl" %}
-  // Prim = bits 24-22, Secnd = bits 31-30
-  ins_encode( enc_bpl( labl, cmp, xcc ) );
-  ins_pc_relative(1);
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Predict predict_taken =
+      cbuf.is_backward_branch(*L) ? Assembler::pt : Assembler::pn;
+
+    __ bp( (Assembler::Condition)($cmp$$cmpcode), false, Assembler::xcc, predict_taken, *L);
+    __ delayed()->nop();
+  %}
   ins_pipe(br_cc);
 %}
 
@@ -9517,7 +10057,6 @@ instruct CallStaticJavaDirect( method meth ) %{
   ins_cost(CALL_COST);
   format %{ "CALL,static  ; NOP ==> " %}
   ins_encode( Java_Static_Call( meth ), call_epilog );
-  ins_pc_relative(1);
   ins_pipe(simple_call);
 %}
 
@@ -9527,11 +10066,10 @@ instruct CallStaticJavaHandle(method meth, l7RegP l7_mh_SP_save) %{
   predicate(((CallStaticJavaNode*)n)->is_method_handle_invoke());
   effect(USE meth, KILL l7_mh_SP_save);
 
-  size(8);
+  size(16);
   ins_cost(CALL_COST);
   format %{ "CALL,static/MethodHandle" %}
   ins_encode(preserve_SP, Java_Static_Call(meth), restore_SP, call_epilog);
-  ins_pc_relative(1);
   ins_pipe(simple_call);
 %}
 
@@ -9544,7 +10082,6 @@ instruct CallDynamicJavaDirect( method meth ) %{
   format %{ "SET    (empty),R_G5\n\t"
             "CALL,dynamic  ; NOP ==> " %}
   ins_encode( Java_Dynamic_Call( meth ), call_epilog );
-  ins_pc_relative(1);
   ins_pipe(call);
 %}
 
@@ -9556,7 +10093,6 @@ instruct CallRuntimeDirect(method meth, l7RegP l7) %{
   format %{ "CALL,runtime" %}
   ins_encode( Java_To_Runtime( meth ),
               call_epilog, adjust_long_from_native_call );
-  ins_pc_relative(1);
   ins_pipe(simple_call);
 %}
 
@@ -9569,7 +10105,6 @@ instruct CallLeafDirect(method meth, l7RegP l7) %{
   ins_encode( Java_To_Runtime( meth ),
               call_epilog,
               adjust_long_from_native_call );
-  ins_pc_relative(1);
   ins_pipe(simple_call);
 %}
 
@@ -9582,7 +10117,6 @@ instruct CallLeafNoFPDirect(method meth, l7RegP l7) %{
   ins_encode( Java_To_Runtime( meth ),
               call_epilog,
               adjust_long_from_native_call );
-  ins_pc_relative(1);
   ins_pipe(simple_call);
 %}
 
@@ -9707,7 +10241,6 @@ instruct cmpFastLock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, o7R
   effect(KILL scratch, TEMP scratch2);
   ins_cost(100);
 
-  size(4*112);       // conservative overestimation ...
   format %{ "FASTLOCK  $object, $box; KILL $scratch, $scratch2, $box" %}
   ins_encode( Fast_Lock(object, box, scratch, scratch2) );
   ins_pipe(long_memory_op);
@@ -9719,7 +10252,6 @@ instruct cmpFastUnlock(flagsRegP pcc, iRegP object, iRegP box, iRegP scratch2, o
   effect(KILL scratch, TEMP scratch2);
   ins_cost(100);
 
-  size(4*120);       // conservative overestimation ...
   format %{ "FASTUNLOCK  $object, $box; KILL $scratch, $scratch2, $box" %}
   ins_encode( Fast_Unlock(object, box, scratch, scratch2) );
   ins_pipe(long_memory_op);

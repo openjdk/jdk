@@ -129,6 +129,7 @@ HeapWord* G1AllocRegion::new_alloc_region_and_allocate(size_t word_size,
     // region in _alloc_region. This is the reason why an active region
     // can never be empty.
     _alloc_region = new_alloc_region;
+    _count += 1;
     trace("region allocation successful");
     return result;
   } else {
@@ -139,8 +140,8 @@ HeapWord* G1AllocRegion::new_alloc_region_and_allocate(size_t word_size,
 }
 
 void G1AllocRegion::fill_in_ext_msg(ar_ext_msg* msg, const char* message) {
-  msg->append("[%s] %s b: %s r: "PTR_FORMAT" u: "SIZE_FORMAT,
-              _name, message, BOOL_TO_STR(_bot_updates),
+  msg->append("[%s] %s c: "SIZE_FORMAT" b: %s r: "PTR_FORMAT" u: "SIZE_FORMAT,
+              _name, message, _count, BOOL_TO_STR(_bot_updates),
               _alloc_region, _used_bytes_before);
 }
 
@@ -148,16 +149,34 @@ void G1AllocRegion::init() {
   trace("initializing");
   assert(_alloc_region == NULL && _used_bytes_before == 0,
          ar_ext_msg(this, "pre-condition"));
-  assert(_dummy_region != NULL, "should have been set");
+  assert(_dummy_region != NULL, ar_ext_msg(this, "should have been set"));
   _alloc_region = _dummy_region;
+  _count = 0;
   trace("initialized");
+}
+
+void G1AllocRegion::set(HeapRegion* alloc_region) {
+  trace("setting");
+  // We explicitly check that the region is not empty to make sure we
+  // maintain the "the alloc region cannot be empty" invariant.
+  assert(alloc_region != NULL && !alloc_region->is_empty(),
+         ar_ext_msg(this, "pre-condition"));
+  assert(_alloc_region == _dummy_region &&
+         _used_bytes_before == 0 && _count == 0,
+         ar_ext_msg(this, "pre-condition"));
+
+  _used_bytes_before = alloc_region->used();
+  _alloc_region = alloc_region;
+  _count += 1;
+  trace("set");
 }
 
 HeapRegion* G1AllocRegion::release() {
   trace("releasing");
   HeapRegion* alloc_region = _alloc_region;
   retire(false /* fill_up */);
-  assert(_alloc_region == _dummy_region, "post-condition of retire()");
+  assert(_alloc_region == _dummy_region,
+         ar_ext_msg(this, "post-condition of retire()"));
   _alloc_region = NULL;
   trace("released");
   return (alloc_region == _dummy_region) ? NULL : alloc_region;
@@ -196,7 +215,8 @@ void G1AllocRegion::trace(const char* str, size_t word_size, HeapWord* result) {
       jio_snprintf(rest_buffer, buffer_length, "");
     }
 
-    tty->print_cr("[%s] %s : %s %s", _name, hr_buffer, str, rest_buffer);
+    tty->print_cr("[%s] "SIZE_FORMAT" %s : %s %s",
+                  _name, _count, hr_buffer, str, rest_buffer);
   }
 }
 #endif // G1_ALLOC_REGION_TRACING
@@ -204,5 +224,5 @@ void G1AllocRegion::trace(const char* str, size_t word_size, HeapWord* result) {
 G1AllocRegion::G1AllocRegion(const char* name,
                              bool bot_updates)
   : _name(name), _bot_updates(bot_updates),
-    _alloc_region(NULL), _used_bytes_before(0) { }
+    _alloc_region(NULL), _count(0), _used_bytes_before(0) { }
 

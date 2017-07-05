@@ -66,7 +66,7 @@ $(GENERATED)\sa-jdi.jar: $(AGENT_FILES1:/=\) $(AGENT_FILES2:/=\)
 	$(QUIETLY) mkdir $(SA_CLASSDIR)\sun\jvm\hotspot\ui\resources
 	$(QUIETLY) cp $(AGENT_SRC_DIR)/sun/jvm/hotspot/ui/resources/*.png $(SA_CLASSDIR)/sun/jvm/hotspot/ui/resources
 	$(QUIETLY) cp -r $(AGENT_SRC_DIR)/images/* $(SA_CLASSDIR)
-	$(RUN_JAR) cf $@ -C saclasses .
+	$(RUN_JAR) cf $@ -C $(SA_CLASSDIR) .
 	$(RUN_JAR) uf $@ -C $(AGENT_SRC_DIR:/=\) META-INF\services\com.sun.jdi.connect.Connector
 	$(RUN_JAVAH) -classpath $(SA_CLASSDIR) -jni sun.jvm.hotspot.debugger.windbg.WindbgDebuggerLocal
 	$(RUN_JAVAH) -classpath $(SA_CLASSDIR) -jni sun.jvm.hotspot.debugger.x86.X86ThreadContext 

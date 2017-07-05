@@ -963,10 +963,21 @@ void GenerateOopMap::init_basic_blocks() {
   // initialize the CellTypeState-related information.
   init_state();
 
-  // We allocate space for all state-vectors for all basicblocks in one huge chuck.
-  // Then in the next part of the code, we set a pointer in each _basic_block that
-  // points to each piece.
-  CellTypeState *basicBlockState = NEW_RESOURCE_ARRAY(CellTypeState, bbNo * _state_len);
+  // We allocate space for all state-vectors for all basicblocks in one huge
+  // chunk.  Then in the next part of the code, we set a pointer in each
+  // _basic_block that points to each piece.
+
+  // The product of bbNo and _state_len can get large if there are lots of
+  // basic blocks and stack/locals/monitors.  Need to check to make sure
+  // we don't overflow the capacity of a pointer.
+  if ((unsigned)bbNo > UINTPTR_MAX / sizeof(CellTypeState) / _state_len) {
+    report_error("The amount of memory required to analyze this method "
+                 "exceeds addressable range");
+    return;
+  }
+
+  CellTypeState *basicBlockState =
+      NEW_RESOURCE_ARRAY(CellTypeState, bbNo * _state_len);
   memset(basicBlockState, 0, bbNo * _state_len * sizeof(CellTypeState));
 
   // Make a pass over the basicblocks and assign their state vectors.
@@ -1556,9 +1567,7 @@ void GenerateOopMap::interp1(BytecodeStream *itr) {
     case Bytecodes::_jsr:               do_jsr(itr->dest());         break;
     case Bytecodes::_jsr_w:             do_jsr(itr->dest_w());       break;
 
-    case Bytecodes::_getstatic:         do_field(true,  true,
-                                                 itr->get_index_u2_cpcache(),
-                                                 itr->bci()); break;
+    case Bytecodes::_getstatic:         do_field(true,  true,  itr->get_index_u2_cpcache(), itr->bci()); break;
     case Bytecodes::_putstatic:         do_field(false, true,  itr->get_index_u2_cpcache(), itr->bci()); break;
     case Bytecodes::_getfield:          do_field(true,  false, itr->get_index_u2_cpcache(), itr->bci()); break;
     case Bytecodes::_putfield:          do_field(false, false, itr->get_index_u2_cpcache(), itr->bci()); break;

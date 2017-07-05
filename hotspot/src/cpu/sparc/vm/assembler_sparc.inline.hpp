@@ -80,32 +80,36 @@ inline void Assembler::add(Register s1, Register s2, Register d )               
 inline void Assembler::add(Register s1, int simm13a, Register d, relocInfo::relocType rtype ) { emit_data( op(arith_op) | rd(d) | op3(add_op3) | rs1(s1) | immed(true) | simm(simm13a, 13), rtype ); }
 inline void Assembler::add(Register s1, int simm13a, Register d, RelocationHolder const& rspec ) { emit_data( op(arith_op) | rd(d) | op3(add_op3) | rs1(s1) | immed(true) | simm(simm13a, 13), rspec ); }
 
-inline void Assembler::bpr( RCondition c, bool a, Predict p, Register s1, address d, relocInfo::relocType rt ) { v9_only();  emit_data( op(branch_op) | annul(a) | cond(c) | op2(bpr_op2) | wdisp16(intptr_t(d), intptr_t(pc())) | predict(p) | rs1(s1), rt);  has_delay_slot(); }
+inline void Assembler::bpr( RCondition c, bool a, Predict p, Register s1, address d, relocInfo::relocType rt ) { v9_only();  cti();  emit_data( op(branch_op) | annul(a) | cond(c) | op2(bpr_op2) | wdisp16(intptr_t(d), intptr_t(pc())) | predict(p) | rs1(s1), rt);  has_delay_slot(); }
 inline void Assembler::bpr( RCondition c, bool a, Predict p, Register s1, Label& L) { bpr( c, a, p, s1, target(L)); }
 
-inline void Assembler::fb( Condition c, bool a, address d, relocInfo::relocType rt ) { v9_dep();  emit_data( op(branch_op) | annul(a) | cond(c) | op2(fb_op2) | wdisp(intptr_t(d), intptr_t(pc()), 22), rt);  has_delay_slot(); }
+inline void Assembler::fb( Condition c, bool a, address d, relocInfo::relocType rt ) { v9_dep();  cti();  emit_data( op(branch_op) | annul(a) | cond(c) | op2(fb_op2) | wdisp(intptr_t(d), intptr_t(pc()), 22), rt);  has_delay_slot(); }
 inline void Assembler::fb( Condition c, bool a, Label& L ) { fb(c, a, target(L)); }
 
-inline void Assembler::fbp( Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt ) { v9_only();  emit_data( op(branch_op) | annul(a) | cond(c) | op2(fbp_op2) | branchcc(cc) | predict(p) | wdisp(intptr_t(d), intptr_t(pc()), 19), rt);  has_delay_slot(); }
+inline void Assembler::fbp( Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt ) { v9_only();  cti();  emit_data( op(branch_op) | annul(a) | cond(c) | op2(fbp_op2) | branchcc(cc) | predict(p) | wdisp(intptr_t(d), intptr_t(pc()), 19), rt);  has_delay_slot(); }
 inline void Assembler::fbp( Condition c, bool a, CC cc, Predict p, Label& L ) { fbp(c, a, cc, p, target(L)); }
 
-inline void Assembler::cb( Condition c, bool a, address d, relocInfo::relocType rt ) { v8_only();  emit_data( op(branch_op) | annul(a) | cond(c) | op2(cb_op2) | wdisp(intptr_t(d), intptr_t(pc()), 22), rt);  has_delay_slot(); }
+inline void Assembler::cb( Condition c, bool a, address d, relocInfo::relocType rt ) { v8_only();  cti();  emit_data( op(branch_op) | annul(a) | cond(c) | op2(cb_op2) | wdisp(intptr_t(d), intptr_t(pc()), 22), rt);  has_delay_slot(); }
 inline void Assembler::cb( Condition c, bool a, Label& L ) { cb(c, a, target(L)); }
 
-inline void Assembler::br( Condition c, bool a, address d, relocInfo::relocType rt ) { v9_dep();   emit_data( op(branch_op) | annul(a) | cond(c) | op2(br_op2) | wdisp(intptr_t(d), intptr_t(pc()), 22), rt);  has_delay_slot(); }
+inline void Assembler::br( Condition c, bool a, address d, relocInfo::relocType rt ) { v9_dep();  cti();   emit_data( op(branch_op) | annul(a) | cond(c) | op2(br_op2) | wdisp(intptr_t(d), intptr_t(pc()), 22), rt);  has_delay_slot(); }
 inline void Assembler::br( Condition c, bool a, Label& L ) { br(c, a, target(L)); }
 
-inline void Assembler::bp( Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt ) { v9_only();  emit_data( op(branch_op) | annul(a) | cond(c) | op2(bp_op2) | branchcc(cc) | predict(p) | wdisp(intptr_t(d), intptr_t(pc()), 19), rt);  has_delay_slot(); }
+inline void Assembler::bp( Condition c, bool a, CC cc, Predict p, address d, relocInfo::relocType rt ) { v9_only();  cti();  emit_data( op(branch_op) | annul(a) | cond(c) | op2(bp_op2) | branchcc(cc) | predict(p) | wdisp(intptr_t(d), intptr_t(pc()), 19), rt);  has_delay_slot(); }
 inline void Assembler::bp( Condition c, bool a, CC cc, Predict p, Label& L ) { bp(c, a, cc, p, target(L)); }
 
-inline void Assembler::call( address d,  relocInfo::relocType rt ) { emit_data( op(call_op) | wdisp(intptr_t(d), intptr_t(pc()), 30), rt);  has_delay_slot(); assert(rt != relocInfo::virtual_call_type, "must use virtual_call_Relocation::spec"); }
+// compare and branch
+inline void Assembler::cbcond(Condition c, CC cc, Register s1, Register s2, Label& L) { cti();  no_cbcond_before();  emit_data(op(branch_op) | cond_cbcond(c) | op2(bpr_op2) | branchcc(cc) | wdisp10(intptr_t(target(L)), intptr_t(pc())) | rs1(s1) | rs2(s2)); }
+inline void Assembler::cbcond(Condition c, CC cc, Register s1, int simm5, Label& L)   { cti();  no_cbcond_before();  emit_data(op(branch_op) | cond_cbcond(c) | op2(bpr_op2) | branchcc(cc) | wdisp10(intptr_t(target(L)), intptr_t(pc())) | rs1(s1) | immed(true) | simm(simm5, 5)); }
+
+inline void Assembler::call( address d,  relocInfo::relocType rt ) { cti();  emit_data( op(call_op) | wdisp(intptr_t(d), intptr_t(pc()), 30), rt);  has_delay_slot(); assert(rt != relocInfo::virtual_call_type, "must use virtual_call_Relocation::spec"); }
 inline void Assembler::call( Label& L,   relocInfo::relocType rt ) { call( target(L), rt); }
 
 inline void Assembler::flush( Register s1, Register s2) { emit_long( op(arith_op) | op3(flush_op3) | rs1(s1) | rs2(s2)); }
 inline void Assembler::flush( Register s1, int simm13a) { emit_data( op(arith_op) | op3(flush_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 
-inline void Assembler::jmpl( Register s1, Register s2, Register d                          ) { emit_long( op(arith_op) | rd(d) | op3(jmpl_op3) | rs1(s1) | rs2(s2));  has_delay_slot(); }
-inline void Assembler::jmpl( Register s1, int simm13a, Register d, RelocationHolder const& rspec ) { emit_data( op(arith_op) | rd(d) | op3(jmpl_op3) | rs1(s1) | immed(true) | simm(simm13a, 13), rspec);  has_delay_slot(); }
+inline void Assembler::jmpl( Register s1, Register s2, Register d ) { cti();  emit_long( op(arith_op) | rd(d) | op3(jmpl_op3) | rs1(s1) | rs2(s2));  has_delay_slot(); }
+inline void Assembler::jmpl( Register s1, int simm13a, Register d, RelocationHolder const& rspec ) { cti();  emit_data( op(arith_op) | rd(d) | op3(jmpl_op3) | rs1(s1) | immed(true) | simm(simm13a, 13), rspec);  has_delay_slot(); }
 
 inline void Assembler::ldf(FloatRegisterImpl::Width w, Register s1, RegisterOrConstant s2, FloatRegister d) {
   if (s2.is_register()) ldf(w, s1, s2.as_register(), d);
@@ -240,8 +244,8 @@ inline void Assembler::prefetch(Register s1, int simm13a, PrefetchFcn f) { v9_on
 inline void Assembler::prefetch(const Address& a, PrefetchFcn f, int offset) { v9_only(); relocate(a.rspec(offset)); prefetch(a.base(), a.disp() + offset, f); }
 
 
-inline void Assembler::rett( Register s1, Register s2                         ) { emit_long( op(arith_op) | op3(rett_op3) | rs1(s1) | rs2(s2));  has_delay_slot(); }
-inline void Assembler::rett( Register s1, int simm13a, relocInfo::relocType rt) { emit_data( op(arith_op) | op3(rett_op3) | rs1(s1) | immed(true) | simm(simm13a, 13), rt);  has_delay_slot(); }
+inline void Assembler::rett( Register s1, Register s2                         ) { cti();  emit_long( op(arith_op) | op3(rett_op3) | rs1(s1) | rs2(s2));  has_delay_slot(); }
+inline void Assembler::rett( Register s1, int simm13a, relocInfo::relocType rt) { cti();  emit_data( op(arith_op) | op3(rett_op3) | rs1(s1) | immed(true) | simm(simm13a, 13), rt);  has_delay_slot(); }
 
 inline void Assembler::sethi( int imm22a, Register d, RelocationHolder const& rspec ) { emit_data( op(branch_op) | rd(d) | op2(sethi_op2) | hi22(imm22a), rspec); }
 
@@ -557,8 +561,8 @@ inline void MacroAssembler::brx( Condition c, bool a, Predict p, Label& L ) {
   brx(c, a, p, target(L));
 }
 
-inline void MacroAssembler::ba( bool a, Label& L ) {
-  br(always, a, pt, L);
+inline void MacroAssembler::ba( Label& L ) {
+  br(always, false, pt, L);
 }
 
 // Warning: V9 only functions
