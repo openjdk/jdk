@@ -7,6 +7,7 @@
     -Xbootclasspath/p:<directories and zip/jar files separated by ;>
                       prepend in front of bootstrap class path
     -Xnoclassgc       disable class garbage collection
+    -Xlog:<opts>      control JVM logging, use -Xlog:help for details
     -Xloggc:<file>    log GC status to a file with time stamps
     -Xbatch           disable background compilation
     -Xms<size>        set initial Java heap size

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,8 @@ package javax.swing;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.beans.PropertyChangeListener;
-import java.util.Locale;
-import java.util.Vector;
-import java.io.Serializable;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 
 import javax.accessibility.*;
 
@@ -83,14 +81,11 @@ import javax.accessibility.*;
  *
  * @see JRootPane
  *
- * @beaninfo
- *      attribute: isContainer true
- *      attribute: containerDelegate getContentPane
- *    description: A toplevel window which has no system border or controls.
- *
  * @author David Kloba
  * @since 1.2
  */
+@JavaBean(defaultProperty = "accessibleContext", description = "A toplevel window which has no system border or controls.")
+@SwingContainer(delegate = "getContentPane")
 @SuppressWarnings("serial")
 public class JWindow extends Window implements Accessible,
                                                RootPaneContainer,
@@ -328,12 +323,9 @@ public class JWindow extends Window implements Accessible,
      * @see #getTransferHandler
      * @see java.awt.Component#setDropTarget
      * @since 1.6
-     *
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *  description: Mechanism for transfer of data into the component
      */
+    @BeanProperty(hidden = true, description
+            = "Mechanism for transfer of data into the component")
     public void setTransferHandler(TransferHandler newHandler) {
         TransferHandler oldHandler = transferHandler;
         transferHandler = newHandler;
@@ -376,10 +368,9 @@ public class JWindow extends Window implements Accessible,
      * @see #setLayout
      * @see #isRootPaneCheckingEnabled
      * @see javax.swing.RootPaneContainer
-     * @beaninfo
-     *      hidden: true
-     * description: Whether the add and setLayout methods are forwarded
      */
+    @BeanProperty(hidden = true, description
+            = "Whether the add and setLayout methods are forwarded")
     protected void setRootPaneCheckingEnabled(boolean enabled) {
         rootPaneCheckingEnabled = enabled;
     }
@@ -463,6 +454,8 @@ public class JWindow extends Window implements Accessible,
      * @see #setRootPane
      * @see RootPaneContainer#getRootPane
      */
+    @BeanProperty(bound = false, hidden = true, description
+            = "the RootPane object for this window.")
     public JRootPane getRootPane() {
         return rootPane;
     }
@@ -474,10 +467,6 @@ public class JWindow extends Window implements Accessible,
      *
      * @param root the new <code>rootPane</code> property
      * @see #getRootPane
-     *
-     * @beaninfo
-     *        hidden: true
-     *   description: the RootPane object for this window.
      */
     protected void setRootPane(JRootPane root) {
         if(rootPane != null) {
@@ -519,12 +508,9 @@ public class JWindow extends Window implements Accessible,
      *            exception) if the content pane parameter is <code>null</code>
      * @see #getContentPane
      * @see RootPaneContainer#setContentPane
-     *
-     * @beaninfo
-     *     hidden: true
-     *     description: The client area of the window where child
-     *                  components are normally inserted.
      */
+    @BeanProperty(bound = false, hidden = true, description
+            = "The client area of the window where child components are normally inserted.")
     public void setContentPane(Container contentPane) {
         getRootPane().setContentPane(contentPane);
     }
@@ -550,11 +536,9 @@ public class JWindow extends Window implements Accessible,
      *            exception) if the content pane parameter is <code>null</code>
      * @see #getLayeredPane
      * @see RootPaneContainer#setLayeredPane
-     *
-     * @beaninfo
-     *     hidden: true
-     *     description: The pane which holds the various window layers.
      */
+    @BeanProperty(bound = false, hidden = true, description
+            = "The pane which holds the various window layers.")
     public void setLayeredPane(JLayeredPane layeredPane) {
         getRootPane().setLayeredPane(layeredPane);
     }
@@ -577,11 +561,9 @@ public class JWindow extends Window implements Accessible,
      *
      * @see #getGlassPane
      * @see RootPaneContainer#setGlassPane
-     *
-     * @beaninfo
-     *     hidden: true
-     *     description: A transparent pane used for menu rendering.
      */
+    @BeanProperty(bound = false, hidden = true, description
+            = "A transparent pane used for menu rendering.")
     public void setGlassPane(Component glassPane) {
         getRootPane().setGlassPane(glassPane);
     }
@@ -591,6 +573,7 @@ public class JWindow extends Window implements Accessible,
      *
      * @since 1.6
      */
+    @BeanProperty(bound = false)
     public Graphics getGraphics() {
         JComponent.getGraphicsInvoked(this);
         return super.getGraphics();

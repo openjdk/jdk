@@ -75,6 +75,7 @@ void MorphTableHeader::process(const LETableReference &base, LEGlyphStorage &gly
                     return;
                 }
                 subtableHeader.addOffset(length, success);
+                if (LE_FAILURE(success)) break;
             }
             SubtableCoverage coverage = SWAPW(subtableHeader->coverage);
             FeatureFlags subtableFeatures = SWAPL(subtableHeader->subtableFeatures);
@@ -90,6 +91,8 @@ void MorphTableHeader::process(const LETableReference &base, LEGlyphStorage &gly
 void MorphSubtableHeader::process(const LEReferenceTo<MorphSubtableHeader> &base, LEGlyphStorage &glyphStorage, LEErrorCode &success) const
 {
     SubtableProcessor *processor = NULL;
+
+    if (LE_FAILURE(success)) return;
 
     switch (SWAPW(coverage) & scfTypeMask)
     {

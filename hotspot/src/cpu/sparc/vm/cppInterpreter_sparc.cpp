@@ -468,7 +468,7 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
   // If G1 is not enabled then attempt to go through the accessor entry point
   // Reference.get is an accessor
-  return generate_jump_to_normal_entry();
+  return NULL;
 }
 
 //
@@ -1164,7 +1164,7 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
 }
 // Find preallocated  monitor and lock method (C++ interpreter)
 //
-void InterpreterGenerator::lock_method(void) {
+void CppInterpreterGenerator::lock_method() {
 // Lock the current method.
 // Destroys registers L2_scratch, L3_scratch, O0
 //

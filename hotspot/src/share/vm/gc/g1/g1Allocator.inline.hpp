@@ -36,7 +36,7 @@ HeapWord* G1Allocator::attempt_allocation(size_t word_size, AllocationContext_t 
 HeapWord* G1Allocator::attempt_allocation_locked(size_t word_size, AllocationContext_t context) {
   HeapWord* result = mutator_alloc_region(context)->attempt_allocation_locked(word_size, false /* bot_updates */);
   assert(result != NULL || mutator_alloc_region(context)->get() == NULL,
-         err_msg("Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT, p2i(mutator_alloc_region(context)->get())));
+         "Must not have a mutator alloc region if there is no memory, but is " PTR_FORMAT, p2i(mutator_alloc_region(context)->get()));
   return result;
 }
 

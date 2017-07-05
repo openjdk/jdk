@@ -1068,20 +1068,17 @@ class RevocationChecker extends PKIXRevocationChecker {
                 boolean signFlag = true;
                 List<? extends Certificate> cpList =
                     cpbr.getCertPath().getCertificates();
-                if (cpList.isEmpty()) {
-                    return;
-                }
                 try {
-                    for (int i = cpList.size()-1; i >= 0; i-- ) {
-                        X509Certificate cert = (X509Certificate)cpList.get(i);
+                    for (int i = cpList.size() - 1; i >= 0; i--) {
+                        X509Certificate cert = (X509Certificate) cpList.get(i);
 
                         if (debug != null) {
                             debug.println("RevocationChecker.buildToNewKey()"
-                                          + " index " + i + " checking "
-                                          + cert);
+                                    + " index " + i + " checking "
+                                    + cert);
                         }
                         checkCRLs(cert, prevKey2, null, signFlag, true,
-                                  stackedCerts, newAnchors);
+                                stackedCerts, newAnchors);
                         signFlag = certCanSignCrl(cert);
                         prevKey2 = cert.getPublicKey();
                     }
@@ -1100,8 +1097,10 @@ class RevocationChecker extends PKIXRevocationChecker {
                 // If it doesn't check out, try to find a different key.
                 // And if we can't find a key, then return false.
                 PublicKey newKey = cpbr.getPublicKey();
+                X509Certificate newCert = cpList.isEmpty() ?
+                    null : (X509Certificate) cpList.get(0);
                 try {
-                    checkCRLs(currCert, newKey, (X509Certificate) cpList.get(0),
+                    checkCRLs(currCert, newKey, newCert,
                               true, false, null, params.trustAnchors());
                     // If that passed, the cert is OK!
                     return;

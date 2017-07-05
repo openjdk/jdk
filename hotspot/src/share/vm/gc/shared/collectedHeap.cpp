@@ -231,7 +231,7 @@ void CollectedHeap::set_barrier_set(BarrierSet* barrier_set) {
 void CollectedHeap::pre_initialize() {
   // Used for ReduceInitialCardMarks (when COMPILER2 is used);
   // otherwise remains unused.
-#ifdef COMPILER2
+#if defined(COMPILER2) || INCLUDE_JVMCI
   _defer_initial_card_mark =    ReduceInitialCardMarks && can_elide_tlab_store_barriers()
                              && (DeferInitialCardMark || card_mark_must_follow_store());
 #else
@@ -459,7 +459,7 @@ CollectedHeap::fill_with_array(HeapWord* start, size_t words, bool zap)
 
   const size_t payload_size = words - filler_array_hdr_size();
   const size_t len = payload_size * HeapWordSize / sizeof(jint);
-  assert((int)len >= 0, err_msg("size too large " SIZE_FORMAT " becomes %d", words, (int)len));
+  assert((int)len >= 0, "size too large " SIZE_FORMAT " becomes %d", words, (int)len);
 
   // Set the length first for concurrent GC.
   ((arrayOop)start)->set_length((int)len);
@@ -539,7 +539,7 @@ void CollectedHeap::ensure_parsability(bool retire_tlabs) {
          " to threads list is doomed to failure!");
   for (JavaThread *thread = Threads::first(); thread; thread = thread->next()) {
      if (use_tlab) thread->tlab().make_parsable(retire_tlabs);
-#ifdef COMPILER2
+#if defined(COMPILER2) || INCLUDE_JVMCI
      // The deferred store barriers must all have been flushed to the
      // card-table (or other remembered set structure) before GC starts
      // processing the card-table (or other remembered set).
@@ -573,13 +573,15 @@ void CollectedHeap::resize_all_tlabs() {
 
 void CollectedHeap::pre_full_gc_dump(GCTimer* timer) {
   if (HeapDumpBeforeFullGC) {
-    GCTraceTime tt("Heap Dump (before full gc): ", PrintGCDetails, false, timer, GCId::create());
+    GCIdMarkAndRestore gc_id_mark;
+    GCTraceTime tt("Heap Dump (before full gc): ", PrintGCDetails, false, timer);
     // We are doing a full collection and a heap dump before
     // full collection has been requested.
     HeapDumper::dump_heap();
   }
   if (PrintClassHistogramBeforeFullGC) {
-    GCTraceTime tt("Class Histogram (before full gc): ", PrintGCDetails, true, timer, GCId::create());
+    GCIdMarkAndRestore gc_id_mark;
+    GCTraceTime tt("Class Histogram (before full gc): ", PrintGCDetails, true, timer);
     VM_GC_HeapInspection inspector(gclog_or_tty, false /* ! full gc */);
     inspector.doit();
   }
@@ -587,11 +589,13 @@ void CollectedHeap::pre_full_gc_dump(GCTimer* timer) {
 
 void CollectedHeap::post_full_gc_dump(GCTimer* timer) {
   if (HeapDumpAfterFullGC) {
-    GCTraceTime tt("Heap Dump (after full gc): ", PrintGCDetails, false, timer, GCId::create());
+    GCIdMarkAndRestore gc_id_mark;
+    GCTraceTime tt("Heap Dump (after full gc): ", PrintGCDetails, false, timer);
     HeapDumper::dump_heap();
   }
   if (PrintClassHistogramAfterFullGC) {
-    GCTraceTime tt("Class Histogram (after full gc): ", PrintGCDetails, true, timer, GCId::create());
+    GCIdMarkAndRestore gc_id_mark;
+    GCTraceTime tt("Class Histogram (after full gc): ", PrintGCDetails, true, timer);
     VM_GC_HeapInspection inspector(gclog_or_tty, false /* ! full gc */);
     inspector.doit();
   }
@@ -622,12 +626,12 @@ void CollectedHeap::test_is_in() {
   assert(heap_start >= ((uintptr_t)NULL + epsilon), "sanity");
   void* before_heap = (void*)(heap_start - epsilon);
   assert(!heap->is_in(before_heap),
-      err_msg("before_heap: " PTR_FORMAT " is unexpectedly in the heap", p2i(before_heap)));
+         "before_heap: " PTR_FORMAT " is unexpectedly in the heap", p2i(before_heap));
 
   // Test that a pointer to after the heap end is reported as outside the heap.
   assert(heap_end <= ((uintptr_t)-1 - epsilon), "sanity");
   void* after_heap = (void*)(heap_end + epsilon);
   assert(!heap->is_in(after_heap),
-      err_msg("after_heap: " PTR_FORMAT " is unexpectedly in the heap", p2i(after_heap)));
+         "after_heap: " PTR_FORMAT " is unexpectedly in the heap", p2i(after_heap));
 }
 #endif

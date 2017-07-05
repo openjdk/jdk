@@ -112,6 +112,8 @@ class ConcurrentG1Refine: public CHeapObj<mtGC> {
   int thread_threshold_step() const { return _thread_threshold_step; }
 
   G1HotCardCache* hot_card_cache() { return &_hot_card_cache; }
+
+  static bool hot_card_cache_enabled() { return G1HotCardCache::default_use_cache(); }
 };
 
 #endif // SHARE_VM_GC_G1_CONCURRENTG1REFINE_HPP

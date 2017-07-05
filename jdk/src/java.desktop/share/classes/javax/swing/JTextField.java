@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,17 @@
  */
 package javax.swing;
 
-import sun.swing.SwingUtilities2;
-
 import java.awt.*;
 import java.awt.event.*;
-import java.beans.*;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import javax.swing.text.*;
-import javax.swing.plaf.*;
 import javax.swing.event.*;
 import javax.accessibility.*;
 
 import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
 import java.io.Serializable;
 
@@ -152,16 +151,14 @@ import java.io.Serializable;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- * @beaninfo
- *   attribute: isContainer false
- * description: A component which allows for the editing of a single line of text.
- *
  * @author  Timothy Prinzing
  * @see #setActionCommand
  * @see JPasswordField
  * @see #addActionListener
  * @since 1.2
  */
+@JavaBean(defaultProperty = "UIClassID", description = "A component which allows for the editing of a single line of text.")
+@SwingContainer(false)
 @SuppressWarnings("serial") // Same-version serialization only
 public class JTextField extends JTextComponent implements SwingConstants {
 
@@ -253,6 +250,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
+    @BeanProperty(bound = false)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -266,11 +264,9 @@ public class JTextField extends JTextComponent implements SwingConstants {
      *
      * @param doc  the document to display/edit
      * @see #getDocument
-     * @beaninfo
-     *  description: the text document model
-     *        bound: true
-     *       expert: true
      */
+    @BeanProperty(expert = true, description
+            = "the text document model")
     public void setDocument(Document doc) {
         if (doc != null) {
             doc.putProperty("filterNewlines", Boolean.TRUE);
@@ -332,14 +328,14 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * @param alignment the alignment
      * @exception IllegalArgumentException if <code>alignment</code>
      *  is not a valid key
-     * @beaninfo
-     *   preferred: true
-     *       bound: true
-     * description: Set the field alignment to LEFT, CENTER, RIGHT,
-     *              LEADING (the default) or TRAILING
-     *        enum: LEFT JTextField.LEFT CENTER JTextField.CENTER RIGHT JTextField.RIGHT
-     *              LEADING JTextField.LEADING TRAILING JTextField.TRAILING
      */
+     @BeanProperty(preferred = true, enumerationValues = {
+             "JTextField.LEFT",
+             "JTextField.CENTER",
+             "JTextField.RIGHT",
+             "JTextField.LEADING",
+             "JTextField.TRAILING"}, description
+             = "Set the field alignment to LEFT, CENTER, RIGHT, LEADING (the default) or TRAILING")
      public void setHorizontalAlignment(int alignment) {
         if (alignment == horizontalAlignment) return;
         int oldValue = horizontalAlignment;
@@ -382,9 +378,9 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * @param columns the number of columns &gt;= 0
      * @exception IllegalArgumentException if <code>columns</code>
      *          is less than 0
-     * @beaninfo
-     * description: the number of columns preferred for display
      */
+    @BeanProperty(bound = false, description
+            = "the number of columns preferred for display")
     public void setColumns(int columns) {
         int oldVal = this.columns;
         if (columns < 0) {
@@ -476,6 +472,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      *         array if no listeners have been added
      * @since 1.4
      */
+    @BeanProperty(bound = false)
     public synchronized ActionListener[] getActionListeners() {
         return listenerList.getListeners(ActionListener.class);
     }
@@ -559,11 +556,9 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * @see #configurePropertiesFromAction
      * @see #createActionPropertyChangeListener
      * @see #actionPropertyChanged
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: the Action instance connected with this ActionEvent source
      */
+    @BeanProperty(visualUpdate = true, description
+            = "the Action instance connected with this ActionEvent source")
     public void setAction(Action a) {
         Action oldValue = getAction();
         if (action==null || !action.equals(a)) {
@@ -712,6 +707,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      *
      * @return the command list
      */
+    @BeanProperty(bound = false)
     public Action[] getActions() {
         return TextAction.augmentList(super.getActions(), defaultActions);
     }
@@ -742,6 +738,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * @return the visibility
      * @see BoundedRangeModel
      */
+    @BeanProperty(bound = false)
     public BoundedRangeModel getHorizontalVisibility() {
         return visibility;
     }
@@ -926,6 +923,7 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * @return an <code>AccessibleJTextField</code> that serves as the
      *         <code>AccessibleContext</code> of this <code>JTextField</code>
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJTextField();

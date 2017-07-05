@@ -91,10 +91,8 @@ CollectionSetChooser::CollectionSetChooser() :
 
 #ifndef PRODUCT
 void CollectionSetChooser::verify() {
-  guarantee(_end <= regions_length(),
-         err_msg("_end: %u regions length: %u", _end, regions_length()));
-  guarantee(_front <= _end,
-            err_msg("_front: %u _end: %u", _front, _end));
+  guarantee(_end <= regions_length(), "_end: %u regions length: %u", _end, regions_length());
+  guarantee(_front <= _end, "_front: %u _end: %u", _front, _end);
   uint index = 0;
   size_t sum_of_reclaimable_bytes = 0;
   while (index < _front) {
@@ -108,19 +106,19 @@ void CollectionSetChooser::verify() {
     guarantee(curr != NULL, "Regions in _regions array cannot be NULL");
     guarantee(!curr->is_young(), "should not be young!");
     guarantee(!curr->is_pinned(),
-              err_msg("Pinned region should not be in collection set (index %u)", curr->hrm_index()));
+              "Pinned region should not be in collection set (index %u)", curr->hrm_index());
     if (prev != NULL) {
       guarantee(order_regions(prev, curr) != 1,
-                err_msg("GC eff prev: %1.4f GC eff curr: %1.4f",
-                        prev->gc_efficiency(), curr->gc_efficiency()));
+                "GC eff prev: %1.4f GC eff curr: %1.4f",
+                prev->gc_efficiency(), curr->gc_efficiency());
     }
     sum_of_reclaimable_bytes += curr->reclaimable_bytes();
     prev = curr;
   }
   guarantee(sum_of_reclaimable_bytes == _remaining_reclaimable_bytes,
-            err_msg("reclaimable bytes inconsistent, "
-                    "remaining: " SIZE_FORMAT " sum: " SIZE_FORMAT,
-                    _remaining_reclaimable_bytes, sum_of_reclaimable_bytes));
+            "reclaimable bytes inconsistent, "
+            "remaining: " SIZE_FORMAT " sum: " SIZE_FORMAT,
+            _remaining_reclaimable_bytes, sum_of_reclaimable_bytes);
 }
 #endif // !PRODUCT
 
@@ -151,7 +149,7 @@ void CollectionSetChooser::sort_regions() {
 
 void CollectionSetChooser::add_region(HeapRegion* hr) {
   assert(!hr->is_pinned(),
-         err_msg("Pinned region shouldn't be added to the collection set (index %u)", hr->hrm_index()));
+         "Pinned region shouldn't be added to the collection set (index %u)", hr->hrm_index());
   assert(!hr->is_young(), "should not be young!");
   _regions.append(hr);
   _end++;

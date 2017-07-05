@@ -31,8 +31,6 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "utilities/hashtable.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 DictionaryEntry*  Dictionary::_current_class_entry = NULL;
 int               Dictionary::_current_class_index =    0;
 
@@ -558,7 +556,7 @@ void ProtectionDomainCacheTable::print() {
 
 void ProtectionDomainCacheEntry::print() {
   tty->print_cr("entry " PTR_FORMAT " value " PTR_FORMAT " strongly_reachable %d next " PTR_FORMAT,
-                this, (void*)literal(), _strongly_reachable, next());
+                p2i(this), p2i(literal()), _strongly_reachable, p2i(next()));
 }
 #endif
 

@@ -42,7 +42,7 @@
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
                                      size_t initial_byte_size,
-                                     GenRemSet* remset) :
+                                     CardTableRS* remset) :
   CardGeneration(rs, initial_byte_size, remset)
 {
   HeapWord* bottom = (HeapWord*) _virtual_space.low();
@@ -129,8 +129,8 @@ void TenuredGeneration::compute_new_size() {
   CardGeneration::compute_new_size();
 
   assert(used() == used_after_gc && used_after_gc <= capacity(),
-         err_msg("used: " SIZE_FORMAT " used_after_gc: " SIZE_FORMAT
-         " capacity: " SIZE_FORMAT, used(), used_after_gc, capacity()));
+         "used: " SIZE_FORMAT " used_after_gc: " SIZE_FORMAT
+         " capacity: " SIZE_FORMAT, used(), used_after_gc, capacity());
 }
 
 void TenuredGeneration::update_gc_stats(Generation* current_generation,

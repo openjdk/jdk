@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-
 package javax.swing;
 
 import java.awt.*;
-import java.awt.event.*;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 import java.beans.ConstructorProperties;
-import java.util.Locale;
-import java.io.Serializable;
 import javax.accessibility.*;
 
 /**
@@ -77,6 +74,7 @@ import javax.accessibility.*;
  * @author  Timothy Prinzing
  * @since 1.2
  */
+@JavaBean(defaultProperty = "accessibleContext")
 @SuppressWarnings("serial")
 public class Box extends JComponent implements Accessible {
 
@@ -413,6 +411,7 @@ public class Box extends JComponent implements Accessible {
      * @return an AccessibleBox that serves as the
      *         AccessibleContext of this Box
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleBox();

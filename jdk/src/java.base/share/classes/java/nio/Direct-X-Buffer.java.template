@@ -242,7 +242,7 @@ class Direct$Type$Buffer$RW$$BO$
     }
 
     private long ix(int i) {
-        return address + (i << $LG_BYTES_PER_VALUE$);
+        return address + ((long)i << $LG_BYTES_PER_VALUE$);
     }
 
     public $type$ get() {
@@ -261,7 +261,7 @@ class Direct$Type$Buffer$RW$$BO$
 
     public $Type$Buffer get($type$[] dst, int offset, int length) {
 #if[rw]
-        if ((length << $LG_BYTES_PER_VALUE$) > Bits.JNI_COPY_TO_ARRAY_THRESHOLD) {
+        if (((long)length << $LG_BYTES_PER_VALUE$) > Bits.JNI_COPY_TO_ARRAY_THRESHOLD) {
             checkBounds(offset, length, dst.length);
             int pos = position();
             int lim = limit();
@@ -273,13 +273,13 @@ class Direct$Type$Buffer$RW$$BO$
 #if[!byte]
             if (order() != ByteOrder.nativeOrder())
                 Bits.copyTo$Memtype$Array(ix(pos), dst,
-                                          offset << $LG_BYTES_PER_VALUE$,
-                                          length << $LG_BYTES_PER_VALUE$);
+                                          (long)offset << $LG_BYTES_PER_VALUE$,
+                                          (long)length << $LG_BYTES_PER_VALUE$);
             else
 #end[!byte]
                 Bits.copyToArray(ix(pos), dst, arrayBaseOffset,
-                                 offset << $LG_BYTES_PER_VALUE$,
-                                 length << $LG_BYTES_PER_VALUE$);
+                                 (long)offset << $LG_BYTES_PER_VALUE$,
+                                 (long)length << $LG_BYTES_PER_VALUE$);
             position(pos + length);
         } else {
             super.get(dst, offset, length);
@@ -329,7 +329,7 @@ class Direct$Type$Buffer$RW$$BO$
 
             if (srem > rem)
                 throw new BufferOverflowException();
-            unsafe.copyMemory(sb.ix(spos), ix(pos), srem << $LG_BYTES_PER_VALUE$);
+            unsafe.copyMemory(sb.ix(spos), ix(pos), (long)srem << $LG_BYTES_PER_VALUE$);
             sb.position(spos + srem);
             position(pos + srem);
         } else if (src.hb != null) {
@@ -353,7 +353,7 @@ class Direct$Type$Buffer$RW$$BO$
 
     public $Type$Buffer put($type$[] src, int offset, int length) {
 #if[rw]
-        if ((length << $LG_BYTES_PER_VALUE$) > Bits.JNI_COPY_FROM_ARRAY_THRESHOLD) {
+        if (((long)length << $LG_BYTES_PER_VALUE$) > Bits.JNI_COPY_FROM_ARRAY_THRESHOLD) {
             checkBounds(offset, length, src.length);
             int pos = position();
             int lim = limit();
@@ -364,12 +364,16 @@ class Direct$Type$Buffer$RW$$BO$
 
 #if[!byte]
             if (order() != ByteOrder.nativeOrder())
-                Bits.copyFrom$Memtype$Array(src, offset << $LG_BYTES_PER_VALUE$,
-                                            ix(pos), length << $LG_BYTES_PER_VALUE$);
+                Bits.copyFrom$Memtype$Array(src,
+                                            (long)offset << $LG_BYTES_PER_VALUE$,
+                                            ix(pos),
+                                            (long)length << $LG_BYTES_PER_VALUE$);
             else
 #end[!byte]
-                Bits.copyFromArray(src, arrayBaseOffset, offset << $LG_BYTES_PER_VALUE$,
-                                   ix(pos), length << $LG_BYTES_PER_VALUE$);
+                Bits.copyFromArray(src, arrayBaseOffset,
+                                   (long)offset << $LG_BYTES_PER_VALUE$,
+                                   ix(pos),
+                                   (long)length << $LG_BYTES_PER_VALUE$);
             position(pos + length);
         } else {
             super.put(src, offset, length);
@@ -387,7 +391,7 @@ class Direct$Type$Buffer$RW$$BO$
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        unsafe.copyMemory(ix(pos), ix(0), rem << $LG_BYTES_PER_VALUE$);
+        unsafe.copyMemory(ix(pos), ix(0), (long)rem << $LG_BYTES_PER_VALUE$);
         position(rem);
         limit(capacity());
         discardMark();

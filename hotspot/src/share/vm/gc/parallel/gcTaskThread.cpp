@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/gcTaskThread.hpp"
+#include "gc/shared/gcId.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -124,6 +125,7 @@ void GCTaskThread::run() {
     for (; /* break */; ) {
       // This will block until there is a task to be gotten.
       GCTask* task = manager()->get_task(which());
+      GCIdMark gc_id_mark(task->gc_id());
       // Record if this is an idle task for later use.
       bool is_idle_task = task->is_idle_task();
       // In case the update is costly

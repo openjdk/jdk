@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,47 @@
 
 #include "ci/compilerInterface.hpp"
 
+typedef void (*initializer)(void);
+
+#if INCLUDE_JVMCI
+// Per-compiler statistics
+class CompilerStatistics VALUE_OBJ_CLASS_SPEC {
+  friend class VMStructs;
+
+  class Data VALUE_OBJ_CLASS_SPEC {
+    friend class VMStructs;
+  public:
+    elapsedTimer _time;  // time spent compiling
+    int _bytes;          // number of bytecodes compiled, including inlined bytecodes
+    int _count;          // number of compilations
+    Data() : _bytes(0), _count(0) {}
+    void update(elapsedTimer time, int bytes) {
+      _time.add(time);
+      _bytes += bytes;
+      _count++;
+    }
+    void reset() {
+      _time.reset();
+    }
+  };
+
+ public:
+  Data _standard;  // stats for non-OSR compilations
+  Data _osr;       // stats for OSR compilations
+  int _nmethods_size; //
+  int _nmethods_code_size;
+  int bytes_per_second() {
+    int bytes = _standard._bytes + _osr._bytes;
+    if (bytes == 0) {
+      return 0;
+    }
+    double seconds = _standard._time.seconds() + _osr._time.seconds();
+    return seconds == 0.0 ? 0 : (int) (bytes / seconds);
+  }
+  CompilerStatistics() : _nmethods_size(0), _nmethods_code_size(0) {}
+};
+#endif // INCLUDE_JVMCI
+
 class AbstractCompiler : public CHeapObj<mtCompiler> {
  private:
   volatile int _num_compiler_threads;
@@ -45,11 +86,16 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
     none,
     c1,
     c2,
+    jvmci,
     shark
   };
 
  private:
   Type _type;
+
+#if INCLUDE_JVMCI
+  CompilerStatistics _stats;
+#endif
 
  public:
   AbstractCompiler(Type type) : _type(type), _compiler_state(uninitialized), _num_compiler_threads(0) {}
@@ -115,6 +161,7 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // Compiler type queries.
   bool is_c1()                                   { return _type == c1; }
   bool is_c2()                                   { return _type == c2; }
+  bool is_jvmci()                                { return _type == jvmci; }
   bool is_shark()                                { return _type == shark; }
 
   // Customization
@@ -138,6 +185,10 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   virtual void print_timers() {
     ShouldNotReachHere();
   }
+
+#if INCLUDE_JVMCI
+  CompilerStatistics* stats() { return &_stats; }
+#endif
 };
 
 #endif // SHARE_VM_COMPILER_ABSTRACTCOMPILER_HPP
