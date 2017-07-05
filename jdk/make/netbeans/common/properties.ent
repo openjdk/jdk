@@ -41,3 +41,5 @@
 <property-file>${user.home}/.openjdk/build.properties</property-file>
 <property-file>build.properties</property-file>
 <property name="bootstrap.jdk">${java.home}/..</property>
+<property name="jtreg.home">${env.JT_HOME}</property>
+<property name="jtreg.tests">**</property>

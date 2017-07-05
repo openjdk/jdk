@@ -22,7 +22,7 @@
 #
 
 # @test
-# @bug 6543842 6543440 6939248
+# @bug 6543842 6543440 6939248 8009636
 # @summary checking response of timestamp
 #
 # @run shell/timeout=600 ts.sh

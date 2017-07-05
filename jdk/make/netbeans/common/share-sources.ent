@@ -37,6 +37,7 @@
     <location>${root}/src/share/classes</location>
     <includes>${includes}</includes>
     <excludes>${excludes}</excludes>
+    <encoding>US-ASCII</encoding>
 </source-folder>
 <source-folder>
     <label>Sources for All Platforms</label>

@@ -1,0 +1,3 @@
+test/script/error/JDK-8008814-1.js:32:2 Function declarations can only occur at program or function body level. You should use a function expression here instead.
+  function g() {
+  ^

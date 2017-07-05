@@ -25,20 +25,17 @@
 
 package jdk.nashorn.internal.ir;
 
-import jdk.nashorn.internal.ir.annotations.Ignore;
+import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
  * IR representation for THROW statements.
  */
-public class ThrowNode extends Node {
+@Immutable
+public final class ThrowNode extends Node {
     /** Exception expression. */
-    private Node expression;
-
-    /** Try chain. */
-    @Ignore
-    private final TryNode tryChain;
+    private final Node expression;
 
     /**
      * Constructor
@@ -47,26 +44,21 @@ public class ThrowNode extends Node {
      * @param token      token
      * @param finish     finish
      * @param expression expression to throw
-     * @param tryChain   surrounding try chain
      */
-    public ThrowNode(final Source source, final long token, final int finish, final Node expression, final TryNode tryChain) {
+    public ThrowNode(final Source source, final long token, final int finish, final Node expression) {
         super(source, token, finish);
 
         this.expression = expression;
-        this.tryChain = tryChain;
-        setIsTerminal(true);
     }
 
-    private ThrowNode(final ThrowNode throwNode, final CopyState cs) {
-        super(throwNode);
-
-        this.expression = cs.existingOrCopy(throwNode.expression);
-        this.tryChain = (TryNode)cs.existingOrSame(throwNode.tryChain);
+    private ThrowNode(final Node node, final Node expression) {
+        super(node);
+        this.expression = expression;
     }
 
     @Override
-    protected Node copy(final CopyState cs) {
-        return new ThrowNode(this, cs);
+    public boolean isTerminal() {
+        return true;
     }
 
     /**
@@ -75,9 +67,8 @@ public class ThrowNode extends Node {
      */
     @Override
     public Node accept(final NodeVisitor visitor) {
-        if (visitor.enterThrowNode(this) != null) {
-            setExpression(expression.accept(visitor));
-            return visitor.leaveThrowNode(this);
+        if (visitor.enterThrowNode(this)) {
+            return visitor.leaveThrowNode(setExpression(expression.accept(visitor)));
         }
 
         return this;
@@ -103,16 +94,13 @@ public class ThrowNode extends Node {
     /**
      * Reset the expression being thrown by this node
      * @param expression new expression
+     * @return new or same thrownode
      */
-    public void setExpression(final Node expression) {
-        this.expression = expression;
+    public ThrowNode setExpression(final Node expression) {
+        if (this.expression == expression) {
+            return this;
+        }
+        return new ThrowNode(this, expression);
     }
 
-    /**
-     * Get surrounding tryChain for this node
-     * @return try chain
-     */
-    public TryNode getTryChain() {
-        return tryChain;
-    }
 }

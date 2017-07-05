@@ -533,5 +533,9 @@ public class TreeSet<E> extends AbstractSet<E>
         tm.readTreeSet(size, s, PRESENT);
     }
 
+    public Spliterator<E> spliterator() {
+        return TreeMap.keySpliteratorFor(m);
+    }
+
     private static final long serialVersionUID = -2479143000061671589L;
 }

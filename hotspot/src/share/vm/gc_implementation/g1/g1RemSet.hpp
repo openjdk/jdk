@@ -53,14 +53,14 @@ protected:
     NumSeqTasks          = 1
   };
 
-  CardTableModRefBS*             _ct_bs;
-  SubTasksDone*                  _seq_task;
-  G1CollectorPolicy* _g1p;
+  CardTableModRefBS*     _ct_bs;
+  SubTasksDone*          _seq_task;
+  G1CollectorPolicy*     _g1p;
 
-  ConcurrentG1Refine* _cg1r;
+  ConcurrentG1Refine*    _cg1r;
 
-  size_t*             _cards_scanned;
-  size_t              _total_cards_scanned;
+  size_t*                _cards_scanned;
+  size_t                 _total_cards_scanned;
 
   // Used for caching the closure that is responsible for scanning
   // references into the collection set.

@@ -215,6 +215,12 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         createAwtWindow(parent);
     }
 
+    @Override
+    final WComponentPeer getNativeParent() {
+        final Container owner = ((Window) target).getOwner();
+        return (WComponentPeer) WToolkit.targetToPeer(owner);
+    }
+
     // should be overriden in WDialogPeer
     protected void realShow() {
         super.show();

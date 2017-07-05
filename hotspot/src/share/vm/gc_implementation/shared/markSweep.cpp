@@ -81,7 +81,7 @@ void MarkSweep::follow_class_loader(ClassLoaderData* cld) {
 }
 
 void MarkSweep::adjust_class_loader(ClassLoaderData* cld) {
-  cld->oops_do(&MarkSweep::adjust_root_pointer_closure, &MarkSweep::adjust_klass_closure, true);
+  cld->oops_do(&MarkSweep::adjust_pointer_closure, &MarkSweep::adjust_klass_closure, true);
 }
 
 
@@ -121,11 +121,10 @@ void MarkSweep::preserve_mark(oop obj, markOop mark) {
   }
 }
 
-MarkSweep::AdjustPointerClosure MarkSweep::adjust_root_pointer_closure(true);
-MarkSweep::AdjustPointerClosure MarkSweep::adjust_pointer_closure(false);
+MarkSweep::AdjustPointerClosure MarkSweep::adjust_pointer_closure;
 
-void MarkSweep::AdjustPointerClosure::do_oop(oop* p)       { adjust_pointer(p, _is_root); }
-void MarkSweep::AdjustPointerClosure::do_oop(narrowOop* p) { adjust_pointer(p, _is_root); }
+void MarkSweep::AdjustPointerClosure::do_oop(oop* p)       { adjust_pointer(p); }
+void MarkSweep::AdjustPointerClosure::do_oop(narrowOop* p) { adjust_pointer(p); }
 
 void MarkSweep::adjust_marks() {
   assert( _preserved_oop_stack.size() == _preserved_mark_stack.size(),

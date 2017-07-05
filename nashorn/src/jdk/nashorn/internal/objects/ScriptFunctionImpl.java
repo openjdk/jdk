@@ -42,12 +42,19 @@ import jdk.nashorn.internal.lookup.Lookup;
  * function objects -- to expose properties like "prototype", "length" etc.
  */
 public class ScriptFunctionImpl extends ScriptFunction {
+
+    /** Reference to constructor prototype. */
+    private Object prototype;
+
     // property map for strict mode functions
     private static final PropertyMap strictmodemap$;
     // property map for bound functions
     private static final PropertyMap boundfunctionmap$;
     // property map for non-strict, non-bound functions.
     private static final PropertyMap nasgenmap$;
+
+    // Marker object for lazily initialized prototype object
+    private static final Object LAZY_PROTOTYPE = new Object();
 
     /**
      * Constructor called by Nasgen generated code, no membercount, use the default map.
@@ -83,8 +90,8 @@ public class ScriptFunctionImpl extends ScriptFunction {
      * @param methodHandle handle for invocation
      * @param scope scope object
      * @param specs specialized versions of this method, if available, null otherwise
-     * @param strict are we in strict mode
-     * @param builtin is this a built-in function
+     * @param isStrict are we in strict mode
+     * @param isBuiltin is this a built-in function
      * @param isConstructor can the function be used as a constructor (most can; some built-ins are restricted).
      */
     ScriptFunctionImpl(final String name, final MethodHandle methodHandle, final ScriptObject scope, final MethodHandle[] specs, final boolean isStrict, final boolean isBuiltin, final boolean isConstructor) {
@@ -235,10 +242,23 @@ public class ScriptFunctionImpl extends ScriptFunction {
         return Global.objectPrototype();
     }
 
+    @Override
+    public final Object getPrototype() {
+        if (prototype == LAZY_PROTOTYPE) {
+            prototype = new PrototypeObject(this);
+        }
+        return prototype;
+    }
+
+    @Override
+    public final void setPrototype(final Object prototype) {
+        this.prototype = prototype;
+    }
+
     // Internals below..
     private void init() {
         this.setProto(Global.instance().getFunctionPrototype());
-        this.setPrototype(new PrototypeObject(this));
+        this.prototype = LAZY_PROTOTYPE;
 
         if (isStrict()) {
             final ScriptFunction func = getTypeErrorThrower();

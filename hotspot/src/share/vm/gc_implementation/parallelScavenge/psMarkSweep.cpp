@@ -138,8 +138,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
   if (VerifyBeforeGC && heap->total_collections() >= VerifyGCStartAt) {
     HandleMark hm;  // Discard invalid handles created during verification
-    gclog_or_tty->print(" VerifyBeforeGC:");
-    Universe::verify();
+    Universe::verify(" VerifyBeforeGC:");
   }
 
   // Verify object start arrays
@@ -177,7 +176,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     size_t prev_used = heap->used();
 
     // Capture metadata size before collection for sizing.
-    size_t metadata_prev_used = MetaspaceAux::used_in_bytes();
+    size_t metadata_prev_used = MetaspaceAux::allocated_used_bytes();
 
     // For PrintGCDetails
     size_t old_gen_prev_used = old_gen->used_in_bytes();
@@ -238,6 +237,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
     // Delete metaspaces for unloaded class loaders and clean up loader_data graph
     ClassLoaderDataGraph::purge();
+    MetaspaceAux::verify_metrics();
 
     BiasedLocking::restore_marks();
     Threads::gc_epilogue();
@@ -340,8 +340,7 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {
     HandleMark hm;  // Discard invalid handles created during verification
-    gclog_or_tty->print(" VerifyAfterGC:");
-    Universe::verify();
+    Universe::verify(" VerifyAfterGC:");
   }
 
   // Re-verify object start arrays
@@ -518,23 +517,23 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
       is_alive_closure(), mark_and_push_closure(), follow_stack_closure(), NULL);
   }
 
-  // Follow system dictionary roots and unload classes
+  // This is the point where the entire marking should have completed.
+  assert(_marking_stack.is_empty(), "Marking should have completed");
+
+  // Unload classes and purge the SystemDictionary.
   bool purged_class = SystemDictionary::do_unloading(is_alive_closure());
 
-  // Follow code cache roots
+  // Unload nmethods.
   CodeCache::do_unloading(is_alive_closure(), purged_class);
-  follow_stack(); // Flush marking stack
 
-  // Update subklass/sibling/implementor links of live klasses
-  Klass::clean_weak_klass_links(&is_alive);
-  assert(_marking_stack.is_empty(), "just drained");
+  // Prune dead klasses from subklass/sibling/implementor lists.
+  Klass::clean_weak_klass_links(is_alive_closure());
 
-  // Visit interned string tables and delete unmarked oops
+  // Delete entries for dead interned strings.
   StringTable::unlink(is_alive_closure());
+
   // Clean up unreferenced symbols in symbol table.
   SymbolTable::unlink();
-
-  assert(_marking_stack.is_empty(), "stack should be empty by now");
 }
 
 
@@ -583,28 +582,27 @@ void PSMarkSweep::mark_sweep_phase3() {
   ClassLoaderDataGraph::clear_claimed_marks();
 
   // General strong roots.
-  Universe::oops_do(adjust_root_pointer_closure());
-  JNIHandles::oops_do(adjust_root_pointer_closure());   // Global (strong) JNI handles
-  CLDToOopClosure adjust_from_cld(adjust_root_pointer_closure());
-  Threads::oops_do(adjust_root_pointer_closure(), &adjust_from_cld, NULL);
-  ObjectSynchronizer::oops_do(adjust_root_pointer_closure());
-  FlatProfiler::oops_do(adjust_root_pointer_closure());
-  Management::oops_do(adjust_root_pointer_closure());
-  JvmtiExport::oops_do(adjust_root_pointer_closure());
+  Universe::oops_do(adjust_pointer_closure());
+  JNIHandles::oops_do(adjust_pointer_closure());   // Global (strong) JNI handles
+  CLDToOopClosure adjust_from_cld(adjust_pointer_closure());
+  Threads::oops_do(adjust_pointer_closure(), &adjust_from_cld, NULL);
+  ObjectSynchronizer::oops_do(adjust_pointer_closure());
+  FlatProfiler::oops_do(adjust_pointer_closure());
+  Management::oops_do(adjust_pointer_closure());
+  JvmtiExport::oops_do(adjust_pointer_closure());
   // SO_AllClasses
-  SystemDictionary::oops_do(adjust_root_pointer_closure());
-  ClassLoaderDataGraph::oops_do(adjust_root_pointer_closure(), adjust_klass_closure(), true);
-  //CodeCache::scavenge_root_nmethods_oops_do(adjust_root_pointer_closure());
+  SystemDictionary::oops_do(adjust_pointer_closure());
+  ClassLoaderDataGraph::oops_do(adjust_pointer_closure(), adjust_klass_closure(), true);
 
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
   // Global (weak) JNI handles
-  JNIHandles::weak_oops_do(&always_true, adjust_root_pointer_closure());
+  JNIHandles::weak_oops_do(&always_true, adjust_pointer_closure());
 
   CodeCache::oops_do(adjust_pointer_closure());
-  StringTable::oops_do(adjust_root_pointer_closure());
-  ref_processor()->weak_oops_do(adjust_root_pointer_closure());
-  PSScavenge::reference_processor()->weak_oops_do(adjust_root_pointer_closure());
+  StringTable::oops_do(adjust_pointer_closure());
+  ref_processor()->weak_oops_do(adjust_pointer_closure());
+  PSScavenge::reference_processor()->weak_oops_do(adjust_pointer_closure());
 
   adjust_marks();
 

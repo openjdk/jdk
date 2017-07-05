@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,71 +25,67 @@
  * @test TestFullGCount.java
  * @bug 7072527
  * @summary CMS: JMM GC counters overcount in some cases
- * @run main/othervm -XX:+UseConcMarkSweepGC TestFullGCCount
- *
+ * @run main/othervm -XX:+PrintGC TestFullGCCount
  */
 import java.util.*;
 import java.lang.management.*;
 
+/*
+ * Originally for a specific failure in CMS, this test now monitors all
+ * collectors for double-counting of collections.
+ */
 public class TestFullGCCount {
 
-    public String collectorName = "ConcurrentMarkSweep";
+    static List<GarbageCollectorMXBean> collectors = ManagementFactory.getGarbageCollectorMXBeans();
 
-    public static void main(String [] args) {
-
-        TestFullGCCount t = null;
-        if (args.length==2) {
-            t = new TestFullGCCount(args[0], args[1]);
-        } else {
-            t = new TestFullGCCount();
-        }
-        System.out.println("Monitoring collector: " + t.collectorName);
-        t.run();
-    }
-
-    public TestFullGCCount(String pool, String collector) {
-        collectorName = collector;
-    }
-
-    public TestFullGCCount() {
-    }
-
-    public void run() {
-        int count = 0;
+    public static void main(String[] args) {
         int iterations = 20;
-        long counts[] = new long[iterations];
-        boolean diffAlways2 = true; // assume we will fail
+        boolean failed = false;
+        String errorMessage = "";
+        HashMap<String, List> counts = new HashMap<String, List>();
 
-        for (int i=0; i<iterations; i++) {
+        // Prime the collection of count lists for all collectors.
+        for (int i = 0; i < collectors.size(); i++) {
+            GarbageCollectorMXBean collector = collectors.get(i);
+            counts.put(collector.getName(), new ArrayList<Long>(iterations));
+        }
+
+        // Perform some gc, record collector counts.
+        for (int i = 0; i < iterations; i++) {
             System.gc();
-            counts[i] = getCollectionCount();
-            if (i>0) {
-                if (counts[i] - counts[i-1] != 2) {
-                    diffAlways2 = false;
+            addCollectionCount(counts, i);
+        }
+
+        // Check the increments:
+        //   Old gen collectors should increase by one,
+        //   New collectors may or may not increase.
+        //   Any increase >=2 is unexpected.
+        for (String collector : counts.keySet()) {
+            System.out.println("Checking: " + collector);
+
+            for (int i = 0; i < iterations - 1; i++) {
+                List<Long> theseCounts = counts.get(collector);
+                long a = theseCounts.get(i);
+                long b = theseCounts.get(i + 1);
+                if (b - a >= 2) {
+                    failed = true;
+                    errorMessage += "Collector '" + collector + "' has increment " + (b - a) +
+                                    " at iteration " + i + "\n";
                 }
             }
         }
-        if (diffAlways2) {
-            throw new RuntimeException("FAILED: System.gc must be incrementing count twice.");
+        if (failed) {
+            System.err.println(errorMessage);
+            throw new RuntimeException("FAILED: System.gc collections miscounted.");
         }
         System.out.println("Passed.");
     }
 
-    private long getCollectionCount() {
-        long count = 0;
-        List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
-        List<GarbageCollectorMXBean> collectors = ManagementFactory.getGarbageCollectorMXBeans();
-        for (int i=0; i<collectors.size(); i++) {
+    private static void addCollectionCount(HashMap<String, List> counts, int iteration) {
+        for (int i = 0; i < collectors.size(); i++) {
             GarbageCollectorMXBean collector = collectors.get(i);
-            String name = collector.getName();
-            if (name.contains(collectorName)) {
-                System.out.println(name + ": collection count = "
-                                   + collector.getCollectionCount());
-                count = collector.getCollectionCount();
-            }
+            List thisList = counts.get(collector.getName());
+            thisList.add(collector.getCollectionCount());
         }
-        return count;
     }
-
 }
-

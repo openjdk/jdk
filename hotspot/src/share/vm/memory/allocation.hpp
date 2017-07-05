@@ -539,6 +539,9 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
 #define NEW_RESOURCE_ARRAY(type, size)\
   (type*) resource_allocate_bytes((size) * sizeof(type))
 
+#define NEW_RESOURCE_ARRAY_RETURN_NULL(type, size)\
+  (type*) resource_allocate_bytes((size) * sizeof(type), AllocFailStrategy::RETURN_NULL)
+
 #define NEW_RESOURCE_ARRAY_IN_THREAD(thread, type, size)\
   (type*) resource_allocate_bytes(thread, (size) * sizeof(type))
 

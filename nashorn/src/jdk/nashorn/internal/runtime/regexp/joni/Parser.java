@@ -287,7 +287,10 @@ class Parser extends Lexer {
 
                     if (syntax.allowDoubleRangeOpInCC()) {
                         env.ccEscWarn("-");
-                        parseCharClassSbChar(cc, arg); // goto sb_char /* [0-9-a] is allowed as [0-9\-a] */
+                        arg.inType = CCVALTYPE.SB;
+                        arg.v = '-';
+                        arg.vIsRaw = false;
+                        parseCharClassValEntry2(cc, arg); // goto val_entry2 /* [0-9-a] is allowed as [0-9\-a] */
                         break;
                     }
                     newSyntaxException(ERR_UNMATCHED_RANGE_SPECIFIER_IN_CHAR_CLASS);

@@ -364,17 +364,18 @@ class DigestAuthentication extends AuthenticationInfo {
                         + ncfield
                         + ", uri=\"" + uri
                         + "\", response=\"" + response
-                        + "\", algorithm=\"" + algorithm;
+                        + "\", algorithm=" + algorithm;
         if (opaque != null) {
-            value = value + "\", opaque=\"" + opaque;
+            value = value + ", opaque=\"" + opaque;
+            value = value + "\"";
         }
         if (cnonce != null) {
-            value = value + "\", cnonce=\"" + cnonce;
+            value = value + ", cnonce=\"" + cnonce;
+            value = value + "\"";
         }
         if (qop) {
-            value = value + "\", qop=\"auth";
+            value = value + ", qop=auth";
         }
-        value = value + "\"";
         return value;
     }
 

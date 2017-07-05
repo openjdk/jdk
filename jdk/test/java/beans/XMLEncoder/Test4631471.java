@@ -28,7 +28,6 @@
  * @author Sergey Malenkov, Mark Davidson
  */
 
-import java.beans.XMLEncoder;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
@@ -76,10 +75,6 @@ public abstract class Test4631471 extends AbstractTest {
 
     protected final void validate(Object before, Object after) {
         // do not any validation
-    }
-
-    protected final void initialize(XMLEncoder encoder) {
-        encoder.setExceptionListener(this);
     }
 
     public static TreeNode getRoot() {

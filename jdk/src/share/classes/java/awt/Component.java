@@ -1051,11 +1051,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
         return parent;
     }
 
-    // This method is overriden in the Window class to return null,
+    // This method is overridden in the Window class to return null,
     //    because the parent field of the Window object contains
     //    the owner of the window, not its parent.
     Container getContainer() {
-        return getParent();
+        return getParent_NoClientCode();
     }
 
     /**
@@ -8194,10 +8194,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Fetches the native container somewhere higher up in the component
      * tree that contains this component.
      */
-    Container getNativeContainer() {
-        Container p = parent;
+    final Container getNativeContainer() {
+        Container p = getContainer();
         while (p != null && p.peer instanceof LightweightPeer) {
-            p = p.getParent_NoClientCode();
+            p = p.getContainer();
         }
         return p;
     }

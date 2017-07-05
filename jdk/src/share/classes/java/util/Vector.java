@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,10 @@
  */
 
 package java.util;
+
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 
 /**
  * The {@code Vector} class implements a growable array of
@@ -1151,6 +1155,28 @@ public class Vector<E>
             lastRet = -1;
         }
 
+        @Override
+        public void forEachRemaining(Consumer<? super E> action) {
+            Objects.requireNonNull(action);
+            synchronized (Vector.this) {
+                final int size = elementCount;
+                int i = cursor;
+                if (i >= size) {
+                    return;
+                }
+                final Object[] elementData = Vector.this.elementData;
+                if (i >= elementData.length) {
+                    throw new ConcurrentModificationException();
+                }
+                while (i != size && modCount == expectedModCount) {
+                    action.accept((E) elementData[i++]);
+                }
+                // update once at end of iteration to reduce heap write traffic
+                lastRet = cursor = i;
+                checkForComodification();
+            }
+        }
+
         final void checkForComodification() {
             if (modCount != expectedModCount)
                 throw new ConcurrentModificationException();
@@ -1207,6 +1233,183 @@ public class Vector<E>
             }
             cursor = i + 1;
             lastRet = -1;
+        }
+    }
+
+    @Override
+    public synchronized void forEach(Consumer<? super E> action) {
+        Objects.requireNonNull(action);
+        final int expectedModCount = modCount;
+        @SuppressWarnings("unchecked")
+        final E[] elementData = (E[]) this.elementData;
+        final int elementCount = this.elementCount;
+        for (int i=0; modCount == expectedModCount && i < elementCount; i++) {
+            action.accept(elementData[i]);
+        }
+        if (modCount != expectedModCount) {
+            throw new ConcurrentModificationException();
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public synchronized boolean removeIf(Predicate<? super E> filter) {
+        Objects.requireNonNull(filter);
+        // figure out which elements are to be removed
+        // any exception thrown from the filter predicate at this stage
+        // will leave the collection unmodified
+        int removeCount = 0;
+        final int size = elementCount;
+        final BitSet removeSet = new BitSet(size);
+        final int expectedModCount = modCount;
+        for (int i=0; modCount == expectedModCount && i < size; i++) {
+            @SuppressWarnings("unchecked")
+            final E element = (E) elementData[i];
+            if (filter.test(element)) {
+                removeSet.set(i);
+                removeCount++;
+            }
+        }
+        if (modCount != expectedModCount) {
+            throw new ConcurrentModificationException();
+        }
+
+        // shift surviving elements left over the spaces left by removed elements
+        final boolean anyToRemove = removeCount > 0;
+        if (anyToRemove) {
+            final int newSize = size - removeCount;
+            for (int i=0, j=0; (i < size) && (j < newSize); i++, j++) {
+                i = removeSet.nextClearBit(i);
+                elementData[j] = elementData[i];
+            }
+            for (int k=newSize; k < size; k++) {
+                elementData[k] = null;  // Let gc do its work
+            }
+            elementCount = newSize;
+            if (modCount != expectedModCount) {
+                throw new ConcurrentModificationException();
+            }
+            modCount++;
+        }
+
+        return anyToRemove;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public synchronized void replaceAll(UnaryOperator<E> operator) {
+        Objects.requireNonNull(operator);
+        final int expectedModCount = modCount;
+        final int size = elementCount;
+        for (int i=0; modCount == expectedModCount && i < size; i++) {
+            elementData[i] = operator.apply((E) elementData[i]);
+        }
+        if (modCount != expectedModCount) {
+            throw new ConcurrentModificationException();
+        }
+        modCount++;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public synchronized void sort(Comparator<? super E> c) {
+        final int expectedModCount = modCount;
+        Arrays.sort((E[]) elementData, 0, elementCount, c);
+        if (modCount != expectedModCount) {
+            throw new ConcurrentModificationException();
+        }
+        modCount++;
+    }
+
+    @Override
+    public Spliterator<E> spliterator() {
+        return new VectorSpliterator<>(this, null, 0, -1, 0);
+    }
+
+    /** Similar to ArrayList Spliterator */
+    static final class VectorSpliterator<E> implements Spliterator<E> {
+        private final Vector<E> list;
+        private Object[] array;
+        private int index; // current index, modified on advance/split
+        private int fence; // -1 until used; then one past last index
+        private int expectedModCount; // initialized when fence set
+
+        /** Create new spliterator covering the given  range */
+        VectorSpliterator(Vector<E> list, Object[] array, int origin, int fence,
+                          int expectedModCount) {
+            this.list = list;
+            this.array = array;
+            this.index = origin;
+            this.fence = fence;
+            this.expectedModCount = expectedModCount;
+        }
+
+        private int getFence() { // initialize on first use
+            int hi;
+            if ((hi = fence) < 0) {
+                synchronized(list) {
+                    array = list.elementData;
+                    expectedModCount = list.modCount;
+                    hi = fence = list.elementCount;
+                }
+            }
+            return hi;
+        }
+
+        public Spliterator<E> trySplit() {
+            int hi = getFence(), lo = index, mid = (lo + hi) >>> 1;
+            return (lo >= mid) ? null :
+                new VectorSpliterator<E>(list, array, lo, index = mid,
+                                         expectedModCount);
+        }
+
+        @SuppressWarnings("unchecked")
+        public boolean tryAdvance(Consumer<? super E> action) {
+            int i;
+            if (action == null)
+                throw new NullPointerException();
+            if (getFence() > (i = index)) {
+                index = i + 1;
+                action.accept((E)array[i]);
+                if (list.modCount != expectedModCount)
+                    throw new ConcurrentModificationException();
+                return true;
+            }
+            return false;
+        }
+
+        @SuppressWarnings("unchecked")
+        public void forEachRemaining(Consumer<? super E> action) {
+            int i, hi; // hoist accesses and checks from loop
+            Vector<E> lst; Object[] a;
+            if (action == null)
+                throw new NullPointerException();
+            if ((lst = list) != null) {
+                if ((hi = fence) < 0) {
+                    synchronized(lst) {
+                        expectedModCount = lst.modCount;
+                        a = array = lst.elementData;
+                        hi = fence = lst.elementCount;
+                    }
+                }
+                else
+                    a = array;
+                if (a != null && (i = index) >= 0 && (index = hi) <= a.length) {
+                    while (i < hi)
+                        action.accept((E) a[i++]);
+                    if (lst.modCount == expectedModCount)
+                        return;
+                }
+            }
+            throw new ConcurrentModificationException();
+        }
+
+        public long estimateSize() {
+            return (long) (getFence() - index);
+        }
+
+        public int characteristics() {
+            return Spliterator.ORDERED | Spliterator.SIZED | Spliterator.SUBSIZED;
         }
     }
 }
