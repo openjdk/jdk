@@ -1,0 +1,21 @@
+<html>
+<!--  
+  @test
+  @bug 4051487 4145670
+  @summary Tests that disposing of an empty Frame or a Frame with a MenuBar
+           while it is being created does not crash the VM.
+  @author dpm area=Threads
+  @run applet/timeout=7200 DisposeStressTest.html
+  -->
+<head>
+<title>DisposeStressTest</title>
+</head>
+<body>
+
+<h1>DisposeStressTest<br>Bug ID: 4051487, 4145670</h1>
+
+<p> This is an AUTOMATIC test, simply wait for completion </p>
+
+<APPLET CODE="DisposeStressTest.class" WIDTH=200 HEIGHT=200></APPLET>
+</body>
+</html>

@@ -28,10 +28,10 @@ package sun.reflect.generics.tree;
 import sun.reflect.generics.visitor.Visitor;
 
 public class MethodTypeSignature implements Signature {
-    private FormalTypeParameter[] formalTypeParams;
-    private TypeSignature[] parameterTypes;
-    private ReturnType returnType;
-    private FieldTypeSignature[] exceptionTypes;
+    private final FormalTypeParameter[] formalTypeParams;
+    private final TypeSignature[] parameterTypes;
+    private final ReturnType returnType;
+    private final FieldTypeSignature[] exceptionTypes;
 
     private MethodTypeSignature(FormalTypeParameter[] ftps,
                                 TypeSignature[] pts,

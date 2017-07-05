@@ -28,9 +28,9 @@ package sun.reflect.generics.tree;
 import sun.reflect.generics.visitor.TypeTreeVisitor;
 
 public class SimpleClassTypeSignature implements FieldTypeSignature {
-    private boolean dollar;
-    private String name;
-    private TypeArgument[] typeArgs;
+    private final boolean dollar;
+    private final String name;
+    private final TypeArgument[] typeArgs;
 
     private SimpleClassTypeSignature(String n, boolean dollar, TypeArgument[] tas) {
         name = n;

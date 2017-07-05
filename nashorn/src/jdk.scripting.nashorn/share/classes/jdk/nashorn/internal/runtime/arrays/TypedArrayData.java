@@ -58,7 +58,7 @@ public abstract class TypedArrayData<T extends Buffer> extends ContinuousArrayDa
      * @return element length
      */
     public final int getElementLength() {
-        return (int)length;
+        return (int)length();
     }
 
     /**
@@ -119,7 +119,7 @@ public abstract class TypedArrayData<T extends Buffer> extends ContinuousArrayDa
 
     @Override
     public final boolean has(final int index) {
-        return 0 <= index && index < length;
+        return 0 <= index && index < length();
     }
 
     @Override

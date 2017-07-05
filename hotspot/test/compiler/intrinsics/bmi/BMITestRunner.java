@@ -22,13 +22,17 @@
  *
  */
 
-import java.util.*;
+import com.oracle.java.testlibrary.Asserts;
+import com.oracle.java.testlibrary.OutputAnalyzer;
+import com.oracle.java.testlibrary.ProcessTools;
+import com.oracle.java.testlibrary.Utils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.nio.charset.StandardCharsets;
-
-import com.oracle.java.testlibrary.*;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Random;
 
 /**
  * Test runner that invokes all methods implemented by particular Expr
@@ -69,7 +73,7 @@ public class BMITestRunner {
                                 String... additionalVMOpts)
                          throws Throwable {
 
-        int seed = new Random().nextInt();
+        int seed = Utils.getRandomInstance().nextInt();
         int iterations = DEFAULT_ITERATIONS_COUNT;
 
         for (String testOption : testOpts) {
@@ -80,8 +84,6 @@ public class BMITestRunner {
                 seed = Integer.valueOf(testOption.replace("-seed=", ""));
             }
         }
-
-        System.out.println("Running test with seed: " + seed);
 
         OutputAnalyzer intOutput = runTest(expr, VMMode.INT,
                                            additionalVMOpts,
@@ -139,9 +141,9 @@ public class BMITestRunner {
 
         Collections.addAll(vmOpts, new String[] {
                 "-XX:+DisplayVMOutputToStderr",
+                "-D" + Utils.SEED_PROPERTY_NAME + "=" + seed,
                 Executor.class.getName(),
                 expr.getName(),
-                new Integer(seed).toString(),
                 new Integer(iterations).toString()
             });
 
@@ -179,16 +181,15 @@ public class BMITestRunner {
     public static class Executor {
 
         /**
-         * Usage: BMITestRunner$Executor <ExprClassName> <seed> <iterations>
+         * Usage: BMITestRunner$Executor &lt;ExprClassName&gt; &lt;iterations&gt;
          */
         public static void main(String args[]) throws Exception {
             @SuppressWarnings("unchecked")
             Class<? extends Expr> exprClass =
                 (Class<? extends Expr>)Class.forName(args[0]);
             Expr expr = exprClass.getConstructor().newInstance();
-            Random rng = new Random(Integer.valueOf(args[1]));
-            int iterations = Integer.valueOf(args[2]);
-            runTests(expr, iterations, rng);
+            int iterations = Integer.valueOf(args[1]);
+            runTests(expr, iterations, Utils.getRandomInstance());
         }
 
 

@@ -30,7 +30,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.SwitchPoint;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.runtime.ScriptFunction;
@@ -61,10 +60,6 @@ public @interface SpecializedFunction {
          * "no special linking or runtime guard behavior"
          */
         public static final LinkLogic EMPTY_INSTANCE = new Empty();
-
-        private static final SwitchPoint[] INVALIDATED_SWITCHPOINTS = new SwitchPoint[0];
-
-        private SwitchPoint[] modificationSwitchPoints; //cache
 
         /** Empty link logic class - allow all linking, no guards */
         private static final class Empty extends LinkLogic {
@@ -167,92 +162,6 @@ public @interface SpecializedFunction {
         }
 
         /**
-         * Return the modification SwitchPoint of a particular index from this OptimisticBuiltins
-         * If none exists, one is created and that one is return.
-         *
-         * The implementor must map indexes to specific SwitchPoints for specific events and keep
-         * track of what they mean, for example NativeArray.LENGTH_NOT_WRITABLE_SWITCHPOINT
-         * might be a useful index mapping
-         *
-         * @param index index for SwitchPoint to get or create
-         * @return modification SwitchPoint of particular index for the receiver
-         */
-        public SwitchPoint getOrCreateModificationSwitchPoint(final int index) {
-            return null;
-        }
-
-        /**
-         * Return the modification SwitchPoint from this OptimisticBuiltins. If none
-         * exists, one is created and that one is return.
-         *
-         * @return modification SwitchPoint for the receiver
-         */
-        public SwitchPoint[] getOrCreateModificationSwitchPoints() {
-            return null;
-        }
-
-        /**
-         * Hook to invalidate a modification SwitchPoint by index.
-         *
-         * @param index index for SwitchPoint to invalidate
-         */
-        public void invalidateModificationSwitchPoint(final int index) {
-            //empty
-        }
-
-        /**
-         * Hook to invalidate all modification SwitchPoints for a receiver
-         */
-        public void invalidateModificationSwitchPoints() {
-            //empty
-        }
-
-        /**
-         * Check whether the receiver has an invalidated modification SwitchPoint.
-         *
-         * @param  index index for the modification SwitchPoint
-         * @return true if the particular SwitchPoint at the index is invalidated
-         */
-        public boolean hasInvalidatedModificationSwitchPoint(final int index) {
-            return false;
-        }
-
-        /**
-         * Check whether at least one of the modification SwitchPoints has been
-         * invalidated
-         * @return true if one of the SwitchPoints has been invalidated
-         */
-        public boolean hasInvalidatedModificationSwitchPoints() {
-            return false;
-        }
-
-        /**
-         * Check whether this OptimisticBuiltins has a SwitchPoints of particular
-         * index.
-         *
-         * As creation overhead for a SwitchPoint is non-zero, we have to create them lazily instead of,
-         * e.g. in the constructor of every subclass.
-         *
-         * @param index index for the modification SwitchPoint
-         * @return true if a modification SwitchPoint exists, no matter if it has been invalidated or not
-         */
-        public boolean hasModificationSwitchPoint(final int index) {
-            return false;
-        }
-
-        /**
-         * Check whether this OptimisticBuiltins has SwitchPoints.
-         *
-         * As creation overhead for a SwitchPoint is non-zero, we have to create them lazily instead of,
-         * e.g. in the constructor of every subclass.
-         *
-         * @return true if a modification SwitchPoint exists, no matter if it has been invalidated or not
-         */
-        public boolean hasModificationSwitchPoints() {
-            return false;
-        }
-
-        /**
          * Check, given a link request and a receiver, if this specialization
          * fits This is used by the linker in {@link ScriptFunction} to figure
          * out if an optimistic builtin can be linked when first discovered
@@ -265,46 +174,8 @@ public @interface SpecializedFunction {
          *         pick a non specialized target
          */
         public boolean checkLinkable(final Object self, final CallSiteDescriptor desc, final LinkRequest request) {
-            // no matter what the modification switchpoints are, if any of them are invalidated,
-            // we can't link. Side effect is that if it's the first time we see this callsite,
-            // we have to create the SwitchPoint(s) so future modification switchpoint invalidations
-            // relink it
-            final SwitchPoint[] sps = getOrCreateModificationSwitchPoints(self);
-            if (sps == INVALIDATED_SWITCHPOINTS) {
-                // nope, can't do the fast link as this assumption
-                // has been invalidated already, e.g. length of an
-                // array set to not writable
-                return false;
-            }
-            modificationSwitchPoints = sps; //cache
-
             // check the link guard, if it says we can link, go ahead
             return canLink(self, desc, request);
-        }
-
-        private SwitchPoint[] getOrCreateModificationSwitchPoints(final Object self) {
-            final SwitchPoint[] sps = getOrCreateModificationSwitchPoints(); //ask for all my switchpoints
-            if (sps != null) { //switchpoint exists, but some may be invalidated
-                for (final SwitchPoint sp : sps) {
-                    if (sp.hasBeenInvalidated()) {
-                        return INVALIDATED_SWITCHPOINTS;
-                    }
-                }
-            }
-            return sps;
-        }
-
-        /**
-         * Get the cached modification switchpoints. Only possible to do after a link
-         * check call has been performed, one that has answered "true", or you will get the
-         * wrong information.
-         *
-         * Should be used only from {@link ScriptFunction#findCallMethod}
-         *
-         * @return cached modification switchpoints for this callsite, null if none
-         */
-        public SwitchPoint[] getModificationSwitchPoints() {
-            return modificationSwitchPoints == null ? null : modificationSwitchPoints.clone();
         }
     }
 

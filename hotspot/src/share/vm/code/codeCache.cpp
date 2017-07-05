@@ -44,6 +44,7 @@
 #include "runtime/icache.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/sweeper.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "services/memoryService.hpp"
 #include "trace/tracing.hpp"
@@ -192,16 +193,16 @@ void CodeCache::initialize_heaps() {
   }
 
   // Make sure we have enough space for VM internal code
-  uint min_code_cache_size = (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3)) + CodeCacheMinimumFreeSpace;
+  uint min_code_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
   if (NonNMethodCodeHeapSize < (min_code_cache_size + code_buffers_size)) {
     vm_exit_during_initialization("Not enough space in non-nmethod code heap to run VM.");
   }
   guarantee(NonProfiledCodeHeapSize + ProfiledCodeHeapSize + NonNMethodCodeHeapSize <= ReservedCodeCacheSize, "Size check");
 
   // Align reserved sizes of CodeHeaps
-  size_t non_method_size    = ReservedCodeSpace::allocation_align_size_up(NonNMethodCodeHeapSize);
-  size_t profiled_size      = ReservedCodeSpace::allocation_align_size_up(ProfiledCodeHeapSize);
-  size_t non_profiled_size  = ReservedCodeSpace::allocation_align_size_up(NonProfiledCodeHeapSize);
+  size_t non_method_size   = ReservedCodeSpace::allocation_align_size_up(NonNMethodCodeHeapSize);
+  size_t profiled_size     = ReservedCodeSpace::allocation_align_size_up(ProfiledCodeHeapSize);
+  size_t non_profiled_size = ReservedCodeSpace::allocation_align_size_up(NonProfiledCodeHeapSize);
 
   // Compute initial sizes of CodeHeaps
   size_t init_non_method_size   = MIN2(InitialCodeCacheSize, non_method_size);
@@ -265,6 +266,22 @@ bool CodeCache::heap_available(int code_blob_type) {
     return (code_blob_type == CodeBlobType::NonNMethod) ||
            (code_blob_type == CodeBlobType::MethodNonProfiled);
   }
+}
+
+const char* CodeCache::get_code_heap_flag_name(int code_blob_type) {
+  switch(code_blob_type) {
+  case CodeBlobType::NonNMethod:
+    return "NonNMethodCodeHeapSize";
+    break;
+  case CodeBlobType::MethodNonProfiled:
+    return "NonProfiledCodeHeapSize";
+    break;
+  case CodeBlobType::MethodProfiled:
+    return "ProfiledCodeHeapSize";
+    break;
+  }
+  ShouldNotReachHere();
+  return NULL;
 }
 
 void CodeCache::add_heap(ReservedSpace rs, const char* name, size_t size_initial, int code_blob_type) {
@@ -332,14 +349,18 @@ CodeBlob* CodeCache::next_blob(CodeBlob* cb) {
   return next_blob(get_code_heap(cb), cb);
 }
 
-CodeBlob* CodeCache::allocate(int size, int code_blob_type, bool is_critical) {
-  // Do not seize the CodeCache lock here--if the caller has not
-  // already done so, we are going to lose bigtime, since the code
-  // cache will contain a garbage CodeBlob until the caller can
-  // run the constructor for the CodeBlob subclass he is busy
-  // instantiating.
+/**
+ * Do not seize the CodeCache lock here--if the caller has not
+ * already done so, we are going to lose bigtime, since the code
+ * cache will contain a garbage CodeBlob until the caller can
+ * run the constructor for the CodeBlob subclass he is busy
+ * instantiating.
+ */
+CodeBlob* CodeCache::allocate(int size, int code_blob_type) {
+  // Possibly wakes up the sweeper thread.
+  NMethodSweeper::notify(code_blob_type);
   assert_locked_or_safepoint(CodeCache_lock);
-  assert(size > 0, "allocation request must be reasonable");
+  assert(size > 0, err_msg_res("Code cache allocation request must be > 0 but is %d", size));
   if (size <= 0) {
     return NULL;
   }
@@ -350,14 +371,18 @@ CodeBlob* CodeCache::allocate(int size, int code_blob_type, bool is_critical) {
   assert(heap != NULL, "heap is null");
 
   while (true) {
-    cb = (CodeBlob*)heap->allocate(size, is_critical);
+    cb = (CodeBlob*)heap->allocate(size);
     if (cb != NULL) break;
     if (!heap->expand_by(CodeCacheExpansionSize)) {
       // Expansion failed
       if (SegmentedCodeCache && (code_blob_type == CodeBlobType::NonNMethod)) {
-        // Fallback solution: Store non-nmethod code in the non-profiled code heap
-        return allocate(size, CodeBlobType::MethodNonProfiled, is_critical);
+        // Fallback solution: Store non-nmethod code in the non-profiled code heap.
+        // Note that at in the sweeper, we check the reverse_free_ratio of the non-profiled
+        // code heap and force stack scanning if less than 10% if the code heap are free.
+        return allocate(size, CodeBlobType::MethodNonProfiled);
       }
+      MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+      CompileBroker::handle_full_code_cache(code_blob_type);
       return NULL;
     }
     if (PrintCodeCacheExtension) {
@@ -755,19 +780,6 @@ size_t CodeCache::max_capacity() {
 }
 
 /**
- * Returns true if a CodeHeap is full and sets code_blob_type accordingly.
- */
-bool CodeCache::is_full(int* code_blob_type) {
-  FOR_ALL_HEAPS(heap) {
-    if ((*heap)->unallocated_capacity() < CodeCacheMinimumFreeSpace) {
-      *code_blob_type = (*heap)->code_blob_type();
-      return true;
-    }
-  }
-  return false;
-}
-
-/**
  * Returns the reverse free ratio. E.g., if 25% (1/4) of the code heap
  * is free, reverse_free_ratio() returns 4.
  */
@@ -776,9 +788,13 @@ double CodeCache::reverse_free_ratio(int code_blob_type) {
   if (heap == NULL) {
     return 0;
   }
-  double unallocated_capacity = (double)(heap->unallocated_capacity() - CodeCacheMinimumFreeSpace);
+
+  double unallocated_capacity = MAX2((double)heap->unallocated_capacity(), 1.0); // Avoid division by 0;
   double max_capacity = (double)heap->max_capacity();
-  return max_capacity / unallocated_capacity;
+  double result = max_capacity / unallocated_capacity;
+  assert (max_capacity >= unallocated_capacity, "Must be");
+  assert (result >= 1.0, err_msg_res("reverse_free_ratio must be at least 1. It is %f", result));
+  return result;
 }
 
 size_t CodeCache::bytes_allocated_in_freelists() {
@@ -1011,9 +1027,8 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
     // Not yet reported for this heap, report
     heap->report_full();
     if (SegmentedCodeCache) {
-      warning("%s is full. Compiler has been disabled.", CodeCache::get_code_heap_name(code_blob_type));
-      warning("Try increasing the code heap size using -XX:%s=",
-          (code_blob_type == CodeBlobType::MethodNonProfiled) ? "NonProfiledCodeHeapSize" : "ProfiledCodeHeapSize");
+      warning("%s is full. Compiler has been disabled.", get_code_heap_name(code_blob_type));
+      warning("Try increasing the code heap size using -XX:%s=", get_code_heap_flag_name(code_blob_type));
     } else {
       warning("CodeCache is full. Compiler has been disabled.");
       warning("Try increasing the code cache size using -XX:ReservedCodeCacheSize=");

@@ -39,8 +39,7 @@ final class UndefinedArrayFilter extends ArrayFilter {
 
     UndefinedArrayFilter(final ArrayData underlying) {
         super(underlying);
-
-        this.undefined = new BitVector(underlying.length);
+        this.undefined = new BitVector(underlying.length());
     }
 
     @Override
@@ -80,25 +79,24 @@ final class UndefinedArrayFilter extends ArrayFilter {
     @Override
     public void shiftLeft(final int by) {
         super.shiftLeft(by);
-        undefined.shiftLeft(by, length);
+        undefined.shiftLeft(by, length());
     }
 
     @Override
     public ArrayData shiftRight(final int by) {
         super.shiftRight(by);
-        undefined.shiftRight(by, length);
-
+        undefined.shiftRight(by, length());
         return this;
     }
 
     @Override
     public ArrayData ensure(final long safeIndex) {
-        if (safeIndex >= SparseArrayData.MAX_DENSE_LENGTH && safeIndex >= length) {
+        if (safeIndex >= SparseArrayData.MAX_DENSE_LENGTH && safeIndex >= length()) {
             return new SparseArrayData(this, safeIndex + 1);
         }
 
         super.ensure(safeIndex);
-        undefined.resize(length);
+        undefined.resize(length());
 
         return this;
     }
@@ -106,8 +104,7 @@ final class UndefinedArrayFilter extends ArrayFilter {
     @Override
     public ArrayData shrink(final long newLength) {
         super.shrink(newLength);
-        undefined.resize(length);
-
+        undefined.resize(length());
         return this;
     }
 
@@ -216,7 +213,7 @@ final class UndefinedArrayFilter extends ArrayFilter {
 
     @Override
     public Object pop() {
-        final long index = length - 1;
+        final long index = length() - 1;
 
         if (super.has((int)index)) {
             final boolean isUndefined = undefined.isSet(index);
@@ -233,7 +230,7 @@ final class UndefinedArrayFilter extends ArrayFilter {
         final ArrayData newArray = underlying.slice(from, to);
         final UndefinedArrayFilter newFilter = new UndefinedArrayFilter(newArray);
         newFilter.getUndefined().copy(undefined);
-        newFilter.getUndefined().shiftLeft(from, newFilter.length);
+        newFilter.getUndefined().shiftLeft(from, newFilter.length());
 
         return newFilter;
     }
