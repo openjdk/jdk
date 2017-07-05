@@ -732,8 +732,12 @@ final class CipherCore {
                     System.arraycopy(buffer, len, buffer, 0, buffered);
                 }
             } else { // len > buffered
-                if (buffered == 0) {
+                if ((input != output) && (buffered == 0)) {
                     // all to-be-processed data are from 'input'
+                    // however, note that if 'input' and 'output' are the same,
+                    // then they can't be passed directly to the underlying cipher
+                    // engine operations as data may be overwritten before they
+                    // are read.
                     if (decrypting) {
                         outLen = cipher.decrypt(input, inputOffset, len, output, outputOffset);
                     } else {
@@ -744,12 +748,16 @@ final class CipherCore {
                 } else {
                     // assemble the data using both 'buffer' and 'input'
                     byte[] in = new byte[len];
-                    System.arraycopy(buffer, 0, in, 0, buffered);
                     int inConsumed = len - buffered;
-                    System.arraycopy(input, inputOffset, in, buffered, inConsumed);
-                    buffered = 0;
-                    inputOffset += inConsumed;
-                    inputLen -= inConsumed;
+                    if (buffered != 0) {
+                        System.arraycopy(buffer, 0, in, 0, buffered);
+                        buffered = 0;
+                    }
+                    if (inConsumed != 0) {
+                        System.arraycopy(input, inputOffset, in, len - inConsumed, inConsumed);
+                        inputOffset += inConsumed;
+                        inputLen -= inConsumed;
+                    }
                     if (decrypting) {
                         outLen = cipher.decrypt(in, 0, len, output, outputOffset);
                     } else {
@@ -907,11 +915,18 @@ final class CipherCore {
                  " when decrypting with padded cipher");
         }
 
-        // prepare the final input avoiding copying if possible
+        /*
+         * prepare the final input, assemble a new buffer if any
+         * of the following is true:
+         *  - 'input' and 'output' are the same buffer
+         *  - there are internally buffered bytes
+         *  - doing encryption and padding is needed
+         */
         byte[] finalBuf = input;
         int finalOffset = inputOffset;
         int finalBufLen = inputLen;
-        if ((buffered != 0) || (!decrypting && padding != null)) {
+        if ((input == output) || (buffered != 0) ||
+            (!decrypting && padding != null)) {
             if (decrypting || padding == null) {
                 paddingLen = 0;
             }

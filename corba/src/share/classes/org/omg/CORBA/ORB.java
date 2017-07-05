@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,7 +285,8 @@ abstract public class ORB {
             String className = getSystemProperty(ORBSingletonClassKey);
             if (className == null)
                 className = getPropertyFromFile(ORBSingletonClassKey);
-            if (className == null) {
+            if ((className == null) ||
+                    (className.equals("com.sun.corba.se.impl.orb.ORBSingleton"))) {
                 singleton = new com.sun.corba.se.impl.orb.ORBSingleton();
             } else {
                 singleton = create_impl(className);
@@ -339,7 +340,8 @@ abstract public class ORB {
             className = getSystemProperty(ORBClassKey);
         if (className == null)
             className = getPropertyFromFile(ORBClassKey);
-        if (className == null) {
+        if ((className == null) ||
+                    (className.equals("com.sun.corba.se.impl.orb.ORBImpl"))) {
             orb = new com.sun.corba.se.impl.orb.ORBImpl();
         } else {
             orb = create_impl(className);
@@ -369,7 +371,8 @@ abstract public class ORB {
             className = getSystemProperty(ORBClassKey);
         if (className == null)
             className = getPropertyFromFile(ORBClassKey);
-        if (className == null) {
+        if ((className == null) ||
+                    (className.equals("com.sun.corba.se.impl.orb.ORBImpl"))) {
             orb = new com.sun.corba.se.impl.orb.ORBImpl();
         } else {
             orb = create_impl(className);

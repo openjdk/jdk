@@ -36,6 +36,10 @@ import sun.java2d.xr.*;
  * @author Clemens Eisserer
  */
 public class XRTextRenderer extends GlyphListPipe {
+    // Workarround for a bug in libXrender.
+    // In case the number of glyphs of an ELT is a multiple of 254,
+    // a few garbage bytes are sent to the XServer causing hangs.
+    static final int MAX_ELT_GLYPH_COUNT = 253;
 
     XRGlyphCache glyphCache;
     XRCompositeManager maskBuffer;
@@ -92,8 +96,11 @@ public class XRTextRenderer extends GlyphListPipe {
 
                 int posX = 0, posY = 0;
                 if (gl.usePositions()
-                        || (cacheEntry.getXAdvance() != ((float) cacheEntry.getXOff()) || cacheEntry.getYAdvance() != ((float) cacheEntry.getYOff()))
-                        || eltIndex < 0 || glyphSet != activeGlyphSet) {
+                        || cacheEntry.getXAdvance() != ((float) cacheEntry.getXOff())
+                        || cacheEntry.getYAdvance() != ((float) cacheEntry.getYOff())
+                        || glyphSet != activeGlyphSet
+                        || eltIndex < 0
+                        || eltList.getCharCnt(eltIndex) == MAX_ELT_GLYPH_COUNT) {
 
                     eltIndex = eltList.getNextIndex();
                     eltList.setCharCnt(eltIndex, 1);
@@ -101,7 +108,7 @@ public class XRTextRenderer extends GlyphListPipe {
                     eltList.setGlyphSet(eltIndex, glyphSet);
 
                     if (gl.usePositions()) {
-                        // /*In this case advX only stores rounding errors*/
+                        // In this case advX only stores rounding errors
                         float x = positions[i * 2] + advX;
                         float y = positions[i * 2 + 1] + advY;
                         posX = (int) Math.floor(x);
@@ -120,16 +127,14 @@ public class XRTextRenderer extends GlyphListPipe {
                         posX = (int) Math.floor(advX);
                         posY = (int) Math.floor(advY);
 
-                        // Advance of ELT = difference between stored
-                        // relative
+                        // Advance of ELT = difference between stored relative
                         // positioning information and required float.
                         advX += (cacheEntry.getXAdvance() - cacheEntry.getXOff());
                         advY += (cacheEntry.getYAdvance() - cacheEntry.getYOff());
                     }
-                    /*
-                     * Offset of the current glyph is the difference to the last
-                     * glyph and this one
-                     */
+
+                    // Offset of the current glyph is the difference
+                    // to the last glyph and this one
                     eltList.setXOff(eltIndex, (posX - oldPosX));
                     eltList.setYOff(eltIndex, (posY - oldPosY));
 

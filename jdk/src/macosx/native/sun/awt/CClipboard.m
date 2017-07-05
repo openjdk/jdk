@@ -91,7 +91,9 @@ static CClipboard *sClipboard = nil;
 {
     if (sClipboard == nil) {
         sClipboard = [[CClipboard alloc] init];
-        [[NSNotificationCenter defaultCenter] addObserver:sClipboard selector: @selector(checkPasteboard:) name: NSApplicationDidBecomeActiveNotification object: nil];
+        [[NSNotificationCenter defaultCenter] addObserver:sClipboard selector: @selector(checkPasteboard:)
+                                                     name: NSApplicationDidBecomeActiveNotification
+                                                   object: nil];
     }
 
     return sClipboard;
@@ -110,8 +112,6 @@ static CClipboard *sClipboard = nil;
 
 - (void) javaDeclareTypes:(NSArray *)inTypes withOwner:(jobject)inClipboard jniEnv:(JNIEnv *)inEnv {
 
-    //NSLog(@"CClipboard javaDeclareTypes %@ withOwner", inTypes);
-
     @synchronized(self) {
         if (inClipboard != NULL) {
             if (fClipboardOwner != NULL) {
@@ -126,8 +126,6 @@ static CClipboard *sClipboard = nil;
 - (void) _nativeDeclareTypes:(NSArray *)inTypes {
     AWT_ASSERT_APPKIT_THREAD;
 
-    //NSLog(@"CClipboard _nativeDeclareTypes %@ withOwner", inTypes);
-
     fChangeCount = [[NSPasteboard generalPasteboard] declareTypes:inTypes owner:self];
 }
 
@@ -136,8 +134,6 @@ static CClipboard *sClipboard = nil;
 
     NSMutableArray *args = [NSMutableArray arrayWithCapacity:1];
     [ThreadUtilities performOnMainThread:@selector(_nativeGetTypes:) on:self withObject:args waitUntilDone:YES];
-
-    //NSLog(@"CClipboard getTypes returns %@", [args lastObject]);
     return [args lastObject];
 }
 
@@ -145,8 +141,6 @@ static CClipboard *sClipboard = nil;
     AWT_ASSERT_APPKIT_THREAD;
 
     [args addObject:[[NSPasteboard generalPasteboard] types]];
-
-    //NSLog(@"CClipboard getTypes returns %@", [args lastObject]);
 }
 
 - (void) javaSetData:(NSData *)inData forType:(NSString *) inFormat {
@@ -154,25 +148,18 @@ static CClipboard *sClipboard = nil;
     CClipboardUpdate *newUpdate = [[CClipboardUpdate alloc] initWithData:inData withFormat:inFormat];
     [ThreadUtilities performOnMainThread:@selector(_nativeSetData:) on:self withObject:newUpdate waitUntilDone:YES];
     [newUpdate release];
-
-    //NSLog(@"CClipboard javaSetData forType %@", inFormat);
 }
 
 - (void) _nativeSetData:(CClipboardUpdate *)newUpdate {
     AWT_ASSERT_APPKIT_THREAD;
 
     [[NSPasteboard generalPasteboard] setData:[newUpdate data] forType:[newUpdate format]];
-
-    //NSLog(@"CClipboard _nativeSetData setData %@", [newUpdate data]);
-    //NSLog(@"CClipboard _nativeSetData forType %@", [newUpdate format]);
 }
 
 - (NSData *) javaGetDataForType:(NSString *) inFormat {
 
     NSMutableArray *args = [NSMutableArray arrayWithObject:inFormat];
     [ThreadUtilities performOnMainThread:@selector(_nativeGetDataForType:) on:self withObject:args waitUntilDone:YES];
-
-    //NSLog(@"CClipboard javaGetDataForType %@ returns an NSData", inFormat);
     return [args lastObject];
 }
 
@@ -183,14 +170,10 @@ static CClipboard *sClipboard = nil;
 
     if (returnValue) [args replaceObjectAtIndex:0 withObject:returnValue];
     else [args removeLastObject];
-
-    //NSLog(@"CClipboard _nativeGetDataForType");
 }
 
 - (void) checkPasteboard:(id)application {
     AWT_ASSERT_APPKIT_THREAD;
-    
-    //NSLog(@"CClipboard checkPasteboard oldCount %d newCount %d newTypes %@", fChangeCount, [[NSPasteboard generalPasteboard] changeCount], [[NSPasteboard generalPasteboard] types]);
     
     // This is called via NSApplicationDidBecomeActiveNotification.
     
@@ -199,27 +182,23 @@ static CClipboard *sClipboard = nil;
     NSInteger newChangeCount = [[NSPasteboard generalPasteboard] changeCount];
     
     if (fChangeCount != newChangeCount) {
-        fChangeCount = newChangeCount;
-        
-        [self pasteboardChangedOwner:[NSPasteboard generalPasteboard]];
-    }
-}
+        fChangeCount = newChangeCount;    
 
-- (void)pasteboardChangedOwner:(NSPasteboard *)sender; {
-    AWT_ASSERT_APPKIT_THREAD;
+        // Notify that the content might be changed
+        static JNF_CLASS_CACHE(jc_CClipboard, "sun/lwawt/macosx/CClipboard");
+        static JNF_STATIC_MEMBER_CACHE(jm_contentChanged, jc_CClipboard, "notifyChanged", "()V");
+        JNIEnv *env = [ThreadUtilities getJNIEnv];
+        JNFCallStaticVoidMethod(env, jm_contentChanged);
 
-    static JNF_CLASS_CACHE(jc_CClipboard, "sun/lwawt/macosx/CClipboard");
-    static JNF_MEMBER_CACHE(jm_lostOwnership, jc_CClipboard, "lostSelectionOwnershipImpl", "()V");
-
-    //NSLog(@"CClipboard pasteboardChangedOwner");
-
-    // If we have a Java pasteboard owner, tell it that it doesn't own the pasteboard anymore.
-    @synchronized(self) {
-        if (fClipboardOwner) {
-            JNIEnv *env = [ThreadUtilities getJNIEnv];
-            JNFCallVoidMethod(env, fClipboardOwner, jm_lostOwnership); // AWT_THREADING Safe (event)
-            JNFDeleteGlobalRef(env, fClipboardOwner);
-            fClipboardOwner = NULL;
+        // If we have a Java pasteboard owner, tell it that it doesn't own the pasteboard anymore.
+        static JNF_MEMBER_CACHE(jm_lostOwnership, jc_CClipboard, "notifyLostOwnership", "()V");
+        @synchronized(self) {
+            if (fClipboardOwner) {
+                JNIEnv *env = [ThreadUtilities getJNIEnv];
+                JNFCallVoidMethod(env, fClipboardOwner, jm_lostOwnership); // AWT_THREADING Safe (event)
+                JNFDeleteGlobalRef(env, fClipboardOwner);
+                fClipboardOwner = NULL;
+            }
         }
     }
 }
@@ -265,9 +244,6 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CClipboard_setData
     }
 
 JNF_COCOA_ENTER(env);
-
-    //NSLog(@"Java_sun_lwawt_macosx_CClipboard_setData");
-
     jint nBytes = (*env)->GetArrayLength(env, inBytes);
     jbyte *rawBytes = (*env)->GetPrimitiveArrayCritical(env, inBytes, NULL);
     NSData *bytesAsData = [NSData dataWithBytes:rawBytes length:nBytes];
@@ -287,8 +263,6 @@ JNIEXPORT jlongArray JNICALL Java_sun_lwawt_macosx_CClipboard_getClipboardFormat
 {
     jlongArray returnValue = NULL;
 JNF_COCOA_ENTER(env);
-
-    //NSLog(@"Java_sun_lwawt_macosx_CClipboard_getClipboardFormats");
 
     NSArray *dataTypes = [[CClipboard sharedClipboard] javaGetTypes];
     NSUInteger nFormats = [dataTypes count];
@@ -345,8 +319,6 @@ JNIEXPORT jbyteArray JNICALL Java_sun_lwawt_macosx_CClipboard_getClipboardData
     // Note that this routine makes no attempt to interpret the data, since we're returning
     // a byte array back to Java.  CDataTransferer will do that if necessary.
 JNF_COCOA_ENTER(env);
-
-    //NSLog(@"Java_sun_lwawt_macosx_CClipboard_getClipboardData");
 
     NSString *formatAsString = formatForIndex(format);
     NSData *clipData = [[CClipboard sharedClipboard] javaGetDataForType:formatAsString];

@@ -124,7 +124,7 @@ public abstract class Image {
      * @param       name   a property name.
      * @param       observer   an object waiting for this image to be loaded.
      * @return      the value of the named property.
-     * @throws      <code>NullPointerException</code> if the property name is null.
+     * @throws      NullPointerException if the property name is null.
      * @see         java.awt.image.ImageObserver
      * @see         java.awt.Image#UndefinedProperty
      */

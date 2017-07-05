@@ -80,6 +80,12 @@ public class LocaleProviders {
 
     static void adapterTest(String expected, String lang, String ctry) {
         Locale testLocale = new Locale(lang, ctry);
+        LocaleProviderAdapter ldaExpected =
+            LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.valueOf(expected));
+        if (!ldaExpected.getDateFormatProvider().isSupportedLocale(testLocale)) {
+            System.out.println("test locale: "+testLocale+" is not supported by the expected provider: "+ldaExpected+". Ignoring the test.");
+            return;
+        }
         String preference = System.getProperty("java.locale.providers", "");
         LocaleProviderAdapter lda = LocaleProviderAdapter.getAdapter(DateFormatProvider.class, testLocale);
         LocaleProviderAdapter.Type type = lda.getAdapterType();

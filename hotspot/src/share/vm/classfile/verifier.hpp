@@ -345,6 +345,9 @@ class ClassVerifier : public StackObj {
   // that a class has been verified and prepared for execution.
   bool was_recursively_verified() { return _klass->is_rewritten(); }
 
+  bool is_same_or_direct_interface(instanceKlassHandle klass,
+    VerificationType klass_type, VerificationType ref_class_type);
+
  public:
   enum {
     BYTECODE_OFFSET = 1,
