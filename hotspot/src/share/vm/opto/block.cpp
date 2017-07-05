@@ -353,7 +353,8 @@ void Block::dump( const Block_Array *bbs ) const {
 PhaseCFG::PhaseCFG( Arena *a, RootNode *r, Matcher &m ) :
   Phase(CFG),
   _bbs(a),
-  _root(r)
+  _root(r),
+  _node_latency(NULL)
 #ifndef PRODUCT
   , _trace_opto_pipelining(TraceOptoPipelining || C->method_has_option("TraceOptoPipelining"))
 #endif

@@ -151,15 +151,12 @@ arrayKlassKlass::oop_update_pointers(ParCompactionManager* cm, oop obj,
 }
 #endif // SERIALGC
 
-#ifndef PRODUCT
-
 // Printing
 
 void arrayKlassKlass::oop_print_on(oop obj, outputStream* st) {
   assert(obj->is_klass(), "must be klass");
   klassKlass::oop_print_on(obj, st);
 }
-#endif //PRODUCT
 
 void arrayKlassKlass::oop_print_value_on(oop obj, outputStream* st) {
   assert(obj->is_klass(), "must be klass");

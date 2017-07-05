@@ -62,6 +62,7 @@ void ClassFileParser::parse_constant_pool_entries(constantPoolHandle cp, int len
   ClassFileStream cfs1 = *cfs0;
   ClassFileStream* cfs = &cfs1;
 #ifdef ASSERT
+  assert(cfs->allocated_on_stack(),"should be local");
   u1* old_current = cfs0->current();
 #endif
 

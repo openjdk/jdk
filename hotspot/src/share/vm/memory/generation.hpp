@@ -131,7 +131,9 @@ class Generation: public CHeapObj {
   enum SomePublicConstants {
     // Generations are GenGrain-aligned and have size that are multiples of
     // GenGrain.
-    LogOfGenGrain = 16,
+    // Note: on ARM we add 1 bit for card_table_base to be properly aligned
+    // (we expect its low byte to be zero - see implementation of post_barrier)
+    LogOfGenGrain = 16 ARM_ONLY(+1),
     GenGrain = 1 << LogOfGenGrain
   };
 

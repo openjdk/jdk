@@ -103,12 +103,13 @@ void C2Compiler::compile_method(ciEnv* env,
   if (!is_initialized()) {
     initialize();
   }
-  bool subsume_loads = true;
+  bool subsume_loads = SubsumeLoads;
   bool do_escape_analysis = DoEscapeAnalysis &&
     !env->jvmti_can_access_local_variables();
   while (!env->failing()) {
     // Attempt to compile while subsuming loads into machine instructions.
     Compile C(env, this, target, entry_bci, subsume_loads, do_escape_analysis);
+
 
     // Check result and retry if appropriate.
     if (C.failure_reason() != NULL) {
@@ -126,6 +127,16 @@ void C2Compiler::compile_method(ciEnv* env,
       // Note that serious, irreversible failures are already logged
       // on the ciEnv via env->record_method_not_compilable().
       env->record_failure(C.failure_reason());
+    }
+    if (StressRecompilation) {
+      if (subsume_loads) {
+        subsume_loads = false;
+        continue;  // retry
+      }
+      if (do_escape_analysis) {
+        do_escape_analysis = false;
+        continue;  // retry
+      }
     }
 
     // No retry; just break the loop.

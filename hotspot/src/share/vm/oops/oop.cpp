@@ -29,15 +29,6 @@ bool always_do_update_barrier = false;
 
 BarrierSet* oopDesc::_bs = NULL;
 
-#ifdef PRODUCT
-void oopDesc::print_on(outputStream* st) const {}
-void oopDesc::print_address_on(outputStream* st) const {}
-char* oopDesc::print_string() { return NULL; }
-void oopDesc::print()         {}
-void oopDesc::print_address() {}
-
-#else //PRODUCT
-
 void oopDesc::print_on(outputStream* st) const {
   if (this == NULL) {
     st->print_cr("NULL");
@@ -62,10 +53,6 @@ char* oopDesc::print_string() {
   return st.as_string();
 }
 
-#endif // PRODUCT
-
-// The print_value functions are present in all builds, to support the disassembler.
-
 void oopDesc::print_value() {
   print_value_on(tty);
 }
@@ -83,9 +70,7 @@ void oopDesc::print_value_on(outputStream* st) const {
     st->print("NULL");
   } else if (java_lang_String::is_instance(obj)) {
     java_lang_String::print(obj, st);
-#ifndef PRODUCT
     if (PrintOopAddress) print_address_on(st);
-#endif //PRODUCT
 #ifdef ASSERT
   } else if (!Universe::heap()->is_in(obj) || !Universe::heap()->is_in(klass())) {
     st->print("### BAD OOP %p ###", (address)obj);
