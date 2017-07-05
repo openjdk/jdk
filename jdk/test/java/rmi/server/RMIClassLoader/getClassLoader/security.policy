@@ -2,10 +2,6 @@
  * security policy used by the test process
  */
 
-grant codeBase "file:${java.home}/lib/ext/*" {
-    permission java.security.AllPermission;
-};
-
 grant {
     // permissions needed to move classes into separate codebase directories
     permission java.io.FilePermission

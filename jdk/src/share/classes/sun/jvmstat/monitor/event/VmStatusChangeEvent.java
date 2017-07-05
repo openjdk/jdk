@@ -44,7 +44,7 @@ public class VmStatusChangeEvent extends HostEvent {
      * active Java Virtual Machine on the MonitoredHost. This Set will only
      * contain Integer objects.
      */
-    protected Set active;
+    protected Set<Integer> active;
 
     /**
      * The set of Java Virtual Machines started on MonitoredHost since the
@@ -52,7 +52,7 @@ public class VmStatusChangeEvent extends HostEvent {
      * <em>lvmid</em> for each Java Virtual Machine started on the
      * MonitoredHost. This Set will only contain Integer objects.
      */
-    protected Set started;
+    protected Set<Integer> started;
 
     /**
      * The set of Java Virtual Machines terminated on MonitoredHost since the
@@ -60,7 +60,7 @@ public class VmStatusChangeEvent extends HostEvent {
      * <em>lvmid</em> for each Java Virtual Machine started on the
      * MonitoredHost. This Set will only contain Integer objects.
      */
-    protected Set terminated;
+    protected Set<Integer> terminated;
 
     /**
      * Construct a new VmStatusChangeEvent instance.
@@ -72,8 +72,8 @@ public class VmStatusChangeEvent extends HostEvent {
      * @param terminated the set of Java Virtual Machines terminated since
      *                   the last event.
      */
-    public VmStatusChangeEvent(MonitoredHost host, Set active,
-                               Set started, Set terminated) {
+    public VmStatusChangeEvent(MonitoredHost host, Set<Integer> active,
+                               Set<Integer> started, Set<Integer> terminated) {
         super(host);
         this.active = active;
         this.started = started;
@@ -90,7 +90,7 @@ public class VmStatusChangeEvent extends HostEvent {
      *               there are no active Java Virtual Machines on the host,
      *               an empty Set is returned.
      */
-    public Set getActive() {
+    public Set<Integer> getActive() {
         return active;
     }
 
@@ -105,7 +105,7 @@ public class VmStatusChangeEvent extends HostEvent {
      *               no Java Virtual Machines were recently started on the
      *               host, an empty Set is returned.
      */
-    public Set getStarted() {
+    public Set<Integer> getStarted() {
         return started;
     }
 
@@ -120,7 +120,7 @@ public class VmStatusChangeEvent extends HostEvent {
      *               no Java Virtual Machines were recently terminated on the
      *               host, an empty Set is returned.
      */
-    public Set getTerminated() {
+    public Set<Integer> getTerminated() {
         return terminated;
     }
 }

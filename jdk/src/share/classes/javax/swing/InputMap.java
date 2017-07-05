@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,12 @@ import java.util.HashMap;
 import java.util.Set;
 
 /**
- * <code>InputMap</code> provides a binding between an input event
- * (currently only <code>KeyStroke</code>s are used)
- * and an <code>Object</code>. <code>InputMap</code>s
- * are usually used with an <code>ActionMap</code>,
- * to determine an <code>Action</code> to perform
- * when a key is pressed.
- * An <code>InputMap</code> can have a parent
- * that is searched for bindings not defined in the <code>InputMap</code>.
- * <p>As with <code>ActionMap</code> if you create a cycle, eg:
+ * {@code InputMap} provides a binding between an input event (currently only
+ * {@code KeyStroke}s are used) and an {@code Object}. {@code InputMap}s are
+ * usually used with an {@code ActionMap}, to determine an {@code Action} to
+ * perform when a key is pressed. An {@code InputMap} can have a parent that
+ * is searched for bindings not defined in the {@code InputMap}.
+ * <p>As with {@code ActionMap} if you create a cycle, eg:
  * <pre>
  *   InputMap am = new InputMap();
  *   InputMap bm = new InputMap():
@@ -61,34 +58,37 @@ public class InputMap implements Serializable {
 
 
     /**
-     * Creates an <code>InputMap</code> with no parent and no mappings.
+     * Creates an {@code InputMap} with no parent and no mappings.
      */
     public InputMap() {
     }
 
     /**
-     * Sets this <code>InputMap</code>'s parent.
+     * Sets this {@code InputMap}'s parent.
      *
-     * @param map  the <code>InputMap</code> that is the parent of this one
+     * @param map the {@code InputMap} that is the parent of this one
      */
     public void setParent(InputMap map) {
         this.parent = map;
     }
 
     /**
-     * Gets this <code>InputMap</code>'s parent.
+     * Gets this {@code InputMap}'s parent.
      *
-     * @return map  the <code>InputMap</code> that is the parent of this one,
-     *              or null if this <code>InputMap</code> has no parent
+     * @return map the {@code InputMap} that is the parent of this one,
+     *             or null if this {@code InputMap} has no parent
      */
     public InputMap getParent() {
         return parent;
     }
 
     /**
-     * Adds a binding for <code>keyStroke</code> to <code>actionMapKey</code>.
-     * If <code>actionMapKey</code> is null, this removes the current binding
-     * for <code>keyStroke</code>.
+     * Adds a binding for {@code keyStroke} to {@code actionMapKey}.
+     * If {@code actionMapKey} is null, this removes the current binding
+     * for {@code keyStroke}.
+     *
+     * @param keyStroke a {@code KeyStroke}
+     * @param actionMapKey an action map key
      */
     public void put(KeyStroke keyStroke, Object actionMapKey) {
         if (keyStroke == null) {
@@ -106,8 +106,11 @@ public class InputMap implements Serializable {
     }
 
     /**
-     * Returns the binding for <code>keyStroke</code>, messaging the
-     * parent <code>InputMap</code> if the binding is not locally defined.
+     * Returns the binding for {@code keyStroke}, messaging the
+     * parent {@code InputMap} if the binding is not locally defined.
+     *
+     * @param keyStroke the {@code KeyStroke} for which to get the binding
+     * @return the binding for {@code keyStroke}
      */
     public Object get(KeyStroke keyStroke) {
         if (arrayTable == null) {
@@ -131,8 +134,9 @@ public class InputMap implements Serializable {
     }
 
     /**
-     * Removes the binding for <code>key</code> from this
-     * <code>InputMap</code>.
+     * Removes the binding for {@code key} from this {@code InputMap}.
+     *
+     * @param key the {@code KeyStroke} for which to remove the binding
      */
     public void remove(KeyStroke key) {
         if (arrayTable != null) {
@@ -141,7 +145,7 @@ public class InputMap implements Serializable {
     }
 
     /**
-     * Removes all the mappings from this <code>InputMap</code>.
+     * Removes all the mappings from this {@code InputMap}.
      */
     public void clear() {
         if (arrayTable != null) {
@@ -150,7 +154,10 @@ public class InputMap implements Serializable {
     }
 
     /**
-     * Returns the <code>KeyStroke</code>s that are bound in this <code>InputMap</code>.
+     * Returns the {@code KeyStroke}s that are bound in this {@code InputMap}.
+     *
+     * @return an array of the {@code KeyStroke}s that are bound in this
+     *         {@code InputMap}
      */
     public KeyStroke[] keys() {
         if (arrayTable == null) {
@@ -162,7 +169,9 @@ public class InputMap implements Serializable {
     }
 
     /**
-     * Returns the number of <code>KeyStroke</code> bindings.
+     * Returns the number of {@code KeyStroke} bindings.
+     *
+     * @return the number of {@code KeyStroke} bindings
      */
     public int size() {
         if (arrayTable == null) {
@@ -172,9 +181,12 @@ public class InputMap implements Serializable {
     }
 
     /**
-     * Returns an array of the <code>KeyStroke</code>s defined in this
-     * <code>InputMap</code> and its parent. This differs from <code>keys()</code> in that
-     * this method includes the keys defined in the parent.
+     * Returns an array of the {@code KeyStroke}s defined in this
+     * {@code InputMap} and its parent. This differs from {@code keys()}
+     * in that this method includes the keys defined in the parent.
+     *
+     * @return an array of the {@code KeyStroke}s defined in this
+     *         {@code InputMap} and its parent
      */
     public KeyStroke[] allKeys() {
         int             count = size();

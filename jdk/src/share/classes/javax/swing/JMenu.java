@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -608,16 +608,18 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * it to the end of this menu.
      *
      * @param s the string for the menu item to be added
+     * @return the new {@code JMenuItem}
      */
     public JMenuItem add(String s) {
         return add(new JMenuItem(s));
     }
 
     /**
-     * Creates a new menu item attached to the specified
-     * <code>Action</code> object and appends it to the end of this menu.
+     * Creates a new menu item attached to the specified {@code Action} object
+     * and appends it to the end of this menu.
      *
-     * @param a the <code>Action</code> for the menu item to be added
+     * @param a the {@code Action} for the menu item to be added
+     * @return the new {@code JMenuItem}
      * @see Action
      */
     public JMenuItem add(Action a) {
@@ -653,8 +655,11 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
     }
 
     /**
-     * Returns a properly configured <code>PropertyChangeListener</code>
-     * which updates the control as changes to the <code>Action</code> occur.
+     * Returns a properly configured {@code PropertyChangeListener}
+     * which updates the control as changes to the {@code Action} occur.
+     *
+     * @param b a menu item for which to create a {@code PropertyChangeListener}
+     * @return a {@code PropertyChangeListener} for {@code b}
      */
     protected PropertyChangeListener createActionChangeListener(JMenuItem b) {
         return b.createActionPropertyChangeListener0(b.getAction());
@@ -714,6 +719,7 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
      * @param a the <code>Action</code> object for the menu item to add
      * @param pos an integer specifying the position at which to add the
      *               new menu item
+     * @return the new menu item
      * @exception IllegalArgumentException if the value of
      *                  <code>pos</code> &lt; 0
      */
@@ -748,16 +754,16 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
     }
 
     /**
-     * Returns the <code>JMenuItem</code> at the specified position.
-     * If the component at <code>pos</code> is not a menu item,
-     * <code>null</code> is returned.
+     * Returns the {@code JMenuItem} at the specified position.
+     * If the component at {@code pos} is not a menu item,
+     * {@code null} is returned.
      * This method is included for AWT compatibility.
      *
-     * @param pos    an integer specifying the position
-     * @exception   IllegalArgumentException if the value of
-     *                       <code>pos</code> &lt; 0
+     * @param pos  an integer specifying the position
      * @return  the menu item at the specified position; or <code>null</code>
      *          if the item as the specified position is not a menu item
+     * @exception  IllegalArgumentException if the value of
+     *             {@code pos} &lt; 0
      */
     public JMenuItem getItem(int pos) {
         if (pos < 0) {
@@ -975,6 +981,8 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
     /**
      * Returns the popupmenu associated with this menu.  If there is
      * no popupmenu, it will create one.
+     *
+     * @return the {@code JPopupMenu} associated with this menu
      */
     public JPopupMenu getPopupMenu() {
         ensurePopupMenuCreated();
@@ -1159,6 +1167,8 @@ public class JMenu extends JMenuItem implements Accessible,MenuElement
         JPopupMenu popupMenu;
         /**
          *  Create the window listener for the specified popup.
+         *
+         * @param p the popup menu for which to create a listener
          * @since 1.4
          */
         public WinListener(JPopupMenu p) {

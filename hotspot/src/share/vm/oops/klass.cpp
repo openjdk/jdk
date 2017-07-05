@@ -508,7 +508,7 @@ void Klass::restore_unshareable_info(TRAPS) {
   // Only recreate it if not present.  A previous attempt to restore may have
   // gotten an OOM later but keep the mirror if it was created.
   if (java_mirror() == NULL) {
-    java_lang_Class::create_mirror(this, Handle(NULL), CHECK);
+    java_lang_Class::create_mirror(this, Handle(NULL), Handle(NULL), CHECK);
   }
 }
 

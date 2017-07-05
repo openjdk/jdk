@@ -80,7 +80,6 @@ public class CheckPackageAccess {
         "com.sun.org.glassfish.",
         "com.oracle.xmlns.internal.",
         "com.oracle.webservices.internal.",
-        "oracle.jrockit.jfr.",
         "org.jcp.xml.dsig.internal.",
         "jdk.internal.",
         "jdk.nashorn.internal.",

@@ -26,6 +26,7 @@ import sun.hotspot.code.NMethod;
 
 /*
  * @test GetNMethodTest
+ * @ignore 8046268
  * @bug 8038240
  * @library /testlibrary /testlibrary/whitebox
  * @build GetNMethodTest
