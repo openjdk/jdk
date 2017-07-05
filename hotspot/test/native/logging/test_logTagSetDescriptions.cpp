@@ -30,7 +30,7 @@
 #include "unittest.hpp"
 #include "utilities/ostream.hpp"
 
-TEST(LogTagSetDescriptions, describe) {
+TEST_VM(LogTagSetDescriptions, describe) {
   for (LogTagSetDescription* d = tagset_descriptions; d->tagset != NULL; d++) {
     char expected[1 * K];
     d->tagset->label(expected, sizeof(expected), "+");
@@ -46,7 +46,7 @@ TEST(LogTagSetDescriptions, describe) {
   }
 }
 
-TEST(LogTagSetDescriptions, command_line_help) {
+TEST_VM(LogTagSetDescriptions, command_line_help) {
   const char* filename = "logtagset_descriptions";
   FILE* fp = fopen(filename, "w+");
   ASSERT_NE((void*)NULL, fp);

@@ -224,7 +224,7 @@ AC_DEFUN([BPERF_SETUP_CCACHE_USAGE],
         AC_MSG_ERROR([On macosx, ccache 3.2 or later is required, found $CCACHE_VERSION])
       fi
     fi
-    if test "x$USE_PRECOMPILED_HEADER" = "x1"; then
+    if test "x$USE_PRECOMPILED_HEADER" = "xtrue"; then
       HAS_BAD_CCACHE=[`$ECHO $CCACHE_VERSION | \
           $GREP -e '^1.*' -e '^2.*' -e '^3\.0.*' -e '^3\.1\.[0123]$'`]
       if test "x$HAS_BAD_CCACHE" != "x"; then
@@ -362,20 +362,20 @@ AC_DEFUN_ONCE([BPERF_SETUP_PRECOMPILED_HEADERS],
       [disable using precompiled headers when compiling C++ @<:@enabled@:>@])],
       [ENABLE_PRECOMPH=${enable_precompiled_headers}], [ENABLE_PRECOMPH=yes])
 
-  USE_PRECOMPILED_HEADER=1
+  USE_PRECOMPILED_HEADER=true
   AC_MSG_CHECKING([If precompiled header is enabled])
   if test "x$ENABLE_PRECOMPH" = xno; then
     AC_MSG_RESULT([no, forced])
-    USE_PRECOMPILED_HEADER=0
+    USE_PRECOMPILED_HEADER=false
   elif test "x$ICECC" != "x"; then
     AC_MSG_RESULT([no, does not work effectively with icecc])
-    USE_PRECOMPILED_HEADER=0
+    USE_PRECOMPILED_HEADER=false
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     AC_MSG_RESULT([no, does not work with Solaris Studio])
-    USE_PRECOMPILED_HEADER=0
+    USE_PRECOMPILED_HEADER=false
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     AC_MSG_RESULT([no, does not work with xlc])
-    USE_PRECOMPILED_HEADER=0
+    USE_PRECOMPILED_HEADER=false
   else
     AC_MSG_RESULT([yes])
   fi
@@ -387,7 +387,7 @@ AC_DEFUN_ONCE([BPERF_SETUP_PRECOMPILED_HEADERS],
       echo "int alfa();" > conftest.h
       $CXX -x c++-header conftest.h -o conftest.hpp.gch 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD
       if test ! -f conftest.hpp.gch; then
-        USE_PRECOMPILED_HEADER=0
+        USE_PRECOMPILED_HEADER=false
         AC_MSG_RESULT([no])
       else
         AC_MSG_RESULT([yes])

@@ -38,8 +38,12 @@
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -XX:+UseJVMCICompiler
+ *                   compiler.jvmci.compilerToVM.IsCompilableTest
+ * @run main/othervm -Xbootclasspath/a:.
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *                   compiler.jvmci.compilerToVM.CanInlineMethodTest
+ *                   compiler.jvmci.compilerToVM.IsCompilableTest
  */
 
 package compiler.jvmci.compilerToVM;
@@ -55,31 +59,30 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public class CanInlineMethodTest {
+public class IsCompilableTest {
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) {
         List<Executable> testCases = createTestCases();
-        testCases.forEach(CanInlineMethodTest::runSanityTest);
+        testCases.forEach(IsCompilableTest::runSanityTest);
     }
 
     private static void runSanityTest(Executable aMethod) {
+        boolean UseJVMCICompiler = (Boolean) WB.getVMFlag("UseJVMCICompiler");
         HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
-        boolean canInline = CompilerToVMHelper.canInlineMethod(method);
-        boolean expectedCanInline = !WB.testSetDontInlineMethod(aMethod,
-                true);
-        Asserts.assertEQ(canInline, expectedCanInline, "Unexpected initial " +
-                "value of property 'can inline'");
+        boolean isCompilable = CompilerToVMHelper.isCompilable(method);
+        boolean expected = UseJVMCICompiler || WB.isMethodCompilable(aMethod);
+        Asserts.assertEQ(isCompilable, expected, "Unexpected initial " +
+                "value of property 'compilable'");
 
-        canInline = CompilerToVMHelper.canInlineMethod(method);
-        Asserts.assertFalse(canInline, aMethod + "Unexpected value of " +
-                "property 'can inline' after setting 'do not inline' to true");
-        WB.testSetDontInlineMethod(aMethod, false);
-        canInline = CompilerToVMHelper.canInlineMethod(method);
-        Asserts.assertTrue(canInline, "Unexpected value of " +
-                "property 'can inline' after setting 'do not inline' to false");
+        if (!UseJVMCICompiler) {
+            WB.makeMethodNotCompilable(aMethod);
+            isCompilable = CompilerToVMHelper.isCompilable(method);
+            Asserts.assertFalse(isCompilable, aMethod + "Unexpected value of " +
+                "property 'isCompilable' after setting 'compilable' to false");
+        }
     }
 
     private static List<Executable> createTestCases() {

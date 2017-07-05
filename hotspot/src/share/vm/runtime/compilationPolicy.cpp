@@ -238,31 +238,17 @@ void NonTieredCompPolicy::initialize() {
 // Note: this policy is used ONLY if TieredCompilation is off.
 // compiler_count() behaves the following way:
 // - with TIERED build (with both COMPILER1 and COMPILER2 defined) it should return
-//   zero for the c1 compilation levels, hence the particular ordering of the
-//   statements.
-// - the same should happen when COMPILER2 is defined and COMPILER1 is not
-//   (server build without TIERED defined).
-// - if only COMPILER1 is defined (client build), zero should be returned for
-//   the c2 level.
+//   zero for the c1 compilation levels in server compilation mode runs
+//   and c2 compilation levels in client compilation mode runs.
+// - with COMPILER2 not defined it should return zero for c2 compilation levels.
+// - with COMPILER1 not defined it should return zero for c1 compilation levels.
 // - if neither is defined - always return zero.
 int NonTieredCompPolicy::compiler_count(CompLevel comp_level) {
   assert(!TieredCompilation, "This policy should not be used with TieredCompilation");
-#ifdef COMPILER2
-  if (is_c2_compile(comp_level)) {
+  if (COMPILER2_PRESENT(is_server_compilation_mode_vm() && is_c2_compile(comp_level) ||)
+      is_client_compilation_mode_vm() && is_c1_compile(comp_level)) {
     return _compiler_count;
-  } else {
-    return 0;
   }
-#endif
-
-#ifdef COMPILER1
-  if (is_c1_compile(comp_level)) {
-    return _compiler_count;
-  } else {
-    return 0;
-  }
-#endif
-
   return 0;
 }
 

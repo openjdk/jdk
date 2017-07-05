@@ -86,7 +86,7 @@ static void test_remove_dependent_nmethod(int id, bool delete_immediately) {
   NOT_PRODUCT(ASSERT_FALSE(depContext.is_dependent_nmethod(nm)));
 }
 
-TEST(code, dependency_context) {
+TEST_VM(code, dependency_context) {
   test_remove_dependent_nmethod(0, false);
   test_remove_dependent_nmethod(1, false);
   test_remove_dependent_nmethod(2, false);

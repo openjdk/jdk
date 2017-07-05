@@ -46,6 +46,9 @@
 //    [pointer to locals     ]                   = locals()             locals_offset
 //    [constant pool cache   ]                   = cache()              cache_offset
 
+//    [klass of method       ]                   = mirror()             mirror_offset
+//    [padding               ]
+
 //    [methodData            ]                   = mdp()                mdx_offset
 //    [methodOop             ]                   = method()             method_offset
 
