@@ -28,15 +28,15 @@ package com.sun.security.auth;
 import java.security.Principal;
 
 /**
- * <p> This class implements the <code>Principal</code> interface
+ * This class implements the {@code Principal} interface
  * and represents a user's Solaris group identification number (GID).
  *
- * <p> Principals such as this <code>SolarisNumericGroupPrincipal</code>
- * may be associated with a particular <code>Subject</code>
- * to augment that <code>Subject</code> with an additional
- * identity.  Refer to the <code>Subject</code> class for more information
+ * <p> Principals such as this {@code SolarisNumericGroupPrincipal}
+ * may be associated with a particular {@code Subject}
+ * to augment that {@code Subject} with an additional
+ * identity.  Refer to the {@code Subject} class for more information
  * on how to achieve this.  Authorization decisions can then be based upon
- * the Principals associated with a <code>Subject</code>.
+ * the Principals associated with a {@code Subject}.
 
  * @deprecated As of JDK&nbsp;1.4, replaced by
  *             {@link UnixNumericGroupPrincipal}.
@@ -73,20 +73,18 @@ public class SolarisNumericGroupPrincipal implements
     private boolean primaryGroup;
 
     /**
-     * Create a <code>SolarisNumericGroupPrincipal</code> using a
-     * <code>String</code> representation of the user's
+     * Create a {@code SolarisNumericGroupPrincipal} using a
+     * {@code String} representation of the user's
      * group identification number (GID).
      *
-     * <p>
-     *
      * @param name the user's group identification number (GID)
-     *                  for this user. <p>
+     *                  for this user.
      *
      * @param primaryGroup true if the specified GID represents the
      *                  primary group to which this user belongs.
      *
-     * @exception NullPointerException if the <code>name</code>
-     *                  is <code>null</code>.
+     * @exception NullPointerException if the {@code name}
+     *                  is {@code null}.
      */
     public SolarisNumericGroupPrincipal(String name, boolean primaryGroup) {
         if (name == null)
@@ -97,13 +95,11 @@ public class SolarisNumericGroupPrincipal implements
     }
 
     /**
-     * Create a <code>SolarisNumericGroupPrincipal</code> using a
+     * Create a {@code SolarisNumericGroupPrincipal} using a
      * long representation of the user's group identification number (GID).
      *
-     * <p>
-     *
      * @param name the user's group identification number (GID) for this user
-     *                  represented as a long. <p>
+     *                  represented as a long.
      *
      * @param primaryGroup true if the specified GID represents the
      *                  primary group to which this user belongs.
@@ -116,12 +112,10 @@ public class SolarisNumericGroupPrincipal implements
 
     /**
      * Return the user's group identification number (GID) for this
-     * <code>SolarisNumericGroupPrincipal</code>.
-     *
-     * <p>
+     * {@code SolarisNumericGroupPrincipal}.
      *
      * @return the user's group identification number (GID) for this
-     *          <code>SolarisNumericGroupPrincipal</code>
+     *          {@code SolarisNumericGroupPrincipal}
      */
     public String getName() {
         return name;
@@ -129,12 +123,10 @@ public class SolarisNumericGroupPrincipal implements
 
     /**
      * Return the user's group identification number (GID) for this
-     * <code>SolarisNumericGroupPrincipal</code> as a long.
-     *
-     * <p>
+     * {@code SolarisNumericGroupPrincipal} as a long.
      *
      * @return the user's group identification number (GID) for this
-     *          <code>SolarisNumericGroupPrincipal</code> as a long.
+     *          {@code SolarisNumericGroupPrincipal} as a long.
      */
     public long longValue() {
         return Long.parseLong(name);
@@ -143,8 +135,6 @@ public class SolarisNumericGroupPrincipal implements
     /**
      * Return whether this group identification number (GID) represents
      * the primary group to which this user belongs.
-     *
-     * <p>
      *
      * @return true if this group identification number (GID) represents
      *          the primary group to which this user belongs,
@@ -156,12 +146,10 @@ public class SolarisNumericGroupPrincipal implements
 
     /**
      * Return a string representation of this
-     * <code>SolarisNumericGroupPrincipal</code>.
-     *
-     * <p>
+     * {@code SolarisNumericGroupPrincipal}.
      *
      * @return a string representation of this
-     *          <code>SolarisNumericGroupPrincipal</code>.
+     *          {@code SolarisNumericGroupPrincipal}.
      */
     public String toString() {
         return((primaryGroup ?
@@ -173,19 +161,17 @@ public class SolarisNumericGroupPrincipal implements
 
     /**
      * Compares the specified Object with this
-     * <code>SolarisNumericGroupPrincipal</code>
+     * {@code SolarisNumericGroupPrincipal}
      * for equality.  Returns true if the given object is also a
-     * <code>SolarisNumericGroupPrincipal</code> and the two
+     * {@code SolarisNumericGroupPrincipal} and the two
      * SolarisNumericGroupPrincipals
      * have the same group identification number (GID).
      *
-     * <p>
-     *
      * @param o Object to be compared for equality with this
-     *          <code>SolarisNumericGroupPrincipal</code>.
+     *          {@code SolarisNumericGroupPrincipal}.
      *
      * @return true if the specified Object is equal to this
-     *          <code>SolarisNumericGroupPrincipal</code>.
+     *          {@code SolarisNumericGroupPrincipal}.
      */
     public boolean equals(Object o) {
         if (o == null)
@@ -205,11 +191,9 @@ public class SolarisNumericGroupPrincipal implements
     }
 
     /**
-     * Return a hash code for this <code>SolarisNumericGroupPrincipal</code>.
+     * Return a hash code for this {@code SolarisNumericGroupPrincipal}.
      *
-     * <p>
-     *
-     * @return a hash code for this <code>SolarisNumericGroupPrincipal</code>.
+     * @return a hash code for this {@code SolarisNumericGroupPrincipal}.
      */
     public int hashCode() {
         return toString().hashCode();

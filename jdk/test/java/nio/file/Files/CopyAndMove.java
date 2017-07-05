@@ -27,6 +27,7 @@
  * @library ..
  * @build CopyAndMove PassThroughFileSystem
  * @run main/othervm CopyAndMove
+ * @key randomness
  */
 
 import java.nio.ByteBuffer;

@@ -36,6 +36,7 @@ import static java.lang.System.out;
  * @bug 8050370
  * @summary MessageDigest tests with DigestIOStream
  * @author Kevin Liu
+ * @key randomness
  */
 
 enum ReadModel {

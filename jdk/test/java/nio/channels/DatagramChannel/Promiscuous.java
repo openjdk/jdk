@@ -28,6 +28,7 @@
  * @build Promiscuous  NetworkConfiguration
  * @run main Promiscuous
  * @run main/othervm -Djava.net.preferIPv4Stack=true Promiscuous
+ * @key randomness
  */
 
 import java.nio.ByteBuffer;

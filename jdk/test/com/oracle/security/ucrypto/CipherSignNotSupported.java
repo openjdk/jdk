@@ -27,6 +27,7 @@
  * @summary Make sure signing via encrypt and verifying via decrypt are not
  * supported by OracleUcrypto provider.
  * @author Anthony Scarpino
+ * @key randomness
  */
 
 import java.util.Random;

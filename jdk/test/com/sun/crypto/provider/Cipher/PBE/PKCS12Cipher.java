@@ -27,6 +27,7 @@
  * @summary basic test for PBEWithSHA1AndDESede, PBEWithSHA1AndRC2_40/128
  *          and PBEWithSHA1AndRC4_40/128
  * @author Valerie Peng
+ * @key randomness
  */
 
 import java.io.*;

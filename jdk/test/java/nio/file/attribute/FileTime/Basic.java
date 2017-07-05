@@ -24,6 +24,7 @@
 /* @test
  * @bug 6844313 8011647
  * @summary Unit test for java.nio.file.FileTime
+ * @key randomness
  */
 
 

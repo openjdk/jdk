@@ -66,7 +66,7 @@ final class JceSecurityManager extends SecurityManager {
         exemptPolicy = JceSecurity.getExemptPolicy();
         allPerm = CryptoAllPermission.INSTANCE;
         INSTANCE = AccessController.doPrivileged(
-                new PrivilegedAction<JceSecurityManager>() {
+                new PrivilegedAction<>() {
                     public JceSecurityManager run() {
                         return new JceSecurityManager();
                     }

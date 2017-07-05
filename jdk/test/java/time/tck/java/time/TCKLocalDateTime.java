@@ -107,8 +107,6 @@ import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
@@ -260,16 +258,17 @@ public class TCKLocalDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test(timeOut=30000)  // TODO: remove when time zone loading is faster
     public void now() {
+        final long DELTA = 20_000_000_000L;    // 20 seconds of nanos leeway
         LocalDateTime expected = LocalDateTime.now(Clock.systemDefaultZone());
         LocalDateTime test = LocalDateTime.now();
         long diff = Math.abs(test.toLocalTime().toNanoOfDay() - expected.toLocalTime().toNanoOfDay());
-        if (diff >= 100000000) {
+        if (diff >= DELTA) {
             // may be date change
             expected = LocalDateTime.now(Clock.systemDefaultZone());
             test = LocalDateTime.now();
             diff = Math.abs(test.toLocalTime().toNanoOfDay() - expected.toLocalTime().toNanoOfDay());
         }
-        assertTrue(diff < 100000000);  // less than 0.1 secs
+        assertTrue(diff < DELTA);
     }
 
     //-----------------------------------------------------------------------

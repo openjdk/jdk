@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,11 +140,24 @@ import java.util.Locale;
  */
 public abstract class LocaleServiceProvider {
 
+    private static Void checkPermission() {
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new RuntimePermission("localeServiceProvider"));
+        }
+        return null;
+    }
+    private LocaleServiceProvider(Void ignore) { }
+
     /**
-     * Sole constructor.  (For invocation by subclass constructors, typically
-     * implicit.)
+     * Initializes a new locale service provider.
+     *
+     * @throws  SecurityException
+     *          If a security manager has been installed and it denies
+     *          {@link RuntimePermission RuntimePermission("localeServiceProvider")}
      */
     protected LocaleServiceProvider() {
+        this(checkPermission());
     }
 
     /**

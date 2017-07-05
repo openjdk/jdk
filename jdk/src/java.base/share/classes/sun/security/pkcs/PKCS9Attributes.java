@@ -85,8 +85,7 @@ public class PKCS9Attributes {
                            DerInputStream in) throws IOException {
         if (permittedAttributes != null) {
             this.permittedAttributes =
-                new Hashtable<ObjectIdentifier, ObjectIdentifier>(
-                                                permittedAttributes.length);
+                new Hashtable<>(permittedAttributes.length);
 
             for (int i = 0; i < permittedAttributes.length; i++)
                 this.permittedAttributes.put(permittedAttributes[i],

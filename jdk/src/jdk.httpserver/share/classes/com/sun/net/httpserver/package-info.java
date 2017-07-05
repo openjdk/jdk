@@ -58,7 +58,7 @@
    server.createContext("/applications/myapp", new MyHandler());
    server.setExecutor(null); // creates a default executor
    server.start();
-   </blockquote></pre>
+   </pre></blockquote>
    <p>The example above creates a simple HttpServer which uses the calling
    application thread to invoke the handle() method for incoming http
    requests directed to port 8000, and to the path /applications/myapp/.
@@ -92,7 +92,7 @@
 
    SSLContext ssl = SSLContext.getInstance("TLS");
    ssl.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-   </blockquote></pre>
+   </pre></blockquote>
    <p>
    In the example above, a keystore file called "testkeys", created with the keytool utility
    is used as a certificate store for client and server certificates.
@@ -119,8 +119,8 @@
 
         }
     });
-   </blockquote></pre>
-   <p>
+   </pre></blockquote>
+
    @since 1.6
  */
 @jdk.Exported

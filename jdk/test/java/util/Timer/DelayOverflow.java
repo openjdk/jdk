@@ -27,6 +27,7 @@
  * @summary java.util.Timer schedule delay Long.MAX_VALUE causes task to execute multiple times
  * @author Chris Hegarty
  * @author Martin Buchholz
+ * @key randomness
  */
 
 import java.util.Date;
