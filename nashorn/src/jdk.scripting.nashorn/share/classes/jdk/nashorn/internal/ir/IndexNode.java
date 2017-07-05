@@ -47,12 +47,13 @@ public final class IndexNode extends BaseNode {
      * @param index   index for access
      */
     public IndexNode(final long token, final int finish, final Expression base, final Expression index) {
-        super(token, finish, base, false);
+        super(token, finish, base, false, false);
         this.index = index;
     }
 
-    private IndexNode(final IndexNode indexNode, final Expression base, final Expression index, final boolean isFunction, final Type type, final int programPoint) {
-        super(indexNode, base, isFunction, type, programPoint);
+    private IndexNode(final IndexNode indexNode, final Expression base, final Expression index, final boolean isFunction,
+                      final Type type, final int programPoint, final boolean isSuper) {
+        super(indexNode, base, isFunction, type, programPoint, isSuper);
         this.index = index;
     }
 
@@ -101,7 +102,7 @@ public final class IndexNode extends BaseNode {
         if (this.base == base) {
             return this;
         }
-        return new IndexNode(this, base, index, isFunction(), type, programPoint);
+        return new IndexNode(this, base, index, isFunction(), type, programPoint, isSuper());
     }
 
     /**
@@ -113,7 +114,7 @@ public final class IndexNode extends BaseNode {
         if(this.index == index) {
             return this;
         }
-        return new IndexNode(this, base, index, isFunction(), type, programPoint);
+        return new IndexNode(this, base, index, isFunction(), type, programPoint, isSuper());
     }
 
     @Override
@@ -121,7 +122,7 @@ public final class IndexNode extends BaseNode {
         if (this.type == type) {
             return this;
         }
-        return new IndexNode(this, base, index, isFunction(), type, programPoint);
+        return new IndexNode(this, base, index, isFunction(), type, programPoint, isSuper());
     }
 
     @Override
@@ -129,7 +130,7 @@ public final class IndexNode extends BaseNode {
         if (isFunction()) {
             return this;
         }
-        return new IndexNode(this, base, index, true, type, programPoint);
+        return new IndexNode(this, base, index, true, type, programPoint, isSuper());
     }
 
     @Override
@@ -137,6 +138,14 @@ public final class IndexNode extends BaseNode {
         if (this.programPoint == programPoint) {
             return this;
         }
-        return new IndexNode(this, base, index, isFunction(), type, programPoint);
+        return new IndexNode(this, base, index, isFunction(), type, programPoint, isSuper());
+    }
+
+    @Override
+    public IndexNode setIsSuper() {
+        if (isSuper()) {
+            return this;
+        }
+        return new IndexNode(this, base, index, isFunction(), type, programPoint, true);
     }
 }

@@ -67,7 +67,6 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
     void updateStyle(JLabel c) {
         SynthContext context = getContext(c, ENABLED);
         style = SynthLookAndFeel.updateStyle(context, this);
-        context.dispose();
     }
 
     /**
@@ -78,7 +77,6 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
         SynthContext context = getContext(c, ENABLED);
 
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
     }
 
@@ -150,7 +148,6 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
         else {
             baseline = textRect.y + fm.getAscent();
         }
-        context.dispose();
         return baseline;
     }
 
@@ -174,7 +171,6 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
         context.getPainter().paintLabelBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -191,7 +187,6 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -242,7 +237,6 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
                label.getVerticalTextPosition(), label.getIconTextGap(),
                label.getDisplayedMnemonicIndex());
 
-        context.dispose();
         return size;
     }
 
@@ -263,7 +257,6 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
                label.getVerticalTextPosition(), label.getIconTextGap(),
                label.getDisplayedMnemonicIndex());
 
-        context.dispose();
         return size;
     }
 
@@ -284,7 +277,6 @@ public class SynthLabelUI extends BasicLabelUI implements SynthUI {
                label.getVerticalTextPosition(), label.getIconTextGap(),
                label.getDisplayedMnemonicIndex());
 
-        context.dispose();
         return size;
     }
 

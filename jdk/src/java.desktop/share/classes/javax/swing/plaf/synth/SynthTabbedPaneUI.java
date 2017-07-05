@@ -154,27 +154,17 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
                 installKeyboardActions();
             }
         }
-        context.dispose();
 
-        if (tabContext != null) {
-            tabContext.dispose();
-        }
         tabContext = getContext(c, Region.TABBED_PANE_TAB, ENABLED);
         this.tabStyle = SynthLookAndFeel.updateStyle(tabContext, this);
         tabInsets = tabStyle.getInsets(tabContext, null);
 
 
-        if (tabAreaContext != null) {
-            tabAreaContext.dispose();
-        }
         tabAreaContext = getContext(c, Region.TABBED_PANE_TAB_AREA, ENABLED);
         this.tabAreaStyle = SynthLookAndFeel.updateStyle(tabAreaContext, this);
         tabAreaInsets = tabAreaStyle.getInsets(tabAreaContext, null);
 
 
-        if (tabContentContext != null) {
-            tabContentContext.dispose();
-        }
         tabContentContext = getContext(c, Region.TABBED_PANE_CONTENT, ENABLED);
         this.tabContentStyle = SynthLookAndFeel.updateStyle(tabContentContext,
                                                             this);
@@ -207,21 +197,17 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     protected void uninstallDefaults() {
         SynthContext context = getContext(tabPane, ENABLED);
         style.uninstallDefaults(context);
-        context.dispose();
         style = null;
 
         tabStyle.uninstallDefaults(tabContext);
-        tabContext.dispose();
         tabContext = null;
         tabStyle = null;
 
         tabAreaStyle.uninstallDefaults(tabAreaContext);
-        tabAreaContext.dispose();
         tabAreaContext = null;
         tabAreaStyle = null;
 
         tabContentStyle.uninstallDefaults(tabContentContext);
-        tabContentContext.dispose();
         tabContentContext = null;
         tabContentStyle = null;
     }
@@ -374,7 +360,6 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
         context.getPainter().paintTabbedPaneBackground(context,
                           g, 0, 0, c.getWidth(), c.getHeight());
         paint(context, g);
-        context.dispose();
     }
 
     /**
@@ -424,7 +409,6 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
         SynthContext context = getContext(c);
 
         paint(context, g);
-        context.dispose();
     }
 
     /**

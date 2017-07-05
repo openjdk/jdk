@@ -1580,7 +1580,7 @@ JDKNET_OPTIONS_FILE = $(DOCSTMPDIR)/jdknet.options
 JDKNET_PACKAGES_FILE = $(DOCSTMPDIR)/jdknet.packages
 
 # The modules required to be documented
-JDKNET_MODULES = java.base
+JDKNET_MODULES = jdk.net
 
 jdknetdocs: $(JDKNET_INDEX_HTML)
 

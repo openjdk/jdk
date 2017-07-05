@@ -21,6 +21,8 @@
  * questions.
  */
 
+import com.sun.swingset3.demos.button.ButtonDemo;
+import org.jtregext.GuiTestListener;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
@@ -32,6 +34,7 @@ import org.netbeans.jemmy.operators.JFrameOperator;
 import static org.jemmy2ext.JemmyExt.*;
 import org.testng.annotations.Test;
 import static com.sun.swingset3.demos.button.ButtonDemo.*;
+import org.testng.annotations.Listeners;
 
 /*
  * @test
@@ -41,31 +44,30 @@ import static com.sun.swingset3.demos.button.ButtonDemo.*;
  *          image is different from initial button image.
  *
  * @library /sanity/client/lib/jemmy/src
- * @library /sanity/client/lib/Jemmy2Ext/src
+ * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.button.ButtonDemo
  * @run testng ButtonDemoScreenshotTest
  */
+@Listeners(GuiTestListener.class)
 public class ButtonDemoScreenshotTest {
 
     private static final int BUTTON_COUNT = 6; // TODO: Decide about "open browser" buttons (value was 8 originally)
 
     @Test
     public void test() throws Exception {
-        captureDebugInfoOnFail(() -> {
-            Robot rob = new Robot();
+        Robot rob = new Robot();
 
-            new ClassReference(com.sun.swingset3.demos.button.ButtonDemo.class.getCanonicalName()).startApplication();
+        new ClassReference(ButtonDemo.class.getCanonicalName()).startApplication();
 
-            JFrameOperator mainFrame = new JFrameOperator(DEMO_TITLE);
-            waitImageIsStill(rob, mainFrame);
+        JFrameOperator mainFrame = new JFrameOperator(DEMO_TITLE);
+        waitImageIsStill(rob, mainFrame);
 
-            // Check all the buttons
-            for (int i = 0; i < BUTTON_COUNT; i++) {
-                checkButton(mainFrame, i, rob);
-            }
-        });
+        // Check all the buttons
+        for (int i = 0; i < BUTTON_COUNT; i++) {
+            checkButton(mainFrame, i, rob);
+        }
     }
 
     public void checkButton(JFrameOperator jfo, int i, Robot rob) {

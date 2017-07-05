@@ -105,7 +105,7 @@ public final class TextMeasurer implements Cloneable {
         String s = System.getProperty("estLines");
         if (s != null) {
             try {
-                Float f = new Float(s);
+                Float f = Float.valueOf(s);
                 EST_LINES = f.floatValue();
             }
             catch(NumberFormatException e) {

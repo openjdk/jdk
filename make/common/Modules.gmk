@@ -63,6 +63,7 @@ BOOT_MODULES += \
     java.xml.crypto \
     jdk.httpserver \
     jdk.management \
+    jdk.net \
     jdk.sctp \
     jdk.security.auth \
     jdk.security.jgss \
@@ -185,7 +186,8 @@ FindAllModules = \
     $(call GetModuleNameFromModuleInfo, $(MODULE_INFOS))))
 
 FindImportedModules = \
-    $(if $(IMPORT_MODULES_CLASSES), $(notdir $(wildcard $(IMPORT_MODULES_CLASSES)/*)))
+    $(filter-out $(MODULES_FILTER), \
+    $(if $(IMPORT_MODULES_CLASSES), $(notdir $(wildcard $(IMPORT_MODULES_CLASSES)/*))))
 
 # Find all source dirs for a particular module
 # $1 - Module to find source dirs for

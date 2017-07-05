@@ -21,6 +21,7 @@
  * questions.
  */
 
+import org.jtregext.GuiTestListener;
 import com.sun.swingset3.DemoProperties;
 import com.sun.swingset3.demos.togglebutton.DirectionPanel;
 import com.sun.swingset3.demos.togglebutton.LayoutControlPanel;
@@ -40,7 +41,7 @@ import org.netbeans.jemmy.operators.JCheckBoxOperator;
 import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JRadioButtonOperator;
 import org.netbeans.jemmy.operators.JTabbedPaneOperator;
-import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
+import org.testng.annotations.Listeners;
 
 /*
  * @test
@@ -53,50 +54,49 @@ import static org.jemmy2ext.JemmyExt.captureDebugInfoOnFail;
  *          selected.
  *
  * @library /sanity/client/lib/jemmy/src
- * @library /sanity/client/lib/Jemmy2Ext/src
+ * @library /sanity/client/lib/Extensions/src
  * @library /sanity/client/lib/SwingSet3/src
  * @build org.jemmy2ext.JemmyExt
  * @build com.sun.swingset3.demos.togglebutton.ToggleButtonDemo
  * @run testng ToggleButtonDemoTest
  */
+@Listeners(GuiTestListener.class)
 public class ToggleButtonDemoTest {
 
     @Test
     public void test() throws Exception {
-        captureDebugInfoOnFail(() -> {
-            new ClassReference(ToggleButtonDemo.class.getCanonicalName()).startApplication();
+        new ClassReference(ToggleButtonDemo.class.getCanonicalName()).startApplication();
 
-            JFrameOperator mainFrame = new JFrameOperator(ToggleButtonDemo.class.getAnnotation(DemoProperties.class).value());
-            JTabbedPaneOperator tabPane = new JTabbedPaneOperator(mainFrame);
+        JFrameOperator mainFrame = new JFrameOperator(ToggleButtonDemo.class.getAnnotation(DemoProperties.class).value());
+        JTabbedPaneOperator tabPane = new JTabbedPaneOperator(mainFrame);
 
-            // Radio Button Toggles
-            testRadioButtons(getBorderTitledJPanelOperator(mainFrame, TEXT_RADIO_BUTTONS), 3, null);
-            testRadioButtons(getBorderTitledJPanelOperator(mainFrame, IMAGE_RADIO_BUTTONS), 3, null);
-            testRadioButtons(getLabeledContainerOperator(mainFrame, PAD_AMOUNT), 3, (t, i) -> DEFAULT.equals(t));
+        // Radio Button Toggles
+        testRadioButtons(getBorderTitledJPanelOperator(mainFrame, TEXT_RADIO_BUTTONS), 3, null);
+        testRadioButtons(getBorderTitledJPanelOperator(mainFrame, IMAGE_RADIO_BUTTONS), 3, null);
+        testRadioButtons(getLabeledContainerOperator(mainFrame, PAD_AMOUNT), 3, (t, i) -> DEFAULT.equals(t));
 
-            // switch to the Check Boxes Tab
-            tabPane.selectPage(CHECK_BOXES);
+        // switch to the Check Boxes Tab
+        tabPane.selectPage(CHECK_BOXES);
 
-            // Check Box Toggles
-            ContainerOperator<?> textCheckBoxesJPanel = getBorderTitledJPanelOperator(mainFrame, TEXT_CHECKBOXES);
-            testCheckBox(textCheckBoxesJPanel, CHECK1, false);
-            testCheckBox(textCheckBoxesJPanel, CHECK2, false);
-            testCheckBox(textCheckBoxesJPanel, CHECK3, false);
+        // Check Box Toggles
+        ContainerOperator<?> textCheckBoxesJPanel = getBorderTitledJPanelOperator(mainFrame, TEXT_CHECKBOXES);
+        testCheckBox(textCheckBoxesJPanel, CHECK1, false);
+        testCheckBox(textCheckBoxesJPanel, CHECK2, false);
+        testCheckBox(textCheckBoxesJPanel, CHECK3, false);
 
-            ContainerOperator<?> imageCheckBoxesJPanel = getBorderTitledJPanelOperator(mainFrame, IMAGE_CHECKBOXES);
-            testCheckBox(imageCheckBoxesJPanel, CHECK1, false);
-            testCheckBox(imageCheckBoxesJPanel, CHECK2, false);
-            testCheckBox(imageCheckBoxesJPanel, CHECK3, false);
+        ContainerOperator<?> imageCheckBoxesJPanel = getBorderTitledJPanelOperator(mainFrame, IMAGE_CHECKBOXES);
+        testCheckBox(imageCheckBoxesJPanel, CHECK1, false);
+        testCheckBox(imageCheckBoxesJPanel, CHECK2, false);
+        testCheckBox(imageCheckBoxesJPanel, CHECK3, false);
 
-            ContainerOperator<?> displayOptionsContainer = getLabeledContainerOperator(mainFrame, DISPLAY_OPTIONS);
-            testCheckBox(displayOptionsContainer, PAINT_BORDER, false);
-            testCheckBox(displayOptionsContainer, PAINT_FOCUS, true);
-            testCheckBox(displayOptionsContainer, ENABLED, true);
-            testCheckBox(displayOptionsContainer, CONTENT_FILLED, true);
+        ContainerOperator<?> displayOptionsContainer = getLabeledContainerOperator(mainFrame, DISPLAY_OPTIONS);
+        testCheckBox(displayOptionsContainer, PAINT_BORDER, false);
+        testCheckBox(displayOptionsContainer, PAINT_FOCUS, true);
+        testCheckBox(displayOptionsContainer, ENABLED, true);
+        testCheckBox(displayOptionsContainer, CONTENT_FILLED, true);
 
-            // Direction Button Toggles
-            testToggleButtons(mainFrame);
-        });
+        // Direction Button Toggles
+        testToggleButtons(mainFrame);
     }
 
     /**

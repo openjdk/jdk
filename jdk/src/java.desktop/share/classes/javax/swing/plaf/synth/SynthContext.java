@@ -24,8 +24,6 @@
  */
 package javax.swing.plaf.synth;
 
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.swing.JComponent;
 
 /**
@@ -40,7 +38,6 @@ import javax.swing.JComponent;
  * @author Scott Violet
  */
 public class SynthContext {
-    private static final Queue<SynthContext> queue = new ConcurrentLinkedQueue<>();
 
     private JComponent component;
     private Region region;
@@ -54,19 +51,15 @@ public class SynthContext {
     static SynthContext getContext(JComponent component,
                                    Region region, SynthStyle style,
                                    int state) {
-        SynthContext context = queue.poll();
-        if (context == null) {
-            context = new SynthContext();
-        }
-        context.reset(component, region, style, state);
+        SynthContext context = new SynthContext();
+        context.component = component;
+        context.region = region;
+        context.style = style;
+        context.state = state;
         return context;
     }
 
-    static void releaseContext(SynthContext context) {
-        queue.offer(context);
-    }
-
-    SynthContext() {
+    private SynthContext() {
     }
 
     /**
@@ -86,7 +79,11 @@ public class SynthContext {
             throw new NullPointerException(
                 "You must supply a non-null component, region and style");
         }
-        reset(component, region, style, state);
+
+        this.component = component;
+        this.region = region;
+        this.style = style;
+        this.state = state;
     }
 
 
@@ -144,23 +141,6 @@ public class SynthContext {
      */
     public int getComponentState() {
         return state;
-    }
-
-    /**
-     * Resets the state of the Context.
-     */
-    void reset(JComponent component, Region region, SynthStyle style,
-               int state) {
-        this.component = component;
-        this.region = region;
-        this.style = style;
-        this.state = state;
-    }
-
-    void dispose() {
-        this.component = null;
-        this.style = null;
-        releaseContext(this);
     }
 
     /**

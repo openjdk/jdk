@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,12 @@ package java.awt.peer;
 
 import java.awt.*;
 import java.awt.event.PaintEvent;
+import java.awt.event.FocusEvent.Cause;
 import java.awt.image.ColorModel;
 import java.awt.image.ImageObserver;
 import java.awt.image.ImageProducer;
 import java.awt.image.VolatileImage;
 
-import sun.awt.CausedFocusEvent;
 import sun.java2d.pipe.Region;
 
 
@@ -343,7 +343,7 @@ public interface ComponentPeer {
      */
     boolean requestFocus(Component lightweightChild, boolean temporary,
                          boolean focusedWindowChangeAllowed, long time,
-                         CausedFocusEvent.Cause cause);
+                         Cause cause);
 
     /**
      * Returns {@code true} when the component takes part in the focus

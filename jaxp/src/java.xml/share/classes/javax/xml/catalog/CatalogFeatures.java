@@ -444,13 +444,15 @@ public class CatalogFeatures {
                 }
             } else if (index == Feature.FILES.ordinal()) {
                 try {
-                    if (Util.verifyAndGetURI(value, null) == null) {
-                        CatalogMessages.reportIAE(new Object[]{value, Feature.FILES.name()}, null);
+                    String[] catalogFile = value.split(";[ ]*");
+                    for (String temp : catalogFile) {
+                        if (Util.verifyAndGetURI(temp, null) == null) {
+                            CatalogMessages.reportIAE(new Object[]{value, Feature.FILES.name()}, null);
+                        }
                     }
                 }catch (MalformedURLException | URISyntaxException | IllegalArgumentException ex) {
                     CatalogMessages.reportIAE(new Object[]{value, Feature.FILES.name()}, ex);
                 }
-
             }
             if (states[index] == null || state.compareTo(states[index]) >= 0) {
                 values[index] = value;

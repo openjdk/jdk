@@ -91,6 +91,7 @@ public class TestPolicy extends Policy {
         permissions.add(new PropertyPermission("line.separator", "read"));
         permissions.add(new PropertyPermission("fileStringBuffer", "read"));
         permissions.add(new PropertyPermission("dataproviderthreadcount", "read"));
+        permissions.add(new RuntimePermission("charsetProvider"));
     }
 
     /*

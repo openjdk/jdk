@@ -2564,7 +2564,7 @@ public class CSS implements Serializable {
          *   represents the CSS attribute value
          */
         Object toStyleConstants(StyleConstants key, View v) {
-            return new Float(getValue(false));
+            return Float.valueOf(getValue(false));
         }
 
         /** If true, span is a percentage value, and that to determine
@@ -2837,25 +2837,25 @@ public class CSS implements Serializable {
         static Hashtable<String, Float> lengthMapping = new Hashtable<String, Float>(6);
         static Hashtable<String, Float> w3cLengthMapping = new Hashtable<String, Float>(6);
         static {
-            lengthMapping.put("pt", new Float(1f));
+            lengthMapping.put("pt", Float.valueOf(1f));
             // Not sure about 1.3, determined by experiementation.
-            lengthMapping.put("px", new Float(1.3f));
-            lengthMapping.put("mm", new Float(2.83464f));
-            lengthMapping.put("cm", new Float(28.3464f));
-            lengthMapping.put("pc", new Float(12f));
-            lengthMapping.put("in", new Float(72f));
+            lengthMapping.put("px", Float.valueOf(1.3f));
+            lengthMapping.put("mm", Float.valueOf(2.83464f));
+            lengthMapping.put("cm", Float.valueOf(28.3464f));
+            lengthMapping.put("pc", Float.valueOf(12f));
+            lengthMapping.put("in", Float.valueOf(72f));
             int res = 72;
             try {
                 res = Toolkit.getDefaultToolkit().getScreenResolution();
             } catch (HeadlessException e) {
             }
             // mapping according to the CSS2 spec
-            w3cLengthMapping.put("pt", new Float(res/72f));
-            w3cLengthMapping.put("px", new Float(1f));
-            w3cLengthMapping.put("mm", new Float(res/25.4f));
-            w3cLengthMapping.put("cm", new Float(res/2.54f));
-            w3cLengthMapping.put("pc", new Float(res/6f));
-            w3cLengthMapping.put("in", new Float(res));
+            w3cLengthMapping.put("pt", Float.valueOf(res/72f));
+            w3cLengthMapping.put("px", Float.valueOf(1f));
+            w3cLengthMapping.put("mm", Float.valueOf(res/25.4f));
+            w3cLengthMapping.put("cm", Float.valueOf(res/2.54f));
+            w3cLengthMapping.put("pc", Float.valueOf(res/6f));
+            w3cLengthMapping.put("in", Float.valueOf((float)res));
         }
 
         LengthUnit(String value, short defaultType, float defaultValue) {

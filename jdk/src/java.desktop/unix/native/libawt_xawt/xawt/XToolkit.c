@@ -354,7 +354,6 @@ JNIEXPORT void JNICALL Java_java_awt_Dialog_initIDs (JNIEnv *env, jclass cls)
 
 static void     waitForEvents(JNIEnv *, jlong);
 static void     awt_pipe_init();
-static void     processOneEvent(XtInputMask iMask);
 static Boolean  performPoll(JNIEnv *, jlong);
 static void     wakeUp();
 static void     update_poll_timeout(int timeout_control);
@@ -614,7 +613,7 @@ static uint32_t get_poll_timeout(jlong nextTaskTime)
 } /* get_poll_timeout() */
 
 /*
- * Waits for X/Xt events to appear on the pipe. Returns only when
+ * Waits for X events to appear on the pipe. Returns only when
  * it is likely (but not definite) that there are events waiting to
  * be processed.
  *

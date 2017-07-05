@@ -101,7 +101,6 @@ struct _X11SDOps {
     jboolean            isPixmap;
     jobject             peer;
     Drawable            drawable;
-    Widget              widget;
     GC                  javaGC;        /* used for Java-level GC validation */
     GC                  cachedGC;      /* cached for use in X11SD_Unlock() */
     jint                depth;

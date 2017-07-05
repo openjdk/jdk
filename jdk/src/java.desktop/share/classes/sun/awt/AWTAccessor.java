@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import jdk.internal.misc.Unsafe;
 
 import javax.accessibility.AccessibleContext;
 import java.awt.*;
+import java.awt.event.FocusEvent.Cause;
 import java.awt.dnd.DragSourceContext;
 import java.awt.dnd.DropTargetContext;
 import java.awt.dnd.peer.DragSourceContextPeer;
@@ -104,7 +105,7 @@ public final class AWTAccessor {
         /*
          * Requests focus to the component.
          */
-        boolean requestFocus(Component comp, CausedFocusEvent.Cause cause);
+        boolean requestFocus(Component comp, Cause cause);
         /*
          * Determines if the component can gain focus.
          */
@@ -438,7 +439,7 @@ public final class AWTAccessor {
                                            boolean temporary,
                                            boolean focusedWindowChangeAllowed,
                                            long time,
-                                           CausedFocusEvent.Cause cause);
+                                           Cause cause);
         /**
          * Delivers focus for the lightweight descendant of the heavyweight
          * synchronously.

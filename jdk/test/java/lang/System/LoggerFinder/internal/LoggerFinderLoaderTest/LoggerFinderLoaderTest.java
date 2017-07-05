@@ -53,6 +53,7 @@ import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicReference;
 import jdk.internal.logger.SimpleConsoleLogger;
+import java.lang.reflect.Module;
 
 /**
  * @test
@@ -166,8 +167,8 @@ public class LoggerFinderLoaderTest {
 
         }
 
-        public Logger getLogger(String name, Class<?> caller);
-        public Logger getLocalizedLogger(String name, ResourceBundle bundle, Class<?> caller);
+        public Logger getLogger(String name, Module caller);
+        public Logger getLocalizedLogger(String name, ResourceBundle bundle, Module caller);
     }
 
     public static class BaseLoggerFinder extends LoggerFinder implements TestLoggerFinder {
@@ -187,7 +188,7 @@ public class LoggerFinderLoaderTest {
 
 
         @Override
-        public Logger getLogger(String name, Class<?> caller) {
+        public Logger getLogger(String name, Module caller) {
             SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
                 sm.checkPermission(LOGGERFINDER_PERMISSION);
@@ -210,7 +211,7 @@ public class LoggerFinderLoaderTest {
             throw new ServiceConfigurationError("Should not come here");
         }
         @Override
-        public Logger getLogger(String name, Class<?> caller) {
+        public Logger getLogger(String name, Module caller) {
             throw new ServiceConfigurationError("Should not come here");
         }
     }

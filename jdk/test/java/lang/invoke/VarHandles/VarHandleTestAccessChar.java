@@ -104,8 +104,8 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET));
+        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE));
-        assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE));
         assertFalse(vh.isAccessModeSupported(VarHandle.AccessMode.GET_AND_SET));
 
@@ -281,6 +281,10 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetVolatile(recv, 'a', 'b');
+        });
+
+        checkUOE(() -> {
             boolean r = vh.weakCompareAndSetAcquire(recv, 'a', 'b');
         });
 
@@ -363,6 +367,10 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetVolatile('a', 'b');
+        });
+
+        checkUOE(() -> {
             boolean r = vh.weakCompareAndSetAcquire('a', 'b');
         });
 
@@ -435,6 +443,10 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         });
 
         checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetVolatile(recv, 'a', 'b');
+        });
+
+        checkUOE(() -> {
             boolean r = vh.weakCompareAndSetAcquire(recv, 'a', 'b');
         });
 
@@ -504,6 +516,10 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSet('a', 'b');
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetVolatile('a', 'b');
         });
 
         checkUOE(() -> {
@@ -583,6 +599,10 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
 
         checkUOE(() -> {
             boolean r = vh.weakCompareAndSet(array, i, 'a', 'b');
+        });
+
+        checkUOE(() -> {
+            boolean r = vh.weakCompareAndSetVolatile(array, i, 'a', 'b');
         });
 
         checkUOE(() -> {

@@ -46,6 +46,8 @@ import java.lang.System.LoggerFinder;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.util.stream.Stream;
+import java.lang.reflect.Module;
+import java.security.AllPermission;
 
 /**
  * @test
@@ -65,6 +67,12 @@ public class CustomLoggerTest {
     final static AtomicLong sequencer = new AtomicLong();
     final static boolean VERBOSE = false;
     static final ThreadLocal<AtomicBoolean> allowControl = new ThreadLocal<AtomicBoolean>() {
+        @Override
+        protected AtomicBoolean initialValue() {
+            return  new AtomicBoolean(false);
+        }
+    };
+    static final ThreadLocal<AtomicBoolean> allowAll = new ThreadLocal<AtomicBoolean>() {
         @Override
         protected AtomicBoolean initialValue() {
             return  new AtomicBoolean(false);
@@ -241,7 +249,7 @@ public class CustomLoggerTest {
         }
 
         @Override
-        public Logger getLogger(String name, Class<?> caller) {
+        public Logger getLogger(String name, Module caller) {
             // We should check the permission to obey the API contract, but
             // what happens if we don't?
             // This is the main difference compared with what we test in
@@ -251,8 +259,13 @@ public class CustomLoggerTest {
                 sm.checkPermission(SimplePolicy.LOGGERFINDER_PERMISSION);
             }
 
-            PrivilegedAction<ClassLoader> pa = () -> caller.getClassLoader();
-            ClassLoader callerLoader = AccessController.doPrivileged(pa);
+            final boolean before = allowAll.get().getAndSet(true);
+            final ClassLoader callerLoader;
+            try {
+                callerLoader = caller.getClassLoader();
+            } finally {
+                allowAll.get().set(before);
+            }
             if (callerLoader == null) {
                 return system.computeIfAbsent(name, (n) -> new LoggerImpl(n));
             } else {
@@ -267,7 +280,7 @@ public class CustomLoggerTest {
 
     static void setSecurityManager() {
         if (System.getSecurityManager() == null) {
-            Policy.setPolicy(new SimplePolicy(allowControl));
+            Policy.setPolicy(new SimplePolicy(allowControl, allowAll));
             System.setSecurityManager(new SecurityManager());
         }
     }
@@ -284,9 +297,9 @@ public class CustomLoggerTest {
         BaseLoggerFinder provider =
                 BaseLoggerFinder.class.cast(LoggerFinder.getLoggerFinder());
         BaseLoggerFinder.LoggerImpl appSink =
-                BaseLoggerFinder.LoggerImpl.class.cast(provider.getLogger("foo", CustomLoggerTest.class));
+                BaseLoggerFinder.LoggerImpl.class.cast(provider.getLogger("foo", CustomLoggerTest.class.getModule()));
         BaseLoggerFinder.LoggerImpl sysSink =
-                BaseLoggerFinder.LoggerImpl.class.cast(provider.getLogger("foo", Thread.class));
+                BaseLoggerFinder.LoggerImpl.class.cast(provider.getLogger("foo", Thread.class.getModule()));
 
 
         Stream.of(args).map(TestCases::valueOf).forEach((testCase) -> {
@@ -695,34 +708,46 @@ public class CustomLoggerTest {
         static final RuntimePermission LOGGERFINDER_PERMISSION =
                 new RuntimePermission("loggerFinder");
         final Permissions permissions;
+        final Permissions controlPermissions;
         final Permissions allPermissions;
         final ThreadLocal<AtomicBoolean> allowControl;
-        public SimplePolicy(ThreadLocal<AtomicBoolean> allowControl) {
+        final ThreadLocal<AtomicBoolean> allowAll;
+        public SimplePolicy(ThreadLocal<AtomicBoolean> allowControl, ThreadLocal<AtomicBoolean> allowAll) {
             this.allowControl = allowControl;
+            this.allowAll = allowAll;
             permissions = new Permissions();
 
             // these are used for configuring the test itself...
+            controlPermissions = new Permissions();
+            controlPermissions.add(LOGGERFINDER_PERMISSION);
+
+            // these are used for simulating a doPrivileged call from
+            // a class in the BCL
             allPermissions = new Permissions();
-            allPermissions.add(LOGGERFINDER_PERMISSION);
+            allPermissions.add(new AllPermission());
+
+        }
+
+        Permissions permissions() {
+            if (allowAll.get().get()) return allPermissions;
+            if (allowControl.get().get()) return controlPermissions;
+            return permissions;
 
         }
 
         @Override
         public boolean implies(ProtectionDomain domain, Permission permission) {
-            if (allowControl.get().get()) return allPermissions.implies(permission);
-            return permissions.implies(permission);
+            return permissions().implies(permission);
         }
 
         @Override
         public PermissionCollection getPermissions(CodeSource codesource) {
-            return new PermissionsBuilder().addAll(allowControl.get().get()
-                    ? allPermissions : permissions).toPermissions();
+            return new PermissionsBuilder().addAll(permissions()).toPermissions();
         }
 
         @Override
         public PermissionCollection getPermissions(ProtectionDomain domain) {
-            return new PermissionsBuilder().addAll(allowControl.get().get()
-                    ? allPermissions : permissions).toPermissions();
+            return new PermissionsBuilder().addAll(permissions()).toPermissions();
         }
     }
 }

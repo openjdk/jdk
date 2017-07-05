@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,6 @@ import sun.util.logging.PlatformLogger;
 
 import sun.awt.AppContext;
 import sun.awt.AWTAccessor;
-import sun.awt.CausedFocusEvent;
 import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
 
@@ -3515,7 +3514,7 @@ public class Container extends Component {
             Component toFocus = getFocusTraversalPolicy().
                 getDefaultComponent(this);
             if (toFocus != null) {
-                toFocus.requestFocus(CausedFocusEvent.Cause.TRAVERSAL_DOWN);
+                toFocus.requestFocus(FocusEvent.Cause.TRAVERSAL_DOWN);
             }
         }
     }

@@ -136,6 +136,7 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
  * consists of the methods
  * {@link #compareAndSet compareAndSet},
  * {@link #weakCompareAndSet weakCompareAndSet},
+ * {@link #weakCompareAndSetVolatile weakCompareAndSetVolatile},
  * {@link #weakCompareAndSetAcquire weakCompareAndSetAcquire},
  * {@link #weakCompareAndSetRelease weakCompareAndSetRelease},
  * {@link #compareAndExchangeAcquire compareAndExchangeAcquire},
@@ -458,7 +459,7 @@ public abstract class VarHandle {
      *
      * <p>The symbolic type descriptor at the call site of {@code get}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.get)} on this VarHandle.
+     * {@code accessModeType(VarHandle.AccessMode.GET)} on this VarHandle.
      *
      * <p>This access mode is supported by all VarHandle instances and never
      * throws {@code UnsupportedOperationException}.
@@ -488,7 +489,7 @@ public abstract class VarHandle {
      *
      * <p>The symbolic type descriptor at the call site of {@code set}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.set)} on this VarHandle.
+     * {@code accessModeType(VarHandle.AccessMode.SET)} on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT, T newValue)}
@@ -516,7 +517,8 @@ public abstract class VarHandle {
      *
      * <p>The symbolic type descriptor at the call site of {@code getVolatile}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.getVolatile)} on this VarHandle.
+     * {@code accessModeType(VarHandle.AccessMode.GET_VOLATILE)} on this
+     * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT)}
@@ -544,7 +546,8 @@ public abstract class VarHandle {
      *
      * <p>The symbolic type descriptor at the call site of {@code setVolatile}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.setVolatile)} on this VarHandle.
+     * {@code accessModeType(VarHandle.AccessMode.SET_VOLATILE)} on this
+     * VarHandle.
      *
      * @apiNote
      * Ignoring the many semantic differences from C and C++, this method has
@@ -574,7 +577,8 @@ public abstract class VarHandle {
      *
      * <p>The symbolic type descriptor at the call site of {@code getOpaque}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.getOpaque)} on this VarHandle.
+     * {@code accessModeType(VarHandle.AccessMode.GET_OPAQUE)} on this
+     * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT)}
@@ -603,7 +607,8 @@ public abstract class VarHandle {
      *
      * <p>The symbolic type descriptor at the call site of {@code setOpaque}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.setOpaque)} on this VarHandle.
+     * {@code accessModeType(VarHandle.AccessMode.SET_OPAQUE)} on this
+     * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT, T newValue)}
@@ -631,7 +636,8 @@ public abstract class VarHandle {
      *
      * <p>The symbolic type descriptor at the call site of {@code getAcquire}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.getAcquire)} on this VarHandle.
+     * {@code accessModeType(VarHandle.AccessMode.GET_ACQUIRE)} on this
+     * VarHandle.
      *
      * @apiNote
      * Ignoring the many semantic differences from C and C++, this method has
@@ -664,7 +670,8 @@ public abstract class VarHandle {
      *
      * <p>The symbolic type descriptor at the call site of {@code setRelease}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.setRelease)} on this VarHandle.
+     * {@code accessModeType(VarHandle.AccessMode.SET_RELEASE)} on this
+     * VarHandle.
      *
      * @apiNote
      * Ignoring the many semantic differences from C and C++, this method has
@@ -700,7 +707,7 @@ public abstract class VarHandle {
      *
      * <p>The symbolic type descriptor at the call site of {@code
      * compareAndSet} must match the access mode type that is the result of
-     * calling {@code accessModeType(VarHandle.AccessMode.compareAndSet)} on
+     * calling {@code accessModeType(VarHandle.AccessMode.COMPARE_AND_SET)} on
      * this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
@@ -734,7 +741,7 @@ public abstract class VarHandle {
      * <p>The symbolic type descriptor at the call site of {@code
      * compareAndExchangeVolatile}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.compareAndExchangeVolatile)}
+     * {@code accessModeType(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_VOLATILE)}
      * on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
@@ -769,7 +776,7 @@ public abstract class VarHandle {
      * <p>The symbolic type descriptor at the call site of {@code
      * compareAndExchangeAcquire}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.compareAndExchangeAcquire)} on
+     * {@code accessModeType(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_ACQUIRE)} on
      * this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
@@ -804,7 +811,8 @@ public abstract class VarHandle {
      * <p>The symbolic type descriptor at the call site of {@code
      * compareAndExchangeRelease}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.compareAndExchangeRelease)} on this VarHandle.
+     * {@code accessModeType(VarHandle.AccessMode.COMPARE_AND_EXCHANGE_RELEASE)}
+     * on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT, T expectedValue, T newValue)}
@@ -836,14 +844,14 @@ public abstract class VarHandle {
      * {@link #get}.
      *
      * <p>This operation may fail spuriously (typically, due to memory
-     * contention) even if the current value does match the expected value.
+     * contention) even if the witness value does match the expected value.
      *
      * <p>The method signature is of the form {@code (CT, T expectedValue, T newValue)boolean}.
      *
      * <p>The symbolic type descriptor at the call site of {@code
      * weakCompareAndSet} must match the access mode type that is the result of
-     * calling {@code accessModeType(VarHandle.AccessMode.weakCompareAndSet)} on
-     * this VarHandle.
+     * calling {@code accessModeType(VarHandle.AccessMode.WEAK_COMPARE_AND_SET)}
+     * on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT, T expectedValue, T newValue)}
@@ -867,20 +875,58 @@ public abstract class VarHandle {
 
     /**
      * Possibly atomically sets the value of a variable to the {@code newValue}
+     * with the memory semantics of {@link #setVolatile} if the variable's
+     * current value, referred to as the <em>witness value</em>, {@code ==} the
+     * {@code expectedValue}, as accessed with the memory semantics of
+     * {@link #getVolatile}.
+     *
+     * <p>This operation may fail spuriously (typically, due to memory
+     * contention) even if the witness value does match the expected value.
+     *
+     * <p>The method signature is of the form {@code (CT, T expectedValue, T newValue)boolean}.
+     *
+     * <p>The symbolic type descriptor at the call site of {@code
+     * weakCompareAndSetVolatile} must match the access mode type that is the
+     * result of calling {@code accessModeType(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_VOLATILE)}
+     * on this VarHandle.
+     *
+     * @param args the signature-polymorphic parameter list of the form
+     * {@code (CT, T expectedValue, T newValue)}
+     * , statically represented using varargs.
+     * @return {@code true} if successful, otherwise {@code false} if the
+     * witness value was not the same as the {@code expectedValue} or if this
+     * operation spuriously failed.
+     * @throws UnsupportedOperationException if the access mode is unsupported
+     * for this VarHandle.
+     * @throws WrongMethodTypeException if the access mode type is not
+     * compatible with the caller's symbolic type descriptor.
+     * @throws ClassCastException if the access mode type is compatible with the
+     * caller's symbolic type descriptor, but a reference cast fails.
+     * @see #setVolatile(Object...)
+     * @see #getVolatile(Object...)
+     */
+    public final native
+    @MethodHandle.PolymorphicSignature
+    @HotSpotIntrinsicCandidate
+    boolean weakCompareAndSetVolatile(Object... args);
+
+    /**
+     * Possibly atomically sets the value of a variable to the {@code newValue}
      * with the semantics of {@link #set} if the variable's current value,
      * referred to as the <em>witness value</em>, {@code ==} the
      * {@code expectedValue}, as accessed with the memory semantics of
      * {@link #getAcquire}.
      *
      * <p>This operation may fail spuriously (typically, due to memory
-     * contention) even if the current value does match the expected value.
+     * contention) even if the witness value does match the expected value.
      *
      * <p>The method signature is of the form {@code (CT, T expectedValue, T newValue)boolean}.
      *
      * <p>The symbolic type descriptor at the call site of {@code
      * weakCompareAndSetAcquire}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.weakCompareAndSetAcquire)} on this VarHandle.
+     * {@code accessModeType(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_ACQUIRE)}
+     * on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT, T expectedValue, T newValue)}
@@ -910,14 +956,15 @@ public abstract class VarHandle {
      * {@link #get}.
      *
      * <p>This operation may fail spuriously (typically, due to memory
-     * contention) even if the current value does match the expected value.
+     * contention) even if the witness value does match the expected value.
      *
      * <p>The method signature is of the form {@code (CT, T expectedValue, T newValue)boolean}.
      *
      * <p>The symbolic type descriptor at the call site of {@code
      * weakCompareAndSetRelease}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.weakCompareAndSetRelease)} on this VarHandle.
+     * {@code accessModeType(VarHandle.AccessMode.WEAK_COMPARE_AND_SET_RELEASE)}
+     * on this VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT, T expectedValue, T newValue)}
@@ -949,7 +996,8 @@ public abstract class VarHandle {
      *
      * <p>The symbolic type descriptor at the call site of {@code getAndSet}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.getAndSet)} on this VarHandle.
+     * {@code accessModeType(VarHandle.AccessMode.GET_AND_SET)} on this
+     * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT, T newValue)}
@@ -985,7 +1033,8 @@ public abstract class VarHandle {
      *
      * <p>The symbolic type descriptor at the call site of {@code getAndAdd}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.getAndAdd)} on this VarHandle.
+     * {@code accessModeType(VarHandle.AccessMode.GET_AND_ADD)} on this
+     * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT, T value)}
@@ -1017,7 +1066,8 @@ public abstract class VarHandle {
      *
      * <p>The symbolic type descriptor at the call site of {@code addAndGet}
      * must match the access mode type that is the result of calling
-     * {@code accessModeType(VarHandle.AccessMode.addAndGet)} on this VarHandle.
+     * {@code accessModeType(VarHandle.AccessMode.ADD_AND_GET)} on this
+     * VarHandle.
      *
      * @param args the signature-polymorphic parameter list of the form
      * {@code (CT, T value)}
@@ -1083,109 +1133,115 @@ public abstract class VarHandle {
          * method
          * {@link VarHandle#get VarHandle.get}
          */
-        GET("get", AccessType.GET, Object.class),   // 0
+        GET("get", AccessType.GET, Object.class),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#set VarHandle.set}
          */
-        SET("set", AccessType.SET, void.class),     // 1
+        SET("set", AccessType.SET, void.class),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#getVolatile VarHandle.getVolatile}
          */
-        GET_VOLATILE("getVolatile", AccessType.GET, Object.class),  // 2
+        GET_VOLATILE("getVolatile", AccessType.GET, Object.class),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#setVolatile VarHandle.setVolatile}
          */
-        SET_VOLATILE("setVolatile", AccessType.SET, void.class),    // 3
+        SET_VOLATILE("setVolatile", AccessType.SET, void.class),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#getAcquire VarHandle.getAcquire}
          */
-        GET_ACQUIRE("getAcquire", AccessType.GET, Object.class),   // 4
+        GET_ACQUIRE("getAcquire", AccessType.GET, Object.class),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#setRelease VarHandle.setRelease}
          */
-        SET_RELEASE("setRelease", AccessType.SET, void.class),     // 5
+        SET_RELEASE("setRelease", AccessType.SET, void.class),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#getOpaque VarHandle.getOpaque}
          */
-        GET_OPAQUE("getOpaque", AccessType.GET, Object.class),    // 6
+        GET_OPAQUE("getOpaque", AccessType.GET, Object.class),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#setOpaque VarHandle.setOpaque}
          */
-        SET_OPAQUE("setOpaque", AccessType.SET, void.class),      // 7
+        SET_OPAQUE("setOpaque", AccessType.SET, void.class),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#compareAndSet VarHandle.compareAndSet}
          */
-        COMPARE_AND_SET("compareAndSet", AccessType.COMPARE_AND_SWAP, boolean.class),    // 8
+        COMPARE_AND_SET("compareAndSet", AccessType.COMPARE_AND_SWAP, boolean.class),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#compareAndExchangeVolatile VarHandle.compareAndExchangeVolatile}
          */
-        COMPARE_AND_EXCHANGE_VOLATILE("compareAndExchangeVolatile", AccessType.COMPARE_AND_EXCHANGE, Object.class), // 9
+        COMPARE_AND_EXCHANGE_VOLATILE("compareAndExchangeVolatile", AccessType.COMPARE_AND_EXCHANGE, Object.class),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#compareAndExchangeAcquire VarHandle.compareAndExchangeAcquire}
          */
-        COMPARE_AND_EXCHANGE_ACQUIRE("compareAndExchangeAcquire", AccessType.COMPARE_AND_EXCHANGE, Object.class),  // 10
+        COMPARE_AND_EXCHANGE_ACQUIRE("compareAndExchangeAcquire", AccessType.COMPARE_AND_EXCHANGE, Object.class),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#compareAndExchangeRelease VarHandle.compareAndExchangeRelease}
          */
-        COMPARE_AND_EXCHANGE_RELEASE("compareAndExchangeRelease", AccessType.COMPARE_AND_EXCHANGE, Object.class),  // 11
+        COMPARE_AND_EXCHANGE_RELEASE("compareAndExchangeRelease", AccessType.COMPARE_AND_EXCHANGE, Object.class),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#weakCompareAndSet VarHandle.weakCompareAndSet}
          */
-        WEAK_COMPARE_AND_SET("weakCompareAndSet", AccessType.COMPARE_AND_SWAP, boolean.class),        // 12
+        WEAK_COMPARE_AND_SET("weakCompareAndSet", AccessType.COMPARE_AND_SWAP, boolean.class),
+        /**
+         * The access mode whose access is specified by the corresponding
+         * method
+         * {@link VarHandle#weakCompareAndSetVolatile VarHandle.weakCompareAndSetVolatile}
+         */
+        WEAK_COMPARE_AND_SET_VOLATILE("weakCompareAndSetVolatile", AccessType.COMPARE_AND_SWAP, boolean.class),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#weakCompareAndSetAcquire VarHandle.weakCompareAndSetAcquire}
          */
-        WEAK_COMPARE_AND_SET_ACQUIRE("weakCompareAndSetAcquire", AccessType.COMPARE_AND_SWAP, boolean.class), // 13
+        WEAK_COMPARE_AND_SET_ACQUIRE("weakCompareAndSetAcquire", AccessType.COMPARE_AND_SWAP, boolean.class),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#weakCompareAndSetRelease VarHandle.weakCompareAndSetRelease}
          */
-        WEAK_COMPARE_AND_SET_RELEASE("weakCompareAndSetRelease", AccessType.COMPARE_AND_SWAP, boolean.class), // 14
+        WEAK_COMPARE_AND_SET_RELEASE("weakCompareAndSetRelease", AccessType.COMPARE_AND_SWAP, boolean.class),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#getAndSet VarHandle.getAndSet}
          */
-        GET_AND_SET("getAndSet", AccessType.GET_AND_UPDATE, Object.class),   // 15
+        GET_AND_SET("getAndSet", AccessType.GET_AND_UPDATE, Object.class),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#getAndAdd VarHandle.getAndAdd}
          */
-        GET_AND_ADD("getAndAdd", AccessType.GET_AND_UPDATE, Object.class),   // 16
+        GET_AND_ADD("getAndAdd", AccessType.GET_AND_UPDATE, Object.class),
         /**
          * The access mode whose access is specified by the corresponding
          * method
          * {@link VarHandle#addAndGet VarHandle.addAndGet}
          */
-        ADD_AND_GET("addAndGet", AccessType.GET_AND_UPDATE, Object.class),   // 17
+        ADD_AND_GET("addAndGet", AccessType.GET_AND_UPDATE, Object.class),
         ;
 
         static final Map<String, AccessMode> methodNameToAccessMode;

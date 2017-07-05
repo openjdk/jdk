@@ -469,12 +469,12 @@ public class LoggerFinderAPITest {
         errors.append(test.testGetLoggerOverriddenOnSpi());
         java.lang.System.Logger julLogger =
                 java.lang.System.LoggerFinder.getLoggerFinder()
-                        .getLogger("foo", LoggerFinderAPITest.class);
+                        .getLogger("foo", LoggerFinderAPITest.class.getModule());
         errors.append(test.testDefaultJULLogger(julLogger));
         if (errors.length() > 0) throw new RuntimeException(errors.toString());
         java.lang.System.Logger julSystemLogger =
                 java.lang.System.LoggerFinder.getLoggerFinder()
-                        .getLogger("bar", Thread.class);
+                        .getLogger("bar", Thread.class.getModule());
         errors.append(test.testDefaultJULLogger(julSystemLogger));
         if (errors.length() > 0) throw new RuntimeException(errors.toString());
         java.lang.System.Logger julLocalizedLogger =
@@ -482,7 +482,7 @@ public class LoggerFinderAPITest {
                 System.getLogger("baz", bundleLocalized);
         java.lang.System.Logger julLocalizedSystemLogger =
                 java.lang.System.LoggerFinder.getLoggerFinder()
-                        .getLocalizedLogger("oof", bundleLocalized, Thread.class);
+                        .getLocalizedLogger("oof", bundleLocalized, Thread.class.getModule());
         final String error = errors.toString();
         if (!error.isEmpty()) throw new RuntimeException(error);
         for (java.lang.System.Logger logger : new java.lang.System.Logger[] {
