@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,10 +36,9 @@ import java.awt.Insets;
 import java.awt.Graphics;
 import java.awt.KeyboardFocusManager;
 import java.awt.*;
-import java.util.Vector;
+
 import sun.swing.DefaultLookup;
 import sun.swing.UIAction;
-import sun.awt.AppContext;
 
 /**
  * Basic L&amp;F for a desktop.
@@ -49,9 +48,6 @@ import sun.awt.AppContext;
 public class BasicDesktopPaneUI extends DesktopPaneUI {
     // Old actions forward to an instance of this.
     private static final Actions SHARED_ACTION = new Actions();
-    private static Dimension minSize = new Dimension(0,0);
-    private static Dimension maxSize = new Dimension(Integer.MAX_VALUE,
-            Integer.MAX_VALUE);
     private Handler handler;
     private PropertyChangeListener pcl;
 
@@ -304,13 +300,19 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
 
     public void paint(Graphics g, JComponent c) {}
 
-    public Dimension getPreferredSize(JComponent c) {return null;}
+    @Override
+    public Dimension getPreferredSize(JComponent c) {
+        return null;
+    }
 
+    @Override
     public Dimension getMinimumSize(JComponent c) {
-        return minSize;
-        }
-    public Dimension getMaximumSize(JComponent c){
-        return maxSize;
+        return new Dimension(0, 0);
+    }
+
+    @Override
+    public Dimension getMaximumSize(JComponent c) {
+        return new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE);
     }
 
     /**

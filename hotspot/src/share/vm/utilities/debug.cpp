@@ -316,13 +316,47 @@ bool is_error_reported() {
 #ifndef PRODUCT
 #include <signal.h>
 
+typedef void (*voidfun_t)();
+// Crash with an authentic sigfpe
+static void crash_with_sigfpe() {
+  // generate a native synchronous SIGFPE where possible;
+  // if that did not cause a signal (e.g. on ppc), just
+  // raise the signal.
+  volatile int x = 0;
+  volatile int y = 1/x;
+#ifndef _WIN32
+  raise(SIGFPE);
+#endif
+} // end: crash_with_sigfpe
+
+// crash with sigsegv at non-null address.
+static void crash_with_segfault() {
+
+  char* const crash_addr = (char*) get_segfault_address();
+  *crash_addr = 'X';
+
+} // end: crash_with_segfault
+
+// returns an address which is guaranteed to generate a SIGSEGV on read,
+// for test purposes, which is not NULL and contains bits in every word
+void* get_segfault_address() {
+  return (void*)
+#ifdef _LP64
+    0xABC0000000000ABCULL;
+#else
+    0x00000ABC;
+#endif
+}
+
 void test_error_handler() {
-  uintx test_num = ErrorHandlerTest;
-  if (test_num == 0) return;
+  controlled_crash(ErrorHandlerTest);
+}
+
+void controlled_crash(int how) {
+  if (how == 0) return;
 
   // If asserts are disabled, use the corresponding guarantee instead.
-  size_t n = test_num;
-  NOT_DEBUG(if (n <= 2) n += 2);
+  NOT_DEBUG(if (how <= 2) how += 2);
 
   const char* const str = "hello";
   const size_t      num = (size_t)os::vm_page_size();
@@ -333,7 +367,7 @@ void test_error_handler() {
   const void (*funcPtr)(void) = (const void(*)()) 0xF;  // bad function pointer
 
   // Keep this in sync with test/runtime/6888954/vmerrors.sh.
-  switch (n) {
+  switch (how) {
     case  1: vmassert(str == NULL, "expected null");
     case  2: vmassert(num == 1023 && *str == 'X',
                       err_msg("num=" SIZE_FORMAT " str=\"%s\"", num, str));
@@ -358,8 +392,10 @@ void test_error_handler() {
     // There's no guarantee the bad function pointer will crash us
     // so "break" out to the ShouldNotReachHere().
     case 13: (*funcPtr)(); break;
+    case 14: crash_with_segfault(); break;
+    case 15: crash_with_sigfpe(); break;
 
-    default: tty->print_cr("ERROR: %d: unexpected test_num value.", n);
+    default: tty->print_cr("ERROR: %d: unexpected test_num value.", how);
   }
   ShouldNotReachHere();
 }

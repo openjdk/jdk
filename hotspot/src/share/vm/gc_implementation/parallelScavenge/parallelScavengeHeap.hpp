@@ -64,7 +64,7 @@ class ParallelScavengeHeap : public CollectedHeap {
   // The task manager
   static GCTaskManager* _gc_task_manager;
 
-  void trace_heap(GCWhen::Type when, GCTracer* tracer);
+  void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
  protected:
   static inline size_t total_invocations();

@@ -34,11 +34,21 @@ import java.nio.charset.CharsetDecoder;
    ExtendedCharsets class, because if we want to have a public HKSCS,
    it probably should be HKSCS_2001 not HKSCS.
 */
-public class HKSCS extends sun.nio.cs.ext.MS950_HKSCS_XP {
+public class HKSCS extends Charset {
+    private static Charset cs = Charset.forName("x-MS950-HKSCS-XP");
+
     public HKSCS () {
-        super();
+        super("HKSCS", null);
     }
     public boolean contains(Charset cs) {
         return (cs instanceof HKSCS);
+    }
+
+    public CharsetDecoder newDecoder() {
+        return cs.newDecoder();
+    }
+
+    public CharsetEncoder newEncoder() {
+        return cs.newEncoder();
     }
 }
