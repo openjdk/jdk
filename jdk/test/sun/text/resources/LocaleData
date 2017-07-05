@@ -7696,3 +7696,6 @@ FormatData/es_EC/TimePatterns/3=H:mm
 # bug 8037343
 FormatData/es_DO/DatePatterns/2=dd/MM/yyyy
 FormatData/es_DO/DatePatterns/3=dd/MM/yy
+
+# bug 8055222
+CurrencyNames/lt_LT/EUR=\u20AC

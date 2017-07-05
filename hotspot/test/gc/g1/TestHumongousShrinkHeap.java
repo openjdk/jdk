@@ -22,9 +22,8 @@
  */
 
 /**
- * @ignore 8041506, 8041946, 8042051
  * @test TestHumongousShrinkHeap
- * @bug 8036025
+ * @bug 8036025 8056043
  * @summary Verify that heap shrinks after GC in the presence of fragmentation due to humongous objects
  * @library /testlibrary
  * @run main/othervm -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=50 -XX:+UseG1GC -XX:G1HeapRegionSize=1M -verbose:gc TestHumongousShrinkHeap

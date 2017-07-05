@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -38,12 +38,12 @@
  */
 package j2dbench.tests.cmm;
 
+import java.awt.color.ICC_ColorSpace;
+import java.awt.color.ICC_Profile;
+
 import j2dbench.Group;
 import j2dbench.Result;
 import j2dbench.TestEnvironment;
-import java.awt.color.ColorSpace;
-import java.awt.color.ICC_ColorSpace;
-import java.awt.color.ICC_Profile;
 
 public class ProfileTests extends CMMTests {
 
@@ -73,13 +73,11 @@ public class ProfileTests extends CMMTests {
         }
     }
 
-    @Override
     public Object initTest(TestEnvironment env, Result res) {
         ICC_ColorSpace cs = (ICC_ColorSpace) getColorSpace(env);
         return new Context(cs.getProfile(), env, res);
     }
 
-    @Override
     public void cleanupTest(TestEnvironment env, Object o) {
     }
 
@@ -91,7 +89,6 @@ public class ProfileTests extends CMMTests {
                     "getData(icSigHead)");
         }
 
-        @Override
         public void runTest(Object ctx, int numReps) {
             final Context ictx = (Context) ctx;
             final ICC_Profile profile = ictx.profile;
@@ -115,7 +112,6 @@ public class ProfileTests extends CMMTests {
                     "getNumComponents");
         }
 
-        @Override
         public void runTest(Object ctx, int numReps) {
             final Context ictx = (Context) ctx;
             final ICC_Profile profile = ictx.profile;

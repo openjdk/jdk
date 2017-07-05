@@ -1708,8 +1708,8 @@ const TypeTuple *TypeTuple::LONG_CC_PAIR;
 // Make a TypeTuple from the range of a method signature
 const TypeTuple *TypeTuple::make_range(ciSignature* sig) {
   ciType* return_type = sig->return_type();
-  uint total_fields = TypeFunc::Parms + return_type->size();
-  const Type **field_array = fields(total_fields);
+  uint arg_cnt = return_type->size();
+  const Type **field_array = fields(arg_cnt);
   switch (return_type->basic_type()) {
   case T_LONG:
     field_array[TypeFunc::Parms]   = TypeLong::LONG;
@@ -1734,26 +1734,26 @@ const TypeTuple *TypeTuple::make_range(ciSignature* sig) {
   default:
     ShouldNotReachHere();
   }
-  return (TypeTuple*)(new TypeTuple(total_fields,field_array))->hashcons();
+  return (TypeTuple*)(new TypeTuple(TypeFunc::Parms + arg_cnt, field_array))->hashcons();
 }
 
 // Make a TypeTuple from the domain of a method signature
 const TypeTuple *TypeTuple::make_domain(ciInstanceKlass* recv, ciSignature* sig) {
-  uint total_fields = TypeFunc::Parms + sig->size();
+  uint arg_cnt = sig->size();
 
   uint pos = TypeFunc::Parms;
   const Type **field_array;
   if (recv != NULL) {
-    total_fields++;
-    field_array = fields(total_fields);
+    arg_cnt++;
+    field_array = fields(arg_cnt);
     // Use get_const_type here because it respects UseUniqueSubclasses:
     field_array[pos++] = get_const_type(recv)->join_speculative(TypePtr::NOTNULL);
   } else {
-    field_array = fields(total_fields);
+    field_array = fields(arg_cnt);
   }
 
   int i = 0;
-  while (pos < total_fields) {
+  while (pos < TypeFunc::Parms + arg_cnt) {
     ciType* type = sig->type_at(i);
 
     switch (type->basic_type()) {
@@ -1780,7 +1780,8 @@ const TypeTuple *TypeTuple::make_domain(ciInstanceKlass* recv, ciSignature* sig)
     }
     i++;
   }
-  return (TypeTuple*)(new TypeTuple(total_fields,field_array))->hashcons();
+
+  return (TypeTuple*)(new TypeTuple(TypeFunc::Parms + arg_cnt, field_array))->hashcons();
 }
 
 const TypeTuple *TypeTuple::make( uint cnt, const Type **fields ) {
@@ -1789,6 +1790,7 @@ const TypeTuple *TypeTuple::make( uint cnt, const Type **fields ) {
 
 //------------------------------fields-----------------------------------------
 // Subroutine call type with space allocated for argument types
+// Memory for Control, I_O, Memory, FramePtr, and ReturnAdr is allocated implicitly
 const Type **TypeTuple::fields( uint arg_cnt ) {
   const Type **flds = (const Type **)(Compile::current()->type_arena()->Amalloc_4((TypeFunc::Parms+arg_cnt)*sizeof(Type*) ));
   flds[TypeFunc::Control  ] = Type::CONTROL;

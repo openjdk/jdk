@@ -37,6 +37,13 @@ import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Window;
+import java.awt.dnd.DragGestureEvent;
+import java.awt.dnd.DragGestureListener;
+import java.awt.dnd.DragGestureRecognizer;
+import java.awt.dnd.DragSource;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.InvalidDnDOperationException;
+import java.awt.dnd.peer.DragSourceContextPeer;
 import java.awt.event.ContainerEvent;
 import java.awt.event.ContainerListener;
 import java.awt.image.BufferedImage;
@@ -471,5 +478,28 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         if (target != null) {
             content.setCursor(target.getCursor());
         }
+    }
+
+    public <T extends DragGestureRecognizer> T createDragGestureRecognizer(
+            Class<T> abstractRecognizerClass,
+            DragSource ds, Component c, int srcActions,
+            DragGestureListener dgl)
+    {
+        return content == null ? null : content.createDragGestureRecognizer(
+                abstractRecognizerClass, ds, c, srcActions, dgl);
+    }
+
+    public DragSourceContextPeer createDragSourceContextPeer(DragGestureEvent dge) throws InvalidDnDOperationException {
+        return content == null ? null : content.createDragSourceContextPeer(dge);
+    }
+
+    public void addDropTarget(DropTarget dt) {
+        if (content == null) return;
+        content.addDropTarget(dt);
+    }
+
+    public void removeDropTarget(DropTarget dt) {
+        if (content == null) return;
+        content.removeDropTarget(dt);
     }
 }
