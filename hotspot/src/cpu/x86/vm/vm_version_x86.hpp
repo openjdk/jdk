@@ -446,6 +446,10 @@ public:
   static bool supports_lzcnt()    { return (_cpuFeatures & CPU_LZCNT) != 0; }
   static bool supports_sse4a()    { return (_cpuFeatures & CPU_SSE4A) != 0; }
 
+  // Intel Core and newer cpus have fast IDIV instruction (excluding Atom).
+  static bool has_fast_idiv()     { return is_intel() && cpu_family() == 6 &&
+                                           supports_sse3() && _model != 0x1C; }
+
   static bool supports_compare_and_exchange() { return true; }
 
   static const char* cpu_features()           { return _features_str; }

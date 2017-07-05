@@ -1322,8 +1322,7 @@ JvmtiEnvBase::check_top_frame(JavaThread* current_thread, JavaThread* java_threa
     if (!vf->fr().can_be_deoptimized()) {
       return JVMTI_ERROR_OPAQUE_FRAME;
     }
-    VM_DeoptimizeFrame deopt(java_thread, jvf->fr().id());
-    VMThread::execute(&deopt);
+    Deoptimization::deoptimize_frame(java_thread, jvf->fr().id());
   }
 
   // Get information about method return type

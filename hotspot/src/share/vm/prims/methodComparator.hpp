@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ class MethodComparator {
   static GrowableArray<int> *_fwd_jmps;
 
   static bool args_same(Bytecodes::Code c_old, Bytecodes::Code c_new);
+  static bool pool_constants_same(int cpi_old, int cpi_new);
   static int check_stack_and_locals_size(methodOop old_method, methodOop new_method);
 
  public:
