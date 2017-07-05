@@ -2066,7 +2066,9 @@ public class Activation implements Serializable {
 
                 try {
                     Class<?> execPolicyClass = getRMIClass(execPolicyClassName);
-                    execPolicy = execPolicyClass.newInstance();
+                    @SuppressWarnings("deprecation")
+                    Object tmp = execPolicyClass.newInstance();
+                    execPolicy = tmp;
                     execPolicyMethod =
                         execPolicyClass.getMethod("checkExecCommand",
                                                   ActivationGroupDesc.class,

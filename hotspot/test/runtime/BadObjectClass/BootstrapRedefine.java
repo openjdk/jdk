@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public class BootstrapRedefine {
                                         "-Xmodule:java.base"),
                                         "mods/java.base");
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xpatch:mods", "-version");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xpatch:java.base=mods/java.base", "-version");
         new OutputAnalyzer(pb.start())
             .shouldContain("Incompatible definition of java.lang.Object")
             .shouldHaveExitValue(1);

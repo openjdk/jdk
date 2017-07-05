@@ -163,6 +163,7 @@ typedef struct {
     char                *grnErrTable;           /* Green ordered dither table */
     char                *bluErrTable;           /* Blue ordered dither table */
     int                 *invGrayTable;          /* Inverse gray table */
+    int                 representsPrimaries;    /* whether cmap represents primary colors */
     union {
         void            *align;                 /* ensures strict alignment */
         char            data[SD_RASINFO_PRIVATE_SIZE];

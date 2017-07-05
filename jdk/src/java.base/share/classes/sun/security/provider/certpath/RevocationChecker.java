@@ -43,7 +43,6 @@ import javax.security.auth.x500.X500Principal;
 
 import static sun.security.provider.certpath.OCSP.*;
 import static sun.security.provider.certpath.PKIX.*;
-import sun.security.action.GetPropertyAction;
 import sun.security.x509.*;
 import static sun.security.x509.PKIXExtensions.*;
 import sun.security.util.Debug;

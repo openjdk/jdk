@@ -374,8 +374,8 @@ public class Net {
     }
 
     public static boolean isFastTcpLoopbackRequested() {
-        String loopbackProp =
-                GetPropertyAction.getProperty("jdk.net.useFastTcpLoopback");
+        String loopbackProp = GetPropertyAction
+                .privilegedGetProperty("jdk.net.useFastTcpLoopback");
         boolean enable;
         if ("".equals(loopbackProp)) {
             enable = true;
@@ -633,8 +633,8 @@ public class Net {
     static {
         int availLevel = isExclusiveBindAvailable();
         if (availLevel >= 0) {
-            String exclBindProp =
-                    GetPropertyAction.getProperty("sun.net.useExclusiveBind");
+            String exclBindProp = GetPropertyAction
+                    .privilegedGetProperty("sun.net.useExclusiveBind");
             if (exclBindProp != null) {
                 exclusiveBind = exclBindProp.isEmpty() ?
                         true : Boolean.parseBoolean(exclBindProp);

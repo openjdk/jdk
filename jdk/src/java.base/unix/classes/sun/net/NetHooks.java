@@ -28,9 +28,6 @@ package sun.net;
 import java.net.InetAddress;
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import sun.security.action.GetPropertyAction;
 
 /**
  * Defines static methods to be invoked prior to binding or connecting TCP sockets.

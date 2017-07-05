@@ -25,7 +25,9 @@
  * @test
  * @bug 8047771
  * @summary check permissions and principals from various modules
- * @run main/othervm/java.security.policy==modules.policy Modules
+ * @compile -addmods java.xml.ws,java.smartcardio Modules.java
+ * @run main/othervm/java.security.policy==modules.policy
+ *     -addmods java.xml.ws,java.smartcardio Modules
  */
 
 import java.security.AccessController;

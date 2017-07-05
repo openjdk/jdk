@@ -125,7 +125,7 @@ final class ProcessImpl extends Process {
         }
 
         String helperPath() {
-            Properties props = GetPropertyAction.getProperties();
+            Properties props = GetPropertyAction.privilegedGetProperties();
             return helperPath(props.getProperty("java.home"),
                               props.getProperty("os.arch"));
         }
@@ -159,7 +159,7 @@ final class ProcessImpl extends Process {
         }
 
         static Platform get() {
-            String osName = GetPropertyAction.getProperty("os.name");
+            String osName = GetPropertyAction.privilegedGetProperty("os.name");
 
             if (osName.equals("Linux")) { return LINUX; }
             if (osName.contains("OS X")) { return BSD; }

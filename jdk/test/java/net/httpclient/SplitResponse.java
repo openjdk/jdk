@@ -68,6 +68,7 @@ public class SplitResponse {
     public static void main(String[] args) throws Exception {
         server = new Server(0);
         URI uri = new URI(server.getURL());
+        server.start();
 
         HttpRequest request;
         HttpResponse r;

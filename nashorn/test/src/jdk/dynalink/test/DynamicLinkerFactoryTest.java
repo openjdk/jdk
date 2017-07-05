@@ -30,10 +30,13 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.List;
 import java.util.ServiceConfigurationError;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.DynamicLinker;
 import jdk.dynalink.DynamicLinkerFactory;
 import jdk.dynalink.NoSuchDynamicMethodException;
+import jdk.dynalink.NamedOperation;
 import jdk.dynalink.Operation;
 import jdk.dynalink.StandardOperation;
 import jdk.dynalink.linker.GuardingDynamicLinker;
@@ -41,6 +44,7 @@ import jdk.dynalink.linker.LinkRequest;
 import jdk.dynalink.linker.LinkerServices;
 import jdk.dynalink.support.SimpleRelinkableCallSite;
 import jdk.dynalink.linker.GuardedInvocation;
+import jdk.nashorn.api.scripting.AbstractJSObject;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -253,5 +257,56 @@ public class DynamicLinkerFactoryTest {
         }
 
         Assert.assertTrue(reachedAutoLinker);
+    }
+
+    @Test
+    public void nashornExportedLinkerJSObjectTest() {
+        final DynamicLinkerFactory factory = newDynamicLinkerFactory(false);
+        final DynamicLinker linker = factory.createLinker();
+
+        final MethodType mt = MethodType.methodType(Object.class, Object.class);
+        final NamedOperation op = new NamedOperation(StandardOperation.GET_PROPERTY, "foo");
+        final CallSite cs = linker.link(new SimpleRelinkableCallSite(new CallSiteDescriptor(
+                MethodHandles.publicLookup(), op, mt)));
+        final boolean[] reachedGetMember = new boolean[1];
+        // check that the nashorn exported linker can be used for user defined JSObject
+        Object obj = new AbstractJSObject() {
+                @Override
+                public Object getMember(String name) {
+                    reachedGetMember[0] = true;
+                    return name.equals("foo")? "bar" : "<unknown>";
+                }
+            };
+
+        Object value = null;
+        try {
+            value = cs.getTarget().invoke(obj);
+        } catch (Throwable th) {
+            throw new RuntimeException(th);
+        }
+
+        Assert.assertTrue(reachedGetMember[0]);
+        Assert.assertEquals(value, "bar");
+    }
+
+    @Test
+    public void nashornExportedLinkerScriptObjectMirrorTest() {
+        final DynamicLinkerFactory factory = newDynamicLinkerFactory(false);
+        final DynamicLinker linker = factory.createLinker();
+
+        // check that the nashorn exported linker can be used for ScriptObjectMirror
+        final ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
+        final MethodType mt = MethodType.methodType(Object.class, Object.class);
+        final NamedOperation op = new NamedOperation(StandardOperation.GET_PROPERTY, "foo");
+        final CallSite cs = linker.link(new SimpleRelinkableCallSite(new CallSiteDescriptor(
+                MethodHandles.publicLookup(), op, mt)));
+        Object value = null;
+        try {
+            final Object obj = engine.eval("({ foo: 'hello' })");
+            value = cs.getTarget().invoke(obj);
+        } catch (Throwable th) {
+            throw new RuntimeException(th);
+        }
+        Assert.assertEquals(value, "hello");
     }
 }

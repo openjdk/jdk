@@ -42,7 +42,7 @@ class WinNTFileSystem extends FileSystem {
     private final char semicolon;
 
     public WinNTFileSystem() {
-        Properties props = GetPropertyAction.getProperties();
+        Properties props = GetPropertyAction.privilegedGetProperties();
         slash = props.getProperty("file.separator").charAt(0);
         semicolon = props.getProperty("path.separator").charAt(0);
         altSlash = (this.slash == '\\') ? '/' : '\\';

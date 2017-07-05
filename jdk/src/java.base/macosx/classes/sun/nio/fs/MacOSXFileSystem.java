@@ -29,8 +29,6 @@ import java.nio.file.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.security.AccessController;
-import sun.security.action.GetPropertyAction;
 
 import static sun.nio.fs.MacOSXNativeDispatcher.*;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ public class XpatchCDS {
 
     public static void main(String args[]) throws Throwable {
         System.out.println("Test that -Xpatch and -Xshare:dump are incompatibable");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xpatch:.", "-Xshare:dump");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xpatch:java.naming=mods/java.naming", "-Xshare:dump");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Cannot use the following option when dumping the shared archive: -Xpatch");
 
@@ -52,7 +52,7 @@ public class XpatchCDS {
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=" + filename,
             "-Xshare:on",
-            "-Xpatch:.",
+            "-Xpatch:java.naming=mods/java.naming",
             "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("The shared archive file cannot be used with -Xpatch");

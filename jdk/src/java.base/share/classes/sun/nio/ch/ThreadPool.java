@@ -165,14 +165,11 @@ public class ThreadPool {
             GetPropertyAction(DEFAULT_THREAD_POOL_THREAD_FACTORY));
         if (propValue != null) {
             try {
-                Class<?> c = Class
-                    .forName(propValue, true, ClassLoader.getSystemClassLoader());
-                return ((ThreadFactory)c.newInstance());
-            } catch (ClassNotFoundException x) {
-                throw new Error(x);
-            } catch (InstantiationException x) {
-                throw new Error(x);
-            } catch (IllegalAccessException x) {
+                @SuppressWarnings("deprecation")
+                Object tmp = Class
+                    .forName(propValue, true, ClassLoader.getSystemClassLoader()).newInstance();
+                return (ThreadFactory)tmp;
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException x) {
                 throw new Error(x);
             }
         }
