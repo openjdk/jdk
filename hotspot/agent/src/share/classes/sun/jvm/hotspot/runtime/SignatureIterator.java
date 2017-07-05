@@ -1,5 +1,5 @@
 /*
- * Copyright 2001 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ public abstract class SignatureIterator {
         return BasicTypeSize.getTArraySize();
       }
     }
-    throw new RuntimeException("Should not reach here");
+    throw new RuntimeException("Should not reach here: char " + (char)_signature.getByteAt(_index) + " @ " + _index + " in " + _signature.asString());
   }
   protected void checkSignatureEnd() {
     if (_index < _signature.getLength()) {

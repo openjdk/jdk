@@ -662,8 +662,6 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
         prt = PosParPRT::alloc(from_hr);
       }
       prt->init(from_hr);
-      // Record the outgoing pointer in the from_region's outgoing bitmap.
-      from_hr->rem_set()->add_outgoing_reference(hr());
 
       PosParPRT* first_prt = _fine_grain_regions[ind];
       prt->set_next(first_prt);  // XXX Maybe move to init?
@@ -1073,11 +1071,7 @@ int HeapRegionRemSet::num_par_rem_sets() {
 
 HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetSharedArray* bosa,
                                    HeapRegion* hr)
-    : _bosa(bosa), _other_regions(hr),
-      _outgoing_region_map(G1CollectedHeap::heap()->max_regions(),
-                           false /* in-resource-area */),
-      _iter_state(Unclaimed)
-{}
+  : _bosa(bosa), _other_regions(hr), _iter_state(Unclaimed) { }
 
 
 void HeapRegionRemSet::setup_remset_size() {
@@ -1148,29 +1142,10 @@ void HeapRegionRemSet::par_cleanup() {
   PosParPRT::par_contract_all();
 }
 
-void HeapRegionRemSet::add_outgoing_reference(HeapRegion* to_hr) {
-  _outgoing_region_map.par_at_put(to_hr->hrs_index(), 1);
-}
-
 void HeapRegionRemSet::clear() {
-  clear_outgoing_entries();
-  _outgoing_region_map.clear();
   _other_regions.clear();
   assert(occupied() == 0, "Should be clear.");
 }
-
-void HeapRegionRemSet::clear_outgoing_entries() {
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  size_t i = _outgoing_region_map.get_next_one_offset(0);
-  while (i < _outgoing_region_map.size()) {
-    HeapRegion* to_region = g1h->region_at(i);
-    if (!to_region->in_collection_set()) {
-      to_region->rem_set()->clear_incoming_entry(hr());
-    }
-    i = _outgoing_region_map.get_next_one_offset(i+1);
-  }
-}
-
 
 void HeapRegionRemSet::scrub(CardTableModRefBS* ctbs,
                              BitMap* region_bm, BitMap* card_bm) {

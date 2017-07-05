@@ -388,6 +388,60 @@ int LIR_Assembler::emit_exception_handler() {
 }
 
 
+// Emit the code to remove the frame from the stack in the exception
+// unwind path.
+int LIR_Assembler::emit_unwind_handler() {
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    _masm->block_comment("Unwind handler");
+  }
+#endif
+
+  int offset = code_offset();
+
+  // Fetch the exception from TLS and clear out exception related thread state
+  __ ld_ptr(G2_thread, in_bytes(JavaThread::exception_oop_offset()), O0);
+  __ st_ptr(G0, G2_thread, in_bytes(JavaThread::exception_oop_offset()));
+  __ st_ptr(G0, G2_thread, in_bytes(JavaThread::exception_pc_offset()));
+
+  __ bind(_unwind_handler_entry);
+  __ verify_not_null_oop(O0);
+  if (method()->is_synchronized() || compilation()->env()->dtrace_method_probes()) {
+    __ mov(O0, I0);  // Preserve the exception
+  }
+
+  // Preform needed unlocking
+  MonitorExitStub* stub = NULL;
+  if (method()->is_synchronized()) {
+    monitor_address(0, FrameMap::I1_opr);
+    stub = new MonitorExitStub(FrameMap::I1_opr, true, 0);
+    __ unlock_object(I3, I2, I1, *stub->entry());
+    __ bind(*stub->continuation());
+  }
+
+  if (compilation()->env()->dtrace_method_probes()) {
+    jobject2reg(method()->constant_encoding(), O0);
+    __ call(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit), relocInfo::runtime_call_type);
+    __ delayed()->nop();
+  }
+
+  if (method()->is_synchronized() || compilation()->env()->dtrace_method_probes()) {
+    __ mov(I0, O0);  // Restore the exception
+  }
+
+  // dispatch to the unwind logic
+  __ call(Runtime1::entry_for(Runtime1::unwind_exception_id), relocInfo::runtime_call_type);
+  __ delayed()->nop();
+
+  // Emit the slow path assembly
+  if (stub != NULL) {
+    stub->emit_code(this);
+  }
+
+  return offset;
+}
+
+
 int LIR_Assembler::emit_deopt_handler() {
   // if the last instruction is a call (typically to do a throw which
   // is coming at the end after block reordering) the return address
@@ -2050,26 +2104,29 @@ int LIR_Assembler::shift_amount(BasicType t) {
 }
 
 
-void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmitInfo* info, bool unwind) {
+void LIR_Assembler::throw_op(LIR_Opr exceptionPC, LIR_Opr exceptionOop, CodeEmitInfo* info) {
   assert(exceptionOop->as_register() == Oexception, "should match");
-  assert(unwind || exceptionPC->as_register() == Oissuing_pc, "should match");
+  assert(exceptionPC->as_register() == Oissuing_pc, "should match");
 
   info->add_register_oop(exceptionOop);
 
-  if (unwind) {
-    __ call(Runtime1::entry_for(Runtime1::unwind_exception_id), relocInfo::runtime_call_type);
-    __ delayed()->nop();
-  } else {
-    // reuse the debug info from the safepoint poll for the throw op itself
-    address pc_for_athrow  = __ pc();
-    int pc_for_athrow_offset = __ offset();
-    RelocationHolder rspec = internal_word_Relocation::spec(pc_for_athrow);
-    __ set(pc_for_athrow, Oissuing_pc, rspec);
-    add_call_info(pc_for_athrow_offset, info); // for exception handler
+  // reuse the debug info from the safepoint poll for the throw op itself
+  address pc_for_athrow  = __ pc();
+  int pc_for_athrow_offset = __ offset();
+  RelocationHolder rspec = internal_word_Relocation::spec(pc_for_athrow);
+  __ set(pc_for_athrow, Oissuing_pc, rspec);
+  add_call_info(pc_for_athrow_offset, info); // for exception handler
 
-    __ call(Runtime1::entry_for(Runtime1::handle_exception_id), relocInfo::runtime_call_type);
-    __ delayed()->nop();
-  }
+  __ call(Runtime1::entry_for(Runtime1::handle_exception_id), relocInfo::runtime_call_type);
+  __ delayed()->nop();
+}
+
+
+void LIR_Assembler::unwind_op(LIR_Opr exceptionOop) {
+  assert(exceptionOop->as_register() == Oexception, "should match");
+
+  __ br(Assembler::always, false, Assembler::pt, _unwind_handler_entry);
+  __ delayed()->nop();
 }
 
 
@@ -2358,7 +2415,7 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
   if (UseSlowPath ||
       (!UseFastNewObjectArray && (op->type() == T_OBJECT || op->type() == T_ARRAY)) ||
       (!UseFastNewTypeArray   && (op->type() != T_OBJECT && op->type() != T_ARRAY))) {
-    __ br(Assembler::always, false, Assembler::pn, *op->stub()->entry());
+    __ br(Assembler::always, false, Assembler::pt, *op->stub()->entry());
     __ delayed()->nop();
   } else {
     __ allocate_array(op->obj()->as_register(),

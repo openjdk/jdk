@@ -1765,35 +1765,17 @@ void LIRGenerator::do_Throw(Throw* x) {
     __ null_check(exception_opr, new CodeEmitInfo(info, true));
   }
 
-  if (compilation()->env()->jvmti_can_post_on_exceptions() &&
-      !block()->is_set(BlockBegin::default_exception_handler_flag)) {
+  if (compilation()->env()->jvmti_can_post_on_exceptions()) {
     // we need to go through the exception lookup path to get JVMTI
     // notification done
     unwind = false;
-  }
-
-  assert(!block()->is_set(BlockBegin::default_exception_handler_flag) || unwind,
-         "should be no more handlers to dispatch to");
-
-  if (compilation()->env()->dtrace_method_probes() &&
-      block()->is_set(BlockBegin::default_exception_handler_flag)) {
-    // notify that this frame is unwinding
-    BasicTypeList signature;
-    signature.append(T_INT);    // thread
-    signature.append(T_OBJECT); // methodOop
-    LIR_OprList* args = new LIR_OprList();
-    args->append(getThreadPointer());
-    LIR_Opr meth = new_register(T_OBJECT);
-    __ oop2reg(method()->constant_encoding(), meth);
-    args->append(meth);
-    call_runtime(&signature, args, CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit), voidType, NULL);
   }
 
   // move exception oop into fixed register
   __ move(exception_opr, exceptionOopOpr());
 
   if (unwind) {
-    __ unwind_exception(LIR_OprFact::illegalOpr, exceptionOopOpr(), info);
+    __ unwind_exception(exceptionOopOpr());
   } else {
     __ throw_exception(exceptionPcOpr(), exceptionOopOpr(), info);
   }
