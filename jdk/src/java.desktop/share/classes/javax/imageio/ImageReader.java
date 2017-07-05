@@ -2452,31 +2452,16 @@ public abstract class ImageReader {
                 locale = Locale.getDefault();
             }
 
-            /**
-             * If an applet supplies an implementation of ImageReader and
-             * resource bundles, then the resource bundle will need to be
-             * accessed via the applet class loader. So first try the context
-             * class loader to locate the resource bundle.
-             * If that throws MissingResourceException, then try the
-             * system class loader.
+            /*
+             * Only the plugin knows the messages that are provided, so we
+             * can always locate the resource bundles from the same loader
+             * as that for the plugin code itself.
              */
-            ClassLoader loader =
-                java.security.AccessController.doPrivileged(
-                   new java.security.PrivilegedAction<ClassLoader>() {
-                      public ClassLoader run() {
-                        return Thread.currentThread().getContextClassLoader();
-                      }
-                });
-
             ResourceBundle bundle = null;
             try {
-                bundle = ResourceBundle.getBundle(baseName, locale, loader);
+                bundle = ResourceBundle.getBundle(baseName, locale, this.getClass().getModule());
             } catch (MissingResourceException mre) {
-                try {
-                    bundle = ResourceBundle.getBundle(baseName, locale);
-                } catch (MissingResourceException mre1) {
-                    throw new IllegalArgumentException("Bundle not found!");
-                }
+                throw new IllegalArgumentException("Bundle not found!");
             }
 
             String warning = null;

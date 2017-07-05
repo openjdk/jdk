@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  *          ISO country codes.
  *          The test program also displays which timezone, country and
  *          language names are not translated
+ * @modules java.base/sun.util.resources
  */
 
 
@@ -49,6 +50,7 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.TimeZone;
 
+import sun.util.resources.LocaleData;
 
 public class Bug4640234  {
     static SimpleDateFormat sdfEn = new SimpleDateFormat("zzzz", Locale.US);
@@ -84,8 +86,8 @@ public class Bug4640234  {
             String[] countries = locEn.getISOCountries();
             String[] languages = locEn.getISOLanguages();
 
-            ResourceBundle resEn = ResourceBundle.getBundle(
-                    "sun.util.resources.LocaleNames", locEn);
+            ResourceBundle resEn = LocaleData.getBundle("sun.util.resources.LocaleNames",
+                                                        locEn);
             Map<String, String> countryMapEn = getList(resEn, true);
             Map<String, String> languageMapEn = getList(resEn, false);
 
@@ -94,8 +96,8 @@ public class Bug4640234  {
             Map<String, String> languageMap;
 
             for (Locale locale : locales2Test) {
-                resLoc = ResourceBundle.getBundle(
-                    "sun.util.resources.LocaleNames", locale);
+                resLoc = LocaleData.getBundle("sun.util.resources.LocaleNames",
+                                              locale);
 
                 sdfLoc = new SimpleDateFormat("zzzz", locale);
                 sdfLocShort = new SimpleDateFormat("z", locale);
@@ -257,18 +259,20 @@ public class Bug4640234  {
 
         if (nameEn == null) {
             // We should not get here but test is a MUST have
-            return new String[] {"", MessageFormat.format(notFoundMessage,
-                new String[] {"English", ISOCode})};
+            return new String[] {"",
+                                 MessageFormat.format(notFoundMessage, "English", ISOCode)};
         }
 
         if (nameLoc == null) {
-            return new String[] {"", MessageFormat.format(notFoundMessage,
-                new String[] {locale.getDisplayName(), ISOCode})};
+            return new String[] {"",
+                                 MessageFormat.format(notFoundMessage,
+                                                      locale.getDisplayName(), ISOCode)};
         }
 
         if (nameEn.equals(nameLoc)) {
             return new String[] {MessageFormat.format(notLocalizedMessage,
-                new String[] {locale.getDisplayName(), ISOCode}), ""};
+                                                      locale.getDisplayName(), ISOCode),
+                                 ""};
         }
 
         return new String[] {"", ""};

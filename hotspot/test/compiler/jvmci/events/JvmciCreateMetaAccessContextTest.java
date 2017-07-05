@@ -26,7 +26,12 @@
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9" | os.simpleArch == "aarch64")
  * @library / /testlibrary
- * @compile ./MetaAccessWrapper.java
+ * @library ../common/patches
+ * @modules jdk.vm.ci/jdk.vm.ci.hotspot
+ *          jdk.vm.ci/jdk.vm.ci.code
+ *          jdk.vm.ci/jdk.vm.ci.meta
+ *          jdk.vm.ci/jdk.vm.ci.runtime
+ * @build jdk.vm.ci/jdk.vm.ci.hotspot.MetaAccessWrapper
  * @build compiler.jvmci.common.JVMCIHelpers
  *     compiler.jvmci.events.JvmciCreateMetaAccessContextTest
  * @run main jdk.test.lib.FileInstaller ../common/services/ ./META-INF/services/
@@ -37,7 +42,6 @@
  *     compiler.jvmci.common.JVMCIHelpers$EmptyHotspotCompiler
  *     compiler.jvmci.common.JVMCIHelpers$EmptyCompilerFactory
  *     compiler.jvmci.events.JvmciCreateMetaAccessContextTest
- *     jdk.vm.ci.hotspot.MetaAccessWrapper
  *     jdk.test.lib.Asserts
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *     -Xbootclasspath/a:.

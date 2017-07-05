@@ -1329,7 +1329,7 @@ vmSymbols::SID Method::klass_id_for_intrinsics(const Klass* holder) {
   // exception: the AES intrinsics come from lib/ext/sunjce_provider.jar
   // which does not use the class default class loader so we check for its loader here
   const InstanceKlass* ik = InstanceKlass::cast(holder);
-  if ((ik->class_loader() != NULL) && !SystemDictionary::is_ext_class_loader(ik->class_loader())) {
+  if ((ik->class_loader() != NULL) && !SystemDictionary::is_platform_class_loader(ik->class_loader())) {
     return vmSymbols::NO_SID;   // regardless of name, no intrinsics here
   }
 

@@ -51,6 +51,9 @@ chmod -R 777 ${TESTCLASSES}/ssl
 DEBUGOPTIONS=""
 export DEBUGOPTIONS
 
+EXTRAOPTIONS="-XaddExports:java.management/sun.management=ALL-UNNAMED,java.management/sun.management.jmxremote=ALL-UNNAMED"
+export EXTRAOPTIONS
+
 # Call the common generic test
 #
 # No need to since bug 4267864 is now fixed. 
@@ -58,7 +61,7 @@ export DEBUGOPTIONS
 echo -------------------------------------------------------------
 echo Launching test for `basename $0 .sh`
 echo -------------------------------------------------------------
-sh ${TESTSRC}/../RunTest.sh ${DEBUGOPTIONS} ${TESTCLASS}
+sh ${TESTSRC}/../RunTest.sh ${DEBUGOPTIONS} ${EXTRAOPTIONS} ${TESTCLASS}
 result=$?
 restoreFilePermissions `ls ${TESTSRC}/*_test*.in`
 exit $result

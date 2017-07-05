@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,9 +133,7 @@ jvmtiCapabilities JvmtiManageCapabilities::init_onload_capabilities() {
   jc.can_get_owned_monitor_info = 1;
   jc.can_get_owned_monitor_stack_depth_info = 1;
   jc.can_get_current_contended_monitor = 1;
-  // jc.can_get_monitor_info = 1;
-  jc.can_tag_objects = 1;                 // TODO: this should have been removed
-  jc.can_generate_object_free_events = 1; // TODO: this should have been removed
+  jc.can_generate_early_vmstart = 1;
   return jc;
 }
 
@@ -454,6 +452,8 @@ void JvmtiManageCapabilities:: print(const jvmtiCapabilities* cap) {
     tty->print_cr("can_generate_resource_exhaustion_heap_events");
   if (cap->can_generate_resource_exhaustion_threads_events)
     tty->print_cr("can_generate_resource_exhaustion_threads_events");
+  if (cap->can_generate_early_vmstart)
+    tty->print_cr("can_generate_early_vmstart");
 }
 
 #endif

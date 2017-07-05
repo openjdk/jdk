@@ -23,8 +23,8 @@
 
 /* @test
  * @bug 8072773
- * @library /lib/testlibrary/ ../../../util/stream/bootlib/java.base
- * @build java.util.stream.OpTestCase
+ * @library /lib/testlibrary/ ../../../util/stream/bootlib
+ * @build java.base/java.util.stream.OpTestCase
  * @build jdk.testlibrary.RandomFactory
  * @run testng/othervm StreamLinesTest
  * @summary Tests streams returned from Files.lines, primarily focused on

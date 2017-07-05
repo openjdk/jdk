@@ -32,6 +32,7 @@
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Module;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -68,7 +69,8 @@ public class ResourceCheckTest {
         // Ensure that all Message fields have a corresponding key/value
         // in the resource bundle and that mnemonics can be looked
         // up where applicable.
-        ResourceBundle rb = ResourceBundle.getBundle(RESOURCE_BUNDLE);
+        Module module = sun.tools.jconsole.Messages.class.getModule();
+        ResourceBundle rb = ResourceBundle.getBundle(RESOURCE_BUNDLE, module);
         for (Field field : Messages.class.getFields()) {
             if (isResourceKeyField(field)) {
                 String resourceKey = field.getName();

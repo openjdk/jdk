@@ -74,6 +74,10 @@ public class DGCDeadLock implements Runnable {
         try {
             String options = " -Djava.security.policy=" +
                 TestParams.defaultPolicy +
+                " -XaddExports:java.rmi/sun.rmi.registry=ALL-UNNAMED," +
+                "java.rmi/sun.rmi.server=ALL-UNNAMED," +
+                "java.rmi/sun.rmi.transport=ALL-UNNAMED," +
+                "java.rmi/sun.rmi.transport.tcp=ALL-UNNAMED" +
                 " -Djava.rmi.dgc.leaseValue=500000" +
                 "  -Dsun.rmi.dgc.checkInterval=" +
                 (HOLD_TARGET_TIME - 5000) +

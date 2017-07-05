@@ -28,66 +28,44 @@
  * @bug 8139758
  * @summary tests memory barrier correctly inserted for stable fields
  * @library /testlibrary /test/lib
+ * @modules java.base/jdk.internal.vm.annotation
  *
  * @run main/bootclasspath -Xcomp -XX:CompileOnly=::testCompile
- *                   java.lang.invoke.TestStableMemoryBarrier
+ *                         compiler.stable.TestStableMemoryBarrier
  *
  * @author hui.shi@linaro.org
  */
-package java.lang.invoke;
+
+package compiler.stable;
 
 import jdk.internal.vm.annotation.Stable;
 
-import java.lang.reflect.InvocationTargetException;
-
 public class TestStableMemoryBarrier {
-
     public static void main(String[] args) throws Exception {
-        run(NotDominate.class);
-
+        for (int i = 0; i < 1000000; i++) {
+            NotDominate.testCompile(i);
+        }
     }
-
     /* ====================================================
      * Stable field initialized in method, but its allocation
      * doesn't dominate MemBar Release at the end of method.
      */
-
-    static class NotDominate{
+    private static class NotDominate {
         public @Stable int v;
         public static int[] array = new int[100];
+
         public static NotDominate testCompile(int n) {
-           if ((n % 2) == 0) return null;
-           // add a loop here, trigger PhaseIdealLoop::verify_dominance
-           for (int i = 0; i < 100; i++) {
-              array[i] = n;
-           }
-           NotDominate nm = new NotDominate();
-           nm.v = n;
-           return nm;
-        }
-
-        public static void test() throws Exception {
-           for (int i = 0; i < 1000000; i++)
-               testCompile(i);
-        }
-    }
-
-    public static void run(Class<?> test) {
-        Throwable ex = null;
-        System.out.print(test.getName()+": ");
-        try {
-            test.getMethod("test").invoke(null);
-        } catch (InvocationTargetException e) {
-            ex = e.getCause();
-        } catch (Throwable e) {
-            ex = e;
-        } finally {
-            if (ex == null) {
-                System.out.println("PASSED");
-            } else {
-                System.out.println("FAILED");
-                ex.printStackTrace(System.out);
+            if ((n % 2) == 0) return null;
+            // add a loop here, trigger PhaseIdealLoop::verify_dominance
+            for (int i = 0; i < 100; i++) {
+                array[i] = n;
             }
+            NotDominate nm = new NotDominate();
+            nm.v = n;
+            return nm;
         }
+
+
     }
 }
+

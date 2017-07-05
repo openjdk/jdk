@@ -31,6 +31,7 @@
  * @summary Verify that starting the VM with a small heap works
  * @library /testlibrary /test/lib
  * @modules java.management/sun.management
+ * @ignore 8076621
  * @build TestSmallHeap
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xmx2m -XX:+UseParallelGC TestSmallHeap

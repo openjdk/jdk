@@ -25,7 +25,6 @@
 
 package sun.tools.jinfo;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,6 +32,8 @@ import java.io.InputStream;
 import com.sun.tools.attach.VirtualMachine;
 
 import sun.tools.attach.HotSpotVirtualMachine;
+import jdk.internal.vm.agent.spi.ToolProvider;
+import jdk.internal.vm.agent.spi.ToolProviderFinder;
 
 /*
  * This class is the main class for the JInfo utility. It parses its arguments
@@ -40,6 +41,7 @@ import sun.tools.attach.HotSpotVirtualMachine;
  * or an SA tool.
  */
 final public class JInfo {
+    private static final String SA_JINFO_TOOL_NAME = "jinfo";
     private boolean useSA = false;
     private String[] args = null;
 
@@ -183,34 +185,11 @@ final public class JInfo {
 
     // Invoke SA tool with the given arguments
     private void runTool() throws Exception {
-        String tool = "sun.jvm.hotspot.tools.JInfo";
-        // Tool not available on this platform.
-        Class<?> c = loadClass(tool);
-        if (c == null) {
+        ToolProvider tool = ToolProviderFinder.find(SA_JINFO_TOOL_NAME);
+        if (tool == null) {
             usage(1);
         }
-
-        // invoke the main method with the arguments
-        Class<?>[] argTypes = { String[].class } ;
-        Method m = c.getDeclaredMethod("main", argTypes);
-
-        Object[] invokeArgs = { args };
-        m.invoke(null, invokeArgs);
-    }
-
-    // loads the given class using the system class loader
-    private static Class<?> loadClass(String name) {
-        //
-        // We specify the system class loader so as to cater for development
-        // environments where this class is on the boot class path but sa-jdi.jar
-        // is on the system class path. Once the JDK is deployed then both
-        // tools.jar and sa-jdi.jar are on the system class path.
-        //
-        try {
-            return Class.forName(name, true,
-                                 ClassLoader.getSystemClassLoader());
-        } catch (Exception x)  { }
-        return null;
+        tool.run(args);
     }
 
     private static void flag(String pid, String option) throws IOException {
@@ -298,9 +277,7 @@ final public class JInfo {
 
     // print usage message
     private static void usage(int exit) {
-
-        Class<?> c = loadClass("sun.jvm.hotspot.tools.JInfo");
-        boolean usageSA = (c != null);
+        boolean usageSA = ToolProviderFinder.find(SA_JINFO_TOOL_NAME) != null;
 
         System.err.println("Usage:");
         if (usageSA) {
