@@ -136,11 +136,16 @@ public class JSRInlinerAdapter extends MethodNode implements Opcodes {
      *            the internal names of the method's exception classes (see
      *            {@link Type#getInternalName() getInternalName}). May be
      *            <tt>null</tt>.
+     * @throws IllegalStateException
+     *             If a subclass calls this constructor.
      */
     public JSRInlinerAdapter(final MethodVisitor mv, final int access,
             final String name, final String desc, final String signature,
             final String[] exceptions) {
         this(Opcodes.ASM5, mv, access, name, desc, signature, exceptions);
+        if (getClass() != JSRInlinerAdapter.class) {
+            throw new IllegalStateException();
+        }
     }
 
     /**
@@ -381,6 +386,17 @@ public class JSRInlinerAdapter extends MethodNode implements Opcodes {
             // Use tail recursion here in the form of an outer while loop to
             // avoid our stack growing needlessly:
             index++;
+
+            // We implicitly assumed above that execution can always fall
+            // through to the next instruction after a JSR. But a subroutine may
+            // never return, in which case the code after the JSR is unreachable
+            // and can be anything. In particular, it can seem to fall off the
+            // end of the method, so we must handle this case here (we could
+            // instead detect whether execution can return or not from a JSR,
+            // but this is more complicated).
+            if (index >= instructions.size()) {
+                return;
+            }
         }
     }
 

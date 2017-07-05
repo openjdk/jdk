@@ -66,7 +66,6 @@ import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.tree.MethodNode;
 import jdk.internal.org.objectweb.asm.tree.TryCatchBlockNode;
-import jdk.internal.org.objectweb.asm.tree.TypeAnnotationNode;
 
 /**
  * A {@link MethodVisitor} adapter to sort the exception handlers. The handlers

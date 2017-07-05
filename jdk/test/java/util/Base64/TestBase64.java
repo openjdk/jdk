@@ -23,7 +23,7 @@
 
 /**
  * @test 4235519 8004212 8005394 8007298 8006295 8006315 8006530 8007379 8008925
- *       8014217 8025003
+ *       8014217 8025003 8026330
  * @summary tests java.util.Base64
  */
 
@@ -47,12 +47,9 @@ public class TestBase64 {
             numBytes = Integer.parseInt(args[1]);
         }
 
-        test(Base64.getEncoder(),     Base64.getDecoder(),
-             numRuns, numBytes);
-        test(Base64.getUrlEncoder(),  Base64.getUrlDecoder(),
-             numRuns, numBytes);
-        test(Base64.getMimeEncoder(), Base64.getMimeDecoder(),
-             numRuns, numBytes);
+        test(Base64.getEncoder(), Base64.getDecoder(), numRuns, numBytes);
+        test(Base64.getUrlEncoder(), Base64.getUrlDecoder(), numRuns, numBytes);
+        test(Base64.getMimeEncoder(), Base64.getMimeDecoder(), numRuns, numBytes);
 
         Random rnd = new java.util.Random();
         byte[] nl_1 = new byte[] {'\n'};
@@ -142,165 +139,175 @@ public class TestBase64 {
         enc.encode(new byte[0]);
         dec.decode(new byte[0]);
 
-        for (int i=0; i<numRuns; i++) {
-            for (int j=1; j<numBytes; j++) {
-                byte[] orig = new byte[j];
-                rnd.nextBytes(orig);
+        for (boolean withoutPadding : new boolean[] { false, true}) {
+            if (withoutPadding) {
+                 enc = enc.withoutPadding();
+            }
+            for (int i=0; i<numRuns; i++) {
+                for (int j=1; j<numBytes; j++) {
+                    byte[] orig = new byte[j];
+                    rnd.nextBytes(orig);
 
-                // --------testing encode/decode(byte[])--------
-                byte[] encoded = enc.encode(orig);
-                byte[] decoded = dec.decode(encoded);
+                    // --------testing encode/decode(byte[])--------
+                    byte[] encoded = enc.encode(orig);
+                    byte[] decoded = dec.decode(encoded);
 
-                checkEqual(orig, decoded,
-                           "Base64 array encoding/decoding failed!");
-
-                // compare to sun.misc.BASE64Encoder
-                byte[] encoded2 = sunmisc.encode(orig).getBytes("ASCII");
-                checkEqual(normalize(encoded),
-                           normalize(encoded2),
-                           "Base64 enc.encode() does not match sun.misc.base64!");
-
-                // remove padding '=' to test non-padding decoding case
-                if (encoded[encoded.length -2] == '=')
-                    encoded2 = Arrays.copyOf(encoded,  encoded.length -2);
-                else if (encoded[encoded.length -1] == '=')
-                    encoded2 = Arrays.copyOf(encoded, encoded.length -1);
-                else
-                    encoded2 = null;
-
-                // --------testing encodetoString(byte[])/decode(String)--------
-                String str = enc.encodeToString(orig);
-                if (!Arrays.equals(str.getBytes("ASCII"), encoded)) {
-                    throw new RuntimeException(
-                        "Base64 encodingToString() failed!");
-                }
-                byte[] buf = dec.decode(new String(encoded, "ASCII"));
-                checkEqual(buf, orig, "Base64 decoding(String) failed!");
-
-                if (encoded2 != null) {
-                    buf = dec.decode(new String(encoded2, "ASCII"));
-                    checkEqual(buf, orig, "Base64 decoding(String) failed!");
-                }
-
-                //-------- testing encode/decode(Buffer)--------
-                testEncode(enc, ByteBuffer.wrap(orig), encoded);
-                ByteBuffer bin = ByteBuffer.allocateDirect(orig.length);
-                bin.put(orig).flip();
-                testEncode(enc, bin, encoded);
-
-                testDecode(dec, ByteBuffer.wrap(encoded), orig);
-                bin = ByteBuffer.allocateDirect(encoded.length);
-                bin.put(encoded).flip();
-                testDecode(dec, bin, orig);
-
-                if (encoded2 != null)
-                    testDecode(dec, ByteBuffer.wrap(encoded2), orig);
-
-                // -------- testing encode(Buffer, Buffer)--------
-                testEncode(enc, encoded,
-                           ByteBuffer.wrap(orig),
-                           ByteBuffer.allocate(encoded.length + 10));
-
-                testEncode(enc, encoded,
-                           ByteBuffer.wrap(orig),
-                           ByteBuffer.allocateDirect(encoded.length + 10));
-
-                // --------testing decode(Buffer, Buffer);--------
-                testDecode(dec, orig,
-                           ByteBuffer.wrap(encoded),
-                           ByteBuffer.allocate(orig.length + 10));
-
-                testDecode(dec, orig,
-                           ByteBuffer.wrap(encoded),
-                           ByteBuffer.allocateDirect(orig.length + 10));
-
-                // --------testing decode.wrap(input stream)--------
-                // 1) random buf length
-                ByteArrayInputStream bais = new ByteArrayInputStream(encoded);
-                InputStream is = dec.wrap(bais);
-                buf = new byte[orig.length + 10];
-                int len = orig.length;
-                int off = 0;
-                while (true) {
-                    int n = rnd.nextInt(len);
-                    if (n == 0)
-                        n = 1;
-                    n = is.read(buf, off, n);
-                    if (n == -1) {
-                        checkEqual(off, orig.length,
-                                   "Base64 stream decoding failed");
-                        break;
+                    checkEqual(orig, decoded,
+                               "Base64 array encoding/decoding failed!");
+                    if (withoutPadding) {
+                        if (encoded[encoded.length - 1] == '=')
+                            throw new RuntimeException(
+                               "Base64 enc.encode().withoutPadding() has padding!");
                     }
-                    off += n;
-                    len -= n;
-                    if (len == 0)
-                        break;
+                    // compare to sun.misc.BASE64Encoder
+
+                    byte[] encoded2 = sunmisc.encode(orig).getBytes("ASCII");
+                    if (!withoutPadding) {    // don't test for withoutPadding()
+                        checkEqual(normalize(encoded), normalize(encoded2),
+                                   "Base64 enc.encode() does not match sun.misc.base64!");
+                    }
+                    // remove padding '=' to test non-padding decoding case
+                    if (encoded[encoded.length -2] == '=')
+                        encoded2 = Arrays.copyOf(encoded,  encoded.length -2);
+                    else if (encoded[encoded.length -1] == '=')
+                        encoded2 = Arrays.copyOf(encoded, encoded.length -1);
+                    else
+                        encoded2 = null;
+
+                    // --------testing encodetoString(byte[])/decode(String)--------
+                    String str = enc.encodeToString(orig);
+                    if (!Arrays.equals(str.getBytes("ASCII"), encoded)) {
+                        throw new RuntimeException(
+                            "Base64 encodingToString() failed!");
+                    }
+                    byte[] buf = dec.decode(new String(encoded, "ASCII"));
+                    checkEqual(buf, orig, "Base64 decoding(String) failed!");
+
+                    if (encoded2 != null) {
+                        buf = dec.decode(new String(encoded2, "ASCII"));
+                        checkEqual(buf, orig, "Base64 decoding(String) failed!");
+                    }
+
+                    //-------- testing encode/decode(Buffer)--------
+                    testEncode(enc, ByteBuffer.wrap(orig), encoded);
+                    ByteBuffer bin = ByteBuffer.allocateDirect(orig.length);
+                    bin.put(orig).flip();
+                    testEncode(enc, bin, encoded);
+
+                    testDecode(dec, ByteBuffer.wrap(encoded), orig);
+                    bin = ByteBuffer.allocateDirect(encoded.length);
+                    bin.put(encoded).flip();
+                    testDecode(dec, bin, orig);
+
+                    if (encoded2 != null)
+                        testDecode(dec, ByteBuffer.wrap(encoded2), orig);
+
+                    // -------- testing encode(Buffer, Buffer)--------
+                    testEncode(enc, encoded,
+                               ByteBuffer.wrap(orig),
+                               ByteBuffer.allocate(encoded.length + 10));
+
+                    testEncode(enc, encoded,
+                               ByteBuffer.wrap(orig),
+                               ByteBuffer.allocateDirect(encoded.length + 10));
+
+                    // --------testing decode(Buffer, Buffer);--------
+                    testDecode(dec, orig,
+                               ByteBuffer.wrap(encoded),
+                               ByteBuffer.allocate(orig.length + 10));
+
+                    testDecode(dec, orig,
+                               ByteBuffer.wrap(encoded),
+                               ByteBuffer.allocateDirect(orig.length + 10));
+
+                    // --------testing decode.wrap(input stream)--------
+                    // 1) random buf length
+                    ByteArrayInputStream bais = new ByteArrayInputStream(encoded);
+                    InputStream is = dec.wrap(bais);
+                    buf = new byte[orig.length + 10];
+                    int len = orig.length;
+                    int off = 0;
+                    while (true) {
+                        int n = rnd.nextInt(len);
+                        if (n == 0)
+                            n = 1;
+                        n = is.read(buf, off, n);
+                        if (n == -1) {
+                            checkEqual(off, orig.length,
+                                       "Base64 stream decoding failed");
+                            break;
+                        }
+                        off += n;
+                        len -= n;
+                        if (len == 0)
+                            break;
+                    }
+                    buf = Arrays.copyOf(buf, off);
+                    checkEqual(buf, orig, "Base64 stream decoding failed!");
+
+                    // 2) read one byte each
+                    bais.reset();
+                    is = dec.wrap(bais);
+                    buf = new byte[orig.length + 10];
+                    off = 0;
+                    int b;
+                    while ((b = is.read()) != -1) {
+                        buf[off++] = (byte)b;
+                    }
+                    buf = Arrays.copyOf(buf, off);
+                    checkEqual(buf, orig, "Base64 stream decoding failed!");
+
+                    // --------testing encode.wrap(output stream)--------
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream((orig.length + 2) / 3 * 4 + 10);
+                    OutputStream os = enc.wrap(baos);
+                    off = 0;
+                    len = orig.length;
+                    for (int k = 0; k < 5; k++) {
+                        if (len == 0)
+                            break;
+                        int n = rnd.nextInt(len);
+                        if (n == 0)
+                            n = 1;
+                        os.write(orig, off, n);
+                        off += n;
+                        len -= n;
+                    }
+                    if (len != 0)
+                        os.write(orig, off, len);
+                    os.close();
+                    buf = baos.toByteArray();
+                    checkEqual(buf, encoded, "Base64 stream encoding failed!");
+
+                    // 2) write one byte each
+                    baos.reset();
+                    os = enc.wrap(baos);
+                    off = 0;
+                    while (off < orig.length) {
+                        os.write(orig[off++]);
+                    }
+                    os.close();
+                    buf = baos.toByteArray();
+                    checkEqual(buf, encoded, "Base64 stream encoding failed!");
+
+                    // --------testing encode(in, out); -> bigger buf--------
+                    buf = new byte[encoded.length + rnd.nextInt(100)];
+                    int ret = enc.encode(orig, buf);
+                    checkEqual(ret, encoded.length,
+                               "Base64 enc.encode(src, null) returns wrong size!");
+                    buf = Arrays.copyOf(buf, ret);
+                    checkEqual(buf, encoded,
+                               "Base64 enc.encode(src, dst) failed!");
+
+                    // --------testing decode(in, out); -> bigger buf--------
+                    buf = new byte[orig.length + rnd.nextInt(100)];
+                    ret = dec.decode(encoded, buf);
+                    checkEqual(ret, orig.length,
+                              "Base64 enc.encode(src, null) returns wrong size!");
+                    buf = Arrays.copyOf(buf, ret);
+                    checkEqual(buf, orig,
+                               "Base64 dec.decode(src, dst) failed!");
+
                 }
-                buf = Arrays.copyOf(buf, off);
-                checkEqual(buf, orig, "Base64 stream decoding failed!");
-
-                // 2) read one byte each
-                bais.reset();
-                is = dec.wrap(bais);
-                buf = new byte[orig.length + 10];
-                off = 0;
-                int b;
-                while ((b = is.read()) != -1) {
-                    buf[off++] = (byte)b;
-                }
-                buf = Arrays.copyOf(buf, off);
-                checkEqual(buf, orig, "Base64 stream decoding failed!");
-
-                // --------testing encode.wrap(output stream)--------
-                ByteArrayOutputStream baos = new ByteArrayOutputStream((orig.length + 2) / 3 * 4 + 10);
-                OutputStream os = enc.wrap(baos);
-                off = 0;
-                len = orig.length;
-                for (int k = 0; k < 5; k++) {
-                    if (len == 0)
-                        break;
-                    int n = rnd.nextInt(len);
-                    if (n == 0)
-                        n = 1;
-                    os.write(orig, off, n);
-                    off += n;
-                    len -= n;
-                }
-                if (len != 0)
-                    os.write(orig, off, len);
-                os.close();
-                buf = baos.toByteArray();
-                checkEqual(buf, encoded, "Base64 stream encoding failed!");
-
-                // 2) write one byte each
-                baos.reset();
-                os = enc.wrap(baos);
-                off = 0;
-                while (off < orig.length) {
-                    os.write(orig[off++]);
-                }
-                os.close();
-                buf = baos.toByteArray();
-                checkEqual(buf, encoded, "Base64 stream encoding failed!");
-
-                // --------testing encode(in, out); -> bigger buf--------
-                buf = new byte[encoded.length + rnd.nextInt(100)];
-                int ret = enc.encode(orig, buf);
-                checkEqual(ret, encoded.length,
-                           "Base64 enc.encode(src, null) returns wrong size!");
-                buf = Arrays.copyOf(buf, ret);
-                checkEqual(buf, encoded,
-                           "Base64 enc.encode(src, dst) failed!");
-
-                // --------testing decode(in, out); -> bigger buf--------
-                buf = new byte[orig.length + rnd.nextInt(100)];
-                ret = dec.decode(encoded, buf);
-                checkEqual(ret, orig.length,
-                          "Base64 enc.encode(src, null) returns wrong size!");
-                buf = Arrays.copyOf(buf, ret);
-                checkEqual(buf, orig,
-                           "Base64 dec.decode(src, dst) failed!");
-
             }
         }
     }

@@ -372,6 +372,12 @@ grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
     
     <copy file="${file.reference.jfxrt.jar}" todir="dist"/>
     
+    <condition property="jfx.prism.order" value="-Dprism.order=j2d" else=" ">
+		<not>
+            <os family="mac"/>
+        </not>
+	</condition>
+    
     <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
       <jvmarg line="${ext.class.path}"/>
@@ -380,6 +386,7 @@ grant codeBase "file:/${basedir}/test/script/basic/classloader.js" {
         <propertyref prefix="testjfx-test-sys-prop."/>
         <mapper from="testjfx-test-sys-prop.*" to="*" type="glob"/>
       </propertyset>
+      <sysproperty key="test.fork.jvm.options" value="${testjfx-test-sys-prop.test.fork.jvm.options} ${jfx.prism.order}"/>
       <classpath>
           <pathelement path="${testjfx.run.test.classpath}"/>
       </classpath>

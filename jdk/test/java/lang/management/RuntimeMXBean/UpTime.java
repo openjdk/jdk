@@ -33,30 +33,34 @@ import java.lang.management.*;
 public class UpTime {
     final static long DELAY = 5; // Seconds
     final static long TIMEOUT = 30; // Minutes
-    private static RuntimeMXBean metrics
+    final static long MULTIPLIER = 1000; // millisecond ticks
+
+    private static final RuntimeMXBean metrics
         = ManagementFactory.getRuntimeMXBean();
 
     public static void main(String argv[]) throws Exception {
         long jvmStartTime = metrics.getStartTime();
-        long systemStartOuter = System.currentTimeMillis();
+        // this will get an aproximate JVM uptime before starting this test
+        long jvmUptime = System.currentTimeMillis() - jvmStartTime;
+        long systemStartOuter = System_milliTime();
         long metricsStart = metrics.getUptime();
-        long systemStartInner = System.currentTimeMillis();
+        long systemStartInner = System_milliTime();
 
         // This JVM might have been running for some time if this test runs
         // in samevm mode.  The sanity check should apply to the test uptime.
-        long testUptime = metricsStart - (systemStartOuter - jvmStartTime);
+        long testUptime = metricsStart - jvmUptime;
 
         // If uptime is more than 30 minutes then it looks like a bug in
         // the method
-        if (testUptime > TIMEOUT * 60 * 1000)
+        if (testUptime > TIMEOUT * 60 * MULTIPLIER)
             throw new RuntimeException("Uptime of the JVM is more than 30 "
                                      + "minutes ("
-                                     + (metricsStart / 60 / 1000)
+                                     + (metricsStart / 60 / MULTIPLIER)
                                      + " minutes).");
 
         // Wait for DELAY seconds
         Object o = new Object();
-        while (System.currentTimeMillis() < systemStartInner + DELAY * 1000) {
+        while (System_milliTime() < systemStartInner + DELAY * MULTIPLIER) {
             synchronized (o) {
                 try {
                     o.wait(DELAY * 1000);
@@ -67,23 +71,27 @@ public class UpTime {
             }
         }
 
-        long systemEndInner = System.currentTimeMillis();
+        long systemEndInner = System_milliTime();
         long metricsEnd = metrics.getUptime();
-        long systemEndOuter = System.currentTimeMillis();
+        long systemEndOuter = System_milliTime();
 
         long systemDifferenceInner = systemEndInner - systemStartInner;
         long systemDifferenceOuter = systemEndOuter - systemStartOuter;
         long metricsDifference = metricsEnd - metricsStart;
 
         // Check the flow of time in RuntimeMXBean.getUptime(). See the
-        // picture below
-        if (metricsDifference < systemDifferenceInner)
+        // picture below.
+        // The measured times can be off by 1 due to conversions from
+        // nanoseconds to milliseconds, using different channels to read the
+        // HR timer and rounding error. Bigger difference will make the test
+        // fail.
+        if (metricsDifference - systemDifferenceInner < -1)
             throw new RuntimeException("Flow of the time in "
                                      + "RuntimeMXBean.getUptime() ("
                                      + metricsDifference + ") is slower than "
                                      + " in system (" + systemDifferenceInner
                                      + ")");
-        if (metricsDifference > systemDifferenceOuter)
+        if (metricsDifference - systemDifferenceOuter > 1)
             throw new RuntimeException("Flow of the time in "
                                      + "RuntimeMXBean.getUptime() ("
                                      + metricsDifference + ") is faster than "
@@ -91,6 +99,10 @@ public class UpTime {
                                      + ")");
 
         System.out.println("Test passed.");
+    }
+
+    private static long System_milliTime() {
+        return System.nanoTime() / 1000000; // nanoseconds / milliseconds;
     }
 }
 

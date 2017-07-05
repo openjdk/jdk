@@ -114,7 +114,7 @@ class HostPortrange {
                 if (hoststr.equals("*")) {
                     hoststr = "";
                 } else if (hoststr.startsWith("*.")) {
-                    hoststr = hoststr.substring(1).toLowerCase(); // leave the '.' ?
+                    hoststr = toLowerCase(hoststr.substring(1));
                 } else {
                     throw new IllegalArgumentException("invalid host wildcard specification");
                 }
@@ -147,7 +147,7 @@ class HostPortrange {
                         hoststr = sb.toString();
                     } else {
                         // regular domain name
-                        hoststr = hoststr.toLowerCase();
+                        hoststr = toLowerCase(hoststr);
                     }
                 }
             }
@@ -160,6 +160,38 @@ class HostPortrange {
             throw new IllegalArgumentException("invalid port range: " + portstr);
         }
     }
+
+    static final int CASE_DIFF = 'A' - 'a';
+
+    /**
+     * Convert to lower case, and check that all chars are ascii
+     * alphanumeric, '-' or '.' only.
+     */
+    static String toLowerCase(String s) {
+        int len = s.length();
+        StringBuilder sb = null;
+
+        for (int i=0; i<len; i++) {
+            char c = s.charAt(i);
+            if ((c >= 'a' && c <= 'z') || (c == '.')) {
+                if (sb != null)
+                    sb.append(c);
+            } else if ((c >= '0' && c <= '9') || (c == '-')) {
+                if (sb != null)
+                    sb.append(c);
+            } else if (c >= 'A' && c <= 'Z') {
+                if (sb == null) {
+                    sb = new StringBuilder(len);
+                    sb.append(s, 0, i);
+                }
+                sb.append((char)(c - CASE_DIFF));
+            } else {
+                throw new IllegalArgumentException("Invalid characters in hostname");
+            }
+        }
+        return sb == null ? s : sb.toString();
+    }
+
 
     public boolean literal() {
         return literal;

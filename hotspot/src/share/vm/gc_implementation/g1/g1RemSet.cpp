@@ -377,11 +377,6 @@ void G1RemSet::prepare_for_oops_into_collection_set_do() {
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   dcqs.concatenate_logs();
 
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    // Don't set the number of workers here.  It will be set
-    // when the task is run
-    // _seq_task->set_n_termination((int)n_workers());
-  }
   guarantee( _cards_scanned == NULL, "invariant" );
   _cards_scanned = NEW_C_HEAP_ARRAY(size_t, n_workers(), mtGC);
   for (uint i = 0; i < n_workers(); ++i) {

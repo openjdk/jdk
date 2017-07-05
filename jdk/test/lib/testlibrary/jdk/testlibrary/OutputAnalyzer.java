@@ -27,6 +27,9 @@ import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Utility class for verifying output and exit value from a {@code Process}.
+ */
 public final class OutputAnalyzer {
 
     private final String stdout;
@@ -85,9 +88,9 @@ public final class OutputAnalyzer {
     public void shouldContain(String expectedString) {
         if (!stdout.contains(expectedString)
                 && !stderr.contains(expectedString)) {
+            reportDiagnosticSummary();
             throw new RuntimeException("'" + expectedString
-                    + "' missing from stdout/stderr: [" + stdout + stderr
-                    + "]\n");
+                    + "' missing from stdout/stderr \n");
         }
     }
 
@@ -101,8 +104,9 @@ public final class OutputAnalyzer {
      */
     public void stdoutShouldContain(String expectedString) {
         if (!stdout.contains(expectedString)) {
+            reportDiagnosticSummary();
             throw new RuntimeException("'" + expectedString
-                    + "' missing from stdout: [" + stdout + "]\n");
+                    + "' missing from stdout \n");
         }
     }
 
@@ -116,8 +120,9 @@ public final class OutputAnalyzer {
      */
     public void stderrShouldContain(String expectedString) {
         if (!stderr.contains(expectedString)) {
+            reportDiagnosticSummary();
             throw new RuntimeException("'" + expectedString
-                    + "' missing from stderr: [" + stderr + "]\n");
+                    + "' missing from stderr \n");
         }
     }
 
@@ -132,12 +137,14 @@ public final class OutputAnalyzer {
      */
     public void shouldNotContain(String notExpectedString) {
         if (stdout.contains(notExpectedString)) {
+            reportDiagnosticSummary();
             throw new RuntimeException("'" + notExpectedString
-                    + "' found in stdout: [" + stdout + "]\n");
+                    + "' found in stdout \n");
         }
         if (stderr.contains(notExpectedString)) {
+            reportDiagnosticSummary();
             throw new RuntimeException("'" + notExpectedString
-                    + "' found in stderr: [" + stderr + "]\n");
+                    + "' found in stderr \n");
         }
     }
 
@@ -152,8 +159,9 @@ public final class OutputAnalyzer {
      */
     public void stdoutShouldNotContain(String notExpectedString) {
         if (stdout.contains(notExpectedString)) {
+            reportDiagnosticSummary();
             throw new RuntimeException("'" + notExpectedString
-                    + "' found in stdout: [" + stdout + "]\n");
+                    + "' found in stdout \n");
         }
     }
 
@@ -168,55 +176,63 @@ public final class OutputAnalyzer {
      */
     public void stderrShouldNotContain(String notExpectedString) {
         if (stderr.contains(notExpectedString)) {
+            reportDiagnosticSummary();
             throw new RuntimeException("'" + notExpectedString
-                    + "' found in stderr: [" + stderr + "]\n");
+                    + "' found in stderr \n");
         }
     }
 
     /**
-     * Verify that the stdout and stderr contents of output buffer matches
-     * the pattern
+     * Verify that the stdout and stderr contents of output buffer matches the
+     * pattern
      *
      * @param pattern
-     * @throws RuntimeException If the pattern was not found
+     * @throws RuntimeException
+     *             If the pattern was not found
      */
     public void shouldMatch(String pattern) {
-        Matcher stdoutMatcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stdout);
-        Matcher stderrMatcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
+        Matcher stdoutMatcher = Pattern.compile(pattern, Pattern.MULTILINE)
+                .matcher(stdout);
+        Matcher stderrMatcher = Pattern.compile(pattern, Pattern.MULTILINE)
+                .matcher(stderr);
         if (!stdoutMatcher.find() && !stderrMatcher.find()) {
+            reportDiagnosticSummary();
             throw new RuntimeException("'" + pattern
-                    + "' missing from stdout/stderr: [" + stdout + stderr
-                    + "]\n");
+                    + "' missing from stdout/stderr \n");
         }
     }
 
     /**
-     * Verify that the stdout contents of output buffer matches the
-     * pattern
+     * Verify that the stdout contents of output buffer matches the pattern
      *
      * @param pattern
-     * @throws RuntimeException If the pattern was not found
+     * @throws RuntimeException
+     *             If the pattern was not found
      */
     public void stdoutShouldMatch(String pattern) {
-        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stdout);
+        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(
+                stdout);
         if (!matcher.find()) {
+            reportDiagnosticSummary();
             throw new RuntimeException("'" + pattern
-                    + "' missing from stdout: [" + stdout + "]\n");
+                    + "' missing from stdout \n");
         }
     }
 
     /**
-     * Verify that the stderr contents of output buffer matches the
-     * pattern
+     * Verify that the stderr contents of output buffer matches the pattern
      *
      * @param pattern
-     * @throws RuntimeException If the pattern was not found
+     * @throws RuntimeException
+     *             If the pattern was not found
      */
     public void stderrShouldMatch(String pattern) {
-        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
+        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(
+                stderr);
         if (!matcher.find()) {
+            reportDiagnosticSummary();
             throw new RuntimeException("'" + pattern
-                    + "' missing from stderr: [" + stderr + "]\n");
+                    + "' missing from stderr \n");
         }
     }
 
@@ -225,18 +241,22 @@ public final class OutputAnalyzer {
      * match the pattern
      *
      * @param pattern
-     * @throws RuntimeException If the pattern was found
+     * @throws RuntimeException
+     *             If the pattern was found
      */
     public void shouldNotMatch(String pattern) {
-        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stdout);
+        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(
+                stdout);
         if (matcher.find()) {
-            throw new RuntimeException("'" + pattern
-                    + "' found in stdout: [" + stdout + "]\n");
+            reportDiagnosticSummary();
+            throw new RuntimeException("'" + pattern + "' found in stdout: '"
+                    + matcher.group() + "' \n");
         }
         matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
         if (matcher.find()) {
-            throw new RuntimeException("'" + pattern
-                    + "' found in stderr: [" + stderr + "]\n");
+            reportDiagnosticSummary();
+            throw new RuntimeException("'" + pattern + "' found in stderr: '"
+                    + matcher.group() + "' \n");
         }
     }
 
@@ -245,13 +265,15 @@ public final class OutputAnalyzer {
      * pattern
      *
      * @param pattern
-     * @throws RuntimeException If the pattern was found
+     * @throws RuntimeException
+     *             If the pattern was found
      */
     public void stdoutShouldNotMatch(String pattern) {
-        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stdout);
+        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(
+                stdout);
         if (matcher.find()) {
-            throw new RuntimeException("'" + pattern
-                    + "' found in stdout: [" + stdout + "]\n");
+            reportDiagnosticSummary();
+            throw new RuntimeException("'" + pattern + "' found in stdout \n");
         }
     }
 
@@ -260,18 +282,56 @@ public final class OutputAnalyzer {
      * pattern
      *
      * @param pattern
-     * @throws RuntimeException If the pattern was found
+     * @throws RuntimeException
+     *             If the pattern was found
      */
     public void stderrShouldNotMatch(String pattern) {
-        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(stderr);
+        Matcher matcher = Pattern.compile(pattern, Pattern.MULTILINE).matcher(
+                stderr);
         if (matcher.find()) {
-            throw new RuntimeException("'" + pattern
-                    + "' found in stderr: [" + stderr + "]\n");
+            reportDiagnosticSummary();
+            throw new RuntimeException("'" + pattern + "' found in stderr \n");
         }
     }
 
     /**
-     * Verifiy the exit value of the process
+     * Get the captured group of the first string matching the pattern. stderr
+     * is searched before stdout.
+     *
+     * @param pattern
+     *            The multi-line pattern to match
+     * @param group
+     *            The group to capture
+     * @return The matched string or null if no match was found
+     */
+    public String firstMatch(String pattern, int group) {
+        Matcher stderrMatcher = Pattern.compile(pattern, Pattern.MULTILINE)
+                .matcher(stderr);
+        Matcher stdoutMatcher = Pattern.compile(pattern, Pattern.MULTILINE)
+                .matcher(stdout);
+        if (stderrMatcher.find()) {
+            return stderrMatcher.group(group);
+        }
+        if (stdoutMatcher.find()) {
+            return stdoutMatcher.group(group);
+        }
+        return null;
+    }
+
+    /**
+     * Get the first string matching the pattern. stderr is searched before
+     * stdout.
+     *
+     * @param pattern
+     *            The multi-line pattern to match
+     * @return The matched string or null if no match was found
+     */
+    public String firstMatch(String pattern) {
+        return firstMatch(pattern, 0);
+    }
+
+    /**
+     * Verify the exit value of the process
      *
      * @param expectedExitValue
      *            Expected exit value from process
@@ -281,9 +341,22 @@ public final class OutputAnalyzer {
      */
     public void shouldHaveExitValue(int expectedExitValue) {
         if (getExitValue() != expectedExitValue) {
-            throw new RuntimeException("Exit value " + getExitValue()
-                    + " , expected to get " + expectedExitValue);
+            reportDiagnosticSummary();
+            throw new RuntimeException("Expected to get exit value of ["
+                    + expectedExitValue + "]\n");
         }
+    }
+
+    /**
+     * Report summary that will help to diagnose the problem Currently includes:
+     * - standard input produced by the process under test - standard output -
+     * exit code Note: the command line is printed by the ProcessTools
+     */
+    private void reportDiagnosticSummary() {
+        String msg = " stdout: [" + stdout + "];\n" + " stderr: [" + stderr
+                + "]\n" + " exitValue = " + getExitValue() + "\n";
+
+        System.err.println(msg);
     }
 
     /**

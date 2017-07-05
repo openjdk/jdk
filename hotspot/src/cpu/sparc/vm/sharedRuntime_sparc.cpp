@@ -1002,18 +1002,6 @@ void AdapterGenerator::gen_i2c_adapter(
   // and the vm will find there should this case occur.
   Address callee_target_addr(G2_thread, JavaThread::callee_target_offset());
   __ st_ptr(G5_method, callee_target_addr);
-
-  if (StressNonEntrant) {
-    // Open a big window for deopt failure
-    __ save_frame(0);
-    __ mov(G0, L0);
-    Label loop;
-    __ bind(loop);
-    __ sub(L0, 1, L0);
-    __ br_null_short(L0, Assembler::pt, loop);
-    __ restore();
-  }
-
   __ jmpl(G3, 0, G0);
   __ delayed()->nop();
 }

@@ -26,13 +26,13 @@
 package javax.swing;
 
 /** DesktopManager objects are owned by a JDesktopPane object. They are responsible
-  * for implementing L&F specific behaviors for the JDesktopPane. JInternalFrame
+  * for implementing L&amp;F specific behaviors for the JDesktopPane. JInternalFrame
   * implementations should delegate specific behaviors to the DesktopManager. For
   * instance, if a JInternalFrame was asked to iconify, it should try:
   * <PRE>
   *    getDesktopPane().getDesktopManager().iconifyFrame(frame);
   * </PRE>
-  * This delegation allows each L&F to provide custom behaviors for desktop-specific
+  * This delegation allows each L&amp;F to provide custom behaviors for desktop-specific
   * actions. (For example, how and where the internal frame's icon would appear.)
   * <p>This class provides a policy for the various JInternalFrame methods, it is not
   * meant to be called directly rather the various JInternalFrame methods will call

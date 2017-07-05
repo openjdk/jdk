@@ -450,9 +450,9 @@ public class FileChooserDemo extends JPanel implements ActionListener {
                     "User cancelled operation. No file was chosen.");
         } else if (retval == ERROR_OPTION) {
             JOptionPane.showMessageDialog(frame,
-                    "An error occured. No file was chosen.");
+                    "An error occurred. No file was chosen.");
         } else {
-            JOptionPane.showMessageDialog(frame, "Unknown operation occured.");
+            JOptionPane.showMessageDialog(frame, "Unknown operation occurred.");
         }
     }
 

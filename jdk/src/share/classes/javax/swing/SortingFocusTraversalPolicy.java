@@ -116,7 +116,7 @@ public class SortingFocusTraversalPolicy
             index = Collections.binarySearch(cycle, aComponent, comparator);
         } catch (ClassCastException e) {
             if (log.isLoggable(PlatformLogger.Level.FINE)) {
-                log.fine("### During the binary search for " + aComponent + " the exception occured: ", e);
+                log.fine("### During the binary search for " + aComponent + " the exception occurred: ", e);
             }
             return -1;
         }

@@ -52,76 +52,20 @@ PSGCAdaptivePolicyCounters* ParallelScavengeHeap::_gc_policy_counters = NULL;
 ParallelScavengeHeap* ParallelScavengeHeap::_psh = NULL;
 GCTaskManager* ParallelScavengeHeap::_gc_task_manager = NULL;
 
-static void trace_gen_sizes(const char* const str,
-                            size_t og_min, size_t og_max,
-                            size_t yg_min, size_t yg_max)
-{
-  if (TracePageSizes) {
-    tty->print_cr("%s:  " SIZE_FORMAT "," SIZE_FORMAT " "
-                  SIZE_FORMAT "," SIZE_FORMAT " "
-                  SIZE_FORMAT,
-                  str,
-                  og_min / K, og_max / K,
-                  yg_min / K, yg_max / K,
-                  (og_max + yg_max) / K);
-  }
-}
-
 jint ParallelScavengeHeap::initialize() {
   CollectedHeap::pre_initialize();
 
-  // Cannot be initialized until after the flags are parsed
-  // GenerationSizer flag_parser;
+  // Initialize collector policy
   _collector_policy = new GenerationSizer();
+  _collector_policy->initialize_all();
 
-  size_t yg_min_size = _collector_policy->min_young_gen_size();
-  size_t yg_max_size = _collector_policy->max_young_gen_size();
-  size_t og_min_size = _collector_policy->min_old_gen_size();
-  size_t og_max_size = _collector_policy->max_old_gen_size();
+  const size_t heap_size = _collector_policy->max_heap_byte_size();
 
-  trace_gen_sizes("ps heap raw",
-                  og_min_size, og_max_size,
-                  yg_min_size, yg_max_size);
-
-  const size_t og_page_sz = os::page_size_for_region(yg_min_size + og_min_size,
-                                                     yg_max_size + og_max_size,
-                                                     8);
-
-  const size_t og_align = set_alignment(_old_gen_alignment,   og_page_sz);
-  const size_t yg_align = set_alignment(_young_gen_alignment, og_page_sz);
-
-  // Update sizes to reflect the selected page size(s).
-  //
-  // NEEDS_CLEANUP.  The default TwoGenerationCollectorPolicy uses NewRatio; it
-  // should check UseAdaptiveSizePolicy.  Changes from generationSizer could
-  // move to the common code.
-  yg_min_size = align_size_up(yg_min_size, yg_align);
-  yg_max_size = align_size_up(yg_max_size, yg_align);
-  size_t yg_cur_size =
-    align_size_up(_collector_policy->young_gen_size(), yg_align);
-  yg_cur_size = MAX2(yg_cur_size, yg_min_size);
-
-  og_min_size = align_size_up(og_min_size, og_align);
-  // Align old gen size down to preserve specified heap size.
-  assert(og_align == yg_align, "sanity");
-  og_max_size = align_size_down(og_max_size, og_align);
-  og_max_size = MAX2(og_max_size, og_min_size);
-  size_t og_cur_size =
-    align_size_down(_collector_policy->old_gen_size(), og_align);
-  og_cur_size = MAX2(og_cur_size, og_min_size);
-
-  trace_gen_sizes("ps heap rnd",
-                  og_min_size, og_max_size,
-                  yg_min_size, yg_max_size);
-
-  const size_t heap_size = og_max_size + yg_max_size;
-
-  ReservedSpace heap_rs = Universe::reserve_heap(heap_size, og_align);
-
+  ReservedSpace heap_rs = Universe::reserve_heap(heap_size, _collector_policy->heap_alignment());
   MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtJavaHeap);
 
-  os::trace_page_sizes("ps main", og_min_size + yg_min_size,
-                       og_max_size + yg_max_size, og_page_sz,
+  os::trace_page_sizes("ps main", _collector_policy->min_heap_byte_size(),
+                       heap_size, generation_alignment(),
                        heap_rs.base(),
                        heap_rs.size());
   if (!heap_rs.is_reserved()) {
@@ -142,12 +86,6 @@ jint ParallelScavengeHeap::initialize() {
     return JNI_ENOMEM;
   }
 
-  // Initial young gen size is 4 Mb
-  //
-  // XXX - what about flag_parser.young_gen_size()?
-  const size_t init_young_size = align_size_up(4 * M, yg_align);
-  yg_cur_size = MAX2(MIN2(init_young_size, yg_max_size), yg_cur_size);
-
   // Make up the generations
   // Calculate the maximum size that a generation can grow.  This
   // includes growth into the other generation.  Note that the
@@ -157,14 +95,7 @@ jint ParallelScavengeHeap::initialize() {
   double max_gc_pause_sec = ((double) MaxGCPauseMillis)/1000.0;
   double max_gc_minor_pause_sec = ((double) MaxGCMinorPauseMillis)/1000.0;
 
-  _gens = new AdjoiningGenerations(heap_rs,
-                                   og_cur_size,
-                                   og_min_size,
-                                   og_max_size,
-                                   yg_cur_size,
-                                   yg_min_size,
-                                   yg_max_size,
-                                   yg_align);
+  _gens = new AdjoiningGenerations(heap_rs, _collector_policy, generation_alignment());
 
   _old_gen = _gens->old_gen();
   _young_gen = _gens->young_gen();
@@ -176,7 +107,7 @@ jint ParallelScavengeHeap::initialize() {
     new PSAdaptiveSizePolicy(eden_capacity,
                              initial_promo_size,
                              young_gen()->to_space()->capacity_in_bytes(),
-                             intra_heap_alignment(),
+                             _collector_policy->gen_alignment(),
                              max_gc_pause_sec,
                              max_gc_minor_pause_sec,
                              GCTimeRatio
