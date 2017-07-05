@@ -219,6 +219,8 @@ void SafepointSynchronize::begin() {
 #ifdef ASSERT
   for (JavaThread *cur = Threads::first(); cur != NULL; cur = cur->next()) {
     assert(cur->safepoint_state()->is_running(), "Illegal initial state");
+    // Clear the visited flag to ensure that the critical counts are collected properly.
+    cur->set_visited_for_critical_count(false);
   }
 #endif // ASSERT
 
@@ -377,6 +379,13 @@ void SafepointSynchronize::begin() {
   _state = _synchronized;
 
   OrderAccess::fence();
+
+#ifdef ASSERT
+  for (JavaThread *cur = Threads::first(); cur != NULL; cur = cur->next()) {
+    // make sure all the threads were visited
+    assert(cur->was_visited_for_critical_count(), "missed a thread");
+  }
+#endif // ASSERT
 
   // Update the count of active JNI critical regions
   GC_locker::set_jni_lock_count(_current_jni_active_count);
@@ -626,6 +635,7 @@ void SafepointSynchronize::block(JavaThread *thread) {
         _waiting_to_block--;
         thread->safepoint_state()->set_has_called_back(true);
 
+        DEBUG_ONLY(thread->set_visited_for_critical_count(true));
         if (thread->in_critical()) {
           // Notice that this thread is in a critical section
           increment_jni_active_count();
@@ -907,12 +917,8 @@ void ThreadSafepointState::examine_state_of_thread() {
   // running, but are actually at a safepoint. We will happily
   // agree and update the safepoint state here.
   if (SafepointSynchronize::safepoint_safe(_thread, state)) {
-    roll_forward(_at_safepoint);
     SafepointSynchronize::check_for_lazy_critical_native(_thread, state);
-    if (_thread->in_critical()) {
-      // Notice that this thread is in a critical section
-      SafepointSynchronize::increment_jni_active_count();
-    }
+    roll_forward(_at_safepoint);
     return;
   }
 
@@ -937,6 +943,11 @@ void ThreadSafepointState::roll_forward(suspend_type type) {
   switch(_type) {
     case _at_safepoint:
       SafepointSynchronize::signal_thread_at_safepoint();
+      DEBUG_ONLY(_thread->set_visited_for_critical_count(true));
+      if (_thread->in_critical()) {
+        // Notice that this thread is in a critical section
+        SafepointSynchronize::increment_jni_active_count();
+      }
       break;
 
     case _call_back:
