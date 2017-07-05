@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,11 @@
  *    an outstanding I/O operation on directory completes after the
  *    directory has been closed
  */
-
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import static java.nio.file.StandardWatchEventKinds.*;
@@ -50,8 +50,8 @@ public class LotsOfCancels {
         // one to bash on cancel, the other to poll the events
         ExecutorService pool = Executors.newCachedThreadPool();
         try {
-            Path top = Files.createTempDirectory("LotsOfCancels");
-            top.toFile().deleteOnExit();
+            Path testDir = Paths.get(System.getProperty("test.dir", "."));
+            Path top = Files.createTempDirectory(testDir, "LotsOfCancels");
             for (int i=1; i<=16; i++) {
                 Path dir = Files.createDirectory(top.resolve("dir-" + i));
                 WatchService watcher = FileSystems.getDefault().newWatchService();
@@ -114,6 +114,4 @@ public class LotsOfCancels {
             failed = true;
         }
     }
-
 }
-

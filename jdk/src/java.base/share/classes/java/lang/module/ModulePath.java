@@ -52,6 +52,7 @@ import java.util.jar.Manifest;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -420,7 +421,7 @@ class ModulePath implements ConfigurableModuleFinder {
         // scan the entries in the JAR file to locate the .class and service
         // configuration file
         Map<Boolean, Set<String>> map =
-            jf.stream()
+            versionedStream(jf)
               .map(JarEntry::getName)
               .filter(s -> (s.endsWith(".class") ^ s.startsWith(SERVICES_PREFIX)))
               .collect(Collectors.partitioningBy(s -> s.endsWith(".class"),
@@ -503,8 +504,21 @@ class ModulePath implements ConfigurableModuleFinder {
         return mn;
     }
 
+    private Stream<JarEntry> versionedStream(JarFile jf) {
+        if (jf.isMultiRelease()) {
+            // a stream of JarEntries whose names are base names and whose
+            // contents are from the corresponding versioned entries in
+            // a multi-release jar file
+            return jf.stream().map(JarEntry::getName)
+                    .filter(name -> !name.startsWith("META-INF/versions/"))
+                    .map(jf::getJarEntry);
+        } else {
+            return jf.stream();
+        }
+    }
+
     private Set<String> jarPackages(JarFile jf) {
-        return jf.stream()
+        return versionedStream(jf)
             .filter(e -> e.getName().endsWith(".class"))
             .map(e -> toPackageName(e.getName()))
             .filter(pkg -> pkg.length() > 0)   // module-info

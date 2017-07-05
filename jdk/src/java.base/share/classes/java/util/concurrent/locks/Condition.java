@@ -396,7 +396,6 @@ public interface Condition {
      * re-acquire the lock associated with this condition. When the
      * thread returns it is <em>guaranteed</em> to hold this lock.
      *
-     *
      * <p>If the current thread:
      * <ul>
      * <li>has its interrupted status set on entry to this method; or
@@ -407,7 +406,6 @@ public interface Condition {
      * interrupted status is cleared. It is not specified, in the first
      * case, whether or not the test for interruption occurs before the lock
      * is released.
-     *
      *
      * <p>The return value indicates whether the deadline has elapsed,
      * which can be used as follows:

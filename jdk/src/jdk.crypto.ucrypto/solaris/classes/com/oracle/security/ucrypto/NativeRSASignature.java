@@ -330,9 +330,9 @@ class NativeRSASignature extends SignatureSpi {
     protected synchronized boolean engineVerify(byte[] sigBytes, int sigOfs, int sigLen)
         throws SignatureException {
         if (sigBytes == null || (sigOfs < 0) || (sigBytes.length < (sigOfs + this.sigLength))
-            || (sigLen < this.sigLength)) {
-            throw new SignatureException("Invalid signature buffer. sigOfs: " +
-                sigOfs + ". sigLen: " + sigLen + ". this.sigLength: " + this.sigLength);
+            || (sigLen != this.sigLength)) {
+            throw new SignatureException("Invalid signature length: got " +
+                sigLen + " but was expecting " + this.sigLength);
         }
 
         int rv = doFinal(sigBytes, sigOfs, sigLen);

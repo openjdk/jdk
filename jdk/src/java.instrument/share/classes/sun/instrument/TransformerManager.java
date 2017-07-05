@@ -169,6 +169,7 @@ public class TransformerManager
 
     public byte[]
     transform(  Module              module,
+                ClassLoader         loader,
                 String              classname,
                 Class<?>            classBeingRedefined,
                 ProtectionDomain    protectionDomain,
@@ -187,6 +188,7 @@ public class TransformerManager
 
             try {
                 transformedBytes = transformer.transform(   module,
+                                                            loader,
                                                             classname,
                                                             classBeingRedefined,
                                                             protectionDomain,
