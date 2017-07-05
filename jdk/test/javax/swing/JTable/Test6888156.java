@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,14 +71,14 @@ public class Test6888156 {
         table = new JTable(model);
     }
 
-    public void test(final LookAndFeel laf) throws Exception {
+    public void test(final String laf) throws Exception {
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override public void run() {
                 try {
+                    System.out.println(laf);
                     UIManager.setLookAndFeel(laf);
-                } catch (UnsupportedLookAndFeelException e) {
-                    System.err.println(laf.getDescription() +
-                                       " is unsupported; continuing");
+                } catch (Exception e) {
+                    System.err.println(laf + " is unsupported; continuing");
                     return;
                 }
                 SwingUtilities.updateComponentTreeUI(table);
@@ -92,8 +92,10 @@ public class Test6888156 {
 
     public static void main(String[] args) throws Exception {
         Test6888156 t = new Test6888156();
-        t.test(new javax.swing.plaf.nimbus.NimbusLookAndFeel());
-        t.test(new com.sun.java.swing.plaf.gtk.GTKLookAndFeel());
+        t.test("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+        t.test("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
+        for (UIManager.LookAndFeelInfo laf : UIManager.getInstalledLookAndFeels()) {
+            t.test(laf.getClassName());
+        }
     }
 }
-

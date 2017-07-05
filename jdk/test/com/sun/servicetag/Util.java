@@ -162,6 +162,8 @@ public class Util {
         for (ServiceTag st : svcTags) {
             ServiceTag st1 = stMap.get(st.getInstanceURN());
             if (!matches(st, st1)) {
+                System.err.println(st);
+                System.err.println(st1);
                 throw new RuntimeException("ServiceTag in the registry " +
                     "does not match the one in the map");
             }

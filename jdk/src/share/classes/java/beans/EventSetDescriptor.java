@@ -176,8 +176,9 @@ public class EventSetDescriptor extends FeatureDescriptor {
         setRemoveListenerMethod(getMethod(sourceClass, removeListenerMethodName, 1));
 
         // Be more forgiving of not finding the getListener method.
-        if (getListenerMethodName != null) {
-            setGetListenerMethod(Introspector.findInstanceMethod(sourceClass, getListenerMethodName));
+        Method method = Introspector.findMethod(sourceClass, getListenerMethodName, 0);
+        if (method != null) {
+            setGetListenerMethod(method);
         }
     }
 

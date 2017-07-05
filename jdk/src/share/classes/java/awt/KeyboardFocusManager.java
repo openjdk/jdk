@@ -142,6 +142,9 @@ public abstract class KeyboardFocusManager
                 public void removeLastFocusRequest(Component heavyweight) {
                     KeyboardFocusManager.removeLastFocusRequest(heavyweight);
                 }
+                public void setMostRecentFocusOwner(Window window, Component component) {
+                    KeyboardFocusManager.setMostRecentFocusOwner(window, component);
+                }
             }
         );
     }

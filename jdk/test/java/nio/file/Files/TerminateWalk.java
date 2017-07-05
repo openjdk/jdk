@@ -49,20 +49,17 @@ public class TerminateWalk {
     public static void main(String[] args) throws Exception {
         Path dir = Paths.get(args[0]);
 
-        Files.walkFileTree(dir, new FileVisitor<Path>() {
-            public FileVisitResult preVisitDirectory(Path dir) {
+        Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
                 return maybeTerminate();
             }
-            public FileVisitResult preVisitDirectoryFailed(Path dir, IOException exc) {
-                return maybeTerminate();
-            }
+            @Override
             public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
                 return maybeTerminate();
             }
+            @Override
             public FileVisitResult postVisitDirectory(Path dir, IOException x) {
-                return maybeTerminate();
-            }
-            public FileVisitResult visitFileFailed(Path file, IOException x) {
                 return maybeTerminate();
             }
         });
