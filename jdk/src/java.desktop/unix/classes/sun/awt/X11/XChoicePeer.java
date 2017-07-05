@@ -482,7 +482,7 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
         firstPress = false;
         dragStartIdx = -1;
     }
-
+    @SuppressWarnings("deprecation")
     public void mouseDragged(MouseEvent e) {
         /*
          * fix for 5003166. On Motif user are unable to drag

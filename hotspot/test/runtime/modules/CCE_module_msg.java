@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,21 +83,21 @@ public class CCE_module_msg {
         ClassLoader this_cldr = CCE_module_msg.class.getClassLoader();
 
         // Define a module for p2.
-        Object m2 = ModuleHelper.ModuleObject("module2", this_cldr, new String[] { "p2" });
-        assertNotNull(m2, "Module should not be null");
-        ModuleHelper.DefineModule(m2, "9.0", "m2/there", new String[] { "p2" });
-        ModuleHelper.AddReadsModule(m2, jlObject_jlrM);
+        Object m2x = ModuleHelper.ModuleObject("module_two", this_cldr, new String[] { "p2" });
+        assertNotNull(m2x, "Module should not be null");
+        ModuleHelper.DefineModule(m2x, "9.0", "m2x/there", new String[] { "p2" });
+        ModuleHelper.AddReadsModule(m2x, jlObject_jlrM);
 
         try {
-            ModuleHelper.AddModuleExportsToAll(m2, "p2");
+            ModuleHelper.AddModuleExportsToAll(m2x, "p2");
             Object p2Obj = new p2.c2();
             System.out.println((String)p2Obj);
             throw new RuntimeException("ClassCastException wasn't thrown, test failed.");
         } catch (ClassCastException cce) {
             String exception = cce.getMessage();
             System.out.println(exception);
-            if (exception.contains("module2/p2.c2") ||
-                !(exception.contains("module2@") &&
+            if (exception.contains("module_two/p2.c2") ||
+                !(exception.contains("module_two@") &&
                   exception.contains("/p2.c2 cannot be cast to java.base/java.lang.String"))) {
                 throw new RuntimeException("Wrong message: " + exception);
             }

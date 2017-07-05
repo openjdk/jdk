@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,6 +144,7 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
         Content div = HtmlTree.DIV(HtmlStyle.contentContainer, table);
         if (configuration.allowTag(HtmlTag.MAIN)) {
             htmlTree.addContent(div);
+            body.addContent(htmlTree);
         } else {
             body.addContent(div);
         }
@@ -183,21 +184,12 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
     protected void addOverviewHeader(Content body) {
         addConfigurationTitle(body);
         if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
-            HtmlTree subTitleDiv = new HtmlTree(HtmlTag.DIV);
-            subTitleDiv.addStyle(HtmlStyle.subTitle);
-            addSummaryComment(configuration.overviewElement, subTitleDiv);
-            Content div = HtmlTree.DIV(HtmlStyle.header, subTitleDiv);
-            Content see = new ContentBuilder();
-            see.addContent(contents.seeLabel);
-            see.addContent(" ");
-            Content descPara = HtmlTree.P(see);
-            Content descLink = getHyperLink(getDocLink(
-                    SectionName.OVERVIEW_DESCRIPTION),
-                    contents.descriptionLabel, "", "");
-            descPara.addContent(descLink);
-            div.addContent(descPara);
+            HtmlTree div = new HtmlTree(HtmlTag.DIV);
+            div.addStyle(HtmlStyle.contentContainer);
+            addOverviewComment(div);
             if (configuration.allowTag(HtmlTag.MAIN)) {
                 htmlTree.addContent(div);
+                body.addContent(htmlTree);
             } else {
                 body.addContent(div);
             }
@@ -213,29 +205,17 @@ public class ModuleIndexWriter extends AbstractModuleIndexWriter {
      */
     protected void addOverviewComment(Content htmltree) {
         if (!utils.getFullBody(configuration.overviewElement).isEmpty()) {
-            htmltree.addContent(getMarkerAnchor(SectionName.OVERVIEW_DESCRIPTION));
             addInlineComment(configuration.overviewElement, htmltree);
         }
     }
 
     /**
-     * Adds the tag information as provided in the file specified by the
-     * "-overview" option on the command line.
+     * Not required for this page.
      *
      * @param body the documentation tree to which the overview will be added
      */
     @Override
-    protected void addOverview(Content body) {
-        HtmlTree div = new HtmlTree(HtmlTag.DIV);
-        div.addStyle(HtmlStyle.contentContainer);
-        addOverviewComment(div);
-        if (configuration.allowTag(HtmlTag.MAIN)) {
-            htmlTree.addContent(div);
-            body.addContent(htmlTree);
-        } else {
-            body.addContent(div);
-        }
-    }
+    protected void addOverview(Content body) {}
 
     /**
      * Adds the top text (from the -top option), the upper
