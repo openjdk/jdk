@@ -1191,6 +1191,7 @@ public class BasicSplitPaneUI extends SplitPaneUI
      * Should be messaged before the dragging session starts, resets
      * lastDragLocation and dividerSize.
      */
+    @SuppressWarnings("deprecation")
     protected void startDragging() {
         Component       leftC = splitPane.getLeftComponent();
         Component       rightC = splitPane.getRightComponent();

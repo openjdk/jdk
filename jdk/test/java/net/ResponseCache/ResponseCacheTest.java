@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 import java.net.*;
 import java.util.*;
 import java.io.*;
-import sun.net.www.ParseUtil;
 import javax.net.ssl.*;
 
 /**
@@ -178,11 +177,16 @@ static class NameVerifier implements HostnameVerifier {
     }
 
     static class MyResponseCache extends ResponseCache {
-        public CacheResponse
-        get(URI uri, String rqstMethod, Map<String,List<String>> rqstHeaders)
-            throws IOException {
-            if (uri.equals(ParseUtil.toURI(url1))) {
-                return new MyCacheResponse(FNPrefix+"file1.cache");
+        public CacheResponse get(URI uri, String rqstMethod,
+                                 Map<String,List<String>> rqstHeaders)
+            throws IOException
+        {
+            try {
+                if (uri.equals(url1.toURI())) {
+                    return new MyCacheResponse(FNPrefix+"file1.cache");
+                }
+            } catch (URISyntaxException ex) {
+                throw new RuntimeException (ex);
             }
             return null;
         }

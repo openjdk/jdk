@@ -2644,6 +2644,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
             /**
              * The only richer format supported is the file list flavor
              */
+            @SuppressWarnings("deprecation")
             protected Object getRicherData(DataFlavor flavor) throws UnsupportedFlavorException {
                 if (richText == null) {
                     return null;

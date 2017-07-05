@@ -39,16 +39,22 @@ public class UseSHASpecificTestCaseForSupportedSparcCPU
                 IntrinsicPredicates.ANY_SHA_INSTRUCTION_AVAILABLE));
 
         Asserts.assertEQ(optionName, SHAOptionsBase.USE_SHA_OPTION,
-                "Test case should be used for " + SHAOptionsBase.USE_SHA_OPTION
-                        + " option only.");
+                String.format("Test case should be used for '%s' option only.",
+                        SHAOptionsBase.USE_SHA_OPTION));
     }
 
     @Override
     protected void verifyWarnings() throws Throwable {
+        String shouldPassMessage = String.format("JVM startup should pass when"
+                        + " %s was passed and all UseSHA*Intrinsics options "
+                        + "were disabled",
+                        CommandLineOptionTest.prepareBooleanFlag(
+                            SHAOptionsBase.USE_SHA_OPTION, true));
         // Verify that there will be no warnings when +UseSHA was passed and
         // all UseSHA*Intrinsics options were disabled.
         CommandLineOptionTest.verifySameJVMStartup(
-                null, new String[] { ".*UseSHA.*" }, ExitCode.OK,
+                null, new String[] { ".*UseSHA.*" }, shouldPassMessage,
+                shouldPassMessage, ExitCode.OK,
                 CommandLineOptionTest.prepareBooleanFlag(
                         SHAOptionsBase.USE_SHA_OPTION, true),
                 CommandLineOptionTest.prepareBooleanFlag(
@@ -61,10 +67,12 @@ public class UseSHASpecificTestCaseForSupportedSparcCPU
 
     @Override
     protected void verifyOptionValues() throws Throwable {
-        // Verify that UseSHA is disabled when all UseSHA*Intrinscs are
+        // Verify that UseSHA is disabled when all UseSHA*Intrinsics are
         // disabled.
         CommandLineOptionTest.verifyOptionValueForSameVM(
-                SHAOptionsBase.USE_SHA_OPTION, "false",
+                SHAOptionsBase.USE_SHA_OPTION, "false", String.format(
+                "'%s' option should be disabled when all UseSHA*Intrinsics are"
+                        + " disabled", SHAOptionsBase.USE_SHA_OPTION),
                 CommandLineOptionTest.prepareBooleanFlag(
                         SHAOptionsBase.USE_SHA1_INTRINSICS_OPTION, false),
                 CommandLineOptionTest.prepareBooleanFlag(
@@ -73,9 +81,14 @@ public class UseSHASpecificTestCaseForSupportedSparcCPU
                         SHAOptionsBase.USE_SHA512_INTRINSICS_OPTION, false));
 
         CommandLineOptionTest.verifyOptionValueForSameVM(
-                // Verify that UseSHA is disabled when all UseSHA*Intrinscs are
+                // Verify that UseSHA is disabled when all UseSHA*Intrinsics are
                 // disabled even if it was explicitly enabled.
                 SHAOptionsBase.USE_SHA_OPTION, "false",
+                String.format("'%s' option should be disabled when all "
+                        + "UseSHA*Intrinsics are disabled even if %s flag set "
+                        + "to JVM", SHAOptionsBase.USE_SHA_OPTION,
+                        CommandLineOptionTest.prepareBooleanFlag(
+                             SHAOptionsBase.USE_SHA_OPTION, true)),
                 CommandLineOptionTest.prepareBooleanFlag(
                         SHAOptionsBase.USE_SHA_OPTION, true),
                 CommandLineOptionTest.prepareBooleanFlag(
@@ -89,6 +102,11 @@ public class UseSHASpecificTestCaseForSupportedSparcCPU
         // if all UseSHA*Intrinsics options were enabled.
         CommandLineOptionTest.verifyOptionValueForSameVM(
                 SHAOptionsBase.USE_SHA_OPTION, "false",
+                String.format("'%s' option should be disabled if %s flag "
+                        + "set even if all UseSHA*Intrinsics were enabled",
+                        SHAOptionsBase.USE_SHA_OPTION,
+                        CommandLineOptionTest.prepareBooleanFlag(
+                            SHAOptionsBase.USE_SHA_OPTION, false)),
                 CommandLineOptionTest.prepareBooleanFlag(
                         SHAOptionsBase.USE_SHA_OPTION, false),
                 CommandLineOptionTest.prepareBooleanFlag(

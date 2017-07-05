@@ -32,7 +32,7 @@ import rtm.predicate.SupportedVM;
  * @bug 8031320
  * @summary Verify RTMTotalCountIncrRate option processing on CPU without
  *          rtm support and/or on VM without rtm locking support.
- * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
+ * @library /testlibrary /../../test/lib /compiler/testlibrary
  * @build TestRTMTotalCountIncrRateOptionOnUnsupportedConfig
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

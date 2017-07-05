@@ -143,6 +143,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         return map;
     }
 
+    @SuppressWarnings("deprecation")
     public String getFileName() {
         JFileChooser fc = getFileChooser();
         String typedInName = fileNameTextField != null ?
@@ -419,6 +420,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
 
 
 
+    @SuppressWarnings("deprecation")
     protected class SelectionListener implements ListSelectionListener {
         public void valueChanged(ListSelectionEvent e) {
             if (!e.getValueIsAdjusting()) {

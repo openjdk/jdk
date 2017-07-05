@@ -5049,6 +5049,7 @@ public abstract class JComponent extends Container implements Serializable,
         this.paintingChild = paintingChild;
     }
 
+    @SuppressWarnings("deprecation")
     void _paintImmediately(int x, int y, int w, int h) {
         Graphics g;
         Container c;

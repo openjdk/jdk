@@ -40,9 +40,7 @@ import static sun.nio.fs.UnixConstants.*;
  * Solaris/Linux implementation of java.nio.file.Path
  */
 
-class UnixPath
-    extends AbstractPath
-{
+class UnixPath implements Path {
     private static ThreadLocal<SoftReference<CharsetEncoder>> encoder =
         new ThreadLocal<SoftReference<CharsetEncoder>>();
 
