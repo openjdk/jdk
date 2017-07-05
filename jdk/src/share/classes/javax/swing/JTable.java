@@ -1828,6 +1828,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * table.  While the {@code autoCreateRowSorter} property remains
      * {@code true}, every time the model is changed, a new {@code
      * TableRowSorter} is created and set as the table's row sorter.
+     * The default value for the {@code autoCreateRowSorter}
+     * property is {@code false}.
      *
      * @param autoCreateRowSorter whether or not a {@code RowSorter}
      *        should be automatically created

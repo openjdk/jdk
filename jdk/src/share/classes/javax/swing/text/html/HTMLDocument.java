@@ -1181,7 +1181,12 @@ public class HTMLDocument extends DefaultStyledDocument {
     public void insertAfterStart(Element elem, String htmlText) throws
                                  BadLocationException, IOException {
         verifyParser();
-        if (elem != null && elem.isLeaf()) {
+
+        if (elem == null || htmlText == null) {
+            return;
+        }
+
+        if (elem.isLeaf()) {
             throw new IllegalArgumentException
                 ("Can not insert HTML after start of a leaf");
         }

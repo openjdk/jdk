@@ -1838,7 +1838,9 @@ public class JTree extends JComponent implements Scrollable, Accessible
      *         nodes, or <code>null</code> if nothing is currently selected
      */
     public TreePath[] getSelectionPaths() {
-        return getSelectionModel().getSelectionPaths();
+        TreePath[] selectionPaths = getSelectionModel().getSelectionPaths();
+
+        return (selectionPaths != null && selectionPaths.length > 0) ? selectionPaths : null;
     }
 
     /**
