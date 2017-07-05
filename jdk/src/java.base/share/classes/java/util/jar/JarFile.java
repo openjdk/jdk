@@ -593,7 +593,7 @@ class JarFile extends ZipFile {
         if (includeUnsigned) {
             return unsignedEntryNames();
         } else {
-            return new Enumeration<String>() {
+            return new Enumeration<>() {
 
                 public boolean hasMoreElements() {
                     return false;
@@ -619,7 +619,7 @@ class JarFile extends ZipFile {
 
         // screen out entries which are never signed
         final Enumeration<? extends ZipEntry> enum_ = super.entries();
-        return new Enumeration<JarEntry>() {
+        return new Enumeration<>() {
 
             ZipEntry entry;
 
@@ -669,7 +669,7 @@ class JarFile extends ZipFile {
 
     private Enumeration<String> unsignedEntryNames() {
         final Enumeration<JarEntry> entries = entries();
-        return new Enumeration<String>() {
+        return new Enumeration<>() {
 
             String name;
 

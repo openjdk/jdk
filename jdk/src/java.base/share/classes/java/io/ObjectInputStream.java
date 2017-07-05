@@ -1263,7 +1263,7 @@ public class ObjectInputStream
      */
     private static boolean auditSubclass(final Class<?> subcl) {
         Boolean result = AccessController.doPrivileged(
-            new PrivilegedAction<Boolean>() {
+            new PrivilegedAction<>() {
                 public Boolean run() {
                     for (Class<?> cl = subcl;
                          cl != ObjectInputStream.class;
@@ -2255,7 +2255,7 @@ public class ObjectInputStream
             try {
                 while (list != null) {
                     AccessController.doPrivileged(
-                        new PrivilegedExceptionAction<Void>()
+                        new PrivilegedExceptionAction<>()
                     {
                         public Void run() throws InvalidObjectException {
                             list.obj.validateObject();

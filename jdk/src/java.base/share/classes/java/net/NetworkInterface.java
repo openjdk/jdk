@@ -54,7 +54,7 @@ public final class NetworkInterface {
 
     static {
         AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
+            new java.security.PrivilegedAction<>() {
                 public Void run() {
                     System.loadLibrary("net");
                     return null;
@@ -167,7 +167,7 @@ public final class NetworkInterface {
      * @since 1.6
      */
     public java.util.List<InterfaceAddress> getInterfaceAddresses() {
-        java.util.List<InterfaceAddress> lst = new java.util.ArrayList<InterfaceAddress>(1);
+        java.util.List<InterfaceAddress> lst = new java.util.ArrayList<>(1);
         SecurityManager sec = System.getSecurityManager();
         for (int j=0; j<bindings.length; j++) {
             try {
@@ -346,7 +346,7 @@ public final class NetworkInterface {
         if (netifs == null)
             return null;
 
-        return new Enumeration<NetworkInterface>() {
+        return new Enumeration<>() {
             private int i = 0;
             public NetworkInterface nextElement() {
                 if (netifs != null && i < netifs.length) {

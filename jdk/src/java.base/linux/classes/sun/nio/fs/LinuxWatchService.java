@@ -190,7 +190,7 @@ class LinuxWatchService
             this.watcher = watcher;
             this.ifd = ifd;
             this.socketpair = sp;
-            this.wdToKey = new HashMap<Integer,LinuxWatchKey>();
+            this.wdToKey = new HashMap<>();
             this.address = unsafe.allocateMemory(BUFFER_SIZE);
         }
 
@@ -457,7 +457,7 @@ class LinuxWatchService
     private static native int poll(int fd1, int fd2) throws UnixException;
 
     static {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+        AccessController.doPrivileged(new PrivilegedAction<>() {
             public Void run() {
                 System.loadLibrary("nio");
                 return null;

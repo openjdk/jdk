@@ -199,7 +199,7 @@ public class MethodHandleProxies {
             // sun.invoke.WrapperInstance is a restricted interface not accessible
             // by any non-null class loader.
             final ClassLoader loader = proxyLoader;
-            proxy = AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            proxy = AccessController.doPrivileged(new PrivilegedAction<>() {
                 public Object run() {
                     return Proxy.newProxyInstance(
                             loader,

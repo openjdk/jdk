@@ -25,6 +25,7 @@
  * @test
  * @bug 4919147
  * @summary Support for token-based KeyStores
+ * @run main/othervm -Duser.language=en OptionTest
  */
 
 import java.io.File;

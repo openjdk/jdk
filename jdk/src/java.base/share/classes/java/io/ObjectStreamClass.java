@@ -367,7 +367,7 @@ public class ObjectStreamClass implements Serializable {
                 entry = th;
             }
             if (future.set(entry)) {
-                Caches.localDescs.put(key, new SoftReference<Object>(entry));
+                Caches.localDescs.put(key, new SoftReference<>(entry));
             } else {
                 // nested lookup call already set future
                 entry = future.get();
@@ -430,7 +430,7 @@ public class ObjectStreamClass implements Serializable {
             }
             if (interrupted) {
                 AccessController.doPrivileged(
-                    new PrivilegedAction<Void>() {
+                    new PrivilegedAction<>() {
                         public Void run() {
                             Thread.currentThread().interrupt();
                             return null;
@@ -465,7 +465,7 @@ public class ObjectStreamClass implements Serializable {
         localDesc = this;
 
         if (serializable) {
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            AccessController.doPrivileged(new PrivilegedAction<>() {
                 public Void run() {
                     if (isEnum) {
                         suid = Long.valueOf(0);
@@ -1733,7 +1733,7 @@ public class ObjectStreamClass implements Serializable {
             for (int i = 0; i < fields.length; i++) {
                 fieldSigs[i] = new MemberSignature(fields[i]);
             }
-            Arrays.sort(fieldSigs, new Comparator<MemberSignature>() {
+            Arrays.sort(fieldSigs, new Comparator<>() {
                 public int compare(MemberSignature ms1, MemberSignature ms2) {
                     return ms1.name.compareTo(ms2.name);
                 }
@@ -1764,7 +1764,7 @@ public class ObjectStreamClass implements Serializable {
             for (int i = 0; i < cons.length; i++) {
                 consSigs[i] = new MemberSignature(cons[i]);
             }
-            Arrays.sort(consSigs, new Comparator<MemberSignature>() {
+            Arrays.sort(consSigs, new Comparator<>() {
                 public int compare(MemberSignature ms1, MemberSignature ms2) {
                     return ms1.signature.compareTo(ms2.signature);
                 }
@@ -1787,7 +1787,7 @@ public class ObjectStreamClass implements Serializable {
             for (int i = 0; i < methods.length; i++) {
                 methSigs[i] = new MemberSignature(methods[i]);
             }
-            Arrays.sort(methSigs, new Comparator<MemberSignature>() {
+            Arrays.sort(methSigs, new Comparator<>() {
                 public int compare(MemberSignature ms1, MemberSignature ms2) {
                     int comp = ms1.name.compareTo(ms2.name);
                     if (comp == 0) {
@@ -2164,7 +2164,7 @@ public class ObjectStreamClass implements Serializable {
                 entry = th;
             }
             future.set(entry);
-            Caches.reflectors.put(key, new SoftReference<Object>(entry));
+            Caches.reflectors.put(key, new SoftReference<>(entry));
         }
 
         if (entry instanceof FieldReflector) {

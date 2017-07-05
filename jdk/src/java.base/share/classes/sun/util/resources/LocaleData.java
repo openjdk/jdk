@@ -159,7 +159,7 @@ public class LocaleData {
     }
 
     public static ResourceBundle getBundle(final String baseName, final Locale locale) {
-        return AccessController.doPrivileged(new PrivilegedAction<ResourceBundle>() {
+        return AccessController.doPrivileged(new PrivilegedAction<>() {
             @Override
             public ResourceBundle run() {
                 return ResourceBundle
@@ -169,7 +169,7 @@ public class LocaleData {
     }
 
     private static OpenListResourceBundle getSupplementary(final String baseName, final Locale locale) {
-        return AccessController.doPrivileged(new PrivilegedAction<OpenListResourceBundle>() {
+        return AccessController.doPrivileged(new PrivilegedAction<>() {
            @Override
            public OpenListResourceBundle run() {
                OpenListResourceBundle rb = null;
