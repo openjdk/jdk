@@ -315,9 +315,9 @@ Declares a structure type that can be used in other events.
 
   <event id="G1MMU" path="vm/gc/detailed/g1_mmu_info" label="G1 MMU Information" is_instant="true">
     <value type="UINT" field="gcId" label="GC Identifier" relation="GcId"/>
-    <value type="DOUBLE" field="timeSlice" label="Time Slice" description="Time slice used to calculate MMU"/>
-    <value type="DOUBLE" field="gcTime" label="GC Time" description="Time spent on GC during last time slice"/>
-    <value type="DOUBLE" field="maxGcTime" label="Max GC Time" description="Max time allowed to be spent on GC during last time slice"/>
+    <value type="MILLIS" field="timeSlice" label="Time Slice" description="Time slice used to calculate MMU"/>
+    <value type="MILLIS" field="gcTime" label="GC Time" description="Time stopped because of GC during last time slice"/>
+    <value type="MILLIS" field="pauseTarget" label="Pause Target" description="Max time allowed to be spent on GC during last time slice"/>
   </event>
 
   <event id="EvacuationInformation" path="vm/gc/detailed/evacuation_info" label="Evacuation Information" is_instant="true">
@@ -377,29 +377,29 @@ Declares a structure type that can be used in other events.
     <structvalue type="G1EvacuationStatistics" field="statistics" label="Evacuation Statistics"/>
   </event>
 
-  <event id="G1BasicIHOP" path="vm/gc/detailed/g1_basic_ihop_status" label="G1 Basic IHOP statistics"
+  <event id="G1BasicIHOP" path="vm/gc/detailed/g1_basic_ihop_status" label="G1 Basic IHOP Statistics"
          is_instant="true" description="Basic statistics related to current IHOP calculation">
     <value type="UINT" field="gcId" label="GC Identifier" relation="GcId"/>
-    <value type="BYTES64" field="threshold" label="Current IHOP threshold" description="Current IHOP threshold in bytes"/>
-    <value type="PERCENTAGE" field="thresholdPercentage" label="Current IHOP threshold in percent" description="Current IHOP threshold in percent of old gen"/>
-    <value type="BYTES64" field="targetOccupancy" label="Target Occupancy" description="Target old gen occupancy to reach at the start of mixed GC in bytes"/>
-    <value type="BYTES64" field="currentOccupancy" label="Current Occupancy" description="Current old generation occupancy in bytes"/>
-    <value type="BYTES64" field="lastAllocationSize" label="Last Mutator Allocation" description="Mutator allocation during mutator operation since last GC in bytes"/>
-    <value type="DOUBLE" field="lastAllocationDuration" label="Last Mutator Operation" description="Time the mutator ran since last GC in seconds"/>
-    <value type="DOUBLE" field="lastAllocationRate" label="Last Mutator Allocation Rate" description="Allocation rate of the mutator since last GC in bytes/second"/>
-    <value type="DOUBLE" field="lastMarkingLength" label="Last Marking Length" description="Last time from the end of the last initial mark to the first mixed GC in seconds"/>
+    <value type="BYTES64" field="threshold" label="Current IHOP Threshold" description="Current IHOP threshold"/>
+    <value type="PERCENTAGE" field="thresholdPercentage" label="Current IHOP Threshold" description="Current IHOP threshold in percent of old generation"/>
+    <value type="BYTES64" field="targetOccupancy" label="Target Occupancy" description="Target old generation occupancy to reach at the start of mixed GC"/>
+    <value type="BYTES64" field="currentOccupancy" label="Current Occupancy" description="Current old generation occupancy"/>
+    <value type="BYTES64" field="recentMutatorAllocationSize" label="Recent Mutator Allocation Size" description="Mutator allocation during mutator operation in the most recent interval"/>
+    <value type="MILLIS" field="recentMutatorDuration" label="Recent Mutator Duration" description="Time the mutator ran in the most recent interval"/>
+    <value type="DOUBLE" field="recentAllocationRate" label="Recent Allocation Rate" description="Allocation rate of the mutator in the most recent interval in bytes/second"/>
+    <value type="MILLIS" field="lastMarkingDuration" label="Last Marking Duration" description="Last time from the end of the last initial mark to the first mixed GC"/>
   </event>
 
-  <event id="G1AdaptiveIHOP" path="vm/gc/detailed/g1_adaptive_ihop_status" label="G1 Adaptive IHOP statistics"
+  <event id="G1AdaptiveIHOP" path="vm/gc/detailed/g1_adaptive_ihop_status" label="G1 Adaptive IHOP Statistics"
          is_instant="true" description="Statistics related to current adaptive IHOP calculation">
     <value type="UINT" field="gcId" label="GC Identifier" relation="GcId"/>
-    <value type="BYTES64" field="threshold" label="Threshold" description="Current IHOP threshold in bytes"/>
-    <value type="PERCENTAGE" field="thresholdPercentage" label="Threshold Percentage" description="Current IHOP threshold in percent of the internal target occupancy"/>
-    <value type="BYTES64" field="internalTargetOccupancy" label="Target Occupancy" description="Internal target old generation occupancy to reach at the start of mixed GC in bytes"/>
-    <value type="BYTES64" field="currentOccupancy" label="Current Occupancy" description="Current old generation occupancy in bytes"/>
-    <value type="BYTES64" field="additionalBufferSize" label="Additional Buffer" description="Additional buffer size in bytes"/>
+    <value type="BYTES64" field="threshold" label="Threshold" description="Current IHOP Threshold"/>
+    <value type="PERCENTAGE" field="thresholdPercentage" label="Threshold" description="Current IHOP threshold in percent of the internal target occupancy"/>
+    <value type="BYTES64" field="ihopTargetOccupancy" label="IHOP Target Occupancy" description="Internal target old generation occupancy to reach at the start of mixed GC"/>
+    <value type="BYTES64" field="currentOccupancy" label="Current Occupancy" description="Current old generation occupancy"/>
+    <value type="BYTES64" field="additionalBufferSize" label="Additional Buffer" description="Additional buffer size" experimental="true"/>
     <value type="DOUBLE" field="predictedAllocationRate" label="Predicted Allocation Rate" description="Current predicted allocation rate for the mutator in bytes/second"/>
-    <value type="DOUBLE" field="predictedMarkingLength" label="Predicted Marking Length" description="Current predicted time from the end of the last initial mark to the first mixed GC in seconds"/>
+    <value type="MILLIS" field="predictedMarkingDuration" label="Predicted Marking Duration" description="Current predicted time from the end of the last initial mark to the first mixed GC"/>
     <value type="BOOLEAN" field="predictionActive" label="Prediction Active" description="Indicates whether the adaptive IHOP prediction is active"/>
   </event>
 

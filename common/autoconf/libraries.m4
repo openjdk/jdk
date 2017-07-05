@@ -42,13 +42,9 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
     # No X11 support on windows or macosx
     NEEDS_LIB_X11=false
   else
-    if test "x$SUPPORT_HEADFUL" = xno; then
-      # No X11 support if building headless-only
-      NEEDS_LIB_X11=false
-    else
-      # All other instances need X11
-      NEEDS_LIB_X11=true
-    fi
+    # All other instances need X11, even if building headless only, libawt still
+    # needs X11 headers.
+    NEEDS_LIB_X11=true
   fi
 
   # Check if cups is needed

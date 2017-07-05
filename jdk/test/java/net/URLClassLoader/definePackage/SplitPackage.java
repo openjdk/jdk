@@ -27,6 +27,7 @@
  * @summary Test two URLClassLoader define Package object of the same name
  * @library /lib/testlibrary
  * @build CompilerUtils
+ * @modules jdk.compiler
  * @run testng SplitPackage
  */
 

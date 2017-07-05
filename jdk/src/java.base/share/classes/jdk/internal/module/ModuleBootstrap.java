@@ -153,27 +153,24 @@ public final class ModuleBootstrap {
         boolean addAllDefaultModules = false;
         boolean addAllSystemModules = false;
         boolean addAllApplicationModules = false;
-        String propValue = getAndRemoveProperty("jdk.module.addmods");
-        if (propValue != null) {
-            for (String mod: propValue.split(",")) {
-                switch (mod) {
-                    case ALL_DEFAULT:
-                        addAllDefaultModules = true;
-                        break;
-                    case ALL_SYSTEM:
-                        addAllSystemModules = true;
-                        break;
-                    case ALL_MODULE_PATH:
-                        addAllApplicationModules = true;
-                        break;
-                    default :
-                        roots.add(mod);
-                }
+        for (String mod: getExtraAddModules()) {
+            switch (mod) {
+                case ALL_DEFAULT:
+                    addAllDefaultModules = true;
+                    break;
+                case ALL_SYSTEM:
+                    addAllSystemModules = true;
+                    break;
+                case ALL_MODULE_PATH:
+                    addAllApplicationModules = true;
+                    break;
+                default :
+                    roots.add(mod);
             }
         }
 
         // --limit-modules
-        propValue = getAndRemoveProperty("jdk.module.limitmods");
+        String propValue = getAndRemoveProperty("jdk.module.limitmods");
         if (propValue != null) {
             Set<String> mods = new HashSet<>();
             for (String mod: propValue.split(",")) {
@@ -392,6 +389,32 @@ public final class ModuleBootstrap {
         }
     }
 
+    /**
+     * Returns the set of module names specified via --add-modules options
+     * on the command line
+     */
+    private static Set<String> getExtraAddModules() {
+        String prefix = "jdk.module.addmods.";
+        int index = 0;
+
+        // the system property is removed after decoding
+        String value = getAndRemoveProperty(prefix + index);
+        if (value == null) {
+            return Collections.emptySet();
+        }
+
+        Set<String> modules = new HashSet<>();
+        while (value != null) {
+            for (String s : value.split(",")) {
+                if (s.length() > 0) modules.add(s);
+            }
+
+            index++;
+            value = getAndRemoveProperty(prefix + index);
+        }
+
+        return modules;
+    }
 
     /**
      * Process the --add-reads options to add any additional read edges that
@@ -514,7 +537,7 @@ public final class ModuleBootstrap {
 
             // value is <module>(,<module>)*
             if (map.containsKey(key))
-                fail(key + " specified more than once");
+                 fail(key + " specified more than once");
 
             Set<String> values = new HashSet<>();
             map.put(key, values);

@@ -32,7 +32,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stax.StAXSource;
 import javax.xml.transform.stream.StreamSource;
-
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Listeners;
@@ -42,7 +41,7 @@ import org.xml.sax.InputSource;
 
 /**
  * @test
- * @bug 8158084 8162438 8162442 8166220
+ * @bug 8158084 8162438 8162442 8166220 8166398
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
  * @run testng/othervm -DrunSecMngr=true catalog.CatalogSupport
  * @run testng/othervm catalog.CatalogSupport
@@ -51,7 +50,7 @@ import org.xml.sax.InputSource;
  * A custom resolver is used whether or not there's a Catalog;
  * A Catalog is used when there's no custom resolver, and the USE_CATALOG
  * is true (which is the case by default).
- */
+*/
 
 /**
  * Support Catalog:
@@ -177,13 +176,13 @@ public class CatalogSupport extends CatalogSupportBase {
      */
     @DataProvider(name = "data_SAXA")
     public Object[][] getDataSAX() {
-        String[] systemIds = {"system.xsd"};
-        InputSource[] returnValues = {new InputSource(new StringReader(dtd_systemResolved))};
-        MyEntityHandler entityHandler = new MyEntityHandler(systemIds, returnValues, elementInSystem);
+        String[] systemIds = {"system.dtd"};
         return new Object[][]{
             {false, true, xml_catalog, xml_system, new MyHandler(elementInSystem), expectedWCatalog},
-            {false, true, xml_catalog, xml_system, entityHandler, expectedWResolver},
-            {true, true, xml_catalog, xml_system, entityHandler, expectedWResolver}
+            {false, true, xml_catalog, xml_system, getMyEntityHandler(elementInSystem, systemIds,
+                    new InputSource(new StringReader(dtd_systemResolved))), expectedWResolver},
+            {true, true, xml_catalog, xml_system, getMyEntityHandler(elementInSystem, systemIds,
+                    new InputSource(new StringReader(dtd_systemResolved))), expectedWResolver}
         };
     }
 
@@ -209,7 +208,7 @@ public class CatalogSupport extends CatalogSupportBase {
      */
     @DataProvider(name = "data_DOMA")
     public Object[][] getDataDOM() {
-        String[] systemIds = {"system.xsd"};
+        String[] systemIds = {"system.dtd"};
         InputSource[] returnValues = {new InputSource(new StringReader(dtd_systemResolved))};
         MyEntityHandler entityHandler = new MyEntityHandler(systemIds, returnValues, elementInSystem);
         return new Object[][]{
@@ -230,8 +229,8 @@ public class CatalogSupport extends CatalogSupportBase {
 
         return new Object[][]{
             {false, true, xml_catalog, xml_system, null, expectedWCatalog},
-            {false, true, xml_catalog, xml_system, null, expectedWResolver},
-            {true, true, xml_catalog, xml_system, null, expectedWResolver}
+            {false, true, xml_catalog, xml_system, new MyStaxEntityResolver(), expectedWResolver},
+            {true, true, xml_catalog, xml_system, new MyStaxEntityResolver(), expectedWResolver}
         };
     }
 

@@ -443,7 +443,7 @@ class os: AllStatic {
 
   static bool create_thread(Thread* thread,
                             ThreadType thr_type,
-                            size_t stack_size = 0);
+                            size_t req_stack_size = 0);
   static bool create_main_thread(JavaThread* thread);
   static bool create_attached_thread(JavaThread* thread);
   static void pd_start_thread(Thread* thread);
