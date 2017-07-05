@@ -230,7 +230,7 @@ ConcurrentMarkSweepGeneration::ConcurrentMarkSweepGeneration(
   // depends on this property.
   debug_only(
     FreeChunk* junk = NULL;
-    assert(UseCompressedKlassPointers ||
+    assert(UseCompressedClassPointers ||
            junk->prev_addr() == (void*)(oop(junk)->klass_addr()),
            "Offset of FreeChunk::_prev within FreeChunk must match"
            "  that of OopDesc::_klass within OopDesc");
@@ -1407,7 +1407,7 @@ ConcurrentMarkSweepGeneration::par_promote(int thread_num,
   assert(!((FreeChunk*)obj_ptr)->is_free(), "Error, block will look free but show wrong size");
   OrderAccess::storestore();
 
-  if (UseCompressedKlassPointers) {
+  if (UseCompressedClassPointers) {
     // Copy gap missed by (aligned) header size calculation below
     obj->set_klass_gap(old->klass_gap());
   }

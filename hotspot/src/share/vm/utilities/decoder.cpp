@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "prims/jvm.h"
-#include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/vmError.hpp"
@@ -78,6 +77,23 @@ AbstractDecoder* Decoder::create_decoder() {
     decoder = &_do_nothing_decoder;
   }
   return decoder;
+}
+
+inline bool DecoderLocker::is_first_error_thread() {
+  return (os::current_thread_id() == VMError::get_first_error_tid());
+}
+
+DecoderLocker::DecoderLocker() :
+  MutexLockerEx(DecoderLocker::is_first_error_thread() ?
+                NULL : Decoder::shared_decoder_lock(), true) {
+  _decoder = is_first_error_thread() ?
+    Decoder::get_error_handler_instance() : Decoder::get_shared_instance();
+  assert(_decoder != NULL, "null decoder");
+}
+
+Mutex* Decoder::shared_decoder_lock() {
+  assert(_shared_decoder_lock != NULL, "Just check");
+  return _shared_decoder_lock;
 }
 
 bool Decoder::decode(address addr, char* buf, int buflen, int* offset, const char* modulepath) {

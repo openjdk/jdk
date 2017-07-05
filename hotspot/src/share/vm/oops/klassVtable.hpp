@@ -124,7 +124,7 @@ class klassVtable : public ResourceObj {
 
   // support for miranda methods
   bool is_miranda_entry_at(int i);
-  void fill_in_mirandas(int* initialized);
+  int fill_in_mirandas(int initialized);
   static bool is_miranda(Method* m, Array<Method*>* class_methods, Klass* super);
   static void add_new_mirandas_to_lists(
       GrowableArray<Method*>* new_mirandas,
@@ -150,6 +150,8 @@ class klassVtable : public ResourceObj {
 //      from_compiled_code_entry_point -> nmethod entry point
 //      from_interpreter_entry_point   -> i2cadapter
 class vtableEntry VALUE_OBJ_CLASS_SPEC {
+  friend class VMStructs;
+
  public:
   // size in words
   static int size() {
@@ -288,12 +290,12 @@ class klassItable : public ResourceObj {
 #endif // INCLUDE_JVMTI
 
   // Setup of itable
+  static int assign_itable_indexes_for_interface(Klass* klass);
+  static int method_count_for_interface(Klass* klass);
   static int compute_itable_size(Array<Klass*>* transitive_interfaces);
   static void setup_itable_offset_table(instanceKlassHandle klass);
 
   // Resolving of method to index
-  static int compute_itable_index(Method* m);
-  // ...and back again:
   static Method* method_for_itable_index(Klass* klass, int itable_index);
 
   // Debugging/Statistics

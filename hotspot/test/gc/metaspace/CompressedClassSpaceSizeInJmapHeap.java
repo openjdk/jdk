@@ -22,11 +22,11 @@
  */
 
 /*
- * @test ClassMetaspaceSizeInJmapHeap
+ * @test CompressedClassSpaceSizeInJmapHeap
  * @bug 8004924
- * @summary Checks that jmap -heap contains the flag ClassMetaspaceSize
+ * @summary Checks that jmap -heap contains the flag CompressedClassSpaceSize
  * @library /testlibrary
- * @run main/othervm -XX:ClassMetaspaceSize=50m ClassMetaspaceSizeInJmapHeap
+ * @run main/othervm -XX:CompressedClassSpaceSize=50m CompressedClassSpaceSizeInJmapHeap
  */
 
 import com.oracle.java.testlibrary.*;
@@ -35,7 +35,7 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.util.List;
 
-public class ClassMetaspaceSizeInJmapHeap {
+public class CompressedClassSpaceSizeInJmapHeap {
     public static void main(String[] args) throws Exception {
         String pid = Integer.toString(ProcessTools.getProcessId());
 
@@ -44,16 +44,16 @@ public class ClassMetaspaceSizeInJmapHeap {
                                               .addToolArg(pid);
         ProcessBuilder pb = new ProcessBuilder(jmap.getCommand());
 
-        File out = new File("ClassMetaspaceSizeInJmapHeap.stdout.txt");
+        File out = new File("CompressedClassSpaceSizeInJmapHeap.stdout.txt");
         pb.redirectOutput(out);
 
-        File err = new File("ClassMetaspaceSizeInJmapHeap.stderr.txt");
+        File err = new File("CompressedClassSpaceSizeInJmapHeap.stderr.txt");
         pb.redirectError(err);
 
         run(pb);
 
         OutputAnalyzer output = new OutputAnalyzer(read(out));
-        output.shouldContain("ClassMetaspaceSize = 52428800 (50.0MB)");
+        output.shouldContain("CompressedClassSpaceSize = 52428800 (50.0MB)");
         out.delete();
     }
 

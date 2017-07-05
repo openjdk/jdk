@@ -2646,7 +2646,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
             addp->in(AddPNode::Base) == n->in(AddPNode::Base),
             "Base pointers must match" );
 #ifdef _LP64
-    if ((UseCompressedOops || UseCompressedKlassPointers) &&
+    if ((UseCompressedOops || UseCompressedClassPointers) &&
         addp->Opcode() == Op_ConP &&
         addp == n->in(AddPNode::Base) &&
         n->in(AddPNode::Offset)->is_Con()) {
@@ -3033,7 +3033,7 @@ void Compile::final_graph_reshaping_walk( Node_Stack &nstack, Node *root, Final_
 
   // Skip next transformation if compressed oops are not used.
   if ((UseCompressedOops && !Matcher::gen_narrow_oop_implicit_null_checks()) ||
-      (!UseCompressedOops && !UseCompressedKlassPointers))
+      (!UseCompressedOops && !UseCompressedClassPointers))
     return;
 
   // Go over safepoints nodes to skip DecodeN/DecodeNKlass nodes for debug edges.
