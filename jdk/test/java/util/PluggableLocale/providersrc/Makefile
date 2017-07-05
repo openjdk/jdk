@@ -20,7 +20,8 @@ BARSERVICES = \
 	java.util.spi.CurrencyNameProvider \
 	java.util.spi.TimeZoneNameProvider \
 	java.util.spi.LocaleNameProvider \
-	java.util.spi.CalendarDataProvider
+	java.util.spi.CalendarDataProvider \
+	java.util.spi.CalendarNameProvider
 
 FOOFILES_JAVA = \
     BreakIteratorProviderImpl.java \
@@ -39,6 +40,7 @@ BARFILES_JAVA = \
     TimeZoneNameProviderImpl.java \
     LocaleNameProviderImpl.java \
     CalendarDataProviderImpl.java \
+    CalendarNameProviderImpl.java \
     Utils.java
 
 BARFILES_PROPERTIES = \
@@ -68,3 +70,8 @@ $(DESTDIR)/barprovider.jar: $(BARSERVICES) $(BARFILES_JAVA) $(BARFILES_PROPERTIE
 	cp $(BARFILES_PROPERTIES) $(BARDIR)/com/bar
 	rm -f $(DESTDIR)/barprovider.jar
 	$(BINDIR)/jar  cvf $(DESTDIR)/barprovider.jar -C $(BARDIR) .
+
+clean:
+	rm -rf $(BARDIR) $(FOODIR)
+
+.PHONY: all clean

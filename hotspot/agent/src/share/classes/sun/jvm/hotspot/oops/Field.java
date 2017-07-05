@@ -110,6 +110,8 @@ public class Field {
   public Symbol getSignature() { return signature; }
   public Symbol getGenericSignature() { return genericSignature; }
 
+  public boolean hasInitialValue()           { return holder.getFieldInitialValueIndex(fieldIndex) != 0;    }
+
   //
   // Following acccessors are for named, non-VM fields only
   //

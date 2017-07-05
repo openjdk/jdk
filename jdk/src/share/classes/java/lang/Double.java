@@ -123,6 +123,13 @@ public final class Double extends Number implements Comparable<Double> {
     public static final int SIZE = 64;
 
     /**
+     * The number of bytes used to represent a {@code double} value.
+     *
+     * @since 1.8
+     */
+    public static final int BYTES = SIZE / Byte.SIZE;
+
+    /**
      * The {@code Class} instance representing the primitive type
      * {@code double}.
      *
@@ -740,7 +747,20 @@ public final class Double extends Number implements Comparable<Double> {
      *
      * @return  a {@code hash code} value for this object.
      */
+    @Override
     public int hashCode() {
+        return Double.hashCode(value);
+    }
+
+    /**
+     * Returns a hash code for a {@code double} value; compatible with
+     * {@code Double.hashCode()}.
+     *
+     * @since 1.8
+     *
+     * @return a hash code value for a {@code double} value.
+     */
+    public static int hashCode(double value) {
         long bits = doubleToLongBits(value);
         return (int)(bits ^ (bits >>> 32));
     }

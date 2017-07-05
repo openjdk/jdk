@@ -236,7 +236,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* thre
   assert(check_compiled_frame(thread), "incorrect caller");
 
   // These checks are cheap to make and support reflective allocation.
-  int lh = Klass::cast(klass)->layout_helper();
+  int lh = klass->layout_helper();
   if (Klass::layout_helper_needs_slow_path(lh)
       || !InstanceKlass::cast(klass)->is_initialized()) {
     KlassHandle kh(THREAD, klass);
@@ -283,7 +283,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaT
   // Scavenge and allocate an instance.
   oop result;
 
-  if (Klass::cast(array_type)->oop_is_typeArray()) {
+  if (array_type->oop_is_typeArray()) {
     // The oopFactory likes to work with the element type.
     // (We could bypass the oopFactory, since it doesn't add much value.)
     BasicType elem_type = TypeArrayKlass::cast(array_type)->element_type();
@@ -321,7 +321,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
   // Scavenge and allocate an instance.
   oop result;
 
-  assert(Klass::cast(array_type)->oop_is_typeArray(), "should be called only for type array");
+  assert(array_type->oop_is_typeArray(), "should be called only for type array");
   // The oopFactory likes to work with the element type.
   BasicType elem_type = TypeArrayKlass::cast(array_type)->element_type();
   result = oopFactory::new_typeArray_nozero(elem_type, len, THREAD);

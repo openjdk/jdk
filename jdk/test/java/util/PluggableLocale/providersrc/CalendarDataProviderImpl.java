@@ -48,65 +48,7 @@ public class CalendarDataProviderImpl extends CalendarDataProvider {
     }
 
     @Override
-    public String getDisplayName(String calendarType, int field, int value, int style, Locale locale) {
-        if (calendarType == null || locale == null) {
-            throw new NullPointerException();
-        }
-        if (!Utils.supportsLocale(Arrays.asList(avail), locale)) {
-            throw new IllegalArgumentException("locale is not one of available locales: "+ locale);
-        }
-        if (field != MONTH) {
-            return null;
-        }
-        return toMonthName(value + 1, style);
-    }
-
-    @Override
-    public Map<String, Integer> getDisplayNames(String calendarType, int field, int style, Locale locale) {
-        if (calendarType == null || locale == null) {
-            throw new NullPointerException();
-        }
-        if (!Utils.supportsLocale(Arrays.asList(avail), locale)) {
-            throw new IllegalArgumentException("locale is not one of available locales: " + locale);
-        }
-        if (field != MONTH) {
-            return null;
-        }
-        Map<String, Integer> map = new HashMap<>();
-        if (style == LONG_STANDALONE) {
-            style = LONG;
-        } else if (style == SHORT_STANDALONE) {
-            style = SHORT;
-        }
-        for (int month = JANUARY; month <= DECEMBER; month++) {
-            if (style == ALL_STYLES || style == LONG) {
-                map.put(toMonthName(month + 1, LONG), month);
-            }
-            if (style == ALL_STYLES || style == SHORT) {
-                map.put(toMonthName(month + 1, SHORT), month);
-            }
-        }
-        return map;
-    }
-
-    @Override
     public Locale[] getAvailableLocales() {
         return avail.clone();
-    }
-
-    // month is 1-based.
-    public static String toMonthName(int month, int style) {
-        StringBuilder sb = new StringBuilder();
-        if (month >= 10) {
-            sb.append((char)(FULLWIDTH_ZERO + 1));
-            sb.appendCodePoint((char)(FULLWIDTH_ZERO + (month % 10)));
-        } else {
-            sb.appendCodePoint((char)(FULLWIDTH_ZERO + month));
-        }
-        if (style == SHORT || style == SHORT_STANDALONE) {
-            return sb.toString(); // full-width digit(s)
-        }
-        sb.append("\u304c\u3064"); // + "gatsu" in Hiragana
-        return sb.toString();
     }
 }
