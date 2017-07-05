@@ -520,7 +520,7 @@ void G1UnsafeGetObjSATBBarrierStub::emit_code(LIR_Assembler* ce) {
   __ load_klass(tmp_reg, src_reg);
 
   Address ref_type_adr(tmp_reg, instanceKlass::reference_type_offset());
-  __ cmpl(ref_type_adr, REF_NONE);
+  __ cmpb(ref_type_adr, REF_NONE);
   __ jcc(Assembler::equal, _continuation);
 
   // Is marking active?
