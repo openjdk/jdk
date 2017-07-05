@@ -3,7 +3,7 @@
 <head>
 <!--
 
-Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -56,41 +56,39 @@ for how to go about registering interceptors.
 <h2>Known limitations / unimplemented methods in package 
 <code>org.omg.PortableInterceptor</code></h2>
 
-<code>
 <ul>
   <li>
-    <b>RequestInfo</b>
+    <code><b>RequestInfo</b></code>
     <ul>
-      <li><b>sync_scope()</b>: Always returns SYNC_WITH_TRANSPORT</li>
-      <li><b>arguments()</b>: Only supported for DII/DSI calls</li>
-      <li><b>exceptions()</b>: Only supported for DII calls on client side.  
+      <li><code><b>sync_scope()</b></code>: Always returns SYNC_WITH_TRANSPORT</li>
+      <li><code><b>arguments()</b></code>: Only supported for DII/DSI calls</li>
+      <li><code><b>exceptions()</b></code>: Only supported for DII calls on client side.  
           Not supported on server-side.</li>
-      <li><b>contexts()</b>: Only supported for DII calls on client side.
+      <li><code><b>contexts()</b></code>: Only supported for DII calls on client side.
           Not supported on server-side since our ORB does not send contexts.
           </li>
-      <li><b>operation_context()</b>: Only supported for DII calls 
+      <li><code><b>operation_context()</b></code>: Only supported for DII calls 
           on client side.  Not supported on server-side since ORB 
           does not send contexts.</li>
-      <li><b>result()</b>: Only supported for DII/DSI calls</li>
+      <li><code><b>result()</b></code>: Only supported for DII/DSI calls</li>
     </ul>
   </li>
   <li>
-    <b>ClientRequestInfo</b>
+    <code><b>ClientRequestInfo</b></code>
     <ul>
-      <li><b>received_exception_id()</b>: Always returns null in the 
+      <li><code><b>received_exception_id()</b></code>: Always returns null in the 
           DII case</li>
-      <li><b>get_request_policy(int type)</b>: Not implemented.</li>
+      <li><code><b>get_request_policy(int type)</b></code>: Not implemented.</li>
     </ul>
   </li>
   <li>
-    <b>ServerRequestInfo</b>
+    <code><b>ServerRequestInfo</b></code>
     <ul>
-      <li><b>sending_exception()</b>: Does not support user exceptions on 
+      <li><code><b>sending_exception()</b></code>: Does not support user exceptions on 
           the server side in non-DSI case.</li>
     </ul>
   </li>
 </ul>
-</code>
 
 <h2>Package Specification</h2>
 <P>For a precise list of supported sections of official OMG specifications with which 

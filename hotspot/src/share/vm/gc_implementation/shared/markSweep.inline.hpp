@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,10 @@ inline void MarkSweep::follow_klass(Klass* klass) {
   MarkSweep::mark_and_push(&op);
 }
 
+inline void MarkSweep::follow_object(oop obj) {
+  obj->follow_contents();
+}
+
 template <class T> inline void MarkSweep::follow_root(T* p) {
   assert(!Universe::heap()->is_in_reserved(p),
          "roots shouldn't be things within the heap");
@@ -66,7 +70,7 @@ template <class T> inline void MarkSweep::follow_root(T* p) {
     oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
     if (!obj->mark()->is_marked()) {
       mark_object(obj);
-      obj->follow_contents();
+      follow_object(obj);
     }
   }
   follow_stack();
@@ -88,6 +92,10 @@ void MarkSweep::push_objarray(oop obj, size_t index) {
   ObjArrayTask task(obj, index);
   assert(task.is_valid(), "bad ObjArrayTask");
   _objarray_stack.push(task);
+}
+
+inline int MarkSweep::adjust_pointers(oop obj) {
+  return obj->adjust_pointers();
 }
 
 template <class T> inline void MarkSweep::adjust_pointer(T* p) {

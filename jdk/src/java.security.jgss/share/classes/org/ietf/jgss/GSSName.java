@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ package org.ietf.jgss;
  * The code below creates a <code>GSSName</code>, converts it to an MN, performs a
  * comparison, obtains a printable representation of the name, exports it
  * to a byte array and then re-imports to obtain a
- * new <code>GSSName</code>.<p>
+ * new <code>GSSName</code>.
  * <pre>
  *      GSSManager manager = GSSManager.getInstance();
  *
@@ -236,7 +236,8 @@ public interface GSSName {
      * method {@link GSSManager#createName(byte[], Oid)
      * GSSManager.createName} and specifying the NT_EXPORT_NAME as the name
      * type object identifier. The resulting <code>GSSName</code> name will
-     * also be a MN.<p>
+     * also be a MN.
+     *
      * @return a byte[] containing the exported name. RFC 2743 defines the
      * "Mechanism-Independent Exported Name Object Format" for these bytes.
      *

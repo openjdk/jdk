@@ -35,7 +35,7 @@ import org.testng.annotations.Test;
  * independently.
  *
  * @test
- * @run testng jdk.nashorn.api.scripting.MultipleEngineTest
+ * @run testng jdk.nashorn.api.scripting.test.MultipleEngineTest
  */
 @SuppressWarnings("javadoc")
 public class MultipleEngineTest {

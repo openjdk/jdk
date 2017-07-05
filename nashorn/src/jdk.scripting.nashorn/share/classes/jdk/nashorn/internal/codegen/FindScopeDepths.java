@@ -207,7 +207,7 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
         final RecompilableScriptFunctionData data = new RecompilableScriptFunctionData(
                 newFunctionNode,
                 compiler.getCodeInstaller(),
-                ObjectClassGenerator.createAllocationStrategy(newFunctionNode.getThisProperties()),
+                ObjectClassGenerator.createAllocationStrategy(newFunctionNode.getThisProperties(), compiler.getContext().useDualFields()),
                 nestedFunctions,
                 externalSymbolDepths.get(fnId),
                 internalSymbols.get(fnId),

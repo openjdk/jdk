@@ -151,7 +151,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
     @Override
     protected PropertyMap makeMap() {
         assert propertyMap == null : "property map already initialized";
-        propertyMap = newMapCreator(fieldObjectClass).makeFieldMap(hasArguments(), fieldCount, paddedFieldCount, evalCode);
+        propertyMap = newMapCreator(fieldObjectClass).makeFieldMap(hasArguments(), codegen.useDualFields(), fieldCount, paddedFieldCount, evalCode);
         return propertyMap;
     }
 
@@ -166,7 +166,7 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
     private void putField(final MethodEmitter method, final String key, final int fieldIndex, final MapTuple<T> tuple) {
         method.dup();
 
-        final Type    fieldType   = tuple.isPrimitive() ? PRIMITIVE_FIELD_TYPE : Type.OBJECT;
+        final Type    fieldType   = codegen.useDualFields() && tuple.isPrimitive() ? PRIMITIVE_FIELD_TYPE : Type.OBJECT;
         final String  fieldClass  = getClassName();
         final String  fieldName   = getFieldName(fieldIndex, fieldType);
         final String  fieldDesc   = typeDescriptor(fieldType.getTypeClass());
@@ -202,8 +202,8 @@ public abstract class FieldObjectCreator<T> extends ObjectCreator<T> {
      */
     private void findClass() {
         fieldObjectClassName = isScope() ?
-                ObjectClassGenerator.getClassName(fieldCount, paramCount) :
-                ObjectClassGenerator.getClassName(paddedFieldCount);
+                ObjectClassGenerator.getClassName(fieldCount, paramCount, codegen.useDualFields()) :
+                ObjectClassGenerator.getClassName(paddedFieldCount, codegen.useDualFields());
 
         try {
             this.fieldObjectClass = Context.forStructureClass(Compiler.binaryName(fieldObjectClassName));

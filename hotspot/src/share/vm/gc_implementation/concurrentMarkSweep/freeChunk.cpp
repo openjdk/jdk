@@ -27,8 +27,6 @@
 #include "memory/freeBlockDictionary.hpp"
 #include "utilities/copy.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 #ifndef PRODUCT
 
 #define baadbabeHeapWord badHeapWordVal
@@ -74,5 +72,5 @@ void FreeChunk::verifyList() const {
 
 void FreeChunk::print_on(outputStream* st) {
   st->print_cr("Next: " PTR_FORMAT " Prev: " PTR_FORMAT " %s",
-    next(), prev(), cantCoalesce() ? "[can't coalesce]" : "");
+    p2i(next()), p2i(prev()), cantCoalesce() ? "[can't coalesce]" : "");
 }

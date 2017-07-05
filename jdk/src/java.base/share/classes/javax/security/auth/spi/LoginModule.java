@@ -32,10 +32,9 @@ import javax.security.auth.login.*;
 import java.util.Map;
 
 /**
- * <p> {@code LoginModule} describes the interface
- * implemented by authentication technology providers.  LoginModules
- * are plugged in under applications to provide a particular type of
- * authentication.
+ * <p> Service-provider interface for authentication technology providers.
+ * LoginModules are plugged in under applications to provide a particular
+ * type of authentication.
  *
  * <p> While applications write to the {@code LoginContext} API,
  * authentication technology providers implement the
