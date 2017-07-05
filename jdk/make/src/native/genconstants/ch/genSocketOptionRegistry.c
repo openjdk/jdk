@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,21 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#endif
+
+/* Defines SO_REUSEPORT */
+#if !defined(SO_REUSEPORT)
+#ifdef _WIN32
+#define SO_REUSEPORT 0
+#elif __linux__
+#define SO_REUSEPORT 15
+#elif __solaris__
+#define SO_REUSEPORT 0x100e
+#elif defined(AIX) || defined(MACOSX)
+#define SO_REUSEPORT 0x0200
+#else
+#define SO_REUSEPORT 0
+#endif
 #endif
 
 /**
@@ -102,6 +117,7 @@ int main(int argc, const char* argv[]) {
     emit_unspec("StandardSocketOptions.SO_SNDBUF",    SOL_SOCKET, SO_SNDBUF);
     emit_unspec("StandardSocketOptions.SO_RCVBUF",    SOL_SOCKET, SO_RCVBUF);
     emit_unspec("StandardSocketOptions.SO_REUSEADDR", SOL_SOCKET, SO_REUSEADDR);
+    emit_unspec("StandardSocketOptions.SO_REUSEPORT", SOL_SOCKET, SO_REUSEPORT);
     emit_unspec("StandardSocketOptions.TCP_NODELAY",  IPPROTO_TCP, TCP_NODELAY);
 
     emit_inet("StandardSocketOptions.IP_TOS",            IPPROTO_IP,     IP_TOS);

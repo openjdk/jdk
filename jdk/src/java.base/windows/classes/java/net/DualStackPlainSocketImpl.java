@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,6 +181,10 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
         if (opt == SO_TIMEOUT) {  // timeout implemented through select.
             return;
         }
+        // SO_REUSEPORT is not supported on Windows.
+        if (opt == SO_REUSEPORT) {
+            throw new UnsupportedOperationException("unsupported option");
+        }
 
         int optionValue = 0;
 
@@ -223,6 +227,10 @@ class DualStackPlainSocketImpl extends AbstractPlainSocketImpl
         if (opt == SO_BINDADDR) {
             localAddress(nativefd, (InetAddressContainer)iaContainerObj);
             return 0;  // return value doesn't matter.
+        }
+        // SO_REUSEPORT is not supported on Windows.
+        if (opt == SO_REUSEPORT) {
+            throw new UnsupportedOperationException("unsupported option");
         }
 
         // SO_REUSEADDR emulated when using exclusive bind

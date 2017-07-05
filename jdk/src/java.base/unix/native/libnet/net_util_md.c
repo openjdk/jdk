@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -438,6 +438,25 @@ jint  IPv6_supported()
 #endif /* AF_INET6 */
 }
 #endif /* DONT_ENABLE_IPV6 */
+
+jint reuseport_supported()
+{
+    /* Do a simple dummy call, and try to figure out from that */
+    int one = 1;
+    int rv, s;
+    s = socket(PF_INET, SOCK_STREAM, 0);
+    if (s < 0) {
+        return JNI_FALSE;
+    }
+    rv = setsockopt(s, SOL_SOCKET, SO_REUSEPORT, (void *)&one, sizeof(one));
+    if (rv != 0) {
+        rv = JNI_FALSE;
+    } else {
+        rv = JNI_TRUE;
+    }
+    close(s);
+    return rv;
+}
 
 void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
                                                const char* hostname,
@@ -1014,6 +1033,7 @@ NET_MapSocketOption(jint cmd, int *level, int *optname) {
         { java_net_SocketOptions_SO_RCVBUF,             SOL_SOCKET,     SO_RCVBUF },
         { java_net_SocketOptions_SO_KEEPALIVE,          SOL_SOCKET,     SO_KEEPALIVE },
         { java_net_SocketOptions_SO_REUSEADDR,          SOL_SOCKET,     SO_REUSEADDR },
+        { java_net_SocketOptions_SO_REUSEPORT,          SOL_SOCKET,     SO_REUSEPORT },
         { java_net_SocketOptions_SO_BROADCAST,          SOL_SOCKET,     SO_BROADCAST },
         { java_net_SocketOptions_IP_TOS,                IPPROTO_IP,     IP_TOS },
         { java_net_SocketOptions_IP_MULTICAST_IF,       IPPROTO_IP,     IP_MULTICAST_IF },

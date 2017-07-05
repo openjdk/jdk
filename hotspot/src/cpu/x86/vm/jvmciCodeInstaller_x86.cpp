@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle constant, T
   }
 }
 
-void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset) {
+void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset, TRAPS) {
   address pc = _instructions->start() + pc_offset;
 
   address operand = Assembler::locate_operand(pc, Assembler::disp32_operand);

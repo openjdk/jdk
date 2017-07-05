@@ -1552,8 +1552,7 @@ Node* PhaseStringOpts::copy_string(GraphKit& kit, Node* str, Node* dst_array, No
 
   if (str->is_Con()) {
     // Constant source string
-    const TypeOopPtr* t = kit.gvn().type(src_array)->isa_oopptr();
-    ciTypeArray* src_array_type = t->const_oop()->as_type_array();
+    ciTypeArray* src_array_type = get_constant_value(kit, str);
 
     // Check encoding of constant string
     bool src_is_byte = (get_constant_coder(kit, str) == java_lang_String::CODER_LATIN1);
@@ -1673,9 +1672,15 @@ jbyte PhaseStringOpts::get_constant_coder(GraphKit& kit, Node* str) {
 
 int PhaseStringOpts::get_constant_length(GraphKit& kit, Node* str) {
   assert(str->is_Con(), "String must be constant");
-  Node* src_array = kit.load_String_value(kit.control(), str);
-  const TypeOopPtr* t = kit.gvn().type(src_array)->isa_oopptr();
-  return t->const_oop()->as_type_array()->length();
+  return get_constant_value(kit, str)->length();
+}
+
+ciTypeArray* PhaseStringOpts::get_constant_value(GraphKit& kit, Node* str) {
+  assert(str->is_Con(), "String must be constant");
+  const TypeOopPtr* str_type = kit.gvn().type(str)->isa_oopptr();
+  ciInstance* str_instance = str_type->const_oop()->as_instance();
+  ciObject* src_array = str_instance->field_value_by_offset(java_lang_String::value_offset_in_bytes()).as_object();
+  return src_array->as_type_array();
 }
 
 void PhaseStringOpts::replace_string_concat(StringConcat* sc) {

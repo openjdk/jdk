@@ -1919,12 +1919,9 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
   collect_statistics(thread, time, task);
 
-  bool printnmethods = directive->PrintAssemblyOption || directive->PrintNMethodsOption;
-  if (printnmethods || PrintDebugInfo || PrintRelocations || PrintDependencies || PrintExceptionHandlers) {
-    nmethod* nm = task->code();
-    if (nm != NULL) {
-      nm->print_nmethod(printnmethods);
-    }
+  nmethod* nm = task->code();
+  if (nm != NULL) {
+    nm->maybe_print_nmethod(directive);
   }
   DirectivesStack::release(directive);
 

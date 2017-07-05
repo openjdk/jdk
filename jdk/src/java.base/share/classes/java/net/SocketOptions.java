@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,6 +169,17 @@ public interface SocketOptions {
      */
 
     @Native public static final int SO_REUSEADDR = 0x04;
+
+    /** Sets SO_REUSEPORT for a socket. This option enables and disables
+     *  the ability to have multiple sockets listen to the same address
+     *  and port.
+     * <P>
+     * Valid for: SocketImpl, DatagramSocketImpl
+     *
+     * @since 9
+     * @see StandardSocketOptions#SO_REUSEPORT
+     */
+    @Native public static final int SO_REUSEPORT = 0x0E;
 
     /**
      * Sets SO_BROADCAST for a socket. This option enables and disables
