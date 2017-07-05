@@ -1,6 +1,5 @@
 '\" t
-.\"  Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
-.\"
+.\" Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -9,7 +8,7 @@
 .\"
 .\" This code is distributed in the hope that it will be useful, but WITHOUT
 .\" ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-.\" FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+.\" FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
 .\" version 2 for more details (a copy is included in the LICENSE file that
 .\" accompanied this code).
 .\"
@@ -21,14 +20,17 @@
 .\" or visit www.oracle.com if you need additional information or have any
 .\" questions.
 .\"
-.\"     Arch: generic
-.\"     Software: JDK 8
-.\"     Date: 10 May 2011
-.\"     SectDesc: Monitoring Tools
-.\"     Title: jstat.1
+.\" Title: jstat
+.\" Language: English
+.\" Date: 03 March 2015
+.\" SectDesc: Monitoring Tools
+.\" Software: JDK 8
+.\" Arch: generic
+.\" Part Number: E38207-04
+.\" Doc ID: JSSON
 .\"
 .if n .pl 99999
-.TH jstat 1 "10 May 2011" "JDK 8" "Monitoring Tools"
+.TH "jstat" "1" "03 March 2015" "JDK 8" "Monitoring Tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -48,519 +50,726 @@
 .\" -----------------------------------------------------------------
 .\" * MAIN CONTENT STARTS HERE *
 .\" -----------------------------------------------------------------
-
-.SH NAME    
+.SH "NAME"
 jstat \- Monitors Java Virtual Machine (JVM) statistics\&. This command is experimental and unsupported\&.
-.SH SYNOPSIS    
-.sp     
-.nf     
-
+.SH "SYNOPSIS"
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
 \fBjstat\fR [ \fIgeneralOption\fR | \fIoutputOptions vmid\fR [ \fIinterval\fR[s|ms] [ \fIcount \fR] ]
-.fi     
-.sp     
-.TP     
+.fi
+.if n \{\
+.RE
+.\}
+.PP
 \fIgeneralOption\fR
-A single general command-line option \f3-help\fR or \f3-options\fR\&. See General Options\&.
-.TP     
+.RS 4
+A single general command\-line option
+\fB\-help\fR
+or
+\fB\-options\fR\&. See General Options\&.
+.RE
+.PP
 \fIoutputOptions\fR
-One or more output options that consist of a single \f3statOption\fR, plus any of the \f3-t\fR, \f3-h\fR, and \f3-J\fR options\&. See Output Options\&.
-.TP     
+.RS 4
+One or more output options that consist of a single
+\fBstatOption\fR, plus any of the
+\fB\-t\fR,
+\fB\-h\fR, and
+\fB\-J\fR
+options\&. See Output Options\&.
+.RE
+.PP
 \fIvmid\fR
+.RS 4
 Virtual machine identifier, which is a string that indicates the target JVM\&. The general syntax is the following:
-.sp     
-.nf     
-\f3[protocol:][//]lvmid[@hostname[:port]/servername]\fP
-.fi     
-.nf     
-\f3\fP
-.fi     
-.sp     
-
-
-The syntax of the \f3vmid\fR string corresponds to the syntax of a URI\&. The \f3vmid\fR string can vary from a simple integer that represents a local JVM to a more complex construction that specifies a communications protocol, port number, and other implementation-specific values\&. See Virtual Machine Identifier\&.
-.TP     
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB[protocol:][//]lvmid[@hostname[:port]/servername]\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+The syntax of the
+\fBvmid\fR
+string corresponds to the syntax of a URI\&. The
+\fBvmid\fR
+string can vary from a simple integer that represents a local JVM to a more complex construction that specifies a communications protocol, port number, and other implementation\-specific values\&. See Virtual Machine Identifier\&.
+.RE
+.PP
 \fIinterval\fR [s|ms]
-Sampling interval in the specified units, seconds (s) or milliseconds (ms)\&. Default units are milliseconds\&. Must be a positive integer\&. When specified, the \f3jstat\fR command produces its output at each interval\&.
-.TP     
+.RS 4
+Sampling interval in the specified units, seconds (s) or milliseconds (ms)\&. Default units are milliseconds\&. Must be a positive integer\&. When specified, the
+\fBjstat\fR
+command produces its output at each interval\&.
+.RE
+.PP
 \fIcount\fR
-Number of samples to display\&. The default value is infinity which causes the \f3jstat\fR command to display statistics until the target JVM terminates or the \f3jstat\fR command is terminated\&. This value must be a positive integer\&.
-.SH DESCRIPTION    
-The \f3jstat\fR command displays performance statistics for an instrumented Java HotSpot VM\&. The target JVM is identified by its virtual machine identifier, or \f3vmid\fR option\&.
-.SH VIRTUAL\ MACHINE\ IDENTIFIER    
-The syntax of the \f3vmid\fR string corresponds to the syntax of a URI:
-.sp     
-.nf     
-\f3[protocol:][//]lvmid[@hostname[:port]/servername]\fP
-.fi     
-.nf     
-\f3\fP
-.fi     
-.sp     
-.TP     
+.RS 4
+Number of samples to display\&. The default value is infinity which causes the
+\fBjstat\fR
+command to display statistics until the target JVM terminates or the
+\fBjstat\fR
+command is terminated\&. This value must be a positive integer\&.
+.RE
+.SH "DESCRIPTION"
+.PP
+The
+\fBjstat\fR
+command displays performance statistics for an instrumented Java HotSpot VM\&. The target JVM is identified by its virtual machine identifier, or
+\fBvmid\fR
+option\&.
+.SH "VIRTUAL MACHINE IDENTIFIER"
+.PP
+The syntax of the
+\fBvmid\fR
+string corresponds to the syntax of a URI:
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fB[protocol:][//]lvmid[@hostname[:port]/servername]\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.PP
 \fIprotocol\fR
-The communications protocol\&. If the \fIprotocol\fR value is omitted and a host name is not specified, then the default protocol is a platform-specific optimized local protocol\&. If the \fIprotocol\fR value is omitted and a host name is specified, then the default protocol is \f3rmi\fR\&.
-.TP     
+.RS 4
+The communications protocol\&. If the
+\fIprotocol\fR
+value is omitted and a host name is not specified, then the default protocol is a platform\-specific optimized local protocol\&. If the
+\fIprotocol\fR
+value is omitted and a host name is specified, then the default protocol is
+\fBrmi\fR\&.
+.RE
+.PP
 \fIlvmid\fR
-The local virtual machine identifier for the target JVM\&. The \f3lvmid\fR is a platform-specific value that uniquely identifies a JVM on a system\&. The \f3lvmid\fR is the only required component of a virtual machine identifier\&. The \f3lvmid\fR is typically, but not necessarily, the operating system\&'s process identifier for the target JVM process\&. You can use the \f3jps\fR command to determine the \f3lvmid\fR\&. Also, you can determine the \f3lvmid\fR on UNIX platforms with the \f3ps\fR command, and on Windows with the Windows Task Manager\&.
-.TP     
+.RS 4
+The local virtual machine identifier for the target JVM\&. The
+\fBlvmid\fR
+is a platform\-specific value that uniquely identifies a JVM on a system\&. The
+\fBlvmid\fR
+is the only required component of a virtual machine identifier\&. The
+\fBlvmid\fR
+is typically, but not necessarily, the operating system\*(Aqs process identifier for the target JVM process\&. You can use the
+\fBjps\fR
+command to determine the
+\fBlvmid\fR\&. Also, you can determine the
+\fBlvmid\fR
+on Solaris, Linux, and OS X platforms with the
+\fBps\fR
+command, and on Windows with the Windows Task Manager\&.
+.RE
+.PP
 \fIhostname\fR
-A hostname or IP address that indicates the target host\&. If the \fIhostname\fR value is omitted, then the target host is the local host\&.
-.TP     
+.RS 4
+A hostname or IP address that indicates the target host\&. If the
+\fIhostname\fR
+value is omitted, then the target host is the local host\&.
+.RE
+.PP
 \fIport\fR
-The default port for communicating with the remote server\&. If the \fIhostname\fR value is omitted or the \fIprotocol\fR value specifies an optimized, local protocol, then the \fIport\fR value is ignored\&. Otherwise, treatment of the \f3port\fR parameter is implementation-specific\&. For the default \f3rmi\fR protocol, the port value indicates the port number for the rmiregistry on the remote host\&. If the \fIport\fR value is omitted and the \fIprotocol\fR value indicates \f3rmi\fR, then the default rmiregistry port (1099) is used\&.
-.TP     
+.RS 4
+The default port for communicating with the remote server\&. If the
+\fIhostname\fR
+value is omitted or the
+\fIprotocol\fR
+value specifies an optimized, local protocol, then the
+\fIport\fR
+value is ignored\&. Otherwise, treatment of the
+\fBport\fR
+parameter is implementation\-specific\&. For the default
+\fBrmi\fR
+protocol, the port value indicates the port number for the rmiregistry on the remote host\&. If the
+\fIport\fR
+value is omitted and the
+\fIprotocol\fR
+value indicates
+\fBrmi\fR, then the default rmiregistry port (1099) is used\&.
+.RE
+.PP
 \fIservername\fR
-The treatment of the \f3servername\fR parameter depends on implementation\&. For the optimized local protocol, this field is ignored\&. For the \f3rmi\fR protocol, it represents the name of the RMI remote object on the remote host\&.
-.SH OPTIONS    
-The \f3jstat\fR command supports two types of options, general options and output options\&. General options cause the \f3jstat\fR command to display simple usage and version information\&. Output options determine the content and format of the statistical output\&.
+.RS 4
+The treatment of the
+\fBservername\fR
+parameter depends on implementation\&. For the optimized local protocol, this field is ignored\&. For the
+\fBrmi\fR
+protocol, it represents the name of the RMI remote object on the remote host\&.
+.RE
+.SH "OPTIONS"
+.PP
+The
+\fBjstat\fR
+command supports two types of options, general options and output options\&. General options cause the
+\fBjstat\fR
+command to display simple usage and version information\&. Output options determine the content and format of the statistical output\&.
 .PP
 All options and their functionality are subject to change or removal in future releases\&.
-.SS GENERAL\ OPTIONS    
+.SS "General Options"
+.PP
 If you specify one of the general options, then you cannot specify any other option or parameter\&.
-.TP
--help
-.br
+.PP
+\-help
+.RS 4
 Displays a help message\&.
-.TP
--options
-.br
+.RE
+.PP
+\-options
+.RS 4
 Displays a list of static options\&. See Output Options\&.
-.SS OUTPUT\ OPTIONS    
-If you do not specify a general option, then you can specify output options\&. Output options determine the content and format of the \f3jstat\fR command\&'s output, and consist of a single \f3statOption\fR, plus any of the other output options (\f3-h\fR, \f3-t\fR, and \f3-J\fR)\&. The \f3statOption\fR must come first\&.
+.RE
+.SS "Output Options"
 .PP
-Output is formatted as a table, with columns that are separated by spaces\&. A header row with titles describes the columns\&. Use the \f3-h\fR option to set the frequency at which the header is displayed\&. Column header names are consistent among the different options\&. In general, if two options provide a column with the same name, then the data source for the two columns is the same\&.
+If you do not specify a general option, then you can specify output options\&. Output options determine the content and format of the
+\fBjstat\fR
+command\*(Aqs output, and consist of a single
+\fBstatOption\fR, plus any of the other output options (\fB\-h\fR,
+\fB\-t\fR, and
+\fB\-J\fR)\&. The
+\fBstatOption\fR
+must come first\&.
 .PP
-Use the \f3-t\fR option to display a time stamp column, labeled Timestamp as the first column of output\&. The Timestamp column contains the elapsed time, in seconds, since the target JVM started\&. The resolution of the time stamp is dependent on various factors and is subject to variation due to delayed thread scheduling on heavily loaded systems\&.
+Output is formatted as a table, with columns that are separated by spaces\&. A header row with titles describes the columns\&. Use the
+\fB\-h\fR
+option to set the frequency at which the header is displayed\&. Column header names are consistent among the different options\&. In general, if two options provide a column with the same name, then the data source for the two columns is the same\&.
 .PP
-Use the interval and count parameters to determine how frequently and how many times, respectively, the \f3jstat\fR command displays its output\&.
+Use the
+\fB\-t\fR
+option to display a time stamp column, labeled Timestamp as the first column of output\&. The Timestamp column contains the elapsed time, in seconds, since the target JVM started\&. The resolution of the time stamp is dependent on various factors and is subject to variation due to delayed thread scheduling on heavily loaded systems\&.
 .PP
-\fINote:\fR Do not to write scripts to parse the \f3jstat\fR command\&'s output because the format might change in future releases\&. If you write scripts that parse \f3jstat\fR command output, then expect to modify them for future releases of this tool\&.
-.TP
--\fIstatOption\fR
-.br
-Determines the statistics information the \f3jstat\fR command displays\&. The following lists the available options\&. Use the \f3-options\fR general option to display the list of options for a particular platform installation\&. See Stat Options and Output\&.
-
-\f3class\fR: Displays statistics about the behavior of the class loader\&.
-
-\f3compiler\fR: Displays statistics about the behavior of the Java HotSpot VM Just-in-Time compiler\&.
-
-\f3gc\fR: Displays statistics about the behavior of the garbage collected heap\&.
-
-\f3gccapacity\fR: Displays statistics about the capacities of the generations and their corresponding spaces\&.
-
-\f3gccause\fR: Displays a summary about garbage collection statistics (same as \f3-gcutil\fR), with the cause of the last and current (when applicable) garbage collection events\&.
-
-\f3gcnew\fR: Displays statistics of the behavior of the new generation\&.
-
-\f3gcnewcapacity\fR: Displays statistics about the sizes of the new generations and its corresponding spaces\&.
-
-\f3gcold\fR: Displays statistics about the behavior of the old generation and Metaspace Statistics\&.
-
-\f3gcoldcapacity\fR: Displays statistics about the sizes of the old generation\&.
-
-\f3gcmetacapacity\fR: Displays statistics about the sizes of the metaspace\&.
-
-\f3gcutil\fR: Displays a summary about garbage collection statistics\&.
-
-\f3printcompilation\fR: Displays Java HotSpot VM compilation method statistics\&.
-.TP
--h \fIn\fR
-.br
-Displays a column header every \fIn\fR samples (output rows), where \fIn\fR is a positive integer\&. Default value is 0, which displays the column header the first row of data\&.
-.TP
--t
-.br
-Display sa timestamp column as the first column of output\&. The time stamp is the time since the start time of the target JVM\&.
-.TP
--J\fIjavaOption\fR
-.br
-Passes \f3javaOption\fR to the Java application launcher\&. For example, \f3-J-Xms48m\fR sets the startup memory to 48 MB\&. For a complete list of options, see java(1)\&.
-.SS STAT\ OPTIONS\ AND\ OUTPUT    
-The following information summarizes the columns that the \f3jstat\fR command outputs for each \fIstatOption\fR\&.
-.TP
--class \fIoption\fR
-.br
+Use the interval and count parameters to determine how frequently and how many times, respectively, the
+\fBjstat\fR
+command displays its output\&.
+.PP
+\fBNote:\fR
+Do not to write scripts to parse the
+\fBjstat\fR
+command\*(Aqs output because the format might change in future releases\&. If you write scripts that parse
+\fBjstat\fR
+command output, then expect to modify them for future releases of this tool\&.
+.PP
+\-\fIstatOption\fR
+.RS 4
+Determines the statistics information the
+\fBjstat\fR
+command displays\&. The following lists the available options\&. Use the
+\fB\-options\fR
+general option to display the list of options for a particular platform installation\&. See Stat Options and Output\&.
+.sp
+\fBclass\fR: Displays statistics about the behavior of the class loader\&.
+.sp
+\fBcompiler\fR: Displays statistics about the behavior of the Java HotSpot VM Just\-in\-Time compiler\&.
+.sp
+\fBgc\fR: Displays statistics about the behavior of the garbage collected heap\&.
+.sp
+\fBgccapacity\fR: Displays statistics about the capacities of the generations and their corresponding spaces\&.
+.sp
+\fBgccause\fR: Displays a summary about garbage collection statistics (same as
+\fB\-gcutil\fR), with the cause of the last and current (when applicable) garbage collection events\&.
+.sp
+\fBgcnew\fR: Displays statistics of the behavior of the new generation\&.
+.sp
+\fBgcnewcapacity\fR: Displays statistics about the sizes of the new generations and its corresponding spaces\&.
+.sp
+\fBgcold\fR: Displays statistics about the behavior of the old generation and metaspace statistics\&.
+.sp
+\fBgcoldcapacity\fR: Displays statistics about the sizes of the old generation\&.
+.sp
+\fBgcmetacapacity\fR: Displays statistics about the sizes of the metaspace\&.
+.sp
+\fBgcutil\fR: Displays a summary about garbage collection statistics\&.
+.sp
+\fBprintcompilation\fR: Displays Java HotSpot VM compilation method statistics\&.
+.RE
+.PP
+\-h \fIn\fR
+.RS 4
+Displays a column header every
+\fIn\fR
+samples (output rows), where
+\fIn\fR
+is a positive integer\&. Default value is 0, which displays the column header the first row of data\&.
+.RE
+.PP
+\-t
+.RS 4
+Displays a timestamp column as the first column of output\&. The time stamp is the time since the start time of the target JVM\&.
+.RE
+.PP
+\-J\fIjavaOption\fR
+.RS 4
+Passes
+\fBjavaOption\fR
+to the Java application launcher\&. For example,
+\fB\-J\-Xms48m\fR
+sets the startup memory to 48 MB\&. For a complete list of options, see
+java(1)\&.
+.RE
+.SS "Stat Options and Output"
+.PP
+The following information summarizes the columns that the
+\fBjstat\fR
+command outputs for each
+\fIstatOption\fR\&.
+.PP
+\-class \fIoption\fR
+.RS 4
 Class loader statistics\&.
-
-\f3Loaded\fR: Number of classes loaded\&.
-
-\f3Bytes\fR: Number of KBs loaded\&.
-
-\f3Unloaded\fR: Number of classes unloaded\&.
-
-\f3Bytes\fR: Number of Kbytes unloaded\&.
-
-\f3Time\fR: Time spent performing class loading and unloading operations\&.
-.TP
--compiler \fIoption\fR
-.br
-Java HotSpot VM Just-in-Time compiler statistics\&.
-
-\f3Compiled\fR: Number of compilation tasks performed\&.
-
-\f3Failed\fR: Number of compilations tasks failed\&.
-
-\f3Invalid\fR: Number of compilation tasks that were invalidated\&.
-
-\f3Time\fR: Time spent performing compilation tasks\&.
-
-\f3FailedType\fR: Compile type of the last failed compilation\&.
-
-\f3FailedMethod\fR: Class name and method of the last failed compilation\&.
-.TP
--gc \fIoption\fR
-.br
-Garbage-collected heap statistics\&.
-
-\f3S0C\fR: Current survivor space 0 capacity (KB)\&.
-
-\f3S1C\fR: Current survivor space 1 capacity (KB)\&.
-
-\f3S0U\fR: Survivor space 0 utilization (KB)\&.
-
-\f3S1U\fR: Survivor space 1 utilization (KB)\&.
-
-\f3EC\fR: Current eden space capacity (KB)\&.
-
-\f3EU\fR: Eden space utilization (KB)\&.
-
-\f3OC\fR: Current old space capacity (KB)\&.
-
-\f3OU\fR: Old space utilization (KB)\&.
-
-\f3MC\fR: Metaspace capacity (KB)\&.
-
-\f3MU\fR: Metacspace utilization (KB)\&.
-
-\f3YGC\fR: Number of young generation garbage collection events\&.
-
-\f3YGCT\fR: Young generation garbage collection time\&.
-
-\f3FGC\fR: Number of full GC events\&.
-
-\f3FGCT\fR: Full garbage collection time\&.
-
-\f3GCT\fR: Total garbage collection time\&.
-.TP
--gccapacity \fIoption\fR
-.br
-Memory pool generation and space capacities\&.
-
-\f3NGCMN\fR: Minimum new generation capacity (KB)\&.
-
-\f3NGCMX\fR: Maximum new generation capacity (KB)\&.
-
-\f3NGC\fR: Current new generation capacity (KB)\&.
-
-\f3S0C\fR: Current survivor space 0 capacity (KB)\&.
-
-\f3S1C\fR: Current survivor space 1 capacity (KB)\&.
-
-\f3EC\fR: Current eden space capacity (KB)\&.
-
-\f3OGCMN\fR: Minimum old generation capacity (KB)\&.
-
-\f3OGCMX\fR: Maximum old generation capacity (KB)\&.
-
-\f3OGC\fR: Current old generation capacity (KB)\&.
-
-\f3OC\fR: Current old space capacity (KB)\&.
-
-\f3MCMN\fR: Minimum metaspace capacity (KB)\&.
-
-\f3MCMX\fR: Maximum metaspace capacity (KB)\&.
-
-\f3MC\fR: Metaspace capacity (KB)\&.
-
-\f3YGC\fR: Number of Young generation GC Events\&.
-
-\f3FGC\fR: Number of Full GC Events\&.
-.TP
--gccause \fIoption\fR
-.br
-This option displays the same summary of garbage collection statistics as the \f3-gcutil\fR option, but includes the causes of the last garbage collection event and (when applicable) the current garbage collection event\&. In addition to the columns listed for \f3-gcutil\fR, this option adds the following columns\&.
-
-Garbage collection statistics, including garbage collection Events\&.
-
-\f3LGCC\fR: Cause of last garbage collection\&.
-
-\f3GCC\fR: Cause of current garbage collection\&.
-.TP
--gcnew \fIoption\fR
-.br
-New generation statistics\&.
-
-\f3S0C\fR: Current survivor space 0 capacity (KB)\&.
-
-\f3S1C\fR: Current survivor space 1 capacity (KB)\&.
-
-\f3S0U\fR: Survivor space 0 utilization (KB)\&.
-
-\f3S1U\fR: Survivor space 1 utilization (KB)\&.
-
-\f3TT\fR: Tenuring threshold\&.
-
-\f3MTT\fR: Maximum tenuring threshold\&.
-
-\f3DSS\fR: Desired survivor size (KB)\&.
-
-\f3EC\fR: Current eden space capacity (KB)\&.
-
-\f3EU\fR: Eden space utilization (KB)\&.
-
-\f3YGC\fR: Number of young generation GC events\&.
-
-\f3YGCT\fR: Young generation garbage collection time\&.
-.TP
--gcnewcapacity \fIoption\fR
-.br
-New generation space size statistics\&.
-
-NGCMN: Minimum new generation capacity (KB)\&.
-
-\f3NGCMX\fR: Maximum new generation capacity (KB)\&.
-
-\f3NGC\fR: Current new generation capacity (KB)\&.
-
-\f3S0CMX\fR: Maximum survivor space 0 capacity (KB)\&.
-
-\f3S0C\fR: Current survivor space 0 capacity (KB)\&.
-
-\f3S1CMX\fR: Maximum survivor space 1 capacity (KB)\&.
-
-\f3S1C\fR: Current survivor space 1 capacity (KB)\&.
-
-\f3ECMX\fR: Maximum eden space capacity (KB)\&.
-
-\f3EC\fR: Current eden space capacity (KB)\&.
-
-\f3YGC\fR: Number of young generation GC events\&.
-
-\f3FGC\fR: Number of Full GC Events\&.
-.TP
--gcold \fIoption\fR
-.br
-old and permanent generation statistics\&.
-
-\f3MC\fR: Metaspace capacity (KB)\&.
-
-\f3MU\fR: Metaspace utilization (KB)\&.
-
-\f3OC\fR: Current old space capacity (KB)\&.
-
-\f3OU\fR: old space utilization (KB)\&.
-
-\f3YGC\fR: Number of young generation GC events\&.
-
-\f3FGC\fR: Number of full GC events\&.
-
-\f3FGCT\fR: Full garbage collection time\&.
-
-\f3GCT\fR: Total garbage collection time\&.
-.TP
--gcoldcapacity \fIoption\fR
-.br
-Old generation statistics\&.
-
-\f3OGCMN\fR: Minimum old generation capacity (KB)\&.
-
-\f3OGCMX\fR: Maximum old generation capacity (KB)\&.
-
-\f3OGC\fR: Current old generation capacity (KB)\&.
-
-\f3OC\fR: Current old space capacity (KB)\&.
-
-\f3YGC\fR: Number of young generation GC events\&.
-
-\f3FGC\fR: Number of full GC events\&.
-
-\f3FGCT\fR: Full garbage collection time\&.
-
-\f3GCT\fR: Total garbage collection time\&.
-.TP
--gcmetacapacity \fIoption\fR
-.br
-Permanent generation statistics\&.
-
-\f3MCMN\fR: Minimum metaspace capacity (KB)\&.
-
-\f3MCMX\fR: Maximum metaspace capacity (KB)\&.
-
-\f3MC\fR: Metaspace capacity (KB)\&.
-
-\f3YGC\fR: Number of young generation GC events\&.
-
-\f3FGC\fR: Number of full GC events\&.
-
-\f3FGCT\fR: Full garbage collection time\&.
-
-\f3GCT\fR: Total garbage collection time\&.
-.TP
--gcutil \fIoption\fR
-.br
-Summary of garbage collection statistics\&.
-
-\f3S0\fR: Survivor space 0 utilization as a percentage of the space\&'s current capacity\&.
-
-\f3S1\fR: Survivor space 1 utilization as a percentage of the space\&'s current capacity\&.
-
-\f3E\fR: Eden space utilization as a percentage of the space\&'s current capacity\&.
-
-\f3O\fR: Old space utilization as a percentage of the space\&'s current capacity\&.
-
-\f3M\fR: Metaspace utilization as a percentage of the space\&'s current capacity\&.
-
-\f3YGC\fR: Number of young generation GC events\&.
-
-\f3YGCT\fR: Young generation garbage collection time\&.
-
-\f3FGC\fR: Number of full GC events\&.
-
-\f3FGCT\fR: Full garbage collection time\&.
-
-\f3GCT\fR: Total garbage collection time\&.
-.TP
--printcompilation \fIoption\fR
-.br
-Java HotSpot VM compiler method statistics\&.
-
-\f3Compiled\fR: Number of compilation tasks performed by the most recently compiled method\&.
-
-\f3Size\fR: Number of bytes of byte code of the most recently compiled method\&.
-
-\f3Type\fR: Compilation type of the most recently compiled method\&.
-
-\f3Method\fR: Class name and method name identifying the most recently compiled method\&. Class name uses slash (/) instead of dot (\&.) as a name space separator\&. Method name is the method within the specified class\&. The format for these two fields is consistent with the HotSpot \f3-XX:+PrintComplation\fR option\&.
-.SH EXAMPLES    
-This section presents some examples of monitoring a local JVM with an \fIlvmid\fR of 21891\&.
-.SS THE\ GCUTIL\ OPTION    
-This example attaches to lvmid 21891 and takes 7 samples at 250 millisecond intervals and displays the output as specified by the -\f3gcutil\fR option\&.
+.sp
+\fBLoaded\fR: Number of classes loaded\&.
+.sp
+\fBBytes\fR: Number of kBs loaded\&.
+.sp
+\fBUnloaded\fR: Number of classes unloaded\&.
+.sp
+\fBBytes\fR: Number of Kbytes unloaded\&.
+.sp
+\fBTime\fR: Time spent performing class loading and unloading operations\&.
+.RE
 .PP
-The output of this example shows that a young generation collection occurred between the third and fourth sample\&. The collection took 0\&.001 seconds and promoted objects from the eden space (E) to the old space (O), resulting in an increase of old space utilization from 9\&.49% to 9\&.51%\&. Before the collection, the survivor space was 12\&.44% utilized, but after this collection it is only 7\&.74% utilized\&.
-.sp     
-.nf     
-\f3jstat \-gcutil 21891 250 7\fP
-.fi     
-.nf     
-\f3  S0     S1     E      O      M       YGC    YGCT    FGC    FGCT     GCT\fP
-.fi     
-.nf     
-\f30\&.00  99\&.74  13\&.49   7\&.86  95\&.82      3    0\&.124     0    0\&.000    0\&.124\fP
-.fi     
-.nf     
-\f30\&.00  99\&.74  13\&.49   7\&.86  95\&.82      3    0\&.124     0    0\&.000    0\&.124\fP
-.fi     
-.nf     
-\f30\&.00  99\&.74  13\&.49   7\&.86  95\&.82      3    0\&.124     0    0\&.000    0\&.124\fP
-.fi     
-.nf     
-\f30\&.00  99\&.74  13\&.49   7\&.86  95\&.82      3    0\&.124     0    0\&.000    0\&.124\fP
-.fi     
-.nf     
-\f30\&.00  99\&.74  13\&.80   7\&.86  95\&.82      3    0\&.124     0    0\&.000    0\&.124\fP
-.fi     
-.nf     
-\f30\&.00  99\&.74  13\&.80   7\&.86  95\&.82      3    0\&.124     0    0\&.000    0\&.124\fP
-.fi     
-.nf     
-\f30\&.00  99\&.74  13\&.80   7\&.86  95\&.82      3    0\&.124     0    0\&.000    0\&.124\fP
-.fi     
-.nf     
-\f3\fP
-.fi     
-.sp     
-.SS REPEAT\ THE\ COLUMN\ HEADER\ STRING    
-This example attaches to lvmid 21891 and takes samples at 250 millisecond intervals and displays the output as specified by \f3-gcutil\fR option\&. In addition, it uses the \f3-h3\fR option to output the column header after every 3 lines of data\&.
+\-compiler \fIoption\fR
+.RS 4
+Java HotSpot VM Just\-in\-Time compiler statistics\&.
+.sp
+\fBCompiled\fR: Number of compilation tasks performed\&.
+.sp
+\fBFailed\fR: Number of compilations tasks failed\&.
+.sp
+\fBInvalid\fR: Number of compilation tasks that were invalidated\&.
+.sp
+\fBTime\fR: Time spent performing compilation tasks\&.
+.sp
+\fBFailedType\fR: Compile type of the last failed compilation\&.
+.sp
+\fBFailedMethod\fR: Class name and method of the last failed compilation\&.
+.RE
+.PP
+\-gc \fIoption\fR
+.RS 4
+Garbage\-collected heap statistics\&.
+.sp
+\fBS0C\fR: Current survivor space 0 capacity (kB)\&.
+.sp
+\fBS1C\fR: Current survivor space 1 capacity (kB)\&.
+.sp
+\fBS0U\fR: Survivor space 0 utilization (kB)\&.
+.sp
+\fBS1U\fR: Survivor space 1 utilization (kB)\&.
+.sp
+\fBEC\fR: Current eden space capacity (kB)\&.
+.sp
+\fBEU\fR: Eden space utilization (kB)\&.
+.sp
+\fBOC\fR: Current old space capacity (kB)\&.
+.sp
+\fBOU\fR: Old space utilization (kB)\&.
+.sp
+\fBMC\fR: Metaspace capacity (kB)\&.
+.sp
+\fBMU\fR: Metacspace utilization (kB)\&.
+.sp
+\fBCCSC\fR: Compressed class space capacity (kB)\&.
+.sp
+\fBCCSU\fR: Compressed class space used (kB)\&.
+.sp
+\fBYGC\fR: Number of young generation garbage collection events\&.
+.sp
+\fBYGCT\fR: Young generation garbage collection time\&.
+.sp
+\fBFGC\fR: Number of full GC events\&.
+.sp
+\fBFGCT\fR: Full garbage collection time\&.
+.sp
+\fBGCT\fR: Total garbage collection time\&.
+.RE
+.PP
+\-gccapacity \fIoption\fR
+.RS 4
+Memory pool generation and space capacities\&.
+.sp
+\fBNGCMN\fR: Minimum new generation capacity (kB)\&.
+.sp
+\fBNGCMX\fR: Maximum new generation capacity (kB)\&.
+.sp
+\fBNGC\fR: Current new generation capacity (kB)\&.
+.sp
+\fBS0C\fR: Current survivor space 0 capacity (kB)\&.
+.sp
+\fBS1C\fR: Current survivor space 1 capacity (kB)\&.
+.sp
+\fBEC\fR: Current eden space capacity (kB)\&.
+.sp
+\fBOGCMN\fR: Minimum old generation capacity (kB)\&.
+.sp
+\fBOGCMX\fR: Maximum old generation capacity (kB)\&.
+.sp
+\fBOGC\fR: Current old generation capacity (kB)\&.
+.sp
+\fBOC\fR: Current old space capacity (kB)\&.
+.sp
+\fBMCMN\fR: Minimum metaspace capacity (kB)\&.
+.sp
+\fBMCMX\fR: Maximum metaspace capacity (kB)\&.
+.sp
+\fBMC\fR: Metaspace capacity (kB)\&.
+.sp
+\fBCCSMN\fR: Compressed class space minimum capacity (kB)\&.
+.sp
+\fBCCSMX\fR: Compressed class space maximum capacity (kB)\&.
+.sp
+\fBCCSC\fR: Compressed class space capacity (kB)\&.
+.sp
+\fBYGC\fR: Number of young generation GC events\&.
+.sp
+\fBFGC\fR: Number of full GC events\&.
+.RE
+.PP
+\-gccause \fIoption\fR
+.RS 4
+This option displays the same summary of garbage collection statistics as the
+\fB\-gcutil\fR
+option, but includes the causes of the last garbage collection event and (when applicable) the current garbage collection event\&. In addition to the columns listed for
+\fB\-gcutil\fR, this option adds the following columns\&.
+.sp
+\fBLGCC\fR: Cause of last garbage collection
+.sp
+\fBGCC\fR: Cause of current garbage collection
+.RE
+.PP
+\-gcnew \fIoption\fR
+.RS 4
+New generation statistics\&.
+.sp
+\fBS0C\fR: Current survivor space 0 capacity (kB)\&.
+.sp
+\fBS1C\fR: Current survivor space 1 capacity (kB)\&.
+.sp
+\fBS0U\fR: Survivor space 0 utilization (kB)\&.
+.sp
+\fBS1U\fR: Survivor space 1 utilization (kB)\&.
+.sp
+\fBTT\fR: Tenuring threshold\&.
+.sp
+\fBMTT\fR: Maximum tenuring threshold\&.
+.sp
+\fBDSS\fR: Desired survivor size (kB)\&.
+.sp
+\fBEC\fR: Current eden space capacity (kB)\&.
+.sp
+\fBEU\fR: Eden space utilization (kB)\&.
+.sp
+\fBYGC\fR: Number of young generation GC events\&.
+.sp
+\fBYGCT\fR: Young generation garbage collection time\&.
+.RE
+.PP
+\-gcnewcapacity \fIoption\fR
+.RS 4
+New generation space size statistics\&.
+.sp
+\fBNGCMN\fR: Minimum new generation capacity (kB)\&.
+.sp
+\fBNGCMX\fR: Maximum new generation capacity (kB)\&.
+.sp
+\fBNGC\fR: Current new generation capacity (kB)\&.
+.sp
+\fBS0CMX\fR: Maximum survivor space 0 capacity (kB)\&.
+.sp
+\fBS0C\fR: Current survivor space 0 capacity (kB)\&.
+.sp
+\fBS1CMX\fR: Maximum survivor space 1 capacity (kB)\&.
+.sp
+\fBS1C\fR: Current survivor space 1 capacity (kB)\&.
+.sp
+\fBECMX\fR: Maximum eden space capacity (kB)\&.
+.sp
+\fBEC\fR: Current eden space capacity (kB)\&.
+.sp
+\fBYGC\fR: Number of young generation GC events\&.
+.sp
+\fBFGC\fR: Number of full GC events\&.
+.RE
+.PP
+\-gcold \fIoption\fR
+.RS 4
+Old generation and metaspace behavior statistics\&.
+.sp
+\fBMC\fR: Metaspace capacity (kB)\&.
+.sp
+\fBMU\fR: Metaspace utilization (kB)\&.
+.sp
+\fBCCSC\fR: Compressed class space capacity (kB)\&.
+.sp
+\fBCCSU\fR: Compressed class space used (kB)\&.
+.sp
+\fBOC\fR: Current old space capacity (kB)\&.
+.sp
+\fBOU\fR: Old space utilization (kB)\&.
+.sp
+\fBYGC\fR: Number of young generation GC events\&.
+.sp
+\fBFGC\fR: Number of full GC events\&.
+.sp
+\fBFGCT\fR: Full garbage collection time\&.
+.sp
+\fBGCT\fR: Total garbage collection time\&.
+.RE
+.PP
+\-gcoldcapacity \fIoption\fR
+.RS 4
+Old generation size statistics\&.
+.sp
+\fBOGCMN\fR: Minimum old generation capacity (kB)\&.
+.sp
+\fBOGCMX\fR: Maximum old generation capacity (kB)\&.
+.sp
+\fBOGC\fR: Current old generation capacity (kB)\&.
+.sp
+\fBOC\fR: Current old space capacity (kB)\&.
+.sp
+\fBYGC\fR: Number of young generation GC events\&.
+.sp
+\fBFGC\fR: Number of full GC events\&.
+.sp
+\fBFGCT\fR: Full garbage collection time\&.
+.sp
+\fBGCT\fR: Total garbage collection time\&.
+.RE
+.PP
+\-gcmetacapacity \fIoption\fR
+.RS 4
+Metaspace size statistics\&.
+.sp
+\fBMCMN\fR: Minimum metaspace capacity (kB)\&.
+.sp
+\fBMCMX\fR: Maximum metaspace capacity (kB)\&.
+.sp
+\fBMC\fR: Metaspace capacity (kB)\&.
+.sp
+\fBCCSMN\fR: Compressed class space minimum capacity (kB)\&.
+.sp
+\fBCCSMX\fR: Compressed class space maximum capacity (kB)\&.
+.sp
+\fBYGC\fR: Number of young generation GC events\&.
+.sp
+\fBFGC\fR: Number of full GC events\&.
+.sp
+\fBFGCT\fR: Full garbage collection time\&.
+.sp
+\fBGCT\fR: Total garbage collection time\&.
+.RE
+.PP
+\-gcutil \fIoption\fR
+.RS 4
+Summary of garbage collection statistics\&.
+.sp
+\fBS0\fR: Survivor space 0 utilization as a percentage of the space\*(Aqs current capacity\&.
+.sp
+\fBS1\fR: Survivor space 1 utilization as a percentage of the space\*(Aqs current capacity\&.
+.sp
+\fBE\fR: Eden space utilization as a percentage of the space\*(Aqs current capacity\&.
+.sp
+\fBO\fR: Old space utilization as a percentage of the space\*(Aqs current capacity\&.
+.sp
+\fBM\fR: Metaspace utilization as a percentage of the space\*(Aqs current capacity\&.
+.sp
+\fBCCS\fR: Compressed class space utilization as a percentage\&.
+.sp
+\fBYGC\fR: Number of young generation GC events\&.
+.sp
+\fBYGCT\fR: Young generation garbage collection time\&.
+.sp
+\fBFGC\fR: Number of full GC events\&.
+.sp
+\fBFGCT\fR: Full garbage collection time\&.
+.sp
+\fBGCT\fR: Total garbage collection time\&.
+.RE
+.PP
+\-printcompilation \fIoption\fR
+.RS 4
+Java HotSpot VM compiler method statistics\&.
+.sp
+\fBCompiled\fR: Number of compilation tasks performed by the most recently compiled method\&.
+.sp
+\fBSize\fR: Number of bytes of byte code of the most recently compiled method\&.
+.sp
+\fBType\fR: Compilation type of the most recently compiled method\&.
+.sp
+\fBMethod\fR: Class name and method name identifying the most recently compiled method\&. Class name uses slash (/) instead of dot (\&.) as a name space separator\&. Method name is the method within the specified class\&. The format for these two fields is consistent with the HotSpot
+\fB\-XX:+PrintCompilation\fR
+option\&.
+.RE
+.SH "EXAMPLES"
+.PP
+This section presents some examples of monitoring a local JVM with an
+\fIlvmid\fR
+of 21891\&.
+.SS "The gcutil Option"
+.PP
+This example attaches to lvmid 21891 and takes 7 samples at 250 millisecond intervals and displays the output as specified by the \-\fBgcutil\fR
+option\&.
+.PP
+The output of this example shows that a young generation collection occurred between the third and fourth sample\&. The collection took 0\&.078 seconds and promoted objects from the eden space (E) to the old space (O), resulting in an increase of old space utilization from 66\&.80% to 68\&.19%\&. Before the collection, the survivor space was 97\&.02% utilized, but after this collection it is 91\&.03% utilized\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBjstat \-gcutil 21891 250 7\fR
+\fB  S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT     GCT   \fR
+\fB  0\&.00  97\&.02  70\&.31  66\&.80  95\&.52  89\&.14      7    0\&.300     0    0\&.000    0\&.300\fR
+\fB  0\&.00  97\&.02  86\&.23  66\&.80  95\&.52  89\&.14      7    0\&.300     0    0\&.000    0\&.300\fR
+\fB  0\&.00  97\&.02  96\&.53  66\&.80  95\&.52  89\&.14      7    0\&.300     0    0\&.000    0\&.300\fR
+\fB 91\&.03   0\&.00   1\&.98  68\&.19  95\&.89  91\&.24      8    0\&.378     0    0\&.000    0\&.378\fR
+\fB 91\&.03   0\&.00  15\&.82  68\&.19  95\&.89  91\&.24      8    0\&.378     0    0\&.000    0\&.378\fR
+\fB 91\&.03   0\&.00  17\&.80  68\&.19  95\&.89  91\&.24      8    0\&.378     0    0\&.000    0\&.378\fR
+\fB 91\&.03   0\&.00  17\&.80  68\&.19  95\&.89  91\&.24      8    0\&.378     0    0\&.000    0\&.378\fR
+.fi
+.if n \{\
+.RE
+.\}
+.SS "Repeat the Column Header String"
+.PP
+This example attaches to lvmid 21891 and takes samples at 250 millisecond intervals and displays the output as specified by
+\fB\-gcnew\fR
+option\&. In addition, it uses the
+\fB\-h3\fR
+option to output the column header after every 3 lines of data\&.
 .PP
 In addition to showing the repeating header string, this example shows that between the second and third samples, a young GC occurred\&. Its duration was 0\&.001 seconds\&. The collection found enough active data that the survivor space 0 utilization (S0U) would have exceeded the desired survivor Size (DSS)\&. As a result, objects were promoted to the old generation (not visible in this output), and the tenuring threshold (TT) was lowered from 31 to 2\&.
 .PP
 Another collection occurs between the fifth and sixth samples\&. This collection found very few survivors and returned the tenuring threshold to 31\&.
-.sp     
-.nf     
-\f3jstat \-gcnew \-h3 21891 250\fP
-.fi     
-.nf     
-\f3 S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT\fP
-.fi     
-.nf     
-\f3  64\&.0   64\&.0    0\&.0   31\&.7 31  31   32\&.0    512\&.0    178\&.6    249    0\&.203\fP
-.fi     
-.nf     
-\f3  64\&.0   64\&.0    0\&.0   31\&.7 31  31   32\&.0    512\&.0    355\&.5    249    0\&.203\fP
-.fi     
-.nf     
-\f3  64\&.0   64\&.0   35\&.4    0\&.0  2  31   32\&.0    512\&.0     21\&.9    250    0\&.204\fP
-.fi     
-.nf     
-\f3 S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT\fP
-.fi     
-.nf     
-\f3  64\&.0   64\&.0   35\&.4    0\&.0  2  31   32\&.0    512\&.0    245\&.9    250    0\&.204\fP
-.fi     
-.nf     
-\f3  64\&.0   64\&.0   35\&.4    0\&.0  2  31   32\&.0    512\&.0    421\&.1    250    0\&.204\fP
-.fi     
-.nf     
-\f3  64\&.0   64\&.0    0\&.0   19\&.0 31  31   32\&.0    512\&.0     84\&.4    251    0\&.204\fP
-.fi     
-.nf     
-\f3 S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT\fP
-.fi     
-.nf     
-\f3  64\&.0   64\&.0    0\&.0   19\&.0 31  31   32\&.0    512\&.0    306\&.7    251    0\&.204\fP
-.fi     
-.nf     
-\f3\fP
-.fi     
-.sp     
-.SS INCLUDE\ A\ TIME\ STAMP\ FOR\ EACH\ SAMPLE    
-This example attaches to lvmid 21891 and takes 3 samples at 250 millisecond intervals\&. The \f3-t\fR option is used to generate a time stamp for each sample in the first column\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBjstat \-gcnew \-h3 21891 250\fR
+\fB S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT\fR
+\fB  64\&.0   64\&.0    0\&.0   31\&.7 31  31   32\&.0    512\&.0    178\&.6    249    0\&.203\fR
+\fB  64\&.0   64\&.0    0\&.0   31\&.7 31  31   32\&.0    512\&.0    355\&.5    249    0\&.203\fR
+\fB  64\&.0   64\&.0   35\&.4    0\&.0  2  31   32\&.0    512\&.0     21\&.9    250    0\&.204\fR
+\fB S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT\fR
+\fB  64\&.0   64\&.0   35\&.4    0\&.0  2  31   32\&.0    512\&.0    245\&.9    250    0\&.204\fR
+\fB  64\&.0   64\&.0   35\&.4    0\&.0  2  31   32\&.0    512\&.0    421\&.1    250    0\&.204\fR
+\fB  64\&.0   64\&.0    0\&.0   19\&.0 31  31   32\&.0    512\&.0     84\&.4    251    0\&.204\fR
+\fB S0C    S1C    S0U    S1U   TT MTT  DSS      EC       EU     YGC     YGCT\fR
+\fB  64\&.0   64\&.0    0\&.0   19\&.0 31  31   32\&.0    512\&.0    306\&.7    251    0\&.204\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.SS "Include a Time Stamp for Each Sample"
 .PP
-The Timestamp column reports the elapsed time in seconds since the start of the target JVM\&. In addition, the \f3-gcoldcapacity\fR output shows the old generation capacity (OGC) and the old space capacity (OC) increasing as the heap expands to meet allocation or promotion demands\&. The old generation capacity (OGC) has grown to from 11,696 KB to 13820 KB after the eighty-first full garbage collection (FGC)\&. The maximum capacity of the generation (and space) is 60,544 KB (OGCMX), so it still has room to expand\&.
-.sp     
-.nf     
-\f3Timestamp      OGCMN    OGCMX     OGC       OC       YGC   FGC    FGCT    GCT\fP
-.fi     
-.nf     
-\f3          150\&.1   1408\&.0  60544\&.0  11696\&.0  11696\&.0   194    80    2\&.874   3\&.799\fP
-.fi     
-.nf     
-\f3          150\&.4   1408\&.0  60544\&.0  13820\&.0  13820\&.0   194    81    2\&.938   3\&.863\fP
-.fi     
-.nf     
-\f3          150\&.7   1408\&.0  60544\&.0  13820\&.0  13820\&.0   194    81    2\&.938   3\&.863\fP
-.fi     
-.nf     
-\f3\fP
-.fi     
-.sp     
-.SS MONITOR\ INSTRUMENTATION\ FOR\ A\ REMOTE\ JVM    
-This example attaches to lvmid 40496 on the system named remote\&.domain using the \f3-gcutil\fR option, with samples taken every second indefinitely\&.
+This example attaches to lvmid 21891 and takes 3 samples at 250 millisecond intervals\&. The
+\fB\-t\fR
+option is used to generate a time stamp for each sample in the first column\&.
 .PP
-The lvmid is combined with the name of the remote host to construct a \fIvmid\fR of \f340496@remote\&.domain\fR\&. This vmid results in the use of the \f3rmi\fR protocol to communicate to the default \f3jstatd\fR server on the remote host\&. The \f3jstatd\fR server is located using the rmiregistry on \f3remote\&.domain\fR that is bound to the default rmiregistry port (port 1099)\&.
-.sp     
-.nf     
-\f3jstat \-gcutil 40496@remote\&.domain 1000\fP
-.fi     
-.nf     
-\f3\fI\&.\&.\&. output omitted\fR\fP
-.fi     
-.nf     
-\f3\fP
-.fi     
-.sp     
-.SH SEE\ ALSO    
-.TP 0.2i    
-\(bu
+The Timestamp column reports the elapsed time in seconds since the start of the target JVM\&. In addition, the
+\fB\-gcoldcapacity\fR
+output shows the old generation capacity (OGC) and the old space capacity (OC) increasing as the heap expands to meet allocation or promotion demands\&. The old generation capacity (OGC) has grown from 11,696 kB to 13,820 kB after the eighty\-first full garbage collection (FGC)\&. The maximum capacity of the generation (and space) is 60,544 kB (OGCMX), so it still has room to expand\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBTimestamp      OGCMN    OGCMX     OGC       OC       YGC   FGC    FGCT    GCT\fR
+\fB          150\&.1   1408\&.0  60544\&.0  11696\&.0  11696\&.0   194    80    2\&.874   3\&.799\fR
+\fB          150\&.4   1408\&.0  60544\&.0  13820\&.0  13820\&.0   194    81    2\&.938   3\&.863\fR
+\fB          150\&.7   1408\&.0  60544\&.0  13820\&.0  13820\&.0   194    81    2\&.938   3\&.863\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.SS "Monitor Instrumentation for a Remote JVM"
+.PP
+This example attaches to lvmid 40496 on the system named remote\&.domain using the
+\fB\-gcutil\fR
+option, with samples taken every second indefinitely\&.
+.PP
+The lvmid is combined with the name of the remote host to construct a
+\fIvmid\fR
+of
+\fB40496@remote\&.domain\fR\&. This vmid results in the use of the
+\fBrmi\fR
+protocol to communicate to the default
+\fBjstatd\fR
+server on the remote host\&. The
+\fBjstatd\fR
+server is located using the
+\fBrmiregistry\fR
+command on
+\fBremote\&.domain\fR
+that is bound to the default port of the
+\fBrmiregistry\fR
+command (port 1099)\&.
+.sp
+.if n \{\
+.RS 4
+.\}
+.nf
+\fBjstat \-gcutil 40496@remote\&.domain 1000\fR
+\fB\fI\&.\&.\&. output omitted\fR\fR
+ 
+.fi
+.if n \{\
+.RE
+.\}
+.SH "SEE ALSO"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
 java(1)
-.TP 0.2i    
-\(bu
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
 jps(1)
-.TP 0.2i    
-\(bu
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
 jstatd(1)
-.TP 0.2i    
-\(bu
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.sp -1
+.IP \(bu 2.3
+.\}
 rmiregistry(1)
 .RE
 .br

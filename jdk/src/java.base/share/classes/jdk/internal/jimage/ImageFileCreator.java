@@ -159,7 +159,11 @@ public final class ImageFileCreator {
             throw new UnsupportedOperationException("Not supported, no external file "
                     + "in a jimage file");
         }, entriesForModule, order);
-        String fileName = jimageFile.getRoot().toString();
+        String fileName = jimageFile.getFileName().toString();
+        if (fileName.endsWith(IMAGE_EXT)) {
+            fileName = fileName.substring(0, fileName.length()
+                    - BasicImageWriter.IMAGE_EXT.length());
+        }
         generateJImage(jimageFile, fileName, resources, order);
     }
 

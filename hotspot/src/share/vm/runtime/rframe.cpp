@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ DeoptimizedRFrame::DeoptimizedRFrame(frame fr, JavaThread* thread, RFrame*const 
 : InterpretedRFrame(fr, thread, callee) {}
 
 RFrame* RFrame::new_RFrame(frame fr, JavaThread* thread, RFrame*const  callee) {
-  RFrame* rf;
+  RFrame* rf = NULL;
   int dist = callee ? callee->distance() : -1;
   if (fr.is_interpreted_frame()) {
     rf = new InterpretedRFrame(fr, thread, callee);
@@ -93,8 +93,10 @@ RFrame* RFrame::new_RFrame(frame fr, JavaThread* thread, RFrame*const  callee) {
   } else {
     assert(false, "Unhandled frame type");
   }
-  rf->set_distance(dist);
-  rf->init();
+  if (rf != NULL) {
+    rf->set_distance(dist);
+    rf->init();
+  }
   return rf;
 }
 
