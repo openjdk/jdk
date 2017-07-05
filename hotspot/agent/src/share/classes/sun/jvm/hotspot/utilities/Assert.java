@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2005 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ public class Assert {
   public static boolean ASSERTS_ENABLED = true;
 
   public static void that(boolean test, String message) {
-    if (!test) {
+    if (ASSERTS_ENABLED && !test) {
       throw new AssertionFailure(message);
     }
   }

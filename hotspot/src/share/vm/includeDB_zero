@@ -1,6 +1,6 @@
 //
 // Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
-// Copyright 2009 Red Hat, Inc.
+// Copyright 2009, 2010 Red Hat, Inc.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 // NOTE: DO NOT CHANGE THIS COPYRIGHT TO NEW STYLE - IT WILL BREAK makeDeps!
 
+cppInterpreter_<arch>.cpp               stack_<arch>.inline.hpp
+
 entryFrame_<arch>.hpp                   javaCalls.hpp
 entryFrame_<arch>.hpp                   stack_<arch>.hpp
 
@@ -47,9 +49,19 @@ interpreterFrame_<arch>.hpp             methodOop.hpp
 interpreterFrame_<arch>.hpp             stack_<arch>.hpp
 interpreterFrame_<arch>.hpp             thread.hpp
 
+interpreterRT_<arch>.cpp                stack_<arch>.inline.hpp
+
 sharkFrame_<arch>.hpp                   methodOop.hpp
 sharkFrame_<arch>.hpp                   stack_<arch>.hpp
 
 stack_<arch>.hpp                        sizes.hpp
+
+stack_<arch>.inline.hpp                 stack_<arch>.hpp
+stack_<arch>.inline.hpp                 thread.hpp
+
+stack_<arch>.cpp                        interpreterRuntime.hpp
+stack_<arch>.cpp                        stack_<arch>.hpp
+
+stubGenerator_<arch>.cpp                stack_<arch>.inline.hpp
 
 thread.hpp                              stack_<arch>.hpp

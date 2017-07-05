@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -985,6 +985,12 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
               annoPanel.addAnnotation(new Annotation(curFrame.addressOfInterpreterFrameExpressionStack(),
                                                      curFrame.addressOfInterpreterFrameTOS(),
                                                      "Interpreter expression stack"));
+              Address monBegin = curFrame.interpreterFrameMonitorBegin().address();
+              Address monEnd = curFrame.interpreterFrameMonitorEnd().address();
+              if (!monBegin.equals(monEnd)) {
+                  annoPanel.addAnnotation(new Annotation(monBegin, monEnd,
+                                                         "BasicObjectLocks"));
+              }
               if (interpreterFrameMethod != null) {
                 // The offset is just to get the right stack slots highlighted in the output
                 int offset = 1;

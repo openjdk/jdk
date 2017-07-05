@@ -40,6 +40,7 @@ public:
                  Exceptions,     // Offset where exception handler lives
                  Deopt,          // Offset where deopt handler lives
                  DeoptMH,        // Offset where MethodHandle deopt handler lives
+                 UnwindHandler,  // Offset to default unwind handler
                  max_Entries };
 
   // special value to note codeBlobs where profile (forte) stack walking is
@@ -59,6 +60,7 @@ public:
     _values[Exceptions    ] = -1;
     _values[Deopt         ] = -1;
     _values[DeoptMH       ] = -1;
+    _values[UnwindHandler ] = -1;
   }
 
   int value(Entries e) { return _values[e]; }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2001-2010 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,12 @@ void PSMarkSweep::initialize() {
 //
 // Note that this method should only be called from the vm_thread while
 // at a safepoint!
+//
+// Note that the all_soft_refs_clear flag in the collector policy
+// may be true because this method can be called without intervening
+// activity.  For example when the heap space is tight and full measure
+// are being taken to free space.
+
 void PSMarkSweep::invoke(bool maximum_heap_compaction) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(), "should be in vm thread");
@@ -54,24 +60,18 @@ void PSMarkSweep::invoke(bool maximum_heap_compaction) {
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
   GCCause::Cause gc_cause = heap->gc_cause();
   PSAdaptiveSizePolicy* policy = heap->size_policy();
+  IsGCActiveMark mark;
 
-  // Before each allocation/collection attempt, find out from the
-  // policy object if GCs are, on the whole, taking too long. If so,
-  // bail out without attempting a collection.  The exceptions are
-  // for explicitly requested GC's.
-  if (!policy->gc_time_limit_exceeded() ||
-      GCCause::is_user_requested_gc(gc_cause) ||
-      GCCause::is_serviceability_requested_gc(gc_cause)) {
-    IsGCActiveMark mark;
-
-    if (ScavengeBeforeFullGC) {
-      PSScavenge::invoke_no_policy();
-    }
-
-    int count = (maximum_heap_compaction)?1:MarkSweepAlwaysCompactCount;
-    IntFlagSetting flag_setting(MarkSweepAlwaysCompactCount, count);
-    PSMarkSweep::invoke_no_policy(maximum_heap_compaction);
+  if (ScavengeBeforeFullGC) {
+    PSScavenge::invoke_no_policy();
   }
+
+  const bool clear_all_soft_refs =
+    heap->collector_policy()->should_clear_all_soft_refs();
+
+  int count = (maximum_heap_compaction)?1:MarkSweepAlwaysCompactCount;
+  IntFlagSetting flag_setting(MarkSweepAlwaysCompactCount, count);
+  PSMarkSweep::invoke_no_policy(clear_all_soft_refs || maximum_heap_compaction);
 }
 
 // This method contains no policy. You should probably
@@ -88,6 +88,10 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
   GCCause::Cause gc_cause = heap->gc_cause();
   assert(heap->kind() == CollectedHeap::ParallelScavengeHeap, "Sanity");
   PSAdaptiveSizePolicy* size_policy = heap->size_policy();
+
+  // The scope of casr should end after code that can change
+  // CollectorPolicy::_should_clear_all_soft_refs.
+  ClearedAllSoftRefs casr(clear_all_softrefs, heap->collector_policy());
 
   PSYoungGen* young_gen = heap->young_gen();
   PSOldGen* old_gen = heap->old_gen();
@@ -275,7 +279,8 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
                                  old_gen->max_gen_size(),
                                  max_eden_size,
                                  true /* full gc*/,
-                                 gc_cause);
+                                 gc_cause,
+                                 heap->collector_policy());
 
         heap->resize_old_gen(size_policy->calculated_old_free_size_in_bytes());
 
@@ -326,19 +331,6 @@ void PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     // Track memory usage and detect low memory
     MemoryService::track_memory_usage();
     heap->update_counters();
-
-    if (PrintGCDetails) {
-      if (size_policy->print_gc_time_limit_would_be_exceeded()) {
-        if (size_policy->gc_time_limit_exceeded()) {
-          gclog_or_tty->print_cr("      GC time is exceeding GCTimeLimit "
-            "of %d%%", GCTimeLimit);
-        } else {
-          gclog_or_tty->print_cr("      GC time would exceed GCTimeLimit "
-            "of %d%%", GCTimeLimit);
-        }
-      }
-      size_policy->set_print_gc_time_limit_would_be_exceeded(false);
-    }
   }
 
   if (VerifyAfterGC && heap->total_collections() >= VerifyGCStartAt) {

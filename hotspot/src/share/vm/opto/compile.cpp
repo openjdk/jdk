@@ -871,7 +871,6 @@ void Compile::Init(int aliaslevel) {
   set_has_split_ifs(false);
   set_has_loops(has_method() && method()->has_loops()); // first approximation
   set_has_stringbuilder(false);
-  _deopt_happens = true;  // start out assuming the worst
   _trap_can_recompile = false;  // no traps emitted yet
   _major_progress = true; // start out assuming good things will happen
   set_has_unsafe_access(false);
