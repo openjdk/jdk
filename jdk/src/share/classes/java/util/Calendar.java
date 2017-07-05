@@ -749,7 +749,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      *
      * @see #NARROW_STANDALONE
      * @see #SHORT_FORMAT
-     * @see #LONG_FOTMAT
+     * @see #LONG_FORMAT
      * @since 1.8
      */
     public static final int NARROW_FORMAT = 4;

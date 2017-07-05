@@ -71,7 +71,7 @@ public class XMLEntityScanner implements XMLLocator  {
     /** Listeners which should know when load is being called */
     private Vector listeners = new Vector();
 
-    public static final boolean [] VALID_NAMES = new boolean[127];
+    private static final boolean [] VALID_NAMES = new boolean[127];
 
     /**
      * Debug printing of buffer. This debugging flag works best when you

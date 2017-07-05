@@ -239,12 +239,10 @@ public class MBeanFeatureInfo implements Serializable, DescriptorRead {
         case 1:
             final String[] names = (String[])in.readObject();
 
-            if (names.length == 0) {
-                descriptor = ImmutableDescriptor.EMPTY_DESCRIPTOR;
-            } else {
-                final Object[] values = (Object[])in.readObject();
-                descriptor = new ImmutableDescriptor(names, values);
-            }
+            final Object[] values = (Object[]) in.readObject();
+            descriptor = (names.length == 0) ?
+                ImmutableDescriptor.EMPTY_DESCRIPTOR :
+                new ImmutableDescriptor(names, values);
 
             break;
         case 0:

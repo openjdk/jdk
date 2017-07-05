@@ -21,13 +21,10 @@
  * questions.
  */
 
-/**
- *
- */
-
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Arrays;
-import java.util.Properties;
 import java.util.StringTokenizer;
 
 /**
@@ -44,10 +41,6 @@ public class JavaVM {
     private OutputStream outputStream = System.out;
     private OutputStream errorStream = System.err;
     private String policyFileName = null;
-
-    // This is used to shorten waiting time at startup.
-    private volatile boolean started = false;
-    private boolean forcesOutput = true; // default behavior
 
     private static void mesg(Object mesg) {
         System.err.println("JAVAVM: " + mesg.toString());
@@ -80,24 +73,6 @@ public class JavaVM {
         this(classname, options, args);
         this.outputStream = out;
         this.errorStream = err;
-    }
-
-    /* This constructor will instantiate a JavaVM object for which caller
-     * can ask for forcing initial version output on child vm process
-     * (if forcesVersionOutput is true), or letting the started vm behave freely
-     * (when forcesVersionOutput is false).
-     */
-    public JavaVM(String classname,
-                  String options, String args,
-                  OutputStream out, OutputStream err,
-                  boolean forcesVersionOutput) {
-        this(classname, options, args, out, err);
-        this.forcesOutput = forcesVersionOutput;
-    }
-
-
-    public void setStarted() {
-        started = true;
     }
 
     // Prepends passed opts array to current options
@@ -139,7 +114,8 @@ public class JavaVM {
      */
     public void start() throws IOException {
 
-        if (vm != null) return;
+        if (vm != null)
+            throw new IllegalStateException("JavaVM already started");
 
         /*
          * If specified, add option for policy file
@@ -150,18 +126,6 @@ public class JavaVM {
         }
 
         addOptions(new String[] { getCodeCoverageOptions() });
-
-        /*
-         * If forcesOutput is true :
-         *  We force the new starting vm to output something so that we can know
-         *  when it is effectively started by redirecting standard output through
-         *  the next StreamPipe call (the vm is considered started when a first
-         *  output has been streamed out).
-         *  We do this by prepnding a "-showversion" option in the command line.
-         */
-        if (forcesOutput) {
-            addOptions(new String[] {"-showversion"});
-        }
 
         StringTokenizer optionsTokenizer = new StringTokenizer(options);
         StringTokenizer argsTokenizer = new StringTokenizer(args);
@@ -186,43 +150,8 @@ public class JavaVM {
         vm = Runtime.getRuntime().exec(javaCommand);
 
         /* output from the execed process may optionally be captured. */
-        StreamPipe.plugTogether(this, vm.getInputStream(), this.outputStream);
-        StreamPipe.plugTogether(this, vm.getErrorStream(), this.errorStream);
-
-        try {
-            if (forcesOutput) {
-                // Wait distant vm to start, by using waiting time slices of 100 ms.
-                // Wait at most for 2secs, after it considers the vm to be started.
-                final long vmStartSleepTime = 100;
-                final int maxTrials = 20;
-                int numTrials = 0;
-                while (!started && numTrials < maxTrials) {
-                    numTrials++;
-                    Thread.sleep(vmStartSleepTime);
-                }
-
-                // Outputs running status of distant vm
-                String message =
-                    "after " + (numTrials * vmStartSleepTime) + " milliseconds";
-                if (started) {
-                    mesg("distant vm process running, " + message);
-                }
-                else {
-                    mesg("unknown running status of distant vm process, " + message);
-                }
-            }
-            else {
-                // Since we have no way to know if the distant vm is started,
-                // we just consider the vm to be started after a 2secs waiting time.
-                Thread.sleep(2000);
-                mesg("distant vm considered to be started after a waiting time of 2 secs");
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            mesg("Thread interrupted while checking if distant vm is started. Giving up check.");
-            mesg("Distant vm state unknown");
-            return;
-        }
+        StreamPipe.plugTogether(vm.getInputStream(), this.outputStream);
+        StreamPipe.plugTogether(vm.getErrorStream(), this.errorStream);
     }
 
     public void destroy() {

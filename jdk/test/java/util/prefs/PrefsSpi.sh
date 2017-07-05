@@ -87,17 +87,17 @@ Sys "$javac" -d jarDir StubPreferencesFactory.java StubPreferences.java
 
 case "`uname`" in Windows*|CYGWIN* ) CPS=';';; *) CPS=':';; esac
 
-Sys "$java" "${TESTVMOPTS}" "-cp" "$TESTCLASSES${CPS}extDir/PrefsSpi.jar" \
+Sys "$java" ${TESTVMOPTS} "-cp" "$TESTCLASSES${CPS}extDir/PrefsSpi.jar" \
     -Djava.util.prefs.PreferencesFactory=StubPreferencesFactory \
     -Djava.util.prefs.userRoot=. \
     PrefsSpi "StubPreferences"
-Sys "$java" "${TESTVMOPTS}" "-cp" "$TESTCLASSES" \
+Sys "$java" ${TESTVMOPTS} "-cp" "$TESTCLASSES" \
     -Djava.util.prefs.userRoot=. \
     PrefsSpi "java.util.prefs.*"
-Sys "$java" "${TESTVMOPTS}" "-cp" "$TESTCLASSES${CPS}extDir/PrefsSpi.jar" \
+Sys "$java" ${TESTVMOPTS} "-cp" "$TESTCLASSES${CPS}extDir/PrefsSpi.jar" \
     -Djava.util.prefs.userRoot=. \
     PrefsSpi "StubPreferences"
-Sys "$java" "${TESTVMOPTS}" "-cp" "$TESTCLASSES" "-Djava.ext.dirs=extDir" \
+Sys "$java" ${TESTVMOPTS} "-cp" "$TESTCLASSES" "-Djava.ext.dirs=extDir" \
     -Djava.util.prefs.userRoot=. \
     PrefsSpi "StubPreferences"
 

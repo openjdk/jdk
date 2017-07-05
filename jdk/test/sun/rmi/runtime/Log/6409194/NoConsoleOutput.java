@@ -64,7 +64,7 @@ public class NoConsoleOutput {
         // (neither on standard output, nor on standard err streams).
         JavaVM vm = new JavaVM(DoRMIStuff.class.getName(),
             "-Djava.util.logging.config.file=" + loggingPropertiesFile,
-                               "", out, err, false);
+                               "", out, err);
         vm.start();
         vm.getVM().waitFor();
 

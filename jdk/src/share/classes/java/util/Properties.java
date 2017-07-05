@@ -1188,7 +1188,7 @@ class Properties extends Hashtable<Object,Object> {
                         provider = loadProviderAsService(cl);
                         if (provider != null)
                             return provider;
-                        throw new InternalError("No fallback");
+                        return new jdk.internal.util.xml.BasicXmlPropertiesProvider();
                 }});
         }
 

@@ -1005,7 +1005,7 @@ public class EnvironmentCheck
     {
       Class clazz = ObjectFactory.findProviderClass(DOM_CLASS, true);
 
-      Method method = clazz.getMethod(DOM_LEVEL3_METHOD, null);
+      Method method = clazz.getMethod(DOM_LEVEL3_METHOD, (Class<?>[])null);
 
       // If we succeeded, we have loaded interfaces from a
       //  level 3 DOM somewhere
