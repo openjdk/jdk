@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,18 +369,17 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_shutdown0
  * Method:    setIntOption
  * Signature: (III)V
  */
-JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_setIntOption
-  (JNIEnv *env, jclass clazz, jint fd, jint cmd, jint value) {
-
+JNIEXPORT void JNICALL
+Java_java_net_DualStackPlainSocketImpl_setIntOption
+  (JNIEnv *env, jclass clazz, jint fd, jint cmd, jint value)
+{
     int level = 0, opt = 0;
     struct linger linger = {0, 0};
     char *parg;
     int arglen;
 
     if (NET_MapSocketOption(cmd, &level, &opt) < 0) {
-        JNU_ThrowByNameWithLastError(env,
-                                     JNU_JAVANETPKG "SocketException",
-                                     "Invalid option");
+        JNU_ThrowByName(env, "java/net/SocketException", "Invalid option");
         return;
     }
 
@@ -410,8 +409,8 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_setIntOption
  * Signature: (II)I
  */
 JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_getIntOption
-  (JNIEnv *env, jclass clazz, jint fd, jint cmd) {
-
+  (JNIEnv *env, jclass clazz, jint fd, jint cmd)
+{
     int level = 0, opt = 0;
     int result=0;
     struct linger linger = {0, 0};
@@ -419,9 +418,7 @@ JNIEXPORT jint JNICALL Java_java_net_DualStackPlainSocketImpl_getIntOption
     int arglen;
 
     if (NET_MapSocketOption(cmd, &level, &opt) < 0) {
-        JNU_ThrowByNameWithLastError(env,
-                                     JNU_JAVANETPKG "SocketException",
-                                     "Unsupported socket option");
+        JNU_ThrowByName(env, "java/net/SocketException", "Invalid option");
         return -1;
     }
 

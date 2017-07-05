@@ -38,7 +38,10 @@ JAVAC_WARNINGS := -Xlint:all -Werror
 # and the interim javac, to be run by the boot jdk.
 $(eval $(call SetupJavaCompiler,BOOT_JAVAC, \
     JAVAC := $(JAVAC), \
-    FLAGS := $(BOOT_JDK_SOURCETARGET) -XDignore.symbol.file=true -g \
+    FLAGS := \
+        $(JAVA_TOOL_FLAGS_SMALL) \
+        $(BOOT_JDK_SOURCETARGET) \
+        -XDignore.symbol.file=true -g \
         -Xlint:all$(COMMA)-deprecation$(COMMA)-options -Werror, \
     DISABLE_SJAVAC := true, \
 ))
