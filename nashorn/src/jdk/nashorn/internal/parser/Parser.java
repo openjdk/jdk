@@ -160,10 +160,10 @@ public class Parser extends AbstractParser {
         if (this.scripting) {
             this.lineInfoReceiver = new Lexer.LineInfoReceiver() {
                 @Override
-                public void lineInfo(final int line, final int linePosition) {
+                public void lineInfo(final int receiverLine, final int receiverLinePosition) {
                     // update the parser maintained line information
-                    Parser.this.line = line;
-                    Parser.this.linePosition = linePosition;
+                    Parser.this.line = receiverLine;
+                    Parser.this.linePosition = receiverLinePosition;
                 }
             };
         } else {

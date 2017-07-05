@@ -60,6 +60,11 @@ class CRC32 implements Checksum {
 
     /**
      * Updates the CRC-32 checksum with the specified array of bytes.
+     *
+     * @throws  ArrayIndexOutOfBoundsException
+     *          if {@code off} is negative, or {@code len} is negative,
+     *          or {@code off+len} is greater than the length of the
+     *          array {@code b}
      */
     public void update(byte[] b, int off, int len) {
         if (b == null) {

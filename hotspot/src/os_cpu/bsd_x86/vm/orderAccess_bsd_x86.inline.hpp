@@ -190,7 +190,7 @@ inline void     OrderAccess::release_store_fence(volatile juint*   p, juint   v)
 inline void     OrderAccess::release_store_fence(volatile julong*  p, julong  v) { release_store_fence((volatile jlong*)p,  (jlong)v);  }
 
 inline void     OrderAccess::release_store_fence(volatile jfloat*  p, jfloat  v) { *p = v; fence(); }
-inline void     OrderAccess::release_store_fence(volatile jdouble* p, jdouble v) { release_store_fence((volatile jlong*)p, jdouble_cast(v)); }
+inline void     OrderAccess::release_store_fence(volatile jdouble* p, jdouble v) { release_store_fence((volatile jlong*)p, jlong_cast(v)); }
 
 inline void     OrderAccess::release_store_ptr_fence(volatile intptr_t* p, intptr_t v) {
 #ifdef AMD64

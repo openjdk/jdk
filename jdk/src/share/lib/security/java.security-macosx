@@ -133,7 +133,7 @@ securerandom.strongAlgorithms=NativePRNGBlocking:SUN
 # Class to instantiate as the javax.security.auth.login.Configuration
 # provider.
 #
-login.configuration.provider=com.sun.security.auth.login.ConfigFile
+login.configuration.provider=sun.security.provider.ConfigFile
 
 #
 # Default login configuration file

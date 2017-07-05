@@ -94,4 +94,5 @@ $(JARFILE): $(LIBDIR) $(FILES_class) $(FILES_png) $(FILES_gif) $(FILES_prop) $(T
 
 clean clobber::
 	$(RM) $(TEMPDIR)/manifest $(JARFILE)
+	$(RM) $(GENSRCDIR)/sun/tools/jconsole/Version.java
 

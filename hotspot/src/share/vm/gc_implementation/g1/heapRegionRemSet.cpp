@@ -33,6 +33,7 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
 
 class PerRegionTable: public CHeapObj<mtGC> {
   friend class OtherRegionsTable;
@@ -849,7 +850,7 @@ int HeapRegionRemSet::num_par_rem_sets() {
 
 HeapRegionRemSet::HeapRegionRemSet(G1BlockOffsetSharedArray* bosa,
                                    HeapRegion* hr)
-  : _bosa(bosa), _other_regions(hr) {
+  : _bosa(bosa), _strong_code_roots_list(NULL), _other_regions(hr) {
   reset_for_par_iteration();
 }
 
@@ -908,6 +909,12 @@ void HeapRegionRemSet::cleanup() {
 }
 
 void HeapRegionRemSet::clear() {
+  if (_strong_code_roots_list != NULL) {
+    delete _strong_code_roots_list;
+  }
+  _strong_code_roots_list = new (ResourceObj::C_HEAP, mtGC)
+                                GrowableArray<nmethod*>(10, 0, NULL, true);
+
   _other_regions.clear();
   assert(occupied() == 0, "Should be clear.");
   reset_for_par_iteration();
@@ -923,6 +930,121 @@ void HeapRegionRemSet::reset_for_par_iteration() {
 void HeapRegionRemSet::scrub(CardTableModRefBS* ctbs,
                              BitMap* region_bm, BitMap* card_bm) {
   _other_regions.scrub(ctbs, region_bm, card_bm);
+}
+
+
+// Code roots support
+
+void HeapRegionRemSet::add_strong_code_root(nmethod* nm) {
+  assert(nm != NULL, "sanity");
+  // Search for the code blob from the RHS to avoid
+  // duplicate entries as much as possible
+  if (_strong_code_roots_list->find_from_end(nm) < 0) {
+    // Code blob isn't already in the list
+    _strong_code_roots_list->push(nm);
+  }
+}
+
+void HeapRegionRemSet::remove_strong_code_root(nmethod* nm) {
+  assert(nm != NULL, "sanity");
+  int idx = _strong_code_roots_list->find(nm);
+  if (idx >= 0) {
+    _strong_code_roots_list->remove_at(idx);
+  }
+  // Check that there were no duplicates
+  guarantee(_strong_code_roots_list->find(nm) < 0, "duplicate entry found");
+}
+
+class NMethodMigrationOopClosure : public OopClosure {
+  G1CollectedHeap* _g1h;
+  HeapRegion* _from;
+  nmethod* _nm;
+
+  uint _num_self_forwarded;
+
+  template <class T> void do_oop_work(T* p) {
+    T heap_oop = oopDesc::load_heap_oop(p);
+    if (!oopDesc::is_null(heap_oop)) {
+      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+      if (_from->is_in(obj)) {
+        // Reference still points into the source region.
+        // Since roots are immediately evacuated this means that
+        // we must have self forwarded the object
+        assert(obj->is_forwarded(),
+               err_msg("code roots should be immediately evacuated. "
+                       "Ref: "PTR_FORMAT", "
+                       "Obj: "PTR_FORMAT", "
+                       "Region: "HR_FORMAT,
+                       p, (void*) obj, HR_FORMAT_PARAMS(_from)));
+        assert(obj->forwardee() == obj,
+               err_msg("not self forwarded? obj = "PTR_FORMAT, (void*)obj));
+
+        // The object has been self forwarded.
+        // Note, if we're during an initial mark pause, there is
+        // no need to explicitly mark object. It will be marked
+        // during the regular evacuation failure handling code.
+        _num_self_forwarded++;
+      } else {
+        // The reference points into a promotion or to-space region
+        HeapRegion* to = _g1h->heap_region_containing(obj);
+        to->rem_set()->add_strong_code_root(_nm);
+      }
+    }
+  }
+
+public:
+  NMethodMigrationOopClosure(G1CollectedHeap* g1h, HeapRegion* from, nmethod* nm):
+    _g1h(g1h), _from(from), _nm(nm), _num_self_forwarded(0) {}
+
+  void do_oop(narrowOop* p) { do_oop_work(p); }
+  void do_oop(oop* p)       { do_oop_work(p); }
+
+  uint retain() { return _num_self_forwarded > 0; }
+};
+
+void HeapRegionRemSet::migrate_strong_code_roots() {
+  assert(hr()->in_collection_set(), "only collection set regions");
+  assert(!hr()->isHumongous(), "not humongous regions");
+
+  ResourceMark rm;
+
+  // List of code blobs to retain for this region
+  GrowableArray<nmethod*> to_be_retained(10);
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+
+  while (_strong_code_roots_list->is_nonempty()) {
+    nmethod *nm = _strong_code_roots_list->pop();
+    if (nm != NULL) {
+      NMethodMigrationOopClosure oop_cl(g1h, hr(), nm);
+      nm->oops_do(&oop_cl);
+      if (oop_cl.retain()) {
+        to_be_retained.push(nm);
+      }
+    }
+  }
+
+  // Now push any code roots we need to retain
+  assert(to_be_retained.is_empty() || hr()->evacuation_failed(),
+         "Retained nmethod list must be empty or "
+         "evacuation of this region failed");
+
+  while (to_be_retained.is_nonempty()) {
+    nmethod* nm = to_be_retained.pop();
+    assert(nm != NULL, "sanity");
+    add_strong_code_root(nm);
+  }
+}
+
+void HeapRegionRemSet::strong_code_roots_do(CodeBlobClosure* blk) const {
+  for (int i = 0; i < _strong_code_roots_list->length(); i += 1) {
+    nmethod* nm = _strong_code_roots_list->at(i);
+    blk->do_code_blob(nm);
+  }
+}
+
+size_t HeapRegionRemSet::strong_code_roots_mem_size() {
+  return sizeof(GrowableArray<nmethod*>) +
+         _strong_code_roots_list->max_length() * sizeof(nmethod*);
 }
 
 //-------------------- Iteration --------------------

@@ -264,13 +264,21 @@ JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *jvm, void *reserved)
 
 }
 
+int isIn(krb5_enctype e, int n, jint* etypes)
+{
+    int i;
+    for (i=0; i<n; i++) {
+        if (e == etypes[i]) return 1;
+    }
+    return 0;
+}
 /*
  * Class:     sun_security_krb5_Credentials
  * Method:    acquireDefaultNativeCreds
- * Signature: ()Lsun/security/krb5/Credentials;
+ * Signature: ([I])Lsun/security/krb5/Credentials;
  */
 JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativeCreds
-(JNIEnv *env, jclass krbcredsClass)
+(JNIEnv *env, jclass krbcredsClass, jintArray jetypes)
 {
     jobject krbCreds = NULL;
     krb5_error_code err = 0;
@@ -279,6 +287,9 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
     krb5_creds creds;
     krb5_flags flags = 0;
     krb5_context kcontext = NULL;
+
+    int netypes;
+    jint *etypes = NULL;
 
     /* Initialize the Kerberos 5 context */
     err = krb5_init_context (&kcontext);
@@ -295,6 +306,9 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
         err = krb5_cc_start_seq_get (kcontext, ccache, &cursor);
     }
 
+    netypes = (*env)->GetArrayLength(env, jetypes);
+    etypes = (jint *) (*env)->GetIntArrayElements(env, jetypes, NULL);
+
     if (!err) {
         while ((err = krb5_cc_next_cred (kcontext, ccache, &cursor, &creds)) == 0) {
             char *serverName = NULL;
@@ -305,7 +319,8 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
             }
 
             if (!err) {
-                if (strncmp (serverName, "krbtgt", strlen("krbtgt")) == 0) {
+                if (strncmp (serverName, "krbtgt", sizeof("krbtgt")-1) == 0 &&
+                        isIn(creds.keyblock.enctype, netypes, etypes)) {
                     jobject ticket, clientPrincipal, targetPrincipal, encryptionKey;
                     jobject ticketFlags, startTime, endTime;
                     jobject authTime, renewTillTime, hostAddresses;
@@ -321,7 +336,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
                     targetPrincipal = BuildClientPrincipal(env, kcontext, creds.server);
                     if (targetPrincipal == NULL) goto cleanup;
 
-                    // Build a com.ibm.security.krb5.Ticket
+                    // Build a sun/security/krb5/internal/Ticket
                     ticket = BuildTicket(env, &creds.ticket);
                     if (ticket == NULL) goto cleanup;
 
@@ -353,7 +368,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_Credentials_acquireDefaultNativ
                         krbcredsConstructor = (*env)->GetMethodID(env, krbcredsClass, "<init>",
                                                                   "(Lsun/security/krb5/internal/Ticket;Lsun/security/krb5/PrincipalName;Lsun/security/krb5/PrincipalName;Lsun/security/krb5/EncryptionKey;Lsun/security/krb5/internal/TicketFlags;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/KerberosTime;Lsun/security/krb5/internal/HostAddresses;)V");
                         if (krbcredsConstructor == 0) {
-                            printf("Couldn't find com.ibm.security.krb5.Credentials constructor\n");
+                            printf("Couldn't find sun.security.krb5.internal.Ticket constructor\n");
                             break;
                         }
                     }
@@ -407,6 +422,10 @@ cleanup:
         flags = KRB5_TC_OPENCLOSE; /* restore OPENCLOSE mode */
         err = krb5_cc_set_flags (kcontext, ccache, flags);
         printiferr (err, "while finishing ticket retrieval");
+    }
+
+    if (etypes != NULL) {
+        (*env)->ReleaseIntArrayElements(env, jetypes, etypes, 0);
     }
 
     krb5_free_context (kcontext);

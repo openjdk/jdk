@@ -68,6 +68,10 @@ public final class Bootstrap {
         if (relinkThreshold > -1) {
             factory.setUnstableRelinkThreshold(relinkThreshold);
         }
+
+        // Linkers for any additional language runtimes deployed alongside Nashorn will be picked up by the factory.
+        factory.setClassLoader(Bootstrap.class.getClassLoader());
+
         dynamicLinker = factory.createLinker();
     }
 

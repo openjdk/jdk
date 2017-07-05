@@ -36,6 +36,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import org.testng.TestNG;
+import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -47,7 +48,7 @@ import org.testng.annotations.Test;
 public class MethodAccessTest {
 
     private static ScriptEngine e = null;
-    private static SharedObject o = new SharedObject();
+    private static SharedObject o = null;
 
     public static void main(final String[] args) {
         TestNG.main(args);
@@ -57,10 +58,17 @@ public class MethodAccessTest {
     public static void setUpClass() throws ScriptException {
         final ScriptEngineManager m = new ScriptEngineManager();
         e = m.getEngineByName("nashorn");
+        o = new SharedObject();
         o.setEngine(e);
         e.put("o", o);
         e.eval("var SharedObject = Packages.jdk.nashorn.api.javaaccess.SharedObject;");
         e.eval("var Person = Packages.jdk.nashorn.api.javaaccess.Person;");
+    }
+
+    @AfterClass
+    public static void tearDownClass() {
+        e = null;
+        o = null;
     }
 
     @Test

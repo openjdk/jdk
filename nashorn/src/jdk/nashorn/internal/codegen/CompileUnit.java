@@ -33,7 +33,7 @@ public class CompileUnit {
     private final String className;
 
     /** Current class generator */
-    private final ClassEmitter classEmitter;
+    private ClassEmitter classEmitter;
 
     private long weight;
 
@@ -64,7 +64,11 @@ public class CompileUnit {
      * @param clazz class with code for this compile unit
      */
     void setCode(final Class<?> clazz) {
+        clazz.getClass(); // null check
         this.clazz = clazz;
+        // Revisit this - refactor to avoid null-ed out non-final fields
+        // null out emitter
+        this.classEmitter = null;
     }
 
     /**
