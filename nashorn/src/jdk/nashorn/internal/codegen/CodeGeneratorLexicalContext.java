@@ -31,7 +31,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
-
+import jdk.nashorn.internal.IntDeque;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.FunctionNode;
@@ -63,6 +63,10 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
      *  i.e. should we keep it or throw it away */
     private final Deque<Node> discard = new ArrayDeque<>();
 
+    private final Deque<Map<String, Collection<Label>>> unwarrantedOptimismHandlers = new ArrayDeque<>();
+    private final Deque<StringBuilder> slotTypesDescriptors = new ArrayDeque<>();
+    private final IntDeque splitNodes = new IntDeque();
+
     /** A stack tracking the next free local variable slot in the blocks. There's one entry for every block
      *  currently on the lexical context stack. */
     private int[] nextFreeSlots = new int[16];
@@ -70,46 +74,56 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
     /** size of next free slot vector */
     private int nextFreeSlotsSize;
 
+    private boolean isWithBoundary(final LexicalContextNode node) {
+        return node instanceof Block && !isEmpty() && peek() instanceof WithNode;
+    }
+
     @Override
     public <T extends LexicalContextNode> T push(final T node) {
-        if (isDynamicScopeBoundary(node)) {
-            ++dynamicScopeCount;
+        if (isWithBoundary(node)) {
+            dynamicScopeCount++;
+        } else if (node instanceof FunctionNode) {
+            if (((FunctionNode)node).inDynamicContext()) {
+                dynamicScopeCount++;
+            }
+            splitNodes.push(0);
         }
         return super.push(node);
+    }
+
+    void enterSplitNode() {
+        splitNodes.getAndIncrement();
+        pushFreeSlots(methodEmitters.peek().getUsedSlotsWithLiveTemporaries());
+    }
+
+    void exitSplitNode() {
+        final int count = splitNodes.decrementAndGet();
+        assert count >= 0;
     }
 
     @Override
     public <T extends LexicalContextNode> T pop(final T node) {
         final T popped = super.pop(node);
-        if (isDynamicScopeBoundary(popped)) {
-            --dynamicScopeCount;
-        }
-        if (node instanceof Block) {
-            --nextFreeSlotsSize;
+        if (isWithBoundary(node)) {
+            dynamicScopeCount--;
+            assert dynamicScopeCount >= 0;
+        } else if (node instanceof FunctionNode) {
+            if (((FunctionNode)node).inDynamicContext()) {
+                dynamicScopeCount--;
+                assert dynamicScopeCount >= 0;
+            }
+            assert splitNodes.peek() == 0;
+            splitNodes.pop();
         }
         return popped;
-    }
-
-    private boolean isDynamicScopeBoundary(final LexicalContextNode node) {
-        if (node instanceof Block) {
-            // Block's immediate parent is a with node. Note we aren't testing for a WithNode, as that'd capture
-            // processing of WithNode.expression too, but it should be unaffected.
-            return !isEmpty() && peek() instanceof WithNode;
-        } else if (node instanceof FunctionNode) {
-            // Function has a direct eval in it (so a top-level "var ..." in the eval code can introduce a new
-            // variable into the function's scope), and it isn't strict (as evals in strict functions get an
-            // isolated scope).
-            return isFunctionDynamicScope((FunctionNode)node);
-        }
-        return false;
     }
 
     boolean inDynamicScope() {
         return dynamicScopeCount > 0;
     }
 
-    static boolean isFunctionDynamicScope(FunctionNode fn) {
-        return fn.hasEval() && !fn.isStrict();
+    boolean inSplitNode() {
+        return !splitNodes.isEmpty() && splitNodes.peek() > 0;
     }
 
     MethodEmitter pushMethodEmitter(final MethodEmitter newMethod) {
@@ -121,6 +135,20 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
         assert methodEmitters.peek() == oldMethod;
         methodEmitters.pop();
         return methodEmitters.isEmpty() ? null : methodEmitters.peek();
+    }
+
+    void pushUnwarrantedOptimismHandlers() {
+        unwarrantedOptimismHandlers.push(new HashMap<String, Collection<Label>>());
+        slotTypesDescriptors.push(new StringBuilder());
+    }
+
+    Map<String, Collection<Label>> getUnwarrantedOptimismHandlers() {
+        return unwarrantedOptimismHandlers.peek();
+    }
+
+    Map<String, Collection<Label>> popUnwarrantedOptimismHandlers() {
+        slotTypesDescriptors.pop();
+        return unwarrantedOptimismHandlers.pop();
     }
 
     CompileUnit pushCompileUnit(final CompileUnit newUnit) {
@@ -167,50 +195,77 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
      * Get a shared static method representing a dynamic scope get access.
      *
      * @param unit current compile unit
-     * @param type the type of the variable
      * @param symbol the symbol
+     * @param valueType the type of the variable
      * @param flags the callsite flags
      * @return an object representing a shared scope call
      */
-    SharedScopeCall getScopeGet(final CompileUnit unit, final Type type, final Symbol symbol, final int flags) {
-        final SharedScopeCall scopeCall = new SharedScopeCall(symbol, type, type, null, flags);
-        if (scopeCalls.containsKey(scopeCall)) {
-            return scopeCalls.get(scopeCall);
-        }
-        scopeCall.setClassAndName(unit, getCurrentFunction().uniqueName(":scopeCall"));
-        scopeCalls.put(scopeCall, scopeCall);
-        return scopeCall;
+    SharedScopeCall getScopeGet(final CompileUnit unit, final Symbol symbol, final Type valueType, final int flags) {
+        return getScopeCall(unit, symbol, valueType, valueType, null, flags);
     }
 
+    void onEnterBlock(final Block block) {
+        pushFreeSlots(assignSlots(block, isFunctionBody() ? 0 : getUsedSlotCount()));
+    }
 
-    void nextFreeSlot(final Block block) {
-        final boolean isFunctionBody = isFunctionBody();
-
-        final int nextFreeSlot;
-        if (isFunctionBody) {
-            // On entry to function, start with slot 0
-            nextFreeSlot = 0;
-        } else {
-            // Otherwise, continue from previous block's first free slot
-            nextFreeSlot = nextFreeSlots[nextFreeSlotsSize - 1];
-        }
+    private void pushFreeSlots(final int freeSlots) {
         if (nextFreeSlotsSize == nextFreeSlots.length) {
             final int[] newNextFreeSlots = new int[nextFreeSlotsSize * 2];
             System.arraycopy(nextFreeSlots, 0, newNextFreeSlots, 0, nextFreeSlotsSize);
             nextFreeSlots = newNextFreeSlots;
         }
-        nextFreeSlots[nextFreeSlotsSize++] = assignSlots(block, nextFreeSlot);
+        nextFreeSlots[nextFreeSlotsSize++] = freeSlots;
     }
 
-    private static int assignSlots(final Block block, final int firstSlot) {
-        int nextSlot = firstSlot;
+    int getUsedSlotCount() {
+        return nextFreeSlots[nextFreeSlotsSize - 1];
+    }
+
+    void releaseSlots() {
+        --nextFreeSlotsSize;
+        final int undefinedFromSlot = nextFreeSlotsSize == 0 ? 0 : nextFreeSlots[nextFreeSlotsSize - 1];
+        if(!slotTypesDescriptors.isEmpty()) {
+            slotTypesDescriptors.peek().setLength(undefinedFromSlot);
+        }
+        methodEmitters.peek().undefineLocalVariables(undefinedFromSlot, false);
+    }
+
+    private int assignSlots(final Block block, final int firstSlot) {
+        int fromSlot = firstSlot;
+        final MethodEmitter method = methodEmitters.peek();
         for (final Symbol symbol : block.getSymbols()) {
             if (symbol.hasSlot()) {
-                symbol.setSlot(nextSlot);
-                nextSlot += symbol.slotCount();
+                symbol.setFirstSlot(fromSlot);
+                final int toSlot = fromSlot + symbol.slotCount();
+                method.defineBlockLocalVariable(fromSlot, toSlot);
+                fromSlot = toSlot;
             }
         }
-        return nextSlot;
+        return fromSlot;
+    }
+
+    static Type getTypeForSlotDescriptor(final char typeDesc) {
+        // Recognizing both lowercase and uppercase as we're using both to signify symbol boundaries; see
+        // MethodEmitter.markSymbolBoundariesInLvarTypesDescriptor().
+        switch(typeDesc) {
+            case 'I':
+            case 'i':
+                return Type.INT;
+            case 'J':
+            case 'j':
+                return Type.LONG;
+            case 'D':
+            case 'd':
+                return Type.NUMBER;
+            case 'A':
+            case 'a':
+                return Type.OBJECT;
+            case 'U':
+            case 'u':
+                return Type.UNKNOWN;
+            default:
+                throw new AssertionError();
+        }
     }
 
     void pushDiscard(final Node node) {
@@ -225,11 +280,8 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
         return discard.peek();
     }
 
-    int quickSlot(final Symbol symbol) {
-        final int quickSlot = nextFreeSlots[nextFreeSlotsSize - 1];
-        nextFreeSlots[nextFreeSlotsSize - 1] = quickSlot + symbol.slotCount();
-        return quickSlot;
+    int quickSlot(final Type type) {
+        return methodEmitters.peek().defineTemporaryLocalVariable(type.getSlots());
     }
-
 }
 

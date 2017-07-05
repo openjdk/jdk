@@ -209,6 +209,11 @@ public final class AccessorPropertyDescriptor extends ScriptObject implements Pr
     }
 
     @Override
+    public String toString() {
+        return '[' + getClass().getSimpleName() + " {configurable=" + configurable + " enumerable=" + enumerable + " getter=" + get + " setter=" + set + "}]";
+    }
+
+    @Override
     public int hashCode() {
         int hash = 7;
         hash = 41 * hash + Objects.hashCode(this.configurable);

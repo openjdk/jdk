@@ -22,7 +22,7 @@
  */
 
 /**
- * JDK-8005848 : assigning to global toString variable affects Object.prototype.toString 
+ * JDK-8005848 : assigning to global toString variable affects Object.prototype.toString
  *
  * @test
  * @run

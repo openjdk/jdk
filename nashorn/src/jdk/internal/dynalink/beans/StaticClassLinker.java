@@ -104,7 +104,7 @@ import jdk.internal.dynalink.support.Lookup;
 class StaticClassLinker implements TypeBasedGuardingDynamicLinker {
     private static final ClassValue<SingleClassStaticsLinker> linkers = new ClassValue<SingleClassStaticsLinker>() {
         @Override
-        protected SingleClassStaticsLinker computeValue(Class<?> clazz) {
+        protected SingleClassStaticsLinker computeValue(final Class<?> clazz) {
             return new SingleClassStaticsLinker(clazz);
         }
     };
@@ -112,7 +112,7 @@ class StaticClassLinker implements TypeBasedGuardingDynamicLinker {
     private static class SingleClassStaticsLinker extends AbstractJavaLinker {
         private final DynamicMethod constructor;
 
-        SingleClassStaticsLinker(Class<?> clazz) {
+        SingleClassStaticsLinker(final Class<?> clazz) {
             super(clazz, IS_CLASS.bindTo(clazz));
             // Map "staticClassObject.class" to StaticClass.getRepresentedClass(). Some adventurous soul could subclass
             // StaticClass, so we use INSTANCE_OF validation instead of EXACT_CLASS.
@@ -126,7 +126,7 @@ class StaticClassLinker implements TypeBasedGuardingDynamicLinker {
          * @return a dynamic method containing all overloads of a class' public constructor. If the class has no public
          * constructors, returns null.
          */
-        private static DynamicMethod createConstructorMethod(Class<?> clazz) {
+        private static DynamicMethod createConstructorMethod(final Class<?> clazz) {
             if(clazz.isArray()) {
                 final MethodHandle boundArrayCtor = ARRAY_CTOR.bindTo(clazz.getComponentType());
                 return new SimpleDynamicMethod(StaticClassIntrospector.editConstructorMethodHandle(
@@ -144,7 +144,7 @@ class StaticClassLinker implements TypeBasedGuardingDynamicLinker {
         }
 
         @Override
-        public GuardedInvocation getGuardedInvocation(LinkRequest request, LinkerServices linkerServices)
+        public GuardedInvocation getGuardedInvocation(final LinkRequest request, final LinkerServices linkerServices)
                 throws Exception {
             final GuardedInvocation gi = super.getGuardedInvocation(request, linkerServices);
             if(gi != null) {
@@ -162,20 +162,20 @@ class StaticClassLinker implements TypeBasedGuardingDynamicLinker {
         }
     }
 
-    static Collection<String> getReadableStaticPropertyNames(Class<?> clazz) {
+    static Collection<String> getReadableStaticPropertyNames(final Class<?> clazz) {
         return linkers.get(clazz).getReadablePropertyNames();
     }
 
-    static Collection<String> getWritableStaticPropertyNames(Class<?> clazz) {
+    static Collection<String> getWritableStaticPropertyNames(final Class<?> clazz) {
         return linkers.get(clazz).getWritablePropertyNames();
     }
 
-    static Collection<String> getStaticMethodNames(Class<?> clazz) {
+    static Collection<String> getStaticMethodNames(final Class<?> clazz) {
         return linkers.get(clazz).getMethodNames();
     }
 
     @Override
-    public GuardedInvocation getGuardedInvocation(LinkRequest request, LinkerServices linkerServices) throws Exception {
+    public GuardedInvocation getGuardedInvocation(final LinkRequest request, final LinkerServices linkerServices) throws Exception {
         final Object receiver = request.getReceiver();
         if(receiver instanceof StaticClass) {
             return linkers.get(((StaticClass)receiver).getRepresentedClass()).getGuardedInvocation(request,
@@ -185,7 +185,7 @@ class StaticClassLinker implements TypeBasedGuardingDynamicLinker {
     }
 
     @Override
-    public boolean canLinkType(Class<?> type) {
+    public boolean canLinkType(final Class<?> type) {
         return type == StaticClass.class;
     }
 
@@ -201,7 +201,7 @@ class StaticClassLinker implements TypeBasedGuardingDynamicLinker {
     }
 
     @SuppressWarnings("unused")
-    private static boolean isClass(Class<?> clazz, Object obj) {
+    private static boolean isClass(final Class<?> clazz, final Object obj) {
         return obj instanceof StaticClass && ((StaticClass)obj).getRepresentedClass() == clazz;
     }
 }

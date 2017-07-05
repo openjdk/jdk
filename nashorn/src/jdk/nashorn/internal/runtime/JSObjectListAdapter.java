@@ -45,12 +45,12 @@ public final class JSObjectListAdapter extends ListAdapter {
     }
 
     @Override
-    protected Object getAt(int index) {
+    protected Object getAt(final int index) {
         return ((JSObject)obj).getSlot(index);
     }
 
     @Override
-    protected void setAt(int index, Object element) {
+    protected void setAt(final int index, final Object element) {
         ((JSObject)obj).setSlot(index, element);
     }
 }

@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
 
 import java.lang.invoke.MethodHandle;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
@@ -63,15 +64,28 @@ public final class FindProperty {
      * @see ObjectClassGenerator
      *
      * @param type type of getter, e.g. int.class if we want a function with {@code get()I} signature
+     * @param programPoint program point, or INVALID_PROGRAM_POINT if pessimistic
      * @return method handle for the getter
      */
-    public MethodHandle getGetter(final Class<?> type) {
-        MethodHandle getter = property.getGetter(type);
+    public MethodHandle getGetter(final Class<?> type, final int programPoint) {
+        final MethodHandle getter;
+        if (isValid(programPoint)) {
+            getter = property.getOptimisticGetter(type, programPoint);
+        } else {
+            getter = property.getGetter(type);
+        }
+        return getGetterInner(getter);
+    }
+
+    private MethodHandle getGetterInner(final MethodHandle getter) {
         if (property instanceof UserAccessorProperty) {
-            final UserAccessorProperty uc = (UserAccessorProperty)property;
-            getter = MH.insertArguments(getter, 0, isInherited() ? getOwner() : null, uc.getGetterSlot());
+            final UserAccessorProperty uc        = (UserAccessorProperty)property;
+            final ScriptObject         owner     = getOwner();
+            final ScriptObject         container = (owner != null) ? owner : self;
+            return MH.insertArguments(getter, 0, uc.getAccessors(container));
         }
         return getter;
+
     }
 
     /**
@@ -86,11 +100,12 @@ public final class FindProperty {
      * @return method handle for the getter
      */
     public MethodHandle getSetter(final Class<?> type, final boolean strict) {
-        MethodHandle setter = property.getSetter(type, getOwner().getMap());
+        final MethodHandle setter = property.getSetter(type, getOwner().getMap());
         if (property instanceof UserAccessorProperty) {
-            final UserAccessorProperty uc = (UserAccessorProperty) property;
-            setter = MH.insertArguments(setter, 0, isInherited() ? getOwner() : null,
-                    uc.getSetterSlot(), strict? property.getKey() : null);
+            final UserAccessorProperty uc        = (UserAccessorProperty)property;
+            final ScriptObject         owner     = getOwner();
+            final ScriptObject         container = (owner != null) ? owner : self;
+            return MH.insertArguments(setter, 0, uc.getAccessors(container), strict ? property.getKey() : null);
         }
 
         return setter;
@@ -155,7 +170,27 @@ public final class FindProperty {
 
     /**
      * Get the property value from self as object.
-     *
+     * @return the property value
+     */
+    public int getIntValue() {
+        return property.getIntValue(getGetterReceiver(), getOwner());
+    }
+    /**
+     * Get the property value from self as object.
+     * @return the property value
+     */
+    public long getLongValue() {
+        return property.getLongValue(getGetterReceiver(), getOwner());
+    }
+    /**
+     * Get the property value from self as object.
+     * @return the property value
+     */
+    public double getDoubleValue() {
+        return property.getDoubleValue(getGetterReceiver(), getOwner());
+    }
+    /**
+     * Get the property value from self as object.
      * @return the property value
      */
     public Object getObjectValue() {
@@ -168,8 +203,38 @@ public final class FindProperty {
      * @param value the new value
      * @param strict strict flag
      */
-    public void setObjectValue(final Object value, final boolean strict) {
-        property.setObjectValue(getSetterReceiver(), getOwner(), value, strict);
+    public void setValue(final int value, final boolean strict) {
+        property.setValue(getSetterReceiver(), getOwner(), value, strict);
+    }
+
+    /**
+     * Set the property value in self.
+     *
+     * @param value the new value
+     * @param strict strict flag
+     */
+    public void setValue(final long value, final boolean strict) {
+        property.setValue(getSetterReceiver(), getOwner(), value, strict);
+    }
+
+    /**
+     * Set the property value in self.
+     *
+     * @param value the new value
+     * @param strict strict flag
+     */
+    public void setValue(final double value, final boolean strict) {
+        property.setValue(getSetterReceiver(), getOwner(), value, strict);
+    }
+
+    /**
+     * Set the property value in self.
+     *
+     * @param value the new value
+     * @param strict strict flag
+     */
+    public void setValue(final Object value, final boolean strict) {
+        property.setValue(getSetterReceiver(), getOwner(), value, strict);
     }
 
     /**
@@ -185,6 +250,11 @@ public final class FindProperty {
             ++length;
         }
         return length;
+    }
+
+    @Override
+    public String toString() {
+        return "[FindProperty: " + property.getKey() + ']';
     }
 
 }

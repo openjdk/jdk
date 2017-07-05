@@ -44,7 +44,7 @@ final class OptExactInfo {
         length = 0;
     }
 
-    void copy(OptExactInfo other) {
+    void copy(final OptExactInfo other) {
         mmd.copy(other.mmd);
         anchor.copy(other.anchor);
         reachEnd = other.reachEnd;
@@ -54,14 +54,14 @@ final class OptExactInfo {
         System.arraycopy(other.chars, 0, chars, 0, OPT_EXACT_MAXLEN);
     }
 
-    void concat(OptExactInfo other) {
+    void concat(final OptExactInfo other) {
         if (!ignoreCase && other.ignoreCase) {
             if (length >= other.length) return; /* avoid */
             ignoreCase = true;
         }
 
         int p = 0; // add->s;
-        int end = p + other.length;
+        final int end = p + other.length;
 
         int i;
         for (i = length; p < end;) {
@@ -72,14 +72,14 @@ final class OptExactInfo {
         length = i;
         reachEnd = (p == end ? other.reachEnd : false);
 
-        OptAnchorInfo tmp = new OptAnchorInfo();
+        final OptAnchorInfo tmp = new OptAnchorInfo();
         tmp.concat(anchor, other.anchor, 1, 1);
         if (!other.reachEnd) tmp.rightAnchor = 0;
         anchor.copy(tmp);
     }
 
     // ?? raw is not used here
-    void concatStr(char[] lchars, int p, int end, boolean raw) {
+    void concatStr(final char[] lchars, int p, final int end, final boolean raw) {
         int i;
         for (i = length; p < end && i < OPT_EXACT_MAXLEN;) {
             if (i + 1 > OPT_EXACT_MAXLEN) break;
@@ -89,7 +89,7 @@ final class OptExactInfo {
         length = i;
     }
 
-    void altMerge(OptExactInfo other, OptEnvironment env) {
+    void altMerge(final OptExactInfo other, final OptEnvironment env) {
         if (other.length == 0 || length == 0) {
             clear();
             return;
@@ -116,7 +116,7 @@ final class OptExactInfo {
     }
 
 
-    void select(OptExactInfo alt) {
+    void select(final OptExactInfo alt) {
         int v1 = length;
         int v2 = alt.length;
 
@@ -142,11 +142,11 @@ final class OptExactInfo {
 
     // comp_opt_exact_or_map_info
     private static final int COMP_EM_BASE   = 20;
-    int compare(OptMapInfo m) {
+    int compare(final OptMapInfo m) {
         if (m.value <= 0) return -1;
 
-        int ve = COMP_EM_BASE * length * (ignoreCase ? 1 : 2);
-        int vm = COMP_EM_BASE * 5 * 2 / m.value;
+        final int ve = COMP_EM_BASE * length * (ignoreCase ? 1 : 2);
+        final int vm = COMP_EM_BASE * 5 * 2 / m.value;
 
         return mmd.compareDistanceValue(m.mmd, ve, vm);
     }

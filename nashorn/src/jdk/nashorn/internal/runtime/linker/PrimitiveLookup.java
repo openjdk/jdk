@@ -59,6 +59,7 @@ public final class PrimitiveLookup {
      * creates a transient native wrapper of the same type as {@code wrappedReceiver} for subsequent invocations of the
      * method - it will be combined into the returned invocation as an argument filter on the receiver.
      * @return a guarded invocation representing the operation at the call site when performed on a JavaScript primitive
+     * @param protoFilter A method handle that walks up the proto chain of this receiver object
      * type {@code receiverClass}.
      */
     public static GuardedInvocation lookupPrimitive(final LinkRequest request, final Class<?> receiverClass,
@@ -77,6 +78,7 @@ public final class PrimitiveLookup {
      * @param wrapFilter A method handle that takes a primitive value of type guarded by the {@code guard} and
      * creates a transient native wrapper of the same type as {@code wrappedReceiver} for subsequent invocations of the
      * method - it will be combined into the returned invocation as an argument filter on the receiver.
+     * @param protoFilter A method handle that walks up the proto chain of this receiver object
      * @return a guarded invocation representing the operation at the call site when performed on a JavaScript primitive
      * type (that is implied by both {@code guard} and {@code wrappedReceiver}).
      */
@@ -86,7 +88,7 @@ public final class PrimitiveLookup {
         final CallSiteDescriptor desc = request.getCallSiteDescriptor();
         final String operator = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
         if ("setProp".equals(operator) || "setElem".equals(operator)) {
-            MethodType type = desc.getMethodType();
+            final MethodType type = desc.getMethodType();
             MethodHandle method = MH.asType(Lookup.EMPTY_SETTER, MH.type(void.class, Object.class, type.parameterType(1)));
             if (type.parameterCount() == 3) {
                 method = MH.dropArguments(method, 2, type.parameterType(2));
@@ -124,7 +126,7 @@ public final class PrimitiveLookup {
                 assert receiverType.isAssignableFrom(wrapType.returnType());
                 method = MH.filterArguments(method, 0, MH.asType(wrapFilter, wrapType.changeReturnType(receiverType)));
             }
-            return new GuardedInvocation(method, guard, link.getSwitchPoint());
+            return new GuardedInvocation(method, guard, link.getSwitchPoints(), null);
         }
         return null;
     }

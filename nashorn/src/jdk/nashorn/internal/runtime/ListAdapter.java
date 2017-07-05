@@ -34,7 +34,6 @@ import java.util.RandomAccess;
 import java.util.concurrent.Callable;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
-import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
 
@@ -174,7 +173,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
      */
     protected abstract void setAt(final int index, final Object element);
 
-    private void checkRange(int index) {
+    private void checkRange(final int index) {
         if(index < 0 || index >= size()) {
             throw invalidIndex(index);
         }
@@ -200,7 +199,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
             unshiftInvoker.getInvoker().invokeExact(fn, obj, e);
         } catch(RuntimeException | Error ex) {
             throw ex;
-        } catch(Throwable t) {
+        } catch(final Throwable t) {
             throw new RuntimeException(t);
         }
     }
@@ -214,7 +213,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
             pushInvoker.getInvoker().invokeExact(fn, obj, e);
         } catch(RuntimeException | Error ex) {
             throw ex;
-        } catch(Throwable t) {
+        } catch(final Throwable t) {
             throw new RuntimeException(t);
         }
     }
@@ -328,7 +327,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
             return shiftInvoker.getInvoker().invokeExact(fn, obj);
         } catch(RuntimeException | Error ex) {
             throw ex;
-        } catch(Throwable t) {
+        } catch(final Throwable t) {
             throw new RuntimeException(t);
         }
     }
@@ -341,7 +340,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
             return popInvoker.getInvoker().invokeExact(fn, obj);
         } catch(RuntimeException | Error ex) {
             throw ex;
-        } catch(Throwable t) {
+        } catch(final Throwable t) {
             throw new RuntimeException(t);
         }
     }
@@ -359,7 +358,7 @@ public abstract class ListAdapter extends AbstractList<Object> implements Random
             spliceRemoveInvoker.getInvoker().invokeExact(fn, obj, fromIndex, count);
         } catch(RuntimeException | Error ex) {
             throw ex;
-        } catch(Throwable t) {
+        } catch(final Throwable t) {
             throw new RuntimeException(t);
         }
     }

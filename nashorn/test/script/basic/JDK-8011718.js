@@ -28,19 +28,19 @@
  * @run
  */
 
-var obj = { 
-    hello:"From obj", 
-}; 
-var obj2 = { 
-    hello:"From obj2", 
-}; 
+var obj = {
+    hello:"From obj",
+};
+var obj2 = {
+    hello:"From obj2",
+};
 
-function doit(cb){ 
-    cb(); 
-    var cb2 = cb.bind(obj2, "This one is not acccepted"); 
-    cb2(); 
-} 
+function doit(cb){
+    cb();
+    var cb2 = cb.bind(obj2, "This one is not acccepted");
+    cb2();
+}
 
-doit(function(){ 
-        print(this.hello); 
+doit(function(){
+        print(this.hello);
     }.bind(obj));

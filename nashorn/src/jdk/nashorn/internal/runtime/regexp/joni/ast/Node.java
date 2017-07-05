@@ -20,7 +20,6 @@
 package jdk.nashorn.internal.runtime.regexp.joni.ast;
 
 import java.util.Set;
-
 import jdk.nashorn.internal.runtime.regexp.joni.Config;
 import jdk.nashorn.internal.runtime.regexp.joni.WarnCallback;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.NodeType;
@@ -34,10 +33,10 @@ public abstract class Node implements NodeType {
         return 1 << getType();
     }
 
-    protected void setChild(Node tgt){}         // default definition
+    protected void setChild(final Node tgt){}         // default definition
     protected Node getChild(){return null;}     // default definition
 
-    public void swap(Node with) {
+    public void swap(final Node with) {
         Node tmp;
 
         //if (getChild() != null) getChild().parent = with;
@@ -57,7 +56,7 @@ public abstract class Node implements NodeType {
     }
 
     // overridden by ConsAltNode and CallNode
-    public void verifyTree(Set<Node> set, WarnCallback warnings) {
+    public void verifyTree(final Set<Node> set, final WarnCallback warnings) {
         if (!set.contains(this) && getChild() != null) {
             set.add(this);
             if (getChild().parent != this) {
@@ -76,15 +75,15 @@ public abstract class Node implements NodeType {
 
     @Override
     public final String toString() {
-        StringBuilder s = new StringBuilder();
+        final StringBuilder s = new StringBuilder();
         s.append("<" + getAddressName() + " (" + (parent == null ? "NULL" : parent.getAddressName())  + ")>");
         return s + toString(0);
     }
 
-    protected static String pad(Object value, int level) {
+    protected static String pad(final Object value, final int level) {
         if (value == null) return "NULL";
 
-        StringBuilder pad = new StringBuilder("  ");
+        final StringBuilder pad = new StringBuilder("  ");
         for (int i=0; i<level; i++) pad.append(pad);
 
         return value.toString().replace("\n",  "\n" + pad);

@@ -150,6 +150,8 @@ public class WhiteBox {
   public native int stressVirtualSpaceResize(long reservedSpaceSize, long magnitude, long iterations);
   public native void runMemoryUnitTests();
   public native void readFromNoaccessArea();
+  public native long getThreadStackSize();
+  public native long getThreadRemainingStackSize();
 
   // CPU features
   public native String getCPUFeatures();

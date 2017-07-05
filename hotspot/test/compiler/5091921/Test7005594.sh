@@ -78,7 +78,7 @@ cp ${TESTSRC}/Test7005594.sh .
 
 ${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} -d . Test7005594.java
 
-${TESTJAVA}/bin/java ${TESTVMOPTS} -Xms1600m -XX:+IgnoreUnrecognizedVMOptions -XX:-ZapUnusedHeapArea -Xcomp -XX:CompileOnly=Test7005594.test Test7005594 > test.out 2>&1
+${TESTJAVA}/bin/java ${TESTVMOPTS} -Xmx1600m -Xms1600m -XX:+IgnoreUnrecognizedVMOptions -XX:-ZapUnusedHeapArea -Xcomp -XX:CompileOnly=Test7005594.test Test7005594 > test.out 2>&1
 
 result=$?
 
@@ -97,7 +97,7 @@ then
 fi
 
 # The test should pass when no enough space for object heap
-grep "Could not reserve enough space for object heap" test.out
+grep "Could not reserve enough space for .*object heap" test.out
 if [ $? = 0 ]
 then
   echo "Passed"

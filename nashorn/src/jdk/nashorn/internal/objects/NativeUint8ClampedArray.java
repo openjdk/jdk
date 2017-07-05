@@ -25,6 +25,13 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
+import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.nio.ByteBuffer;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -35,6 +42,7 @@ import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
+import jdk.nashorn.internal.runtime.arrays.TypedArrayData;
 
 /**
  * Uint8 clamped array for TypedArray extension
@@ -56,55 +64,140 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
         public ArrayBufferView construct(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
             return new NativeUint8ClampedArray(buffer, byteOffset, length);
         }
+
         @Override
-        public ArrayData createArrayData(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
-            return new Uint8ClampedArrayData(buffer, byteOffset, length);
+        public Uint8ClampedArrayData createArrayData(final ByteBuffer nb, final int start, final int end) {
+            return new Uint8ClampedArrayData(nb, start, end);
+        }
+
+        @Override
+        public String getClassName() {
+            return "Uint8ClampedArray";
         }
     };
 
-    private static final class Uint8ClampedArrayData extends ArrayDataImpl {
-        private Uint8ClampedArrayData(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {
-            super(buffer, byteOffset, elementLength);
+    private static final class Uint8ClampedArrayData extends TypedArrayData<ByteBuffer> {
+
+        private static final MethodHandle GET_ELEM = specialCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "getElem", int.class, int.class).methodHandle();
+        private static final MethodHandle SET_ELEM = specialCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "setElem", void.class, int.class, int.class).methodHandle();
+        private static final MethodHandle RINT     = staticCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "rint", double.class, double.class).methodHandle();
+        private static final MethodHandle CLAMP_LONG = staticCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "clampLong", long.class, long.class).methodHandle();
+
+        private Uint8ClampedArrayData(final ByteBuffer nb, final int start, final int end) {
+            super(((ByteBuffer)nb.position(start).limit(end)).slice(), end - start);
         }
 
         @Override
-        protected int byteIndex(final int index) {
-            return index * BYTES_PER_ELEMENT + byteOffset;
+        protected MethodHandle getGetElem() {
+            return GET_ELEM;
         }
 
         @Override
-        protected int getIntImpl(final int index) {
-            return buffer.getByteArray()[byteIndex(index)] & 0xff;
+        protected MethodHandle getSetElem() {
+            return SET_ELEM;
         }
 
-        @Override
-        protected void setImpl(final int index, final int value) {
-            final byte clamped;
-            if ((value & 0xffff_ff00) == 0) {
-                clamped = (byte) value;
-            } else {
-                clamped = value < 0 ? 0 : (byte)0xff;
-            }
-            buffer.getByteArray()[byteIndex(index)] = clamped;
-        }
-
-        @Override
-        protected void setImpl(final int index, final long value) {
-            if (JSType.isRepresentableAsInt(value)) {
-                setImpl(index, (int)value);
-            } else {
-                buffer.getByteArray()[byteIndex(index)] = value > 0 ? (byte)0xff : 0;
+        private int getElem(final int index) {
+            try {
+                return nb.get(index) & 0xff;
+            } catch (final IndexOutOfBoundsException e) {
+                throw new ClassCastException(); //force relink - this works for unoptimistic too
             }
         }
 
         @Override
-        protected void setImpl(final int key, final double value) {
-            setImpl(key, (int)Math.rint(value));
+        public MethodHandle getElementSetter(final Class<?> elementType) {
+            final MethodHandle setter = super.getElementSetter(elementType); //getContinuousElementSetter(getClass(), setElem(), elementType);
+            if (setter != null) {
+                if (elementType == double.class) {
+                    return MH.filterArguments(setter, 2, RINT);
+                } else if (elementType == long.class) {
+                    return MH.filterArguments(setter, 2, CLAMP_LONG);
+                }
+            }
+            return setter;
+        }
+
+        private void setElem(final int index, final int elem) {
+            try {
+                final byte clamped;
+                if ((elem & 0xffff_ff00) == 0) {
+                    clamped = (byte)elem;
+                } else {
+                    clamped = elem < 0 ? 0 : (byte)0xff;
+                }
+                nb.put(index, clamped);
+            } catch (final IndexOutOfBoundsException e) {
+                //swallow valid array indexes. it's ok.
+                if (index < 0) {
+                    throw new ClassCastException();
+                }
+            }
         }
 
         @Override
-        protected void setImpl(final int key, final Object value) {
-            setImpl(key, JSType.toNumber(value));
+        public boolean isClamped() {
+            return true;
+        }
+
+        @Override
+        public boolean isUnsigned() {
+            return true;
+        }
+
+        @Override
+        public int getInt(final int index) {
+            return getElem(index);
+        }
+
+        @Override
+        public long getLong(final int index) {
+            return getInt(index);
+        }
+
+        @Override
+        public double getDouble(final int index) {
+            return getInt(index);
+        }
+
+        @Override
+        public Object getObject(final int index) {
+            return getInt(index);
+        }
+
+        @Override
+        public ArrayData set(final int index, final Object value, final boolean strict) {
+            return set(index, JSType.toNumber(value), strict);
+        }
+
+        @Override
+        public ArrayData set(final int index, final int value, final boolean strict) {
+            setElem(index, value);
+            return this;
+        }
+
+        @Override
+        public ArrayData set(final int index, final long value, final boolean strict) {
+            return set(index, (int)value, strict);
+        }
+
+        @Override
+        public ArrayData set(final int index, final double value, final boolean strict) {
+            return set(index, rint(value), strict);
+        }
+
+        private static double rint(final double rint) {
+            return (int)Math.rint(rint);
+        }
+
+        @SuppressWarnings("unused")
+        private static long clampLong(final long l) {
+            if(l < 0L) {
+                return 0L;
+            } else if(l > 0xffL) {
+                return 0xffL;
+            }
+            return l;
         }
     }
 
@@ -119,16 +212,11 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
      */
     @Constructor(arity = 1)
     public static NativeUint8ClampedArray constructor(final boolean newObj, final Object self, final Object... args) {
-        return (NativeUint8ClampedArray)constructorImpl(args, FACTORY);
+        return (NativeUint8ClampedArray)constructorImpl(newObj, args, FACTORY);
     }
 
     NativeUint8ClampedArray(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
         super(buffer, byteOffset, length);
-    }
-
-    @Override
-    public String getClassName() {
-        return "Uint8ClampedArray";
     }
 
     @Override

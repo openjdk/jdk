@@ -87,7 +87,9 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import jdk.internal.dynalink.DynamicLinker;
+import jdk.internal.dynalink.DynamicLinkerFactory;
 import jdk.internal.dynalink.linker.ConversionComparator.Comparison;
+import jdk.internal.dynalink.support.TypeUtilities;
 
 /**
  * Interface for services provided to {@link GuardingDynamicLinker} instances by the {@link DynamicLinker} that owns
@@ -103,16 +105,32 @@ public interface LinkerServices {
      * parameters. It will apply {@link MethodHandle#asType(MethodType)} for all primitive-to-primitive,
      * wrapper-to-primitive, primitive-to-wrapper conversions as well as for all upcasts. For all other conversions,
      * it'll insert {@link MethodHandles#filterArguments(MethodHandle, int, MethodHandle...)} with composite filters
-     * provided by {@link GuardingTypeConverterFactory} implementations. It doesn't use language-specific conversions on
-     * the return type.
+     * provided by {@link GuardingTypeConverterFactory} implementations.
      *
      * @param handle target method handle
      * @param fromType the types of source arguments
-     * @return a method handle that is a suitable combination of {@link MethodHandle#asType(MethodType)} and
-     * {@link MethodHandles#filterArguments(MethodHandle, int, MethodHandle...)} with
-     * {@link GuardingTypeConverterFactory} produced type converters as filters.
+     * @return a method handle that is a suitable combination of {@link MethodHandle#asType(MethodType)},
+     * {@link MethodHandles#filterArguments(MethodHandle, int, MethodHandle...)}, and
+     * {@link MethodHandles#filterReturnValue(MethodHandle, MethodHandle)} with
+     * {@link GuardingTypeConverterFactory}-produced type converters as filters.
      */
     public MethodHandle asType(MethodHandle handle, MethodType fromType);
+
+    /**
+     * Similar to {@link #asType(MethodHandle, MethodType)} except it only converts the return type of the method handle
+     * when it can be done using a conversion that loses neither precision nor magnitude, otherwise it leaves it
+     * unchanged. The idea is that other conversions should not be performed by individual linkers, but instead the
+     * {@link DynamicLinkerFactory#setPrelinkFilter(jdk.internal.dynalink.GuardedInvocationFilter) pre-link filter of
+     * the dynamic linker} should implement the strategy of dealing with potentially lossy return type conversions in a
+     * manner specific to the language runtime.
+     *
+     * @param handle target method handle
+     * @param fromType the types of source arguments
+     * @return a method handle that is a suitable combination of {@link MethodHandle#asType(MethodType)}, and
+     * {@link MethodHandles#filterArguments(MethodHandle, int, MethodHandle...)} with
+     * {@link GuardingTypeConverterFactory}-produced type converters as filters.
+     */
+    public MethodHandle asTypeLosslessReturn(MethodHandle handle, MethodType fromType);
 
     /**
      * Given a source and target type, returns a method handle that converts between them. Never returns null; in worst
@@ -161,4 +179,23 @@ public interface LinkerServices {
      * conversion.
      */
     public Comparison compareConversion(Class<?> sourceType, Class<?> targetType1, Class<?> targetType2);
+
+    /**
+     * If we could just use Java 8 constructs, then {@code asTypeSafeReturn} would be a method with default
+     * implementation. Since we can't do that, we extract common default implementations into this static class.
+     */
+    public static class Implementation {
+        /**
+         * Default implementation for {@link LinkerServices#asTypeLosslessReturn(MethodHandle, MethodType)}.
+         * @param linkerServices the linker services that delegates to this implementation
+         * @param handle the passed handle
+         * @param fromType the passed type
+         * @return the converted method handle, as per the {@code asTypeSafeReturn} semantics.
+         */
+        public static MethodHandle asTypeLosslessReturn(final LinkerServices linkerServices, final MethodHandle handle, final MethodType fromType) {
+            final Class<?> handleReturnType = handle.type().returnType();
+            return linkerServices.asType(handle, TypeUtilities.isConvertibleWithoutLoss(handleReturnType, fromType.returnType()) ?
+                    fromType : fromType.changeReturnType(handleReturnType));
+        }
+    }
 }

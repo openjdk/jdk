@@ -546,7 +546,7 @@ final class PropertyPermissionCollection extends PermissionCollection
 
         offset = name.length()-1;
 
-        while ((last = name.lastIndexOf(".", offset)) != -1) {
+        while ((last = name.lastIndexOf('.', offset)) != -1) {
 
             name = name.substring(0, last+1) + "*";
             //System.out.println("check "+name);

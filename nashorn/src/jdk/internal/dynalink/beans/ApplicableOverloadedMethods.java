@@ -108,7 +108,7 @@ class ApplicableOverloadedMethods {
     ApplicableOverloadedMethods(final List<SingleDynamicMethod> methods, final MethodType callSiteType,
             final ApplicabilityTest test) {
         this.methods = new LinkedList<>();
-        for(SingleDynamicMethod m: methods) {
+        for(final SingleDynamicMethod m: methods) {
             if(test.isApplicable(callSiteType, m)) {
                 this.methods.add(m);
             }
@@ -143,7 +143,7 @@ class ApplicableOverloadedMethods {
      */
     static final ApplicabilityTest APPLICABLE_BY_SUBTYPING = new ApplicabilityTest() {
         @Override
-        boolean isApplicable(MethodType callSiteType, SingleDynamicMethod method) {
+        boolean isApplicable(final MethodType callSiteType, final SingleDynamicMethod method) {
             final MethodType methodType = method.getMethodType();
             final int methodArity = methodType.parameterCount();
             if(methodArity != callSiteType.parameterCount()) {
@@ -165,7 +165,7 @@ class ApplicableOverloadedMethods {
      */
     static final ApplicabilityTest APPLICABLE_BY_METHOD_INVOCATION_CONVERSION = new ApplicabilityTest() {
         @Override
-        boolean isApplicable(MethodType callSiteType, SingleDynamicMethod method) {
+        boolean isApplicable(final MethodType callSiteType, final SingleDynamicMethod method) {
             final MethodType methodType = method.getMethodType();
             final int methodArity = methodType.parameterCount();
             if(methodArity != callSiteType.parameterCount()) {
@@ -188,7 +188,7 @@ class ApplicableOverloadedMethods {
      */
     static final ApplicabilityTest APPLICABLE_BY_VARIABLE_ARITY = new ApplicabilityTest() {
         @Override
-        boolean isApplicable(MethodType callSiteType, SingleDynamicMethod method) {
+        boolean isApplicable(final MethodType callSiteType, final SingleDynamicMethod method) {
             if(!method.isVarArgs()) {
                 return false;
             }

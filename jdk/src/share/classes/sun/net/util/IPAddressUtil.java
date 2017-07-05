@@ -132,7 +132,7 @@ public class IPAddressUtil {
         byte[] dst = new byte[INADDR16SZ];
 
         int srcb_length = srcb.length;
-        int pc = src.indexOf ("%");
+        int pc = src.indexOf ('%');
         if (pc == srcb_length -1) {
             return null;
         }

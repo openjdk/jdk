@@ -30,11 +30,11 @@ import java.util.List;
 public class VarArgConstructor {
     private final String indicator;
 
-    public VarArgConstructor(int x, boolean y, List<String> z) {
+    public VarArgConstructor(final int x, final boolean y, final List<String> z) {
         indicator = "non-vararg";
     }
 
-    public VarArgConstructor(int x, boolean y, String... z) {
+    public VarArgConstructor(final int x, final boolean y, final String... z) {
         indicator = "vararg";
     }
 

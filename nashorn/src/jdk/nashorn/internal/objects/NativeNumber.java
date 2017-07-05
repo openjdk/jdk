@@ -25,12 +25,10 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.rangeError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
-import static jdk.nashorn.internal.runtime.JSType.isRepresentableAsInt;
-import static jdk.nashorn.internal.runtime.JSType.isRepresentableAsLong;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -44,6 +42,7 @@ import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
+import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -84,8 +83,6 @@ public final class NativeNumber extends ScriptObject {
     public static final double POSITIVE_INFINITY = Double.POSITIVE_INFINITY;
 
     private final double  value;
-    private final boolean isInt;
-    private final boolean isLong;
 
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
@@ -93,8 +90,6 @@ public final class NativeNumber extends ScriptObject {
     private NativeNumber(final double value, final ScriptObject proto, final PropertyMap map) {
         super(proto, map);
         this.value = value;
-        this.isInt  = isRepresentableAsInt(value);
-        this.isLong = isRepresentableAsLong(value);
     }
 
     NativeNumber(final double value, final Global global) {
@@ -132,30 +127,6 @@ public final class NativeNumber extends ScriptObject {
         return value;
     }
 
-    /**
-     * Get the value of this Number as a {@code int}
-     * @return an {@code int} representing the Number value
-     * @throws ClassCastException If number is not representable as an {@code int}
-     */
-    public int intValue() throws ClassCastException {
-        if (isInt) {
-            return (int)value;
-        }
-        throw new ClassCastException();
-    }
-
-    /**
-     * Get the value of this Number as a {@code long}
-     * @return a {@code long} representing the Number value
-     * @throws ClassCastException If number is not representable as an {@code long}
-     */
-    public long longValue() throws ClassCastException {
-        if (isLong) {
-            return (long)value;
-        }
-        throw new ClassCastException();
-    }
-
     @Override
     public String getClassName() {
         return "Number";
@@ -186,8 +157,20 @@ public final class NativeNumber extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static String toFixed(final Object self, final Object fractionDigits) {
-        final int f = JSType.toInteger(fractionDigits);
-        if (f < 0 || f > 20) {
+        return toFixed(self, JSType.toInteger(fractionDigits));
+    }
+
+    /**
+     * ECMA 15.7.4.5 Number.prototype.toFixed (fractionDigits) specialized for int fractionDigits
+     *
+     * @param self           self reference
+     * @param fractionDigits how many digits should be after the decimal point, 0 if undefined
+     *
+     * @return number in decimal fixed point notation
+     */
+    @SpecializedFunction
+    public static String toFixed(final Object self, final int fractionDigits) {
+        if (fractionDigits < 0 || fractionDigits > 20) {
             throw rangeError("invalid.fraction.digits", "toFixed");
         }
 
@@ -201,8 +184,8 @@ public final class NativeNumber extends ScriptObject {
         }
 
         final NumberFormat format = NumberFormat.getNumberInstance(Locale.US);
-        format.setMinimumFractionDigits(f);
-        format.setMaximumFractionDigits(f);
+        format.setMinimumFractionDigits(fractionDigits);
+        format.setMaximumFractionDigits(fractionDigits);
         format.setGroupingUsed(false);
 
         return format.format(x);
@@ -240,7 +223,7 @@ public final class NativeNumber extends ScriptObject {
      * ECMA 15.7.4.7 Number.prototype.toPrecision (precision)
      *
      * @param self      self reference
-     * @param precision use {@code precision - 1} digits after the significand's decimal point or call {@link NativeDate#toString} if undefined
+     * @param precision use {@code precision - 1} digits after the significand's decimal point or call {@link JSType#toString} if undefined
      *
      * @return number in decimal exponentiation notation or decimal fixed notation depending on {@code precision}
      */
@@ -250,8 +233,23 @@ public final class NativeNumber extends ScriptObject {
         if (precision == UNDEFINED) {
             return JSType.toString(x);
         }
+        return (toPrecision(x, JSType.toInteger(precision)));
+    }
 
-        final int p = JSType.toInteger(precision);
+    /**
+     * ECMA 15.7.4.7 Number.prototype.toPrecision (precision) specialized f
+     *
+     * @param self      self reference
+     * @param precision use {@code precision - 1} digits after the significand's decimal point.
+     *
+     * @return number in decimal exponentiation notation or decimal fixed notation depending on {@code precision}
+     */
+    @SpecializedFunction
+    public static String toPrecision(final Object self, final int precision) {
+        return toPrecision(getNumberValue(self), precision);
+    }
+
+    private static String toPrecision(final double x, final int p) {
         if (Double.isNaN(x)) {
             return "NaN";
         } else if (Double.isInfinite(x)) {

@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.runtime.arrays;
 
+import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.Undefined;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
@@ -140,9 +141,34 @@ abstract class ArrayFilter extends ArrayData {
         return this;
     }
 
+    private static void printTrace(final Throwable t, final String msg) {
+        final java.io.StringWriter sw = new java.io.StringWriter();
+        final java.io.PrintWriter pw = new java.io.PrintWriter(sw, false);
+        pw.println(msg);
+        final StackTraceElement[] trace = t.getStackTrace();
+        for(final StackTraceElement e: trace) {
+            pw.println(" at " + e);
+            if(e.getClassName().startsWith("jdk.nashorn.")) {
+                break;
+            }
+        }
+        pw.flush();
+        System.out.println(sw.toString());
+    }
+
+    @Override
+    public Type getOptimisticType() {
+        return underlying.getOptimisticType();
+    }
+
     @Override
     public int getInt(final int index) {
         return underlying.getInt(index);
+    }
+
+    @Override
+    public int getIntOptimistic(final int index, final int programPoint) {
+        return underlying.getIntOptimistic(index, programPoint);
     }
 
     @Override
@@ -151,8 +177,18 @@ abstract class ArrayFilter extends ArrayData {
     }
 
     @Override
+    public long getLongOptimistic(final int index, final int programPoint) {
+        return underlying.getLongOptimistic(index, programPoint);
+    }
+
+    @Override
     public double getDouble(final int index) {
         return underlying.getDouble(index);
+    }
+
+    @Override
+    public double getDoubleOptimistic(final int index, final int programPoint) {
+        return underlying.getDoubleOptimistic(index, programPoint);
     }
 
     @Override

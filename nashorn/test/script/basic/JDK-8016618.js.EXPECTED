@@ -1,6 +1,10 @@
 x = 33
 func.x = 23
 func.x = hello
+func.x = 24
+func.x = hello2
+func.x = 25
+func.x = hello3
 global instanceof fObject? true
 x is wriable ? true
 x value = 33

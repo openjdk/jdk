@@ -294,7 +294,7 @@ public class CookieManager extends CookieHandler
                             // the path is the directory of the page/doc
                             String path = uri.getPath();
                             if (!path.endsWith("/")) {
-                                int i = path.lastIndexOf("/");
+                                int i = path.lastIndexOf('/');
                                 if (i > 0) {
                                     path = path.substring(0, i + 1);
                                 } else {
@@ -364,7 +364,7 @@ public class CookieManager extends CookieHandler
 
 
     static private boolean isInPortList(String lst, int port) {
-        int i = lst.indexOf(",");
+        int i = lst.indexOf(',');
         int val = -1;
         while (i > 0) {
             try {
@@ -375,7 +375,7 @@ public class CookieManager extends CookieHandler
             } catch (NumberFormatException numberFormatException) {
             }
             lst = lst.substring(i+1);
-            i = lst.indexOf(",");
+            i = lst.indexOf(',');
         }
         if (!lst.isEmpty()) {
             try {
