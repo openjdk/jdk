@@ -351,7 +351,7 @@ void ciBlock::set_exception_range(int start_bci, int limit_bci)  {
 }
 
 #ifndef PRODUCT
-static char *flagnames[] = {
+static const char *flagnames[] = {
   "Processed",
   "Handler",
   "MayThrow",

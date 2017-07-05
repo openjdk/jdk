@@ -2218,7 +2218,7 @@ const Type *TypeOopPtr::cast_to_ptr_type(PTR ptr) const {
   return make(ptr, _offset);
 }
 
-//-----------------------------cast_to_instance-------------------------------
+//-----------------------------cast_to_instance_id----------------------------
 const TypeOopPtr *TypeOopPtr::cast_to_instance_id(int instance_id) const {
   // There are no instances of a general oop.
   // Return self unchanged.
@@ -2610,8 +2610,7 @@ const TypeInstPtr *TypeInstPtr::make(PTR ptr,
   // Ptr is never Null
   assert( ptr != Null, "NULL pointers are not typed" );
 
-  if ( instance_id > 0 )
-    xk = true;  // instances are always exactly typed
+  assert(instance_id <= 0 || xk || !UseExactTypes, "instances are always exactly typed");
   if (!UseExactTypes)  xk = false;
   if (ptr == Constant) {
     // Note:  This case includes meta-object constants, such as methods.
@@ -2650,16 +2649,10 @@ const Type *TypeInstPtr::cast_to_exactness(bool klass_is_exact) const {
   return make(ptr(), klass(), klass_is_exact, const_oop(), _offset, _instance_id);
 }
 
-//-----------------------------cast_to_instance-------------------------------
+//-----------------------------cast_to_instance_id----------------------------
 const TypeOopPtr *TypeInstPtr::cast_to_instance_id(int instance_id) const {
   if( instance_id == _instance_id ) return this;
-  bool exact = _klass_is_exact;
-  PTR  ptr_t = _ptr;
-  if ( instance_id > 0 ) { // instances are always exactly typed
-    if (UseExactTypes) exact = true;
-    ptr_t = NotNull;
-  }
-  return make(ptr_t, klass(), exact, const_oop(), _offset, instance_id);
+  return make(_ptr, klass(), _klass_is_exact, const_oop(), _offset, instance_id);
 }
 
 //------------------------------xmeet_unloaded---------------------------------
@@ -2899,6 +2892,7 @@ const Type *TypeInstPtr::xmeet( const Type *t ) const {
         xk = above_centerline(ptr) ? tinst_xk : false;
         // Watch out for Constant vs. AnyNull interface.
         if (ptr == Constant)  ptr = NotNull;   // forget it was a constant
+        instance_id = InstanceBot;
       }
       ciObject* o = NULL;  // the Constant value, if any
       if (ptr == Constant) {
@@ -2989,6 +2983,7 @@ const Type *TypeInstPtr::xmeet( const Type *t ) const {
     // class hierarchy - which means we have to fall to at least NotNull.
     if( ptr == TopPTR || ptr == AnyNull || ptr == Constant )
       ptr = NotNull;
+    instance_id = InstanceBot;
 
     // Now we find the LCA of Java classes
     ciKlass* k = this_klass->least_common_ancestor(tinst_klass);
@@ -3101,8 +3096,7 @@ const TypeAryPtr *TypeAryPtr::make( PTR ptr, const TypeAry *ary, ciKlass* k, boo
   assert(!(k == NULL && ary->_elem->isa_int()),
          "integral arrays must be pre-equipped with a class");
   if (!xk)  xk = ary->ary_must_be_exact();
-  if ( instance_id > 0 )
-    xk = true;  // instances are always exactly typed
+  assert(instance_id <= 0 || xk || !UseExactTypes, "instances are always exactly typed");
   if (!UseExactTypes)  xk = (ptr == Constant);
   return (TypeAryPtr*)(new TypeAryPtr(ptr, NULL, ary, k, xk, offset, instance_id))->hashcons();
 }
@@ -3113,8 +3107,7 @@ const TypeAryPtr *TypeAryPtr::make( PTR ptr, ciObject* o, const TypeAry *ary, ci
          "integral arrays must be pre-equipped with a class");
   assert( (ptr==Constant && o) || (ptr!=Constant && !o), "" );
   if (!xk)  xk = (o != NULL) || ary->ary_must_be_exact();
-  if ( instance_id > 0 )
-    xk = true;  // instances are always exactly typed
+  assert(instance_id <= 0 || xk || !UseExactTypes, "instances are always exactly typed");
   if (!UseExactTypes)  xk = (ptr == Constant);
   return (TypeAryPtr*)(new TypeAryPtr(ptr, o, ary, k, xk, offset, instance_id))->hashcons();
 }
@@ -3134,16 +3127,10 @@ const Type *TypeAryPtr::cast_to_exactness(bool klass_is_exact) const {
   return make(ptr(), const_oop(), _ary, klass(), klass_is_exact, _offset, _instance_id);
 }
 
-//-----------------------------cast_to_instance-------------------------------
+//-----------------------------cast_to_instance_id----------------------------
 const TypeOopPtr *TypeAryPtr::cast_to_instance_id(int instance_id) const {
   if( instance_id == _instance_id ) return this;
-  bool exact = _klass_is_exact;
-  PTR  ptr_t = _ptr;
-  if ( instance_id > 0 ) { // instances are always exactly typed
-    if (UseExactTypes) exact = true;
-    ptr_t = NotNull;
-  }
-  return make(ptr_t, const_oop(), _ary, klass(), exact, _offset, instance_id);
+  return make(_ptr, const_oop(), _ary, klass(), _klass_is_exact, _offset, instance_id);
 }
 
 //-----------------------------narrow_size_type-------------------------------
@@ -3300,6 +3287,7 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
       } else {
         // Something like byte[int+] meets char[int+].
         // This must fall to bottom, not (int[-128..65535])[int+].
+        instance_id = InstanceBot;
         tary = TypeAry::make(Type::BOTTOM, tary->_size);
       }
     }
@@ -3316,6 +3304,7 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
         if( tap->const_oop() != NULL && !o->equals(tap->const_oop()) ) {
           ptr = NotNull;
           o = NULL;
+          instance_id = InstanceBot;
         }
       } else if( above_centerline(_ptr) ) {
         o = tap->const_oop();

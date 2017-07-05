@@ -83,7 +83,7 @@ static bool is_init_with_ea(ciMethod* callee_method,
                             ciMethod* caller_method, Compile* C) {
   // True when EA is ON and a java constructor is called or
   // a super constructor is called from an inlined java constructor.
-  return DoEscapeAnalysis && EliminateAllocations &&
+  return C->do_escape_analysis() && EliminateAllocations &&
          ( callee_method->is_initializer() ||
            (caller_method->is_initializer() &&
             caller_method != C->method() &&

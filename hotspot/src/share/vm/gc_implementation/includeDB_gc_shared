@@ -56,6 +56,7 @@ markSweep.inline.hpp                    psParallelCompact.hpp
 mutableNUMASpace.cpp                    mutableNUMASpace.hpp
 mutableNUMASpace.cpp                    oop.inline.hpp
 mutableNUMASpace.cpp                    sharedHeap.hpp
+mutableNUMASpace.cpp                    spaceDecorator.hpp
 mutableNUMASpace.cpp                    thread_<os_family>.inline.hpp
 
 mutableNUMASpace.hpp                    mutableSpace.hpp
@@ -64,6 +65,7 @@ mutableNUMASpace.hpp                    gcUtil.hpp
 mutableSpace.cpp                        mutableSpace.hpp
 mutableSpace.cpp                        oop.inline.hpp
 mutableSpace.cpp                        safepoint.hpp
+mutableSpace.cpp                        spaceDecorator.hpp
 mutableSpace.cpp                        thread.hpp
 
 spaceCounters.cpp                       resourceArea.hpp

@@ -1196,8 +1196,10 @@ void SuperWord::construct_bb() {
     Node *n = lp()->fast_out(i);
     if (in_bb(n) && (n->is_Phi() && n->bottom_type() == Type::MEMORY)) {
       Node* n_tail  = n->in(LoopNode::LoopBackControl);
-      _mem_slice_head.push(n);
-      _mem_slice_tail.push(n_tail);
+      if (n_tail != n->in(LoopNode::EntryControl)) {
+        _mem_slice_head.push(n);
+        _mem_slice_tail.push(n_tail);
+      }
     }
   }
 

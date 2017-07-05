@@ -479,7 +479,7 @@ class Parse : public GraphKit {
   float   branch_prediction(float &cnt, BoolTest::mask btest, int target_bci);
   bool    seems_never_taken(float prob);
 
-  void    do_ifnull(BoolTest::mask btest);
+  void    do_ifnull(BoolTest::mask btest, Node* c);
   void    do_if(BoolTest::mask btest, Node* c);
   void    repush_if_args();
   void    adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
