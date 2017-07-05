@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -708,7 +708,7 @@ public class X509CertInfo implements CertAttrSet<String> {
     }
 
     /*
-     * Verify if X.509 V3 Certificate is compliant with RFC 3280.
+     * Verify if X.509 V3 Certificate is compliant with RFC 5280.
      */
     private void verifyCert(X500Name subject,
         CertificateExtensions extensions)

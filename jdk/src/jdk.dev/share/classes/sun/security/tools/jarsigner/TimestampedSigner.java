@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ public final class TimestampedSigner extends ContentSigner {
 
     /**
      * Examine the certificate for a Subject Information Access extension
-     * (<a href="http://www.ietf.org/rfc/rfc3280.txt">RFC 3280</a>).
+     * (<a href="http://tools.ietf.org/html/rfc5280">RFC 5280</a>).
      * The extension's <tt>accessMethod</tt> field should contain the object
      * identifier defined for timestamping: 1.3.6.1.5.5.7.48.3 and its
      * <tt>accessLocation</tt> field should contain an HTTP or HTTPS URL.

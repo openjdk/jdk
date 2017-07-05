@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -341,7 +341,7 @@ public class RDN {
     /*
      * Returns a printable form of this RDN, using RFC 1779 style catenation
      * of attribute/value assertions, and emitting attribute type keywords
-     * from RFCs 1779, 2253, and 3280.
+     * from RFCs 1779, 2253, and 5280.
      */
     public String toString() {
         if (assertion.length == 1) {

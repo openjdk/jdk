@@ -78,7 +78,7 @@
       <istrue value="${jfr}"/>
     </condition>
   </target>
-
+  
   <target name="init" depends="init-conditions, init-cc">
     <!-- extends jvm args -->
     <property name="run.test.jvmargs" value="${run.test.jvmargs.main} ${run.test.cc.jvmargs} ${jfr.options}"/>
@@ -420,6 +420,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
         <propertyref prefix="test-sys-prop-no-security."/>
         <mapper from="test-sys-prop-no-security.*" to="*" type="glob"/>
       </propertyset>
+      <sysproperty key="optimistic.override" value="${optimistic}"/>
       <classpath>
           <pathelement path="${run.test.classpath}"/>
       </classpath>
@@ -431,7 +432,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     <delete dir="${build.dir}/nashorn_code_cache"/>
     <property name="debug.test.jvmargs" value=""/>
     <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
-       verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
+	    verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
       <jvmarg line="${ext.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs} -Dbuild.dir=${build.dir}"/>
       <jvmarg line="${debug.test.jvmargs}"/>
@@ -442,6 +443,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
         <propertyref prefix="test-sys-prop."/>
         <mapper from="test-sys-prop.*" to="*" type="glob"/>
       </propertyset>
+      <sysproperty key="optimistic.override" value="${optimistic}"/>
       <sysproperty key="test.js.excludes.file" value="${exclude.list}"/>
       <classpath>
           <pathelement path="${run.test.classpath}"/>
@@ -449,7 +451,27 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     </testng>
   </target>
 
-  <target name="test" depends="jar, -test-classes-all,-test-classes-single, check-testng, check-external-tests, compile-test, generate-policy-file, -test-security, -test-nosecurity" if="testng.available"/>
+  <target name="test" depends="test-pessimistic, test-optimistic"/>
+
+  <target name="test-optimistic" depends="jar, -test-classes-all,-test-classes-single, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
+    <echo message="Running test suite in OPTIMISTIC mode..."/>
+    <antcall target="-test-nosecurity" inheritRefs="true">
+      <param name="optimistic" value="true"/>
+    </antcall>    
+    <antcall target="-test-security" inheritRefs="true">
+      <param name="optimistic" value="true"/>
+    </antcall>
+  </target>
+
+  <target name="test-pessimistic" depends="jar, -test-classes-all,-test-classes-single, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
+    <echo message="Running test suite in PESSIMISTIC mode..."/>
+    <antcall target="-test-nosecurity" inheritRefs="true">
+      <param name="optimistic" value="false"/>
+    </antcall>    
+    <antcall target="-test-security" inheritRefs="true">
+      <param name="optimistic" value="false"/>
+    </antcall>
+  </target>
 
   <target name="check-jemmy.jfx.testng" unless="jemmy.jfx.testng.available">
     <echo message="WARNING: Jemmy or JavaFX or TestNG not available, will not run tests. Please copy testng.jar, JemmyCore.jar, JemmyFX.jar, JemmyAWTInput.jar under test${file.separator}lib directory. And make sure you have jfxrt.jar in ${java.home}${file.separator}lib${file.separator}ext dir."/>

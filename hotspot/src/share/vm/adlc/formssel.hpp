@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -910,13 +910,16 @@ public:
 public:
   // Implementation depends upon working bit intersection and union.
   enum use_def_enum {
-    INVALID = 0x0,
-    USE     = 0x1,
-    DEF     = 0x2, USE_DEF   = 0x3,
-    KILL    = 0x4, USE_KILL  = 0x5,
+    INVALID   = 0x0,
+    USE       = 0x1,
+    DEF       = 0x2,
+    USE_DEF   = USE | DEF,
+    KILL      = 0x4,
+    USE_KILL  = USE | KILL,
     SYNTHETIC = 0x8,
-    TEMP = USE | SYNTHETIC,
-    CALL = 0x10
+    TEMP      = USE | SYNTHETIC,
+    TEMP_DEF  = TEMP | DEF,
+    CALL      = 0x10
   };
 };
 

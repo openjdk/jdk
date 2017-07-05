@@ -365,7 +365,6 @@ needs_jdk = \
   java/util/zip/3GBZipFiles.sh \
   jdk/lambda/FDTest.java \
   jdk/lambda/separate/Compiler.java \
-  sun/management/jdp/JdpTest.sh \
   sun/management/jmxremote/bootstrap/JvmstatCountersTest.java \
   sun/management/jmxremote/bootstrap/LocalManagementTest.java \
   sun/management/jmxremote/bootstrap/CustomLauncherTest.java \
