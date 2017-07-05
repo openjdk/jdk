@@ -498,7 +498,7 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
         postDropTargetEvent(component, x, y, dropAction, actions,
                             formats, nativeCtxt,
                             SunDropTargetEvent.MOUSE_DROPPED,
-                            !SunDropTargetContextPeer.DISPATCH_SYNC);
+                            SunDropTargetContextPeer.DISPATCH_SYNC);
     }
 
     /**
