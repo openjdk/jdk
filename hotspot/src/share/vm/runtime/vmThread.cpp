@@ -291,7 +291,9 @@ void VMThread::run() {
     // Among other things, this ensures that Eden top is correct.
     Universe::heap()->prepare_for_verify();
     os::check_heap();
-    Universe::verify(true, true); // Silent verification to not polute normal output
+    // Silent verification so as not to pollute normal output,
+    // unless we really asked for it.
+    Universe::verify(true, !(PrintGCDetails || Verbose));
   }
 
   CompileBroker::set_should_block();

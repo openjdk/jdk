@@ -486,7 +486,7 @@ void MethodHandles::generate_method_handle_stub(MacroAssembler* _masm, MethodHan
       if (ek == _invokespecial_mh) {
         // Must load & check the first argument before entering the target method.
         __ load_method_handle_vmslots(O0_argslot, G3_method_handle, O1_scratch);
-        __ ld_ptr(__ argument_address(O0_argslot), G3_method_handle);
+        __ ld_ptr(__ argument_address(O0_argslot, -1), G3_method_handle);
         __ null_check(G3_method_handle);
         __ verify_oop(G3_method_handle);
       }
