@@ -118,7 +118,7 @@ public class JLinkTest {
                     .output(helper.createNewImageDir(moduleName))
                     .addMods("leaf1")
                     .option("")
-                    .call().assertFailure("Error: no value given for --modulepath");
+                    .call().assertFailure("Error: no value given for --module-path");
         }
 
         {
@@ -250,7 +250,7 @@ public class JLinkTest {
         // @file
         {
             Path path = Paths.get("embedded.properties");
-            Files.write(path, Collections.singletonList("--strip-debug --addmods " +
+            Files.write(path, Collections.singletonList("--strip-debug --add-modules " +
                     "toto.unknown --compress UNKNOWN\n"));
             String[] userOptions = {"@", path.toAbsolutePath().toString()};
             String moduleName = "configembeddednocompresscomposite2";

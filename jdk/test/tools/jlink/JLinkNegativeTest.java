@@ -95,7 +95,7 @@ public class JLinkNegativeTest {
     }
 
     public void testNotExistInAddMods() {
-        // cannot find jmod from --addmods
+        // cannot find jmod from --add-modules
         JImageGenerator.getJLinkTask()
                 .modulePath(".")
                 .addMods("not_exist")

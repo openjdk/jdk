@@ -51,7 +51,7 @@ import static build.tools.jigsaw.ModuleSummary.HtmlDocument.Selector.*;
 import static build.tools.jigsaw.ModuleSummary.HtmlDocument.Division.*;
 
 public class ModuleSummary {
-    private static final String USAGE = "Usage: ModuleSummary -mp <dir> -o <outfile> [-root mn]*";
+    private static final String USAGE = "Usage: ModuleSummary --module-path <dir> -o <outfile> [--root mn]*";
 
     public static void main(String[] args) throws Exception {
         int i=0;
@@ -61,13 +61,13 @@ public class ModuleSummary {
         while (i < args.length && args[i].startsWith("-")) {
             String arg = args[i++];
             switch (arg) {
-                case "-mp":
+                case "--module-path":
                     modpath = Paths.get(args[i++]);
                     break;
                 case "-o":
                     outfile = Paths.get(args[i++]);
                     break;
-                case "-root":
+                case "--root":
                     roots.add(args[i++]);
                 default:
                     System.err.println(USAGE);

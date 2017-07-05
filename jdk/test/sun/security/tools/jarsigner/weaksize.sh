@@ -31,6 +31,8 @@ if [ "${TESTJAVA}" = "" ] ; then
   TESTJAVA=`dirname $JAVAC_CMD`/..
 fi
 
+TESTTOOLVMOPTS="$TESTTOOLVMOPTS -J-Duser.language=en -J-Duser.country=US"
+
 # The sigalg used is MD2withRSA, which is obsolete.
 
 KT="$TESTJAVA/bin/keytool ${TESTTOOLVMOPTS} -keystore ks
