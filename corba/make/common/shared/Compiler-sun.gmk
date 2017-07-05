@@ -31,11 +31,8 @@ COMPILER_NAME=Sun Studio
 
 # Sun Studio Compiler settings specific to Solaris
 ifeq ($(PLATFORM), solaris)
-  # FIXUP: Change to SS12 when validated
-  #COMPILER_VERSION=SS12
-  #REQUIRED_CC_VER=5.9
-  COMPILER_VERSION=SS11
-  REQUIRED_CC_VER=5.8
+  COMPILER_VERSION=SS12
+  REQUIRED_CC_VER=5.9
   CC             = $(COMPILER_PATH)cc
   CPP            = $(COMPILER_PATH)cc -E
   CXX            = $(COMPILER_PATH)CC

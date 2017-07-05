@@ -138,7 +138,7 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_localPort(JNIEnv *env, jclass clazz, jobject fdo)
 {
     SOCKADDR sa;
-    int sa_len = SOCKADDR_LEN;
+    socklen_t sa_len = SOCKADDR_LEN;
     if (getsockname(fdval(env, fdo), (struct sockaddr *)&sa, &sa_len) < 0) {
         handleSocketError(env, errno);
         return -1;
@@ -150,7 +150,7 @@ JNIEXPORT jobject JNICALL
 Java_sun_nio_ch_Net_localInetAddress(JNIEnv *env, jclass clazz, jobject fdo)
 {
     SOCKADDR sa;
-    int sa_len = SOCKADDR_LEN;
+    socklen_t sa_len = SOCKADDR_LEN;
     int port;
     if (getsockname(fdval(env, fdo), (struct sockaddr *)&sa, &sa_len) < 0) {
         handleSocketError(env, errno);

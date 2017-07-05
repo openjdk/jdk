@@ -84,6 +84,15 @@ EXTRA_LFLAGS += /LIBPATH:$(DXSDK_LIB_PATH)
 #
 # Default optimization
 #
+
+ifndef OPTIMIZATION_LEVEL
+  ifeq ($(PRODUCT), java)
+    OPTIMIZATION_LEVEL = HIGHER
+  else
+    OPTIMIZATION_LEVEL = LOWER
+  endif
+endif
+
 ifeq ($(CC_VERSION),msvc)
   # Visual Studio .NET 2003 or VS2003 compiler option definitions:
   #   -O1      Favors reduced size over speed (-Og     -Os -Oy -Ob2 -Gs -GF -Gy)
@@ -113,21 +122,28 @@ ifeq ($(CC_VERSION),msvc)
   # NOTE: With VC6, -Ox, -O1, and -O2 used -Ob1, not -Ob2.
   # NOTE: With VC6, -O1 and -O2 used -Gf, not -GF.
   #
+
+  CC_OPT/NONE    = -Od
+  CC_OPT/LOWER   = -O2
+  CC_OPT/HIGHER  = -O3
+  CC_OPT/HIGHEST = -O3
+  
   ifeq ($(COMPILER_VERSION), VC6)
     # VC6 (6.2) msvc compiler (the way Tiger and early Mustang were built)
     # Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
     AUTOMATIC_PCH_OPTION =
     GX_OPTION = -GX
     ifeq ($(ARCH_DATA_MODEL), 32)
-      CC_HIGHEST_OPT = -Ox -Gy -Os -GB
-      CC_HIGHER_OPT  = -Ox -Gy -Os -GB
-      CC_LOWER_OPT   = -Ox -Gy -Os -GB
+      CC_OPT/HIGHEST = -Ox -Gy -Os -GB
+      CC_OPT/HIGHER  = -Ox -Gy -Os -GB
+      CC_OPT/LOWER   = -Ox -Gy -Os -GB
     else
-      CC_HIGHEST_OPT = -Ox -Gy -Op
-      CC_HIGHER_OPT  = -Ox -Gy -Op
-      CC_LOWER_OPT   = -Ox -Gy -Op
+      CC_OPT/HIGHEST = -Ox -Gy -Op
+      CC_OPT/HIGHER  = -Ox -Gy -Op
+      CC_OPT/LOWER   = -Ox -Gy -Op
     endif
   endif
+  
   ifeq ($(COMPILER_VERSION), VS2003)
     # Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
     AUTOMATIC_PCH_OPTION = -YX
@@ -135,53 +151,45 @@ ifeq ($(CC_VERSION),msvc)
     GX_OPTION = -GX
     ifeq ($(ARCH_DATA_MODEL), 32)
       # Lowered opt level to try and reduce footprint, dll size especially.
-      #     Was: CC_HIGHEST_OPT = -O2 -G6
-      #     Was: CC_HIGHER_OPT  = -O2
-      CC_HIGHEST_OPT = -O2
-      CC_HIGHER_OPT  = -O1
-      CC_LOWER_OPT   = -O1
+      #     Was: CC_OPT/HIGHEST = -O2 -G6
+      #     Was: CC_OPT/HIGHER  = -O2
+      CC_OPT/HIGHEST = -O2
+      CC_OPT/HIGHER  = -O1
+      CC_OPT/LOWER   = -O1
     else
-      CC_HIGHEST_OPT = -O2 -Op
-      CC_HIGHER_OPT  = -O2 -Op
-      CC_LOWER_OPT   = -O1 -Op
+      CC_OPT/HIGHEST = -O2 -Op
+      CC_OPT/HIGHER  = -O2 -Op
+      CC_OPT/LOWER   = -O1 -Op
     endif
   endif
+  
   ifeq ($(COMPILER_VERSION), VS2005)
     # Automatic precompiled header option to use (if COMPILE_APPROACH=batch)
     AUTOMATIC_PCH_OPTION =
     # VS2005 compiler, only with Platform SDK right now?
     GX_OPTION = -EHsc
     ifeq ($(ARCH_DATA_MODEL), 32)
-      CC_HIGHEST_OPT = -O2
-      CC_HIGHER_OPT  = -O1
-      CC_LOWER_OPT   = -O1
+      CC_OPT/HIGHEST = -O2
+      CC_OPT/HIGHER  = -O1
+      CC_OPT/LOWER   = -O1
     else
-      CC_HIGHEST_OPT = -O2
-      CC_HIGHER_OPT  = -O1
-      CC_LOWER_OPT   = -O1
+      CC_OPT/HIGHEST = -O2
+      CC_OPT/HIGHER  = -O1
+      CC_OPT/LOWER   = -O1
     endif
   endif
-  CC_NO_OPT      = -Od
+
 else # CC_VERSION
+  
   # GCC not supported, but left for historical reference...
-  CC_HIGHEST_OPT = -O3
-  CC_HIGHER_OPT  = -O2
-  CC_LOWER_OPT   = -O2
-  CC_NO_OPT      = 
+  CC_OPT/NONE     =
+  CC_OPT/LOWER    = -O2
+  CC_OPT/HIGHER   = -O2
+  CC_OPT/HIGHEST  = -O3
+
 endif
 
-# If NO_OPTIMIZATIONS is defined in the environment, turn all optimzations off
-ifdef NO_OPTIMIZATIONS
-  CC_HIGHEST_OPT = $(CC_NO_OPT)
-  CC_HIGHER_OPT  = $(CC_NO_OPT)
-  CC_LOWER_OPT   = $(CC_NO_OPT)
-endif
-
-ifeq ($(PRODUCT), java)
-    _OPT = $(CC_HIGHER_OPT)
-else
-    _OPT = $(CC_LOWER_OPT)
-endif
+CC_OPT = $(CC_OPT/$(OPTIMIZATION_LEVEL))
 
 # Select the runtime support library carefully, need to be consistent
 #
@@ -233,7 +241,7 @@ ifeq ($(CC_VERSION),msvc)
   #            Use static link for the C++ runtime (so msvcp71.dll not needed)
   #   
   CFLAGS_COMMON  += -Zi -nologo
-  CFLAGS_OPT      = $(POPT)
+  CFLAGS_OPT      = $(CC_OPT)
   CFLAGS_DBG      = -Od $(MS_RUNTIME_DEBUG_OPTION)
 
   # Starting from VS2005 the wchar_t is handled as a built-in C/C++ data type

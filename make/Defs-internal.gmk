@@ -159,6 +159,9 @@ else
     SKIP_OPENJDK_BUILD = true
   endif
 endif
+ifndef SKIP_PRODUCT_BUILD
+  SKIP_PRODUCT_BUILD = false
+endif
 
 # Solaris 64 bit builds are not complete enough to ever do this
 ifeq ($(PLATFORM)$(ARCH_DATA_MODEL),solaris64)

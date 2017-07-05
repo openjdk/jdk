@@ -540,7 +540,6 @@ ownedMonitorsWithStackDepth(PacketInputStream *in, PacketOutputStream *out)
 
         jvmtiError error = JVMTI_ERROR_NONE;
         jint count = 0;
-        jint depth;
         jvmtiMonitorStackDepthInfo *monitors=NULL;
 
         error = JVMTI_FUNC_PTR(gdata->jvmti,GetOwnedMonitorStackDepthInfo)

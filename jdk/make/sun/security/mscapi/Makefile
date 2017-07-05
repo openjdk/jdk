@@ -210,7 +210,7 @@ build-jar: $(UNSIGNED_DIR)/sunmscapi.jar
 $(UNSIGNED_DIR)/sunmscapi.jar: build
 	$(prep-target)
 	$(BOOT_JAR_CMD) cf $@ $(JAR_DIRS) \
-	    $(JAR_JFLAGS)
+	    $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 

@@ -210,7 +210,7 @@ build-jar: $(UNSIGNED_DIR)/sunpkcs11.jar
 $(UNSIGNED_DIR)/sunpkcs11.jar: build
 	$(prep-target)
 	$(BOOT_JAR_CMD) cf $@ $(JAR_DIRS) \
-	    $(JAR_JFLAGS)
+	    $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 

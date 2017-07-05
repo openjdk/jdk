@@ -96,7 +96,8 @@ setLastError(int err, char *newmsg) {
      */
     if (err == JDWPTRANSPORT_ERROR_IO_ERROR) {
         char *join_str = ": ";
-        int msg_len = strlen(newmsg) + strlen(join_str) + strlen(buf) + 3;
+        int msg_len = (int)strlen(newmsg) + (int)strlen(join_str) +
+                      (int)strlen(buf) + 3;
         msg = (*callbacks->alloc)(msg_len);
         if (msg != NULL) {
             strcpy(msg, newmsg);
@@ -104,7 +105,7 @@ setLastError(int err, char *newmsg) {
             strcat(msg, buf);
         }
     } else {
-        msg = (*callbacks->alloc)(strlen(newmsg)+1);
+        msg = (*callbacks->alloc)((int)strlen(newmsg)+1);
         if (msg != NULL) {
             strcpy(msg, newmsg);
         }
@@ -183,7 +184,7 @@ shmemStartListening(jdwpTransportEnv* env, const char *address, char **actualAdd
         char *name2;
         rc = shmemBase_name(transport, &name);
         if (rc == SYS_OK) {
-            name2 = (callbacks->alloc)(strlen(name) + 1);
+            name2 = (callbacks->alloc)((int)strlen(name) + 1);
             if (name2 == NULL) {
                 RETURN_ERROR(JDWPTRANSPORT_ERROR_OUT_OF_MEMORY, "out of memory");
             } else {
@@ -329,7 +330,7 @@ shmemGetLastError(jdwpTransportEnv* env, char **msgP)
     if (msg == NULL) {
         return JDWPTRANSPORT_ERROR_MSG_NOT_AVAILABLE;
     }
-    *msgP = (*callbacks->alloc)(strlen(msg)+1);
+    *msgP = (*callbacks->alloc)((int)strlen(msg)+1);
     if (*msgP == NULL) {
         return JDWPTRANSPORT_ERROR_OUT_OF_MEMORY;
     }

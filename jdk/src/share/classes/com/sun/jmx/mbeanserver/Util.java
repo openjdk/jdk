@@ -26,6 +26,7 @@
 package com.sun.jmx.mbeanserver;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -113,4 +114,32 @@ public class Util {
     public static <T> T cast(Object x) {
         return (T) x;
     }
+
+    /**
+     * Computes a descriptor hashcode from its names and values.
+     * @param names  the sorted array of descriptor names.
+     * @param values the array of descriptor values.
+     * @return a hash code value, as described in {@link #hashCode(Descriptor)}
+     */
+    public static int hashCode(String[] names, Object[] values) {
+        int hash = 0;
+        for (int i = 0; i < names.length; i++) {
+            Object v = values[i];
+            int h;
+            if (v == null) {
+                h = 0;
+            } else if (v instanceof Object[]) {
+                h = Arrays.deepHashCode((Object[]) v);
+            } else if (v.getClass().isArray()) {
+                h = Arrays.deepHashCode(new Object[]{v}) - 31;
+            // hashcode of a list containing just v is
+            // v.hashCode() + 31, see List.hashCode()
+            } else {
+                h = v.hashCode();
+            }
+            hash += names[i].toLowerCase().hashCode() ^ h;
+        }
+        return hash;
+    }
+
 }

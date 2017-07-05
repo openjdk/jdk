@@ -71,7 +71,7 @@ $(IMJAR): $(FILES_class) $(FILES_copy) $(PROVIDER_CONF_FILE)
 	$(BOOT_JAR_CMD) -cf $@ \
 	     -C $(CLASSDESTDIR) com \
 	     -C $(CLASSDESTDIR) $(SERVICESDIR) \
-	     $(JAR_JFLAGS)
+	     $(BOOT_JAR_JFLAGS)
 	@$(java-vm-cleanup)
 
 clean::
