@@ -148,6 +148,8 @@ void Flag::print_as_flag(outputStream* st) {
     st->print("-XX:%s=" UINTX_FORMAT, name, get_uintx());
   } else if (is_uint64_t()) {
     st->print("-XX:%s=" UINT64_FORMAT, name, get_uint64_t());
+  } else if (is_double()) {
+    st->print("-XX:%s=%f", name, get_double());
   } else if (is_ccstr()) {
     st->print("-XX:%s=", name);
     const char* cp = get_ccstr();
