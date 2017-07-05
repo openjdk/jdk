@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,12 +27,14 @@ package sun.jvm.hotspot.oops;
 import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.utilities.*;
 
-// An Instance is an instance of a Java Class
+// An InstanceKlass is the VM level representation of a Java class.
 
-public class Instance extends Oop {
+public class InstanceMirrorKlass extends InstanceKlass {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -40,41 +42,26 @@ public class Instance extends Oop {
         }
       });
   }
-  private static long typeSize;
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-    Type type = db.lookupType("instanceOopDesc");
-    typeSize = type.getSize();
+    // Just make sure it's there for now
+    Type type = db.lookupType("instanceMirrorKlass");
   }
 
-  Instance(OopHandle handle, ObjectHeap heap) {
+  InstanceMirrorKlass(OopHandle handle, ObjectHeap heap) {
     super(handle, heap);
   }
 
-  // Returns header size in bytes.
-  public static long getHeaderSize() {
-    if (VM.getVM().isCompressedOopsEnabled()) {
-      return typeSize - VM.getVM().getIntSize();
-    } else {
-      return typeSize;
-    }
+  public long getObjectSize(Oop o) {
+    return java_lang_Class.getOopSize(o) * VM.getVM().getAddressSize();
   }
 
-  public boolean isInstance()          { return true; }
-
-  public void iterateFields(OopVisitor visitor, boolean doVMFields) {
-    super.iterateFields(visitor, doVMFields);
-    ((InstanceKlass) getKlass()).iterateNonStaticFields(visitor, this);
-  }
-
-  public void printValueOn(PrintStream tty) {
-    // Special-case strings.
-    // FIXME: would like to do this in more type-safe fashion (need
-    // SystemDictionary analogue)
-    if (getKlass().getName().asString().equals("java/lang/String")) {
-      tty.print("\"" + OopUtilities.stringOopToString(this) + "\"");
-    } else {
-      super.printValueOn(tty);
+  public void iterateNonStaticFields(OopVisitor visitor, Oop obj) {
+    super.iterateNonStaticFields(visitor, obj);
+    // Fetch the real klass from the mirror object
+    Klass klass = java_lang_Class.asKlass(obj);
+    if (klass instanceof InstanceKlass) {
+      ((InstanceKlass)klass).iterateStaticFields(visitor);
     }
   }
 }
