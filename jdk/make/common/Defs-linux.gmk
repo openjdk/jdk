@@ -194,7 +194,16 @@ ifeq ($(FASTDEBUG), true)
   CXXFLAGS_DBG	+= $(CC_OPT/$(FASTDEBUG_OPTIMIZATION_LEVEL))
 endif
 
-CPPFLAGS_COMMON = -D$(ARCH) -DARCH='"$(ARCH)"' -DLINUX $(VERSION_DEFINES) \
+CPP_ARCH_FLAGS = -DARCH='"$(ARCH)"'
+
+# Alpha arch does not like "alpha" defined (potential general arch cleanup issue here)
+ifneq ($(ARCH),alpha)
+  CPP_ARCH_FLAGS += -D$(ARCH)
+else
+  CPP_ARCH_FLAGS += -D_$(ARCH)_
+endif
+
+CPPFLAGS_COMMON = $(CPP_ARCH_FLAGS) -DLINUX $(VERSION_DEFINES) \
 		  -D_LARGEFILE64_SOURCE -D_GNU_SOURCE -D_REENTRANT
 
 ifeq ($(ARCH_DATA_MODEL), 64)

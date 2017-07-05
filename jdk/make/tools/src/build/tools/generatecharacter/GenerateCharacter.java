@@ -35,6 +35,8 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.File;
 
+import build.tools.generatecharacter.CharacterName;
+
 /**
  * This program generates the source code for the class java.lang.Character.
  * It also generates native C code that can perform the same operations.

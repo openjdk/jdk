@@ -2583,10 +2583,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #convertColumnIndexToView
      */
     public int convertColumnIndexToModel(int viewColumnIndex) {
-        if (viewColumnIndex < 0) {
-            return viewColumnIndex;
-        }
-        return getColumnModel().getColumn(viewColumnIndex).getModelIndex();
+        return SwingUtilities2.convertColumnIndexToModel(
+                getColumnModel(), viewColumnIndex);
     }
 
     /**
@@ -2603,16 +2601,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #convertColumnIndexToModel
      */
     public int convertColumnIndexToView(int modelColumnIndex) {
-        if (modelColumnIndex < 0) {
-            return modelColumnIndex;
-        }
-        TableColumnModel cm = getColumnModel();
-        for (int column = 0; column < getColumnCount(); column++) {
-            if (cm.getColumn(column).getModelIndex() == modelColumnIndex) {
-                return column;
-            }
-        }
-        return -1;
+        return SwingUtilities2.convertColumnIndexToView(
+                getColumnModel(), modelColumnIndex);
     }
 
     /**

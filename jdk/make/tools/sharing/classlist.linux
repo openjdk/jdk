@@ -2259,7 +2259,6 @@ com/sun/java/swing/plaf/gtk/GTKLookAndFeel$1FontLazyValue
 com/sun/java/swing/plaf/gtk/GTKLookAndFeel$2
 com/sun/java/swing/plaf/gtk/GTKLookAndFeel$3
 javax/swing/plaf/synth/SynthPanelUI
-sun/swing/plaf/synth/SynthUI
 javax/swing/plaf/synth/SynthConstants
 javax/swing/plaf/synth/SynthContext
 javax/swing/plaf/synth/SynthBorder
@@ -2271,6 +2270,7 @@ javax/swing/plaf/basic/BasicBorders$FieldBorder
 javax/swing/plaf/synth/SynthMenuBarUI
 javax/swing/plaf/synth/DefaultMenuLayout
 javax/swing/plaf/synth/SynthMenuUI
+javax/swing/plaf/synth/SynthUI
 com/sun/java/swing/plaf/gtk/GTKIconFactory
 com/sun/java/swing/plaf/gtk/GTKIconFactory$MenuArrowIcon
 com/sun/java/swing/plaf/gtk/GTKIconFactory$DelegatingIcon
