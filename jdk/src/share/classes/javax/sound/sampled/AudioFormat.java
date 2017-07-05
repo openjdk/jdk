@@ -85,7 +85,7 @@ import java.util.Map;
  * service providers should use, if applicable:
  *
  * <table border=0>
- *  <caption>Audio Format Property Keys</caption>
+ *  <caption>Audio Format Properties</caption>
  *  <tr>
  *   <th>Property key</th>
  *   <th>Value type</th>

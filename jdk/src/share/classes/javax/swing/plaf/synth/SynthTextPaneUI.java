@@ -185,7 +185,7 @@ public class SynthTextPaneUI extends SynthEditorPaneUI {
     }
 
     /**
-     * @inheritDoc
+     * {@inheritDoc}
      */
     @Override
     public void paintBorder(SynthContext context, Graphics g, int x,

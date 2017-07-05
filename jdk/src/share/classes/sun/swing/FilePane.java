@@ -1980,18 +1980,18 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         }
 
         if (f instanceof ShellFolder) {
-            return ((ShellFolder) f).isFileSystem();
+            return f.canWrite();
         } else {
             if (usesShellFolder(getFileChooser())) {
                 try {
-                    return ShellFolder.getShellFolder(f).isFileSystem();
+                    return ShellFolder.getShellFolder(f).canWrite();
                 } catch (FileNotFoundException ex) {
                     // File doesn't exist
                     return false;
                 }
             } else {
                 // Ordinary file
-                return true;
+                return f.canWrite();
             }
         }
     }

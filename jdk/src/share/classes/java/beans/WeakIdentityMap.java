@@ -33,18 +33,22 @@ import java.lang.ref.WeakReference;
  * and reference-equality in place of object-equality to compare them.
  * An entry will automatically be removed when its key is no longer
  * in ordinary use.  Both null values and the null key are supported.
+ * This class does not require additional synchronization.
+ * A thread-safety is provided by a fragile combination
+ * of synchronized blocks and volatile fields.
+ * Be very careful during editing!
  *
  * @see java.util.IdentityHashMap
  * @see java.util.WeakHashMap
  */
-final class WeakIdentityMap<T> {
+abstract class WeakIdentityMap<T> {
 
     private static final int MAXIMUM_CAPACITY = 1 << 30; // it MUST be a power of two
     private static final Object NULL = new Object(); // special object for null key
 
     private final ReferenceQueue<Object> queue = new ReferenceQueue<Object>();
 
-    private Entry<T>[] table = newTable(1<<3); // table's length MUST be a power of two
+    private volatile Entry<T>[] table = newTable(1<<3); // table's length MUST be a power of two
     private int threshold = 6; // the next size value at which to resize
     private int size = 0; // the number of key-value mappings
 
@@ -54,78 +58,83 @@ final class WeakIdentityMap<T> {
             key = NULL;
         }
         int hash = key.hashCode();
-        int index = getIndex(this.table, hash);
-        for (Entry<T> entry = this.table[index]; entry != null; entry = entry.next) {
+        Entry<T>[] table = this.table;
+        // unsynchronized search improves performance
+        // the null value does not mean that there are no needed entry
+        int index = getIndex(table, hash);
+        for (Entry<T> entry = table[index]; entry != null; entry = entry.next) {
             if (entry.isMatched(key, hash)) {
                 return entry.value;
             }
         }
-        return null;
-    }
-
-    public T put(Object key, T value) {
-        removeStaleEntries();
-        if (key == null) {
-            key = NULL;
-        }
-        int hash = key.hashCode();
-        int index = getIndex(this.table, hash);
-        for (Entry<T> entry = this.table[index]; entry != null; entry = entry.next) {
-            if (entry.isMatched(key, hash)) {
-                T oldValue = entry.value;
-                entry.value = value;
-                return oldValue;
+        synchronized (NULL) {
+            // synchronized search improves stability
+            // we must create and add new value if there are no needed entry
+            index = getIndex(this.table, hash);
+            for (Entry<T> entry = this.table[index]; entry != null; entry = entry.next) {
+                if (entry.isMatched(key, hash)) {
+                    return entry.value;
+                }
             }
-        }
-        this.table[index] = new Entry<T>(key, hash, value, this.queue, this.table[index]);
-        if (++this.size >= this.threshold) {
-            if (this.table.length == MAXIMUM_CAPACITY) {
-                this.threshold = Integer.MAX_VALUE;
-            }
-            else {
-                removeStaleEntries();
-                Entry<T>[] table = newTable(this.table.length * 2);
-                transfer(this.table, table);
-
-                // If ignoring null elements and processing ref queue caused massive
-                // shrinkage, then restore old table.  This should be rare, but avoids
-                // unbounded expansion of garbage-filled tables.
-                if (this.size >= this.threshold / 2) {
-                    this.table = table;
-                    this.threshold *= 2;
+            T value = create(key);
+            this.table[index] = new Entry<T>(key, hash, value, this.queue, this.table[index]);
+            if (++this.size >= this.threshold) {
+                if (this.table.length == MAXIMUM_CAPACITY) {
+                    this.threshold = Integer.MAX_VALUE;
                 }
                 else {
-                    transfer(table, this.table);
-                }
-            }
-        }
-        return null;
-    }
-
-    private void removeStaleEntries() {
-        for (Object ref = this.queue.poll(); ref != null; ref = this.queue.poll()) {
-            @SuppressWarnings("unchecked")
-            Entry<T> entry = (Entry<T>) ref;
-            int index = getIndex(this.table, entry.hash);
-
-            Entry<T> prev = this.table[index];
-            Entry<T> current = prev;
-            while (current != null) {
-                Entry<T> next = current.next;
-                if (current == entry) {
-                    if (prev == entry) {
-                        this.table[index] = next;
+                    removeStaleEntries();
+                    table = newTable(this.table.length * 2);
+                    transfer(this.table, table);
+                    // If ignoring null elements and processing ref queue caused massive
+                    // shrinkage, then restore old table.  This should be rare, but avoids
+                    // unbounded expansion of garbage-filled tables.
+                    if (this.size >= this.threshold / 2) {
+                        this.table = table;
+                        this.threshold *= 2;
                     }
                     else {
-                        prev.next = next;
+                        transfer(table, this.table);
                     }
-                    entry.value = null; // Help GC
-                    entry.next = null; // Help GC
-                    this.size--;
-                    break;
                 }
-                prev = current;
-                current = next;
+            }
+            return value;
+        }
+    }
+
+    protected abstract T create(Object key);
+
+    private void removeStaleEntries() {
+        Object ref = this.queue.poll();
+        if (ref != null) {
+            synchronized (NULL) {
+                do {
+                    @SuppressWarnings("unchecked")
+                    Entry<T> entry = (Entry<T>) ref;
+                    int index = getIndex(this.table, entry.hash);
+
+                    Entry<T> prev = this.table[index];
+                    Entry<T> current = prev;
+                    while (current != null) {
+                        Entry<T> next = current.next;
+                        if (current == entry) {
+                            if (prev == entry) {
+                                this.table[index] = next;
+                            }
+                            else {
+                                prev.next = next;
+                            }
+                            entry.value = null; // Help GC
+                            entry.next = null; // Help GC
+                            this.size--;
+                            break;
+                        }
+                        prev = current;
+                        current = next;
+                    }
+                    ref = this.queue.poll();
+                }
+                while (ref != null);
             }
         }
     }
@@ -164,8 +173,8 @@ final class WeakIdentityMap<T> {
 
     private static class Entry<T> extends WeakReference<Object> {
         private final int hash;
-        private T value;
-        private Entry<T> next;
+        private volatile T value;
+        private volatile Entry<T> next;
 
         Entry(Object key, int hash, T value, ReferenceQueue<Object> queue, Entry<T> next) {
             super(key, queue);

@@ -79,13 +79,12 @@ public final class WhileNode extends LoopNode {
         if (visitor.enterWhileNode(this)) {
             if (isDoWhile()) {
                 return visitor.leaveWhileNode(
-                        setTest(lc, (Expression)test.accept(visitor)).
-                        setBody(lc, (Block)body.accept(visitor)));
+                        setBody(lc, (Block)body.accept(visitor)).
+                        setTest(lc, (Expression)test.accept(visitor)));
             }
             return visitor.leaveWhileNode(
-                    setBody(lc, (Block)body.accept(visitor)).
-                    setTest(lc, (Expression)test.accept(visitor)));
-
+                    setTest(lc, (Expression)test.accept(visitor)).
+                    setBody(lc, (Block)body.accept(visitor)));
         }
         return this;
     }

@@ -450,8 +450,12 @@ abstract public class JDIScaffold {
                   requestManager.createStepRequest(thread, gran, depth);
 
         sr.addClassExclusionFilter("java.*");
+        sr.addClassExclusionFilter("javax.*");
         sr.addClassExclusionFilter("sun.*");
         sr.addClassExclusionFilter("com.sun.*");
+        sr.addClassExclusionFilter("com.oracle.*");
+        sr.addClassExclusionFilter("oracle.*");
+        sr.addClassExclusionFilter("jdk.internal.*");
         sr.addCountFilter(1);
         sr.enable();
         StepEvent retEvent = (StepEvent)waitForRequestedEvent(sr);

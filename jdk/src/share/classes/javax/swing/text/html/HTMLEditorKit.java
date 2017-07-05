@@ -55,7 +55,6 @@ import java.lang.ref.*;
  * an effect upon the way that HTML is modeled.  These
  * have influenced its design in a substantial way.
  * <dl>
- * <p>
  * <dt>
  * Support editing
  * <dd>

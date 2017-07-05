@@ -33,16 +33,9 @@ import com.oracle.java.testlibrary.*;
 
 public class XShareAuto {
     public static void main(String[] args) throws Exception {
-        if (!Platform.is64bit()) {
-            System.out.println("ObjectAlignmentInBytes for CDS is only " +
-                "supported on 64bit platforms; this plaform is " +
-                System.getProperty("sun.arch.data.model"));
-            System.out.println("Skipping the test");
-            return;
-        }
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions", "-XX:SharedArchiveFile=./sample.jsa",
-            "-Xshare:dump");
+            "-server", "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:SharedArchiveFile=./sample.jsa", "-Xshare:dump");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Loading classes to share");
         output.shouldHaveExitValue(0);

@@ -63,8 +63,8 @@ import sun.awt.AWTAccessor;
  *
  * <p>The following code snippet demonstrates how to access
  * and customize the system tray:
- * <code>
  * <pre>
+ * <code>
  *     {@link TrayIcon} trayIcon = null;
  *     if (SystemTray.isSupported()) {
  *         // get the SystemTray instance
@@ -109,8 +109,8 @@ import sun.awt.AWTAccessor;
  *         trayIcon.{@link TrayIcon#setImage(java.awt.Image) setImage}(updatedImage);
  *     }
  *     // ...
- * </pre>
  * </code>
+ * </pre>
  *
  * @since 1.6
  * @see TrayIcon

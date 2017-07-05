@@ -1,0 +1,9 @@
+{
+          "foo": 23,
+          "bar": {
+                    "x": 22
+          }
+}
+{"foo":23,"bar":{"x":22}}
+inside n.valueOf
+inside s.toString
