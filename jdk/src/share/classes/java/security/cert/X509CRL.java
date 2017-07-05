@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ import sun.security.x509.X509CRLImpl;
  * <a href="http://www.ietf.org/rfc/rfc3280.txt">RFC 3280: Internet X.509
  * Public Key Infrastructure Certificate and CRL Profile</a>.
  * <p>
- * The ASN.1 definition of <code>tbsCertList</code> is:
+ * The ASN.1 definition of {@code tbsCertList} is:
  * <pre>
  * TBSCertList  ::=  SEQUENCE  {
  *     version                 Version OPTIONAL,
@@ -94,12 +94,12 @@ import sun.security.x509.X509CRLImpl;
  * <p>
  * CRLs are instantiated using a certificate factory. The following is an
  * example of how to instantiate an X.509 CRL:
- * <pre><code>
+ * <pre>{@code
  * try (InputStream inStream = new FileInputStream("fileName-of-crl")) {
  *     CertificateFactory cf = CertificateFactory.getInstance("X.509");
  *     X509CRL crl = (X509CRL)cf.generateCRL(inStream);
  * }
- * </code></pre>
+ * }</pre>
  *
  * @author Hemma Prafullchandra
  *
@@ -122,8 +122,8 @@ public abstract class X509CRL extends CRL implements X509Extension {
 
     /**
      * Compares this CRL for equality with the given
-     * object. If the <code>other</code> object is an
-     * <code>instanceof</code> <code>X509CRL</code>, then
+     * object. If the {@code other} object is an
+     * {@code instanceof} {@code X509CRL}, then
      * its encoded form is retrieved and compared with the
      * encoded form of this CRL.
      *
@@ -225,7 +225,7 @@ public abstract class X509CRL extends CRL implements X509Extension {
      *
      * This method was added to version 1.8 of the Java Platform Standard
      * Edition. In order to maintain backwards compatibility with existing
-     * service providers, this method is not <code>abstract</code>
+     * service providers, this method is not {@code abstract}
      * and it provides a default implementation.
      *
      * @param key the PublicKey used to carry out the verification.
@@ -245,11 +245,12 @@ public abstract class X509CRL extends CRL implements X509Extension {
     }
 
     /**
-     * Gets the <code>version</code> (version number) value from the CRL.
+     * Gets the {@code version} (version number) value from the CRL.
      * The ASN.1 definition for this is:
      * <pre>
      * version    Version OPTIONAL,
-     *             -- if present, must be v2<p>
+     *             -- if present, must be v2
+     *
      * Version  ::=  INTEGER  {  v1(0), v2(1), v3(2)  }
      *             -- v3 does not apply to CRLs but appears for consistency
      *             -- with definition of Version for certs
@@ -261,12 +262,12 @@ public abstract class X509CRL extends CRL implements X509Extension {
 
     /**
      * <strong>Denigrated</strong>, replaced by {@linkplain
-     * #getIssuerX500Principal()}. This method returns the <code>issuer</code>
+     * #getIssuerX500Principal()}. This method returns the {@code issuer}
      * as an implementation specific Principal object, which should not be
      * relied upon by portable code.
      *
      * <p>
-     * Gets the <code>issuer</code> (issuer distinguished name) value from
+     * Gets the {@code issuer} (issuer distinguished name) value from
      * the CRL. The issuer name identifies the entity that signed (and
      * issued) the CRL.
      *
@@ -287,14 +288,14 @@ public abstract class X509CRL extends CRL implements X509Extension {
      * AttributeType ::= OBJECT IDENTIFIER
      * AttributeValue ::= ANY
      * </pre>
-     * The <code>Name</code> describes a hierarchical name composed of
+     * The {@code Name} describes a hierarchical name composed of
      * attributes,
      * such as country name, and corresponding values, such as US.
-     * The type of the <code>AttributeValue</code> component is determined by
-     * the <code>AttributeType</code>; in general it will be a
-     * <code>directoryString</code>. A <code>directoryString</code> is usually
-     * one of <code>PrintableString</code>,
-     * <code>TeletexString</code> or <code>UniversalString</code>.
+     * The type of the {@code AttributeValue} component is determined by
+     * the {@code AttributeType}; in general it will be a
+     * {@code directoryString}. A {@code directoryString} is usually
+     * one of {@code PrintableString},
+     * {@code TeletexString} or {@code UniversalString}.
      *
      * @return a Principal whose name is the issuer distinguished name.
      */
@@ -302,11 +303,11 @@ public abstract class X509CRL extends CRL implements X509Extension {
 
     /**
      * Returns the issuer (issuer distinguished name) value from the
-     * CRL as an <code>X500Principal</code>.
+     * CRL as an {@code X500Principal}.
      * <p>
      * It is recommended that subclasses override this method.
      *
-     * @return an <code>X500Principal</code> representing the issuer
+     * @return an {@code X500Principal} representing the issuer
      *          distinguished name
      * @since 1.4
      */
@@ -318,7 +319,7 @@ public abstract class X509CRL extends CRL implements X509Extension {
     }
 
     /**
-     * Gets the <code>thisUpdate</code> date from the CRL.
+     * Gets the {@code thisUpdate} date from the CRL.
      * The ASN.1 definition for this is:
      * <pre>
      * thisUpdate   ChoiceOfTime
@@ -327,14 +328,14 @@ public abstract class X509CRL extends CRL implements X509Extension {
      *     generalTime    GeneralizedTime }
      * </pre>
      *
-     * @return the <code>thisUpdate</code> date from the CRL.
+     * @return the {@code thisUpdate} date from the CRL.
      */
     public abstract Date getThisUpdate();
 
     /**
-     * Gets the <code>nextUpdate</code> date from the CRL.
+     * Gets the {@code nextUpdate} date from the CRL.
      *
-     * @return the <code>nextUpdate</code> date from the CRL, or null if
+     * @return the {@code nextUpdate} date from the CRL, or null if
      * not present.
      */
     public abstract Date getNextUpdate();
@@ -388,7 +389,7 @@ public abstract class X509CRL extends CRL implements X509Extension {
 
     /**
      * Gets the DER-encoded CRL information, the
-     * <code>tbsCertList</code> from this CRL.
+     * {@code tbsCertList} from this CRL.
      * This can be used to verify the signature independently.
      *
      * @return the DER-encoded CRL information.
@@ -397,7 +398,7 @@ public abstract class X509CRL extends CRL implements X509Extension {
     public abstract byte[] getTBSCertList() throws CRLException;
 
     /**
-     * Gets the <code>signature</code> value (the raw signature bits) from
+     * Gets the {@code signature} value (the raw signature bits) from
      * the CRL.
      * The ASN.1 definition for this is:
      * <pre>
@@ -413,7 +414,8 @@ public abstract class X509CRL extends CRL implements X509Extension {
      * signature algorithm. An example is the string "SHA256withRSA".
      * The ASN.1 definition for this is:
      * <pre>
-     * signatureAlgorithm   AlgorithmIdentifier<p>
+     * signatureAlgorithm   AlgorithmIdentifier
+     *
      * AlgorithmIdentifier  ::=  SEQUENCE  {
      *     algorithm               OBJECT IDENTIFIER,
      *     parameters              ANY DEFINED BY algorithm OPTIONAL  }
@@ -422,7 +424,7 @@ public abstract class X509CRL extends CRL implements X509Extension {
      *                             -- algorithm object identifier value
      * </pre>
      *
-     * <p>The algorithm name is determined from the <code>algorithm</code>
+     * <p>The algorithm name is determined from the {@code algorithm}
      * OID string.
      *
      * @return the signature algorithm name.

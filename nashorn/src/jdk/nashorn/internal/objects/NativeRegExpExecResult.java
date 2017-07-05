@@ -31,6 +31,7 @@ import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Setter;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.regexp.RegExpResult;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
@@ -49,12 +50,20 @@ public final class NativeRegExpExecResult extends ScriptObject {
     @Property
     public Object input;
 
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
     NativeRegExpExecResult(final RegExpResult result) {
-        setProto(Global.instance().getArrayPrototype());
+        super(Global.instance().getArrayPrototype(), $nasgenmap$);
         setIsArray();
         this.setArray(ArrayData.allocate(result.getGroups().clone()));
         this.index = result.getIndex();
         this.input = result.getInput();
+    }
+
+    @Override
+    public String getClassName() {
+        return "Array";
     }
 
     /**

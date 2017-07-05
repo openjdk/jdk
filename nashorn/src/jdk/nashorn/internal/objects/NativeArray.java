@@ -50,6 +50,7 @@ import jdk.nashorn.internal.objects.annotations.SpecializedConstructor;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -82,6 +83,8 @@ public final class NativeArray extends ScriptObject {
 
     private static final InvokeByName TO_LOCALE_STRING = new InvokeByName("toLocaleString", ScriptObject.class, String.class);
 
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
 
     /*
      * Constructors.
@@ -126,8 +129,8 @@ public final class NativeArray extends ScriptObject {
         this.setArray(arrayData);
     }
 
-    private NativeArray(final ArrayData arrayData) {
-        setProto(Global.instance().getArrayPrototype());
+    NativeArray(final ArrayData arrayData) {
+        super(Global.instance().getArrayPrototype(), $nasgenmap$);
         this.setArray(arrayData);
         this.setIsArray();
     }
@@ -856,8 +859,12 @@ public final class NativeArray extends ScriptObject {
                 }
 
                 // delete missing elements - which are at the end of sorted array
-                sobj.setArray(array.delete(sorted.length, len - 1));
-            }
+                if (sorted.length != len) {
+                    array = array.delete(sorted.length, len - 1);
+                }
+
+                sobj.setArray(array);
+           }
 
             return sobj;
         } catch (final ClassCastException | NullPointerException e) {

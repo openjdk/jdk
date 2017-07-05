@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import javax.sql.rowset.spi.*;
  * A <code>CachedRowSet</code> object is a container for rows of data
  * that caches its rows in memory, which makes it possible to operate without always being
  * connected to its data source. Further, it is a
- * JavaBeans<sup><font size=-2>TM</font></sup> component and is scrollable,
+ * JavaBeans&trade; component and is scrollable,
  * updatable, and serializable. A <code>CachedRowSet</code> object typically
  * contains rows from a result set, but it can also contain rows from any file
  * with a tabular format, such as a spread sheet.  The reference implementation
@@ -410,7 +410,7 @@ import javax.sql.rowset.spi.*;
  * NOTE:  In order to use a <code>DataSource</code> object for making a
  * connection, the <code>DataSource</code> object must have been registered
  * with a naming service that uses the Java Naming and Directory
- * Interface<sup><font size=-2>TM</font></sup> (JNDI) API.  This registration
+ * Interface&trade; (JNDI) API.  This registration
  * is usually done by a person acting in the capacity of a system
  * administrator.
  * <P>
@@ -734,7 +734,6 @@ public interface CachedRowSet extends RowSet, Joinable {
     * source. Otherwise, the application <b>must</b> explicity call the
     * <code>commit()</code> or <code>rollback()</code> methods as appropriate.
     *
-    * @throws SQLException if the cursor is on the insert row
     * @throws SyncProviderException if the underlying
     * synchronization provider's writer fails to write the updates
     * back to the data source
@@ -805,7 +804,6 @@ public interface CachedRowSet extends RowSet, Joinable {
     * <code>commit</code> or <code>rollback</code> methods as appropriate.
     *
     * @param con a standard JDBC <code>Connection</code> object
-    * @throws SQLException if the cursor is on the insert row
     * @throws SyncProviderException if the underlying
     * synchronization provider's writer fails to write the updates
     * back to the data source
@@ -1371,7 +1369,7 @@ public interface CachedRowSet extends RowSet, Joinable {
      * Applications can form a <code>WebRowSet</code> object from the <code>CachedRowSet</code>
      * object returned by this method in order
      * to export the <code>RowSet</code> schema definition to XML for future use.
-     *
+     * @return An empty copy of this {@code CachedRowSet} object
      * @throws SQLException if an error occurs in cloning the structure of this
      *         <code>CachedRowSet</code> object
      * @see #createShared
@@ -1543,6 +1541,7 @@ public interface CachedRowSet extends RowSet, Joinable {
      * @param numRows when populating, the number of rows interval on which the
      *     <code>CachedRowSet</code> populated should fire; the default value
      *     is zero; cannot be less than <code>fetchSize</code> or zero
+     * @throws SQLException {@code numRows < 0 or numRows < getFetchSize() }
      */
     public void rowSetPopulated(RowSetEvent event, int numRows) throws SQLException;
 

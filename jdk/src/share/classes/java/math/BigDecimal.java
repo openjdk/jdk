@@ -2572,6 +2572,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * ({@code this} * 10<sup>n</sup>).  The scale of
      * the result is {@code (this.scale() - n)}.
      *
+     * @param n the exponent power of ten to scale by
+     * @return a BigDecimal whose numerical value is equal to
+     * ({@code this} * 10<sup>n</sup>)
      * @throws ArithmeticException if the scale would be
      *         outside the range of a 32-bit integer.
      *

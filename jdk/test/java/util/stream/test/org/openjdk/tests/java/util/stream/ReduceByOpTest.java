@@ -51,6 +51,7 @@ public class ReduceByOpTest extends OpTestCase {
         Map<Boolean, Integer> result = data.stream().collect(groupingBy(LambdaTestHelpers.forPredicate(pEven, true, false), reducing(0, rPlus)));
         assertEquals(result.size(), gbResult.size());
         for (Map.Entry<Boolean, Integer> entry : result.entrySet()) {
+            setContext("entry", entry);
             Boolean key = entry.getKey();
             assertEquals(entry.getValue(), data.stream().filter(e -> pEven.test(e) == key).reduce(0, rPlus));
         }
@@ -59,7 +60,9 @@ public class ReduceByOpTest extends OpTestCase {
         Map<Integer, List<Integer>> mgResult = exerciseTerminalOps(data, s -> s.collect(groupingBy(mId)));
         Map<Integer, Integer> miResult = exerciseTerminalOps(data, s -> s.collect(groupingBy(mId, reducing(0, e -> 1, Integer::sum))));
         assertEquals(miResult.keySet().size(), uniqueSize);
-        for (Map.Entry<Integer, Integer> entry : miResult.entrySet())
+        for (Map.Entry<Integer, Integer> entry : miResult.entrySet()) {
+            setContext("entry", entry);
             assertEquals((int) entry.getValue(), mgResult.get(entry.getKey()).size());
+        }
     }
 }

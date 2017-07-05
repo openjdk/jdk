@@ -96,19 +96,19 @@ public final class UserAccessorProperty extends Property {
     }
 
     /**
-     * Return getter slot for this UserAccessorProperty. Slots start with first embed field.
+     * Return getter spill slot for this UserAccessorProperty.
      * @return getter slot
      */
     public int getGetterSlot() {
-        return getterSlot < 0 ? -getterSlot - 1 : getterSlot;
+        return getterSlot;
     }
 
     /**
-     * Return setter slot for this UserAccessorProperty. Slots start with first embed field.
+     * Return setter spill slot for this UserAccessorProperty.
      * @return setter slot
      */
     public int getSetterSlot() {
-        return setterSlot < 0 ? -setterSlot - 1 : setterSlot;
+        return setterSlot;
     }
 
     @Override
@@ -124,7 +124,7 @@ public final class UserAccessorProperty extends Property {
 
         final UserAccessorProperty uc = (UserAccessorProperty) other;
         return getterSlot == uc.getterSlot && setterSlot == uc.setterSlot;
-     }
+    }
 
     @Override
     public int hashCode() {
@@ -136,34 +136,26 @@ public final class UserAccessorProperty extends Property {
      */
     @Override
     public int getSpillCount() {
-        // calculate how many spill array slots used by this propery.
-        int count = 0;
-        if (getGetterSlot() >= 0) {
-            count++;
-        }
-        if (getSetterSlot() >= 0) {
-            count++;
-        }
-        return count;
+        return 2;
     }
 
     @Override
-    public boolean hasGetterFunction() {
-        return getterSlot > -1;
+    public boolean hasGetterFunction(final ScriptObject obj) {
+        return obj.getSpill(getterSlot) != null;
     }
 
     @Override
-    public boolean hasSetterFunction() {
-        return setterSlot > -1;
+    public boolean hasSetterFunction(final ScriptObject obj) {
+        return obj.getSpill(setterSlot) != null;
     }
 
     @Override
-    protected Object getObjectValue(final ScriptObject self, final ScriptObject owner) {
+    public Object getObjectValue(final ScriptObject self, final ScriptObject owner) {
         return userAccessorGetter(owner, getGetterSlot(), self);
     }
 
     @Override
-    protected void setObjectValue(final ScriptObject self, final ScriptObject owner, final Object value, final boolean strict) {
+    public void setObjectValue(final ScriptObject self, final ScriptObject owner, final Object value, final boolean strict) {
         userAccessorSetter(owner, getSetterSlot(), strict ? getKey() : null, self, value);
     }
 

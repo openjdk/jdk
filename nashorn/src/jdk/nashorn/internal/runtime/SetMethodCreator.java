@@ -151,9 +151,10 @@ final class SetMethodCreator {
         assert methodHandle != null;
         assert property     != null;
 
+        final ScriptObject prototype = find.getOwner();
         final MethodHandle boundHandle;
-        if (!property.hasSetterFunction() && find.isInherited()) {
-            boundHandle = ScriptObject.bindTo(methodHandle, find.getOwner());
+        if (!property.hasSetterFunction(prototype) && find.isInherited()) {
+            boundHandle = ScriptObject.bindTo(methodHandle, prototype);
         } else {
             boundHandle = methodHandle;
         }

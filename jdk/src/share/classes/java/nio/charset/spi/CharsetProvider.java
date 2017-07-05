@@ -39,8 +39,8 @@ import java.util.Iterator;
  * the usual extension directories.  Providers may also be made available by
  * adding them to the applet or application class path or by some other
  * platform-specific means.  Charset providers are looked up via the current
- * thread's {@link java.lang.Thread#getContextClassLoader() </code>context
- * class loader<code>}.
+ * thread's {@link java.lang.Thread#getContextClassLoader() context class
+ * loader}.
  *
  * <p> A charset provider identifies itself with a provider-configuration file
  * named <tt>java.nio.charset.spi.CharsetProvider</tt> in the resource

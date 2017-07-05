@@ -102,7 +102,7 @@ public class DoubleNodeTest extends OpTestCase {
 
         double i = it.nextDouble();
         if (it.hasNext()) {
-            return new Nodes.DoubleConcNode(Nodes.node(new double[] {i}), degenerateTree(it));
+            return new Nodes.ConcNode.OfDouble(Nodes.node(new double[] {i}), degenerateTree(it));
         }
         else {
             return Nodes.node(new double[] {i});
@@ -114,7 +114,7 @@ public class DoubleNodeTest extends OpTestCase {
             return m.apply(l);
         }
         else {
-            return new Nodes.DoubleConcNode(
+            return new Nodes.ConcNode.OfDouble(
                     tree(l.subList(0, l.size() / 2), m),
                     tree(l.subList(l.size() / 2, l.size()), m));
         }
@@ -161,5 +161,19 @@ public class DoubleNodeTest extends OpTestCase {
     // throws SOE on serialization of DoubleConcNode[size=1000]
     public void testSpliterator(double[] array, Node.OfDouble n) {
         SpliteratorTestHelper.testDoubleSpliterator(n::spliterator);
+    }
+
+    @Test(dataProvider = "nodes")
+    public void testTruncate(double[] array, Node.OfDouble n) {
+        int[] nums = new int[] { 0, 1, array.length / 2, array.length - 1, array.length };
+        for (int start : nums)
+            for (int end : nums) {
+                if (start < 0 || end < 0 || end < start || end > array.length)
+                    continue;
+                Node.OfDouble slice = n.truncate(start, end, Double[]::new);
+                double[] asArray = slice.asPrimitiveArray();
+                for (int k = start; k < end; k++)
+                    assertEquals(array[k], asArray[k - start]);
+            }
     }
 }

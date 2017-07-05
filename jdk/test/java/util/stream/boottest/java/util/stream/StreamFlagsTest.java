@@ -80,8 +80,8 @@ public class StreamFlagsTest {
                     EnumSet.of(ORDERED, DISTINCT, SIZED),
                     EnumSet.of(SORTED, SHORT_CIRCUIT));
         assertFlags(OpTestCase.getStreamFlags(repeat),
-                    EnumSet.of(ORDERED),
-                    EnumSet.of(SIZED, DISTINCT, SORTED, SHORT_CIRCUIT));
+                    EnumSet.noneOf(StreamOpFlag.class),
+                    EnumSet.of(DISTINCT, SORTED, SHORT_CIRCUIT));
     }
 
     public void testFilter() {

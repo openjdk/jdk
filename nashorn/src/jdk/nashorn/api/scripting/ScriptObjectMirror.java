@@ -102,7 +102,7 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
 
     // JSObject methods
     @Override
-    public Object call(final String methodName, final Object args[]) {
+    public Object call(final String functionName, final Object... args) {
         final ScriptObject oldGlobal = NashornScriptEngine.getNashornGlobal();
         final boolean globalChanged = (oldGlobal != global);
 
@@ -111,13 +111,41 @@ public final class ScriptObjectMirror extends JSObject implements Bindings {
                 NashornScriptEngine.setNashornGlobal(global);
             }
 
-            final Object val = sobj.get(methodName);
+            final Object val = functionName == null? sobj : sobj.get(functionName);
             if (! (val instanceof ScriptFunction)) {
-                throw new RuntimeException("No such method: " + methodName);
+                throw new RuntimeException("No such function " + ((functionName != null)? functionName : ""));
             }
 
             final Object[] modArgs = globalChanged? wrapArray(args, oldGlobal) : args;
             return wrap(ScriptRuntime.checkAndApply((ScriptFunction)val, sobj, unwrapArray(modArgs, global)), global);
+        } catch (final RuntimeException | Error e) {
+            throw e;
+        } catch (final Throwable t) {
+            throw new RuntimeException(t);
+        } finally {
+            if (globalChanged) {
+                NashornScriptEngine.setNashornGlobal(oldGlobal);
+            }
+        }
+    }
+
+    @Override
+    public Object newObject(final String functionName, final Object... args) {
+        final ScriptObject oldGlobal = NashornScriptEngine.getNashornGlobal();
+        final boolean globalChanged = (oldGlobal != global);
+
+        try {
+            if (globalChanged) {
+                NashornScriptEngine.setNashornGlobal(global);
+            }
+
+            final Object val = functionName == null? sobj : sobj.get(functionName);
+            if (! (val instanceof ScriptFunction)) {
+                throw new RuntimeException("not a constructor " + ((functionName != null)? functionName : ""));
+            }
+
+            final Object[] modArgs = globalChanged? wrapArray(args, oldGlobal) : args;
+            return wrap(ScriptRuntime.checkAndConstruct((ScriptFunction)val, unwrapArray(modArgs, global)), global);
         } catch (final RuntimeException | Error e) {
             throw e;
         } catch (final Throwable t) {

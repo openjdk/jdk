@@ -27,8 +27,8 @@ import java.util.stream.OpTestCase;
 import java.util.stream.StreamTestDataProvider;
 import org.testng.annotations.Test;
 
-import java.util.Comparators;
 import java.util.Iterator;
+import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -64,8 +64,12 @@ public class SequentialOpTest extends OpTestCase {
                     (UnaryOperator<Stream<Integer>>) s -> s.parallel().map(id).peek(e -> { counter.incrementAndGet(); }).map(id)
         };
 
-        for (Supplier<Stream<Integer>> supp : suppliers)
-            for (UnaryOperator<Stream<Integer>> config : configs) {
+        for (int i = 0; i < suppliers.length; i++) {
+            setContext("supplierIndex", i);
+            Supplier<Stream<Integer>> supp = suppliers[i];
+            for (int j = 0; j < configs.length; j++) {
+                setContext("configIndex", j);
+                UnaryOperator<Stream<Integer>> config = configs[j];
                 counter.set(0);
                 Stream<Integer> stream = config.apply(supp.get());
                 assertEquals(0, counter.get());
@@ -86,6 +90,7 @@ public class SequentialOpTest extends OpTestCase {
                 });
                 assertTrue(data.size() == 0 || counter.get() > 0);
             }
+        }
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -96,23 +101,35 @@ public class SequentialOpTest extends OpTestCase {
                 = new UnaryOperator[] {
                 (UnaryOperator<Stream<Integer>>) s -> s,
                 (UnaryOperator<Stream<Integer>>) s -> s.sequential(),
-                (UnaryOperator<Stream<Integer>>) s -> s.parallel()
+                (UnaryOperator<Stream<Integer>>) s -> s.parallel(),
+                (UnaryOperator<Stream<Integer>>) s -> s.unordered()
         };
         UnaryOperator<Stream<Integer>>[] stuff
                 = new UnaryOperator[] {
                 (UnaryOperator<Stream<Integer>>) s -> s,
                 (UnaryOperator<Stream<Integer>>) s -> s.map(id),
-                (UnaryOperator<Stream<Integer>>) s -> s.sorted(Comparators.naturalOrder()),
-                (UnaryOperator<Stream<Integer>>) s -> s.map(id).sorted(Comparators.naturalOrder()).map(id),
-                (UnaryOperator<Stream<Integer>>) s -> s.filter(LambdaTestHelpers.pEven).sorted(Comparators.naturalOrder()).map(id),
+                (UnaryOperator<Stream<Integer>>) s -> s.sorted(Comparator.naturalOrder()),
+                (UnaryOperator<Stream<Integer>>) s -> s.map(id).sorted(Comparator.naturalOrder()).map(id),
+                (UnaryOperator<Stream<Integer>>) s -> s.filter(LambdaTestHelpers.pEven).sorted(Comparator.naturalOrder()).map(id),
         };
 
-        for (UnaryOperator<Stream<Integer>> c1 : changers)
-            for (UnaryOperator<Stream<Integer>> s1 : stuff)
-                for (UnaryOperator<Stream<Integer>> c2 : changers)
-                    for (UnaryOperator<Stream<Integer>> s2 : stuff) {
+        for (int c1Index = 0; c1Index < changers.length; c1Index++) {
+            setContext("c1Index", c1Index);
+            UnaryOperator<Stream<Integer>> c1 = changers[c1Index];
+            for (int s1Index = 0; s1Index < stuff.length; s1Index++) {
+                setContext("s1Index", s1Index);
+                UnaryOperator<Stream<Integer>> s1 = stuff[s1Index];
+                for (int c2Index = 0; c2Index < changers.length; c2Index++) {
+                    setContext("c2Index", c2Index);
+                    UnaryOperator<Stream<Integer>> c2 = changers[c2Index];
+                    for (int s2Index = 0; s2Index < stuff.length; s2Index++) {
+                        setContext("s2Index", s2Index);
+                        UnaryOperator<Stream<Integer>> s2 = stuff[s2Index];
                         UnaryOperator<Stream<Integer>> composed = s -> s2.apply(c2.apply(s1.apply(c1.apply(s))));
                         exerciseOps(data, composed);
                     }
+                }
+            }
+        }
     }
 }

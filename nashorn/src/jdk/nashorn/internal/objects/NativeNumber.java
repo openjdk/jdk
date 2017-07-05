@@ -45,6 +45,7 @@ import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
@@ -83,15 +84,18 @@ public final class NativeNumber extends ScriptObject {
     private final boolean isInt;
     private final boolean isLong;
 
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
+
     NativeNumber(final double value) {
         this(value, Global.instance().getNumberPrototype());
     }
 
     private NativeNumber(final double value, final ScriptObject proto) {
+        super(proto, $nasgenmap$);
         this.value = value;
         this.isInt  = isRepresentableAsInt(value);
         this.isLong = isRepresentableAsLong(value);
-        this.setProto(proto);
     }
 
     @Override

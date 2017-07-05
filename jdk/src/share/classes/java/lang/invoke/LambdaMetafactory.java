@@ -111,7 +111,7 @@ package java.lang.invoke;
  * done on return type, while a strict version is applied to arguments.
  *
  * <p>A type Q is considered adaptable to S as follows:
- * <table>
+ * <table summary="adaptable types">
  *     <tr><th>Q</th><th>S</th><th>Link-time checks</th><th>Capture-time checks</th></tr>
  *     <tr>
  *         <td>Primitive</td><td>Primitive</td>
@@ -155,7 +155,7 @@ public class LambdaMetafactory {
 
     private static final Class<?>[] EMPTY_CLASS_ARRAY = new Class<?>[0];
 
-/**
+    /**
      * Standard meta-factory for conversion of lambda expressions or method references to functional interfaces.
      *
      * @param caller Stacked automatically by VM; represents a lookup context with the accessibility privileges
@@ -174,7 +174,7 @@ public class LambdaMetafactory {
      * @param instantiatedMethodType The signature of the primary functional interface method after type variables
      *                               are substituted with their instantiation from the capture site
      * @return a CallSite, which, when invoked, will return an instance of the functional interface
-     * @throws ReflectiveOperationException
+     * @throws ReflectiveOperationException if the caller is not able to reconstruct one of the method handles
      * @throws LambdaConversionException If any of the meta-factory protocol invariants are violated
      */
     public static CallSite metaFactory(MethodHandles.Lookup caller,
@@ -226,7 +226,7 @@ public class LambdaMetafactory {
      *                    the first argument in the invocation signature will correspond to the receiver.
      * @param  args       argument to pass, flags, marker interface count, and marker interfaces as described above
      * @return a CallSite, which, when invoked, will return an instance of the functional interface
-     * @throws ReflectiveOperationException
+     * @throws ReflectiveOperationException if the caller is not able to reconstruct one of the method handles
      * @throws LambdaConversionException If any of the meta-factory protocol invariants are violated
      */
     public static CallSite altMetaFactory(MethodHandles.Lookup caller,

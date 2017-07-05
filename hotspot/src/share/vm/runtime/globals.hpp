@@ -220,7 +220,8 @@ struct Flag {
   // number of flags
   static size_t numFlags;
 
-  static Flag* find_flag(char* name, size_t length, bool allow_locked = false);
+  static Flag* find_flag(const char* name, size_t length, bool allow_locked = false);
+  static Flag* fuzzy_match(const char* name, size_t length, bool allow_locked = false);
 
   bool is_bool() const        { return strcmp(type, "bool") == 0; }
   bool get_bool() const       { return *((bool*) addr); }
@@ -643,6 +644,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, UseAESIntrinsics, false,                                    \
           "use intrinsics for AES versions of crypto")                      \
+                                                                            \
+  product(bool, UseCRC32Intrinsics, false,                                  \
+          "use intrinsics for java.util.zip.CRC32")                         \
                                                                             \
   develop(bool, TraceCallFixup, false,                                      \
           "traces all call fixups")                                         \
@@ -3159,6 +3163,9 @@ class CommandLineFlags {
                                                                             \
   product_pd(uintx, InitialCodeCacheSize,                                   \
           "Initial code cache size (in bytes)")                             \
+                                                                            \
+  develop_pd(uintx, CodeCacheMinimumUseSpace,                               \
+          "Minimum code cache size (in bytes) required to start VM.")       \
                                                                             \
   product_pd(uintx, ReservedCodeCacheSize,                                  \
           "Reserved code cache size (in bytes) - maximum code cache size")  \

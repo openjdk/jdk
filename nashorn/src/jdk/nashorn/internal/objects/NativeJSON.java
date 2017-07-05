@@ -42,6 +42,7 @@ import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSONFunctions;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
@@ -58,9 +59,11 @@ public final class NativeJSON extends ScriptObject {
     private static final MethodHandle REPLACER_INVOKER = Bootstrap.createDynamicInvoker("dyn:call", Object.class,
             ScriptFunction.class, ScriptObject.class, Object.class, Object.class);
 
+    // initialized by nasgen
+    private static PropertyMap $nasgenmap$;
 
     NativeJSON() {
-        this.setProto(Global.objectPrototype());
+        super(Global.objectPrototype(), $nasgenmap$);
     }
 
     /**

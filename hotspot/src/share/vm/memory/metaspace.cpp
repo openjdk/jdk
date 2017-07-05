@@ -70,7 +70,7 @@ enum ChunkSizes {    // in words.
   SpecializedChunk = 128,
   ClassSmallChunk = 256,
   SmallChunk = 512,
-  ClassMediumChunk = 1 * K,
+  ClassMediumChunk = 4 * K,
   MediumChunk = 8 * K,
   HumongousChunkGranularity = 8
 };
@@ -580,7 +580,6 @@ class SpaceManager : public CHeapObj<mtClass> {
   // Number of small chunks to allocate to a manager
   // If class space manager, small chunks are unlimited
   static uint const _small_chunk_limit;
-  bool has_small_chunk_limit() { return !vs_list()->is_class(); }
 
   // Sum of all space in allocated chunks
   size_t _allocated_blocks_words;
@@ -1298,13 +1297,18 @@ size_t MetaspaceGC::delta_capacity_until_GC(size_t word_size) {
 
 bool MetaspaceGC::should_expand(VirtualSpaceList* vsl, size_t word_size) {
 
-  size_t committed_capacity_bytes = MetaspaceAux::allocated_capacity_bytes();
   // If the user wants a limit, impose one.
-  size_t max_metaspace_size_bytes = MaxMetaspaceSize;
-  size_t metaspace_size_bytes = MetaspaceSize;
-  if (!FLAG_IS_DEFAULT(MaxMetaspaceSize) &&
-      MetaspaceAux::reserved_in_bytes() >= MaxMetaspaceSize) {
-    return false;
+  // The reason for someone using this flag is to limit reserved space.  So
+  // for non-class virtual space, compare against virtual spaces that are reserved.
+  // For class virtual space, we only compare against the committed space, not
+  // reserved space, because this is a larger space prereserved for compressed
+  // class pointers.
+  if (!FLAG_IS_DEFAULT(MaxMetaspaceSize)) {
+    size_t real_allocated = Metaspace::space_list()->virtual_space_total() +
+              MetaspaceAux::allocated_capacity_bytes(Metaspace::ClassType);
+    if (real_allocated >= MaxMetaspaceSize) {
+      return false;
+    }
   }
 
   // Class virtual space should always be expanded.  Call GC for the other
@@ -1318,11 +1322,12 @@ bool MetaspaceGC::should_expand(VirtualSpaceList* vsl, size_t word_size) {
   }
 
 
-
   // If the capacity is below the minimum capacity, allow the
   // expansion.  Also set the high-water-mark (capacity_until_GC)
   // to that minimum capacity so that a GC will not be induced
   // until that minimum capacity is exceeded.
+  size_t committed_capacity_bytes = MetaspaceAux::allocated_capacity_bytes();
+  size_t metaspace_size_bytes = MetaspaceSize;
   if (committed_capacity_bytes < metaspace_size_bytes ||
       capacity_until_GC() == 0) {
     set_capacity_until_GC(metaspace_size_bytes);
@@ -1854,13 +1859,11 @@ size_t SpaceManager::sum_waste_in_chunks_in_use(ChunkIndex index) const {
   Metachunk* chunk = chunks_in_use(index);
   // Count the free space in all the chunk but not the
   // current chunk from which allocations are still being done.
-  if (chunk != NULL) {
-    Metachunk* prev = chunk;
-    while (chunk != NULL && chunk != current_chunk()) {
+  while (chunk != NULL) {
+    if (chunk != current_chunk()) {
       result += chunk->free_word_size();
-      prev = chunk;
-      chunk = chunk->next();
     }
+    chunk = chunk->next();
   }
   return result;
 }
@@ -1949,8 +1952,7 @@ size_t SpaceManager::calc_chunk_size(size_t word_size) {
   // chunks will be allocated.
   size_t chunk_word_size;
   if (chunks_in_use(MediumIndex) == NULL &&
-      (!has_small_chunk_limit() ||
-       sum_count_in_chunks_in_use(SmallIndex) < _small_chunk_limit)) {
+      sum_count_in_chunks_in_use(SmallIndex) < _small_chunk_limit) {
     chunk_word_size = (size_t) small_chunk_size();
     if (word_size + Metachunk::overhead() > small_chunk_size()) {
       chunk_word_size = medium_chunk_size();
@@ -2659,10 +2661,10 @@ void MetaspaceAux::print_on(outputStream* out, Metaspace::MetadataType mdtype) {
 // Print total fragmentation for class and data metaspaces separately
 void MetaspaceAux::print_waste(outputStream* out) {
 
-  size_t specialized_waste = 0, small_waste = 0, medium_waste = 0, large_waste = 0;
-  size_t specialized_count = 0, small_count = 0, medium_count = 0, large_count = 0;
-  size_t cls_specialized_waste = 0, cls_small_waste = 0, cls_medium_waste = 0, cls_large_waste = 0;
-  size_t cls_specialized_count = 0, cls_small_count = 0, cls_medium_count = 0, cls_large_count = 0;
+  size_t specialized_waste = 0, small_waste = 0, medium_waste = 0;
+  size_t specialized_count = 0, small_count = 0, medium_count = 0, humongous_count = 0;
+  size_t cls_specialized_waste = 0, cls_small_waste = 0, cls_medium_waste = 0;
+  size_t cls_specialized_count = 0, cls_small_count = 0, cls_medium_count = 0, cls_humongous_count = 0;
 
   ClassLoaderDataGraphMetaspaceIterator iter;
   while (iter.repeat()) {
@@ -2674,8 +2676,7 @@ void MetaspaceAux::print_waste(outputStream* out) {
       small_count += msp->vsm()->sum_count_in_chunks_in_use(SmallIndex);
       medium_waste += msp->vsm()->sum_waste_in_chunks_in_use(MediumIndex);
       medium_count += msp->vsm()->sum_count_in_chunks_in_use(MediumIndex);
-      large_waste += msp->vsm()->sum_waste_in_chunks_in_use(HumongousIndex);
-      large_count += msp->vsm()->sum_count_in_chunks_in_use(HumongousIndex);
+      humongous_count += msp->vsm()->sum_count_in_chunks_in_use(HumongousIndex);
 
       cls_specialized_waste += msp->class_vsm()->sum_waste_in_chunks_in_use(SpecializedIndex);
       cls_specialized_count += msp->class_vsm()->sum_count_in_chunks_in_use(SpecializedIndex);
@@ -2683,20 +2684,23 @@ void MetaspaceAux::print_waste(outputStream* out) {
       cls_small_count += msp->class_vsm()->sum_count_in_chunks_in_use(SmallIndex);
       cls_medium_waste += msp->class_vsm()->sum_waste_in_chunks_in_use(MediumIndex);
       cls_medium_count += msp->class_vsm()->sum_count_in_chunks_in_use(MediumIndex);
-      cls_large_waste += msp->class_vsm()->sum_waste_in_chunks_in_use(HumongousIndex);
-      cls_large_count += msp->class_vsm()->sum_count_in_chunks_in_use(HumongousIndex);
+      cls_humongous_count += msp->class_vsm()->sum_count_in_chunks_in_use(HumongousIndex);
     }
   }
   out->print_cr("Total fragmentation waste (words) doesn't count free space");
   out->print_cr("  data: " SIZE_FORMAT " specialized(s) " SIZE_FORMAT ", "
                         SIZE_FORMAT " small(s) " SIZE_FORMAT ", "
-                        SIZE_FORMAT " medium(s) " SIZE_FORMAT,
+                        SIZE_FORMAT " medium(s) " SIZE_FORMAT ", "
+                        "large count " SIZE_FORMAT,
              specialized_count, specialized_waste, small_count,
-             small_waste, medium_count, medium_waste);
+             small_waste, medium_count, medium_waste, humongous_count);
   out->print_cr(" class: " SIZE_FORMAT " specialized(s) " SIZE_FORMAT ", "
-                           SIZE_FORMAT " small(s) " SIZE_FORMAT,
+                           SIZE_FORMAT " small(s) " SIZE_FORMAT ", "
+                           SIZE_FORMAT " medium(s) " SIZE_FORMAT ", "
+                           "large count " SIZE_FORMAT,
              cls_specialized_count, cls_specialized_waste,
-             cls_small_count, cls_small_waste);
+             cls_small_count, cls_small_waste,
+             cls_medium_count, cls_medium_waste, cls_humongous_count);
 }
 
 // Dump global metaspace things from the end of ClassLoaderDataGraph
@@ -3037,18 +3041,24 @@ Metablock* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
       if (Verbose && TraceMetadataChunkAllocation) {
         gclog_or_tty->print_cr("Metaspace allocation failed for size "
           SIZE_FORMAT, word_size);
-        if (loader_data->metaspace_or_null() != NULL) loader_data->metaspace_or_null()->dump(gclog_or_tty);
+        if (loader_data->metaspace_or_null() != NULL) loader_data->dump(gclog_or_tty);
         MetaspaceAux::dump(gclog_or_tty);
       }
       // -XX:+HeapDumpOnOutOfMemoryError and -XX:OnOutOfMemoryError support
-      report_java_out_of_memory("Metadata space");
+      const char* space_string = (mdtype == ClassType) ? "Class Metadata space" :
+                                                         "Metadata space";
+      report_java_out_of_memory(space_string);
 
       if (JvmtiExport::should_post_resource_exhausted()) {
         JvmtiExport::post_resource_exhausted(
             JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR,
-            "Metadata space");
+            space_string);
       }
-      THROW_OOP_0(Universe::out_of_memory_error_perm_gen());
+      if (mdtype == ClassType) {
+        THROW_OOP_0(Universe::out_of_memory_error_class_metaspace());
+      } else {
+        THROW_OOP_0(Universe::out_of_memory_error_metaspace());
+      }
     }
   }
   return Metablock::initialize(result, word_size);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.security.spec.InvalidParameterSpecException;
 
 /**
  * This class defines the <i>Service Provider Interface</i> (<b>SPI</b>)
- * for the <code>AlgorithmParameters</code> class, which is used to manage
+ * for the {@code AlgorithmParameters} class, which is used to manage
  * algorithm parameters.
  *
  * <p> All the abstract methods in this class must be implemented by each
@@ -52,7 +52,7 @@ public abstract class AlgorithmParametersSpi {
 
     /**
      * Initializes this parameters object using the parameters
-     * specified in <code>paramSpec</code>.
+     * specified in {@code paramSpec}.
      *
      * @param paramSpec the parameter specification.
      *
@@ -77,9 +77,9 @@ public abstract class AlgorithmParametersSpi {
         throws IOException;
 
     /**
-     * Imports the parameters from <code>params</code> and
+     * Imports the parameters from {@code params} and
      * decodes them according to the specified decoding format.
-     * If <code>format</code> is null, the
+     * If {@code format} is null, the
      * primary decoding format for parameters is used. The primary decoding
      * format is ASN.1, if an ASN.1 specification for these parameters
      * exists.
@@ -96,11 +96,11 @@ public abstract class AlgorithmParametersSpi {
     /**
      * Returns a (transparent) specification of this parameters
      * object.
-     * <code>paramSpec</code> identifies the specification class in which
+     * {@code paramSpec} identifies the specification class in which
      * the parameters should be returned. It could, for example, be
-     * <code>DSAParameterSpec.class</code>, to indicate that the
+     * {@code DSAParameterSpec.class}, to indicate that the
      * parameters should be returned in an instance of the
-     * <code>DSAParameterSpec</code> class.
+     * {@code DSAParameterSpec} class.
      *
      * @param paramSpec the specification class in which
      * the parameters should be returned.
@@ -128,7 +128,7 @@ public abstract class AlgorithmParametersSpi {
 
     /**
      * Returns the parameters encoded in the specified format.
-     * If <code>format</code> is null, the
+     * If {@code format} is null, the
      * primary encoding format for parameters is used. The primary encoding
      * format is ASN.1, if an ASN.1 specification for these parameters
      * exists.
