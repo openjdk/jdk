@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/plab.hpp"
+#include "gc/shared/plab.inline.hpp"
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/oop.inline.hpp"

@@ -44,5 +44,3 @@ esac
 
 # now start the test
 ${TESTJAVA}/bin/java ${TESTVMOPTS} -cp ${TESTSRC}${FS}resource.jar${PS}${TESTCLASSES} GetDotResource
-
-

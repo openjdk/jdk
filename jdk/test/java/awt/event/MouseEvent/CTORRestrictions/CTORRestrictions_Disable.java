@@ -120,5 +120,3 @@ public class CTORRestrictions_Disable {
         frame.dispatchEvent( ( AWTEvent )meOld );
     }
 }
-
-

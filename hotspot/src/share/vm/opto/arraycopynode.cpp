@@ -626,3 +626,75 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
 
   return CallNode::may_modify_arraycopy_helper(dest_t, t_oop, phase);
 }
+
+bool ArrayCopyNode::may_modify_helper(const TypeOopPtr *t_oop, Node* n, PhaseTransform *phase) {
+  if (n->is_Proj()) {
+    n = n->in(0);
+    if (n->is_Call() && n->as_Call()->may_modify(t_oop, phase)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool ArrayCopyNode::may_modify(const TypeOopPtr *t_oop, MemBarNode* mb, PhaseTransform *phase) {
+  Node* mem = mb->in(TypeFunc::Memory);
+
+  if (mem->is_MergeMem()) {
+    Node* n = mem->as_MergeMem()->memory_at(Compile::AliasIdxRaw);
+    if (may_modify_helper(t_oop, n, phase)) {
+      return true;
+    } else if (n->is_Phi()) {
+      for (uint i = 1; i < n->req(); i++) {
+        if (n->in(i) != NULL) {
+          if (may_modify_helper(t_oop, n->in(i), phase)) {
+            return true;
+          }
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+// Does this array copy modify offsets between offset_lo and offset_hi
+// in the destination array
+// if must_modify is false, return true if the copy could write
+// between offset_lo and offset_hi
+// if must_modify is true, return true if the copy is guaranteed to
+// write between offset_lo and offset_hi
+bool ArrayCopyNode::modifies(intptr_t offset_lo, intptr_t offset_hi, PhaseTransform* phase, bool must_modify) {
+  assert(_kind == ArrayCopy || _kind == CopyOf || _kind == CopyOfRange, "only for real array copies");
+
+  Node* dest = in(ArrayCopyNode::Dest);
+  Node* src_pos = in(ArrayCopyNode::SrcPos);
+  Node* dest_pos = in(ArrayCopyNode::DestPos);
+  Node* len = in(ArrayCopyNode::Length);
+
+  const TypeInt *dest_pos_t = phase->type(dest_pos)->isa_int();
+  const TypeInt *len_t = phase->type(len)->isa_int();
+  const TypeAryPtr* ary_t = phase->type(dest)->isa_aryptr();
+
+  if (dest_pos_t != NULL && len_t != NULL && ary_t != NULL) {
+    BasicType ary_elem = ary_t->klass()->as_array_klass()->element_type()->basic_type();
+    uint header = arrayOopDesc::base_offset_in_bytes(ary_elem);
+    uint elemsize = type2aelembytes(ary_elem);
+
+    intptr_t dest_pos_plus_len_lo = (((intptr_t)dest_pos_t->_lo) + len_t->_lo) * elemsize + header;
+    intptr_t dest_pos_plus_len_hi = (((intptr_t)dest_pos_t->_hi) + len_t->_hi) * elemsize + header;
+    intptr_t dest_pos_lo = ((intptr_t)dest_pos_t->_lo) * elemsize + header;
+    intptr_t dest_pos_hi = ((intptr_t)dest_pos_t->_hi) * elemsize + header;
+
+    if (must_modify) {
+      if (offset_lo >= dest_pos_hi && offset_hi < dest_pos_plus_len_lo) {
+        return true;
+      }
+    } else {
+      if (offset_hi >= dest_pos_lo && offset_lo < dest_pos_plus_len_hi) {
+        return true;
+      }
+    }
+  }
+  return false;
+}

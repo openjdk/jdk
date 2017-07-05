@@ -159,11 +159,42 @@ public class Block extends Node implements BreakableNode, Terminal, Flags<Block>
     }
 
     /**
-     * Clear the symbols in the block.
-     * TODO: make this immutable.
+     * Returns true if this block defines any symbols.
+     * @return true if this block defines any symbols.
      */
-    public void clearSymbols() {
-        symbols.clear();
+    public boolean hasSymbols() {
+        return !symbols.isEmpty();
+    }
+
+    /**
+     * Replaces symbols defined in this block with different symbols. Used to ensure symbol tables are
+     * immutable upon construction and have copy-on-write semantics. Note that this method only replaces the
+     * symbols in the symbol table, it does not act on any contained AST nodes that might reference the symbols.
+     * Those should be updated separately as this method is meant to be used as part of such an update pass.
+     * @param lc the current lexical context
+     * @param replacements the map of symbol replacements
+     * @return a new block with replaced symbols, or this block if none of the replacements modified the symbol
+     * table.
+     */
+    public Block replaceSymbols(final LexicalContext lc, final Map<Symbol, Symbol> replacements) {
+        if (symbols.isEmpty()) {
+            return this;
+        }
+        final LinkedHashMap<String, Symbol> newSymbols = new LinkedHashMap<>(symbols);
+        for (final Map.Entry<String, Symbol> entry: newSymbols.entrySet()) {
+            final Symbol newSymbol = replacements.get(entry.getValue());
+            assert newSymbol != null : "Missing replacement for " + entry.getKey();
+            entry.setValue(newSymbol);
+        }
+        return Node.replaceInLexicalContext(lc, this, new Block(this, finish, statements, flags, newSymbols, conversion));
+    }
+
+    /**
+     * Returns a copy of this block with a shallow copy of the symbol table.
+     * @return a copy of this block with a shallow copy of the symbol table.
+     */
+    public Block copyWithNewSymbols() {
+        return new Block(this, finish, statements, flags, new LinkedHashMap<>(symbols), conversion);
     }
 
     @Override
@@ -191,7 +222,7 @@ public class Block extends Node implements BreakableNode, Terminal, Flags<Block>
      * @return symbol iterator
      */
     public List<Symbol> getSymbols() {
-        return Collections.unmodifiableList(new ArrayList<>(symbols.values()));
+        return symbols.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(symbols.values()));
     }
 
     /**
@@ -355,10 +386,9 @@ public class Block extends Node implements BreakableNode, Terminal, Flags<Block>
     /**
      * Add or overwrite an existing symbol in the block
      *
-     * @param lc     get lexical context
      * @param symbol symbol
      */
-    public void putSymbol(final LexicalContext lc, final Symbol symbol) {
+    public void putSymbol(final Symbol symbol) {
         symbols.put(symbol.getName(), symbol);
     }
 

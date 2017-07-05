@@ -304,13 +304,6 @@ void print_statistics() {
     CodeCache::print_internals();
   }
 
-  if (PrintClassStatistics) {
-    SystemDictionary::print_class_statistics();
-  }
-  if (PrintMethodStatistics) {
-    SystemDictionary::print_method_statistics();
-  }
-
   if (PrintVtableStats) {
     klassVtable::print_statistics();
     klassItable::print_statistics();

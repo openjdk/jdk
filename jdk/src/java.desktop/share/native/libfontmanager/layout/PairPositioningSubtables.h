@@ -109,5 +109,3 @@ LE_VAR_ARRAY(PairPositioningFormat2Subtable, class1RecordArray)
 
 U_NAMESPACE_END
 #endif
-
-

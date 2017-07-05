@@ -35,7 +35,7 @@
 Symbol::Symbol(const u1* name, int length, int refcount) {
   _refcount = refcount;
   _length = length;
-  _identity_hash = os::random();
+  _identity_hash = (short)os::random();
   for (int i = 0; i < _length; i++) {
     byte_at_put(i, name[i]);
   }

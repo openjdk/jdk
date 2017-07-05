@@ -268,7 +268,7 @@ void entry(CodeBuffer *cb) {
     __ ldar(r21, r28);                                 //       ldar    x21, [x28]
 
 // LoadStoreExclusiveOp
-    __ stxrw(r24, r24, r7);                            //       stxr    w24, w24, [x7]
+    __ stxrw(r21, r24, r7);                            //       stxr    w21, w24, [x7]
     __ stlxrw(r21, r26, r28);                          //       stlxr   w21, w26, [x28]
     __ ldxrw(r21, r6);                                 //       ldxr    w21, [x6]
     __ ldaxrw(r15, r30);                               //       ldaxr   w15, [x30]
@@ -299,7 +299,7 @@ void entry(CodeBuffer *cb) {
 
 // LoadStoreExclusiveOp
     __ ldxpw(r25, r4, r22);                            //       ldxp    w25, w4, [x22]
-    __ ldaxpw(r14, r14, r15);                          //       ldaxp   w14, w14, [x15]
+    __ ldaxpw(r13, r14, r15);                          //       ldaxp   w13, w14, [x15]
     __ stxpw(r20, r26, r8, r10);                       //       stxp    w20, w26, w8, [x10]
     __ stlxpw(r23, r18, r18, r18);                     //       stlxp   w23, w18, w18, [x18]
 
@@ -773,7 +773,7 @@ Disassembly of section .text:
  260:   c85fffbb        ldaxr   x27, [x29]
  264:   c89fffa0        stlr    x0, [x29]
  268:   c8dfff95        ldar    x21, [x28]
- 26c:   88187cf8        stxr    w24, w24, [x7]
+ 26c:   88157cf8        stxr    w21, w24, [x7]
  270:   8815ff9a        stlxr   w21, w26, [x28]
  274:   885f7cd5        ldxr    w21, [x6]
  278:   885fffcf        ldaxr   w15, [x30]
@@ -796,7 +796,7 @@ Disassembly of section .text:
  2bc:   c82870bb        stxp    w8, x27, x28, [x5]
  2c0:   c825b8c8        stlxp   w5, x8, x14, [x6]
  2c4:   887f12d9        ldxp    w25, w4, [x22]
- 2c8:   887fb9ee        ldaxp   w14, w14, [x15]
+ 2c8:   887fb9ed        ldaxp   w13, w14, [x15]
  2cc:   8834215a        stxp    w20, w26, w8, [x10]
  2d0:   8837ca52        stlxp   w23, w18, w18, [x18]
  2d4:   f806317e        str     x30, [x11,#99]
@@ -1085,13 +1085,13 @@ Disassembly of section .text:
     0xd444c320,     0xd503201f,     0xd69f03e0,     0xd6bf03e0,
     0xd5033fdf,     0xd5033f9f,     0xd5033abf,     0xd61f0040,
     0xd63f00a0,     0xc8147c55,     0xc805fcfd,     0xc85f7e05,
-    0xc85fffbb,     0xc89fffa0,     0xc8dfff95,     0x88187cf8,
+    0xc85fffbb,     0xc89fffa0,     0xc8dfff95,     0x88157cf8,
     0x8815ff9a,     0x885f7cd5,     0x885fffcf,     0x889ffc73,
     0x88dffc56,     0x48127c0f,     0x480bff85,     0x485f7cdd,
     0x485ffcf2,     0x489fff99,     0x48dffe62,     0x080a7c3e,
     0x0814fed5,     0x085f7c59,     0x085ffcb8,     0x089ffc70,
     0x08dfffb6,     0xc87f0a68,     0xc87fcdc7,     0xc82870bb,
-    0xc825b8c8,     0x887f12d9,     0x887fb9ee,     0x8834215a,
+    0xc825b8c8,     0x887f12d9,     0x887fb9ed,     0x8834215a,
     0x8837ca52,     0xf806317e,     0xb81b3337,     0x39000dc2,
     0x78005149,     0xf84391f4,     0xb85b220c,     0x385fd356,
     0x785d127e,     0x389f4149,     0x79801e3c,     0x79c014a3,
