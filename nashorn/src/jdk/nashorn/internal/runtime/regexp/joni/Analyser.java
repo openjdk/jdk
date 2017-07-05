@@ -21,10 +21,7 @@ package jdk.nashorn.internal.runtime.regexp.joni;
 
 import static jdk.nashorn.internal.runtime.regexp.joni.BitStatus.bsAll;
 import static jdk.nashorn.internal.runtime.regexp.joni.BitStatus.bsAt;
-import static jdk.nashorn.internal.runtime.regexp.joni.BitStatus.bsClear;
 import static jdk.nashorn.internal.runtime.regexp.joni.BitStatus.bsOnAt;
-import static jdk.nashorn.internal.runtime.regexp.joni.BitStatus.bsOnAtSimple;
-import static jdk.nashorn.internal.runtime.regexp.joni.Option.isCaptureGroup;
 import static jdk.nashorn.internal.runtime.regexp.joni.Option.isFindCondition;
 import static jdk.nashorn.internal.runtime.regexp.joni.Option.isIgnoreCase;
 import static jdk.nashorn.internal.runtime.regexp.joni.Option.isMultiline;
@@ -36,8 +33,6 @@ import java.util.HashSet;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.AnchorNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.BackRefNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.CClassNode;
-import jdk.nashorn.internal.runtime.regexp.joni.ast.CTypeNode;
-import jdk.nashorn.internal.runtime.regexp.joni.ast.CallNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.ConsAltNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.EncloseNode;
 import jdk.nashorn.internal.runtime.regexp.joni.ast.Node;
@@ -49,9 +44,7 @@ import jdk.nashorn.internal.runtime.regexp.joni.constants.NodeType;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.RegexState;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.StackPopLevel;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.TargetInfo;
-import jdk.nashorn.internal.runtime.regexp.joni.encoding.CharacterType;
 import jdk.nashorn.internal.runtime.regexp.joni.encoding.ObjPtr;
-import jdk.nashorn.internal.runtime.regexp.joni.encoding.Ptr;
 
 final class Analyser extends Parser {
 
@@ -74,37 +67,8 @@ final class Analyser extends Parser {
         //regex.repeatRangeAlloc = 0;
         regex.repeatRangeLo = null;
         regex.repeatRangeHi = null;
-        regex.numCombExpCheck = 0;
-
-        if (Config.USE_COMBINATION_EXPLOSION_CHECK) regex.numCombExpCheck = 0;
 
         parse();
-
-        if (Config.USE_NAMED_GROUP) {
-            /* mixed use named group and no-named group */
-            if (env.numNamed > 0 && syntax.captureOnlyNamedGroup() && !isCaptureGroup(regex.options)) {
-                if (env.numNamed != env.numMem) {
-                    root = disableNoNameGroupCapture(root);
-                } else {
-                    numberedRefCheck(root);
-                }
-            }
-        } // USE_NAMED_GROUP
-
-        if (Config.USE_NAMED_GROUP) {
-            if (env.numCall > 0) {
-                env.unsetAddrList = new UnsetAddrList(env.numCall);
-                setupSubExpCall(root);
-                // r != 0 ???
-                subexpRecursiveCheckTrav(root);
-                // r < 0 -< err, FOUND_CALLED_NODE = 1
-                subexpInfRecursiveCheckTrav(root);
-                // r != 0  recursion infinite ???
-                regex.numCall = env.numCall;
-            } else {
-                regex.numCall = 0;
-            }
-        } // USE_NAMED_GROUP
 
         if (Config.DEBUG_PARSE_TREE_RAW && Config.DEBUG_PARSE_TREE) {
             Config.log.println("<RAW TREE>");
@@ -129,27 +93,6 @@ final class Analyser extends Parser {
             regex.btMemEnd |= regex.captureHistory;
         }
 
-        if (Config.USE_COMBINATION_EXPLOSION_CHECK) {
-            if (env.backrefedMem == 0 || (Config.USE_SUBEXP_CALL && env.numCall == 0)) {
-                setupCombExpCheck(root, 0);
-
-                if (Config.USE_SUBEXP_CALL && env.hasRecursion) {
-                    env.numCombExpCheck = 0;
-                } else { // USE_SUBEXP_CALL
-                    if (env.combExpMaxRegNum > 0) {
-                        for (int i=1; i<env.combExpMaxRegNum; i++) {
-                            if (bsAt(env.backrefedMem, i)) {
-                                env.numCombExpCheck = 0;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-            } // USE_SUBEXP_CALL
-            regex.numCombExpCheck = env.numCombExpCheck;
-        } // USE_COMBINATION_EXPLOSION_CHECK
-
         regex.clearOptimizeInfo();
 
         if (!Config.DONT_OPTIMIZE) setOptimizedInfoFromTree(root);
@@ -167,7 +110,6 @@ final class Analyser extends Parser {
         }
 
         if (Config.DEBUG_COMPILE) {
-            if (Config.USE_NAMED_GROUP) Config.log.print(regex.nameTableToString());
             Config.log.println("stack used: " + regex.stackNeeded);
             if (Config.USE_STRING_TEMPLATES) Config.log.print("templates: " + regex.templateNum + "\n");
             Config.log.println(new ByteCodePrinter(regex).byteCodeListToString());
@@ -175,157 +117,6 @@ final class Analyser extends Parser {
         } // DEBUG_COMPILE
 
         regex.state = RegexState.NORMAL;
-    }
-
-    private void noNameDisableMapFor_cosAlt(Node node, int[]map, Ptr counter) {
-        ConsAltNode can = (ConsAltNode)node;
-        do {
-            can.setCar(noNameDisableMap(can.car, map, counter));
-        } while ((can = can.cdr) != null);
-    }
-
-    private void noNameDisableMapFor_quantifier(Node node, int[]map, Ptr counter) {
-        QuantifierNode qn = (QuantifierNode)node;
-        Node target = qn.target;
-        Node old = target;
-        target = noNameDisableMap(target, map, counter);
-
-        if (target != old) {
-            qn.setTarget(target);
-            if (target.getType() == NodeType.QTFR) qn.reduceNestedQuantifier((QuantifierNode)target);
-        }
-    }
-
-    private Node noNameDisableMapFor_enclose(Node node, int[]map, Ptr counter) {
-        EncloseNode en = (EncloseNode)node;
-        if (en.type == EncloseType.MEMORY) {
-            if (en.isNamedGroup()) {
-                counter.p++;
-                map[en.regNum] = counter.p;
-                en.regNum = counter.p;
-                //en.target = noNameDisableMap(en.target, map, counter);
-                en.setTarget(noNameDisableMap(en.target, map, counter)); // ???
-            } else {
-                node = en.target;
-                en.target = null; // remove first enclose: /(a)(?<b>c)/
-                node = noNameDisableMap(node, map, counter);
-            }
-        } else {
-            //en.target = noNameDisableMap(en.target, map, counter);
-            en.setTarget(noNameDisableMap(en.target, map, counter)); // ???
-        }
-        return node;
-    }
-
-    private void noNameDisableMapFor_anchor(Node node, int[]map, Ptr counter) {
-        AnchorNode an = (AnchorNode)node;
-        switch (an.type) {
-            case AnchorNode.PREC_READ:
-            case AnchorNode.PREC_READ_NOT:
-            case AnchorNode.LOOK_BEHIND:
-            case AnchorNode.LOOK_BEHIND_NOT:
-                an.setTarget(noNameDisableMap(an.target, map, counter));
-        }
-    }
-
-    private Node noNameDisableMap(Node node, int[]map, Ptr counter) {
-        switch (node.getType()) {
-        case NodeType.LIST:
-        case NodeType.ALT:
-            noNameDisableMapFor_cosAlt(node, map, counter);
-            break;
-        case NodeType.QTFR:
-            noNameDisableMapFor_quantifier(node, map, counter);
-            break;
-        case NodeType.ENCLOSE:
-            node = noNameDisableMapFor_enclose(node, map, counter);
-            break;
-        case NodeType.ANCHOR:
-            noNameDisableMapFor_anchor(node, map, counter);
-            break;
-        } // switch
-        return node;
-    }
-
-    private void renumberByMap(Node node, int[]map) {
-        switch (node.getType()) {
-        case NodeType.LIST:
-        case NodeType.ALT:
-            ConsAltNode can = (ConsAltNode)node;
-            do {
-                renumberByMap(can.car, map);
-            } while ((can = can.cdr) != null);
-            break;
-
-        case NodeType.QTFR:
-            renumberByMap(((QuantifierNode)node).target, map);
-            break;
-
-        case NodeType.ENCLOSE:
-            renumberByMap(((EncloseNode)node).target, map);
-            break;
-
-        case NodeType.BREF:
-            ((BackRefNode)node).renumber(map);
-            break;
-        } // switch
-    }
-
-    protected final void numberedRefCheck(Node node) {
-        switch (node.getType()) {
-        case NodeType.LIST:
-        case NodeType.ALT:
-            ConsAltNode can = (ConsAltNode)node;
-            do {
-                numberedRefCheck(can.car);
-            } while ((can = can.cdr) != null);
-            break;
-
-        case NodeType.QTFR:
-            numberedRefCheck(((QuantifierNode)node).target);
-            break;
-
-        case NodeType.ENCLOSE:
-            numberedRefCheck(((EncloseNode)node).target);
-            break;
-
-        case NodeType.BREF:
-            BackRefNode br = (BackRefNode)node;
-            if (!br.isNameRef()) newValueException(ERR_NUMBERED_BACKREF_OR_CALL_NOT_ALLOWED);
-            break;
-        } // switch
-    }
-
-    protected final Node disableNoNameGroupCapture(Node root) {
-        int[]map = new int[env.numMem + 1];
-
-        for (int i=1; i<=env.numMem; i++) map[i] = 0;
-
-        root = noNameDisableMap(root, map, new Ptr(0));
-        renumberByMap(root, map);
-
-        for (int i=1, pos=1; i<=env.numMem; i++) {
-            if (map[i] > 0) {
-                env.memNodes[pos] = env.memNodes[i];
-                pos++;
-            }
-        }
-
-        int loc = env.captureHistory;
-        env.captureHistory = bsClear();
-
-        for (int i=1; i<=Config.MAX_CAPTURE_HISTORY_GROUP; i++) {
-            if (bsAt(loc, i)) {
-                env.captureHistory = bsOnAtSimple(env.captureHistory, map[i]);
-            }
-        }
-
-        env.numMem = env.numNamed;
-        regex.numMem = env.numNamed;
-
-        regex.renumberNameTable(map);
-
-        return root;
     }
 
     private void swap(Node a, Node b) {
@@ -350,17 +141,6 @@ final class Analyser extends Parser {
                 int v = quantifiersMemoryInfo(can.car);
                 if (v > info) info = v;
             } while ((can = can.cdr) != null);
-            break;
-
-        case NodeType.CALL:
-            if (Config.USE_SUBEXP_CALL) {
-                CallNode cn = (CallNode)node;
-                if (cn.isRecursion()) {
-                    return TargetInfo.IS_EMPTY_REC; /* tiny version */
-                } else {
-                    info = quantifiersMemoryInfo(cn.target);
-                }
-            } // USE_SUBEXP_CALL
             break;
 
         case NodeType.QTFR:
@@ -417,18 +197,6 @@ final class Analyser extends Parser {
             }
             break;
 
-        case NodeType.CALL:
-            if (Config.USE_SUBEXP_CALL) {
-                CallNode cn = (CallNode)node;
-                if (cn.isRecursion()) {
-                    EncloseNode en = (EncloseNode)cn.target;
-                    if (en.isMinFixed()) min = en.minLength;
-                } else {
-                    min = getMinMatchLength(cn.target);
-                }
-            } // USE_SUBEXP_CALL
-            break;
-
         case NodeType.LIST:
             ConsAltNode can = (ConsAltNode)node;
             do {
@@ -474,15 +242,13 @@ final class Analyser extends Parser {
             EncloseNode en = (EncloseNode)node;
             switch (en.type) {
             case EncloseType.MEMORY:
-                if (Config.USE_SUBEXP_CALL) {
-                    if (en.isMinFixed()) {
-                        min = en.minLength;
-                    } else {
-                        min = getMinMatchLength(en.target);
-                        en.minLength = min;
-                        en.setMinFixed();
-                    }
-                } // USE_SUBEXP_CALL
+                if (en.isMinFixed()) {
+                    min = en.minLength;
+                } else {
+                    min = getMinMatchLength(en.target);
+                    en.minLength = min;
+                    en.setMinFixed();
+                }
                 break;
 
             case EncloseType.OPTION:
@@ -547,17 +313,6 @@ final class Analyser extends Parser {
             }
             break;
 
-        case NodeType.CALL:
-            if (Config.USE_SUBEXP_CALL) {
-                CallNode cn = (CallNode)node;
-                if (!cn.isRecursion()) {
-                    max = getMaxMatchLength(cn.target);
-                } else {
-                    max = MinMaxLen.INFINITE_DISTANCE;
-                }
-            } // USE_SUBEXP_CALL
-            break;
-
         case NodeType.QTFR:
             QuantifierNode qn = (QuantifierNode)node;
             if (qn.upper != 0) {
@@ -576,15 +331,13 @@ final class Analyser extends Parser {
             EncloseNode en = (EncloseNode)node;
             switch (en.type) {
             case EncloseType.MEMORY:
-                if (Config.USE_SUBEXP_CALL) {
-                    if (en.isMaxFixed()) {
-                        max = en.maxLength;
-                    } else {
-                        max = getMaxMatchLength(en.target);
-                        en.maxLength = max;
-                        en.setMaxFixed();
-                    }
-                } // USE_SUBEXP_CALL
+                if (en.isMaxFixed()) {
+                    max = en.maxLength;
+                } else {
+                    max = getMaxMatchLength(en.target);
+                    en.maxLength = max;
+                    en.setMaxFixed();
+                }
                 break;
 
             case EncloseType.OPTION:
@@ -663,17 +416,6 @@ final class Analyser extends Parser {
             }
             break;
 
-        case NodeType.CALL:
-            if (Config.USE_SUBEXP_CALL) {
-                CallNode cn = (CallNode)node;
-                if (!cn.isRecursion()) {
-                    len = getCharLengthTree(cn.target, level);
-                } else {
-                    returnCode = GET_CHAR_LEN_VARLEN;
-                }
-            } // USE_SUBEXP_CALL
-            break;
-
         case NodeType.CTYPE:
             len = 1;
 
@@ -686,17 +428,15 @@ final class Analyser extends Parser {
             EncloseNode en = (EncloseNode)node;
             switch(en.type) {
             case EncloseType.MEMORY:
-                if (Config.USE_SUBEXP_CALL) {
-                    if (en.isCLenFixed()) {
-                        len = en.charLength;
-                    } else {
-                        len = getCharLengthTree(en.target, level);
-                        if (returnCode == 0) {
-                            en.charLength = len;
-                            en.setCLenFixed();
-                        }
+                if (en.isCLenFixed()) {
+                    len = en.charLength;
+                } else {
+                    len = getCharLengthTree(en.target, level);
+                    if (returnCode == 0) {
+                        en.charLength = len;
+                        en.setCLenFixed();
                     }
-                } // USE_SUBEXP_CALL
+                }
                 break;
 
             case EncloseType.OPTION:
@@ -727,10 +467,6 @@ final class Analyser extends Parser {
         switch(x.getType()) {
         case NodeType.CTYPE:
             switch(yType) {
-            case NodeType.CTYPE:
-                CTypeNode cny = (CTypeNode)y;
-                CTypeNode cnx = (CTypeNode)x;
-                return cny.ctype == cnx.ctype && cny.not != cnx.not;
 
             case NodeType.CCLASS:
                 // !swap:!
@@ -756,37 +492,6 @@ final class Analyser extends Parser {
             CClassNode xc = (CClassNode)x;
 
             switch(yType) {
-            case NodeType.CTYPE:
-                switch(((CTypeNode)y).ctype) {
-                case CharacterType.WORD:
-                    if (!((CTypeNode)y).not) {
-                        if (xc.mbuf == null && !xc.isNot()) {
-                            for (int i=0; i<BitSet.SINGLE_BYTE_SIZE; i++) {
-                                if (xc.bs.at(i)) {
-                                    if (EncodingHelper.isWord(i)) return false;
-                                }
-                            }
-                            return true;
-                        }
-                        return false;
-                    } else {
-                        for (int i=0; i<BitSet.SINGLE_BYTE_SIZE; i++) {
-                            if (!EncodingHelper.isWord(i)) {
-                                if (!xc.isNot()) {
-                                    if (xc.bs.at(i)) return false;
-                                } else {
-                                    if (!xc.bs.at(i)) return false;
-                                }
-                            }
-                        }
-                        return true;
-                    }
-                    // break; not reached
-
-                default:
-                    break;
-                } // inner switch
-                break;
 
             case NodeType.CCLASS:
                 CClassNode yc = (CClassNode)y;
@@ -820,17 +525,6 @@ final class Analyser extends Parser {
             if (xs.length() == 0) break;
 
             switch (yType) {
-            case NodeType.CTYPE:
-                CTypeNode cy = ((CTypeNode)y);
-                switch (cy.ctype) {
-                case CharacterType.WORD:
-                    return !cy.not;
-
-                default:
-                    break;
-
-                } // inner switch
-                break;
 
             case NodeType.CCLASS:
                 CClassNode cc = (CClassNode)y;
@@ -872,9 +566,6 @@ final class Analyser extends Parser {
         case NodeType.ALT:
         case NodeType.CANY:
             break;
-
-        case NodeType.CALL:
-            break; // if (Config.USE_SUBEXP_CALL)
 
         case NodeType.CTYPE:
         case NodeType.CCLASS:
@@ -975,316 +666,6 @@ final class Analyser extends Parser {
         } // switch
 
         return invalid;
-    }
-
-    private static final int RECURSION_EXIST       = 1;
-    private static final int RECURSION_INFINITE    = 2;
-    private int subexpInfRecursiveCheck(Node node, boolean head) {
-        int r = 0;
-
-        switch (node.getType()) {
-        case NodeType.LIST:
-            int min;
-            ConsAltNode x = (ConsAltNode)node;
-            do {
-                int ret = subexpInfRecursiveCheck(x.car, head);
-                if (ret == RECURSION_INFINITE) return ret;
-                r |= ret;
-                if (head) {
-                    min = getMinMatchLength(x.car);
-                    if (min != 0) head = false;
-                }
-            } while ((x = x.cdr) != null);
-            break;
-
-        case NodeType.ALT:
-            ConsAltNode can = (ConsAltNode)node;
-            r = RECURSION_EXIST;
-            do {
-                int ret = subexpInfRecursiveCheck(can.car, head);
-                if (ret == RECURSION_INFINITE) return ret;
-                r &= ret;
-            } while ((can = can.cdr) != null);
-            break;
-
-        case NodeType.QTFR:
-            QuantifierNode qn = (QuantifierNode)node;
-            r = subexpInfRecursiveCheck(qn.target, head);
-            if (r == RECURSION_EXIST) {
-                if (qn.lower == 0) r = 0;
-            }
-            break;
-
-        case NodeType.ANCHOR:
-            AnchorNode an = (AnchorNode)node;
-            switch (an.type) {
-            case AnchorType.PREC_READ:
-            case AnchorType.PREC_READ_NOT:
-            case AnchorType.LOOK_BEHIND:
-            case AnchorType.LOOK_BEHIND_NOT:
-                r = subexpInfRecursiveCheck(an.target, head);
-                break;
-            } // inner switch
-            break;
-
-        case NodeType.CALL:
-            r = subexpInfRecursiveCheck(((CallNode)node).target, head);
-            break;
-
-        case NodeType.ENCLOSE:
-            EncloseNode en = (EncloseNode)node;
-            if (en.isMark2()) {
-                return 0;
-            } else if (en.isMark1()) {
-                return !head ? RECURSION_EXIST : RECURSION_INFINITE;
-                // throw exception here ???
-            } else {
-                en.setMark2();
-                r = subexpInfRecursiveCheck(en.target, head);
-                en.clearMark2();
-            }
-            break;
-
-        default:
-            break;
-        } // switch
-        return r;
-    }
-
-    protected final int subexpInfRecursiveCheckTrav(Node node) {
-        int r = 0;
-
-        switch (node.getType()) {
-        case NodeType.LIST:
-        case NodeType.ALT:
-            ConsAltNode can = (ConsAltNode)node;
-            do {
-                r = subexpInfRecursiveCheckTrav(can.car);
-            } while (r == 0 && (can = can.cdr) != null);
-            break;
-
-        case NodeType.QTFR:
-            r = subexpInfRecursiveCheckTrav(((QuantifierNode)node).target);
-            break;
-
-        case NodeType.ANCHOR:
-            AnchorNode an = (AnchorNode)node;
-            switch (an.type) {
-            case AnchorType.PREC_READ:
-            case AnchorType.PREC_READ_NOT:
-            case AnchorType.LOOK_BEHIND:
-            case AnchorType.LOOK_BEHIND_NOT:
-                r = subexpInfRecursiveCheckTrav(an.target);
-                break;
-            } // inner switch
-            break;
-
-        case NodeType.ENCLOSE:
-            EncloseNode en = (EncloseNode)node;
-            if (en.isRecursion()) {
-                en.setMark1();
-                r = subexpInfRecursiveCheck(en.target, true);
-                if (r > 0) newValueException(ERR_NEVER_ENDING_RECURSION);
-                en.clearMark1();
-            }
-            r = subexpInfRecursiveCheckTrav(en.target);
-            break;
-
-        default:
-            break;
-        } // switch
-
-        return r;
-    }
-
-    private int subexpRecursiveCheck(Node node) {
-        int r = 0;
-
-        switch (node.getType()) {
-        case NodeType.LIST:
-        case NodeType.ALT:
-            ConsAltNode can = (ConsAltNode)node;
-            do {
-                r |= subexpRecursiveCheck(can.car);
-            } while ((can = can.cdr) != null);
-            break;
-
-        case NodeType.QTFR:
-            r = subexpRecursiveCheck(((QuantifierNode)node).target);
-            break;
-
-        case NodeType.ANCHOR:
-            AnchorNode an = (AnchorNode)node;
-            switch (an.type) {
-            case AnchorType.PREC_READ:
-            case AnchorType.PREC_READ_NOT:
-            case AnchorType.LOOK_BEHIND:
-            case AnchorType.LOOK_BEHIND_NOT:
-                r = subexpRecursiveCheck(an.target);
-                break;
-            } // inner switch
-            break;
-
-        case NodeType.CALL:
-            CallNode cn = (CallNode)node;
-            r = subexpRecursiveCheck(cn.target);
-            if (r != 0) cn.setRecursion();
-            break;
-
-        case NodeType.ENCLOSE:
-            EncloseNode en = (EncloseNode)node;
-            if (en.isMark2()) {
-                return 0;
-            } else if (en.isMark1()) {
-                return 1; /* recursion */
-            } else {
-                en.setMark2();
-                r = subexpRecursiveCheck(en.target);
-                en.clearMark2();
-            }
-            break;
-
-        default:
-            break;
-        } // switch
-
-        return r;
-    }
-
-    private static final int FOUND_CALLED_NODE  = 1;
-    protected final int subexpRecursiveCheckTrav(Node node) {
-        int r = 0;
-
-        switch (node.getType()) {
-        case NodeType.LIST:
-        case NodeType.ALT:
-            ConsAltNode can = (ConsAltNode)node;
-            do {
-                int ret = subexpRecursiveCheckTrav(can.car);
-                if (ret == FOUND_CALLED_NODE) {
-                    r = FOUND_CALLED_NODE;
-                }
-                // else if (ret < 0) return ret; ???
-            } while ((can = can.cdr) != null);
-            break;
-
-        case NodeType.QTFR:
-            QuantifierNode qn = (QuantifierNode)node;
-            r = subexpRecursiveCheckTrav(qn.target);
-            if (qn.upper == 0) {
-                if (r == FOUND_CALLED_NODE) qn.isRefered = true;
-            }
-            break;
-
-        case NodeType.ANCHOR:
-            AnchorNode an = (AnchorNode)node;
-            switch (an.type) {
-            case AnchorType.PREC_READ:
-            case AnchorType.PREC_READ_NOT:
-            case AnchorType.LOOK_BEHIND:
-            case AnchorType.LOOK_BEHIND_NOT:
-                r = subexpRecursiveCheckTrav(an.target);
-                break;
-            } // inner switch
-            break;
-
-        case NodeType.ENCLOSE:
-            EncloseNode en = (EncloseNode)node;
-            if (!en.isRecursion()) {
-                if (en.isCalled()) {
-                    en.setMark1();
-                    r = subexpRecursiveCheck(en.target);
-                    if (r != 0) en.setRecursion();
-                    en.clearMark1();
-                }
-            }
-            r = subexpRecursiveCheckTrav(en.target);
-            if (en.isCalled()) r |= FOUND_CALLED_NODE;
-            break;
-
-        default:
-            break;
-        } // switch
-
-        return r;
-    }
-
-    private void setCallAttr(CallNode cn) {
-        cn.target = env.memNodes[cn.groupNum]; // no setTarget in call nodes!
-        if (cn.target == null) newValueException(ERR_UNDEFINED_NAME_REFERENCE, cn.nameP, cn.nameEnd);
-
-        ((EncloseNode)cn.target).setCalled();
-        env.btMemStart = BitStatus.bsOnAt(env.btMemStart, cn.groupNum);
-        cn.unsetAddrList = env.unsetAddrList;
-    }
-
-    protected final void setupSubExpCall(Node node) {
-
-        switch(node.getType()) {
-        case NodeType.LIST:
-            ConsAltNode ln = (ConsAltNode)node;
-            do {
-                setupSubExpCall(ln.car);
-            } while ((ln = ln.cdr) != null);
-            break;
-
-        case NodeType.ALT:
-            ConsAltNode can = (ConsAltNode)node;
-            do {
-                setupSubExpCall(can.car);
-            } while ((can = can.cdr) != null);
-            break;
-
-        case NodeType.QTFR:
-            setupSubExpCall(((QuantifierNode)node).target);
-            break;
-
-        case NodeType.ENCLOSE:
-            setupSubExpCall(((EncloseNode)node).target);
-            break;
-
-        case NodeType.CALL:
-            CallNode cn = (CallNode)node;
-
-            if (cn.groupNum != 0) {
-                int gNum = cn.groupNum;
-
-                if (Config.USE_NAMED_GROUP) {
-                    if (env.numNamed > 0 && syntax.captureOnlyNamedGroup() && !isCaptureGroup(env.option)) {
-                        newValueException(ERR_NUMBERED_BACKREF_OR_CALL_NOT_ALLOWED);
-                    }
-                } // USE_NAMED_GROUP
-                if (gNum > env.numMem) newValueException(ERR_UNDEFINED_GROUP_REFERENCE, cn.nameP, cn.nameEnd);
-                setCallAttr(cn);
-            } else {
-                if (Config.USE_NAMED_GROUP) {
-                    NameEntry ne = regex.nameToGroupNumbers(cn.name, cn.nameP, cn.nameEnd);
-
-                    if (ne == null) {
-                        newValueException(ERR_UNDEFINED_NAME_REFERENCE, cn.nameP, cn.nameEnd);
-                    } else if (ne.backNum > 1) {
-                        newValueException(ERR_MULTIPLEX_DEFINITION_NAME_CALL, cn.nameP, cn.nameEnd);
-                    } else {
-                        cn.groupNum = ne.backRef1; // ne.backNum == 1 ? ne.backRef1 : ne.backRefs[0]; // ??? need to check ?
-                        setCallAttr(cn);
-                    }
-                }
-            }
-            break;
-
-        case NodeType.ANCHOR:
-            AnchorNode an = (AnchorNode)node;
-            switch (an.type) {
-            case AnchorType.PREC_READ:
-            case AnchorType.PREC_READ_NOT:
-            case AnchorType.LOOK_BEHIND:
-            case AnchorType.LOOK_BEHIND_NOT:
-                setupSubExpCall(an.target);
-                break;
-            }
-            break;
-
-        } // switch
     }
 
     /* divide different length alternatives in look-behind.
@@ -1523,125 +904,6 @@ final class Analyser extends Parser {
         return xnode;
     }
 
-    private static final int CEC_THRES_NUM_BIG_REPEAT       = 512;
-    private static final int CEC_INFINITE_NUM               = 0x7fffffff;
-
-    private static final int CEC_IN_INFINITE_REPEAT         = (1<<0);
-    private static final int CEC_IN_FINITE_REPEAT           = (1<<1);
-    private static final int CEC_CONT_BIG_REPEAT            = (1<<2);
-
-    protected final int setupCombExpCheck(Node node, int state) {
-        int r = state;
-        int ret;
-
-        switch (node.getType()) {
-        case NodeType.LIST:
-            ConsAltNode ln = (ConsAltNode)node;
-
-            do {
-                r = setupCombExpCheck(ln.car, r);
-                //prev = ((ConsAltNode)node).car;
-            } while (r >= 0 && (ln = ln.cdr) != null);
-            break;
-
-        case NodeType.ALT:
-            ConsAltNode an = (ConsAltNode)node;
-            do {
-                ret = setupCombExpCheck(an.car, state);
-                r |= ret;
-            } while (ret >= 0 && (an = an.cdr) != null);
-            break;
-
-        case NodeType.QTFR:
-            QuantifierNode qn = (QuantifierNode)node;
-            int childState = state;
-            int addState = 0;
-            int varNum;
-
-            if (!isRepeatInfinite(qn.upper)) {
-                if (qn.upper > 1) {
-                    /* {0,1}, {1,1} are allowed */
-                    childState |= CEC_IN_FINITE_REPEAT;
-
-                    /* check (a*){n,m}, (a+){n,m} => (a*){n,n}, (a+){n,n} */
-                    if (env.backrefedMem == 0) {
-                        if (qn.target.getType() == NodeType.ENCLOSE) {
-                            EncloseNode en = (EncloseNode)qn.target;
-                            if (en.type == EncloseType.MEMORY) {
-                                if (en.target.getType() == NodeType.QTFR) {
-                                    QuantifierNode q = (QuantifierNode)en.target;
-                                    if (isRepeatInfinite(q.upper) && q.greedy == qn.greedy) {
-                                        qn.upper = qn.lower == 0 ? 1 : qn.lower;
-                                        if (qn.upper == 1) childState = state;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            if ((state & CEC_IN_FINITE_REPEAT) != 0) {
-                qn.combExpCheckNum = -1;
-            } else {
-                if (isRepeatInfinite(qn.upper)) {
-                    varNum = CEC_INFINITE_NUM;
-                    childState |= CEC_IN_INFINITE_REPEAT;
-                } else {
-                    varNum = qn.upper - qn.lower;
-                }
-
-                if (varNum >= CEC_THRES_NUM_BIG_REPEAT) addState |= CEC_CONT_BIG_REPEAT;
-
-                if (((state & CEC_IN_INFINITE_REPEAT) != 0 && varNum != 0) ||
-                   ((state & CEC_CONT_BIG_REPEAT) != 0 && varNum >= CEC_THRES_NUM_BIG_REPEAT)) {
-                    if (qn.combExpCheckNum == 0) {
-                        env.numCombExpCheck++;
-                        qn.combExpCheckNum = env.numCombExpCheck;
-                        if (env.currMaxRegNum > env.combExpMaxRegNum) {
-                            env.combExpMaxRegNum = env.currMaxRegNum;
-                        }
-                    }
-                }
-            }
-            r = setupCombExpCheck(qn.target, childState);
-            r |= addState;
-            break;
-
-        case NodeType.ENCLOSE:
-            EncloseNode en = (EncloseNode)node;
-            switch( en.type) {
-            case EncloseNode.MEMORY:
-                if (env.currMaxRegNum < en.regNum) {
-                    env.currMaxRegNum = en.regNum;
-                }
-                r = setupCombExpCheck(en.target, state);
-                break;
-
-            default:
-                r = setupCombExpCheck(en.target, state);
-            } // inner switch
-            break;
-
-        case NodeType.CALL:
-            if (Config.USE_SUBEXP_CALL) {
-                CallNode cn = (CallNode)node;
-                if (cn.isRecursion()) {
-                    env.hasRecursion = true;
-                } else {
-                    r = setupCombExpCheck(cn.target, state);
-                }
-            } // USE_SUBEXP_CALL
-            break;
-
-        default:
-            break;
-
-        } // switch
-
-        return r;
-    }
-
     private static final int IN_ALT                     = (1<<0);
     private static final int IN_NOT                     = (1<<1);
     private static final int IN_REPEAT                  = (1<<2);
@@ -1691,20 +953,12 @@ final class Analyser extends Parser {
         case NodeType.CANY:
             break;
 
-        case NodeType.CALL: // if (Config.USE_SUBEXP_CALL) ?
-            break;
-
         case NodeType.BREF:
             BackRefNode br = (BackRefNode)node;
             for (int i=0; i<br.backNum; i++) {
                 if (br.back[i] > env.numMem) newValueException(ERR_INVALID_BACKREF);
                 env.backrefedMem = bsOnAt(env.backrefedMem, br.back[i]);
                 env.btMemStart = bsOnAt(env.btMemStart, br.back[i]);
-                if (Config.USE_BACKREF_WITH_LEVEL) {
-                    if (br.isNestLevel()) {
-                        env.btMemEnd = bsOnAt(env.btMemEnd, br.back[i]);
-                    }
-                } // USE_BACKREF_AT_LEVEL
                 ((EncloseNode)env.memNodes[br.back[i]]).setMemBackrefed();
             }
             break;
@@ -1916,37 +1170,6 @@ final class Analyser extends Parser {
             break;
         }
 
-        case NodeType.CTYPE: {
-            int min;
-            int max = 1;
-            if (max == 1) {
-                min = 1;
-                CTypeNode cn = (CTypeNode)node;
-
-                switch (cn.ctype) {
-                case CharacterType.WORD:
-                    if (cn.not) {
-                        for (int i=0; i<BitSet.SINGLE_BYTE_SIZE; i++) {
-                            if (!EncodingHelper.isWord(i)) {
-                                opt.map.addChar(i);
-                            }
-                        }
-                    } else {
-                        for (int i=0; i<BitSet.SINGLE_BYTE_SIZE; i++) {
-                            if (EncodingHelper.isWord(i)) {
-                                opt.map.addChar(i);
-                            }
-                        }
-                    }
-                    break;
-                } // inner switch
-            } else {
-                min = 1;
-            }
-            opt.length.set(min, max);
-            break;
-        }
-
         case NodeType.CANY: {
             opt.length.set(1, 1);
             break;
@@ -2008,20 +1231,6 @@ final class Analyser extends Parser {
             break;
         }
 
-        case NodeType.CALL: {
-            if (Config.USE_SUBEXP_CALL) {
-                CallNode cn = (CallNode)node;
-                if (cn.isRecursion()) {
-                    opt.length.set(0, MinMaxLen.INFINITE_DISTANCE);
-                } else {
-                    int safe = oenv.options;
-                    oenv.options = ((EncloseNode)cn.target).option;
-                    optimizeNodeLeft(cn.target, opt, oenv);
-                    oenv.options = safe;
-                }
-            } // USE_SUBEXP_CALL
-            break;
-        }
 
         case NodeType.QTFR: {
             NodeOptInfo nopt = new NodeOptInfo();
@@ -2081,7 +1290,7 @@ final class Analyser extends Parser {
                 break;
 
             case EncloseType.MEMORY:
-                if (Config.USE_SUBEXP_CALL && ++en.optCount > MAX_NODE_OPT_INFO_REF_COUNT) {
+                if (++en.optCount > MAX_NODE_OPT_INFO_REF_COUNT) {
                     int min = 0;
                     int max = MinMaxLen.INFINITE_DISTANCE;
                     if (en.isMinFixed()) min = en.minLength;

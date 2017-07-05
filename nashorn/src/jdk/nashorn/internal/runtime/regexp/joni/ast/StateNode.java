@@ -40,7 +40,6 @@ public abstract class StateNode extends Node implements NodeStatus {
         if (isRecursion()) states.append("RECURSION ");
         if (isCalled()) states.append("CALLED ");
         if (isAddrFixed()) states.append("ADDR_FIXED ");
-        if (isNamedGroup()) states.append("NAMED_GROUP ");
         if (isNameRef()) states.append("NAME_REF ");
         if (isInRepeat()) states.append("IN_REPEAT ");
         if (isNestLevel()) states.append("NEST_LEVEL ");
@@ -57,20 +56,12 @@ public abstract class StateNode extends Node implements NodeStatus {
         state |= NST_MIN_FIXED;
     }
 
-    public void clearMinFixed() {
-        state &= ~NST_MIN_FIXED;
-    }
-
     public boolean isMaxFixed() {
         return (state & NST_MAX_FIXED) != 0;
     }
 
     public void setMaxFixed() {
         state |= NST_MAX_FIXED;
-    }
-
-    public void clearMaxFixed() {
-        state &= ~NST_MAX_FIXED;
     }
 
     public boolean isCLenFixed() {
@@ -81,20 +72,12 @@ public abstract class StateNode extends Node implements NodeStatus {
         state |= NST_CLEN_FIXED;
     }
 
-    public void clearCLenFixed() {
-        state &= ~NST_CLEN_FIXED;
-    }
-
     public boolean isMark1() {
         return (state & NST_MARK1) != 0;
     }
 
     public void setMark1() {
         state |= NST_MARK1;
-    }
-
-    public void clearMark1() {
-        state &= ~NST_MARK1;
     }
 
     public boolean isMark2() {
@@ -117,20 +100,12 @@ public abstract class StateNode extends Node implements NodeStatus {
         state |= NST_MEM_BACKREFED;
     }
 
-    public void clearMemBackrefed() {
-        state &= ~NST_MEM_BACKREFED;
-    }
-
     public boolean isStopBtSimpleRepeat() {
         return (state & NST_STOP_BT_SIMPLE_REPEAT) != 0;
     }
 
     public void setStopBtSimpleRepeat() {
         state |= NST_STOP_BT_SIMPLE_REPEAT;
-    }
-
-    public void clearStopBtSimpleRepeat() {
-        state &= ~NST_STOP_BT_SIMPLE_REPEAT;
     }
 
     public boolean isRecursion() {
@@ -141,20 +116,12 @@ public abstract class StateNode extends Node implements NodeStatus {
         state |= NST_RECURSION;
     }
 
-    public void clearRecursion() {
-        state &= ~NST_RECURSION;
-    }
-
     public boolean isCalled() {
         return (state & NST_CALLED) != 0;
     }
 
     public void setCalled() {
         state |= NST_CALLED;
-    }
-
-    public void clearCAlled() {
-        state &= ~NST_CALLED;
     }
 
     public boolean isAddrFixed() {
@@ -165,32 +132,12 @@ public abstract class StateNode extends Node implements NodeStatus {
         state |= NST_ADDR_FIXED;
     }
 
-    public void clearAddrFixed() {
-        state &= ~NST_ADDR_FIXED;
-    }
-
-    public boolean isNamedGroup() {
-        return (state & NST_NAMED_GROUP) != 0;
-    }
-
-    public void setNamedGroup() {
-        state |= NST_NAMED_GROUP;
-    }
-
-    public void clearNamedGroup() {
-        state &= ~NST_NAMED_GROUP;
-    }
-
     public boolean isNameRef() {
         return (state & NST_NAME_REF) != 0;
     }
 
     public void setNameRef() {
         state |= NST_NAME_REF;
-    }
-
-    public void clearNameRef() {
-        state &= ~NST_NAME_REF;
     }
 
     public boolean isInRepeat() {
@@ -201,10 +148,6 @@ public abstract class StateNode extends Node implements NodeStatus {
         state |= NST_IN_REPEAT;
     }
 
-    public void clearInRepeat() {
-        state &= ~NST_IN_REPEAT;
-    }
-
     public boolean isNestLevel() {
         return (state & NST_NEST_LEVEL) != 0;
     }
@@ -213,20 +156,12 @@ public abstract class StateNode extends Node implements NodeStatus {
         state |= NST_NEST_LEVEL;
     }
 
-    public void clearNestLevel() {
-        state &= ~NST_NEST_LEVEL;
-    }
-
     public boolean isByNumber() {
         return (state & NST_BY_NUMBER) != 0;
     }
 
     public void setByNumber() {
         state |= NST_BY_NUMBER;
-    }
-
-    public void clearByNumber() {
-        state &= ~NST_BY_NUMBER;
     }
 
 }

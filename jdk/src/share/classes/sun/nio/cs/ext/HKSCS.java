@@ -356,6 +356,11 @@ public class HKSCS {
                 return encodeBufferLoop(src, dst);
         }
 
+        private byte[] repl = replacement();
+        protected void implReplaceWith(byte[] newReplacement) {
+            repl = newReplacement;
+        }
+
         public int encode(char[] src, int sp, int len, byte[] dst) {
             int dp = 0;
             int sl = sp + len;
@@ -367,7 +372,6 @@ public class HKSCS {
                         !Character.isLowSurrogate(src[sp]) ||
                         (bb = encodeSupp(Character.toCodePoint(c, src[sp++])))
                         == UNMAPPABLE_ENCODING) {
-                        byte[] repl = replacement();
                         dst[dp++] = repl[0];
                         if (repl.length > 1)
                             dst[dp++] = repl[1];

@@ -29,7 +29,6 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.__DIR__;
 import static jdk.nashorn.internal.codegen.CompilerConstants.__FILE__;
 import static jdk.nashorn.internal.codegen.CompilerConstants.__LINE__;
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.DEBUG_FIELDS;
-
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
@@ -119,7 +118,7 @@ public final class IdentNode extends Node implements PropertyKey, TypeOverride<I
      * @param visitor IR navigating visitor.
      */
     @Override
-    public Node accept(final NodeVisitor visitor) {
+    public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterIdentNode(this)) {
             return visitor.leaveIdentNode(this);
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -996,7 +996,7 @@ public class WrapperGenerator {
             pw.println("\t\t\t}");
             pw.println("\t\t\t__executed = true;");
             pw.println("\t\t\tif (errorHandler != null) {");
-            pw.println("\t\t\t    XToolkit.WITH_XERROR_HANDLER(errorHandler);");
+            pw.println("\t\t\t    XErrorHandlerUtil.WITH_XERROR_HANDLER(errorHandler);");
             pw.println("\t\t\t}");
             iter = ft.getArguments().iterator();
             while (iter.hasNext()) {
@@ -1025,7 +1025,7 @@ public class WrapperGenerator {
             }
             pw.println("\t\t\t);");
             pw.println("\t\t\tif (errorHandler != null) {");
-            pw.println("\t\t\t    XToolkit.RESTORE_XERROR_HANDLER();");
+            pw.println("\t\t\t    XErrorHandlerUtil.RESTORE_XERROR_HANDLER();");
             pw.println("\t\t\t}");
             if (!ft.isVoid()) {
                 pw.println("\t\t\treturn status;");

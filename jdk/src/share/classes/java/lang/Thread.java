@@ -145,10 +145,10 @@ class Thread implements Runnable {
         registerNatives();
     }
 
-    private char        name[];
-    private int         priority;
-    private Thread      threadQ;
-    private long        eetop;
+    private volatile char  name[];
+    private int            priority;
+    private Thread         threadQ;
+    private long           eetop;
 
     /* Whether or not to single_step this thread. */
     private boolean     single_step;
@@ -1135,7 +1135,7 @@ class Thread implements Runnable {
      * @see        #getName
      * @see        #checkAccess()
      */
-    public final void setName(String name) {
+    public final synchronized void setName(String name) {
         checkAccess();
         this.name = name.toCharArray();
         if (threadStatus != 0) {
@@ -1150,7 +1150,7 @@ class Thread implements Runnable {
      * @see     #setName(String)
      */
     public final String getName() {
-        return String.valueOf(name);
+        return new String(name, true);
     }
 
     /**

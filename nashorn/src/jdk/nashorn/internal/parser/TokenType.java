@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.parser;
 
+import java.util.Locale;
 import static jdk.nashorn.internal.parser.TokenKind.BINARY;
 import static jdk.nashorn.internal.parser.TokenKind.BRACKET;
 import static jdk.nashorn.internal.parser.TokenKind.FUTURE;
@@ -249,7 +250,7 @@ public enum TokenType {
     }
 
     public String getNameOrType() {
-        return name == null ? super.name().toLowerCase() : name;
+        return name == null ? super.name().toLowerCase(Locale.ENGLISH) : name;
     }
 
     public TokenType getNext() {

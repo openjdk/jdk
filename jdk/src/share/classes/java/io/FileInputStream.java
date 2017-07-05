@@ -240,13 +240,15 @@ class FileInputStream extends InputStream
      *
      * <p>The <code>skip</code> method may, for a variety of
      * reasons, end up skipping over some smaller number of bytes,
-     * possibly <code>0</code>. If <code>n</code> is negative, an
-     * <code>IOException</code> is thrown, even though the <code>skip</code>
-     * method of the {@link InputStream} superclass does nothing in this case.
-     * The actual number of bytes skipped is returned.
+     * possibly <code>0</code>. If <code>n</code> is negative, the method
+     * will try to skip backwards. In case the backing file does not support
+     * backward skip at its current position, an <code>IOException</code> is
+     * thrown. The actual number of bytes skipped is returned. If it skips
+     * forwards, it returns a positive value. If it skips backwards, it
+     * returns a negative value.
      *
-     * <p>This method may skip more bytes than are remaining in the backing
-     * file. This produces no exception and the number of bytes skipped
+     * <p>This method may skip more bytes than what are remaining in the
+     * backing file. This produces no exception and the number of bytes skipped
      * may include some number of bytes that were beyond the EOF of the
      * backing file. Attempting to read from the stream after skipping past
      * the end will result in -1 indicating the end of the file.
@@ -261,9 +263,10 @@ class FileInputStream extends InputStream
     /**
      * Returns an estimate of the number of remaining bytes that can be read (or
      * skipped over) from this input stream without blocking by the next
-     * invocation of a method for this input stream. The next invocation might be
-     * the same thread or another thread.  A single read or skip of this
-     * many bytes will not block, but may read or skip fewer bytes.
+     * invocation of a method for this input stream. Returns 0 when the file
+     * position is beyond EOF. The next invocation might be the same thread
+     * or another thread. A single read or skip of this many bytes will not
+     * block, but may read or skip fewer bytes.
      *
      * <p> In some cases, a non-blocking read (or skip) may appear to be
      * blocked when it is merely slow, for example when reading large

@@ -25,14 +25,13 @@
 
 package jdk.nashorn.internal.runtime;
 
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
 
 /**
@@ -92,12 +91,13 @@ public abstract class ScriptFunctionData {
     CompiledFunction bind(final CompiledFunction originalInv, final ScriptFunction fn, final Object self, final Object[] args) {
         final MethodHandle boundInvoker = bindInvokeHandle(originalInv.getInvoker(), fn, self, args);
 
+        //TODO the boundinvoker.type() could actually be more specific here
         if (isConstructor()) {
             ensureConstructor(originalInv);
-            return new CompiledFunction(boundInvoker, bindConstructHandle(originalInv.getConstructor(), fn, args));
+            return new CompiledFunction(boundInvoker.type(), boundInvoker, bindConstructHandle(originalInv.getConstructor(), fn, args));
         }
 
-        return new CompiledFunction(boundInvoker);
+        return new CompiledFunction(boundInvoker.type(), boundInvoker);
     }
 
     /**
@@ -389,7 +389,9 @@ public abstract class ScriptFunctionData {
                 boundInvoker = noArgBoundInvoker;
             }
         } else {
-            final Object[] boundArgs = new Object[Math.min(originalInvoker.type().parameterCount(), args.length + (isTargetBound ? 0 : (needsCallee  ? 2 : 1)))];
+            // If target is already bound, insert additional bound arguments after "this" argument, at position 1.
+            final int argInsertPos = isTargetBound ? 1 : 0;
+            final Object[] boundArgs = new Object[Math.min(originalInvoker.type().parameterCount() - argInsertPos, args.length + (isTargetBound ? 0 : (needsCallee  ? 2 : 1)))];
             int next = 0;
             if (!isTargetBound) {
                 if (needsCallee) {
@@ -403,7 +405,7 @@ public abstract class ScriptFunctionData {
             // "this" will get dropped anyway by the target invoker. We previously asserted that already bound functions
             // don't take a callee parameter, so we can know that the signature is (this[, args...]) therefore args
             // start at position 1. If the function is not bound, we start inserting arguments at position 0.
-            boundInvoker = MH.insertArguments(originalInvoker, isTargetBound ? 1 : 0, boundArgs);
+            boundInvoker = MH.insertArguments(originalInvoker, argInsertPos, boundArgs);
         }
 
         if (isTargetBound) {

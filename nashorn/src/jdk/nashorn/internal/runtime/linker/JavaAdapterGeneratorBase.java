@@ -33,6 +33,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  * Base class for both {@link JavaAdapterBytecodeGenerator} and {@link JavaAdapterClassLoader}, containing those
  * bytecode types, type names and method descriptor that are used by both.
  */
+@SuppressWarnings("javadoc")
 abstract class JavaAdapterGeneratorBase {
     static final Type CONTEXT_TYPE       = Type.getType(Context.class);
     static final Type OBJECT_TYPE        = Type.getType(Object.class);
