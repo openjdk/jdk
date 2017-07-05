@@ -52,7 +52,6 @@ public abstract class AbstractMidiDeviceProvider extends MidiDeviceProvider {
         // also for memory's sake, do not initialize the arrays here
     }
 
-
     final synchronized void readDeviceInfos() {
         Info[] infos = getInfoCache();
         MidiDevice[] devices = getDeviceCache();
@@ -148,10 +147,6 @@ public abstract class AbstractMidiDeviceProvider extends MidiDeviceProvider {
         throw MidiUtils.unsupportedDevice(info);
     }
 
-
-    // INNER CLASSES
-
-
     /**
      * Info class for MidiDevices.  Adds an index value for
      * making native references to a particular device.
@@ -181,9 +176,6 @@ public abstract class AbstractMidiDeviceProvider extends MidiDeviceProvider {
         }
 
     } // class Info
-
-
-    // ABSTRACT METHODS
 
     abstract int getNumDevices();
     abstract MidiDevice[] getDeviceCache();

@@ -33,7 +33,6 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 
-
 /**
  * U-law encodes linear data, and decodes u-law data to linear data.
  *
@@ -53,7 +52,7 @@ public final class UlawCodec extends SunCodec {
                                              0x7FF, 0xFFF, 0x1FFF, 0x3FFF, 0x7FFF};
 
     /**
-     * Initializes the decode tables
+     * Initializes the decode tables.
      */
     static {
         for (int i=0;i<256;i++) {
@@ -70,7 +69,6 @@ public final class UlawCodec extends SunCodec {
         }
     }
 
-
     /**
      * Constructs a new ULAW codec object.
      */
@@ -78,8 +76,7 @@ public final class UlawCodec extends SunCodec {
         super(ulawEncodings, ulawEncodings);
     }
 
-    /**
-     */
+    @Override
     public AudioFormat.Encoding[] getTargetEncodings(AudioFormat sourceFormat){
         if( AudioFormat.Encoding.PCM_SIGNED.equals(sourceFormat.getEncoding()) ) {
             if( sourceFormat.getSampleSizeInBits() == 16 ) {
@@ -102,9 +99,7 @@ public final class UlawCodec extends SunCodec {
         }
     }
 
-
-    /**
-     */
+    @Override
     public AudioFormat[] getTargetFormats(AudioFormat.Encoding targetEncoding, AudioFormat sourceFormat){
         Objects.requireNonNull(targetEncoding);
         Objects.requireNonNull(sourceFormat);
@@ -119,8 +114,7 @@ public final class UlawCodec extends SunCodec {
             }
     }
 
-    /**
-     */
+    @Override
     public AudioInputStream getAudioInputStream(AudioFormat.Encoding targetEncoding, AudioInputStream sourceStream){
         AudioFormat sourceFormat = sourceStream.getFormat();
         AudioFormat.Encoding sourceEncoding = sourceFormat.getEncoding();
@@ -157,9 +151,7 @@ public final class UlawCodec extends SunCodec {
         return getConvertedStream(targetFormat, sourceStream);
     }
 
-    /**
-     * use old code...
-     */
+    @Override
     public AudioInputStream getAudioInputStream(AudioFormat targetFormat, AudioInputStream sourceStream){
         if (!isConversionSupported(targetFormat, sourceStream.getFormat()))
             throw new IllegalArgumentException("Unsupported conversion: "
@@ -167,9 +159,6 @@ public final class UlawCodec extends SunCodec {
                                                + targetFormat.toString());
         return getConvertedStream(targetFormat, sourceStream);
     }
-
-
-    // OLD CODE
 
     /**
      * Opens the codec with the specified parameters.
@@ -179,7 +168,6 @@ public final class UlawCodec extends SunCodec {
      * @throws IllegalArgumentException if the format combination supplied is
      * not supported.
      */
-    /*  public AudioInputStream getConvertedStream(AudioFormat outputFormat, AudioInputStream stream) { */
     private AudioInputStream getConvertedStream(AudioFormat outputFormat, AudioInputStream stream) {
         AudioInputStream cs = null;
 
@@ -188,7 +176,7 @@ public final class UlawCodec extends SunCodec {
         if( inputFormat.matches(outputFormat) ) {
             cs = stream;
         } else {
-            cs = (AudioInputStream) (new UlawCodecStream(stream, outputFormat));
+            cs = new UlawCodecStream(stream, outputFormat);
         }
         return cs;
     }
@@ -200,7 +188,6 @@ public final class UlawCodec extends SunCodec {
      * returns an array of length 0.
      * @return array of supported output formats.
      */
-    /*  public AudioFormat[] getOutputFormats(AudioFormat inputFormat) { */
     private AudioFormat[] getOutputFormats(AudioFormat inputFormat) {
 
         Vector<AudioFormat> formats = new Vector<>();
@@ -241,14 +228,13 @@ public final class UlawCodec extends SunCodec {
         return formatArray;
     }
 
-
     private final class UlawCodecStream extends AudioInputStream {
 
         private static final int tempBufferSize = 64;
         private byte tempBuffer [] = null;
 
         /**
-         * True to encode to u-law, false to decode to linear
+         * True to encode to u-law, false to decode to linear.
          */
         boolean encode = false;
 
@@ -312,7 +298,6 @@ public final class UlawCodec extends SunCodec {
             }
         }
 
-
         /*
          * $$jb 2/23/99
          * Used to determine segment number in uLaw encoding
@@ -328,6 +313,7 @@ public final class UlawCodec extends SunCodec {
          * Note that this won't actually read anything; must read in
          * two-byte units.
          */
+        @Override
         public int read() throws IOException {
             byte[] b = new byte[1];
             if (read(b, 0, b.length) == 1) {
@@ -336,10 +322,12 @@ public final class UlawCodec extends SunCodec {
             return -1;
         }
 
+        @Override
         public int read(byte[] b) throws IOException {
             return read(b, 0, b.length);
         }
 
+        @Override
         public int read(byte[] b, int off, int len) throws IOException {
             // don't read fractional frames
             if( len%frameSize != 0 ) {

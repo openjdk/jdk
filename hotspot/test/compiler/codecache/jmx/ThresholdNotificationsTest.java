@@ -31,11 +31,11 @@
  * @build compiler.codecache.jmx.ThresholdNotificationsTest
  * @run driver ClassFileInstaller sun.hotspot.WhiteBox
  *                                sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
  *     -XX:+WhiteBoxAPI -XX:-MethodFlushing -XX:CompileCommand=compileonly,null::*
  *     -XX:+SegmentedCodeCache
  *     compiler.codecache.jmx.ThresholdNotificationsTest
- * @run main/othervm -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
  *     -XX:+WhiteBoxAPI -XX:-MethodFlushing -XX:CompileCommand=compileonly,null::*
  *     -XX:-SegmentedCodeCache
  *     compiler.codecache.jmx.ThresholdNotificationsTest
@@ -63,7 +63,9 @@ public class ThresholdNotificationsTest implements NotificationListener {
 
     public static void main(String[] args) {
         for (BlobType bt : BlobType.getAvailable()) {
-            new ThresholdNotificationsTest(bt).runTest();
+            if (CodeCacheUtils.isCodeHeapPredictable(bt)) {
+                new ThresholdNotificationsTest(bt).runTest();
+            }
         }
     }
 

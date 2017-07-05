@@ -139,32 +139,32 @@ public class ReverbType {
     /**
      * Descriptive name of the reverb type.
      */
-    private String name;
+    private final String name;
 
     /**
      * Early reflection delay in microseconds.
      */
-    private int earlyReflectionDelay;
+    private final int earlyReflectionDelay;
 
     /**
      * Early reflection intensity.
      */
-    private float earlyReflectionIntensity;
+    private final float earlyReflectionIntensity;
 
     /**
      * Late reflection delay in microseconds.
      */
-    private int lateReflectionDelay;
+    private final int lateReflectionDelay;
 
     /**
      * Late reflection intensity.
      */
-    private float lateReflectionIntensity;
+    private final float lateReflectionIntensity;
 
     /**
      * Total decay time.
      */
-    private int decayTime;
+    private final int decayTime;
 
     /**
      * Constructs a new reverb type that has the specified reverberation

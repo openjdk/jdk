@@ -24,8 +24,9 @@
 /**
  * @test
  * @bug 4064654 4374886 4984320 4984574 4944795
- * @library /java/text/testlib
  * @summary test for Calendar
+ * @library /java/text/testlib
+ * @run main CalendarTest
  * @key randomness
  */
 
@@ -203,7 +204,9 @@ public class CalendarTest extends IntlTest {
     }
 
     public void TestGenericAPI() {
-        if (Locale.getDefault().equals(new Locale("th", "TH"))) {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesGregorianCalendar(locale)) {
+            logln("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -559,7 +562,9 @@ public class CalendarTest extends IntlTest {
 
     // Test the behavior of GMT vs. local time
     public void TestGMTvsLocal4064654() {
-        if (Locale.getDefault().equals(new Locale("th", "TH"))) {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesGregorianCalendar(locale)) {
+            logln("Skipping this test because locale is " + locale);
             return;
         }
 
@@ -875,10 +880,6 @@ public class CalendarTest extends IntlTest {
     // Verify that the fields are as expected (mostly zero) at the epoch start.
     // Note that we adjust for the default timezone to get most things to zero.
     public void TestEpochStartFields() {
-        if (Locale.getDefault().equals(new Locale("th", "TH"))) {
-            return;
-        }
-
         String[][] lt = {
           {"en", "US", "US/Pacific"},        /* First day = 1, Minimum day = 1 */
           {"en", "US", "America/Anchorage"}, /* First day = 1, Minimum day = 1 */

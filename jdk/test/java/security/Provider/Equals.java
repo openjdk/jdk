@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 4918769
+ * @bug 4918769 8130181
  * @summary make sure Provider.equals() behaves as expected with the id attributes
  * @author Andreas Sterbenz
  */
@@ -33,9 +33,9 @@ import java.security.*;
 public class Equals {
 
     public static void main(String[] args) throws Exception {
-        Provider p1 = new P1("foo", 1.0d, "foo");
-        Provider p1b = new P1("foo", 1.0d, "foo");
-        Provider p2 = new P2("foo", 1.0d, "foo");
+        Provider p1 = new P1("foo", "1.0", "foo");
+        Provider p1b = new P1("foo", "1.0", "foo");
+        Provider p2 = new P2("foo", "1.0", "foo");
         System.out.println(p1.entrySet());
         if (p1.equals(p2)) {
             throw new Exception("Objects are equal");
@@ -55,13 +55,13 @@ public class Equals {
     }
 
     private static class P1 extends Provider {
-        P1(String name, double version, String info) {
+        P1(String name, String version, String info) {
             super(name, version, info);
         }
     }
 
     private static class P2 extends Provider {
-        P2(String name, double version, String info) {
+        P2(String name, String version, String info) {
             super(name, version, info);
         }
     }

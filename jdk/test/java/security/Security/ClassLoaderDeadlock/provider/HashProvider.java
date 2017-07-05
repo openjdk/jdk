@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import java.security.*;
 
 public final class HashProvider extends Provider {
     public HashProvider() {
-        super("HashProvider", 1.0d, "");
+        super("HashProvider", "1.0", "");
         // register all algorithms from the following providers into this provider
         // the security framework will try to load them via the classloader of this provider
         addAlgorithms("SunRsaSign");

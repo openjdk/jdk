@@ -90,7 +90,9 @@ public class Bug4322313 extends IntlTest {
             TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
 
             for (int i = 0; i < locs.length; i++) {
-                Locale.setDefault(locs[i]);
+                Locale locale = locs[i];
+                Locale.setDefault(locale);
+
 
                 /* Okay case */
                 for (int k = 0; k < VALIDS.length; k++) {
@@ -100,12 +102,12 @@ public class Bug4322313 extends IntlTest {
                     if (!tz.getID().equals(VALIDS[k][2])) {
                         err = true;
                         System.err.println("\tFailed [Locale=" +
-                                           Locale.getDefault() + ", \"" + VALIDS[k][0] +
+                                           locale + ", \"" + VALIDS[k][0] +
                                            "\"] Invalid TimeZone ID, expected:" +
                                            VALIDS[k][2] + ", got:" + tz.getID() + ", " + tz);
                     } else {
                         logln("\tPassed [Locale=" +
-                              Locale.getDefault() + ", \"" + VALIDS[k][0] +
+                              locale + ", \"" + VALIDS[k][0] +
                               "\"] Valid TimeZone ID, got:" + VALIDS[k][2]);
                     }
 
@@ -113,12 +115,12 @@ public class Bug4322313 extends IntlTest {
                     if (offset != (int)VALIDS[k][1]) {
                         err = true;
                         System.err.println("\tFailed [Locale=" +
-                                           Locale.getDefault() + ", \"" + VALIDS[k][0] +
+                                           locale + ", \"" + VALIDS[k][0] +
                                            "\"] Invalid RawOffset, expected:" + VALIDS[k][1] +
                                            ", got:" + offset + ", " + tz);
                     } else {
                         logln("\tPassed [Locale=" +
-                              Locale.getDefault() + ", \"" + VALIDS[k][0] +
+                              locale + ", \"" + VALIDS[k][0] +
                               "\"] Vaild RawOffset, got:" + offset);
                     }
 
@@ -126,12 +128,12 @@ public class Bug4322313 extends IntlTest {
                     if (offset != 0) {
                         err = true;
                         System.err.println("\tFailed [Locale=" +
-                                           Locale.getDefault() + ", \"" + VALIDS[k][0] +
+                                           locale + ", \"" + VALIDS[k][0] +
                                            "\"] DSTSavings should be zero, got:" + offset +
                                            ", " + tz);
                     } else {
                         logln("\tPassed [Locale=" +
-                              Locale.getDefault() + ", \"" + VALIDS[k][0] +
+                              locale + ", \"" + VALIDS[k][0] +
                               "\"] DSTSavings is zero.");
                     }
                 }
@@ -144,12 +146,12 @@ public class Bug4322313 extends IntlTest {
                     if (!tz.getID().equals("GMT")) {
                         err = true;
                         System.err.println("\tFailed [Locale=" +
-                                           Locale.getDefault() + ", \"" + INVALIDS[k] +
+                                           locale + ", \"" + INVALIDS[k] +
                                            "\"] Invalid TimeZone ID, expected:GMT, got:" +
                                            tz.getID() + ", " + tz);
                     } else {
                         logln("\tPassed [Locale=" +
-                              Locale.getDefault() + ", \"" + INVALIDS[k] +
+                              locale + ", \"" + INVALIDS[k] +
                               "\"] Valid TimeZone ID, got:" + tz.getID());
                     }
 
@@ -157,12 +159,12 @@ public class Bug4322313 extends IntlTest {
                     if (offset != 0) {
                         err = true;
                         System.err.println("\tFailed [Locale=" +
-                                           Locale.getDefault() + ", \"" + INVALIDS[k] +
+                                           locale + ", \"" + INVALIDS[k] +
                                            "\"] RawOffset should be zero, got:" + offset +
                                            ", " + tz);
                     } else {
                         logln("\tPassed [Locale=" +
-                              Locale.getDefault() + ", \"" + INVALIDS[k] +
+                              locale + ", \"" + INVALIDS[k] +
                               "\"] RawOffset is zero.");
                     }
 
@@ -170,12 +172,12 @@ public class Bug4322313 extends IntlTest {
                     if (offset != 0) {
                         err = true;
                         System.err.println("\tFailed [Locale=" +
-                                           Locale.getDefault() + ", \"" + INVALIDS[k] +
+                                           locale + ", \"" + INVALIDS[k] +
                                            "\"] DSTSavings should be zero, got:" + offset +
                                            ", " + tz);
                     } else {
                         logln("\tPassed [Locale=" +
-                              Locale.getDefault() + ", \"" + INVALIDS[k] +
+                              locale + ", \"" + INVALIDS[k] +
                               "\"] DSTSavings is zero.");
                     }
                 }
@@ -189,25 +191,25 @@ public class Bug4322313 extends IntlTest {
                     if (!normalizedID.equals(s)) {
                         err = true;
                         System.err.println("getDisplayName returned unexpected name: " + s +
-                                           " in " + Locale.getDefault());
+                                           " in " + locale);
                     }
                     s = tz.getDisplayName(true, tz.SHORT);
                     if (!normalizedID.equals(s)) {
                         err = true;
                         System.err.println("getDisplayName returned unexpected name: " + s +
-                                           " in " + Locale.getDefault());
+                                           " in " + locale);
                     }
                     s = tz.getDisplayName(false, tz.LONG);
                     if (!normalizedID.equals(s)) {
                         err = true;
                         System.err.println("getDisplayName returned unexpected name: " + s +
-                                           " in " + Locale.getDefault());
+                                           " in " + locale);
                     }
                     s = tz.getDisplayName(false, tz.SHORT);
                     if (!normalizedID.equals(s)) {
                         err = true;
                         System.err.println("getDisplayName returned unexpected name: " + s +
-                                           " in " + Locale.getDefault());
+                                           " in " + locale);
                     }
                 }
             }

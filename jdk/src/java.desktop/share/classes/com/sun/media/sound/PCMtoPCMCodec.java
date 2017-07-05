@@ -40,7 +40,6 @@ import javax.sound.sampled.AudioSystem;
  */
 public final class PCMtoPCMCodec extends SunCodec {
 
-
     private static final AudioFormat.Encoding[] inputEncodings = {
         AudioFormat.Encoding.PCM_SIGNED,
         AudioFormat.Encoding.PCM_UNSIGNED,
@@ -59,8 +58,7 @@ public final class PCMtoPCMCodec extends SunCodec {
         super( inputEncodings, outputEncodings);
     }
 
-    // NEW CODE
-
+    @Override
     public AudioFormat.Encoding[] getTargetEncodings(AudioFormat sourceFormat) {
 
         final int sampleSize = sourceFormat.getSampleSizeInBits();
@@ -88,9 +86,7 @@ public final class PCMtoPCMCodec extends SunCodec {
         return new AudioFormat.Encoding[0];
     }
 
-
-    /**
-     */
+    @Override
     public AudioFormat[] getTargetFormats(AudioFormat.Encoding targetEncoding, AudioFormat sourceFormat){
         Objects.requireNonNull(targetEncoding);
 
@@ -113,9 +109,7 @@ public final class PCMtoPCMCodec extends SunCodec {
         return formatArray;
     }
 
-
-    /**
-     */
+    @Override
     public AudioInputStream getAudioInputStream(AudioFormat.Encoding targetEncoding, AudioInputStream sourceStream) {
 
         if( isConversionSupported(targetEncoding, sourceStream.getFormat()) ) {
@@ -136,9 +130,8 @@ public final class PCMtoPCMCodec extends SunCodec {
         }
 
     }
-    /**
-     * use old code
-     */
+
+    @Override
     public AudioInputStream getAudioInputStream(AudioFormat targetFormat, AudioInputStream sourceStream){
         if (!isConversionSupported(targetFormat, sourceStream.getFormat()))
             throw new IllegalArgumentException("Unsupported conversion: "
@@ -146,11 +139,6 @@ public final class PCMtoPCMCodec extends SunCodec {
                                                + targetFormat.toString());
         return getConvertedStream( targetFormat, sourceStream );
     }
-
-
-
-
-    // OLD CODE
 
     /**
      * Opens the codec with the specified parameters.
@@ -160,7 +148,6 @@ public final class PCMtoPCMCodec extends SunCodec {
      * @throws IllegalArgumentException if the format combination supplied is
      * not supported.
      */
-    /*  public AudioInputStream getConvertedStream(AudioFormat outputFormat, AudioInputStream stream) {*/
     private AudioInputStream getConvertedStream(AudioFormat outputFormat, AudioInputStream stream) {
 
         AudioInputStream cs = null;
@@ -172,12 +159,10 @@ public final class PCMtoPCMCodec extends SunCodec {
             cs = stream;
         } else {
 
-            cs = (AudioInputStream) (new PCMtoPCMCodecStream(stream, outputFormat));
+            cs = new PCMtoPCMCodecStream(stream, outputFormat);
         }
         return cs;
     }
-
-
 
     /**
      * Obtains the set of output formats supported by the codec
@@ -186,7 +171,6 @@ public final class PCMtoPCMCodec extends SunCodec {
      * returns an array of length 0.
      * @return array of supported output formats.
      */
-    /*  public AudioFormat[] getOutputFormats(AudioFormat inputFormat) { */
     private AudioFormat[] getOutputFormats(AudioFormat inputFormat) {
 
         Vector<AudioFormat> formats = new Vector<>();
@@ -350,7 +334,6 @@ public final class PCMtoPCMCodec extends SunCodec {
         return formatArray;
     }
 
-
     class PCMtoPCMCodecStream extends AudioInputStream {
 
         private final int PCM_SWITCH_SIGNED_8BIT                = 1;
@@ -460,7 +443,7 @@ public final class PCMtoPCMCodec extends SunCodec {
          * Note that this only works for sign conversions.
          * Other conversions require a read of at least 2 bytes.
          */
-
+        @Override
         public int read() throws IOException {
 
             // $$jb: do we want to implement this function?
@@ -489,12 +472,13 @@ public final class PCMtoPCMCodec extends SunCodec {
             }
         }
 
-
+        @Override
         public int read(byte[] b) throws IOException {
 
             return read(b, 0, b.length);
         }
 
+        @Override
         public int read(byte[] b, int off, int len) throws IOException {
 
 
@@ -589,9 +573,5 @@ public final class PCMtoPCMCodec extends SunCodec {
                 }
             }
         }
-
-
-
     } // end class PCMtoPCMCodecStream
-
 } // end class PCMtoPCMCodec

@@ -158,7 +158,8 @@ public class Bug4322313 extends IntlTest {
 
         try {
             for (int i=0; i < locs.length; i++) {
-                Locale.setDefault(locs[i]);
+                Locale locale = locs[i];
+                Locale.setDefault(locale);
 
                 for (int j=0; j < formats.length; j++) {
                     TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
@@ -174,7 +175,7 @@ public class Bug4322313 extends IntlTest {
                         catch (Exception e) {
                             err = true;
                             System.err.println("\tParse  Error [Locale=" +
-                                Locale.getDefault() + ", " + formats[j] +
+                                locale + ", " + formats[j] +
                                 "/\"" + valids[k][0] +
                                 "\"] Unexpected Exception occurred: " + e);
                             continue;
@@ -184,7 +185,7 @@ public class Bug4322313 extends IntlTest {
                         if (offset != ((Integer)valids[k][4]).intValue()) {
                             err = true;
                             System.err.println("\tParse  Error [Locale=" +
-                                Locale.getDefault() + ", " + formats[j] +
+                                locale + ", " + formats[j] +
                                 "/\"" + valids[k][0] +
                                 "\"] invalid index: expected:" + valids[k][4] +
                                 ", got:" + offset);
@@ -193,14 +194,14 @@ public class Bug4322313 extends IntlTest {
                         if (date.getTime() != ((Long)valids[k][1]).longValue()) {
                             err = true;
                             System.err.println("\tParse  Error [Locale=" +
-                                Locale.getDefault() + ", " + formats[j] +
+                                locale + ", " + formats[j] +
                                 "/\"" + valids[k][0] +
                                 "\"] expected:" + valids[k][1] +
                                 ", got:" + date.getTime() + ", " + date);
                         } else {
 /*
                             logln("\tParse  Okay  [Locale=" +
-                                Locale.getDefault() + ", " + formats[j] +
+                                locale) + ", " + formats[j] +
                                 "/\"" + valids[k][0] +
                                 "\"] expected:" + valids[k][1] +
                                 ", got:" + date.getTime() + ", " + date);
@@ -212,7 +213,7 @@ public class Bug4322313 extends IntlTest {
                             catch (Exception e) {
                                 err = true;
                                 System.err.println("\tParse  Error [Locale=" +
-                                    Locale.getDefault() + ", " + formats[j] +
+                                    locale + ", " + formats[j] +
                                     "/\"" + valids[k][0] +
                                     "\"] Unexpected Exception occurred: " + e);
                                 continue;
@@ -245,14 +246,14 @@ public class Bug4322313 extends IntlTest {
                                   expected.equals("GMT+00:00"))) {
                                 err = true;
                                 System.err.println("\tFormat Error [Locale=" +
-                                    Locale.getDefault() + ", " +
+                                    locale + ", " +
                                     formats[j] + "/\"" + valids[k][0] +
                                     "\"] expected:" + valids[k][2+j] +
                                     ", got:" + s + ", " + date);
                             } else {
 /*
                                 logln("\tFormat Okay  [Locale=" +
-                                    Locale.getDefault() + ", " +
+                                    locale + ", " +
                                     formats[j] + "/\"" + valids[k][0] +
                                     "\"] expected:" + valids[k][2+j] +
                                     ", got:" + s + ", " + date);
@@ -271,7 +272,7 @@ public class Bug4322313 extends IntlTest {
                             if (date != null) {
                                 err = true;
                                 System.err.println("\tParse  Error [Locale=" +
-                                    Locale.getDefault() + ", " + formats[j] +
+                                    locale + ", " + formats[j] +
                                     "/\"" + invalids[k][0] +
                                     "\"] expected:null , got:" + date);
                             }
@@ -279,14 +280,14 @@ public class Bug4322313 extends IntlTest {
                             if (offset != ((Integer)invalids[k][1]).intValue()) {
                                 err = true;
                                 System.err.println("\tParse  Error [Locale=" +
-                                    Locale.getDefault() + ", " + formats[j] +
+                                    locale + ", " + formats[j] +
                                     "/\"" + invalids[k][0] +
                                     "\"] incorrect offset. expected:" +
                                     invalids[k][1] + ", got: " + offset);
                             } else {
 /*
                                 logln("\tParse  Okay  [Locale=" +
-                                    Locale.getDefault() + ", " + formats[j] +
+                                    locale + ", " + formats[j] +
                                     "/\"" + invalids[k][0] +
                                     "\"] correct offset: " + offset);
 */
@@ -295,7 +296,7 @@ public class Bug4322313 extends IntlTest {
                         catch (Exception e) {
                             err = true;
                             System.err.println("\tParse  Error [Locale=" +
-                                Locale.getDefault() + ", " + formats[j] +
+                                locale + ", " + formats[j] +
                                 "/\"" + invalids[k][0] +
                                 "\"] Unexpected Exception occurred: " + e);
                         }
@@ -315,14 +316,14 @@ public class Bug4322313 extends IntlTest {
                             if (offset != ((Integer)invalids[k][1]).intValue()) {
                                 err = true;
                                 System.err.println("\tParse  Error [Locale=" +
-                                    Locale.getDefault() + ", " + formats[j] +
+                                    locale + ", " + formats[j] +
                                     "/\"" + invalids[k][0] +
                                     "\"] Expected exception occurred with an incorrect offset. expected:" +
                                     invalids[k][1] + ", got: " + offset);
                             } else {
 /*
                                 logln("\tParse  Okay  [Locale=" +
-                                    Locale.getDefault() + ", " + formats[j] +
+                                    locale + ", " + formats[j] +
                                     "/\"" + invalids[k][0] +
                                     "\"] Expected exception occurred with an correct offset: "
                                     + offset);
@@ -332,7 +333,7 @@ public class Bug4322313 extends IntlTest {
                         catch (Exception e) {
                             err = true;
                             System.err.println("\tParse  Error [Locale=" +
-                                Locale.getDefault() + ", " + formats[j] +
+                                locale + ", " + formats[j] +
                                 "/\"" + invalids[k][0] +
                                 "\"] Invalid exception occurred: " + e);
                         }
@@ -340,7 +341,7 @@ public class Bug4322313 extends IntlTest {
                             if (!correctParseException) {
                                 err = true;
                                 System.err.println("\tParse  Error: [Locale=" +
-                                    Locale.getDefault() + ", " + formats[j] +
+                                    locale + ", " + formats[j] +
                                     "/\"" + invalids[k][0] +
                                     "\"] Expected exception didn't occur.");
                             }

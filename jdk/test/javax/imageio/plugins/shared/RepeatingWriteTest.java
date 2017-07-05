@@ -25,7 +25,6 @@
  * @test
  *
  * @bug     8144991 8150154
- * @ignore  8150154
  * @author  a.stepanov
  * @summary Check if repeating image writing doesn't fail
  *          (particularly, no AIOOB occurs)
@@ -103,17 +102,18 @@ public class RepeatingWriteTest {
         reader.setInput(iis);
         BufferedImage img = reader.read(0);
         Color c = new Color(img.getRGB(szRef / 2, szRef / 2));
-
         int w = img.getWidth(), h = img.getHeight();
 
         if (w != szRef || h != szRef) {
             throw new ImageCheckException(fileName +
-                ": invalid image size " + w + " x " + h);
+                ": invalid image size " + w + " x " + h +
+                " expected " + szRef + " x " + szRef);
         }
 
         if (!c.equals(cRef)) {
             throw new ImageCheckException(fileName +
-                ": invalid image color " + c);
+                ": invalid image color " + c +
+                " expected " + cRef);
         }
     }
 
@@ -128,6 +128,14 @@ public class RepeatingWriteTest {
             return;
         }
 
+        // If JDK-8163323 is fixed this if block should be removed.
+        if (format.equals("tiff")
+            && (NAMES[i].equals("TYPE_USHORT_555_RGB")
+                 || NAMES[i].equals("TYPE_USHORT_565_RGB"))
+                && (NAMES[j].equals("TYPE_USHORT_555_RGB")
+                    || NAMES[j].equals("TYPE_USHORT_565_RGB"))) {
+            return;
+        }
 
         String f1 = "test-1-" + NAMES[i] + "." + format;
         String f2 = "test-2-" + NAMES[j] + "." + format;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.crypto.provider;
 import java.security.AccessController;
 import java.security.Provider;
 import java.security.SecureRandom;
+import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 
 /**
@@ -104,7 +105,7 @@ public final class SunJCE extends Provider {
 
     public SunJCE() {
         /* We are the "SunJCE" provider */
-        super("SunJCE", 9.0d, info);
+        super("SunJCE", PROVIDER_VER, info);
 
         final String BLOCK_MODES = "ECB|CBC|PCBC|CTR|CTS|CFB|OFB" +
             "|CFB8|CFB16|CFB24|CFB32|CFB40|CFB48|CFB56|CFB64" +

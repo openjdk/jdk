@@ -40,15 +40,6 @@ public class TimeZoneRegression extends IntlTest {
         new TimeZoneRegression().run(args);
     }
 
-    public void Test4052967() {
-        logln("*** CHECK TIMEZONE AGAINST HOST OS SETTING ***");
-        String id = TimeZone.getDefault().getID();
-        logln("user.timezone: " + System.getProperty("user.timezone", "<not set>"));
-        logln("TimeZone.getDefault().getID(): " + id);
-        logln(new Date().toString());
-        logln("*** THE RESULTS OF THIS TEST MUST BE VERIFIED MANUALLY ***");
-    }
-
     public void Test4073209() {
         TimeZone z1 = TimeZone.getTimeZone("PST");
         TimeZone z2 = TimeZone.getTimeZone("PST");
@@ -167,11 +158,14 @@ public class TimeZoneRegression extends IntlTest {
     }
 
     public void Test4109314() {
-        // test both SimpleTimeZone and ZoneInfo objects.
-        // @since 1.4
-        if (Locale.getDefault().equals(new Locale("th", "TH"))) {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesGregorianCalendar(locale)) {
+            logln("Skipping this test because locale is " + locale);
             return;
         }
+
+        // test both SimpleTimeZone and ZoneInfo objects.
+        // @since 1.4
         sub4109314(getPST());
         sub4109314(TimeZone.getTimeZone("PST"));
     }
@@ -291,6 +285,12 @@ public class TimeZoneRegression extends IntlTest {
      * When you fix these two problems, the test passes, as expected.
      */
     public void Test4126678() {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesGregorianCalendar(locale)) {
+            logln("Skipping this test because locale is " + locale);
+            return;
+        }
+
         // Note: this test depends on the PST time zone.
         TimeZone initialZone = TimeZone.getDefault();
 

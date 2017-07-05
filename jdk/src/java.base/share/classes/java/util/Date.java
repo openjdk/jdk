@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -952,6 +952,9 @@ public class Date
      * without affecting its internal state.
      */
     static final long getMillisOf(Date date) {
+        if (date.getClass() != Date.class) {
+            return date.getTime();
+        }
         if (date.cdate == null || date.cdate.isNormalized()) {
             return date.fastTime;
         }

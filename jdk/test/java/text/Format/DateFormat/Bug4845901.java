@@ -27,6 +27,8 @@
  * @summary Make sure that SimpleDateFormat.parse() can distinguish
  * the same time zone abbreviation for standard and daylight saving
  * time.
+ * @library /java/text/testlib
+ * @run main Bug4845901
  */
 
 import java.util.*;
@@ -34,6 +36,12 @@ import java.text.SimpleDateFormat;
 
 public class Bug4845901 {
     public static void main (String args[]) {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesGregorianCalendar(locale)) {
+            System.out.println("Skipping this test because locale is " + locale);
+            return;
+        }
+
         TimeZone savedTZ = TimeZone.getDefault();
         TimeZone.setDefault(TimeZone.getTimeZone("Australia/Sydney"));
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss.SSS z");
