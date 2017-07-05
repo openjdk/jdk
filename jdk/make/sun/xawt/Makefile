@@ -56,6 +56,11 @@ LDFLAGS += -lpthread
 dummy := $(shell $(MKDIR) -p $(LIB_LOCATION))
 endif
 
+ifeq ($(PLATFORM), macosx))
+LDFLAGS += -pthread
+dummy := $(shell $(MKDIR) -p $(LIB_LOCATION))
+endif
+
 # Since this library will be living in a subdirectory below the other libraries
 #   we need to add an extra runpath so that libraries in the upper directory
 #   are found at runtime.
@@ -90,7 +95,7 @@ vpath %.c   $(SHARE_SRC)/native/sun/java2d/opengl
 vpath %.c   $(PLATFORM_SRC)/native/sun/java2d/opengl
 vpath %.c   $(PLATFORM_SRC)/native/sun/java2d/x11
 
-OTHER_LDLIBS = $(LIBM) -lawt -lXext -lX11 -lXrender -ldl \
+OTHER_LDLIBS = $(LIBM) -lawt -lXext -lX11 -lXrender $(LIBDL) \
                    $(LDFLAGS_COMMON) $(AWT_RUNPATH) $(OTHER_LDFLAGS) -lXtst -lXi
 
 ifeq  ($(PLATFORM), solaris)
@@ -161,6 +166,10 @@ ifeq ($(PLATFORM), solaris)
  endif
 endif
 
+ifeq ($(PLATFORM), macosx)
+  CPPFLAGS += -DX11_PATH=\"$(X11_PATH)\" -DPACKAGE_PATH=\"$(PACKAGE_PATH)\"
+endif
+
 ifeq ($(MILESTONE), internal)
   CPPFLAGS += -DINTERNAL_BUILD
 endif
@@ -205,6 +214,13 @@ endif # sparcv9
 
 else # !solaris
 
+ifeq ($(PLATFORM), macosx)
+CFLAGS_32=-arch i386
+SIZERS = $(SIZER).32 $(SIZER).64
+SIZERS_C = $(SIZER_32_C) $(SIZER_64_C)
+SIZES = $(WRAPPER_GENERATOR_DIR)/sizes.32 $(WRAPPER_GENERATOR_DIR)/sizes.64
+CFLAGS_64=-arch x86_64
+else # !macosx
 ifeq ($(ARCH_DATA_MODEL), 32)
 SIZERS = $(SIZER).32
 SIZERS_C = $(SIZER_32_C)
@@ -214,7 +230,7 @@ SIZERS = $(SIZER).64
 SIZERS_C = $(SIZER_64_C)
 SIZES = $(WRAPPER_GENERATOR_DIR)/sizes.64
 endif # 32
-
+endif # !macosx
 endif # solaris
 
 # XXX Hack for 6185483 - use hard-coded sizes.
@@ -251,9 +267,11 @@ XLIBTYPES=$(PLATFORM_SRC)/classes/sun/awt/X11/generator/xlibtypes.txt
 $(SIZERS): $(SIZERS_C) 
 	$(prep-target)
 ifndef CROSS_COMPILE_ARCH
-	$(CC) $(CFLAGS_$(subst .,,$(suffix $@))) $(CPPFLAGS) -o $@ $(SIZER)$(suffix $@).c
+	$(CC) $(CFLAGS_$(subst .,,$(suffix $@))) $(CPPFLAGS) -c -o $(SIZER)$(suffix $@).o $(SIZER)$(suffix $@).c
+	$(CC) $(CFLAGS_$(subst .,,$(suffix $@))) -o $@ $(CPPFLAGS) $(SIZER)$(suffix $@).o
 else
-	$(HOST_CC) $(CPPFLAGS) -o $@ $(SIZER)$(suffix $@).c
+	$(HOST_CC) $(CPPFLAGS) -c -o $(SIZER)$(suffix $@).o $(SIZER)$(suffix $@).c
+	$(HOST_CC) $(CPPFLAGS) -o $@ $(SIZER)$(suffix $@).o
 endif
 
 $(WRAPPER_GENERATOR_CLASS): $(WRAPPER_GENERATOR_JAVA)

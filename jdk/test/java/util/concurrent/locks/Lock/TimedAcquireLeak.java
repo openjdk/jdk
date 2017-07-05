@@ -28,6 +28,8 @@
  * @author Martin Buchholz
  */
 
+// Note: this file is now out of sync with the jsr166 CVS repository due to the fix for 7092140
+
 import java.util.*;
 import java.util.regex.*;
 import java.util.concurrent.*;
@@ -148,7 +150,7 @@ public class TimedAcquireLeak {
             String.valueOf(new Random().nextInt(Integer.MAX_VALUE));
 
         final String[] jobCmd = {
-            java, "-Xmx8m",
+            java, "-Xmx8m", "-XX:+UsePerfData",
             "-classpath", System.getProperty("test.classes", "."),
             childClassName, uniqueID
         };

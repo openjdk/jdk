@@ -46,6 +46,8 @@ DTRACE_SUFFIX = _dtrace
 
 ifeq ($(PLATFORM), windows)
   LIB_LOCATION = $(BINDIR)
+else ifeq ($(PLATFORM), macosx)
+  LIB_LOCATION = $(LIBDIR)
 else
   LIB_LOCATION = $(LIBDIR)/$(LIBARCH)
 endif

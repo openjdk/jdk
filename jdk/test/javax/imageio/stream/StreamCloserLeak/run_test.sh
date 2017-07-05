@@ -84,7 +84,7 @@ case "$OS" in
       TMP="/tmp"
       ;;
 
-   Linux )
+   Linux | Darwin )
       VAR="A different value for Linux"
       DEFAULT_JDK=/usr/local/java/jdk1.4/linux-i386
       FILESEP="/"
@@ -123,7 +123,7 @@ if [ -z "${TESTJAVA}" ] ; then
    if [ -n "$1" ] ;
       then TESTJAVA=$1
       else echo "no JDK specified on command line so using default!"
-	 TESTJAVA=$DEFAULT_JDK
+         TESTJAVA=$DEFAULT_JDK
    fi
    TESTSRC=.
    TESTCLASSES=.

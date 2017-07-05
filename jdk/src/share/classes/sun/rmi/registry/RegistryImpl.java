@@ -77,9 +77,9 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
     /* indicate compatibility with JDK 1.1.x version of class */
     private static final long serialVersionUID = 4666870661827494597L;
     private Hashtable<String, Remote> bindings
-        = new Hashtable<String, Remote>(101);
+        = new Hashtable<>(101);
     private static Hashtable<InetAddress, InetAddress> allowedAccessCache
-        = new Hashtable<InetAddress, InetAddress>(3);
+        = new Hashtable<>(3);
     private static RegistryImpl registry;
     private static ObjID id = new ObjID(ObjID.REGISTRY_ID);
 
@@ -194,9 +194,9 @@ public class RegistryImpl extends java.rmi.server.RemoteServer
         synchronized (bindings) {
             int i = bindings.size();
             names = new String[i];
-            Enumeration enum_ = bindings.keys();
+            Enumeration<String> enum_ = bindings.keys();
             while ((--i) >= 0)
-                names[i] = (String)enum_.nextElement();
+                names[i] = enum_.nextElement();
         }
         return names;
     }

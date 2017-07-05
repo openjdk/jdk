@@ -50,7 +50,6 @@ typedef void * dmutex_t;
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-#include <malloc.h>
 #include <limits.h>
 
 /* keep these after the other headers */

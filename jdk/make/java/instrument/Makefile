@@ -105,6 +105,16 @@ ifeq ($(PLATFORM), windows)
   # equivalent of strcasecmp is stricmp on Windows
   CPPFLAGS_COMMON += -Dstrcasecmp=stricmp
 else
+ifneq (,$(findstring $(PLATFORM), macosx))
+  ifneq ($(ARCH), universal)
+    LDFLAGS += -Wl,-all_load
+  endif
+  LDFLAGS += $(OUTPUTDIR)/tmp/java/jli/$(OBJDIRNAME)/static/libjli.a
+  OTHER_LDLIBS += -liconv
+  ifeq ($(SYSTEM_ZLIB), true)
+    OTHER_LDLIBS += -lz
+  endif
+else
   LDFLAGS += -L $(LIBDIR)/$(LIBARCH)/jli
   OTHER_LDLIBS += -ljli
   OTHER_LDLIBS += -ldl 
@@ -116,6 +126,11 @@ else
     LDFLAGS += -Wl,--allow-shlib-undefined
     LDFLAGS += -Wl,-rpath -Wl,\$$ORIGIN/jli
   endif
+endif
+endif
+
+ifeq ($(PLATFORM), macosx)
+  LDFLAGS += -framework Cocoa -framework Security -framework ApplicationServices
 endif
 
 #

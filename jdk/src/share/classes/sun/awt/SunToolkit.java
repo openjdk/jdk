@@ -35,6 +35,7 @@ import java.awt.event.KeyEvent;
 import java.awt.image.*;
 import java.awt.TrayIcon;
 import java.awt.SystemTray;
+import java.awt.event.InputEvent;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -578,7 +579,7 @@ public abstract class SunToolkit extends Toolkit
         postEvent(targetToAppContext(e.getSource()), pe);
     }
 
-    private static final Lock flushLock = new ReentrantLock();
+    protected static final Lock flushLock = new ReentrantLock();
     private static boolean isFlushingPendingEvents = false;
 
     /*
@@ -1115,6 +1116,13 @@ public abstract class SunToolkit extends Toolkit
             c = AWTAccessor.getComponentAccessor().getParent(c);
         }
         return c;
+    }
+
+    /**
+     * Returns key modifiers used by Swing to set up a focus accelerator key stroke.
+     */
+    public int getFocusAcceleratorKeyMask() {
+        return InputEvent.ALT_MASK;
     }
 
     /**

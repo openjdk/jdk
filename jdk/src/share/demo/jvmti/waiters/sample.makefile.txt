@@ -91,7 +91,7 @@ ifeq ($(OSNAME), linux)
     OBJECTS=$(SOURCES:%.cpp=%.o)
     # Library name and options needed to build it
     LIBRARY=lib$(LIBNAME).so
-    LDFLAGS=-Wl,-soname=$(LIBRARY) -static-libgcc -mimpure-text
+    LDFLAGS=-Wl,-soname=$(LIBRARY) -static-libgcc
     # Libraries we are dependent on
     LIBRARIES=
     # Building a shared library

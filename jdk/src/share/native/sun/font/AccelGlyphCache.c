@@ -23,7 +23,7 @@
  * questions.
  */
 
-#include <malloc.h>
+#include <stdlib.h>
 #include "jni.h"
 #include "AccelGlyphCache.h"
 #include "Trace.h"

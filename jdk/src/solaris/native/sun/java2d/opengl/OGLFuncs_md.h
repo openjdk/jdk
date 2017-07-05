@@ -27,7 +27,10 @@
 #define OGLFuncs_md_h_Included
 
 #include <stdlib.h>
+#ifndef MACOSX
 #include <link.h>
+#endif
+#include "jvm_md.h"
 #include "J2D_GL/glx.h"
 #include "OGLFuncMacros.h"
 
@@ -113,7 +116,7 @@ do { \
     { \
         char *libGLPath = getenv("J2D_ALT_LIBGL_PATH"); \
         if (libGLPath == NULL) { \
-            libGLPath = "libGL.so.1"; \
+            libGLPath = VERSIONED_JNI_LIB_NAME("GL", "1"); \
         } \
         OGL_LIB_HANDLE = dlopen(libGLPath, RTLD_LAZY | RTLD_LOCAL); \
     } \

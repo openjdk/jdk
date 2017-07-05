@@ -49,7 +49,8 @@
 #define fileclose       fclose
 #endif
 
-#ifdef __linux__
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
+
 
 static const char *ETC_TIMEZONE_FILE = "/etc/timezone";
 static const char *ZONEINFO_DIR = "/usr/share/zoneinfo";
@@ -122,8 +123,8 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
         return NULL;
     }
 
-#if defined(__linux__) || (defined(__solaris__) && (defined(_POSIX_PTHREAD_SEMANTICS) || \
-                                                    defined(_LP64)))
+#if defined(__linux__) || defined(MACOSX) || (defined(__solaris__) \
+    && (defined(_POSIX_PTHREAD_SEMANTICS) || defined(_LP64)))
     while (readdir_r(dirp, entry, &dp) == 0 && dp != NULL) {
 #else
     while ((dp = readdir_r(dirp, entry)) != NULL) {
@@ -210,7 +211,7 @@ findZoneinfoFile(char *buf, size_t size, const char *dir)
     return tz;
 }
 
-#ifdef __linux__
+#if defined(__linux__) || defined(MACOSX)
 
 /*
  * Performs Linux specific mapping and returns a zone ID
@@ -226,6 +227,7 @@ getPlatformTimeZoneID()
     char *buf;
     size_t size;
 
+#ifdef __linux__
     /*
      * Try reading the /etc/timezone file for Debian distros. There's
      * no spec of the file format available. This parsing assumes that
@@ -249,6 +251,7 @@ getPlatformTimeZoneID()
             return tz;
         }
     }
+#endif /* __linux__ */
 
     /*
      * Next, try /etc/localtime to find the zone ID.
@@ -623,7 +626,7 @@ findJavaTZ_md(const char *java_home_dir, const char *country)
 
     tz = getenv("TZ");
 
-#ifdef __linux__
+#if defined(__linux__) || defined(_ALLBSD_SOURCE)
     if (tz == NULL) {
 #else
 #ifdef __solaris__
@@ -664,10 +667,37 @@ findJavaTZ_md(const char *java_home_dir, const char *country)
     }
     return javatz;
 }
-
 /**
  * Returns a GMT-offset-based zone ID. (e.g., "GMT-08:00")
  */
+
+#ifdef MACOSX
+
+char *
+getGMTOffsetID()
+{
+    time_t offset;
+    char sign, buf[32];
+    struct tm *local_tm;
+    time_t clock;
+    time_t currenttime;
+
+    clock = time(NULL);
+    tzset();
+    local_tm = localtime(&clock);
+    if (local_tm->tm_gmtoff >= 0) {
+        offset = (time_t) local_tm->tm_gmtoff;
+        sign = "+";
+    } else {
+        offset = (time_t) -local_tm->tm_gmtoff;
+        sign = "-";
+    }
+    sprintf(buf, (const char *)"GMT%c%02d:%02d",
+            sign, (int)(offset/3600), (int)((offset%3600)/60));
+    return strdup(buf);
+}
+#else
+
 char *
 getGMTOffsetID()
 {
@@ -702,3 +732,4 @@ getGMTOffsetID()
             sign, (int)(offset/3600), (int)((offset%3600)/60));
     return strdup(buf);
 }
+#endif /* MACOSX */

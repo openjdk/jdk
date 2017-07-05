@@ -67,6 +67,13 @@ ifeq ($(PLATFORM),windows)
   UTILS_DEVTOOL_PATH=$(DEVTOOLS_PATH)
 endif
 
+ifeq ($(PLATFORM),macosx)
+  UTILS_COMMAND_PATH=$(UNIXCOMMAND_PATH)
+  UTILS_USR_BIN_PATH=$(USRBIN_PATH)
+  UTILS_CCS_BIN_PATH=$(USRBIN_PATH)
+  UTILS_DEVTOOL_PATH=$(DEVTOOLS_PATH)
+endif
+
 # Utilities
 ifdef CROSS_COMPILE_ARCH
   AR             = $(COMPILER_PATH)ar
@@ -126,6 +133,7 @@ MKSINFO        = $(UTILS_COMMAND_PATH)mksinfo
 MSGFMT         = $(UTILS_USR_BIN_PATH)msgfmt
 MV             = $(UTILS_COMMAND_PATH)mv
 NAWK           = $(UTILS_USR_BIN_PATH)nawk
+OTOOL          = $(UTILS_USR_BIN_PATH)otool
 PKGMK          = $(UTILS_COMMAND_PATH)pkgmk
 PRINTF         = $(UTILS_USR_BIN_PATH)printf
 PWD            = $(UTILS_COMMAND_PATH)pwd
@@ -220,3 +228,26 @@ ifeq ($(PLATFORM),solaris)
   ECHO           = /usr/bin/echo
 endif
 
+ifeq ($(PLATFORM), macosx) 
+  BASENAME     = $(UTILS_USR_BIN_PATH)basename
+  EGREP        = $(UTILS_USR_BIN_PATH)egrep
+  EXPR         = $(UTILS_COMMAND_PATH)expr
+  FMT          = $(UTILS_USR_BIN_PATH)fmt
+  GREP         = $(UTILS_USR_BIN_PATH)grep
+  GUNZIP       = $(UTILS_USR_BIN_PATH)gunzip
+  ID           = $(UTILS_USR_BIN_PATH)id
+  MSGFMT       = $(UTILS_DEVTOOL_PATH)msgfmt
+  SED          = $(UTILS_USR_BIN_PATH)sed
+  SORT         = $(UTILS_USR_BIN_PATH)sort
+  TEST         = $(UTILS_COMMAND_PATH)test
+  TOUCH        = $(UTILS_USR_BIN_PATH)touch
+  TRUE         = $(UTILS_USR_BIN_PATH)true
+  UNAME        = $(UTILS_USR_BIN_PATH)uname
+  NAWK         = $(UTILS_USR_BIN_PATH)awk
+  UNZIPSFX     = $(UTILS_USR_BIN_PATH)unzipsfx
+  ZIPEXE       = $(UTILS_USR_BIN_PATH)zip
+  CPIO         = $(UTILS_USR_BIN_PATH)cpio
+  TAR          = $(UTILS_USR_BIN_PATH)tar
+  # Builtin shell command, no -e option needed
+  ECHO         = echo
+endif

@@ -39,6 +39,7 @@ import java.awt.image.DataBuffer;
 import sun.java2d.SurfaceData;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.StateTrackable;
+import sun.java2d.StateTrackable.*;
 import sun.java2d.StateTracker;
 import sun.java2d.loops.SurfaceType;
 import sun.java2d.loops.CompositeType;
@@ -353,6 +354,10 @@ public class BufImgSurfaceData extends SurfaceData {
         super(SunWritableRaster.stealTrackable(db),
               sType, bufImg.getColorModel());
         this.bufImg = bufImg;
+    }
+
+    protected BufImgSurfaceData(SurfaceType surfaceType, ColorModel cm) {
+        super(surfaceType, cm);
     }
 
     public void initSolidLoops() {

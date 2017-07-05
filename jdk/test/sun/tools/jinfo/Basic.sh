@@ -1,5 +1,4 @@
 #!/bin/sh
-
 #
 # Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -45,6 +44,10 @@ set +e
 failed=0
 
 runSA=true
+
+if [ $isMacos = true ]; then
+    runSA=false
+fi
 
 if [ $isLinux = true ]; then
     # Some Linux systems disable non-child ptrace (see 7050524)
