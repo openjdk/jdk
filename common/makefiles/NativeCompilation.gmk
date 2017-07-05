@@ -28,7 +28,7 @@
 # desired whenever sort is used below!
 
 ifeq  (,$(_MAKEBASE_GMK))
-    $(error You must include MakeBase.gmk prior to including JavaCompilation.gmk)
+    $(error You must include MakeBase.gmk prior to including NativeCompilation.gmk)
 endif
 
 ifeq ($(COMPILER_TYPE),CC)
@@ -54,15 +54,22 @@ define add_native_source
 
     ifneq (,$$(filter %.c,$2))
         # Compile as a C file
-        $1_$2_FLAGS=$4
+        $1_$2_FLAGS=$4 $$($1_$(notdir $2)_CFLAGS)
         $1_$2_COMP=$5
+        $1_$2_DEP_FLAG:=$(C_FLAG_DEPS)
+    else ifneq (,$$(filter %.m,$2))
+        # Compile as a objective-c file
+        $1_$2_FLAGS=-x objective-c $4 $$($1_$(notdir $2)_CFLAGS)
+        $1_$2_COMP=$5
+        $1_$2_DEP_FLAG:=$(C_FLAG_DEPS)
     else
         # Compile as a C++ file
-        $1_$2_FLAGS=$6
+        $1_$2_FLAGS=$6 $$($1_$(notdir $2)_CXXFLAGS)
         $1_$2_COMP=$7
+        $1_$2_DEP_FLAG:=$(CXX_FLAG_DEPS)
     endif
     # Generate the .o (.obj) file name and place it in the bin dir.
-    $1_$2_OBJ:=$3/$$(patsubst %.cpp,%$(OBJ_SUFFIX),$$(patsubst %.c,%$(OBJ_SUFFIX),$$(notdir $2)))
+    $1_$2_OBJ:=$3/$$(patsubst %.cpp,%$(OBJ_SUFFIX),$$(patsubst %.c,%$(OBJ_SUFFIX),$$(patsubst %.m,%$(OBJ_SUFFIX),$$(notdir $2))))
     # Only continue if this object file hasn't been processed already. This lets the first found
     # source file override any other with the same name.
     ifeq (,$$(findstring $$($1_$2_OBJ),$$($1_OBJS_SO_FAR)))
@@ -80,7 +87,7 @@ define add_native_source
         $$($1_$2_OBJ) : $2
         ifeq ($(COMPILER_TYPE),CC)
 		$$(call COMPILING_MSG,$$(notdir $2))
-		$$($1_$2_COMP) $$($1_$2_FLAGS) -MMD -MF $$($1_$2_DEP) -c $(CC_OUT_OPTION)$$($1_$2_OBJ) $2
+		$$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEP_FLAG) $$($1_$2_DEP) -c $(CC_OUT_OPTION)$$($1_$2_OBJ) $2
         endif
         ifeq ($(COMPILER_TYPE),CL)
 		$$(call COMPILING_MSG,$$(notdir $2))
@@ -109,6 +116,8 @@ define SetupNativeCompilation
     #    EXCLUDE_FILES with these names
     #    VERSIONINFO_RESOURCE Input file for RC. Setting this implies that RC will be run
     #    RC_FLAGS flags for RC.
+    #    MAPFILE mapfile
+    #    REORDER reorder file
     $(if $2,$1_$(strip $2))
     $(if $3,$1_$(strip $3))
     $(if $4,$1_$(strip $4))
@@ -154,7 +163,7 @@ define SetupNativeCompilation
     ifneq ($$($1_EXCLUDE_FILES),)
         $1_EXCLUDE_FILES:=$$(addprefix %,$$($1_EXCLUDE_FILES))
     endif
-    $1_SRCS     := $$(filter-out $$($1_EXCLUDE_FILES),$$(filter %.c %.cpp,$$($1_ALL_SRCS)))
+    $1_SRCS     := $$(filter-out $$($1_EXCLUDE_FILES),$$(filter %.c %.cpp %.m,$$($1_ALL_SRCS)))
     ifneq (,$$(strip $$($1_INCLUDE_FILES)))
         $1_SRCS := $$(filter $$($1_INCLUDE_FILES),$$($1_SRCS))
     endif
@@ -178,7 +187,7 @@ define SetupNativeCompilation
 
     # Calculate the expected output from compiling the sources (sort to remove duplicates. Also provides
     # a reproducable order on the input files to the linker).
-    $1_EXPECTED_OBJS:=$$(sort $$(addprefix $$($1_BIN)/,$$(patsubst %.cpp,%$(OBJ_SUFFIX),$$(patsubst %.c,%$(OBJ_SUFFIX),$$(notdir $$($1_SRCS))))))
+    $1_EXPECTED_OBJS:=$$(sort $$(addprefix $$($1_BIN)/,$$(patsubst %.cpp,%$(OBJ_SUFFIX),$$(patsubst %.c,%$(OBJ_SUFFIX),$$(patsubst %.m,%$(OBJ_SUFFIX),$$(notdir $$($1_SRCS)))))))
     $1 := $$($1_EXPECTED_OBJS)
     # Are there too many object files on disk? Perhaps because some source file was removed?
     $1_SUPERFLOUS_OBJS:=$$(sort $$(filter-out $$($1_EXPECTED_OBJS),$$($1_BINS)))
@@ -218,6 +227,11 @@ define SetupNativeCompilation
         $1_EXTRA_CXXFLAGS:=$$($1_EXTRA_CFLAGS)
     endif
 
+    ifneq (,$$($1_REORDER))
+          $1_EXTRA_CFLAGS += $$(C_FLAG_REORDER)
+          $1_EXTRA_CXXFLAGS += $$(CXX_FLAG_REORDER)
+    endif
+
     # Now create a list of the packages that are about to compile. Used when sending source
     # in a batch to the compiler.
     $$(shell $(RM) $$($1_BIN)/_the.list_of_sources)
@@ -233,29 +247,53 @@ define SetupNativeCompilation
     ifeq ($(HOST_OS_API), winapi)
         ifneq (,$$($1_VERSIONINFO_RESOURCE))
             ifneq (,$$($1_LIB))
-                ifeq (dynamic,$$(patsubst %$(SHARED_LIBRARY_SUFFIX),dynamic,$$($1_LIB)))
-                    $1_RES:=$$(patsubst %$(SHARED_LIBRARY_SUFFIX),%.res,$$($1_LIB))
-                else
-                    $1_RES:=$$(patsubst %$(STATIC_LIBRARY_SUFFIX),%.res,$$($1_LIB))
-                endif
+                $1_BASENAME:=$$(basename $$(notdir $$($1_LIB)))
             endif
             ifneq (,$$($1_EXE))
-                $1_RES:=$$(patsubst %$(EXE_SUFFIX),%.res,$$($1_EXE))
+                $1_BASENAME:=$$(basename $$(notdir $$($1_EXE)))
             endif
+            $1_RES:=$$($1_BIN)/$$($1_BASENAME).res
             $$($1_RES): $$($1_VERSIONINFO_RESOURCE)
 		$(RC) $$($1_RC_FLAGS) $(CC_OUT_OPTION)$$@ $$($1_VERSIONINFO_RESOURCE)
         endif
+        ifneq (,$$($1_MANIFEST))
+            $1_PROGRAM:=$$(basename $$(notdir $$($1_EXE)))
+            $1_GEN_MANIFEST:=$$($1_BIN)/$$($1_PROGRAM).manifest
+            IMVERSIONVALUE:=$(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION).$(JDK_UPDATE_VERSION).$(COOKED_BUILD_NUMBER)
+            $$($1_GEN_MANIFEST): $$($1_MANIFEST)
+		$(SED) 's%IMVERSION%$$(IMVERSIONVALUE)%g;s%PROGRAM%$$($1_PROGRAM)%g' $$< > $$@
+        endif
+    endif
+
+    # mapfile doesnt seem to be implemented on macosx (yet??)
+    ifneq ($(HOST_OS),macosx)
+    ifneq ($(HOST_OS),windows)
+        $1_REAL_MAPFILE := $$($1_MAPFILE)
+        ifneq (,$$($1_REORDER))
+            $1_REAL_MAPFILE := $$($1_BIN)/mapfile
+
+            $$($1_REAL_MAPFILE) : $$($1_MAPFILE) $$($1_REORDER)
+		$$(MKDIR) -p $$(@D)
+		$$(CP) $$($1_MAPFILE) $$@.tmp
+		$$(SED) -e 's=OUTPUTDIR=$$($1_BIN)=' $$($1_REORDER) >> $$@.tmp
+		$$(MV) $$@.tmp $$@
+        endif
+    endif
     endif
 
     # Pickup extra HOST_OS_API dependent variables (posix or winapi) and 
     # (linux,solaris,windows,bsd) for LDFLAGS and LDFLAGS_SUFFIX
     $1_EXTRA_LDFLAGS:=$$($1_LDFLAGS_$(HOST_OS_API)) $$($1_LDFLAGS_$(PLATFORM))
     $1_EXTRA_LDFLAGS_SUFFIX:=$$($1_LDFLAGS_SUFFIX_$(HOST_OS_API)) $$($1_LDFLAGS_SUFFIX_$(PLATFORM))
+    ifneq (,$$($1_REAL_MAPFILE))
+	$1_EXTRA_LDFLAGS += $(call SET_SHARED_LIBRARY_MAPFILE,$$($1_REAL_MAPFILE))
+    endif
+
     ifneq (,$$($1_LIB))
         ifeq (dynamic,$$(patsubst %$(SHARED_LIBRARY_SUFFIX),dynamic,$$($1_LIB)))
             # Generating a dynamic library.
             $1_EXTRA_LDFLAGS+=$$(call SET_SHARED_LIBRARY_NAME,$$(notdir $$($1_LIB)))
-            $$($1_LIB) : $$($1_EXPECTED_OBJS) $$($1_RES)
+            $$($1_LIB) : $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_REAL_MAPFILE)
 	    	$$(call LINKING_MSG,$$(notdir $$($1_LIB)))
 		$$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $(LD_OUT_OPTION)$$($1_LIB) \
 			$$($1_EXPECTED_OBJS) $$($1_RES) $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
@@ -269,9 +307,13 @@ define SetupNativeCompilation
     endif
     ifneq (,$$($1_EXE))
         # A executable binary has been specified, setup the target for it.
-        $$($1_EXE) : $$($1_EXPECTED_OBJS) $$($1_RES)
+        $$($1_EXE) : $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_GEN_MANIFEST)
 	    	$$(call LINKING_EXE_MSG,$$(notdir $$($1_EXE)))
 		$$($1_LDEXE) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $(EXE_OUT_OPTION)$$($1_EXE) \
-			$$($1_EXPECTED_OBJS) $$($1_RES) $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)
+			$$($1_EXPECTED_OBJS) $$($1_RES) $$($1_LDFLAGS_SUFFIX) \
+			$$($1_EXTRA_LDFLAGS_SUFFIX)
+        ifneq (,$$($1_GEN_MANIFEST))
+		$(MT) -nologo /manifest $$($1_GEN_MANIFEST) /outputresource:$$@;#1
+        endif
     endif
 endef
