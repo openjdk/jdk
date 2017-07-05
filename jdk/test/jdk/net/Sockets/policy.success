@@ -1,0 +1,6 @@
+grant {
+    permission java.net.SocketPermission "127.0.0.1", "connect,accept" ;
+    permission java.net.SocketPermission "localhost", "listen" ;
+    permission jdk.net.NetworkPermission "setOption.SO_FLOW_SLA";
+    permission jdk.net.NetworkPermission "getOption.SO_FLOW_SLA";
+};

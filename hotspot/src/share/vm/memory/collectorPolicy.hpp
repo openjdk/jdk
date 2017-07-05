@@ -248,13 +248,13 @@ friend class TestGenCollectorPolicy;
   // Compute max heap alignment.
   size_t compute_max_alignment();
 
- // Scale the base_size by NewRatio according to
- //     result = base_size / (NewRatio + 1)
- // and align by min_alignment()
- size_t scale_by_NewRatio_aligned(size_t base_size);
+  // Scale the base_size by NewRatio according to
+  //     result = base_size / (NewRatio + 1)
+  // and align by min_alignment()
+  size_t scale_by_NewRatio_aligned(size_t base_size);
 
- // Bound the value by the given maximum minus the min_alignment.
- size_t bound_minus_alignment(size_t desired_size, size_t maximum_size);
+  // Bound the value by the given maximum minus the min_alignment.
+  size_t bound_minus_alignment(size_t desired_size, size_t maximum_size);
 
  public:
   GenCollectorPolicy();
@@ -335,10 +335,6 @@ class TwoGenerationCollectorPolicy : public GenCollectorPolicy {
   virtual CollectorPolicy::Name kind() {
     return CollectorPolicy::TwoGenerationCollectorPolicyKind;
   }
-
-  // Returns true if gen0 sizes were adjusted
-  bool adjust_gen0_sizes(size_t* gen0_size_ptr, size_t* gen1_size_ptr,
-                         const size_t heap_size);
 };
 
 class MarkSweepPolicy : public TwoGenerationCollectorPolicy {

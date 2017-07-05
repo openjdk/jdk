@@ -127,6 +127,10 @@ __attribute__((visibility("default")))
 
 + (JNIEnv*)getJNIEnv;
 + (JNIEnv*)getJNIEnvUncached;
++ (void)detachCurrentThread;
++ (void)setAppkitThreadGroup:(jobject)group;
++ (void)setAWTEmbedded:(BOOL)embedded;
++ (BOOL)isAWTEmbedded;
 
 //Wrappers for the corresponding JNFRunLoop methods with a check for main thread
 + (void)performOnMainThreadWaiting:(BOOL)wait block:(void (^)())block;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,9 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
-import sun.awt.SunToolkit;
+
 import sun.awt.AWTAccessor;
+import sun.misc.ThreadGroupUtils;
 import sun.awt.Win32GraphicsConfig;
 import sun.awt.windows.WComponentPeer;
 import sun.java2d.InvalidPipeException;
@@ -92,21 +93,12 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
     public D3DScreenUpdateManager() {
         done = false;
         AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
-                    ThreadGroup currentTG =
-                        Thread.currentThread().getThreadGroup();
-                    ThreadGroup parentTG = currentTG.getParent();
-                    while (parentTG != null) {
-                        currentTG = parentTG;
-                        parentTG = currentTG.getParent();
-                    }
-                    Thread shutdown = new Thread(currentTG, new Runnable() {
-                            public void run() {
-                                done = true;
-                                wakeUpUpdateThread();
-                            }
-                        });
+                (PrivilegedAction<Void>) () -> {
+                    ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+                    Thread shutdown = new Thread(rootTG, () -> {
+                        done = true;
+                        wakeUpUpdateThread();
+                    });
                     shutdown.setContextClassLoader(null);
                     try {
                         Runtime.getRuntime().addShutdownHook(shutdown);
@@ -115,7 +107,6 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
                     }
                     return null;
                 }
-            }
         );
     }
 
@@ -354,21 +345,17 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      */
     private synchronized void startUpdateThread() {
         if (screenUpdater == null) {
-            screenUpdater = (Thread)java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction() {
-                    public Object run() {
-                        ThreadGroup tg =
-                            Thread.currentThread().getThreadGroup();
-                        for (ThreadGroup tgn = tg;
-                             tgn != null; tg = tgn, tgn = tg.getParent());
-                        Thread t = new Thread(tg, D3DScreenUpdateManager.this,
-                                              "D3D Screen Updater");
+            screenUpdater = AccessController.doPrivileged(
+                    (PrivilegedAction<Thread>) () -> {
+                        ThreadGroup rootTG = ThreadGroupUtils.getRootThreadGroup();
+                        Thread t = new Thread(rootTG,
+                                D3DScreenUpdateManager.this,
+                                "D3D Screen Updater");
                         // REMIND: should it be higher?
                         t.setPriority(Thread.NORM_PRIORITY + 2);
                         t.setDaemon(true);
                         return t;
-                    }
-            });
+                    });
             screenUpdater.start();
         } else {
             wakeUpUpdateThread();

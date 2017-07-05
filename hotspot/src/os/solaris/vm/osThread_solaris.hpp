@@ -82,8 +82,6 @@
   void set_ucontext(ucontext_t* ptr) { _ucontext = ptr; }
   static void SR_handler(Thread* thread, ucontext_t* uc);
 
-  static void       handle_spinlock_contention(int tries);                      // Used for thread local eden locking
-
   // ***************************************************************
   // Platform dependent initialization and cleanup
   // ***************************************************************

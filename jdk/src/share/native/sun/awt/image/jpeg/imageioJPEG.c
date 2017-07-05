@@ -945,6 +945,9 @@ imageio_fill_input_buffer(j_decompress_ptr cinfo)
                                 JPEGImageReader_readInputDataID,
                                 sb->hstreamBuffer, 0,
                                 sb->bufferLength);
+    if ((ret > 0) && ((unsigned int)ret > sb->bufferLength)) {
+         ret = sb->bufferLength;
+    }
     if ((*env)->ExceptionOccurred(env)
         || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
             cinfo->err->error_exit((j_common_ptr) cinfo);
@@ -1041,6 +1044,7 @@ imageio_fill_suspended_buffer(j_decompress_ptr cinfo)
                                 JPEGImageReader_readInputDataID,
                                 sb->hstreamBuffer,
                                 offset, buflen);
+    if ((ret > 0) && ((unsigned int)ret > buflen)) ret = buflen;
     if ((*env)->ExceptionOccurred(env)
         || !GET_ARRAYS(env, data, &(src->next_input_byte))) {
         cinfo->err->error_exit((j_common_ptr) cinfo);

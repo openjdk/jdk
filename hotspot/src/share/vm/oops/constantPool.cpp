@@ -144,6 +144,10 @@ void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
 // CDS support. Create a new resolved_references array.
 void ConstantPool::restore_unshareable_info(TRAPS) {
 
+  // Only create the new resolved references array and lock if it hasn't been
+  // attempted before
+  if (resolved_references() != NULL) return;
+
   // restore the C++ vtable from the shared archive
   restore_vtable();
 
