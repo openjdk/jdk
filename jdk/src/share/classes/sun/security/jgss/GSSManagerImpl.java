@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,6 @@ package sun.security.jgss;
 
 import org.ietf.jgss.*;
 import sun.security.jgss.spi.*;
-import java.io.*;
-import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -63,17 +61,17 @@ public class GSSManagerImpl extends GSSManager {
     private ProviderList list;
 
     // Used by java SPNEGO impl to make sure native is disabled
-    public GSSManagerImpl(int caller, boolean useNative) {
+    public GSSManagerImpl(GSSCaller caller, boolean useNative) {
         list = new ProviderList(caller, useNative);
     }
 
     // Used by HTTP/SPNEGO NegotiatorImpl
-    public GSSManagerImpl(int caller) {
+    public GSSManagerImpl(GSSCaller caller) {
         list = new ProviderList(caller, USE_NATIVE);
     }
 
     public GSSManagerImpl() {
-        list = new ProviderList(GSSUtil.CALLER_UNKNOWN, USE_NATIVE);
+        list = new ProviderList(GSSCaller.CALLER_UNKNOWN, USE_NATIVE);
     }
 
     public Oid[] getMechs(){

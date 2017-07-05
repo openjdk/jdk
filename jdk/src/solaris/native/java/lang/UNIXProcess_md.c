@@ -49,6 +49,30 @@
 #include <fcntl.h>
 #include <limits.h>
 
+/*
+ * (Hopefully temporarily) disable the clone-exec feature pending
+ * further investigation and bug-fixing.
+ * 32-bit (but not 64-bit) Linux fails on the program
+ *   Runtime.getRuntime().exec("/bin/true").waitFor();
+ * with:
+ * #  Internal Error (os_linux_x86.cpp:683), pid=19940, tid=2934639536
+ * #  Error: pthread_getattr_np failed with errno = 3 (ESRCH)
+ * Linux kernel/pthread gurus are invited to figure this out.
+ */
+#define USE_CLONE 0
+
+#ifndef USE_CLONE
+#ifdef __linux__
+#define USE_CLONE 1
+#else
+#define USE_CLONE 0
+#endif
+#endif
+
+#if USE_CLONE
+#include <sched.h>
+#endif
+
 #ifndef STDIN_FILENO
 #define STDIN_FILENO 0
 #endif
@@ -376,70 +400,61 @@ debugPrint(char *format, ...)
 }
 #endif /* DEBUG_PROCESS */
 
-/* Version of execvpe when child's PATH differs from parent's */
-static int
-execvp_usingParentPath(const char *file, const char *const argv[])
+/**
+ * Exec FILE as a traditional Bourne shell script (i.e. one without #!).
+ * If we could do it over again, we would probably not support such an ancient
+ * misfeature, but compatibility wins over sanity.  The original support for
+ * this was imported accidentally from execvp().
+ */
+static void
+execve_as_traditional_shell_script(const char *file,
+                                   const char *argv[],
+                                   const char *const envp[])
 {
-    char expanded_file[PATH_MAX];
-    int filelen = strlen(file);
-    int sticky_errno = 0;
-    const char * const * dirs;
-    /* Search parent's PATH */
-    for (dirs = parentPathv; *dirs; dirs++) {
-        const char * dir = *dirs;
-        int dirlen = strlen(dir);
-        if (filelen + dirlen + 1 >= PATH_MAX) {
-            /* Resist the urge to remove this limit;
-             * calling malloc after fork is unsafe. */
-            errno = ENAMETOOLONG;
-            continue;
-        }
-        strcpy(expanded_file, dir);
-        strcpy(expanded_file + dirlen, file);
-        execvp(expanded_file, (char **) argv);
-        /* There are 3 responses to various classes of errno:
-         * return immediately, continue (especially for ENOENT),
-         * or continue with "sticky" errno.
-         *
-         * From exec(3):
-         *
-         * If permission is denied for a file (the attempted
-         * execve returned EACCES), these functions will continue
-         * searching the rest of the search path.  If no other
-         * file is found, however, they will return with the
-         * global variable errno set to EACCES.
-         */
-        switch (errno) {
-        case EACCES:
-            sticky_errno = errno;
-            /* FALLTHRU */
-        case ENOENT:
-        case ENOTDIR:
-#ifdef ELOOP
-        case ELOOP:
-#endif
-#ifdef ESTALE
-        case ESTALE:
-#endif
-#ifdef ENODEV
-        case ENODEV:
-#endif
-#ifdef ETIMEDOUT
-        case ETIMEDOUT:
-#endif
-            break; /* Try other directories in PATH */
-        default:
-            return -1;
-        }
-    }
-    if (sticky_errno != 0)
-        errno = sticky_errno;
-    return -1;
+    /* Use the extra word of space provided for us in argv by caller. */
+    const char *argv0 = argv[0];
+    const char *const *end = argv;
+    while (*end != NULL)
+        ++end;
+    memmove(argv+2, argv+1, (end-argv) * sizeof (*end));
+    argv[0] = "/bin/sh";
+    argv[1] = file;
+    execve(argv[0], (char **) argv, (char **) envp);
+    /* Can't even exec /bin/sh?  Big trouble, but let's soldier on... */
+    memmove(argv+1, argv+2, (end-argv) * sizeof (*end));
+    argv[0] = argv0;
 }
 
-/* execvpe should have been included in the Unix standards. */
-static int
-execvpe(const char *file, const char *const argv[], const char *const envp[])
+/**
+ * Like execve(2), except that in case of ENOEXEC, FILE is assumed to
+ * be a shell script and the system default shell is invoked to run it.
+ */
+static void
+execve_with_shell_fallback(const char *file,
+                           const char *argv[],
+                           const char *const envp[])
+{
+#if USE_CLONE
+    execve(file, (char **) argv, (char **) envp);
+    if (errno == ENOEXEC)
+        execve_as_traditional_shell_script(file, argv, envp);
+#else
+    /* Our address space is unshared, so can mutate environ. */
+    extern char **environ;
+    environ = (char **) envp;
+    execvp(file, (char **) argv);
+#endif
+}
+
+/**
+ * execvpe should have been included in the Unix standards.
+ * execvpe is identical to execvp, except that the child environment is
+ * specified via the 3rd argument instead of being inherited from environ.
+ */
+static void
+execvpe(const char *file,
+        const char *argv[],
+        const char *const envp[])
 {
     /* This is one of the rare times it's more portable to declare an
      * external symbol explicitly, rather than via a system header.
@@ -454,28 +469,73 @@ execvpe(const char *file, const char *const argv[], const char *const envp[])
      */
     extern char **environ;
 
-    if (envp != NULL)
-        environ = (char **) envp;
+    if (envp == NULL || (char **) envp == environ) {
+        execvp(file, (char **) argv);
+        return;
+    }
 
-    if (/* Parent and child environment the same?  Use child PATH. */
-        (envp == NULL)
+    if (*file == '\0') {
+        errno = ENOENT;
+        return;
+    }
 
-        /* http://www.opengroup.org/onlinepubs/009695399/functions/exec.html
-         * "If the file argument contains a slash character, it is used as
-         * the pathname for this file.  Otherwise, the path prefix for this
-         * file is obtained by a search of the directories passed in the
-         * PATH environment variable" */
-        || (strchr(file, '/') != NULL)
-
-        /* Parent and child PATH the same?  Use child PATH. */
-        || (strcmp(parentPath, effectivePath()) == 0)
-
-        /* We want ENOENT, not EACCES, for zero-length program names. */
-        || (*file == '\0'))
-
-        return execvp(file, (char **) argv);
-    else
-        return execvp_usingParentPath(file, argv);
+    if (strchr(file, '/') != NULL) {
+        execve_with_shell_fallback(file, argv, envp);
+    } else {
+        /* We must search PATH (parent's, not child's) */
+        char expanded_file[PATH_MAX];
+        int filelen = strlen(file);
+        int sticky_errno = 0;
+        const char * const * dirs;
+        for (dirs = parentPathv; *dirs; dirs++) {
+            const char * dir = *dirs;
+            int dirlen = strlen(dir);
+            if (filelen + dirlen + 1 >= PATH_MAX) {
+                errno = ENAMETOOLONG;
+                continue;
+            }
+            memcpy(expanded_file, dir, dirlen);
+            memcpy(expanded_file + dirlen, file, filelen);
+            expanded_file[dirlen + filelen] = '\0';
+            execve_with_shell_fallback(expanded_file, argv, envp);
+            /* There are 3 responses to various classes of errno:
+             * return immediately, continue (especially for ENOENT),
+             * or continue with "sticky" errno.
+             *
+             * From exec(3):
+             *
+             * If permission is denied for a file (the attempted
+             * execve returned EACCES), these functions will continue
+             * searching the rest of the search path.  If no other
+             * file is found, however, they will return with the
+             * global variable errno set to EACCES.
+             */
+            switch (errno) {
+            case EACCES:
+                sticky_errno = errno;
+                /* FALLTHRU */
+            case ENOENT:
+            case ENOTDIR:
+#ifdef ELOOP
+            case ELOOP:
+#endif
+#ifdef ESTALE
+            case ESTALE:
+#endif
+#ifdef ENODEV
+            case ENODEV:
+#endif
+#ifdef ETIMEDOUT
+            case ETIMEDOUT:
+#endif
+                break; /* Try other directories in PATH */
+            default:
+                return;
+            }
+        }
+        if (sticky_errno != 0)
+            errno = sticky_errno;
+    }
 }
 
 static void
@@ -516,10 +576,95 @@ readFully(int fd, void *buf, size_t nbyte)
     }
 }
 
-#ifndef __solaris__
-#undef fork1
-#define fork1() fork()
-#endif
+typedef struct _ChildStuff
+{
+    int in[2];
+    int out[2];
+    int err[2];
+    int fail[2];
+    int fds[3];
+    const char **argv;
+    const char **envv;
+    const char *pdir;
+    jboolean redirectErrorStream;
+} ChildStuff;
+
+static void
+copyPipe(int from[2], int to[2])
+{
+    to[0] = from[0];
+    to[1] = from[1];
+}
+
+/**
+ * Child process after a successful fork() or clone().
+ * This function must not return, and must be prepared for either all
+ * of its address space to be shared with its parent, or to be a copy.
+ * It must not modify global variables such as "environ".
+ */
+static int
+childProcess(void *arg)
+{
+    const ChildStuff* p = (const ChildStuff*) arg;
+
+    /* Close the parent sides of the pipes.
+       Closing pipe fds here is redundant, since closeDescriptors()
+       would do it anyways, but a little paranoia is a good thing. */
+    closeSafely(p->in[1]);
+    closeSafely(p->out[0]);
+    closeSafely(p->err[0]);
+    closeSafely(p->fail[0]);
+
+    /* Give the child sides of the pipes the right fileno's. */
+    /* Note: it is possible for in[0] == 0 */
+    moveDescriptor(p->in[0] != -1 ?  p->in[0] : p->fds[0], STDIN_FILENO);
+    moveDescriptor(p->out[1]!= -1 ? p->out[1] : p->fds[1], STDOUT_FILENO);
+
+    if (p->redirectErrorStream) {
+      closeSafely(p->err[1]);
+      dup2(STDOUT_FILENO, STDERR_FILENO);
+    } else {
+      moveDescriptor(p->err[1] != -1 ? p->err[1] : p->fds[2], STDERR_FILENO);
+    }
+
+    moveDescriptor(p->fail[1], FAIL_FILENO);
+
+    /* close everything */
+    if (closeDescriptors() == 0) { /* failed,  close the old way */
+        int max_fd = (int)sysconf(_SC_OPEN_MAX);
+        int i;
+        for (i = FAIL_FILENO + 1; i < max_fd; i++)
+            close(i);
+    }
+
+    /* change to the new working directory */
+    if (p->pdir != NULL && chdir(p->pdir) < 0)
+        goto WhyCantJohnnyExec;
+
+    if (fcntl(FAIL_FILENO, F_SETFD, FD_CLOEXEC) == -1)
+        goto WhyCantJohnnyExec;
+
+    execvpe(p->argv[0], p->argv, p->envv);
+
+ WhyCantJohnnyExec:
+    /* We used to go to an awful lot of trouble to predict whether the
+     * child would fail, but there is no reliable way to predict the
+     * success of an operation without *trying* it, and there's no way
+     * to try a chdir or exec in the parent.  Instead, all we need is a
+     * way to communicate any failure back to the parent.  Easy; we just
+     * send the errno back to the parent over a pipe in case of failure.
+     * The tricky thing is, how do we communicate the *success* of exec?
+     * We use FD_CLOEXEC together with the fact that a read() on a pipe
+     * yields EOF when the write ends (we have two of them!) are closed.
+     */
+    {
+        int errnum = errno;
+        write(FAIL_FILENO, &errnum, sizeof(errnum));
+    }
+    close(FAIL_FILENO);
+    _exit(-1);
+    return 0;  /* Suppress warning "no return value from function" */
+}
 
 JNIEXPORT jint JNICALL
 Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
@@ -533,34 +678,43 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
 {
     int errnum;
     int resultPid = -1;
+#if USE_CLONE
+    void *clone_stack = NULL;
+#endif
     int in[2], out[2], err[2], fail[2];
-    const char **argv = NULL;
-    const char **envv = NULL;
-    const char *pprog     = getBytes(env, prog);
-    const char *pargBlock = getBytes(env, argBlock);
-    const char *penvBlock = getBytes(env, envBlock);
-    const char *pdir      = getBytes(env, dir);
     jint *fds = NULL;
+    const char *pprog = NULL;
+    const char *pargBlock = NULL;
+    const char *penvBlock = NULL;
+    ChildStuff *c;
 
     in[0] = in[1] = out[0] = out[1] = err[0] = err[1] = fail[0] = fail[1] = -1;
 
-    assert(prog != NULL && argBlock != NULL);
-    if (pprog     == NULL) goto Catch;
-    if (pargBlock == NULL) goto Catch;
-    if (envBlock  != NULL && penvBlock == NULL) goto Catch;
-    if (dir       != NULL && pdir      == NULL) goto Catch;
+    if ((c = NEW(ChildStuff, 1)) == NULL) return -1;
+    c->argv = NULL;
+    c->envv = NULL;
+    c->pdir = NULL;
 
-    /* Convert pprog + pargBlock into a char ** argv */
-    if ((argv = NEW(const char *, argc + 2)) == NULL)
-        goto Catch;
-    argv[0] = pprog;
-    initVectorFromBlock(argv+1, pargBlock, argc);
+    /* Convert prog + argBlock into a char ** argv.
+     * Add one word room for expansion of argv for use by
+     * execve_as_traditional_shell_script.
+     */
+    assert(prog != NULL && argBlock != NULL);
+    if ((pprog     = getBytes(env, prog))       == NULL) goto Catch;
+    if ((pargBlock = getBytes(env, argBlock))   == NULL) goto Catch;
+    if ((c->argv = NEW(const char *, argc + 3)) == NULL) goto Catch;
+    c->argv[0] = pprog;
+    initVectorFromBlock(c->argv+1, pargBlock, argc);
 
     if (envBlock != NULL) {
-        /* Convert penvBlock into a char ** envv */
-        if ((envv = NEW(const char *, envc + 1)) == NULL)
-            goto Catch;
-        initVectorFromBlock(envv, penvBlock, envc);
+        /* Convert envBlock into a char ** envv */
+        if ((penvBlock = getBytes(env, envBlock))   == NULL) goto Catch;
+        if ((c->envv = NEW(const char *, envc + 1)) == NULL) goto Catch;
+        initVectorFromBlock(c->envv, penvBlock, envc);
+    }
+
+    if (dir != NULL) {
+        if ((c->pdir = getBytes(env, dir)) == NULL) goto Catch;
     }
 
     assert(std_fds != NULL);
@@ -574,70 +728,43 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
         throwIOException(env, errno, "Bad file descriptor");
         goto Catch;
     }
+    c->fds[0] = fds[0];
+    c->fds[1] = fds[1];
+    c->fds[2] = fds[2];
 
-    resultPid = fork1();
+    copyPipe(in,   c->in);
+    copyPipe(out,  c->out);
+    copyPipe(err,  c->err);
+    copyPipe(fail, c->fail);
+
+    c->redirectErrorStream = redirectErrorStream;
+
+    {
+#if USE_CLONE
+        /* See clone(2).
+         * Instead of worrying about which direction the stack grows, just
+         * allocate twice as much and start the stack in the middle. */
+        const int stack_size = 64 * 1024;
+        if ((clone_stack = NEW(char, 2 * stack_size)) == NULL) goto Catch;
+        resultPid = clone(childProcess, clone_stack + stack_size,
+                          /* CLONE_VFORK | // works, but unnecessary */
+                          CLONE_VM | SIGCHLD, c);
+#else
+        /* From fork(2): In Solaris 10, a call to fork() is identical
+         * to a call to fork1(); only the calling thread is replicated
+         * in the child process. This is the POSIX-specified behavior
+         * for fork(). */
+        resultPid = fork();
+        if (resultPid == 0) {
+          childProcess(c);
+          assert(0);  /* childProcess must not return */
+        }
+#endif
+    }
+
     if (resultPid < 0) {
         throwIOException(env, errno, "Fork failed");
         goto Catch;
-    }
-
-    if (resultPid == 0) {
-        /* Child process */
-
-        /* Close the parent sides of the pipes.
-           Closing pipe fds here is redundant, since closeDescriptors()
-           would do it anyways, but a little paranoia is a good thing. */
-        closeSafely(in[1]);
-        closeSafely(out[0]);
-        closeSafely(err[0]);
-        closeSafely(fail[0]);
-
-        /* Give the child sides of the pipes the right fileno's. */
-        /* Note: it is possible for in[0] == 0 */
-        moveDescriptor(in[0] != -1 ?  in[0] : fds[0], STDIN_FILENO);
-        moveDescriptor(out[1]!= -1 ? out[1] : fds[1], STDOUT_FILENO);
-
-        if (redirectErrorStream) {
-            closeSafely(err[1]);
-            dup2(STDOUT_FILENO, STDERR_FILENO);
-        } else {
-            moveDescriptor(err[1] != -1 ? err[1] : fds[2], STDERR_FILENO);
-        }
-
-        moveDescriptor(fail[1], FAIL_FILENO);
-
-        /* close everything */
-        if (closeDescriptors() == 0) { /* failed,  close the old way */
-            int max_fd = (int)sysconf(_SC_OPEN_MAX);
-            int i;
-            for (i = FAIL_FILENO + 1; i < max_fd; i++)
-                close(i);
-        }
-
-        /* change to the new working directory */
-        if (pdir != NULL && chdir(pdir) < 0)
-            goto WhyCantJohnnyExec;
-
-        if (fcntl(FAIL_FILENO, F_SETFD, FD_CLOEXEC) == -1)
-            goto WhyCantJohnnyExec;
-
-        execvpe(argv[0], argv, envv);
-
-    WhyCantJohnnyExec:
-        /* We used to go to an awful lot of trouble to predict whether the
-         * child would fail, but there is no reliable way to predict the
-         * success of an operation without *trying* it, and there's no way
-         * to try a chdir or exec in the parent.  Instead, all we need is a
-         * way to communicate any failure back to the parent.  Easy; we just
-         * send the errno back to the parent over a pipe in case of failure.
-         * The tricky thing is, how do we communicate the *success* of exec?
-         * We use FD_CLOEXEC together with the fact that a read() on a pipe
-         * yields EOF when the write ends (we have two of them!) are closed.
-         */
-        errnum = errno;
-        write(FAIL_FILENO, &errnum, sizeof(errnum));
-        close(FAIL_FILENO);
-        _exit(-1);
     }
 
     /* parent process */
@@ -660,6 +787,10 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
     fds[2] = (err[0] != -1) ? err[0] : -1;
 
  Finally:
+#if USE_CLONE
+    free(clone_stack);
+#endif
+
     /* Always clean up the child's side of the pipes */
     closeSafely(in [0]);
     closeSafely(out[1]);
@@ -669,13 +800,14 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
     closeSafely(fail[0]);
     closeSafely(fail[1]);
 
-    free(argv);
-    free(envv);
-
     releaseBytes(env, prog,     pprog);
     releaseBytes(env, argBlock, pargBlock);
     releaseBytes(env, envBlock, penvBlock);
-    releaseBytes(env, dir,      pdir);
+    releaseBytes(env, dir,      c->pdir);
+
+    free(c->argv);
+    free(c->envv);
+    free(c);
 
     if (fds != NULL)
         (*env)->ReleaseIntArrayElements(env, std_fds, fds, 0);

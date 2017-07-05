@@ -804,8 +804,73 @@ LRESULT CALLBACK AwtToolkit::WndProc(HWND hWnd, UINT message,
           return 0;
       }
       case WM_AWT_ASSOCIATECONTEXT: {
-          AwtComponent *p = AwtComponent::GetComponent((HWND)wParam);
-          p->ImmAssociateContext((HIMC)lParam);
+          EnableNativeIMEStruct *data = (EnableNativeIMEStruct*)wParam;
+
+          jobject peer = data->peer;
+          jobject self = data->self;
+          jint context = data->context;
+          jboolean useNativeCompWindow = data->useNativeCompWindow;
+
+          AwtComponent* comp = (AwtComponent*)JNI_GET_PDATA(peer);
+          if (comp != NULL)
+          {
+              comp->SetInputMethod(self, useNativeCompWindow);
+              comp->ImmAssociateContext((HIMC)context);
+          }
+
+          if (peer != NULL) {
+              env->DeleteGlobalRef(peer);
+          }
+          if (self != NULL) {
+              env->DeleteGlobalRef(self);
+          }
+
+          delete data;
+          return 0;
+      }
+      case WM_AWT_GET_DEFAULT_IME_HANDLER: {
+          LRESULT ret = (LRESULT)FALSE;
+          jobject peer = (jobject)wParam;
+
+          AwtComponent* comp = (AwtComponent*)JNI_GET_PDATA(peer);
+          if (comp != NULL) {
+              HWND defaultIMEHandler = ImmGetDefaultIMEWnd(comp->GetHWnd());
+              if (defaultIMEHandler != NULL) {
+                  AwtToolkit::GetInstance().SetInputMethodWindow(defaultIMEHandler);
+                  ret = (LRESULT)TRUE;
+              }
+          }
+
+          if (peer != NULL) {
+              env->DeleteGlobalRef(peer);
+          }
+          return ret;
+      }
+      case WM_AWT_HANDLE_NATIVE_IME_EVENT: {
+          jobject peer = (jobject)wParam;
+          AwtComponent* comp = (AwtComponent*)JNI_GET_PDATA(peer);
+          MSG* msg = (MSG*)lParam;
+
+          long modifiers = comp->GetJavaModifiers();
+          if ((comp != NULL) && (msg->message==WM_CHAR || msg->message==WM_SYSCHAR)) {
+              WCHAR unicodeChar = (WCHAR)msg->wParam;
+              comp->SendKeyEvent(java_awt_event_KeyEvent_KEY_TYPED,
+                                 0, //to be fixed nowMillis(),
+                                 java_awt_event_KeyEvent_CHAR_UNDEFINED,
+                                 unicodeChar,
+                                 modifiers,
+                                 java_awt_event_KeyEvent_KEY_LOCATION_UNKNOWN, (jlong)0,
+                                 msg);
+          } else if (comp != NULL) {
+              MSG* pCopiedMsg = new MSG;
+              *pCopiedMsg = *msg;
+              comp->SendMessage(WM_AWT_HANDLE_EVENT, (WPARAM) FALSE,
+                                (LPARAM) pCopiedMsg);
+          }
+
+          if (peer != NULL) {
+              env->DeleteGlobalRef(peer);
+          }
           return 0;
       }
       case WM_AWT_ENDCOMPOSITION: {

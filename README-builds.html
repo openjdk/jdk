@@ -72,6 +72,7 @@
                             <li>Linux and Solaris:
                                 <ul>
                                     <li><a href="#cups">CUPS Include files</a> </li>
+                                    <li><a href="#xrender">XRender Include files</a></li>
                                 </ul>
                             </li>
                             <li>Linux only:
@@ -657,6 +658,9 @@
                     <tt><a href="#ALT_CUPS_HEADERS_PATH">ALT_CUPS_HEADERS_PATH</a></tt>.
                 </li>
                 <li>
+                    Install the <a href="#xrender">XRender Include files</a>.
+                </li>
+                <li>
                     Install the
                     <a href="#jibx">JIBX Libraries</a>, set
                     <tt><a href="#ALT_JIBX_LIBS_PATH">ALT_JIBX_LIBS_PATH</a></tt>.
@@ -1030,6 +1034,27 @@
                 <tt><a href="#ALT_CUPS_HEADERS_PATH">ALT_CUPS_HEADERS_PATH</a></tt>
                 can be used to override the default location of the
                 CUPS Header files.
+            </blockquote>
+            <!-- ------------------------------------------------------ -->
+            <h4><a name="xrender">XRender Extension Headers (Solaris &amp; Linux)</a></h4>
+            <blockquote>
+                <p>
+                <strong>Solaris:</strong>
+                XRender header files are required for building the 
+                OpenJDK on Solaris.
+                The XRender header file is included with the other X11 header files
+                in the package <strong>SFWxwinc</strong> on new enough versions of
+                Solaris and will be installed in
+	        <tt>/usr/X11/include/X11/extensions/Xrender.h</tt>
+                </p><p>
+                <strong>Linux:</strong>
+                XRender header files are required for building the 
+                OpenJDK on Linux.
+                The Linux header files are usually available from a "Xrender"
+                development package, it's recommended that you try and use
+                the package provided by the particular distribution of Linux that
+                you are using.
+	        </p>
             </blockquote>
             <!-- ------------------------------------------------------ -->
             <h4><a name="freetype">FreeType 2</a></h4>

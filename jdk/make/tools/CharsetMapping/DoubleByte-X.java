@@ -1,0 +1,100 @@
+/*
+ * Copyright 2009 Sun Microsystems, Inc.  All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Sun designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Sun in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa Clara,
+ * CA 95054 USA or visit www.sun.com if you need additional information or
+ * have any questions.
+ */
+
+// -- This file was mechanically generated: Do not edit! -- //
+
+package $PACKAGE$;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
+import java.util.Arrays;
+import sun.nio.cs.HistoricallyNamedCharset;
+import sun.nio.cs.ext.DoubleByte;
+
+public class $NAME_CLZ$ extends Charset
+                        $IMPLEMENTS$
+{
+    public $NAME_CLZ$() {
+        super("$NAME_CS$", $NAME_ALIASES$);
+    }
+
+    $HISTORICALNAME$
+
+    public boolean contains(Charset cs) {
+        $CONTAINS$
+    }
+
+    public CharsetDecoder newDecoder() {
+        initb2c();
+        return new  DoubleByte.Decoder$DECTYPE$(this, b2c, b2cSB, $B2MIN$, $B2MAX$);
+    }
+
+    public CharsetEncoder newEncoder() {
+        initc2b();
+        return new DoubleByte.Encoder$ENCTYPE$(this, c2b, c2bIndex);
+    }
+
+    $B2C$
+    static char[][] b2c = new char[b2cStr.length][];
+    static char[] b2cSB;
+    private static volatile boolean b2cInitialized = false;
+
+    static void initb2c() {
+        if (b2cInitialized)
+            return;
+        synchronized (b2c) {
+            if (b2cInitialized)
+                return;
+            for (int i = 0; i < b2cStr.length; i++) {
+                if (b2cStr[i] == null)
+                    b2c[i] = DoubleByte.B2C_UNMAPPABLE;
+                else
+                    b2c[i] = b2cStr[i].toCharArray();
+            }
+            b2cSB = b2cSBStr.toCharArray();
+            b2cInitialized = true;
+        }
+    }
+
+    static char[] c2b = new char[$C2BLENGTH$];
+    static char[] c2bIndex = new char[0x100];
+    private static volatile boolean c2bInitialized = false;
+
+    static void initc2b() {
+        if (c2bInitialized)
+            return;
+        synchronized (c2b) {
+            if (c2bInitialized)
+                return;
+            $NONROUNDTRIP_B2C$
+            $NONROUNDTRIP_C2B$
+            DoubleByte.Encoder.initC2B(b2cStr, b2cSBStr, b2cNR, c2bNR,
+                                       $B2MIN$, $B2MAX$,
+                                       c2b, c2bIndex);
+            c2bInitialized = true;
+        }
+    }
+}

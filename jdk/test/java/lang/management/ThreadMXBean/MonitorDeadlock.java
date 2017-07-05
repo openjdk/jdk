@@ -83,11 +83,24 @@ public class MonitorDeadlock {
 
     void waitUntilDeadlock() {
         barr.await();
-        // sleep a little while to wait until threads are blocked.
-        try {
-            Thread.sleep(100);
-        } catch (InterruptedException e) {
-            // ignore
+
+        for (int i=0; i < 100; i++) {
+            // sleep a little while to wait until threads are blocked.
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+            boolean retry = false;
+            for (Thread t: dThreads) {
+                if (t.getState() == Thread.State.RUNNABLE) {
+                    retry = true;
+                    break;
+                }
+            }
+            if (!retry) {
+                break;
+            }
         }
     }
 
