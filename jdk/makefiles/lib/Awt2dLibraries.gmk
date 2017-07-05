@@ -226,7 +226,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/windows \
       $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/java2d/windows \
       $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/java2d/d3d
-else
+else ifneq ($(OPENJDK_TARGET_OS), macosx)
   LIBAWT_DIRS += \
       $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/java2d/x11
 endif
@@ -509,15 +509,7 @@ BUILD_LIBRARIES += $(BUILD_LIBAWT)
 
 ##########################################################################################
 
-# TODO!!
-# Even though this variable as a general name, it is
-# only used on macos, in fontpath.c, as prefix for where to find fonts.
-#
-# It's used for libawt_headless _and_ libawt_xawt
-#
-X11_PATH := /usr/X11R6
-
-ifneq ($(OPENJDK_TARGET_OS), windows)
+ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
   ifndef BUILD_HEADLESS_ONLY
 
     LIBAWT_XAWT_DIRS := \
@@ -532,7 +524,7 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
         $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/xawt \
 
     LIBAWT_XAWT_CFLAGS := -DXAWT -DXAWT_HACK \
-        -DX11_PATH=\"$(X11_PATH)\" -DPACKAGE_PATH=\"$(PACKAGE_PATH)\" \
+        -DPACKAGE_PATH=\"$(PACKAGE_PATH)\" \
         $(CUPS_CFLAGS) \
         $(foreach dir, $(LIBAWT_XAWT_DIRS), -I$(dir)) \
         -I$(JDK_TOPDIR)/src/share/native/sun/java2d \
@@ -627,11 +619,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       LIBAWT_XAWT_LDFLAGS += -lpthread
     endif
 
-    ifeq ($(OPENJDK_TARGET_OS), macosx)
-      LIBAWT_XAWT_LDFLAGS_SUFFIX += -lpthread
-    endif
-
-    # On macosx, the shared library origin is set twice for this lib.
     $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_XAWT, \
         LIBRARY := awt_xawt, \
         OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
@@ -653,10 +640,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
             -R/usr/dt/lib$(OPENJDK_TARGET_CPU_ISADIR) \
             $(call SET_SHARED_LIBRARY_ORIGIN) \
             $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
-        LDFLAGS_macosx := $(call SET_SHARED_LIBRARY_ORIGIN) \
-            $(call SET_SHARED_LIBRARY_ORIGIN). \
-            $(call SET_SHARED_LIBRARY_ORIGIN) \
-            $(call SET_SHARED_LIBRARY_ORIGIN)., \
         LDFLAGS_SUFFIX := $(LIBAWT_XAWT_LDFLAGS_SUFFIX), \
         VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
         RC_FLAGS := $(RC_FLAGS) \
@@ -788,6 +771,11 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c \
       X11TextRenderer.c
   LIBFONTMANAGER_OPTIMIZATION := HIGHEST
+else ifeq ($(OPENJDK_TARGET_OS), macosx)
+  LIBFONTMANAGER_EXCLUDE_FILES += X11FontScaler.c \
+      X11TextRenderer.c \
+      fontpath.c \
+      lcdglyph.c
 else
   LIBFONTMANAGER_EXCLUDE_FILES += fontpath.c \
       lcdglyph.c
@@ -845,7 +833,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
 
 $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT)
 
-ifneq (, $(findstring $(OPENJDK_TARGET_OS), solaris macosx))
+ifeq ($(OPENJDK_TARGET_OS), solaris)
   $(BUILD_LIBFONTMANAGER): $(BUILD_LIBAWT_XAWT)
 endif
 
@@ -947,22 +935,21 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 
 else # OPENJDK_TARGET_OS not windows
 
-  JAWT_LIBS :=
-  ifneq ($(OPENJDK_TARGET_OS), solaris)
-    JAWT_LIBS += -lawt
-  endif
-
-  ifndef BUILD_HEADLESS_ONLY
-    JAWT_LIBS += -lawt_xawt
-  else
-    JAWT_LIBS += -lawt_headless
-    HEADLESS_CFLAG += -DHEADLESS
-  endif
-
-  JAWT_FILES := jawt.c
   ifeq ($(OPENJDK_TARGET_OS), macosx)
     JAWT_FILES := jawt.m
     JAWT_LIBS := -lawt_lwawt
+  else
+    JAWT_FILES := jawt.c
+    JAWT_LIBS :=
+    ifneq ($(OPENJDK_TARGET_OS), solaris)
+      JAWT_LIBS += -lawt
+    endif
+    ifndef BUILD_HEADLESS_ONLY
+      JAWT_LIBS += -lawt_xawt
+    else
+      JAWT_LIBS += -lawt_headless
+      HEADLESS_CFLAG += -DHEADLESS
+    endif
   endif
 
   $(eval $(call SetupNativeCompilation,BUILD_LIBJAWT, \
@@ -1094,7 +1081,8 @@ endif
 ##########################################################################################
 
 ifeq ($(BUILD_HEADLESS), true)
-  ifneq ($(OPENJDK_TARGET_OS), windows)
+  # Mac and Windows only use the native AWT lib, do not build libawt_headless
+  ifeq ($(findstring $(OPENJDK_TARGET_OS), windows macosx),)
 
     LIBAWT_HEADLESS_DIRS := $(JDK_TOPDIR)/src/share/native/sun/font \
         $(JDK_TOPDIR)/src/share/native/sun/java2d/opengl \
@@ -1108,7 +1096,7 @@ ifeq ($(BUILD_HEADLESS), true)
     endif
 
     LIBAWT_HEADLESS_CFLAGS := -DHEADLESS=true \
-        -DX11_PATH=\"$(X11_PATH)\" -DPACKAGE_PATH=\"$(PACKAGE_PATH)\" \
+        -DPACKAGE_PATH=\"$(PACKAGE_PATH)\" \
         $(CUPS_CFLAGS) \
         $(X_CFLAGS) \
         -I$(JDK_TOPDIR)/src/share/native/sun/java2d \
@@ -1155,16 +1143,6 @@ ifeq ($(BUILD_HEADLESS), true)
         AccelGlyphCache.c \
         CUPSfuncs.c
 
-    ifeq ($(OPENJDK_TARGET_OS), macosx)
-      LIBAWT_HEADLESS_FILES += \
-          AWTFont.m \
-          AWTStrike.m \
-          CCharToGlyphMapper.m \
-          CGGlyphImages.m \
-          CGGlyphOutlines.m \
-          CoreTextSupport.m
-    endif
-
     LIBAWT_HEADLESS_REORDER :=
     ifeq ($(OPENJDK_TARGET_OS), solaris)
       ifneq ($(OPENJDK_TARGET_CPU), x86_64)
@@ -1191,13 +1169,6 @@ ifeq ($(BUILD_HEADLESS), true)
         REORDER := $(LIBAWT_HEADLESS_REORDER), \
         LDFLAGS_SUFFIX_linux := -ljvm -lawt -lm $(LIBDL) -ljava, \
         LDFLAGS_SUFFIX_solaris := $(LIBDL) -ljvm -lawt -lm -ljava $(LIBCXX) -lc, \
-        LDFLAGS_SUFFIX_macosx := -ljvm $(LIBCXX) -lawt $(LIBDL) -ljava \
-            -framework Accelerate \
-            -framework ApplicationServices \
-            -framework Cocoa \
-            -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
-            -framework JavaNativeFoundation \
-            -framework JavaRuntimeSupport, \
         OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libawt_headless, \
         DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 

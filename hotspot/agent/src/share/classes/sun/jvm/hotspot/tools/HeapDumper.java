@@ -80,8 +80,7 @@ public class HeapDumper extends Tool {
         }
 
         HeapDumper dumper = new HeapDumper(file);
-        dumper.start(args);
-        dumper.stop();
+        dumper.execute(args);
     }
 
 }

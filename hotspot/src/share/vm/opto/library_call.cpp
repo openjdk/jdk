@@ -63,7 +63,7 @@ class LibraryIntrinsic : public InlineCallGenerator {
   virtual bool is_virtual()   const { return _is_virtual; }
   virtual bool is_predicted()   const { return _is_predicted; }
   virtual bool does_virtual_dispatch()   const { return _does_virtual_dispatch; }
-  virtual JVMState* generate(JVMState* jvms);
+  virtual JVMState* generate(JVMState* jvms, Parse* parent_parser);
   virtual Node* generate_predicate(JVMState* jvms);
   vmIntrinsics::ID intrinsic_id() const { return _intrinsic_id; }
 };
@@ -203,8 +203,15 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_native(vmIntrinsics::ID id);
   bool inline_trig(vmIntrinsics::ID id);
   bool inline_math(vmIntrinsics::ID id);
-  bool inline_math_mathExact(Node* math);
-  bool inline_math_addExact();
+  void inline_math_mathExact(Node* math);
+  bool inline_math_addExactI(bool is_increment);
+  bool inline_math_addExactL(bool is_increment);
+  bool inline_math_multiplyExactI();
+  bool inline_math_multiplyExactL();
+  bool inline_math_negateExactI();
+  bool inline_math_negateExactL();
+  bool inline_math_subtractExactI(bool is_decrement);
+  bool inline_math_subtractExactL(bool is_decrement);
   bool inline_exp();
   bool inline_pow();
   void finish_pow_exp(Node* result, Node* x, Node* y, const TypeFunc* call_type, address funcAddr, const char* funcName);
@@ -507,13 +514,33 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     if (!UseCRC32Intrinsics) return NULL;
     break;
 
-  case vmIntrinsics::_addExact:
-    if (!Matcher::match_rule_supported(Op_AddExactI)) {
-      return NULL;
-    }
-    if (!UseMathExactIntrinsics) {
-      return NULL;
-    }
+  case vmIntrinsics::_incrementExactI:
+  case vmIntrinsics::_addExactI:
+    if (!Matcher::match_rule_supported(Op_AddExactI) || !UseMathExactIntrinsics) return NULL;
+    break;
+  case vmIntrinsics::_incrementExactL:
+  case vmIntrinsics::_addExactL:
+    if (!Matcher::match_rule_supported(Op_AddExactL) || !UseMathExactIntrinsics) return NULL;
+    break;
+  case vmIntrinsics::_decrementExactI:
+  case vmIntrinsics::_subtractExactI:
+    if (!Matcher::match_rule_supported(Op_SubExactI) || !UseMathExactIntrinsics) return NULL;
+    break;
+  case vmIntrinsics::_decrementExactL:
+  case vmIntrinsics::_subtractExactL:
+    if (!Matcher::match_rule_supported(Op_SubExactL) || !UseMathExactIntrinsics) return NULL;
+    break;
+  case vmIntrinsics::_negateExactI:
+    if (!Matcher::match_rule_supported(Op_NegExactI) || !UseMathExactIntrinsics) return NULL;
+    break;
+  case vmIntrinsics::_negateExactL:
+    if (!Matcher::match_rule_supported(Op_NegExactL) || !UseMathExactIntrinsics) return NULL;
+    break;
+  case vmIntrinsics::_multiplyExactI:
+    if (!Matcher::match_rule_supported(Op_MulExactI) || !UseMathExactIntrinsics) return NULL;
+    break;
+  case vmIntrinsics::_multiplyExactL:
+    if (!Matcher::match_rule_supported(Op_MulExactL) || !UseMathExactIntrinsics) return NULL;
     break;
 
  default:
@@ -556,7 +583,7 @@ void Compile::register_library_intrinsics() {
   // Nothing to do here.
 }
 
-JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
+JVMState* LibraryIntrinsic::generate(JVMState* jvms, Parse* parent_parser) {
   LibraryCallKit kit(jvms, this);
   Compile* C = kit.C;
   int nodes = C->unique();
@@ -686,7 +713,18 @@ bool LibraryCallKit::try_to_inline() {
   case vmIntrinsics::_min:
   case vmIntrinsics::_max:                      return inline_min_max(intrinsic_id());
 
-  case vmIntrinsics::_addExact:                 return inline_math_addExact();
+  case vmIntrinsics::_addExactI:                return inline_math_addExactI(false /* add */);
+  case vmIntrinsics::_addExactL:                return inline_math_addExactL(false /* add */);
+  case vmIntrinsics::_decrementExactI:          return inline_math_subtractExactI(true /* decrement */);
+  case vmIntrinsics::_decrementExactL:          return inline_math_subtractExactL(true /* decrement */);
+  case vmIntrinsics::_incrementExactI:          return inline_math_addExactI(true /* increment */);
+  case vmIntrinsics::_incrementExactL:          return inline_math_addExactL(true /* increment */);
+  case vmIntrinsics::_multiplyExactI:           return inline_math_multiplyExactI();
+  case vmIntrinsics::_multiplyExactL:           return inline_math_multiplyExactL();
+  case vmIntrinsics::_negateExactI:             return inline_math_negateExactI();
+  case vmIntrinsics::_negateExactL:             return inline_math_negateExactL();
+  case vmIntrinsics::_subtractExactI:           return inline_math_subtractExactI(false /* subtract */);
+  case vmIntrinsics::_subtractExactL:           return inline_math_subtractExactL(false /* subtract */);
 
   case vmIntrinsics::_arraycopy:                return inline_arraycopy();
 
@@ -1931,7 +1969,14 @@ bool LibraryCallKit::inline_min_max(vmIntrinsics::ID id) {
   return true;
 }
 
-bool LibraryCallKit::inline_math_mathExact(Node* math) {
+void LibraryCallKit::inline_math_mathExact(Node* math) {
+  // If we didn't get the expected opcode it means we have optimized
+  // the node to something else and don't need the exception edge.
+  if (!math->is_MathExact()) {
+    set_result(math);
+    return;
+  }
+
   Node* result = _gvn.transform( new(C) ProjNode(math, MathExactNode::result_proj_node));
   Node* flags = _gvn.transform( new(C) FlagsProjNode(math, MathExactNode::flags_proj_node));
 
@@ -1954,19 +1999,106 @@ bool LibraryCallKit::inline_math_mathExact(Node* math) {
 
   set_control(fast_path);
   set_result(result);
+}
+
+bool LibraryCallKit::inline_math_addExactI(bool is_increment) {
+  Node* arg1 = argument(0);
+  Node* arg2 = NULL;
+
+  if (is_increment) {
+      arg2 = intcon(1);
+  } else {
+      arg2 = argument(1);
+  }
+
+  Node* add = _gvn.transform( new(C) AddExactINode(NULL, arg1, arg2) );
+  inline_math_mathExact(add);
   return true;
 }
 
-bool LibraryCallKit::inline_math_addExact() {
+bool LibraryCallKit::inline_math_addExactL(bool is_increment) {
+  Node* arg1 = argument(0); // type long
+  // argument(1) == TOP
+  Node* arg2 = NULL;
+
+  if (is_increment) {
+    arg2 = longcon(1);
+  } else {
+    arg2 = argument(2); // type long
+    // argument(3) == TOP
+  }
+
+  Node* add = _gvn.transform(new(C) AddExactLNode(NULL, arg1, arg2));
+  inline_math_mathExact(add);
+  return true;
+}
+
+bool LibraryCallKit::inline_math_subtractExactI(bool is_decrement) {
+  Node* arg1 = argument(0);
+  Node* arg2 = NULL;
+
+  if (is_decrement) {
+    arg2 = intcon(1);
+  } else {
+    arg2 = argument(1);
+  }
+
+  Node* sub = _gvn.transform(new(C) SubExactINode(NULL, arg1, arg2));
+  inline_math_mathExact(sub);
+  return true;
+}
+
+bool LibraryCallKit::inline_math_subtractExactL(bool is_decrement) {
+  Node* arg1 = argument(0); // type long
+  // argument(1) == TOP
+  Node* arg2 = NULL;
+
+  if (is_decrement) {
+    arg2 = longcon(1);
+  } else {
+    Node* arg2 = argument(2); // type long
+    // argument(3) == TOP
+  }
+
+  Node* sub = _gvn.transform(new(C) SubExactLNode(NULL, arg1, arg2));
+  inline_math_mathExact(sub);
+  return true;
+}
+
+bool LibraryCallKit::inline_math_negateExactI() {
+  Node* arg1 = argument(0);
+
+  Node* neg = _gvn.transform(new(C) NegExactINode(NULL, arg1));
+  inline_math_mathExact(neg);
+  return true;
+}
+
+bool LibraryCallKit::inline_math_negateExactL() {
+  Node* arg1 = argument(0);
+  // argument(1) == TOP
+
+  Node* neg = _gvn.transform(new(C) NegExactLNode(NULL, arg1));
+  inline_math_mathExact(neg);
+  return true;
+}
+
+bool LibraryCallKit::inline_math_multiplyExactI() {
   Node* arg1 = argument(0);
   Node* arg2 = argument(1);
 
-  Node* add = _gvn.transform( new(C) AddExactINode(NULL, arg1, arg2) );
-  if (add->Opcode() == Op_AddExactI) {
-    return inline_math_mathExact(add);
-  } else {
-    set_result(add);
-  }
+  Node* mul = _gvn.transform(new(C) MulExactINode(NULL, arg1, arg2));
+  inline_math_mathExact(mul);
+  return true;
+}
+
+bool LibraryCallKit::inline_math_multiplyExactL() {
+  Node* arg1 = argument(0);
+  // argument(1) == TOP
+  Node* arg2 = argument(2);
+  // argument(3) == TOP
+
+  Node* mul = _gvn.transform(new(C) MulExactLNode(NULL, arg1, arg2));
+  inline_math_mathExact(mul);
   return true;
 }
 
@@ -3353,6 +3485,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
   // If kls is null, we have a primitive mirror.
   phi->init_req(_prim_path, prim_return_value);
   if (stopped()) { set_result(region, phi); return true; }
+  bool safe_for_replace = (region->in(_prim_path) == top());
 
   Node* p;  // handy temp
   Node* null_ctl;
@@ -3363,7 +3496,7 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_isInstance:
     // nothing is an instance of a primitive type
-    query_value = gen_instanceof(obj, kls);
+    query_value = gen_instanceof(obj, kls, safe_for_replace);
     break;
 
   case vmIntrinsics::_getModifiers:
@@ -4553,8 +4686,62 @@ bool LibraryCallKit::inline_arraycopy() {
   const Type* dest_type = dest->Value(&_gvn);
   const TypeAryPtr* top_src  = src_type->isa_aryptr();
   const TypeAryPtr* top_dest = dest_type->isa_aryptr();
-  if (top_src  == NULL || top_src->klass()  == NULL ||
-      top_dest == NULL || top_dest->klass() == NULL) {
+
+  // Do we have the type of src?
+  bool has_src = (top_src != NULL && top_src->klass() != NULL);
+  // Do we have the type of dest?
+  bool has_dest = (top_dest != NULL && top_dest->klass() != NULL);
+  // Is the type for src from speculation?
+  bool src_spec = false;
+  // Is the type for dest from speculation?
+  bool dest_spec = false;
+
+  if (!has_src || !has_dest) {
+    // We don't have sufficient type information, let's see if
+    // speculative types can help. We need to have types for both src
+    // and dest so that it pays off.
+
+    // Do we already have or could we have type information for src
+    bool could_have_src = has_src;
+    // Do we already have or could we have type information for dest
+    bool could_have_dest = has_dest;
+
+    ciKlass* src_k = NULL;
+    if (!has_src) {
+      src_k = src_type->speculative_type();
+      if (src_k != NULL && src_k->is_array_klass()) {
+        could_have_src = true;
+      }
+    }
+
+    ciKlass* dest_k = NULL;
+    if (!has_dest) {
+      dest_k = dest_type->speculative_type();
+      if (dest_k != NULL && dest_k->is_array_klass()) {
+        could_have_dest = true;
+      }
+    }
+
+    if (could_have_src && could_have_dest) {
+      // This is going to pay off so emit the required guards
+      if (!has_src) {
+        src = maybe_cast_profiled_obj(src, src_k);
+        src_type  = _gvn.type(src);
+        top_src  = src_type->isa_aryptr();
+        has_src = (top_src != NULL && top_src->klass() != NULL);
+        src_spec = true;
+      }
+      if (!has_dest) {
+        dest = maybe_cast_profiled_obj(dest, dest_k);
+        dest_type  = _gvn.type(dest);
+        top_dest  = dest_type->isa_aryptr();
+        has_dest = (top_dest != NULL && top_dest->klass() != NULL);
+        dest_spec = true;
+      }
+    }
+  }
+
+  if (!has_src || !has_dest) {
     // Conservatively insert a memory barrier on all memory slices.
     // Do not let writes into the source float below the arraycopy.
     insert_mem_bar(Op_MemBarCPUOrder);
@@ -4587,6 +4774,40 @@ bool LibraryCallKit::inline_arraycopy() {
                             src, src_offset, dest, dest_offset, length,
                             /*dest_uninitialized*/false);
     return true;
+  }
+
+  if (src_elem == T_OBJECT) {
+    // If both arrays are object arrays then having the exact types
+    // for both will remove the need for a subtype check at runtime
+    // before the call and may make it possible to pick a faster copy
+    // routine (without a subtype check on every element)
+    // Do we have the exact type of src?
+    bool could_have_src = src_spec;
+    // Do we have the exact type of dest?
+    bool could_have_dest = dest_spec;
+    ciKlass* src_k = top_src->klass();
+    ciKlass* dest_k = top_dest->klass();
+    if (!src_spec) {
+      src_k = src_type->speculative_type();
+      if (src_k != NULL && src_k->is_array_klass()) {
+          could_have_src = true;
+      }
+    }
+    if (!dest_spec) {
+      dest_k = dest_type->speculative_type();
+      if (dest_k != NULL && dest_k->is_array_klass()) {
+        could_have_dest = true;
+      }
+    }
+    if (could_have_src && could_have_dest) {
+      // If we can have both exact types, emit the missing guards
+      if (could_have_src && !src_spec) {
+        src = maybe_cast_profiled_obj(src, src_k);
+      }
+      if (could_have_dest && !dest_spec) {
+        dest = maybe_cast_profiled_obj(dest, dest_k);
+      }
+    }
   }
 
   //---------------------------------------------------------------------------
