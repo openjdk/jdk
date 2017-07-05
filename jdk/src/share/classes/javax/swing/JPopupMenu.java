@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ import javax.swing.plaf.PopupMenuUI;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicComboPopup;
 import javax.swing.event.*;
+
+import sun.awt.SunToolkit;
 import sun.security.util.SecurityConstants;
 
 import java.applet.Applet;
@@ -347,6 +349,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         long popupBottomY = (long)popupLocation.y + (long)popupSize.height;
         int scrWidth = scrBounds.width;
         int scrHeight = scrBounds.height;
+
         if (!canPopupOverlapTaskBar()) {
             // Insets include the task bar. Take them into account.
             Insets scrInsets = toolkit.getScreenInsets(gc);
@@ -407,24 +410,18 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     }
 
     /**
-     * Checks that there are enough security permissions
-     * to make popup "always on top", which allows to show it above the task bar.
+     * Returns whether popup is allowed to be shown above the task bar.
      */
     static boolean canPopupOverlapTaskBar() {
         boolean result = true;
-        try {
-            SecurityManager sm = System.getSecurityManager();
-            if (sm != null) {
-                sm.checkPermission(
-                    SecurityConstants.AWT.SET_WINDOW_ALWAYS_ON_TOP_PERMISSION);
-            }
-        } catch (SecurityException se) {
-            // There is no permission to show popups over the task bar
-            result = false;
+
+        Toolkit tk = Toolkit.getDefaultToolkit();
+        if (tk instanceof SunToolkit) {
+            result = ((SunToolkit)tk).canPopupOverlapTaskBar();
         }
+
         return result;
     }
-
 
     /**
      * Factory method which creates the <code>JMenuItem</code> for

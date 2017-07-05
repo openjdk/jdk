@@ -23,7 +23,8 @@
  */
 
 #include "precompiled.hpp"
-#include "gc_implementation/concurrentMarkSweep/freeBlockDictionary.hpp"
+#include "gc_implementation/concurrentMarkSweep/freeChunk.hpp"
+#include "memory/freeBlockDictionary.hpp"
 #include "utilities/copy.hpp"
 
 #ifndef PRODUCT

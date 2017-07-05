@@ -87,7 +87,12 @@ public class JPEGImageReader extends ImageReader {
 
     static {
         java.security.AccessController.doPrivileged(
-            new sun.security.action.LoadLibraryAction("jpeg"));
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("jpeg");
+                    return null;
+                }
+            });
         initReaderIDs(ImageInputStream.class,
                       JPEGQTable.class,
                       JPEGHuffmanTable.class);

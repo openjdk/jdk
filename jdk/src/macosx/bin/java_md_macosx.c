@@ -906,11 +906,41 @@ SetXDockArgForAWT(const char *arg)
 {
     char envVar[80];
     if (strstr(arg, "-Xdock:name=") == arg) {
+        /*
+         * The APP_NAME_<pid> environment variable is used to pass
+         * an application name as specified with the -Xdock:name command
+         * line option from Java launcher code to the AWT code in order
+         * to assign this name to the app's dock tile on the Mac.
+         * The _<pid> part is added to avoid collisions with child processes.
+         *
+         * WARNING: This environment variable is an implementation detail and
+         * isn't meant for use outside of the core platform. The mechanism for
+         * passing this information from Java launcher to other modules may
+         * change drastically between update release, and it may even be
+         * removed or replaced with another mechanism.
+         *
+         * NOTE: It is used by SWT, and JavaFX.
+         */
         snprintf(envVar, sizeof(envVar), "APP_NAME_%d", getpid());
         setenv(envVar, (arg + 12), 1);
     }
 
     if (strstr(arg, "-Xdock:icon=") == arg) {
+        /*
+         * The APP_ICON_<pid> environment variable is used to pass
+         * an application icon as specified with the -Xdock:icon command
+         * line option from Java launcher code to the AWT code in order
+         * to assign this icon to the app's dock tile on the Mac.
+         * The _<pid> part is added to avoid collisions with child processes.
+         *
+         * WARNING: This environment variable is an implementation detail and
+         * isn't meant for use outside of the core platform. The mechanism for
+         * passing this information from Java launcher to other modules may
+         * change drastically between update release, and it may even be
+         * removed or replaced with another mechanism.
+         *
+         * NOTE: It is used by SWT, and JavaFX.
+         */
         snprintf(envVar, sizeof(envVar), "APP_ICON_%d", getpid());
         setenv(envVar, (arg + 12), 1);
     }
@@ -931,6 +961,22 @@ SetMainClassForAWT(JNIEnv *env, jclass mainClass) {
     NULL_CHECK(mainClassName = (*env)->GetStringUTFChars(env, mainClassString, NULL));
 
     char envVar[80];
+    /*
+     * The JAVA_MAIN_CLASS_<pid> environment variable is used to pass
+     * the name of a Java class whose main() method is invoked by
+     * the Java launcher code to start the application, to the AWT code
+     * in order to assign the name to the Apple menu bar when the app
+     * is active on the Mac.
+     * The _<pid> part is added to avoid collisions with child processes.
+     *
+     * WARNING: This environment variable is an implementation detail and
+     * isn't meant for use outside of the core platform. The mechanism for
+     * passing this information from Java launcher to other modules may
+     * change drastically between update release, and it may even be
+     * removed or replaced with another mechanism.
+     *
+     * NOTE: It is used by SWT, and JavaFX.
+     */
     snprintf(envVar, sizeof(envVar), "JAVA_MAIN_CLASS_%d", getpid());
     setenv(envVar, mainClassName, 1);
 

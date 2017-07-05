@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,12 @@ static const byte TAGS_IN_ORDER[] = {
   CONSTANT_NameandType,
   CONSTANT_Fieldref,
   CONSTANT_Methodref,
-  CONSTANT_InterfaceMethodref
+  CONSTANT_InterfaceMethodref,
+  // constants defined as of JDK 7
+  CONSTANT_MethodHandle,
+  CONSTANT_MethodType,
+  CONSTANT_BootstrapMethod,
+  CONSTANT_InvokeDynamic
 };
 #define N_TAGS_IN_ORDER (sizeof TAGS_IN_ORDER)
 
@@ -101,6 +106,11 @@ static const char* TAG_NAME[] = {
   "InterfaceMethodref",
   "NameandType",
   "*Signature",
+  "unused14",
+  "MethodHandle",
+  "MethodType",
+  "*BootstrapMethod",
+  "InvokeDynamic",
   0
 };
 
@@ -114,9 +124,13 @@ static const char* ATTR_CONTEXT_NAME[] = {  // match ATTR_CONTEXT_NAME, etc.
 
 #endif
 
-
-// REQUESTED must be -2 for u2 and REQUESTED_LDC must be -1 for u1
-enum { NOT_REQUESTED = 0, REQUESTED = -2, REQUESTED_LDC = -1 };
+// Note that REQUESTED_LDC comes first, then the normal REQUESTED,
+// in the regular constant pool.
+enum { REQUESTED_NONE = -1,
+       // The codes below REQUESTED_NONE are in constant pool output order,
+       // for the sake of outputEntry_cmp:
+       REQUESTED_LDC = -99, REQUESTED
+};
 
 #define NO_INORD ((uint)-1)
 
@@ -146,7 +160,7 @@ struct entry {
 
   void requestOutputIndex(cpool& cp, int req = REQUESTED);
   int getOutputIndex() {
-    assert(outputIndex > NOT_REQUESTED);
+    assert(outputIndex > REQUESTED_NONE);
     return outputIndex;
   }
 
@@ -167,12 +181,12 @@ struct entry {
   }
 
   entry* memberClass() {
-    assert(tagMatches(CONSTANT_Member));
+    assert(tagMatches(CONSTANT_AnyMember));
     return ref(0);
   }
 
   entry* memberDescr() {
-    assert(tagMatches(CONSTANT_Member));
+    assert(tagMatches(CONSTANT_AnyMember));
     return ref(1);
   }
 
@@ -199,9 +213,9 @@ struct entry {
     return (tag2 == tag)
       || (tag2 == CONSTANT_Utf8 && tag == CONSTANT_Signature)
       #ifndef PRODUCT
-      || (tag2 == CONSTANT_Literal
+      || (tag2 == CONSTANT_FieldSpecific
           && tag >= CONSTANT_Integer && tag <= CONSTANT_String && tag != CONSTANT_Class)
-      || (tag2 == CONSTANT_Member
+      || (tag2 == CONSTANT_AnyMember
           && tag >= CONSTANT_Fieldref && tag <= CONSTANT_InterfaceMethodref)
       #endif
       ;
@@ -309,6 +323,7 @@ void unpacker::free() {
   code_fixup_offset.free();
   code_fixup_source.free();
   requested_ics.free();
+  cp.requested_bsms.free();
   cur_classfile_head.free();
   cur_classfile_tail.free();
   for (i = 0; i < ATTR_CONTEXT_LIMIT; i++)
@@ -448,12 +463,12 @@ maybe_inline
 int unpacker::putref_index(entry* e, int size) {
   if (e == null)
     return 0;
-  else if (e->outputIndex > NOT_REQUESTED)
+  else if (e->outputIndex > REQUESTED_NONE)
     return e->outputIndex;
   else if (e->tag == CONSTANT_Signature)
     return putref_index(e->ref(0), size);
   else {
-    e->requestOutputIndex(cp, -size);
+    e->requestOutputIndex(cp, (size == 1 ? REQUESTED_LDC : REQUESTED));
     // Later on we'll fix the bits.
     class_fixup_type.addByte(size);
     class_fixup_offset.add((int)wpoffset());
@@ -515,28 +530,33 @@ void unpacker::saveTo(bytes& b, byte* ptr, size_t len) {
   b.copyFrom(ptr, len);
 }
 
+bool testBit(int archive_options, int bitMask) {
+    return (archive_options & bitMask) != 0;
+}
+
 // Read up through band_headers.
 // Do the archive_size dance to set the size of the input mega-buffer.
 void unpacker::read_file_header() {
   // Read file header to determine file type and total size.
   enum {
     MAGIC_BYTES = 4,
-    AH_LENGTH_0 = 3,  //minver, majver, options are outside of archive_size
+    AH_LENGTH_0 = 3,  // archive_header_0 = {minver, majver, options}
+    AH_LENGTH_MIN = 15, // observed in spec {header_0[3], cp_counts[8], class_counts[4]}
     AH_LENGTH_0_MAX = AH_LENGTH_0 + 1,  // options might have 2 bytes
-    AH_LENGTH   = 26, //maximum archive header length (w/ all fields)
+    AH_LENGTH   = 30, //maximum archive header length (w/ all fields)
     // Length contributions from optional header fields:
-    AH_FILE_HEADER_LEN = 5, // sizehi/lo/next/modtime/files
-    AH_ARCHIVE_SIZE_LEN = 2, // sizehi/lo only; part of AH_FILE_HEADER_LEN
-    AH_CP_NUMBER_LEN = 4,  // int/float/long/double
-    AH_SPECIAL_FORMAT_LEN = 2, // layouts/band-headers
-    AH_LENGTH_MIN = AH_LENGTH
-        -(AH_FILE_HEADER_LEN+AH_SPECIAL_FORMAT_LEN+AH_CP_NUMBER_LEN),
-    ARCHIVE_SIZE_MIN = AH_LENGTH_MIN - (AH_LENGTH_0 + AH_ARCHIVE_SIZE_LEN),
+    AH_LENGTH_S = 2, // archive_header_S = optional {size_hi, size_lo}
+    AH_ARCHIVE_SIZE_HI = 0, // offset in archive_header_S
+    AH_ARCHIVE_SIZE_LO = 1, // offset in archive_header_S
+    AH_FILE_HEADER_LEN = 5, // file_counts = {{size_hi, size_lo), next, modtile, files}
+    AH_SPECIAL_FORMAT_LEN = 2, // special_count = {layouts, band_headers}
+    AH_CP_NUMBER_LEN = 4,      // cp_number_counts = {int, float, long, double}
+    AH_CP_EXTRA_LEN = 4,        // cp_attr_counts = {MH, MT, InDy, BSM}
+    ARCHIVE_SIZE_MIN = AH_LENGTH_MIN - AH_LENGTH_0 - AH_LENGTH_S,
     FIRST_READ  = MAGIC_BYTES + AH_LENGTH_MIN
   };
 
   assert(AH_LENGTH_MIN    == 15); // # of UNSIGNED5 fields required after archive_magic
-  assert(ARCHIVE_SIZE_MIN == 10); // # of UNSIGNED5 fields required after archive_size
   // An absolute minimum null archive is magic[4], {minver,majver,options}[3],
   // archive_size[0], cp_counts[8], class_counts[4], for a total of 19 bytes.
   // (Note that archive_size is optional; it may be 0..10 bytes in length.)
@@ -622,23 +642,32 @@ void unpacker::read_file_header() {
   // Read the first 3 values from the header.
   value_stream hdr;
   int          hdrVals = 0;
-  int          hdrValsSkipped = 0;  // debug only
+  int          hdrValsSkipped = 0;  // for assert
   hdr.init(rp, rplimit, UNSIGNED5_spec);
   minver = hdr.getInt();
   majver = hdr.getInt();
   hdrVals += 2;
 
-  if (magic != (int)JAVA_PACKAGE_MAGIC ||
-      (majver != JAVA5_PACKAGE_MAJOR_VERSION  &&
-       majver != JAVA6_PACKAGE_MAJOR_VERSION) ||
-      (minver != JAVA5_PACKAGE_MINOR_VERSION  &&
-       minver != JAVA6_PACKAGE_MINOR_VERSION)) {
+  int majmin[3][2] = {
+      {JAVA5_PACKAGE_MAJOR_VERSION, JAVA5_PACKAGE_MINOR_VERSION},
+      {JAVA6_PACKAGE_MAJOR_VERSION, JAVA6_PACKAGE_MINOR_VERSION},
+      {JAVA7_PACKAGE_MAJOR_VERSION, JAVA7_PACKAGE_MINOR_VERSION}
+  };
+  int majminfound = false;
+  for (int i = 0 ; i < 3 ; i++) {
+      if (majver == majmin[i][0] && minver == majmin[i][1]) {
+          majminfound = true;
+          break;
+      }
+  }
+  if (majminfound == null) {
     char message[200];
     sprintf(message, "@" ERROR_FORMAT ": magic/ver = "
-            "%08X/%d.%d should be %08X/%d.%d OR %08X/%d.%d\n",
+            "%08X/%d.%d should be %08X/%d.%d OR %08X/%d.%d OR %08X/%d.%d\n",
             magic, majver, minver,
             JAVA_PACKAGE_MAGIC, JAVA5_PACKAGE_MAJOR_VERSION, JAVA5_PACKAGE_MINOR_VERSION,
-            JAVA_PACKAGE_MAGIC, JAVA6_PACKAGE_MAJOR_VERSION, JAVA6_PACKAGE_MINOR_VERSION);
+            JAVA_PACKAGE_MAGIC, JAVA6_PACKAGE_MAJOR_VERSION, JAVA6_PACKAGE_MINOR_VERSION,
+            JAVA_PACKAGE_MAGIC, JAVA7_PACKAGE_MAJOR_VERSION, JAVA7_PACKAGE_MINOR_VERSION);
     abort(message);
   }
   CHECK;
@@ -646,18 +675,26 @@ void unpacker::read_file_header() {
   archive_options = hdr.getInt();
   hdrVals += 1;
   assert(hdrVals == AH_LENGTH_0);  // first three fields only
+  bool haveSizeHi = testBit(archive_options, AO_HAVE_FILE_SIZE_HI);
+  bool haveModTime = testBit(archive_options, AO_HAVE_FILE_MODTIME);
+  bool haveFileOpt = testBit(archive_options, AO_HAVE_FILE_OPTIONS);
 
-#define ORBIT(bit) |(bit)
-  int OPTION_LIMIT = (0 ARCHIVE_BIT_DO(ORBIT));
-#undef ORBIT
-  if ((archive_options & ~OPTION_LIMIT) != 0) {
-    fprintf(errstrm, "Warning: Illegal archive options 0x%x\n",
-        archive_options);
-    abort("illegal archive options");
+  bool haveSpecial = testBit(archive_options, AO_HAVE_SPECIAL_FORMATS);
+  bool haveFiles = testBit(archive_options, AO_HAVE_FILE_HEADERS);
+  bool haveNumbers = testBit(archive_options, AO_HAVE_CP_NUMBERS);
+  bool haveCPExtra = testBit(archive_options, AO_HAVE_CP_EXTRAS);
+
+  if (majver < JAVA7_PACKAGE_MAJOR_VERSION) {
+    if (haveCPExtra) {
+        abort("Format bits for Java 7 must be zero in previous releases");
+        return;
+    }
+  }
+  if (testBit(archive_options, AO_UNUSED_MBZ)) {
+    abort("High archive option bits are reserved and must be zero");
     return;
   }
-
-  if ((archive_options & AO_HAVE_FILE_HEADERS) != 0) {
+  if (haveFiles) {
     uint hi = hdr.getInt();
     uint lo = hdr.getInt();
     julong x = band::makeLong(hi, lo);
@@ -738,13 +775,23 @@ void unpacker::read_file_header() {
     return;
   }
 
-  // read the rest of the header fields
-  ensure_input((AH_LENGTH-AH_LENGTH_0) * B_MAX);
+  // read the rest of the header fields  int assertSkipped = AH_LENGTH_MIN - AH_LENGTH_0 - AH_LENGTH_S;
+  int remainingHeaders = AH_LENGTH_MIN - AH_LENGTH_0 - AH_LENGTH_S;
+  if (haveSpecial)
+    remainingHeaders += AH_SPECIAL_FORMAT_LEN;
+  if (haveFiles)
+     remainingHeaders += AH_FILE_HEADER_LEN;
+  if (haveNumbers)
+    remainingHeaders += AH_CP_NUMBER_LEN;
+  if (haveCPExtra)
+    remainingHeaders += AH_CP_EXTRA_LEN;
+
+  ensure_input(remainingHeaders * B_MAX);
   CHECK;
   hdr.rp      = rp;
   hdr.rplimit = rplimit;
 
-  if ((archive_options & AO_HAVE_FILE_HEADERS) != 0) {
+  if (haveFiles) {
     archive_next_count = hdr.getInt();
     CHECK_COUNT(archive_next_count);
     archive_modtime = hdr.getInt();
@@ -755,7 +802,7 @@ void unpacker::read_file_header() {
     hdrValsSkipped += 3;
   }
 
-  if ((archive_options & AO_HAVE_SPECIAL_FORMATS) != 0) {
+  if (haveSpecial) {
     band_headers_size = hdr.getInt();
     CHECK_COUNT(band_headers_size);
     attr_definition_count = hdr.getInt();
@@ -767,7 +814,7 @@ void unpacker::read_file_header() {
 
   int cp_counts[N_TAGS_IN_ORDER];
   for (int k = 0; k < (int)N_TAGS_IN_ORDER; k++) {
-    if (!(archive_options & AO_HAVE_CP_NUMBERS)) {
+    if (!haveNumbers) {
       switch (TAGS_IN_ORDER[k]) {
       case CONSTANT_Integer:
       case CONSTANT_Float:
@@ -777,6 +824,17 @@ void unpacker::read_file_header() {
         hdrValsSkipped += 1;
         continue;
       }
+    }
+    if (!haveCPExtra) {
+        switch(TAGS_IN_ORDER[k]) {
+        case CONSTANT_MethodHandle:
+        case CONSTANT_MethodType:
+        case CONSTANT_InvokeDynamic:
+        case CONSTANT_BootstrapMethod:
+          cp_counts[k] = 0;
+          hdrValsSkipped += 1;
+          continue;
+        }
     }
     cp_counts[k] = hdr.getInt();
     CHECK_COUNT(cp_counts[k]);
@@ -791,36 +849,26 @@ void unpacker::read_file_header() {
   CHECK_COUNT(class_count);
   hdrVals += 4;
 
-  // done with archive_header
+  // done with archive_header, time to reconcile to ensure
+  // we have read everything correctly
   hdrVals += hdrValsSkipped;
   assert(hdrVals == AH_LENGTH);
-#ifndef PRODUCT
-  int assertSkipped = AH_LENGTH - AH_LENGTH_MIN;
-  if ((archive_options & AO_HAVE_FILE_HEADERS) != 0)
-    assertSkipped -= AH_FILE_HEADER_LEN;
-  if ((archive_options & AO_HAVE_SPECIAL_FORMATS) != 0)
-    assertSkipped -= AH_SPECIAL_FORMAT_LEN;
-  if ((archive_options & AO_HAVE_CP_NUMBERS) != 0)
-    assertSkipped -= AH_CP_NUMBER_LEN;
-  assert(hdrValsSkipped == assertSkipped);
-#endif //PRODUCT
-
   rp = hdr.rp;
   if (rp > rplimit)
     abort("EOF reading archive header");
 
   // Now size the CP.
 #ifndef PRODUCT
-  bool x = (N_TAGS_IN_ORDER == cpool::NUM_COUNTS);
-  assert(x);
+  // bool x = (N_TAGS_IN_ORDER == CONSTANT_Limit);
+  // assert(x);
 #endif //PRODUCT
   cp.init(this, cp_counts);
   CHECK;
 
   default_file_modtime = archive_modtime;
-  if (default_file_modtime == 0 && !(archive_options & AO_HAVE_FILE_MODTIME))
+  if (default_file_modtime == 0 && haveModTime)
     default_file_modtime = DEFAULT_ARCHIVE_MODTIME;  // taken from driver
-  if ((archive_options & AO_DEFLATE_HINT) != 0)
+  if (testBit(archive_options, AO_DEFLATE_HINT))
     default_file_options |= FO_DEFLATE_HINT;
 
   // meta-bytes, if any, immediately follow archive header
@@ -876,7 +924,7 @@ void unpacker::finish() {
 
 
 // Cf. PackageReader.readConstantPoolCounts
-void cpool::init(unpacker* u_, int counts[NUM_COUNTS]) {
+void cpool::init(unpacker* u_, int counts[CONSTANT_Limit]) {
   this->u = u_;
 
   // Fill-pointer for CP.
@@ -924,13 +972,16 @@ void cpool::init(unpacker* u_, int counts[NUM_COUNTS]) {
   first_extra_entry = &entries[nentries];
 
   // Initialize the standard indexes.
-  tag_count[CONSTANT_All] = nentries;
-  tag_base[ CONSTANT_All] = 0;
   for (int tag = 0; tag < CONSTANT_Limit; tag++) {
     entry* cpMap = &entries[tag_base[tag]];
     tag_index[tag].init(tag_count[tag], cpMap, tag);
   }
 
+  // Initialize *all* our entries once
+  for (int i = 0 ; i < maxentries ; i++)
+    entries[i].outputIndex = REQUESTED_NONE;
+
+  initGroupIndexes();
   // Initialize hashTab to a generous power-of-two size.
   uint pow2 = 1;
   uint target = maxentries + maxentries/2;  // 60% full
@@ -1281,6 +1332,70 @@ void unpacker::read_signature_values(entry* cpMap, int len) {
   //cp_Signature_classes.done();
 }
 
+maybe_inline
+void unpacker::checkLegacy(const char* name) {
+  if (u->majver < JAVA7_PACKAGE_MAJOR_VERSION) {
+      char message[100];
+      snprintf(message, 99, "unexpected band %s\n", name);
+      abort(message);
+  }
+}
+
+maybe_inline
+void unpacker::read_method_handle(entry* cpMap, int len) {
+  if (len > 0) {
+    checkLegacy(cp_MethodHandle_refkind.name);
+  }
+  cp_MethodHandle_refkind.readData(len);
+  cp_MethodHandle_member.setIndexByTag(CONSTANT_AnyMember);
+  cp_MethodHandle_member.readData(len);
+  for (int i = 0 ; i < len ; i++) {
+    entry& e = cpMap[i];
+    e.value.i = cp_MethodHandle_refkind.getInt();
+    e.refs = U_NEW(entry*, e.nrefs = 1);
+    e.refs[0] = cp_MethodHandle_member.getRef();
+    CHECK;
+  }
+}
+
+maybe_inline
+void unpacker::read_method_type(entry* cpMap, int len) {
+  if (len > 0) {
+    checkLegacy(cp_MethodType.name);
+  }
+  cp_MethodType.setIndexByTag(CONSTANT_Signature);
+  cp_MethodType.readData(len);
+  for (int i = 0 ; i < len ; i++) {
+      entry& e = cpMap[i];
+      e.refs = U_NEW(entry*, e.nrefs = 1);
+      e.refs[0] = cp_MethodType.getRef();
+  }
+}
+
+maybe_inline
+void unpacker::read_bootstrap_methods(entry* cpMap, int len) {
+  if (len > 0) {
+    checkLegacy(cp_BootstrapMethod_ref.name);
+  }
+  cp_BootstrapMethod_ref.setIndexByTag(CONSTANT_MethodHandle);
+  cp_BootstrapMethod_ref.readData(len);
+
+  cp_BootstrapMethod_arg_count.readData(len);
+  int totalArgCount = cp_BootstrapMethod_arg_count.getIntTotal();
+  cp_BootstrapMethod_arg.setIndexByTag(CONSTANT_LoadableValue);
+  cp_BootstrapMethod_arg.readData(totalArgCount);
+  for (int i = 0; i < len; i++) {
+    entry& e = cpMap[i];
+    int argc = cp_BootstrapMethod_arg_count.getInt();
+    e.value.i = argc;
+    e.refs = U_NEW(entry*, e.nrefs = argc + 1);
+    e.refs[0] = cp_BootstrapMethod_ref.getRef();
+    for (int j = 1 ; j < e.nrefs ; j++) {
+      e.refs[j] = cp_BootstrapMethod_arg.getRef();
+      CHECK;
+    }
+  }
+}
 // Cf. PackageReader.readConstantPool
 void unpacker::read_cp() {
   byte* rp0 = rp;
@@ -1298,6 +1413,14 @@ void unpacker::read_cp() {
       cpMap[i].tag = tag;
       cpMap[i].inord = i;
     }
+    // Initialize the tag's CP index right away, since it might be needed
+    // in the next pass to initialize the CP for another tag.
+#ifndef PRODUCT
+    cpindex* ix = &cp.tag_index[tag];
+    assert(ix->ixTag == tag);
+    assert((int)ix->len   == len);
+    assert(ix->base1 == cpMap);
+#endif
 
     switch (tag) {
     case CONSTANT_Utf8:
@@ -1344,19 +1467,27 @@ void unpacker::read_cp() {
                        CONSTANT_Class, CONSTANT_NameandType,
                        cpMap, len);
       break;
+    case CONSTANT_MethodHandle:
+      // consumes cp_MethodHandle_refkind and cp_MethodHandle_member
+      read_method_handle(cpMap, len);
+      break;
+    case CONSTANT_MethodType:
+      // consumes cp_MethodType
+      read_method_type(cpMap, len);
+      break;
+    case CONSTANT_InvokeDynamic:
+      read_double_refs(cp_InvokeDynamic_spec, CONSTANT_BootstrapMethod,
+                       CONSTANT_NameandType,
+                       cpMap, len);
+      break;
+    case CONSTANT_BootstrapMethod:
+      // consumes cp_BootstrapMethod_ref, cp_BootstrapMethod_arg_count and cp_BootstrapMethod_arg
+      read_bootstrap_methods(cpMap, len);
+      break;
     default:
       assert(false);
       break;
     }
-
-    // Initialize the tag's CP index right away, since it might be needed
-    // in the next pass to initialize the CP for another tag.
-#ifndef PRODUCT
-    cpindex* ix = &cp.tag_index[tag];
-    assert(ix->ixTag == tag);
-    assert((int)ix->len   == len);
-    assert(ix->base1 == cpMap);
-#endif
     CHECK;
   }
 
@@ -1791,7 +1922,12 @@ unpacker::attr_definitions::parseLayout(const char* lp, band** &res,
           case 'F': ixTag = CONSTANT_Float; break;
           case 'D': ixTag = CONSTANT_Double; break;
           case 'S': ixTag = CONSTANT_String; break;
-          case 'Q': ixTag = CONSTANT_Literal; break;
+          case 'Q': ixTag = CONSTANT_FieldSpecific; break;
+
+          // new in 1.7
+          case 'M': ixTag = CONSTANT_MethodHandle; break;
+          case 'T': ixTag = CONSTANT_MethodType; break;
+          case 'L': ixTag = CONSTANT_LoadableValue; break;
           }
         } else {
           switch (*lp++) {
@@ -1803,6 +1939,11 @@ unpacker::attr_definitions::parseLayout(const char* lp, band** &res,
           case 'I': ixTag = CONSTANT_InterfaceMethodref; break;
           case 'U': ixTag = CONSTANT_Utf8; break; //utf8_ref
           case 'Q': ixTag = CONSTANT_All; break; //untyped_ref
+
+          // new in 1.7
+          case 'Y': ixTag = CONSTANT_InvokeDynamic; break;
+          case 'B': ixTag = CONSTANT_BootstrapMethod; break;
+          case 'N': ixTag = CONSTANT_AnyMember; break;
           }
         }
         if (ixTag == CONSTANT_None) {
@@ -1873,13 +2014,13 @@ void unpacker::read_attr_defs() {
 
   // Decide whether bands for the optional high flag words are present.
   attr_defs[ATTR_CONTEXT_CLASS]
-    .setHaveLongFlags((archive_options & AO_HAVE_CLASS_FLAGS_HI) != 0);
+    .setHaveLongFlags(testBit(archive_options, AO_HAVE_CLASS_FLAGS_HI));
   attr_defs[ATTR_CONTEXT_FIELD]
-    .setHaveLongFlags((archive_options & AO_HAVE_FIELD_FLAGS_HI) != 0);
+    .setHaveLongFlags(testBit(archive_options, AO_HAVE_FIELD_FLAGS_HI));
   attr_defs[ATTR_CONTEXT_METHOD]
-    .setHaveLongFlags((archive_options & AO_HAVE_METHOD_FLAGS_HI) != 0);
+    .setHaveLongFlags(testBit(archive_options, AO_HAVE_METHOD_FLAGS_HI));
   attr_defs[ATTR_CONTEXT_CODE]
-    .setHaveLongFlags((archive_options & AO_HAVE_CODE_FLAGS_HI) != 0);
+    .setHaveLongFlags(testBit(archive_options, AO_HAVE_CODE_FLAGS_HI));
 
   // Set up built-in attrs.
   // (The simple ones are hard-coded.  The metadata layouts are not.)
@@ -2579,7 +2720,7 @@ void unpacker::putlayout(band** body) {
       // It has data, so unparse an element.
       if (b.ixTag != CONSTANT_None) {
         assert(le_kind == EK_REF);
-        if (b.ixTag == CONSTANT_Literal)
+        if (b.ixTag == CONSTANT_FieldSpecific)
           e = b.getRefUsing(cp.getKQIndex());
         else
           e = b.getRefN();
@@ -2653,13 +2794,13 @@ void unpacker::putlayout(band** body) {
 
 void unpacker::read_files() {
   file_name.readData(file_count);
-  if ((archive_options & AO_HAVE_FILE_SIZE_HI) != 0)
+  if (testBit(archive_options, AO_HAVE_FILE_SIZE_HI))
     file_size_hi.readData(file_count);
   file_size_lo.readData(file_count);
-  if ((archive_options & AO_HAVE_FILE_MODTIME) != 0)
+  if (testBit(archive_options, AO_HAVE_FILE_MODTIME))
     file_modtime.readData(file_count);
   int allFiles = file_count + class_count;
-  if ((archive_options & AO_HAVE_FILE_OPTIONS) != 0) {
+  if (testBit(archive_options, AO_HAVE_FILE_OPTIONS)) {
     file_options.readData(file_count);
     // FO_IS_CLASS_STUB might be set, causing overlap between classes and files
     for (int i = 0; i < file_count; i++) {
@@ -2703,7 +2844,7 @@ void unpacker::get_code_header(int& max_stack,
   max_stack     = sc % mod;
   max_na_locals = sc / mod;  // caller must add static, siglen
   handler_count = nh;
-  if ((archive_options & AO_HAVE_ALL_CODE_FLAGS) != 0)
+  if (testBit(archive_options, AO_HAVE_ALL_CODE_FLAGS))
     cflags      = -1;
   else
     cflags      = 0;  // this one has no attributes
@@ -2777,12 +2918,14 @@ band* unpacker::ref_band_for_op(int bc) {
     return &bc_longref;
   case bc_dldc2_w:
     return &bc_doubleref;
-  case bc_aldc:
-  case bc_aldc_w:
+  case bc_sldc:
+  case bc_sldc_w:
     return &bc_stringref;
   case bc_cldc:
   case bc_cldc_w:
     return &bc_classref;
+  case bc_qldc: case bc_qldc_w:
+    return &bc_loadablevalueref;
 
   case bc_getstatic:
   case bc_putstatic:
@@ -2796,6 +2939,8 @@ band* unpacker::ref_band_for_op(int bc) {
     return &bc_methodref;
   case bc_invokeinterface:
     return &bc_imethodref;
+  case bc_invokedynamic:
+    return &bc_indyref;
 
   case bc_new:
   case bc_anewarray:
@@ -3131,6 +3276,71 @@ void cpool::expandSignatures() {
   }
 }
 
+bool isLoadableValue(int tag) {
+  switch(tag) {
+    case CONSTANT_Integer:
+    case CONSTANT_Float:
+    case CONSTANT_Long:
+    case CONSTANT_Double:
+    case CONSTANT_String:
+    case CONSTANT_Class:
+    case CONSTANT_MethodHandle:
+    case CONSTANT_MethodType:
+      return true;
+    default:
+      return false;
+  }
+}
+/*
+ * this method can be used to size an array using null as the parameter,
+ * thereafter can be reused to initialize the array using a valid pointer
+ * as a parameter.
+ */
+int cpool::initLoadableValues(entry** loadable_entries) {
+  int loadable_count = 0;
+  for (int i = 0; i < (int)N_TAGS_IN_ORDER; i++) {
+    int tag = TAGS_IN_ORDER[i];
+    if (!isLoadableValue(tag))
+      continue;
+    if (loadable_entries != NULL) {
+      for (int n = 0 ; n < tag_count[tag] ; n++) {
+        loadable_entries[loadable_count + n] = &entries[tag_base[tag] + n];
+      }
+    }
+    loadable_count += tag_count[tag];
+  }
+  return loadable_count;
+}
+
+// Initialize various views into the constant pool.
+void cpool::initGroupIndexes() {
+  // Initialize All
+  int all_count = 0;
+  for (int tag = CONSTANT_None ; tag < CONSTANT_Limit ; tag++) {
+    all_count += tag_count[tag];
+  }
+  entry* all_entries = &entries[tag_base[CONSTANT_None]];
+  tag_group_count[CONSTANT_All - CONSTANT_All] = all_count;
+  tag_group_index[CONSTANT_All - CONSTANT_All].init(all_count, all_entries, CONSTANT_All);
+
+  // Initialize LoadableValues
+  int loadable_count = initLoadableValues(NULL);
+  entry** loadable_entries = U_NEW(entry*, loadable_count);
+  initLoadableValues(loadable_entries);
+  tag_group_count[CONSTANT_LoadableValue - CONSTANT_All] = loadable_count;
+  tag_group_index[CONSTANT_LoadableValue - CONSTANT_All].init(loadable_count,
+                  loadable_entries, CONSTANT_LoadableValue);
+
+// Initialize AnyMembers
+  int any_count = tag_count[CONSTANT_Fieldref] +
+                  tag_count[CONSTANT_Methodref] +
+                  tag_count[CONSTANT_InterfaceMethodref];
+  entry *any_entries = &entries[tag_base[CONSTANT_Fieldref]];
+  tag_group_count[CONSTANT_AnyMember - CONSTANT_All] = any_count;
+  tag_group_index[CONSTANT_AnyMember - CONSTANT_All].init(any_count,
+                                               any_entries, CONSTANT_AnyMember);
+}
+
 void cpool::initMemberIndexes() {
   // This function does NOT refer to any class schema.
   // It is totally internal to the cpool.
@@ -3238,13 +3448,13 @@ void cpool::initMemberIndexes() {
 }
 
 void entry::requestOutputIndex(cpool& cp, int req) {
-  assert(outputIndex <= NOT_REQUESTED);  // must not have assigned indexes yet
+  assert(outputIndex <= REQUESTED_NONE);  // must not have assigned indexes yet
   if (tag == CONSTANT_Signature) {
     ref(0)->requestOutputIndex(cp, req);
     return;
   }
   assert(req == REQUESTED || req == REQUESTED_LDC);
-  if (outputIndex != NOT_REQUESTED) {
+  if (outputIndex != REQUESTED_NONE) {
     if (req == REQUESTED_LDC)
       outputIndex = req;  // this kind has precedence
     return;
@@ -3252,31 +3462,52 @@ void entry::requestOutputIndex(cpool& cp, int req) {
   outputIndex = req;
   //assert(!cp.outputEntries.contains(this));
   assert(tag != CONSTANT_Signature);
-  cp.outputEntries.add(this);
+  // The BSMs are jetisoned to a side table, however all references
+  // that the BSMs refer to,  need to be considered.
+  if (tag == CONSTANT_BootstrapMethod) {
+    // this is a a pseudo-op entry; an attribute will be generated later on
+    cp.requested_bsms.add(this);
+  } else {
+    // all other tag types go into real output file CP:
+    cp.outputEntries.add(this);
+  }
   for (int j = 0; j < nrefs; j++) {
     ref(j)->requestOutputIndex(cp);
   }
 }
 
 void cpool::resetOutputIndexes() {
-  int i;
-  int    noes =           outputEntries.length();
+    /*
+     * reset those few entries that are being used in the current class
+     * (Caution since this method is called after every class written, a loop
+     * over every global constant pool entry would be a quadratic cost.)
+     */
+
+  int noes    = outputEntries.length();
   entry** oes = (entry**) outputEntries.base();
-  for (i = 0; i < noes; i++) {
+  for (int i = 0 ; i < noes ; i++) {
     entry& e = *oes[i];
-    e.outputIndex = NOT_REQUESTED;
+    e.outputIndex = REQUESTED_NONE;
+  }
+
+  // do the same for bsms and reset them if required
+  int nbsms = requested_bsms.length();
+  entry** boes = (entry**) requested_bsms.base();
+  for (int i = 0 ; i < nbsms ; i++) {
+    entry& e = *boes[i];
+    e.outputIndex = REQUESTED_NONE;
   }
   outputIndexLimit = 0;
   outputEntries.empty();
 #ifndef PRODUCT
-  // they must all be clear now
-  for (i = 0; i < (int)nentries; i++)
-    assert(entries[i].outputIndex == NOT_REQUESTED);
+  // ensure things are cleared out
+  for (int i = 0; i < (int)maxentries; i++)
+    assert(entries[i].outputIndex == REQUESTED_NONE);
 #endif
 }
 
 static const byte TAG_ORDER[CONSTANT_Limit] = {
-  0, 1, 0, 2, 3, 4, 5, 7, 6, 10, 11, 12, 9, 8
+  0, 1, 0, 2, 3, 4, 5, 7, 6, 10, 11, 12, 9, 8, 0, 13, 14, 15, 16
 };
 
 extern "C"
@@ -3323,10 +3554,18 @@ void cpool::computeOutputIndexes() {
   if (nentries > 100)  checkStep = nentries / 100;
   for (i = (int)(checkStart++ % checkStep); i < (int)nentries; i += checkStep) {
     entry& e = entries[i];
-    if (e.outputIndex != NOT_REQUESTED) {
-      assert(outputEntries.contains(&e));
+    if (e.tag == CONSTANT_BootstrapMethod) {
+      if (e.outputIndex != REQUESTED_NONE) {
+        assert(requested_bsms.contains(&e));
+      } else {
+        assert(!requested_bsms.contains(&e));
+      }
     } else {
-      assert(!outputEntries.contains(&e));
+      if (e.outputIndex != REQUESTED_NONE) {
+        assert(outputEntries.contains(&e));
+      } else {
+        assert(!outputEntries.contains(&e));
+      }
     }
   }
 
@@ -3348,7 +3587,7 @@ void cpool::computeOutputIndexes() {
   int nextIndex = 1;  // always skip index #0 in output cpool
   for (i = 0; i < noes; i++) {
     entry& e = *oes[i];
-    assert(e.outputIndex == REQUESTED || e.outputIndex == REQUESTED_LDC);
+    assert(e.outputIndex >= REQUESTED_LDC);
     e.outputIndex = nextIndex++;
     if (e.isDoubleWord())  nextIndex++;  // do not use the next index
   }
@@ -3396,7 +3635,7 @@ char* entry::string() {
   default:
     if (nrefs == 0) {
       buf = getbuf(20);
-      sprintf((char*)buf.ptr, "<tag=%d>", tag);
+      sprintf((char*)buf.ptr, TAG_NAME[tag]);
     } else if (nrefs == 1) {
       return refs[0]->string();
     } else {
@@ -3674,6 +3913,7 @@ void unpacker::reset_cur_classfile() {
   class_fixup_offset.empty();
   class_fixup_ref.empty();
   requested_ics.empty();
+  cp.requested_bsms.empty();
 }
 
 cpindex* cpool::getKQIndex() {
@@ -3931,13 +4171,15 @@ void unpacker::write_bc_ops() {
         case bc_ildc:
         case bc_cldc:
         case bc_fldc:
-        case bc_aldc:
+        case bc_sldc:
+        case bc_qldc:
           origBC = bc_ldc;
           break;
         case bc_ildc_w:
         case bc_cldc_w:
         case bc_fldc_w:
-        case bc_aldc_w:
+        case bc_sldc_w:
+        case bc_qldc_w:
           origBC = bc_ldc_w;
           break;
         case bc_lldc2_w:
@@ -3961,6 +4203,10 @@ void unpacker::write_bc_ops() {
         } else if (origBC == bc_invokeinterface) {
           int argSize = ref->memberDescr()->descrType()->typeSize();
           putu1_fast(1 + argSize);
+          putu1_fast(0);
+        } else if (origBC == bc_invokedynamic) {
+          // pad the next two byte
+          putu1_fast(0);
           putu1_fast(0);
         }
         continue;
@@ -4353,49 +4599,12 @@ int raw_address_cmp(const void* p1p, const void* p2p) {
   return (p1 > p2)? 1: (p1 < p2)? -1: 0;
 }
 
-void unpacker::write_classfile_tail() {
-  cur_classfile_tail.empty();
-  set_output(&cur_classfile_tail);
-
-  int i, num;
-
-  attr_definitions& ad = attr_defs[ATTR_CONTEXT_CLASS];
-
-  bool haveLongFlags = ad.haveLongFlags();
-  julong kflags = class_flags_hi.getLong(class_flags_lo, haveLongFlags);
-  julong indexMask = ad.flagIndexMask();
-
-  cur_class = class_this.getRef();
-  cur_super = class_super.getRef();
-
-  CHECK;
-
-  if (cur_super == cur_class)  cur_super = null;
-  // special representation for java/lang/Object
-
-  putu2((ushort)(kflags & ~indexMask));
-  putref(cur_class);
-  putref(cur_super);
-
-  putu2(num = class_interface_count.getInt());
-  for (i = 0; i < num; i++) {
-    putref(class_interface.getRef());
-  }
-
-  write_members(class_field_count.getInt(),  ATTR_CONTEXT_FIELD);
-  write_members(class_method_count.getInt(), ATTR_CONTEXT_METHOD);
-  CHECK;
-
-  cur_class_has_local_ics = false;  // may be set true by write_attrs
-
-
-  int naOffset = (int)wpoffset();
-  int na = write_attrs(ATTR_CONTEXT_CLASS, (kflags & indexMask));
-
-
-  // at the very last, choose which inner classes (if any) pertain to k:
+/*
+ * writes the InnerClass attributes and returns the updated attribute
+ */
+int  unpacker::write_ics(int naOffset, int na) {
 #ifdef ASSERT
-  for (i = 0; i < ic_count; i++) {
+  for (int i = 0; i < ic_count; i++) {
     assert(!ics[i].requested);
   }
 #endif
@@ -4416,7 +4625,7 @@ void unpacker::write_classfile_tail() {
   // include it and all its outers.
   int    noes =           cp.outputEntries.length();
   entry** oes = (entry**) cp.outputEntries.base();
-  for (i = 0; i < noes; i++) {
+  for (int i = 0; i < noes; i++) {
     entry& e = *oes[i];
     if (e.tag != CONSTANT_Class)  continue;  // wrong sort
     for (inner_class* ic = cp.getIC(&e);
@@ -4442,10 +4651,10 @@ void unpacker::write_classfile_tail() {
       // Note:  extra_ics will be freed up by next call to get_next_file().
     }
   }
-  for (i = 0; i < num_extra_ics; i++) {
+  for (int i = 0; i < num_extra_ics; i++) {
     inner_class& extra_ic = extra_ics[i];
     extra_ic.inner = class_InnerClasses_RC.getRef();
-    CHECK;
+    CHECK_0;
     // Find the corresponding equivalent global IC:
     inner_class* global_ic = cp.getIC(extra_ic.inner);
     int flags = class_InnerClasses_F.getInt();
@@ -4493,7 +4702,7 @@ void unpacker::write_classfile_tail() {
     putu2(local_ics);
     PTRLIST_QSORT(requested_ics, raw_address_cmp);
     int num_global_ics = requested_ics.length();
-    for (i = -num_global_ics; i < num_extra_ics; i++) {
+    for (int i = -num_global_ics; i < num_extra_ics; i++) {
       inner_class* ic;
       if (i < 0)
         ic = (inner_class*) requested_ics.get(num_global_ics+i);
@@ -4512,17 +4721,99 @@ void unpacker::write_classfile_tail() {
   }
 
   // Tidy up global 'requested' bits:
-  for (i = requested_ics.length(); --i >= 0; ) {
+  for (int i = requested_ics.length(); --i >= 0; ) {
     inner_class* ic = (inner_class*) requested_ics.get(i);
     ic->requested = false;
   }
   requested_ics.empty();
+  return na;
+}
 
+/*
+ * Writes the BootstrapMethods attribute and returns the updated attribute count
+ */
+int unpacker::write_bsms(int naOffset, int na) {
+  cur_class_local_bsm_count = cp.requested_bsms.length();
+  if (cur_class_local_bsm_count > 0) {
+    int    noes =           cp.outputEntries.length();
+    entry** oes = (entry**) cp.outputEntries.base();
+    PTRLIST_QSORT(cp.requested_bsms, outputEntry_cmp);
+    // append the BootstrapMethods attribute (after the InnerClasses attr):
+    putref(cp.sym[cpool::s_BootstrapMethods]);
+    int sizeOffset = (int)wpoffset();
+    byte* sizewp = wp;
+    putu4(-99);  // attr size will be patched
+    putu2(cur_class_local_bsm_count);
+    int written_bsms = 0;
+    for (int i = 0 ; i < cur_class_local_bsm_count ; i++) {
+      entry* e = (entry*)cp.requested_bsms.get(i);
+      assert(e->outputIndex != REQUESTED_NONE);
+      // output index is the index within the array
+      e->outputIndex = i;
+      putref(e->refs[0]);  // bsm
+      putu2(e->nrefs-1);  // number of args after bsm
+      for (int j = 1; j < e->nrefs; j++) {
+        putref(e->refs[j]);
+      }
+      written_bsms += 1;
+    }
+    assert(written_bsms == cur_class_local_bsm_count);  // else insane
+    putu4_at(sizewp, (int)(wp - (sizewp+4)));  // size of code attr
+    putu2_at(wp_at(naOffset), ++na);  // increment class attr count
+  }
+  return na;
+}
+
+void unpacker::write_classfile_tail() {
+
+  cur_classfile_tail.empty();
+  set_output(&cur_classfile_tail);
+
+  int i, num;
+
+  attr_definitions& ad = attr_defs[ATTR_CONTEXT_CLASS];
+
+  bool haveLongFlags = ad.haveLongFlags();
+  julong kflags = class_flags_hi.getLong(class_flags_lo, haveLongFlags);
+  julong indexMask = ad.flagIndexMask();
+
+  cur_class = class_this.getRef();
+  cur_super = class_super.getRef();
   CHECK;
+
+  if (cur_super == cur_class)  cur_super = null;
+  // special representation for java/lang/Object
+
+  putu2((ushort)(kflags & ~indexMask));
+  putref(cur_class);
+  putref(cur_super);
+
+  putu2(num = class_interface_count.getInt());
+  for (i = 0; i < num; i++) {
+    putref(class_interface.getRef());
+  }
+
+  write_members(class_field_count.getInt(),  ATTR_CONTEXT_FIELD);
+  write_members(class_method_count.getInt(), ATTR_CONTEXT_METHOD);
+  CHECK;
+
+  cur_class_has_local_ics = false;  // may be set true by write_attrs
+
+  int naOffset = (int)wpoffset();   // note the attr count location
+  int na = write_attrs(ATTR_CONTEXT_CLASS, (kflags & indexMask));
+  CHECK;
+
+  na = write_bsms(naOffset, na);
+  CHECK;
+
+  // choose which inner classes (if any) pertain to k:
+  na = write_ics(naOffset, na);
+  CHECK;
+
   close_output();
+  cp.computeOutputIndexes();
 
   // rewrite CP references in the tail
-  cp.computeOutputIndexes();
   int nextref = 0;
   for (i = 0; i < (int)class_fixup_type.size(); i++) {
     int    type = class_fixup_type.getByte(i);
@@ -4579,9 +4870,18 @@ void unpacker::write_classfile_head() {
     case CONSTANT_Methodref:
     case CONSTANT_InterfaceMethodref:
     case CONSTANT_NameandType:
+    case CONSTANT_InvokeDynamic:
       putu2(e.refs[0]->getOutputIndex());
       putu2(e.refs[1]->getOutputIndex());
       break;
+    case CONSTANT_MethodHandle:
+        putu1(e.value.i);
+        putu2(e.refs[0]->getOutputIndex());
+        break;
+    case CONSTANT_MethodType:
+      putu2(e.refs[0]->getOutputIndex());
+      break;
+    case CONSTANT_BootstrapMethod: // should not happen
     default:
       abort(ERROR_INTERNAL);
     }
@@ -4620,11 +4920,11 @@ unpacker::file* unpacker::get_next_file() {
     entry* e = file_name.getRef();
     CHECK_0;
     cur_file.name = e->utf8String();
-    bool haveLongSize = ((archive_options & AO_HAVE_FILE_SIZE_HI) != 0);
+    bool haveLongSize = (testBit(archive_options, AO_HAVE_FILE_SIZE_HI));
     cur_file.size = file_size_hi.getLong(file_size_lo, haveLongSize);
-    if ((archive_options & AO_HAVE_FILE_MODTIME) != 0)
+    if (testBit(archive_options, AO_HAVE_FILE_MODTIME))
       cur_file.modtime += file_modtime.getInt();  //relative to archive modtime
-    if ((archive_options & AO_HAVE_FILE_OPTIONS) != 0)
+    if (testBit(archive_options, AO_HAVE_FILE_OPTIONS))
       cur_file.options |= file_options.getInt() & ~suppress_file_options;
   } else if (classes_written < class_count) {
     // there is a class for a missing file record

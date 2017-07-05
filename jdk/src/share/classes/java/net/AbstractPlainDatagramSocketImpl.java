@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,14 +60,19 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
     /**
      * flag set if the native connect() call not to be used
      */
-    private final static boolean connectDisabled = os.startsWith("Mac OS");
+    private final static boolean connectDisabled = os.contains("OS X");
 
     /**
      * Load net library into runtime.
      */
     static {
         java.security.AccessController.doPrivileged(
-                  new sun.security.action.LoadLibraryAction("net"));
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("net");
+                    return null;
+                }
+            });
     }
 
     /**

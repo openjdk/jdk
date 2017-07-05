@@ -187,7 +187,7 @@ abstract class LWTextComponentPeer<T extends TextComponent, D extends JComponent
         }
     }
 
-    private void sendTextEvent(final DocumentEvent e) {
+    protected final void postTextEvent() {
         postEvent(new TextEvent(getTarget(), TextEvent.TEXT_VALUE_CHANGED));
         synchronized (getDelegateLock()) {
             revalidate();
@@ -196,17 +196,17 @@ abstract class LWTextComponentPeer<T extends TextComponent, D extends JComponent
 
     @Override
     public final void changedUpdate(final DocumentEvent e) {
-        sendTextEvent(e);
+        postTextEvent();
     }
 
     @Override
     public final void insertUpdate(final DocumentEvent e) {
-        sendTextEvent(e);
+        postTextEvent();
     }
 
     @Override
     public final void removeUpdate(final DocumentEvent e) {
-        sendTextEvent(e);
+        postTextEvent();
     }
 
     @Override

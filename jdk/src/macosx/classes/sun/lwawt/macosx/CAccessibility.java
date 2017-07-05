@@ -29,7 +29,6 @@ import java.awt.*;
 import java.beans.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.security.PrivilegedAction;
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -41,7 +40,13 @@ class CAccessibility implements PropertyChangeListener {
 
     static {
         // Need to load the native library for this code.
-        java.security.AccessController.doPrivileged((PrivilegedAction<?>)new sun.security.action.LoadLibraryAction("awt"));
+        java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("awt");
+                    return null;
+                }
+            });
     }
 
     static CAccessibility sAccessibility;

@@ -52,9 +52,12 @@
     BOOL fPAHNeedsToSelect;
 
     id cglLayer; // is a sublayer of view.layer
+
+    BOOL mouseIsOver;
 }
 
 @property (nonatomic, retain) id cglLayer;
+@property (nonatomic) BOOL mouseIsOver;
 
 - (id) initWithRect:(NSRect) rect platformView:(jobject)cPlatformView windowLayer:(CALayer*)windowLayer;
 - (void) deliverJavaMouseEvent: (NSEvent *) event;
