@@ -346,7 +346,7 @@ class GraphBuilder VALUE_OBJ_CLASS_SPEC {
   const char* should_not_inline(ciMethod* callee) const;
 
   // JSR 292 support
-  bool for_method_handle_inline(ciMethod* callee);
+  bool try_method_handle_inline(ciMethod* callee);
 
   // helpers
   void inline_bailout(const char* msg);

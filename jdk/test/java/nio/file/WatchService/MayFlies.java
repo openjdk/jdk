@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 7164570
+ * @bug 7164570 7191467
  * @summary Test that CREATE and DELETE events are paired for very
  *     short lived files
  * @library ..

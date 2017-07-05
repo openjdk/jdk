@@ -126,10 +126,6 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     native void getWindowBounds(long window, long x, long y, long width, long height);
     private native static void initIDs();
 
-    private static Field isPostedField;
-    private static Field rawCodeField;
-    private static Field primaryLevelUnicodeField;
-    private static Field extendedKeyCodeField;
     static {
         initIDs();
     }
@@ -398,20 +394,11 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
 
     static Method m_sendMessage;
     static void sendEvent(final AWTEvent e) {
-        if (isPostedField == null) {
-            isPostedField = SunToolkit.getField(AWTEvent.class, "isPosted");
-        }
         // The uses of this method imply that the incoming event is system-generated
         SunToolkit.setSystemGenerated(e);
         PeerEvent pe = new PeerEvent(Toolkit.getDefaultToolkit(), new Runnable() {
                 public void run() {
-                    try {
-                        isPostedField.setBoolean(e, true);
-                    } catch (IllegalArgumentException e) {
-                        assert(false);
-                    } catch (IllegalAccessException e) {
-                        assert(false);
-                    }
+                    AWTAccessor.getAWTEventAccessor().setPosted(e);
                     ((Component)e.getSource()).dispatchEvent(e);
                 }
             }, PeerEvent.ULTIMATE_PRIORITY_EVENT);
@@ -1428,16 +1415,8 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     }
 
 
-    static Field bdata;
     static void setBData(KeyEvent e, byte[] data) {
-        try {
-            if (bdata == null) {
-                bdata = SunToolkit.getField(java.awt.AWTEvent.class, "bdata");
-            }
-            bdata.set(e, data);
-        } catch (IllegalAccessException ex) {
-            assert false;
-        }
+        AWTAccessor.getAWTEventAccessor().setBData(e, data);
     }
 
     public void postKeyEvent(int id, long when, int keyCode, int keyChar,
@@ -1447,15 +1426,6 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
     {
         long jWhen = XToolkit.nowMillisUTC_offset(when);
         int modifiers = getModifiers(state, 0, keyCode);
-        if (rawCodeField == null) {
-            rawCodeField = XToolkit.getField(KeyEvent.class, "rawCode");
-        }
-        if (primaryLevelUnicodeField == null) {
-            primaryLevelUnicodeField = XToolkit.getField(KeyEvent.class, "primaryLevelUnicode");
-        }
-        if (extendedKeyCodeField == null) {
-            extendedKeyCodeField = XToolkit.getField(KeyEvent.class, "extendedKeyCode");
-        }
 
         KeyEvent ke = new KeyEvent((Component)getEventSource(), id, jWhen,
                                    modifiers, keyCode, (char)keyChar, keyLocation);
@@ -1463,15 +1433,11 @@ public class XWindow extends XBaseWindow implements X11ComponentPeer {
             byte[] data = Native.toBytes(event, eventSize);
             setBData(ke, data);
         }
-        try {
-            rawCodeField.set(ke, rawCode);
-            primaryLevelUnicodeField.set(ke, (long)unicodeFromPrimaryKeysym);
-            extendedKeyCodeField.set(ke, (long)extendedKeyCode);
-        } catch (IllegalArgumentException e) {
-            assert(false);
-        } catch (IllegalAccessException e) {
-            assert(false);
-        }
+
+        AWTAccessor.KeyEventAccessor kea = AWTAccessor.getKeyEventAccessor();
+        kea.setRawCode(ke, rawCode);
+        kea.setPrimaryLevelUnicode(ke, (long)unicodeFromPrimaryKeysym);
+        kea.setExtendedKeyCode(ke, (long)extendedKeyCode);
         postEventToEventQueue(ke);
     }
 

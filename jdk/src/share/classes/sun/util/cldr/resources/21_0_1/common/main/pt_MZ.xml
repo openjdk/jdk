@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 5798 $"/>
+		<generation date="$Date: 2011-05-02 15:05:34 +0900 (Mon, 02 May 2011) $"/>
+		<language type="pt"/>
+		<territory type="MZ"/>
+	</identity>
+	<fallback>pt_PT</fallback>
+	<numbers>
+		<currencies>
+			<currency type="MZN">
+				<symbol>MTn</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

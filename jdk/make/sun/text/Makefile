@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ include FILES_properties.gmk
 #
 # Compile the properties files
 #
-COMPILED_PROPERTIES_SUPERCLASS=LocaleNamesBundle
+COMPILED_PROPERTIES_SUPERCLASS=sun.util.resources.LocaleNamesBundle
 
 #
 # Rules
@@ -68,13 +68,13 @@ TEXT_CLASSES = $(BUILDTOOLCLASSDIR)/sun.text/classes
 #
 TEXT_SRCDIR = $(SHARE_SRC)/classes/sun/text/resources
 BIRULES = $(TEXT_SRCDIR)/BreakIteratorRules.java \
-          $(TEXT_SRCDIR)/BreakIteratorRules_th.java
-BIINFO = $(TEXT_SRCDIR)/BreakIteratorInfo_th.java
+          $(TEXT_SRCDIR)/th/BreakIteratorRules_th.java
+BIINFO = $(TEXT_SRCDIR)/th/BreakIteratorInfo_th.java
 UNICODEDATA = $(BUILDDIR)/tools/UnicodeData
 
 # output
-BIFILES = $(CLASSDESTDIR)/sun/text/resources/WordBreakIteratorData_th \
-          $(CLASSDESTDIR)/sun/text/resources/LineBreakIteratorData_th
+BIFILES = $(CLASSDESTDIR)/sun/text/resources/th/WordBreakIteratorData_th \
+          $(CLASSDESTDIR)/sun/text/resources/th/LineBreakIteratorData_th
 
 # builder
 GENERATEBREAKITERATORDATA_JARFILE = \
@@ -106,7 +106,7 @@ clean::
 #
 LOCALEDATA_JAR = $(EXTDIR)/localedata.jar
 
-SPECIALFILES = $(CLASSDESTDIR)/sun/text/resources/thai_dict
+SPECIALFILES = $(CLASSDESTDIR)/sun/text/resources/th/thai_dict
 
 $(CLASSDESTDIR)/sun/text/resources/% : $(TEXT_SRCDIR)/%
 	$(install-file)

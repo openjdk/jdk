@@ -25,6 +25,7 @@
 package sun.jvm.hotspot.debugger.x86;
 
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.debugger.cdbg.*;
 
 /** Specifies the thread context on x86 platforms; only a sub-portion
     of the context is guaranteed to be present on all operating
@@ -107,6 +108,10 @@ public abstract class X86ThreadContext implements ThreadContext {
 
   public long getRegister(int index) {
     return data[index];
+  }
+
+  public CFrame getTopFrame(Debugger dbg) {
+    return null;
   }
 
   /** This can't be implemented in this class since we would have to

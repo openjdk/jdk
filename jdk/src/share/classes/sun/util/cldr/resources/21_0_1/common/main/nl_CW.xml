@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6159 $"/>
+		<generation date="$Date: 2011-09-22 05:19:10 +0900 (Thu, 22 Sep 2011) $"/>
+		<language type="nl"/>
+		<territory type="CW"/>
+	</identity>
+	<numbers>
+		<currencies>
+			<currency type="ANG">
+				<symbol>NAf.</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

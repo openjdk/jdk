@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,43 +79,33 @@ public class GenerateBreakIteratorData {
         ResourceBundle rules, info;
 
         info =  ResourceBundle.getBundle("sun.text.resources.BreakIteratorInfo",
-                                       new Locale(language, country, valiant));
+                                         new Locale(language, country, valiant),
+                                         BreakIteratorRBControl.INSTANCE);
         classNames = info.getStringArray("BreakIteratorClasses");
 
         rules = ResourceBundle.getBundle("sun.text.resources.BreakIteratorRules",
-                                       new Locale(language, country, valiant));
+                                         new Locale(language, country, valiant),
+                                         BreakIteratorRBControl.INSTANCE);
 
-        /*
-         * Fallback is not necessary here.... So, cannot use getBundle().
-         */
-        try {
-            info = (ResourceBundle)Class.forName("sun.text.resources.BreakIteratorInfo" + localeName).newInstance();
-
-            Enumeration<String> keys = info.getKeys();
-            while (keys.hasMoreElements()) {
-                String key = keys.nextElement();
-
-                if (key.equals("CharacterData")) {
-                    generateDataFile(info.getString(key),
-                                     rules.getString("CharacterBreakRules"),
-                                     classNames[0]);
-                } else if (key.endsWith("WordData")) {
-                    generateDataFile(info.getString(key),
-                                     rules.getString("WordBreakRules"),
-                                     classNames[1]);
-                } else if (key.endsWith("LineData")) {
-                    generateDataFile(info.getString(key),
-                                     rules.getString("LineBreakRules"),
-                                     classNames[2]);
-                } else if (key.endsWith("SentenceData")) {
-                    generateDataFile(info.getString(key),
-                                     rules.getString("SentenceBreakRules"),
-                                     classNames[3]);
-                }
-            }
+        if (info.containsKey("CharacterData")) {
+            generateDataFile(info.getString("CharacterData"),
+                             rules.getString("CharacterBreakRules"),
+                             classNames[0]);
         }
-        catch (Exception e) {
-            throw new InternalError(e.toString());
+        if (info.containsKey("WordData")) {
+            generateDataFile(info.getString("WordData"),
+                             rules.getString("WordBreakRules"),
+                             classNames[1]);
+        }
+        if (info.containsKey("LineData")) {
+            generateDataFile(info.getString("LineData"),
+                             rules.getString("LineBreakRules"),
+                             classNames[2]);
+        }
+        if (info.containsKey("SentenceData")) {
+            generateDataFile(info.getString("SentenceData"),
+                             rules.getString("SentenceBreakRules"),
+                             classNames[3]);
         }
     }
 

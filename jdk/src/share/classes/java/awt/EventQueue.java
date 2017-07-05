@@ -36,6 +36,8 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 
 import java.util.EmptyStackException;
+
+import sun.awt.dnd.SunDropTargetEvent;
 import sun.util.logging.PlatformLogger;
 
 import sun.awt.AppContext;
@@ -50,7 +52,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import java.security.AccessControlContext;
-import java.security.ProtectionDomain;
 
 import sun.misc.SharedSecrets;
 import sun.misc.JavaSecurityAccess;
@@ -185,6 +186,17 @@ public class EventQueue {
                 }
                 public boolean isDispatchThreadImpl(EventQueue eventQueue) {
                     return eventQueue.isDispatchThreadImpl();
+                }
+                public void removeSourceEvents(EventQueue eventQueue,
+                                               Object source,
+                                               boolean removeAllEvents) {
+                    eventQueue.removeSourceEvents(source, removeAllEvents);
+                }
+                public boolean noEvents(EventQueue eventQueue) {
+                    return eventQueue.noEvents();
+                }
+                public void wakeup(EventQueue eventQueue, boolean isShutdown) {
+                    eventQueue.wakeup(isShutdown);
                 }
             });
     }
@@ -464,7 +476,9 @@ public class EventQueue {
         case MouseEvent.MOUSE_MOVED:
             return MOVE;
         case MouseEvent.MOUSE_DRAGGED:
-            return DRAG;
+            // Return -1 for SunDropTargetEvent since they are usually synchronous
+            // and we don't want to skip them by coalescing with MouseEvent or other drag events
+            return e instanceof SunDropTargetEvent ? -1 : DRAG;
         default:
             return e instanceof PeerEvent ? PEER : -1;
         }

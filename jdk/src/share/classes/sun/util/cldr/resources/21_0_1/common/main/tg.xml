@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<ldml>
+	<identity>
+		<version number="$Revision: 6610 $"/>
+		<generation date="$Date: 2012-02-27 09:50:26 +0900 (Mon, 27 Feb 2012) $"/>
+		<language type="tg"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="be" draft="unconfirmed">Белорусӣ</language>
+			<language type="bg" draft="unconfirmed">Булғорӣ</language>
+			<language type="bh" draft="unconfirmed">Биҳарӣ</language>
+			<language type="bn" draft="unconfirmed">Бенгалӣ</language>
+			<language type="br" draft="unconfirmed">Бретонӣ</language>
+			<language type="bs" draft="unconfirmed">Босниягӣ</language>
+			<language type="ca" draft="unconfirmed">Каталанӣ</language>
+			<language type="cs" draft="unconfirmed">Чехӣ</language>
+			<language type="da" draft="unconfirmed">Даниягӣ</language>
+			<language type="de">Немисӣ</language>
+			<language type="el" draft="unconfirmed">Юнонӣ</language>
+			<language type="en">Англисӣ</language>
+			<language type="eo" draft="unconfirmed">Эсперанто</language>
+			<language type="es" draft="unconfirmed">Испанӣ</language>
+			<language type="et" draft="unconfirmed">Эстонӣ</language>
+			<language type="eu" draft="unconfirmed">Баскӣ</language>
+			<language type="fa" draft="unconfirmed">Форсӣ</language>
+			<language type="fi" draft="unconfirmed">Финнӣ</language>
+			<language type="fil" draft="unconfirmed">Филиппинӣ</language>
+			<language type="fo" draft="unconfirmed">Фарозӣ</language>
+			<language type="fr">Фаронсавӣ</language>
+			<language type="fy" draft="unconfirmed">Фрисианӣ</language>
+			<language type="ga" draft="unconfirmed">Ирландӣ</language>
+			<language type="gd" draft="unconfirmed">Шотландӣ-Галикӣ</language>
+			<language type="gl" draft="unconfirmed">Галисианӣ</language>
+			<language type="gn" draft="unconfirmed">Горанӣ</language>
+			<language type="gu" draft="unconfirmed">Гуҷаратӣ</language>
+			<language type="he" draft="unconfirmed">Яҳудӣ</language>
+			<language type="hi" draft="unconfirmed">Ҳиндӣ</language>
+			<language type="hu" draft="unconfirmed">Маҷорӣ</language>
+			<language type="ia" draft="unconfirmed">Байни забонӣ</language>
+			<language type="id" draft="unconfirmed">Индонезӣ</language>
+			<language type="is" draft="unconfirmed">Исландӣ</language>
+			<language type="ja" draft="unconfirmed">Ҷопонӣ</language>
+			<language type="jv" draft="unconfirmed">Ҷаванизӣ</language>
+			<language type="ka" draft="unconfirmed">Гурҷӣ</language>
+			<language type="ky" draft="unconfirmed">Қирғизӣ</language>
+			<language type="la" draft="unconfirmed">Лотинӣ</language>
+			<language type="lo" draft="unconfirmed">Лаосӣ</language>
+			<language type="lt" draft="unconfirmed">Литвонӣ</language>
+			<language type="lv" draft="unconfirmed">Латвиягӣ</language>
+			<language type="nl" draft="unconfirmed">Ҳолландӣ</language>
+			<language type="no" draft="unconfirmed">Норвегӣ</language>
+			<language type="or" draft="unconfirmed">Урисоӣ</language>
+			<language type="pl" draft="unconfirmed">Лаҳистонӣ</language>
+			<language type="pt" draft="unconfirmed">Португалӣ</language>
+			<language type="pt_BR" draft="unconfirmed">Португалӣ (Бразилия)</language>
+			<language type="ro" draft="unconfirmed">Руминӣ</language>
+			<language type="ru" draft="unconfirmed">Русӣ</language>
+            <language type="sv" draft="unconfirmed">Шведӣ</language>
+            <language type="tg" draft="unconfirmed">Тоҷикӣ</language>
+			<language type="ug" draft="unconfirmed">Ӯйғурӣ</language>
+			<language type="uk" draft="unconfirmed">Украинӣ</language>
+			<language type="ur" draft="unconfirmed">Урду</language>
+			<language type="uz" draft="unconfirmed">Ӯзбекӣ</language>
+			<language type="yi" draft="unconfirmed">Яҳудии Аврупои шарқӣ</language>
+			<language type="zh">Чинӣ</language>
+			<language type="zu" draft="unconfirmed">Зулу</language>
+		</languages>
+		<scripts>
+			<script type="Arab">Арабӣ</script>
+		</scripts>
+		<territories>
+			<territory type="AF">Афғонистан</territory>
+			<territory type="TO" draft="unconfirmed">Тонга</territory>
+		</territories>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[а б в г ғ д е ё ж з и ӣ й к қ л м н о п р с т у ӯ ф х ҳ ч ҷ ш ъ э ю я]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ц щ ы ь]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[А Б В Г Ғ Д Е Ж З И Й К Қ Л М Н О П Р С Т У Ф Х Ҳ Ч Ҷ Ш Ъ Э Ю Я]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<quotationStart draft="unconfirmed">«</quotationStart>
+		<quotationEnd draft="unconfirmed">»</quotationEnd>
+		<alternateQuotationStart draft="unconfirmed">«</alternateQuotationStart>
+		<alternateQuotationEnd draft="unconfirmed">„</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">Янв</month>
+							<month type="2" draft="unconfirmed">Фев</month>
+							<month type="3" draft="unconfirmed">Мар</month>
+							<month type="4" draft="unconfirmed">Апр</month>
+							<month type="5" draft="unconfirmed">Май</month>
+							<month type="6" draft="unconfirmed">Июн</month>
+							<month type="7" draft="unconfirmed">Июл</month>
+							<month type="8" draft="unconfirmed">Авг</month>
+							<month type="9" draft="unconfirmed">Сен</month>
+							<month type="10" draft="unconfirmed">Окт</month>
+							<month type="11" draft="unconfirmed">Ноя</month>
+							<month type="12" draft="unconfirmed">Дек</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Январ</month>
+							<month type="2" draft="unconfirmed">Феврал</month>
+							<month type="3" draft="unconfirmed">Март</month>
+							<month type="4" draft="unconfirmed">Апрел</month>
+							<month type="5" draft="unconfirmed">Май</month>
+							<month type="6" draft="unconfirmed">Июн</month>
+							<month type="7" draft="unconfirmed">Июл</month>
+							<month type="8" draft="unconfirmed">Август</month>
+							<month type="9" draft="unconfirmed">Сентябр</month>
+							<month type="10" draft="unconfirmed">Октябр</month>
+							<month type="11" draft="unconfirmed">Ноябр</month>
+							<month type="12" draft="unconfirmed">Декабр</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">Яшб</day>
+							<day type="mon" draft="unconfirmed">Дшб</day>
+							<day type="tue" draft="unconfirmed">Сшб</day>
+							<day type="wed" draft="unconfirmed">Чшб</day>
+							<day type="thu" draft="unconfirmed">Пшб</day>
+							<day type="fri" draft="unconfirmed">Ҷмъ</day>
+							<day type="sat" draft="unconfirmed">Шнб</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">Якшанбе</day>
+							<day type="mon" draft="unconfirmed">Душанбе</day>
+							<day type="tue" draft="unconfirmed">Сешанбе</day>
+							<day type="wed" draft="unconfirmed">Чоршанбе</day>
+							<day type="thu" draft="unconfirmed">Панҷшанбе</day>
+							<day type="fri" draft="unconfirmed">Ҷумъа</day>
+							<day type="sat" draft="unconfirmed">Шанбе</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">пе. чо.</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">па. чо.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0" draft="unconfirmed">Пеш аз милод</era>
+						<era type="1" draft="unconfirmed">ПаМ</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="unconfirmed">ПеМ</era>
+						<era type="1" draft="unconfirmed">ПаМ</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, y MMMM dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">y MMMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">y MMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">yy/MM/dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="unconfirmed">HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="TJS">
+				<displayName draft="unconfirmed">Сомонӣ</displayName>
+				<symbol draft="unconfirmed">сом</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>
+

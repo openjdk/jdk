@@ -1403,7 +1403,7 @@ public abstract class ClassLoader {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             ClassLoader ccl = getCallerClassLoader();
-            if (ccl != null && !isAncestor(ccl)) {
+            if (needsClassLoaderPermissionCheck(ccl, this)) {
                 sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
             }
         }
@@ -1473,7 +1473,7 @@ public abstract class ClassLoader {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             ClassLoader ccl = getCallerClassLoader();
-            if (ccl != null && ccl != scl && !scl.isAncestor(ccl)) {
+            if (needsClassLoaderPermissionCheck(ccl, scl)) {
                 sm.checkPermission(SecurityConstants.GET_CLASSLOADER_PERMISSION);
             }
         }
@@ -1521,6 +1521,23 @@ public abstract class ClassLoader {
             }
         } while (acl != null);
         return false;
+    }
+
+    // Tests if class loader access requires "getClassLoader" permission
+    // check.  A class loader 'from' can access class loader 'to' if
+    // class loader 'from' is same as class loader 'to' or an ancestor
+    // of 'to'.  The class loader in a system domain can access
+    // any class loader.
+    static boolean needsClassLoaderPermissionCheck(ClassLoader from,
+                                                   ClassLoader to)
+    {
+        if (from == to)
+            return false;
+
+        if (from == null)
+            return false;
+
+        return !to.isAncestor(from);
     }
 
     // Returns the invoker's class loader, or null if none.

@@ -1,0 +1,1436 @@
+<!--
+Copyright © 2003-2012 Unicode, Inc. and others. All rights reserved. Distributed under the Terms of Use in http://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of the Unicode data files and any associated documentation (the "Data Files") or Unicode software and any associated documentation (the "Software") to deal in the Data Files or Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, and/or sell copies of the Data Files or Software, and to permit persons to whom the Data Files or Software are furnished to do so, provided that (a) the above copyright notice(s) and this permission notice appear with all copies of the Data Files or Software, (b) both the above copyright notice(s) and this permission notice appear in associated documentation, and (c) there is clear notice in each modified Data File or in the Software as well as in the documentation associated with the Data File(s) or Software that the data or software has been modified.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall not be used in advertising or otherwise to promote the sale, use or other dealings in these Data Files or Software without prior written authorization of the copyright holder.
+$Revision: 6708 $
+$Date: 2012-03-16 15:58:36 +0900 (Fri, 16 Mar 2012) $
+-->
+
+<!ELEMENT ldml (identity, (alias | (fallback*, localeDisplayNames?, layout?, contextTransforms?, characters?, delimiters?, measurement?, dates?, numbers?, units?, listPatterns?, collations?, posix?, segmentations?, rbnf?, metadata?, references?, special*))) >
+<!ATTLIST ldml draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+
+<!-- ######################################################### -->
+
+<!ELEMENT identity (alias | (version, generation?, language, script?, territory?, variant?, special*) ) >
+
+<!ELEMENT version EMPTY >
+<!ATTLIST version number CDATA #REQUIRED >
+<!ATTLIST version cldrVersion CDATA #FIXED "21.0" >
+
+<!ELEMENT generation EMPTY >
+<!ATTLIST generation date CDATA #REQUIRED >
+
+<!ELEMENT language ( #PCDATA ) >
+<!ATTLIST language type NMTOKEN #REQUIRED >
+<!ATTLIST language draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST language references CDATA #IMPLIED >
+<!ATTLIST language alt NMTOKENS #IMPLIED >
+
+
+<!ELEMENT script ( #PCDATA ) >
+<!ATTLIST script type NMTOKEN #REQUIRED >
+<!ATTLIST script draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST script references CDATA #IMPLIED >
+<!ATTLIST script alt NMTOKENS #IMPLIED >
+
+
+<!ELEMENT territory ( #PCDATA ) >
+<!ATTLIST territory type NMTOKEN #REQUIRED >
+<!ATTLIST territory draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST territory references CDATA #IMPLIED >
+<!ATTLIST territory alt NMTOKENS #IMPLIED >
+
+
+<!ELEMENT variant ( #PCDATA ) >
+<!ATTLIST variant type NMTOKEN #REQUIRED >
+<!ATTLIST variant draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST variant references CDATA #IMPLIED >
+<!ATTLIST variant alt NMTOKENS #IMPLIED >
+
+
+<!-- ######################################################### -->
+
+<!-- These elements are common to almost all elements defined  -->
+<!-- ######################################################### -->
+
+<!ELEMENT alias  (special*) >
+<!ATTLIST alias source NMTOKEN #REQUIRED >
+<!ATTLIST alias path CDATA #IMPLIED>
+<!ATTLIST alias draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST alias alt NMTOKENS #IMPLIED >
+
+<!ELEMENT default (special*) >
+<!ATTLIST default type NMTOKEN #IMPLIED > <!-- deprecated in favor of choice -->
+<!ATTLIST default choice NMTOKEN #IMPLIED > <!-- really required, but needs to be optional to support type also -->
+<!ATTLIST default draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST default references CDATA #IMPLIED >
+<!ATTLIST default alt NMTOKENS #IMPLIED >
+
+<!ELEMENT special ANY >
+
+<!-- This element can occur anywhere there may be localizable data -->
+<!ELEMENT cp (special*) >
+<!ATTLIST cp hex NMTOKEN #REQUIRED >
+
+<!-- ######################################################### -->
+
+<!ELEMENT fallback (#PCDATA) > <!-- deprecated -->
+<!ATTLIST fallback draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED  >
+<!ATTLIST fallback references CDATA #IMPLIED >
+<!ATTLIST fallback alt NMTOKENS #IMPLIED >
+
+<!ELEMENT localeDisplayNames (alias | (localeDisplayPattern?, languages?, scripts?, territories?, variants?, keys?, types?, transformNames?, measurementSystemNames?, codePatterns?, special*)) >
+<!ATTLIST localeDisplayNames draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+
+<!-- Either 1 alias OR any specials, any order, zero or more language -->
+<!ELEMENT languages ( alias | (language | special)* ) >
+<!ATTLIST languages draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED  > <!-- true and false are deprecated. -->
+<!ATTLIST languages standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST languages references CDATA #IMPLIED >
+<!ATTLIST languages validSubLocales CDATA #IMPLIED >
+
+<!-- Either 1 alias OR any specials, any order, zero or more script -->
+<!ELEMENT scripts (alias |(script | special)* ) >
+<!ATTLIST scripts draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST scripts standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST scripts references CDATA #IMPLIED >
+<!ATTLIST scripts validSubLocales CDATA #IMPLIED >
+
+<!-- Either 1 alias OR any specials, any order, zero or more territory -->
+<!ELEMENT territories ( alias | (territory | special)*) >
+<!ATTLIST territories draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST territories standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST territories references CDATA #IMPLIED >
+<!ATTLIST territories validSubLocales CDATA #IMPLIED >
+
+<!-- Either 1 alias OR any specials, any order, zero or more variant -->
+<!ELEMENT variants ( alias |(variant | special)*  ) >
+<!ATTLIST variants draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST variants standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST variants references CDATA #IMPLIED >
+<!ATTLIST variants validSubLocales CDATA #IMPLIED >
+
+<!-- Either 1 alias OR any specials, any order, zero or more key -->
+<!ELEMENT keys ( alias | (key | special)*) >
+<!ATTLIST keys draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST keys standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST keys references CDATA #IMPLIED >
+<!ATTLIST keys validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT key ( #PCDATA ) >
+<!ATTLIST key type NMTOKEN #REQUIRED >
+<!ATTLIST key draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST key references CDATA #IMPLIED >
+<!ATTLIST key alt NMTOKENS #IMPLIED >
+
+
+<!-- Either 1 alias OR any specials, any order, zero or more type -->
+<!ELEMENT types ( alias | (type | special)* ) >
+<!ATTLIST types draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST types standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST types references CDATA #IMPLIED >
+<!ATTLIST types validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT type ( #PCDATA ) >
+<!ATTLIST type type NMTOKEN #REQUIRED >
+<!ATTLIST type key NMTOKEN #IMPLIED >
+<!ATTLIST type draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST type references CDATA #IMPLIED >
+<!ATTLIST type alt NMTOKENS #IMPLIED >
+
+<!ELEMENT transformNames ( alias | (transformName | special)* ) >
+<!ATTLIST transformNames draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST transformNames references CDATA #IMPLIED >
+
+<!ELEMENT transformName ( #PCDATA ) >
+<!ATTLIST transformName type NMTOKEN #REQUIRED >
+<!ATTLIST transformName draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST transformName references CDATA #IMPLIED >
+<!ATTLIST transformName alt NMTOKENS #IMPLIED >
+
+
+<!ELEMENT codePatterns ( alias | (codePattern | special)* ) >
+<!ELEMENT codePattern ( #PCDATA ) >
+<!ATTLIST codePattern type NMTOKEN #REQUIRED >
+<!ATTLIST codePattern draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST codePattern references CDATA #IMPLIED >
+<!ATTLIST codePattern alt NMTOKENS #IMPLIED >
+
+<!-- Either 1 alias OR any specials, any order, zero or more measurementSystemName -->
+<!ELEMENT measurementSystemNames ( alias | (measurementSystemName | special)* ) >
+<!ATTLIST measurementSystemNames draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST measurementSystemNames references CDATA #IMPLIED >
+<!ATTLIST measurementSystemNames validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT measurementSystemName ( #PCDATA ) >
+<!ATTLIST measurementSystemName type ( US | metric | UK ) #REQUIRED >
+<!ATTLIST measurementSystemName draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST measurementSystemName references CDATA #IMPLIED >
+<!ATTLIST measurementSystemName alt NMTOKENS #IMPLIED >
+
+<!ELEMENT localeDisplayPattern ( alias | (localePattern*, localeSeparator*, localeKeyTypePattern*, special*) ) >
+<!ATTLIST localeDisplayPattern draft ( approved | contributed | provisional | unconfirmed) #IMPLIED >
+<!ATTLIST localeDisplayPattern references CDATA #IMPLIED >
+<!ATTLIST localeDisplayPattern alt NMTOKENS #IMPLIED >
+
+<!ELEMENT localePattern ( #PCDATA ) >
+<!ATTLIST localePattern draft ( approved | contributed | provisional | unconfirmed) #IMPLIED >
+<!ATTLIST localePattern references CDATA #IMPLIED >
+<!ATTLIST localePattern alt NMTOKENS #IMPLIED >
+
+<!ELEMENT localeSeparator ( #PCDATA ) >
+<!ATTLIST localeSeparator draft ( approved | contributed | provisional | unconfirmed) #IMPLIED >
+<!ATTLIST localeSeparator references CDATA #IMPLIED >
+<!ATTLIST localeSeparator alt NMTOKENS #IMPLIED >
+
+<!ELEMENT localeKeyTypePattern ( #PCDATA ) >
+<!ATTLIST localeKeyTypePattern draft ( approved | contributed | provisional | unconfirmed) #IMPLIED >
+<!ATTLIST localeKeyTypePattern references CDATA #IMPLIED >
+<!ATTLIST localeKeyTypePattern alt NMTOKENS #IMPLIED >
+
+<!-- ######################################################### -->
+
+
+<!-- ######################################################### -->
+<!-- layout and orientation are script specific, so validSublocales attribute is not required -->
+<!ELEMENT layout ( alias | (orientation*, inList*, inText*, special*) ) >
+<!ATTLIST layout draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST layout references CDATA #IMPLIED >
+
+<!ELEMENT orientation ( special* ) >
+<!ATTLIST orientation characters ( left-to-right | right-to-left | top-to-bottom | bottom-to-top ) "left-to-right" >
+<!ATTLIST orientation lines ( left-to-right | right-to-left | top-to-bottom | bottom-to-top ) "top-to-bottom" >
+<!ATTLIST orientation draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST orientation standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST orientation references CDATA #IMPLIED >
+<!ATTLIST orientation alt NMTOKENS #IMPLIED >
+
+<!ELEMENT inList ( #PCDATA ) > <!-- deprecated, use contextTransforms -->
+<!ATTLIST inList casing ( titlecase-words | titlecase-firstword | lowercase-words | mixed ) #IMPLIED > <!-- deprecated -->
+<!ATTLIST inList draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST inList references CDATA #IMPLIED >
+<!ATTLIST inList alt NMTOKENS #IMPLIED >
+
+<!ELEMENT inText ( #PCDATA ) > <!-- deprecated, use contextTransforms -->
+<!ATTLIST inText type ( languages | scripts | territories | variants | keys | types | measurementSystemNames | monthWidth | dayWidth | quarterWidth | long | fields | currency ) #IMPLIED >
+<!ATTLIST inText draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED > 
+<!ATTLIST inText references CDATA #IMPLIED >
+<!ATTLIST inText alt NMTOKENS #IMPLIED >
+
+<!-- ######################################################### -->
+
+<!ELEMENT contextTransforms ( alias | (contextTransformUsage*, special*)) >
+<!ATTLIST contextTransforms draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST contextTransforms references CDATA #IMPLIED >
+<!ATTLIST contextTransforms alt NMTOKENS #IMPLIED >
+<!ATTLIST contextTransforms validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT contextTransformUsage ( alias | (contextTransform*, special*)) >
+<!ATTLIST contextTransformUsage type CDATA #REQUIRED >
+<!ATTLIST contextTransformUsage draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST contextTransformUsage references CDATA #IMPLIED >
+<!ATTLIST contextTransformUsage alt NMTOKENS #IMPLIED >
+<!ATTLIST contextTransformUsage validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT contextTransform ( #PCDATA ) >
+<!ATTLIST contextTransform type ( uiListOrMenu | stand-alone ) #REQUIRED >
+<!ATTLIST contextTransform draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST contextTransform references CDATA #IMPLIED >
+<!ATTLIST contextTransform alt NMTOKENS #IMPLIED >
+
+<!-- ######################################################### -->
+
+<!ELEMENT characters (alias | (exemplarCharacters*, ellipsis*, moreInformation*, stopwords*, indexLabels*, mapping*, special*))  >
+<!ATTLIST characters draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+
+<!ELEMENT exemplarCharacters ( #PCDATA | cp )* >
+<!ATTLIST exemplarCharacters type ( auxiliary | standard | punctuation | currencySymbol | index ) #IMPLIED >
+<!ATTLIST exemplarCharacters draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST exemplarCharacters standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST exemplarCharacters references CDATA #IMPLIED >
+<!ATTLIST exemplarCharacters alt NMTOKENS #IMPLIED >
+<!ATTLIST exemplarCharacters validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT ellipsis ( #PCDATA ) >
+<!ATTLIST ellipsis type ( initial | medial | final ) #IMPLIED >
+<!ATTLIST ellipsis draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST ellipsis references CDATA #IMPLIED >
+<!ATTLIST ellipsis alt NMTOKENS #IMPLIED >
+
+<!ELEMENT moreInformation ( #PCDATA ) >
+<!ATTLIST moreInformation draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST moreInformation references CDATA #IMPLIED >
+<!ATTLIST moreInformation alt NMTOKENS #IMPLIED >
+
+<!ELEMENT stopwords ( stopwordList* ) >
+<!ELEMENT stopwordList ( #PCDATA ) >
+<!ATTLIST stopwordList type NMTOKEN #REQUIRED >
+<!ATTLIST stopwordList draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST stopwordList references CDATA #IMPLIED >
+<!ATTLIST stopwordList alt NMTOKENS #IMPLIED >
+
+
+<!ELEMENT indexLabels (indexSeparator*, compressedIndexSeparator*, indexRangePattern*, indexLabelBefore*, indexLabelAfter*, indexLabel*) >
+
+<!ELEMENT indexSeparator ( #PCDATA ) >
+<!ATTLIST indexSeparator draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST indexSeparator references CDATA #IMPLIED >
+<!ATTLIST indexSeparator alt NMTOKENS #IMPLIED >
+
+<!ELEMENT compressedIndexSeparator ( #PCDATA ) >
+<!ATTLIST compressedIndexSeparator draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST compressedIndexSeparator references CDATA #IMPLIED >
+<!ATTLIST compressedIndexSeparator alt NMTOKENS #IMPLIED >
+
+<!ELEMENT indexRangePattern ( #PCDATA ) >
+<!ATTLIST indexRangePattern draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST indexRangePattern references CDATA #IMPLIED >
+<!ATTLIST indexRangePattern alt NMTOKENS #IMPLIED >
+
+<!ELEMENT indexLabelBefore ( #PCDATA ) >
+<!ATTLIST indexLabelBefore draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST indexLabelBefore references CDATA #IMPLIED >
+<!ATTLIST indexLabelBefore alt NMTOKENS #IMPLIED >
+
+<!ELEMENT indexLabelAfter ( #PCDATA ) >
+<!ATTLIST indexLabelAfter draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST indexLabelAfter references CDATA #IMPLIED >
+<!ATTLIST indexLabelAfter alt NMTOKENS #IMPLIED >
+
+<!ELEMENT indexLabel ( #PCDATA ) >
+<!ATTLIST indexLabel indexSource CDATA #IMPLIED >
+<!ATTLIST indexLabel priority ( 1 | 2 | 3 ) #IMPLIED >
+<!ATTLIST indexLabel draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST indexLabel references CDATA #IMPLIED >
+<!ATTLIST indexLabel alt NMTOKENS #IMPLIED >
+
+<!ELEMENT mapping (special*) >
+<!ATTLIST mapping registry NMTOKEN #REQUIRED >
+<!ATTLIST mapping type NMTOKEN #IMPLIED > <!-- deprecated in favor of choice -->
+<!ATTLIST mapping choice NMTOKEN #IMPLIED >
+<!ATTLIST mapping draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST mapping standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST mapping references CDATA #IMPLIED >
+<!ATTLIST mapping alt NMTOKENS #IMPLIED >
+<!ATTLIST mapping validSubLocales CDATA #IMPLIED >
+
+<!-- ######################################################### -->
+
+
+<!-- ######################################################### -->
+
+<!ELEMENT delimiters (alias | (quotationStart*, quotationEnd*, alternateQuotationStart*, alternateQuotationEnd*, special*)) >
+<!ATTLIST delimiters draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST delimiters standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST delimiters references CDATA #IMPLIED >
+<!ATTLIST delimiters alt NMTOKENS #IMPLIED >
+<!ATTLIST delimiters validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT quotationStart ( #PCDATA | cp )* >
+<!ATTLIST quotationStart draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST quotationStart references CDATA #IMPLIED >
+<!ATTLIST quotationStart alt NMTOKENS #IMPLIED >
+
+<!ELEMENT quotationEnd ( #PCDATA | cp )* >
+<!ATTLIST quotationEnd draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST quotationEnd references CDATA #IMPLIED >
+<!ATTLIST quotationEnd alt NMTOKENS #IMPLIED >
+ 
+<!ELEMENT alternateQuotationStart ( #PCDATA | cp )* >
+<!ATTLIST alternateQuotationStart draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST alternateQuotationStart references CDATA #IMPLIED >
+<!ATTLIST alternateQuotationStart alt NMTOKENS #IMPLIED >
+
+<!ELEMENT alternateQuotationEnd ( #PCDATA | cp )* >
+<!ATTLIST alternateQuotationEnd draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST alternateQuotationEnd references CDATA #IMPLIED >
+<!ATTLIST alternateQuotationEnd alt NMTOKENS #IMPLIED >
+
+<!-- ######################################################### -->
+
+
+<!-- ######################################################### -->
+
+<!ELEMENT measurement (alias | (measurementSystem*, paperSize*, special*)) > <!-- deprecated, use measurementData in supplemental instead -->
+<!ATTLIST measurement draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST measurement standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST measurement references CDATA #IMPLIED >
+<!ATTLIST measurement alt NMTOKENS #IMPLIED >
+<!ATTLIST measurement validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT paperSize (alias | (height*, width*, special*)) > <!-- deprecated, use paperSize in supplemental instead -->
+<!ATTLIST paperSize draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST paperSize standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST paperSize references CDATA #IMPLIED >
+<!ATTLIST paperSize alt NMTOKENS #IMPLIED >
+<!ATTLIST paperSize validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT height ( #PCDATA ) > <!-- deprecated -->
+<!ATTLIST height draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST height references CDATA #IMPLIED >
+<!ATTLIST height alt NMTOKENS #IMPLIED >
+
+<!ELEMENT width ( #PCDATA ) > <!-- deprecated -->
+<!ATTLIST width draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST width references CDATA #IMPLIED >
+<!ATTLIST width alt NMTOKENS #IMPLIED >
+
+<!ELEMENT measurementSystem (special*) > <!-- deprecated, use measurementSystem in supplemental instead -->
+<!ATTLIST measurementSystem type ( metric | US | UK ) #IMPLIED > <!-- deprecated in favor of choice -->
+<!ATTLIST measurementSystem choice ( metric | US | UK ) #IMPLIED > <!-- really required, but needs to be optional to support type also -->
+<!ATTLIST measurementSystem draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST measurementSystem standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST measurementSystem references CDATA #IMPLIED >
+<!ATTLIST measurementSystem alt NMTOKENS #IMPLIED >
+<!ATTLIST measurementSystem validSubLocales CDATA #IMPLIED >
+
+<!-- ######################################################### -->
+
+
+<!-- ######################################################### -->
+
+<!ELEMENT dates (alias | (localizedPatternChars*, dateRangePattern*, calendars?, timeZoneNames?, special*)) >
+<!ATTLIST dates draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST dates standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST dates references CDATA #IMPLIED >
+<!ATTLIST dates alt NMTOKENS #IMPLIED >
+<!ATTLIST dates validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT localizedPatternChars ( #PCDATA | cp )* > <!-- deprecated. -->
+<!ATTLIST localizedPatternChars draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST localizedPatternChars standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST localizedPatternChars references CDATA #IMPLIED >
+<!ATTLIST localizedPatternChars alt NMTOKENS #IMPLIED >
+<!ATTLIST localizedPatternChars validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT dateRangePattern ( #PCDATA ) > <!-- deprecated, use intervalFormats. -->
+<!ATTLIST dateRangePattern draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST dateRangePattern standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST dateRangePattern references CDATA #IMPLIED >
+<!ATTLIST dateRangePattern alt NMTOKENS #IMPLIED >
+<!ATTLIST dateRangePattern validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT calendars (alias | (default*, calendar*, special*)) >
+<!ATTLIST calendars draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST calendars validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT calendar (alias | (months?, monthNames?, monthAbbr?, monthPatterns?, days?, dayNames?, dayAbbr?, quarters?, week?, am*, pm*, dayPeriods?, eras?, cyclicNameSets?, dateFormats?, timeFormats?, dateTimeFormats?, fields*, special*))>
+<!ATTLIST calendar type NMTOKEN #REQUIRED >
+<!ATTLIST calendar draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST calendar standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST calendar references CDATA #IMPLIED >
+<!ATTLIST calendar alt NMTOKENS #IMPLIED >
+<!ATTLIST calendar validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT months ( alias | (default*, monthContext*, special*)) >
+<!ATTLIST months draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST months standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST months references CDATA #IMPLIED >
+<!ATTLIST months alt NMTOKENS #IMPLIED >
+<!ATTLIST months validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT monthContext ( alias | (default*, monthWidth*, special*)) >
+<!ATTLIST monthContext type ( format | stand-alone ) #REQUIRED >
+<!ATTLIST monthContext draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST monthContext standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST monthContext references CDATA #IMPLIED >
+<!ATTLIST monthContext alt NMTOKENS #IMPLIED >
+<!ATTLIST monthContext validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT monthWidth ( alias | (month*, special*)) >
+<!ATTLIST monthWidth type ( abbreviated| narrow | wide) #REQUIRED >
+<!ATTLIST monthWidth draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST monthWidth standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST monthWidth references CDATA #IMPLIED >
+<!ATTLIST monthWidth alt NMTOKENS #IMPLIED >
+<!ATTLIST monthWidth validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT month ( #PCDATA | cp )* >
+<!ATTLIST month type ( 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 ) #REQUIRED >
+<!ATTLIST month yeartype ( standard | leap ) #IMPLIED >
+<!ATTLIST month references CDATA #IMPLIED >
+<!ATTLIST month alt NMTOKENS #IMPLIED >
+<!ATTLIST month draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+
+<!ELEMENT monthPatterns ( alias | (monthPatternContext*, special*)) >
+<!ATTLIST monthPatterns draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST monthPatterns references CDATA #IMPLIED >
+<!ATTLIST monthPatterns alt NMTOKENS #IMPLIED >
+<!ATTLIST monthPatterns validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT monthPatternContext ( alias | (monthPatternWidth*, special*)) >
+<!ATTLIST monthPatternContext type ( format | stand-alone | numeric ) #REQUIRED >
+<!ATTLIST monthPatternContext draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST monthPatternContext references CDATA #IMPLIED >
+<!ATTLIST monthPatternContext alt NMTOKENS #IMPLIED >
+<!ATTLIST monthPatternContext validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT monthPatternWidth ( alias | (monthPattern*, special*)) >
+<!ATTLIST monthPatternWidth type ( abbreviated| narrow | wide | all ) #REQUIRED >
+<!ATTLIST monthPatternWidth draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST monthPatternWidth references CDATA #IMPLIED >
+<!ATTLIST monthPatternWidth alt NMTOKENS #IMPLIED >
+<!ATTLIST monthPatternWidth validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT monthPattern ( #PCDATA ) >
+<!ATTLIST monthPattern type ( leap | standardAfterLeap | combined ) #REQUIRED >
+<!ATTLIST monthPattern draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST monthPattern references CDATA #IMPLIED >
+<!ATTLIST monthPattern alt NMTOKENS #IMPLIED >
+
+
+<!-- START_DEPRECATED -->
+<!ELEMENT monthNames ( alias | (month*, special*)) >
+<!ATTLIST monthNames draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+
+<!ELEMENT monthAbbr ( alias | (month*, special*)) >
+<!ATTLIST monthAbbr draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!-- END_DEPRECATED-->
+
+<!ELEMENT days ( alias | (default*, dayContext*, special*)) >
+<!ATTLIST days draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED ><!-- true and false are deprecated. -->
+<!ATTLIST days standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST days references CDATA #IMPLIED >
+<!ATTLIST days alt NMTOKENS #IMPLIED >
+<!ATTLIST days validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT dayContext ( alias | (default*, dayWidth*, special*)) >
+<!ATTLIST dayContext draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST dayContext type ( format | stand-alone ) #REQUIRED >
+<!ATTLIST dayContext standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST dayContext references CDATA #IMPLIED >
+<!ATTLIST dayContext alt NMTOKENS #IMPLIED >
+<!ATTLIST dayContext validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT dayWidth ( alias | (day*, special*)) >
+<!ATTLIST dayWidth draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST dayWidth type ( abbreviated| narrow | wide ) #REQUIRED >
+<!ATTLIST dayWidth standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST dayWidth references CDATA #IMPLIED >
+<!ATTLIST dayWidth alt NMTOKENS #IMPLIED >
+<!ATTLIST dayWidth validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT day ( #PCDATA ) >
+<!ATTLIST day type ( sun | mon | tue | wed | thu | fri | sat ) #REQUIRED >
+<!ATTLIST day references CDATA #IMPLIED >
+<!ATTLIST day draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST day alt NMTOKENS #IMPLIED >
+
+
+<!ELEMENT quarters ( alias | (default*, quarterContext*, special*)) >
+<!ATTLIST quarters draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST quarters references CDATA #IMPLIED >
+<!ATTLIST quarters alt NMTOKENS #IMPLIED >
+<!ATTLIST quarters validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT quarterContext ( alias | (default*, quarterWidth*, special*)) >
+<!ATTLIST quarterContext draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST quarterContext type ( format | stand-alone ) #REQUIRED >
+<!ATTLIST quarterContext references CDATA #IMPLIED >
+<!ATTLIST quarterContext alt NMTOKENS #IMPLIED >
+<!ATTLIST quarterContext validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT quarterWidth ( alias | (quarter*, special*)) >
+<!ATTLIST quarterWidth draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST quarterWidth type ( abbreviated| narrow | wide ) #REQUIRED >
+<!ATTLIST quarterWidth references CDATA #IMPLIED >
+<!ATTLIST quarterWidth alt NMTOKENS #IMPLIED >
+<!ATTLIST quarterWidth validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT quarter ( #PCDATA ) >
+<!ATTLIST quarter type ( 1 | 2 | 3 | 4 ) #REQUIRED >
+<!ATTLIST quarter references CDATA #IMPLIED >
+<!ATTLIST quarter draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST quarter alt NMTOKENS #IMPLIED >
+
+
+<!-- START_DEPRECATED-->
+
+<!ELEMENT dayAbbr ( alias | (day*, special*)) >
+<!ATTLIST dayAbbr draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+
+<!ELEMENT dayNames ( alias | (day*, special*)) >
+<!ATTLIST dayNames draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+
+
+<!ELEMENT week (alias | (minDays*, firstDay*, weekendStart*, weekendEnd*, special*)) >
+<!ATTLIST week draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST week standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST week references CDATA #IMPLIED >
+<!ATTLIST week alt NMTOKENS #IMPLIED >
+<!ATTLIST week validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT minDays (special*) >
+<!ATTLIST minDays count ( 1 | 2 | 3 | 4 | 5 | 6 | 7 ) #REQUIRED >
+<!ATTLIST minDays draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST minDays references CDATA #IMPLIED >
+<!ATTLIST minDays alt NMTOKENS #IMPLIED >
+
+<!ELEMENT firstDay (special*) >
+<!ATTLIST firstDay day NMTOKEN #REQUIRED >
+<!ATTLIST firstDay draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST firstDay references CDATA #IMPLIED >
+<!ATTLIST firstDay alt NMTOKENS #IMPLIED >
+
+<!ELEMENT weekendStart (special*) >
+<!ATTLIST weekendStart day ( sun | mon | tue | wed | thu | fri | sat ) #REQUIRED >
+<!ATTLIST weekendStart time CDATA "00:00" > <!-- the "time" attribute is deprecated everywhere. -->
+<!ATTLIST weekendStart draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST weekendStart references CDATA #IMPLIED >
+<!ATTLIST weekendStart alt NMTOKENS #IMPLIED >
+
+<!ELEMENT weekendEnd (special*) >
+<!ATTLIST weekendEnd day ( sun | mon | tue | wed | thu | fri | sat ) #REQUIRED >
+<!ATTLIST weekendEnd time CDATA "24:00" > <!-- the "time" attribute is deprecated everywhere. -->
+<!ATTLIST weekendEnd draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST weekendEnd references CDATA #IMPLIED >
+<!ATTLIST weekendEnd alt NMTOKENS #IMPLIED >
+
+<!-- END_DEPRECATED-->
+
+<!ELEMENT dayPeriods ( alias | (dayPeriodContext*) ) >
+<!ATTLIST dayPeriods draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED > 
+<!ATTLIST dayPeriods references CDATA #IMPLIED >
+
+<!ELEMENT dayPeriodContext (alias | dayPeriodWidth*) >
+<!ATTLIST dayPeriodContext type NMTOKEN #REQUIRED >
+<!ATTLIST dayPeriodContext draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED > 
+<!ATTLIST dayPeriodContext references CDATA #IMPLIED >
+
+<!ELEMENT dayPeriodWidth (alias | dayPeriod*) >
+<!ATTLIST dayPeriodWidth type ( abbreviated| narrow | wide ) #REQUIRED >
+<!ATTLIST dayPeriodWidth draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED > 
+<!ATTLIST dayPeriodWidth references CDATA #IMPLIED >
+
+<!ELEMENT dayPeriod ( #PCDATA ) >
+<!ATTLIST dayPeriod type NMTOKEN #REQUIRED >
+<!ATTLIST dayPeriod alt NMTOKENS #IMPLIED >
+<!ATTLIST dayPeriod draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST dayPeriod references CDATA #IMPLIED > 
+
+<!ELEMENT am ( #PCDATA ) >
+<!ATTLIST am draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST am references CDATA #IMPLIED >
+<!ATTLIST am alt NMTOKENS #IMPLIED >
+<!ATTLIST am validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT pm ( #PCDATA ) >
+<!ATTLIST pm draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST pm references CDATA #IMPLIED >
+<!ATTLIST pm alt NMTOKENS #IMPLIED >
+<!ATTLIST pm validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT eras   (alias | (eraNames?, eraAbbr?, eraNarrow?, special*)) >
+<!ATTLIST eras draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST eras standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST eras references CDATA #IMPLIED >
+<!ATTLIST eras alt NMTOKENS #IMPLIED >
+<!ATTLIST eras validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT eraNames ( alias | (era*, special*) ) >
+<!ATTLIST eraNames draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST eraNames references CDATA #IMPLIED >
+<!ATTLIST eraNames alt NMTOKENS #IMPLIED >
+<!ATTLIST eraNames validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT eraAbbr ( alias | (era*, special*) ) >
+<!ATTLIST eraAbbr draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST eraAbbr references CDATA #IMPLIED >
+<!ATTLIST eraAbbr alt NMTOKENS #IMPLIED >
+<!ATTLIST eraAbbr validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT eraNarrow ( alias | (era*, special*) ) >
+<!ATTLIST eraNarrow draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST eraNarrow references CDATA #IMPLIED >
+<!ATTLIST eraNarrow alt NMTOKENS #IMPLIED >
+<!ATTLIST eraNarrow validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT era (#PCDATA) >
+<!ATTLIST era type NMTOKEN #REQUIRED >
+<!ATTLIST era draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST era references CDATA #IMPLIED >
+<!ATTLIST era alt NMTOKENS #IMPLIED >
+
+<!ELEMENT cyclicNameSets ( alias | (cyclicNameSet*, special*)) >
+<!ATTLIST cyclicNameSets draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST cyclicNameSets references CDATA #IMPLIED >
+<!ATTLIST cyclicNameSets alt NMTOKENS #IMPLIED >
+<!ATTLIST cyclicNameSets validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT cyclicNameSet ( alias | (cyclicNameContext*, special*)) >
+<!ATTLIST cyclicNameSet type ( years | months | days | dayParts | zodiacs ) #REQUIRED >
+<!ATTLIST cyclicNameSet draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST cyclicNameSet references CDATA #IMPLIED >
+<!ATTLIST cyclicNameSet alt NMTOKENS #IMPLIED >
+<!ATTLIST cyclicNameSet validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT cyclicNameContext ( alias | (cyclicNameWidth*, special*)) >
+<!ATTLIST cyclicNameContext type ( format | stand-alone ) #REQUIRED >
+<!ATTLIST cyclicNameContext draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST cyclicNameContext references CDATA #IMPLIED >
+<!ATTLIST cyclicNameContext alt NMTOKENS #IMPLIED >
+<!ATTLIST cyclicNameContext validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT cyclicNameWidth ( alias | (cyclicName*, special*)) >
+<!ATTLIST cyclicNameWidth type ( abbreviated | narrow | wide ) #REQUIRED >
+<!ATTLIST cyclicNameWidth draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST cyclicNameWidth references CDATA #IMPLIED >
+<!ATTLIST cyclicNameWidth alt NMTOKENS #IMPLIED >
+<!ATTLIST cyclicNameWidth validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT cyclicName ( #PCDATA ) >
+<!ATTLIST cyclicName type NMTOKEN #REQUIRED >
+<!ATTLIST cyclicName draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST cyclicName references CDATA #IMPLIED >
+<!ATTLIST cyclicName alt NMTOKENS #IMPLIED >
+
+<!ELEMENT dateFormats (alias | (default*, dateFormatLength*, special*)) >
+<!ATTLIST dateFormats draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST dateFormats validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT dateFormatLength (alias | (default*, dateFormat*, special*)) >
+<!ATTLIST dateFormatLength type ( full | long | medium | short ) #REQUIRED >
+<!ATTLIST dateFormatLength draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST dateFormatLength standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST dateFormatLength references CDATA #IMPLIED >
+<!ATTLIST dateFormatLength alt NMTOKENS #IMPLIED >
+<!ATTLIST dateFormatLength validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT dateFormat (alias | (pattern*, displayName*, special*))  >
+<!ATTLIST dateFormat type NMTOKEN "standard">
+<!ATTLIST dateFormat draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST dateFormat standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST dateFormat references CDATA #IMPLIED >
+<!ATTLIST dateFormat alt NMTOKENS #IMPLIED >
+<!ATTLIST dateFormat validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT displayName ( #PCDATA ) >
+<!ATTLIST displayName count (0 | 1 | zero | one | two | few | many | other) #IMPLIED> <!-- only for currencies -->
+<!ATTLIST displayName draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST displayName references CDATA #IMPLIED >
+<!ATTLIST displayName alt NMTOKENS #IMPLIED >
+
+<!ELEMENT timeFormats (alias | (default*, timeFormatLength*, special*)) >
+<!ATTLIST timeFormats draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST timeFormats validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT timeFormatLength (alias | (default*, timeFormat*, special*)) >
+<!ATTLIST timeFormatLength type ( full | long | medium | short ) #REQUIRED >
+<!ATTLIST timeFormatLength draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST timeFormatLength standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST timeFormatLength references CDATA #IMPLIED >
+<!ATTLIST timeFormatLength alt NMTOKENS #IMPLIED >
+<!ATTLIST timeFormatLength validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT timeFormat (alias | (pattern*, displayName*, special*)) >
+<!ATTLIST timeFormat type NMTOKEN "standard" >
+<!ATTLIST timeFormat draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST timeFormat standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST timeFormat references CDATA #IMPLIED >
+<!ATTLIST timeFormat alt NMTOKENS #IMPLIED >
+<!ATTLIST timeFormat validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT dateTimeFormats (alias | (default*, dateTimeFormatLength*, availableFormats*, appendItems*, intervalFormats*, special*)) >
+<!ATTLIST dateTimeFormats draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST dateTimeFormats validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT dateTimeFormatLength (alias | (default*, dateTimeFormat*, special*)) >
+<!ATTLIST dateTimeFormatLength type ( full | long | medium | short ) #IMPLIED >
+<!ATTLIST dateTimeFormatLength draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST dateTimeFormatLength standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST dateTimeFormatLength references CDATA #IMPLIED >
+<!ATTLIST dateTimeFormatLength alt NMTOKENS #IMPLIED >
+<!ATTLIST dateTimeFormatLength validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT dateTimeFormat (alias | (pattern*, displayName*, special*)) >
+<!ATTLIST dateTimeFormat type NMTOKEN "standard"  >
+<!ATTLIST dateTimeFormat draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST dateTimeFormat standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST dateTimeFormat references CDATA #IMPLIED >
+<!ATTLIST dateTimeFormat alt NMTOKENS #IMPLIED >
+<!ATTLIST dateTimeFormat validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT availableFormats (alias | (dateFormatItem*, special*)) >
+<!ATTLIST availableFormats draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST availableFormats references CDATA #IMPLIED >
+<!ATTLIST availableFormats alt NMTOKENS #IMPLIED >
+<!ATTLIST availableFormats validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT appendItems (alias | (appendItem*, special*)) >
+<!ATTLIST appendItems draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST appendItems references CDATA #IMPLIED >
+<!ATTLIST appendItems alt NMTOKENS #IMPLIED >
+<!ATTLIST appendItems validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT dateFormatItem ( #PCDATA ) >
+<!ATTLIST dateFormatItem id CDATA #REQUIRED >
+<!ATTLIST dateFormatItem draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST dateFormatItem references CDATA #IMPLIED >
+<!ATTLIST dateFormatItem alt NMTOKENS #IMPLIED >
+
+<!ELEMENT appendItem ( #PCDATA ) >
+<!ATTLIST appendItem request CDATA #REQUIRED >
+<!ATTLIST appendItem draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST appendItem references CDATA #IMPLIED >
+<!ATTLIST appendItem alt NMTOKENS #IMPLIED >
+
+<!ELEMENT intervalFormats (alias | (intervalFormatFallback*, intervalFormatItem*, special*)) >
+<!ATTLIST intervalFormats draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST intervalFormats references CDATA #IMPLIED >
+<!ATTLIST intervalFormats alt NMTOKENS #IMPLIED >
+<!ATTLIST intervalFormats validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT intervalFormatFallback ( #PCDATA ) >
+<!ATTLIST intervalFormatFallback draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST intervalFormatFallback references CDATA #IMPLIED >
+<!ATTLIST intervalFormatFallback alt NMTOKENS #IMPLIED >
+<!ATTLIST intervalFormatFallback validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT intervalFormatItem (alias | (greatestDifference*, special*)) >
+<!ATTLIST intervalFormatItem id NMTOKEN #REQUIRED >
+<!ATTLIST intervalFormatItem draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST intervalFormatItem references CDATA #IMPLIED >
+<!ATTLIST intervalFormatItem alt NMTOKENS #IMPLIED >
+<!ATTLIST intervalFormatItem validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT greatestDifference ( #PCDATA ) >
+<!ATTLIST greatestDifference id NMTOKEN #REQUIRED >
+<!ATTLIST greatestDifference draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST greatestDifference references CDATA #IMPLIED >
+<!ATTLIST greatestDifference alt NMTOKENS #IMPLIED >
+<!ATTLIST greatestDifference validSubLocales CDATA #IMPLIED >
+
+
+<!ELEMENT timeZoneNames (alias | (hourFormat*, hoursFormat*, gmtFormat*, gmtZeroFormat*, regionFormat*, fallbackFormat*, fallbackRegionFormat*, abbreviationFallback*, preferenceOrdering*, singleCountries*, default*, zone*, metazone*, special*)) >
+<!ATTLIST timeZoneNames draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST timeZoneNames validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT hourFormat ( #PCDATA ) >
+<!ATTLIST hourFormat alt NMTOKENS #IMPLIED >
+<!ATTLIST hourFormat draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST hourFormat references CDATA #IMPLIED >
+
+<!ELEMENT hoursFormat ( #PCDATA ) > <!-- deprecated. -->
+<!ATTLIST hoursFormat alt NMTOKENS #IMPLIED >
+<!ATTLIST hoursFormat draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST hoursFormat references CDATA #IMPLIED >
+
+<!ELEMENT gmtFormat ( #PCDATA ) >
+<!ATTLIST gmtFormat alt NMTOKENS #IMPLIED >
+<!ATTLIST gmtFormat draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST gmtFormat references CDATA #IMPLIED >
+
+<!ELEMENT gmtZeroFormat ( #PCDATA ) >
+<!ATTLIST gmtZeroFormat alt NMTOKENS #IMPLIED >
+<!ATTLIST gmtZeroFormat draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST gmtZeroFormat references CDATA #IMPLIED >
+
+<!ELEMENT regionFormat ( #PCDATA ) >
+<!ATTLIST regionFormat alt NMTOKENS #IMPLIED >
+<!ATTLIST regionFormat draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST regionFormat references CDATA #IMPLIED >
+
+<!ELEMENT fallbackFormat ( #PCDATA ) >
+<!ATTLIST fallbackFormat alt NMTOKENS #IMPLIED >
+<!ATTLIST fallbackFormat draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST fallbackFormat references CDATA #IMPLIED >
+
+<!ELEMENT fallbackRegionFormat ( #PCDATA ) >
+<!ATTLIST fallbackRegionFormat alt NMTOKENS #IMPLIED >
+<!ATTLIST fallbackRegionFormat draft ( approved | contributed | provisional | unconfirmed) #IMPLIED >
+<!ATTLIST fallbackRegionFormat references CDATA #IMPLIED >
+
+<!ELEMENT abbreviationFallback EMPTY > <!-- deprecated. -->
+<!ATTLIST abbreviationFallback type ( GMT | standard ) #IMPLIED > <!-- deprecated in favor of choice -->
+<!ATTLIST abbreviationFallback choice ( GMT | standard ) #IMPLIED > <!-- really required, but needs to be optional to support type also -->
+<!ATTLIST abbreviationFallback alt NMTOKENS #IMPLIED >
+<!ATTLIST abbreviationFallback draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST abbreviationFallback references CDATA #IMPLIED >
+
+<!ELEMENT preferenceOrdering EMPTY > <!-- deprecated, use metazones instead -->
+<!ATTLIST preferenceOrdering type CDATA #IMPLIED > <!-- deprecated in favor of choice -->
+<!ATTLIST preferenceOrdering choice CDATA #IMPLIED > <!-- really required, but needs to be optional to support type also -->
+<!ATTLIST preferenceOrdering alt NMTOKENS #IMPLIED >
+<!ATTLIST preferenceOrdering draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST preferenceOrdering references CDATA #IMPLIED >
+
+<!ELEMENT singleCountries EMPTY >
+<!ATTLIST singleCountries list CDATA #REQUIRED >
+<!ATTLIST singleCountries alt NMTOKENS #IMPLIED >
+<!ATTLIST singleCountries draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST singleCountries references CDATA #IMPLIED >
+
+<!ELEMENT zone (alias | ( long*, short*, commonlyUsed*, exemplarCity*, special*)) >
+<!ATTLIST zone type CDATA #REQUIRED >
+<!ATTLIST zone draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST zone standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST zone references CDATA #IMPLIED >
+<!ATTLIST zone alt NMTOKENS #IMPLIED >
+<!ATTLIST zone validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT metazone (alias | ( long*, short*, commonlyUsed*, special*)) >
+<!ATTLIST metazone type CDATA #REQUIRED >
+<!ATTLIST metazone draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST metazone standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST metazone references CDATA #IMPLIED >
+<!ATTLIST metazone alt NMTOKENS #IMPLIED >
+<!ATTLIST metazone validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT long (alias | (generic*, standard*, daylight*, special*)) >
+<!ATTLIST long draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST long references CDATA #IMPLIED >
+<!ATTLIST long alt NMTOKENS #IMPLIED >
+<!ATTLIST long validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT short (alias | (generic*, standard*, daylight*, special*)) >
+<!ATTLIST short draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST short references CDATA #IMPLIED >
+<!ATTLIST short alt NMTOKENS #IMPLIED >
+<!ATTLIST short validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT generic ( #PCDATA ) >
+<!ATTLIST generic draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST generic references CDATA #IMPLIED >
+<!ATTLIST generic alt NMTOKENS #IMPLIED >
+
+
+<!ELEMENT standard ( #PCDATA ) >
+<!ATTLIST standard draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST standard references CDATA #IMPLIED >
+<!ATTLIST standard alt NMTOKENS #IMPLIED >
+
+
+<!ELEMENT daylight ( #PCDATA ) >
+<!ATTLIST daylight draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST daylight references CDATA #IMPLIED >
+<!ATTLIST daylight alt NMTOKENS #IMPLIED >
+
+
+<!ELEMENT commonlyUsed ( #PCDATA ) > <!-- deprecated -->
+<!ATTLIST commonlyUsed used ( true | false ) #IMPLIED >
+<!ATTLIST commonlyUsed draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST commonlyUsed references CDATA #IMPLIED >
+<!ATTLIST commonlyUsed alt NMTOKENS #IMPLIED >
+
+
+<!ELEMENT exemplarCity ( #PCDATA ) >
+<!ATTLIST exemplarCity draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST exemplarCity references CDATA #IMPLIED >
+<!ATTLIST exemplarCity alt NMTOKENS #IMPLIED >
+
+<!ELEMENT usesMetazone EMPTY >
+<!ATTLIST usesMetazone mzone NMTOKEN #REQUIRED >
+<!ATTLIST usesMetazone from CDATA #IMPLIED >
+<!ATTLIST usesMetazone to CDATA #IMPLIED >
+<!ATTLIST usesMetazone draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST usesMetazone references CDATA #IMPLIED >
+<!ATTLIST usesMetazone alt NMTOKENS #IMPLIED >
+
+
+<!ELEMENT fields ( alias | (field*, special*)) >
+<!ATTLIST fields draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST fields standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST fields references CDATA #IMPLIED >
+<!ATTLIST fields alt NMTOKENS #IMPLIED >
+<!ATTLIST fields validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT field ( alias | (displayName*, relative*, special*)) >
+<!ATTLIST field type ( era | year | month | week | day | weekday | dayperiod | hour | minute | second | zone ) #IMPLIED >
+<!ATTLIST field draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST field standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST field references CDATA #IMPLIED >
+<!ATTLIST field alt NMTOKENS #IMPLIED >
+<!ATTLIST field validSubLocales CDATA #IMPLIED >
+
+
+<!ELEMENT relative (#PCDATA) >
+<!ATTLIST relative type NMTOKEN #IMPLIED >
+<!ATTLIST relative draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST relative references CDATA #IMPLIED >
+<!ATTLIST relative alt NMTOKENS #IMPLIED >
+<!ATTLIST relative validSubLocales CDATA #IMPLIED >
+
+
+<!-- ######################################################### -->
+
+
+<!-- ######################################################### -->
+
+<!ELEMENT numbers (alias | (defaultNumberingSystem*, otherNumberingSystems*, symbols*, decimalFormats*, scientificFormats*, percentFormats*, currencyFormats*, currencies?, special*)) >
+<!ATTLIST numbers draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST numbers standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST numbers references CDATA #IMPLIED >
+<!ATTLIST numbers alt NMTOKENS #IMPLIED >
+<!ATTLIST numbers validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT defaultNumberingSystem ( #PCDATA ) >
+<!ATTLIST defaultNumberingSystem references CDATA #IMPLIED >
+<!ATTLIST defaultNumberingSystem draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST defaultNumberingSystem alt NMTOKENS #IMPLIED >
+
+<!ELEMENT otherNumberingSystems ( alias | ( native*, traditional*, finance*)) >
+<!ATTLIST otherNumberingSystems draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST otherNumberingSystems alt NMTOKENS #IMPLIED >
+
+<!ELEMENT native ( #PCDATA ) >
+<!ATTLIST native draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST native alt NMTOKENS #IMPLIED >
+
+<!ELEMENT traditional ( #PCDATA ) >
+<!ATTLIST traditional draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST traditional alt NMTOKENS #IMPLIED >
+
+<!ELEMENT finance ( #PCDATA ) >
+<!ATTLIST finance draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST finance alt NMTOKENS #IMPLIED >
+
+<!ELEMENT symbols (alias | (decimal*, group*, list*, percentSign*, nativeZeroDigit*, patternDigit*, plusSign*, minusSign*, exponential*, perMille*, infinity*, nan*, currencyDecimal*, currencyGroup*, special*)) >
+<!ATTLIST symbols draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST symbols standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST symbols references CDATA #IMPLIED >
+<!ATTLIST symbols alt NMTOKENS #IMPLIED >
+<!ATTLIST symbols validSubLocales CDATA #IMPLIED >
+<!ATTLIST symbols numberSystem CDATA #IMPLIED >
+
+<!ELEMENT decimal ( #PCDATA ) >
+<!ATTLIST decimal references CDATA #IMPLIED >
+<!ATTLIST decimal draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST decimal alt NMTOKENS #IMPLIED >
+<!ATTLIST decimal numberSystem CDATA #IMPLIED > <!-- deprecated -->
+
+<!ELEMENT group ( #PCDATA ) >
+<!ATTLIST group references CDATA #IMPLIED >
+<!ATTLIST group draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST group alt NMTOKENS #IMPLIED >
+<!ATTLIST group numberSystem CDATA #IMPLIED > <!-- deprecated -->
+
+<!ELEMENT list ( #PCDATA ) >
+<!ATTLIST list references CDATA #IMPLIED >
+<!ATTLIST list draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST list alt NMTOKENS #IMPLIED >
+<!ATTLIST list numberSystem CDATA #IMPLIED > <!-- deprecated -->
+
+<!ELEMENT percentSign ( #PCDATA ) >
+<!ATTLIST percentSign references CDATA #IMPLIED >
+<!ATTLIST percentSign draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST percentSign alt NMTOKENS #IMPLIED >
+<!ATTLIST percentSign numberSystem CDATA #IMPLIED > <!-- deprecated -->
+
+<!ELEMENT nativeZeroDigit ( #PCDATA ) >
+<!ATTLIST nativeZeroDigit references CDATA #IMPLIED >
+<!ATTLIST nativeZeroDigit draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST nativeZeroDigit alt NMTOKENS #IMPLIED >
+<!ATTLIST nativeZeroDigit numberSystem CDATA #IMPLIED > <!-- deprecated -->
+
+<!ELEMENT patternDigit ( #PCDATA ) >
+<!ATTLIST patternDigit references CDATA #IMPLIED >
+<!ATTLIST patternDigit draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST patternDigit alt NMTOKENS #IMPLIED >
+<!ATTLIST patternDigit numberSystem CDATA #IMPLIED > <!-- deprecated -->
+
+<!ELEMENT plusSign ( #PCDATA ) >
+<!ATTLIST plusSign references CDATA #IMPLIED >
+<!ATTLIST plusSign draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST plusSign alt NMTOKENS #IMPLIED >
+<!ATTLIST plusSign numberSystem CDATA #IMPLIED > <!-- deprecated -->
+
+<!ELEMENT minusSign ( #PCDATA ) >
+<!ATTLIST minusSign references CDATA #IMPLIED >
+<!ATTLIST minusSign draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST minusSign alt NMTOKENS #IMPLIED >
+<!ATTLIST minusSign numberSystem CDATA #IMPLIED > <!-- deprecated -->
+
+<!ELEMENT exponential ( #PCDATA ) >
+<!ATTLIST exponential references CDATA #IMPLIED >
+<!ATTLIST exponential draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST exponential alt NMTOKENS #IMPLIED >
+<!ATTLIST exponential numberSystem CDATA #IMPLIED > <!-- deprecated -->
+
+<!ELEMENT perMille ( #PCDATA ) >
+<!ATTLIST perMille references CDATA #IMPLIED >
+<!ATTLIST perMille draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST perMille alt NMTOKENS #IMPLIED >
+<!ATTLIST perMille numberSystem CDATA #IMPLIED > <!-- deprecated -->
+
+<!ELEMENT infinity ( #PCDATA ) >
+<!ATTLIST infinity references CDATA #IMPLIED >
+<!ATTLIST infinity draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST infinity alt NMTOKENS #IMPLIED >
+<!ATTLIST infinity numberSystem CDATA #IMPLIED > <!-- deprecated -->
+
+<!ELEMENT nan ( #PCDATA ) >
+<!ATTLIST nan references CDATA #IMPLIED >
+<!ATTLIST nan draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST nan alt NMTOKENS #IMPLIED >
+<!ATTLIST nan numberSystem CDATA #IMPLIED > <!-- deprecated -->
+
+<!ELEMENT currencyDecimal ( #PCDATA ) >
+<!ATTLIST currencyDecimal references CDATA #IMPLIED >
+<!ATTLIST currencyDecimal draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST currencyDecimal alt NMTOKENS #IMPLIED >
+<!ATTLIST currencyDecimal numberSystem CDATA #IMPLIED > <!-- deprecated -->
+
+<!ELEMENT currencyGroup ( #PCDATA ) >
+<!ATTLIST currencyGroup references CDATA #IMPLIED >
+<!ATTLIST currencyGroup draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST currencyGroup alt NMTOKENS #IMPLIED >
+<!ATTLIST currencyGroup numberSystem CDATA #IMPLIED > <!-- deprecated -->
+
+<!ELEMENT pattern ( #PCDATA ) >
+<!ATTLIST pattern type NMTOKEN "standard" >
+<!ATTLIST pattern draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST pattern numbers CDATA #IMPLIED >
+<!ATTLIST pattern references CDATA #IMPLIED >
+<!ATTLIST pattern alt NMTOKENS #IMPLIED >
+
+<!ELEMENT decimalFormats (alias | (default*, decimalFormatLength*, special*)) >
+<!ATTLIST decimalFormats draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST decimalFormats validSubLocales CDATA #IMPLIED >
+<!ATTLIST decimalFormats numberSystem CDATA #IMPLIED >
+
+<!ELEMENT decimalFormatLength (alias | (default*, decimalFormat*, special*)) >
+<!ATTLIST decimalFormatLength type ( full | long | medium | short ) #IMPLIED >
+<!ATTLIST decimalFormatLength draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST decimalFormatLength standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST decimalFormatLength references CDATA #IMPLIED >
+<!ATTLIST decimalFormatLength alt NMTOKENS #IMPLIED >
+<!ATTLIST decimalFormatLength validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT decimalFormat (alias | (pattern*, special*)) >
+<!ATTLIST decimalFormat type NMTOKEN "standard" >
+<!ATTLIST decimalFormat draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST decimalFormat standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST decimalFormat references CDATA #IMPLIED >
+<!ATTLIST decimalFormat alt NMTOKENS #IMPLIED >
+<!ATTLIST decimalFormat validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT scientificFormats (alias | (default*, scientificFormatLength*, special*)) >
+<!ATTLIST scientificFormats draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST scientificFormats validSubLocales CDATA #IMPLIED >
+<!ATTLIST scientificFormats numberSystem CDATA #IMPLIED >
+
+<!ELEMENT scientificFormatLength (alias | (default*, scientificFormat*, special*)) >
+<!ATTLIST scientificFormatLength type ( full | long | medium | short ) #IMPLIED >
+<!ATTLIST scientificFormatLength draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST scientificFormatLength standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST scientificFormatLength references CDATA #IMPLIED >
+<!ATTLIST scientificFormatLength alt NMTOKENS #IMPLIED >
+<!ATTLIST scientificFormatLength validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT scientificFormat (alias | (pattern*, special*)) >
+<!ATTLIST scientificFormat type NMTOKEN "standard" >
+<!ATTLIST scientificFormat draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST scientificFormat standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST scientificFormat references CDATA #IMPLIED >
+<!ATTLIST scientificFormat alt NMTOKENS #IMPLIED >
+<!ATTLIST scientificFormat validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT percentFormats (alias | (default*, percentFormatLength*, special*)) >
+<!ATTLIST percentFormats draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST percentFormats validSubLocales CDATA #IMPLIED >
+<!ATTLIST percentFormats numberSystem CDATA #IMPLIED >
+
+<!ELEMENT percentFormatLength (alias | (default*, percentFormat*, special*)) >
+<!ATTLIST percentFormatLength type ( full | long | medium | short ) #IMPLIED >
+<!ATTLIST percentFormatLength draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST percentFormatLength standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST percentFormatLength references CDATA #IMPLIED >
+<!ATTLIST percentFormatLength alt NMTOKENS #IMPLIED >
+<!ATTLIST percentFormatLength validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT percentFormat (alias | (pattern*, special*)) >
+<!ATTLIST percentFormat type NMTOKEN "standard" >
+<!ATTLIST percentFormat draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST percentFormat standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST percentFormat references CDATA #IMPLIED >
+<!ATTLIST percentFormat alt NMTOKENS #IMPLIED >
+<!ATTLIST percentFormat validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT currencyFormats (alias | (default*, currencySpacing*, currencyFormatLength*, unitPattern*, special*)) >
+<!ATTLIST currencyFormats draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST currencyFormats validSubLocales CDATA #IMPLIED >
+<!ATTLIST currencyFormats numberSystem CDATA #IMPLIED >
+
+<!ELEMENT currencySpacing (alias | (beforeCurrency*, afterCurrency*, special*)) >
+<!ELEMENT beforeCurrency (alias | (currencyMatch*, surroundingMatch*, insertBetween*)) >
+<!ELEMENT afterCurrency (alias | (currencyMatch*, surroundingMatch*, insertBetween*)) >
+
+<!ELEMENT surroundingMatch ( #PCDATA ) >
+<!ATTLIST surroundingMatch draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST surroundingMatch alt NMTOKENS #IMPLIED >
+<!ATTLIST surroundingMatch references CDATA #IMPLIED >
+
+<!ELEMENT currencyMatch ( #PCDATA ) >
+<!ATTLIST currencyMatch draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST currencyMatch alt NMTOKENS #IMPLIED >
+<!ATTLIST currencyMatch references CDATA #IMPLIED >
+
+<!ELEMENT insertBetween ( #PCDATA ) >
+<!ATTLIST insertBetween draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST insertBetween alt NMTOKENS #IMPLIED >
+<!ATTLIST insertBetween references CDATA #IMPLIED >
+
+<!ELEMENT currencyFormatLength (alias | (default*, currencyFormat*, special*)) >
+<!ATTLIST currencyFormatLength type ( full | long | medium | short ) #IMPLIED >
+<!ATTLIST currencyFormatLength draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST currencyFormatLength standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST currencyFormatLength references CDATA #IMPLIED >
+<!ATTLIST currencyFormatLength alt NMTOKENS #IMPLIED >
+<!ATTLIST currencyFormatLength validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT currencyFormat (alias | (pattern*, special*)) >
+<!ATTLIST currencyFormat type NMTOKEN "standard" >
+<!ATTLIST currencyFormat draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST currencyFormat standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST currencyFormat references CDATA #IMPLIED >
+<!ATTLIST currencyFormat alt NMTOKENS #IMPLIED >
+<!ATTLIST currencyFormat validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT currencies (alias | (default?, currency*, special*)) >
+<!ATTLIST currencies draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST currencies validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT currency (alias | (((pattern+, displayName*, symbol*) | (displayName+, symbol*, pattern*) | (symbol+, pattern*))?, decimal*, group*, special*)) >
+<!-- warning: pattern appears twice in the above. The first is for consistency with all other cases of
+    pattern + displayName; the second is for backwards compatibility -->
+<!ATTLIST currency type NMTOKEN "standard" >
+<!ATTLIST currency draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST currency references CDATA #IMPLIED >
+<!ATTLIST currency alt NMTOKENS #IMPLIED >
+<!ATTLIST currency validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT symbol ( #PCDATA ) >
+<!ATTLIST symbol draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST symbol references CDATA #IMPLIED >
+<!ATTLIST symbol alt NMTOKENS #IMPLIED >
+<!ATTLIST symbol choice ( true | false ) #IMPLIED > <!-- deprecated -->
+<!-- ######################################################### -->
+
+<!ELEMENT units (alias | (unit*, special*)) >
+<!ATTLIST units draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST units references CDATA #IMPLIED >
+<!ATTLIST units alt NMTOKENS #IMPLIED >
+<!ATTLIST units validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT unit (alias | (unitPattern*, special*)) >
+<!ATTLIST unit type NMTOKEN #REQUIRED >
+<!ATTLIST unit draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST unit references CDATA #IMPLIED >
+<!ATTLIST unit alt NMTOKENS #IMPLIED >
+<!ATTLIST unit validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT unitPattern ( #PCDATA ) >
+<!ATTLIST unitPattern count (0 | 1 | zero | one | two | few | many | other) #REQUIRED >
+<!ATTLIST unitPattern draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST unitPattern references CDATA #IMPLIED >
+<!ATTLIST unitPattern alt NMTOKENS #IMPLIED >
+<!ATTLIST unitPattern validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT listPatterns (alias | (listPattern*, special*)) >
+<!ATTLIST listPatterns draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST listPatterns references CDATA #IMPLIED >
+<!ATTLIST listPatterns alt NMTOKENS #IMPLIED >
+<!ATTLIST listPatterns validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT listPattern (alias | (listPatternPart*, special*)) >
+<!ATTLIST listPattern type (NMTOKEN) #IMPLIED >
+<!ATTLIST listPattern draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST listPattern references CDATA #IMPLIED >
+<!ATTLIST listPattern alt NMTOKENS #IMPLIED >
+<!ATTLIST listPattern validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT listPatternPart ( #PCDATA ) >
+<!ATTLIST listPatternPart type (start | middle | end | 2 | 3) #REQUIRED >
+<!ATTLIST listPatternPart draft ( approved | contributed | provisional | unconfirmed ) #IMPLIED >
+<!ATTLIST listPatternPart references CDATA #IMPLIED >
+<!ATTLIST listPatternPart alt NMTOKENS #IMPLIED >
+<!ATTLIST listPatternPart validSubLocales CDATA #IMPLIED >
+
+<!-- ######################################################### -->
+
+<!ELEMENT collations (alias | (default*, collation*, special*)) >
+<!ATTLIST collations version NMTOKEN #IMPLIED >
+<!ATTLIST collations draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST collations validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT collation (alias | (base?, settings?, suppress_contractions?, optimize?, rules?, special*)) >
+<!ATTLIST collation type NMTOKEN "standard" >
+<!ATTLIST collation draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST collation standard CDATA #IMPLIED > <!-- the "standard" attribute is deprecated everywhere. -->
+<!ATTLIST collation references CDATA #IMPLIED >
+<!ATTLIST collation alt NMTOKENS #IMPLIED >
+<!ATTLIST collation validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT base (alias|special) >
+
+<!ELEMENT settings (special*) >
+<!ATTLIST settings strength             ( primary | secondary | tertiary | quaternary | identical ) #IMPLIED >
+<!ATTLIST settings alternate            ( non-ignorable | shifted ) #IMPLIED >
+<!ATTLIST settings backwards            ( on | off)  #IMPLIED >
+<!ATTLIST settings normalization        ( on | off ) #IMPLIED >
+<!ATTLIST settings caseLevel            ( on | off ) #IMPLIED >
+<!ATTLIST settings caseFirst            ( upper | lower | off ) #IMPLIED >
+<!ATTLIST settings hiraganaQuarternary  ( on | off ) #IMPLIED >
+<!ATTLIST settings hiraganaQuaternary   ( on | off ) #IMPLIED >
+<!ATTLIST settings numeric              ( on | off ) #IMPLIED >
+<!ATTLIST settings private              ( true | false ) #IMPLIED >
+<!ATTLIST settings variableTop          CDATA #IMPLIED >
+<!ATTLIST settings reorder              NMTOKENS #IMPLIED >
+
+<!ELEMENT suppress_contractions (  #PCDATA | cp )* >
+
+<!ELEMENT optimize ( #PCDATA | cp )* >
+
+<!ELEMENT rules (alias | ( ( reset | import ), ( reset | import | p | pc |  s | sc | t | tc | q | qc | i | ic | x)* )) >
+
+<!ELEMENT reset ( #PCDATA | cp  | first_variable| last_variable | first_tertiary_ignorable | last_tertiary_ignorable | first_secondary_ignorable | last_secondary_ignorable | first_primary_ignorable | last_primary_ignorable | first_non_ignorable | last_non_ignorable | first_trailing | last_trailing )* >
+<!ATTLIST reset before NMTOKEN #IMPLIED >
+
+<!ELEMENT import EMPTY >
+<!ATTLIST import source CDATA #REQUIRED >
+<!ATTLIST import type CDATA #IMPLIED >
+
+<!ELEMENT p  ( #PCDATA  | cp | last_variable )* >
+
+<!ELEMENT pc ( #PCDATA  | cp | last_variable )* >
+
+<!ELEMENT s  ( #PCDATA  | cp | last_variable )* >
+
+<!ELEMENT sc ( #PCDATA  | cp | last_variable )* >
+
+<!ELEMENT t  ( #PCDATA  | cp | last_variable )* >
+
+<!ELEMENT tc ( #PCDATA  | cp | last_variable )* >
+
+<!ELEMENT q  ( #PCDATA  | cp | last_variable )* > <!-- deprecated -->
+
+<!ELEMENT qc ( #PCDATA  | cp | last_variable )* > <!-- deprecated -->
+
+<!ELEMENT i  ( #PCDATA  | cp | last_variable )* >
+
+<!ELEMENT ic ( #PCDATA  | cp | last_variable )* >
+
+<!ELEMENT x (context?, (  p | pc |  s | sc | t | tc | q | qc | i | ic )*, extend? )  >
+
+<!ELEMENT extend ( #PCDATA | cp )* >
+
+<!ELEMENT context (  #PCDATA | cp )* >
+
+<!ELEMENT first_variable EMPTY >
+<!ELEMENT last_variable EMPTY >
+<!ELEMENT first_tertiary_ignorable EMPTY >
+<!ELEMENT last_tertiary_ignorable EMPTY >
+<!ELEMENT first_secondary_ignorable EMPTY >
+<!ELEMENT last_secondary_ignorable EMPTY >
+<!ELEMENT first_primary_ignorable EMPTY >
+<!ELEMENT last_primary_ignorable EMPTY >
+<!ELEMENT first_non_ignorable EMPTY >
+<!ELEMENT last_non_ignorable EMPTY >
+<!ELEMENT first_trailing EMPTY >
+<!ELEMENT last_trailing EMPTY >
+
+<!-- ######################################################### -->
+
+<!ELEMENT posix (alias | (messages*, special*)) >
+<!ATTLIST posix draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST posix references CDATA #IMPLIED >
+<!ATTLIST posix validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT messages (alias | ( yesstr*, nostr*, yesexpr*, noexpr*)) >
+<!ATTLIST messages draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST messages references CDATA #IMPLIED >
+<!ATTLIST messages alt NMTOKENS #IMPLIED >
+<!ATTLIST messages validSubLocales CDATA #IMPLIED >
+
+<!ELEMENT yesstr ( #PCDATA ) >
+<!ATTLIST yesstr draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST yesstr references CDATA #IMPLIED >
+<!ATTLIST yesstr alt NMTOKENS #IMPLIED >
+
+<!ELEMENT nostr ( #PCDATA ) >
+<!ATTLIST nostr draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST nostr references CDATA #IMPLIED >
+<!ATTLIST nostr alt NMTOKENS #IMPLIED >
+
+<!-- START_DEPRECATED -->
+<!ELEMENT yesexpr ( #PCDATA ) >
+<!ATTLIST yesexpr draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST yesexpr references CDATA #IMPLIED >
+<!ATTLIST yesexpr alt NMTOKENS #IMPLIED >
+
+<!ELEMENT noexpr ( #PCDATA ) >
+<!ATTLIST noexpr draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST noexpr references CDATA #IMPLIED >
+<!ATTLIST noexpr alt NMTOKENS #IMPLIED >
+<!-- END_DEPRECATED -->
+
+<!ELEMENT segmentations ( alias | segmentation*) >
+<!ATTLIST segmentations draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED ><!-- true and false are deprecated. -->
+<!ATTLIST segmentations alt NMTOKENS #IMPLIED >
+<!ATTLIST segmentations validSubLocales CDATA #IMPLIED >
+<!ATTLIST segmentations references CDATA #IMPLIED >
+
+<!ELEMENT segmentation ( alias | (variables?, segmentRules?) | special*) >
+<!ATTLIST segmentation type NMTOKEN #REQUIRED >
+<!ATTLIST segmentation draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED ><!-- true and false are deprecated. -->
+<!ATTLIST segmentation alt NMTOKENS #IMPLIED >
+<!ATTLIST segmentation validSubLocales CDATA #IMPLIED >
+<!ATTLIST segmentation references CDATA #IMPLIED >
+
+<!ELEMENT variables ( alias | variable*) >
+
+<!ELEMENT variable ( #PCDATA ) >
+<!ATTLIST variable id CDATA #REQUIRED >
+<!ATTLIST variable draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED ><!-- true and false are deprecated. -->
+<!ATTLIST variable alt NMTOKENS #IMPLIED >
+<!ATTLIST variable references CDATA #IMPLIED >
+
+<!ELEMENT segmentRules ( alias | rule*) >
+
+<!ELEMENT rule ( #PCDATA ) >
+<!ATTLIST rule id NMTOKEN #REQUIRED >
+<!ATTLIST rule draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED ><!-- true and false are deprecated. -->
+<!ATTLIST rule alt NMTOKENS #IMPLIED >
+<!ATTLIST rule references CDATA #IMPLIED >
+
+<!ELEMENT rbnf ( alias | rulesetGrouping*) >
+
+<!ELEMENT rulesetGrouping ( alias | ruleset*) >
+<!ATTLIST rulesetGrouping type NMTOKEN #REQUIRED>
+<!ATTLIST rulesetGrouping draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED ><!-- true and false are deprecated. -->
+
+<!ELEMENT ruleset ( alias | rbnfrule*) >
+<!ATTLIST ruleset type NMTOKEN #REQUIRED>
+<!ATTLIST ruleset access ( public | private ) #IMPLIED >
+<!ATTLIST ruleset allowsParsing ( true | false ) #IMPLIED >
+<!ATTLIST ruleset draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED ><!-- true and false are deprecated. -->
+
+<!ELEMENT rbnfrule ( #PCDATA ) >
+<!ATTLIST rbnfrule value CDATA #REQUIRED >
+<!ATTLIST rbnfrule radix CDATA #IMPLIED >
+<!ATTLIST rbnfrule decexp CDATA #IMPLIED >
+<!ATTLIST rbnfrule draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED ><!-- true and false are deprecated. -->
+
+<!ELEMENT references ( reference* ) > <!-- deprecated. -->
+<!ELEMENT reference ( #PCDATA ) >
+<!ATTLIST reference type NMTOKEN #REQUIRED>
+<!ATTLIST reference standard ( true | false ) #IMPLIED >
+<!ATTLIST reference uri CDATA #IMPLIED >
+<!ATTLIST reference draft ( approved | contributed | provisional | unconfirmed | true | false ) #IMPLIED > <!-- true and false are deprecated. -->
+<!ATTLIST reference alt NMTOKENS #IMPLIED >
+
+<!-- ######################################################### -->
+
+<!-- This element contains metadata for Survey Tool internal use (optimization, etc). -->
+
+<!ELEMENT metadata (casingData?)>
+
+<!ELEMENT casingData (casingItem*)>
+
+<!ELEMENT casingItem (#PCDATA) >
+<!ATTLIST casingItem type CDATA #REQUIRED >
+

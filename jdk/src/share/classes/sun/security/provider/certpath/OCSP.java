@@ -32,6 +32,7 @@ import java.net.URL;
 import java.net.HttpURLConnection;
 import java.security.cert.CertificateException;
 import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.CRLReason;
 import java.security.cert.Extension;
 import java.security.cert.X509Certificate;
@@ -336,6 +337,11 @@ public final class OCSP {
 
         private NetworkFailureException(IOException ioe) {
             super(ioe);
+        }
+
+        @Override
+        public CertPathValidatorException.Reason getReason() {
+            return BasicReason.UNDETERMINED_REVOCATION_STATUS;
         }
     }
 }

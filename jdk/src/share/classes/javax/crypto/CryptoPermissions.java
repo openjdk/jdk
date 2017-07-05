@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,16 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 import java.util.NoSuchElementException;
+import java.util.concurrent.ConcurrentHashMap;
 import java.io.Serializable;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.BufferedReader;
+import java.io.ObjectStreamField;
+import java.io.ObjectInputStream;
+import java.io.ObjectInputStream.GetField;
+import java.io.ObjectOutputStream;
+import java.io.ObjectOutputStream.PutField;
 import java.io.IOException;
 
 /**
@@ -61,15 +67,24 @@ implements Serializable {
 
     private static final long serialVersionUID = 4946547168093391015L;
 
-    // This class is similar to java.security.Permissions
-    private Hashtable<String, PermissionCollection> perms;
+    /**
+     * @serialField perms java.util.Hashtable
+     */
+    private static final ObjectStreamField[] serialPersistentFields = {
+        new ObjectStreamField("perms", Hashtable.class),
+    };
+
+    // Switched from Hashtable to ConcurrentHashMap to improve scalability.
+    // To maintain serialization compatibility, this field is made transient
+    // and custom readObject/writeObject methods are used.
+    private transient ConcurrentHashMap<String,PermissionCollection> perms;
 
     /**
      * Creates a new CryptoPermissions object containing
      * no CryptoPermissionCollections.
      */
     CryptoPermissions() {
-        perms = new Hashtable<String, PermissionCollection>(7);
+        perms = new ConcurrentHashMap<>(7);
     }
 
     /**
@@ -132,9 +147,7 @@ implements Serializable {
                         getPermissionCollection(cryptoPerm);
         pc.add(cryptoPerm);
         String alg = cryptoPerm.getAlgorithm();
-        if (!perms.containsKey(alg)) {
-            perms.put(alg, pc);
-        }
+        perms.putIfAbsent(alg, pc);
     }
 
     /**
@@ -377,18 +390,17 @@ implements Serializable {
     PermissionCollection getPermissionCollection(String alg) {
         // If this CryptoPermissions includes CryptoAllPermission,
         // we should return CryptoAllPermission.
-        if (perms.containsKey(CryptoAllPermission.ALG_NAME)) {
-            return perms.get(CryptoAllPermission.ALG_NAME);
-        }
-
-        PermissionCollection pc = perms.get(alg);
-
-        // If there isn't a PermissionCollection for
-        // the given algorithm,we should return the
-        // PermissionCollection for the wildcard
-        // if there is one.
+        PermissionCollection pc = perms.get(CryptoAllPermission.ALG_NAME);
         if (pc == null) {
-            pc = perms.get(CryptoPermission.ALG_NAME_WILDCARD);
+            pc = perms.get(alg);
+
+            // If there isn't a PermissionCollection for
+            // the given algorithm,we should return the
+            // PermissionCollection for the wildcard
+            // if there is one.
+            if (pc == null) {
+                pc = perms.get(CryptoPermission.ALG_NAME_WILDCARD);
+            }
         }
         return pc;
     }
@@ -413,6 +425,28 @@ implements Serializable {
             pc = cryptoPerm.newPermissionCollection();
         }
         return pc;
+    }
+
+    private void readObject(ObjectInputStream s)
+        throws IOException, ClassNotFoundException {
+        ObjectInputStream.GetField fields = s.readFields();
+        @SuppressWarnings("unchecked")
+        Hashtable<String,PermissionCollection> permTable =
+                (Hashtable<String,PermissionCollection>)
+                (fields.get("perms", null));
+        if (permTable != null) {
+            perms = new ConcurrentHashMap<>(permTable);
+        } else {
+            perms = new ConcurrentHashMap<>();
+        }
+    }
+
+    private void writeObject(ObjectOutputStream s) throws IOException {
+        Hashtable<String,PermissionCollection> permTable =
+                new Hashtable<>(perms);
+        ObjectOutputStream.PutField fields = s.putFields();
+        fields.put("perms", permTable);
+        s.writeFields();
     }
 }
 
@@ -456,7 +490,6 @@ final class PermissionsEnumerator implements Enumeration<Permission> {
         } else {
             throw new NoSuchElementException("PermissionsEnumerator");
         }
-
     }
 
     private Enumeration<Permission> getNextEnumWithMore() {

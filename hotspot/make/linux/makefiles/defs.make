@@ -295,6 +295,8 @@ ADD_SA_BINARIES/ia64  =
 ADD_SA_BINARIES/arm   = 
 ADD_SA_BINARIES/zero  = 
 
+-include $(HS_ALT_MAKE)/linux/makefiles/defs.make
+
 EXPORT_LIST += $(ADD_SA_BINARIES/$(HS_ARCH))
 
 

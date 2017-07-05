@@ -41,22 +41,19 @@ package java.text;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
+import static java.text.DateFormatSymbols.*;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
 import java.util.Map;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.calendar.CalendarUtils;
 import sun.util.calendar.ZoneInfoFile;
-import sun.util.resources.LocaleData;
-
-import static java.text.DateFormatSymbols.*;
 
 /**
  * <code>SimpleDateFormat</code> is a concrete class for formatting and
@@ -117,95 +114,100 @@ import static java.text.DateFormatSymbols.*;
  *         <td><code>2009</code>; <code>09</code>
  *     <tr bgcolor="#eeeeff">
  *         <td><code>M</code>
- *         <td>Month in year
+ *         <td>Month in year (context sensitive)
  *         <td><a href="#month">Month</a>
  *         <td><code>July</code>; <code>Jul</code>; <code>07</code>
  *     <tr>
+ *         <td><code>L</code>
+ *         <td>Month in year (standalone form)
+ *         <td><a href="#month">Month</a>
+ *         <td><code>July</code>; <code>Jul</code>; <code>07</code>
+ *     <tr bgcolor="#eeeeff">
  *         <td><code>w</code>
  *         <td>Week in year
  *         <td><a href="#number">Number</a>
  *         <td><code>27</code>
- *     <tr bgcolor="#eeeeff">
+ *     <tr>
  *         <td><code>W</code>
  *         <td>Week in month
  *         <td><a href="#number">Number</a>
  *         <td><code>2</code>
- *     <tr>
+ *     <tr bgcolor="#eeeeff">
  *         <td><code>D</code>
  *         <td>Day in year
  *         <td><a href="#number">Number</a>
  *         <td><code>189</code>
- *     <tr bgcolor="#eeeeff">
+ *     <tr>
  *         <td><code>d</code>
  *         <td>Day in month
  *         <td><a href="#number">Number</a>
  *         <td><code>10</code>
- *     <tr>
+ *     <tr bgcolor="#eeeeff">
  *         <td><code>F</code>
  *         <td>Day of week in month
  *         <td><a href="#number">Number</a>
  *         <td><code>2</code>
- *     <tr bgcolor="#eeeeff">
+ *     <tr>
  *         <td><code>E</code>
  *         <td>Day name in week
  *         <td><a href="#text">Text</a>
  *         <td><code>Tuesday</code>; <code>Tue</code>
- *     <tr>
+ *     <tr bgcolor="#eeeeff">
  *         <td><code>u</code>
  *         <td>Day number of week (1 = Monday, ..., 7 = Sunday)
  *         <td><a href="#number">Number</a>
  *         <td><code>1</code>
- *     <tr bgcolor="#eeeeff">
+ *     <tr>
  *         <td><code>a</code>
  *         <td>Am/pm marker
  *         <td><a href="#text">Text</a>
  *         <td><code>PM</code>
- *     <tr>
+ *     <tr bgcolor="#eeeeff">
  *         <td><code>H</code>
  *         <td>Hour in day (0-23)
  *         <td><a href="#number">Number</a>
  *         <td><code>0</code>
- *     <tr bgcolor="#eeeeff">
+ *     <tr>
  *         <td><code>k</code>
  *         <td>Hour in day (1-24)
  *         <td><a href="#number">Number</a>
  *         <td><code>24</code>
- *     <tr>
+ *     <tr bgcolor="#eeeeff">
  *         <td><code>K</code>
  *         <td>Hour in am/pm (0-11)
  *         <td><a href="#number">Number</a>
  *         <td><code>0</code>
- *     <tr bgcolor="#eeeeff">
+ *     <tr>
  *         <td><code>h</code>
  *         <td>Hour in am/pm (1-12)
  *         <td><a href="#number">Number</a>
  *         <td><code>12</code>
- *     <tr>
+ *     <tr bgcolor="#eeeeff">
  *         <td><code>m</code>
  *         <td>Minute in hour
  *         <td><a href="#number">Number</a>
  *         <td><code>30</code>
- *     <tr bgcolor="#eeeeff">
+ *     <tr>
  *         <td><code>s</code>
  *         <td>Second in minute
  *         <td><a href="#number">Number</a>
  *         <td><code>55</code>
- *     <tr>
+ *     <tr bgcolor="#eeeeff">
  *         <td><code>S</code>
  *         <td>Millisecond
  *         <td><a href="#number">Number</a>
  *         <td><code>978</code>
- *     <tr bgcolor="#eeeeff">
+ *     <tr>
  *         <td><code>z</code>
  *         <td>Time zone
  *         <td><a href="#timezone">General time zone</a>
  *         <td><code>Pacific Standard Time</code>; <code>PST</code>; <code>GMT-08:00</code>
- *     <tr>
+ *     <tr bgcolor="#eeeeff">
  *         <td><code>Z</code>
  *         <td>Time zone
  *         <td><a href="#rfc822timezone">RFC 822 time zone</a>
  *         <td><code>-0800</code>
- *     <tr bgcolor="#eeeeff">
+ *     <tr>
  *         <td><code>X</code>
  *         <td>Time zone
  *         <td><a href="#iso8601timezone">ISO 8601 time zone</a>
@@ -270,7 +272,17 @@ import static java.text.DateFormatSymbols.*;
  * <li><strong><a name="month">Month:</a></strong>
  *     If the number of pattern letters is 3 or more, the month is
  *     interpreted as <a href="#text">text</a>; otherwise,
- *     it is interpreted as a <a href="#number">number</a>.<br><br></li>
+ *     it is interpreted as a <a href="#number">number</a>.<br>
+ *     <ul>
+ *     <li>Letter <em>M</em> produces context-sensitive month names, such as the
+ *         embedded form of names. If a {@code DateFormatSymbols} has been set
+ *         explicitly with constructor {@link #SimpleDateFormat(String,
+ *         DateFormatSymbols)} or method {@link
+ *         #setDateFormatSymbols(DateFormatSymbols)}, the month names given by
+ *         the {@code DateFormatSymbols} are used.</li>
+ *     <li>Letter <em>L</em> produces the standalone form of month names.</li>
+ *     </ul>
+ *     <br></li>
  * <li><strong><a name="timezone">General time zone:</a></strong>
  *     Time zones are interpreted as <a href="#text">text</a> if they have
  *     names. For time zones representing a GMT offset value, the
@@ -459,6 +471,11 @@ public class SimpleDateFormat extends DateFormat {
     transient private boolean hasFollowingMinusSign = false;
 
     /**
+     * True if standalone form needs to be used.
+     */
+    transient private boolean forceStandaloneForm = false;
+
+    /**
      * The compiled pattern.
      */
     transient private char[] compiledPattern;
@@ -502,16 +519,10 @@ public class SimpleDateFormat extends DateFormat {
     private static final String GMT = "GMT";
 
     /**
-     * Cache to hold the DateTimePatterns of a Locale.
-     */
-    private static final ConcurrentMap<Locale, String[]> cachedLocaleData
-        = new ConcurrentHashMap<Locale, String[]>(3);
-
-    /**
      * Cache NumberFormat instances with Locale key.
      */
     private static final ConcurrentMap<Locale, NumberFormat> cachedNumberFormatData
-        = new ConcurrentHashMap<Locale, NumberFormat>(3);
+        = new ConcurrentHashMap<>(3);
 
     /**
      * The Locale used to instantiate this
@@ -541,7 +552,9 @@ public class SimpleDateFormat extends DateFormat {
      * class.
      */
     public SimpleDateFormat() {
-        this(SHORT, SHORT, Locale.getDefault(Locale.Category.FORMAT));
+        this("", Locale.getDefault(Locale.Category.FORMAT));
+        applyPatternImpl(LocaleProviderAdapter.getResourceBundleBased().getLocaleResources(locale)
+                         .getDateTimePattern(SHORT, SHORT, calendar));
     }
 
     /**
@@ -606,51 +619,6 @@ public class SimpleDateFormat extends DateFormat {
         initializeCalendar(this.locale);
         initialize(this.locale);
         useDateFormatSymbols = true;
-    }
-
-    /* Package-private, called by DateFormat factory methods */
-    SimpleDateFormat(int timeStyle, int dateStyle, Locale loc) {
-        if (loc == null) {
-            throw new NullPointerException();
-        }
-
-        this.locale = loc;
-        // initialize calendar and related fields
-        initializeCalendar(loc);
-
-        /* try the cache first */
-        String[] dateTimePatterns = cachedLocaleData.get(loc);
-        if (dateTimePatterns == null) { /* cache miss */
-            ResourceBundle r = LocaleData.getDateFormatData(loc);
-            if (!isGregorianCalendar()) {
-                try {
-                    dateTimePatterns = r.getStringArray(getCalendarName() + ".DateTimePatterns");
-                } catch (MissingResourceException e) {
-                }
-            }
-            if (dateTimePatterns == null) {
-                dateTimePatterns = r.getStringArray("DateTimePatterns");
-            }
-            /* update cache */
-            cachedLocaleData.putIfAbsent(loc, dateTimePatterns);
-        }
-        formatData = DateFormatSymbols.getInstanceRef(loc);
-        if ((timeStyle >= 0) && (dateStyle >= 0)) {
-            Object[] dateTimeArgs = {dateTimePatterns[timeStyle],
-                                     dateTimePatterns[dateStyle + 4]};
-            pattern = MessageFormat.format(dateTimePatterns[8], dateTimeArgs);
-        }
-        else if (timeStyle >= 0) {
-            pattern = dateTimePatterns[timeStyle];
-        }
-        else if (dateStyle >= 0) {
-            pattern = dateTimePatterns[dateStyle + 4];
-        }
-        else {
-            throw new IllegalArgumentException("No date or time style specified");
-        }
-
-        initialize(loc);
     }
 
     /* Initialize compiledPattern and numberFormat fields */
@@ -750,10 +718,10 @@ public class SimpleDateFormat extends DateFormat {
     private char[] compile(String pattern) {
         int length = pattern.length();
         boolean inQuote = false;
-        StringBuilder compiledPattern = new StringBuilder(length * 2);
+        StringBuilder compiledCode = new StringBuilder(length * 2);
         StringBuilder tmpBuffer = null;
-        int count = 0;
-        int lastTag = -1;
+        int count = 0, tagcount = 0;
+        int lastTag = -1, prevTag = -1;
 
         for (int i = 0; i < length; i++) {
             char c = pattern.charAt(i);
@@ -766,21 +734,25 @@ public class SimpleDateFormat extends DateFormat {
                     if (c == '\'') {
                         i++;
                         if (count != 0) {
-                            encode(lastTag, count, compiledPattern);
+                            encode(lastTag, count, compiledCode);
+                            tagcount++;
+                            prevTag = lastTag;
                             lastTag = -1;
                             count = 0;
                         }
                         if (inQuote) {
                             tmpBuffer.append(c);
                         } else {
-                            compiledPattern.append((char)(TAG_QUOTE_ASCII_CHAR << 8 | c));
+                            compiledCode.append((char)(TAG_QUOTE_ASCII_CHAR << 8 | c));
                         }
                         continue;
                     }
                 }
                 if (!inQuote) {
                     if (count != 0) {
-                        encode(lastTag, count, compiledPattern);
+                        encode(lastTag, count, compiledCode);
+                        tagcount++;
+                        prevTag = lastTag;
                         lastTag = -1;
                         count = 0;
                     }
@@ -795,14 +767,14 @@ public class SimpleDateFormat extends DateFormat {
                     if (len == 1) {
                         char ch = tmpBuffer.charAt(0);
                         if (ch < 128) {
-                            compiledPattern.append((char)(TAG_QUOTE_ASCII_CHAR << 8 | ch));
+                            compiledCode.append((char)(TAG_QUOTE_ASCII_CHAR << 8 | ch));
                         } else {
-                            compiledPattern.append((char)(TAG_QUOTE_CHARS << 8 | 1));
-                            compiledPattern.append(ch);
+                            compiledCode.append((char)(TAG_QUOTE_CHARS << 8 | 1));
+                            compiledCode.append(ch);
                         }
                     } else {
-                        encode(TAG_QUOTE_CHARS, len, compiledPattern);
-                        compiledPattern.append(tmpBuffer);
+                        encode(TAG_QUOTE_CHARS, len, compiledCode);
+                        compiledCode.append(tmpBuffer);
                     }
                     inQuote = false;
                 }
@@ -814,13 +786,15 @@ public class SimpleDateFormat extends DateFormat {
             }
             if (!(c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z')) {
                 if (count != 0) {
-                    encode(lastTag, count, compiledPattern);
+                    encode(lastTag, count, compiledCode);
+                    tagcount++;
+                    prevTag = lastTag;
                     lastTag = -1;
                     count = 0;
                 }
                 if (c < 128) {
                     // In most cases, c would be a delimiter, such as ':'.
-                    compiledPattern.append((char)(TAG_QUOTE_ASCII_CHAR << 8 | c));
+                    compiledCode.append((char)(TAG_QUOTE_ASCII_CHAR << 8 | c));
                 } else {
                     // Take any contiguous non-ASCII alphabet characters and
                     // put them in a single TAG_QUOTE_CHARS.
@@ -831,9 +805,9 @@ public class SimpleDateFormat extends DateFormat {
                             break;
                         }
                     }
-                    compiledPattern.append((char)(TAG_QUOTE_CHARS << 8 | (j - i)));
+                    compiledCode.append((char)(TAG_QUOTE_CHARS << 8 | (j - i)));
                     for (; i < j; i++) {
-                        compiledPattern.append(pattern.charAt(i));
+                        compiledCode.append(pattern.charAt(i));
                     }
                     i--;
                 }
@@ -850,7 +824,9 @@ public class SimpleDateFormat extends DateFormat {
                 count++;
                 continue;
             }
-            encode(lastTag, count, compiledPattern);
+            encode(lastTag, count, compiledCode);
+            tagcount++;
+            prevTag = lastTag;
             lastTag = tag;
             count = 1;
         }
@@ -860,20 +836,24 @@ public class SimpleDateFormat extends DateFormat {
         }
 
         if (count != 0) {
-            encode(lastTag, count, compiledPattern);
+            encode(lastTag, count, compiledCode);
+            tagcount++;
+            prevTag = lastTag;
         }
 
+        forceStandaloneForm = (tagcount == 1 && prevTag == PATTERN_MONTH);
+
         // Copy the compiled pattern to a char array
-        int len = compiledPattern.length();
+        int len = compiledCode.length();
         char[] r = new char[len];
-        compiledPattern.getChars(0, len, r, 0);
+        compiledCode.getChars(0, len, r, 0);
         return r;
     }
 
     /**
      * Encodes the given tag and length and puts encoded char(s) into buffer.
      */
-    private static final void encode(int tag, int length, StringBuilder buffer) {
+    private static void encode(int tag, int length, StringBuilder buffer) {
         if (tag == PATTERN_ISO_ZONE && length >= 4) {
             throw new IllegalArgumentException("invalid ISO 8601 format: length=" + length);
         }
@@ -941,6 +921,7 @@ public class SimpleDateFormat extends DateFormat {
      * @return the formatted date-time string.
      * @exception NullPointerException if the given {@code date} is {@code null}.
      */
+    @Override
     public StringBuffer format(Date date, StringBuffer toAppendTo,
                                FieldPosition pos)
     {
@@ -999,6 +980,7 @@ public class SimpleDateFormat extends DateFormat {
      * @return AttributedCharacterIterator describing the formatted value.
      * @since 1.4
      */
+    @Override
     public AttributedCharacterIterator formatToCharacterIterator(Object obj) {
         StringBuffer sb = new StringBuffer();
         CharacterIteratorFieldDelegate delegate = new
@@ -1022,47 +1004,84 @@ public class SimpleDateFormat extends DateFormat {
     }
 
     // Map index into pattern character string to Calendar field number
-    private static final int[] PATTERN_INDEX_TO_CALENDAR_FIELD =
-    {
-        Calendar.ERA, Calendar.YEAR, Calendar.MONTH, Calendar.DATE,
-        Calendar.HOUR_OF_DAY, Calendar.HOUR_OF_DAY, Calendar.MINUTE,
-        Calendar.SECOND, Calendar.MILLISECOND, Calendar.DAY_OF_WEEK,
-        Calendar.DAY_OF_YEAR, Calendar.DAY_OF_WEEK_IN_MONTH,
-        Calendar.WEEK_OF_YEAR, Calendar.WEEK_OF_MONTH,
-        Calendar.AM_PM, Calendar.HOUR, Calendar.HOUR, Calendar.ZONE_OFFSET,
+    private static final int[] PATTERN_INDEX_TO_CALENDAR_FIELD = {
+        Calendar.ERA,
+        Calendar.YEAR,
+        Calendar.MONTH,
+        Calendar.DATE,
+        Calendar.HOUR_OF_DAY,
+        Calendar.HOUR_OF_DAY,
+        Calendar.MINUTE,
+        Calendar.SECOND,
+        Calendar.MILLISECOND,
+        Calendar.DAY_OF_WEEK,
+        Calendar.DAY_OF_YEAR,
+        Calendar.DAY_OF_WEEK_IN_MONTH,
+        Calendar.WEEK_OF_YEAR,
+        Calendar.WEEK_OF_MONTH,
+        Calendar.AM_PM,
+        Calendar.HOUR,
+        Calendar.HOUR,
         Calendar.ZONE_OFFSET,
-        // Pseudo Calendar fields
-        CalendarBuilder.WEEK_YEAR,
-        CalendarBuilder.ISO_DAY_OF_WEEK,
-        Calendar.ZONE_OFFSET
+        Calendar.ZONE_OFFSET,
+        CalendarBuilder.WEEK_YEAR,         // Pseudo Calendar field
+        CalendarBuilder.ISO_DAY_OF_WEEK,   // Pseudo Calendar field
+        Calendar.ZONE_OFFSET,
+        Calendar.MONTH
     };
 
     // Map index into pattern character string to DateFormat field number
     private static final int[] PATTERN_INDEX_TO_DATE_FORMAT_FIELD = {
-        DateFormat.ERA_FIELD, DateFormat.YEAR_FIELD, DateFormat.MONTH_FIELD,
-        DateFormat.DATE_FIELD, DateFormat.HOUR_OF_DAY1_FIELD,
-        DateFormat.HOUR_OF_DAY0_FIELD, DateFormat.MINUTE_FIELD,
-        DateFormat.SECOND_FIELD, DateFormat.MILLISECOND_FIELD,
-        DateFormat.DAY_OF_WEEK_FIELD, DateFormat.DAY_OF_YEAR_FIELD,
-        DateFormat.DAY_OF_WEEK_IN_MONTH_FIELD, DateFormat.WEEK_OF_YEAR_FIELD,
-        DateFormat.WEEK_OF_MONTH_FIELD, DateFormat.AM_PM_FIELD,
-        DateFormat.HOUR1_FIELD, DateFormat.HOUR0_FIELD,
-        DateFormat.TIMEZONE_FIELD, DateFormat.TIMEZONE_FIELD,
-        DateFormat.YEAR_FIELD, DateFormat.DAY_OF_WEEK_FIELD,
-        DateFormat.TIMEZONE_FIELD
+        DateFormat.ERA_FIELD,
+        DateFormat.YEAR_FIELD,
+        DateFormat.MONTH_FIELD,
+        DateFormat.DATE_FIELD,
+        DateFormat.HOUR_OF_DAY1_FIELD,
+        DateFormat.HOUR_OF_DAY0_FIELD,
+        DateFormat.MINUTE_FIELD,
+        DateFormat.SECOND_FIELD,
+        DateFormat.MILLISECOND_FIELD,
+        DateFormat.DAY_OF_WEEK_FIELD,
+        DateFormat.DAY_OF_YEAR_FIELD,
+        DateFormat.DAY_OF_WEEK_IN_MONTH_FIELD,
+        DateFormat.WEEK_OF_YEAR_FIELD,
+        DateFormat.WEEK_OF_MONTH_FIELD,
+        DateFormat.AM_PM_FIELD,
+        DateFormat.HOUR1_FIELD,
+        DateFormat.HOUR0_FIELD,
+        DateFormat.TIMEZONE_FIELD,
+        DateFormat.TIMEZONE_FIELD,
+        DateFormat.YEAR_FIELD,
+        DateFormat.DAY_OF_WEEK_FIELD,
+        DateFormat.TIMEZONE_FIELD,
+        DateFormat.MONTH_FIELD
     };
 
     // Maps from DecimalFormatSymbols index to Field constant
     private static final Field[] PATTERN_INDEX_TO_DATE_FORMAT_FIELD_ID = {
-        Field.ERA, Field.YEAR, Field.MONTH, Field.DAY_OF_MONTH,
-        Field.HOUR_OF_DAY1, Field.HOUR_OF_DAY0, Field.MINUTE,
-        Field.SECOND, Field.MILLISECOND, Field.DAY_OF_WEEK,
-        Field.DAY_OF_YEAR, Field.DAY_OF_WEEK_IN_MONTH,
-        Field.WEEK_OF_YEAR, Field.WEEK_OF_MONTH,
-        Field.AM_PM, Field.HOUR1, Field.HOUR0, Field.TIME_ZONE,
+        Field.ERA,
+        Field.YEAR,
+        Field.MONTH,
+        Field.DAY_OF_MONTH,
+        Field.HOUR_OF_DAY1,
+        Field.HOUR_OF_DAY0,
+        Field.MINUTE,
+        Field.SECOND,
+        Field.MILLISECOND,
+        Field.DAY_OF_WEEK,
+        Field.DAY_OF_YEAR,
+        Field.DAY_OF_WEEK_IN_MONTH,
+        Field.WEEK_OF_YEAR,
+        Field.WEEK_OF_MONTH,
+        Field.AM_PM,
+        Field.HOUR1,
+        Field.HOUR0,
         Field.TIME_ZONE,
-        Field.YEAR, Field.DAY_OF_WEEK,
-        Field.TIME_ZONE
+        Field.TIME_ZONE,
+        Field.YEAR,
+        Field.DAY_OF_WEEK,
+        Field.TIME_ZONE,
+        Field.MONTH
     };
 
     /**
@@ -1094,7 +1113,8 @@ public class SimpleDateFormat extends DateFormat {
         }
 
         int style = (count >= 4) ? Calendar.LONG : Calendar.SHORT;
-        if (!useDateFormatSymbols && field != CalendarBuilder.ISO_DAY_OF_WEEK) {
+        if (!useDateFormatSymbols && field < Calendar.ZONE_OFFSET
+            && patternCharIndex != PATTERN_MONTH_STANDALONE) {
             current = calendar.getDisplayName(field, style, locale);
         }
 
@@ -1106,20 +1126,23 @@ public class SimpleDateFormat extends DateFormat {
         case PATTERN_ERA: // 'G'
             if (useDateFormatSymbols) {
                 String[] eras = formatData.getEras();
-                if (value < eras.length)
+                if (value < eras.length) {
                     current = eras[value];
+                }
             }
-            if (current == null)
+            if (current == null) {
                 current = "";
+            }
             break;
 
         case PATTERN_WEEK_YEAR: // 'Y'
         case PATTERN_YEAR:      // 'y'
             if (calendar instanceof GregorianCalendar) {
-                if (count != 2)
+                if (count != 2) {
                     zeroPaddingNumber(value, count, maxIntCount, buffer);
-                else // count == 2
-                    zeroPaddingNumber(value, 2, 2, buffer); // clip 1996 to 96
+                } else {
+                    zeroPaddingNumber(value, 2, 2, buffer);
+                } // clip 1996 to 96
             } else {
                 if (current == null) {
                     zeroPaddingNumber(value, style == Calendar.LONG ? 1 : count,
@@ -1128,7 +1151,7 @@ public class SimpleDateFormat extends DateFormat {
             }
             break;
 
-        case PATTERN_MONTH: // 'M'
+        case PATTERN_MONTH:            // 'M' (context seinsive)
             if (useDateFormatSymbols) {
                 String[] months;
                 if (count >= 4) {
@@ -1141,6 +1164,32 @@ public class SimpleDateFormat extends DateFormat {
             } else {
                 if (count < 3) {
                     current = null;
+                } else if (forceStandaloneForm) {
+                    current = calendar.getDisplayName(field, style | 0x8000, locale);
+                    if (current == null) {
+                        current = calendar.getDisplayName(field, style, locale);
+                    }
+                }
+            }
+            if (current == null) {
+                zeroPaddingNumber(value+1, count, maxIntCount, buffer);
+            }
+            break;
+
+        case PATTERN_MONTH_STANDALONE: // 'L'
+            assert current == null;
+            if (locale == null) {
+                String[] months;
+                if (count >= 4) {
+                    months = formatData.getMonths();
+                    current = months[value];
+                } else if (count == 3) {
+                    months = formatData.getShortMonths();
+                    current = months[value];
+                }
+            } else {
+                if (count >= 3) {
+                    current = calendar.getDisplayName(field, style | 0x8000, locale);
                 }
             }
             if (current == null) {
@@ -1150,11 +1199,12 @@ public class SimpleDateFormat extends DateFormat {
 
         case PATTERN_HOUR_OF_DAY1: // 'k' 1-based.  eg, 23:59 + 1 hour =>> 24:59
             if (current == null) {
-                if (value == 0)
-                    zeroPaddingNumber(calendar.getMaximum(Calendar.HOUR_OF_DAY)+1,
+                if (value == 0) {
+                    zeroPaddingNumber(calendar.getMaximum(Calendar.HOUR_OF_DAY) + 1,
                                       count, maxIntCount, buffer);
-                else
+                } else {
                     zeroPaddingNumber(value, count, maxIntCount, buffer);
+                }
             }
             break;
 
@@ -1180,11 +1230,12 @@ public class SimpleDateFormat extends DateFormat {
 
         case PATTERN_HOUR1:    // 'h' 1-based.  eg, 11PM + 1 hour =>> 12 AM
             if (current == null) {
-                if (value == 0)
-                    zeroPaddingNumber(calendar.getLeastMaximum(Calendar.HOUR)+1,
+                if (value == 0) {
+                    zeroPaddingNumber(calendar.getLeastMaximum(Calendar.HOUR) + 1,
                                       count, maxIntCount, buffer);
-                else
+                } else {
                     zeroPaddingNumber(value, count, maxIntCount, buffer);
+                }
             }
             break;
 
@@ -1289,7 +1340,7 @@ public class SimpleDateFormat extends DateFormat {
     /**
      * Formats a number with the specified minimum and maximum number of digits.
      */
-    private final void zeroPaddingNumber(int value, int minDigits, int maxDigits, StringBuffer buffer)
+    private void zeroPaddingNumber(int value, int minDigits, int maxDigits, StringBuffer buffer)
     {
         // Optimization for 1, 2 and 4 digit numbers. This should
         // cover most cases of formatting date/time related items.
@@ -1371,6 +1422,7 @@ public class SimpleDateFormat extends DateFormat {
      *         error, returns null.
      * @exception NullPointerException if <code>text</code> or <code>pos</code> is null.
      */
+    @Override
     public Date parse(String text, ParsePosition pos)
     {
         checkNegativeNumberExpression();
@@ -1504,7 +1556,9 @@ public class SimpleDateFormat extends DateFormat {
         int i = 0;
         int count = data.length;
 
-        if (field == Calendar.DAY_OF_WEEK) i = 1;
+        if (field == Calendar.DAY_OF_WEEK) {
+            i = 1;
+        }
 
         // There may be multiple strings in the data[] array which begin with
         // the same prefix (e.g., Cerven and Cervenec (June and July) in Czech).
@@ -1767,7 +1821,9 @@ public class SimpleDateFormat extends DateFormat {
                 return -1;
             }
             char c = text.charAt(pos.index);
-            if (c != ' ' && c != '\t') break;
+            if (c != ' ' && c != '\t') {
+                break;
+            }
             ++pos.index;
         }
 
@@ -1912,8 +1968,9 @@ public class SimpleDateFormat extends DateFormat {
                     }
                 }
                 // [We computed 'value' above.]
-                if (value == calendar.getMaximum(Calendar.HOUR_OF_DAY)+1)
+                if (value == calendar.getMaximum(Calendar.HOUR_OF_DAY) + 1) {
                     value = 0;
+                }
                 calb.set(Calendar.HOUR_OF_DAY, value);
                 return pos.index;
 
@@ -1966,8 +2023,9 @@ public class SimpleDateFormat extends DateFormat {
                     }
                 }
                 // [We computed 'value' above.]
-                if (value == calendar.getLeastMaximum(Calendar.HOUR)+1)
+                if (value == calendar.getLeastMaximum(Calendar.HOUR) + 1) {
                     value = 0;
+                }
                 calb.set(Calendar.HOUR, value);
                 return pos.index;
 
@@ -2111,19 +2169,12 @@ public class SimpleDateFormat extends DateFormat {
         return -1;
     }
 
-    private final String getCalendarName() {
-        return calendar.getClass().getName();
-    }
-
+    /**
+     * Returns true if the DateFormatSymbols has been set explicitly or locale
+     * is null.
+     */
     private boolean useDateFormatSymbols() {
-        if (useDateFormatSymbols) {
-            return true;
-        }
-        return isGregorianCalendar() || locale == null;
-    }
-
-    private boolean isGregorianCalendar() {
-        return "java.util.GregorianCalendar".equals(getCalendarName());
+        return useDateFormatSymbols || locale == null;
     }
 
     /**
@@ -2138,13 +2189,14 @@ public class SimpleDateFormat extends DateFormat {
         for (int i = 0; i < pattern.length(); ++i) {
             char c = pattern.charAt(i);
             if (inQuote) {
-                if (c == '\'')
+                if (c == '\'') {
                     inQuote = false;
+                }
             }
             else {
-                if (c == '\'')
+                if (c == '\'') {
                     inQuote = true;
-                else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+                } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
                     int ci = from.indexOf(c);
                     if (ci >= 0) {
                         // patternChars is longer than localPatternChars due
@@ -2162,8 +2214,9 @@ public class SimpleDateFormat extends DateFormat {
             }
             result.append(c);
         }
-        if (inQuote)
+        if (inQuote) {
             throw new IllegalArgumentException("Unfinished quote in pattern");
+        }
         return result.toString();
     }
 
@@ -2196,6 +2249,10 @@ public class SimpleDateFormat extends DateFormat {
      */
     public void applyPattern(String pattern)
     {
+        applyPatternImpl(pattern);
+    }
+
+    private void applyPatternImpl(String pattern) {
         compiledPattern = compile(pattern);
         this.pattern = pattern;
     }
@@ -2246,6 +2303,7 @@ public class SimpleDateFormat extends DateFormat {
      *
      * @return a clone of this <code>SimpleDateFormat</code>
      */
+    @Override
     public Object clone() {
         SimpleDateFormat other = (SimpleDateFormat) super.clone();
         other.formatData = (DateFormatSymbols) formatData.clone();
@@ -2257,6 +2315,7 @@ public class SimpleDateFormat extends DateFormat {
      *
      * @return the hash code value for this <code>SimpleDateFormat</code> object.
      */
+    @Override
     public int hashCode()
     {
         return pattern.hashCode();
@@ -2270,9 +2329,12 @@ public class SimpleDateFormat extends DateFormat {
      * @return true if the given object is equal to this
      * <code>SimpleDateFormat</code>
      */
+    @Override
     public boolean equals(Object obj)
     {
-        if (!super.equals(obj)) return false; // super does class check
+        if (!super.equals(obj)) {
+            return false; // super does class check
+        }
         SimpleDateFormat that = (SimpleDateFormat) obj;
         return (pattern.equals(that.pattern)
                 && formatData.equals(that.formatData));

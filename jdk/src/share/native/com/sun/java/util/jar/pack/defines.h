@@ -93,7 +93,7 @@ extern int assert_failed(const char*);
 // bytes and byte arrays
 
 typedef unsigned int uint;
-#if !defined(MACOSX) || (defined(MACOSX) && defined(NO_ZLIB))
+#if defined(NO_ZLIB)
 #ifdef _LP64
 typedef unsigned int uLong; // Historical zlib, should be 32-bit.
 #else

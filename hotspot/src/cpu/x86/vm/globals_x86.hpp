@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,4 +78,53 @@ define_pd_global(bool, UseMembar,            false);
 
 // GC Ergo Flags
 define_pd_global(intx, CMSYoungGenPerWorker, 64*M);  // default max size of CMS young gen, per GC worker thread
+
+#define ARCH_FLAGS(develop, product, diagnostic, experimental, notproduct) \
+                                                                            \
+  develop(bool, IEEEPrecision, true,                                        \
+          "Enables IEEE precision (for INTEL only)")                        \
+                                                                            \
+  product(intx, FenceInstruction, 0,                                        \
+          "(Unsafe,Unstable) Experimental")                                 \
+                                                                            \
+  product(intx,  ReadPrefetchInstr, 0,                                      \
+          "Prefetch instruction to prefetch ahead")                         \
+                                                                            \
+  product(bool, UseStoreImmI16, true,                                       \
+          "Use store immediate 16-bits value instruction on x86")           \
+                                                                            \
+  product(intx, UseAVX, 99,                                                 \
+          "Highest supported AVX instructions set on x86/x64")              \
+                                                                            \
+  diagnostic(bool, UseIncDec, true,                                         \
+          "Use INC, DEC instructions on x86")                               \
+                                                                            \
+  product(bool, UseNewLongLShift, false,                                    \
+          "Use optimized bitwise shift left")                               \
+                                                                            \
+  product(bool, UseAddressNop, false,                                       \
+          "Use '0F 1F [addr]' NOP instructions on x86 cpus")                \
+                                                                            \
+  product(bool, UseXmmLoadAndClearUpper, true,                              \
+          "Load low part of XMM register and clear upper part")             \
+                                                                            \
+  product(bool, UseXmmRegToRegMoveAll, false,                               \
+          "Copy all XMM register bits when moving value between registers") \
+                                                                            \
+  product(bool, UseXmmI2D, false,                                           \
+          "Use SSE2 CVTDQ2PD instruction to convert Integer to Double")     \
+                                                                            \
+  product(bool, UseXmmI2F, false,                                           \
+          "Use SSE2 CVTDQ2PS instruction to convert Integer to Float")      \
+                                                                            \
+  product(bool, UseUnalignedLoadStores, false,                              \
+          "Use SSE2 MOVDQU instruction for Arraycopy")                      \
+                                                                            \
+  /* assembler */                                                           \
+  product(bool, Use486InstrsOnly, false,                                    \
+          "Use 80486 Compliant instruction subset")                         \
+                                                                            \
+  product(bool, UseCountLeadingZerosInstruction, false,                     \
+          "Use count leading zeros instruction")                            \
+
 #endif // CPU_X86_VM_GLOBALS_X86_HPP

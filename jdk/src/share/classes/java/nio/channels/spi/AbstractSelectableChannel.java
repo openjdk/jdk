@@ -90,27 +90,26 @@ public abstract class AbstractSelectableChannel
     // -- Utility methods for the key set --
 
     private void addKey(SelectionKey k) {
-        synchronized (keyLock) {
-            int i = 0;
-            if ((keys != null) && (keyCount < keys.length)) {
-                // Find empty element of key array
-                for (i = 0; i < keys.length; i++)
-                    if (keys[i] == null)
-                        break;
-            } else if (keys == null) {
-                keys =  new SelectionKey[3];
-            } else {
-                // Grow key array
-                int n = keys.length * 2;
-                SelectionKey[] ks =  new SelectionKey[n];
-                for (i = 0; i < keys.length; i++)
-                    ks[i] = keys[i];
-                keys = ks;
-                i = keyCount;
-            }
-            keys[i] = k;
-            keyCount++;
+        assert Thread.holdsLock(keyLock);
+        int i = 0;
+        if ((keys != null) && (keyCount < keys.length)) {
+            // Find empty element of key array
+            for (i = 0; i < keys.length; i++)
+                if (keys[i] == null)
+                    break;
+        } else if (keys == null) {
+            keys =  new SelectionKey[3];
+        } else {
+            // Grow key array
+            int n = keys.length * 2;
+            SelectionKey[] ks =  new SelectionKey[n];
+            for (i = 0; i < keys.length; i++)
+                ks[i] = keys[i];
+            keys = ks;
+            i = keyCount;
         }
+        keys[i] = k;
+        keyCount++;
     }
 
     private SelectionKey findKey(Selector sel) {
@@ -190,11 +189,11 @@ public abstract class AbstractSelectableChannel
                                        Object att)
         throws ClosedChannelException
     {
-        if (!isOpen())
-            throw new ClosedChannelException();
-        if ((ops & ~validOps()) != 0)
-            throw new IllegalArgumentException();
         synchronized (regLock) {
+            if (!isOpen())
+                throw new ClosedChannelException();
+            if ((ops & ~validOps()) != 0)
+                throw new IllegalArgumentException();
             if (blocking)
                 throw new IllegalBlockingModeException();
             SelectionKey k = findKey(sel);
@@ -204,8 +203,12 @@ public abstract class AbstractSelectableChannel
             }
             if (k == null) {
                 // New registration
-                k = ((AbstractSelector)sel).register(this, ops, att);
-                addKey(k);
+                synchronized (keyLock) {
+                    if (!isOpen())
+                        throw new ClosedChannelException();
+                    k = ((AbstractSelector)sel).register(this, ops, att);
+                    addKey(k);
+                }
             }
             return k;
         }
@@ -275,9 +278,9 @@ public abstract class AbstractSelectableChannel
     public final SelectableChannel configureBlocking(boolean block)
         throws IOException
     {
-        if (!isOpen())
-            throw new ClosedChannelException();
         synchronized (regLock) {
+            if (!isOpen())
+                throw new ClosedChannelException();
             if (blocking == block)
                 return this;
             if (block && haveValidKeys())

@@ -28,10 +28,9 @@ import java.awt.*;
 import java.awt.peer.*;
 import java.awt.event.*;
 
-import java.lang.reflect.Field;
 import java.util.Vector;
 import sun.util.logging.PlatformLogger;
-import sun.awt.SunToolkit;
+import sun.awt.AWTAccessor;
 
 public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
 
@@ -66,15 +65,6 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
     private final static int BAR_ITEM_MARGIN_RIGHT = 10;
     private final static int BAR_ITEM_MARGIN_TOP = 2;
     private final static int BAR_ITEM_MARGIN_BOTTOM = 2;
-
-    //fields
-    private static Field f_helpMenu;
-    private static Field f_menus;
-
-    static {
-        f_helpMenu = SunToolkit.getField(MenuBar.class, "helpMenu");
-        f_menus = SunToolkit.getField(MenuBar.class, "menus");
-    }
 
     /************************************************
      *
@@ -204,16 +194,12 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      */
     void postInit(XCreateWindowParams params) {
         super.postInit(params);
-        Vector targetMenuVector = null;
-        Menu targetHelpMenu = null;
-        try {
-            // Get menus from the target.
-            targetMenuVector = (Vector)f_menus.get(menuBarTarget);
-            targetHelpMenu = (Menu)f_helpMenu.get(menuBarTarget);
-            reloadItems(targetMenuVector);
-        } catch (IllegalAccessException iae) {
-            iae.printStackTrace();
-        }
+        // Get menus from the target.
+        Vector targetMenuVector = AWTAccessor.getMenuBarAccessor()
+                                      .getMenus(menuBarTarget);
+        Menu targetHelpMenu = AWTAccessor.getMenuBarAccessor()
+                                  .getHelpMenu(menuBarTarget);
+        reloadItems(targetMenuVector);
         if (targetHelpMenu != null) {
             addHelpMenu(targetHelpMenu);
         }

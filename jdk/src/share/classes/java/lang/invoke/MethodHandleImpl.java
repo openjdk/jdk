@@ -59,7 +59,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         Name[] args  = Arrays.copyOfRange(names, 1, 1 + srcType.parameterCount());
         names[names.length - 1] = new Name(accessor.asType(srcType), (Object[]) args);
         LambdaForm form = new LambdaForm("getElement", lambdaType.parameterCount(), names);
-        MethodHandle mh = new SimpleMethodHandle(srcType, form);
+        MethodHandle mh = SimpleMethodHandle.make(srcType, form);
         if (ArrayAccessor.needCast(arrayClass)) {
             mh = mh.bindTo(arrayClass);
         }
@@ -171,37 +171,45 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
         // Calculate extra arguments (temporaries) required in the names array.
         // FIXME: Use an ArrayList<Name>.  Some arguments require more than one conversion step.
-        int extra = 0;
-        for (int i = 0; i < srcType.parameterCount(); i++) {
-            Class<?> src = srcType.parameterType(i);
-            Class<?> dst = dstType.parameterType(i);
-            if (!VerifyType.isNullConversion(src, dst)) {
-                extra++;
+        final int INARG_COUNT = srcType.parameterCount();
+        int conversions = 0;
+        boolean[] needConv = new boolean[1+INARG_COUNT];
+        for (int i = 0; i <= INARG_COUNT; i++) {
+            Class<?> src = (i == INARG_COUNT) ? dstType.returnType() : srcType.parameterType(i);
+            Class<?> dst = (i == INARG_COUNT) ? srcType.returnType() : dstType.parameterType(i);
+            if (!VerifyType.isNullConversion(src, dst) ||
+                level <= 1 && dst.isInterface() && !dst.isAssignableFrom(src)) {
+                needConv[i] = true;
+                conversions++;
             }
         }
+        boolean retConv = needConv[INARG_COUNT];
 
-        Class<?> needReturn = srcType.returnType();
-        Class<?> haveReturn = dstType.returnType();
-        boolean retConv = !VerifyType.isNullConversion(haveReturn, needReturn);
+        final int IN_MH         = 0;
+        final int INARG_BASE    = 1;
+        final int INARG_LIMIT   = INARG_BASE + INARG_COUNT;
+        final int NAME_LIMIT    = INARG_LIMIT + conversions + 1;
+        final int RETURN_CONV   = (!retConv ? -1         : NAME_LIMIT - 1);
+        final int OUT_CALL      = (!retConv ? NAME_LIMIT : RETURN_CONV) - 1;
 
         // Now build a LambdaForm.
-        MethodType lambdaType = srcType.invokerType();
-        Name[] names = arguments(extra + 1, lambdaType);
-        int[] indexes = new int[lambdaType.parameterCount()];
+        MethodType lambdaType = srcType.basicType().invokerType();
+        Name[] names = arguments(NAME_LIMIT - INARG_LIMIT, lambdaType);
 
-        MethodType midType = dstType;
-        for (int i = 0, argIndex = 1, tmpIndex = lambdaType.parameterCount(); i < srcType.parameterCount(); i++, argIndex++) {
+        // Collect the arguments to the outgoing call, maybe with conversions:
+        final int OUTARG_BASE = 0;  // target MH is Name.function, name Name.arguments[0]
+        Object[] outArgs = new Object[OUTARG_BASE + INARG_COUNT];
+
+        int nameCursor = INARG_LIMIT;
+        for (int i = 0; i < INARG_COUNT; i++) {
             Class<?> src = srcType.parameterType(i);
-            Class<?> dst = midType.parameterType(i);
+            Class<?> dst = dstType.parameterType(i);
 
-            if (VerifyType.isNullConversion(src, dst)) {
+            if (!needConv[i]) {
                 // do nothing: difference is trivial
-                indexes[i] = argIndex;
+                outArgs[OUTARG_BASE + i] = names[INARG_BASE + i];
                 continue;
             }
-
-            // Work the current type backward toward the desired caller type:
-            midType = midType.changeParameterType(i, src);
 
             // Tricky case analysis follows.
             MethodHandle fn = null;
@@ -246,33 +254,41 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                     fn = ValueConversions.cast(dst);
                 }
             }
-            names[tmpIndex] = new Name(fn, names[argIndex]);
-            indexes[i] = tmpIndex;
-            tmpIndex++;
-        }
-        if (retConv) {
-            MethodHandle adjustReturn;
-            if (haveReturn == void.class) {
-                // synthesize a zero value for the given void
-                Object zero = Wrapper.forBasicType(needReturn).zero();
-                adjustReturn = MethodHandles.constant(needReturn, zero);
-            } else {
-                MethodHandle identity = MethodHandles.identity(needReturn);
-                MethodType needConversion = identity.type().changeParameterType(0, haveReturn);
-                adjustReturn = makePairwiseConvert(identity, needConversion, level);
-            }
-            target = makeCollectArguments(adjustReturn, target, 0, false);
+            Name conv = new Name(fn, names[INARG_BASE + i]);
+            assert(names[nameCursor] == null);
+            names[nameCursor++] = conv;
+            assert(outArgs[OUTARG_BASE + i] == null);
+            outArgs[OUTARG_BASE + i] = conv;
         }
 
         // Build argument array for the call.
-        Name[] targetArgs = new Name[dstType.parameterCount()];
-        for (int i = 0; i < dstType.parameterCount(); i++) {
-            int idx = indexes[i];
-            targetArgs[i] = names[idx];
+        assert(nameCursor == OUT_CALL);
+        names[OUT_CALL] = new Name(target, outArgs);
+
+        if (RETURN_CONV < 0) {
+            assert(OUT_CALL == names.length-1);
+        } else {
+            Class<?> needReturn = srcType.returnType();
+            Class<?> haveReturn = dstType.returnType();
+            MethodHandle fn;
+            Object[] arg = { names[OUT_CALL] };
+            if (haveReturn == void.class) {
+                // synthesize a zero value for the given void
+                Object zero = Wrapper.forBasicType(needReturn).zero();
+                fn = MethodHandles.constant(needReturn, zero);
+                arg = new Object[0];  // don't pass names[OUT_CALL] to conversion
+            } else {
+                MethodHandle identity = MethodHandles.identity(needReturn);
+                MethodType needConversion = identity.type().changeParameterType(0, haveReturn);
+                fn = makePairwiseConvert(identity, needConversion, level);
+            }
+            assert(names[RETURN_CONV] == null);
+            names[RETURN_CONV] = new Name(fn, arg);
+            assert(RETURN_CONV == names.length-1);
         }
-        names[names.length - 1] = new Name(target, (Object[]) targetArgs);
+
         LambdaForm form = new LambdaForm("convert", lambdaType.parameterCount(), names);
-        return new SimpleMethodHandle(srcType, form);
+        return SimpleMethodHandle.make(srcType, form);
     }
 
     static MethodHandle makeReferenceIdentity(Class<?> refType) {
@@ -280,7 +296,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         Name[] names = arguments(1, lambdaType);
         names[names.length - 1] = new Name(ValueConversions.identity(), names[1]);
         LambdaForm form = new LambdaForm("identity", lambdaType.parameterCount(), names);
-        return new SimpleMethodHandle(MethodType.methodType(refType, refType), form);
+        return SimpleMethodHandle.make(MethodType.methodType(refType, refType), form);
     }
 
     static MethodHandle makeVarargsCollector(MethodHandle target, Class<?> arrayType) {
@@ -334,8 +350,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             MethodHandle collector;
             try {
                 collector = asFixedArity().asCollector(arrayType, arrayLength);
+                assert(collector.type().parameterCount() == newArity) : "newArity="+newArity+" but collector="+collector;
             } catch (IllegalArgumentException ex) {
-                throw new WrongMethodTypeException("cannot build collector");
+                throw new WrongMethodTypeException("cannot build collector", ex);
             }
             cache = collector;
             return collector.asType(newType);
@@ -429,12 +446,18 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         names[names.length - 1] = new Name(target, (Object[]) targetArgs);
 
         LambdaForm form = new LambdaForm("spread", lambdaType.parameterCount(), names);
-        return new SimpleMethodHandle(srcType, form);
+        return SimpleMethodHandle.make(srcType, form);
     }
 
     static void checkSpreadArgument(Object av, int n) {
+        // FIXME: regression test for bug 7141637 erroneously expects an NPE, and other tests may expect IAE
+        // but the actual exception raised by an arity mismatch should be WMTE
+        final boolean RAISE_RANDOM_EXCEPTIONS = true;  // FIXME: delete in JSR 292 M1
         if (av == null) {
             if (n == 0)  return;
+            int len;
+            if (RAISE_RANDOM_EXCEPTIONS)
+                len = ((Object[])av).length;  // throw NPE; but delete this after tests are fixed
         } else if (av instanceof Object[]) {
             int len = ((Object[])av).length;
             if (len == n)  return;
@@ -443,7 +466,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             if (len == n)  return;
         }
         // fall through to error:
-        throw newIllegalArgumentException("Array is not of length "+n);
+        if (RAISE_RANDOM_EXCEPTIONS)
+            throw newIllegalArgumentException("Array is not of length "+n);
+        throw new WrongMethodTypeException("Array is not of length "+n);
     }
 
     private static final NamedFunction NF_checkSpreadArgument;
@@ -508,7 +533,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         names[targetNamePos] = new Name(target, (Object[]) targetArgs);
 
         LambdaForm form = new LambdaForm("collect", lambdaType.parameterCount(), names);
-        return new SimpleMethodHandle(srcType, form);
+        return SimpleMethodHandle.make(srcType, form);
     }
 
     static
@@ -555,7 +580,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         names[arity + 3] = new Name(new NamedFunction(invokeBasic), targetArgs);
 
         LambdaForm form = new LambdaForm("guard", lambdaType.parameterCount(), names);
-        return new SimpleMethodHandle(target.type(), form);
+        return SimpleMethodHandle.make(target.type(), form);
     }
 
     private static class GuardWithCatch {
