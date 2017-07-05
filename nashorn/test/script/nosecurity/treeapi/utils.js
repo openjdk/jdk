@@ -30,17 +30,42 @@ var parser = Java.type('jdk.nashorn.api.tree.Parser');
 var tree = Java.type('jdk.nashorn.api.tree.Tree');
 var list = Java.type('java.util.List');
 var visitor = Java.type('jdk.nashorn.api.tree.SimpleTreeVisitorES5_1');
+var visitor_es6 = Java.type('jdk.nashorn.api.tree.SimpleTreeVisitorES6');
 var file = Java.type('java.io.File')
 var cls = Java.type('java.lang.Class')
 
 function convert (value) {
-    if (!value) {
+    if (!value || typeof(value) != 'object') {
         return value;
     }
     var  obj = Object.bindProperties({}, value)
     var result = {}
     for (var i in obj) {
+        if (i == "lineMap") {
+            continue;
+        }
+
         var val = obj[i]
+        // skip these ES6 specific properties to reduce noise
+        // in the output - unless there were set to true
+        if (typeof(val) == 'boolean' && val == false) {
+            switch (i) {
+                case "computed":
+                case "static":
+                case "restParameter":
+                case "this":
+                case "super":
+                case "star":
+                case "default":
+                case "starDefaultStar":
+                case "arrow":
+                case "generator":
+                case "let":
+                case "const":
+                    continue;
+             }
+        }
+
         if (typeof(val) == 'object') {
             if (val instanceof cls) {
                 continue;
@@ -72,6 +97,9 @@ function parse(name, code, args, visitor, listener) {
     print(JSON.stringify(results, null, 2))
 }
 
+function parseModule(name, code) {
+    return parser.create("--es6-module").parse(name, code, null);
+}
 
 function parseDiagnostic (code, args) {
     var messages = new Array()

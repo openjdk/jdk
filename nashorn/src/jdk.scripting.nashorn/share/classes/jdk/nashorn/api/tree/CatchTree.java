@@ -38,11 +38,11 @@ package jdk.nashorn.api.tree;
  */
 public interface CatchTree extends Tree {
     /**
-     * Returns the catch parameter identifier of the exception caught.
+     * Returns the catch parameter identifier or parameter binding pattern of the exception caught.
      *
-     * @return the catch parameter identifier
+     * @return the catch parameter identifier or parameter binding pattern
      */
-    IdentifierTree getParameter();
+    ExpressionTree getParameter();
 
     /**
      * Returns the code block of this catch block.

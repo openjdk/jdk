@@ -68,7 +68,7 @@ ifeq ($(call check-jvm-feature, dtrace), true)
       $1: $$(BUILD_DTRACE_GEN_OFFSETS)
 	$$(call LogInfo, Generating dtrace $2 file $$(@F))
 	$$(call MakeDir, $$(@D))
-	$$(call ExecuteWithLog, $$@, $$(DTRACE_GEN_OFFSETS_TOOL) -$$(strip $2) > $$@)
+	$$(call ExecuteWithLog, $$@, ( $$(DTRACE_GEN_OFFSETS_TOOL) -$$(strip $2) > $$@ ) )
 
       TARGETS += $1
     endef

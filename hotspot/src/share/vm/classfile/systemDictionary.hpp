@@ -660,6 +660,7 @@ public:
   static instanceKlassHandle load_shared_class(Symbol* class_name,
                                                Handle class_loader,
                                                TRAPS);
+  static bool is_system_class_loader(Handle class_loader);
   static bool is_platform_class_loader(Handle class_loader);
 
 protected:

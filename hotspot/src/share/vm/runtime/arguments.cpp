@@ -584,27 +584,26 @@ static bool verify_special_jvm_flags() {
 // Parses a size specification string.
 bool Arguments::atojulong(const char *s, julong* result) {
   julong n = 0;
-  int args_read = 0;
-  bool is_hex = false;
-  // Skip leading 0[xX] for hexadecimal
-  if (*s =='0' && (*(s+1) == 'x' || *(s+1) == 'X')) {
-    s += 2;
-    is_hex = true;
-    args_read = sscanf(s, JULONG_FORMAT_X, &n);
-  } else {
-    args_read = sscanf(s, JULONG_FORMAT, &n);
-  }
-  if (args_read != 1) {
+
+  // First char must be a digit. Don't allow negative numbers or leading spaces.
+  if (!isdigit(*s)) {
     return false;
   }
-  while (*s != '\0' && (isdigit(*s) || (is_hex && isxdigit(*s)))) {
-    s++;
-  }
-  // 4705540: illegal if more characters are found after the first non-digit
-  if (strlen(s) > 1) {
+
+  bool is_hex = (s[0] == '0' && (s[1] == 'x' || s[1] == 'X'));
+  char* remainder;
+  errno = 0;
+  n = strtoull(s, &remainder, (is_hex ? 16 : 10));
+  if (errno != 0) {
     return false;
   }
-  switch (*s) {
+
+  // Fail if no number was read at all or if the remainder contains more than a single non-digit character.
+  if (remainder == s || strlen(remainder) > 1) {
+    return false;
+  }
+
+  switch (*remainder) {
     case 'T': case 't':
       *result = n * G * K;
       // Check for overflow.
