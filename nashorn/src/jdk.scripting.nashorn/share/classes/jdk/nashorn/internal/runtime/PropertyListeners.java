@@ -28,6 +28,7 @@ package jdk.nashorn.internal.runtime;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * Helper class to manage property listeners and notification.
@@ -37,8 +38,15 @@ public class PropertyListeners {
     private Map<String, WeakPropertyMapSet> listeners;
 
     // These counters are updated in debug mode
-    private static int listenersAdded;
-    private static int listenersRemoved;
+    private static LongAdder listenersAdded;
+    private static LongAdder listenersRemoved;
+
+    static {
+        if (Context.DEBUG) {
+            listenersAdded = new LongAdder();
+            listenersRemoved = new LongAdder();
+        }
+    }
 
     /**
      * Copy constructor
@@ -54,16 +62,16 @@ public class PropertyListeners {
      * Return aggregate listeners added to all PropertyListenerManagers
      * @return the listenersAdded
      */
-    public static int getListenersAdded() {
-        return listenersAdded;
+    public static long getListenersAdded() {
+        return listenersAdded.longValue();
     }
 
     /**
      * Return aggregate listeners removed from all PropertyListenerManagers
      * @return the listenersRemoved
      */
-    public static int getListenersRemoved() {
-        return listenersRemoved;
+    public static long getListenersRemoved() {
+        return listenersRemoved.longValue();
     }
 
     /**
@@ -122,7 +130,7 @@ public class PropertyListeners {
      */
     synchronized final void addListener(final String key, final PropertyMap propertyMap) {
         if (Context.DEBUG) {
-            listenersAdded++;
+            listenersAdded.increment();
         }
         if (listeners == null) {
             listeners = new WeakHashMap<>();
@@ -151,6 +159,9 @@ public class PropertyListeners {
                     propertyMap.propertyAdded(prop);
                 }
                 listeners.remove(prop.getKey());
+                if (Context.DEBUG) {
+                    listenersRemoved.increment();
+                }
             }
         }
     }
@@ -168,6 +179,9 @@ public class PropertyListeners {
                     propertyMap.propertyDeleted(prop);
                 }
                 listeners.remove(prop.getKey());
+                if (Context.DEBUG) {
+                    listenersRemoved.increment();
+                }
             }
         }
     }
@@ -187,6 +201,9 @@ public class PropertyListeners {
                     propertyMap.propertyModified(oldProp, newProp);
                 }
                 listeners.remove(oldProp.getKey());
+                if (Context.DEBUG) {
+                    listenersRemoved.increment();
+                }
             }
         }
     }

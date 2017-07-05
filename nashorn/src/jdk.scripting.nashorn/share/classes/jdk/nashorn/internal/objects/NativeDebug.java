@@ -26,6 +26,7 @@
 package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
+
 import java.io.PrintWriter;
 import java.util.LinkedList;
 import java.util.Objects;
@@ -246,7 +247,7 @@ public final class NativeDebug extends ScriptObject {
         final PrintWriter out = Context.getCurrentErr();
 
         out.println("ScriptObject count " + ScriptObject.getCount());
-        out.println("Scope count " + Scope.getCount());
+        out.println("Scope count " + Scope.getScopeCount());
         out.println("ScriptObject listeners added " + PropertyListeners.getListenersAdded());
         out.println("ScriptObject listeners removed " + PropertyListeners.getListenersRemoved());
         out.println("ScriptFunction constructor calls " + ScriptFunction.getConstructorCount());

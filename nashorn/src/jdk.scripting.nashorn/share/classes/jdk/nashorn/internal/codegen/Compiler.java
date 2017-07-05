@@ -101,7 +101,7 @@ public final class Compiler implements Loggable {
 
     private final ConstantData constantData;
 
-    private final CodeInstaller<ScriptEnvironment> installer;
+    private final CodeInstaller installer;
 
     /** logger for compiler, trampolines and related code generation events
      *  that affect classes */
@@ -352,47 +352,83 @@ public final class Compiler implements Loggable {
     private static final AtomicInteger COMPILATION_ID = new AtomicInteger(0);
 
     /**
-     * Constructor
+     * Creates a new compiler instance for initial compilation of a script.
      *
-     * @param context   context
-     * @param env       script environment
      * @param installer code installer
      * @param source    source to compile
      * @param errors    error manager
      * @param isStrict  is this a strict compilation
+     * @return a new compiler
      */
-    public Compiler(
-            final Context context,
-            final ScriptEnvironment env,
-            final CodeInstaller<ScriptEnvironment> installer,
+    public static Compiler forInitialCompilation(
+            final CodeInstaller installer,
             final Source source,
             final ErrorManager errors,
             final boolean isStrict) {
-        this(context, env, installer, source, errors, isStrict, false, null, null, null, null, null, null);
+        return new Compiler(installer.getContext(), installer, source, errors, isStrict);
     }
 
     /**
-     * Constructor
+     * Creates a compiler without a code installer. It can only be used to compile code, not install the
+     * generated classes and as such it is useful only for implementation of {@code --compile-only} command
+     * line option.
+     * @param context  the current context
+     * @param source   source to compile
+     * @param isStrict is this a strict compilation
+     * @return a new compiler
+     */
+    public static Compiler forNoInstallerCompilation(
+            final Context context,
+            final Source source,
+            final boolean isStrict) {
+        return new Compiler(context, null, source, context.getErrorManager(), isStrict);
+    }
+
+    /**
+     * Creates a compiler for an on-demand compilation job.
      *
-     * @param context                  context
-     * @param env                      script environment
      * @param installer                code installer
      * @param source                   source to compile
-     * @param errors                   error manager
      * @param isStrict                 is this a strict compilation
-     * @param isOnDemand               is this an on demand compilation
      * @param compiledFunction         compiled function, if any
      * @param types                    parameter and return value type information, if any is known
      * @param invalidatedProgramPoints invalidated program points for recompilation
      * @param typeInformationFile      descriptor of the location where type information is persisted
      * @param continuationEntryPoints  continuation entry points for restof method
      * @param runtimeScope             runtime scope for recompilation type lookup in {@code TypeEvaluator}
+     * @return a new compiler
      */
-    @SuppressWarnings("unused")
-    public Compiler(
+    public static Compiler forOnDemandCompilation(
+            final CodeInstaller installer,
+            final Source source,
+            final boolean isStrict,
+            final RecompilableScriptFunctionData compiledFunction,
+            final TypeMap types,
+            final Map<Integer, Type> invalidatedProgramPoints,
+            final Object typeInformationFile,
+            final int[] continuationEntryPoints,
+            final ScriptObject runtimeScope) {
+        final Context context = installer.getContext();
+        return new Compiler(context, installer, source, context.getErrorManager(), isStrict, true,
+                compiledFunction, types, invalidatedProgramPoints, typeInformationFile,
+                continuationEntryPoints, runtimeScope);
+    }
+
+    /**
+     * Convenience constructor for non on-demand compiler instances.
+     */
+    private Compiler(
             final Context context,
-            final ScriptEnvironment env,
-            final CodeInstaller<ScriptEnvironment> installer,
+            final CodeInstaller installer,
+            final Source source,
+            final ErrorManager errors,
+            final boolean isStrict) {
+        this(context, installer, source, errors, isStrict, false, null, null, null, null, null, null);
+    }
+
+    private Compiler(
+            final Context context,
+            final CodeInstaller installer,
             final Source source,
             final ErrorManager errors,
             final boolean isStrict,
@@ -404,7 +440,7 @@ public final class Compiler implements Loggable {
             final int[] continuationEntryPoints,
             final ScriptObject runtimeScope) {
         this.context                  = context;
-        this.env                      = env;
+        this.env                      = context.getEnv();
         this.installer                = installer;
         this.constantData             = new ConstantData();
         this.compileUnits             = CompileUnit.createCompileUnitSet();
@@ -416,7 +452,7 @@ public final class Compiler implements Loggable {
         this.onDemand                 = isOnDemand;
         this.compiledFunction         = compiledFunction;
         this.types                    = types;
-        this.invalidatedProgramPoints = invalidatedProgramPoints == null ? new HashMap<Integer, Type>() : invalidatedProgramPoints;
+        this.invalidatedProgramPoints = invalidatedProgramPoints == null ? new HashMap<>() : invalidatedProgramPoints;
         this.typeInformationFile      = typeInformationFile;
         this.continuationEntryPoints  = continuationEntryPoints == null ? null: continuationEntryPoints.clone();
         this.typeEvaluator            = new TypeEvaluator(this, runtimeScope);
@@ -426,7 +462,7 @@ public final class Compiler implements Loggable {
         this.optimistic = env._optimistic_types;
     }
 
-    private static String safeSourceName(final ScriptEnvironment env, final CodeInstaller<ScriptEnvironment> installer, final Source source) {
+    private String safeSourceName() {
         String baseName = new File(source.getName()).getName();
 
         final int index = baseName.lastIndexOf(".js");
@@ -485,7 +521,7 @@ public final class Compiler implements Loggable {
             sb.append('$');
         }
 
-        sb.append(Compiler.safeSourceName(env, installer, source));
+        sb.append(safeSourceName());
 
         return sb.toString();
     }
@@ -684,7 +720,7 @@ public final class Compiler implements Loggable {
         return constantData;
     }
 
-    CodeInstaller<ScriptEnvironment> getCodeInstaller() {
+    CodeInstaller getCodeInstaller() {
         return installer;
     }
 

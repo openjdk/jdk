@@ -193,7 +193,7 @@ public final class ObjectSizeCalculator {
     }
 
     /**
-     * Get the class histograpm
+     * Get the class histogram
      * @return class histogram element list
      */
     public List<ClassHistogramElement> getClassHistogram() {

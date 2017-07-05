@@ -45,9 +45,10 @@ JNIEXPORT void JNICALL Java_java_net_DualStackPlainSocketImpl_initIDs
     jclass cls = (*env)->FindClass(env, "java/net/InetSocketAddress");
     CHECK_NULL(cls);
     isa_class = (*env)->NewGlobalRef(env, cls);
+    CHECK_NULL(isa_class);
     isa_ctorID = (*env)->GetMethodID(env, cls, "<init>",
                                      "(Ljava/net/InetAddress;I)V");
-
+    CHECK_NULL(isa_ctorID);
     initInetAddressIDs(env);
 
     // implement read timeout with select.
