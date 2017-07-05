@@ -143,7 +143,8 @@ public class XRPMBlitLoops {
 
         Blit swToSurfaceBlit = Blit.getFromCache(src.getSurfaceType(), CompositeType.SrcNoEa, vImgSurfaceType);
         XRSurfaceData vImgSurface = (XRSurfaceData) vImg.getDestSurface();
-        swToSurfaceBlit.Blit(src, vImgSurface, null, null, sx, sy, 0, 0, w, h);
+        swToSurfaceBlit.Blit(src, vImgSurface, AlphaComposite.Src, null,
+                             sx, sy, 0, 0, w, h);
 
         return vImgSurface;
     }

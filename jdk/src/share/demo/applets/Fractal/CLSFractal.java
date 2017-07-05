@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,13 +29,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
 import java.awt.Graphics;
 import java.util.Stack;
-import java.util.Vector;
 import java.awt.event.*;
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * A (not-yet) Context sensitive L-System Fractal applet class.
@@ -50,9 +50,11 @@ import java.awt.event.*;
  *
  * @author      Jim Graham
  */
+@SuppressWarnings("serial")
 public class CLSFractal
-    extends java.applet.Applet
-    implements Runnable, MouseListener {
+        extends java.applet.Applet
+        implements Runnable, MouseListener {
+
     Thread kicker;
     ContextLSystem cls;
     int fractLevel = 1;
@@ -67,31 +69,48 @@ public class CLSFractal
     int border;
     boolean normalizescaling;
 
+    @Override
     public void init() {
         String s;
         cls = new ContextLSystem(this);
         s = getParameter("level");
-        if (s != null) fractLevel = Integer.parseInt(s);
+        if (s != null) {
+            fractLevel = Integer.parseInt(s);
+        }
         s = getParameter("incremental");
-        if (s != null) incrementalUpdates = s.equalsIgnoreCase("true");
+        if (s != null) {
+            incrementalUpdates = s.equalsIgnoreCase("true");
+        }
         s = getParameter("delay");
-        if (s != null) repaintDelay = Integer.parseInt(s);
+        if (s != null) {
+            repaintDelay = Integer.parseInt(s);
+        }
         s = getParameter("startAngle");
-        if (s != null) startAngle = Float.valueOf(s).floatValue();
+        if (s != null) {
+            startAngle = Float.valueOf(s).floatValue();
+        }
         s = getParameter("rotAngle");
-        if (s != null) rotAngle = Float.valueOf(s).floatValue();
+        if (s != null) {
+            rotAngle = Float.valueOf(s).floatValue();
+        }
         rotAngle = rotAngle / 360 * 2 * 3.14159265358f;
         s = getParameter("border");
-        if (s != null) border = Integer.parseInt(s);
+        if (s != null) {
+            border = Integer.parseInt(s);
+        }
         s = getParameter("normalizescale");
-        if (s != null) normalizescaling = s.equalsIgnoreCase("true");
+        if (s != null) {
+            normalizescaling = s.equalsIgnoreCase("true");
+        }
         addMouseListener(this);
     }
 
+    @Override
     public void destroy() {
         removeMouseListener(this);
     }
 
+    @Override
     public void run() {
         Thread me = Thread.currentThread();
         boolean needsRepaint = false;
@@ -99,7 +118,10 @@ public class CLSFractal
             cls.generate();
             if (kicker == me && incrementalUpdates) {
                 repaint();
-                try {Thread.sleep(repaintDelay);} catch (InterruptedException e){}
+                try {
+                    Thread.sleep(repaintDelay);
+                } catch (InterruptedException ignored) {
+                }
             } else {
                 needsRepaint = true;
             }
@@ -112,22 +134,27 @@ public class CLSFractal
         }
     }
 
+    @Override
     public void start() {
         kicker = new Thread(this);
         kicker.start();
     }
 
+    @Override
     public void stop() {
         kicker = null;
     }
 
-      /*1.1 event handling */
+    /*1.1 event handling */
+    @Override
     public void mouseClicked(MouseEvent e) {
     }
 
+    @Override
     public void mousePressed(MouseEvent e) {
     }
 
+    @Override
     public void mouseReleased(MouseEvent e) {
         cls = new ContextLSystem(this);
         savedPath = null;
@@ -135,14 +162,16 @@ public class CLSFractal
         e.consume();
     }
 
+    @Override
     public void mouseEntered(MouseEvent e) {
     }
 
+    @Override
     public void mouseExited(MouseEvent e) {
     }
-
     String savedPath;
 
+    @Override
     public void paint(Graphics g) {
         String fractalPath = cls.getPath();
         if (fractalPath == null) {
@@ -155,13 +184,14 @@ public class CLSFractal
         }
 
         for (int i = 0; i < border; i++) {
-            g.draw3DRect(i, i, getSize().width - i * 2, getSize().height - i * 2,false);
+            g.draw3DRect(i, i, getSize().width - i * 2, getSize().height - i * 2,
+                    false);
         }
         render(g, fractalPath);
     }
 
     void render(Graphics g, String path) {
-        Stack turtleStack = new Stack();
+        Stack<CLSTurtle> turtleStack = new Stack<CLSTurtle>();
         CLSTurtle turtle;
 
         if (g == null) {
@@ -172,11 +202,13 @@ public class CLSFractal
             turtle = new CLSTurtle(startAngle, 0, 0, 0, 0, 1, 1);
         } else {
             float frwidth = Xmax - Xmin;
-            if (frwidth == 0)
+            if (frwidth == 0) {
                 frwidth = 1;
+            }
             float frheight = Ymax - Ymin;
-            if (frheight == 0)
+            if (frheight == 0) {
                 frheight = 1;
+            }
             float xscale = (getSize().width - border * 2 - 1) / frwidth;
             float yscale = (getSize().height - border * 2 - 1) / frheight;
             int xoff = border;
@@ -184,83 +216,101 @@ public class CLSFractal
             if (normalizescaling) {
                 if (xscale < yscale) {
                     yoff += ((getSize().height - border * 2)
-                             - ((Ymax - Ymin) * xscale)) / 2;
+                            - ((Ymax - Ymin) * xscale)) / 2;
                     yscale = xscale;
                 } else if (yscale < xscale) {
                     xoff += ((getSize().width - border * 2)
-                             - ((Xmax - Xmin) * yscale)) / 2;
+                            - ((Xmax - Xmin) * yscale)) / 2;
                     xscale = yscale;
                 }
             }
             turtle = new CLSTurtle(startAngle, 0 - Xmin, 0 - Ymin,
-                                   xoff, yoff, xscale, yscale);
+                    xoff, yoff, xscale, yscale);
         }
 
         for (int pos = 0; pos < path.length(); pos++) {
             switch (path.charAt(pos)) {
-            case '+':
-                turtle.rotate(rotAngle);
-                break;
-            case '-':
-                turtle.rotate(-rotAngle);
-                break;
-            case '[':
-                turtleStack.push(turtle);
-                turtle = new CLSTurtle(turtle);
-                break;
-            case ']':
-                turtle = (CLSTurtle) turtleStack.pop();
-                break;
-            case 'f':
-                turtle.jump();
-                break;
-            case 'F':
-                if (g == null) {
-                    includePt(turtle.X, turtle.Y);
+                case '+':
+                    turtle.rotate(rotAngle);
+                    break;
+                case '-':
+                    turtle.rotate(-rotAngle);
+                    break;
+                case '[':
+                    turtleStack.push(turtle);
+                    turtle = new CLSTurtle(turtle);
+                    break;
+                case ']':
+                    turtle = turtleStack.pop();
+                    break;
+                case 'f':
                     turtle.jump();
-                    includePt(turtle.X, turtle.Y);
-                } else {
-                    turtle.draw(g);
-                }
-                break;
-            default:
-                break;
+                    break;
+                case 'F':
+                    if (g == null) {
+                        includePt(turtle.X, turtle.Y);
+                        turtle.jump();
+                        includePt(turtle.X, turtle.Y);
+                    } else {
+                        turtle.draw(g);
+                    }
+                    break;
+                default:
+                    break;
             }
         }
     }
 
     void includePt(float x, float y) {
-        if (x < Xmin)
+        if (x < Xmin) {
             Xmin = x;
-        if (x > Xmax)
+        }
+        if (x > Xmax) {
             Xmax = x;
-        if (y < Ymin)
+        }
+        if (y < Ymin) {
             Ymin = y;
-        if (y > Ymax)
+        }
+        if (y > Ymax) {
             Ymax = y;
+        }
     }
 
-  public String getAppletInfo() {
-    return "Title: CLSFractal 1.1f, 27 Mar 1995 \nAuthor: Jim Graham \nA (not yet) Context Sensitive L-System production rule. \nThis class encapsulates a production rule for a Context Sensitive\n L-System \n(pred, succ, lContext, rContext).  The matches() method, however, does not \n(yet) verify the lContext and rContext parts of the rule.";
-  }
+    @Override
+    public String getAppletInfo() {
+        return "Title: CLSFractal 1.1f, 27 Mar 1995 \nAuthor: Jim Graham \nA "
+                + "(not yet) Context Sensitive L-System production rule. \n"
+                + "This class encapsulates a production rule for a Context "
+                + "Sensitive\n L-System \n(pred, succ, lContext, rContext)."
+                + "  The matches() method, however, does not \n(yet) verify "
+                + "the lContext and rContext parts of the rule.";
+    }
 
-  public String[][] getParameterInfo() {
-    String[][] info = {
-      {"level", "int", "Maximum number of recursions.  Default is 1."},
-      {"incremental","boolean","Whether or not to repaint between recursions.  Default is true."},
-      {"delay","integer","Sets delay between repaints.  Default is 50."},
-      {"startAngle","float","Sets the starting angle.  Default is 0."},
-      {"rotAngle","float","Sets the rotation angle.  Default is 45."},
-      {"border","integer","Width of border.  Default is 2."},
-      {"normalizeScale","boolean","Whether or not to normalize the scaling.  Default is true."},
-      {"pred","String","Initializes the rules for Context Sensitive L-Systems."},
-      {"succ","String","Initializes the rules for Context Sensitive L-Systems."},
-      {"lContext","String","Initializes the rules for Context Sensitive L-Systems."},
-      {"rContext","String","Initializes the rules for Context Sensitive L-Systems."}
-    };
-    return info;
-  }
+    @Override
+    public String[][] getParameterInfo() {
+        String[][] info = {
+            { "level", "int", "Maximum number of recursions.  Default is 1." },
+            { "incremental", "boolean", "Whether or not to repaint between "
+                + "recursions.  Default is true." },
+            { "delay", "integer", "Sets delay between repaints.  Default is 50." },
+            { "startAngle", "float", "Sets the starting angle.  Default is 0." },
+            { "rotAngle", "float", "Sets the rotation angle.  Default is 45." },
+            { "border", "integer", "Width of border.  Default is 2." },
+            { "normalizeScale", "boolean", "Whether or not to normalize "
+                + "the scaling.  Default is true." },
+            { "pred", "String",
+                "Initializes the rules for Context Sensitive L-Systems." },
+            { "succ", "String",
+                "Initializes the rules for Context Sensitive L-Systems." },
+            { "lContext", "String",
+                "Initializes the rules for Context Sensitive L-Systems." },
+            { "rContext", "String",
+                "Initializes the rules for Context Sensitive L-Systems." }
+        };
+        return info;
+    }
 }
+
 
 /**
  * A Logo turtle class designed to support Context sensitive L-Systems.
@@ -271,6 +321,7 @@ public class CLSFractal
  * @author      Jim Graham
  */
 class CLSTurtle {
+
     float angle;
     float X;
     float Y;
@@ -280,7 +331,7 @@ class CLSTurtle {
     int yoff;
 
     public CLSTurtle(float ang, float x, float y,
-                     int xorg, int yorg, float sx, float sy) {
+            int xorg, int yorg, float sx, float sy) {
         angle = ang;
         scaleX = sx;
         scaleY = sy;
@@ -313,11 +364,12 @@ class CLSTurtle {
         float x = X + (float) Math.cos(angle) * scaleX;
         float y = Y + (float) Math.sin(angle) * scaleY;
         g.drawLine((int) X + xoff, (int) Y + yoff,
-                   (int) x + xoff, (int) y + yoff);
+                (int) x + xoff, (int) y + yoff);
         X = x;
         Y = y;
     }
 }
+
 
 /**
  * A (non-)Context sensitive L-System class.
@@ -330,22 +382,23 @@ class CLSTurtle {
  * @author      Jim Graham
  */
 class ContextLSystem {
+
     String axiom;
-    Vector rules = new Vector();
+    List<CLSRule> rules = new ArrayList<CLSRule>();
     int level;
 
     public ContextLSystem(java.applet.Applet app) {
         axiom = app.getParameter("axiom");
         int num = 1;
         while (true) {
-            String pred = app.getParameter("pred"+num);
-            String succ = app.getParameter("succ"+num);
+            String pred = app.getParameter("pred" + num);
+            String succ = app.getParameter("succ" + num);
             if (pred == null || succ == null) {
                 break;
             }
-            rules.addElement(new CLSRule(pred, succ,
-                                         app.getParameter("lContext"+num),
-                                         app.getParameter("rContext"+num)));
+            rules.add(new CLSRule(pred, succ,
+                    app.getParameter("lContext" + num),
+                    app.getParameter("rContext" + num)));
             num++;
         }
         currentPath = new StringBuffer(axiom);
@@ -355,7 +408,6 @@ class ContextLSystem {
     public int getLevel() {
         return level;
     }
-
     StringBuffer currentPath;
 
     public synchronized String getPath() {
@@ -385,7 +437,7 @@ class ContextLSystem {
 
     public CLSRule findRule(int pos) {
         for (int i = 0; i < rules.size(); i++) {
-            CLSRule rule = (CLSRule) rules.elementAt(i);
+            CLSRule rule = rules.get(i);
             if (rule.matches(currentPath, pos)) {
                 return rule;
             }
@@ -393,6 +445,7 @@ class ContextLSystem {
         return null;
     }
 }
+
 
 /**
  * A Context sensitive L-System production rule.
@@ -405,6 +458,7 @@ class ContextLSystem {
  * @author      Jim Graham
  */
 class CLSRule {
+
     String pred;
     String succ;
     String lContext;

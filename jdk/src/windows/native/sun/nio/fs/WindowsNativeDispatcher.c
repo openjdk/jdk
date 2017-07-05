@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 
 #ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0500
+#define _WIN32_WINNT 0x0501
 #endif
 
 #include <stdio.h>
@@ -36,6 +36,7 @@
 #include <windows.h>
 #include <aclapi.h>
 #include <winioctl.h>
+#include <Sddl.h>
 
 #include "jni.h"
 #include "jni_util.h"
@@ -77,39 +78,19 @@ static jfieldID backupResult_context;
 
 
 /**
- * Win32 APIs not defined in Visual Studio 2003 header files
+ * Win32 APIs not available in Windows XP
  */
-
-typedef enum {
-  FindStreamInfoStandard
-} MY_STREAM_INFO_LEVELS;
-
-typedef struct _MY_WIN32_FIND_STREAM_DATA {
-  LARGE_INTEGER StreamSize;
-  WCHAR cStreamName[MAX_PATH + 36];
-} MY_WIN32_FIND_STREAM_DATA;
-
-typedef HANDLE (WINAPI* FindFirstStream_Proc)(LPCWSTR, MY_STREAM_INFO_LEVELS, LPVOID, DWORD);
+typedef HANDLE (WINAPI* FindFirstStream_Proc)(LPCWSTR, STREAM_INFO_LEVELS, LPVOID, DWORD);
 typedef BOOL (WINAPI* FindNextStream_Proc)(HANDLE, LPVOID);
 
 typedef BOOLEAN (WINAPI* CreateSymbolicLinkProc) (LPCWSTR, LPCWSTR, DWORD);
-typedef BOOL (WINAPI* CreateHardLinkProc) (LPCWSTR, LPCWSTR, LPSECURITY_ATTRIBUTES);
 typedef BOOL (WINAPI* GetFinalPathNameByHandleProc) (HANDLE, LPWSTR, DWORD, DWORD);
-
-typedef BOOL (WINAPI* ConvertSidToStringSidProc) (PSID, LPWSTR*);
-typedef BOOL (WINAPI* ConvertStringSidToSidProc) (LPWSTR, PSID*);
-typedef DWORD (WINAPI* GetLengthSidProc) (PSID);
 
 static FindFirstStream_Proc FindFirstStream_func;
 static FindNextStream_Proc FindNextStream_func;
 
 static CreateSymbolicLinkProc CreateSymbolicLink_func;
-static CreateHardLinkProc CreateHardLink_func;
 static GetFinalPathNameByHandleProc GetFinalPathNameByHandle_func;
-
-static ConvertSidToStringSidProc ConvertSidToStringSid_func;
-static ConvertStringSidToSidProc ConvertStringSidToSid_func;
-static GetLengthSidProc GetLengthSid_func;
 
 static void throwWindowsException(JNIEnv* env, DWORD lastError) {
     jobject x = JNU_NewObjectByName(env, "sun/nio/fs/WindowsException",
@@ -190,33 +171,23 @@ Java_sun_nio_fs_WindowsNativeDispatcher_initIDs(JNIEnv* env, jclass this)
     backupResult_bytesTransferred = (*env)->GetFieldID(env, clazz, "bytesTransferred", "I");
     backupResult_context = (*env)->GetFieldID(env, clazz, "context", "J");
 
-
-    h = LoadLibrary("kernel32");
-    if (h != INVALID_HANDLE_VALUE) {
+    // get handle to kernel32
+    if (GetModuleHandleExW((GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
+                            GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT),
+                           (LPCWSTR)&CreateFileW, &h) != 0)
+    {
+        // requires Windows Server 2003 or newer
         FindFirstStream_func =
             (FindFirstStream_Proc)GetProcAddress(h, "FindFirstStreamW");
         FindNextStream_func =
             (FindNextStream_Proc)GetProcAddress(h, "FindNextStreamW");
+
+        // requires Windows Vista or newer
         CreateSymbolicLink_func =
             (CreateSymbolicLinkProc)GetProcAddress(h, "CreateSymbolicLinkW");
-        CreateHardLink_func =
-            (CreateHardLinkProc)GetProcAddress(h, "CreateHardLinkW");
         GetFinalPathNameByHandle_func =
             (GetFinalPathNameByHandleProc)GetProcAddress(h, "GetFinalPathNameByHandleW");
-        FreeLibrary(h);
     }
-
-    h = LoadLibrary("advapi32");
-    if (h != INVALID_HANDLE_VALUE) {
-        ConvertSidToStringSid_func =
-            (ConvertSidToStringSidProc)GetProcAddress(h, "ConvertSidToStringSidW");
-        ConvertStringSidToSid_func =
-            (ConvertStringSidToSidProc)GetProcAddress(h, "ConvertStringSidToSidW");
-        GetLengthSid_func =
-            (GetLengthSidProc)GetProcAddress(h, "GetLengthSid");
-        FreeLibrary(h);
-    }
-
 }
 
 JNIEXPORT jstring JNICALL
@@ -413,7 +384,7 @@ JNIEXPORT void JNICALL
 Java_sun_nio_fs_WindowsNativeDispatcher_FindFirstStream0(JNIEnv* env, jclass this,
     jlong address, jobject obj)
 {
-    MY_WIN32_FIND_STREAM_DATA data;
+    WIN32_FIND_STREAM_DATA data;
     LPCWSTR lpFileName = jlong_to_ptr(address);
     HANDLE handle;
 
@@ -443,7 +414,7 @@ JNIEXPORT jstring JNICALL
 Java_sun_nio_fs_WindowsNativeDispatcher_FindNextStream(JNIEnv* env, jclass this,
     jlong handle)
 {
-    MY_WIN32_FIND_STREAM_DATA data;
+    WIN32_FIND_STREAM_DATA data;
     HANDLE h = (HANDLE)jlong_to_ptr(handle);
 
     if (FindNextStream_func == NULL) {
@@ -909,12 +880,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_GetLengthSid(JNIEnv* env,
     jclass this, jlong address)
 {
     PSID sid = jlong_to_ptr(address);
-
-    if (GetLengthSid_func == NULL) {
-        JNU_ThrowInternalError(env, "Should not get here");
-        return 0;
-    }
-    return (jint)(*GetLengthSid_func)(sid);
+    return (jint)GetLengthSid(sid);
 }
 
 
@@ -924,13 +890,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_ConvertSidToStringSid(JNIEnv* env,
 {
     PSID sid = jlong_to_ptr(address);
     LPWSTR string;
-
-    if (ConvertSidToStringSid_func == NULL) {
-        JNU_ThrowInternalError(env, "Should not get here");
-        return NULL;
-    }
-
-    if ((*ConvertSidToStringSid_func)(sid, &string) == 0) {
+    if (ConvertSidToStringSidW(sid, &string) == 0) {
         throwWindowsException(env, GetLastError());
         return NULL;
     } else {
@@ -947,15 +907,8 @@ Java_sun_nio_fs_WindowsNativeDispatcher_ConvertStringSidToSid0(JNIEnv* env,
 {
     LPWSTR lpStringSid = jlong_to_ptr(address);
     PSID pSid;
-
-    if (ConvertStringSidToSid_func == NULL) {
-        JNU_ThrowInternalError(env, "Should not get here");
-        return (jlong)0;
-    }
-
-    if ((*ConvertStringSidToSid_func)(lpStringSid, &pSid) == 0)
+    if (ConvertStringSidToSidW(lpStringSid, &pSid) == 0)
         throwWindowsException(env, GetLastError());
-
     return ptr_to_jlong(pSid);
 }
 
@@ -1137,11 +1090,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_CreateHardLink0(JNIEnv* env,
     LPCWSTR newFile = jlong_to_ptr(newFileAddress);
     LPCWSTR existingFile = jlong_to_ptr(existingFileAddress);
 
-    if (CreateHardLink_func == NULL) {
-        JNU_ThrowInternalError(env, "Should not get here");
-        return;
-    }
-    if ((*CreateHardLink_func)(newFile, existingFile, NULL) == 0)
+    if (CreateHardLinkW(newFile, existingFile, NULL) == 0)
         throwWindowsException(env, GetLastError());
 }
 

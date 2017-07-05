@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,17 +29,36 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
-import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.text.*;
-import javax.swing.tree.*;
-import javax.swing.undo.*;
-import java.awt.*;
-import java.beans.*;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.util.*;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTree;
+import javax.swing.SwingConstants;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.Document;
+import javax.swing.text.Element;
+import javax.swing.text.JTextComponent;
+import javax.swing.text.StyleConstants;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
+
 
 /**
  * Displays a tree showing all the elements in a text Document. Selecting
@@ -49,16 +68,20 @@ import java.util.*;
  *
  * @author Scott Violet
  */
-public class ElementTreePanel extends JPanel implements CaretListener, DocumentListener, PropertyChangeListener, TreeSelectionListener {
-    /** Tree showing the documents element structure. */
-    protected JTree             tree;
-    /** Text component showing elemenst for. */
-    protected JTextComponent    editor;
-    /** Model for the tree. */
-    protected ElementTreeModel  treeModel;
-    /** Set to true when updatin the selection. */
-    protected boolean           updatingSelection;
+@SuppressWarnings("serial")
+public class ElementTreePanel extends JPanel implements CaretListener,
+        DocumentListener, PropertyChangeListener, TreeSelectionListener {
 
+    /** Tree showing the documents element structure. */
+    protected JTree tree;
+    /** Text component showing elemenst for. */
+    protected JTextComponent editor;
+    /** Model for the tree. */
+    protected ElementTreeModel treeModel;
+    /** Set to true when updatin the selection. */
+    protected boolean updatingSelection;
+
+    @SuppressWarnings("LeakingThisInConstructor")
     public ElementTreePanel(JTextComponent editor) {
         this.editor = editor;
 
@@ -67,25 +90,28 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
         // Create the tree.
         treeModel = new ElementTreeModel(document);
         tree = new JTree(treeModel) {
+
+            @Override
             public String convertValueToText(Object value, boolean selected,
-                                             boolean expanded, boolean leaf,
-                                             int row, boolean hasFocus) {
+                    boolean expanded, boolean leaf,
+                    int row, boolean hasFocus) {
                 // Should only happen for the root
-                if(!(value instanceof Element))
+                if (!(value instanceof Element)) {
                     return value.toString();
+                }
 
-                Element        e = (Element)value;
-                AttributeSet   as = e.getAttributes().copyAttributes();
-                String         asString;
+                Element e = (Element) value;
+                AttributeSet as = e.getAttributes().copyAttributes();
+                String asString;
 
-                if(as != null) {
-                    StringBuffer       retBuffer = new StringBuffer("[");
-                    Enumeration        names = as.getAttributeNames();
+                if (as != null) {
+                    StringBuilder retBuffer = new StringBuilder("[");
+                    Enumeration names = as.getAttributeNames();
 
-                    while(names.hasMoreElements()) {
-                        Object        nextName = names.nextElement();
+                    while (names.hasMoreElements()) {
+                        Object nextName = names.nextElement();
 
-                        if(nextName != StyleConstants.ResolveAttribute) {
+                        if (nextName != StyleConstants.ResolveAttribute) {
                             retBuffer.append(" ");
                             retBuffer.append(nextName);
                             retBuffer.append("=");
@@ -94,16 +120,16 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
                     }
                     retBuffer.append(" ]");
                     asString = retBuffer.toString();
-                }
-                else
+                } else {
                     asString = "[ ]";
+                }
 
-                if(e.isLeaf())
-                    return e.getName() + " [" + e.getStartOffset() +
-                        ", " + e.getEndOffset() +"] Attributes: " + asString;
-                return e.getName() + " [" + e.getStartOffset() +
-                    ", " + e.getEndOffset() + "] Attributes: " +
-                        asString;
+                if (e.isLeaf()) {
+                    return e.getName() + " [" + e.getStartOffset() + ", " + e.
+                            getEndOffset() + "] Attributes: " + asString;
+                }
+                return e.getName() + " [" + e.getStartOffset() + ", " + e.
+                        getEndOffset() + "] Attributes: " + asString;
             }
         };
         tree.addTreeSelectionListener(this);
@@ -117,10 +143,13 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
         // This is a temporary workaround, increase the needed size by 15,
         // hoping that will be enough.
         tree.setCellRenderer(new DefaultTreeCellRenderer() {
+
+            @Override
             public Dimension getPreferredSize() {
                 Dimension retValue = super.getPreferredSize();
-                if(retValue != null)
+                if (retValue != null) {
                     retValue.width += 15;
+                }
                 return retValue;
             }
         });
@@ -139,7 +168,8 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
         add(new JScrollPane(tree), BorderLayout.CENTER);
 
         // Add a label above tree to describe what is being shown
-        JLabel     label = new JLabel("Elements that make up the current document", SwingConstants.CENTER);
+        JLabel label = new JLabel("Elements that make up the current document",
+                SwingConstants.CENTER);
 
         label.setFont(new Font("Dialog", Font.BOLD, 14));
         add(label, BorderLayout.NORTH);
@@ -157,7 +187,7 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
         }
 
         if (this.editor != null) {
-            Document      oldDoc = this.editor.getDocument();
+            Document oldDoc = this.editor.getDocument();
 
             oldDoc.removeDocumentListener(this);
             this.editor.removePropertyChangeListener(this);
@@ -167,9 +197,8 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
         if (editor == null) {
             treeModel = null;
             tree.setModel(null);
-        }
-        else {
-            Document   newDoc = editor.getDocument();
+        } else {
+            Document newDoc = editor.getDocument();
 
             newDoc.addDocumentListener(this);
             editor.addPropertyChangeListener(this);
@@ -180,17 +209,15 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
     }
 
     // PropertyChangeListener
-
     /**
      * Invoked when a property changes. We are only interested in when the
      * Document changes to reset the DocumentListener.
      */
     public void propertyChange(PropertyChangeEvent e) {
-        if (e.getSource() == getEditor() &&
-            e.getPropertyName().equals("document")) {
-            JTextComponent      editor = getEditor();
-            Document            oldDoc = (Document)e.getOldValue();
-            Document            newDoc = (Document)e.getNewValue();
+        if (e.getSource() == getEditor() && e.getPropertyName().equals(
+                "document")) {
+            Document oldDoc = (Document) e.getOldValue();
+            Document newDoc = (Document) e.getNewValue();
 
             // Reset the DocumentListener
             oldDoc.removeDocumentListener(this);
@@ -202,9 +229,7 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
         }
     }
 
-
     // DocumentListener
-
     /**
      * Gives notification that there was an insert into the document.  The
      * given range bounds the freshly inserted region.
@@ -236,53 +261,50 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
     }
 
     // CaretListener
-
     /**
      * Messaged when the selection in the editor has changed. Will update
      * the selection in the tree.
      */
     public void caretUpdate(CaretEvent e) {
-        if(!updatingSelection) {
-            JTextComponent     editor = getEditor();
-            int                selBegin = Math.min(e.getDot(), e.getMark());
-            int                end = Math.max(e.getDot(), e.getMark());
-            Vector             paths = new Vector();
-            TreeModel          model = getTreeModel();
-            Object             root = model.getRoot();
-            int                rootCount = model.getChildCount(root);
+        if (!updatingSelection) {
+            int selBegin = Math.min(e.getDot(), e.getMark());
+            int end = Math.max(e.getDot(), e.getMark());
+            List<TreePath> paths = new ArrayList<TreePath>();
+            TreeModel model = getTreeModel();
+            Object root = model.getRoot();
+            int rootCount = model.getChildCount(root);
 
             // Build an array of all the paths to all the character elements
             // in the selection.
-            for(int counter = 0; counter < rootCount; counter++) {
-                int            start = selBegin;
+            for (int counter = 0; counter < rootCount; counter++) {
+                int start = selBegin;
 
-                while(start <= end) {
-                    TreePath    path = getPathForIndex(start, root,
-                                       (Element)model.getChild(root, counter));
-                    Element     charElement = (Element)path.
-                                               getLastPathComponent();
+                while (start <= end) {
+                    TreePath path = getPathForIndex(start, root,
+                            (Element) model.getChild(root, counter));
+                    Element charElement = (Element) path.getLastPathComponent();
 
-                    paths.addElement(path);
-                    if(start >= charElement.getEndOffset())
+                    paths.add(path);
+                    if (start >= charElement.getEndOffset()) {
                         start++;
-                    else
+                    } else {
                         start = charElement.getEndOffset();
+                    }
                 }
             }
 
             // If a path was found, select it (them).
-            int               numPaths = paths.size();
+            int numPaths = paths.size();
 
-            if(numPaths > 0) {
-                TreePath[]    pathArray = new TreePath[numPaths];
+            if (numPaths > 0) {
+                TreePath[] pathArray = new TreePath[numPaths];
 
-                paths.copyInto(pathArray);
+                paths.toArray(pathArray);
                 updatingSelection = true;
                 try {
                     getTree().setSelectionPaths(pathArray);
                     getTree().scrollPathToVisible(pathArray[0]);
-                }
-                finally {
+                } finally {
                     updatingSelection = false;
                 }
             }
@@ -290,27 +312,24 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
     }
 
     // TreeSelectionListener
-
     /**
-      * Called whenever the value of the selection changes.
-      * @param e the event that characterizes the change.
-      */
+     * Called whenever the value of the selection changes.
+     * @param e the event that characterizes the change.
+     */
     public void valueChanged(TreeSelectionEvent e) {
-        JTree       tree = getTree();
 
-        if(!updatingSelection && tree.getSelectionCount() == 1) {
-            TreePath      selPath = tree.getSelectionPath();
-            Object        lastPathComponent = selPath.getLastPathComponent();
+        if (!updatingSelection && tree.getSelectionCount() == 1) {
+            TreePath selPath = tree.getSelectionPath();
+            Object lastPathComponent = selPath.getLastPathComponent();
 
-            if(!(lastPathComponent instanceof DefaultMutableTreeNode)) {
-                Element       selElement = (Element)lastPathComponent;
+            if (!(lastPathComponent instanceof DefaultMutableTreeNode)) {
+                Element selElement = (Element) lastPathComponent;
 
                 updatingSelection = true;
                 try {
                     getEditor().select(selElement.getStartOffset(),
-                                       selElement.getEndOffset());
-                }
-                finally {
+                            selElement.getEndOffset());
+                } finally {
                     updatingSelection = false;
                 }
             }
@@ -318,7 +337,6 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
     }
 
     // Local methods
-
     /**
      * @return tree showing elements.
      */
@@ -347,15 +365,14 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
     protected void updateTree(DocumentEvent event) {
         updatingSelection = true;
         try {
-            TreeModel        model = getTreeModel();
-            Object           root = model.getRoot();
+            TreeModel model = getTreeModel();
+            Object root = model.getRoot();
 
-            for(int counter = model.getChildCount(root) - 1; counter >= 0;
-                counter--) {
-                updateTree(event, (Element)model.getChild(root, counter));
+            for (int counter = model.getChildCount(root) - 1; counter >= 0;
+                    counter--) {
+                updateTree(event, (Element) model.getChild(root, counter));
             }
-        }
-        finally {
+        } finally {
             updatingSelection = false;
         }
     }
@@ -372,53 +389,50 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
         DocumentEvent.ElementChange ec = event.getChange(element);
 
         if (ec != null) {
-            Element[]       removed = ec.getChildrenRemoved();
-            Element[]       added = ec.getChildrenAdded();
-            int             startIndex = ec.getIndex();
+            Element[] removed = ec.getChildrenRemoved();
+            Element[] added = ec.getChildrenAdded();
+            int startIndex = ec.getIndex();
 
             // Check for removed.
-            if(removed != null && removed.length > 0) {
-                int[]            indices = new int[removed.length];
+            if (removed != null && removed.length > 0) {
+                int[] indices = new int[removed.length];
 
-                for(int counter = 0; counter < removed.length; counter++) {
+                for (int counter = 0; counter < removed.length; counter++) {
                     indices[counter] = startIndex + counter;
                 }
-                getTreeModel().nodesWereRemoved((TreeNode)element, indices,
-                                                removed);
+                getTreeModel().nodesWereRemoved((TreeNode) element, indices,
+                        removed);
             }
             // check for added
-            if(added != null && added.length > 0) {
-                int[]            indices = new int[added.length];
+            if (added != null && added.length > 0) {
+                int[] indices = new int[added.length];
 
-                for(int counter = 0; counter < added.length; counter++) {
+                for (int counter = 0; counter < added.length; counter++) {
                     indices[counter] = startIndex + counter;
                 }
-                getTreeModel().nodesWereInserted((TreeNode)element, indices);
+                getTreeModel().nodesWereInserted((TreeNode) element, indices);
             }
         }
-        if(!element.isLeaf()) {
-            int        startIndex = element.getElementIndex
-                                       (event.getOffset());
-            int        elementCount = element.getElementCount();
-            int        endIndex = Math.min(elementCount - 1,
-                                           element.getElementIndex
-                                     (event.getOffset() + event.getLength()));
+        if (!element.isLeaf()) {
+            int startIndex = element.getElementIndex(event.getOffset());
+            int elementCount = element.getElementCount();
+            int endIndex = Math.min(elementCount - 1,
+                    element.getElementIndex(event.getOffset()
+                    + event.getLength()));
 
-            if(startIndex > 0 && startIndex < elementCount &&
-               element.getElement(startIndex).getStartOffset() ==
-               event.getOffset()) {
+            if (startIndex > 0 && startIndex < elementCount && element.
+                    getElement(startIndex).getStartOffset() == event.getOffset()) {
                 // Force checking the previous element.
                 startIndex--;
             }
-            if(startIndex != -1 && endIndex != -1) {
-                for(int counter = startIndex; counter <= endIndex; counter++) {
+            if (startIndex != -1 && endIndex != -1) {
+                for (int counter = startIndex; counter <= endIndex; counter++) {
                     updateTree(event, element.getElement(counter));
                 }
             }
-        }
-        else {
+        } else {
             // Element is a leaf, assume it changed
-            getTreeModel().nodeChanged((TreeNode)element);
+            getTreeModel().nodeChanged((TreeNode) element);
         }
     }
 
@@ -426,14 +440,14 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
      * Returns a TreePath to the element at <code>position</code>.
      */
     protected TreePath getPathForIndex(int position, Object root,
-                                       Element rootElement) {
-        TreePath         path = new TreePath(root);
-        Element          child = rootElement.getElement
-                                    (rootElement.getElementIndex(position));
+            Element rootElement) {
+        TreePath path = new TreePath(root);
+        Element child = rootElement.getElement(rootElement.getElementIndex(
+                position));
 
         path = path.pathByAddingChild(rootElement);
         path = path.pathByAddingChild(child);
-        while(!child.isLeaf()) {
+        while (!child.isLeaf()) {
             child = child.getElement(child.getElementIndex(position));
             path = path.pathByAddingChild(child);
         }
@@ -456,7 +470,8 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
      * methods have been subclassed, primarily to special case the root.
      */
     public static class ElementTreeModel extends DefaultTreeModel {
-        protected Element[]         rootElements;
+
+        protected Element[] rootElements;
 
         public ElementTreeModel(Document document) {
             super(new DefaultMutableTreeNode("root"), false);
@@ -474,12 +489,13 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
          * @param   parent  a node in the tree, obtained from this data source
          * @return  the child of <I>parent</I> at index <I>index</I>
          */
+        @Override
         public Object getChild(Object parent, int index) {
-            if(parent == root)
+            if (parent == root) {
                 return rootElements[index];
+            }
             return super.getChild(parent, index);
         }
-
 
         /**
          * Returns the number of children of <I>parent</I>.  Returns 0
@@ -490,12 +506,13 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
          * @param   parent  a node in the tree, obtained from this data source
          * @return  the number of children of the node <I>parent</I>
          */
+        @Override
         public int getChildCount(Object parent) {
-            if(parent == root)
+            if (parent == root) {
                 return rootElements.length;
+            }
             return super.getChildCount(parent);
         }
-
 
         /**
          * Returns true if <I>node</I> is a leaf.  It is possible for
@@ -507,21 +524,25 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
          * @param   node    a node in the tree, obtained from this data source
          * @return  true if <I>node</I> is a leaf
          */
+        @Override
         public boolean isLeaf(Object node) {
-            if(node == root)
+            if (node == root) {
                 return false;
+            }
             return super.isLeaf(node);
         }
 
         /**
          * Returns the index of child in parent.
          */
+        @Override
         public int getIndexOfChild(Object parent, Object child) {
-            if(parent == root) {
-                for(int counter = rootElements.length - 1; counter >= 0;
-                    counter--) {
-                    if(rootElements[counter] == child)
+            if (parent == root) {
+                for (int counter = rootElements.length - 1; counter >= 0;
+                        counter--) {
+                    if (rootElements[counter] == child) {
                         return counter;
+                    }
                 }
                 return -1;
             }
@@ -532,18 +553,19 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
          * Invoke this method after you've changed how node is to be
          * represented in the tree.
          */
+        @Override
         public void nodeChanged(TreeNode node) {
-            if(listenerList != null && node != null) {
-                TreeNode         parent = node.getParent();
+            if (listenerList != null && node != null) {
+                TreeNode parent = node.getParent();
 
-                if(parent == null && node != root) {
+                if (parent == null && node != root) {
                     parent = root;
                 }
-                if(parent != null) {
-                    int        anIndex = getIndexOfChild(parent, node);
+                if (parent != null) {
+                    int anIndex = getIndexOfChild(parent, node);
 
-                    if(anIndex != -1) {
-                        int[]        cIndexs = new int[1];
+                    if (anIndex != -1) {
+                        int[] cIndexs = new int[1];
 
                         cIndexs[0] = anIndex;
                         nodesChanged(parent, cIndexs);
@@ -555,26 +577,28 @@ public class ElementTreePanel extends JPanel implements CaretListener, DocumentL
         /**
          * Returns the path to a particluar node. This is recursive.
          */
+        @Override
         protected TreeNode[] getPathToRoot(TreeNode aNode, int depth) {
-            TreeNode[]              retNodes;
+            TreeNode[] retNodes;
 
             /* Check for null, in case someone passed in a null node, or
-               they passed in an element that isn't rooted at root. */
-            if(aNode == null) {
-                if(depth == 0)
+            they passed in an element that isn't rooted at root. */
+            if (aNode == null) {
+                if (depth == 0) {
                     return null;
-                else
+                } else {
                     retNodes = new TreeNode[depth];
-            }
-            else {
+                }
+            } else {
                 depth++;
-                if(aNode == root)
+                if (aNode == root) {
                     retNodes = new TreeNode[depth];
-                else {
+                } else {
                     TreeNode parent = aNode.getParent();
 
-                    if(parent == null)
+                    if (parent == null) {
                         parent = root;
+                    }
                     retNodes = getPathToRoot(parent, depth);
                 }
                 retNodes[retNodes.length - depth] = aNode;

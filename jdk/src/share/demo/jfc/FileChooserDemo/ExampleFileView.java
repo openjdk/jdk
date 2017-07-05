@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,14 +29,13 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- */
 
 import javax.swing.*;
 import javax.swing.filechooser.*;
-
 import java.io.File;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
+
 
 /**
  * A convenience implementation of the FileView interface that
@@ -61,15 +60,19 @@ import java.util.Hashtable;
  * @author Jeff Dinkins
  */
 public class ExampleFileView extends FileView {
-    private final Hashtable<String, Icon> icons = new Hashtable<String, Icon>();
-    private final Hashtable<File, String> fileDescriptions = new Hashtable<File, String>();
-    private final Hashtable<String, String> typeDescriptions = new Hashtable<String, String>();
+
+    private final Map<String, Icon> icons = new HashMap<String, Icon>();
+    private final Map<File, String> fileDescriptions =
+            new HashMap<File, String>();
+    private final Map<String, String> typeDescriptions =
+            new HashMap<String, String>();
 
     /**
      * The name of the file.  Do nothing special here. Let
      * the system file view handle this.
      * @see FileView#getName
      */
+    @Override
     public String getName(File f) {
         return null;
     }
@@ -86,6 +89,7 @@ public class ExampleFileView extends FileView {
      *
      * @see FileView#getDescription
      */
+    @Override
     public String getDescription(File f) {
         return fileDescriptions.get(f);
     }
@@ -112,6 +116,7 @@ public class ExampleFileView extends FileView {
      *
      * @see FileView#getTypeDescription
      */
+    @Override
     public String getTypeDescription(File f) {
         return typeDescriptions.get(getExtension(f));
     }
@@ -122,12 +127,12 @@ public class ExampleFileView extends FileView {
      */
     private String getExtension(File f) {
         String name = f.getName();
-        if(name != null) {
+        if (name != null) {
             int extensionIndex = name.lastIndexOf('.');
-            if(extensionIndex < 0) {
+            if (extensionIndex < 0) {
                 return null;
             }
-            return name.substring(extensionIndex+1).toLowerCase();
+            return name.substring(extensionIndex + 1).toLowerCase();
         }
         return null;
     }
@@ -147,10 +152,11 @@ public class ExampleFileView extends FileView {
      *
      * @see FileView#getIcon
      */
+    @Override
     public Icon getIcon(File f) {
         Icon icon = null;
         String extension = getExtension(f);
-        if(extension != null) {
+        if (extension != null) {
             icon = icons.get(extension);
         }
         return icon;
@@ -168,11 +174,11 @@ public class ExampleFileView extends FileView {
      *
      * @see FileView#isTraversable
      */
+    @Override
     public Boolean isTraversable(File f) {
         // if (some_reason) {
         //    return Boolean.FALSE;
         // }
         return null;    // Use default from FileSystemView
     }
-
 }
