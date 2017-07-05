@@ -64,27 +64,71 @@ import java.awt.Image;
 public abstract class AbstractMultiResolutionImage extends java.awt.Image
         implements MultiResolutionImage {
 
+    /**
+     * This method simply delegates to the same method on the base image and
+     * it is equivalent to: {@code getBaseImage().getWidth(observer)}.
+     *
+     * @return the width of the base image, or -1 if the width is not yet known
+     * @see #getBaseImage()
+     *
+     * @since 9
+     */
     @Override
     public int getWidth(ImageObserver observer) {
         return getBaseImage().getWidth(observer);
     }
 
+    /**
+     * This method simply delegates to the same method on the base image and
+     * it is equivalent to: {@code getBaseImage().getHeight(observer)}.
+     *
+     * @return the height of the base image, or -1 if the height is not yet known
+     * @see #getBaseImage()
+     *
+     * @since 9
+     */
     @Override
     public int getHeight(ImageObserver observer) {
         return getBaseImage().getHeight(observer);
     }
 
+    /**
+     * This method simply delegates to the same method on the base image and
+     * it is equivalent to: {@code getBaseImage().getSource()}.
+     *
+     * @return the image producer that produces the pixels for the base image
+     * @see #getBaseImage()
+     *
+     * @since 9
+     */
     @Override
     public ImageProducer getSource() {
         return getBaseImage().getSource();
     }
 
+    /**
+     * As per the contract of the base {@code Image#getGraphics()} method,
+     * this implementation will always throw {@code UnsupportedOperationException}
+     * since only off-screen images can return a {@code Graphics} object.
+     *
+     * @return throws {@code UnsupportedOperationException}
+     * @throws UnsupportedOperationException this method is not supported
+     */
     @Override
     public Graphics getGraphics() {
         throw new UnsupportedOperationException("getGraphics() not supported"
                 + " on Multi-Resolution Images");
     }
 
+    /**
+     * This method simply delegates to the same method on the base image and
+     * it is equivalent to: {@code getBaseImage().getProperty(name, observer)}.
+     *
+     * @return the value of the named property in the base image
+     * @see #getBaseImage()
+     *
+     * @since 9
+     */
     @Override
     public Object getProperty(String name, ImageObserver observer) {
         return getBaseImage().getProperty(name, observer);

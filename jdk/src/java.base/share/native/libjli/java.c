@@ -573,6 +573,17 @@ IsModuleOption(const char* name) {
            JLI_StrCmp(name, "--patch-module") == 0;
 }
 
+static jboolean
+IsLongFormModuleOption(const char* name) {
+    return JLI_StrCCmp(name, "--module-path=") == 0 ||
+           JLI_StrCCmp(name, "--upgrade-module-path=") == 0 ||
+           JLI_StrCCmp(name, "--add-modules=") == 0 ||
+           JLI_StrCCmp(name, "--limit-modules=") == 0 ||
+           JLI_StrCCmp(name, "--add-exports=") == 0 ||
+           JLI_StrCCmp(name, "--add-reads=") == 0 ||
+           JLI_StrCCmp(name, "--patch-module=") == 0;
+}
+
 /*
  * Test if the given name has a white space option.
  */
@@ -1236,7 +1247,7 @@ ParseArguments(int *pargc, char ***pargv,
         char *option = NULL;
         char *value = NULL;
         int kind = GetOpt(&argc, &argv, &option, &value);
-        jboolean has_arg = value != NULL;
+        jboolean has_arg = value != NULL && JLI_StrLen(value) > 0;
 
 /*
  * Option to set main entry point
@@ -1285,19 +1296,13 @@ ParseArguments(int *pargc, char ***pargv,
 /*
  * Error missing argument
  */
-        } else if (!has_arg && IsWhiteSpaceOption(arg)) {
-            if (JLI_StrCmp(arg, "--module-path") == 0 ||
-                JLI_StrCmp(arg, "-p") == 0 ||
-                JLI_StrCmp(arg, "--upgrade-module-path") == 0) {
-                REPORT_ERROR (has_arg, ARG_ERROR4, arg);
-            } else if (JLI_StrCmp(arg, "--add-modules") == 0 ||
-                       JLI_StrCmp(arg, "--limit-modules") == 0 ||
-                       JLI_StrCmp(arg, "--add-exports") == 0 ||
-                       JLI_StrCmp(arg, "--add-opens") == 0 ||
-                       JLI_StrCmp(arg, "--add-reads") == 0 ||
-                       JLI_StrCmp(arg, "--patch-module") == 0) {
-                REPORT_ERROR (has_arg, ARG_ERROR6, arg);
-            }
+        } else if (!has_arg && (JLI_StrCmp(arg, "--module-path") == 0 ||
+                                JLI_StrCmp(arg, "-p") == 0 ||
+                                JLI_StrCmp(arg, "--upgrade-module-path") == 0)) {
+            REPORT_ERROR (has_arg, ARG_ERROR4, arg);
+
+        } else if (!has_arg && (IsModuleOption(arg) || IsLongFormModuleOption(arg))) {
+            REPORT_ERROR (has_arg, ARG_ERROR6, arg);
 /*
  * The following cases will cause the argument parsing to stop
  */

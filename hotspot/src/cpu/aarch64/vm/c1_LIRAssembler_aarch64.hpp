@@ -68,14 +68,19 @@ friend class ArrayCopyStub;
 
   void deoptimize_trap(CodeEmitInfo *info);
 
+  enum {
+    _call_stub_size = 12 * NativeInstruction::instruction_size,
+    _call_aot_stub_size = 0,
+    _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175),
+    _deopt_handler_size = 7 * NativeInstruction::instruction_size
+  };
+
+  void arithmetic_idiv(LIR_Op3* op, bool is_irem);
+
 public:
 
   void store_parameter(Register r, int offset_from_esp_in_words);
   void store_parameter(jint c,     int offset_from_esp_in_words);
   void store_parameter(jobject c,  int offset_from_esp_in_words);
-
-enum { call_stub_size = 12 * NativeInstruction::instruction_size,
-       exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175),
-       deopt_handler_size = 7 * NativeInstruction::instruction_size };
 
 #endif // CPU_AARCH64_VM_C1_LIRASSEMBLER_AARCH64_HPP

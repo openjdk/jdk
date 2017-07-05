@@ -46,7 +46,7 @@ public class GcNewTest {
         JstatGcNewResults measurement1 = jstatGcTool.measure();
         measurement1.assertConsistency();
 
-        GcProvoker gcProvoker = GcProvoker.createGcProvoker();
+        GcProvoker gcProvoker = new GcProvoker();
 
         // Provoke GC and run the tool again
         gcProvoker.provokeGc();

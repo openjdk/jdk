@@ -400,6 +400,7 @@ void nmethod::init_defaults() {
   _lock_count                 = 0;
   _stack_traversal_mark       = 0;
   _unload_reported            = false; // jvmti state
+  _is_far_code                = false; // nmethods are located in CodeCache
 
 #ifdef ASSERT
   _oops_are_stale             = false;
@@ -2054,6 +2055,7 @@ nmethodLocker::nmethodLocker(address pc) {
 // should pass zombie_ok == true.
 void nmethodLocker::lock_nmethod(CompiledMethod* cm, bool zombie_ok) {
   if (cm == NULL)  return;
+  if (cm->is_aot()) return;  // FIXME: Revisit once _lock_count is added to aot_method
   nmethod* nm = cm->as_nmethod();
   Atomic::inc(&nm->_lock_count);
   assert(zombie_ok || !nm->is_zombie(), "cannot lock a zombie method");
@@ -2061,6 +2063,7 @@ void nmethodLocker::lock_nmethod(CompiledMethod* cm, bool zombie_ok) {
 
 void nmethodLocker::unlock_nmethod(CompiledMethod* cm) {
   if (cm == NULL)  return;
+  if (cm->is_aot()) return;  // FIXME: Revisit once _lock_count is added to aot_method
   nmethod* nm = cm->as_nmethod();
   Atomic::dec(&nm->_lock_count);
   assert(nm->_lock_count >= 0, "unmatched nmethod lock/unlock");
@@ -2170,11 +2173,11 @@ void nmethod::verify_scopes() {
         verify_interrupt_point(iter.addr());
         break;
       case relocInfo::opt_virtual_call_type:
-        stub = iter.opt_virtual_call_reloc()->static_stub();
+        stub = iter.opt_virtual_call_reloc()->static_stub(false);
         verify_interrupt_point(iter.addr());
         break;
       case relocInfo::static_call_type:
-        stub = iter.static_call_reloc()->static_stub();
+        stub = iter.static_call_reloc()->static_stub(false);
         //verify_interrupt_point(iter.addr());
         break;
       case relocInfo::runtime_call_type:
@@ -2724,6 +2727,114 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
 
 }
 
+class DirectNativeCallWrapper: public NativeCallWrapper {
+private:
+  NativeCall* _call;
+
+public:
+  DirectNativeCallWrapper(NativeCall* call) : _call(call) {}
+
+  virtual address destination() const { return _call->destination(); }
+  virtual address instruction_address() const { return _call->instruction_address(); }
+  virtual address next_instruction_address() const { return _call->next_instruction_address(); }
+  virtual address return_address() const { return _call->return_address(); }
+
+  virtual address get_resolve_call_stub(bool is_optimized) const {
+    if (is_optimized) {
+      return SharedRuntime::get_resolve_opt_virtual_call_stub();
+    }
+    return SharedRuntime::get_resolve_virtual_call_stub();
+  }
+
+  virtual void set_destination_mt_safe(address dest) {
+#if INCLUDE_AOT
+    if (UseAOT) {
+      CodeBlob* callee = CodeCache::find_blob(dest);
+      CompiledMethod* cm = callee->as_compiled_method_or_null();
+      if (cm != NULL && cm->is_far_code()) {
+        // Temporary fix, see JDK-8143106
+        CompiledDirectStaticCall* csc = CompiledDirectStaticCall::at(instruction_address());
+        csc->set_to_far(methodHandle(cm->method()), dest);
+        return;
+      }
+    }
+#endif
+    _call->set_destination_mt_safe(dest);
+  }
+
+  virtual void set_to_interpreted(const methodHandle& method, CompiledICInfo& info) {
+    CompiledDirectStaticCall* csc = CompiledDirectStaticCall::at(instruction_address());
+#if INCLUDE_AOT
+    if (info.to_aot()) {
+      csc->set_to_far(method, info.entry());
+    } else
+#endif
+    {
+      csc->set_to_interpreted(method, info.entry());
+    }
+  }
+
+  virtual void verify() const {
+    // make sure code pattern is actually a call imm32 instruction
+    _call->verify();
+    if (os::is_MP()) {
+      _call->verify_alignment();
+    }
+  }
+
+  virtual void verify_resolve_call(address dest) const {
+    CodeBlob* db = CodeCache::find_blob_unsafe(dest);
+    assert(!db->is_adapter_blob(), "must use stub!");
+  }
+
+  virtual bool is_call_to_interpreted(address dest) const {
+    CodeBlob* cb = CodeCache::find_blob(_call->instruction_address());
+    return cb->contains(dest);
+  }
+
+  virtual bool is_safe_for_patching() const { return false; }
+
+  virtual NativeInstruction* get_load_instruction(virtual_call_Relocation* r) const {
+    return nativeMovConstReg_at(r->cached_value());
+  }
+
+  virtual void *get_data(NativeInstruction* instruction) const {
+    return (void*)((NativeMovConstReg*) instruction)->data();
+  }
+
+  virtual void set_data(NativeInstruction* instruction, intptr_t data) {
+    ((NativeMovConstReg*) instruction)->set_data(data);
+  }
+};
+
+NativeCallWrapper* nmethod::call_wrapper_at(address call) const {
+  return new DirectNativeCallWrapper((NativeCall*) call);
+}
+
+NativeCallWrapper* nmethod::call_wrapper_before(address return_pc) const {
+  return new DirectNativeCallWrapper(nativeCall_before(return_pc));
+}
+
+address nmethod::call_instruction_address(address pc) const {
+  if (NativeCall::is_call_before(pc)) {
+    NativeCall *ncall = nativeCall_before(pc);
+    return ncall->instruction_address();
+  }
+  return NULL;
+}
+
+CompiledStaticCall* nmethod::compiledStaticCall_at(Relocation* call_site) const {
+  return CompiledDirectStaticCall::at(call_site);
+}
+
+CompiledStaticCall* nmethod::compiledStaticCall_at(address call_site) const {
+  return CompiledDirectStaticCall::at(call_site);
+}
+
+CompiledStaticCall* nmethod::compiledStaticCall_before(address return_addr) const {
+  return CompiledDirectStaticCall::before(return_addr);
+}
+
 #ifndef PRODUCT
 
 void nmethod::print_value_on(outputStream* st) const {
@@ -2743,7 +2854,7 @@ void nmethod::print_calls(outputStream* st) {
     }
     case relocInfo::static_call_type:
       st->print_cr("Static call at " INTPTR_FORMAT, p2i(iter.reloc()->addr()));
-      compiledStaticCall_at(iter.reloc())->print();
+      CompiledDirectStaticCall::at(iter.reloc())->print();
       break;
     }
   }

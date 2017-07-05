@@ -60,6 +60,7 @@ class SharedRuntime: AllStatic {
   static RuntimeStub*        _resolve_opt_virtual_call_blob;
   static RuntimeStub*        _resolve_virtual_call_blob;
   static RuntimeStub*        _resolve_static_call_blob;
+  static address             _resolve_static_call_entry;
 
   static DeoptimizationBlob* _deopt_blob;
 
@@ -676,6 +677,9 @@ class AdapterHandlerEntry : public BasicHashtableEntry<mtCode> {
   void print_adapter_on(outputStream* st) const;
 };
 
+// This class is used only with DumpSharedSpaces==true. It holds extra information
+// that's used only during CDS dump time.
+// For details, see comments around Method::link_method()
 class CDSAdapterHandlerEntry: public AdapterHandlerEntry {
   address               _c2i_entry_trampoline;   // allocated from shared spaces "MC" region
   AdapterHandlerEntry** _adapter_trampoline;     // allocated from shared spaces "MD" region

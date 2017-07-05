@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,9 +226,10 @@ public class DcmdMBeanPermissionsTest {
         sm.grantPermission(new RuntimePermission("createClassLoader"));
         sm.grantPermission(new ReflectPermission("suppressAccessChecks"));
         sm.grantPermission(new java.util.logging.LoggingPermission("control", ""));
-        sm.grantPermission(new java.lang.RuntimePermission("exitVM.97"));
+        sm.grantPermission(new java.lang.RuntimePermission("exitVM.*"));
         sm.grantPermission(new java.lang.RuntimePermission("modifyThreadGroup"));
         sm.grantPermission(new java.lang.RuntimePermission("modifyThread"));
+        sm.grantPermission(new java.security.SecurityPermission("getProperty.jdk.jar.disabledAlgorithms"));
         for(MBeanOperationInfo opInfo : info.getOperations()) {
             Permission opPermission = new MBeanPermission(info.getClassName(),
                     opInfo.getName(),

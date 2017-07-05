@@ -101,10 +101,12 @@ final class DeletedRangeArrayFilter extends ArrayFilter {
     }
 
     @Override
-    public void shiftLeft(final int by) {
+    public ArrayData shiftLeft(final int by) {
         super.shiftLeft(by);
         lo = Math.max(0, lo - by);
         hi = Math.max(-1, hi - by);
+
+        return isEmpty() ? getUnderlying() : this;
     }
 
     @Override

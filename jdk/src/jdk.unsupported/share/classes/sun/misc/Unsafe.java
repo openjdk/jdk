@@ -27,8 +27,10 @@ package sun.misc;
 
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.misc.VM;
+import jdk.internal.ref.Cleaner;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
+import sun.nio.ch.DirectBuffer;
 
 import java.lang.reflect.Field;
 import java.security.ProtectionDomain;
@@ -1227,5 +1229,29 @@ public final class Unsafe {
     @ForceInline
     public void fullFence() {
         theInternalUnsafe.fullFence();
+    }
+
+    /**
+     * Invokes the given direct byte buffer's cleaner, if any.
+     *
+     * @param directBuffer a direct byte buffer
+     * @throws NullPointerException if {@code directBuffer} is null
+     * @throws IllegalArgumentException if {@code directBuffer} is non-direct,
+     * or is a {@link java.nio.Buffer#slice slice}, or is a
+     * {@link java.nio.Buffer#duplicate duplicate}
+     * @since 9
+     */
+    public void invokeCleaner(java.nio.ByteBuffer directBuffer) {
+        if (!directBuffer.isDirect())
+            throw new IllegalArgumentException("buffer is non-direct");
+
+        DirectBuffer db = (DirectBuffer)directBuffer;
+        if (db.attachment() != null)
+            throw new IllegalArgumentException("duplicate or slice");
+
+        Cleaner cleaner = db.cleaner();
+        if (cleaner != null) {
+            cleaner.clean();
+        }
     }
 }

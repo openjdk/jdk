@@ -42,7 +42,7 @@
 // buffered entries.
 
 class BufferingOopClosure: public OopClosure {
-  friend class TestBufferingOopClosure;
+  friend class BufferingOopClosureTest;
 protected:
   static const size_t BufferLength = 1024;
 

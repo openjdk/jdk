@@ -27,7 +27,7 @@
  * @summary Make sure initSign/initVerify() check RSA key lengths
  * @author Yu-Ching Valerie Peng
  * @library ..
- * @modules jdk.crypto.pkcs11
+ * @modules jdk.crypto.token
  * @run main/othervm TestRSAKeyLength
  * @run main/othervm TestRSAKeyLength sm
  */

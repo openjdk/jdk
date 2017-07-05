@@ -53,7 +53,9 @@ import jdk.tools.jlink.internal.ImagePluginStack.ImageProvider;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.builder.DefaultImageBuilder;
 import jdk.tools.jlink.plugin.Plugin;
-import jdk.internal.misc.SharedSecrets;
+import jdk.internal.module.Checks;
+import jdk.internal.module.ModulePath;
+import jdk.internal.module.ModuleResolution;
 
 /**
  * Implementation for the jlink tool.
@@ -108,6 +110,27 @@ public class JlinkTask {
             Path path = Paths.get(arg);
             task.options.output = path;
         }, "--output"),
+        new Option<JlinkTask>(true, (task, opt, arg) -> {
+            String[] values = arg.split("=");
+            // check values
+            if (values.length != 2 || values[0].isEmpty() || values[1].isEmpty()) {
+                throw taskHelper.newBadArgs("err.launcher.value.format", arg);
+            } else {
+                String commandName = values[0];
+                String moduleAndMain = values[1];
+                int idx = moduleAndMain.indexOf("/");
+                if (idx != -1) {
+                    if (moduleAndMain.substring(0, idx).isEmpty()) {
+                        throw taskHelper.newBadArgs("err.launcher.module.name.empty", arg);
+                    }
+
+                    if (moduleAndMain.substring(idx + 1).isEmpty()) {
+                        throw taskHelper.newBadArgs("err.launcher.main.class.empty", arg);
+                    }
+                }
+                task.options.launchers.put(commandName, moduleAndMain);
+            }
+        }, "--launcher"),
         new Option<JlinkTask>(true, (task, opt, arg) -> {
             if ("little".equals(arg)) {
                 task.options.endian = ByteOrder.LITTLE_ENDIAN;
@@ -168,6 +191,7 @@ public class JlinkTask {
         final Set<String> limitMods = new HashSet<>();
         final Set<String> addMods = new HashSet<>();
         Path output;
+        final Map<String, String> launchers = new HashMap<>();
         Path packagedModulesPath;
         ByteOrder endian = ByteOrder.nativeOrder();
         boolean ignoreSigning = false;
@@ -260,7 +284,8 @@ public class JlinkTask {
                                     config.getModules(),
                                     config.getByteOrder(),
                                     null,
-                                    IGNORE_SIGNING_DEFAULT);
+                                    IGNORE_SIGNING_DEFAULT,
+                                    null);
 
         // Then create the Plugin Stack
         ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(plugins);
@@ -284,7 +309,7 @@ public class JlinkTask {
     }
 
     private void postProcessOnly(Path existingImage) throws Exception {
-        PluginsConfiguration config = taskHelper.getPluginsConfig(null);
+        PluginsConfiguration config = taskHelper.getPluginsConfig(null, null);
         ExecutableImage img = DefaultImageBuilder.getExecutableImage(existingImage);
         if (img == null) {
             throw taskHelper.newBadArgs("err.existing.image.invalid");
@@ -328,11 +353,12 @@ public class JlinkTask {
                                                           roots,
                                                           options.endian,
                                                           options.packagedModulesPath,
-                                                          options.ignoreSigning);
+                                                          options.ignoreSigning,
+                                                          log);
 
         // Then create the Plugin Stack
         ImagePluginStack stack = ImagePluginConfiguration.
-                parseConfiguration(taskHelper.getPluginsConfig(options.output));
+                parseConfiguration(taskHelper.getPluginsConfig(options.output, options.launchers));
 
         //Ask the stack to proceed
         stack.operate(imageProvider);
@@ -344,9 +370,7 @@ public class JlinkTask {
      */
     private ModuleFinder modulePathFinder() {
         Path[] entries = options.modulePath.toArray(new Path[0]);
-        ModuleFinder finder = SharedSecrets.getJavaLangModuleAccess()
-            .newModulePath(Runtime.version(), true, entries);
-
+        ModuleFinder finder = new ModulePath(Runtime.version(), true, entries);
         if (!options.limitMods.isEmpty()) {
             finder = limitFinder(finder, options.limitMods, Collections.emptySet());
         }
@@ -364,8 +388,7 @@ public class JlinkTask {
                                                Set<String> roots)
     {
         Path[] entries = paths.toArray(new Path[0]);
-        ModuleFinder finder = SharedSecrets.getJavaLangModuleAccess()
-            .newModulePath(Runtime.version(), true, entries);
+        ModuleFinder finder = new ModulePath(Runtime.version(), true, entries);
 
         // if limitmods is specified then limit the universe
         if (!limitMods.isEmpty()) {
@@ -386,7 +409,8 @@ public class JlinkTask {
                                                      Set<String> roots,
                                                      ByteOrder order,
                                                      Path retainModulesPath,
-                                                     boolean ignoreSigning)
+                                                     boolean ignoreSigning,
+                                                     PrintWriter log)
             throws IOException
     {
         if (roots.isEmpty()) {
@@ -397,6 +421,27 @@ public class JlinkTask {
                 .resolveRequires(finder,
                                  ModuleFinder.of(),
                                  roots);
+
+        // emit warning for modules that end with a digit
+        cf.modules().stream()
+            .map(ResolvedModule::name)
+            .filter(mn -> !Checks.hasLegalModuleNameLastCharacter(mn))
+            .forEach(mn -> System.err.println("WARNING: Module name \""
+                                              + mn + "\" may soon be illegal"));
+
+        // emit a warning for any incubating modules in the configuration
+        if (log != null) {
+            String im = cf.modules()
+                          .stream()
+                          .map(ResolvedModule::reference)
+                          .filter(ModuleResolution::hasIncubatingWarning)
+                          .map(ModuleReference::descriptor)
+                          .map(ModuleDescriptor::name)
+                          .collect(Collectors.joining(", "));
+
+            if (!"".equals(im))
+                log.println("WARNING: Using incubator modules: " + im);
+        }
 
         Map<String, Path> mods = cf.modules().stream()
             .collect(Collectors.toMap(ResolvedModule::name, JlinkTask::toPathLocation));

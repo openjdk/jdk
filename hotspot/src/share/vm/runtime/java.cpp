@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "aot/aotLoader.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -279,6 +280,10 @@ void print_statistics() {
 #endif
 #endif
 #endif
+
+  if (PrintAOTStatistics) {
+    AOTLoader::print_statistics();
+  }
 
   if (PrintNMethodStatistics) {
     nmethod::print_statistics();

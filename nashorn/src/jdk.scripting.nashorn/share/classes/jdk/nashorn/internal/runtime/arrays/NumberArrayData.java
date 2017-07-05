@@ -121,8 +121,14 @@ final class NumberArrayData extends ContinuousArrayData implements NumericElemen
     }
 
     @Override
-    public void shiftLeft(final int by) {
-        System.arraycopy(array, by, array, 0, array.length - by);
+    public ArrayData shiftLeft(final int by) {
+        if (by >= length()) {
+            shrink(0);
+        } else {
+            System.arraycopy(array, by, array, 0, array.length - by);
+        }
+        setLength(Math.max(0, length() - by));
+        return this;
     }
 
     @Override

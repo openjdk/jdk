@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,8 +139,8 @@ public class Symbol extends VMObject {
       time-invariant order Since Symbol* are in C_HEAP, their
       relative order in memory never changes, so use address
       comparison for speed. */
-  public int fastCompare(Symbol other) {
-    return (int) addr.minus(other.addr);
+  public long fastCompare(Symbol other) {
+    return addr.minus(other.addr);
   }
 
   private static String readModifiedUTF8(byte[] buf) throws IOException {

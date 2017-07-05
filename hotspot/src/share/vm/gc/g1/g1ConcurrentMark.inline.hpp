@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
+#include "gc/g1/g1ConcurrentMarkObjArrayProcessor.inline.hpp"
 #include "gc/g1/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 
@@ -117,11 +118,11 @@ inline void G1CMTask::scan_object(oop obj) { process_grey_object<true>(obj); }
 
 inline void G1CMTask::push(oop obj) {
   HeapWord* objAddr = (HeapWord*) obj;
-  assert(_g1h->is_in_g1_reserved(objAddr), "invariant");
-  assert(!_g1h->is_on_master_free_list(
+  assert(G1CMObjArrayProcessor::is_array_slice(obj) || _g1h->is_in_g1_reserved(objAddr), "invariant");
+  assert(G1CMObjArrayProcessor::is_array_slice(obj) || !_g1h->is_on_master_free_list(
               _g1h->heap_region_containing((HeapWord*) objAddr)), "invariant");
-  assert(!_g1h->is_obj_ill(obj), "invariant");
-  assert(_nextMarkBitMap->isMarked(objAddr), "invariant");
+  assert(G1CMObjArrayProcessor::is_array_slice(obj) || !_g1h->is_obj_ill(obj), "invariant");
+  assert(G1CMObjArrayProcessor::is_array_slice(obj) || _nextMarkBitMap->isMarked(objAddr), "invariant");
 
   if (!_task_queue->push(obj)) {
     // The local task queue looks full. We need to push some entries
@@ -169,15 +170,24 @@ inline bool G1CMTask::is_below_finger(oop obj, HeapWord* global_finger) const {
 template<bool scan>
 inline void G1CMTask::process_grey_object(oop obj) {
   assert(scan || obj->is_typeArray(), "Skipping scan of grey non-typeArray");
-  assert(_nextMarkBitMap->isMarked((HeapWord*) obj), "invariant");
-
-  size_t obj_size = obj->size();
-  _words_scanned += obj_size;
+  assert(G1CMObjArrayProcessor::is_array_slice(obj) || _nextMarkBitMap->isMarked((HeapWord*) obj),
+         "Any stolen object should be a slice or marked");
 
   if (scan) {
-    obj->oop_iterate(_cm_oop_closure);
+    if (G1CMObjArrayProcessor::is_array_slice(obj)) {
+      _words_scanned += _objArray_processor.process_slice(obj);
+    } else if (G1CMObjArrayProcessor::should_be_sliced(obj)) {
+      _words_scanned += _objArray_processor.process_obj(obj);
+    } else {
+      _words_scanned += obj->oop_iterate_size(_cm_oop_closure);;
+    }
   }
   check_limits();
+}
+
+inline size_t G1CMTask::scan_objArray(objArrayOop obj, MemRegion mr) {
+  obj->oop_iterate(_cm_oop_closure, mr);
+  return mr.word_size();
 }
 
 inline void G1CMTask::make_reference_grey(oop obj) {

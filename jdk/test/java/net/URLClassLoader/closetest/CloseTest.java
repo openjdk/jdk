@@ -21,10 +21,11 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 4167874
- * @modules jdk.httpserver
+ * @modules java.logging
+ *          jdk.httpserver
  * @library ../../../../com/sun/net/httpserver
  * @library /lib/testlibrary
  * @build FileServerHandler jdk.testlibrary.FileUtils
@@ -33,10 +34,13 @@
  * @summary URL-downloaded jar files can consume all available file descriptors
  */
 
-import java.io.*;
-import java.net.*;
-import java.lang.reflect.*;
-import com.sun.net.httpserver.*;
+import java.io.File;
+import java.lang.reflect.Method;
+import java.net.URLClassLoader;
+import java.net.InetSocketAddress;
+import java.net.URL;
+import com.sun.net.httpserver.HttpContext;
+import com.sun.net.httpserver.HttpServer;
 
 public class CloseTest extends Common {
 
@@ -130,7 +134,7 @@ public class CloseTest extends Common {
         // load tests
         loadClass ("com.foo.TestClass1", loader, false);
         loadClass ("com.foo.TestClass", loader, true);
-        loadClass ("java.sql.Array", loader, true);
+        loadClass ("java.util.ArrayList", loader, true);
 
         // now check we can delete the path
         rm_minus_rf (new File(name));

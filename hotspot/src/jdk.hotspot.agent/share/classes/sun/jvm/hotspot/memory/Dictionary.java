@@ -102,4 +102,17 @@ public class Dictionary extends TwoOopHashtable {
     }
     return null;
   }
+
+  public boolean contains(Klass c, Oop classLoader) {
+    long hash = computeHash(c.getName(), classLoader);
+    int index = hashToIndex(hash);
+
+    for (DictionaryEntry entry = (DictionaryEntry) bucket(index); entry != null;
+                                    entry = (DictionaryEntry) entry.next()) {
+      if (entry.literalValue().equals(c.getAddress())) {
+        return true;
+      }
+    }
+    return false;
+  }
 }

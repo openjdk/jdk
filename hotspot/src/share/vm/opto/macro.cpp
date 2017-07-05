@@ -1952,7 +1952,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       i_o = pf_phi_abio;
    } else if( UseTLAB && AllocatePrefetchStyle == 3 ) {
       // Insert a prefetch instruction for each allocation.
-      // This code is used for SPARC with BIS.
+      // This code is used to generate 1 prefetch instruction per cache line.
 
       // Generate several prefetch instructions.
       uint lines = (length != NULL) ? AllocatePrefetchLines : AllocateInstancePrefetchLines;
@@ -1965,11 +1965,8 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       transform_later(cache_adr);
       cache_adr = new CastP2XNode(needgc_false, cache_adr);
       transform_later(cache_adr);
-      // For BIS instructions to be emitted, the address must be aligned at cache line size.
-      // (The VM sets AllocatePrefetchStepSize to the cache line size, unless a value is
-      // specified at the command line.) If the address is not aligned at cache line size
-      // boundary, a standard store instruction is triggered (instead of the BIS). For the
-      // latter, 8-byte alignment is necessary.
+      // Address is aligned to execute prefetch to the beginning of cache line size
+      // (it is important when BIS instruction is used on SPARC as prefetch).
       Node* mask = _igvn.MakeConX(~(intptr_t)(step_size-1));
       cache_adr = new AndXNode(cache_adr, mask);
       transform_later(cache_adr);
