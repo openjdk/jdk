@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.InputStream;
 import java.net.Socket;
+import javax.net.ssl.SSLSocket;
 
 import javax.naming.CommunicationException;
 import javax.naming.ServiceUnavailableException;
@@ -359,6 +360,19 @@ public final class Connection implements Runnable {
                 // connected socket
                 socket = new Socket(host, port);
             }
+        }
+
+        // For LDAP connect timeouts on LDAP over SSL connections must treat
+        // the SSL handshake following socket connection as part of the timeout.
+        // So explicitly set a socket read timeout, trigger the SSL handshake,
+        // then reset the timeout.
+        if (connectTimeout > 0 && socket instanceof SSLSocket) {
+            SSLSocket sslSocket = (SSLSocket) socket;
+            int socketTimeout = sslSocket.getSoTimeout();
+
+            sslSocket.setSoTimeout(connectTimeout); // reuse full timeout value
+            sslSocket.startHandshake();
+            sslSocket.setSoTimeout(socketTimeout);
         }
 
         return socket;

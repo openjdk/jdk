@@ -37,26 +37,49 @@ import java.util.spi.TimeZoneNameProvider;
 import sun.util.LocaleServiceProviderPool;
 
 public class Bug6989440 {
-    public static void main(String[] args) {
-        TestThread t1 = new TestThread(LocaleNameProvider.class);
-        TestThread t2 = new TestThread(TimeZoneNameProvider.class);
-        TestThread t3 = new TestThread(DateFormatProvider.class);
+    static volatile boolean failed;  // false
+    static final int THREADS = 50;
 
-        t1.start();
-        t2.start();
-        t3.start();
+    public static void main(String[] args) throws Exception {
+        Thread[] threads = new Thread[THREADS];
+        for (int i=0; i<threads.length; i++)
+            threads[i] = new TestThread();
+        for (int i=0; i<threads.length; i++)
+            threads[i].start();
+        for (int i=0; i<threads.length; i++)
+            threads[i].join();
+
+        if (failed)
+            throw new RuntimeException("Failed: check output");
     }
 
     static class TestThread extends Thread {
         private Class<? extends LocaleServiceProvider> cls;
+        private static int count;
 
         public TestThread(Class<? extends LocaleServiceProvider> providerClass) {
             cls = providerClass;
         }
 
+        public TestThread() {
+            int which = count++ % 3;
+            switch (which) {
+                case 0 : cls = LocaleNameProvider.class; break;
+                case 1 : cls = TimeZoneNameProvider.class; break;
+                case 2 : cls = DateFormatProvider.class; break;
+                default : throw new AssertionError("Should not reach here");
+            }
+        }
+
         public void run() {
-            LocaleServiceProviderPool pool = LocaleServiceProviderPool.getPool(cls);
-            pool.getAvailableLocales();
+            try {
+                LocaleServiceProviderPool pool = LocaleServiceProviderPool.getPool(cls);
+                pool.getAvailableLocales();
+            } catch (Exception e) {
+                System.out.println(e);
+                e.printStackTrace();
+                failed = true;
+            }
         }
     }
 }

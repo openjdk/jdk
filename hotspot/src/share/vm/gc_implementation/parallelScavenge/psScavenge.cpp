@@ -350,10 +350,9 @@ bool PSScavenge::invoke_no_policy() {
     }
     save_to_space_top_before_gc();
 
-    NOT_PRODUCT(reference_processor()->verify_no_references_recorded());
     COMPILER2_PRESENT(DerivedPointerTable::clear());
 
-    reference_processor()->enable_discovery();
+    reference_processor()->enable_discovery(true /*verify_disabled*/, true /*verify_no_refs*/);
     reference_processor()->setup_policy(false);
 
     // We track how much was promoted to the next generation for

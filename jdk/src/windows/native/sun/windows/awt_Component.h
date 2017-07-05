@@ -119,6 +119,7 @@ public:
     static jmethodID getLocationOnScreenMID;
     static jmethodID replaceSurfaceDataMID;
     static jmethodID replaceSurfaceDataLaterMID;
+    static jmethodID disposeLaterMID;
 
     static const UINT WmAwtIsComponent;
     static jint * masks; //InputEvent mask array
@@ -490,6 +491,7 @@ public:
     virtual MsgRouting WmCreate() {return mrDoDefault;}
     virtual MsgRouting WmClose() {return mrDoDefault;}
     virtual MsgRouting WmDestroy();
+    virtual MsgRouting WmNcDestroy();
 
     virtual MsgRouting WmActivate(UINT nState, BOOL fMinimized, HWND opposite)
     {
@@ -711,6 +713,10 @@ public:
         return m_MessagesProcessing == 0;
     }
 
+    BOOL IsDestroyPaused() const {
+        return m_bPauseDestroy;
+    }
+
 protected:
     static AwtComponent* GetComponentImpl(HWND hWnd);
 
@@ -752,6 +758,7 @@ private:
     UINT m_mouseButtonClickAllowed;
 
     BOOL m_bSubclassed;
+    BOOL m_bPauseDestroy;
 
     COLORREF m_colorForeground;
     COLORREF m_colorBackground;
