@@ -70,13 +70,13 @@ public class XKeyboardFocusManagerPeer extends KeyboardFocusManagerPeerImpl {
 
         synchronized(this) {
             if (currentFocusedWindow != null) {
-                from = (XWindowPeer)AWTAccessor.getComponentAccessor().getPeer(currentFocusedWindow);
+                from = AWTAccessor.getComponentAccessor().getPeer(currentFocusedWindow);
             }
 
             currentFocusedWindow = win;
 
             if (currentFocusedWindow != null) {
-                to = (XWindowPeer)AWTAccessor.getComponentAccessor().getPeer(currentFocusedWindow);
+                to = AWTAccessor.getComponentAccessor().getPeer(currentFocusedWindow);
             }
         }
 

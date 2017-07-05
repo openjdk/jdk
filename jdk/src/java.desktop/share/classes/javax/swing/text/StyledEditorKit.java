@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,6 +288,8 @@ public class StyledEditorKit extends DefaultEditorKit {
      * are in <code>set</code>.<p>
      * This is called anytime the caret moves over a different location.
      *
+     * @param element the element
+     * @param set the attributes
      */
     protected void createInputAttributes(Element element,
                                          MutableAttributeSet set) {

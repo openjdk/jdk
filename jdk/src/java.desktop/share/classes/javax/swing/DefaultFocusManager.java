@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,10 +57,19 @@ public class DefaultFocusManager extends FocusManager {
     private final LayoutComparator comparator =
         new LayoutComparator();
 
+    /**
+     * Constructs a {@code DefaultFocusManager}.
+     */
     public DefaultFocusManager() {
         setDefaultFocusTraversalPolicy(gluePolicy);
     }
 
+    /**
+     * Returns the component after.
+     * @return the component after
+     * @param aContainer a container
+     * @param aComponent a component
+     */
     public Component getComponentAfter(Container aContainer,
                                        Component aComponent)
     {
@@ -83,6 +92,12 @@ public class DefaultFocusManager extends FocusManager {
         return null;
     }
 
+    /**
+     * Returns the component before.
+     * @return the component before
+     * @param aContainer a container
+     * @param aComponent a component
+     */
     public Component getComponentBefore(Container aContainer,
                                         Component aComponent)
     {
@@ -105,6 +120,11 @@ public class DefaultFocusManager extends FocusManager {
         return null;
     }
 
+    /**
+     * Returns the first component.
+     * @return the first component
+     * @param aContainer a container
+     */
     public Component getFirstComponent(Container aContainer) {
         Container root = (aContainer.isFocusCycleRoot())
             ? aContainer
@@ -125,6 +145,11 @@ public class DefaultFocusManager extends FocusManager {
         return null;
     }
 
+    /**
+     * Returns the last component.
+     * @return the last component
+     * @param aContainer a container
+     */
     public Component getLastComponent(Container aContainer) {
         Container root = (aContainer.isFocusCycleRoot())
             ? aContainer
@@ -145,6 +170,12 @@ public class DefaultFocusManager extends FocusManager {
         return null;
     }
 
+    /**
+     * Compares the components by their focus traversal cycle order.
+     * @param a the first component
+     * @param b the second component
+     * @return a comparison of the components by their focus traversal cycle order
+     */
     public boolean compareTabOrder(Component a, Component b) {
         return (comparator.compare(a, b) < 0);
     }

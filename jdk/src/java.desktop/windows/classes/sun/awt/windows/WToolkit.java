@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.awt.TrayIcon;
 import java.beans.PropertyChangeListener;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+
+import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
 import sun.awt.AWTAutoShutdown;
 import sun.awt.AWTPermissions;
@@ -301,9 +303,10 @@ public final class WToolkit extends SunToolkit implements Runnable {
     public void run() {
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             Thread.currentThread().setContextClassLoader(null);
+            Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
             return null;
         });
-        Thread.currentThread().setPriority(Thread.NORM_PRIORITY + 1);
+
         boolean startPump = init();
 
         if (startPump) {
@@ -438,9 +441,8 @@ public final class WToolkit extends SunToolkit implements Runnable {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void disableBackgroundErase(Canvas canvas) {
-        WCanvasPeer peer = (WCanvasPeer)canvas.getPeer();
+        WCanvasPeer peer = AWTAccessor.getComponentAccessor().getPeer(canvas);
         if (peer == null) {
             throw new IllegalStateException("Canvas must have a valid peer");
         }
@@ -1100,18 +1102,18 @@ public final class WToolkit extends SunToolkit implements Runnable {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void grab(Window w) {
-        if (w.getPeer() != null) {
-            ((WWindowPeer)w.getPeer()).grab();
+        final Object peer = AWTAccessor.getComponentAccessor().getPeer(w);
+        if (peer != null) {
+            ((WWindowPeer) peer).grab();
         }
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public void ungrab(Window w) {
-        if (w.getPeer() != null) {
-           ((WWindowPeer)w.getPeer()).ungrab();
+        final Object peer = AWTAccessor.getComponentAccessor().getPeer(w);
+        if (peer != null) {
+            ((WWindowPeer) peer).ungrab();
         }
     }
 

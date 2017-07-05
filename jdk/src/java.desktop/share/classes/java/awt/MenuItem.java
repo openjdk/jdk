@@ -233,7 +233,7 @@ public class MenuItem extends MenuComponent implements Accessible {
     public void addNotify() {
         synchronized (getTreeLock()) {
             if (peer == null)
-                peer = Toolkit.getDefaultToolkit().createMenuItem(this);
+                peer = getComponentFactory().createMenuItem(this);
         }
     }
 

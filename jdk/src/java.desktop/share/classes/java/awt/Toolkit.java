@@ -25,36 +25,37 @@
 
 package java.awt;
 
-import java.beans.PropertyChangeEvent;
+import java.awt.datatransfer.Clipboard;
+import java.awt.dnd.DragGestureListener;
+import java.awt.dnd.DragGestureRecognizer;
+import java.awt.dnd.DragSource;
 import java.awt.event.*;
-import java.awt.peer.*;
 import java.awt.im.InputMethodHighlight;
+import java.awt.image.ColorModel;
 import java.awt.image.ImageObserver;
 import java.awt.image.ImageProducer;
-import java.awt.image.ColorModel;
-import java.awt.datatransfer.Clipboard;
-import java.awt.dnd.DragSource;
-import java.awt.dnd.DragGestureRecognizer;
-import java.awt.dnd.DragGestureEvent;
-import java.awt.dnd.DragGestureListener;
-import java.awt.dnd.InvalidDnDOperationException;
-import java.awt.dnd.peer.DragSourceContextPeer;
-import java.net.URL;
-import java.io.File;
-import java.io.FileInputStream;
-
-import java.util.*;
+import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import sun.awt.AppContext;
+import java.io.File;
+import java.io.FileInputStream;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.EventListener;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.MissingResourceException;
+import java.util.Properties;
+import java.util.ResourceBundle;
+import java.util.StringTokenizer;
+import java.util.WeakHashMap;
 
-import sun.awt.HeadlessToolkit;
-import sun.awt.NullComponentPeer;
-import sun.awt.PeerEvent;
-import sun.awt.SunToolkit;
 import sun.awt.AWTAccessor;
 import sun.awt.AWTPermissions;
-
+import sun.awt.AppContext;
+import sun.awt.HeadlessToolkit;
+import sun.awt.PeerEvent;
+import sun.awt.SunToolkit;
 import sun.util.CoreResourceBundleControl;
 
 /**
@@ -111,341 +112,6 @@ import sun.util.CoreResourceBundleControl;
  * @since       1.0
  */
 public abstract class Toolkit {
-
-    /**
-     * Creates this toolkit's implementation of the <code>Desktop</code>
-     * using the specified peer interface.
-     * @param     target the desktop to be implemented
-     * @return    this toolkit's implementation of the <code>Desktop</code>
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.Desktop
-     * @see       java.awt.peer.DesktopPeer
-     * @since 1.6
-     */
-    protected abstract DesktopPeer createDesktopPeer(Desktop target)
-      throws HeadlessException;
-
-
-    /**
-     * Creates this toolkit's implementation of <code>Button</code> using
-     * the specified peer interface.
-     * @param     target the button to be implemented.
-     * @return    this toolkit's implementation of <code>Button</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.Button
-     * @see       java.awt.peer.ButtonPeer
-     */
-    protected abstract ButtonPeer createButton(Button target)
-        throws HeadlessException;
-
-    /**
-     * Creates this toolkit's implementation of <code>TextField</code> using
-     * the specified peer interface.
-     * @param     target the text field to be implemented.
-     * @return    this toolkit's implementation of <code>TextField</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.TextField
-     * @see       java.awt.peer.TextFieldPeer
-     */
-    protected abstract TextFieldPeer createTextField(TextField target)
-        throws HeadlessException;
-
-    /**
-     * Creates this toolkit's implementation of <code>Label</code> using
-     * the specified peer interface.
-     * @param     target the label to be implemented.
-     * @return    this toolkit's implementation of <code>Label</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.Label
-     * @see       java.awt.peer.LabelPeer
-     */
-    protected abstract LabelPeer createLabel(Label target)
-        throws HeadlessException;
-
-    /**
-     * Creates this toolkit's implementation of <code>List</code> using
-     * the specified peer interface.
-     * @param     target the list to be implemented.
-     * @return    this toolkit's implementation of <code>List</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.List
-     * @see       java.awt.peer.ListPeer
-     */
-    protected abstract ListPeer createList(java.awt.List target)
-        throws HeadlessException;
-
-    /**
-     * Creates this toolkit's implementation of <code>Checkbox</code> using
-     * the specified peer interface.
-     * @param     target the check box to be implemented.
-     * @return    this toolkit's implementation of <code>Checkbox</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.Checkbox
-     * @see       java.awt.peer.CheckboxPeer
-     */
-    protected abstract CheckboxPeer createCheckbox(Checkbox target)
-        throws HeadlessException;
-
-    /**
-     * Creates this toolkit's implementation of <code>Scrollbar</code> using
-     * the specified peer interface.
-     * @param     target the scroll bar to be implemented.
-     * @return    this toolkit's implementation of <code>Scrollbar</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.Scrollbar
-     * @see       java.awt.peer.ScrollbarPeer
-     */
-    protected abstract ScrollbarPeer createScrollbar(Scrollbar target)
-        throws HeadlessException;
-
-    /**
-     * Creates this toolkit's implementation of <code>ScrollPane</code> using
-     * the specified peer interface.
-     * @param     target the scroll pane to be implemented.
-     * @return    this toolkit's implementation of <code>ScrollPane</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.ScrollPane
-     * @see       java.awt.peer.ScrollPanePeer
-     * @since     1.1
-     */
-    protected abstract ScrollPanePeer createScrollPane(ScrollPane target)
-        throws HeadlessException;
-
-    /**
-     * Creates this toolkit's implementation of <code>TextArea</code> using
-     * the specified peer interface.
-     * @param     target the text area to be implemented.
-     * @return    this toolkit's implementation of <code>TextArea</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.TextArea
-     * @see       java.awt.peer.TextAreaPeer
-     */
-    protected abstract TextAreaPeer createTextArea(TextArea target)
-        throws HeadlessException;
-
-    /**
-     * Creates this toolkit's implementation of <code>Choice</code> using
-     * the specified peer interface.
-     * @param     target the choice to be implemented.
-     * @return    this toolkit's implementation of <code>Choice</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.Choice
-     * @see       java.awt.peer.ChoicePeer
-     */
-    protected abstract ChoicePeer createChoice(Choice target)
-        throws HeadlessException;
-
-    /**
-     * Creates this toolkit's implementation of <code>Frame</code> using
-     * the specified peer interface.
-     * @param     target the frame to be implemented.
-     * @return    this toolkit's implementation of <code>Frame</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.Frame
-     * @see       java.awt.peer.FramePeer
-     */
-    protected abstract FramePeer createFrame(Frame target)
-        throws HeadlessException;
-
-    /**
-     * Creates this toolkit's implementation of <code>Canvas</code> using
-     * the specified peer interface.
-     * @param     target the canvas to be implemented.
-     * @return    this toolkit's implementation of <code>Canvas</code>.
-     * @see       java.awt.Canvas
-     * @see       java.awt.peer.CanvasPeer
-     */
-    protected abstract CanvasPeer       createCanvas(Canvas target);
-
-    /**
-     * Creates this toolkit's implementation of <code>Panel</code> using
-     * the specified peer interface.
-     * @param     target the panel to be implemented.
-     * @return    this toolkit's implementation of <code>Panel</code>.
-     * @see       java.awt.Panel
-     * @see       java.awt.peer.PanelPeer
-     */
-    protected abstract PanelPeer        createPanel(Panel target);
-
-    /**
-     * Creates this toolkit's implementation of <code>Window</code> using
-     * the specified peer interface.
-     * @param     target the window to be implemented.
-     * @return    this toolkit's implementation of <code>Window</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.Window
-     * @see       java.awt.peer.WindowPeer
-     */
-    protected abstract WindowPeer createWindow(Window target)
-        throws HeadlessException;
-
-    /**
-     * Creates this toolkit's implementation of <code>Dialog</code> using
-     * the specified peer interface.
-     * @param     target the dialog to be implemented.
-     * @return    this toolkit's implementation of <code>Dialog</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.Dialog
-     * @see       java.awt.peer.DialogPeer
-     */
-    protected abstract DialogPeer createDialog(Dialog target)
-        throws HeadlessException;
-
-    /**
-     * Creates this toolkit's implementation of <code>MenuBar</code> using
-     * the specified peer interface.
-     * @param     target the menu bar to be implemented.
-     * @return    this toolkit's implementation of <code>MenuBar</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.MenuBar
-     * @see       java.awt.peer.MenuBarPeer
-     */
-    protected abstract MenuBarPeer createMenuBar(MenuBar target)
-        throws HeadlessException;
-
-    /**
-     * Creates this toolkit's implementation of <code>Menu</code> using
-     * the specified peer interface.
-     * @param     target the menu to be implemented.
-     * @return    this toolkit's implementation of <code>Menu</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.Menu
-     * @see       java.awt.peer.MenuPeer
-     */
-    protected abstract MenuPeer createMenu(Menu target)
-        throws HeadlessException;
-
-    /**
-     * Creates this toolkit's implementation of <code>PopupMenu</code> using
-     * the specified peer interface.
-     * @param     target the popup menu to be implemented.
-     * @return    this toolkit's implementation of <code>PopupMenu</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.PopupMenu
-     * @see       java.awt.peer.PopupMenuPeer
-     * @since     1.1
-     */
-    protected abstract PopupMenuPeer createPopupMenu(PopupMenu target)
-        throws HeadlessException;
-
-    /**
-     * Creates this toolkit's implementation of <code>MenuItem</code> using
-     * the specified peer interface.
-     * @param     target the menu item to be implemented.
-     * @return    this toolkit's implementation of <code>MenuItem</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.MenuItem
-     * @see       java.awt.peer.MenuItemPeer
-     */
-    protected abstract MenuItemPeer createMenuItem(MenuItem target)
-        throws HeadlessException;
-
-    /**
-     * Creates this toolkit's implementation of <code>FileDialog</code> using
-     * the specified peer interface.
-     * @param     target the file dialog to be implemented.
-     * @return    this toolkit's implementation of <code>FileDialog</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.FileDialog
-     * @see       java.awt.peer.FileDialogPeer
-     */
-    protected abstract FileDialogPeer createFileDialog(FileDialog target)
-        throws HeadlessException;
-
-    /**
-     * Creates this toolkit's implementation of <code>CheckboxMenuItem</code> using
-     * the specified peer interface.
-     * @param     target the checkbox menu item to be implemented.
-     * @return    this toolkit's implementation of <code>CheckboxMenuItem</code>.
-     * @exception HeadlessException if GraphicsEnvironment.isHeadless()
-     * returns true
-     * @see       java.awt.GraphicsEnvironment#isHeadless
-     * @see       java.awt.CheckboxMenuItem
-     * @see       java.awt.peer.CheckboxMenuItemPeer
-     */
-    protected abstract CheckboxMenuItemPeer createCheckboxMenuItem(
-        CheckboxMenuItem target) throws HeadlessException;
-
-    /**
-     * Obtains this toolkit's implementation of helper class for
-     * <code>MouseInfo</code> operations.
-     * @return    this toolkit's implementation of  helper for <code>MouseInfo</code>
-     * @throws    UnsupportedOperationException if this operation is not implemented
-     * @see       java.awt.peer.MouseInfoPeer
-     * @see       java.awt.MouseInfo
-     * @since 1.5
-     */
-    protected MouseInfoPeer getMouseInfoPeer() {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
-    private static LightweightPeer lightweightMarker;
-
-    /**
-     * Creates a peer for a component or container.  This peer is windowless
-     * and allows the Component and Container classes to be extended directly
-     * to create windowless components that are defined entirely in java.
-     *
-     * @param  target The Component to be created.
-     * @return the peer for the specified component
-     */
-    protected LightweightPeer createComponent(Component target) {
-        if (lightweightMarker == null) {
-            lightweightMarker = new NullComponentPeer();
-        }
-        return lightweightMarker;
-    }
-
-    /**
-     * Creates this toolkit's implementation of <code>Font</code> using
-     * the specified peer interface.
-     * @param     name the font to be implemented
-     * @param     style the style of the font, such as <code>PLAIN</code>,
-     *            <code>BOLD</code>, <code>ITALIC</code>, or a combination
-     * @return    this toolkit's implementation of <code>Font</code>
-     * @see       java.awt.Font
-     * @see       java.awt.peer.FontPeer
-     * @see       java.awt.GraphicsEnvironment#getAllFonts
-     * @deprecated  see java.awt.GraphicsEnvironment#getAllFonts
-     */
-    @Deprecated
-    protected abstract FontPeer getFontPeer(String name, int style);
 
     // The following method is called by the private method
     // <code>updateSystemColors</code> in <code>SystemColor</code>.
@@ -1747,17 +1413,6 @@ public abstract class Toolkit {
     static EventQueue getEventQueue() {
         return getDefaultToolkit().getSystemEventQueueImpl();
     }
-
-    /**
-     * Creates the peer for a DragSourceContext.
-     * Always throws InvalidDndOperationException if
-     * GraphicsEnvironment.isHeadless() returns true.
-     *
-     * @param  dge the {@code DragGestureEvent}
-     * @return the peer created
-     * @see java.awt.GraphicsEnvironment#isHeadless
-     */
-    public abstract DragSourceContextPeer createDragSourceContextPeer(DragGestureEvent dge) throws InvalidDnDOperationException;
 
     /**
      * Creates a concrete, platform dependent, subclass of the abstract

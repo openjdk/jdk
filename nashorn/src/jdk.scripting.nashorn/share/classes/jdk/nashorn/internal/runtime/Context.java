@@ -1239,6 +1239,10 @@ public final class Context {
         }
 
         if (storedScript == null) {
+            if (env._dest_dir != null) {
+                source.dump(env._dest_dir);
+            }
+
             functionNode = new Parser(env, source, errMan, strict, getLogger(Parser.class)).parse();
 
             if (errMan.hasErrors()) {

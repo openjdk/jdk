@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,20 @@ import javax.swing.plaf.UIResource;
 @SuppressWarnings("serial") // Same-version serialization only
 public class FontUIResource extends Font implements UIResource
 {
+    /**
+     * Constructs a {@code FontUIResource}.
+     * @param name the font name
+     * @param style the style constant for the font
+     * @param size the point size of the font
+     */
     public FontUIResource(String name, int style, int size) {
         super(name, style, size);
     }
 
+    /**
+     * Constructs a {@code FontUIResource}.
+     * @param font the font
+     */
     public FontUIResource(Font font) {
         super(font);
     }

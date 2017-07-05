@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package javax.swing.plaf;
 import java.awt.Color;
 import java.beans.ConstructorProperties;
 
-/*
+/**
  * A subclass of Color that implements UIResource.  UI
  * classes that create colors should use this class.
  * <p>
@@ -48,19 +48,39 @@ import java.beans.ConstructorProperties;
 @SuppressWarnings("serial") // Same-version serialization only
 public class ColorUIResource extends Color implements UIResource
 {
+    /**
+     * Constructs a {@code ColorUIResource}.
+     * @param r the red component
+     * @param g the green component
+     * @param b the blue component
+     */
     @ConstructorProperties({"red", "green", "blue"})
     public ColorUIResource(int r, int g, int b) {
         super(r, g, b);
     }
 
+    /**
+     * Constructs a {@code ColorUIResource}.
+     * @param rgb the combined RGB components
+     */
     public ColorUIResource(int rgb) {
         super(rgb);
     }
 
+    /**
+     * Constructs a {@code ColorUIResource}.
+     * @param r the red component
+     * @param g the green component
+     * @param b the blue component
+     */
     public ColorUIResource(float r, float g, float b) {
         super(r, g, b);
     }
 
+    /**
+     * Constructs a {@code ColorUIResource}.
+     * @param c the color
+     */
     public ColorUIResource(Color c) {
         super(c.getRGB(), (c.getRGB() & 0xFF000000) != 0xFF000000);
     }

@@ -1154,7 +1154,23 @@ cmsStage* _cmsStageNormalizeToXyzFloat(cmsContext ContextID)
     return mpe;
 }
 
+// Clips values smaller than zero
+static
+void Clipper(const cmsFloat32Number In[], cmsFloat32Number Out[], const cmsStage *mpe)
+{
+       cmsUInt32Number i;
+       for (i = 0; i < mpe->InputChannels; i++) {
 
+              cmsFloat32Number n = In[i];
+              Out[i] = n < 0 ? 0 : n;
+       }
+}
+
+cmsStage*  _cmsStageClipNegatives(cmsContext ContextID, int nChannels)
+{
+       return _cmsStageAllocPlaceholder(ContextID, cmsSigClipNegativesElemType,
+              nChannels, nChannels, Clipper, NULL, NULL, NULL);
+}
 
 // ********************************************************************************
 // Type cmsSigXYZ2LabElemType

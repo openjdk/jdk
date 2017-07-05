@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,19 @@ import java.awt.peer.*;
 import java.io.*;
 import java.util.Locale;
 import java.util.Arrays;
-import com.sun.java.swing.plaf.motif.*;
-import javax.swing.plaf.ComponentUI;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.util.logging.PlatformLogger;
 import sun.awt.AWTAccessor;
 
-class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListener, ItemListener, KeyEventDispatcher, XChoicePeerListener {
-    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XFileDialogPeer");
+class XFileDialogPeer extends XDialogPeer
+        implements FileDialogPeer, ActionListener, ItemListener,
+                   KeyEventDispatcher, XChoicePeerListener {
+
+    private static final PlatformLogger log =
+            PlatformLogger.getLogger("sun.awt.X11.XFileDialogPeer");
 
     FileDialog  target;
 
@@ -286,7 +290,8 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
         fileDialog.setSize(400, 400);
 
         // Update choice's popup width
-        XChoicePeer choicePeer = (XChoicePeer)pathChoice.getPeer();
+        XChoicePeer choicePeer = AWTAccessor.getComponentAccessor()
+                                            .getPeer(pathChoice);
         choicePeer.setDrawSelectedItem(false);
         choicePeer.setAlignUnder(pathField);
 
@@ -642,7 +647,6 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
         }
     }
 
-    @SuppressWarnings("deprecation")
     public boolean dispatchKeyEvent(KeyEvent keyEvent) {
         int id = keyEvent.getID();
         int keyCode = keyEvent.getKeyCode();
@@ -653,13 +657,15 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
                 while (comp != null) {
                     // Fix for 6240084 Disposing a file dialog when the drop-down is active does not dispose the dropdown menu, on Xtoolkit
                     // See also 6259493
+                    ComponentAccessor acc = AWTAccessor.getComponentAccessor();
                     if (comp == pathChoice) {
-                        XChoicePeer choicePeer = (XChoicePeer)pathChoice.getPeer();
+                        XChoicePeer choicePeer = acc.getPeer(pathChoice);
                         if (choicePeer.isUnfurled()){
                             return false;
                         }
                     }
-                    if (comp.getPeer() == this) {
+                    Object peer = acc.getPeer(comp);
+                    if (peer == this) {
                         handleCancel();
                         return true;
                     }
@@ -796,16 +802,18 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
         }
 
         super.setVisible(b);
+        XChoicePeer choicePeer = AWTAccessor.getComponentAccessor()
+                                            .getPeer(pathChoice);
         if (b == true){
             // See 6240074 for more information
-            XChoicePeer choicePeer = (XChoicePeer)pathChoice.getPeer();
             choicePeer.addXChoicePeerListener(this);
-            KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(this);
+            KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                                .addKeyEventDispatcher(this);
         }else{
             // See 6240074 for more information
-            XChoicePeer choicePeer = (XChoicePeer)pathChoice.getPeer();
             choicePeer.removeXChoicePeerListener();
-            KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(this);
+            KeyboardFocusManager.getCurrentKeyboardFocusManager()
+                                .removeKeyEventDispatcher(this);
         }
 
         selectionField.requestFocusInWindow();

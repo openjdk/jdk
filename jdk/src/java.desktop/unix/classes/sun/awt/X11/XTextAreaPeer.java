@@ -1164,12 +1164,6 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         }
 
         @Override
-        @SuppressWarnings("deprecation")
-        public ComponentPeer getPeer() {
-            return (ComponentPeer) (xwin);
-        }
-
-        @Override
         public void updateUI() {
             ComponentUI ui = new XAWTScrollPaneUI();
             setUI(ui);

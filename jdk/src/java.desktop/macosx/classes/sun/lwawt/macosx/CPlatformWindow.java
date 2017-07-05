@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,11 @@ import java.awt.event.*;
 import java.awt.peer.WindowPeer;
 import java.beans.*;
 import java.lang.reflect.InvocationTargetException;
-import java.util.List;
-import java.util.Objects;
 
 import javax.swing.*;
 
 import sun.awt.*;
+import sun.awt.AWTAccessor.ComponentAccessor;
 import sun.java2d.SurfaceData;
 import sun.java2d.opengl.CGLSurfaceData;
 import sun.lwawt.*;
@@ -193,8 +192,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         @SuppressWarnings("deprecation")
         public CPlatformWindow convertJComponentToTarget(final JRootPane p) {
             Component root = SwingUtilities.getRoot(p);
-            if (root == null || (LWWindowPeer)root.getPeer() == null) return null;
-            return (CPlatformWindow)((LWWindowPeer)root.getPeer()).getPlatformWindow();
+            final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
+            if (root == null || acc.getPeer(root) == null) return null;
+            return (CPlatformWindow)((LWWindowPeer)acc.getPeer(root)).getPlatformWindow();
         }
     };
 
@@ -523,15 +523,15 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     @Override // PlatformWindow
-    @SuppressWarnings("deprecation")
     public void setVisible(boolean visible) {
         final long nsWindowPtr = getNSWindowPtr();
 
         // Process parent-child relationship when hiding
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
         if (!visible) {
             // Unparent my children
             for (Window w : target.getOwnedWindows()) {
-                WindowPeer p = (WindowPeer)w.getPeer();
+                WindowPeer p = acc.getPeer(w);
                 if (p instanceof LWWindowPeer) {
                     CPlatformWindow pw = (CPlatformWindow)((LWWindowPeer)p).getPlatformWindow();
                     if (pw != null && pw.isVisible()) {
@@ -627,7 +627,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
 
             // Add my own children to myself
             for (Window w : target.getOwnedWindows()) {
-                WindowPeer p = (WindowPeer)w.getPeer();
+                final Object p = acc.getPeer(w);
                 if (p instanceof LWWindowPeer) {
                     CPlatformWindow pw = (CPlatformWindow)((LWWindowPeer)p).getPlatformWindow();
                     if (pw != null && pw.isVisible()) {
@@ -679,13 +679,13 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     @Override  // PlatformWindow
-    @SuppressWarnings("deprecation")
     public void toFront() {
         final long nsWindowPtr = getNSWindowPtr();
         LWCToolkit lwcToolkit = (LWCToolkit) Toolkit.getDefaultToolkit();
         Window w = DefaultKeyboardFocusManager.getCurrentKeyboardFocusManager().getActiveWindow();
-        if( w != null && w.getPeer() != null
-                && ((LWWindowPeer)w.getPeer()).getPeerType() == LWWindowPeer.PeerType.EMBEDDED_FRAME
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
+        if( w != null && acc.getPeer(w) != null
+                && ((LWWindowPeer)acc.getPeer(w)).getPeerType() == LWWindowPeer.PeerType.EMBEDDED_FRAME
                 && !lwcToolkit.isApplicationActive()) {
             lwcToolkit.activateApplicationIgnoringOtherApps();
         }
