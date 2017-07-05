@@ -65,8 +65,8 @@ final class Formatter {
 
         while (m.find()) {
             int index = index(m.group(1));
-            boolean previous = isPreviousArgument(m.group(2));
-            char conversion = m.group(6).charAt(0);
+            final boolean previous = isPreviousArgument(m.group(2));
+            final char conversion = m.group(6).charAt(0);
 
             // skip over some formats
             if (index < 0 || previous
@@ -85,7 +85,7 @@ final class Formatter {
             }
 
             // current argument
-            Object arg = args[index - 1];
+            final Object arg = args[index - 1];
 
             // for date we convert double to long
             if (m.group(5) != null) {

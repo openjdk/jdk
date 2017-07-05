@@ -67,7 +67,7 @@ class AllClassesQuery extends QueryHandler {
                 continue;
             }
             String name = clazz.getName();
-            int pos = name.lastIndexOf(".");
+            int pos = name.lastIndexOf('.');
             String pkg;
             if (name.startsWith("[")) {         // Only in ancient heap dumps
                 pkg = "<Arrays>";

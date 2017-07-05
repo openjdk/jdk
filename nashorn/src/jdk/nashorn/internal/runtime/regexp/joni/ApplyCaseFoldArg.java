@@ -28,7 +28,7 @@ public final class ApplyCaseFoldArg {
     ConsAltNode altRoot;
     ConsAltNode tail;
 
-    public ApplyCaseFoldArg(ScanEnvironment env, CClassNode cc) {
+    public ApplyCaseFoldArg(final ScanEnvironment env, final CClassNode cc) {
         this.env = env;
         this.cc = cc;
     }

@@ -1,392 +1,440 @@
+/*
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
 package jdk.nashorn.internal.codegen;
 
-import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.ATTR;
+import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.BUILTINS_TRANSFORMED;
+import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.BYTECODE_GENERATED;
+import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.BYTECODE_INSTALLED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.CONSTANT_FOLDED;
-import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.FINALIZED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.INITIALIZED;
+import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.LOCAL_VARIABLE_TYPES_CALCULATED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.LOWERED;
+import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.OPTIMISTIC_TYPES_ASSIGNED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.PARSED;
+import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SCOPE_DEPTHS_COMPUTED;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SPLIT;
+import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SYMBOLS_ASSIGNED;
+import static jdk.nashorn.internal.runtime.logging.DebugLogger.quote;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayDeque;
+import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.EnumSet;
-import java.util.HashSet;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
-import jdk.nashorn.internal.codegen.types.Range;
-import jdk.nashorn.internal.codegen.types.Type;
-import jdk.nashorn.internal.ir.CallNode;
-import jdk.nashorn.internal.ir.Expression;
+import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.LexicalContext;
+import jdk.nashorn.internal.ir.LiteralNode;
+import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
+import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode.ArrayUnit;
 import jdk.nashorn.internal.ir.Node;
-import jdk.nashorn.internal.ir.ReturnNode;
-import jdk.nashorn.internal.ir.Symbol;
-import jdk.nashorn.internal.ir.TemporarySymbols;
+import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.ECMAErrors;
+import jdk.nashorn.internal.runtime.CodeInstaller;
+import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
-import jdk.nashorn.internal.runtime.Timing;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
 
 /**
  * A compilation phase is a step in the processes of turning a JavaScript
  * FunctionNode into bytecode. It has an optional return value.
  */
 enum CompilationPhase {
-
-    /*
-     * Lazy initialization - tag all function nodes not the script as lazy as
-     * default policy. The will get trampolines and only be generated when
-     * called
-     */
-    LAZY_INITIALIZATION_PHASE(EnumSet.of(INITIALIZED, PARSED)) {
-        @Override
-        FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
-
-            /*
-             * For lazy compilation, we might be given a node previously marked
-             * as lazy to compile as the outermost function node in the
-             * compiler. Unmark it so it can be compiled and not cause
-             * recursion. Make sure the return type is unknown so it can be
-             * correctly deduced. Return types are always Objects in Lazy nodes
-             * as we haven't got a change to generate code for them and decude
-             * its parameter specialization
-             *
-             * TODO: in the future specializations from a callsite will be
-             * passed here so we can generate a better non-lazy version of a
-             * function from a trampoline
-             */
-
-            final FunctionNode outermostFunctionNode = fn;
-
-            final Set<FunctionNode> neverLazy = new HashSet<>();
-            final Set<FunctionNode> lazy      = new HashSet<>();
-
-            FunctionNode newFunctionNode = outermostFunctionNode;
-
-            newFunctionNode = (FunctionNode)newFunctionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
-                // self references are done with invokestatic and thus cannot
-                // have trampolines - never lazy
-                @Override
-                public boolean enterCallNode(final CallNode node) {
-                    final Node callee = node.getFunction();
-                    if (callee instanceof FunctionNode) {
-                        neverLazy.add(((FunctionNode)callee));
-                        return false;
-                    }
-                    return true;
-                }
-
-                //any function that isn't the outermost one must be marked as lazy
-                @Override
-                public boolean enterFunctionNode(final FunctionNode node) {
-                    assert compiler.isLazy();
-                    lazy.add(node);
-                    return true;
-                }
-            });
-
-            //at least one method is non lazy - the outermost one
-            neverLazy.add(newFunctionNode);
-
-            for (final FunctionNode node : neverLazy) {
-                Compiler.LOG.fine(
-                        "Marking ",
-                        node.getName(),
-                        " as non lazy, as it's a self reference");
-                lazy.remove(node);
-            }
-
-            newFunctionNode = (FunctionNode)newFunctionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
-                @Override
-                public Node leaveFunctionNode(final FunctionNode functionNode) {
-                    if (lazy.contains(functionNode)) {
-                        Compiler.LOG.fine(
-                                "Marking ",
-                                functionNode.getName(),
-                                " as lazy");
-                        final FunctionNode parent = lc.getParentFunction(functionNode);
-                        assert parent != null;
-                        lc.setFlag(parent, FunctionNode.HAS_LAZY_CHILDREN);
-                        lc.setBlockNeedsScope(parent.getBody());
-                        lc.setFlag(functionNode, FunctionNode.IS_LAZY);
-                        return functionNode;
-                    }
-
-                    return functionNode.
-                        clearFlag(lc, FunctionNode.IS_LAZY).
-                        setReturnType(lc, Type.UNKNOWN);
-                }
-            });
-
-            return newFunctionNode;
-        }
-
-        @Override
-        public String toString() {
-            return "[Lazy JIT Initialization]";
-        }
-    },
-
-    /*
+    /**
      * Constant folding pass Simple constant folding that will make elementary
      * constructs go away
      */
-    CONSTANT_FOLDING_PHASE(EnumSet.of(INITIALIZED, PARSED)) {
+    CONSTANT_FOLDING_PHASE(
+            EnumSet.of(
+                INITIALIZED,
+                PARSED)) {
         @Override
-        FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
-            return (FunctionNode)fn.accept(new FoldConstants());
+        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
+            return (FunctionNode)fn.accept(new FoldConstants(compiler));
         }
 
         @Override
         public String toString() {
-            return "[Constant Folding]";
+            return "'Constant Folding'";
         }
     },
 
-    /*
+    /**
      * Lower (Control flow pass) Finalizes the control flow. Clones blocks for
      * finally constructs and similar things. Establishes termination criteria
      * for nodes Guarantee return instructions to method making sure control
      * flow cannot fall off the end. Replacing high level nodes with lower such
      * as runtime nodes where applicable.
      */
-    LOWERING_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED)) {
+    LOWERING_PHASE(
+            EnumSet.of(
+                INITIALIZED,
+                PARSED,
+                CONSTANT_FOLDED)) {
         @Override
-        FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
-            return (FunctionNode)fn.accept(new Lower(compiler.getCodeInstaller()));
+        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
+            return (FunctionNode)fn.accept(new Lower(compiler));
         }
 
         @Override
         public String toString() {
-            return "[Control Flow Lowering]";
+            return "'Control Flow Lowering'";
         }
     },
 
-    /*
-     * Attribution Assign symbols and types to all nodes.
+    /**
+     * Phase used only when doing optimistic code generation. It assigns all potentially
+     * optimistic ops a program point so that an UnwarrantedException knows from where
+     * a guess went wrong when creating the continuation to roll back this execution
      */
-    ATTRIBUTION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED)) {
+    PROGRAM_POINT_PHASE(
+            EnumSet.of(
+                INITIALIZED,
+                PARSED,
+                CONSTANT_FOLDED,
+                LOWERED)) {
         @Override
-        FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
-            final TemporarySymbols ts = compiler.getTemporarySymbols();
-            final FunctionNode newFunctionNode = (FunctionNode)enterAttr(fn, ts).accept(new Attr(ts));
-            if (compiler.getEnv()._print_mem_usage) {
-                Compiler.LOG.info("Attr temporary symbol count: " + ts.getTotalSymbolCount());
-            }
-            return newFunctionNode;
+        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
+            return (FunctionNode)fn.accept(new ProgramPoints());
         }
 
-        /**
-         * Pessimistically set all lazy functions' return types to Object
-         * and the function symbols to object
-         * @param functionNode node where to start iterating
-         */
-        private FunctionNode enterAttr(final FunctionNode functionNode, final TemporarySymbols ts) {
-            return (FunctionNode)functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+        @Override
+        public String toString() {
+            return "'Program Point Calculation'";
+        }
+    },
+
+    TRANSFORM_BUILTINS_PHASE(
+            EnumSet.of(
+                    INITIALIZED,
+                    PARSED,
+                    CONSTANT_FOLDED,
+                    LOWERED)) {
+        //we only do this if we have a param type map, otherwise this is not a specialized recompile
+        @Override
+        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
+            final FunctionNode newFunctionNode = (FunctionNode)fn.accept(new ApplySpecialization(compiler));
+            return (FunctionNode)newFunctionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
                 @Override
                 public Node leaveFunctionNode(final FunctionNode node) {
-                    if (node.isLazy()) {
-                        FunctionNode newNode = node.setReturnType(lc, Type.OBJECT);
-                        return ts.ensureSymbol(lc, Type.OBJECT, newNode);
-                    }
-                    //node may have a reference here that needs to be nulled if it was referred to by
-                    //its outer context, if it is lazy and not attributed
-                    return node.setReturnType(lc, Type.UNKNOWN).setSymbol(lc, null);
+                    return node.setState(lc, BUILTINS_TRANSFORMED);
                 }
             });
         }
 
         @Override
         public String toString() {
-            return "[Type Attribution]";
+            return "'Builtin Replacement'";
         }
     },
 
-    /*
-     * Range analysis
-     *    Conservatively prove that certain variables can be narrower than
-     *    the most generic number type
+    /**
+     * Splitter Split the AST into several compile units based on a heuristic size calculation.
+     * Split IR can lead to scope information being changed.
      */
-    RANGE_ANALYSIS_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, ATTR)) {
+    SPLITTING_PHASE(
+            EnumSet.of(
+                    INITIALIZED,
+                    PARSED,
+                    CONSTANT_FOLDED,
+                    LOWERED,
+                    BUILTINS_TRANSFORMED)) {
         @Override
-        FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
-            if (!compiler.getEnv()._range_analysis) {
-                return fn;
+        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
+            final CompileUnit  outermostCompileUnit = compiler.addCompileUnit(0L);
+            final FunctionNode newFunctionNode      = new Splitter(compiler, fn, outermostCompileUnit).split(fn, true);
+
+            assert newFunctionNode.getCompileUnit() == outermostCompileUnit : "fn=" + fn.getName() + ", fn.compileUnit (" + newFunctionNode.getCompileUnit() + ") != " + outermostCompileUnit;
+            assert newFunctionNode.isStrict() == compiler.isStrict() : "functionNode.isStrict() != compiler.isStrict() for " + quote(newFunctionNode.getName());
+
+            return newFunctionNode;
+        }
+
+        @Override
+        public String toString() {
+            return "'Code Splitting'";
+        }
+    },
+
+    SYMBOL_ASSIGNMENT_PHASE(
+            EnumSet.of(
+                    INITIALIZED,
+                    PARSED,
+                    CONSTANT_FOLDED,
+                    LOWERED,
+                    BUILTINS_TRANSFORMED,
+                    SPLIT)) {
+        @Override
+        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
+            return (FunctionNode)fn.accept(new AssignSymbols(compiler));
+        }
+
+        @Override
+        public String toString() {
+            return "'Symbol Assignment'";
+        }
+    },
+
+    SCOPE_DEPTH_COMPUTATION_PHASE(
+            EnumSet.of(
+                    INITIALIZED,
+                    PARSED,
+                    CONSTANT_FOLDED,
+                    LOWERED,
+                    BUILTINS_TRANSFORMED,
+                    SPLIT,
+                    SYMBOLS_ASSIGNED)) {
+        @Override
+        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
+            return (FunctionNode)fn.accept(new FindScopeDepths(compiler));
+        }
+
+        @Override
+        public String toString() {
+            return "'Scope Depth Computation'";
+        }
+    },
+
+    OPTIMISTIC_TYPE_ASSIGNMENT_PHASE(
+            EnumSet.of(
+                    INITIALIZED,
+                    PARSED,
+                    CONSTANT_FOLDED,
+                    LOWERED,
+                    BUILTINS_TRANSFORMED,
+                    SPLIT,
+                    SYMBOLS_ASSIGNED,
+                    SCOPE_DEPTHS_COMPUTED)) {
+        @Override
+        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
+            if (compiler.useOptimisticTypes()) {
+                return (FunctionNode)fn.accept(new OptimisticTypesCalculator(compiler));
+            }
+            return setStates(fn, OPTIMISTIC_TYPES_ASSIGNED);
+        }
+
+        @Override
+        public String toString() {
+            return "'Optimistic Type Assignment'";
+        }
+    },
+
+    LOCAL_VARIABLE_TYPE_CALCULATION_PHASE(
+            EnumSet.of(
+                    INITIALIZED,
+                    PARSED,
+                    CONSTANT_FOLDED,
+                    LOWERED,
+                    BUILTINS_TRANSFORMED,
+                    SPLIT,
+                    SYMBOLS_ASSIGNED,
+                    SCOPE_DEPTHS_COMPUTED,
+                    OPTIMISTIC_TYPES_ASSIGNED)) {
+        @Override
+        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
+            final FunctionNode newFunctionNode = (FunctionNode)fn.accept(new LocalVariableTypesCalculator(compiler));
+
+            final ScriptEnvironment senv = compiler.getScriptEnvironment();
+            final PrintWriter       err  = senv.getErr();
+
+            //TODO separate phase for the debug printouts for abstraction and clarity
+            if (senv._print_lower_ast) {
+                err.println("Lower AST for: " + quote(newFunctionNode.getName()));
+                err.println(new ASTWriter(newFunctionNode));
             }
 
-            FunctionNode newFunctionNode = (FunctionNode)fn.accept(new RangeAnalyzer());
-            final List<ReturnNode> returns = new ArrayList<>();
+            if (senv._print_lower_parse) {
+                err.println("Lower AST for: " + quote(newFunctionNode.getName()));
+                err.println(new PrintVisitor(newFunctionNode));
+            }
 
-            newFunctionNode = (FunctionNode)newFunctionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
-                private final Deque<ArrayList<ReturnNode>> returnStack = new ArrayDeque<>();
+            return newFunctionNode;
+        }
 
+        @Override
+        public String toString() {
+            return "'Local Variable Type Calculation'";
+        }
+    },
+
+    /**
+     * Reuse compile units, if they are already present. We are using the same compiler
+     * to recompile stuff
+     */
+    REUSE_COMPILE_UNITS_PHASE(
+            EnumSet.of(
+                    INITIALIZED,
+                    PARSED,
+                    CONSTANT_FOLDED,
+                    LOWERED,
+                    BUILTINS_TRANSFORMED,
+                    SPLIT,
+                    SYMBOLS_ASSIGNED,
+                    SCOPE_DEPTHS_COMPUTED,
+                    OPTIMISTIC_TYPES_ASSIGNED,
+                    LOCAL_VARIABLE_TYPES_CALCULATED)) {
+        @Override
+        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
+            assert phases.isRestOfCompilation() : "reuse compile units currently only used for Rest-Of methods";
+
+            final Map<CompileUnit, CompileUnit> map = new HashMap<>();
+            final Set<CompileUnit> newUnits = CompileUnit.createCompileUnitSet();
+
+            final DebugLogger log = compiler.getLogger();
+
+            log.fine("Clearing bytecode cache");
+
+            for (final CompileUnit oldUnit : compiler.getCompileUnits()) {
+                CompileUnit newUnit = map.get(oldUnit);
+                assert map.get(oldUnit) == null;
+                final StringBuilder sb = new StringBuilder(compiler.nextCompileUnitName());
+                if (phases.isRestOfCompilation()) {
+                    sb.append("$restOf");
+                }
+                newUnit = compiler.createCompileUnit(sb.toString(), oldUnit.getWeight());
+                log.info("Creating new compile unit ", oldUnit, " => ", newUnit);
+                map.put(oldUnit, newUnit);
+                assert newUnit != null;
+                newUnits.add(newUnit);
+            }
+
+            log.info("Replacing compile units in Compiler...");
+            compiler.replaceCompileUnits(newUnits);
+            log.info("Done");
+
+            //replace old compile units in function nodes, if any are assigned,
+            //for example by running the splitter on this function node in a previous
+            //partial code generation
+            final FunctionNode newFunctionNode = (FunctionNode)fn.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
                 @Override
-                public boolean enterFunctionNode(final FunctionNode functionNode) {
-                    returnStack.push(new ArrayList<ReturnNode>());
-                    return true;
+                public Node leaveFunctionNode(final FunctionNode node) {
+                    final CompileUnit oldUnit = node.getCompileUnit();
+                    assert oldUnit != null : "no compile unit in function node";
+
+                    final CompileUnit newUnit = map.get(oldUnit);
+                    assert newUnit != null : "old unit has no mapping to new unit " + oldUnit;
+
+                    log.fine("Replacing compile unit: ", oldUnit, " => ", newUnit, " in ", quote(node.getName()));
+                    return node.setCompileUnit(lc, newUnit).setState(lc, CompilationState.COMPILE_UNITS_REUSED);
                 }
 
                 @Override
-                public Node leaveFunctionNode(final FunctionNode functionNode) {
-                    Type returnType = Type.UNKNOWN;
-                    for (final ReturnNode ret : returnStack.pop()) {
-                        if (ret.getExpression() == null) {
-                            returnType = Type.OBJECT;
-                            break;
+                public Node leaveSplitNode(final SplitNode node) {
+                    final CompileUnit oldUnit = node.getCompileUnit();
+                    assert oldUnit != null : "no compile unit in function node";
+
+                    final CompileUnit newUnit = map.get(oldUnit);
+                    assert newUnit != null : "old unit has no mapping to new unit " + oldUnit;
+
+                    log.fine("Replacing compile unit: ", oldUnit, " => ", newUnit, " in ", quote(node.getName()));
+                    return node.setCompileUnit(lc, newUnit);
+                }
+
+                @Override
+                public Node leaveLiteralNode(final LiteralNode<?> node) {
+                    if (node instanceof ArrayLiteralNode) {
+                        final ArrayLiteralNode aln = (ArrayLiteralNode)node;
+                        if (aln.getUnits() == null) {
+                            return node;
                         }
-                        returnType = Type.widest(returnType, ret.getExpression().getType());
+                        final List<ArrayUnit> newArrayUnits = new ArrayList<>();
+                        for (final ArrayUnit au : aln.getUnits()) {
+                            final CompileUnit newUnit = map.get(au.getCompileUnit());
+                            assert newUnit != null;
+                            newArrayUnits.add(new ArrayUnit(newUnit, au.getLo(), au.getHi()));
+                        }
+                        aln.setUnits(newArrayUnits);
                     }
-                    return functionNode.setReturnType(lc, returnType);
-                }
-
-                @Override
-                public Node leaveReturnNode(final ReturnNode returnNode) {
-                    final ReturnNode result = (ReturnNode)leaveDefault(returnNode);
-                    returns.add(result);
-                    return result;
+                    return node;
                 }
 
                 @Override
                 public Node leaveDefault(final Node node) {
-                    if(node instanceof Expression) {
-                        final Expression expr = (Expression)node;
-                        final Symbol symbol = expr.getSymbol();
-                        if (symbol != null) {
-                            final Range range  = symbol.getRange();
-                            final Type  symbolType = symbol.getSymbolType();
-                            if (!symbolType.isNumeric()) {
-                                return expr;
-                            }
-                            final Type  rangeType  = range.getType();
-                            if (!Type.areEquivalent(symbolType, rangeType) && Type.widest(symbolType, rangeType) == symbolType) { //we can narrow range
-                                RangeAnalyzer.LOG.info("[", lc.getCurrentFunction().getName(), "] ", symbol, " can be ", range.getType(), " ", symbol.getRange());
-                                return expr.setSymbol(lc, symbol.setTypeOverrideShared(range.getType(), compiler.getTemporarySymbols()));
-                            }
-                        }
-                    }
-                    return node;
+                    return node.ensureUniqueLabels(lc);
                 }
             });
 
-            Type returnType = Type.UNKNOWN;
-            for (final ReturnNode node : returns) {
-                if (node.getExpression() != null) {
-                    returnType = Type.widest(returnType, node.getExpression().getType());
-                } else {
-                    returnType = Type.OBJECT;
-                    break;
-                }
-            }
-
-            return newFunctionNode.setReturnType(null, returnType);
-        }
-
-        @Override
-        public String toString() {
-            return "[Range Analysis]";
-        }
-    },
-
-
-    /*
-     * Splitter Split the AST into several compile units based on a size
-     * heuristic Splitter needs attributed AST for weight calculations (e.g. is
-     * a + b a ScriptRuntime.ADD with call overhead or a dadd with much less).
-     * Split IR can lead to scope information being changed.
-     */
-    SPLITTING_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, ATTR)) {
-        @Override
-        FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
-            final CompileUnit outermostCompileUnit = compiler.addCompileUnit(compiler.firstCompileUnitName());
-
-            final FunctionNode newFunctionNode = new Splitter(compiler, fn, outermostCompileUnit).split(fn);
-
-            assert newFunctionNode.getCompileUnit() == outermostCompileUnit : "fn.compileUnit (" + newFunctionNode.getCompileUnit() + ") != " + outermostCompileUnit;
-
-            if (newFunctionNode.isStrict()) {
-                assert compiler.getStrictMode();
-                compiler.setStrictMode(true);
-            }
-
             return newFunctionNode;
         }
 
         @Override
         public String toString() {
-            return "[Code Splitting]";
+            return "'Reuse Compile Units'";
         }
     },
 
-    /*
-     * FinalizeTypes
-     *
-     * This pass finalizes the types for nodes. If Attr created wider types than
-     * known during the first pass, convert nodes are inserted or access nodes
-     * are specialized where scope accesses.
-     *
-     * Runtime nodes may be removed and primitivized or reintroduced depending
-     * on information that was established in Attr.
-     *
-     * Contract: all variables must have slot assignments and scope assignments
-     * before type finalization.
-     */
-    TYPE_FINALIZATION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, ATTR, SPLIT)) {
-        @Override
-        FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
-            final ScriptEnvironment env = compiler.getEnv();
-
-            final FunctionNode newFunctionNode = (FunctionNode)fn.accept(new FinalizeTypes(compiler.getTemporarySymbols()));
-
-            if (env._print_lower_ast) {
-                env.getErr().println(new ASTWriter(newFunctionNode));
-            }
-
-            if (env._print_lower_parse) {
-                env.getErr().println(new PrintVisitor(newFunctionNode));
-            }
-
-            return newFunctionNode;
-        }
-
-        @Override
-        public String toString() {
-            return "[Type Finalization]";
-        }
-    },
-
-    /*
+     /**
      * Bytecode generation:
      *
      * Generate the byte code class(es) resulting from the compiled FunctionNode
      */
-    BYTECODE_GENERATION_PHASE(EnumSet.of(INITIALIZED, PARSED, CONSTANT_FOLDED, LOWERED, ATTR, SPLIT, FINALIZED)) {
+    BYTECODE_GENERATION_PHASE(
+            EnumSet.of(
+                    INITIALIZED,
+                    PARSED,
+                    CONSTANT_FOLDED,
+                    LOWERED,
+                    BUILTINS_TRANSFORMED,
+                    SPLIT,
+                    SYMBOLS_ASSIGNED,
+                    SCOPE_DEPTHS_COMPUTED,
+                    OPTIMISTIC_TYPES_ASSIGNED,
+                    LOCAL_VARIABLE_TYPES_CALCULATED)) {
+
         @Override
-        FunctionNode transform(final Compiler compiler, final FunctionNode fn) {
-            final ScriptEnvironment env = compiler.getEnv();
+        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
+            final ScriptEnvironment senv = compiler.getScriptEnvironment();
+
             FunctionNode newFunctionNode = fn;
 
+            compiler.getLogger().fine("Starting bytecode generation for ", quote(fn.getName()), " - restOf=", phases.isRestOfCompilation());
+            final CodeGenerator codegen = new CodeGenerator(compiler, phases.isRestOfCompilation() ? compiler.getContinuationEntryPoints() : null);
             try {
-                final CodeGenerator codegen = new CodeGenerator(compiler);
                 newFunctionNode = (FunctionNode)newFunctionNode.accept(codegen);
                 codegen.generateScopeCalls();
             } catch (final VerifyError e) {
-                if (env._verify_code || env._print_code) {
-                    env.getErr().println(e.getClass().getSimpleName() + ": "  + e.getMessage());
-                    if (env._dump_on_error) {
-                        e.printStackTrace(env.getErr());
+                if (senv._verify_code || senv._print_code) {
+                    senv.getErr().println(e.getClass().getSimpleName() + ": "  + e.getMessage());
+                    if (senv._dump_on_error) {
+                        e.printStackTrace(senv.getErr());
                     }
                 } else {
                     throw e;
                 }
+            } catch (final Throwable e) {
+                // Provide source file and line number being compiled when the assertion occurred
+                throw new AssertionError("Failed generating bytecode for " + fn.getSourceName() + ":" + codegen.getLastLineNumber(), e);
             }
 
             for (final CompileUnit compileUnit : compiler.getCompileUnits()) {
@@ -400,50 +448,12 @@ enum CompilationPhase {
 
                 compiler.addClass(className, bytecode);
 
-                // should could be printed to stderr for generate class?
-                if (env._print_code) {
-                    final StringBuilder sb = new StringBuilder();
-                    sb.append("class: " + className).append('\n')
-                            .append(ClassEmitter.disassemble(bytecode))
-                            .append("=====");
-                    env.getErr().println(sb);
-                }
-
                 // should we verify the generated code?
-                if (env._verify_code) {
+                if (senv._verify_code) {
                     compiler.getCodeInstaller().verify(bytecode);
                 }
 
-                // should code be dumped to disk - only valid in compile_only mode?
-                if (env._dest_dir != null && env._compile_only) {
-                    final String fileName = className.replace('.', File.separatorChar) + ".class";
-                    final int    index    = fileName.lastIndexOf(File.separatorChar);
-
-                    final File dir;
-                    if (index != -1) {
-                        dir = new File(env._dest_dir, fileName.substring(0, index));
-                    } else {
-                        dir = new File(env._dest_dir);
-                    }
-
-                    try {
-                        if (!dir.exists() && !dir.mkdirs()) {
-                            throw new IOException(dir.toString());
-                        }
-                        final File file = new File(env._dest_dir, fileName);
-                        try (final FileOutputStream fos = new FileOutputStream(file)) {
-                            fos.write(bytecode);
-                        }
-                        Compiler.LOG.info("Wrote class to '" + file.getAbsolutePath() + '\'');
-                    } catch (final IOException e) {
-                        Compiler.LOG.warning("Skipping class dump for ",
-                                className,
-                                ": ",
-                                ECMAErrors.getMessage(
-                                    "io.error.cant.write",
-                                    dir.toString()));
-                    }
-                }
+                DumpBytecode.dumpBytecode(senv, compiler.getLogger(), bytecode, className);
             }
 
             return newFunctionNode;
@@ -451,13 +461,121 @@ enum CompilationPhase {
 
         @Override
         public String toString() {
-            return "[Bytecode Generation]";
+            return "'Bytecode Generation'";
         }
-    };
+    },
 
+     INSTALL_PHASE(
+            EnumSet.of(
+                    INITIALIZED,
+                    PARSED,
+                    CONSTANT_FOLDED,
+                    LOWERED,
+                    BUILTINS_TRANSFORMED,
+                    SPLIT,
+                    SYMBOLS_ASSIGNED,
+                    SCOPE_DEPTHS_COMPUTED,
+                    OPTIMISTIC_TYPES_ASSIGNED,
+                    LOCAL_VARIABLE_TYPES_CALCULATED,
+                    BYTECODE_GENERATED)) {
+
+        @Override
+        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
+            final DebugLogger log = compiler.getLogger();
+
+            final Map<String, Class<?>> installedClasses = new LinkedHashMap<>();
+
+            boolean first = true;
+            Class<?> rootClass = null;
+            long length = 0L;
+
+            final CodeInstaller<?> codeInstaller = compiler.getCodeInstaller();
+
+            final Map<String, byte[]> bytecode = compiler.getBytecode();
+
+            for (final Entry<String, byte[]> entry : bytecode.entrySet()) {
+                final String className = entry.getKey();
+                //assert !first || className.equals(compiler.getFirstCompileUnit().getUnitClassName()) : "first=" + first + " className=" + className + " != " + compiler.getFirstCompileUnit().getUnitClassName();
+                final byte[] code = entry.getValue();
+                length += code.length;
+
+                final Class<?> clazz = codeInstaller.install(className, code);
+                if (first) {
+                    rootClass = clazz;
+                    first = false;
+                }
+                installedClasses.put(className, clazz);
+            }
+
+            if (rootClass == null) {
+                throw new CompilationException("Internal compiler error: root class not found!");
+            }
+
+            final Object[] constants = compiler.getConstantData().toArray();
+            codeInstaller.initialize(installedClasses.values(), compiler.getSource(), constants);
+
+            // index recompilable script function datas in the constant pool
+            final Map<RecompilableScriptFunctionData, RecompilableScriptFunctionData> rfns = new IdentityHashMap<>();
+            for (final Object constant: constants) {
+                if (constant instanceof RecompilableScriptFunctionData) {
+                    final RecompilableScriptFunctionData rfn = (RecompilableScriptFunctionData)constant;
+                    rfns.put(rfn, rfn);
+                }
+            }
+
+            // initialize function in the compile units
+            for (final CompileUnit unit : compiler.getCompileUnits()) {
+                unit.setCode(installedClasses.get(unit.getUnitClassName()));
+                unit.initializeFunctionsCode();
+            }
+
+            if (!compiler.isOnDemandCompilation()) {
+                codeInstaller.storeCompiledScript(compiler.getSource(), compiler.getFirstCompileUnit().getUnitClassName(), bytecode, constants);
+            }
+
+            // remove installed bytecode from table in case compiler is reused
+            for (final String className : installedClasses.keySet()) {
+                log.fine("Removing installed class ", quote(className), " from bytecode table...");
+                compiler.removeClass(className);
+            }
+
+            if (log.isEnabled()) {
+                final StringBuilder sb = new StringBuilder();
+
+                sb.append("Installed class '").
+                    append(rootClass.getSimpleName()).
+                    append('\'').
+                    append(" [").
+                    append(rootClass.getName()).
+                    append(", size=").
+                    append(length).
+                    append(" bytes, ").
+                    append(compiler.getCompileUnits().size()).
+                    append(" compile unit(s)]");
+
+                log.info(sb.toString());
+            }
+
+            return setStates(fn.setRootClass(null, rootClass), BYTECODE_INSTALLED);
+        }
+
+        @Override
+        public String toString() {
+            return "'Class Installation'";
+        }
+
+     };
+
+    /** pre conditions required for function node to which this transform is to be applied */
     private final EnumSet<CompilationState> pre;
+
+    /** start time of transform - used for timing, see {@link jdk.nashorn.internal.runtime.Timing} */
     private long startTime;
+
+    /** start time of transform - used for timing, see {@link jdk.nashorn.internal.runtime.Timing} */
     private long endTime;
+
+    /** boolean that is true upon transform completion */
     private boolean isFinished;
 
     private CompilationPhase(final EnumSet<CompilationState> pre) {
@@ -465,28 +583,58 @@ enum CompilationPhase {
     }
 
     boolean isApplicable(final FunctionNode functionNode) {
+        //this means that all in pre are present in state. state can be larger
         return functionNode.hasState(pre);
     }
 
-    protected FunctionNode begin(final FunctionNode functionNode) {
-        if (pre != null) {
-            // check that everything in pre is present
-            for (final CompilationState state : pre) {
-                assert functionNode.hasState(state);
-            }
-            // check that nothing else is present
-            for (final CompilationState state : CompilationState.values()) {
-                assert !(functionNode.hasState(state) && !pre.contains(state));
-            }
-        }
-
-        startTime = System.currentTimeMillis();
-        return functionNode;
+    private static FunctionNode setStates(final FunctionNode functionNode, final CompilationState state) {
+        return (FunctionNode)functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+            @Override
+            public Node leaveFunctionNode(final FunctionNode fn) {
+                return fn.setState(lc, state);
+           }
+        });
     }
 
-    protected FunctionNode end(final FunctionNode functionNode) {
+    /**
+     * Start a compilation phase
+     * @param compiler
+     * @param functionNode function to compile
+     * @return function node
+     */
+    protected FunctionNode begin(final Compiler compiler, final FunctionNode functionNode) {
+        compiler.getLogger().indent();
+
+        assert pre != null;
+
+        if (!isApplicable(functionNode)) {
+            final StringBuilder sb = new StringBuilder("Compilation phase ");
+            sb.append(this).
+                append(" is not applicable to ").
+                append(quote(functionNode.getName())).
+                append("\n\tFunctionNode state = ").
+                append(functionNode.getState()).
+                append("\n\tRequired state     = ").
+                append(this.pre);
+
+            throw new CompilationException(sb.toString());
+         }
+
+         startTime = System.currentTimeMillis();
+
+         return functionNode;
+     }
+
+    /**
+     * End a compilation phase
+     * @param compiler the compiler
+     * @param functionNode function node to compile
+     * @return function node
+     */
+    protected FunctionNode end(final Compiler compiler, final FunctionNode functionNode) {
+        compiler.getLogger().unindent();
         endTime = System.currentTimeMillis();
-        Timing.accumulateTime(toString(), endTime - startTime);
+        compiler.getScriptEnvironment()._timing.accumulateTime(toString(), endTime - startTime);
 
         isFinished = true;
         return functionNode;
@@ -504,13 +652,26 @@ enum CompilationPhase {
         return endTime;
     }
 
-    abstract FunctionNode transform(final Compiler compiler, final FunctionNode functionNode) throws CompilationException;
+    abstract FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode functionNode) throws CompilationException;
 
-    final FunctionNode apply(final Compiler compiler, final FunctionNode functionNode) throws CompilationException {
-        if (!isApplicable(functionNode)) {
-            throw new CompilationException("compile phase not applicable: " + this + " to " + functionNode.getName() + " state=" + functionNode.getState());
-        }
-        return end(transform(compiler, begin(functionNode)));
+    /**
+     * Apply a transform to a function node, returning the transfored function node. If the transform is not
+     * applicable, an exception is thrown. Every transform requires the function to have a certain number of
+     * states to operate. It can have more states set, but not fewer. The state list, i.e. the constructor
+     * arguments to any of the CompilationPhase enum entries, is a set of REQUIRED states.
+     *
+     * @param compiler     compiler
+     * @param phases       current complete pipeline of which this phase is one
+     * @param functionNode function node to transform
+     *
+     * @return transformed function node
+     *
+     * @throws CompilationException if function node lacks the state required to run the transform on it
+     */
+    final FunctionNode apply(final Compiler compiler, final CompilationPhases phases, final FunctionNode functionNode) throws CompilationException {
+        assert phases.contains(this);
+
+        return end(compiler, transform(compiler, phases, begin(compiler, functionNode)));
     }
 
 }

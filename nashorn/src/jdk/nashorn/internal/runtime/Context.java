@@ -26,10 +26,9 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.CONSTANTS;
-import static jdk.nashorn.internal.codegen.CompilerConstants.RUN_SCRIPT;
+import static jdk.nashorn.internal.codegen.CompilerConstants.CREATE_PROGRAM_FUNCTION;
 import static jdk.nashorn.internal.codegen.CompilerConstants.SOURCE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.STRICT_MODE;
-import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.Source.sourceFor;
@@ -39,6 +38,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
@@ -54,20 +54,31 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.ProtectionDomain;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+import java.util.logging.Level;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.Compiler;
+import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
+import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Parser;
+import jdk.nashorn.internal.runtime.events.RuntimeEvent;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
+import jdk.nashorn.internal.runtime.options.LoggingOption.LoggerInfo;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
@@ -110,6 +121,9 @@ public final class Context {
     private static final String LOAD_FX = "fx:";
     private static final String LOAD_NASHORN = "nashorn:";
 
+    private static MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    private static MethodType CREATE_PROGRAM_FUNCTION_TYPE = MethodType.methodType(ScriptFunction.class, ScriptObject.class);
+
     /* Force DebuggerSupport to be loaded. */
     static {
         DebuggerSupport.FORCELOAD = true;
@@ -140,32 +154,43 @@ public final class Context {
         }
 
         @Override
-        public Class<?> install(final String className, final byte[] bytecode, final Source source, final Object[] constants) {
-            Compiler.LOG.fine("Installing class ", className);
-
+        public Class<?> install(final String className, final byte[] bytecode) {
             final String   binaryName = Compiler.binaryName(className);
-            final Class<?> clazz      = loader.installClass(binaryName, bytecode, codeSource);
+            return loader.installClass(binaryName, bytecode, codeSource);
+        }
 
-            try {
-                // Need doPrivileged because these fields are private
-                AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+        @Override
+        public void initialize(final Collection<Class<?>> classes, final Source source, final Object[] constants) {
+            // do these in parallel, this significantly reduces class installation overhead
+            // however - it still means that every thread needs a separate doPrivileged
+            classes.parallelStream().forEach(
+                new Consumer<Class<?>>() {
                     @Override
-                    public Void run() throws Exception {
-                        //use reflection to write source and constants table to installed classes
-                        final Field sourceField    = clazz.getDeclaredField(SOURCE.symbolName());
-                        final Field constantsField = clazz.getDeclaredField(CONSTANTS.symbolName());
-                        sourceField.setAccessible(true);
-                        constantsField.setAccessible(true);
-                        sourceField.set(null, source);
-                        constantsField.set(null, constants);
-                        return null;
+                    public void accept(final Class<?> clazz) {
+                        try {
+                            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+                                @Override
+                                public Void run() {
+                                    try {
+                                        //use reflection to write source and constants table to installed classes
+                                        final Field sourceField = clazz.getDeclaredField(SOURCE.symbolName());
+                                        sourceField.setAccessible(true);
+                                        sourceField.set(null, source);
+
+                                        final Field constantsField = clazz.getDeclaredField(CONSTANTS.symbolName());
+                                        constantsField.setAccessible(true);
+                                        constantsField.set(null, constants);
+                                    } catch (final IllegalAccessException | NoSuchFieldException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                    return null;
+                                }
+                            });
+                        } catch (final PrivilegedActionException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 });
-            } catch (final PrivilegedActionException e) {
-                throw new RuntimeException(e);
-            }
-
-            return clazz;
         }
 
         @Override
@@ -235,6 +260,11 @@ public final class Context {
     public static void setGlobal(final Global global) {
         // This class in a package.access protected package.
         // Trusted code only can call this method.
+        assert getGlobal() != global;
+        //same code can be cached between globals, then we need to invalidate method handle constants
+        if (global != null) {
+            Global.getConstants().invalidateAll();
+        }
         currentGlobal.set(global);
     }
 
@@ -275,7 +305,6 @@ public final class Context {
      * @param str  text to write
      * @param crlf write a carriage return/new line after text
      */
-    @SuppressWarnings("resource")
     public static void err(final String str, final boolean crlf) {
         final PrintWriter err = Context.getCurrentErr();
         if (err != null) {
@@ -399,7 +428,7 @@ public final class Context {
         // if user passed -classpath option, make a class loader with that and set it as
         // thread context class loader so that script can access classes from that path.
         final String classPath = options.getString("classpath");
-        if (! env._compile_only && classPath != null && !classPath.isEmpty()) {
+        if (!env._compile_only && classPath != null && !classPath.isEmpty()) {
             // make sure that caller can create a class loader.
             if (sm != null) {
                 sm.checkPermission(new RuntimePermission("createClassLoader"));
@@ -415,13 +444,13 @@ public final class Context {
         }
 
         if (env._persistent_cache) {
-            if (env._lazy_compilation || env._specialize_calls != null) {
-                getErr().println("Can not use persistent class caching with lazy compilation or call specialization.");
+            if (env._lazy_compilation || env._optimistic_types) {
+                getErr().println("Can not use persistent class caching with lazy compilation or optimistic compilation.");
             } else {
                 try {
                     final String cacheDir = Options.getStringProperty("nashorn.persistent.code.cache", "nashorn_code_cache");
                     codeStore = new CodeStore(cacheDir);
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     throw new RuntimeException("Error initializing code cache", e);
                 }
             }
@@ -435,6 +464,8 @@ public final class Context {
         if (env._fullversion) {
             getErr().println("nashorn full version " + Version.fullVersion());
         }
+
+        initLoggers();
     }
 
     /**
@@ -511,13 +542,12 @@ public final class Context {
      */
     public MultiGlobalCompiledScript compileScript(final Source source) {
         final Class<?> clazz = compile(source, this.errors, this._strict);
-        final MethodHandle runMethodHandle = getRunScriptHandle(clazz);
-        final boolean strict = isStrict(clazz);
+        final MethodHandle createProgramFunctionHandle = getCreateProgramFunctionHandle(clazz);
 
         return new MultiGlobalCompiledScript() {
             @Override
             public ScriptFunction getFunction(final Global newGlobal) {
-                return Context.getGlobal().newScriptFunction(RUN_SCRIPT.symbolName(), runMethodHandle, newGlobal, strict);
+                return invokeCreateProgramFunctionHandle(createProgramFunctionHandle, newGlobal);
             }
         };
     }
@@ -534,11 +564,10 @@ public final class Context {
      * @return the return value of the {@code eval}
      */
     public Object eval(final ScriptObject initialScope, final String string, final Object callThis, final Object location, final boolean strict) {
-        final String  file       = (location == UNDEFINED || location == null) ? "<eval>" : location.toString();
+        final String  file       = location == UNDEFINED || location == null ? "<eval>" : location.toString();
         final Source  source     = sourceFor(file, string);
         final boolean directEval = location != UNDEFINED; // is this direct 'eval' call or indirectly invoked eval?
         final Global  global = Context.getGlobal();
-
         ScriptObject scope = initialScope;
 
         // ECMA section 10.1.1 point 2 says eval code is strict if it begins
@@ -580,10 +609,10 @@ public final class Context {
             scope = strictEvalScope;
         }
 
-        ScriptFunction func = getRunScriptFunction(clazz, scope);
+        final ScriptFunction func = getProgramFunction(clazz, scope);
         Object evalThis;
         if (directEval) {
-            evalThis = (callThis instanceof ScriptObject || strictFlag) ? callThis : global;
+            evalThis = callThis instanceof ScriptObject || strictFlag ? callThis : global;
         } else {
             evalThis = global;
         }
@@ -602,7 +631,7 @@ public final class Context {
                         public Source run() {
                             try {
                                 final URL resURL = Context.class.getResource(resource);
-                                return (resURL != null)? sourceFor(srcStr, resURL) : null;
+                                return resURL != null ? sourceFor(srcStr, resURL) : null;
                             } catch (final IOException exp) {
                                 return null;
                             }
@@ -625,7 +654,7 @@ public final class Context {
      * @throws IOException if source cannot be found or loaded
      */
     public Object load(final ScriptObject scope, final Object from) throws IOException {
-        final Object src = (from instanceof ConsString)?  from.toString() : from;
+        final Object src = from instanceof ConsString ? from.toString() : from;
         Source source = null;
 
         // load accepts a String (which could be a URL or a file name), a File, a URL
@@ -633,8 +662,8 @@ public final class Context {
         if (src instanceof String) {
             final String srcStr = (String)src;
             if (srcStr.startsWith(LOAD_CLASSPATH)) {
-                URL url = getResourceURL(srcStr.substring(LOAD_CLASSPATH.length()));
-                source = (url != null)? sourceFor(url.toString(), url) : null;
+                final URL url = getResourceURL(srcStr.substring(LOAD_CLASSPATH.length()));
+                source = url != null ? sourceFor(url.toString(), url) : null;
             } else {
                 final File file = new File(srcStr);
                 if (srcStr.indexOf(':') != -1) {
@@ -738,11 +767,12 @@ public final class Context {
      *
      * @throws ClassNotFoundException if structure class cannot be resolved
      */
-    public static Class<?> forStructureClass(final String fullName) throws ClassNotFoundException {
+    @SuppressWarnings("unchecked")
+    public static Class<? extends ScriptObject> forStructureClass(final String fullName) throws ClassNotFoundException {
         if (System.getSecurityManager() != null && !StructureLoader.isStructureClass(fullName)) {
             throw new ClassNotFoundException(fullName);
         }
-        return Class.forName(fullName, true, sharedLoader);
+        return (Class<? extends ScriptObject>)Class.forName(fullName, true, sharedLoader);
     }
 
     /**
@@ -930,15 +960,16 @@ public final class Context {
     }
 
     /**
-     * Trusted variant - package-private
-     */
-
-    /**
      * Return the current global's context
      * @return current global's context
      */
     static Context getContextTrusted() {
         return ((ScriptObject)Context.getGlobal()).getContext();
+    }
+
+    static Context getContextTrustedOrNull() {
+        final Global global = Context.getGlobal();
+        return global == null ? null : ((ScriptObject)global).getContext();
     }
 
     /**
@@ -982,40 +1013,30 @@ public final class Context {
         return ScriptRuntime.apply(script, thiz);
     }
 
-    private static MethodHandle getRunScriptHandle(final Class<?> script) {
-        return MH.findStatic(
-                    MethodHandles.lookup(),
-                    script,
-                    RUN_SCRIPT.symbolName(),
-                    MH.type(
-                        Object.class,
-                        ScriptFunction.class,
-                        Object.class));
+    private static ScriptFunction getProgramFunction(final Class<?> script, final ScriptObject scope) {
+        return invokeCreateProgramFunctionHandle(getCreateProgramFunctionHandle(script), scope);
     }
 
-    private static boolean isStrict(final Class<?> script) {
+    private static MethodHandle getCreateProgramFunctionHandle(final Class<?> script) {
         try {
-            return script.getField(STRICT_MODE.symbolName()).getBoolean(null);
-        } catch (final NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
-            return false;
+            return LOOKUP.findStatic(script, CREATE_PROGRAM_FUNCTION.symbolName(), CREATE_PROGRAM_FUNCTION_TYPE);
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new AssertionError("Failed to retrieve a handle for the program function for " + script.getName(), e);
         }
     }
 
-    private static ScriptFunction getRunScriptFunction(final Class<?> script, final ScriptObject scope) {
-        if (script == null) {
-            return null;
+    private static ScriptFunction invokeCreateProgramFunctionHandle(final MethodHandle createProgramFunctionHandle, final ScriptObject scope) {
+        try {
+            return (ScriptFunction)createProgramFunctionHandle.invokeExact(scope);
+        } catch (final RuntimeException|Error e) {
+            throw e;
+        } catch (final Throwable t) {
+            throw new AssertionError("Failed to create a program function", t);
         }
-
-        // Get run method - the entry point to the script
-        final MethodHandle runMethodHandle = getRunScriptHandle(script);
-        boolean strict = isStrict(script);
-
-        // Package as a JavaScript function and pass function back to shell.
-        return Context.getGlobal().newScriptFunction(RUN_SCRIPT.symbolName(), runMethodHandle, scope, strict);
     }
 
     private ScriptFunction compileScript(final Source source, final ScriptObject scope, final ErrorManager errMan) {
-        return getRunScriptFunction(compile(source, errMan, this._strict), scope);
+        return getProgramFunction(compile(source, errMan, this._strict), scope);
     }
 
     private synchronized Class<?> compile(final Source source, final ErrorManager errMan, final boolean strict) {
@@ -1024,7 +1045,10 @@ public final class Context {
 
         Class<?> script = findCachedClass(source);
         if (script != null) {
-            Compiler.LOG.fine("Code cache hit for ", source, " avoiding recompile.");
+            final DebugLogger log = getLogger(Compiler.class);
+            if (log.isEnabled()) {
+                log.fine(new RuntimeEvent<>(Level.INFO, source), "Code cache hit for ", source, " avoiding recompile.");
+            }
             return script;
         }
 
@@ -1035,13 +1059,13 @@ public final class Context {
             try {
                 compiledScript = codeStore.getScript(source);
             } catch (IOException | ClassNotFoundException e) {
-                Compiler.LOG.warning("Error loading ", source, " from cache: ", e);
+                getLogger(Compiler.class).warning("Error loading ", source, " from cache: ", e);
                 // Fall back to normal compilation
             }
         }
 
         if (compiledScript == null) {
-            functionNode = new Parser(env, source, errMan, strict).parse();
+            functionNode = new Parser(env, source, errMan, strict, getLogger(Parser.class)).parse();
 
             if (errors.hasErrors()) {
                 return null;
@@ -1052,7 +1076,7 @@ public final class Context {
             }
 
             if (env._print_parse) {
-                getErr().println(new PrintVisitor(functionNode));
+                getErr().println(new PrintVisitor(functionNode, true, false));
             }
         }
 
@@ -1066,9 +1090,17 @@ public final class Context {
         final CodeInstaller<ScriptEnvironment> installer = new ContextCodeInstaller(this, loader, cs);
 
         if (functionNode != null) {
-            final Compiler compiler = new Compiler(installer, strict);
-            final FunctionNode newFunctionNode = compiler.compile(functionNode);
-            script = compiler.install(newFunctionNode);
+            final CompilationPhases phases = Compiler.CompilationPhases.COMPILE_ALL;
+
+            final Compiler compiler = new Compiler(
+                    this,
+                    env,
+                    installer,
+                    source,
+                    functionNode.getSourceURL(),
+                    strict | functionNode.isStrict());
+
+            script = compiler.compile(functionNode, phases).getRootClass();
         } else {
             script = install(compiledScript, installer);
         }
@@ -1102,14 +1134,14 @@ public final class Context {
      * @param compiledScript cached script containing class bytes and constants
      * @return main script class
      */
-    private Class<?> install(final CompiledScript compiledScript, final CodeInstaller<ScriptEnvironment> installer) {
+    private static Class<?> install(final CompiledScript compiledScript, final CodeInstaller<ScriptEnvironment> installer) {
 
         final Map<String, Class<?>> installedClasses = new HashMap<>();
         final Source   source        = compiledScript.getSource();
         final Object[] constants     = compiledScript.getConstants();
         final String   rootClassName = compiledScript.getMainClassName();
         final byte[]   rootByteCode  = compiledScript.getClassBytes().get(rootClassName);
-        final Class<?> rootClass     = installer.install(rootClassName, rootByteCode, source, constants);
+        final Class<?> rootClass     = installer.install(rootClassName, rootByteCode);
 
         installedClasses.put(rootClassName, rootClass);
 
@@ -1120,9 +1152,12 @@ public final class Context {
             }
             final byte[] code = entry.getValue();
 
-            installedClasses.put(className, installer.install(className, code, source, constants));
+            installedClasses.put(className, installer.install(className, code));
         }
-        for (Object constant : constants) {
+
+        installer.initialize(installedClasses.values(), source, constants);
+
+        for (final Object constant : constants) {
             if (constant instanceof RecompilableScriptFunctionData) {
                 ((RecompilableScriptFunctionData) constant).setCodeAndSource(installedClasses, source);
             }
@@ -1139,7 +1174,7 @@ public final class Context {
         private final int size;
         private final ReferenceQueue<Class<?>> queue;
 
-        ClassCache(int size) {
+        ClassCache(final int size) {
             super(size, 0.75f, true);
             this.size = size;
             this.queue = new ReferenceQueue<>();
@@ -1155,7 +1190,7 @@ public final class Context {
         }
 
         @Override
-        public ClassReference get(Object key) {
+        public ClassReference get(final Object key) {
             for (ClassReference ref; (ref = (ClassReference)queue.poll()) != null; ) {
                 remove(ref.source);
             }
@@ -1175,7 +1210,7 @@ public final class Context {
 
     // Class cache management
     private Class<?> findCachedClass(final Source source) {
-        ClassReference ref = classCache == null ? null : classCache.get(source);
+        final ClassReference ref = classCache == null ? null : classCache.get(source);
         return ref != null ? ref.get() : null;
     }
 
@@ -1185,5 +1220,78 @@ public final class Context {
         }
     }
 
+    // logging
+    private final Map<String, DebugLogger> loggers = new HashMap<>();
+
+    private void initLoggers() {
+        ((Loggable)MethodHandleFactory.getFunctionality()).initLogger(this);
+    }
+
+    /**
+     * Get a logger, given a loggable class
+     * @param clazz a Loggable class
+     * @return debuglogger associated with that class
+     */
+    public DebugLogger getLogger(final Class<? extends Loggable> clazz) {
+        final String name = getLoggerName(clazz);
+        DebugLogger logger = loggers.get(name);
+        if (logger == null) {
+            if (!env.hasLogger(name)) {
+                return DebugLogger.DISABLED_LOGGER;
+            }
+            final LoggerInfo info = env._loggers.get(name);
+            logger = new DebugLogger(name, info.getLevel(), info.isQuiet());
+            loggers.put(name, logger);
+        }
+        return logger;
+    }
+
+    /**
+     * Given a Loggable class, weave debug info info a method handle for that logger.
+     * Level.INFO is used
+     *
+     * @param clazz loggable
+     * @param mh    method handle
+     * @param text  debug printout to add
+     *
+     * @return instrumented method handle, or null if logger not enabled
+     */
+    public MethodHandle addLoggingToHandle(final Class<? extends Loggable> clazz, final MethodHandle mh, final Supplier<String> text) {
+        return addLoggingToHandle(clazz, Level.INFO, mh, Integer.MAX_VALUE, false, text);
+    }
+
+    /**
+     * Given a Loggable class, weave debug info info a method handle for that logger.
+     *
+     * @param clazz            loggable
+     * @param level            log level
+     * @param mh               method handle
+     * @param paramStart       first parameter to print
+     * @param printReturnValue should we print the return vaulue?
+     * @param text             debug printout to add
+     *
+     * @return instrumented method handle, or null if logger not enabled
+     */
+    public MethodHandle addLoggingToHandle(final Class<? extends Loggable> clazz, final Level level, final MethodHandle mh, final int paramStart, final boolean printReturnValue, final Supplier<String> text) {
+        final DebugLogger log = getLogger(clazz);
+        if (log.isEnabled()) {
+            return MethodHandleFactory.addDebugPrintout(log, level, mh, paramStart, printReturnValue, text.get());
+        }
+        return mh;
+    }
+
+    private static String getLoggerName(final Class<?> clazz) {
+        Class<?> current = clazz;
+        while (current != null) {
+            final Logger log = current.getAnnotation(Logger.class);
+            if (log != null) {
+                assert !"".equals(log.name());
+                return log.name();
+            }
+            current = current.getSuperclass();
+        }
+        assert false;
+        return null;
+    }
 
 }

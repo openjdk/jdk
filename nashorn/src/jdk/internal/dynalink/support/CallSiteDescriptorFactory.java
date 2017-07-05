@@ -86,6 +86,7 @@ package jdk.internal.dynalink.support;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
@@ -103,7 +104,7 @@ import jdk.internal.dynalink.CallSiteDescriptor;
  * @author Attila Szegedi
  */
 public class CallSiteDescriptorFactory {
-    private static final WeakHashMap<CallSiteDescriptor, WeakReference<CallSiteDescriptor>> publicDescs =
+    private static final WeakHashMap<CallSiteDescriptor, Reference<CallSiteDescriptor>> publicDescs =
             new WeakHashMap<>();
 
 
@@ -121,7 +122,7 @@ public class CallSiteDescriptorFactory {
      * @return a call site descriptor representing the input. Note that although the method name is "create", it will
      * in fact return a weakly-referenced canonical instance.
      */
-    public static CallSiteDescriptor create(Lookup lookup, String name, MethodType methodType) {
+    public static CallSiteDescriptor create(final Lookup lookup, final String name, final MethodType methodType) {
         name.getClass(); // NPE check
         methodType.getClass(); // NPE check
         lookup.getClass(); // NPE check
@@ -134,19 +135,28 @@ public class CallSiteDescriptorFactory {
 
     static CallSiteDescriptor getCanonicalPublicDescriptor(final CallSiteDescriptor desc) {
         synchronized(publicDescs) {
-            final WeakReference<CallSiteDescriptor> ref = publicDescs.get(desc);
+            final Reference<CallSiteDescriptor> ref = publicDescs.get(desc);
             if(ref != null) {
                 final CallSiteDescriptor canonical = ref.get();
                 if(canonical != null) {
                     return canonical;
                 }
             }
-            publicDescs.put(desc, new WeakReference<>(desc));
+            publicDescs.put(desc, createReference(desc));
         }
         return desc;
     }
 
-    private static CallSiteDescriptor createPublicCallSiteDescriptor(String[] tokenizedName, MethodType methodType) {
+    /**
+     * Override this to use a different kind of references for the cache
+     * @param desc desc
+     * @return reference
+     */
+    protected static Reference<CallSiteDescriptor> createReference(final CallSiteDescriptor desc) {
+        return new WeakReference<>(desc);
+    }
+
+    private static CallSiteDescriptor createPublicCallSiteDescriptor(final String[] tokenizedName, final MethodType methodType) {
         final int l = tokenizedName.length;
         if(l > 0 && tokenizedName[0] == "dyn") {
             if(l == 2) {
@@ -158,7 +168,7 @@ public class CallSiteDescriptorFactory {
         return new DefaultCallSiteDescriptor(tokenizedName, methodType);
     }
 
-    private static boolean isPublicLookup(Lookup lookup) {
+    private static boolean isPublicLookup(final Lookup lookup) {
         return lookup == MethodHandles.publicLookup();
     }
 
@@ -169,7 +179,7 @@ public class CallSiteDescriptorFactory {
      * @param name the composite name consisting of colon-separated, possibly mangled tokens.
      * @return an array of tokens
      */
-    public static String[] tokenizeName(String name) {
+    public static String[] tokenizeName(final String name) {
         final StringTokenizer tok = new StringTokenizer(name, CallSiteDescriptor.TOKEN_DELIMITER);
         final String[] tokens = new String[tok.countTokens()];
         for(int i = 0; i < tokens.length; ++i) {
@@ -188,7 +198,7 @@ public class CallSiteDescriptorFactory {
      * @param desc the call site descriptor with the operation
      * @return a list of tokens
      */
-    public static List<String> tokenizeOperators(CallSiteDescriptor desc) {
+    public static List<String> tokenizeOperators(final CallSiteDescriptor desc) {
         final String ops = desc.getNameToken(CallSiteDescriptor.OPERATOR);
         final StringTokenizer tok = new StringTokenizer(ops, CallSiteDescriptor.OPERATOR_DELIMITER);
         final int count = tok.countTokens();
@@ -210,7 +220,7 @@ public class CallSiteDescriptorFactory {
      * @param end index of the first parameter to not remove
      * @return a new call site descriptor with modified method type
      */
-    public static CallSiteDescriptor dropParameterTypes(CallSiteDescriptor desc, int start, int end) {
+    public static CallSiteDescriptor dropParameterTypes(final CallSiteDescriptor desc, final int start, final int end) {
         return desc.changeMethodType(desc.getMethodType().dropParameterTypes(start, end));
     }
 
@@ -222,7 +232,7 @@ public class CallSiteDescriptorFactory {
      * @param nptype the new parameter type
      * @return a new call site descriptor with modified method type
      */
-    public static CallSiteDescriptor changeParameterType(CallSiteDescriptor desc, int num, Class<?> nptype) {
+    public static CallSiteDescriptor changeParameterType(final CallSiteDescriptor desc, final int num, final Class<?> nptype) {
         return desc.changeMethodType(desc.getMethodType().changeParameterType(num, nptype));
     }
 
@@ -233,7 +243,7 @@ public class CallSiteDescriptorFactory {
      * @param nrtype the new return type
      * @return a new call site descriptor with modified method type
      */
-    public static CallSiteDescriptor changeReturnType(CallSiteDescriptor desc, Class<?> nrtype) {
+    public static CallSiteDescriptor changeReturnType(final CallSiteDescriptor desc, final Class<?> nrtype) {
         return desc.changeMethodType(desc.getMethodType().changeReturnType(nrtype));
     }
 
@@ -245,7 +255,7 @@ public class CallSiteDescriptorFactory {
      * @param ptypesToInsert the new types to insert
      * @return a new call site descriptor with modified method type
      */
-    public static CallSiteDescriptor insertParameterTypes(CallSiteDescriptor desc, int num, Class<?>... ptypesToInsert) {
+    public static CallSiteDescriptor insertParameterTypes(final CallSiteDescriptor desc, final int num, final Class<?>... ptypesToInsert) {
         return desc.changeMethodType(desc.getMethodType().insertParameterTypes(num, ptypesToInsert));
     }
 
@@ -257,7 +267,7 @@ public class CallSiteDescriptorFactory {
      * @param ptypesToInsert the new types to insert
      * @return a new call site descriptor with modified method type
      */
-    public static CallSiteDescriptor insertParameterTypes(CallSiteDescriptor desc, int num, List<Class<?>> ptypesToInsert) {
+    public static CallSiteDescriptor insertParameterTypes(final CallSiteDescriptor desc, final int num, final List<Class<?>> ptypesToInsert) {
         return desc.changeMethodType(desc.getMethodType().insertParameterTypes(num, ptypesToInsert));
     }
 }

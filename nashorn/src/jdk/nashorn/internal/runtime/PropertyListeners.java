@@ -111,7 +111,7 @@ public class PropertyListeners {
         if (listeners == null) {
             return false;
         }
-        WeakPropertyMapSet set = listeners.get(key);
+        final WeakPropertyMapSet set = listeners.get(key);
         return set != null && set.contains(propertyMap);
     }
 
@@ -145,9 +145,9 @@ public class PropertyListeners {
      */
     public synchronized void propertyAdded(final Property prop) {
         if (listeners != null) {
-            WeakPropertyMapSet set = listeners.get(prop.getKey());
+            final WeakPropertyMapSet set = listeners.get(prop.getKey());
             if (set != null) {
-                for (PropertyMap propertyMap : set.elements()) {
+                for (final PropertyMap propertyMap : set.elements()) {
                     propertyMap.propertyAdded(prop);
                 }
                 listeners.remove(prop.getKey());
@@ -162,9 +162,9 @@ public class PropertyListeners {
      */
     public synchronized void propertyDeleted(final Property prop) {
         if (listeners != null) {
-            WeakPropertyMapSet set = listeners.get(prop.getKey());
+            final WeakPropertyMapSet set = listeners.get(prop.getKey());
             if (set != null) {
-                for (PropertyMap propertyMap : set.elements()) {
+                for (final PropertyMap propertyMap : set.elements()) {
                     propertyMap.propertyDeleted(prop);
                 }
                 listeners.remove(prop.getKey());
@@ -181,9 +181,9 @@ public class PropertyListeners {
      */
     public synchronized void propertyModified(final Property oldProp, final Property newProp) {
         if (listeners != null) {
-            WeakPropertyMapSet set = listeners.get(oldProp.getKey());
+            final WeakPropertyMapSet set = listeners.get(oldProp.getKey());
             if (set != null) {
-                for (PropertyMap propertyMap : set.elements()) {
+                for (final PropertyMap propertyMap : set.elements()) {
                     propertyMap.propertyModified(oldProp, newProp);
                 }
                 listeners.remove(oldProp.getKey());
@@ -191,10 +191,13 @@ public class PropertyListeners {
         }
     }
 
+    /**
+     * Callback for when a proto is changed
+     */
     public synchronized void protoChanged() {
         if (listeners != null) {
-            for (WeakPropertyMapSet set : listeners.values()) {
-                for (PropertyMap propertyMap : set.elements()) {
+            for (final WeakPropertyMapSet set : listeners.values()) {
+                for (final PropertyMap propertyMap : set.elements()) {
                     propertyMap.protoChanged();
                 }
             }
@@ -204,7 +207,7 @@ public class PropertyListeners {
 
     private static class WeakPropertyMapSet {
 
-        private WeakHashMap<PropertyMap, Boolean> map = new WeakHashMap<>();
+        private final WeakHashMap<PropertyMap, Boolean> map = new WeakHashMap<>();
 
         void add(final PropertyMap propertyMap) {
             map.put(propertyMap, Boolean.TRUE);

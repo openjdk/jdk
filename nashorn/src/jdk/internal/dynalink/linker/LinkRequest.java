@@ -101,6 +101,17 @@ public interface LinkRequest {
     public CallSiteDescriptor getCallSiteDescriptor();
 
     /**
+     * Returns the call site token for the call site being linked. This token is an opaque object that is guaranteed to
+     * have different identity for different call sites, and is also guaranteed to not become weakly reachable before
+     * the call site does and to become weakly reachable some time after the call site does. This makes it ideal as a
+     * candidate for a key in a weak hash map in which a linker might want to keep per-call site linking state (usually
+     * profiling information).
+     *
+     * @return the call site token for the call site being linked.
+     */
+    public Object getCallSiteToken();
+
+    /**
      * Returns the arguments for the invocation being linked. The returned array is a clone; modifications to it won't
      * affect the arguments in this request.
      *
@@ -114,6 +125,17 @@ public interface LinkRequest {
      * @return the receiver object.
      */
     public Object getReceiver();
+
+    /**
+     * Returns the number of times this callsite has been linked/relinked. This can be useful if you want to
+     * change e.g. exception based relinking to guard based relinking. It's probably not a good idea to keep,
+     * for example, expensive exception throwing relinkage based on failed type checks/ClassCastException in
+     * a nested callsite tree where the exception is thrown repeatedly for the common case. There it would be
+     * much more performant to use exact type guards instead.
+     *
+     * @return link count for call site
+     */
+    public int getLinkCount();
 
     /**
      * Returns true if the call site is considered unstable, that is, it has been relinked more times than was

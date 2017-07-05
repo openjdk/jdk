@@ -25,15 +25,23 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
+import jdk.nashorn.internal.runtime.arrays.TypedArrayData;
 
 /**
  * Int16 array for the TypedArray extension
@@ -56,37 +64,95 @@ public final class NativeInt16Array extends ArrayBufferView {
         public ArrayBufferView construct(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
             return new NativeInt16Array(buffer, byteOffset, length);
         }
+
         @Override
-        public ArrayData createArrayData(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
-            return new Int16ArrayData(buffer, byteOffset, length);
+        public Int16ArrayData createArrayData(final ByteBuffer nb, final int start, final int end) {
+            return new Int16ArrayData(nb.asShortBuffer(), start, end);
+        }
+
+        @Override
+        public String getClassName() {
+            return "Int16Array";
         }
     };
 
-    private static final class Int16ArrayData extends ArrayDataImpl {
-        private Int16ArrayData(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {
-            super(buffer, byteOffset, elementLength);
+    private static final class Int16ArrayData extends TypedArrayData<ShortBuffer> {
+
+        private static final MethodHandle GET_ELEM = specialCall(MethodHandles.lookup(), Int16ArrayData.class, "getElem", int.class, int.class).methodHandle();
+        private static final MethodHandle SET_ELEM = specialCall(MethodHandles.lookup(), Int16ArrayData.class, "setElem", void.class, int.class, int.class).methodHandle();
+
+        private Int16ArrayData(final ShortBuffer nb, final int start, final int end) {
+            super(((ShortBuffer)nb.position(start).limit(end)).slice(), end - start);
         }
 
         @Override
-        protected int byteIndex(final int index) {
-            return index * BYTES_PER_ELEMENT + byteOffset;
+        protected MethodHandle getGetElem() {
+            return GET_ELEM;
         }
 
         @Override
-        protected int getIntImpl(final int index) {
-            final int byteIndex = byteIndex(index);
-            final byte[] byteArray = buffer.getByteArray();
-            return byteArray[byteIndex  ]       & (short)0x00ff |
-                   byteArray[byteIndex+1] <<  8 & (short)0xff00 ;
+        protected MethodHandle getSetElem() {
+            return SET_ELEM;
+        }
+
+        private int getElem(final int index) {
+            try {
+                return nb.get(index);
+            } catch (final IndexOutOfBoundsException e) {
+                throw new ClassCastException(); //force relink - this works for unoptimistic too
+            }
+        }
+
+        private void setElem(final int index, final int elem) {
+            try {
+                nb.put(index, (short)elem);
+            } catch (final IndexOutOfBoundsException e) {
+                //swallow valid array indexes. it's ok.
+                if (index < 0) {
+                    throw new ClassCastException();
+                }
+            }
         }
 
         @Override
-        protected void setImpl(final int index, final int value) {
-            final int byteIndex = byteIndex(index);
-            @SuppressWarnings("MismatchedReadAndWriteOfArray")
-            final byte[] byteArray = buffer.getByteArray();
-            byteArray[byteIndex  ] = (byte)(value       & 0xff);
-            byteArray[byteIndex+1] = (byte)(value >>> 8 & 0xff);
+        public int getInt(final int index) {
+            return getElem(index);
+        }
+
+        @Override
+        public long getLong(final int index) {
+            return getInt(index);
+        }
+
+        @Override
+        public double getDouble(final int index) {
+            return getInt(index);
+        }
+
+        @Override
+        public Object getObject(final int index) {
+            return getInt(index);
+        }
+
+        @Override
+        public ArrayData set(final int index, final Object value, final boolean strict) {
+            return set(index, JSType.toInt32(value), strict);
+        }
+
+        @Override
+        public ArrayData set(final int index, final int value, final boolean strict) {
+            setElem(index, value);
+            return this;
+        }
+
+        @Override
+        public ArrayData set(final int index, final long value, final boolean strict) {
+            return set(index, (int)value, strict);
+        }
+
+        @Override
+        public ArrayData set(final int index, final double value, final boolean strict) {
+            return set(index, (int)value, strict);
         }
     }
 
@@ -101,16 +167,11 @@ public final class NativeInt16Array extends ArrayBufferView {
      */
     @Constructor(arity = 1)
     public static NativeInt16Array constructor(final boolean newObj, final Object self, final Object... args) {
-        return (NativeInt16Array)constructorImpl(args, FACTORY);
+        return (NativeInt16Array)constructorImpl(newObj, args, FACTORY);
     }
 
     NativeInt16Array(final NativeArrayBuffer buffer, final int byteOffset, final int byteLength) {
         super(buffer, byteOffset, byteLength);
-    }
-
-    @Override
-    public String getClassName() {
-        return "Int16Array";
     }
 
     @Override

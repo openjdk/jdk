@@ -171,7 +171,7 @@ public final class NativeJSON extends ScriptObject {
         }
 
         if (modSpace instanceof Number) {
-            int indent = Math.min(10, JSType.toInteger(modSpace));
+            final int indent = Math.min(10, JSType.toInteger(modSpace));
             if (indent < 1) {
                 gap = "";
             } else {

@@ -319,7 +319,8 @@ class ZipInputStream extends InflaterInputStream implements ZipConstants {
         if (len > 0) {
             byte[] extra = new byte[len];
             readFully(extra, 0, len);
-            e.setExtra0(extra, true);
+            e.setExtra0(extra,
+                        e.csize == ZIP64_MAGICVAL || e.size == ZIP64_MAGICVAL);
         }
         return e;
     }

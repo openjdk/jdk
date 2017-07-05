@@ -25,28 +25,28 @@ final class StackEntry {
 
     // first union member
     /* byte code position */
-    void setStatePCode(int pcode) {
+    void setStatePCode(final int pcode) {
         E1 = pcode;
     }
     int getStatePCode() {
         return E1;
     }
     /* string position */
-    void setStatePStr(int pstr) {
+    void setStatePStr(final int pstr) {
         E2 = pstr;
     }
     int getStatePStr() {
         return E2;
     }
     /* previous char position of pstr */
-    void setStatePStrPrev(int pstrPrev) {
+    void setStatePStrPrev(final int pstrPrev) {
         E3 = pstrPrev;
     }
     int getStatePStrPrev() {
         return E3;
     }
 
-    void setStateCheck(int check) {
+    void setStateCheck(final int check) {
         E4 = check;
     }
     int getStateCheck() {
@@ -55,7 +55,7 @@ final class StackEntry {
 
     // second union member
     /* for OP_REPEAT_INC, OP_REPEAT_INC_NG */
-    void setRepeatCount(int count) {
+    void setRepeatCount(final int count) {
         E1 = count;
     }
     int getRepeatCount() {
@@ -68,14 +68,14 @@ final class StackEntry {
         E1++;
     }
     /* byte code position (head of repeated target) */
-    void setRepeatPCode(int pcode) {
+    void setRepeatPCode(final int pcode) {
         E2 = pcode;
     }
     int getRepeatPCode() {
         return E2;
     }
     /* repeat id */
-    void setRepeatNum(int num) {
+    void setRepeatNum(final int num) {
         E3 = num;
     }
     int getRepeatNum() {
@@ -84,7 +84,7 @@ final class StackEntry {
 
     // third union member
     /* index of stack */ /*int repeat_inc struct*/
-    void setSi(int si) {
+    void setSi(final int si) {
         E1 = si;
     }
     int getSi() {
@@ -93,14 +93,14 @@ final class StackEntry {
 
     // fourth union member
     /* memory num */
-    void setMemNum(int num) {
+    void setMemNum(final int num) {
         E1 = num;
     }
     int getMemNum() {
         return E1;
     }
     /* start/end position */
-    void setMemPstr(int pstr) {
+    void setMemPstr(final int pstr) {
         E2 = pstr;
     }
     int getMemPStr() {
@@ -109,14 +109,14 @@ final class StackEntry {
 
     /* Following information is set, if this stack type is MEM-START */
     /* prev. info (for backtrack  "(...)*" ) */
-    void setMemStart(int start) {
+    void setMemStart(final int start) {
         E3 = start;
     }
     int getMemStart() {
         return E3;
     }
     /* prev. info (for backtrack  "(...)*" ) */
-    void setMemEnd(int end) {
+    void setMemEnd(final int end) {
         E4 = end;
     }
     int getMemEnd() {
@@ -125,14 +125,14 @@ final class StackEntry {
 
     // fifth union member
     /* null check id */
-    void setNullCheckNum(int num) {
+    void setNullCheckNum(final int num) {
         E1 = num;
     }
     int getNullCheckNum() {
         return E1;
     }
     /* start position */
-    void setNullCheckPStr(int pstr) {
+    void setNullCheckPStr(final int pstr) {
         E2 = pstr;
     }
     int getNullCheckPStr() {
@@ -141,21 +141,21 @@ final class StackEntry {
 
     // sixth union member
     /* byte code position */
-    void setCallFrameRetAddr(int addr) {
+    void setCallFrameRetAddr(final int addr) {
         E1 = addr;
     }
     int getCallFrameRetAddr() {
         return E1;
     }
     /* null check id */
-    void setCallFrameNum(int num) {
+    void setCallFrameNum(final int num) {
         E2 = num;
     }
     int getCallFrameNum() {
         return E2;
     }
     /* string position */
-    void setCallFramePStr(int pstr) {
+    void setCallFramePStr(final int pstr) {
         E3 = pstr;
     }
     int getCallFramePStr() {

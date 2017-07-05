@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,19 +69,13 @@ public class Interrupt {
                 (BlockingDeque<Object>) q : null;
             q.clear();
             List<Fun> fs = new ArrayList<Fun>();
-            fs.add(new Fun() { void f() throws Throwable
-                    { q.take(); }});
-            fs.add(new Fun() { void f() throws Throwable
-                    { q.poll(60, SECONDS); }});
+            fs.add(() -> q.take());
+            fs.add(() -> q.poll(60, SECONDS));
             if (deq != null) {
-                fs.add(new Fun() { void f() throws Throwable
-                        { deq.takeFirst(); }});
-                fs.add(new Fun() { void f() throws Throwable
-                        { deq.takeLast(); }});
-                fs.add(new Fun() { void f() throws Throwable
-                        { deq.pollFirst(7, SECONDS); }});
-                fs.add(new Fun() { void f() throws Throwable
-                        { deq.pollLast(7, SECONDS); }});
+                fs.add(() -> deq.takeFirst());
+                fs.add(() -> deq.takeLast());
+                fs.add(() -> deq.pollFirst(7, SECONDS));
+                fs.add(() -> deq.pollLast(7, SECONDS));
             }
 
             checkInterrupted(fs);
@@ -92,19 +86,13 @@ public class Interrupt {
                 catch (Throwable t) { unexpected(t); }
 
             fs.clear();
-            fs.add(new Fun() { void f() throws Throwable
-                    { q.put(1); }});
-            fs.add(new Fun() { void f() throws Throwable
-                    { q.offer(1, 7, SECONDS); }});
+            fs.add(() -> q.put(1));
+            fs.add(() -> q.offer(1, 7, SECONDS));
             if (deq != null) {
-                fs.add(new Fun() { void f() throws Throwable
-                        { deq.putFirst(1); }});
-                fs.add(new Fun() { void f() throws Throwable
-                        { deq.putLast(1); }});
-                fs.add(new Fun() { void f() throws Throwable
-                        { deq.offerFirst(1, 7, SECONDS); }});
-                fs.add(new Fun() { void f() throws Throwable
-                        { deq.offerLast(1, 7, SECONDS); }});
+                fs.add(() -> deq.putFirst(1));
+                fs.add(() -> deq.putLast(1));
+                fs.add(() -> deq.offerFirst(1, 7, SECONDS));
+                fs.add(() -> deq.offerLast(1, 7, SECONDS));
             }
             checkInterrupted(fs);
         } catch (Throwable t) {
@@ -135,5 +123,5 @@ public class Interrupt {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
-    private abstract static class Fun {abstract void f() throws Throwable;}
+    interface Fun {void f() throws Throwable;}
 }

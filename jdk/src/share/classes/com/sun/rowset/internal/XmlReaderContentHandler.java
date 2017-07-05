@@ -1147,7 +1147,7 @@ public class XmlReaderContentHandler extends DefaultHandler {
             if (nullValue) {
                 rs.setSyncProvider(null);
             } else {
-                String str = s.substring(0,s.indexOf("@")+1);
+                String str = s.substring(0,s.indexOf('@')+1);
                 rs.setSyncProvider(str);
             }
             break;

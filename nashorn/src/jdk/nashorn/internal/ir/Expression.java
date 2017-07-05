@@ -25,7 +25,9 @@
 
 package jdk.nashorn.internal.ir;
 
+import java.util.function.Function;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
 
 /**
  * Common superclass for all expression nodes. Expression nodes can have
@@ -33,69 +35,44 @@ import jdk.nashorn.internal.codegen.types.Type;
  *
  */
 public abstract class Expression extends Node {
-    private Symbol symbol;
+    static final String OPT_IDENTIFIER = "%";
 
-    Expression(long token, int start, int finish) {
+    private static final Function<Symbol, Type> UNKNOWN_LOCALS = new Function<Symbol, Type>() {
+        @Override
+        public Type apply(final Symbol t) {
+            return null;
+        }
+    };
+
+    Expression(final long token, final int start, final int finish) {
         super(token, start, finish);
     }
 
-    Expression(long token, int finish) {
+    Expression(final long token, final int finish) {
         super(token, finish);
     }
 
-    Expression(Expression expr) {
+    Expression(final Expression expr) {
         super(expr);
-        this.symbol = expr.symbol;
     }
 
     /**
-     * Return the Symbol the compiler has assigned to this Node. The symbol
-     * is the place where it's expression value is stored after evaluation
+     * Returns the type of the expression.
      *
-     * @return the symbol
+     * @return the type of the expression.
      */
-    public Symbol getSymbol() {
-        return symbol;
+    public final Type getType() {
+        return getType(UNKNOWN_LOCALS);
     }
 
     /**
-     * Assign a symbol to this node. See {@link Expression#getSymbol()} for explanation
-     * of what a symbol is
-     *
-     * @param lc lexical context
-     * @param symbol the symbol
-     * @return new node
+     * Returns the type of the expression under the specified symbol-to-type mapping. By default delegates to
+     * {@link #getType()} but expressions whose type depends on their subexpressions' types and expressions whose type
+     * depends on symbol type ({@link IdentNode}) will have a special implementation.
+     * @param localVariableTypes a mapping from symbols to their types, used for type calculation.
+     * @return the type of the expression under the specified symbol-to-type mapping.
      */
-    public Expression setSymbol(final LexicalContext lc, final Symbol symbol) {
-        if (this.symbol == symbol) {
-            return this;
-        }
-        final Expression newExpr = (Expression)clone();
-        newExpr.symbol = symbol;
-        return newExpr;
-    }
-
-    /**
-     * Check if the expression has a type. The default behavior is to go into the symbol
-     * and check the symbol type, but there may be overrides, for example in
-     * getters that require a different type than the internal representation
-     *
-     * @return true if a type exists
-     */
-    public boolean hasType() {
-        return getSymbol() != null;
-    }
-
-    /**
-     * Returns the type of the expression. Typically this is the symbol type. No types
-     * are stored in the expression itself, unless it implements TypeOverride.
-     *
-     * @return the type of the node.
-     */
-    public Type getType() {
-        assert hasType() : this + " has no type";
-        return symbol.getSymbolType();
-    }
+    public abstract Type getType(final Function<Symbol, Type> localVariableTypes);
 
     /**
      * Returns {@code true} if this expression depends exclusively on state that is constant
@@ -107,5 +84,89 @@ public abstract class Expression extends Node {
      */
     public boolean isLocal() {
         return false;
+    }
+
+    /**
+     * Is this a self modifying assignment?
+     * @return true if self modifying, e.g. a++, or a*= 17
+     */
+    public boolean isSelfModifying() {
+        return false;
+    }
+
+    /**
+     * Returns widest operation type of this operation.
+     *
+     * @return the widest type for this operation
+     */
+    public Type getWidestOperationType() {
+        return Type.OBJECT;
+    }
+
+    /**
+     * Returns true if the type of this expression is narrower than its widest operation type (thus, it is
+     * optimistically typed).
+     * @return true if this expression is optimistically typed.
+     */
+    public final boolean isOptimistic() {
+        return getType().narrowerThan(getWidestOperationType());
+    }
+
+    void optimisticTypeToString(final StringBuilder sb) {
+        optimisticTypeToString(sb, isOptimistic());
+    }
+
+    void optimisticTypeToString(final StringBuilder sb, final boolean optimistic) {
+        sb.append('{');
+        final Type type = getType();
+        final String desc = type == Type.UNDEFINED ? "U" : type.getDescriptor();
+
+        sb.append(desc.charAt(desc.length() - 1) == ';' ? "O" : desc);
+        if (isOptimistic() && optimistic) {
+            sb.append(OPT_IDENTIFIER);
+            final int pp = ((Optimistic)this).getProgramPoint();
+            if (UnwarrantedOptimismException.isValid(pp)) {
+                sb.append('_').append(pp);
+            }
+        }
+        sb.append('}');
+    }
+
+    /**
+     * Returns true if the runtime value of this expression is always false when converted to boolean as per ECMAScript
+     * ToBoolean conversion. Used in control flow calculations.
+     * @return true if this expression's runtime value converted to boolean is always false.
+     */
+    public boolean isAlwaysFalse() {
+        return false;
+    }
+
+    /**
+     * Returns true if the runtime value of this expression is always true when converted to boolean as per ECMAScript
+     * ToBoolean conversion. Used in control flow calculations.
+     * @return true if this expression's runtime value converted to boolean is always true.
+     */
+    public boolean isAlwaysTrue() {
+        return false;
+    }
+
+    /**
+     * Returns true if the expression is not null and {@link #isAlwaysFalse()}.
+     * @param test a test expression used as a predicate of a branch or a loop.
+     * @return true if the expression is not null and {@link #isAlwaysFalse()}.
+     */
+    public static boolean isAlwaysFalse(final Expression test) {
+        return test != null && test.isAlwaysFalse();
+    }
+
+
+    /**
+     * Returns true if the expression is null or {@link #isAlwaysTrue()}. Null is considered to be always true as a
+     * for loop with no test is equivalent to a for loop with always-true test.
+     * @param test a test expression used as a predicate of a branch or a loop.
+     * @return true if the expression is null or {@link #isAlwaysFalse()}.
+     */
+    public static boolean isAlwaysTrue(final Expression test) {
+        return test == null || test.isAlwaysTrue();
     }
 }

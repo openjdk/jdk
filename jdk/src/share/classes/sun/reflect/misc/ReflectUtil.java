@@ -341,6 +341,6 @@ public final class ReflectUtil {
      * (not to be confused with a Java Language anonymous inner class).
      */
     public static boolean isVMAnonymousClass(Class<?> cls) {
-        return cls.getName().indexOf("/") > -1;
+        return cls.getName().indexOf('/') > -1;
     }
 }

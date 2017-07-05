@@ -3,10 +3,7 @@
     "body": [
         {
             "type": "LabeledStatement",
-            "label": {
-                "type": "Identifier",
-                "name": "begin"
-            },
+            "label": "begin",
             "body": {
                 "type": "BlockStatement",
                 "body": [
@@ -20,10 +17,7 @@
                             "body": [
                                 {
                                     "type": "BreakStatement",
-                                    "label": {
-                                        "type": "Identifier",
-                                        "name": "begin"
-                                    }
+                                    "label": "begin"
                                 }
                             ]
                         }
@@ -38,10 +32,7 @@
     "body": [
         {
             "type": "LabeledStatement",
-            "label": {
-                "type": "Identifier",
-                "name": "begin"
-            },
+            "label": "begin",
             "body": {
                 "type": "BlockStatement",
                 "body": [
@@ -56,10 +47,7 @@
                             "body": [
                                 {
                                     "type": "BreakStatement",
-                                    "label": {
-                                        "type": "Identifier",
-                                        "name": "begin"
-                                    }
+                                    "label": "begin"
                                 }
                             ]
                         }

@@ -25,8 +25,10 @@
 
 package jdk.nashorn.internal.runtime;
 
-import jdk.nashorn.api.scripting.URLReader;
-import org.testng.annotations.Test;
+import static jdk.nashorn.internal.runtime.Source.sourceFor;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,11 +36,8 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
 import java.util.Arrays;
-
-import static jdk.nashorn.internal.runtime.Source.sourceFor;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import jdk.nashorn.api.scripting.URLReader;
+import org.testng.annotations.Test;
 
 /**
  * Tests different Source representations.

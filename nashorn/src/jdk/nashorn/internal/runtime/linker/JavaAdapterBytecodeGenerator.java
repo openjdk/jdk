@@ -56,7 +56,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Handle;
@@ -65,6 +67,7 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.commons.InstructionAdapter;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.linker.AdaptationResult.Outcome;
@@ -131,7 +134,8 @@ import sun.reflect.CallerSensitive;
  * implemented securely.
  */
 final class JavaAdapterBytecodeGenerator {
-    static final Type OBJECT_TYPE = Type.getType(Object.class);
+    private static final Type OBJECT_TYPE = Type.getType(Object.class);
+    private static final Type CLASS_TYPE  = Type.getType(Class.class);
 
     static final String OBJECT_TYPE_NAME  = OBJECT_TYPE.getInternalName();
 
@@ -166,7 +170,11 @@ final class JavaAdapterBytecodeGenerator {
 
     private static final String METHOD_HANDLE_TYPE_DESCRIPTOR = METHOD_HANDLE_TYPE.getDescriptor();
     private static final String GET_GLOBAL_METHOD_DESCRIPTOR = Type.getMethodDescriptor(OBJECT_TYPE);
-    private static final String GET_CLASS_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.getType(Class.class));
+    private static final String GET_CLASS_METHOD_DESCRIPTOR = Type.getMethodDescriptor(CLASS_TYPE);
+    private static final String EXPORT_RETURN_VALUE_METHOD_DESCRIPTOR = Type.getMethodDescriptor(OBJECT_TYPE, OBJECT_TYPE);
+    private static final String GET_CONVERTER_METHOD_DESCRIPTOR = Type.getMethodDescriptor(METHOD_HANDLE_TYPE, CLASS_TYPE);
+    private static final String TO_CHAR_PRIMITIVE_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.CHAR_TYPE, OBJECT_TYPE);
+    private static final String TO_STRING_METHOD_DESCRIPTOR = Type.getMethodDescriptor(STRING_TYPE, OBJECT_TYPE);
 
     // Package used when the adapter can't be defined in the adaptee's package (either because it's sealed, or because
     // it's a java.* package.
@@ -177,6 +185,7 @@ final class JavaAdapterBytecodeGenerator {
     private static final int MAX_GENERATED_TYPE_NAME_LENGTH = 255;
 
     private static final String CLASS_INIT = "<clinit>";
+    static final String CONVERTER_INIT = "<converter-init>";
 
     // Method name prefix for invoking super-methods
     static final String SUPER_PREFIX = "super$";
@@ -205,6 +214,22 @@ final class JavaAdapterBytecodeGenerator {
     private final Set<MethodInfo> methodInfos = new HashSet<>();
     private boolean autoConvertibleFromFunction = false;
     private boolean hasExplicitFinalizer = false;
+
+    /**
+     * Names of static fields holding type converter method handles for return value conversion. We are emitting code
+     * for invoking these explicitly after the delegate handle is invoked, instead of doing an asType or
+     * filterReturnValue on the delegate handle, as that would create a new converter handle wrapping the function's
+     * handle for every instance of the adapter, causing the handle.invokeExact() call sites to become megamorphic.
+     */
+    private final Map<Class<?>, String> converterFields = new LinkedHashMap<>();
+
+    /**
+     * Subset of possible return types for all methods; namely, all possible return types of the SAM methods (we
+     * identify SAM types by having all of their abstract methods share a single name, so there can be multiple
+     * overloads with multiple return types. We use this set when emitting the constructor taking a ScriptFunction (the
+     * SAM initializer) to avoid populating converter fields that will never be used by SAM methods.
+     */
+    private final Set<Class<?>> samReturnTypes = new HashSet<>();
 
     private final ClassWriter cw;
 
@@ -243,6 +268,7 @@ final class JavaAdapterBytecodeGenerator {
         gatherMethods(interfaces);
         samName = abstractMethodNames.size() == 1 ? abstractMethodNames.iterator().next() : null;
         generateHandleFields();
+        generateConverterFields();
         if(classOverride) {
             generateClassInit();
         }
@@ -315,6 +341,24 @@ final class JavaAdapterBytecodeGenerator {
         }
     }
 
+    private void generateConverterFields() {
+        final int flags = ACC_PRIVATE | ACC_FINAL | (classOverride ? ACC_STATIC : 0);
+        for (final MethodInfo mi: methodInfos) {
+            final Class<?> returnType = mi.type.returnType();
+            // Handle primitive types, Object, and String specially
+            if(!returnType.isPrimitive() && returnType != Object.class && returnType != String.class) {
+                if(!converterFields.containsKey(returnType)) {
+                    final String name = nextName("convert");
+                    converterFields.put(returnType, name);
+                    if(mi.getName().equals(samName)) {
+                        samReturnTypes.add(returnType);
+                    }
+                    cw.visitField(flags, name, METHOD_HANDLE_TYPE_DESCRIPTOR, null, null).visitEnd();
+                }
+            }
+        }
+    }
+
     private void generateClassInit() {
         final InstructionAdapter mv = new InstructionAdapter(cw.visitMethod(ACC_STATIC, CLASS_INIT,
                 Type.getMethodDescriptor(Type.VOID_TYPE), null, null));
@@ -334,8 +378,7 @@ final class JavaAdapterBytecodeGenerator {
             for (final MethodInfo mi : methodInfos) {
                 if(mi.getName().equals(samName)) {
                     mv.dup();
-                    mv.aconst(Type.getMethodType(mi.type.toMethodDescriptorString()));
-                    mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "getHandle", GET_HANDLE_FUNCTION_DESCRIPTOR, false);
+                    loadMethodTypeAndGetHandle(mv, mi, GET_HANDLE_FUNCTION_DESCRIPTOR);
                 } else {
                     mv.visitInsn(ACONST_NULL);
                 }
@@ -351,8 +394,7 @@ final class JavaAdapterBytecodeGenerator {
         for (final MethodInfo mi : methodInfos) {
             mv.dup();
             mv.aconst(mi.getName());
-            mv.aconst(Type.getMethodType(mi.type.toMethodDescriptorString()));
-            mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "getHandle", GET_HANDLE_OBJECT_DESCRIPTOR, false);
+            loadMethodTypeAndGetHandle(mv, mi, GET_HANDLE_OBJECT_DESCRIPTOR);
             mv.putstatic(generatedClassName, mi.methodHandleFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
         }
 
@@ -363,7 +405,39 @@ final class JavaAdapterBytecodeGenerator {
         invokeGetGlobalWithNullCheck(mv);
         mv.putstatic(generatedClassName, GLOBAL_FIELD_NAME, GLOBAL_TYPE_DESCRIPTOR);
 
+        generateConverterInit(mv, false);
         endInitMethod(mv);
+    }
+
+    private void generateConverterInit(final InstructionAdapter mv, final boolean samOnly) {
+        assert !samOnly || !classOverride;
+        for(final Map.Entry<Class<?>, String> converterField: converterFields.entrySet()) {
+            final Class<?> returnType = converterField.getKey();
+            if(!classOverride) {
+                mv.visitVarInsn(ALOAD, 0);
+            }
+
+            if(samOnly && !samReturnTypes.contains(returnType)) {
+                mv.visitInsn(ACONST_NULL);
+            } else {
+                mv.aconst(Type.getType(converterField.getKey()));
+                mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "getObjectConverter", GET_CONVERTER_METHOD_DESCRIPTOR, false);
+            }
+
+            if(classOverride) {
+                mv.putstatic(generatedClassName, converterField.getValue(), METHOD_HANDLE_TYPE_DESCRIPTOR);
+            } else {
+                mv.putfield(generatedClassName, converterField.getValue(), METHOD_HANDLE_TYPE_DESCRIPTOR);
+            }
+        }
+    }
+
+    private static void loadMethodTypeAndGetHandle(final InstructionAdapter mv, final MethodInfo mi, final String getHandleDescriptor) {
+        // NOTE: we're using generic() here because we'll be linking to the "generic" invoker version of
+        // the functions anyway, so we cut down on megamorphism in the invokeExact() calls in adapter
+        // bodies. Once we start linking to type-specializing invokers, this should be changed.
+        mv.aconst(Type.getMethodType(mi.type.generic().toMethodDescriptorString()));
+        mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "getHandle", getHandleDescriptor, false);
     }
 
     private static void invokeGetGlobalWithNullCheck(final InstructionAdapter mv) {
@@ -422,7 +496,7 @@ final class JavaAdapterBytecodeGenerator {
         // Invoke super constructor with the same arguments.
         mv.visitVarInsn(ALOAD, 0);
         int offset = 1; // First arg is at position 1, after this.
-        for (Type argType: argTypes) {
+        for (final Type argType: argTypes) {
             mv.load(offset, argType);
             offset += argType.getSize();
         }
@@ -497,8 +571,7 @@ final class JavaAdapterBytecodeGenerator {
                 if(!fromFunction) {
                     mv.aconst(mi.getName());
                 }
-                mv.aconst(Type.getMethodType(mi.type.toMethodDescriptorString()));
-                mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "getHandle", getHandleDescriptor, false);
+                loadMethodTypeAndGetHandle(mv, mi, getHandleDescriptor);
             }
             mv.putfield(generatedClassName, mi.methodHandleFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
         }
@@ -508,6 +581,8 @@ final class JavaAdapterBytecodeGenerator {
         invokeGetGlobalWithNullCheck(mv);
         mv.putfield(generatedClassName, GLOBAL_FIELD_NAME, GLOBAL_TYPE_DESCRIPTOR);
 
+        // Initialize converters
+        generateConverterInit(mv, fromFunction);
         endInitMethod(mv);
     }
 
@@ -622,7 +697,8 @@ final class JavaAdapterBytecodeGenerator {
 
         final Label handleDefined = new Label();
 
-        final Type asmReturnType = Type.getType(type.returnType());
+        final Class<?> returnType = type.returnType();
+        final Type asmReturnType = Type.getType(returnType);
 
         // See if we have overriding method handle defined
         if(classOverride) {
@@ -632,7 +708,8 @@ final class JavaAdapterBytecodeGenerator {
             mv.getfield(generatedClassName, mi.methodHandleFieldName, METHOD_HANDLE_TYPE_DESCRIPTOR);
         }
         // stack: [handle]
-        jumpIfNonNullKeepOperand(mv, handleDefined);
+        mv.visitInsn(DUP);
+        mv.visitJumpInsn(IFNONNULL, handleDefined);
 
         // No handle is available, fall back to default behavior
         if(Modifier.isAbstract(method.getModifiers())) {
@@ -642,6 +719,7 @@ final class JavaAdapterBytecodeGenerator {
             mv.invokespecial(UNSUPPORTED_OPERATION_TYPE_NAME, INIT, VOID_NOARG_METHOD_DESCRIPTOR, false);
             mv.athrow();
         } else {
+            mv.visitInsn(POP);
             // If the super method is not abstract, delegate to it.
             emitSuperCall(mv, method.getDeclaringClass(), name, methodDesc);
         }
@@ -703,17 +781,20 @@ final class JavaAdapterBytecodeGenerator {
         mv.visitVarInsn(ISTORE, globalsDifferVar);
         // stack: [handle]
 
-        // Load all parameters back on stack for dynamic invocation.
+        // Load all parameters back on stack for dynamic invocation. NOTE: since we're using a generic
+        // Object(Object, Object, ...) type signature for the method, we must box all arguments here.
         int varOffset = 1;
         for (final Type t : asmArgTypes) {
             mv.load(varOffset, t);
+            boxStackTop(mv, t);
             varOffset += t.getSize();
         }
 
         // Invoke the target method handle
         final Label tryBlockStart = new Label();
         mv.visitLabel(tryBlockStart);
-        mv.invokevirtual(METHOD_HANDLE_TYPE.getInternalName(), "invokeExact", type.toMethodDescriptorString(), false);
+        emitInvokeExact(mv, type.generic());
+        convertReturnValue(mv, returnType, asmReturnType);
         final Label tryBlockEnd = new Label();
         mv.visitLabel(tryBlockEnd);
         emitFinally(mv, currentGlobalVar, globalsDifferVar);
@@ -743,7 +824,7 @@ final class JavaAdapterBytecodeGenerator {
         mv.visitLabel(methodEnd);
 
         mv.visitLocalVariable("currentGlobal", GLOBAL_TYPE_DESCRIPTOR, null, setupGlobal, methodEnd, currentGlobalVar);
-        mv.visitLocalVariable("globalsDiffer", Type.INT_TYPE.getDescriptor(), null, setupGlobal, methodEnd, globalsDifferVar);
+        mv.visitLocalVariable("globalsDiffer", Type.BOOLEAN_TYPE.getDescriptor(), null, setupGlobal, methodEnd, globalsDifferVar);
 
         if(throwableDeclared) {
             mv.visitTryCatchBlock(tryBlockStart, tryBlockEnd, rethrowHandler, THROWABLE_TYPE_NAME);
@@ -759,16 +840,106 @@ final class JavaAdapterBytecodeGenerator {
         endMethod(mv);
     }
 
-    /**
-     * Emits code for jumping to a label if the top stack operand is not null. The operand is kept on the stack if it
-     * is not null (so is available to code at the jump address) and is popped if it is null.
-     * @param mv the instruction adapter being used to emit code
-     * @param label the label to jump to
-     */
-    private static void jumpIfNonNullKeepOperand(final InstructionAdapter mv, final Label label) {
-        mv.visitInsn(DUP);
-        mv.visitJumpInsn(IFNONNULL, label);
-        mv.visitInsn(POP);
+    private void convertReturnValue(final InstructionAdapter mv, final Class<?> returnType, final Type asmReturnType) {
+        switch(asmReturnType.getSort()) {
+        case Type.VOID:
+            mv.pop();
+            break;
+        case Type.BOOLEAN:
+            JSType.TO_BOOLEAN.invoke(mv);
+            break;
+        case Type.BYTE:
+            JSType.TO_INT32.invoke(mv);
+            mv.visitInsn(Opcodes.I2B);
+            break;
+        case Type.SHORT:
+            JSType.TO_INT32.invoke(mv);
+            mv.visitInsn(Opcodes.I2S);
+            break;
+        case Type.CHAR:
+            // JSType doesn't have a TO_CHAR, so we have services supply us one.
+            mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "toCharPrimitive", TO_CHAR_PRIMITIVE_METHOD_DESCRIPTOR, false);
+            break;
+        case Type.INT:
+            JSType.TO_INT32.invoke(mv);
+            break;
+        case Type.LONG:
+            JSType.TO_LONG.invoke(mv);
+            break;
+        case Type.FLOAT:
+            JSType.TO_NUMBER.invoke(mv);
+            mv.visitInsn(Opcodes.D2F);
+            break;
+        case Type.DOUBLE:
+            JSType.TO_NUMBER.invoke(mv);
+            break;
+        default:
+            if(asmReturnType.equals(OBJECT_TYPE)) {
+                // Must hide ConsString (and potentially other internal Nashorn types) from callers
+                mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "exportReturnValue", EXPORT_RETURN_VALUE_METHOD_DESCRIPTOR, false);
+            } else if(asmReturnType.equals(STRING_TYPE)){
+                // Well-known conversion to String. Not using the JSType one as we want to preserve null as null instead
+                // of the string "n,u,l,l".
+                mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "toString", TO_STRING_METHOD_DESCRIPTOR, false);
+            } else {
+                // Invoke converter method handle for everything else. Note that we could have just added an asType or
+                // filterReturnValue to the invoked handle instead, but then every instance would have the function
+                // method handle wrapped in a separate converter method handle, making handle.invokeExact() megamorphic.
+                if(classOverride) {
+                    mv.getstatic(generatedClassName, converterFields.get(returnType), METHOD_HANDLE_TYPE_DESCRIPTOR);
+                } else {
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.getfield(generatedClassName, converterFields.get(returnType), METHOD_HANDLE_TYPE_DESCRIPTOR);
+                }
+                mv.swap();
+                emitInvokeExact(mv, MethodType.methodType(returnType, Object.class));
+            }
+        }
+    }
+
+    private static void emitInvokeExact(final InstructionAdapter mv, final MethodType type) {
+        mv.invokevirtual(METHOD_HANDLE_TYPE.getInternalName(), "invokeExact", type.toMethodDescriptorString(), false);
+    }
+
+    private static void boxStackTop(final InstructionAdapter mv, final Type t) {
+        switch(t.getSort()) {
+        case Type.BOOLEAN:
+            invokeValueOf(mv, "Boolean", 'Z');
+            break;
+        case Type.BYTE:
+        case Type.SHORT:
+        case Type.INT:
+            // bytes and shorts get boxed as integers
+            invokeValueOf(mv, "Integer", 'I');
+            break;
+        case Type.CHAR:
+            invokeValueOf(mv, "Character", 'C');
+            break;
+        case Type.FLOAT:
+            // floats get boxed as doubles
+            mv.visitInsn(Opcodes.F2D);
+            invokeValueOf(mv, "Double", 'D');
+            break;
+        case Type.LONG:
+            invokeValueOf(mv, "Long", 'J');
+            break;
+        case Type.DOUBLE:
+            invokeValueOf(mv, "Double", 'D');
+            break;
+        case Type.ARRAY:
+        case Type.OBJECT:
+        case Type.METHOD:
+            // Already boxed
+            break;
+        default:
+            // Not expecting anything else (e.g. VOID)
+            assert false;
+            break;
+        }
+    }
+
+    private static void invokeValueOf(final InstructionAdapter mv, final String boxedType, final char unboxedType) {
+        mv.invokestatic("java/lang/" + boxedType, "valueOf", "(" + unboxedType + ")Ljava/lang/" + boxedType + ";", false);
     }
 
     /**
@@ -805,7 +976,7 @@ final class JavaAdapterBytecodeGenerator {
         }
     }
 
-    private void generateSuperMethod(MethodInfo mi) {
+    private void generateSuperMethod(final MethodInfo mi) {
         final Method method = mi.method;
 
         final String methodDesc = mi.type.toMethodDescriptorString();
