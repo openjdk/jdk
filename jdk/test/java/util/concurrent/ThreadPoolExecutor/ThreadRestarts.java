@@ -36,6 +36,7 @@
  * @test
  * @summary Only one thread should be created when a thread needs to
  * be kept alive to service a delayed task waiting in the queue.
+ * @library /lib/testlibrary/
  */
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -44,8 +45,12 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicLong;
+import jdk.testlibrary.Utils;
 
 public class ThreadRestarts {
+    static final long LONG_DELAY_MS = Utils.adjustTimeout(10_000);
+    static final long FAR_FUTURE_MS = 10 * LONG_DELAY_MS;
+
     public static void main(String[] args) throws Exception {
         test(false);
         test(true);
@@ -56,14 +61,15 @@ public class ThreadRestarts {
         ScheduledThreadPoolExecutor stpe
             = new ScheduledThreadPoolExecutor(10, ctf);
         try {
+            // schedule a dummy task in the "far future"
             Runnable nop = new Runnable() { public void run() {}};
-            stpe.schedule(nop, 10*1000L, MILLISECONDS);
+            stpe.schedule(nop, FAR_FUTURE_MS, MILLISECONDS);
             stpe.setKeepAliveTime(1L, MILLISECONDS);
             stpe.allowCoreThreadTimeOut(allowTimeout);
-            MILLISECONDS.sleep(100L);
+            MILLISECONDS.sleep(12L);
         } finally {
             stpe.shutdownNow();
-            if (!stpe.awaitTermination(60L, SECONDS))
+            if (!stpe.awaitTermination(LONG_DELAY_MS, MILLISECONDS))
                 throw new AssertionError("timed out");
         }
         if (ctf.count.get() > 1)
@@ -76,8 +82,9 @@ public class ThreadRestarts {
         final AtomicLong count = new AtomicLong(0L);
 
         public Thread newThread(Runnable r) {
-            Thread t = new Thread(r);
             count.getAndIncrement();
+            Thread t = new Thread(r);
+            t.setDaemon(true);
             return t;
         }
     }

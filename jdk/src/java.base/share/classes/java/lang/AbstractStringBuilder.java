@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,39 +133,62 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /**
-     * This method has the same contract as ensureCapacity, but is
-     * never synchronized.
+     * For positive values of {@code minimumCapacity}, this method
+     * behaves like {@code ensureCapacity}, however it is never
+     * synchronized.
+     * If {@code minimumCapacity} is non positive due to numeric
+     * overflow, this method throws {@code OutOfMemoryError}.
      */
     private void ensureCapacityInternal(int minimumCapacity) {
         // overflow-conscious code
-        int capacity = value.length >> coder;
-        if (minimumCapacity - capacity > 0) {
-            expandCapacity(minimumCapacity);
+        int oldCapacity = value.length >> coder;
+        if (minimumCapacity - oldCapacity > 0) {
+            value = Arrays.copyOf(value,
+                    newCapacity(minimumCapacity) << coder);
         }
     }
 
     /**
-     * This implements the expansion semantics of ensureCapacity with no
-     * size check or synchronization.
+     * The maximum size of array to allocate (unless necessary).
+     * Some VMs reserve some header words in an array.
+     * Attempts to allocate larger arrays may result in
+     * OutOfMemoryError: Requested array size exceeds VM limit
      */
-    private void expandCapacity(int minimumCapacity) {
-        int newCapacity = (value.length >> coder) * 2 + 2;
-        if (newCapacity - minimumCapacity < 0) {
-            newCapacity = minimumCapacity;
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+
+    /**
+     * Returns a capacity at least as large as the given minimum capacity.
+     * Returns the current capacity increased by the same amount + 2 if
+     * that suffices.
+     * Will not return a capacity greater than
+     * {@code (MAX_ARRAY_SIZE >> coder)} unless the given minimum capacity
+     * is greater than that.
+     *
+     * @param  minCapacity the desired minimum capacity
+     * @throws OutOfMemoryError if minCapacity is less than zero or
+     *         greater than (Integer.MAX_VALUE >> coder)
+     */
+    private int newCapacity(int minCapacity) {
+        // overflow-conscious code
+        int oldCapacity = value.length >> coder;
+        int newCapacity = (oldCapacity << 1) + 2;
+        if (newCapacity - minCapacity < 0) {
+            newCapacity = minCapacity;
         }
-        if (newCapacity < 0) {
-            if (minimumCapacity < 0) {// overflow
-                throw new OutOfMemoryError();
-            }
-            newCapacity = Integer.MAX_VALUE;
+        int SAFE_BOUND = MAX_ARRAY_SIZE >> coder;
+        return (newCapacity <= 0 || SAFE_BOUND - newCapacity < 0)
+            ? hugeCapacity(minCapacity)
+            : newCapacity;
+    }
+
+    private int hugeCapacity(int minCapacity) {
+        int SAFE_BOUND = MAX_ARRAY_SIZE >> coder;
+        int UNSAFE_BOUND = Integer.MAX_VALUE >> coder;
+        if (UNSAFE_BOUND - minCapacity < 0) { // overflow
+            throw new OutOfMemoryError();
         }
-        if (coder != LATIN1 && newCapacity > StringUTF16.MAX_LENGTH) {
-            if (minimumCapacity >= StringUTF16.MAX_LENGTH) {
-                throw new OutOfMemoryError();
-            }
-            newCapacity = StringUTF16.MAX_LENGTH;
-        }
-        this.value = Arrays.copyOf(value, newCapacity << coder);
+        return (minCapacity > SAFE_BOUND)
+            ? minCapacity : SAFE_BOUND;
     }
 
     /**

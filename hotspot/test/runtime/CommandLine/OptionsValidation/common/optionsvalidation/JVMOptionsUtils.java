@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,6 +52,9 @@ public class JVMOptionsUtils {
     /* Used to start the JVM with the same type as current */
     static String VMType;
 
+    /* Used to start the JVM with the same GC type as current */
+    static String GCType;
+
     private static Map<String, JVMOption> optionsAsMap;
 
     static {
@@ -63,6 +68,27 @@ public class JVMOptionsUtils {
             VMType = "-graal";
         } else {
             VMType = null;
+        }
+
+        List<GarbageCollectorMXBean> gcMxBeans = ManagementFactory.getGarbageCollectorMXBeans();
+
+        GCType = null;
+
+        for (GarbageCollectorMXBean gcMxBean : gcMxBeans) {
+            switch (gcMxBean.getName()) {
+                case "ConcurrentMarkSweep":
+                    GCType = "-XX:+UseConcMarkSweepGC";
+                    break;
+                case "MarkSweepCompact":
+                    GCType = "-XX:+UseSerialGC";
+                    break;
+                case "PS Scavenge":
+                    GCType = "-XX:+UseParallelGC";
+                    break;
+                case "G1 Old Generation":
+                    GCType = "-XX:+UseG1GC";
+                    break;
+            }
         }
     }
 
@@ -443,6 +469,10 @@ public class JVMOptionsUtils {
         if (VMType != null) {
             runJava.add(VMType);
         }
+
+        if (GCType != null) {
+            runJava.add(GCType);
+        }
         runJava.add(PRINT_FLAGS_RANGES);
         runJava.add("-version");
 
@@ -533,10 +563,5 @@ public class JVMOptionsUtils {
      */
     public static Map<String, JVMOption> getOptionsWithRangeAsMap(String... additionalArgs) throws Exception {
         return getOptionsWithRangeAsMap(origin -> true, additionalArgs);
-    }
-
-    /* Simple method to test that java start-up. Used for testing options. */
-    public static void main(String[] args) {
-        System.out.print("Java start-up!");
     }
 }

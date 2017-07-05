@@ -28,7 +28,6 @@
 tier1 = \
     :jdk_lang \
     -java/lang/ProcessHandle/TreeTest.java \
-    -java/util/zip/TestLocalTime.java \
     :jdk_util \
     -java/util/WeakHashMap/GCDuringIteration.java \
     -java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
@@ -40,7 +39,6 @@ tier1 = \
 
 tier2 = \
     java/lang/ProcessHandle/TreeTest.java \
-    java/util/zip/TestLocalTime.java \
     java/util/WeakHashMap/GCDuringIteration.java \
     java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
     java/util/concurrent/forkjoin/FJExceptionTableLeak.java \

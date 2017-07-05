@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
 
 import java.lang.ref.WeakReference;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Map;
 import javax.management.Attribute;
@@ -70,16 +69,16 @@ public class MXBeanLoadingTest1 {
                     + " some little extra check of Descriptors, MBean*Info.");
 
             ClassLoader myClassLoader = MXBeanLoadingTest1.class.getClassLoader();
+            if(myClassLoader == null)
+                throw new RuntimeException("Test Failed : Null Classloader for test");
+            URL url = myClassLoader.getResource(
+                    MXBeanLoadingTest1.class.getCanonicalName()
+                            .replace(".", "/") + ".class");
+            String clsLoadPath = url.toURI().toString().
+                    replaceAll(MXBeanLoadingTest1.class.getSimpleName()
+                            + ".class", "");
 
-            if (!(myClassLoader instanceof URLClassLoader)) {
-                String message = "(ERROR) Test's class loader is not " +
-                        "a URLClassLoader";
-                System.out.println(message);
-                throw new RuntimeException(message);
-            }
-
-            URLClassLoader myURLClassLoader = (URLClassLoader) myClassLoader;
-            URL[] urls = myURLClassLoader.getURLs();
+            URL[] urls = new URL[]{new URL(clsLoadPath)};
             PrivateMLet mlet = new PrivateMLet(urls, null, false);
             Class<?> shadowClass = mlet.loadClass(TestMXBean.class.getName());
 

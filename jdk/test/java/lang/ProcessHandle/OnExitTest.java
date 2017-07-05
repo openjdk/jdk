@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import org.testng.TestNG;
 /*
  * @test
  * @library /test/lib/share/classes
+ * @modules jdk.management
  * @build jdk.test.lib.Platform jdk.test.lib.Utils
  * @run testng OnExitTest
  * @summary Functions of Process.onExit and ProcessHandle.onExit
