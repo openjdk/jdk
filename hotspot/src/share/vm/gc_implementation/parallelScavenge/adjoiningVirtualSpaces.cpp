@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc_implementation/parallelScavenge/adjoiningVirtualSpaces.hpp"
+#include "memory/allocation.inline.hpp"
 #include "runtime/java.hpp"
 
 AdjoiningVirtualSpaces::AdjoiningVirtualSpaces(ReservedSpace rs,

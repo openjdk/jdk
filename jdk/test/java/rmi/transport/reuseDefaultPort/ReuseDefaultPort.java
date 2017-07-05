@@ -34,7 +34,7 @@
  * @author Peter Jones
  *
  * @library ../../testlibrary
- * @build ReuseDefaultPort TestLibrary
+ * @build TestLibrary
  * @run main/othervm ReuseDefaultPort
  */
 

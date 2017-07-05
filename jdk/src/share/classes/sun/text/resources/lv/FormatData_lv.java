@@ -121,6 +121,17 @@ public class FormatData_lv extends ListResourceBundle {
                     "S" // abb Saturday
                 }
             },
+            { "DayNarrows",
+                new String[] {
+                    "S",
+                    "P",
+                    "O",
+                    "T",
+                    "C",
+                    "P",
+                    "S",
+                }
+            },
             { "Eras",
                 new String[] { // era strings
                     "pm\u0113",

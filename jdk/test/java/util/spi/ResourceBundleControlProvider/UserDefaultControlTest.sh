@@ -21,4 +21,5 @@
 # questions.
 #
 
-${TESTJAVA}/bin/java -Djava.ext.dirs=${TESTSRC} -cp ${TESTCLASSES} UserDefaultControlTest
+${TESTJAVA}/bin/java ${TESTVMOPTS} -Djava.ext.dirs=${TESTSRC} -cp ${TESTCLASSES} UserDefaultControlTest
+

@@ -25,6 +25,7 @@
 
 package build.tools.cldrconverter;
 
+import build.tools.cldrconverter.BundleGenerator.BundleType;
 import java.io.File;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
@@ -58,9 +59,8 @@ public class CLDRConverter {
     static final String CURRENCY_SYMBOL_PREFIX = "currency.symbol.";
     static final String CURRENCY_NAME_PREFIX = "currency.displayname.";
     static final String TIMEZONE_ID_PREFIX = "timezone.id.";
-    static final String TIMEZONE_NAME_PREFIX = "timezone.displayname.";
+    static final String ZONE_NAME_PREFIX = "timezone.displayname.";
     static final String METAZONE_ID_PREFIX = "metazone.id.";
-    static final String METAZONE_NAME_PREFIX = "metazone.displayname.";
 
     private static SupplementDataParseHandler handlerSuppl;
     static NumberingSystemsParseHandler handlerNumbering;
@@ -236,7 +236,14 @@ public class CLDRConverter {
                     if (sb.indexOf("root") == -1) {
                         sb.append("root");
                     }
-                    retList.add(new Bundle(id, sb.toString(), null, null));
+                    Bundle b = new Bundle(id, sb.toString(), null, null);
+                    // Insert the bundle for en at the top so that it will get
+                    // processed first.
+                    if ("en".equals(id)) {
+                        retList.add(0, b);
+                    } else {
+                        retList.add(b);
+                    }
                 }
             }
         }
@@ -312,6 +319,7 @@ public class CLDRConverter {
         Map<String, SortedSet<String>> metaInfo = new HashMap<>();
         metaInfo.put("LocaleNames", new TreeSet<String>());
         metaInfo.put("CurrencyNames", new TreeSet<String>());
+        metaInfo.put("TimeZoneNames", new TreeSet<String>());
         metaInfo.put("CalendarData", new TreeSet<String>());
         metaInfo.put("FormatData", new TreeSet<String>());
 
@@ -348,24 +356,28 @@ public class CLDRConverter {
                 Map<String, Object> localeNamesMap = extractLocaleNames(targetMap, bundle.getID());
                 if (!localeNamesMap.isEmpty() || bundle.isRoot()) {
                     metaInfo.get("LocaleNames").add(toLanguageTag(bundle.getID()));
-                    bundleGenerator.generateBundle("util", "LocaleNames", bundle.getID(), true, localeNamesMap, true);
+                    bundleGenerator.generateBundle("util", "LocaleNames", bundle.getID(), true, localeNamesMap, BundleType.OPEN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.CURRENCYNAMES)) {
                 Map<String, Object> currencyNamesMap = extractCurrencyNames(targetMap, bundle.getID(), bundle.getCurrencies());
                 if (!currencyNamesMap.isEmpty() || bundle.isRoot()) {
                     metaInfo.get("CurrencyNames").add(toLanguageTag(bundle.getID()));
-                    bundleGenerator.generateBundle("util", "CurrencyNames", bundle.getID(), true, currencyNamesMap, true);
+                    bundleGenerator.generateBundle("util", "CurrencyNames", bundle.getID(), true, currencyNamesMap, BundleType.OPEN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.TIMEZONENAMES)) {
                 Map<String, Object> zoneNamesMap = extractZoneNames(targetMap, bundle.getID());
+                if (!zoneNamesMap.isEmpty() || bundle.isRoot()) {
+                    metaInfo.get("TimeZoneNames").add(toLanguageTag(bundle.getID()));
+                    bundleGenerator.generateBundle("util", "TimeZoneNames", bundle.getID(), true, zoneNamesMap, BundleType.TIMEZONE);
+                }
             }
             if (bundleTypes.contains(Bundle.Type.CALENDARDATA)) {
                 Map<String, Object> calendarDataMap = extractCalendarData(targetMap, bundle.getID());
                 if (!calendarDataMap.isEmpty() || bundle.isRoot()) {
                     metaInfo.get("CalendarData").add(toLanguageTag(bundle.getID()));
-                    bundleGenerator.generateBundle("util", "CalendarData", bundle.getID(), true, calendarDataMap, false);
+                    bundleGenerator.generateBundle("util", "CalendarData", bundle.getID(), true, calendarDataMap, BundleType.PLAIN);
                 }
             }
             if (bundleTypes.contains(Bundle.Type.FORMATDATA)) {
@@ -373,9 +385,10 @@ public class CLDRConverter {
                 // LocaleData.getAvailableLocales depends on having FormatData bundles around
                 if (!formatDataMap.isEmpty() || bundle.isRoot()) {
                     metaInfo.get("FormatData").add(toLanguageTag(bundle.getID()));
-                    bundleGenerator.generateBundle("text", "FormatData", bundle.getID(), true, formatDataMap, false);
+                    bundleGenerator.generateBundle("text", "FormatData", bundle.getID(), true, formatDataMap, BundleType.PLAIN);
                 }
             }
+
             // For testing
             SortedSet<String> allLocales = new TreeSet<>();
             allLocales.addAll(metaInfo.get("CurrencyNames"));
@@ -431,6 +444,7 @@ public class CLDRConverter {
         private KeyComparator() {
         }
 
+        @Override
         public int compare(String o1, String o2) {
             int len1 = o1.length();
             int len2 = o2.length();
@@ -476,7 +490,26 @@ public class CLDRConverter {
     }
 
     private static Map<String, Object> extractZoneNames(Map<String, Object> map, String id) {
-        return null;
+        Map<String, Object> names = new HashMap<>();
+        for (String tzid : handlerMetaZones.keySet()) {
+            String tzKey = TIMEZONE_ID_PREFIX + tzid;
+            Object data = map.get(tzKey);
+            if (data instanceof String[]) {
+                names.put(tzid, data);
+            } else {
+                String meta = handlerMetaZones.get(tzid);
+                if (meta != null) {
+                    String metaKey = METAZONE_ID_PREFIX + meta;
+                    data = map.get(metaKey);
+                    if (data instanceof String[]) {
+                        // Keep the metazone prefix here.
+                        names.put(metaKey, data);
+                        names.put(tzid, meta);
+                    }
+                }
+            }
+        }
+        return names;
     }
 
     private static Map<String, Object> extractCalendarData(Map<String, Object> map, String id) {
@@ -494,11 +527,19 @@ public class CLDRConverter {
             copyIfPresent(map, prefix + "standalone.MonthNames", formatData);
             copyIfPresent(map, prefix + "MonthAbbreviations", formatData);
             copyIfPresent(map, prefix + "standalone.MonthAbbreviations", formatData);
+            copyIfPresent(map, prefix + "MonthNarrow", formatData);
+            copyIfPresent(map, prefix + "standalone.MonthNarrows", formatData);
             copyIfPresent(map, prefix + "DayNames", formatData);
+            copyIfPresent(map, prefix + "standalone.DayNames", formatData);
             copyIfPresent(map, prefix + "DayAbbreviations", formatData);
+            copyIfPresent(map, prefix + "standalone.DayAbbreviations", formatData);
+            copyIfPresent(map, prefix + "DayNarrows", formatData);
+            copyIfPresent(map, prefix + "standalone.DayNarrows", formatData);
             copyIfPresent(map, prefix + "AmPmMarkers", formatData);
+            copyIfPresent(map, prefix + "narrow.AmPmMarkers", formatData);
+            copyIfPresent(map, prefix + "long.Eras", formatData);
             copyIfPresent(map, prefix + "Eras", formatData);
-            copyIfPresent(map, prefix + "short.Eras", formatData);
+            copyIfPresent(map, prefix + "narrow.Eras", formatData);
             copyIfPresent(map, prefix + "TimePatterns", formatData);
             copyIfPresent(map, prefix + "DatePatterns", formatData);
             copyIfPresent(map, prefix + "DateTimePatterns", formatData);
@@ -560,7 +601,6 @@ public class CLDRConverter {
                 if (x == 0 || escapeSpace) {
                     outBuffer.append('\\');
                 }
-
                 outBuffer.append(' ');
                 break;
             case '\\':
@@ -584,7 +624,7 @@ public class CLDRConverter {
                 outBuffer.append('f');
                 break;
             default:
-                if (!USE_UTF8 && ((aChar < 0x0020) || (aChar > 0x007e))) {
+                if (aChar < 0x0020 || (!USE_UTF8 && aChar > 0x007e)) {
                     formatter.format("\\u%04x", (int)aChar);
                 } else {
                     if (specialSaveChars.indexOf(aChar) != -1) {

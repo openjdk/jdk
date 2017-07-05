@@ -25,6 +25,7 @@
  * @bug 4290727
  * @summary Verify that ConnectException will trigger HTTP fallback if
  *          sun.rmi.transport.proxy.eagerHttpFallback system property is set.
+ *
  * @library ../../../../java/rmi/testlibrary
  * @build TestLibrary
  * @run main/othervm EagerHttpFallback

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,9 +163,9 @@ import sun.security.util.ResourcesMgr;
  * input parameter, or if the caller specifies a <code>null</code>
  * CallbackHandler object (and a <code>null</code> value is permitted),
  * the LoginContext queries the
- * <i>auth.login.defaultCallbackHandler</i> security property
- * for the fully qualified class name of a default handler implementation.
- * If the security property is not set,
+ * {@code auth.login.defaultCallbackHandler} security property for the
+ * fully qualified class name of a default handler
+ * implementation. If the security property is not set,
  * then the underlying modules will not have a
  * CallbackHandler for use in communicating
  * with users.  The caller thus assumes that the configured
@@ -184,21 +184,13 @@ import sun.security.util.ResourcesMgr;
  * </ul>
  * </ol>
  *
- * <p> Note that Security Properties
- * (such as <code>auth.login.defaultCallbackHandler</code>)
- * can be set programmatically via the
- * <code>java.security.Security</code> class,
- * or statically in the Java security properties file located in the
- * file named &lt;JAVA_HOME&gt;/lib/security/java.security.
- * &lt;JAVA_HOME&gt; refers to the value of the java.home system property,
- * and specifies the directory where the JRE is installed.
- *
  * @see java.security.Security
  * @see javax.security.auth.AuthPermission
  * @see javax.security.auth.Subject
  * @see javax.security.auth.callback.CallbackHandler
  * @see javax.security.auth.login.Configuration
  * @see javax.security.auth.spi.LoginModule
+ * @see java.security.Security security properties
  */
 public class LoginContext {
 

@@ -34,7 +34,7 @@
  * @author Peter Jones
  *
  * @library ../../testlibrary
- * @build HandshakeTimeout TestLibrary
+ * @build TestLibrary
  * @run main/othervm HandshakeTimeout
  */
 

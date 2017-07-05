@@ -33,8 +33,7 @@
  * @author Laird Dornin
  *
  * @library ../../testlibrary
- * @build CheckFQDN CheckFQDNClient CheckFQDN_Stub TellServerName
- * @build TestLibrary
+ * @build TestLibrary CheckFQDNClient CheckFQDN_Stub TellServerName
  * @run main/othervm/timeout=120 CheckFQDN
  */
 

@@ -114,26 +114,26 @@ EOF
 
 Success "$javac" -classpath "jars/A.jar"       Main.java MainI.java
 Success "$rmic"  -classpath "jars/A.jar${PS}." Main
-Success "$java"  -classpath "jars/A.jar${PS}." Main
+Success "$java" ${TESTVMOPTS} -classpath "jars/A.jar${PS}." Main
 
 Sys rm -f Main.class MainI.class Main_Stub.class
 
 Success "$javac" -classpath "jars/sub/B.zip"       Main.java MainI.java
 Success "$rmic"  -classpath "jars/sub/B.zip${PS}." Main
-Success "$java"  -classpath "jars/sub/B.zip${PS}." Main
+Success "$java" ${TESTVMOPTS}  -classpath "jars/sub/B.zip${PS}." Main
 
 #Sys rm -f Main.class MainI.class Main_Stub.class
 Sys rm -f Main_Stub.class				# javac -extdirs workaround
 
 #Success "$javac" -extdirs "jars" -classpath None Main.java MainI.java
 Success "$rmic"  -extdirs "jars" -classpath .    Main
-Success "$java"  -Djava.ext.dirs="jars" -cp .    Main
+Success "$java" ${TESTVMOPTS}  -Djava.ext.dirs="jars" -cp .    Main
 
 Sys rm -f Main_Stub.class
 
 #Success "$javac" -extdirs "jars/sub" -classpath None Main.java MainI.java
 Success "$rmic"  -extdirs "jars/sub" -classpath . Main
-Success "$java"  -Djava.ext.dirs="jars/sub" -cp . Main
+Success "$java" ${TESTVMOPTS}  -Djava.ext.dirs="jars/sub" -cp . Main
 
 Cleanup
 

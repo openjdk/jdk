@@ -44,5 +44,5 @@ ${TESTJAVA}/bin/javac -d . ${TESTSRC}/Boot.java
 ${TESTJAVA}/bin/jar cf boot.jar *.class
 rm -f *.class
 ${TESTJAVA}/bin/javac -classpath boot.jar -d . ${TESTSRC}/Test.java
-${TESTJAVA}/bin/java -Xbootclasspath/a:boot.jar Test
+${TESTJAVA}/bin/java ${TESTVMOPTS} -Xbootclasspath/a:boot.jar Test
 rm -f *.class *.jar

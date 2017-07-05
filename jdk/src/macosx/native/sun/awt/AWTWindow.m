@@ -1156,34 +1156,6 @@ JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSynthesizeMou
 
 /*
  * Class:     sun_lwawt_macosx_CPlatformWindow
- * Method:    nativeGetDisplayID_AppKitThread
- * Signature: (J)I
- */
-JNIEXPORT jint JNICALL
-Java_sun_lwawt_macosx_CPlatformWindow_nativeGetNSWindowDisplayID
-(JNIEnv *env, jclass clazz, jlong windowPtr)
-{
-    __block jint ret; // CGDirectDisplayID
-
-JNF_COCOA_ENTER(env);
-
-    NSWindow *window = OBJC(windowPtr);
-
-    if ([NSThread isMainThread]) {
-        ret = (jint)[[AWTWindow getNSWindowDisplayID_AppKitThread: window] intValue];
-    } else {
-        [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
-            ret = (jint)[[AWTWindow getNSWindowDisplayID_AppKitThread: window] intValue];
-        }];
-    }
-
-JNF_COCOA_EXIT(env);
-
-    return ret;
-}
-
-/*
- * Class:     sun_lwawt_macosx_CPlatformWindow
  * Method:    _toggleFullScreenMode
  * Signature: (J)V
  */
@@ -1201,27 +1173,6 @@ JNF_COCOA_ENTER(env);
     }];
 
 JNF_COCOA_EXIT(env);
-}
-
-JNIEXPORT jboolean JNICALL Java_sun_lwawt_macosx_CMouseInfoPeer_nativeIsWindowUnderMouse
-(JNIEnv *env, jclass clazz, jlong windowPtr)
-{
-    __block jboolean underMouse = JNI_FALSE;
-
-JNF_COCOA_ENTER(env);
-AWT_ASSERT_NOT_APPKIT_THREAD;
-
-    NSWindow *nsWindow = OBJC(windowPtr);
-    [JNFRunLoop performOnMainThreadWaiting:YES withBlock:^() {
-        AWT_ASSERT_APPKIT_THREAD;
-
-        NSPoint pt = [nsWindow mouseLocationOutsideOfEventStream];
-        underMouse = [[nsWindow contentView] hitTest:pt] != nil;
-    }];
-
-JNF_COCOA_EXIT(env);
-
-    return underMouse;
 }
 
 JNIEXPORT void JNICALL Java_sun_lwawt_macosx_CPlatformWindow_nativeSetEnabled

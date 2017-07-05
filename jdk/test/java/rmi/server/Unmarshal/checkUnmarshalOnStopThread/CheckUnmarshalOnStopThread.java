@@ -31,10 +31,8 @@
  * @author Laird Dornin
  *
  * @library ../../../testlibrary
- * @build TestLibrary RMID JavaVM StreamPipe
- * @build CheckUnmarshall PoisonPill RuntimeExceptionParameter
- * @build CheckUnmarshalOnStopThread
- * @build CheckUnmarshalOnStopThread_Stub
+ * @build TestLibrary CheckUnmarshal CheckUnmarshalOnStopThread_Stub
+ *     PoisonPill RuntimeExceptionParameter
  * @run main/othervm/timeout=480 CheckUnmarshalOnStopThread
  */
 

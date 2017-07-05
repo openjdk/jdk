@@ -50,14 +50,14 @@ esac
 ${TESTJAVA}${FS}bin${FS}javac -d . ${TESTSRC}${FS}RetryPost.java
 
 # run with no option specified. Should retry POST request.
-${TESTJAVA}${FS}bin${FS}java RetryPost
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} RetryPost
 result=$?
 if [ "$result" -ne "0" ]; then
     exit 1
 fi
 
 # run with option specified. Should not retry POST request.
-${TESTJAVA}${FS}bin${FS}java -Dsun.net.http.retryPost=false RetryPost noRetry
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Dsun.net.http.retryPost=false RetryPost noRetry
 result=$?
 if [ "$result" -ne "0" ]; then
     exit 1

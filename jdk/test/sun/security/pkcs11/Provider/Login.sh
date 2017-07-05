@@ -108,7 +108,7 @@ ${TESTJAVA}${FS}bin${FS}javac \
 
 # run test
 
-${TESTJAVA}${FS}bin${FS}java \
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} \
         -classpath ${TESTCLASSES} \
         -DCUSTOM_DB_DIR=${TESTCLASSES} \
         -DCUSTOM_P11_CONFIG=${TESTSRC}${FS}Login-nss.txt \

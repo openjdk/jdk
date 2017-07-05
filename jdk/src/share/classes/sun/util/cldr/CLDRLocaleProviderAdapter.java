@@ -89,11 +89,6 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     }
 
     @Override
-    public TimeZoneNameProvider getTimeZoneNameProvider() {
-        return null;
-    }
-
-    @Override
     public Locale[] getAvailableLocales() {
         Set<String> all = createLanguageTagSet("All");
         Locale[] locs = new Locale[all.size()];

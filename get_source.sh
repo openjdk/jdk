@@ -26,8 +26,8 @@
 #
 
 # Get clones of all nested repositories
-sh ./make/scripts/hgforest.sh clone $*
+sh ./common/bin/hgforest.sh clone "$@"
 
 # Update all existing repositories to the latest sources
-sh ./make/scripts/hgforest.sh pull -u
+sh ./common/bin/hgforest.sh pull -u
 

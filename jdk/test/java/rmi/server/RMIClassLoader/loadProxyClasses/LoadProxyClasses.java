@@ -30,8 +30,8 @@
  * @author Laird Dornin
  *
  * @library ../../../testlibrary
- * @build TestLibrary FnnClass FnnUnmarshal LoadProxyClasses NonpublicInterface
- * @build NonpublicInterface1 PublicInterface PublicInterface1
+ * @build TestLibrary FnnClass FnnUnmarshal NonpublicInterface
+ *     NonpublicInterface1 PublicInterface PublicInterface1
  * @run main/othervm/policy=security.policy LoadProxyClasses
  */
 

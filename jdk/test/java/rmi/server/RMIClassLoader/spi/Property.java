@@ -29,10 +29,7 @@
  * @author Peter Jones
  *
  * @library ../../../testlibrary
- * @build TestLibrary
- * @build Property
- * @build ServiceConfiguration
- * @build TestProvider
+ * @build TestLibrary ServiceConfiguration TestProvider
  * @run main/othervm/policy=security.policy Property
  */
 

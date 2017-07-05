@@ -40,7 +40,8 @@ AUTO_FILES_JAVA_DIRS = java/security
 # Directories
 #
 
-PROPS_SRC   = $(TOPDIR)/src/share/lib/security/java.security
+# The default security properties file is for linux
+PROPS_SRC   = $(TOPDIR)/src/share/lib/security/java.security-linux
 
 ifeq ($(PLATFORM), solaris)
 PROPS_SRC   = $(TOPDIR)/src/share/lib/security/java.security-solaris

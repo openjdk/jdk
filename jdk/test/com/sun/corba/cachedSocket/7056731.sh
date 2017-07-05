@@ -64,12 +64,12 @@ ORB_PROC=$!
 sleep 2 #give orbd time to start
 echo "started orb"
 echo "starting server"
-${TESTJAVA}${FS}bin${FS}java -cp . HelloServer -ORBInitialPort $PORT -ORBInitialHost localhost &
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -cp . HelloServer -ORBInitialPort $PORT -ORBInitialHost localhost &
 SERVER_PROC=$!
 sleep 2 #give server time to start
 echo "started server"
 echo "starting client (debug mode)"
-${TESTJAVA}${FS}bin${FS}java -cp . -agentlib:jdwp=transport=dt_socket,server=y,address=8000 HelloClient -ORBInitialPort $PORT -ORBInitialHost localhost > client.$$ 2>&1 & 
+${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -cp . -agentlib:jdwp=transport=dt_socket,server=y,address=8000 HelloClient -ORBInitialPort $PORT -ORBInitialHost localhost > client.$$ 2>&1 & 
 JVM_PROC=$!
 sleep 2 #give jvm/debugger/client time to start
 

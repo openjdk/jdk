@@ -25,11 +25,14 @@
 
 package sun.util.locale.provider;
 
+import java.util.LinkedHashSet;
 import java.util.Locale;
-import java.util.ResourceBundle;
+import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.spi.TimeZoneNameProvider;
+import sun.util.calendar.ZoneInfo;
+import sun.util.resources.TimeZoneNamesBundle;
 
 /**
  * Concrete implementation of the
@@ -96,21 +99,67 @@ public class TimeZoneNameProviderImpl extends TimeZoneNameProvider {
      */
     @Override
     public String getDisplayName(String id, boolean daylight, int style, Locale locale) {
+        String[] names = getDisplayNameArray(id, 5, locale);
+        if (names != null) {
+            int index = daylight ? 3 : 1;
+            if (style == TimeZone.SHORT) {
+                index++;
+            }
+            return names[index];
+        }
+        return null;
+    }
+
+    @Override
+    public String getGenericDisplayName(String id, int style, Locale locale) {
+        String[] names = getDisplayNameArray(id, 7, locale);
+        if (names != null && names.length >= 7) {
+            return names[(style == TimeZone.LONG) ? 5 : 6];
+        }
+        return null;
+    }
+
+    private String[] getDisplayNameArray(String id, int n, Locale locale) {
         if (id == null || locale == null) {
             throw new NullPointerException();
         }
-
         LocaleProviderAdapter adapter = LocaleProviderAdapter.forType(type);
-        ResourceBundle rb = adapter.getLocaleResources(locale).getTimeZoneNames();
-        if (rb.containsKey(id)) {
-                String[] names = rb.getStringArray(id);
-                int index = daylight ? 3 : 1;
-                if (style == TimeZone.SHORT) {
-                    index++;
-                }
-                return names[index];
-            }
+        TimeZoneNamesBundle rb = adapter.getLocaleResources(locale).getTimeZoneNames();
+        return rb.containsKey(id) ? rb.getStringArray(id, n) : null;
+    }
 
-        return null;
+    /**
+     * Returns a String[][] as the DateFormatSymbols.getZoneStrings() value for
+     * the given locale. This method is package private.
+     *
+     * @param locale a Locale for time zone names
+     * @return an array of time zone names arrays
+     */
+    String[][] getZoneStrings(Locale locale) {
+        LocaleProviderAdapter adapter = LocaleProviderAdapter.forType(type);
+        TimeZoneNamesBundle rb = adapter.getLocaleResources(locale).getTimeZoneNames();
+        Set<String> keyset = rb.keySet();
+        // Use a LinkedHashSet to preseve the order
+        Set<String[]> value = new LinkedHashSet<>();
+        for (String key : keyset) {
+            value.add(rb.getStringArray(key));
+        }
+
+        // Add aliases data for CLDR
+        if (type == LocaleProviderAdapter.Type.CLDR) {
+            // Note: TimeZoneNamesBundle creates a String[] on each getStringArray call.
+            Map<String, String> aliases = ZoneInfo.getAliasTable();
+            for (String alias : aliases.keySet()) {
+                if (!keyset.contains(alias)) {
+                    String tzid = aliases.get(alias);
+                    if (keyset.contains(tzid)) {
+                        String[] val = rb.getStringArray(tzid);
+                        val[0] = alias;
+                        value.add(val);
+                    }
+                }
+            }
+        }
+        return value.toArray(new String[0][]);
     }
 }

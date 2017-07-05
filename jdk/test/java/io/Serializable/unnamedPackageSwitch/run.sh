@@ -41,4 +41,4 @@ fi
 set -ex
 
 ${TESTJAVA}/bin/javac -d . ${TESTSRC}/A.java ${TESTSRC}/Test.java
-${TESTJAVA}/bin/java Test
+${TESTJAVA}/bin/java ${TESTVMOPTS} Test

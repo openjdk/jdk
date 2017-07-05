@@ -29,9 +29,8 @@
  * @author Ann Wollrath
  *
  * @library ../../../testlibrary
- * @build ActivateMe
- * @build ModifyDescriptor
- * @build ModifyDescriptor_Stub
+ * @build TestLibrary RMID ActivationLibrary
+ *     ActivateMe ModifyDescriptor_Stub
  * @run main/othervm/policy=security.policy/timeout=240 ModifyDescriptor
  */
 

@@ -25,7 +25,7 @@
  * @bug 4259564
  *
  * @library ../../testlibrary
- * @build TestLibrary JavaVM CheckUsage
+ * @build TestLibrary JavaVM
  * @run main/othervm CheckUsage
  */
 

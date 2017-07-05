@@ -28,7 +28,6 @@
  * on that port, rather than engage in the deprecated "multiplexing protocol".
  * @author Peter Jones
  *
- * @build DisableMultiplexing
  * @build DisableMultiplexing_Stub
  * @run main/othervm DisableMultiplexing
  */

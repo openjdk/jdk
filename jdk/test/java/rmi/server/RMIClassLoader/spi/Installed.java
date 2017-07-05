@@ -29,11 +29,7 @@
  * @author Peter Jones
  *
  * @library ../../../testlibrary
- * @build TestLibrary
- * @build Installed
- * @build ServiceConfiguration
- * @build TestProvider
- * @build TestProvider2
+ * @build TestLibrary ServiceConfiguration TestProvider TestProvider2
  * @run main/othervm/policy=security.policy Installed
  */
 
