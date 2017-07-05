@@ -669,39 +669,42 @@ public class LWWindowPeer
             }
         } else {
             if (targetPeer != lastMouseEventPeer) {
-                // lastMouseEventPeer may be null if mouse was out of Java windows
-                if (lastMouseEventPeer != null && lastMouseEventPeer.isEnabled()) {
-                    // Sometimes, MOUSE_EXITED is not sent by delegate (or is sent a bit
-                    // later), in which case lastWindowPeer is another window
-                    if (lastWindowPeer != this) {
-                        Point oldp = lastMouseEventPeer.windowToLocal(x, y, lastWindowPeer);
-                        // Additionally translate from this to lastWindowPeer coordinates
-                        Rectangle lr = lastWindowPeer.getBounds();
-                        oldp.x += r.x - lr.x;
-                        oldp.y += r.y - lr.y;
-                        postEvent(new MouseEvent(lastMouseEventPeer.getTarget(),
-                                                 MouseEvent.MOUSE_EXITED,
+
+                if (id != MouseEvent.MOUSE_DRAGGED || lastMouseEventPeer == null) {
+                    // lastMouseEventPeer may be null if mouse was out of Java windows
+                    if (lastMouseEventPeer != null && lastMouseEventPeer.isEnabled()) {
+                        // Sometimes, MOUSE_EXITED is not sent by delegate (or is sent a bit
+                        // later), in which case lastWindowPeer is another window
+                        if (lastWindowPeer != this) {
+                            Point oldp = lastMouseEventPeer.windowToLocal(x, y, lastWindowPeer);
+                            // Additionally translate from this to lastWindowPeer coordinates
+                            Rectangle lr = lastWindowPeer.getBounds();
+                            oldp.x += r.x - lr.x;
+                            oldp.y += r.y - lr.y;
+                            postEvent(new MouseEvent(lastMouseEventPeer.getTarget(),
+                                                     MouseEvent.MOUSE_EXITED,
+                                                     when, modifiers,
+                                                     oldp.x, oldp.y, screenX, screenY,
+                                                     clickCount, popupTrigger, button));
+                        } else {
+                            Point oldp = lastMouseEventPeer.windowToLocal(x, y, this);
+                            postEvent(new MouseEvent(lastMouseEventPeer.getTarget(),
+                                                     MouseEvent.MOUSE_EXITED,
+                                                     when, modifiers,
+                                                     oldp.x, oldp.y, screenX, screenY,
+                                                     clickCount, popupTrigger, button));
+                        }
+                    }
+                    if (targetPeer != null && targetPeer.isEnabled() && id != MouseEvent.MOUSE_ENTERED) {
+                        Point newp = targetPeer.windowToLocal(x, y, curWindowPeer);
+                        postEvent(new MouseEvent(targetPeer.getTarget(),
+                                                 MouseEvent.MOUSE_ENTERED,
                                                  when, modifiers,
-                                                 oldp.x, oldp.y, screenX, screenY,
-                                                 clickCount, popupTrigger, button));
-                    } else {
-                        Point oldp = lastMouseEventPeer.windowToLocal(x, y, this);
-                        postEvent(new MouseEvent(lastMouseEventPeer.getTarget(),
-                                                 MouseEvent.MOUSE_EXITED,
-                                                 when, modifiers,
-                                                 oldp.x, oldp.y, screenX, screenY,
+                                                 newp.x, newp.y, screenX, screenY,
                                                  clickCount, popupTrigger, button));
                     }
                 }
                 lastMouseEventPeer = targetPeer;
-                if (targetPeer != null && targetPeer.isEnabled() && id != MouseEvent.MOUSE_ENTERED) {
-                    Point newp = targetPeer.windowToLocal(x, y, curWindowPeer);
-                    postEvent(new MouseEvent(targetPeer.getTarget(),
-                                             MouseEvent.MOUSE_ENTERED,
-                                             when, modifiers,
-                                             newp.x, newp.y, screenX, screenY,
-                                             clickCount, popupTrigger, button));
-                }
             }
             // TODO: fill "bdata" member of AWTEvent
 

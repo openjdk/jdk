@@ -109,6 +109,24 @@ void setDefaultScopeID(JNIEnv *env, struct sockaddr *him)
 #endif
 }
 
+int getDefaultScopeID(JNIEnv *env) {
+    static jclass ni_class = NULL;
+    static jfieldID ni_defaultIndexID;
+    if (ni_class == NULL) {
+        jclass c = (*env)->FindClass(env, "java/net/NetworkInterface");
+        CHECK_NULL(c);
+        c = (*env)->NewGlobalRef(env, c);
+        CHECK_NULL(c);
+        ni_defaultIndexID = (*env)->GetStaticFieldID(env, c,
+                                                     "defaultIndex", "I");
+        ni_class = c;
+    }
+    int defaultIndex = 0;
+    defaultIndex = (*env)->GetStaticIntField(env, ni_class,
+                                             ni_defaultIndexID);
+    return defaultIndex;
+}
+
 #ifdef __solaris__
 static int init_tcp_max_buf, init_udp_max_buf;
 static int tcp_max_buf;

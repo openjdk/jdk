@@ -57,7 +57,12 @@ public class Disposer implements Runnable {
 
     static {
         java.security.AccessController.doPrivileged(
-            new sun.security.action.LoadLibraryAction("awt"));
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("awt");
+                    return null;
+                }
+            });
         initIDs();
         String type = (String) java.security.AccessController.doPrivileged(
                 new sun.security.action.GetPropertyAction("sun.java2d.reftype"));

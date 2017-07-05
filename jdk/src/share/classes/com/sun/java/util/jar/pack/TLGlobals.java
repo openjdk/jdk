@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,10 @@ import com.sun.java.util.jar.pack.ConstantPool.ClassEntry;
 import com.sun.java.util.jar.pack.ConstantPool.DescriptorEntry;
 import com.sun.java.util.jar.pack.ConstantPool.LiteralEntry;
 import com.sun.java.util.jar.pack.ConstantPool.MemberEntry;
+import com.sun.java.util.jar.pack.ConstantPool.MethodHandleEntry;
+import com.sun.java.util.jar.pack.ConstantPool.MethodTypeEntry;
+import com.sun.java.util.jar.pack.ConstantPool.InvokeDynamicEntry;
+import com.sun.java.util.jar.pack.ConstantPool.BootstrapMethodEntry;
 import com.sun.java.util.jar.pack.ConstantPool.SignatureEntry;
 import com.sun.java.util.jar.pack.ConstantPool.Utf8Entry;
 import java.util.HashMap;
@@ -56,6 +60,10 @@ class TLGlobals {
     private final Map<String, SignatureEntry> signatureEntries;
     private final Map<String, DescriptorEntry> descriptorEntries;
     private final Map<String, MemberEntry> memberEntries;
+    private final Map<String, MethodHandleEntry> methodHandleEntries;
+    private final Map<String, MethodTypeEntry> methodTypeEntries;
+    private final Map<String, InvokeDynamicEntry> invokeDynamicEntries;
+    private final Map<String, BootstrapMethodEntry> bootstrapMethodEntries;
 
     TLGlobals() {
         utf8Entries = new HashMap<>();
@@ -64,6 +72,10 @@ class TLGlobals {
         signatureEntries = new HashMap<>();
         descriptorEntries = new HashMap<>();
         memberEntries = new HashMap<>();
+        methodHandleEntries = new HashMap<>();
+        methodTypeEntries = new HashMap<>();
+        invokeDynamicEntries = new HashMap<>();
+        bootstrapMethodEntries = new HashMap<>();
         props = new PropMap();
     }
 
@@ -93,5 +105,21 @@ class TLGlobals {
 
     Map<String, MemberEntry> getMemberEntries() {
         return memberEntries;
+    }
+
+    Map<String, MethodHandleEntry> getMethodHandleEntries() {
+        return methodHandleEntries;
+    }
+
+    Map<String, MethodTypeEntry> getMethodTypeEntries() {
+        return methodTypeEntries;
+    }
+
+    Map<String, InvokeDynamicEntry> getInvokeDynamicEntries() {
+        return invokeDynamicEntries;
+    }
+
+    Map<String, BootstrapMethodEntry> getBootstrapMethodEntries() {
+        return bootstrapMethodEntries;
     }
 }
