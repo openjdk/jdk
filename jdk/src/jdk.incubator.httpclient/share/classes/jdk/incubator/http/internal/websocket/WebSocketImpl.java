@@ -26,6 +26,7 @@
 package jdk.incubator.http.internal.websocket;
 
 import jdk.incubator.http.WebSocket;
+import jdk.incubator.http.internal.common.Log;
 import jdk.incubator.http.internal.common.Pair;
 import jdk.incubator.http.internal.websocket.OpeningHandshake.Result;
 import jdk.incubator.http.internal.websocket.OutgoingMessage.Binary;
@@ -47,8 +48,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static java.lang.System.Logger.Level.ERROR;
-import static java.lang.System.Logger.Level.TRACE;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.CompletableFuture.failedFuture;
 import static jdk.incubator.http.internal.common.Pair.pair;
@@ -60,8 +59,6 @@ import static jdk.incubator.http.internal.websocket.StatusCodes.checkOutgoingCod
  * A WebSocket client.
  */
 final class WebSocketImpl implements WebSocket {
-
-    static final System.Logger logger = System.getLogger("jdk.httpclient.WebSocket");
 
     private final URI uri;
     private final String subprotocol;
@@ -142,7 +139,7 @@ final class WebSocketImpl implements WebSocket {
                     try {
                         channel.close();
                     } catch (IOException e) {
-                        logger.log(ERROR, e);
+                        Log.logError(e);
                     } finally {
                         closed.set(true);
                     }
@@ -168,14 +165,14 @@ final class WebSocketImpl implements WebSocket {
     private void signalError(Throwable error) {
         synchronized (lock) {
             if (lastMethodInvoked) {
-                logger.log(ERROR, error);
+                Log.logError(error);
             } else {
                 lastMethodInvoked = true;
                 receiver.close();
                 try {
                     listener.onError(this, error);
                 } catch (Exception e) {
-                    logger.log(ERROR, e);
+                    Log.logError(e);
                 }
             }
         }
@@ -190,7 +187,7 @@ final class WebSocketImpl implements WebSocket {
         try {
             channel.shutdownInput();
         } catch (IOException e) {
-            logger.log(ERROR, e);
+            Log.logError(e);
         }
         boolean wasComplete = !closeReceived.complete(null);
         if (wasComplete) {
@@ -210,7 +207,7 @@ final class WebSocketImpl implements WebSocket {
             enqueueClose(new Close(code, ""))
                     .whenComplete((r1, error1) -> {
                         if (error1 != null) {
-                            logger.log(ERROR, error1);
+                            Log.logError(error1);
                         }
                     });
         });
@@ -223,14 +220,14 @@ final class WebSocketImpl implements WebSocket {
     private CompletionStage<?> signalClose(int statusCode, String reason) {
         synchronized (lock) {
             if (lastMethodInvoked) {
-                logger.log(TRACE, "Close: {0}, ''{1}''", statusCode, reason);
+                Log.logTrace("Close: {0}, ''{1}''", statusCode, reason);
             } else {
                 lastMethodInvoked = true;
                 receiver.close();
                 try {
                     return listener.onClose(this, statusCode, reason);
                 } catch (Exception e) {
-                    logger.log(ERROR, e);
+                    Log.logError(e);
                 }
             }
         }
@@ -289,7 +286,7 @@ final class WebSocketImpl implements WebSocket {
             try {
                 channel.shutdownOutput();
             } catch (IOException e) {
-                logger.log(ERROR, e);
+                Log.logError(e);
             }
             boolean wasComplete = !closeSent.complete(null);
             if (wasComplete) {

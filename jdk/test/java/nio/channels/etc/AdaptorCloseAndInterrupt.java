@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.Random;
 
 
@@ -45,6 +46,9 @@ public class AdaptorCloseAndInterrupt {
     final ServerSocketChannel listener;
     final DatagramChannel peer;
     final int port;
+
+    final AtomicBoolean isClosed = new AtomicBoolean();
+    final AtomicBoolean isInterrupted = new AtomicBoolean();
 
     public AdaptorCloseAndInterrupt() {
         listener = null;
@@ -96,6 +100,7 @@ public class AdaptorCloseAndInterrupt {
 
             try {
                 sc.socket().getInputStream().read(new byte[100]);
+                System.err.format("close() was invoked: %s%n", isClosed.get());
                 throw new RuntimeException("read should not have completed");
             } catch (ClosedChannelException expected) {}
 
@@ -119,7 +124,10 @@ public class AdaptorCloseAndInterrupt {
                 sc.socket().getInputStream().read(new byte[100]);
                 throw new RuntimeException("read should not have completed");
             } catch (ClosedByInterruptException expected) {
-                Thread.currentThread().interrupted();
+                System.out.format("interrupt() was invoked: %s%n",
+                    isInterrupted.get());
+                System.out.format("scReadAsyncInterrupt was interrupted: %s%n",
+                    Thread.currentThread().interrupted());
             }
 
             if (!sc.socket().isClosed())
@@ -140,6 +148,7 @@ public class AdaptorCloseAndInterrupt {
 
         try {
             dc.socket().receive(new DatagramPacket(new byte[100], 100));
+            System.err.format("close() was invoked: %s%n", isClosed.get());
             throw new RuntimeException("receive should not have completed");
         } catch (ClosedChannelException expected) {}
 
@@ -159,7 +168,16 @@ public class AdaptorCloseAndInterrupt {
             dc.socket().receive(new DatagramPacket(new byte[100], 100));
             throw new RuntimeException("receive should not have completed");
         } catch (ClosedByInterruptException expected) {
-            Thread.currentThread().interrupted();
+            System.out.format("interrupt() was invoked: %s%n",
+                isInterrupted.get());
+            System.out.format("dcReceiveAsyncInterrupt was interrupted: %s%n",
+                Thread.currentThread().interrupted());
+        } catch (SocketTimeoutException unexpected) {
+            System.err.format("Receive thread interrupt invoked: %s%n",
+                isInterrupted.get());
+            System.err.format("Receive thread was interrupted: %s%n",
+                Thread.currentThread().isInterrupted());
+            throw unexpected;
         }
 
         if (!dc.socket().isClosed())
@@ -175,6 +193,7 @@ public class AdaptorCloseAndInterrupt {
 
         try {
             ssc.socket().accept();
+            System.err.format("close() was invoked: %s%n", isClosed.get());
             throw new RuntimeException("accept should not have completed");
         } catch (ClosedChannelException expected) {}
 
@@ -193,7 +212,10 @@ public class AdaptorCloseAndInterrupt {
             ssc.socket().accept();
             throw new RuntimeException("accept should not have completed");
         } catch (ClosedByInterruptException expected) {
-            Thread.currentThread().interrupted();
+            System.out.format("interrupt() was invoked: %s%n",
+                isInterrupted.get());
+            System.out.format("ssAcceptAsyncInterrupt was interrupted: %s%n",
+                Thread.currentThread().interrupted());
         }
 
         if (!ssc.socket().isClosed())
@@ -204,6 +226,7 @@ public class AdaptorCloseAndInterrupt {
         AdaptorCloseAndInterrupt.pool.schedule(new Callable<Void>() {
             public Void call() throws Exception {
                 sc.close();
+                isClosed.set(true);
                 return null;
             }
         }, new Random().nextInt(1000), TimeUnit.MILLISECONDS);
@@ -214,6 +237,7 @@ public class AdaptorCloseAndInterrupt {
         AdaptorCloseAndInterrupt.pool.schedule(new Callable<Void>() {
             public Void call() throws Exception {
                 current.interrupt();
+                isInterrupted.set(true);
                 return null;
             }
         }, new Random().nextInt(1000), TimeUnit.MILLISECONDS);
