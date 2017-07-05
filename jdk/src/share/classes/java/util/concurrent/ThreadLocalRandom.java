@@ -83,22 +83,20 @@ public class ThreadLocalRandom extends Random {
      * programs.
      *
      * Because this class is in a different package than class Thread,
-     * field access methods must use Unsafe to bypass access control
-     * rules.  The base functionality of Random methods is
-     * conveniently isolated in method next(bits), that just reads and
-     * writes the Thread field rather than its own field. However, to
-     * conform to the requirements of the Random constructor, during
-     * construction, the common static ThreadLocalRandom must maintain
-     * initialization and value fields, mainly for the sake of
-     * disabling user calls to setSeed while still allowing a call
-     * from constructor.  For serialization compatibility, these
-     * fields are left with the same declarations as used in the
-     * previous ThreadLocal-based version of this class, that used
-     * them differently. Note that serialization is completely
-     * unnecessary because there is only a static singleton. But these
-     * mechanics still ensure compatibility across versions.
+     * field access methods use Unsafe to bypass access control rules.
+     * The base functionality of Random methods is conveniently
+     * isolated in method next(bits), that just reads and writes the
+     * Thread field rather than its own field.  However, to conform to
+     * the requirements of the Random superclass constructor, the
+     * common static ThreadLocalRandom maintains an "initialized"
+     * field for the sake of rejecting user calls to setSeed while
+     * still allowing a call from constructor.  Note that
+     * serialization is completely unnecessary because there is only a
+     * static singleton.  But we generate a serial form containing
+     * "rnd" and "initialized" fields to ensure compatibility across
+     * versions.
      *
-     * Per-instance initialization is similar to that in the no-arg
+     * Per-thread initialization is similar to that in the no-arg
      * Random constructor, but we avoid correlation among not only
      * initial seeds of those created in different threads, but also
      * those created using class Random itself; while at the same time
@@ -132,10 +130,11 @@ public class ThreadLocalRandom extends Random {
     private static final ThreadLocal<Double> nextLocalGaussian =
         new ThreadLocal<Double>();
 
-    /*
-     * Field used only during singleton initialization
+    /**
+     * Field used only during singleton initialization.
+     * True when constructor completes.
      */
-    boolean initialized; // true when constructor completes
+    boolean initialized;
 
     /** Constructor used only for static singleton */
     private ThreadLocalRandom() {
@@ -184,7 +183,8 @@ public class ThreadLocalRandom extends Random {
      * @throws UnsupportedOperationException always
      */
     public void setSeed(long seed) {
-        if (initialized) // allow call from super() constructor
+        // only allow call from super() constructor
+        if (initialized)
             throw new UnsupportedOperationException();
     }
 
@@ -357,39 +357,29 @@ public class ThreadLocalRandom extends Random {
             r ^= r >>> 17;
             r ^= r << 5;
         }
-        else if ((r = (int)UNSAFE.getLong(t, SEED)) == 0)
-            r = 1; // avoid zero
+        else {
+            localInit();
+            if ((r = (int)UNSAFE.getLong(t, SEED)) == 0)
+                r = 1; // avoid zero
+        }
         UNSAFE.putInt(t, SECONDARY, r);
         return r;
     }
 
-    // Serialization support, maintains original persistent form.
+    // Serialization support
 
     private static final long serialVersionUID = -5851777807851030925L;
 
     /**
      * @serialField rnd long
+     *              seed for random computations
      * @serialField initialized boolean
-     * @serialField pad0 long
-     * @serialField pad1 long
-     * @serialField pad2 long
-     * @serialField pad3 long
-     * @serialField pad4 long
-     * @serialField pad5 long
-     * @serialField pad6 long
-     * @serialField pad7 long
+     *              always true
      */
     private static final ObjectStreamField[] serialPersistentFields = {
             new ObjectStreamField("rnd", long.class),
-            new ObjectStreamField("initialized", boolean.class),
-            new ObjectStreamField("pad0", long.class),
-            new ObjectStreamField("pad1", long.class),
-            new ObjectStreamField("pad2", long.class),
-            new ObjectStreamField("pad3", long.class),
-            new ObjectStreamField("pad4", long.class),
-            new ObjectStreamField("pad5", long.class),
-            new ObjectStreamField("pad6", long.class),
-            new ObjectStreamField("pad7", long.class) };
+            new ObjectStreamField("initialized", boolean.class)
+    };
 
     /**
      * Saves the {@code ThreadLocalRandom} to a stream (that is, serializes it).
@@ -398,16 +388,8 @@ public class ThreadLocalRandom extends Random {
         throws java.io.IOException {
 
         java.io.ObjectOutputStream.PutField fields = out.putFields();
-        fields.put("rnd", 0L);
+        fields.put("rnd", UNSAFE.getLong(Thread.currentThread(), SEED));
         fields.put("initialized", true);
-        fields.put("pad0", 0L);
-        fields.put("pad1", 0L);
-        fields.put("pad2", 0L);
-        fields.put("pad3", 0L);
-        fields.put("pad4", 0L);
-        fields.put("pad5", 0L);
-        fields.put("pad6", 0L);
-        fields.put("pad7", 0L);
         out.writeFields();
     }
 

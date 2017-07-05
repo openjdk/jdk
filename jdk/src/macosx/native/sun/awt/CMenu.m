@@ -55,11 +55,11 @@ AWT_ASSERT_APPKIT_THREAD;
 //- (void)finalize { [super finalize]; }
 
 - (void)addJavaSubmenu:(CMenu *)submenu {
-    [ThreadUtilities performOnMainThread:@selector(addNativeItem_OnAppKitThread:) onObject:self withObject:submenu waitUntilDone:YES awtMode:YES];
+    [ThreadUtilities performOnMainThread:@selector(addNativeItem_OnAppKitThread:) on:self withObject:submenu waitUntilDone:YES];
 }
 
 - (void)addJavaMenuItem:(CMenuItem *)theMenuItem {
-    [ThreadUtilities performOnMainThread:@selector(addNativeItem_OnAppKitThread:) onObject:self withObject:theMenuItem waitUntilDone:YES awtMode:YES];
+    [ThreadUtilities performOnMainThread:@selector(addNativeItem_OnAppKitThread:) on:self withObject:theMenuItem waitUntilDone:YES];
 }
 
 - (void)addNativeItem_OnAppKitThread:(CMenuItem *)itemModified {
@@ -70,7 +70,7 @@ AWT_ASSERT_APPKIT_THREAD;
 - (void)setJavaMenuTitle:(NSString *)title {
 
     if (title) {
-        [ThreadUtilities performOnMainThread:@selector(setNativeMenuTitle_OnAppKitThread:) onObject:self withObject:title waitUntilDone:YES awtMode:YES];
+        [ThreadUtilities performOnMainThread:@selector(setNativeMenuTitle_OnAppKitThread:) on:self withObject:title waitUntilDone:YES];
     }
 }
 
@@ -93,7 +93,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
 - (void)deleteJavaItem:(jint)index {
 
-    [ThreadUtilities performOnMainThread:@selector(deleteNativeJavaItem_OnAppKitThread:) onObject:self withObject:[NSNumber numberWithInt:index] waitUntilDone:YES awtMode:YES];
+    [ThreadUtilities performOnMainThread:@selector(deleteNativeJavaItem_OnAppKitThread:) on:self withObject:[NSNumber numberWithInt:index] waitUntilDone:YES];
 }
 
 - (void)deleteNativeJavaItem_OnAppKitThread:(NSNumber *)number {
@@ -139,7 +139,7 @@ CMenu * createCMenu (jobject cPeerObjGlobal) {
     // We use an array here only to be able to get a return value
     NSMutableArray *args = [[NSMutableArray alloc] initWithObjects:[NSValue valueWithBytes:&cPeerObjGlobal objCType:@encode(jobject)], nil];
 
-    [ThreadUtilities performOnMainThread:@selector(_create_OnAppKitThread:) onObject:[CMenu alloc] withObject:args waitUntilDone:YES awtMode:YES];
+    [ThreadUtilities performOnMainThread:@selector(_create_OnAppKitThread:) on:[CMenu alloc] withObject:args waitUntilDone:YES];
 
     aCMenu = (CMenu *)[args objectAtIndex: 0];
 

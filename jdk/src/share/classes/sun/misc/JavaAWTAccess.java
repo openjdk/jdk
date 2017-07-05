@@ -26,6 +26,14 @@
 package sun.misc;
 
 public interface JavaAWTAccess {
+    public Object getContext();
+    public Object getExecutionContext();
+
+    public Object get(Object context, Object key);
+    public void put(Object context, Object key, Object value);
+    public void remove(Object context, Object key);
+
+    // convenience methods whose context is the object returned by getContext()
     public Object get(Object key);
     public void put(Object key, Object value);
     public void remove(Object key);

@@ -1,0 +1,15 @@
+test/script/error/NASHORN-154/improper_return_break_continue.js:34:0 Invalid return statement
+return 33;
+^
+test/script/error/NASHORN-154/improper_return_break_continue.js:36:0 Illegal continue statement
+continue;
+^
+test/script/error/NASHORN-154/improper_return_break_continue.js:37:0 Illegal break statement
+break;
+^
+test/script/error/NASHORN-154/improper_return_break_continue.js:39:9 Undefined Label "nonExist"
+continue nonExist;
+         ^
+test/script/error/NASHORN-154/improper_return_break_continue.js:40:6 Undefined Label "nonExist"
+break nonExist;
+      ^

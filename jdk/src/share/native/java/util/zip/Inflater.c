@@ -27,6 +27,7 @@
  * Native method support for java.util.zip.Inflater
  */
 
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -60,12 +61,13 @@ Java_java_util_zip_Inflater_init(JNIEnv *env, jclass cls, jboolean nowrap)
 {
     z_stream *strm = calloc(1, sizeof(z_stream));
 
-    if (strm == 0) {
+    if (strm == NULL) {
         JNU_ThrowOutOfMemoryError(env, 0);
         return jlong_zero;
     } else {
-        char *msg;
-        switch (inflateInit2(strm, nowrap ? -MAX_WBITS : MAX_WBITS)) {
+        const char *msg;
+        int ret = inflateInit2(strm, nowrap ? -MAX_WBITS : MAX_WBITS);
+        switch (ret) {
           case Z_OK:
             return ptr_to_jlong(strm);
           case Z_MEM_ERROR:
@@ -73,7 +75,13 @@ Java_java_util_zip_Inflater_init(JNIEnv *env, jclass cls, jboolean nowrap)
             JNU_ThrowOutOfMemoryError(env, 0);
             return jlong_zero;
           default:
-            msg = strm->msg;
+            msg = ((strm->msg != NULL) ? strm->msg :
+                   (ret == Z_VERSION_ERROR) ?
+                   "zlib returned Z_VERSION_ERROR: "
+                   "compile time and runtime zlib implementations differ" :
+                   (ret == Z_STREAM_ERROR) ?
+                   "inflateInit2 returned Z_STREAM_ERROR" :
+                   "unknown error initializing zlib library");
             free(strm);
             JNU_ThrowInternalError(env, msg);
             return jlong_zero;

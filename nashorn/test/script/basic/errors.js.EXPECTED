@@ -1,0 +1,31 @@
+Error is a function
+EvalError is a function
+RangeError is a function
+ReferenceError is a function
+SyntaxError is a function
+TypeError is a function
+URIError is a function
+Error.arity 1
+EvalError.arity 1
+RangeError.arity 1
+ReferenceError.arity 1
+SyntaxError.arity 1
+TypeError.arity 1
+URIError.arity 1
+true
+my error
+Error
+thrown @ 49
+true
+ReferenceError
+"foo" is not defined
+true
+TypeError
+Cannot call undefined
+Error
+EvalError
+RangeError
+ReferenceError
+SyntaxError
+TypeError
+URIError

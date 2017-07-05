@@ -1,0 +1,11 @@
+99
+world
+1
+undefined
+undefined
+hello
+Scoping OK
+function cake() { print('moist and delicious!'); }
+moist and delicious!
+function cookie() { print('sweet and crunchy!'); }
+sweet and crunchy!

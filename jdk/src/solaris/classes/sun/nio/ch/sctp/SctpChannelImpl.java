@@ -1026,13 +1026,21 @@ public class SctpChannelImpl extends SctpChannel
                                      boolean unordered,
                                      int ppid)
             throws IOException {
+        InetAddress addr = null;     // no preferred address
+        int port = 0;
+        if (target != null) {
+            InetSocketAddress isa = Net.checkAddress(target);
+            addr = isa.getAddress();
+            port = isa.getPort();
+        }
+
         int pos = bb.position();
         int lim = bb.limit();
         assert (pos <= lim);
         int rem = (pos <= lim ? lim - pos : 0);
 
-        int written = send0(fd, ((DirectBuffer)bb).address() + pos,
-                            rem, target, -1 /*121*/, streamNumber, unordered, ppid);
+        int written = send0(fd, ((DirectBuffer)bb).address() + pos, rem, addr,
+                            port, -1 /*121*/, streamNumber, unordered, ppid);
         if (written > 0)
             bb.position(pos + written);
         return written;
@@ -1091,7 +1099,7 @@ public class SctpChannelImpl extends SctpChannel
             long address, int length, boolean peek) throws IOException;
 
     static native int send0(int fd, long address, int length,
-            SocketAddress target, int assocId, int streamNumber,
+            InetAddress addr, int port, int assocId, int streamNumber,
             boolean unordered, int ppid) throws IOException;
 
     private static native int checkConnect(FileDescriptor fd, boolean block,

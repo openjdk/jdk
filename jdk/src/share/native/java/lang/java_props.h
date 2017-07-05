@@ -41,6 +41,10 @@ typedef struct {
     char *os_version;
     char *os_arch;
 
+#ifdef JDK_ARCH_ABI_PROP_NAME
+    char *sun_arch_abi;
+#endif
+
     nchar *tmp_dir;
     nchar *font_dir;
     nchar *user_dir;

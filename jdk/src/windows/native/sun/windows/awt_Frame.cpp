@@ -105,6 +105,7 @@ AwtFrame::AwtFrame() {
     m_parentWnd = NULL;
     menuBar = NULL;
     m_isEmbedded = FALSE;
+    m_isLightweight = FALSE;
     m_ignoreWmSize = FALSE;
     m_isMenuDropped = FALSE;
     m_isInputMethodWindow = FALSE;
@@ -170,14 +171,13 @@ AwtFrame* AwtFrame::Create(jobject self, jobject parent)
              * area of the browser is a Java Frame for parenting purposes, but
              * really a Windows child window
              */
+            BOOL isEmbeddedInstance = FALSE;
+            BOOL isEmbedded = FALSE;
             cls = env->FindClass("sun/awt/EmbeddedFrame");
-            if (cls == NULL) {
-                return NULL;
+            if (cls) {
+                isEmbeddedInstance = env->IsInstanceOf(target, cls);
             }
             INT_PTR handle;
-            jboolean isEmbeddedInstance = env->IsInstanceOf(target, cls);
-            jboolean isEmbedded = FALSE;
-
             if (isEmbeddedInstance) {
                 handle = static_cast<INT_PTR>(env->GetLongField(target, AwtFrame::handleID));
                 if (handle != 0) {
@@ -185,6 +185,13 @@ AwtFrame* AwtFrame::Create(jobject self, jobject parent)
                 }
             }
             frame->m_isEmbedded = isEmbedded;
+
+            BOOL isLightweight = FALSE;
+            cls = env->FindClass("sun/awt/LightweightFrame");
+            if (cls) {
+                isLightweight = env->IsInstanceOf(target, cls);
+            }
+            frame->m_isLightweight = isLightweight;
 
             if (isEmbedded) {
                 hwndParent = (HWND)handle;
@@ -230,6 +237,23 @@ AwtFrame* AwtFrame::Create(jobject self, jobject parent)
                                  rect.bottom-rect.top);
                 frame->InitPeerGraphicsConfig(env, self);
                 AwtToolkit::GetInstance().RegisterEmbedderProcessId(hwndParent);
+            } else if (isLightweight) {
+                frame->m_isUndecorated = true;
+                frame->m_peerObject = env->NewGlobalRef(self);
+                frame->RegisterClass();
+
+                DWORD exStyle = 0;
+                DWORD style = WS_POPUP;
+
+                frame->CreateHWnd(env, L"",
+                                  style,
+                                  exStyle,
+                                  0, 0, 0, 0,
+                                  0,
+                                  NULL,
+                                  ::GetSysColor(COLOR_WINDOWTEXT),
+                                  ::GetSysColor(COLOR_WINDOWFRAME),
+                                  self);
             } else {
                 jint state = env->CallIntMethod(self, AwtFrame::getExtendedStateMID);
                 DWORD exStyle;
@@ -345,16 +369,20 @@ LRESULT AwtFrame::ProxyWindowProc(UINT message, WPARAM wParam, LPARAM lParam, Ms
         case WM_SETFOCUS:
             if (sm_inSynthesizeFocus) break; // pass it up the WindowProc chain
 
-            if (!sm_suppressFocusAndActivation && IsEmbeddedFrame()) {
-                AwtSetActiveWindow();
+            if (!sm_suppressFocusAndActivation) {
+                if (IsLightweightFrame() || IsEmbeddedFrame()) {
+                    AwtSetActiveWindow();
+                }
             }
             mr = mrConsume;
             break;
         case WM_KILLFOCUS:
             if (sm_inSynthesizeFocus) break; // pass it up the WindowProc chain
 
-            if (!sm_suppressFocusAndActivation && IsEmbeddedFrame()) {
-                AwtWindow::SynthesizeWmActivate(FALSE, GetHWnd(), NULL);
+            if (!sm_suppressFocusAndActivation) {
+                if (IsLightweightFrame() || IsEmbeddedFrame()) {
+                    AwtWindow::SynthesizeWmActivate(FALSE, GetHWnd(), NULL);
+                }
 
             } else if (sm_restoreFocusAndActivation) {
                 if (AwtComponent::GetFocusedWindow() != NULL) {
@@ -639,6 +667,10 @@ AwtFrame::Show()
     m_visible = true;
     HWND hwnd = GetHWnd();
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    if (IsLightweightFrame()) {
+        return;
+    }
 
     DTRACE_PRINTLN3("AwtFrame::Show:%s%s%s",
                   m_iconic ? " iconic" : "",
@@ -991,6 +1023,9 @@ BOOL AwtFrame::AwtSetActiveWindow(BOOL isMouseEventCause, UINT hittest)
         // a) the frame is clicked in its client area;
         // b) focus is requested to some of the frame's child.
         m_actualFocusedWindow = NULL;
+    }
+    if (IsLightweightFrame()) {
+        return TRUE;
     }
     return AwtWindow::AwtSetActiveWindow(isMouseEventCause);
 }
@@ -1873,7 +1908,7 @@ Java_sun_awt_windows_WEmbeddedFramePeer_getBoundsPrivate(JNIEnv *env, jobject se
 }
 
 JNIEXPORT void JNICALL
-Java_sun_awt_windows_WEmbeddedFramePeer_synthesizeWmActivate(JNIEnv *env, jobject self, jboolean doActivate)
+Java_sun_awt_windows_WFramePeer_synthesizeWmActivate(JNIEnv *env, jobject self, jboolean doActivate)
 {
     TRY;
 

@@ -1,0 +1,3 @@
+java.security.AccessControlException: access denied ("java.util.PropertyPermission" "user.dir" "read")
+java.security.AccessControlException: access denied ("java.io.FilePermission" "foo" "read")
+java.security.AccessControlException: access denied ("java.io.FilePermission" "foo" "write")

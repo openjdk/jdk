@@ -3759,7 +3759,7 @@ public class Collections {
             return c2.compareTo(c1);
         }
 
-        private Object readResolve() { return reverseOrder(); }
+        private Object readResolve() { return Collections.reverseOrder(); }
     }
 
     /**

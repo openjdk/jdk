@@ -200,7 +200,7 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
         V prev, next;
         do {
             prev = get(obj);
-            next = updateFunction.operate(prev);
+            next = updateFunction.apply(prev);
         } while (!compareAndSet(obj, prev, next));
         return prev;
     }
@@ -220,7 +220,7 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
         V prev, next;
         do {
             prev = get(obj);
-            next = updateFunction.operate(prev);
+            next = updateFunction.apply(prev);
         } while (!compareAndSet(obj, prev, next));
         return next;
     }
@@ -245,7 +245,7 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
         V prev, next;
         do {
             prev = get(obj);
-            next = accumulatorFunction.operate(prev, x);
+            next = accumulatorFunction.apply(prev, x);
         } while (!compareAndSet(obj, prev, next));
         return prev;
     }
@@ -270,7 +270,7 @@ public abstract class AtomicReferenceFieldUpdater<T, V> {
         V prev, next;
         do {
             prev = get(obj);
-            next = accumulatorFunction.operate(prev, x);
+            next = accumulatorFunction.apply(prev, x);
         } while (!compareAndSet(obj, prev, next));
         return next;
     }

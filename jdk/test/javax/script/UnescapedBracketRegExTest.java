@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 7012701
- * @summary 7012701 Add a test to check that Rhino's RegExp parser accepts unescaped '['
+ * @summary 7012701 Add a test to check that RegExp parser accepts unescaped '['
  */
 
 import javax.script.*;
@@ -33,9 +33,9 @@ import java.io.*;
 public class UnescapedBracketRegExTest {
     public static void main(String[] args) throws ScriptException {
         ScriptEngineManager sem = new ScriptEngineManager();
-        ScriptEngine engine = sem.getEngineByName("js");
+        ScriptEngine engine = sem.getEngineByName("nashorn");
         if (engine == null) {
-            System.out.println("Warning: No js engine found; test vacuously passes.");
+            System.out.println("Warning: No nashorn engine found; test vacuously passes.");
             return;
         }
         // the following throws exception
