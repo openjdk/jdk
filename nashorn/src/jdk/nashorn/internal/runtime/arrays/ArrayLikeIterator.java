@@ -27,7 +27,7 @@ package jdk.nashorn.internal.runtime.arrays;
 
 import java.util.Iterator;
 import java.util.List;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptObject;
 
@@ -127,8 +127,8 @@ abstract public class ArrayLikeIterator<T> implements Iterator<T> {
             return new ScriptObjectIterator((ScriptObject)obj, includeUndefined);
         }
 
-        if (obj instanceof ScriptObjectMirror) {
-            return new ScriptObjectMirrorIterator((ScriptObjectMirror)obj, includeUndefined);
+        if (obj instanceof JSObject) {
+            return new JSObjectIterator((JSObject)obj, includeUndefined);
         }
 
         if (obj instanceof List) {
@@ -160,8 +160,8 @@ abstract public class ArrayLikeIterator<T> implements Iterator<T> {
             return new ReverseScriptObjectIterator((ScriptObject)obj, includeUndefined);
         }
 
-        if (obj instanceof ScriptObjectMirror) {
-            return new ReverseScriptObjectMirrorIterator((ScriptObjectMirror)obj, includeUndefined);
+        if (obj instanceof JSObject) {
+            return new ReverseJSObjectIterator((JSObject)obj, includeUndefined);
         }
 
         if (obj instanceof List) {

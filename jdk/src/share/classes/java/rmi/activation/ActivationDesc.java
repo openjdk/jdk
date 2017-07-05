@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,6 +105,8 @@ public final class ActivationDesc implements Serializable {
      * @param data the object's initialization (activation) data contained
      * in marshalled form.
      * @exception ActivationException if the current group is nonexistent
+     * @exception UnsupportedOperationException if and only if activation is
+     * not supported by this implementation
      * @since 1.2
      */
     public ActivationDesc(String className,
@@ -142,6 +144,8 @@ public final class ActivationDesc implements Serializable {
      * <code>true</code> does not force an initial immediate activation of
      * a newly registered object;  initial activation is lazy.
      * @exception ActivationException if the current group is nonexistent
+     * @exception UnsupportedOperationException if and only if activation is
+     * not supported by this implementation
      * @since 1.2
      */
     public ActivationDesc(String className,
@@ -176,6 +180,8 @@ public final class ActivationDesc implements Serializable {
      * @param data  the object's initialization (activation) data contained
      * in marshalled form.
      * @exception IllegalArgumentException if <code>groupID</code> is null
+     * @exception UnsupportedOperationException if and only if activation is
+     * not supported by this implementation
      * @since 1.2
      */
     public ActivationDesc(ActivationGroupID groupID,
@@ -208,6 +214,8 @@ public final class ActivationDesc implements Serializable {
      * <code>true</code> does not force an initial immediate activation of
      * a newly registered object;  initial activation is lazy.
      * @exception IllegalArgumentException if <code>groupID</code> is null
+     * @exception UnsupportedOperationException if and only if activation is
+     * not supported by this implementation
      * @since 1.2
      */
     public ActivationDesc(ActivationGroupID groupID,

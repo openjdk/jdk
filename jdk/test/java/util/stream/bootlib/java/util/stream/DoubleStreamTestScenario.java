@@ -40,7 +40,7 @@ import java.util.function.Function;
 @SuppressWarnings({"rawtypes", "unchecked"})
 public enum DoubleStreamTestScenario implements OpTestCase.BaseStreamTestScenario {
 
-    STREAM_FOR_EACH(false) {
+    STREAM_FOR_EACH_WITH_CLOSE(false) {
         <T, S_IN extends BaseStream<T, S_IN>>
         void _run(TestData<T, S_IN> data, DoubleConsumer b, Function<S_IN, DoubleStream> m) {
             DoubleStream s = m.apply(data.stream());
@@ -48,6 +48,7 @@ public enum DoubleStreamTestScenario implements OpTestCase.BaseStreamTestScenari
                 s = s.sequential();
             }
             s.forEach(b);
+            s.close();
         }
     },
 

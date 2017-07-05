@@ -1270,12 +1270,8 @@ public abstract class Toolkit {
      * <p>
      * Each actual implementation of this method should first check if there
      * is a security manager installed. If there is, the method should call
-     * the security manager's <code>checkSystemClipboardAccess</code> method
-     * to ensure it's ok to to access the system clipboard. If the default
-     * implementation of <code>checkSystemClipboardAccess</code> is used (that
-     * is, that method is not overriden), then this results in a call to the
-     * security manager's <code>checkPermission</code> method with an <code>
-     * AWTPermission("accessClipboard")</code> permission.
+     * the security manager's {@link SecurityManager#checkPermission
+     * checkPermission} method to check {@code AWTPermission("accessClipboard")}.
      *
      * @return    the system Clipboard
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
@@ -1318,14 +1314,9 @@ public abstract class Toolkit {
      * system selection <code>Clipboard</code> as described above.
      * <p>
      * Each actual implementation of this method should first check if there
-     * is a <code>SecurityManager</code> installed. If there is, the method
-     * should call the <code>SecurityManager</code>'s
-     * <code>checkSystemClipboardAccess</code> method to ensure that client
-     * code has access the system selection. If the default implementation of
-     * <code>checkSystemClipboardAccess</code> is used (that is, if the method
-     * is not overridden), then this results in a call to the
-     * <code>SecurityManager</code>'s <code>checkPermission</code> method with
-     * an <code>AWTPermission("accessClipboard")</code> permission.
+     * is a security manager installed. If there is, the method should call
+     * the security manager's {@link SecurityManager#checkPermission
+     * checkPermission} method to check {@code AWTPermission("accessClipboard")}.
      *
      * @return the system selection as a <code>Clipboard</code>, or
      *         <code>null</code> if the native platform does not support a
@@ -1699,25 +1690,20 @@ public abstract class Toolkit {
      * therefore not assume that the EventQueue instance returned
      * by this method will be shared by other applets or the system.
      *
-     * <p>First, if there is a security manager, its
-     * <code>checkAwtEventQueueAccess</code>
-     * method is called.
-     * If  the default implementation of <code>checkAwtEventQueueAccess</code>
-     * is used (that is, that method is not overriden), then this results in
-     * a call to the security manager's <code>checkPermission</code> method
-     * with an <code>AWTPermission("accessEventQueue")</code> permission.
+     * <p> If there is a security manager then its
+     * {@link SecurityManager#checkPermission checkPermission} method
+     * is called to check {@code AWTPermission("accessEventQueue")}.
      *
      * @return    the <code>EventQueue</code> object
      * @throws  SecurityException
-     *          if a security manager exists and its <code>{@link
-     *          java.lang.SecurityManager#checkAwtEventQueueAccess}</code>
-     *          method denies access to the <code>EventQueue</code>
+     *          if a security manager is set and it denies access to
+     *          the {@code EventQueue}
      * @see     java.awt.AWTPermission
     */
     public final EventQueue getSystemEventQueue() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
-          security.checkAwtEventQueueAccess();
+            security.checkPermission(SecurityConstants.AWT.CHECK_AWT_EVENTQUEUE_PERMISSION);
         }
         return getSystemEventQueueImpl();
     }

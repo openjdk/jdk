@@ -78,8 +78,6 @@ ifeq ($(COMPILER_VERSION), VS2010)
   MS_RUNTIME_LIBRARIES = $(MSVCRNN_DLL)
 endif
 
-EXTRA_LFLAGS += -LIBPATH:$(DXSDK_LIB_PATH)
-
 # Full Debug Symbols has been enabled on Windows since JDK1.4.1.
 # The Full Debug Symbols (FDS) default for VARIANT == OPT builds is
 # enabled with debug info files ZIP'ed to save space. For VARIANT !=

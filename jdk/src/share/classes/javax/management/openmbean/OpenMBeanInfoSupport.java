@@ -31,6 +31,7 @@ package javax.management.openmbean;
 //
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Objects;
 
 import javax.management.Descriptor;
 import javax.management.MBeanAttributeInfo;
@@ -269,8 +270,9 @@ public class OpenMBeanInfoSupport
         //
 
         // their MBean className should be equal
-        if ( ! this.getClassName().equals(other.getClassName()) )
+        if (!Objects.equals(this.getClassName(), other.getClassName())) {
             return false;
+        }
 
         // their infos on attributes should be equal (order not
         // significant => equality between sets, not arrays or lists)
@@ -342,7 +344,9 @@ public class OpenMBeanInfoSupport
         //
         if (myHashCode == null) {
             int value = 0;
-            value += this.getClassName().hashCode();
+            if (this.getClassName() != null) {
+                value += this.getClassName().hashCode();
+            }
             value += arraySetHash(this.getAttributes());
             value += arraySetHash(this.getConstructors());
             value += arraySetHash(this.getOperations());

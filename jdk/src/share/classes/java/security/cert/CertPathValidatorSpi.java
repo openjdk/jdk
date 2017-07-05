@@ -97,6 +97,8 @@ public abstract class CertPathValidatorSpi {
      * service providers, this method cannot be abstract and by default throws
      * an {@code UnsupportedOperationException}.
      *
+     * @return a {@code CertPathChecker} that this implementation uses to
+     * check the revocation status of certificates
      * @throws UnsupportedOperationException if this method is not supported
      * @since 1.8
      */

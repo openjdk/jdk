@@ -67,6 +67,7 @@ import static java.time.temporal.TemporalAdjuster.previousOrSame;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.Serializable;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -231,7 +232,56 @@ public final class ZoneOffsetTransitionRule implements Serializable {
 
     //-----------------------------------------------------------------------
     /**
-     * Uses a serialization delegate.
+     * Defend against malicious streams.
+     * @return never
+     * @throws InvalidObjectException always
+     */
+    private Object readResolve() throws InvalidObjectException {
+        throw new InvalidObjectException("Deserialization via serialization delegate");
+    }
+
+    /**
+     * Writes the object using a
+     * <a href="../../../serialized-form.html#java.time.zone.Ser">dedicated serialized form</a>.
+     * @serialData
+     * Refer to the serialized form of
+     * <a href="../../../serialized-form.html#java.time.zone.ZoneRules">ZoneRules.writeReplace</a>
+     * for the encoding of epoch seconds and offsets.
+     * <pre style="font-size:1.0em">{@code
+     *
+     *      out.writeByte(3);                // identifies a ZoneOffsetTransition
+     *      final int timeSecs = (timeEndOfDay ? 86400 : time.toSecondOfDay());
+     *      final int stdOffset = standardOffset.getTotalSeconds();
+     *      final int beforeDiff = offsetBefore.getTotalSeconds() - stdOffset;
+     *      final int afterDiff = offsetAfter.getTotalSeconds() - stdOffset;
+     *      final int timeByte = (timeSecs % 3600 == 0 ? (timeEndOfDay ? 24 : time.getHour()) : 31);
+     *      final int stdOffsetByte = (stdOffset % 900 == 0 ? stdOffset / 900 + 128 : 255);
+     *      final int beforeByte = (beforeDiff == 0 || beforeDiff == 1800 || beforeDiff == 3600 ? beforeDiff / 1800 : 3);
+     *      final int afterByte = (afterDiff == 0 || afterDiff == 1800 || afterDiff == 3600 ? afterDiff / 1800 : 3);
+     *      final int dowByte = (dow == null ? 0 : dow.getValue());
+     *      int b = (month.getValue() << 28) +          // 4 bits
+     *              ((dom + 32) << 22) +                // 6 bits
+     *              (dowByte << 19) +                   // 3 bits
+     *              (timeByte << 14) +                  // 5 bits
+     *              (timeDefinition.ordinal() << 12) +  // 2 bits
+     *              (stdOffsetByte << 4) +              // 8 bits
+     *              (beforeByte << 2) +                 // 2 bits
+     *              afterByte;                          // 2 bits
+     *      out.writeInt(b);
+     *      if (timeByte == 31) {
+     *          out.writeInt(timeSecs);
+     *      }
+     *      if (stdOffsetByte == 255) {
+     *          out.writeInt(stdOffset);
+     *      }
+     *      if (beforeByte == 3) {
+     *          out.writeInt(offsetBefore.getTotalSeconds());
+     *      }
+     *      if (afterByte == 3) {
+     *          out.writeInt(offsetAfter.getTotalSeconds());
+     *      }
+     * }
+     * </pre>
      *
      * @return the replacing object, not null
      */

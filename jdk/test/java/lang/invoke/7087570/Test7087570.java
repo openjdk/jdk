@@ -35,20 +35,9 @@ import java.util.*;
 
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
+import static java.lang.invoke.MethodHandleInfo.*;
 
 public class Test7087570 {
-    // XXX may remove the following constant declarations when MethodHandleInfo is made public
-    private static final int
-            REF_getField                = 1,
-            REF_getStatic               = 2,
-            REF_putField                = 3,
-            REF_putStatic               = 4,
-            REF_invokeVirtual           = 5,
-            REF_invokeStatic            = 6,
-            REF_invokeSpecial           = 7,
-            REF_newInvokeSpecial        = 8,
-            REF_invokeInterface         = 9,
-            REF_LIMIT                  = 10;
 
     private static final TestMethodData[] TESTS = new TestMethodData[] {
         // field accessors
@@ -87,17 +76,17 @@ public class Test7087570 {
     }
 
     private static void doTest(MethodHandle mh, TestMethodData testMethod) {
-        Object mhi = newMethodHandleInfo(mh);
+        MethodHandleInfo mhi = LOOKUP.revealDirect(mh);
 
         System.out.printf("%s.%s: %s, nominal refKind: %s, actual refKind: %s\n",
                           testMethod.clazz.getName(), testMethod.name, testMethod.methodType,
-                          REF_KIND_NAMES[testMethod.referenceKind],
-                          REF_KIND_NAMES[getReferenceKind(mhi)]);
-        assertEquals(testMethod.name,           getName(mhi));
-        assertEquals(testMethod.methodType,     getMethodType(mhi));
-        assertEquals(testMethod.declaringClass, getDeclaringClass(mhi));
+                          referenceKindToString(testMethod.referenceKind),
+                          referenceKindToString(mhi.getReferenceKind()));
+        assertEquals(testMethod.name,           mhi.getName());
+        assertEquals(testMethod.methodType,     mhi.getMethodType());
+        assertEquals(testMethod.declaringClass, mhi.getDeclaringClass());
         assertEquals(testMethod.referenceKind == REF_invokeSpecial, isInvokeSpecial(mh));
-        assertRefKindEquals(testMethod.referenceKind,  getReferenceKind(mhi));
+        assertRefKindEquals(testMethod.referenceKind,  mhi.getReferenceKind());
     }
 
     private static void testWithLookup() throws Throwable {
@@ -122,49 +111,7 @@ public class Test7087570 {
         return methodType(void.class, clazz);
     }
 
-    private static final String[] REF_KIND_NAMES = {
-        "MH::invokeBasic",
-        "REF_getField", "REF_getStatic", "REF_putField", "REF_putStatic",
-        "REF_invokeVirtual", "REF_invokeStatic", "REF_invokeSpecial",
-        "REF_newInvokeSpecial", "REF_invokeInterface"
-    };
-
     private static final Lookup LOOKUP = lookup();
-
-    // XXX may remove the following reflective logic when MethodHandleInfo is made public
-    private static final MethodHandle MH_IS_INVOKESPECIAL;
-    private static final MethodHandle MHI_CONSTRUCTOR;
-    private static final MethodHandle MHI_GET_NAME;
-    private static final MethodHandle MHI_GET_METHOD_TYPE;
-    private static final MethodHandle MHI_GET_DECLARING_CLASS;
-    private static final MethodHandle MHI_GET_REFERENCE_KIND;
-
-    static {
-        try {
-            // This is white box testing.  Use reflection to grab private implementation bits.
-            String magicName = "IMPL_LOOKUP";
-            Field magicLookup = MethodHandles.Lookup.class.getDeclaredField(magicName);
-            // This unit test will fail if a security manager is installed.
-            magicLookup.setAccessible(true);
-            // Forbidden fruit...
-            Lookup directInvokeLookup = (Lookup) magicLookup.get(null);
-            Class<?> mhiClass = Class.forName("java.lang.invoke.MethodHandleInfo", false, MethodHandle.class.getClassLoader());
-            MH_IS_INVOKESPECIAL = directInvokeLookup
-                    .findVirtual(MethodHandle.class, "isInvokeSpecial", methodType(boolean.class));
-            MHI_CONSTRUCTOR = directInvokeLookup
-                    .findConstructor(mhiClass, methodType(void.class, MethodHandle.class));
-            MHI_GET_NAME = directInvokeLookup
-                    .findVirtual(mhiClass, "getName", methodType(String.class));
-            MHI_GET_METHOD_TYPE = directInvokeLookup
-                    .findVirtual(mhiClass, "getMethodType", methodType(MethodType.class));
-            MHI_GET_DECLARING_CLASS = directInvokeLookup
-                    .findVirtual(mhiClass, "getDeclaringClass", methodType(Class.class));
-            MHI_GET_REFERENCE_KIND = directInvokeLookup
-                    .findVirtual(mhiClass, "getReferenceKind", methodType(int.class));
-        } catch (ReflectiveOperationException ex) {
-            throw new Error(ex);
-        }
-    }
 
     private static class TestMethodData {
         final Class<?> clazz;
@@ -208,7 +155,9 @@ public class Test7087570 {
             return LOOKUP.findStatic(testMethod.clazz, testMethod.name, testMethod.methodType);
         case REF_invokeSpecial:
             Class<?> thisClass = LOOKUP.lookupClass();
-            return LOOKUP.findSpecial(testMethod.clazz, testMethod.name, testMethod.methodType, thisClass);
+            MethodHandle smh = LOOKUP.findSpecial(testMethod.clazz, testMethod.name, testMethod.methodType, thisClass);
+            noteInvokeSpecial(smh);
+            return smh;
         case REF_newInvokeSpecial:
             return LOOKUP.findConstructor(testMethod.clazz, testMethod.methodType);
         default:
@@ -238,7 +187,9 @@ public class Test7087570 {
         case REF_invokeSpecial: {
                 Method m = testMethod.clazz.getDeclaredMethod(testMethod.name, testMethod.methodType.parameterArray());
                 Class<?> thisClass = LOOKUP.lookupClass();
-                return LOOKUP.unreflectSpecial(m, thisClass);
+                MethodHandle smh = LOOKUP.unreflectSpecial(m, thisClass);
+                noteInvokeSpecial(smh);
+                return smh;
             }
         case REF_newInvokeSpecial: {
                 Constructor c = testMethod.clazz.getDeclaredConstructor(testMethod.methodType.parameterArray());
@@ -249,59 +200,20 @@ public class Test7087570 {
         }
     }
 
-    private static Object newMethodHandleInfo(MethodHandle mh) {
-        try {
-            return MHI_CONSTRUCTOR.invoke(mh);
-        } catch (Throwable ex) {
-            throw new Error(ex);
-        }
+    private static List<MethodHandle> specialMethodHandles = new ArrayList<>();
+    private static void noteInvokeSpecial(MethodHandle mh) {
+        specialMethodHandles.add(mh);
+        assert(isInvokeSpecial(mh));
     }
-
     private static boolean isInvokeSpecial(MethodHandle mh) {
-        try {
-            return (boolean) MH_IS_INVOKESPECIAL.invokeExact(mh);
-        } catch (Throwable ex) {
-            throw new Error(ex);
-        }
-    }
-
-    private static String getName(Object mhi) {
-        try {
-            return (String) MHI_GET_NAME.invoke(mhi);
-        } catch (Throwable ex) {
-            throw new Error(ex);
-        }
-    }
-
-    private static MethodType getMethodType(Object mhi) {
-        try {
-            return (MethodType) MHI_GET_METHOD_TYPE.invoke(mhi);
-        } catch (Throwable ex) {
-            throw new Error(ex);
-        }
-    }
-
-    private static Class<?> getDeclaringClass(Object mhi) {
-        try {
-            return (Class<?>) MHI_GET_DECLARING_CLASS.invoke(mhi);
-        } catch (Throwable ex) {
-            throw new Error(ex);
-        }
-    }
-
-    private static int getReferenceKind(Object mhi) {
-        try {
-            return (int) MHI_GET_REFERENCE_KIND.invoke(mhi);
-        } catch (Throwable ex) {
-            throw new Error(ex);
-        }
+        return specialMethodHandles.contains(mh);
     }
 
     private static void assertRefKindEquals(int expect, int observed) {
         if (expect == observed) return;
 
-        String msg = "expected " + REF_KIND_NAMES[(int) expect] +
-                     " but observed " + REF_KIND_NAMES[(int) observed];
+        String msg = "expected " + referenceKindToString(expect) +
+                     " but observed " + referenceKindToString(observed);
         System.out.println("FAILED: " + msg);
         throw new AssertionError(msg);
     }

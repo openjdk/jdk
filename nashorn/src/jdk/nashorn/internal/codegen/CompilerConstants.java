@@ -102,8 +102,12 @@ public enum CompilerConstants {
     /** the varargs variable when necessary */
     VARARGS(":varargs", Object[].class),
 
-    /** the arguments vector when necessary and the slot */
-    ARGUMENTS("arguments", ScriptObject.class, 2),
+    /** the arguments variable (visible to function body). Initially set to ARGUMENTS, but can be reassigned by code in
+     * the function body.*/
+    ARGUMENTS_VAR("arguments", Object.class),
+
+    /** the internal arguments object, when necessary (not visible to scripts, can't be reassigned). */
+    ARGUMENTS(":arguments", ScriptObject.class),
 
     /** prefix for iterators for for (x in ...) */
     ITERATOR_PREFIX(":i", Iterator.class),

@@ -56,6 +56,8 @@
  */
 package java.time.chrono;
 
+import java.io.InvalidObjectException;
+import java.io.ObjectStreamException;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.DAY_OF_YEAR;
 import static java.time.temporal.ChronoField.ERA;
@@ -503,4 +505,29 @@ public final class JapaneseChronology extends Chronology implements Serializable
         return dateYearDay(era, yoe, doy);  // smart is same as strict
     }
 
+    //-----------------------------------------------------------------------
+    /**
+     * Writes the Chronology using a
+     * <a href="../../../serialized-form.html#java.time.chrono.Ser">dedicated serialized form</a>.
+     * @serialData
+     * <pre>
+     *  out.writeByte(1);     // identifies a Chronology
+     *  out.writeUTF(getId());
+     * </pre>
+     *
+     * @return the instance of {@code Ser}, not null
+     */
+    @Override
+    Object writeReplace() {
+        return super.writeReplace();
+    }
+
+    /**
+     * Defend against malicious streams.
+     * @return never
+     * @throws InvalidObjectException always
+     */
+    private Object readResolve() throws InvalidObjectException {
+        throw new InvalidObjectException("Deserialization via serialization delegate");
+    }
 }

@@ -446,7 +446,7 @@ elif test "x$with_user_release_suffix" != x; then
 else
   BUILD_DATE=`date '+%Y_%m_%d_%H_%M'`
   # Avoid [:alnum:] since it depends on the locale.
-  CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyz0123456789'`
+  CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'`
   USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
 fi
 AC_SUBST(USER_RELEASE_SUFFIX)
