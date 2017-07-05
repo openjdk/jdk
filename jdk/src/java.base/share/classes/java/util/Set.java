@@ -448,7 +448,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of() {
-        return new ImmutableCollections.Set0<>();
+        return ImmutableCollections.Set0.instance();
     }
 
     /**
@@ -692,7 +692,7 @@ public interface Set<E> extends Collection<E> {
         Objects.requireNonNull(elements);
         switch (elements.length) {
             case 0:
-                return new ImmutableCollections.Set0<>();
+                return ImmutableCollections.Set0.instance();
             case 1:
                 return new ImmutableCollections.Set1<>(elements[0]);
             case 2:

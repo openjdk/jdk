@@ -189,8 +189,14 @@ JVM_GetVmArguments(JNIEnv *env);
 JNIEXPORT void JNICALL
 JVM_FillInStackTrace(JNIEnv *env, jobject throwable);
 
+/*
+ * java.lang.StackTraceElement
+ */
 JNIEXPORT void JNICALL
-JVM_GetStackTraceElements(JNIEnv *env, jobject throwable, jobjectArray elements);
+JVM_InitStackTraceElementArray(JNIEnv *env, jobjectArray elements, jobject throwable);
+
+JNIEXPORT void JNICALL
+JVM_InitStackTraceElement(JNIEnv* env, jobject element, jobject stackFrameInfo);
 
 /*
  * java.lang.StackWalker
@@ -211,9 +217,6 @@ JNIEXPORT jint JNICALL
 JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jlong mode, jlong anchor,
                   jint frame_count, jint start_index,
                   jobjectArray frames);
-
-JNIEXPORT void JNICALL
-JVM_ToStackTraceElement(JNIEnv* env, jobject frame, jobject stackElement);
 
 /*
  * java.lang.Thread
