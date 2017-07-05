@@ -34,13 +34,13 @@ else
 endif
 
 jprt_build_productEmb:
-	$(MAKE) JAVASE_EMBEDDED=true jprt_build_product
+	$(MAKE) JAVASE_EMBEDDED=true MINIMIZE_RAM_USAGE=true jprt_build_product
 
 jprt_build_debugEmb:
-	$(MAKE) JAVASE_EMBEDDED=true jprt_build_debug
+	$(MAKE) JAVASE_EMBEDDED=true MINIMIZE_RAM_USAGE=true jprt_build_debug
 
 jprt_build_fastdebugEmb:
-	$(MAKE) JAVASE_EMBEDDED=true jprt_build_fastdebug
+	$(MAKE) JAVASE_EMBEDDED=true MINIMIZE_RAM_USAGE=true jprt_build_fastdebug
 
 jprt_build_productOpen:
 	$(MAKE) OPENJDK=true jprt_build_product

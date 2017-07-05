@@ -243,6 +243,7 @@ void print_statistics() {
     FlagSetting fs(DisplayVMOutput, DisplayVMOutput && PrintC1Statistics);
     Runtime1::print_statistics();
     Deoptimization::print_statistics();
+    SharedRuntime::print_statistics();
     nmethod::print_statistics();
   }
 #endif /* COMPILER1 */
@@ -254,8 +255,8 @@ void print_statistics() {
 #ifndef COMPILER1
     Deoptimization::print_statistics();
     nmethod::print_statistics();
-#endif //COMPILER1
     SharedRuntime::print_statistics();
+#endif //COMPILER1
     os::print_statistics();
   }
 

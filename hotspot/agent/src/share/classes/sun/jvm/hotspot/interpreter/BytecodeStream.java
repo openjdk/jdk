@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,13 @@ public class BytecodeStream {
   public int     getIndex()           { return (isWide())
                                           ? (_method.getBytecodeShortArg(bci() + 2) & 0xFFFF)
                                           : (_method.getBytecodeOrBPAt(bci() + 1) & 0xFF); }
-  public int     getIndexBig()        { return _method.getBytecodeShortArg(bci() + 1); }
+  public int     getIndexU1()         { return _method.getBytecodeOrBPAt(bci() + 1) & 0xFF; }
+  public int     getIndexU2()         { return _method.getBytecodeShortArg(bci() + 1) & 0xFFFF; }
+  public int     getIndexU4()         { return _method.getNativeIntArg(bci() + 1); }
+  public boolean hasIndexU4()         { return code() == Bytecodes._invokedynamic; }
+
+  public int     getIndexU1Cpcache()         { return _method.getBytecodeOrBPAt(bci() + 1) & 0xFF; }
+  public int     getIndexU2Cpcache()         { return _method.getNativeShortArg(bci() + 1) & 0xFFFF; }
 
   // Fetch at absolute BCI (for manual parsing of certain bytecodes)
   public int     codeAt(int bci) {

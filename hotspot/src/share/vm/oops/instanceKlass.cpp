@@ -1406,7 +1406,7 @@ class nmethodBucket {
 
 //
 // Walk the list of dependent nmethods searching for nmethods which
-// are dependent on the klassOop that was passed in and mark them for
+// are dependent on the changes that were passed in and mark them for
 // deoptimization.  Returns the number of nmethods found.
 //
 int instanceKlass::mark_dependent_nmethods(DepChange& changes) {
