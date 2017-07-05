@@ -540,30 +540,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
      */
     @Override
     public float getMinimumSpan(int axis) {
-        switch (axis) {
-        case View.X_AXIS:
-            if (minimumSpan < 0) {
-                minimumSpan = 0;
-                int p0 = getStartOffset();
-                int p1 = getEndOffset();
-                while (p1 > p0) {
-                    int breakSpot = getBreakSpot(p0, p1);
-                    if (breakSpot == BreakIterator.DONE) {
-                        // the rest of the view is non-breakable
-                        breakSpot = p0;
-                    }
-                    minimumSpan = Math.max(minimumSpan,
-                            getPartialSpan(breakSpot, p1));
-                    // Note: getBreakSpot returns the *last* breakspot
-                    p1 = breakSpot - 1;
-                }
-            }
-            return minimumSpan;
-        case View.Y_AXIS:
-            return super.getMinimumSpan(axis);
-        default:
-            throw new IllegalArgumentException("Invalid axis: " + axis);
-        }
+        return super.getMinimumSpan(axis);
     }
 
     /**

@@ -52,6 +52,12 @@ case "$OS" in
     FS="/"
     TMP=/tmp
     ;;
+  CYGWIN* )
+    NULL=/dev/null
+    PS=";"
+    FS="/"
+    TMP=/tmp
+    ;;
   Windows_* )
     NULL=NUL
     PS=";"
@@ -66,14 +72,21 @@ esac
 
 # the test code
 #genkey
-${TESTJAVA}${FS}bin${FS}keytool -genkey -v -alias dummyTestCA -keyalg "RSA" -keysize 1024 -sigalg "ShA1WithRSA" -dname "cn=Dummy Test CA, ou=JSN, o=JavaSoft, c=US" -validity 3650 -keypass storepass -keystore keystoreCA.dks -storepass storepass -storetype "dks" -provider "org.test.dummy.DummyProvider" -providerPath ${TESTCLASSES}
+${TESTJAVA}${FS}bin${FS}keytool -genkey -v -alias dummyTestCA \
+    -keyalg "RSA" -keysize 1024 -sigalg "ShA1WithRSA" \
+    -dname "cn=Dummy Test CA, ou=JSN, o=JavaSoft, c=US" -validity 3650 \
+    -keypass storepass -keystore keystoreCA.dks -storepass storepass \
+    -storetype "dks" -provider "org.test.dummy.DummyProvider" \
+    -providerPath ${TESTCLASSES}
 
 if [ $? -ne 0 ]; then 
     exit 1
 fi
 
 #Change keystore password
-${TESTJAVA}${FS}bin${FS}keytool -storepasswd -new storepass2 -keystore keystoreCA.dks -storetype "dks" -storepass storepass -provider "org.test.dummy.DummyProvider" -providerPath ${TESTCLASSES}
+${TESTJAVA}${FS}bin${FS}keytool -storepasswd -new storepass2 \
+    -keystore keystoreCA.dks -storetype "dks" -storepass storepass \
+    -provider "org.test.dummy.DummyProvider" -providerPath ${TESTCLASSES}
 
 if [ $? -ne 0 ]; then 
     exit 1
@@ -81,21 +94,29 @@ fi
 
 
 #Change keystore key password
-${TESTJAVA}${FS}bin${FS}keytool -keypasswd -alias "dummyTestCA" -keypass storepass -new keypass -keystore keystoreCA.dks -storetype "dks" -storepass storepass2 -provider "org.test.dummy.DummyProvider" -providerPath ${TESTCLASSES}
+${TESTJAVA}${FS}bin${FS}keytool -keypasswd -alias "dummyTestCA" \
+    -keypass storepass -new keypass -keystore keystoreCA.dks \
+    -storetype "dks" -storepass storepass2 \
+    -provider "org.test.dummy.DummyProvider" -providerPath ${TESTCLASSES}
 
 if [ $? -ne 0 ]; then 
     exit 1
 fi
 
 #Export certificate
-${TESTJAVA}${FS}bin${FS}keytool -v -export -rfc -alias "dummyTestCA" -file "dummyTestCA.der" -keystore keystoreCA.dks -storetype "dks" -storepass storepass2 -provider "org.test.dummy.DummyProvider" -providerPath ${TESTCLASSES}
+${TESTJAVA}${FS}bin${FS}keytool -v -export -rfc -alias "dummyTestCA" \
+    -file "dummyTestCA.der" -keystore keystoreCA.dks -storetype "dks" \
+    -storepass storepass2 -provider "org.test.dummy.DummyProvider" \
+    -providerPath ${TESTCLASSES}
 
 if [ $? -ne 0 ]; then 
     exit 1
 fi
 
 #list keystore
-${TESTJAVA}${FS}bin${FS}keytool -v -list -keystore keystoreCA.dks -storetype "dks" -storepass storepass2 -provider "org.test.dummy.DummyProvider" -providerPath ${TESTCLASSES}
+${TESTJAVA}${FS}bin${FS}keytool -v -list -keystore keystoreCA.dks \
+    -storetype "dks" -storepass storepass2 \
+    -provider "org.test.dummy.DummyProvider" -providerPath ${TESTCLASSES}
 
 if [ $? -ne 0 ]; then 
     exit 1

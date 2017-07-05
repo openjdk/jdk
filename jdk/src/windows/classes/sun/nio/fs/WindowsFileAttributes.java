@@ -299,6 +299,9 @@ class WindowsFileAttributes
         throws WindowsException
     {
         if (!ensureAccurateMetadata) {
+            WindowsException firstException = null;
+
+            // GetFileAttributesEx is the fastest way to read the attributes
             NativeBuffer buffer =
                 NativeBuffers.getNativeBuffer(SIZEOF_FILE_ATTRIBUTE_DATA);
             try {
@@ -310,8 +313,38 @@ class WindowsFileAttributes
                     .getInt(address + OFFSETOF_FILE_ATTRIBUTE_DATA_ATTRIBUTES);
                 if ((fileAttrs & FILE_ATTRIBUTE_REPARSE_POINT) == 0)
                     return fromFileAttributeData(address, 0);
+            } catch (WindowsException x) {
+                if (x.lastError() != ERROR_SHARING_VIOLATION)
+                    throw x;
+                firstException = x;
             } finally {
                 buffer.release();
+            }
+
+            // For sharing violations, fallback to FindFirstFile if the file
+            // is not a root directory.
+            if (firstException != null) {
+                String search = path.getPathForWin32Calls();
+                char last = search.charAt(search.length() -1);
+                if (last == ':' || last == '\\')
+                    throw firstException;
+                buffer = getBufferForFindData();
+                try {
+                    long handle = FindFirstFile(search, buffer.address());
+                    FindClose(handle);
+                    WindowsFileAttributes attrs = fromFindData(buffer.address());
+                    // FindFirstFile does not follow sym links. Even if
+                    // followLinks is false, there isn't sufficient information
+                    // in the WIN32_FIND_DATA structure to know if the reparse
+                    // point is a sym link.
+                    if (attrs.isReparsePoint())
+                        throw firstException;
+                    return attrs;
+                } catch (WindowsException ignore) {
+                    throw firstException;
+                } finally {
+                    buffer.release();
+                }
             }
         }
 

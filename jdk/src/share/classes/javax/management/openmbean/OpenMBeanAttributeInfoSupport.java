@@ -690,7 +690,7 @@ public class OpenMBeanAttributeInfoSupport
     private static <T> T convertFromString(String s, OpenType<T> openType) {
         Class<T> c;
         try {
-            c = cast(Class.forName(openType.getClassName()));
+            c = cast(Class.forName(openType.safeGetClassName()));
         } catch (ClassNotFoundException e) {
             throw new NoClassDefFoundError(e.toString());  // can't happen
         }
@@ -711,7 +711,7 @@ public class OpenMBeanAttributeInfoSupport
             } catch (Exception e) {
                 final String msg =
                     "Could not convert \"" + s + "\" using method: " + valueOf;
-                throw new IllegalArgumentException(msg);
+                throw new IllegalArgumentException(msg, e);
             }
         }
 
@@ -728,7 +728,7 @@ public class OpenMBeanAttributeInfoSupport
             } catch (Exception e) {
                 final String msg =
                     "Could not convert \"" + s + "\" using constructor: " + con;
-                throw new IllegalArgumentException(msg);
+                throw new IllegalArgumentException(msg, e);
             }
         }
 
@@ -757,7 +757,7 @@ public class OpenMBeanAttributeInfoSupport
             stringArrayClass =
                 Class.forName(squareBrackets + "Ljava.lang.String;");
             targetArrayClass =
-                Class.forName(squareBrackets + "L" + baseType.getClassName() +
+                Class.forName(squareBrackets + "L" + baseType.safeGetClassName() +
                               ";");
         } catch (ClassNotFoundException e) {
             throw new NoClassDefFoundError(e.toString());  // can't happen

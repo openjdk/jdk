@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,21 +35,16 @@ import java.net.MalformedURLException;
 import java.lang.reflect.*;
 import java.text.Collator;
 import java.text.MessageFormat;
-import sun.misc.BASE64Decoder;
-import sun.security.provider.PolicyParser.PermissionEntry;
 import sun.security.util.PropertyExpander;
 import sun.security.util.PropertyExpander.ExpandException;
 import java.awt.*;
 import java.awt.event.*;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.*;
 import sun.security.provider.*;
 import sun.security.util.PolicyUtil;
 import javax.security.auth.x500.X500Principal;
-import java.util.HashSet;
 
 /**
  * PolicyTool may be used by users and administrators to configure the
@@ -1459,6 +1454,7 @@ class ToolDialog extends Dialog {
         PERM_ARRAY.add(new AWTPerm());
         PERM_ARRAY.add(new DelegationPerm());
         PERM_ARRAY.add(new FilePerm());
+        PERM_ARRAY.add(new InqSecContextPerm());
         PERM_ARRAY.add(new LogPerm());
         PERM_ARRAY.add(new MgmtPerm());
         PERM_ARRAY.add(new MBeanPerm());
@@ -3958,6 +3954,20 @@ class FilePerm extends Perm {
                 "delete",
                 "execute"
                 });
+    }
+}
+
+class InqSecContextPerm extends Perm {
+    public InqSecContextPerm() {
+    super("InquireSecContextPermission",
+        "com.sun.security.jgss.InquireSecContextPermission",
+        new String[]    {
+                "KRB5_GET_SESSION_KEY",
+                "KRB5_GET_TKT_FLAGS",
+                "KRB5_GET_AUTHZ_DATA",
+                "KRB5_GET_AUTHTIME"
+                },
+        null);
     }
 }
 

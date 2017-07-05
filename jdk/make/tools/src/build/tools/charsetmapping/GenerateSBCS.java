@@ -26,6 +26,7 @@
 package build.tools.charsetmapping;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.Formatter;
@@ -54,33 +55,19 @@ public class GenerateSBCS {
             String pkgName  = fields[4];
             System.out.printf("%s,%s,%s,%b,%s%n", clzName, csName, hisName, isASCII, pkgName);
 
-            StringBuilder b2c = new StringBuilder();
-            int c2bLen = genB2C(
-                new FileInputStream(new File(args[0], clzName+".map")), b2c);
-
-            String b2cNR = null;
-            File nrF = new File(args[0], clzName+".nr");
-            if (nrF.exists()) {
-                b2cNR = genNR(new FileInputStream(nrF));
-            }
-
-            String c2bNR = null;
-            File c2bF = new File(args[0], clzName+".c2b");
-            if (c2bF.exists()) {
-                c2bNR = genC2BNR(new FileInputStream(c2bF));
-            }
-
-            genSBCSClass(args[0], args[1], "SingleByte-X.java",
-                         clzName, csName, hisName, pkgName, isASCII,
-                         b2c.toString(), b2cNR, c2bNR, c2bLen);
+            genClass(args[0], args[1], "SingleByte-X.java",
+                     clzName, csName, hisName, pkgName, isASCII);
         }
     }
 
     private static void toString(char[] sb, int off, int end,
-                                 Formatter out, String closure) {
+                                 Formatter out, String closure,
+                                 boolean comment) {
         while (off < end) {
             out.format("        \"");
             for (int j = 0; j < 8; j++) {
+                if (off == end)
+                    break;
                 char c = sb[off++];
                 switch (c) {
                 case '\b':
@@ -103,101 +90,124 @@ public class GenerateSBCS {
                     out.format("\\u%04X", c & 0xffff);
                 }
             }
-            if (off == end)
-               out.format("\" %s      // 0x%02x - 0x%02x%n", closure, off-8, off-1);
-            else
-               out.format("\" +      // 0x%02x - 0x%02x%n", off-8, off-1);
+            if (comment) {
+                if (off == end)
+                    out.format("\" %s      // 0x%02x - 0x%02x%n",
+                               closure, off-8, off-1);
+                else
+                    out.format("\" +      // 0x%02x - 0x%02x%n",
+                               off-8, off-1);
+            } else {
+                if (off == end)
+                    out.format("\"%s%n", closure);
+                else
+                    out.format("\" +%n");
+            }
         }
     }
 
     static Pattern sbmap = Pattern.compile("0x(\\p{XDigit}++)\\s++U\\+(\\p{XDigit}++)(\\s++#.*)?");
-    private static int genB2C(InputStream in, StringBuilder out)
+
+    private static void genClass(String srcDir, String dstDir,
+                                 String template,
+                                 String clzName,
+                                 String csName,
+                                 String hisName,
+                                 String pkgName,
+                                 boolean isASCII)
         throws Exception
     {
+        StringBuilder b2cSB = new StringBuilder();
+        StringBuilder b2cNRSB = new StringBuilder();
+        StringBuilder c2bNRSB = new StringBuilder();
+
         char[] sb = new char[0x100];
-        int[] indexC2B = new int[0x100];
+        char[] c2bIndex = new char[0x100];
+        int    c2bOff = 0;
+        Arrays.fill(sb, UNMAPPABLE_DECODING);
+        Arrays.fill(c2bIndex, UNMAPPABLE_DECODING);
 
-        for (int i = 0; i < sb.length; i++)
-            sb[i] = UNMAPPABLE_DECODING;
-
-        // parse the b2c mapping table
+        // (1)read in .map to parse all b->c entries
+        FileInputStream in = new FileInputStream(
+                                 new File(srcDir, clzName + ".map"));
         Parser p = new Parser(in, sbmap);
         Entry  e = null;
-        int    off = 0;
+
         while ((e = p.next()) != null) {
             sb[e.bs] = (char)e.cp;
-            if (indexC2B[e.cp>>8] == 0) {
-                off += 0x100;
-                indexC2B[e.cp>>8] = 1;
+            if (c2bIndex[e.cp>>8] == UNMAPPABLE_DECODING) {
+                c2bOff += 0x100;
+                c2bIndex[e.cp>>8] = 1;
             }
         }
 
-        Formatter fm = new Formatter(out);
+        Formatter fm = new Formatter(b2cSB);
         fm.format("%n");
 
         // vm -server shows cc[byte + 128] access is much faster than
         // cc[byte&0xff] so we output the upper segment first
-        toString(sb, 0x80, 0x100, fm, "+");
-        toString(sb, 0x00, 0x80,  fm, ";");
-
+        toString(sb, 0x80, 0x100, fm, "+", true);
+        toString(sb, 0x00, 0x80,  fm, ";", true);
         fm.close();
-        return off;
-    }
 
-    // generate non-roundtrip entries from xxx.nr file
-    private static String genNR(InputStream in) throws Exception
-    {
-        StringBuilder sb = new StringBuilder();
-        Formatter fm = new Formatter(sb);
-        Parser p = new Parser(in, sbmap);
-        Entry  e = null;
-        fm.format("// remove non-roundtrip entries%n");
-        fm.format("        b2cMap = b2cTable.toCharArray();%n");
-        while ((e = p.next()) != null) {
-            fm.format("        b2cMap[%d] = UNMAPPABLE_DECODING;%n",
-                      (e.bs>=0x80)?(e.bs-0x80):(e.bs+0x80));
-        }
-        fm.close();
-        return sb.toString();
-    }
+        // (2)now the .nr file which includes "b->c" non-roundtrip entries
+        File f = new File(srcDir, clzName + ".nr");
+        if (f.exists()) {
+            in = new FileInputStream(f);
+            fm = new Formatter(b2cNRSB);
+            p = new Parser(in, sbmap);
+            e = null;
 
-    // generate c2b only entries from xxx.c2b file
-    private static String genC2BNR(InputStream in) throws Exception
-    {
-        StringBuilder sb = new StringBuilder();
-        Formatter fm = new Formatter(sb);
-        Parser p = new Parser(in, sbmap);
-        ArrayList<Entry> es = new ArrayList<Entry>();
-        Entry  e = null;
-        while ((e = p.next()) != null) {
-            es.add(e);
+            fm.format("// remove non-roundtrip entries%n");
+            fm.format("        b2cMap = b2cTable.toCharArray();%n");
+            while ((e = p.next()) != null) {
+                fm.format("        b2cMap[%d] = UNMAPPABLE_DECODING;%n",
+                          (e.bs>=0x80)?(e.bs-0x80):(e.bs+0x80));
+            }
+            fm.close();
         }
 
-        fm.format("// non-roundtrip c2b only entries%n");
-        fm.format("        c2bNR = new char[%d];%n", es.size() * 2);
-        int i = 0;
-        for (Entry entry: es) {
-            fm.format("        c2bNR[%d] = 0x%x; c2bNR[%d] = 0x%x;%n",
-                      i++, entry.bs, i++, entry.cp);
+        // (3)finally the .c2b file which includes c->b non-roundtrip entries
+        f = new File(srcDir, clzName + ".c2b");
+        if (f.exists()) {
+            in = new FileInputStream(f);
+            fm = new Formatter(c2bNRSB);
+            p = new Parser(in, sbmap);
+            e = null;
+            ArrayList<Entry> es = new ArrayList<Entry>();
+            while ((e = p.next()) != null) {
+                if (c2bIndex[e.cp>>8] == UNMAPPABLE_DECODING) {
+                    c2bOff += 0x100;
+                    c2bIndex[e.cp>>8] = 1;
+                }
+                es.add(e);
+            }
+            fm.format("// non-roundtrip c2b only entries%n");
+            if (es.size() < 100) {
+                fm.format("        c2bNR = new char[%d];%n", es.size() * 2);
+                int i = 0;
+                for (Entry entry: es) {
+                    fm.format("        c2bNR[%d] = 0x%x; c2bNR[%d] = 0x%x;%n",
+                              i++, entry.bs, i++, entry.cp);
+                }
+            } else {
+                char[] cc = new char[es.size() * 2];
+                int i = 0;
+                for (Entry entry: es) {
+                    cc[i++] = (char)entry.bs;
+                    cc[i++] = (char)entry.cp;
+                }
+                fm.format("        c2bNR = (%n");
+                toString(cc, 0, i,  fm, ").toCharArray();", false);
+            }
+            fm.close();
         }
-        fm.close();
-        return sb.toString();
-    }
 
-    private static void genSBCSClass(String srcDir,
-                                     String dstDir,
-                                     String template,
-                                     String clzName,
-                                     String csName,
-                                     String hisName,
-                                     String pkgName,
-                                     boolean isASCII,
-                                     String b2c,
-                                     String b2cNR,
-                                     String c2bNR,
-                                     int    c2blen)
-        throws Exception
-    {
+        // (4)it's time to generate the source file
+        String b2c = b2cSB.toString();
+        String b2cNR = b2cNRSB.toString();
+        String c2bNR = c2bNRSB.toString();
+
         Scanner s = new Scanner(new File(srcDir, template));
         PrintStream out = new PrintStream(new FileOutputStream(
                               new File(dstDir, clzName + ".java")));
@@ -239,16 +249,16 @@ public class GenerateSBCS {
                 line = line.replace("$B2CTABLE$", b2c);
             }
             if (line.indexOf("$C2BLENGTH$") != -1) {
-                line = line.replace("$C2BLENGTH$", "0x" + Integer.toString(c2blen, 16));
+                line = line.replace("$C2BLENGTH$", "0x" + Integer.toString(c2bOff, 16));
             }
             if (line.indexOf("$NONROUNDTRIP_B2C$") != -1) {
-                if (b2cNR == null)
+                if (b2cNR.length() == 0)
                     continue;
                 line = line.replace("$NONROUNDTRIP_B2C$", b2cNR);
             }
 
             if (line.indexOf("$NONROUNDTRIP_C2B$") != -1) {
-                if (c2bNR == null)
+                if (c2bNR.length() == 0)
                     continue;
                 line = line.replace("$NONROUNDTRIP_C2B$", c2bNR);
             }
