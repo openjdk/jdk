@@ -28,6 +28,7 @@ package build.tools.taglet;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import javax.lang.model.element.Element;
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.Taglet;
 import static jdk.javadoc.doclet.Taglet.Location.*;
@@ -59,7 +60,7 @@ public class Incubating implements Taglet {
                 + " Will be removed in a future release.</b>";
 
     @Override
-    public String toString(List<? extends DocTree> tags) {
+    public String toString(List<? extends DocTree> tags, Element elem) {
         return MESSAGE;
     }
 }

@@ -773,9 +773,6 @@ public class AutomaticModulesTest {
         // test miscellaneous methods
         assertTrue(m.isAutomatic());
         assertFalse(m.modifiers().contains(ModuleDescriptor.Modifier.SYNTHETIC));
-        assertFalse(m.osName().isPresent());
-        assertFalse(m.osArch().isPresent());
-        assertFalse(m.osVersion().isPresent());
     }
 
 

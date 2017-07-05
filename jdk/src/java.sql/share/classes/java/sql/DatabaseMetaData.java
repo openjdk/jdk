@@ -68,6 +68,7 @@ package java.sql;
  * argument is set to <code>null</code>, that argument's criterion will
  * be dropped from the search.
  *
+ * @since 1.1
  */
 public interface DatabaseMetaData extends Wrapper {
 

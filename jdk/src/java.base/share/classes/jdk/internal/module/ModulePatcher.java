@@ -55,7 +55,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.loader.Resource;
-import jdk.internal.loader.ResourceHelper;
 import jdk.internal.misc.JavaLangModuleAccess;
 import jdk.internal.misc.SharedSecrets;
 import sun.net.www.ParseUtil;
@@ -165,9 +164,6 @@ public final class ModulePatcher {
 
             descriptor.version().ifPresent(builder::version);
             descriptor.mainClass().ifPresent(builder::mainClass);
-            descriptor.osName().ifPresent(builder::osName);
-            descriptor.osArch().ifPresent(builder::osArch);
-            descriptor.osVersion().ifPresent(builder::osVersion);
 
             // original + new packages
             builder.packages(descriptor.packages());
@@ -179,10 +175,12 @@ public final class ModulePatcher {
         // return a module reference to the patched module
         URI location = mref.location().orElse(null);
 
+        ModuleTarget target = null;
         ModuleHashes recordedHashes = null;
         ModuleResolution mres = null;
         if (mref instanceof ModuleReferenceImpl) {
             ModuleReferenceImpl impl = (ModuleReferenceImpl)mref;
+            target = impl.moduleTarget();
             recordedHashes = impl.recordedHashes();
             mres = impl.moduleResolution();
         }
@@ -191,6 +189,7 @@ public final class ModulePatcher {
                                        location,
                                        () -> new PatchedModuleReader(paths, mref),
                                        this,
+                                       target,
                                        recordedHashes,
                                        null,
                                        mres);
@@ -226,7 +225,7 @@ public final class ModulePatcher {
         private volatile ModuleReader delegate;
 
         /**
-         * Creates the ModuleReader to reads resources a patched module.
+         * Creates the ModuleReader to reads resources in a patched module.
          */
         PatchedModuleReader(List<Path> patches, ModuleReference mref) {
             List<ResourceFinder> finders = new ArrayList<>();
@@ -291,13 +290,16 @@ public final class ModulePatcher {
         }
 
         /**
-         * Finds a resources in the patch locations. Returns null if not found.
+         * Finds a resources in the patch locations. Returns null if not found
+         * or the name is "module-info.class" as that cannot be overridden.
          */
         private Resource findResourceInPatch(String name) throws IOException {
-            for (ResourceFinder finder : finders) {
-                Resource r = finder.find(name);
-                if (r != null)
-                    return r;
+            if (!name.equals("module-info.class")) {
+                for (ResourceFinder finder : finders) {
+                    Resource r = finder.find(name);
+                    if (r != null)
+                        return r;
+                }
             }
             return null;
         }
@@ -478,9 +480,7 @@ public final class ModulePatcher {
 
         @Override
         public Stream<String> list() throws IOException {
-            return jf.stream()
-                    .filter(e -> !e.isDirectory())
-                    .map(JarEntry::getName);
+            return jf.stream().map(JarEntry::getName);
         }
     }
 
@@ -500,14 +500,12 @@ public final class ModulePatcher {
 
         @Override
         public Resource find(String name) throws IOException {
-            Path path = ResourceHelper.toFilePath(name);
-            if (path != null) {
-                Path file = dir.resolve(path);
-                if (Files.isRegularFile(file)) {
-                    return newResource(name, dir, file);
-                }
+            Path file = Resources.toFilePath(dir, name);
+            if (file != null) {
+                return  newResource(name, dir, file);
+            } else {
+                return null;
             }
-            return null;
         }
 
         private Resource newResource(String name, Path top, Path file) {
@@ -550,11 +548,9 @@ public final class ModulePatcher {
 
         @Override
         public Stream<String> list() throws IOException {
-            return Files.find(dir, Integer.MAX_VALUE,
-                              (path, attrs) -> attrs.isRegularFile())
-                    .map(f -> dir.relativize(f)
-                                 .toString()
-                                 .replace(File.separatorChar, '/'));
+            return Files.walk(dir, Integer.MAX_VALUE)
+                        .map(f -> Resources.toResourceName(dir, f))
+                        .filter(s -> s.length() > 0);
         }
     }
 

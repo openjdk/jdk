@@ -27,6 +27,7 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include $(JDK_TOPDIR)/make/Tools.gmk
+include $(JDK_TOPDIR)/make/ModuleTools.gmk
 
 ################################################################################
 
@@ -174,6 +175,7 @@ DEFAULT_JAVADOC_TAGS := \
     -tag param \
     -tag return \
     -tag throws \
+    -taglet build.tools.taglet.ModuleGraph \
     -tag since \
     -tag version \
     -tag serialData \
@@ -187,6 +189,13 @@ DEFAULT_JAVADOC_TAGS := \
 
 DEFAULT_JAVADOC_OPTIONS := -XDignore.symbol.file=true -use -keywords -notimestamp \
     -serialwarn -encoding ISO-8859-1 -breakiterator --system none
+
+#
+# TODO: this should be set by the configure option.
+#
+ifndef ENABLE_MODULE_GRAPH
+   ENABLE_MODULE_GRAPH=false
+endif
 
 ################################################################################
 # Setup make rules for running javadoc.
@@ -321,7 +330,8 @@ define SetupJavadocGenerationBody
 	  $$(eval $$(call ListPathsSafely, $1_PACKAGES, $$($1_PACKAGES_FILE)))
         endif
 	$$(call ExecuteWithLog, $$(SUPPORT_OUTPUTDIR)/docs/$1.javadoc, \
-	    $$($1_JAVA) -Djava.awt.headless=true $(NEW_JAVADOC) -d $$(@D) \
+	    $$($1_JAVA) -Djava.awt.headless=true -DenableModuleGraph=$(ENABLE_MODULE_GRAPH) \
+		$(NEW_JAVADOC) -d $$(@D) \
 	        $$(DEFAULT_JAVADOC_TAGS) $$(DEFAULT_JAVADOC_OPTIONS) \
 	        --module-source-path $$(call PathList, $$(JAVADOC_SOURCE_DIRS)) \
 	        $$($1_OPTIONS) $$($1_PACKAGES_ARG))
@@ -735,11 +745,27 @@ $(JAVADOC_ARCHIVE): $(TARGETS) $(COPY_TARGETS)
 ZIP_TARGETS += $(JAVADOC_ARCHIVE)
 
 ################################################################################
+# generate .dot files for module graphs
+
+JAVADOC_MODULE_GRAPHS_DIR := $(SUPPORT_OUTPUTDIR)/docs/module-graphs
+JAVADOC_MODULE_GRAPHS := $(JAVADOC_MODULE_GRAPHS_DIR)/java.se.dot
+JAVADOC_MODULE_GRAPHS_PROPS := $(JDK_TOPDIR)/make/src/classes/build/tools/jigsaw/javadoc-graphs.properties
+
+$(JAVADOC_MODULE_GRAPHS): $(BUILD_JIGSAW_TOOLS) $(JAVADOC_MODULE_GRAPHS_PROPS)
+	$(MKDIR) -p $(@D)
+	$(TOOL_GENGRAPHS) --spec --output $(JAVADOC_MODULE_GRAPHS_DIR) \
+	    --dot-attributes $(JAVADOC_MODULE_GRAPHS_PROPS)
+
+MODULE_GRAPH_TARGETS += $(JAVADOC_MODULE_GRAPHS)
+
+################################################################################
 
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, , Javadoc.gmk))
 
 ################################################################################
+
+docs-module-graphs: $(MODULE_GRAPH_TARGETS) 
 
 docs-javadoc: $(TARGETS)
 
@@ -747,6 +773,6 @@ docs-copy: $(COPY_TARGETS)
 
 docs-zip: $(ZIP_TARGETS)
 
-all: docs-javadoc docs-copy docs-zip
+all: docs-module-graphs docs-javadoc docs-copy docs-zip
 
-.PHONY: default all docs-javadoc docs-copy docs-zip
+.PHONY: default all docs-module-graphs docs-javadoc docs-copy docs-zip
