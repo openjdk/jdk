@@ -323,7 +323,7 @@ address AbstractInterpreter::deopt_continue_after_entry(methodOop method, addres
       // (NOT needed for the old calling convension)
       if (!is_top_frame) {
         int index = Bytes::get_native_u4(bcp+1);
-        method->constants()->cache()->entry_at(index)->set_parameter_size(callee_parameters);
+        method->constants()->cache()->secondary_entry_at(index)->set_parameter_size(callee_parameters);
       }
       break;
     }

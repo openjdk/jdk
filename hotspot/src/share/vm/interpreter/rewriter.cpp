@@ -247,15 +247,22 @@ methodHandle Rewriter::rewrite_jsrs(methodHandle method, TRAPS) {
 
 void Rewriter::rewrite(instanceKlassHandle klass, TRAPS) {
   ResourceMark rm(THREAD);
-  Rewriter     rw(klass, CHECK);
+  Rewriter     rw(klass, klass->constants(), klass->methods(), CHECK);
   // (That's all, folks.)
 }
 
-Rewriter::Rewriter(instanceKlassHandle klass, TRAPS)
+
+void Rewriter::rewrite(instanceKlassHandle klass, constantPoolHandle cpool, objArrayHandle methods, TRAPS) {
+  ResourceMark rm(THREAD);
+  Rewriter     rw(klass, cpool, methods, CHECK);
+  // (That's all, folks.)
+}
+
+
+Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, objArrayHandle methods, TRAPS)
   : _klass(klass),
-    // gather starting points
-    _pool(   THREAD, klass->constants()),
-    _methods(THREAD, klass->methods())
+    _pool(cpool),
+    _methods(methods)
 {
   assert(_pool->cache() == NULL, "constant pool cache must not be set yet");
 

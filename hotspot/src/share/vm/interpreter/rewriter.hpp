@@ -57,7 +57,7 @@ class Rewriter: public StackObj {
   }
 
   // All the work goes in here:
-  Rewriter(instanceKlassHandle klass, TRAPS);
+  Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, objArrayHandle methods, TRAPS);
 
   void compute_index_maps();
   void make_constant_pool_cache(TRAPS);
@@ -70,6 +70,7 @@ class Rewriter: public StackObj {
  public:
   // Driver routine:
   static void rewrite(instanceKlassHandle klass, TRAPS);
+  static void rewrite(instanceKlassHandle klass, constantPoolHandle cpool, objArrayHandle methods, TRAPS);
 
   enum {
     _secondary_entry_tag = nth_bit(30)
