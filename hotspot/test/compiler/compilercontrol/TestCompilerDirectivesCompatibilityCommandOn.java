@@ -30,7 +30,7 @@
  *          java.management
  * @build jdk.test.lib.*
  * @build jdk.test.lib.dcmd.*
- * @build sun.hotspot.WhiteBox.*
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions

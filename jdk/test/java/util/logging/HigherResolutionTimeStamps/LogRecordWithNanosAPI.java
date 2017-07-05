@@ -33,7 +33,7 @@ import java.util.logging.SimpleFormatter;
 
 /**
  * @test
- * @bug 8072645
+ * @bug 8072645 8144262
  * @summary tests the new methods added to LogRecord.
  * @run main LogRecordWithNanosAPI
  * @author danielfuchs
@@ -299,8 +299,35 @@ public class LogRecordWithNanosAPI {
 
         try {
             record.setInstant(null);
+            throw new RuntimeException("Expected NullPointerException not thrown");
         } catch (NullPointerException x) {
             System.out.println("Got expected NPE when trying to call record.setInstant(null): " + x);
+        }
+
+        // This instant is the biggest for which toEpochMilli will not throw...
+        final Instant max = Instant.ofEpochMilli(Long.MAX_VALUE).plusNanos(999_999L);
+        record.setInstant(max);
+        assertEquals(Long.MAX_VALUE / 1000L,
+                     record.getInstant().getEpochSecond(),
+                     "max instant seconds [record.getInstant().getEpochSecond()]");
+        assertEquals(Long.MAX_VALUE,
+                     record.getInstant().toEpochMilli(),
+                     "max instant millis [record.getInstant().toEpochMilli()]");
+        assertEquals(Long.MAX_VALUE, record.getMillis(),
+                     "max instant millis [record.getMillis()]");
+        assertEquals((Long.MAX_VALUE % 1000L)*1000_000L + 999_999L,
+                     record.getInstant().getNano(),
+                     "max instant nanos [record.getInstant().getNano()]");
+
+        // Too big by 1 ns.
+        final Instant tooBig = max.plusNanos(1L);
+        try {
+            record.setInstant(tooBig);
+            throw new RuntimeException("Expected ArithmeticException not thrown");
+        } catch (ArithmeticException x) {
+            System.out.println("Got expected ArithmeticException when trying"
+                    + " to call record.setInstant(Instant.ofEpochMilli(Long.MAX_VALUE)"
+                    + ".plusNanos(999_999L).plusNanos(1L)): " + x);
         }
 
     }

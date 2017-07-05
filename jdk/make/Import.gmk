@@ -34,11 +34,9 @@ include MakeBase.gmk
 ifneq ($(OPENJDK_TARGET_OS), windows)
   HOTSPOT_LIB_DIR := $(HOTSPOT_DIST)/lib$(OPENJDK_TARGET_CPU_LIBDIR)
   BASE_INSTALL_LIBRARIES_HERE := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base$(OPENJDK_TARGET_CPU_LIBDIR)
-  SA_INSTALL_LIBRARIES_HERE := $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent$(OPENJDK_TARGET_CPU_LIBDIR)
 else
   HOTSPOT_LIB_DIR := $(HOTSPOT_DIST)/bin
   BASE_INSTALL_LIBRARIES_HERE := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base
-  SA_INSTALL_LIBRARIES_HERE := $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent
 endif
 
 ################################################################################
@@ -58,10 +56,6 @@ HOTSPOT_BASE_IMPORT_FILES := \
     Xusage.txt \
     #
 
-HOTSPOT_SA_IMPORT_FILES := \
-    $(addprefix $(LIBRARY_PREFIX), saproc.* sawindbg.*) \
-    #
-
 $(eval $(call SetupCopyFiles,COPY_HOTSPOT_BASE, \
     SRC := $(HOTSPOT_LIB_DIR), \
     DEST := $(BASE_INSTALL_LIBRARIES_HERE), \
@@ -76,14 +70,6 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
 endif
 
 BASE_TARGETS := $(COPY_HOTSPOT_BASE) $(COPY_HOTSPOT_BASE_JVMLIB)
-
-$(eval $(call SetupCopyFiles,COPY_HOTSPOT_SA, \
-    SRC := $(HOTSPOT_LIB_DIR), \
-    DEST := $(SA_INSTALL_LIBRARIES_HERE), \
-    FILES := $(shell $(FIND) $(HOTSPOT_LIB_DIR) -type f  \
-        -a \( -name DUMMY $(addprefix -o$(SPACE)-name$(SPACE), $(HOTSPOT_SA_IMPORT_FILES)) \) )))
-
-SA_TARGETS := $(COPY_HOTSPOT_SA)
 
 ################################################################################
 
@@ -213,34 +199,6 @@ endif
 
 ################################################################################
 
-$(JDK_OUTPUTDIR)/modules/jdk.hotspot.agent/_the.sa.jar.unpacked: $(HOTSPOT_DIST)/lib/sa-jdi.jar \
-    $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/_the.sa.services
-	$(ECHO) $(LOG_INFO) Unzipping $(<F)
-	$(RM) -r $(@D)
-	$(MKDIR) -p $(@D)
-	$(CD) $(@D) && $(UNZIP) $< -x META-INF/MANIFEST.MF $(LOG_DEBUG)
-        # We must move the service provider file out of the way so that
-        # Gensrc-jdk.jdi.gmk can combine them.
-	$(MKDIR) -p $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent
-	$(MV) $(JDK_OUTPUTDIR)/modules/jdk.hotspot.agent/META-INF/services/com.sun.jdi.connect.Connector \
-	    $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/_the.sa.services
-	$(TOUCH) $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/_the.sa.services
-	$(TOUCH) $@
-
-# Declaring this dependency guarantees that _the.sa.services will be rebuilt
-# even if zip is already unpacked.
-$(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/_the.sa.services: $(HOTSPOT_DIST)/lib/sa-jdi.jar
-
-# Some platforms don't have the serviceability agent
-ifeq (, $(filter $(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU), aix-ppc64))
-  ifneq ($(JVM_VARIANT_ZERO), true)
-    SA_TARGETS += $(JDK_OUTPUTDIR)/modules/jdk.hotspot.agent/_the.sa.jar.unpacked \
-        $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent/_the.sa.services
-  endif
-endif
-
-################################################################################
-
 ifeq ($(OPENJDK_TARGET_OS), windows)
   $(eval $(call SetupCopyFiles,BASE_COPY_LIBS_BIN, \
       SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base, \
@@ -252,33 +210,16 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       DEST := $(JDK_OUTPUTDIR)/lib, \
       FILES := $(filter %.lib, $(BASE_TARGETS))))
 
-  $(eval $(call SetupCopyFiles,SA_COPY_LIBS, \
-      SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent, \
-      DEST := $(JDK_OUTPUTDIR)/lib, \
-      FILES := $(filter $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent/%, \
-          $(SA_TARGETS))))
-
-  $(eval $(call SetupCopyFiles,SA_COPY_LIBS, \
-      SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent, \
-      DEST := $(JDK_OUTPUTDIR)/bin, \
-      FILES := $(filter $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent/%, \
-          $(SA_TARGETS))))
 else
   $(eval $(call SetupCopyFiles,BASE_COPY_LIBS, \
       SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base, \
       DEST := $(JDK_OUTPUTDIR)/lib, \
       FILES := $(BASE_TARGETS)))
-
-  $(eval $(call SetupCopyFiles,SA_COPY_LIBS, \
-      SRC := $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent, \
-      DEST := $(JDK_OUTPUTDIR)/lib, \
-      FILES := $(filter $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.hotspot.agent/%, $(SA_TARGETS))))
 endif
 
 ################################################################################
 
-all: $(BASE_TARGETS) $(SA_TARGETS) \
-    $(BASE_COPY_LIBS_BIN) $(BASE_COPY_LIBS_LIB) \
-    $(BASE_COPY_LIBS) $(SA_COPY_LIBS)
+all: $(BASE_TARGETS) $(BASE_COPY_LIBS_BIN) $(BASE_COPY_LIBS_LIB) \
+    $(BASE_COPY_LIBS)
 
 .PHONY: default all

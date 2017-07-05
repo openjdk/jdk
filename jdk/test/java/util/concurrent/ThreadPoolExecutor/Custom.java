@@ -28,8 +28,15 @@
  * @author Martin Buchholz
  */
 
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.RunnableFuture;
+import java.util.concurrent.RunnableScheduledFuture;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Custom {
     static volatile int passed = 0, failed = 0;
@@ -99,7 +106,7 @@ public class Custom {
         equal(countExecutorThreads(), threadCount);
         equal(CustomTask.births.get(), threadCount);
         tpe.shutdown();
-        tpe.awaitTermination(120, TimeUnit.SECONDS);
+        tpe.awaitTermination(120L, TimeUnit.SECONDS);
         Thread.sleep(1000);
         equal(countExecutorThreads(), 0);
 
@@ -109,7 +116,7 @@ public class Custom {
         equal(CustomSTPE.decorations.get(), threadCount);
         equal(countExecutorThreads(), threadCount);
         stpe.shutdown();
-        stpe.awaitTermination(120, TimeUnit.SECONDS);
+        stpe.awaitTermination(120L, TimeUnit.SECONDS);
         Thread.sleep(1000);
         equal(countExecutorThreads(), 0);
 

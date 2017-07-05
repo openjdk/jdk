@@ -81,12 +81,17 @@ package java.util.concurrent.locks;
  * method is designed for use only in constructions of the form:
  *
  * <pre> {@code
- * while (!canProceed()) { ... LockSupport.park(this); }}</pre>
+ * while (!canProceed()) {
+ *   // ensure request to unpark is visible to other threads
+ *   ...
+ *   LockSupport.park(this);
+ * }}</pre>
  *
- * where neither {@code canProceed} nor any other actions prior to the
- * call to {@code park} entail locking or blocking.  Because only one
- * permit is associated with each thread, any intermediary uses of
- * {@code park} could interfere with its intended effects.
+ * where no actions by the thread publishing a request to unpark,
+ * prior to the call to {@code park}, entail locking or blocking.
+ * Because only one permit is associated with each thread, any
+ * intermediary uses of {@code park}, including implicitly via class
+ * loading, could lead to an unresponsive thread (a "lost unpark").
  *
  * <p><b>Sample Usage.</b> Here is a sketch of a first-in-first-out
  * non-reentrant lock class:
@@ -98,25 +103,32 @@ package java.util.concurrent.locks;
  *
  *   public void lock() {
  *     boolean wasInterrupted = false;
- *     Thread current = Thread.currentThread();
- *     waiters.add(current);
+ *     // publish current thread for unparkers
+ *     waiters.add(Thread.currentThread());
  *
  *     // Block while not first in queue or cannot acquire lock
- *     while (waiters.peek() != current ||
+ *     while (waiters.peek() != Thread.currentThread() ||
  *            !locked.compareAndSet(false, true)) {
  *       LockSupport.park(this);
- *       if (Thread.interrupted()) // ignore interrupts while waiting
+ *       // ignore interrupts while waiting
+ *       if (Thread.interrupted())
  *         wasInterrupted = true;
  *     }
  *
  *     waiters.remove();
- *     if (wasInterrupted)          // reassert interrupt status on exit
- *       current.interrupt();
+ *     // ensure correct interrupt status on return
+ *     if (wasInterrupted)
+ *       Thread.currentThread().interrupt();
  *   }
  *
  *   public void unlock() {
  *     locked.set(false);
  *     LockSupport.unpark(waiters.peek());
+ *   }
+ *
+ *   static {
+ *     // Reduce the risk of "lost unpark" due to classloading
+ *     Class<?> ensureLoaded = LockSupport.class;
  *   }
  * }}</pre>
  */

@@ -146,18 +146,18 @@ public class XEmbeddedFramePeer extends XFramePeer {
         // fix for 5063031
         // if we use super.handleConfigureNotifyEvent() we would get wrong
         // size and position because embedded frame really is NOT a decorated one
-        checkIfOnNewScreen(toGlobal(new Rectangle(xe.get_x(),
-                xe.get_y(),
-                xe.get_width(),
-                xe.get_height())));
+        checkIfOnNewScreen(toGlobal(new Rectangle(scaleDown(xe.get_x()),
+                                                  scaleDown(xe.get_y()),
+                                                  scaleDown(xe.get_width()),
+                                                  scaleDown(xe.get_height()))));
 
         Rectangle oldBounds = getBounds();
 
         synchronized (getStateLock()) {
-            x = xe.get_x();
-            y = xe.get_y();
-            width = xe.get_width();
-            height = xe.get_height();
+            x = scaleDown(xe.get_x());
+            y = scaleDown(xe.get_y());
+            width = scaleDown(xe.get_width());
+            height = scaleDown(xe.get_height());
 
             dimensions.setClientSize(width, height);
             dimensions.setLocation(x, y);
@@ -215,10 +215,10 @@ public class XEmbeddedFramePeer extends XFramePeer {
         try {
             XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(),
                 getWindow(), attr.pData);
-            x = attr.get_x();
-            y = attr.get_y();
-            w = attr.get_width();
-            h = attr.get_height();
+            x = scaleDown(attr.get_x());
+            y = scaleDown(attr.get_y());
+            w = scaleDown(attr.get_width());
+            h = scaleDown(attr.get_height());
         } finally {
             XToolkit.awtUnlock();
         }
@@ -276,7 +276,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
     {
         Point absoluteLoc = XlibUtil.translateCoordinates(getWindow(),
                                                           XToolkit.getDefaultRootWindow(),
-                                                          new Point(0, 0));
+                                                          new Point(0, 0), getScale());
         return absoluteLoc != null ? absoluteLoc.x : 0;
     }
 
@@ -284,7 +284,7 @@ public class XEmbeddedFramePeer extends XFramePeer {
     {
         Point absoluteLoc = XlibUtil.translateCoordinates(getWindow(),
                                                           XToolkit.getDefaultRootWindow(),
-                                                          new Point(0, 0));
+                                                          new Point(0, 0), getScale());
         return absoluteLoc != null ? absoluteLoc.y : 0;
     }
 

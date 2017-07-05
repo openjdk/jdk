@@ -1,2 +1,2 @@
-[jdk.internal.dynalink.beans.CallerSensitiveDynamicMethod Object java.security.AccessController.doPrivileged(PrivilegedAction)]
-[jdk.internal.dynalink.beans.SimpleDynamicMethod String java.lang.String.valueOf(char)]
+[jdk.dynalink.beans.CallerSensitiveDynamicMethod Object java.security.AccessController.doPrivileged(PrivilegedAction)]
+[jdk.dynalink.beans.SimpleDynamicMethod String java.lang.String.valueOf(char)]

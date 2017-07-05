@@ -916,7 +916,8 @@ public:
 
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
   ProjNode* create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry,
-                                        Deoptimization::DeoptReason reason);
+                                        Deoptimization::DeoptReason reason,
+                                        int opcode);
   void register_control(Node* n, IdealLoopTree *loop, Node* pred);
 
   // Clone loop predicates to cloned loops (peeled, unswitched)
@@ -966,7 +967,8 @@ public:
   // Create a slow version of the loop by cloning the loop
   // and inserting an if to select fast-slow versions.
   ProjNode* create_slow_version_of_loop(IdealLoopTree *loop,
-                                        Node_List &old_new);
+                                        Node_List &old_new,
+                                        int opcode);
 
   // Clone a loop and return the clone head (clone_loop_head).
   // Added nodes include int(1), int(0) - disconnected, If, IfTrue, IfFalse,

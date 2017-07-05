@@ -26,6 +26,8 @@ package compiler.compilercontrol.share.scenario;
 import compiler.compilercontrol.share.JSONFile;
 import compiler.compilercontrol.share.method.MethodDescriptor;
 
+import java.util.List;
+
 /**
  * Simple directive file writer.
  */
@@ -86,6 +88,20 @@ public class DirectiveWriter implements AutoCloseable {
         return this;
     }
 
+    /**
+     * Emits inline block with a given methods to be inlined or not.
+     * Each method should be prepended with + or - to show if it should be
+     * inlined or not.
+     *
+     * @param methods methods used for the inline
+     * @return this DirectiveWriter instance
+     */
+    public DirectiveWriter inline(List<String> methods) {
+        write(JSONFile.Element.PAIR, "inline");
+        writeMethods(methods.toArray(new String[methods.size()]));
+        return this;
+    }
+
     private void writeMethods(String[] methods) {
         if (methods.length == 0) {
             throw new IllegalArgumentException("ERROR: empty methods array");
@@ -111,16 +127,15 @@ public class DirectiveWriter implements AutoCloseable {
      */
     public DirectiveWriter excludeCompile(Scenario.Compiler compiler,
                                           boolean exclude) {
-        if (compiler != null) {
-            emitCompiler(compiler);
-            option(Option.EXCLUDE, exclude);
-            end();
-        } else {
-            for (Scenario.Compiler comp : Scenario.Compiler.values()) {
-                emitCompiler(comp);
+        for (Scenario.Compiler comp : Scenario.Compiler.values()) {
+            emitCompiler(comp);
+            if (comp == compiler || compiler == null) {
                 option(Option.EXCLUDE, exclude);
-                end(); // end compiler block
+            } else {
+                // just make this block be enabled
+                option(Option.ENABLE, true);
             }
+            end(); // end compiler block
         }
         return this;
     }
@@ -176,7 +191,8 @@ public class DirectiveWriter implements AutoCloseable {
     public enum Option {
         PRINT_ASSEMBLY("PrintAssembly"),
         LOG("Log"),
-        EXCLUDE("Exclude");
+        EXCLUDE("Exclude"),
+        ENABLE("Enable");
 
         public final String string;
 

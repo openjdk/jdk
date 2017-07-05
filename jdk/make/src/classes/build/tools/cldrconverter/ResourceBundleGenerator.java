@@ -62,6 +62,7 @@ class ResourceBundleGenerator implements BundleGenerator {
         "Asia/Tokyo",
         "Europe/Bucharest",
         "Asia/Shanghai",
+        "UTC",
     };
 
     // For duplicated values
@@ -136,7 +137,7 @@ class ResourceBundleGenerator implements BundleGenerator {
             for (String preferred : preferredTZIDs) {
                 if (map.containsKey(preferred)) {
                     newMap.put(preferred, map.remove(preferred));
-                } else if ("GMT".equals(preferred) &&
+                } else if (("GMT".equals(preferred) || "UTC".equals(preferred)) &&
                            metaKeys.contains(CLDRConverter.METAZONE_ID_PREFIX+preferred)) {
                     newMap.put(preferred, preferred);
                 }

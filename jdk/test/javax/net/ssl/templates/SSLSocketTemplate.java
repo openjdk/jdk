@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@
  */
 
 import java.io.*;
-import java.net.*;
 import javax.net.ssl.*;
 
 public class SSLSocketTemplate {
@@ -162,8 +161,9 @@ public class SSLSocketTemplate {
         System.setProperty("javax.net.ssl.trustStore", trustFilename);
         System.setProperty("javax.net.ssl.trustStorePassword", passwd);
 
-        if (debug)
+        if (debug) {
             System.setProperty("javax.net.debug", "all");
+        }
 
         /*
          * Start the tests.
@@ -255,6 +255,7 @@ public class SSLSocketTemplate {
     void startServer(boolean newThread) throws Exception {
         if (newThread) {
             serverThread = new Thread() {
+                @Override
                 public void run() {
                     try {
                         doServerSide();
@@ -285,6 +286,7 @@ public class SSLSocketTemplate {
     void startClient(boolean newThread) throws Exception {
         if (newThread) {
             clientThread = new Thread() {
+                @Override
                 public void run() {
                     try {
                         doClientSide();

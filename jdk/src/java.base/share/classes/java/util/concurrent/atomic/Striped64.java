@@ -55,7 +55,7 @@ abstract class Striped64 extends Number {
      * accessed directly by subclasses.
      *
      * Table entries are of class Cell; a variant of AtomicLong padded
-     * (via @sun.misc.Contended) to reduce cache contention. Padding
+     * (via @jdk.internal.vm.annotation.Contended) to reduce cache contention. Padding
      * is overkill for most Atomics because they are usually
      * irregularly scattered in memory and thus don't interfere much
      * with each other. But Atomic objects residing in arrays will
@@ -119,7 +119,7 @@ abstract class Striped64 extends Number {
      * JVM intrinsics note: It would be possible to use a release-only
      * form of CAS here, if it were provided.
      */
-    @sun.misc.Contended static final class Cell {
+    @jdk.internal.vm.annotation.Contended static final class Cell {
         volatile long value;
         Cell(long x) { value = x; }
         final boolean cas(long cmp, long val) {
