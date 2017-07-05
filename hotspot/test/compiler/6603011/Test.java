@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,8 +108,10 @@ public class Test implements Runnable {
 
     if (quo != quo0 || rem != rem0) {
       if (VERBOSE) {
-        System.out.println("  " + dividend + " / " + divisor() + " = " +
-                           quo + ", " + dividend + " % " + divisor() + " = " + rem);
+        System.out.println("Computed: " + dividend + " / " + divisor() + " = " +
+                           quo  + ", " + dividend + " % " + divisor() + " = " + rem );
+        System.out.println("expected: " + dividend + " / " + divisor() + " = " +
+                           quo0 + ", " + dividend + " % " + divisor() + " = " + rem0);
         // Report sign of rem failure
         if (rem != 0 && (rem ^ dividend) < 0) {
           System.out.println("  rem & dividend have different signs");
@@ -168,7 +170,7 @@ public class Test implements Runnable {
     for (int i = start; i <= end; i++) {
       for (int s = 0; s < 64; s += 4) {
         total++;
-        long dividend = i << s;
+        long dividend = ((long)i) << s;
         if (!checkL(dividend)) {
           wrong++;
           // Stop on the first failure

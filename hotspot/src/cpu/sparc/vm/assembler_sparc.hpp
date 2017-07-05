@@ -1126,7 +1126,7 @@ public:
   inline void add(Register s1, int simm13a, Register d, relocInfo::relocType rtype = relocInfo::none);
   inline void add(Register s1, int simm13a, Register d, RelocationHolder const& rspec);
   inline void add(Register s1, RegisterOrConstant s2, Register d, int offset = 0);
-  inline void add(const Address& a, Register d, int offset = 0) { add( a.base(), a.disp() + offset, d, a.rspec(offset)); }
+  inline void add(const Address& a, Register d, int offset = 0);
 
   void addcc(  Register s1, Register s2, Register d ) { emit_long( op(arith_op) | rd(d) | op3(add_op3  | cc_bit_op3) | rs1(s1) | rs2(s2) ); }
   void addcc(  Register s1, int simm13a, Register d ) { emit_long( op(arith_op) | rd(d) | op3(add_op3  | cc_bit_op3) | rs1(s1) | immed(true) | simm(simm13a, 13) ); }

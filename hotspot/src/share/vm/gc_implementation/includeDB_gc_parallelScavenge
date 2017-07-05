@@ -133,6 +133,7 @@ parallelScavengeHeap.cpp                psMarkSweep.hpp
 parallelScavengeHeap.cpp                psParallelCompact.hpp
 parallelScavengeHeap.cpp                psPromotionManager.hpp
 parallelScavengeHeap.cpp                psScavenge.hpp
+parallelScavengeHeap.cpp                vmError.hpp
 parallelScavengeHeap.cpp                vmThread.hpp
 parallelScavengeHeap.cpp                vmPSOperations.hpp
 

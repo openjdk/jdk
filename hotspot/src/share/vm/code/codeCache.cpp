@@ -914,3 +914,14 @@ void CodeCache::print() {
 }
 
 #endif // PRODUCT
+
+void CodeCache::print_bounds(outputStream* st) {
+  st->print_cr("Code Cache  [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT ")",
+               _heap->low_boundary(),
+               _heap->high(),
+               _heap->high_boundary());
+  st->print_cr(" total_blobs=" UINT32_FORMAT " nmethods=" UINT32_FORMAT
+               " adapters=" UINT32_FORMAT " free_code_cache=" SIZE_FORMAT,
+               CodeCache::nof_blobs(), CodeCache::nof_nmethods(),
+               CodeCache::nof_adapters(), CodeCache::unallocated_capacity());
+}

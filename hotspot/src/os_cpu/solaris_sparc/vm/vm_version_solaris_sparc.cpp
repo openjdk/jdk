@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,10 +65,6 @@ int VM_Version::platform_features(int features) {
   // getisax(2), SI_ARCHITECTURE_32, and SI_ARCHITECTURE_64 are
   // supported on Solaris 10 and later.
   if (os::Solaris::supports_getisax()) {
-#ifndef PRODUCT
-    if (PrintMiscellaneous && Verbose)
-      tty->print_cr("getisax(2) supported.");
-#endif
 
     // Check 32-bit architecture.
     do_sysinfo(SI_ARCHITECTURE_32, "sparc", &features, v8_instructions_m);
@@ -81,6 +77,11 @@ int VM_Version::platform_features(int features) {
     uint_t avn = os::Solaris::getisax(&av, 1);
     assert(avn == 1, "should only return one av");
 
+#ifndef PRODUCT
+    if (PrintMiscellaneous && Verbose)
+      tty->print_cr("getisax(2) returned: " PTR32_FORMAT, av);
+#endif
+
     if (av & AV_SPARC_MUL32)  features |= hardware_mul32_m;
     if (av & AV_SPARC_DIV32)  features |= hardware_div32_m;
     if (av & AV_SPARC_FSMULD) features |= hardware_fsmuld_m;
@@ -88,11 +89,22 @@ int VM_Version::platform_features(int features) {
     if (av & AV_SPARC_POPC)   features |= hardware_popc_m;
     if (av & AV_SPARC_VIS)    features |= vis1_instructions_m;
     if (av & AV_SPARC_VIS2)   features |= vis2_instructions_m;
+
+    // Next values are not defined before Solaris 10
+    // but Solaris 8 is used for jdk6 update builds.
+#ifndef AV_SPARC_ASI_BLK_INIT
+#define AV_SPARC_ASI_BLK_INIT 0x0080  /* ASI_BLK_INIT_xxx ASI */
+#endif
+#ifndef AV_SPARC_FMAF
+#define AV_SPARC_FMAF 0x0100  /* Sparc64 Fused Multiply-Add */
+#endif
+    if (av & AV_SPARC_ASI_BLK_INIT) features |= blk_init_instructions_m;
+    if (av & AV_SPARC_FMAF)         features |= fmaf_instructions_m;
   } else {
     // getisax(2) failed, use the old legacy code.
 #ifndef PRODUCT
     if (PrintMiscellaneous && Verbose)
-      tty->print_cr("getisax(2) not supported.");
+      tty->print_cr("getisax(2) is not supported.");
 #endif
 
     char   tmp;

@@ -450,11 +450,12 @@ class os: AllStatic {
   static void print_dll_info(outputStream* st);
   static void print_environment_variables(outputStream* st, const char** env_list, char* buffer, int len);
   static void print_context(outputStream* st, void* context);
+  static void print_register_info(outputStream* st, void* context);
   static void print_siginfo(outputStream* st, void* siginfo);
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st);
 
-  static void print_location(outputStream* st, intptr_t x, bool print_pc = false);
+  static void print_location(outputStream* st, intptr_t x, bool verbose = false);
 
   // The following two functions are used by fatal error handler to trace
   // native (C) frames. They are not part of frame.hpp/frame.cpp because
