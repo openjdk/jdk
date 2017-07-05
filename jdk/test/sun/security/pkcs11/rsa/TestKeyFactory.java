@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,26 +27,26 @@
  * @summary Test KeyFactory of the new RSA provider
  * @author Andreas Sterbenz
  * @library ..
+ * @run main/othervm TestKeyFactory
+ * @run main/othervm TestKeyFactory sm rsakeys.ks.policy
  */
 
 import java.io.*;
 import java.util.*;
 
 import java.security.*;
-import java.security.interfaces.*;
 import java.security.spec.*;
 
 public class TestKeyFactory extends PKCS11Test {
 
-    private final static String BASE = System.getProperty("test.src", ".");
-
     private static final char[] password = "test12".toCharArray();
 
     static KeyStore getKeyStore() throws Exception {
-        InputStream in = new FileInputStream(new File(BASE, "rsakeys.ks"));
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(in, password);
-        in.close();
+        KeyStore ks;
+        try (InputStream in = new FileInputStream(new File(BASE, "rsakeys.ks"))) {
+            ks = KeyStore.getInstance("JKS");
+            ks.load(in, password);
+        }
         return ks;
     }
 
@@ -128,9 +128,10 @@ public class TestKeyFactory extends PKCS11Test {
     }
 
     public static void main(String[] args) throws Exception {
-        main(new TestKeyFactory());
+        main(new TestKeyFactory(), args);
     }
 
+    @Override
     public void main(Provider p) throws Exception {
         long start = System.currentTimeMillis();
         KeyStore ks = getKeyStore();
