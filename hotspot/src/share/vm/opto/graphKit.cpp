@@ -1212,6 +1212,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
                     Deoptimization::Action_make_not_entrant,
                     NULL, "assert_null");
     } else {
+      replace_in_map(value, zerocon(type));
       builtin_throw(reason);
     }
   }
@@ -1960,6 +1961,7 @@ Node* GraphKit::null_check_oop(Node* value, Node* *null_control,
     // method will be compiled to handle NULLs.
     PreserveJVMState pjvms(this);
     set_control(*null_control);
+    replace_in_map(value, null());
     uncommon_trap(Deoptimization::Reason_null_check,
                   Deoptimization::Action_make_not_entrant);
     (*null_control) = top();    // NULL path is dead

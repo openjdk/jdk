@@ -486,6 +486,8 @@ public class DragSourceContext
         Cursor c = null;
 
         switch (status) {
+            default:
+                targetAct = DnDConstants.ACTION_NONE;
             case ENTER:
             case OVER:
             case CHANGED:
@@ -506,10 +508,6 @@ public class DragSourceContext
                     else
                         c = DragSource.DefaultCopyDrop;
                 }
-                break;
-            default:
-                targetAct = DnDConstants.ACTION_NONE;
-
         }
 
         setCursorImpl(c);

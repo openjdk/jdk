@@ -48,7 +48,7 @@
 
 /* JNI field and method ids */
 #include "awt_Component.h"
-#include "awt_Cursor.h"
+//#include "awt_Cursor.h"
 #include "awt_MenuComponent.h"
 #include "awt_TopLevel.h"
 #include "canvas.h"

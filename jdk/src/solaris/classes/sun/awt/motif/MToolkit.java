@@ -60,12 +60,12 @@ import java.awt.dnd.MouseDragGestureRecognizer;
 import java.awt.dnd.InvalidDnDOperationException;
 import java.awt.dnd.peer.DragSourceContextPeer;
 
-import sun.awt.motif.MInputMethod;
+//import sun.awt.motif.MInputMethod;
 import sun.awt.X11GraphicsConfig;
 import sun.awt.X11GraphicsEnvironment;
 import sun.awt.XSettings;
 
-import sun.awt.motif.MDragSourceContextPeer;
+//import sun.awt.motif.MDragSourceContextPeer;
 
 import sun.print.PrintJob2D;
 
@@ -79,9 +79,9 @@ public class MToolkit extends UNIXToolkit implements Runnable {
     private static final Logger log = Logger.getLogger("sun.awt.motif.MToolkit");
 
     // the system clipboard - CLIPBOARD selection
-    X11Clipboard clipboard;
+    //X11Clipboard clipboard;
     // the system selection - PRIMARY selection
-    X11Clipboard selection;
+    //X11Clipboard selection;
 
     // Dynamic Layout Resize client code setting
     protected static boolean dynamicLayoutSetting = false;
@@ -130,7 +130,7 @@ public class MToolkit extends UNIXToolkit implements Runnable {
             new GetBooleanAction("awt.dnd.motifdnd"))).booleanValue();
     }
 
-    public static final String DATA_TRANSFERER_CLASS_NAME = "sun.awt.motif.MDataTransferer";
+    //public static final String DATA_TRANSFERER_CLASS_NAME = "sun.awt.motif.MDataTransferer";
 
     public MToolkit() {
         super();
@@ -150,7 +150,7 @@ public class MToolkit extends UNIXToolkit implements Runnable {
             }
 
             init(mainClassName);
-            SunToolkit.setDataTransfererClassName(DATA_TRANSFERER_CLASS_NAME);
+            //SunToolkit.setDataTransfererClassName(DATA_TRANSFERER_CLASS_NAME);
 
             Thread toolkitThread = new Thread(this, "AWT-Motif");
             toolkitThread.setPriority(Thread.NORM_PRIORITY + 1);
@@ -197,131 +197,152 @@ public class MToolkit extends UNIXToolkit implements Runnable {
      */
 
     public ButtonPeer createButton(Button target) {
-        ButtonPeer peer = new MButtonPeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //ButtonPeer peer = new MButtonPeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public TextFieldPeer createTextField(TextField target) {
-        TextFieldPeer peer = new MTextFieldPeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //TextFieldPeer peer = new MTextFieldPeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public LabelPeer createLabel(Label target) {
-        LabelPeer peer = new MLabelPeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //LabelPeer peer = new MLabelPeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public ListPeer createList(List target) {
-        ListPeer peer = new MListPeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //ListPeer peer = new MListPeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public CheckboxPeer createCheckbox(Checkbox target) {
-        CheckboxPeer peer = new MCheckboxPeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //CheckboxPeer peer = new MCheckboxPeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public ScrollbarPeer createScrollbar(Scrollbar target) {
-        ScrollbarPeer peer = new MScrollbarPeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //ScrollbarPeer peer = new MScrollbarPeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public ScrollPanePeer createScrollPane(ScrollPane target) {
-        ScrollPanePeer peer = new MScrollPanePeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //ScrollPanePeer peer = new MScrollPanePeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public TextAreaPeer createTextArea(TextArea target) {
-        TextAreaPeer peer = new MTextAreaPeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //TextAreaPeer peer = new MTextAreaPeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public ChoicePeer createChoice(Choice target) {
-        ChoicePeer peer = new MChoicePeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //ChoicePeer peer = new MChoicePeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public FramePeer  createFrame(Frame target) {
-        FramePeer peer = new MFramePeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //FramePeer peer = new MFramePeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public CanvasPeer createCanvas(Canvas target) {
-        CanvasPeer peer = (isXEmbedServerRequested() ? new MEmbedCanvasPeer(target) : new MCanvasPeer(target));
-        targetCreatedPeer(target, peer);
-        return peer;
+        //CanvasPeer peer = (isXEmbedServerRequested() ? new MEmbedCanvasPeer(target) : new MCanvasPeer(target));
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public PanelPeer createPanel(Panel target) {
-        PanelPeer peer = new MPanelPeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //PanelPeer peer = new MPanelPeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public WindowPeer createWindow(Window target) {
-        WindowPeer peer = new MWindowPeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //WindowPeer peer = new MWindowPeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public DialogPeer createDialog(Dialog target) {
-        DialogPeer peer = new MDialogPeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //DialogPeer peer = new MDialogPeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public FileDialogPeer createFileDialog(FileDialog target) {
-        FileDialogPeer peer = new MFileDialogPeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //FileDialogPeer peer = new MFileDialogPeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public MenuBarPeer createMenuBar(MenuBar target) {
-        MenuBarPeer peer = new MMenuBarPeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //MenuBarPeer peer = new MMenuBarPeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public MenuPeer createMenu(Menu target) {
-        MenuPeer peer = new MMenuPeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //MenuPeer peer = new MMenuPeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public PopupMenuPeer createPopupMenu(PopupMenu target) {
-        PopupMenuPeer peer = new MPopupMenuPeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //PopupMenuPeer peer = new MPopupMenuPeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public MenuItemPeer createMenuItem(MenuItem target) {
-        MenuItemPeer peer = new MMenuItemPeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //MenuItemPeer peer = new MMenuItemPeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
     public CheckboxMenuItemPeer createCheckboxMenuItem(CheckboxMenuItem target) {
-        CheckboxMenuItemPeer peer = new MCheckboxMenuItemPeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
+        //CheckboxMenuItemPeer peer = new MCheckboxMenuItemPeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+        return null;
     }
 
-    public MEmbeddedFramePeer createEmbeddedFrame(MEmbeddedFrame target)
-    {
-        MEmbeddedFramePeer peer = new MEmbeddedFramePeer(target);
-        targetCreatedPeer(target, peer);
-        return peer;
-    }
+    //public MEmbeddedFramePeer createEmbeddedFrame(MEmbeddedFrame target)
+    //{
+        //MEmbeddedFramePeer peer = new MEmbeddedFramePeer(target);
+        //targetCreatedPeer(target, peer);
+        //return peer;
+    //    return null;
+    //}
 
 
     public FontPeer getFontPeer(String name, int style){
@@ -438,29 +459,31 @@ public class MToolkit extends UNIXToolkit implements Runnable {
     public native void beep();
 
     public  Clipboard getSystemClipboard() {
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-          security.checkSystemClipboardAccess();
-        }
-        synchronized (this) {
-            if (clipboard == null) {
-                clipboard = new X11Clipboard("System", "CLIPBOARD");
-            }
-        }
-        return clipboard;
+        //SecurityManager security = System.getSecurityManager();
+        //if (security != null) {
+        //  security.checkSystemClipboardAccess();
+        //}
+        //synchronized (this) {
+        //    if (clipboard == null) {
+        //        clipboard = new X11Clipboard("System", "CLIPBOARD");
+        //    }
+        //}
+        //return clipboard;
+        return null;
     }
 
     public Clipboard getSystemSelection() {
-        SecurityManager security = System.getSecurityManager();
-        if (security != null) {
-            security.checkSystemClipboardAccess();
-        }
-        synchronized (this) {
-            if (selection == null) {
-                selection = new X11Clipboard("Selection", "PRIMARY");
-            }
-        }
-        return selection;
+        //SecurityManager security = System.getSecurityManager();
+        //if (security != null) {
+        //    security.checkSystemClipboardAccess();
+        //}
+        //synchronized (this) {
+        //    if (selection == null) {
+        //        selection = new X11Clipboard("Selection", "PRIMARY");
+        //    }
+        //}
+        //return selection;
+        return null;
     }
 
     public boolean getLockingKeyState(int key) {
@@ -492,11 +515,12 @@ public class MToolkit extends UNIXToolkit implements Runnable {
     }
 
     public DragSourceContextPeer createDragSourceContextPeer(DragGestureEvent dge) throws InvalidDnDOperationException {
-        if (MToolkit.useMotifDnD()) {
-            return MDragSourceContextPeer.createDragSourceContextPeer(dge);
-        } else {
-            return X11DragSourceContextPeer.createDragSourceContextPeer(dge);
-        }
+        //if (MToolkit.useMotifDnD()) {
+        //    return MDragSourceContextPeer.createDragSourceContextPeer(dge);
+        //} else {
+        //    return X11DragSourceContextPeer.createDragSourceContextPeer(dge);
+        //}
+        return null;
     }
 
     public <T extends DragGestureRecognizer> T
@@ -504,9 +528,9 @@ public class MToolkit extends UNIXToolkit implements Runnable {
                                     DragSource ds, Component c, int srcActions,
                                     DragGestureListener dgl)
     {
-        if (MouseDragGestureRecognizer.class.equals(abstractRecognizerClass))
-            return (T)new MMouseDragGestureRecognizer(ds, c, srcActions, dgl);
-        else
+        //if (MouseDragGestureRecognizer.class.equals(abstractRecognizerClass))
+        //    return (T)new MMouseDragGestureRecognizer(ds, c, srcActions, dgl);
+        //else
             return null;
     }
 
@@ -514,14 +538,14 @@ public class MToolkit extends UNIXToolkit implements Runnable {
      * Returns a new input method adapter descriptor for native input methods.
      */
     public InputMethodDescriptor getInputMethodAdapterDescriptor() throws AWTException {
-        return new MInputMethodDescriptor();
+        return null; // return new MInputMethodDescriptor();
     }
 
     /**
      * Returns a style map for the input method highlight.
      */
     public Map mapInputMethodHighlight(InputMethodHighlight highlight) {
-        return MInputMethod.mapInputMethodHighlight(highlight);
+        return null; //return MInputMethod.mapInputMethodHighlight(highlight);
     }
 
     /**
@@ -529,15 +553,15 @@ public class MToolkit extends UNIXToolkit implements Runnable {
      */
     public Cursor createCustomCursor(Image cursor, Point hotSpot, String name)
         throws IndexOutOfBoundsException {
-        return new MCustomCursor(cursor, hotSpot, name);
+        return null; //return new MCustomCursor(cursor, hotSpot, name);
     }
 
     /**
      * Returns the supported cursor size
      */
     public Dimension getBestCursorSize(int preferredWidth, int preferredHeight) {
-        return MCustomCursor.getBestCursorSize(
-            java.lang.Math.max(1,preferredWidth), java.lang.Math.max(1,preferredHeight));
+        return null; //MCustomCursor.getBestCursorSize(
+            //java.lang.Math.max(1,preferredWidth), java.lang.Math.max(1,preferredHeight));
     }
 
     public int getMaximumCursorColors() {
@@ -621,7 +645,8 @@ public class MToolkit extends UNIXToolkit implements Runnable {
 
     public RobotPeer createRobot(Robot target, GraphicsDevice screen) {
         /* 'target' is unused for now... */
-        return new MRobotPeer(screen.getDefaultConfiguration());
+        //return new MRobotPeer(screen.getDefaultConfiguration());
+        return null;
     }
 
     static boolean useMotifDnD() {

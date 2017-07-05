@@ -57,6 +57,7 @@ import javax.security.auth.Subject;
 
 public class ServerNotifForwarder {
 
+
     public ServerNotifForwarder(MBeanServer mbeanServer,
                                 Map env,
                                 NotificationBuffer notifBuffer,
@@ -85,7 +86,8 @@ public class ServerNotifForwarder {
 
         // Explicitly check MBeanPermission for addNotificationListener
         //
-        checkMBeanPermission(name, "addNotificationListener");
+        checkMBeanPermission(getMBeanServerName(),
+                mbeanServer, name, "addNotificationListener");
         if (notificationAccessController != null) {
             notificationAccessController.addNotificationListener(
                 connectionId, name, getSubject());
@@ -155,7 +157,8 @@ public class ServerNotifForwarder {
 
         // Explicitly check MBeanPermission for removeNotificationListener
         //
-        checkMBeanPermission(name, "removeNotificationListener");
+        checkMBeanPermission(getMBeanServerName(),
+                mbeanServer, name, "removeNotificationListener");
         if (notificationAccessController != null) {
             notificationAccessController.removeNotificationListener(
                 connectionId, name, getSubject());
@@ -330,13 +333,7 @@ public class ServerNotifForwarder {
      * Explicitly check the MBeanPermission for
      * the current access control context.
      */
-    private void checkMBeanPermission(final ObjectName name,
-        final String actions)
-            throws InstanceNotFoundException, SecurityException {
-        checkMBeanPermission(mbeanServer, name, actions);
-    }
-
-    public static void checkMBeanPermission(
+    public static void checkMBeanPermission(String serverName,
             final MBeanServer mbs, final ObjectName name, final String actions)
             throws InstanceNotFoundException, SecurityException {
         SecurityManager sm = System.getSecurityManager();
@@ -355,7 +352,9 @@ public class ServerNotifForwarder {
                 throw (InstanceNotFoundException) extractException(e);
             }
             String classname = oi.getClassName();
-            MBeanPermission perm = new MBeanPermission(classname,
+            MBeanPermission perm = new MBeanPermission(
+                serverName,
+                classname,
                 null,
                 name,
                 actions);
@@ -370,8 +369,8 @@ public class ServerNotifForwarder {
                                               TargetedNotification tn) {
         try {
             if (checkNotificationEmission) {
-                checkMBeanPermission(
-                        name, "addNotificationListener");
+                checkMBeanPermission(getMBeanServerName(),
+                        mbeanServer, name, "addNotificationListener");
             }
             if (notificationAccessController != null) {
                 notificationAccessController.fetchNotification(
@@ -433,11 +432,27 @@ public class ServerNotifForwarder {
         }
     }
 
+    private String getMBeanServerName() {
+        if (mbeanServerName != null) return mbeanServerName;
+        else return (mbeanServerName = getMBeanServerName(mbeanServer));
+    }
+
+    private static String getMBeanServerName(final MBeanServer server) {
+        final PrivilegedAction<String> action = new PrivilegedAction<String>() {
+            public String run() {
+                return Util.getMBeanServerSecurityName(server);
+            }
+        };
+        return AccessController.doPrivileged(action);
+    }
+
+
     //------------------
     // PRIVATE VARIABLES
     //------------------
 
     private MBeanServer mbeanServer;
+    private volatile String mbeanServerName;
 
     private final String connectionId;
 
