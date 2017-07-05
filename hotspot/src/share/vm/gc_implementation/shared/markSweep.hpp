@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@
 
 class ReferenceProcessor;
 class DataLayout;
+class SerialOldTracer;
+class STWGCTimer;
 
 // MarkSweep takes care of global mark-compact garbage collection for a
 // GenCollectedHeap using a four-phase pointer forwarding algorithm.  All
@@ -128,6 +130,9 @@ class MarkSweep : AllStatic {
   // Reference processing (used in ...follow_contents)
   static ReferenceProcessor*             _ref_processor;
 
+  static STWGCTimer*                     _gc_timer;
+  static SerialOldTracer*                _gc_tracer;
+
   // Non public closures
   static KeepAliveClosure keep_alive;
 
@@ -150,6 +155,9 @@ class MarkSweep : AllStatic {
 
   // Reference Processing
   static ReferenceProcessor* const ref_processor() { return _ref_processor; }
+
+  static STWGCTimer* gc_timer() { return _gc_timer; }
+  static SerialOldTracer* gc_tracer() { return _gc_tracer; }
 
   // Call backs for marking
   static void mark_object(oop obj);
