@@ -74,133 +74,133 @@ public class TypeReference {
      * The sort of type references that target a type parameter of a generic
      * class. See {@link #getSort getSort}.
      */
-    public static final int CLASS_TYPE_PARAMETER = 0x00;
+    public final static int CLASS_TYPE_PARAMETER = 0x00;
 
     /**
      * The sort of type references that target a type parameter of a generic
      * method. See {@link #getSort getSort}.
      */
-    public static final int METHOD_TYPE_PARAMETER = 0x01;
+    public final static int METHOD_TYPE_PARAMETER = 0x01;
 
     /**
      * The sort of type references that target the super class of a class or one
      * of the interfaces it implements. See {@link #getSort getSort}.
      */
-    public static final int CLASS_EXTENDS = 0x10;
+    public final static int CLASS_EXTENDS = 0x10;
 
     /**
      * The sort of type references that target a bound of a type parameter of a
      * generic class. See {@link #getSort getSort}.
      */
-    public static final int CLASS_TYPE_PARAMETER_BOUND = 0x11;
+    public final static int CLASS_TYPE_PARAMETER_BOUND = 0x11;
 
     /**
      * The sort of type references that target a bound of a type parameter of a
      * generic method. See {@link #getSort getSort}.
      */
-    public static final int METHOD_TYPE_PARAMETER_BOUND = 0x12;
+    public final static int METHOD_TYPE_PARAMETER_BOUND = 0x12;
 
     /**
      * The sort of type references that target the type of a field. See
      * {@link #getSort getSort}.
      */
-    public static final int FIELD = 0x13;
+    public final static int FIELD = 0x13;
 
     /**
      * The sort of type references that target the return type of a method. See
      * {@link #getSort getSort}.
      */
-    public static final int METHOD_RETURN = 0x14;
+    public final static int METHOD_RETURN = 0x14;
 
     /**
      * The sort of type references that target the receiver type of a method.
      * See {@link #getSort getSort}.
      */
-    public static final int METHOD_RECEIVER = 0x15;
+    public final static int METHOD_RECEIVER = 0x15;
 
     /**
      * The sort of type references that target the type of a formal parameter of
      * a method. See {@link #getSort getSort}.
      */
-    public static final int METHOD_FORMAL_PARAMETER = 0x16;
+    public final static int METHOD_FORMAL_PARAMETER = 0x16;
 
     /**
      * The sort of type references that target the type of an exception declared
      * in the throws clause of a method. See {@link #getSort getSort}.
      */
-    public static final int THROWS = 0x17;
+    public final static int THROWS = 0x17;
 
     /**
      * The sort of type references that target the type of a local variable in a
      * method. See {@link #getSort getSort}.
      */
-    public static final int LOCAL_VARIABLE = 0x40;
+    public final static int LOCAL_VARIABLE = 0x40;
 
     /**
      * The sort of type references that target the type of a resource variable
      * in a method. See {@link #getSort getSort}.
      */
-    public static final int RESOURCE_VARIABLE = 0x41;
+    public final static int RESOURCE_VARIABLE = 0x41;
 
     /**
      * The sort of type references that target the type of the exception of a
      * 'catch' clause in a method. See {@link #getSort getSort}.
      */
-    public static final int EXCEPTION_PARAMETER = 0x42;
+    public final static int EXCEPTION_PARAMETER = 0x42;
 
     /**
      * The sort of type references that target the type declared in an
      * 'instanceof' instruction. See {@link #getSort getSort}.
      */
-    public static final int INSTANCEOF = 0x43;
+    public final static int INSTANCEOF = 0x43;
 
     /**
      * The sort of type references that target the type of the object created by
      * a 'new' instruction. See {@link #getSort getSort}.
      */
-    public static final int NEW = 0x44;
+    public final static int NEW = 0x44;
 
     /**
      * The sort of type references that target the receiver type of a
      * constructor reference. See {@link #getSort getSort}.
      */
-    public static final int CONSTRUCTOR_REFERENCE = 0x45;
+    public final static int CONSTRUCTOR_REFERENCE = 0x45;
 
     /**
      * The sort of type references that target the receiver type of a method
      * reference. See {@link #getSort getSort}.
      */
-    public static final int METHOD_REFERENCE = 0x46;
+    public final static int METHOD_REFERENCE = 0x46;
 
     /**
      * The sort of type references that target the type declared in an explicit
      * or implicit cast instruction. See {@link #getSort getSort}.
      */
-    public static final int CAST = 0x47;
+    public final static int CAST = 0x47;
 
     /**
      * The sort of type references that target a type parameter of a generic
      * constructor in a constructor call. See {@link #getSort getSort}.
      */
-    public static final int CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT = 0x48;
+    public final static int CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT = 0x48;
 
     /**
      * The sort of type references that target a type parameter of a generic
      * method in a method call. See {@link #getSort getSort}.
      */
-    public static final int METHOD_INVOCATION_TYPE_ARGUMENT = 0x49;
+    public final static int METHOD_INVOCATION_TYPE_ARGUMENT = 0x49;
 
     /**
      * The sort of type references that target a type parameter of a generic
      * constructor in a constructor reference. See {@link #getSort getSort}.
      */
-    public static final int CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT = 0x4A;
+    public final static int CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT = 0x4A;
 
     /**
      * The sort of type references that target a type parameter of a generic
      * method in a method reference. See {@link #getSort getSort}.
      */
-    public static final int METHOD_REFERENCE_TYPE_ARGUMENT = 0x4B;
+    public final static int METHOD_REFERENCE_TYPE_ARGUMENT = 0x4B;
 
     /**
      * The type reference value in Java class file format.

@@ -171,7 +171,7 @@ public final class ScriptUtils {
 
         final LinkerServices linker = Bootstrap.getLinkerServices();
         final Object objToConvert = unwrap(obj);
-        final MethodHandle converter = linker.getTypeConverter(objToConvert.getClass(),  clazz);
+        final MethodHandle converter = linker.getTypeConverter(objToConvert.getClass(), clazz);
         if (converter == null) {
             // no supported conversion!
             throw new UnsupportedOperationException("conversion not supported");

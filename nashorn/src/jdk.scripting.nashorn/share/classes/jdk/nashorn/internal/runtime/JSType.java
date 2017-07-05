@@ -35,6 +35,7 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import jdk.dynalink.SecureLookupSupplier;
 import jdk.dynalink.beans.StaticClass;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
@@ -174,6 +175,9 @@ public enum JSType {
 
     /** Method handle to convert a JS Object to a Java array. */
     public static final Call TO_JAVA_ARRAY = staticCall(JSTYPE_LOOKUP, JSType.class, "toJavaArray", Object.class, Object.class, Class.class);
+
+    /** Method handle to convert a JS Object to a Java array. */
+    public static final Call TO_JAVA_ARRAY_WITH_LOOKUP = staticCall(JSTYPE_LOOKUP, JSType.class, "toJavaArrayWithLookup", Object.class, Object.class, Class.class, SecureLookupSupplier.class);
 
     /** Method handle for void returns. */
     public static final Call VOID_RETURN = staticCall(JSTYPE_LOOKUP, JSType.class, "voidReturn", void.class);
@@ -798,7 +802,7 @@ public enum JSType {
      * @return the value converted to Integer or Double
      */
     public static Number toNarrowestNumber(final long l) {
-        return isRepresentableAsInt(l) ? Integer.valueOf((int) l) : Double.valueOf((double) l);
+        return isRepresentableAsInt(l) ? Integer.valueOf((int) l) : Double.valueOf(l);
     }
 
     /**
@@ -1108,7 +1112,7 @@ public enum JSType {
      * @return the uint32 value as double
      */
     public static double toUint32Double(final int num) {
-        return (double) toUint32(num);
+        return toUint32(num);
     }
 
     /**
@@ -1316,6 +1320,20 @@ public enum JSType {
         } else {
             throw new IllegalArgumentException("not a script object");
         }
+    }
+
+    /**
+     * Script object to Java array conversion.
+     *
+     * @param obj script object to be converted to Java array
+     * @param componentType component type of the destination array required
+     * @param lookupSupplier supplier for the lookup of the class invoking the
+     * conversion. Can be used to use protection-domain specific converters
+     * if the target type is a SAM.
+     * @return converted Java array
+     */
+    public static Object toJavaArrayWithLookup(final Object obj, final Class<?> componentType, final SecureLookupSupplier lookupSupplier) {
+        return Bootstrap.getLinkerServices().getWithLookup(()->toJavaArray(obj, componentType), lookupSupplier);
     }
 
     /**
@@ -1744,9 +1762,9 @@ public enum JSType {
     public static MethodHandle unboxConstant(final Object o) {
         if (o != null) {
             if (o.getClass() == Integer.class) {
-                return MH.constant(int.class, ((Integer)o));
+                return MH.constant(int.class, o);
             } else if (o.getClass() == Double.class) {
-                return MH.constant(double.class, ((Double)o));
+                return MH.constant(double.class, o);
             }
         }
         return MH.constant(Object.class, o);

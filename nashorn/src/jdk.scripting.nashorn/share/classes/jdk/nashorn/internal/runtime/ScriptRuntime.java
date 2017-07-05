@@ -52,10 +52,12 @@ import jdk.nashorn.internal.codegen.ApplySpecialization;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.ir.debug.JSONWriter;
+import jdk.nashorn.internal.objects.AbstractIterator;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.objects.NativeObject;
 import jdk.nashorn.internal.parser.Lexer;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
+import jdk.nashorn.internal.runtime.linker.InvokeByName;
 
 /**
  * Utilities to be called by JavaScript runtime API and generated classes.
@@ -101,6 +103,11 @@ public final class ScriptRuntime {
      * Return an appropriate iterator for the elements in a for-each construct
      */
     public static final Call TO_VALUE_ITERATOR = staticCallNoLookup(ScriptRuntime.class, "toValueIterator", Iterator.class, Object.class);
+
+    /**
+     * Return an appropriate iterator for the elements in a ES6 for-of loop
+     */
+    public static final Call TO_ES6_ITERATOR = staticCallNoLookup(ScriptRuntime.class, "toES6Iterator", Iterator.class, Object.class);
 
     /**
       * Method handle for apply. Used from {@link ScriptFunction} for looking up calls to
@@ -363,6 +370,77 @@ public final class ScriptRuntime {
         }
 
         return Collections.emptyIterator();
+    }
+
+    /**
+     * Returns an iterator over property values used in the {@code for ... of} statement. The iterator uses the
+     * Iterator interface defined in version 6 of the ECMAScript specification.
+     *
+     * @param obj object to iterate on.
+     * @return iterator based on the ECMA 6 Iterator interface.
+     */
+    public static Iterator<?> toES6Iterator(final Object obj) {
+        final Global global = Global.instance();
+        final Object iterator = AbstractIterator.getIterator(Global.toObject(obj), global);
+
+        final InvokeByName nextInvoker = AbstractIterator.getNextInvoker(global);
+        final MethodHandle doneInvoker = AbstractIterator.getDoneInvoker(global);
+        final MethodHandle valueInvoker = AbstractIterator.getValueInvoker(global);
+
+        return new Iterator<Object>() {
+
+            private Object nextResult = nextResult();
+
+            private Object nextResult() {
+                try {
+                    final Object next = nextInvoker.getGetter().invokeExact(iterator);
+                    if (Bootstrap.isCallable(next)) {
+                        return nextInvoker.getInvoker().invokeExact(next, iterator, (Object) null);
+                    }
+                } catch (final RuntimeException|Error r) {
+                    throw r;
+                } catch (final Throwable t) {
+                    throw new RuntimeException(t);
+                }
+                return null;
+            }
+
+            @Override
+            public boolean hasNext() {
+                if (nextResult == null) {
+                    return false;
+                }
+                try {
+                    final Object done = doneInvoker.invokeExact(nextResult);
+                    return !JSType.toBoolean(done);
+                } catch (final RuntimeException|Error r) {
+                    throw r;
+                } catch (final Throwable t) {
+                    throw new RuntimeException(t);
+                }
+            }
+
+            @Override
+            public Object next() {
+                if (nextResult == null) {
+                    return Undefined.getUndefined();
+                }
+                try {
+                    final Object result = nextResult;
+                    nextResult = nextResult();
+                    return valueInvoker.invokeExact(result);
+                } catch (final RuntimeException|Error r) {
+                    throw r;
+                } catch (final Throwable t) {
+                    throw new RuntimeException(t);
+                }
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException("remove");
+            }
+        };
     }
 
     /**

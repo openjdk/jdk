@@ -26,7 +26,6 @@
  * check -fx option.
  * @test
  * @option -scripting
- * @runif os.not.windows
  * @run
  * @summary Test -fx flag and its basic functionality
  * the JavaFX primary stage is available to Nashorn as a global property $STAGE with -fx
@@ -35,7 +34,7 @@
 
 load(__DIR__ + "jjs-common.js")
 
-var msg_flag = "print(typeof($STAGE)); exit();";
+var msg_flag = "print(typeof($STAGE)); exit();"
 
 // flag test expected output variables
 var e_outn = "undefined"

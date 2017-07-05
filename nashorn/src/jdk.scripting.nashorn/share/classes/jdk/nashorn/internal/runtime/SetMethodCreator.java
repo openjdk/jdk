@@ -145,8 +145,7 @@ final class SetMethodCreator {
         final boolean isStrict  = NashornCallSiteDescriptor.isStrict(desc);
         final MethodHandle methodHandle;
 
-        if (NashornCallSiteDescriptor.isDeclaration(desc)) {
-            assert property.needsDeclaration();
+        if (NashornCallSiteDescriptor.isDeclaration(desc) && property.needsDeclaration()) {
             // This is a LET or CONST being declared. The property is already there but flagged as needing declaration.
             // We create a new PropertyMap with the flag removed. The map is installed with a fast compare-and-set
             // method if the pre-callsite map is stable (which should be the case for function scopes except for

@@ -29,6 +29,7 @@
 #include "gc/shared/cardTableModRefBS.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
+#include "prims/unsafe.hpp"
 #include "runtime/os.hpp"
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.hpp"
@@ -326,7 +327,6 @@ Value* SharkBuilder::fabs() {
 }
 
 Value* SharkBuilder::unsafe_field_offset_to_byte_offset() {
-  extern jlong Unsafe_field_offset_to_byte_offset(jlong field_offset);
   return make_function((address) Unsafe_field_offset_to_byte_offset, "l", "l");
 }
 

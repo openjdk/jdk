@@ -1381,7 +1381,6 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
   assert(_method == NULL, "Tautology");
 
   set_osr_link(NULL);
-  //set_scavenge_root_link(NULL); // done by prune_scavenge_root_nmethods
   NMethodSweeper::report_state_change(this);
 }
 

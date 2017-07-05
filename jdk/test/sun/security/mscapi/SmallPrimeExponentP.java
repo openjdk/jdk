@@ -32,6 +32,7 @@ import java.security.interfaces.RSAPrivateCrtKey;
 /*
  * @test
  * @bug 8023546
+ * @key intermittent
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.tools.keytool
  * @summary sun/security/mscapi/ShortRSAKey1024.sh fails intermittently

@@ -38,7 +38,8 @@ class G1IHOPControl : public CHeapObj<mtGC> {
  protected:
   // The initial IHOP value relative to the target occupancy.
   double _initial_ihop_percent;
-  // The target maximum occupancy of the heap.
+  // The target maximum occupancy of the heap. The target occupancy is the number
+  // of bytes when marking should be finished and reclaim started.
   size_t _target_occupancy;
 
   // Most recent complete mutator allocation period in seconds.
@@ -46,10 +47,9 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Amount of bytes allocated during _last_allocation_time_s.
   size_t _last_allocated_bytes;
 
-  // Initialize an instance with the initial IHOP value in percent and the target
-  // occupancy. The target occupancy is the number of bytes when marking should
-  // be finished and reclaim started.
-  G1IHOPControl(double initial_ihop_percent, size_t target_occupancy);
+  // Initialize an instance with the initial IHOP value in percent. The target
+  // occupancy will be updated at the first heap expansion.
+  G1IHOPControl(double initial_ihop_percent);
 
   // Most recent time from the end of the initial mark to the start of the first
   // mixed gc.
@@ -60,6 +60,8 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // Get the current non-young occupancy at which concurrent marking should start.
   virtual size_t get_conc_mark_start_threshold() = 0;
 
+  // Adjust target occupancy.
+  virtual void update_target_occupancy(size_t new_target_occupancy);
   // Update information about time during which allocations in the Java heap occurred,
   // how large these allocations were in bytes, and an additional buffer.
   // The allocations should contain any amount of space made unusable for further
@@ -86,9 +88,12 @@ class G1StaticIHOPControl : public G1IHOPControl {
  protected:
   double last_marking_length_s() const { return _last_marking_length_s; }
  public:
-  G1StaticIHOPControl(double ihop_percent, size_t target_occupancy);
+  G1StaticIHOPControl(double ihop_percent);
 
-  size_t get_conc_mark_start_threshold() { return (size_t) (_initial_ihop_percent * _target_occupancy / 100.0); }
+  size_t get_conc_mark_start_threshold() {
+    guarantee(_target_occupancy > 0, "Target occupancy must have been initialized.");
+    return (size_t) (_initial_ihop_percent * _target_occupancy / 100.0);
+  }
 
   virtual void update_marking_length(double marking_length_s) {
    assert(marking_length_s > 0.0, "Marking length must be larger than zero but is %.3f", marking_length_s);
@@ -132,7 +137,6 @@ class G1AdaptiveIHOPControl : public G1IHOPControl {
   virtual double last_marking_length_s() const { return _marking_times_s.last(); }
  public:
   G1AdaptiveIHOPControl(double ihop_percent,
-                        size_t initial_target_occupancy,
                         G1Predictions const* predictor,
                         size_t heap_reserve_percent, // The percentage of total heap capacity that should not be tapped into.
                         size_t heap_waste_percent);  // The percentage of the free space in the heap that we think is not usable for allocation.

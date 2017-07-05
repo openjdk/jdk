@@ -26,7 +26,6 @@
  * check if jjs version is same as of java.
  * @test
  * @option -scripting
- * @runif os.not.windows
  * @run
  * @summary Test -version flag and its functionality 
  */

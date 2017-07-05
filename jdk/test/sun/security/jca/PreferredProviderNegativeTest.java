@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,24 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8076359 8133151
- * @summary Test for jdk.security.provider.preferred security property
- * @requires os.name == "SunOS"
- * @run main/othervm  PreferredProviderNegativeTest preJCESet AES:OracleUcrypto false
- * @run main/othervm  PreferredProviderNegativeTest preJCESet AES:SunNegative true
- * @run main/othervm  PreferredProviderNegativeTest afterJCESet AES:SunJGSS
- * @run main/othervm  PreferredProviderNegativeTest afterJCESet AES:SunECNegative
- * @run main/othervm  PreferredProviderNegativeTest invalidAlg AESNegative:SunJCE
- */
-
 import java.security.Security;
 import java.security.NoSuchAlgorithmException;
 import javax.crypto.Cipher;
 import javax.crypto.NoSuchPaddingException;
 
+/**
+ * @test
+ * @bug 8076359 8133151 8150512
+ * @summary Test for jdk.security.provider.preferred security property
+ * @run main/othervm  PreferredProviderNegativeTest preSet AES false
+ * @run main/othervm  PreferredProviderNegativeTest preSet AES:SunNegative true
+ * @run main/othervm  PreferredProviderNegativeTest afterSet AES:SunJGSS
+ * @run main/othervm  PreferredProviderNegativeTest afterSet AES:SunECNegative
+ * @run main/othervm  PreferredProviderNegativeTest invalidAlg AESInvalid:SunJCE
+ */
 public class PreferredProviderNegativeTest {
+
+    static final String SEC_PREF_PROP = "jdk.security.provider.preferred";
 
     /*
      * Test security property could be set by valid and invalid provider
@@ -46,30 +46,27 @@ public class PreferredProviderNegativeTest {
      */
     public static void preJCESet(String value, boolean negativeProvider)
             throws NoSuchAlgorithmException, NoSuchPaddingException {
-        Security.setProperty("jdk.security.provider.preferred", value);
 
-        if (!Security.getProperty("jdk.security.provider.preferred")
-                .equals(value)) {
-            throw new RuntimeException(
-                    "Test Failed:The property wasn't set");
+        Security.setProperty(SEC_PREF_PROP, value);
+
+        if (!Security.getProperty(SEC_PREF_PROP).equals(value)) {
+            throw new RuntimeException("Test Failed:The property wasn't set");
         }
 
         String[] arrays = value.split(":");
         Cipher cipher = Cipher.getInstance(arrays[0]);
-
         if (negativeProvider) {
             if (cipher.getProvider().getName().equals(arrays[1])) {
                 throw new RuntimeException(
-                        "Test Failed:The provider shouldn't be set");
+                        "Test Failed:The provider shouldn't be set.");
             }
         } else {
             if (!cipher.getProvider().getName().equals(arrays[1])) {
-                throw new RuntimeException(
-                        "Test Faild:The provider could be set "
-                                + "by valid provider ");
+                throw new RuntimeException("Test Faild:The provider could be "
+                        + "set by valid provider.");
             }
         }
-        System.out.println("Test Pass");
+        System.out.println("Test Pass.");
     }
 
     /*
@@ -81,10 +78,10 @@ public class PreferredProviderNegativeTest {
         String[] arrays = value.split(":");
         Cipher cipher = Cipher.getInstance(arrays[0]);
 
-        Security.setProperty("jdk.security.provider.preferred", value);
+        Security.setProperty(SEC_PREF_PROP, value);
         if (!cipher.getProvider().getName().equals("SunJCE")) {
-            throw new RuntimeException(
-                    "Test Failed:The security property can't be updated after JCE load.");
+            throw new RuntimeException("Test Failed:The security property can't"
+                    + " be updated after JCE load.");
         }
         System.out.println("Test Pass");
     }
@@ -94,10 +91,11 @@ public class PreferredProviderNegativeTest {
         String[] arrays = value.split(":");
 
         try {
-            Security.setProperty("jdk.security.provider.preferred", value);
+            Security.setProperty(SEC_PREF_PROP, value);
             Cipher.getInstance(arrays[0]);
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("Test Pass:Got NoSuchAlgorithmException as expired");
+            System.out.println(
+                    "Test Pass:Got NoSuchAlgorithmException as expired");
             return;
         }
         throw new RuntimeException(
@@ -106,15 +104,25 @@ public class PreferredProviderNegativeTest {
 
     public static void main(String[] args)
             throws NoSuchAlgorithmException, NoSuchPaddingException {
-        boolean negativeProvider;
 
         if (args.length >= 2) {
             switch (args[0]) {
-                case "preJCESet":
-                    negativeProvider = Boolean.valueOf(args[2]);
-                    PreferredProviderNegativeTest.preJCESet(args[1], negativeProvider);
+                case "preSet":
+                    boolean negativeProvider = Boolean.valueOf(args[2]);
+                    boolean solaris = System.getProperty("os.name")
+                            .toLowerCase().contains("sun");
+                    String value = args[1];
+                    if (args[1].split(":").length < 2) {
+                        if (solaris) {
+                            value += ":OracleUcrypto";
+                        } else {
+                            value += ":SunJCE";
+                        }
+                    }
+                    PreferredProviderNegativeTest.preJCESet(
+                            value, negativeProvider);
                     break;
-                case "afterJCESet":
+                case "afterSet":
                     PreferredProviderNegativeTest.afterJCESet(args[1]);
                     break;
                 case "invalidAlg":
@@ -127,4 +135,3 @@ public class PreferredProviderNegativeTest {
         }
     }
 }
-
