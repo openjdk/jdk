@@ -135,6 +135,20 @@ class KlassToOopClosure : public KlassClosure {
   virtual void do_klass(Klass* k);
 };
 
+class CLDToOopClosure {
+  OopClosure* _oop_closure;
+  KlassToOopClosure _klass_closure;
+  bool _must_claim_cld;
+
+ public:
+  CLDToOopClosure(OopClosure* oop_closure, bool must_claim_cld = true) :
+      _oop_closure(oop_closure),
+      _klass_closure(oop_closure),
+      _must_claim_cld(must_claim_cld) {}
+
+  void do_cld(ClassLoaderData* cld);
+};
+
 // ObjectClosure is used for iterating through an object space
 
 class ObjectClosure : public Closure {

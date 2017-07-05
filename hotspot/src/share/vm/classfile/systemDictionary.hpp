@@ -471,7 +471,7 @@ public:
   static void compute_java_system_loader(TRAPS);
 
   // Register a new class loader
-  static ClassLoaderData* register_loader(Handle class_loader);
+  static ClassLoaderData* register_loader(Handle class_loader, TRAPS);
 private:
   // Mirrors for primitive classes (created eagerly)
   static oop check_mirror(oop m) {
@@ -531,7 +531,7 @@ public:
             InstanceKlass::cast((loader)->klass())->name()->as_C_string() );
   }
   static const char* loader_name(ClassLoaderData* loader_data) {
-    return (loader_data->is_the_null_class_loader_data() ? "<bootloader>" :
+    return (loader_data->class_loader() == NULL ? "<bootloader>" :
             InstanceKlass::cast((loader_data->class_loader())->klass())->name()->as_C_string() );
   }
 

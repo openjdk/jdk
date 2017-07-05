@@ -48,7 +48,12 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT],
     METHOD="$2"
     BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(WIN_SDK_BASE)
     if test -d "$WIN_SDK_BASE"; then
-      if test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
+      # There have been cases of partial or broken SDK installations. A missing
+      # lib dir is not going to work.
+      if test ! -d "$WIN_SDK_BASE/../lib"; then
+        AC_MSG_NOTICE([Found Windows SDK installation at $WIN_SDK_BASE using $METHOD])
+        AC_MSG_NOTICE([Warning: Installation is broken, lib dir is missing. Ignoring])
+      elif test -f "$WIN_SDK_BASE/SetEnv.Cmd"; then
         AC_MSG_NOTICE([Found Windows SDK installation at $WIN_SDK_BASE using $METHOD])
         VS_ENV_CMD="$WIN_SDK_BASE/SetEnv.Cmd"
         if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
@@ -200,8 +205,9 @@ AC_DEFUN([TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV],
       AC_MSG_ERROR([Your VC command prompt seems broken, INCLUDE and/or LIB is missing.])
     else
       AC_MSG_RESULT([ok])
-      VS_INCLUDE="$INCLUDE"
-      VS_LIB="$LIB"
+      # Remove any trailing \ from INCLUDE and LIB to avoid trouble in spec.gmk.
+      VS_INCLUDE=`$ECHO "$INCLUDE" | $SED 's/\\\\$//'`
+      VS_LIB=`$ECHO "$LIB" | $SED 's/\\\\$//'`
       VS_PATH="$PATH"
       AC_SUBST(VS_INCLUDE)
       AC_SUBST(VS_LIB)

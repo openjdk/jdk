@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
-#include "thread_windows.inline.hpp"
 
 // OS-includes here
 # include <windows.h>

@@ -62,13 +62,14 @@ class ClassLoaderDataGraph : public AllStatic {
   // CMS support.
   static ClassLoaderData* _saved_head;
 
-  static ClassLoaderData* add(ClassLoaderData** loader_data_addr, Handle class_loader);
+  static ClassLoaderData* add(ClassLoaderData** loader_data_addr, Handle class_loader, TRAPS);
  public:
-  static ClassLoaderData* find_or_create(Handle class_loader);
+  static ClassLoaderData* find_or_create(Handle class_loader, TRAPS);
   static void purge();
   static void clear_claimed_marks();
   static void oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim);
   static void always_strong_oops_do(OopClosure* blk, KlassClosure* klass_closure, bool must_claim);
+  static void keep_alive_oops_do(OopClosure* blk, KlassClosure* klass_closure, bool must_claim);
   static void classes_do(KlassClosure* klass_closure);
   static bool do_unloading(BoolObjectClosure* is_alive);
 
@@ -101,10 +102,13 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   oop _class_loader;       // oop used to uniquely identify a class loader
                            // class loader or a canonical class path
+  oop _dependencies;       // oop to hold dependencies from this class loader
+                           // data to others.
   Metaspace * _metaspace;  // Meta-space where meta-data defined by the
                            // classes in the class loader are allocated.
   Mutex* _metaspace_lock;  // Locks the metaspace for allocations and setup.
   bool _unloading;         // true if this class loader goes away
+  bool _keep_alive;        // if this CLD can be unloaded for anonymous loaders
   volatile int _claimed;   // true if claimed, for example during GC traces.
                            // To avoid applying oop closure more than once.
                            // Has to be an int because we cas it.
@@ -129,8 +133,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   static Metaspace* _ro_metaspace;
   static Metaspace* _rw_metaspace;
 
-  bool has_dependency(ClassLoaderData* cld);
-  void add_dependency(ClassLoaderData* to_loader_data, TRAPS);
+  void add_dependency(Handle dependency, TRAPS);
+  void locked_add_dependency(objArrayHandle last, objArrayHandle new_dependency);
 
   void set_next(ClassLoaderData* next) { _next = next; }
   ClassLoaderData* next() const        { return _next; }
@@ -150,7 +154,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool claimed() const          { return _claimed == 1; }
   bool claim();
 
-  void mark_for_unload()        { _unloading = true; }
+  void unload();
+  bool keep_alive() const       { return _keep_alive; }
+  bool is_alive(BoolObjectClosure* is_alive_closure) const;
 
   void classes_do(void f(InstanceKlass*));
 
@@ -167,6 +173,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   static ClassLoaderData* the_null_class_loader_data() {
     return _the_null_class_loader_data;
   }
+
+  bool is_anonymous() const;
 
   static void init_null_class_loader_data() {
     assert(_the_null_class_loader_data == NULL, "cannot initialize twice");
@@ -194,6 +202,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
     assert(!(is_the_null_class_loader_data() && _unloading), "The null class loader can never be unloaded");
     return _unloading;
   }
+  // Anonymous class loader data doesn't have anything to keep them from
+  // being unloaded during parsing the anonymous class.
+  void set_keep_alive(bool value) { _keep_alive = value; }
 
   unsigned int identity_hash() {
     return _class_loader == NULL ? 0 : _class_loader->identity_hash();
@@ -211,15 +222,18 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void print_value_on(outputStream* out) const PRODUCT_RETURN;
   void dump(outputStream * const out) PRODUCT_RETURN;
   void verify();
+  const char* loader_name();
 
   jobject add_handle(Handle h);
   void add_class(Klass* k);
   void remove_class(Klass* k);
   void record_dependency(Klass* to, TRAPS);
+  void init_dependencies(TRAPS);
 
   void add_to_deallocate_list(Metadata* m);
 
   static ClassLoaderData* class_loader_data(oop loader);
+  static ClassLoaderData* anonymous_class_loader_data(oop loader, TRAPS);
   static void print_loader(ClassLoaderData *loader_data, outputStream *out);
 
   // CDS support
