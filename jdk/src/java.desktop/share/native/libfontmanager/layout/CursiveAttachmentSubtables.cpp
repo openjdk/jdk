@@ -45,6 +45,9 @@ le_uint32 CursiveAttachmentSubtable::process(const LEReferenceTo<CursiveAttachme
     le_int32  coverageIndex = getGlyphCoverage(base, glyphID, success);
     le_uint16 eeCount       = SWAPW(entryExitCount);
 
+    LEReferenceToArrayOf<EntryExitRecord>
+        entryExitRecordsArrayRef(base, success, entryExitRecords, coverageIndex);
+
     if (coverageIndex < 0 || coverageIndex >= eeCount || LE_FAILURE(success)) {
         glyphIterator->setCursiveGlyph();
         return 0;

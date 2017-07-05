@@ -1835,7 +1835,7 @@ import sun.misc.FormattedFloatingDecimal;
  * <p> The maximum number of arguments is limited by the maximum dimension of a
  * Java array as defined by
  * <cite>The Java&trade; Virtual Machine Specification</cite>.
- * If the argument index is does not correspond to an
+ * If the argument index does not correspond to an
  * available argument, then a {@link MissingFormatArgumentException} is thrown.
  *
  * <p> If there are more arguments than format specifiers, the extra arguments

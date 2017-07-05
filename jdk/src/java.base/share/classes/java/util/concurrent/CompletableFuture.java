@@ -978,7 +978,15 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
             }
             try {
                 @SuppressWarnings("unchecked") T t = (T) r;
-                return f.apply(t).toCompletableFuture();
+                CompletableFuture<V> g = f.apply(t).toCompletableFuture();
+                Object s = g.result;
+                if (s != null)
+                    return new CompletableFuture<V>(encodeRelay(s));
+                CompletableFuture<V> d = new CompletableFuture<V>();
+                UniRelay<V> copy = new UniRelay<V>(d, g);
+                g.push(copy);
+                copy.tryFire(SYNC);
+                return d;
             } catch (Throwable ex) {
                 return new CompletableFuture<V>(encodeThrowable(ex));
             }

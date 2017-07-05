@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2007, 2008, 2011 Red Hat, Inc.
+ * Copyright 2007, 2008, 2011, 2015, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,7 +237,13 @@ inline jint Atomic::xchg(jint exchange_value, volatile jint* dest) {
   // operation.  Note that some platforms only support this with the
   // limitation that the only valid value to store is the immediate
   // constant 1.  There is a test for this in JNI_CreateJavaVM().
-  return __sync_lock_test_and_set (dest, exchange_value);
+  jint result = __sync_lock_test_and_set (dest, exchange_value);
+  // All atomic operations are expected to be full memory barriers
+  // (see atomic.hpp). However, __sync_lock_test_and_set is not
+  // a full memory barrier, but an acquire barrier. Hence, this added
+  // barrier.
+  __sync_synchronize();
+  return result;
 #endif // M68K
 #endif // ARM
 }
@@ -250,7 +256,9 @@ inline intptr_t Atomic::xchg_ptr(intptr_t exchange_value,
 #ifdef M68K
   return m68k_lock_test_and_set(dest, exchange_value);
 #else
-  return __sync_lock_test_and_set (dest, exchange_value);
+  intptr_t result = __sync_lock_test_and_set (dest, exchange_value);
+  __sync_synchronize();
+  return result;
 #endif // M68K
 #endif // ARM
 }
