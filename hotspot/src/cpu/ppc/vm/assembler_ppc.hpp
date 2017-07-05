@@ -124,6 +124,7 @@ class Argument VALUE_OBJ_CLASS_SPEC {
   }
 };
 
+#if !defined(ABI_ELFv2)
 // A ppc64 function descriptor.
 struct FunctionDescriptor VALUE_OBJ_CLASS_SPEC {
  private:
@@ -161,6 +162,7 @@ struct FunctionDescriptor VALUE_OBJ_CLASS_SPEC {
     _env   = (address) 0xbad;
   }
 };
+#endif
 
 class Assembler : public AbstractAssembler {
  protected:
@@ -1067,6 +1069,7 @@ class Assembler : public AbstractAssembler {
   // Emit an address.
   inline address emit_addr(const address addr = NULL);
 
+#if !defined(ABI_ELFv2)
   // Emit a function descriptor with the specified entry point, TOC,
   // and ENV. If the entry point is NULL, the descriptor will point
   // just past the descriptor.
@@ -1074,6 +1077,7 @@ class Assembler : public AbstractAssembler {
   inline address emit_fd(address entry = NULL,
                          address toc = (address) FunctionDescriptor::friend_toc,
                          address env = (address) FunctionDescriptor::friend_env);
+#endif
 
   /////////////////////////////////////////////////////////////////////////////////////
   // PPC instructions

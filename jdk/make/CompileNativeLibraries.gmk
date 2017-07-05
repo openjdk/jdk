@@ -35,7 +35,7 @@ include Setup.gmk
 # Copy files (can now depend on $(COPY_FILES))
 include CopyFiles.gmk
 
-# Prepare the find cache. Only used if running on windows.
+# Prepare the find cache.
 $(eval $(call FillCacheFind, $(JDK_TOPDIR)/src))
 
 # Build tools

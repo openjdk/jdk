@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,7 @@
 # @bug 4348369
 # @summary keytool not i18n compliant
 # @author charlie lai
-#
-# @ignore unable to test manual tools that have input from stdin,
-#		and output to stderr and stdout
+# @run shell/manual i18n.sh
 
 # set a few environment variables so that the shell-script can run stand-alone
 # in the source directory

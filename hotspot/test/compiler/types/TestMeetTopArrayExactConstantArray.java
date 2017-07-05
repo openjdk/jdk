@@ -25,7 +25,7 @@
  * @test
  * @bug 8027571
  * @summary meet of TopPTR exact array with constant array is not symmetric
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222 -XX:+UnlockExperimentalVMOptions -XX:+UseTypeSpeculation -XX:-BackgroundCompilation TestMeetTopArrayExactConstantArray
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222 -XX:+UseTypeSpeculation -XX:-BackgroundCompilation TestMeetTopArrayExactConstantArray
  *
  */
 

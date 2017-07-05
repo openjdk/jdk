@@ -1160,7 +1160,7 @@ class ToolWindow extends JFrame {
         if (policyFile == null) {
             String userHome;
             userHome = java.security.AccessController.doPrivileged(
-                    new sun.security.action.GetPropertyAction("user.home"));
+                (PrivilegedAction<String>) () -> System.getProperty("user.home"));
             policyFile = userHome + File.separatorChar + ".java.policy";
         }
 

@@ -414,9 +414,10 @@ Zone America/Denver	-6:59:56 -	LMT	1883 Nov 18 12:00:04
 # US Pacific time, represented by Los Angeles
 #
 # California, northern Idaho (Benewah, Bonner, Boundary, Clearwater,
-# Idaho, Kootenai, Latah, Lewis, Nez Perce, and Shoshone counties,
-# and the northern three-quarters of Idaho county),
-# most of Nevada, most of Oregon, and Washington
+# Kootenai, Latah, Lewis, Nez Perce, and Shoshone counties, Idaho county
+# north of the Salmon River, and the towns of Burgdorf and Warren),
+# Nevada (except West Wendover), Oregon (except the northern 3/4 of
+# Malheur county), and Washington
 #
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER
 Rule	CA	1948	only	-	Mar	14	2:00	1:00	D

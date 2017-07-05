@@ -87,7 +87,7 @@ void OptoRuntime::generate_exception_blob() {
 
   address start = __ pc();
 
-  int frame_size_in_bytes = frame::abi_112_size;
+  int frame_size_in_bytes = frame::abi_reg_args_size;
   OopMap* map = new OopMap(frame_size_in_bytes / sizeof(jint), 0);
 
   // Exception pc is 'return address' for stack walker.
@@ -99,7 +99,7 @@ void OptoRuntime::generate_exception_blob() {
 
   // Save callee-saved registers.
   // Push a C frame for the exception blob. It is needed for the C call later on.
-  __ push_frame_abi112(0, R11_scratch1);
+  __ push_frame_reg_args(0, R11_scratch1);
 
   // This call does all the hard work. It checks if an exception handler
   // exists in the method.
@@ -109,8 +109,12 @@ void OptoRuntime::generate_exception_blob() {
   __ set_last_Java_frame(/*sp=*/R1_SP, noreg);
 
   __ mr(R3_ARG1, R16_thread);
+#if defined(ABI_ELFv2)
+  __ call_c((address) OptoRuntime::handle_exception_C, relocInfo::none);
+#else
   __ call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, OptoRuntime::handle_exception_C),
             relocInfo::none);
+#endif
   address calls_return_pc = __ last_calls_return_pc();
 # ifdef ASSERT
   __ cmpdi(CCR0, R3_RET, 0);
@@ -162,7 +166,11 @@ void OptoRuntime::generate_exception_blob() {
   __ bind(mh_callsite);
   __ mr(R31, R3_RET); // Save branch address.
   __ mr(R3_ARG1, R16_thread);
+#if defined(ABI_ELFv2)
+  __ call_c((address) adjust_SP_for_methodhandle_callsite, relocInfo::none);
+#else
   __ call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, adjust_SP_for_methodhandle_callsite), relocInfo::none);
+#endif
   // Returns unextended_sp in R3_RET.
 
   __ mtctr(R31); // Move address of exception handler to SR_CTR.

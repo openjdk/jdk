@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import sun.awt.PeerEvent;
 
 import sun.util.logging.PlatformLogger;
 
-class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
+final class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
 
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.windows.WScrollPanePeer");
 
@@ -47,6 +47,7 @@ class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
     }
 
     static native void initIDs();
+    @Override
     native void create(WComponentPeer parent);
     native int getOffset(int orient);
 
@@ -56,6 +57,7 @@ class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
         scrollbarHeight = _getHScrollbarHeight();
     }
 
+    @Override
     void initialize() {
         super.initialize();
         setInsets();
@@ -63,22 +65,27 @@ class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
         setScrollPosition(-i.left,-i.top);
     }
 
+    @Override
     public void setUnitIncrement(Adjustable adj, int p) {
         // The unitIncrement is grabbed from the target as needed.
     }
 
+    @Override
     public Insets insets() {
         return getInsets();
     }
     private native void setInsets();
 
+    @Override
     public native synchronized void setScrollPosition(int x, int y);
 
+    @Override
     public int getHScrollbarHeight() {
         return scrollbarHeight;
     }
     private native int _getHScrollbarHeight();
 
+    @Override
     public int getVScrollbarWidth() {
         return scrollbarWidth;
     }
@@ -96,6 +103,7 @@ class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
      * the actual windows may not have changed yet, so the size
      * information from the java-level is passed down and used.
      */
+    @Override
     public void childResized(int width, int height) {
         ScrollPane sp = (ScrollPane)target;
         Dimension vs = sp.getSize();
@@ -112,6 +120,7 @@ class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
      * of adjustables, whether it was modified externally or from the
      * native scrollbars themselves.
      */
+    @Override
     public void setValue(Adjustable adj, int v) {
         Component c = getScrollChild();
         if (c == null) {
@@ -160,6 +169,7 @@ class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
             super(source, runnable, 0L);
         }
 
+        @Override
         public PeerEvent coalesceEvents(PeerEvent newEvent) {
             if (log.isLoggable(PlatformLogger.Level.FINEST)) {
                 log.finest("ScrollEvent coalesced: " + newEvent);
@@ -187,6 +197,7 @@ class WScrollPanePeer extends WPanelPeer implements ScrollPanePeer {
             this.isAdjusting = isAdjusting;
         }
 
+        @Override
         public void run() {
             if (getScrollChild() == null) {
                 return;

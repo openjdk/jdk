@@ -910,7 +910,7 @@ void Thread::check_for_valid_safepoint_state(bool potential_vm_operation) {
               cur != VMOperationRequest_lock &&
               cur != VMOperationQueue_lock) ||
               cur->rank() == Mutex::special) {
-          warning("Thread holding lock at safepoint that vm can block on: %s", cur->name());
+          fatal(err_msg("Thread holding lock at safepoint that vm can block on: %s", cur->name()));
         }
       }
     }

@@ -126,8 +126,6 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * 1 for positive.  Note that the BigInteger zero <i>must</i> have
      * a signum of 0.  This is necessary to ensures that there is exactly one
      * representation for each BigInteger value.
-     *
-     * @serial
      */
     final int signum;
 
@@ -142,55 +140,43 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      */
     final int[] mag;
 
-    // These "redundant fields" are initialized with recognizable nonsense
-    // values, and cached the first time they are needed (or never, if they
-    // aren't needed).
-
-     /**
-     * One plus the bitCount of this BigInteger. Zeros means unitialized.
-     *
-     * @serial
-     * @see #bitCount
-     * @deprecated Deprecated since logical value is offset from stored
-     * value and correction factor is applied in accessor method.
-     */
-    @Deprecated
-    private int bitCount;
+    // The following fields are stable variables. A stable variable's value
+    // changes at most once from the default zero value to a non-zero stable
+    // value. A stable value is calculated lazily on demand.
 
     /**
-     * One plus the bitLength of this BigInteger. Zeros means unitialized.
+     * One plus the bitCount of this BigInteger. This is a stable variable.
+     *
+     * @see #bitCount
+     */
+    private int bitCountPlusOne;
+
+    /**
+     * One plus the bitLength of this BigInteger. This is a stable variable.
      * (either value is acceptable).
      *
-     * @serial
      * @see #bitLength()
-     * @deprecated Deprecated since logical value is offset from stored
-     * value and correction factor is applied in accessor method.
      */
-    @Deprecated
-    private int bitLength;
+    private int bitLengthPlusOne;
 
     /**
-     * Two plus the lowest set bit of this BigInteger, as returned by
-     * getLowestSetBit().
+     * Two plus the lowest set bit of this BigInteger. This is a stable variable.
      *
-     * @serial
      * @see #getLowestSetBit
-     * @deprecated Deprecated since logical value is offset from stored
-     * value and correction factor is applied in accessor method.
      */
-    @Deprecated
-    private int lowestSetBit;
+    private int lowestSetBitPlusTwo;
 
     /**
      * Two plus the index of the lowest-order int in the magnitude of this
-     * BigInteger that contains a nonzero int, or -2 (either value is acceptable).
-     * The least significant int has int-number 0, the next int in order of
+     * BigInteger that contains a nonzero int. This is a stable variable. The
+     * least significant int has int-number 0, the next int in order of
      * increasing significance has int-number 1, and so forth.
-     * @deprecated Deprecated since logical value is offset from stored
-     * value and correction factor is applied in accessor method.
+     *
+     * <p>Note: never used for a BigInteger with a magnitude of zero.
+     *
+     * @see #firstNonzeroIntNum()
      */
-    @Deprecated
-    private int firstNonzeroIntNum;
+    private int firstNonzeroIntNumPlusTwo;
 
     /**
      * This mask is used to obtain the value of an int as if it were unsigned.
@@ -3240,7 +3226,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return index of the rightmost one bit in this BigInteger.
      */
     public int getLowestSetBit() {
-        @SuppressWarnings("deprecation") int lsb = lowestSetBit - 2;
+        int lsb = lowestSetBitPlusTwo - 2;
         if (lsb == -2) {  // lowestSetBit not initialized yet
             lsb = 0;
             if (signum == 0) {
@@ -3252,7 +3238,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                     ;
                 lsb += (i << 5) + Integer.numberOfTrailingZeros(b);
             }
-            lowestSetBit = lsb + 2;
+            lowestSetBitPlusTwo = lsb + 2;
         }
         return lsb;
     }
@@ -3271,7 +3257,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *         representation of this BigInteger, <i>excluding</i> a sign bit.
      */
     public int bitLength() {
-        @SuppressWarnings("deprecation") int n = bitLength - 1;
+        int n = bitLengthPlusOne - 1;
         if (n == -1) { // bitLength not initialized yet
             int[] m = mag;
             int len = m.length;
@@ -3291,7 +3277,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                      n = magBitLength;
                  }
             }
-            bitLength = n + 1;
+            bitLengthPlusOne = n + 1;
         }
         return n;
     }
@@ -3305,7 +3291,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      *         of this BigInteger that differ from its sign bit.
      */
     public int bitCount() {
-        @SuppressWarnings("deprecation") int bc = bitCount - 1;
+        int bc = bitCountPlusOne - 1;
         if (bc == -1) {  // bitCount not initialized yet
             bc = 0;      // offset by one to initialize
             // Count the bits in the magnitude
@@ -3319,7 +3305,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                 magTrailingZeroCount += Integer.numberOfTrailingZeros(mag[j]);
                 bc += magTrailingZeroCount - 1;
             }
-            bitCount = bc + 1;
+            bitCountPlusOne = bc + 1;
         }
         return bc;
     }
@@ -3622,16 +3608,16 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      */
     private static void toString(BigInteger u, StringBuilder sb, int radix,
                                  int digits) {
-        /* If we're smaller than a certain threshold, use the smallToString
-           method, padding with leading zeroes when necessary. */
+        // If we're smaller than a certain threshold, use the smallToString
+        // method, padding with leading zeroes when necessary.
         if (u.mag.length <= SCHOENHAGE_BASE_CONVERSION_THRESHOLD) {
             String s = u.smallToString(radix);
 
             // Pad with internal zeros if necessary.
             // Don't pad if we're at the beginning of the string.
             if ((s.length() < digits) && (sb.length() > 0)) {
-                for (int i=s.length(); i < digits; i++) { // May be a faster way to
-                    sb.append('0');                    // do this?
+                for (int i=s.length(); i < digits; i++) {
+                    sb.append('0');
                 }
             }
 
@@ -4185,22 +4171,23 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
-     * Returns the index of the int that contains the first nonzero int in the
-     * little-endian binary representation of the magnitude (int 0 is the
-     * least significant). If the magnitude is zero, return value is undefined.
-     */
+    * Returns the index of the int that contains the first nonzero int in the
+    * little-endian binary representation of the magnitude (int 0 is the
+    * least significant). If the magnitude is zero, return value is undefined.
+    *
+    * <p>Note: never used for a BigInteger with a magnitude of zero.
+    * @see #getInt.
+    */
     private int firstNonzeroIntNum() {
-        int fn = firstNonzeroIntNum - 2;
+        int fn = firstNonzeroIntNumPlusTwo - 2;
         if (fn == -2) { // firstNonzeroIntNum not initialized yet
-            fn = 0;
-
             // Search for the first nonzero int
             int i;
             int mlen = mag.length;
             for (i = mlen - 1; i >= 0 && mag[i] == 0; i--)
                 ;
             fn = mlen - i - 1;
-            firstNonzeroIntNum = fn + 2; // offset by two to initialize
+            firstNonzeroIntNumPlusTwo = fn + 2; // offset by two to initialize
         }
         return fn;
     }
@@ -4212,16 +4199,17 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Serializable fields for BigInteger.
      *
      * @serialField signum  int
-     *              signum of this BigInteger.
-     * @serialField magnitude int[]
-     *              magnitude array of this BigInteger.
+     *              signum of this BigInteger
+     * @serialField magnitude byte[]
+     *              magnitude array of this BigInteger
      * @serialField bitCount  int
-     *              number of bits in this BigInteger
+     *              appears in the serialized form for backward compatibility
      * @serialField bitLength int
-     *              the number of bits in the minimal two's-complement
-     *              representation of this BigInteger
+     *              appears in the serialized form for backward compatibility
+     * @serialField firstNonzeroByteNum int
+     *              appears in the serialized form for backward compatibility
      * @serialField lowestSetBit int
-     *              lowest set bit in the twos complement representation
+     *              appears in the serialized form for backward compatibility
      */
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("signum", Integer.TYPE),
@@ -4238,22 +4226,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * for historical reasons, but it is converted to an array of ints
      * and the byte array is discarded.
      * Note:
-     * The current convention is to initialize the cache fields, bitCount,
-     * bitLength and lowestSetBit, to 0 rather than some other marker value.
-     * Therefore, no explicit action to set these fields needs to be taken in
-     * readObject because those fields already have a 0 value be default since
-     * defaultReadObject is not being used.
+     * The current convention is to initialize the cache fields, bitCountPlusOne,
+     * bitLengthPlusOne and lowestSetBitPlusTwo, to 0 rather than some other
+     * marker value. Therefore, no explicit action to set these fields needs to
+     * be taken in readObject because those fields already have a 0 value by
+     * default since defaultReadObject is not being used.
      */
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
-        /*
-         * In order to maintain compatibility with previous serialized forms,
-         * the magnitude of a BigInteger is serialized as an array of bytes.
-         * The magnitude field is used as a temporary store for the byte array
-         * that is deserialized. The cached computation fields should be
-         * transient but are serialized for compatibility reasons.
-         */
-
         // prepare to read the alternate persistent fields
         ObjectInputStream.GetField fields = s.readFields();
 
@@ -4317,12 +4297,14 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /**
-     * Save the {@code BigInteger} instance to a stream.
-     * The magnitude of a BigInteger is serialized as a byte array for
-     * historical reasons.
-     *
-     * @serialData two necessary fields are written as well as obsolete
-     *             fields for compatibility with older versions.
+     * Save the {@code BigInteger} instance to a stream.  The magnitude of a
+     * {@code BigInteger} is serialized as a byte array for historical reasons.
+     * To maintain compatibility with older implementations, the integers
+     * -1, -1, -2, and -2 are written as the values of the obsolete fields
+     * {@code bitCount}, {@code bitLength}, {@code lowestSetBit}, and
+     * {@code firstNonzeroByteNum}, respectively.  These values are compatible
+     * with older implementations, but will be ignored by current
+     * implementations.
      */
     private void writeObject(ObjectOutputStream s) throws IOException {
         // set the values of the Serializable fields
@@ -4338,7 +4320,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
         // save them
         s.writeFields();
-}
+    }
 
     /**
      * Returns the mag array as an array of bytes.

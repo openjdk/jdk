@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,10 @@
  * @bug 6293769 6294527
  * @summary test that the isCardPresent()/waitForX() APIs work correctly
  * @author Andreas Sterbenz
- * @ignore requires special hardware
  * @run main/manual TestPresent
  */
+
+// This test requires special hardware.
 
 import java.io.*;
 import java.util.*;

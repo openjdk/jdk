@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,6 @@
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #include "runtime/vframeArray.hpp"
-#endif
-
-#ifndef CC_INTERP
-#error "CC_INTERP must be defined on PPC64"
 #endif
 
 #ifdef ASSERT
@@ -89,7 +85,10 @@ frame frame::sender_for_entry_frame(RegisterMap *map) const {
 
 frame frame::sender_for_interpreter_frame(RegisterMap *map) const {
   // Pass callers initial_caller_sp as unextended_sp.
-  return frame(sender_sp(), sender_pc(), (intptr_t*)((parent_ijava_frame_abi *)callers_abi())->initial_caller_sp);
+  return frame(sender_sp(), sender_pc(),
+               CC_INTERP_ONLY((intptr_t*)((parent_ijava_frame_abi *)callers_abi())->initial_caller_sp)
+               NOT_CC_INTERP((intptr_t*)get_ijava_state()->sender_sp)
+               );
 }
 
 frame frame::sender_for_compiled_frame(RegisterMap *map) const {
@@ -183,6 +182,9 @@ BasicType frame::interpreter_frame_result(oop* oop_result, jvalue* value_result)
     interpreterState istate = get_interpreterState();
     address lresult = (address)istate + in_bytes(BytecodeInterpreter::native_lresult_offset());
     address fresult = (address)istate + in_bytes(BytecodeInterpreter::native_fresult_offset());
+#else
+    address lresult = (address)&(get_ijava_state()->lresult);
+    address fresult = (address)&(get_ijava_state()->fresult);
 #endif
 
     switch (method->result_type()) {
@@ -259,7 +261,21 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     values.describe(frame_no, (intptr_t*)&(istate->_native_fresult), " native_fresult");
     values.describe(frame_no, (intptr_t*)&(istate->_native_lresult), " native_lresult");
 #else
-    Unimplemented();
+#define DESCRIBE_ADDRESS(name) \
+  values.describe(frame_no, (intptr_t*)&(get_ijava_state()->name), #name);
+
+      DESCRIBE_ADDRESS(method);
+      DESCRIBE_ADDRESS(locals);
+      DESCRIBE_ADDRESS(monitors);
+      DESCRIBE_ADDRESS(cpoolCache);
+      DESCRIBE_ADDRESS(bcp);
+      DESCRIBE_ADDRESS(esp);
+      DESCRIBE_ADDRESS(mdx);
+      DESCRIBE_ADDRESS(top_frame_sp);
+      DESCRIBE_ADDRESS(sender_sp);
+      DESCRIBE_ADDRESS(oop_tmp);
+      DESCRIBE_ADDRESS(lresult);
+      DESCRIBE_ADDRESS(fresult);
 #endif
   }
 }

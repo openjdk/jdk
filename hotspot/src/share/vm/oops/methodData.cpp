@@ -1071,7 +1071,8 @@ void MethodData::post_initialize(BytecodeStream* stream) {
 }
 
 // Initialize the MethodData* corresponding to a given method.
-MethodData::MethodData(methodHandle method, int size, TRAPS) {
+MethodData::MethodData(methodHandle method, int size, TRAPS)
+  : _extra_data_lock(Monitor::leaf, "MDO extra data lock") {
   No_Safepoint_Verifier no_safepoint;  // init function atomic wrt GC
   ResourceMark rm;
   // Set the method back-pointer.
@@ -1235,7 +1236,7 @@ DataLayout* MethodData::next_extra(DataLayout* dp) {
   return (DataLayout*)((address)dp + DataLayout::compute_size_in_bytes(nb_cells));
 }
 
-ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout*& dp) {
+ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout*& dp, bool concurrent) {
   DataLayout* end = extra_data_limit();
 
   for (;; dp = next_extra(dp)) {
@@ -1257,10 +1258,11 @@ ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout
       if (m != NULL) {
         SpeculativeTrapData* data = new SpeculativeTrapData(dp);
         // data->method() may be null in case of a concurrent
-        // allocation. Assume it's for the same method and use that
+        // allocation. Maybe it's for the same method. Try to use that
         // entry in that case.
         if (dp->bci() == bci) {
           if (data->method() == NULL) {
+            assert(concurrent, "impossible because no concurrent allocation");
             return NULL;
           } else if (data->method() == m) {
             return data;
@@ -1289,40 +1291,40 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
   // Allocation in the extra data space has to be atomic because not
   // all entries have the same size and non atomic concurrent
   // allocation would result in a corrupted extra data space.
-  while (true) {
-    ProfileData* result = bci_to_extra_data_helper(bci, m, dp);
-    if (result != NULL) {
+  ProfileData* result = bci_to_extra_data_helper(bci, m, dp, true);
+  if (result != NULL) {
+    return result;
+  }
+
+  if (create_if_missing && dp < end) {
+    MutexLocker ml(&_extra_data_lock);
+    // Check again now that we have the lock. Another thread may
+    // have added extra data entries.
+    ProfileData* result = bci_to_extra_data_helper(bci, m, dp, false);
+    if (result != NULL || dp >= end) {
       return result;
     }
 
-    if (create_if_missing && dp < end) {
-      assert(dp->tag() == DataLayout::no_tag || (dp->tag() == DataLayout::speculative_trap_data_tag && m != NULL), "should be free");
-      assert(next_extra(dp)->tag() == DataLayout::no_tag || next_extra(dp)->tag() == DataLayout::arg_info_data_tag, "should be free or arg info");
-      u1 tag = m == NULL ? DataLayout::bit_data_tag : DataLayout::speculative_trap_data_tag;
-      // SpeculativeTrapData is 2 slots. Make sure we have room.
-      if (m != NULL && next_extra(dp)->tag() != DataLayout::no_tag) {
-        return NULL;
-      }
-      DataLayout temp;
-      temp.initialize(tag, bci, 0);
-      // May have been set concurrently
-      if (dp->header() != temp.header() && !dp->atomic_set_header(temp.header())) {
-        // Allocation failure because of concurrent allocation. Try
-        // again.
-        continue;
-      }
-      assert(dp->tag() == tag, "sane");
-      assert(dp->bci() == bci, "no concurrent allocation");
-      if (tag == DataLayout::bit_data_tag) {
-        return new BitData(dp);
-      } else {
-        // If being allocated concurrently, one trap may be lost
-        SpeculativeTrapData* data = new SpeculativeTrapData(dp);
-        data->set_method(m);
-        return data;
-      }
+    assert(dp->tag() == DataLayout::no_tag || (dp->tag() == DataLayout::speculative_trap_data_tag && m != NULL), "should be free");
+    assert(next_extra(dp)->tag() == DataLayout::no_tag || next_extra(dp)->tag() == DataLayout::arg_info_data_tag, "should be free or arg info");
+    u1 tag = m == NULL ? DataLayout::bit_data_tag : DataLayout::speculative_trap_data_tag;
+    // SpeculativeTrapData is 2 slots. Make sure we have room.
+    if (m != NULL && next_extra(dp)->tag() != DataLayout::no_tag) {
+      return NULL;
     }
-    return NULL;
+    DataLayout temp;
+    temp.initialize(tag, bci, 0);
+
+    dp->set_header(temp.header());
+    assert(dp->tag() == tag, "sane");
+    assert(dp->bci() == bci, "no concurrent allocation");
+    if (tag == DataLayout::bit_data_tag) {
+      return new BitData(dp);
+    } else {
+      SpeculativeTrapData* data = new SpeculativeTrapData(dp);
+      data->set_method(m);
+      return data;
+    }
   }
   return NULL;
 }
