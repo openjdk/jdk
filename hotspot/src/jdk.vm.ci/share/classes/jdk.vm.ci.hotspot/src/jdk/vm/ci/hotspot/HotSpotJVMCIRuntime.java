@@ -91,6 +91,7 @@ public final class HotSpotJVMCIRuntime implements HotSpotJVMCIRuntimeProvider, H
      * A list of all supported JVMCI options.
      */
     public enum Option {
+        Compiler(String.class, null, "Selects the system compiler."),
         ImplicitStableValues(boolean.class, true, "Mark well-known stable fields as such."),
         // Note: The following one is not used (see InitTimer.ENABLED).
         InitTimer(boolean.class, false, "Specifies if initialization timing is enabled."),

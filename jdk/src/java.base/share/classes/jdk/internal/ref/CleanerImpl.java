@@ -324,10 +324,10 @@ public final class CleanerImpl implements Runnable {
         final AtomicInteger cleanerThreadNumber = new AtomicInteger();
 
         public Thread newThread(Runnable r) {
-            return AccessController.doPrivileged(new PrivilegedAction<Thread>() {
+            return AccessController.doPrivileged(new PrivilegedAction<>() {
                 @Override
                 public Thread run() {
-                    Thread t = new InnocuousThread(r);
+                    Thread t = InnocuousThread.newThread(r);
                     t.setPriority(Thread.MAX_PRIORITY - 2);
                     t.setName("Cleaner-" + cleanerThreadNumber.getAndIncrement());
                     return t;

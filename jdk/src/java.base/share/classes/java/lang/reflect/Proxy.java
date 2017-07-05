@@ -48,8 +48,8 @@ import java.util.stream.Stream;
 
 import jdk.internal.loader.BootLoader;
 import jdk.internal.module.Modules;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
-import sun.misc.Unsafe;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 import sun.reflect.misc.ReflectUtil;

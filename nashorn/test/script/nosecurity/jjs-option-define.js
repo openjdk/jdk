@@ -25,7 +25,6 @@
  * JDK-8144113: Nashorn: enable jjs testing. 
  * @test
  * @option -scripting
- * @runif os.not.windows
  * @run
  * @summary Test to check -D flag basic functionality
  */
@@ -38,7 +37,7 @@ var testfunc_file = path_func.toAbsolutePath()
 // code to check basic functionality
 var msg_func = <<EOD
 try {
-    var System = Java.type('java.lang.System');
+    var System = Java.type('java.lang.System')
     print(System.getProperty('user.name'))
     if (System.getProperty('user.name') != "nashorn9")
         throw new Error("un expected system property user.name value")

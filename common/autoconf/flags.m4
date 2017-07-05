@@ -427,6 +427,9 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     CFLAGS_DEBUG_SYMBOLS="-g"
     CXXFLAGS_DEBUG_SYMBOLS="-g"
+  elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    CFLAGS_DEBUG_SYMBOLS="-Zi"
+    CXXFLAGS_DEBUG_SYMBOLS="-Zi"
   fi
   AC_SUBST(CFLAGS_DEBUG_SYMBOLS)
   AC_SUBST(CXXFLAGS_DEBUG_SYMBOLS)
@@ -585,6 +588,12 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     CFLAGS_JDK="${CFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
     CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
+  elif test "x$TOOLCHAIN_TYPE" = xgcc; then
+    CXXSTD_CXXFLAG="-std=gnu++98"
+    FLAGS_CXX_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$CXXSTD_CXXFLAG -Werror],
+    						 IF_FALSE: [CXXSTD_CXXFLAG=""])
+    CXXFLAGS_JDK="${CXXFLAGS_JDK} ${CXXSTD_CXXFLAG}"
+    AC_SUBST([CXXSTD_CXXFLAG])
   fi
 
   CFLAGS_JDK="${CFLAGS_JDK} $EXTRA_CFLAGS"
@@ -622,6 +631,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
         CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
         ;;
     esac
+    TOOLCHAIN_CHECK_COMPILER_VERSION(VERSION: 6, IF_AT_LEAST: FLAGS_SETUP_GCC6_COMPILER_FLAGS)
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
       if test "x$OPENJDK_TARGET_CPU" = xx86; then
@@ -654,7 +664,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
     CXXFLAGS_JDK="$CXXFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK \
-        -Zi -MD -Zc:wchar_t- -W3 -wd4800 \
+        -MD -Zc:wchar_t- -W3 -wd4800 \
         -DWIN32_LEAN_AND_MEAN \
         -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE \
         -D_WINSOCK_DEPRECATED_NO_WARNINGS \
@@ -821,9 +831,6 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
       LDFLAGS_SAFESH="-safeseh"
       LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_SAFESH"
     fi
-    # TODO: make -debug optional "--disable-full-debug-symbols"
-    LDFLAGS_MICROSOFT_DEBUG="-debug"
-    LDFLAGS_JDK="$LDFLAGS_JDK $LDFLAGS_MICROSOFT_DEBUG"
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     # If this is a --hash-style=gnu system, use --hash-style=both, why?
     # We have previously set HAS_GNU_HASH if this is the case
@@ -950,14 +957,14 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
   AC_SUBST(LDFLAGS_TESTEXE)
 ])
 
-# FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARGUMENT], IF_TRUE: [RUN-IF-TRUE],
-#                                   IF_FALSE: [RUN-IF-FALSE])
+# FLAGS_C_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARGUMENT], IF_TRUE: [RUN-IF-TRUE],
+#                                  IF_FALSE: [RUN-IF-FALSE])
 # ------------------------------------------------------------
-# Check that the c and c++ compilers support an argument
-BASIC_DEFUN_NAMED([FLAGS_COMPILER_CHECK_ARGUMENTS],
+# Check that the C compiler supports an argument
+BASIC_DEFUN_NAMED([FLAGS_C_COMPILER_CHECK_ARGUMENTS],
     [*ARGUMENT IF_TRUE IF_FALSE], [$@],
 [
-  AC_MSG_CHECKING([if compiler supports "ARG_ARGUMENT"])
+  AC_MSG_CHECKING([if the C compiler supports "ARG_ARGUMENT"])
   supports=yes
 
   saved_cflags="$CFLAGS"
@@ -968,6 +975,26 @@ BASIC_DEFUN_NAMED([FLAGS_COMPILER_CHECK_ARGUMENTS],
   AC_LANG_POP([C])
   CFLAGS="$saved_cflags"
 
+  AC_MSG_RESULT([$supports])
+  if test "x$supports" = "xyes" ; then
+    :
+    ARG_IF_TRUE
+  else
+    :
+    ARG_IF_FALSE
+  fi
+])
+
+# FLAGS_CXX_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARGUMENT], IF_TRUE: [RUN-IF-TRUE],
+#                                    IF_FALSE: [RUN-IF-FALSE])
+# ------------------------------------------------------------
+# Check that the C++ compiler supports an argument
+BASIC_DEFUN_NAMED([FLAGS_CXX_COMPILER_CHECK_ARGUMENTS],
+    [*ARGUMENT IF_TRUE IF_FALSE], [$@],
+[
+  AC_MSG_CHECKING([if the C++ compiler supports "ARG_ARGUMENT"])
+  supports=yes
+
   saved_cxxflags="$CXXFLAGS"
   CXXFLAGS="$CXXFLAG ARG_ARGUMENT"
   AC_LANG_PUSH([C++])
@@ -976,6 +1003,34 @@ BASIC_DEFUN_NAMED([FLAGS_COMPILER_CHECK_ARGUMENTS],
   AC_LANG_POP([C++])
   CXXFLAGS="$saved_cxxflags"
 
+  AC_MSG_RESULT([$supports])
+  if test "x$supports" = "xyes" ; then
+    :
+    ARG_IF_TRUE
+  else
+    :
+    ARG_IF_FALSE
+  fi
+])
+
+# FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARGUMENT], IF_TRUE: [RUN-IF-TRUE],
+#                                IF_FALSE: [RUN-IF-FALSE])
+# ------------------------------------------------------------
+# Check that the C and C++ compilers support an argument
+BASIC_DEFUN_NAMED([FLAGS_COMPILER_CHECK_ARGUMENTS],
+    [*ARGUMENT IF_TRUE IF_FALSE], [$@],
+[
+  FLAGS_C_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARG_ARGUMENT],
+  					     IF_TRUE: [C_COMP_SUPPORTS="yes"],
+					     IF_FALSE: [C_COMP_SUPPORTS="no"])
+  FLAGS_CXX_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [ARG_ARGUMENT],
+  					       IF_TRUE: [CXX_COMP_SUPPORTS="yes"],
+					       IF_FALSE: [CXX_COMP_SUPPORTS="no"])
+
+  AC_MSG_CHECKING([if both compilers support "ARG_ARGUMENT"])
+  supports=no
+  if test "x$C_COMP_SUPPORTS" = "xyes" -a "x$CXX_COMP_SUPPORTS" = "xyes"; then supports=yes; fi
+  
   AC_MSG_RESULT([$supports])
   if test "x$supports" = "xyes" ; then
     :
@@ -1109,4 +1164,21 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
   AC_SUBST(DISABLE_WARNING_PREFIX)
   AC_SUBST(BUILD_CC_DISABLE_WARNING_PREFIX)
   AC_SUBST(CFLAGS_WARNINGS_ARE_ERRORS)
+])
+
+AC_DEFUN_ONCE([FLAGS_SETUP_GCC6_COMPILER_FLAGS],
+[
+  # These flags are required for GCC 6 builds as undefined behaviour in OpenJDK code
+  # runs afoul of the more aggressive versions of these optimisations.
+  # Notably, value range propagation now assumes that the this pointer of C++
+  # member functions is non-null.
+  NO_NULL_POINTER_CHECK_CFLAG="-fno-delete-null-pointer-checks"
+  FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$NO_NULL_POINTER_CHECK_CFLAG -Werror],
+  					     IF_FALSE: [NO_NULL_POINTER_CHECK_CFLAG=""])
+  AC_SUBST([NO_NULL_POINTER_CHECK_CFLAG])
+  NO_LIFETIME_DSE_CFLAG="-fno-lifetime-dse"
+  FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$NO_LIFETIME_DSE_CFLAG -Werror],
+  					     IF_FALSE: [NO_LIFETIME_DSE_CFLAG=""])
+  CFLAGS_JDK="${CFLAGS_JDK} ${NO_NULL_POINTER_CHECK_CFLAG} ${NO_LIFETIME_DSE_CFLAG}"
+  AC_SUBST([NO_LIFETIME_DSE_CFLAG])
 ])

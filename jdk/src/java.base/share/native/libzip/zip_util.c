@@ -1408,7 +1408,7 @@ InflateFully(jzfile *zip, jzentry *entry, void *buf, char **msg)
             case Z_OK:
                 break;
             case Z_STREAM_END:
-                if (count != 0 || strm.total_out != entry->size) {
+                if (count != 0 || strm.total_out != (uInt)entry->size) {
                     *msg = "inflateFully: Unexpected end of stream";
                     inflateEnd(&strm);
                     return JNI_FALSE;
@@ -1528,7 +1528,7 @@ ZIP_InflateFully(void *inBuf, jlong inLen, void *outBuf, jlong outLen, char **pm
             case Z_OK:
                 break;
             case Z_STREAM_END:
-                if (strm.total_out != outLen) {
+                if (strm.total_out != (uInt)outLen) {
                     *pmsg = "INFLATER_inflateFully: Unexpected end of stream";
                     inflateEnd(&strm);
                     return JNI_FALSE;

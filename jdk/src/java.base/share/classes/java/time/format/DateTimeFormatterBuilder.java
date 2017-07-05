@@ -866,7 +866,9 @@ public final class DateTimeFormatterBuilder {
      * Appends the zone offset, such as '+01:00', to the formatter.
      * <p>
      * This appends an instruction to format/parse the offset ID to the builder.
-     * This is equivalent to calling {@code appendOffset("+HH:MM:ss", "Z")}.
+     * This is equivalent to calling {@code appendOffset("+HH:mm:ss", "Z")}.
+     * See {@link #appendOffset(String, String)} for details on formatting
+     * and parsing.
      *
      * @return this, for chaining, not null
      */
@@ -886,9 +888,18 @@ public final class DateTimeFormatterBuilder {
      * If the offset cannot be obtained then an exception is thrown unless the
      * section of the formatter is optional.
      * <p>
-     * During parsing, the offset is parsed using the format defined below.
-     * If the offset cannot be parsed then an exception is thrown unless the
-     * section of the formatter is optional.
+     * When parsing in strict mode, the input must contain the mandatory
+     * and optional elements are defined by the specified pattern.
+     * If the offset cannot be parsed then an exception is thrown unless
+     * the section of the formatter is optional.
+     * <p>
+     * When parsing in lenient mode, only the hours are mandatory - minutes
+     * and seconds are optional. The colons are required if the specified
+     * pattern contains a colon. If the specified pattern is "+HH", the
+     * presence of colons is determined by whether the character after the
+     * hour digits is a colon or not.
+     * If the offset cannot be parsed then an exception is thrown unless
+     * the section of the formatter is optional.
      * <p>
      * The format of the offset is controlled by a pattern which must be one
      * of the following:
@@ -902,6 +913,10 @@ public final class DateTimeFormatterBuilder {
      * <li>{@code +HH:MM:ss} - hour and minute, with second if non-zero, with colon
      * <li>{@code +HHMMSS} - hour, minute and second, no colon
      * <li>{@code +HH:MM:SS} - hour, minute and second, with colon
+     * <li>{@code +HHmmss} - hour, with minute if non-zero or with minute and
+     * second if non-zero, no colon
+     * <li>{@code +HH:mm:ss} - hour, with minute if non-zero or with minute and
+     * second if non-zero, with colon
      * </ul>
      * The "no offset" text controls what text is printed when the total amount of
      * the offset fields to be output is zero.
@@ -1256,6 +1271,9 @@ public final class DateTimeFormatterBuilder {
      * During formatting, the chronology is obtained from the temporal object
      * being formatted, which may have been overridden by
      * {@link DateTimeFormatter#withChronology(Chronology)}.
+     * The {@code FULL} and {@code LONG} styles typically require a time-zone.
+     * When formatting using these styles, a {@code ZoneId} must be available,
+     * either by using {@code ZonedDateTime} or {@link DateTimeFormatter#withZone}.
      * <p>
      * During parsing, if a chronology has already been parsed, then it is used.
      * Otherwise the default from {@code DateTimeFormatter.withChronology(Chronology)}
@@ -3315,7 +3333,7 @@ public final class DateTimeFormatterBuilder {
      */
     static final class OffsetIdPrinterParser implements DateTimePrinterParser {
         static final String[] PATTERNS = new String[] {
-            "+HH", "+HHmm", "+HH:mm", "+HHMM", "+HH:MM", "+HHMMss", "+HH:MM:ss", "+HHMMSS", "+HH:MM:SS",
+            "+HH", "+HHmm", "+HH:mm", "+HHMM", "+HH:MM", "+HHMMss", "+HH:MM:ss", "+HHMMSS", "+HH:MM:SS", "+HHmmss", "+HH:mm:ss",
         };  // order used in pattern builder
         static final OffsetIdPrinterParser INSTANCE_ID_Z = new OffsetIdPrinterParser("+HH:MM:ss", "Z");
         static final OffsetIdPrinterParser INSTANCE_ID_ZERO = new OffsetIdPrinterParser("+HH:MM:ss", "0");
@@ -3362,11 +3380,11 @@ public final class DateTimeFormatterBuilder {
                 int output = absHours;
                 buf.append(totalSecs < 0 ? "-" : "+")
                     .append((char) (absHours / 10 + '0')).append((char) (absHours % 10 + '0'));
-                if (type >= 3 || (type >= 1 && absMinutes > 0)) {
+                if ((type >= 3 && type < 9) || (type >= 9 && absSeconds > 0) || (type >= 1 && absMinutes > 0)) {
                     buf.append((type % 2) == 0 ? ":" : "")
                         .append((char) (absMinutes / 10 + '0')).append((char) (absMinutes % 10 + '0'));
                     output += absMinutes;
-                    if (type >= 7 || (type >= 5 && absSeconds > 0)) {
+                    if (type == 7  || type == 8 || (type >= 5 && absSeconds > 0)) {
                         buf.append((type % 2) == 0 ? ":" : "")
                             .append((char) (absSeconds / 10 + '0')).append((char) (absSeconds % 10 + '0'));
                         output += absSeconds;
@@ -3384,6 +3402,15 @@ public final class DateTimeFormatterBuilder {
         public int parse(DateTimeParseContext context, CharSequence text, int position) {
             int length = text.length();
             int noOffsetLen = noOffsetText.length();
+            int parseType = type;
+            if (context.isStrict() == false) {
+                if ((parseType > 0 && (parseType % 2) == 0) ||
+                    (parseType == 0 && length > position + 3 && text.charAt(position + 3) == ':')) {
+                    parseType = 10;
+                } else {
+                    parseType = 9;
+                }
+            }
             if (noOffsetLen == 0) {
                 if (position == length) {
                     return context.setParsedField(OFFSET_SECONDS, 0, position, position);
@@ -3404,9 +3431,9 @@ public final class DateTimeFormatterBuilder {
                 int negative = (sign == '-' ? -1 : 1);
                 int[] array = new int[4];
                 array[0] = position + 1;
-                if ((parseNumber(array, 1, text, true) ||
-                        parseNumber(array, 2, text, type >=3) ||
-                        parseNumber(array, 3, text, false)) == false) {
+                if ((parseNumber(array, 1, text, true, parseType) ||
+                        parseNumber(array, 2, text, parseType >= 3 && parseType < 9, parseType) ||
+                        parseNumber(array, 3, text, parseType == 7 || parseType == 8, parseType)) == false) {
                     // success
                     long offsetSecs = negative * (array[1] * 3600L + array[2] * 60L + array[3]);
                     return context.setParsedField(OFFSET_SECONDS, offsetSecs, position, array[0]);
@@ -3414,7 +3441,7 @@ public final class DateTimeFormatterBuilder {
             }
             // handle special case of empty no offset text
             if (noOffsetLen == 0) {
-                return context.setParsedField(OFFSET_SECONDS, 0, position, position + noOffsetLen);
+                return context.setParsedField(OFFSET_SECONDS, 0, position, position);
             }
             return ~position;
         }
@@ -3426,14 +3453,15 @@ public final class DateTimeFormatterBuilder {
          * @param arrayIndex  the index to parse the value into
          * @param parseText  the offset ID, not null
          * @param required  whether this number is required
+         * @param parseType the offset pattern type
          * @return true if an error occurred
          */
-        private boolean parseNumber(int[] array, int arrayIndex, CharSequence parseText, boolean required) {
-            if ((type + 3) / 2 < arrayIndex) {
+        private boolean parseNumber(int[] array, int arrayIndex, CharSequence parseText, boolean required, int parseType) {
+            if ((parseType + 3) / 2 < arrayIndex) {
                 return false;  // ignore seconds/minutes
             }
             int pos = array[0];
-            if ((type % 2) == 0 && arrayIndex > 1) {
+            if ((parseType % 2) == 0 && arrayIndex > 1) {
                 if (pos + 1 > parseText.length() || parseText.charAt(pos) != ':') {
                     return required;
                 }

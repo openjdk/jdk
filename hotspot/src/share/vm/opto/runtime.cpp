@@ -220,22 +220,17 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* thre
 
   // These checks are cheap to make and support reflective allocation.
   int lh = klass->layout_helper();
-  if (Klass::layout_helper_needs_slow_path(lh)
-      || !InstanceKlass::cast(klass)->is_initialized()) {
-    KlassHandle kh(THREAD, klass);
-    kh->check_valid_for_instantiation(false, THREAD);
+  if (Klass::layout_helper_needs_slow_path(lh) || !InstanceKlass::cast(klass)->is_initialized()) {
+    Handle holder(THREAD, klass->klass_holder()); // keep the klass alive
+    klass->check_valid_for_instantiation(false, THREAD);
     if (!HAS_PENDING_EXCEPTION) {
-      InstanceKlass::cast(kh())->initialize(THREAD);
-    }
-    if (!HAS_PENDING_EXCEPTION) {
-      klass = kh();
-    } else {
-      klass = NULL;
+      InstanceKlass::cast(klass)->initialize(THREAD);
     }
   }
 
-  if (klass != NULL) {
+  if (!HAS_PENDING_EXCEPTION) {
     // Scavenge and allocate an instance.
+    Handle holder(THREAD, klass->klass_holder()); // keep the klass alive
     oop result = InstanceKlass::cast(klass)->allocate_instance(THREAD);
     thread->set_vm_result(result);
 
@@ -275,6 +270,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaT
     // Although the oopFactory likes to work with the elem_type,
     // the compiler prefers the array_type, since it must already have
     // that latter value in hand for the fast path.
+    Handle holder(THREAD, array_type->klass_holder()); // keep the array klass alive
     Klass* elem_type = ObjArrayKlass::cast(array_type)->element_klass();
     result = oopFactory::new_objArray(elem_type, len, THREAD);
   }
@@ -353,6 +349,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarray2_C(Klass* elem_type, int len1, int l
   jint dims[2];
   dims[0] = len1;
   dims[1] = len2;
+  Handle holder(THREAD, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(2, dims, THREAD);
   deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
   thread->set_vm_result(obj);
@@ -369,6 +366,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarray3_C(Klass* elem_type, int len1, int l
   dims[0] = len1;
   dims[1] = len2;
   dims[2] = len3;
+  Handle holder(THREAD, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(3, dims, THREAD);
   deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
   thread->set_vm_result(obj);
@@ -386,6 +384,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarray4_C(Klass* elem_type, int len1, int l
   dims[1] = len2;
   dims[2] = len3;
   dims[3] = len4;
+  Handle holder(THREAD, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(4, dims, THREAD);
   deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
   thread->set_vm_result(obj);
@@ -404,6 +403,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarray5_C(Klass* elem_type, int len1, int l
   dims[2] = len3;
   dims[3] = len4;
   dims[4] = len5;
+  Handle holder(THREAD, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(5, dims, THREAD);
   deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
   thread->set_vm_result(obj);
@@ -421,6 +421,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarrayN_C(Klass* elem_type, arrayOopDesc* d
   jint *c_dims = NEW_RESOURCE_ARRAY(jint, len);
   Copy::conjoint_jints_atomic(j_dims, c_dims, len);
 
+  Handle holder(THREAD, elem_type->klass_holder()); // keep the klass alive
   oop obj = ArrayKlass::cast(elem_type)->multi_allocate(len, c_dims, THREAD);
   deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
   thread->set_vm_result(obj);
