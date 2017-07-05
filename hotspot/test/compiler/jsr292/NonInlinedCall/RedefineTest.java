@@ -24,35 +24,46 @@
 /*
  * @test
  * @bug 8072008
- * @library /testlibrary /test/lib
- * @compile -XDignore.symbol.file RedefineTest.java Agent.java
+ * @modules java.base/jdk.internal.org.objectweb.asm
+ *          java.base/jdk.internal.misc
+ *          java.base/jdk.internal.vm.annotation
+ * @library /testlibrary /test/lib / ../patches
+ * @build sun.hotspot.WhiteBox
+ * @build java.base/java.lang.invoke.MethodHandleHelper
+ * @build compiler.jsr292.NonInlinedCall.RedefineTest
+ * @run main compiler.jsr292.NonInlinedCall.Agent agent.jar compiler.jsr292.NonInlinedCall.RedefineTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- *                              java.lang.invoke.RedefineTest
- *                              Agent
- * @run main Agent agent.jar java.lang.invoke.RedefineTest
- * @run main/othervm -Xbootclasspath/a:. -javaagent:agent.jar
- *                   -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1
- *                      java.lang.invoke.RedefineTest
+ *                              compiler.jsr292.NonInlinedCall.RedefineTest
+ * @run main/bootclasspath -javaagent:agent.jar
+ *                         -XX:+IgnoreUnrecognizedVMOptions
+ *                         -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                         -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1
+ *                         compiler.jsr292.NonInlinedCall.RedefineTest
  */
-package java.lang.invoke;
+
+package compiler.jsr292.NonInlinedCall;
 
 import sun.hotspot.WhiteBox;
-import sun.misc.Unsafe;
-import jdk.internal.org.objectweb.asm.*;
-import jdk.internal.vm.annotation.DontInline;
+
 import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.Instrumentation;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandleHelper;
+import java.lang.invoke.MethodType;
+
+import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.DontInline;
+import jdk.internal.org.objectweb.asm.*;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 public class RedefineTest {
-    static final MethodHandles.Lookup LOOKUP = MethodHandles.Lookup.IMPL_LOOKUP;
+    static final MethodHandles.Lookup LOOKUP = MethodHandleHelper.IMPL_LOOKUP;
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
-    static final String NAME = "java/lang/invoke/RedefineTest$T";
+    static final String NAME = "compiler/jsr292/NonInlinedCall/RedefineTest$T";
 
     static Class<?> getClass(int r) {
         byte[] classFile = getClassFile(r);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/moduleEntry.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verificationType.hpp"
@@ -102,8 +103,6 @@
 #define JAVA_8_VERSION                    52
 
 #define JAVA_9_VERSION                    53
-
-enum { LegalClass, LegalField, LegalMethod }; // used to verify unqualified names
 
 void ClassFileParser::parse_constant_pool_entries(const ClassFileStream* const stream,
                                                   ConstantPool* cp,
@@ -1965,7 +1964,7 @@ AnnotationCollector::annotation_index(const ClassLoaderData* loader_data,
   const vmSymbols::SID sid = vmSymbols::find_sid(name);
   // Privileged code can use all annotations.  Other code silently drops some.
   const bool privileged = loader_data->is_the_null_class_loader_data() ||
-                          loader_data->is_ext_class_loader_data() ||
+                          loader_data->is_platform_class_loader_data() ||
                           loader_data->is_anonymous();
   switch (sid) {
     case vmSymbols::VM_SYMBOL_ENUM_NAME(sun_reflect_CallerSensitive_signature): {
@@ -4358,17 +4357,29 @@ static Array<Klass*>* compute_transitive_interfaces(const InstanceKlass* super,
 static void check_super_class_access(const InstanceKlass* this_klass, TRAPS) {
   assert(this_klass != NULL, "invariant");
   const Klass* const super = this_klass->super();
-  if ((super != NULL) &&
-      (!Reflection::verify_class_access(this_klass, super, false))) {
-    ResourceMark rm(THREAD);
-    Exceptions::fthrow(
-      THREAD_AND_LOCATION,
-      vmSymbols::java_lang_IllegalAccessError(),
-      "class %s cannot access its superclass %s",
-      this_klass->external_name(),
-      super->external_name()
-    );
-    return;
+  if (super != NULL) {
+    Reflection::VerifyClassAccessResults vca_result =
+      Reflection::verify_class_access(this_klass, super, false);
+    if (vca_result != Reflection::ACCESS_OK) {
+      ResourceMark rm(THREAD);
+      char* msg =  Reflection::verify_class_access_msg(this_klass, super, vca_result);
+      if (msg == NULL) {
+        ResourceMark rm(THREAD);
+        Exceptions::fthrow(
+          THREAD_AND_LOCATION,
+          vmSymbols::java_lang_IllegalAccessError(),
+          "class %s cannot access its superclass %s",
+          this_klass->external_name(),
+          super->external_name());
+      } else {
+        // Add additional message content.
+        Exceptions::fthrow(
+          THREAD_AND_LOCATION,
+          vmSymbols::java_lang_IllegalAccessError(),
+          "superclass access check failed: %s",
+          msg);
+      }
+    }
   }
 }
 
@@ -4380,16 +4391,26 @@ static void check_super_interface_access(const InstanceKlass* this_klass, TRAPS)
   for (int i = lng - 1; i >= 0; i--) {
     Klass* const k = local_interfaces->at(i);
     assert (k != NULL && k->is_interface(), "invalid interface");
-    if (!Reflection::verify_class_access(this_klass, k, false)) {
+    Reflection::VerifyClassAccessResults vca_result =
+      Reflection::verify_class_access(this_klass, k, false);
+    if (vca_result != Reflection::ACCESS_OK) {
       ResourceMark rm(THREAD);
-      Exceptions::fthrow(
-        THREAD_AND_LOCATION,
-        vmSymbols::java_lang_IllegalAccessError(),
-        "class %s cannot access its superinterface %s",
-        this_klass->external_name(),
-        k->external_name()
-      );
-      return;
+      char* msg =  Reflection::verify_class_access_msg(this_klass, k, vca_result);
+      if (msg == NULL) {
+        Exceptions::fthrow(
+          THREAD_AND_LOCATION,
+          vmSymbols::java_lang_IllegalAccessError(),
+          "class %s cannot access its superinterface %s",
+          this_klass->external_name(),
+          k->external_name());
+      } else {
+        // Add additional message content.
+        Exceptions::fthrow(
+          THREAD_AND_LOCATION,
+          vmSymbols::java_lang_IllegalAccessError(),
+          "superinterface check failed: %s",
+          msg);
+      }
     }
   }
 }
@@ -4489,12 +4510,14 @@ void ClassFileParser::verify_legal_class_modifiers(jint flags, TRAPS) const {
   const bool is_super      = (flags & JVM_ACC_SUPER)      != 0;
   const bool is_enum       = (flags & JVM_ACC_ENUM)       != 0;
   const bool is_annotation = (flags & JVM_ACC_ANNOTATION) != 0;
+  const bool is_module_info= (flags & JVM_ACC_MODULE)     != 0;
   const bool major_gte_15  = _major_version >= JAVA_1_5_VERSION;
 
   if ((is_abstract && is_final) ||
       (is_interface && !is_abstract) ||
       (is_interface && major_gte_15 && (is_super || is_enum)) ||
-      (!is_interface && major_gte_15 && is_annotation)) {
+      (!is_interface && major_gte_15 && is_annotation) ||
+      is_module_info) {
     ResourceMark rm(THREAD);
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
@@ -4650,65 +4673,9 @@ void ClassFileParser::verify_legal_utf8(const unsigned char* buffer,
                                         int length,
                                         TRAPS) const {
   assert(_need_verify, "only called when _need_verify is true");
-  int i = 0;
-  const int count = length >> 2;
-  for (int k=0; k<count; k++) {
-    unsigned char b0 = buffer[i];
-    unsigned char b1 = buffer[i+1];
-    unsigned char b2 = buffer[i+2];
-    unsigned char b3 = buffer[i+3];
-    // For an unsigned char v,
-    // (v | v - 1) is < 128 (highest bit 0) for 0 < v < 128;
-    // (v | v - 1) is >= 128 (highest bit 1) for v == 0 or v >= 128.
-    const unsigned char res = b0 | b0 - 1 |
-                              b1 | b1 - 1 |
-                              b2 | b2 - 1 |
-                              b3 | b3 - 1;
-    if (res >= 128) break;
-    i += 4;
+  if (!UTF8::is_legal_utf8(buffer, length, _major_version <= 47)) {
+    classfile_parse_error("Illegal UTF8 string in constant pool in class file %s", CHECK);
   }
-  for(; i < length; i++) {
-    unsigned short c;
-    // no embedded zeros
-    guarantee_property((buffer[i] != 0), "Illegal UTF8 string in constant pool in class file %s", CHECK);
-    if(buffer[i] < 128) {
-      continue;
-    }
-    if ((i + 5) < length) { // see if it's legal supplementary character
-      if (UTF8::is_supplementary_character(&buffer[i])) {
-        c = UTF8::get_supplementary_character(&buffer[i]);
-        i += 5;
-        continue;
-      }
-    }
-    switch (buffer[i] >> 4) {
-      default: break;
-      case 0x8: case 0x9: case 0xA: case 0xB: case 0xF:
-        classfile_parse_error("Illegal UTF8 string in constant pool in class file %s", CHECK);
-      case 0xC: case 0xD:  // 110xxxxx  10xxxxxx
-        c = (buffer[i] & 0x1F) << 6;
-        i++;
-        if ((i < length) && ((buffer[i] & 0xC0) == 0x80)) {
-          c += buffer[i] & 0x3F;
-          if (_major_version <= 47 || c == 0 || c >= 0x80) {
-            // for classes with major > 47, c must a null or a character in its shortest form
-            break;
-          }
-        }
-        classfile_parse_error("Illegal UTF8 string in constant pool in class file %s", CHECK);
-      case 0xE:  // 1110xxxx 10xxxxxx 10xxxxxx
-        c = (buffer[i] & 0xF) << 12;
-        i += 2;
-        if ((i < length) && ((buffer[i-1] & 0xC0) == 0x80) && ((buffer[i] & 0xC0) == 0x80)) {
-          c += ((buffer[i-1] & 0x3F) << 6) + (buffer[i] & 0x3F);
-          if (_major_version <= 47 || c >= 0x800) {
-            // for classes with major > 47, c must be in its shortest form
-            break;
-          }
-        }
-        classfile_parse_error("Illegal UTF8 string in constant pool in class file %s", CHECK);
-    }  // end of switch
-  } // end of for
 }
 
 // Unqualified names may not contain the characters '.', ';', '[', or '/'.
@@ -4716,24 +4683,35 @@ void ClassFileParser::verify_legal_utf8(const unsigned char* buffer,
 // or <clinit>.  Note that method names may not be <init> or <clinit> in this
 // method.  Because these names have been checked as special cases before
 // calling this method in verify_legal_method_name.
-static bool verify_unqualified_name(const char* name,
-                                    unsigned int length,
-                                    int type) {
+//
+// This method is also called from the modular system APIs in modules.cpp
+// to verify the validity of module and package names.
+bool ClassFileParser::verify_unqualified_name(const char* name,
+                                              unsigned int length,
+                                              int type) {
   for (const char* p = name; p != name + length;) {
     jchar ch = *p;
     if (ch < 128) {
-      p++;
-      if (ch == '.' || ch == ';' || ch == '[') {
+      if (ch == '.') {
+        // permit '.' in module names unless it's the first char, or
+        // preceding char is also a '.', or last char is a '.'.
+        if ((type != ClassFileParser::LegalModule) ||
+          (p == name) || (*(p-1) == '.') ||
+          (p == name + length - 1)) {
+          return false;
+        }
+      }
+      if (ch == ';' || ch == '[' ) {
         return false;   // do not permit '.', ';', or '['
       }
-      if (type != LegalClass && ch == '/') {
+      if (type != ClassFileParser::LegalClass && ch == '/') {
         return false;   // do not permit '/' unless it's class name
       }
-      if (type == LegalMethod && (ch == '<' || ch == '>')) {
+      if (type == ClassFileParser::LegalMethod && (ch == '<' || ch == '>')) {
         return false;   // do not permit '<' or '>' in method names
       }
-    }
-    else {
+      p++;
+    } else {
       char* tmp_p = UTF8::next(p, &ch);
       p = tmp_p;
     }
@@ -5192,7 +5170,7 @@ static void check_methods_for_intrinsics(const InstanceKlass* ik,
   }
 }
 
-InstanceKlass* ClassFileParser::create_instance_klass(TRAPS) {
+InstanceKlass* ClassFileParser::create_instance_klass(bool changed_by_loadhook, TRAPS) {
   if (_klass != NULL) {
     return _klass;
   }
@@ -5200,14 +5178,14 @@ InstanceKlass* ClassFileParser::create_instance_klass(TRAPS) {
   InstanceKlass* const ik =
     InstanceKlass::allocate_instance_klass(*this, CHECK_NULL);
 
-  fill_instance_klass(ik, CHECK_NULL);
+  fill_instance_klass(ik, changed_by_loadhook, CHECK_NULL);
 
   assert(_klass == ik, "invariant");
 
   return ik;
 }
 
-void ClassFileParser::fill_instance_klass(InstanceKlass* ik, TRAPS) {
+void ClassFileParser::fill_instance_klass(InstanceKlass* ik, bool changed_by_loadhook, TRAPS) {
   assert(ik != NULL, "invariant");
 
   set_klass_to_deallocate(ik);
@@ -5272,6 +5250,12 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, TRAPS) {
     ik->set_host_klass(_host_klass);
   }
 
+  // Set PackageEntry for this_klass
+  oop cl = ik->class_loader();
+  Handle clh = Handle(THREAD, java_lang_ClassLoader::non_reflection_class_loader(cl));
+  ClassLoaderData* cld = ClassLoaderData::class_loader_data_or_null(clh());
+  ik->set_package(cld, CHECK);
+
   const Array<Method*>* const methods = ik->methods();
   assert(methods != NULL, "invariant");
   const int methods_len = methods->length();
@@ -5327,10 +5311,18 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, TRAPS) {
     }
   }
 
+  // Obtain this_klass' module entry
+  ModuleEntry* module_entry = ik->module();
+  assert(module_entry != NULL, "module_entry should always be set");
+
+  // Obtain java.lang.reflect.Module
+  Handle module_handle(THREAD, JNIHandles::resolve(module_entry->module()));
+
   // Allocate mirror and initialize static fields
   // The create_mirror() call will also call compute_modifiers()
   java_lang_Class::create_mirror(ik,
                                  _loader_data->class_loader(),
+                                 module_handle,
                                  _protection_domain,
                                  CHECK);
 
@@ -5344,6 +5336,15 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, TRAPS) {
                                              CHECK);
   }
 
+  // Add read edges to the unnamed modules of the bootstrap and app class loaders.
+  if (changed_by_loadhook && !module_handle.is_null() && module_entry->is_named() &&
+      !module_entry->has_default_read_edges()) {
+    if (!module_entry->set_has_default_read_edges()) {
+      // We won a potential race
+      JvmtiExport::add_default_read_edges(module_handle, THREAD);
+    }
+  }
+
   // Update the loader_data graph.
   record_defined_class_dependencies(ik, CHECK);
 
@@ -5351,11 +5352,24 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik, TRAPS) {
 
   if (!is_internal()) {
     if (log_is_enabled(Info, classload)) {
-      ik->print_loading_log(LogLevel::Info, _loader_data, _stream);
-    }
-    // No 'else' here as logging levels are not mutually exclusive
-    if (log_is_enabled(Debug, classload)) {
-      ik->print_loading_log(LogLevel::Debug, _loader_data, _stream);
+      ResourceMark rm;
+      const char* module_name = NULL;
+      static const size_t modules_image_name_len = strlen(MODULES_IMAGE_NAME);
+      size_t stream_len = strlen(_stream->source());
+      // See if _stream->source() ends in "modules"
+      if (module_entry->is_named() && modules_image_name_len < stream_len &&
+        (strncmp(_stream->source() + stream_len - modules_image_name_len,
+                 MODULES_IMAGE_NAME, modules_image_name_len) == 0)) {
+        module_name = module_entry->name()->as_C_string();
+      }
+
+      if (log_is_enabled(Info, classload)) {
+        ik->print_loading_log(LogLevel::Info, _loader_data, module_name, _stream);
+      }
+      // No 'else' here as logging levels are not mutually exclusive
+      if (log_is_enabled(Debug, classload)) {
+        ik->print_loading_log(LogLevel::Debug, _loader_data, module_name, _stream);
+      }
     }
 
     if (log_is_enabled(Info, classresolve))  {

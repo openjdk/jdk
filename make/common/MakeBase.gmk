@@ -247,7 +247,7 @@ REPO_LIST = $(patsubst ./%,%,$(patsubst %/,%,$(sort $(dir \
             $(HG_SEARCH:%/REPO=%/$(HGTIP_FILENAME)) \
         2> /dev/null)))))
 
-# Emit the repo:tip pairs to $@
+# Emit the repo:tip pairs to $@, but only if they changed since last time
 define GetSourceTips
 	$(CD) $(SRC_ROOT) ; \
 	for i in $(REPO_LIST) IGNORE ; do \
@@ -260,8 +260,13 @@ define GetSourceTips
 	    $(PRINTF) " %s:%s" \
 	        "$${i}" `$(CAT) $${i}/$(HGTIP_FILENAME)` ; \
 	  fi; \
-	done >> $@
-	$(PRINTF) "\n" >> $@
+	done > $@.tmp
+	$(PRINTF) "\n" >> $@.tmp
+	if [ ! -f $@ ] || [ "`$(CAT) $@`" != "`$(CAT) $@.tmp`" ]; then \
+	  $(MV) $@.tmp $@ ; \
+	else \
+	  $(RM) $@.tmp ; \
+	fi
 endef
 
 # Create the HGTIP_FILENAME file. Called from closed/make/SourceBundles.gmk
@@ -644,10 +649,10 @@ endif
 
 # Defines the sub directory structure to store variable value file in
 DependOnVariableDirName = \
-    $(strip $(subst $(SRC_ROOT)/,,\
-        $(if $(filter /%, $(firstword $(MAKEFILE_LIST))), \
+    $(strip $(addsuffix $(if $(MODULE),/$(MODULE)), \
+        $(subst $(SRC_ROOT)/,, $(if $(filter /%, $(firstword $(MAKEFILE_LIST))), \
           $(firstword $(MAKEFILE_LIST)), \
-          $(CURDIR)/$(firstword $(MAKEFILE_LIST)))))
+          $(CURDIR)/$(firstword $(MAKEFILE_LIST))))))
 
 # Defines the name of the file to store variable value in. Generates a name
 # unless parameter 2 is given.

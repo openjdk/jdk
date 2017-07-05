@@ -333,6 +333,68 @@ jint UTF8::get_supplementary_character(const unsigned char* str) {
                  + ((str[4] & 0x0f) << 6)  + (str[5] & 0x3f);
 }
 
+bool UTF8::is_legal_utf8(const unsigned char* buffer, int length,
+                         bool version_leq_47) {
+  int i = 0;
+  int count = length >> 2;
+  for (int k=0; k<count; k++) {
+    unsigned char b0 = buffer[i];
+    unsigned char b1 = buffer[i+1];
+    unsigned char b2 = buffer[i+2];
+    unsigned char b3 = buffer[i+3];
+    // For an unsigned char v,
+    // (v | v - 1) is < 128 (highest bit 0) for 0 < v < 128;
+    // (v | v - 1) is >= 128 (highest bit 1) for v == 0 or v >= 128.
+    unsigned char res = b0 | b0 - 1 |
+                        b1 | b1 - 1 |
+                        b2 | b2 - 1 |
+                        b3 | b3 - 1;
+    if (res >= 128) break;
+    i += 4;
+  }
+  for(; i < length; i++) {
+    unsigned short c;
+    // no embedded zeros
+    if (buffer[i] == 0) return false;
+    if(buffer[i] < 128) {
+      continue;
+    }
+    if ((i + 5) < length) { // see if it's legal supplementary character
+      if (UTF8::is_supplementary_character(&buffer[i])) {
+        c = UTF8::get_supplementary_character(&buffer[i]);
+        i += 5;
+        continue;
+      }
+    }
+    switch (buffer[i] >> 4) {
+      default: break;
+      case 0x8: case 0x9: case 0xA: case 0xB: case 0xF:
+        return false;
+      case 0xC: case 0xD:  // 110xxxxx  10xxxxxx
+        c = (buffer[i] & 0x1F) << 6;
+        i++;
+        if ((i < length) && ((buffer[i] & 0xC0) == 0x80)) {
+          c += buffer[i] & 0x3F;
+          if (version_leq_47 || c == 0 || c >= 0x80) {
+            break;
+          }
+        }
+        return false;
+      case 0xE:  // 1110xxxx 10xxxxxx 10xxxxxx
+        c = (buffer[i] & 0xF) << 12;
+        i += 2;
+        if ((i < length) && ((buffer[i-1] & 0xC0) == 0x80) && ((buffer[i] & 0xC0) == 0x80)) {
+          c += ((buffer[i-1] & 0x3F) << 6) + (buffer[i] & 0x3F);
+          if (version_leq_47 || c >= 0x800) {
+            break;
+          }
+        }
+        return false;
+    }  // end of switch
+  } // end of for
+  return true;
+}
+
 //-------------------------------------------------------------------------------------
 
 bool UNICODE::is_latin1(jchar c) {

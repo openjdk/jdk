@@ -36,6 +36,10 @@ ifneq ($(CYGPATH), )
     override JPRT_ARCHIVE_INSTALL_BUNDLE := \
         $(shell $(CYGPATH) -u $(JPRT_ARCHIVE_INSTALL_BUNDLE))
   endif
+  ifdef JPRT_ARCHIVE_MODULES_BUNDLE
+    override JPRT_ARCHIVE_MODULES_BUNDLE := \
+        $(shell $(CYGPATH) -u $(JPRT_ARCHIVE_MODULES_BUNDLE))
+  endif
   ifdef JPRT_ARCHIVE_TEST_BUNDLE
     override JPRT_ARCHIVE_TEST_BUNDLE := \
         $(shell $(CYGPATH) -u $(JPRT_ARCHIVE_TEST_BUNDLE))
@@ -54,6 +58,9 @@ endif
 ifndef JPRT_ARCHIVE_INSTALL_BUNDLE
   JPRT_ARCHIVE_INSTALL_BUNDLE=/tmp/jprt_bundles/product-install.zip
 endif
+ifndef JPRT_ARCHIVE_MODULES_BUNDLE
+  JPRT_ARCHIVE_MODULES_BUNDLE=/tmp/jprt_bundles/modules.zip
+endif
 ifndef JPRT_ARCHIVE_TEST_BUNDLE
   JPRT_ARCHIVE_TEST_BUNDLE=/tmp/jprt_bundles/test-image.zip
 endif
@@ -66,7 +73,8 @@ ifeq ($(SKIP_BOOT_CYCLE), false)
 endif
 
 # This target must be called in the context of a SPEC file
-jprt_bundle: $(JPRT_ARCHIVE_BUNDLE) $(JPRT_ARCHIVE_TEST_BUNDLE)
+jprt_bundle: $(JPRT_ARCHIVE_BUNDLE) $(JPRT_ARCHIVE_TEST_BUNDLE) \
+    $(JPRT_ARCHIVE_MODULES_BUNDLE)
 
 ifeq ($(GCOV_ENABLED), true)
   jprt_bundle: $(JPRT_ARCHIVE_SYMBOLS_BUNDLE)
@@ -77,6 +85,11 @@ $(JPRT_ARCHIVE_BUNDLE): bundles
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(CP) $(BUILD_OUTPUT)/bundles/$(JDK_IMAGE_SUBDIR).zip $@
+
+$(JPRT_ARCHIVE_MODULES_BUNDLE): bundles
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(CP) $(BUILD_OUTPUT)/bundles/modules.zip $@
 
 $(JPRT_ARCHIVE_TEST_BUNDLE): bundles
 	$(MKDIR) -p $(@D)
@@ -104,6 +117,8 @@ bundles: all
 	    $(BUILD_OUTPUT)/bundles/$(JRE_IMAGE_SUBDIR).zip .
 	$(CD) $(SRC_TEST_IMAGE_DIR) && $(ZIP) -y -q -r \
 	    $(BUILD_OUTPUT)/bundles/$(TEST_IMAGE_SUBDIR).zip .
+	$(CD) $(IMAGES_OUTPUTDIR)/jmods && $(ZIP) -y -q -r \
+	    $(BUILD_OUTPUT)/bundles/modules.zip .
 	if [ -d $(BUILD_OUTPUT)/install/bundles ] ; then \
 	  $(CD) $(BUILD_OUTPUT)/install/bundles && $(ZIP) -y -q -r \
 	      $(JPRT_ARCHIVE_INSTALL_BUNDLE) . ; \

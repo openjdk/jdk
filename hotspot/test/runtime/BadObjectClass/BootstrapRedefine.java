@@ -28,7 +28,6 @@
  * @library /testlibrary
  * @modules java.base/sun.misc
  *          java.management
- * @compile Object.java
  * @run main BootstrapRedefine
  */
 
@@ -37,8 +36,19 @@ import jdk.test.lib.*;
 public class BootstrapRedefine {
 
     public static void main(String[] args) throws Exception {
-        String testClasses = System.getProperty("test.classes", ".");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xbootclasspath/p:" + testClasses, "-version");
+        String source = "package java.lang;" +
+                        "public class Object {" +
+                        "    void dummy1() { return; }" +
+                        "    void dummy2() { return; }" +
+                        "    void dummy3() { return; }" +
+                        "}";
+
+        ClassFileInstaller.writeClassToDisk("java/lang/Object",
+                                        InMemoryJavaCompiler.compile("java.lang.Object", source,
+                                        "-Xmodule:java.base"),
+                                        "mods/java.base");
+
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xpatch:mods", "-version");
         new OutputAnalyzer(pb.start())
             .shouldContain("Incompatible definition of java.lang.Object")
             .shouldHaveExitValue(1);
