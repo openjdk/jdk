@@ -34,6 +34,7 @@
  */
 
 package java.util.concurrent;
+
 import java.util.AbstractSet;
 import java.util.Collection;
 import java.util.Collections;
@@ -323,8 +324,9 @@ public class ConcurrentSkipListSet<E>
      *
      * @param  c collection containing elements to be removed from this set
      * @return {@code true} if this set changed as a result of the call
-     * @throws ClassCastException if the types of one or more elements in this
-     *         set are incompatible with the specified collection
+     * @throws ClassCastException if the class of an element of this set
+     *         is incompatible with the specified collection
+     * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified collection or any
      *         of its elements are null
      */
@@ -383,7 +385,6 @@ public class ConcurrentSkipListSet<E>
 
 
     /* ---------------- SortedSet operations -------------- */
-
 
     public Comparator<? super E> comparator() {
         return m.comparator();
@@ -498,28 +499,24 @@ public class ConcurrentSkipListSet<E>
      * @return a {@code Spliterator} over the elements in this set
      * @since 1.8
      */
-    @SuppressWarnings("unchecked")
     public Spliterator<E> spliterator() {
-        if (m instanceof ConcurrentSkipListMap)
-            return ((ConcurrentSkipListMap<E,?>)m).keySpliterator();
-        else
-            return (Spliterator<E>)((ConcurrentSkipListMap.SubMap<E,?>)m).keyIterator();
+        return (m instanceof ConcurrentSkipListMap)
+            ? ((ConcurrentSkipListMap<E,?>)m).keySpliterator()
+            : ((ConcurrentSkipListMap.SubMap<E,?>)m).new SubMapKeyIterator();
     }
 
     // Support for resetting map in clone
     private void setMap(ConcurrentNavigableMap<E,Object> map) {
-        UNSAFE.putObjectVolatile(this, mapOffset, map);
+        U.putObjectVolatile(this, MAP, map);
     }
 
-    private static final sun.misc.Unsafe UNSAFE;
-    private static final long mapOffset;
+    private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+    private static final long MAP;
     static {
         try {
-            UNSAFE = sun.misc.Unsafe.getUnsafe();
-            Class<?> k = ConcurrentSkipListSet.class;
-            mapOffset = UNSAFE.objectFieldOffset
-                (k.getDeclaredField("m"));
-        } catch (Exception e) {
+            MAP = U.objectFieldOffset
+                (ConcurrentSkipListSet.class.getDeclaredField("m"));
+        } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }
     }

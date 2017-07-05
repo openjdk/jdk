@@ -383,7 +383,7 @@ class MethodHandleNatives {
         if (type instanceof MethodType)
             return (MethodType) type;
         else
-            return MethodType.fromMethodDescriptorString((String)type, callerClass.getClassLoader());
+            return MethodType.fromDescriptor((String)type, callerClass.getClassLoader());
     }
     // Tracing logic:
     static MemberName linkMethodTracing(Class<?> callerClass, int refKind,
