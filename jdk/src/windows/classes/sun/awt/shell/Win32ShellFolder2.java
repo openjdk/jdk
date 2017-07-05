@@ -910,8 +910,10 @@ final class Win32ShellFolder2 extends ShellFolder {
     /**
      * Gets an icon from the Windows system icon list as an <code>Image</code>
      */
-    static Image getShell32Icon(int iconID) {
+    static Image getShell32Icon(int iconID, boolean getLargeIcon) {
         boolean useVGAColors = true; // Will be ignored on XP and later
+
+        int size = getLargeIcon ? 32 : 16;
 
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         String shellIconBPP = (String)toolkit.getDesktopProperty("win.icon.shellIconBPP");
@@ -919,9 +921,9 @@ final class Win32ShellFolder2 extends ShellFolder {
             useVGAColors = shellIconBPP.equals("4");
         }
 
-        long hIcon = getIconResource("shell32.dll", iconID, 16, 16, useVGAColors);
+        long hIcon = getIconResource("shell32.dll", iconID, size, size, useVGAColors);
         if (hIcon != 0) {
-            Image icon = makeIcon(hIcon, false);
+            Image icon = makeIcon(hIcon, getLargeIcon);
             disposeIcon(hIcon);
             return icon;
         }

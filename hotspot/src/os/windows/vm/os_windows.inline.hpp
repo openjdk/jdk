@@ -69,3 +69,6 @@ inline void os::bang_stack_shadow_pages() {
     *((int *)(sp - (pages * vm_page_size()))) = 0;
   }
 }
+
+inline bool os::numa_has_static_binding()   { return true;   }
+inline bool os::numa_has_group_homing()     { return false;  }

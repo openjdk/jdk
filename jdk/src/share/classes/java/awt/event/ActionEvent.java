@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,10 @@ import java.awt.Event;
  * is therefore spared the details of processing individual mouse movements
  * and mouse clicks, and can instead process a "meaningful" (semantic)
  * event like "button pressed".
+ * <p>
+ * An unspecified behavior will be caused if the {@code id} parameter
+ * of any particular {@code ActionEvent} instance is not
+ * in the range from {@code ACTION_FIRST} to {@code ACTION_LAST}.
  *
  * @see ActionListener
  * @see <a href="http://java.sun.com/docs/books/tutorial/post1.0/ui/eventmodel.html">Tutorial: Java 1.1 Event Model</a>
@@ -134,18 +138,22 @@ public class ActionEvent extends AWTEvent {
     /**
      * Constructs an <code>ActionEvent</code> object.
      * <p>
-     * Note that passing in an invalid <code>id</code> results in
-     * unspecified behavior. This method throws an
+     * This method throws an
      * <code>IllegalArgumentException</code> if <code>source</code>
      * is <code>null</code>.
      * A <code>null</code> <code>command</code> string is legal,
      * but not recommended.
      *
-     * @param source  the object that originated the event
-     * @param id      an integer that identifies the event
-     * @param command a string that may specify a command (possibly one
+     * @param source  The object that originated the event
+     * @param id      An integer that identifies the event.
+     *                     For information on allowable values, see
+     *                     the class description for {@link ActionEvent}
+     * @param command A string that may specify a command (possibly one
      *                of several) associated with the event
      * @throws IllegalArgumentException if <code>source</code> is null
+     * @see #getSource()
+     * @see #getID()
+     * @see #getActionCommand()
      */
     public ActionEvent(Object source, int id, String command) {
         this(source, id, command, 0);
@@ -154,19 +162,27 @@ public class ActionEvent extends AWTEvent {
     /**
      * Constructs an <code>ActionEvent</code> object with modifier keys.
      * <p>
-     * Note that passing in an invalid <code>id</code> results in
-     * unspecified behavior. This method throws an
+     * This method throws an
      * <code>IllegalArgumentException</code> if <code>source</code>
      * is <code>null</code>.
      * A <code>null</code> <code>command</code> string is legal,
      * but not recommended.
      *
-     * @param source    the object that originated the event
-     * @param id        an integer that identifies the event
-     * @param command   a string that may specify a command (possibly one
-     *                  of several) associated with the event
-     * @param modifiers the modifier keys held down during this action
+     * @param source  The object that originated the event
+     * @param id      An integer that identifies the event.
+     *                     For information on allowable values, see
+     *                     the class description for {@link ActionEvent}
+     * @param command A string that may specify a command (possibly one
+     *                of several) associated with the event
+     * @param modifiers The modifier keys down during event
+     *                  (shift, ctrl, alt, meta).
+     *                  Passing negative parameter is not recommended.
+     *                  Zero value means that no modifiers were passed
      * @throws IllegalArgumentException if <code>source</code> is null
+     * @see #getSource()
+     * @see #getID()
+     * @see #getActionCommand()
+     * @see #getModifiers()
      */
     public ActionEvent(Object source, int id, String command, int modifiers) {
         this(source, id, command, 0, modifiers);
@@ -176,20 +192,31 @@ public class ActionEvent extends AWTEvent {
      * Constructs an <code>ActionEvent</code> object with the specified
      * modifier keys and timestamp.
      * <p>
-     * Note that passing in an invalid <code>id</code> results in
-     * unspecified behavior. This method throws an
+     * This method throws an
      * <code>IllegalArgumentException</code> if <code>source</code>
      * is <code>null</code>.
      * A <code>null</code> <code>command</code> string is legal,
      * but not recommended.
      *
-     * @param source    the object that originated the event
-     * @param id        an integer that identifies the event
-     * @param command   a string that may specify a command (possibly one
-     *                  of several) associated with the event
-     * @param when      the time the event occurred
-     * @param modifiers the modifier keys held down during this action
+     * @param source    The object that originated the event
+     * @param id      An integer that identifies the event.
+     *                     For information on allowable values, see
+     *                     the class description for {@link ActionEvent}
+     * @param command A string that may specify a command (possibly one
+     *                of several) associated with the event
+     * @param modifiers The modifier keys down during event
+     *                  (shift, ctrl, alt, meta).
+     *                  Passing negative parameter is not recommended.
+     *                  Zero value means that no modifiers were passed
+     * @param when   A long that gives the time the event occurred.
+     *               Passing negative or zero value
+     *               is not recommended
      * @throws IllegalArgumentException if <code>source</code> is null
+     * @see #getSource()
+     * @see #getID()
+     * @see #getActionCommand()
+     * @see #getModifiers()
+     * @see #getWhen()
      *
      * @since 1.4
      */

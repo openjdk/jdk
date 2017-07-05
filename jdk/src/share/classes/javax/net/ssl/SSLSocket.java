@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,8 +212,10 @@ public abstract class SSLSocket extends Socket
      * @param host name of the host with which to connect, or
      *        <code>null</code> for the loopback address.
      * @param port number of the server's port
-     * @param clientAddress the client's host
-     * @param clientPort number of the client's port
+     * @param clientAddress the client's address the socket is bound to, or
+     *        <code>null</code> for the <code>anyLocal</code> address.
+     * @param clientPort the client's port the socket is bound to, or
+     *        <code>zero</code> for a system selected free port.
      * @throws IOException if an I/O error occurs when creating the socket
      * @throws SecurityException if a security manager exists and its
      *         <code>checkConnect</code> method doesn't allow the operation.
@@ -241,8 +243,10 @@ public abstract class SSLSocket extends Socket
      *
      * @param address the server's host
      * @param port its port
-     * @param clientAddress the client's host
-     * @param clientPort number of the client's port
+     * @param clientAddress the client's address the socket is bound to, or
+     *        <code>null</code> for the <code>anyLocal</code> address.
+     * @param clientPort the client's port the socket is bound to, or
+     *        <code>zero</code> for a system selected free port.
      * @throws IOException if an I/O error occurs when creating the socket
      * @throws SecurityException if a security manager exists and its
      *         <code>checkConnect</code> method doesn't allow the operation.

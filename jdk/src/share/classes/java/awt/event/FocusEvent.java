@@ -50,6 +50,10 @@ import sun.awt.SunToolkit;
  * reactivated. Both permanent and temporary focus events are delivered using
  * the FOCUS_GAINED and FOCUS_LOST event ids; the level may be distinguished in
  * the event using the isTemporary() method.
+ * <p>
+ * An unspecified behavior will be caused if the {@code id} parameter
+ * of any particular {@code FocusEvent} instance is not
+ * in the range from {@code FOCUS_FIRST} to {@code FOCUS_LAST}.
  *
  * @see FocusAdapter
  * @see FocusListener
@@ -121,18 +125,23 @@ public class FocusEvent extends ComponentEvent {
      * application, with a Java application in a different VM,
      * or with no other <code>Component</code>, then the opposite
      * <code>Component</code> is <code>null</code>.
-     * <p>Note that passing in an invalid <code>id</code> results in
-     * unspecified behavior. This method throws an
+     * <p> This method throws an
      * <code>IllegalArgumentException</code> if <code>source</code>
      * is <code>null</code>.
      *
-     * @param source     the <code>Component</code> that originated the event
-     * @param id         <code>FOCUS_GAINED</code> or <code>FOCUS_LOST</code>
-     * @param temporary  <code>true</code> if the focus change is temporary;
+     * @param source     The <code>Component</code> that originated the event
+     * @param id         An integer indicating the type of event.
+     *                     For information on allowable values, see
+     *                     the class description for {@link FocusEvent}
+     * @param temporary  Equals <code>true</code> if the focus change is temporary;
      *                   <code>false</code> otherwise
-     * @param opposite   the other Component involved in the focus change,
+     * @param opposite   The other Component involved in the focus change,
      *                   or <code>null</code>
-     * @throws IllegalArgumentException if <code>source</code> is null
+     * @throws IllegalArgumentException if <code>source</code> equals {@code null}
+     * @see #getSource()
+     * @see #getID()
+     * @see #isTemporary()
+     * @see #getOppositeComponent()
      * @since 1.4
      */
     public FocusEvent(Component source, int id, boolean temporary,
@@ -145,16 +154,20 @@ public class FocusEvent extends ComponentEvent {
     /**
      * Constructs a <code>FocusEvent</code> object and identifies
      * whether or not the change is temporary.
-     * <p>Note that passing in an invalid <code>id</code> results in
-     * unspecified behavior. This method throws an
+     * <p> This method throws an
      * <code>IllegalArgumentException</code> if <code>source</code>
      * is <code>null</code>.
      *
-     * @param source    the <code>Component</code> that originated the event
-     * @param id        an integer indicating the type of event
-     * @param temporary <code>true</code> if the focus change is temporary;
+     * @param source    The <code>Component</code> that originated the event
+     * @param id        An integer indicating the type of event.
+     *                     For information on allowable values, see
+     *                     the class description for {@link FocusEvent}
+     * @param temporary Equals <code>true</code> if the focus change is temporary;
      *                  <code>false</code> otherwise
-     * @throws IllegalArgumentException if <code>source</code> is null
+     * @throws IllegalArgumentException if <code>source</code> equals {@code null}
+     * @see #getSource()
+     * @see #getID()
+     * @see #isTemporary()
      */
     public FocusEvent(Component source, int id, boolean temporary) {
         this(source, id, temporary, null);
@@ -163,14 +176,17 @@ public class FocusEvent extends ComponentEvent {
     /**
      * Constructs a <code>FocusEvent</code> object and identifies it
      * as a permanent change in focus.
-     * <p>Note that passing in an invalid <code>id</code> results in
-     * unspecified behavior. This method throws an
+     * <p> This method throws an
      * <code>IllegalArgumentException</code> if <code>source</code>
      * is <code>null</code>.
      *
-     * @param source    the <code>Component</code> that originated the event
-     * @param id        an integer indicating the type of event
-     * @throws IllegalArgumentException if <code>source</code> is null
+     * @param source    The <code>Component</code> that originated the event
+     * @param id        An integer indicating the type of event.
+     *                     For information on allowable values, see
+     *                     the class description for {@link FocusEvent}
+     * @throws IllegalArgumentException if <code>source</code> equals {@code null}
+     * @see #getSource()
+     * @see #getID()
      */
     public FocusEvent(Component source, int id) {
         this(source, id, false);

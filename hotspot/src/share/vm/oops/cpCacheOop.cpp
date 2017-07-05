@@ -218,6 +218,7 @@ class LocalOopClosure: public OopClosure {
  public:
   LocalOopClosure(void f(oop*))        { _f = f; }
   virtual void do_oop(oop* o)          { _f(o); }
+  virtual void do_oop(narrowOop *o)    { ShouldNotReachHere(); }
 };
 
 

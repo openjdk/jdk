@@ -267,7 +267,7 @@ inline bool CMSCollector::is_dead_obj(oop obj) const {
          (_permGen->cmsSpace()->is_in_reserved(addr)
           && _permGen->cmsSpace()->block_is_obj(addr)),
          "must be object");
-  return  cms_should_unload_classes() &&
+  return  should_unload_classes() &&
           _collectorState == Sweeping &&
          !_markBitMap.isMarked(addr);
 }

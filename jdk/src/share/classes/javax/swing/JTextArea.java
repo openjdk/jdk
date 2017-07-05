@@ -267,7 +267,7 @@ public class JTextArea extends JTextComponent {
         Document doc = getDocument();
         if (doc != null) {
             int old = getTabSize();
-            doc.putProperty(PlainDocument.tabSizeAttribute, new Integer(size));
+            doc.putProperty(PlainDocument.tabSizeAttribute, Integer.valueOf(size));
             firePropertyChange("tabSize", old, size);
         }
     }
@@ -444,11 +444,6 @@ public class JTextArea extends JTextComponent {
     /**
      * Inserts the specified text at the specified position.  Does nothing
      * if the model is null or if the text is null or empty.
-     * <p>
-     * This method is thread safe, although most Swing methods
-     * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
      *
      * @param str the text to insert
      * @param pos the position at which to insert >= 0
@@ -471,11 +466,6 @@ public class JTextArea extends JTextComponent {
     /**
      * Appends the given text to the end of the document.  Does nothing if
      * the model is null or the string is null or empty.
-     * <p>
-     * This method is thread safe, although most Swing methods
-     * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
      *
      * @param str the text to insert
      * @see #insert
@@ -494,11 +484,6 @@ public class JTextArea extends JTextComponent {
      * Replaces text from the indicated start to end position with the
      * new text specified.  Does nothing if the model is null.  Simply
      * does a delete if the new string is null or empty.
-     * <p>
-     * This method is thread safe, although most Swing methods
-     * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
      *
      * @param str the text to use as the replacement
      * @param start the start position >= 0

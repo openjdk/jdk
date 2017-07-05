@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ final class XDropTargetEventProcessor {
     private XDropTargetEventProcessor() {}
 
     private boolean doProcessEvent(XEvent ev) {
-        if (ev.get_type() == (int)XlibWrapper.DestroyNotify &&
+        if (ev.get_type() == (int)XConstants.DestroyNotify &&
             protocol != null &&
             ev.get_xany().get_window() == protocol.getSourceWindow()) {
             protocol.cleanup();
@@ -51,7 +51,7 @@ final class XDropTargetEventProcessor {
             return false;
         }
 
-        if (ev.get_type() == (int)XlibWrapper.PropertyNotify) {
+        if (ev.get_type() == (int)XConstants.PropertyNotify) {
             XPropertyEvent xproperty = ev.get_xproperty();
             if (xproperty.get_atom() ==
                 MotifDnDConstants.XA_MOTIF_DRAG_RECEIVER_INFO.getAtom()) {
@@ -60,7 +60,7 @@ final class XDropTargetEventProcessor {
             }
         }
 
-        if (ev.get_type() != (int)XlibWrapper.ClientMessage) {
+        if (ev.get_type() != (int)XConstants.ClientMessage) {
             return false;
         }
 

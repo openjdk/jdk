@@ -29,8 +29,9 @@ constantPoolOop constantPoolKlass::allocate(int length, TRAPS) {
   int size = constantPoolOopDesc::object_size(length);
   KlassHandle klass (THREAD, as_klassOop());
   constantPoolOop c =
-    (constantPoolOop)CollectedHeap::permanent_array_allocate(klass, size, length, CHECK_NULL);
+    (constantPoolOop)CollectedHeap::permanent_obj_allocate(klass, size, CHECK_NULL);
 
+  c->set_length(length);
   c->set_tags(NULL);
   c->set_cache(NULL);
   c->set_pool_holder(NULL);
@@ -54,13 +55,13 @@ constantPoolOop constantPoolKlass::allocate(int length, TRAPS) {
 
 klassOop constantPoolKlass::create_klass(TRAPS) {
   constantPoolKlass o;
-  KlassHandle klassklass(THREAD, Universe::arrayKlassKlassObj());
-  arrayKlassHandle k = base_create_array_klass(o.vtbl_value(), header_size(), klassklass, CHECK_NULL);
-  arrayKlassHandle super (THREAD, k->super());
-  complete_create_array_klass(k, super, CHECK_NULL);
+  KlassHandle h_this_klass(THREAD, Universe::klassKlassObj());
+  KlassHandle k = base_create_klass(h_this_klass, header_size(), o.vtbl_value(), CHECK_NULL);
+  // Make sure size calculation is right
+  assert(k()->size() == align_object_size(header_size()), "wrong size for object");
+  java_lang_Class::create_mirror(k, CHECK_NULL); // Allocate mirror
   return k();
 }
-
 
 int constantPoolKlass::oop_size(oop obj) const {
   assert(obj->is_constantPool(), "must be constantPool");
@@ -275,7 +276,7 @@ void constantPoolKlass::oop_print_on(oop obj, outputStream* st) {
   EXCEPTION_MARK;
   oop anObj;
   assert(obj->is_constantPool(), "must be constantPool");
-  arrayKlass::oop_print_on(obj, st);
+  Klass::oop_print_on(obj, st);
   constantPoolOop cp = constantPoolOop(obj);
 
   // Temp. remove cache so we can do lookups with original indicies.

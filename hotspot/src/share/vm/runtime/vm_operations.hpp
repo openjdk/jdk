@@ -49,6 +49,7 @@
   template(GenCollectFull)                        \
   template(GenCollectFullConcurrent)              \
   template(GenCollectForAllocation)               \
+  template(GenCollectForPermanentAllocation)      \
   template(ParallelGCFailedAllocation)            \
   template(ParallelGCFailedPermanentAllocation)   \
   template(ParallelGCSystemGC)                    \

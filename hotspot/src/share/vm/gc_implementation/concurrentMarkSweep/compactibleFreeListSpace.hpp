@@ -540,7 +540,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   HeapWord* allocate(size_t size);
   HeapWord* par_allocate(size_t size);
 
-  oop       promote(oop obj, size_t obj_size, oop* ref);
+  oop       promote(oop obj, size_t obj_size);
   void      gc_prologue();
   void      gc_epilogue();
 

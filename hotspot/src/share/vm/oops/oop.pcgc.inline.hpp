@@ -67,8 +67,8 @@ inline void oopDesc::update_contents(ParCompactionManager* cm,
   // update_header();
   // The klass has moved.  Is the location of the klass
   // within the limits?
-  if ((((HeapWord*)&_klass) >= begin_limit) &&
-      (((HeapWord*)&_klass) < end_limit)) {
+  if ((((HeapWord*)&_metadata._klass) >= begin_limit) &&
+      (((HeapWord*)&_metadata._klass) < end_limit)) {
     set_klass(updated_klass);
   }
 
@@ -89,7 +89,11 @@ inline void oopDesc::follow_contents(ParCompactionManager* cm) {
 // Used by parallel old GC.
 
 inline void oopDesc::follow_header(ParCompactionManager* cm) {
-  PSParallelCompact::mark_and_push(cm, (oop*)&_klass);
+  if (UseCompressedOops) {
+    PSParallelCompact::mark_and_push(cm, compressed_klass_addr());
+  } else {
+    PSParallelCompact::mark_and_push(cm, klass_addr());
+  }
 }
 
 inline oop oopDesc::forward_to_atomic(oop p) {
@@ -114,9 +118,18 @@ inline oop oopDesc::forward_to_atomic(oop p) {
 }
 
 inline void oopDesc::update_header() {
-  PSParallelCompact::adjust_pointer((oop*)&_klass);
+  if (UseCompressedOops) {
+    PSParallelCompact::adjust_pointer(compressed_klass_addr());
+  } else {
+    PSParallelCompact::adjust_pointer(klass_addr());
+  }
 }
 
 inline void oopDesc::update_header(HeapWord* beg_addr, HeapWord* end_addr) {
-  PSParallelCompact::adjust_pointer((oop*)&_klass, beg_addr, end_addr);
+  if (UseCompressedOops) {
+    PSParallelCompact::adjust_pointer(compressed_klass_addr(),
+                                      beg_addr, end_addr);
+  } else {
+    PSParallelCompact::adjust_pointer(klass_addr(), beg_addr, end_addr);
+  }
 }

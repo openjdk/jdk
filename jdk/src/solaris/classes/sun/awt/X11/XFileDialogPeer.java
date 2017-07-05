@@ -908,7 +908,7 @@ class FileDialogFilter implements FilenameFilter {
      * Converts the filter into the form which is acceptable by Java's regexps
      */
     private String convert(String filter) {
-        String regex = new String("^" + filter + "$");
+        String regex = "^" + filter + "$";
         regex = regex.replaceAll("\\.", "\\\\.");
         regex = regex.replaceAll("\\?", ".");
         regex = regex.replaceAll("\\*", ".*");

@@ -114,7 +114,7 @@ public abstract class PhysicalStrike extends FontStrike {
      */
     Point2D.Float getGlyphPoint(int glyphCode, int ptNumber) {
         Point2D.Float gp = null;
-        Integer ptKey = new Integer(glyphCode<<16|ptNumber);
+        Integer ptKey = Integer.valueOf(glyphCode<<16|ptNumber);
         if (glyphPointMapCache == null) {
             synchronized (this) {
                 if (glyphPointMapCache == null) {

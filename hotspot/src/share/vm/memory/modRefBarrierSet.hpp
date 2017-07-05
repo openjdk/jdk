@@ -37,19 +37,19 @@ public:
   bool has_write_ref_barrier() { return true; }
   bool has_write_prim_barrier() { return false; }
 
-  bool read_ref_needs_barrier(oop* field) { return false; }
+  bool read_ref_needs_barrier(void* field) { return false; }
   bool read_prim_needs_barrier(HeapWord* field, size_t bytes) { return false; }
-  virtual bool write_ref_needs_barrier(oop* field, oop new_val) = 0;
+  virtual bool write_ref_needs_barrier(void* field, oop new_val) = 0;
   bool write_prim_needs_barrier(HeapWord* field, size_t bytes,
                                 juint val1, juint val2) { return false; }
 
   void write_prim_field(oop obj, size_t offset, size_t bytes,
                         juint val1, juint val2) {}
 
-  void read_ref_field(oop* field) {}
+  void read_ref_field(void* field) {}
   void read_prim_field(HeapWord* field, size_t bytes) {}
 protected:
-  virtual void write_ref_field_work(oop* field, oop new_val) = 0;
+  virtual void write_ref_field_work(void* field, oop new_val) = 0;
 public:
   void write_prim_field(HeapWord* field, size_t bytes,
                         juint val1, juint val2) {}

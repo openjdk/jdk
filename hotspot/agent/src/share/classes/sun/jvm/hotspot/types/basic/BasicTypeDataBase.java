@@ -27,6 +27,7 @@ package sun.jvm.hotspot.types.basic;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.types.*;
+import sun.jvm.hotspot.runtime.VM;
 
 /** <P> This is a basic implementation of the TypeDataBase interface.
     It allows an external type database builder to add types to be
@@ -146,7 +147,7 @@ public class BasicTypeDataBase implements TypeDataBase {
   }
 
   public long getOopSize() {
-    return machDesc.getOopSize();
+    return VM.getVM().getOopSize();
   }
 
   public boolean addressTypeIsEqualToType(Address addr, Type type) {

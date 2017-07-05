@@ -98,7 +98,7 @@ class GIFWritableImageMetadata extends GIFImageMetadata {
         try {
             return data.getBytes("ISO-8859-1");
         } catch (UnsupportedEncodingException e) {
-            return (new String("")).getBytes();
+            return "".getBytes();
         }
     }
 

@@ -423,12 +423,23 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
         long value = readAddressValue(address);
         return (value == 0 ? null : new LinuxAddress(this, value));
     }
+    public LinuxAddress readCompOopAddress(long address)
+            throws UnmappedAddressException, UnalignedAddressException {
+        long value = readCompOopAddressValue(address);
+        return (value == 0 ? null : new LinuxAddress(this, value));
+    }
 
     /** From the LinuxDebugger interface */
     public LinuxOopHandle readOopHandle(long address)
             throws UnmappedAddressException, UnalignedAddressException,
                 NotInHeapException {
         long value = readAddressValue(address);
+        return (value == 0 ? null : new LinuxOopHandle(this, value));
+    }
+    public LinuxOopHandle readCompOopHandle(long address)
+            throws UnmappedAddressException, UnalignedAddressException,
+                NotInHeapException {
+        long value = readCompOopAddressValue(address);
         return (value == 0 ? null : new LinuxOopHandle(this, value));
     }
 

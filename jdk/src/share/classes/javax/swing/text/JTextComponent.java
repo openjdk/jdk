@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.lang.reflect.Method;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
+import java.beans.Transient;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -571,6 +572,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *
      * @return the caret
      */
+    @Transient
     public Caret getCaret() {
         return caret;
     }
@@ -1349,11 +1351,6 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * This is the method that is used by the default implementation
      * of the action for inserting content that gets bound to the
      * keymap actions.
-     * <p>
-     * This method is thread safe, although most Swing methods
-     * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
      *
      * @param content  the content to replace the selection with
      */
@@ -1677,6 +1674,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * @return the position of the text insertion caret for the
      *  text component >= 0
      */
+    @Transient
     public int getCaretPosition() {
         return caret.getDot();
     }
@@ -1687,12 +1685,8 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * or empty, has the effect of simply deleting the old text.
      * When text has been inserted, the resulting caret location
      * is determined by the implementation of the caret class.
-     * <p>
-     * This method is thread safe, although most Swing methods
-     * are not. Please see
-     * <A HREF="http://java.sun.com/docs/books/tutorial/uiswing/misc/threads.html">How
-     * to Use Threads</A> for more information.
      *
+     * <p>
      * Note that text is not a bound property, so no <code>PropertyChangeEvent
      * </code> is fired when it changes. To listen for changes to the text,
      * use <code>DocumentListener</code>.
@@ -1806,6 +1800,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *
      * @return the start position >= 0
      */
+    @Transient
     public int getSelectionStart() {
         int start = Math.min(caret.getDot(), caret.getMark());
         return start;
@@ -1838,6 +1833,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      *
      * @return the end position >= 0
      */
+    @Transient
     public int getSelectionEnd() {
         int end = Math.max(caret.getDot(), caret.getMark());
         return end;

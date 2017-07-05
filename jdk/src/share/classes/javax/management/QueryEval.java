@@ -25,20 +25,15 @@
 
 package javax.management;
 
-
 // java import
 import java.io.Serializable;
-
-// RI import
-import javax.management.MBeanServer;
-
 
 /**
  * Allows a query to be performed in the context of a specific MBean server.
  *
  * @since 1.5
  */
-public abstract class QueryEval extends ToQueryString implements Serializable {
+public abstract class QueryEval implements Serializable {
 
     /* Serial version */
     private static final long serialVersionUID = 2675899265640874796L;
@@ -79,5 +74,11 @@ public abstract class QueryEval extends ToQueryString implements Serializable {
      */
     public static MBeanServer getMBeanServer() {
         return server.get();
+    }
+
+    // Subclasses in this package can override this method to return a different
+    // string.
+    String toQueryString() {
+        return toString();
     }
 }

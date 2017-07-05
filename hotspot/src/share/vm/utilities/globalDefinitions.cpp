@@ -24,18 +24,23 @@
 
 # include "incls/_precompiled.incl"
 # include "incls/_globalDefinitions.cpp.incl"
-
-
 // Basic error support
+
+// Info for oops within a java object.  Defaults are zero so
+// things will break badly if incorrectly initialized.
+int heapOopSize        = 0;
+int LogBytesPerHeapOop = 0;
+int LogBitsPerHeapOop  = 0;
+int BytesPerHeapOop    = 0;
+int BitsPerHeapOop     = 0;
 
 void basic_fatal(const char* msg) {
   fatal(msg);
 }
 
-
 // Something to help porters sleep at night
 
-void check_basic_types() {
+void basic_types_init() {
 #ifdef ASSERT
 #ifdef _LP64
   assert(min_intx ==  (intx)CONST64(0x8000000000000000), "correct constant");
@@ -92,6 +97,7 @@ void check_basic_types() {
       case T_LONG:
       case T_OBJECT:
       case T_ADDRESS:   // random raw pointer
+      case T_NARROWOOP: // compressed pointer
       case T_CONFLICT:  // might as well support a bottom type
       case T_VOID:      // padding or other unaddressed word
         // layout type must map to itself
@@ -134,11 +140,30 @@ void check_basic_types() {
     os::java_to_os_priority[9] = JavaPriority9_To_OSPriority;
   if(JavaPriority10_To_OSPriority != -1 )
     os::java_to_os_priority[10] = JavaPriority10_To_OSPriority;
+
+  // Set the size of basic types here (after argument parsing but before
+  // stub generation).
+  if (UseCompressedOops) {
+    // Size info for oops within java objects is fixed
+    heapOopSize        = jintSize;
+    LogBytesPerHeapOop = LogBytesPerInt;
+    LogBitsPerHeapOop  = LogBitsPerInt;
+    BytesPerHeapOop    = BytesPerInt;
+    BitsPerHeapOop     = BitsPerInt;
+  } else {
+    heapOopSize        = oopSize;
+    LogBytesPerHeapOop = LogBytesPerWord;
+    LogBitsPerHeapOop  = LogBitsPerWord;
+    BytesPerHeapOop    = BytesPerWord;
+    BitsPerHeapOop     = BitsPerWord;
+  }
+  _type2aelembytes[T_OBJECT] = heapOopSize;
+  _type2aelembytes[T_ARRAY]  = heapOopSize;
 }
 
 
 // Map BasicType to signature character
-char type2char_tab[T_CONFLICT+1]={ 0, 0, 0, 0, 'Z', 'C', 'F', 'D', 'B', 'S', 'I', 'J', 'L', '[', 'V', 0, 0};
+char type2char_tab[T_CONFLICT+1]={ 0, 0, 0, 0, 'Z', 'C', 'F', 'D', 'B', 'S', 'I', 'J', 'L', '[', 'V', 0, 0, 0};
 
 // Map BasicType to Java type name
 const char* type2name_tab[T_CONFLICT+1] = {
@@ -155,6 +180,7 @@ const char* type2name_tab[T_CONFLICT+1] = {
   "array",
   "void",
   "*address*",
+  "*narrowoop*",
   "*conflict*"
 };
 
@@ -170,7 +196,7 @@ BasicType name2type(const char* name) {
 
 
 // Map BasicType to size in words
-int type2size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, -1};
+int type2size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, 1, -1};
 
 BasicType type2field[T_CONFLICT+1] = {
   (BasicType)0,            // 0,
@@ -189,7 +215,8 @@ BasicType type2field[T_CONFLICT+1] = {
   T_OBJECT,                // T_ARRAY    = 13,
   T_VOID,                  // T_VOID     = 14,
   T_ADDRESS,               // T_ADDRESS  = 15,
-  T_CONFLICT               // T_CONFLICT = 16,
+  T_NARROWOOP,             // T_NARROWOOP= 16,
+  T_CONFLICT               // T_CONFLICT = 17,
 };
 
 
@@ -210,7 +237,8 @@ BasicType type2wfield[T_CONFLICT+1] = {
   T_OBJECT,  // T_ARRAY    = 13,
   T_VOID,    // T_VOID     = 14,
   T_ADDRESS, // T_ADDRESS  = 15,
-  T_CONFLICT // T_CONFLICT = 16,
+  T_NARROWOOP, // T_NARROWOOP  = 16,
+  T_CONFLICT // T_CONFLICT = 17,
 };
 
 
@@ -231,7 +259,8 @@ int _type2aelembytes[T_CONFLICT+1] = {
   T_ARRAY_aelem_bytes,    // T_ARRAY    = 13,
   0,                      // T_VOID     = 14,
   T_OBJECT_aelem_bytes,   // T_ADDRESS  = 15,
-  0                       // T_CONFLICT = 16,
+  T_NARROWOOP_aelem_bytes,// T_NARROWOOP= 16,
+  0                       // T_CONFLICT = 17,
 };
 
 #ifdef ASSERT
@@ -245,7 +274,7 @@ int type2aelembytes(BasicType t, bool allow_address) {
 
 // The following code is mostly taken from JVM typedefs_md.h and system_md.c
 
-static const jlong  high_bit  = (jlong)1 << (jlong)63;
+static const jlong high_bit   = (jlong)1 << (jlong)63;
 static const jlong other_bits = ~high_bit;
 
 jlong float2long(jfloat f) {

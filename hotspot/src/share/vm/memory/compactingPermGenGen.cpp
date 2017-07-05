@@ -49,9 +49,9 @@ public:
 // to prevent visiting any object twice.
 
 class RecursiveAdjustSharedObjectClosure : public OopClosure {
-public:
-  void do_oop(oop* o) {
-    oop obj = *o;
+ protected:
+  template <class T> inline void do_oop_work(T* p) {
+    oop obj = oopDesc::load_decode_heap_oop_not_null(p);
     if (obj->is_shared_readwrite()) {
       if (obj->mark()->is_marked()) {
         obj->init_mark();         // Don't revisit this object.
@@ -71,7 +71,10 @@ public:
         }
       }
     }
-  };
+  }
+ public:
+  virtual void do_oop(oop* p)       { RecursiveAdjustSharedObjectClosure::do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) { RecursiveAdjustSharedObjectClosure::do_oop_work(p); }
 };
 
 
@@ -86,9 +89,9 @@ public:
 // as doing so can cause hash codes to be computed, destroying
 // forwarding pointers.
 class TraversePlaceholdersClosure : public OopClosure {
- public:
-  void do_oop(oop* o) {
-    oop obj = *o;
+ protected:
+  template <class T> inline void do_oop_work(T* p) {
+    oop obj = oopDesc::load_decode_heap_oop_not_null(p);
     if (obj->klass() == Universe::symbolKlassObj() &&
         obj->is_shared_readonly()) {
       symbolHandle sym((symbolOop) obj);
@@ -99,6 +102,10 @@ class TraversePlaceholdersClosure : public OopClosure {
       }
     }
   }
+ public:
+  virtual void do_oop(oop* p)       { TraversePlaceholdersClosure::do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) { TraversePlaceholdersClosure::do_oop_work(p); }
+
 };
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
             }
 
             XClientMessageEvent req = new XClientMessageEvent();
-            req.set_type(XlibWrapper.ClientMessage);
+            req.set_type(XConstants.ClientMessage);
             req.set_window(window.getWindow());
             req.set_message_type(XA_WIN_STATE.getAtom());
             req.set_format(32);
@@ -71,7 +71,7 @@ class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
                         XlibWrapper.RootWindow(XToolkit.getDisplay(),
                             window.getScreenNumber()),
                         false,
-                        XlibWrapper.SubstructureRedirectMask | XlibWrapper.SubstructureNotifyMask,
+                        XConstants.SubstructureRedirectMask | XConstants.SubstructureNotifyMask,
                         req.pData);
             }
             finally {
@@ -150,7 +150,7 @@ class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
     public void setLayer(XWindowPeer window, int layer) {
         if (window.isShowing()) {
             XClientMessageEvent req = new XClientMessageEvent();
-            req.set_type(XlibWrapper.ClientMessage);
+            req.set_type(XConstants.ClientMessage);
             req.set_window(window.getWindow());
             req.set_message_type(XA_WIN_LAYER.getAtom());
             req.set_format(32);
@@ -164,7 +164,7 @@ class XWINProtocol extends XProtocol implements XStateProtocol, XLayerProtocol {
                         XlibWrapper.RootWindow(XToolkit.getDisplay(),
                             window.getScreenNumber()),
                         false,
-                        /*XlibWrapper.SubstructureRedirectMask | */XlibWrapper.SubstructureNotifyMask,
+                        /*XConstants.SubstructureRedirectMask | */XConstants.SubstructureNotifyMask,
                         req.pData);
             }
             finally {
