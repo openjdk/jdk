@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/oopMapCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.hpp"
@@ -744,6 +745,13 @@ bool VM_GetOrSetLocal::doit_prologue() {
 }
 
 void VM_GetOrSetLocal::doit() {
+  InterpreterOopMap oop_mask;
+  _jvf->method()->mask_for(_jvf->bci(), &oop_mask);
+  if (oop_mask.is_dead(_index)) {
+    // The local can be invalid and uninitialized in the scope of current bci
+    _result = JVMTI_ERROR_INVALID_SLOT;
+    return;
+  }
   if (_set) {
     // Force deoptimization of frame if compiled because it's
     // possible the compiler emitted some locals as constant values,

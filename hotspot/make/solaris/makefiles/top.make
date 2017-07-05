@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # top.make is included in the Makefile in the build directories.
@@ -44,7 +44,7 @@ include $(GAMMADIR)/make/altsrc.make
 GENERATED   = ../generated
 VM          = $(GAMMADIR)/src/share/vm
 Plat_File   = $(Platform_file)
-CDG         = cd $(GENERATED); 
+CDG         = cd $(GENERATED);
 
 Cached_plat = $(GENERATED)/platform.current
 
@@ -77,7 +77,7 @@ vm_build_preliminaries:  checks $(Cached_plat) $(AD_Files_If_Required) jvmti_stu
 	@# We need a null action here, so implicit rules don't get consulted.
 
 $(Cached_plat): $(Plat_File)
-	$(CDG) cp $(Plat_File) $(Cached_plat)
+	$(CDG) $(CP) $(Plat_File) $(Cached_plat)
 
 # make AD files as necessary
 ad_stuff: $(Cached_plat) $(adjust-mflags)
@@ -87,7 +87,7 @@ ad_stuff: $(Cached_plat) $(adjust-mflags)
 jvmti_stuff: $(Cached_plat) $(adjust-mflags)
 	@$(MAKE) -f jvmti.make $(MFLAGS-adjusted)
 
-# generate trace files 
+# generate trace files
 trace_stuff: jvmti_stuff $(Cached_plat) $(adjust-mflags)
 	@$(MAKE) -f trace.make $(MFLAGS-adjusted)
 
@@ -124,7 +124,7 @@ install: the_vm
 	#$(MAKE) -f vm.make $@
 
 # this should force everything to be rebuilt
-clean: 
+clean:
 	rm -f $(GENERATED)/*.class
 	$(MAKE) -f vm.make $(MFLAGS) clean
 

@@ -430,9 +430,18 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
 
     // tracing
     if (TraceExceptions) {
-      ttyLocker ttyl;
       ResourceMark rm(thread);
-      tty->print_cr("Exception <%s> (" INTPTR_FORMAT ")", h_exception->print_value_string(), (address)h_exception());
+      Symbol* message = java_lang_Throwable::detail_message(h_exception());
+      ttyLocker ttyl;  // Lock after getting the detail message
+      if (message != NULL) {
+        tty->print_cr("Exception <%s: %s> (" INTPTR_FORMAT ")",
+                      h_exception->print_value_string(), message->as_C_string(),
+                      (address)h_exception());
+      } else {
+        tty->print_cr("Exception <%s> (" INTPTR_FORMAT ")",
+                      h_exception->print_value_string(),
+                      (address)h_exception());
+      }
       tty->print_cr(" thrown in interpreter method <%s>", h_method->print_value_string());
       tty->print_cr(" at bci %d for thread " INTPTR_FORMAT, current_bci, thread);
     }

@@ -28,6 +28,8 @@
  *          same InetAddress set by MulticastSocket.setInterface
  */
 import java.net.*;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.io.IOException;
 
@@ -47,6 +49,7 @@ public class TestInterfaces {
             /*
              * Test MulticastSocket.getInterface
              */
+            System.out.println("Testing network interface " + ni);
             Enumeration addrs = ni.getInetAddresses();
             while (addrs.hasMoreElements()) {
                 InetAddress ia = (InetAddress)addrs.nextElement();
@@ -64,6 +67,8 @@ public class TestInterfaces {
 
                 InetAddress curr = soc.getInterface();
                 if (!curr.equals(ia)) {
+                    System.err.println("NetworkInterface under test " + ni);
+                    displayInterfaceInformation(ni);
                     System.err.println("MulticastSocket.getInterface returned: " + curr);
                     System.err.println("Failed! Expected: " + ia);
                     failures++;
@@ -96,6 +101,10 @@ public class TestInterfaces {
             if (!curr.equals(ni)) {
                 System.err.println("MulticastSocket.getNetworkInterface returned: " + curr);
                 System.err.println("Failed! Expected: " + ni);
+                System.err.println("NetworkInterface details for curr variable ");
+                displayInterfaceInformation(curr);
+                System.err.println("NetworkInterface details for ni variable ");
+                displayInterfaceInformation(ni) ;
                 failures++;
             } else {
                 System.out.println("Passed.");
@@ -110,4 +119,23 @@ public class TestInterfaces {
 
     }
 
+    static void displayInterfaceInformation(NetworkInterface netint) throws SocketException {
+        System.err.println("Display name: " + netint.getDisplayName());
+        System.err.println("Name: " + netint.getName());
+        Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
+
+        for (InetAddress inetAddress : Collections.list(inetAddresses))
+            System.err.println("InetAddress: " + inetAddress);
+
+        System.err.println("Up? " + netint.isUp());
+        System.err.println("Loopback? " + netint.isLoopback());
+        System.err.println("PointToPoint? " + netint.isPointToPoint());
+        System.err.println("Supports multicast? " + netint.supportsMulticast());
+        System.err.println("Virtual? " + netint.isVirtual());
+        System.err.println("Hardware address: " +
+                Arrays.toString(netint.getHardwareAddress()));
+        System.err.println("MTU: " + netint.getMTU());
+        System.err.println("Index: " + netint.getIndex());
+        System.err.println();
+    }
 }

@@ -392,19 +392,22 @@ void ObjectSynchronizer::notifyall(Handle obj, TRAPS) {
 // Hash Code handling
 //
 // Performance concern:
-// OrderAccess::storestore() calls release() which STs 0 into the global volatile
-// OrderAccess::Dummy variable.  This store is unnecessary for correctness.
-// Many threads STing into a common location causes considerable cache migration
-// or "sloshing" on large SMP system.  As such, I avoid using OrderAccess::storestore()
-// until it's repaired.  In some cases OrderAccess::fence() -- which incurs local
-// latency on the executing processor -- is a better choice as it scales on SMP
-// systems.  See http://blogs.sun.com/dave/entry/biased_locking_in_hotspot for a
-// discussion of coherency costs.  Note that all our current reference platforms
-// provide strong ST-ST order, so the issue is moot on IA32, x64, and SPARC.
+// OrderAccess::storestore() calls release() which at one time stored 0
+// into the global volatile OrderAccess::dummy variable. This store was
+// unnecessary for correctness. Many threads storing into a common location
+// causes considerable cache migration or "sloshing" on large SMP systems.
+// As such, I avoided using OrderAccess::storestore(). In some cases
+// OrderAccess::fence() -- which incurs local latency on the executing
+// processor -- is a better choice as it scales on SMP systems.
+//
+// See http://blogs.oracle.com/dave/entry/biased_locking_in_hotspot for
+// a discussion of coherency costs. Note that all our current reference
+// platforms provide strong ST-ST order, so the issue is moot on IA32,
+// x64, and SPARC.
 //
 // As a general policy we use "volatile" to control compiler-based reordering
-// and explicit fences (barriers) to control for architectural reordering performed
-// by the CPU(s) or platform.
+// and explicit fences (barriers) to control for architectural reordering
+// performed by the CPU(s) or platform.
 
 struct SharedGlobals {
     // These are highly shared mostly-read variables.
@@ -1596,7 +1599,55 @@ void ObjectSynchronizer::release_monitors_owned_by_thread(TRAPS) {
 }
 
 //------------------------------------------------------------------------------
-// Non-product code
+// Debugging code
+
+void ObjectSynchronizer::sanity_checks(const bool verbose,
+                                       const uint cache_line_size,
+                                       int *error_cnt_ptr,
+                                       int *warning_cnt_ptr) {
+  u_char *addr_begin      = (u_char*)&GVars;
+  u_char *addr_stwRandom  = (u_char*)&GVars.stwRandom;
+  u_char *addr_hcSequence = (u_char*)&GVars.hcSequence;
+
+  if (verbose) {
+    tty->print_cr("INFO: sizeof(SharedGlobals)=" SIZE_FORMAT,
+                  sizeof(SharedGlobals));
+  }
+
+  uint offset_stwRandom = (uint)(addr_stwRandom - addr_begin);
+  if (verbose) tty->print_cr("INFO: offset(stwRandom)=%u", offset_stwRandom);
+
+  uint offset_hcSequence = (uint)(addr_hcSequence - addr_begin);
+  if (verbose) {
+    tty->print_cr("INFO: offset(_hcSequence)=%u", offset_hcSequence);
+  }
+
+  if (cache_line_size != 0) {
+    // We were able to determine the L1 data cache line size so
+    // do some cache line specific sanity checks
+
+    if (offset_stwRandom < cache_line_size) {
+      tty->print_cr("WARNING: the SharedGlobals.stwRandom field is closer "
+                    "to the struct beginning than a cache line which permits "
+                    "false sharing.");
+      (*warning_cnt_ptr)++;
+    }
+
+    if ((offset_hcSequence - offset_stwRandom) < cache_line_size) {
+      tty->print_cr("WARNING: the SharedGlobals.stwRandom and "
+                    "SharedGlobals.hcSequence fields are closer than a cache "
+                    "line which permits false sharing.");
+      (*warning_cnt_ptr)++;
+    }
+
+    if ((sizeof(SharedGlobals) - offset_hcSequence) < cache_line_size) {
+      tty->print_cr("WARNING: the SharedGlobals.hcSequence field is closer "
+                    "to the struct end than a cache line which permits false "
+                    "sharing.");
+      (*warning_cnt_ptr)++;
+    }
+  }
+}
 
 #ifndef PRODUCT
 
