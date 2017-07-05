@@ -1,5 +1,5 @@
 #
-# Copyright 2002-2008 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 2002-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,8 @@ OLD_JSSE_PKGS    = com.sun.net.ssl
 HTTPSERVER_PKGS  = com.sun.net.httpserver       \
                    com.sun.net.httpserver.spi 
 
+NIO_PKGS         = com.sun.nio.file
+
 DOCLETAPI_PKGS   = com.sun.javadoc
 
 TAGLETAPI_FILE   = com/sun/tools/doclets/Taglet.java
@@ -92,6 +94,7 @@ NON_CORE_PKGS    = $(DOMAPI_PKGS) \
                    $(MGMT_PKGS) \
                    $(JAAS_PKGS) \
                    $(JGSS_PKGS) \
+                   $(NIO_PKGS) \
                    $(OLD_JSSE_PKGS) \
                    $(HTTPSERVER_PKGS) \
                    $(SMARTCARDIO_PKGS) \

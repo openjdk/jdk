@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,11 +56,14 @@
  */
 
 import java.security.KeyStore;
-import java.util.Locale;
-import java.util.MissingResourceException;
 import sun.security.tools.KeyTool;
 import sun.security.x509.*;
 import java.io.*;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
+import java.security.cert.X509Certificate;
+import sun.security.util.ObjectIdentifier;
 
 public class KeyToolTest {
 
@@ -118,7 +121,7 @@ public class KeyToolTest {
         lastInput = input;
         lastCommand = cmd;
 
-        // "X" is appened so that we can precisely test how input is consumed
+        // "X" is appended so that we can precisely test how input is consumed
         HumanInputStream in = new HumanInputStream(input+"X");
         test(in, cmd);
         // make sure the input string is no more no less
@@ -264,12 +267,21 @@ public class KeyToolTest {
     }
 
     void assertTrue(boolean bool, String msg) {
+        if (debug) {
+            System.err.println("If not " + bool + ", " + msg);
+        } else {
+            System.err.print("v");
+        }
         if(!bool) {
             afterFail(lastInput, lastCommand, "TRUE");
+                System.err.println(msg);
             throw new RuntimeException(msg);
         }
     }
 
+    void assertTrue(boolean bool) {
+        assertTrue(bool, "well...");
+    }
     /**
      * Helper method, load a keystore
      * @param file file for keystore, null or "NONE" for PKCS11
@@ -827,32 +839,363 @@ public class KeyToolTest {
         remove("mykey.cert");
     }
 
+    void v3extTest(String keyAlg) throws Exception {
+        KeyStore ks;
+        remove("x.jks");
+        String simple = "-keystore x.jks -storepass changeit -keypass changeit -noprompt -keyalg " + keyAlg + " ";
+        String pre = simple + "-genkeypair -dname CN=Olala -alias ";
+
+        // Version and SKID
+        testOK("", pre + "o1");
+
+        ks = loadStore("x.jks", "changeit", "JKS");
+        assertTrue(((X509Certificate)ks.getCertificate("o1")).getVersion() == 3);
+        assertTrue(((X509CertImpl)ks.getCertificate("o1")).getSubjectKeyIdentifierExtension() != null);
+
+        // BC
+        testOK("", pre + "b1 -ext BC:critical");
+        testOK("", pre + "b2 -ext BC");
+        testOK("", pre + "b3 -ext bc");
+        testOK("", pre + "b4 -ext BasicConstraints");
+        testOK("", pre + "b5 -ext basicconstraints");
+        testOK("", pre + "b6 -ext BC=ca:true,pathlen:12");
+        testOK("", pre + "b7 -ext BC=ca:false");
+        testOK("", pre + "b8 -ext BC:critical=ca:false");
+        testOK("", pre + "b9 -ext BC=12");
+
+        ks = loadStore("x.jks", "changeit", "JKS");
+        assertTrue(((X509CertImpl)ks.getCertificate("b1")).getBasicConstraintsExtension().isCritical());
+        assertTrue(!((X509CertImpl)ks.getCertificate("b2")).getBasicConstraintsExtension().isCritical());
+        assertTrue(((X509CertImpl)ks.getCertificate("b8")).getBasicConstraintsExtension().isCritical());
+        assertTrue(((X509Certificate)ks.getCertificate("b1")).getBasicConstraints() == Integer.MAX_VALUE);
+        assertTrue(((X509Certificate)ks.getCertificate("b2")).getBasicConstraints() == Integer.MAX_VALUE);
+        assertTrue(((X509Certificate)ks.getCertificate("b3")).getBasicConstraints() == Integer.MAX_VALUE);
+        assertTrue(((X509Certificate)ks.getCertificate("b4")).getBasicConstraints() == Integer.MAX_VALUE);
+        assertTrue(((X509Certificate)ks.getCertificate("b5")).getBasicConstraints() == Integer.MAX_VALUE);
+        assertTrue(((X509Certificate)ks.getCertificate("b6")).getBasicConstraints() == 12);
+        assertTrue(((X509Certificate)ks.getCertificate("b7")).getBasicConstraints() == -1);
+        assertTrue(((X509Certificate)ks.getCertificate("b9")).getBasicConstraints() == 12);
+
+        // KU
+        testOK("", pre + "ku1 -ext KeyUsage:critical=digitalsignature");
+        testOK("", pre + "ku2 -ext KU=digitalSignature");
+        testOK("", pre + "ku3 -ext KU=ds");
+        testOK("", pre + "ku4 -ext KU=dig");
+        testFail("", pre + "ku5 -ext KU=d");    // ambigous value
+        testFail("", pre + "ku6 -ext KU=cs");   // cRLSign cannot be cs
+        testOK("", pre + "ku11 -ext KU=nr");
+        testFail("", pre + "ku12 -ext KU=ke");  // ke also means keyAgreement
+        testOK("", pre + "ku12 -ext KU=keyE");
+        testFail("", pre + "ku13 -ext KU=de");  // de also means decipherOnly
+        testOK("", pre + "ku13 -ext KU=dataE");
+        testOK("", pre + "ku14 -ext KU=ka");
+        testOK("", pre + "ku15 -ext KU=kcs");
+        testOK("", pre + "ku16 -ext KU=crls");
+        testOK("", pre + "ku17 -ext KU=eo");
+        testOK("", pre + "ku18 -ext KU=do");
+        testOK("", pre + "ku19 -ext KU=cc");
+
+        testOK("", pre + "ku017 -ext KU=ds,cc,eo");
+        testOK("", pre + "ku135 -ext KU=nr,dataEncipherment,keyCertSign");
+        testOK("", pre + "ku246 -ext KU=keyEnc,cRL,keyA");
+        testOK("", pre + "ku1234 -ext KU=ka,da,keyE,nonR");
+
+        ks = loadStore("x.jks", "changeit", "JKS");
+        class CheckKU {
+            void check(KeyStore ks, String alias, int... pos) throws Exception {
+                System.err.print("x");
+                boolean[] bs = ((X509Certificate)ks.getCertificate(alias)).getKeyUsage();
+                bs = Arrays.copyOf(bs, 9);
+                for (int i=0; i<bs.length; i++) {
+                    boolean found = false;
+                    for (int p: pos) {
+                        if (p == i) found = true;
+                    }
+                    if (!found ^ bs[i]) {
+                        // OK
+                    } else {
+                        throw new RuntimeException("KU not match at " + i +
+                                ": " + found + " vs " + bs[i]);
+                    }
+                }
+            }
+        }
+        CheckKU c = new CheckKU();
+        assertTrue(((X509CertImpl)ks.getCertificate("ku1")).getExtension(PKIXExtensions.KeyUsage_Id).isCritical());
+        assertTrue(!((X509CertImpl)ks.getCertificate("ku2")).getExtension(PKIXExtensions.KeyUsage_Id).isCritical());
+        c.check(ks, "ku1", 0);
+        c.check(ks, "ku2", 0);
+        c.check(ks, "ku3", 0);
+        c.check(ks, "ku4", 0);
+        c.check(ks, "ku11", 1);
+        c.check(ks, "ku12", 2);
+        c.check(ks, "ku13", 3);
+        c.check(ks, "ku14", 4);
+        c.check(ks, "ku15", 5);
+        c.check(ks, "ku16", 6);
+        c.check(ks, "ku17", 7);
+        c.check(ks, "ku18", 8);
+        c.check(ks, "ku19", 1);
+        c.check(ks, "ku11", 1);
+        c.check(ks, "ku11", 1);
+        c.check(ks, "ku11", 1);
+        c.check(ks, "ku017", 0, 1, 7);
+        c.check(ks, "ku135", 1, 3, 5);
+        c.check(ks, "ku246", 6, 2, 4);
+        c.check(ks, "ku1234", 1, 2, 3, 4);
+
+        // EKU
+        testOK("", pre + "eku1 -ext EKU:critical=sa");
+        testOK("", pre + "eku2 -ext ExtendedKeyUsage=ca");
+        testOK("", pre + "eku3 -ext EKU=cs");
+        testOK("", pre + "eku4 -ext EKU=ep");
+        testOK("", pre + "eku8 -ext EKU=ts");
+        testFail("", pre + "eku9 -ext EKU=os");
+        testOK("", pre + "eku9 -ext EKU=ocsps");
+        testOK("", pre + "eku10 -ext EKU=any");
+        testOK("", pre + "eku11 -ext EKU=1.2.3.4,1.3.5.7,ep");
+        testFail("", pre + "eku12 -ext EKU=c");
+        testFail("", pre + "eku12 -ext EKU=nothing");
+
+        ks = loadStore("x.jks", "changeit", "JKS");
+        class CheckEKU {
+            void check(KeyStore ks, String alias, String... pos) throws Exception {
+                System.err.print("x");
+                List<String> bs = ((X509Certificate)ks.getCertificate(alias)).getExtendedKeyUsage();
+                int found = 0;
+                for (String p: pos) {
+                    if (bs.contains(p)) {
+                        found++;
+                    } else {
+                        throw new RuntimeException("EKU: not included " + p);
+                    }
+                }
+                if (found != bs.size()) {
+                    throw new RuntimeException("EKU: more items than expected");
+                }
+            }
+        }
+        CheckEKU cx = new CheckEKU();
+        assertTrue(((X509CertImpl)ks.getCertificate("eku1")).getExtension(PKIXExtensions.ExtendedKeyUsage_Id).isCritical());
+        assertTrue(!((X509CertImpl)ks.getCertificate("eku2")).getExtension(PKIXExtensions.ExtendedKeyUsage_Id).isCritical());
+        cx.check(ks, "eku1", "1.3.6.1.5.5.7.3.1");
+        cx.check(ks, "eku2", "1.3.6.1.5.5.7.3.2");
+        cx.check(ks, "eku3", "1.3.6.1.5.5.7.3.3");
+        cx.check(ks, "eku4", "1.3.6.1.5.5.7.3.4");
+        cx.check(ks, "eku8", "1.3.6.1.5.5.7.3.8");
+        cx.check(ks, "eku9", "1.3.6.1.5.5.7.3.9");
+        cx.check(ks, "eku10", "2.5.29.37.0");
+        cx.check(ks, "eku11", "1.3.6.1.5.5.7.3.4", "1.2.3.4", "1.3.5.7");
+
+        // SAN
+        testOK("", pre+"san1 -ext san:critical=email:me@me.org");
+        testOK("", pre+"san2 -ext san=uri:http://me.org");
+        testOK("", pre+"san3 -ext san=dns:me.org");
+        testOK("", pre+"san4 -ext san=ip:192.168.0.1");
+        testOK("", pre+"san5 -ext san=oid:1.2.3.4");
+        testOK("", pre+"san235 -ext san=uri:http://me.org,dns:me.org,oid:1.2.3.4");
+
+        ks = loadStore("x.jks", "changeit", "JKS");
+        class CheckSAN {
+            // Please sort items with name type
+            void check(KeyStore ks, String alias, int type, Object... items) throws Exception {
+                int pos = 0;
+                System.err.print("x");
+                Object[] names = null;
+                if (type == 0) names = ((X509Certificate)ks.getCertificate(alias)).getSubjectAlternativeNames().toArray();
+                else names = ((X509Certificate)ks.getCertificate(alias)).getIssuerAlternativeNames().toArray();
+                Arrays.sort(names, new Comparator() {
+                    public int compare(Object o1, Object o2) {
+                        int i1 = (Integer)((List)o1).get(0);
+                        int i2 = (Integer)((List)o2).get(0);
+                        return i1 - i2;
+                    }
+                });
+                for (Object o: names) {
+                    List l = (List)o;
+                    for (Object o2: l) {
+                        if (!items[pos++].equals(o2)) {
+                            throw new RuntimeException("Not equals at " + pos
+                                    + ": " + items[pos-1] + " vs " + o2);
+                        }
+                    }
+                }
+                if (pos != items.length) {
+                    throw new RuntimeException("Extra items, pos is " + pos);
+                }
+            }
+        }
+        CheckSAN csan = new CheckSAN();
+        assertTrue(((X509CertImpl)ks.getCertificate("san1")).getSubjectAlternativeNameExtension().isCritical());
+        assertTrue(!((X509CertImpl)ks.getCertificate("san2")).getSubjectAlternativeNameExtension().isCritical());
+        csan.check(ks, "san1", 0, 1, "me@me.org");
+        csan.check(ks, "san2", 0, 6, "http://me.org");
+        csan.check(ks, "san3", 0, 2, "me.org");
+        csan.check(ks, "san4", 0, 7, "192.168.0.1");
+        csan.check(ks, "san5", 0, 8, "1.2.3.4");
+        csan.check(ks, "san235", 0, 2, "me.org", 6, "http://me.org", 8, "1.2.3.4");
+
+        // IAN
+        testOK("", pre+"ian1 -ext ian:critical=email:me@me.org");
+        testOK("", pre+"ian2 -ext ian=uri:http://me.org");
+        testOK("", pre+"ian3 -ext ian=dns:me.org");
+        testOK("", pre+"ian4 -ext ian=ip:192.168.0.1");
+        testOK("", pre+"ian5 -ext ian=oid:1.2.3.4");
+        testOK("", pre+"ian235 -ext ian=uri:http://me.org,dns:me.org,oid:1.2.3.4");
+
+        ks = loadStore("x.jks", "changeit", "JKS");
+        assertTrue(((X509CertImpl)ks.getCertificate("ian1")).getIssuerAlternativeNameExtension().isCritical());
+        assertTrue(!((X509CertImpl)ks.getCertificate("ian2")).getIssuerAlternativeNameExtension().isCritical());
+        csan.check(ks, "ian1", 1, 1, "me@me.org");
+        csan.check(ks, "ian2", 1, 6, "http://me.org");
+        csan.check(ks, "ian3", 1, 2, "me.org");
+        csan.check(ks, "ian4", 1, 7, "192.168.0.1");
+        csan.check(ks, "ian5", 1, 8, "1.2.3.4");
+        csan.check(ks, "ian235", 1, 2, "me.org", 6, "http://me.org", 8, "1.2.3.4");
+
+        // SIA
+        testOK("", pre+"sia1 -ext sia=care:uri:ldap://ca.com/cn=CA");
+        testOK("", pre+"sia2 -ext sia=ts:email:ts@ca.com");
+        testFail("SIA never critical", pre+"sia3 -ext sia:critical=ts:email:ts@ca.com");
+
+        ks = loadStore("x.jks", "changeit", "JKS");
+        class CheckSia {
+            void check(KeyStore ks, String alias, int type, Object... items) throws Exception {
+                int pos = 0;
+                System.err.print("x");
+                AccessDescription[] ads = null;
+                if (type == 0) {
+                    SubjectInfoAccessExtension siae = (SubjectInfoAccessExtension)((X509CertImpl)ks.getCertificate(alias)).getExtension(PKIXExtensions.SubjectInfoAccess_Id);
+                    ads = siae.getAccessDescriptions().toArray(new AccessDescription[0]);
+                } else {
+                    AuthorityInfoAccessExtension aiae = (AuthorityInfoAccessExtension)((X509CertImpl)ks.getCertificate(alias)).getExtension(PKIXExtensions.AuthInfoAccess_Id);
+                    ads = aiae.getAccessDescriptions().toArray(new AccessDescription[0]);
+                }
+                Arrays.sort(ads, new Comparator<AccessDescription>() {
+                    @Override
+                    public int compare(AccessDescription o1, AccessDescription o2) {
+                        return o1.getAccessMethod().toString().compareTo(o2.getAccessMethod().toString());
+                    }
+                });
+                for (AccessDescription ad: ads) {
+                    if (!ad.getAccessMethod().equals(items[pos++]) ||
+                            !new Integer(ad.getAccessLocation().getType()).equals(items[pos++])) {
+                        throw new RuntimeException("Not same type at " + pos);
+                    }
+                    String name = null;
+                    switch (ad.getAccessLocation().getType()) {
+                        case 1:
+                            name = ((RFC822Name)ad.getAccessLocation().getName()).getName();
+                            break;
+                        case 6:
+                            name = ((URIName)ad.getAccessLocation().getName()).getURI().toString();
+                            break;
+                        default:
+                            throw new RuntimeException("Not implemented: " + ad);
+                    }
+                    if (!name.equals(items[pos++])) {
+                        throw new Exception("Name not same for " + ad + " at pos " + pos);
+                    }
+                }
+            }
+        }
+        CheckSia csia = new CheckSia();
+        assertTrue(!((X509CertImpl)ks.getCertificate("sia1")).getExtension(PKIXExtensions.SubjectInfoAccess_Id).isCritical());
+        csia.check(ks, "sia1", 0, AccessDescription.Ad_CAREPOSITORY_Id, 6, "ldap://ca.com/cn=CA");
+        csia.check(ks, "sia2", 0, AccessDescription.Ad_TIMESTAMPING_Id, 1, "ts@ca.com");
+
+        // AIA
+        testOK("", pre+"aia1 -ext aia=cai:uri:ldap://ca.com/cn=CA");
+        testOK("", pre+"aia2 -ext aia=ocsp:email:ocsp@ca.com");
+        testFail("AIA never critical", pre+"aia3 -ext aia:critical=ts:email:ts@ca.com");
+
+        ks = loadStore("x.jks", "changeit", "JKS");
+        assertTrue(!((X509CertImpl)ks.getCertificate("aia1")).getExtension(PKIXExtensions.AuthInfoAccess_Id).isCritical());
+        csia.check(ks, "aia1", 1, AccessDescription.Ad_CAISSUERS_Id, 6, "ldap://ca.com/cn=CA");
+        csia.check(ks, "aia2", 1, AccessDescription.Ad_OCSP_Id, 1, "ocsp@ca.com");
+
+        // OID
+        testOK("", pre+"oid1 -ext 1.2.3:critical=0102");
+        testOK("", pre+"oid2 -ext 1.2.3");
+        testOK("", pre+"oid12 -ext 1.2.3 -ext 1.2.4=01:02:03");
+
+        ks = loadStore("x.jks", "changeit", "JKS");
+        class CheckOid {
+            void check(KeyStore ks, String alias, String oid, byte[] value) throws Exception {
+                int pos = 0;
+                System.err.print("x");
+                Extension ex = ((X509CertImpl)ks.getCertificate(alias)).getExtension(new ObjectIdentifier(oid));
+                if (!Arrays.equals(value, ex.getValue())) {
+                    throw new RuntimeException("Not same content in " + alias + " for " + oid);
+                }
+            }
+        }
+        CheckOid coid = new CheckOid();
+        assertTrue(((X509CertImpl)ks.getCertificate("oid1")).getExtension(new ObjectIdentifier("1.2.3")).isCritical());
+        assertTrue(!((X509CertImpl)ks.getCertificate("oid2")).getExtension(new ObjectIdentifier("1.2.3")).isCritical());
+        coid.check(ks, "oid1", "1.2.3", new byte[]{1,2});
+        coid.check(ks, "oid2", "1.2.3", new byte[]{});
+        coid.check(ks, "oid12", "1.2.3", new byte[]{});
+        coid.check(ks, "oid12", "1.2.4", new byte[]{1,2,3});
+
+        // honored
+        testOK("", pre+"ca");
+        testOK("", pre+"a");
+        // request: BC,KU,1.2.3,1.2.4,1.2.5
+        testOK("", simple+"-alias a -certreq " +
+                "-ext BC=1 -ext KU=crl " +
+                "-ext 1.2.3=01 -ext 1.2.4:critical=0102 -ext 1.2.5=010203 " +
+                "-rfc -file test.req");
+        // printcertreq
+        testOK("", "-printcertreq -file test.req");
+        // issue: deny KU, change criticality of 1.2.3 and 1.2.4, change content of BC, add 2.3.4
+        testOK("", simple+"-gencert -alias ca -infile test.req -ext " +
+                "honored=all,-KU,1.2.3:critical,1.2.4:non-critical " +
+                "-ext BC=2 -ext 2.3.4=01020304 " +
+                "-debug -rfc -outfile test.cert");
+        testOK("", simple+"-importcert -file test.cert -alias a");
+        ks = loadStore("x.jks", "changeit", "JKS");
+        X509CertImpl a = (X509CertImpl)ks.getCertificate("a");
+        assertTrue(a.getAuthorityKeyIdentifierExtension() != null);
+        assertTrue(a.getSubjectKeyIdentifierExtension() != null);
+        assertTrue(a.getKeyUsage() == null);
+        assertTrue(a.getExtension(new ObjectIdentifier("1.2.3")).isCritical());
+        assertTrue(!a.getExtension(new ObjectIdentifier("1.2.4")).isCritical());
+        assertTrue(!a.getExtension(new ObjectIdentifier("1.2.5")).isCritical());
+        assertTrue(a.getExtensionValue("1.2.3").length == 3);
+        assertTrue(a.getExtensionValue("1.2.4").length == 4);
+        assertTrue(a.getExtensionValue("1.2.5").length == 5);
+        assertTrue(a.getBasicConstraints() == 2);
+        assertTrue(!a.getExtension(new ObjectIdentifier("2.3.4")).isCritical());
+        assertTrue(a.getExtensionValue("2.3.4").length == 6);
+
+        remove("x.jks");
+        remove("test.req");
+        remove("test.cert");
+    }
+
     void i18nTest() throws Exception {
         //   1.  keytool -help
         remove("x.jks");
-        try {
-            test("", "-help");
-            assertTrue(false, "Cannot come here");
-        } catch(RuntimeException e) {
-            assertTrue(e.getMessage().indexOf("NO ERROR, SORRY") != -1, "No error");
-        }
+        testOK("", "-help");
+
         //   2. keytool -genkey -v -keysize 512 Enter "a" for the keystore password. Check error (password too short). Enter "password" for the keystore password. Hit 'return' for "first and last name", "organizational unit", "City", "State", and "Country Code". Type "yes" when they ask you if everything is correct. Type 'return' for new key password.
         testOK("a\npassword\npassword\nMe\nHere\nNow\nPlace\nPlace\nUS\nyes\n\n", "-genkey -v -keysize 512 -keystore x.jks");
         //   3. keytool -list -v -storepass password
         testOK("", "-list -v -storepass password -keystore x.jks");
         //   4. keytool -list -v Type "a" for the keystore password. Check error (wrong keystore password).
         testFail("a\n", "-list -v -keystore x.jks");
-        assertTrue(ex.indexOf("password was incorrect") != -1, "");
+        assertTrue(ex.indexOf("password was incorrect") != -1);
         //   5. keytool -genkey -v -keysize 512 Enter "password" as the password. Check error (alias 'mykey' already exists).
         testFail("password\n", "-genkey -v -keysize 512 -keystore x.jks");
-        assertTrue(ex.indexOf("alias <mykey> already exists") != -1, "");
+        assertTrue(ex.indexOf("alias <mykey> already exists") != -1);
         //   6. keytool -genkey -v -keysize 512 -alias mykey2 -storepass password Hit 'return' for "first and last name", "organizational unit", "City", "State", and "Country Code". Type "yes" when they ask you if everything is correct. Type 'return' for new key password.
         testOK("\n\n\n\n\n\nyes\n\n", "-genkey -v -keysize 512 -alias mykey2 -storepass password -keystore x.jks");
         //   7. keytool -list -v Type 'password' for the store password.
         testOK("password\n", "-list -v -keystore x.jks");
         //   8. keytool -keypasswd -v -alias mykey2 -storepass password Type "a" for the new key password. Type "aaaaaa" for the new key password. Type "bbbbbb" when re-entering the new key password. Type "a" for the new key password. Check Error (too many failures).
         testFail("a\naaaaaa\nbbbbbb\na\n", "-keypasswd -v -alias mykey2 -storepass password -keystore x.jks");
-        assertTrue(ex.indexOf("Too many failures - try later") != -1, "");
+        assertTrue(ex.indexOf("Too many failures - try later") != -1);
         //   9. keytool -keypasswd -v -alias mykey2 -storepass password Type "aaaaaa" for the new key password. Type "aaaaaa" when re-entering the new key password.
         testOK("aaaaaa\naaaaaa\n", "-keypasswd -v -alias mykey2 -storepass password -keystore x.jks");
         //  10. keytool -selfcert -v -alias mykey -storepass password
@@ -864,7 +1207,7 @@ public class KeyToolTest {
         testOK("", "-export -v -alias mykey -file cert -storepass password -keystore x.jks");
         //  13. keytool -import -v -file cert -storepass password Check error (Certificate reply and cert are the same)
         testFail("", "-import -v -file cert -storepass password -keystore x.jks");
-        assertTrue(ex.indexOf("Certificate reply and certificate in keystore are identical") != -1, "");
+        assertTrue(ex.indexOf("Certificate reply and certificate in keystore are identical") != -1);
         //  14. keytool -printcert -file cert
         testOK("", "-printcert -file cert -keystore x.jks");
         remove("cert");
@@ -875,26 +1218,26 @@ public class KeyToolTest {
 
         //   1. keytool -storepasswd -storepass password -new abc Check error (password too short)
         testFail("", "-storepasswd -storepass password -new abc");
-        assertTrue(ex.indexOf("New password must be at least 6 characters") != -1, "");
+        assertTrue(ex.indexOf("New password must be at least 6 characters") != -1);
         // Changed, no NONE needed now
         //   2. keytool -list -storetype PKCS11 Check error (-keystore must be NONE)
         //testFail("", "-list -storetype PKCS11");
-        //assertTrue(err.indexOf("keystore must be NONE") != -1, "");
+        //assertTrue(err.indexOf("keystore must be NONE") != -1);
         //   3. keytool -storepasswd -storetype PKCS11 -keystore NONE Check error (unsupported operation)
         testFail("", "-storepasswd -storetype PKCS11 -keystore NONE");
-        assertTrue(ex.indexOf("UnsupportedOperationException") != -1, "");
+        assertTrue(ex.indexOf("UnsupportedOperationException") != -1);
         //   4. keytool -keypasswd -storetype PKCS11 -keystore NONE Check error (unsupported operation)
         testFail("", "-keypasswd -storetype PKCS11 -keystore NONE");
-        assertTrue(ex.indexOf("UnsupportedOperationException") != -1, "");
+        assertTrue(ex.indexOf("UnsupportedOperationException") != -1);
         //   5. keytool -list -protected -storepass password Check error (password can not be specified with -protected)
         testFail("", "-list -protected -storepass password -keystore x.jks");
-        assertTrue(ex.indexOf("if -protected is specified, then") != -1, "");
+        assertTrue(ex.indexOf("if -protected is specified, then") != -1);
         //   6. keytool -keypasswd -protected -keypass password Check error (password can not be specified with -protected)
         testFail("", "-keypasswd -protected -keypass password -keystore x.jks");
-        assertTrue(ex.indexOf("if -protected is specified, then") != -1, "");
+        assertTrue(ex.indexOf("if -protected is specified, then") != -1);
         //   7. keytool -keypasswd -protected -new password Check error (password can not be specified with -protected)
         testFail("", "-keypasswd -protected -new password -keystore x.jks");
-        assertTrue(ex.indexOf("if -protected is specified, then") != -1, "");
+        assertTrue(ex.indexOf("if -protected is specified, then") != -1);
         remove("x.jks");
     }
 
@@ -911,11 +1254,11 @@ public class KeyToolTest {
         testOK("", "-printcert -file genkey.cert");
         testOK("", p11Arg + "-storepass test12 -selfcert -alias genkey -dname cn=selfCert");
         testOK("", p11Arg + "-storepass test12 -list -alias genkey -v");
-        assertTrue(out.indexOf("Owner: CN=selfCert") != -1, "");
+        assertTrue(out.indexOf("Owner: CN=selfCert") != -1);
         //(check that cert subject DN is [cn=selfCert])
         testOK("", p11Arg + "-storepass test12 -delete -alias genkey");
         testOK("", p11Arg + "-storepass test12 -list");
-        assertTrue(out.indexOf("Your keystore contains 0 entries") != -1, "");
+        assertTrue(out.indexOf("Your keystore contains 0 entries") != -1);
         //(check for empty database listing)
         //Runtime.getRuntime().exec("/usr/ccs/bin/sccs unedit cert8.db key3.db");
         remove("genkey.cert");
@@ -943,6 +1286,15 @@ public class KeyToolTest {
             t.sqeTest();
             t.testAll();
             t.i18nTest();
+            t.v3extTest("RSA");
+            t.v3extTest("DSA");
+            boolean testEC = true;
+            try {
+                KeyPairGenerator.getInstance("EC");
+            } catch (NoSuchAlgorithmException nae) {
+                testEC = false;
+            }
+            if (testEC) t.v3extTest("EC");
         }
 
         if (System.getProperty("nss") != null) {

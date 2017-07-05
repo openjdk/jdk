@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@
 #include <sys/stat.h>
 #include "sun_nio_ch_FileChannelImpl.h"
 #include "java_lang_Integer.h"
-#include "java_lang_Long.h"
 #include "nio.h"
 #include "nio_util.h"
 #include <dlfcn.h>
@@ -145,32 +144,6 @@ Java_sun_nio_ch_FileChannelImpl_unmap0(JNIEnv *env, jobject this,
 }
 
 
-JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileChannelImpl_truncate0(JNIEnv *env, jobject this,
-                                          jobject fdo, jlong size)
-{
-    return handle(env,
-                  ftruncate64(fdval(env, fdo), size),
-                  "Truncation failed");
-}
-
-
-JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileChannelImpl_force0(JNIEnv *env, jobject this,
-                                       jobject fdo, jboolean md)
-{
-    jint fd = fdval(env, fdo);
-    int result = 0;
-
-    if (md == JNI_FALSE) {
-        result = fdatasync(fd);
-    } else {
-        result = fsync(fd);
-    }
-    return handle(env, result, "Force failed");
-}
-
-
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_position0(JNIEnv *env, jobject this,
                                           jobject fdo, jlong offset)
@@ -184,17 +157,6 @@ Java_sun_nio_ch_FileChannelImpl_position0(JNIEnv *env, jobject this,
         result = lseek64(fd, offset, SEEK_SET);
     }
     return handle(env, result, "Position failed");
-}
-
-
-JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_size0(JNIEnv *env, jobject this, jobject fdo)
-{
-    struct stat64 fbuf;
-
-    if (fstat64(fdval(env, fdo), &fbuf) < 0)
-        return handle(env, -1, "Size failed");
-    return fbuf.st_size;
 }
 
 
@@ -279,66 +241,4 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
         return result;
     }
 #endif
-}
-
-JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileChannelImpl_lock0(JNIEnv *env, jobject this, jobject fdo,
-                                      jboolean block, jlong pos, jlong size,
-                                      jboolean shared)
-{
-    jint fd = fdval(env, fdo);
-    jint lockResult = 0;
-    int cmd = 0;
-    struct flock64 fl;
-
-    fl.l_whence = SEEK_SET;
-    if (size == (jlong)java_lang_Long_MAX_VALUE) {
-        fl.l_len = (off64_t)0;
-    } else {
-        fl.l_len = (off64_t)size;
-    }
-    fl.l_start = (off64_t)pos;
-    if (shared == JNI_TRUE) {
-        fl.l_type = F_RDLCK;
-    } else {
-        fl.l_type = F_WRLCK;
-    }
-    if (block == JNI_TRUE) {
-        cmd = F_SETLKW64;
-    } else {
-        cmd = F_SETLK64;
-    }
-    lockResult = fcntl(fd, cmd, &fl);
-    if (lockResult < 0) {
-        if ((cmd == F_SETLK64) && (errno == EAGAIN))
-            return sun_nio_ch_FileChannelImpl_NO_LOCK;
-        if (errno == EINTR)
-            return sun_nio_ch_FileChannelImpl_INTERRUPTED;
-        JNU_ThrowIOExceptionWithLastError(env, "Lock failed");
-    }
-    return 0;
-}
-
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileChannelImpl_release0(JNIEnv *env, jobject this,
-                                         jobject fdo, jlong pos, jlong size)
-{
-    jint fd = fdval(env, fdo);
-    jint lockResult = 0;
-    struct flock64 fl;
-    int cmd = F_SETLK64;
-
-    fl.l_whence = SEEK_SET;
-    if (size == (jlong)java_lang_Long_MAX_VALUE) {
-        fl.l_len = (off64_t)0;
-    } else {
-        fl.l_len = (off64_t)size;
-    }
-    fl.l_start = (off64_t)pos;
-    fl.l_type = F_UNLCK;
-    lockResult = fcntl(fd, cmd, &fl);
-    if (lockResult < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Release failed");
-    }
 }
