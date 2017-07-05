@@ -711,7 +711,7 @@ public class Font implements java.io.Serializable
                                 EBIDI_EMBEDDING, EJUSTIFICATION,
                                 EINPUT_METHOD_HIGHLIGHT, EINPUT_METHOD_UNDERLINE,
                                 ESWAP_COLORS, ENUMERIC_SHAPING, EKERNING,
-                                ELIGATURES, ETRACKING);
+                                ELIGATURES, ETRACKING, ESUPERSCRIPT);
 
     private static final int EXTRA_MASK =
             AttributeValues.getMask(ETRANSFORM, ESUPERSCRIPT, EWIDTH);
@@ -1970,7 +1970,6 @@ public class Font implements java.io.Serializable
      * in the JDK - and the only likely caller - is in this same class.
      */
     private float getItalicAngle(FontRenderContext frc) {
-        AffineTransform at = (isTransformed()) ? getTransform() : identityTx;
         Object aa, fm;
         if (frc == null) {
             aa = RenderingHints.VALUE_TEXT_ANTIALIAS_OFF;
@@ -1979,7 +1978,7 @@ public class Font implements java.io.Serializable
             aa = frc.getAntiAliasingHint();
             fm = frc.getFractionalMetricsHint();
         }
-        return getFont2D().getItalicAngle(this, at, aa, fm);
+        return getFont2D().getItalicAngle(this, identityTx, aa, fm);
     }
 
     /**

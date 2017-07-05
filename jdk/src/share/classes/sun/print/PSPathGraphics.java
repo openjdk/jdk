@@ -344,8 +344,15 @@ class PSPathGraphics extends PathGraphics {
         double devScaleX = devResX / DEFAULT_USER_RES;
         double devScaleY = devResY / DEFAULT_USER_RES;
 
-        if (scaleX > devScaleX) scaleX = devScaleX;
-        if (scaleY > devScaleY) scaleY = devScaleY;
+        /* check if rotated or sheared */
+        int transformType = fullTransform.getType();
+        boolean clampScale = ((transformType &
+                               (AffineTransform.TYPE_GENERAL_ROTATION |
+                                AffineTransform.TYPE_GENERAL_TRANSFORM)) != 0);
+        if (clampScale) {
+            if (scaleX > devScaleX) scaleX = devScaleX;
+            if (scaleY > devScaleY) scaleY = devScaleY;
+        }
 
         /* We do not need to draw anything if either scaling
          * factor is zero.

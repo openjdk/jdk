@@ -332,7 +332,7 @@ public class TabularType extends OpenType<TabularData> {
             for (Iterator k = indexNames.iterator(); k.hasNext();  ) {
                 value += k.next().hashCode();
             }
-            myHashCode = new Integer(value);
+            myHashCode = Integer.valueOf(value);
         }
 
         // return always the same hash code for this instance (immutable)

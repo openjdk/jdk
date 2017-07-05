@@ -162,8 +162,6 @@ public class JMXServiceURL implements Serializable {
                                             requiredPrefix);
         }
 
-        int[] ptr = new int[1];
-
         // Parse the protocol name
         final int protoStart = requiredPrefixLength;
         final int protoEnd = indexOf(serviceURL, ':', protoStart);
@@ -662,11 +660,6 @@ public class JMXServiceURL implements Serializable {
         hostNameBitSet.or(alphaNumericBitSet);
         hostNameBitSet.set('-');
         hostNameBitSet.set('.');
-    }
-
-    private static void addCharsToBitSet(BitSet set, String chars) {
-        for (int i = 0; i < chars.length(); i++)
-            set.set(chars.charAt(i));
     }
 
     /**

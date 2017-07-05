@@ -426,7 +426,7 @@ public class CompositeType extends OpenType<CompositeData> {
                 value += key.hashCode();
                 value += this.nameToType.get(key).hashCode();
             }
-            myHashCode = new Integer(value);
+            myHashCode = Integer.valueOf(value);
         }
 
         // return always the same hash code for this instance (immutable)

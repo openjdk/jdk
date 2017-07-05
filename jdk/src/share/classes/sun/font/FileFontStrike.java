@@ -27,6 +27,7 @@ package sun.font;
 
 import java.lang.ref.SoftReference;
 import java.awt.Font;
+import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
@@ -105,6 +106,19 @@ public class FileFontStrike extends PhysicalStrike {
     boolean useNatives;
     NativeStrike[] nativeStrikes;
 
+    /* Used only for communication to native layer */
+    private int intPtSize;
+
+    /* Perform global initialisation needed for Windows native rasterizer */
+    private static native boolean initNative();
+    private static boolean isXPorLater = false;
+    static {
+        if (FontManager.isWindows && !FontManager.useT2K &&
+            !GraphicsEnvironment.isHeadless()) {
+            isXPorLater = initNative();
+        }
+    }
+
     FileFontStrike(FileFont fileFont, FontStrikeDesc desc) {
         super(fileFont, desc);
         this.fileFont = fileFont;
@@ -165,7 +179,7 @@ public class FileFontStrike extends PhysicalStrike {
          * should not segment unless there's another reason to do so.
          */
         float ptSize = (float)matrix[3]; // interpreted only when meaningful.
-        int iSize = (int)ptSize;
+        int iSize = intPtSize = (int)ptSize;
         boolean isSimpleTx = (at.getType() & complexTX) == 0;
         segmentedCache =
             (numGlyphs > SEGSIZE << 3) ||
@@ -189,8 +203,26 @@ public class FileFontStrike extends PhysicalStrike {
             FontManager.deRegisterBadFont(fileFont);
             return;
         }
-
-        if (fileFont.checkUseNatives() && desc.aaHint==0 && !algoStyle) {
+        /* First, see if native code should be used to create the glyph.
+         * GDI will return the integer metrics, not fractional metrics, which
+         * may be requested for this strike, so we would require here that :
+         * desc.fmHint != INTVAL_FRACTIONALMETRICS_ON
+         * except that the advance returned by GDI is always overwritten by
+         * the JDK rasteriser supplied one (see getGlyphImageFromWindows()).
+         */
+        if (FontManager.isWindows && isXPorLater &&
+            !FontManager.useT2K &&
+            !GraphicsEnvironment.isHeadless() &&
+            !fileFont.useJavaRasterizer &&
+            (desc.aaHint == INTVAL_TEXT_ANTIALIAS_LCD_HRGB ||
+             desc.aaHint == INTVAL_TEXT_ANTIALIAS_LCD_HBGR) &&
+            (matrix[1] == 0.0 && matrix[2] == 0.0 &&
+             matrix[0] == matrix[3] &&
+             matrix[0] >= 3.0 && matrix[0] <= 100.0) &&
+            !((TrueTypeFont)fileFont).useEmbeddedBitmapsForSize(intPtSize)) {
+            useNatives = true;
+        }
+        else if (fileFont.checkUseNatives() && desc.aaHint==0 && !algoStyle) {
             /* Check its a simple scale of a pt size in the range
              * where native bitmaps typically exist (6-36 pts) */
             if (matrix[1] == 0.0 && matrix[2] == 0.0 &&
@@ -208,7 +240,16 @@ public class FileFontStrike extends PhysicalStrike {
                 }
             }
         }
-
+        if (FontManager.logging && FontManager.isWindows) {
+            FontManager.logger.info
+                ("Strike for " + fileFont + " at size = " + intPtSize +
+                 " use natives = " + useNatives +
+                 " useJavaRasteriser = " + fileFont.useJavaRasterizer +
+                 " AAHint = " + desc.aaHint +
+                 " Has Embedded bitmaps = " +
+                 ((TrueTypeFont)fileFont).
+                 useEmbeddedBitmapsForSize(intPtSize));
+        }
         this.disposer = new FontStrikeDisposer(fileFont, desc, pScalerContext);
 
         /* Always get the image and the advance together for smaller sizes
@@ -217,7 +258,12 @@ public class FileFontStrike extends PhysicalStrike {
          * "maximumSizeForGetImageWithAdvance".
          * This should be no greater than OutlineTextRender.THRESHOLD.
          */
-        getImageWithAdvance = at.getScaleY() <= 48.0;
+        double maxSz = 48.0;
+        getImageWithAdvance =
+            Math.abs(at.getScaleX()) <= maxSz &&
+            Math.abs(at.getScaleY()) <= maxSz &&
+            Math.abs(at.getShearX()) <= maxSz &&
+            Math.abs(at.getShearY()) <= maxSz;
 
         /* Some applications request advance frequently during layout.
          * If we are not getting and caching the image with the advance,
@@ -250,8 +296,50 @@ public class FileFontStrike extends PhysicalStrike {
         return fileFont.getNumGlyphs();
     }
 
-    /* Try the native strikes first, then try the fileFont strike */
     long getGlyphImageFromNative(int glyphCode) {
+        if (FontManager.isWindows) {
+            return getGlyphImageFromWindows(glyphCode);
+        } else {
+            return getGlyphImageFromX11(glyphCode);
+        }
+    }
+
+    /* There's no global state conflicts, so this method is not
+     * presently synchronized.
+     */
+    private native long _getGlyphImageFromWindows(String family,
+                                                  int style,
+                                                  int size,
+                                                  int glyphCode,
+                                                  boolean fracMetrics);
+
+    long getGlyphImageFromWindows(int glyphCode) {
+        String family = fileFont.getFamilyName(null);
+        int style = desc.style & Font.BOLD | desc.style & Font.ITALIC
+            | fileFont.getStyle();
+        int size = intPtSize;
+        long ptr = _getGlyphImageFromWindows
+            (family, style, size, glyphCode,
+             desc.fmHint == INTVAL_FRACTIONALMETRICS_ON);
+        if (ptr != 0) {
+            /* Get the advance from the JDK rasterizer. This is mostly
+             * necessary for the fractional metrics case, but there are
+             * also some very small number (<0.25%) of marginal cases where
+             * there is some rounding difference between windows and JDK.
+             * After these are resolved, we can restrict this extra
+             * work to the FM case.
+             */
+            float advance = getGlyphAdvance(glyphCode, false);
+            StrikeCache.unsafe.putFloat(ptr + StrikeCache.xAdvanceOffset,
+                                        advance);
+            return ptr;
+        } else {
+            return fileFont.getGlyphImage(pScalerContext, glyphCode);
+        }
+    }
+
+    /* Try the native strikes first, then try the fileFont strike */
+    long getGlyphImageFromX11(int glyphCode) {
         long glyphPtr;
         char charCode = fileFont.glyphToCharMap[glyphCode];
         for (int i=0;i<nativeStrikes.length;i++) {
@@ -271,13 +359,19 @@ public class FileFontStrike extends PhysicalStrike {
         if (glyphCode >= INVISIBLE_GLYPHS) {
             return StrikeCache.invisibleGlyphPtr;
         }
-        long glyphPtr;
+        long glyphPtr = 0L;
         if ((glyphPtr = getCachedGlyphPtr(glyphCode)) != 0L) {
             return glyphPtr;
         } else {
             if (useNatives) {
                 glyphPtr = getGlyphImageFromNative(glyphCode);
-            } else {
+                if (glyphPtr == 0L && FontManager.logging) {
+                    FontManager.logger.info
+                        ("Strike for " + fileFont +
+                         " at size = " + intPtSize +
+                         " couldn't get native glyph for code = " + glyphCode);
+                 }
+            } if (glyphPtr == 0L) {
                 glyphPtr = fileFont.getGlyphImage(pScalerContext,
                                                   glyphCode);
             }
@@ -295,10 +389,10 @@ public class FileFontStrike extends PhysicalStrike {
             } else if ((images[i] = getCachedGlyphPtr(glyphCode)) != 0L) {
                 continue;
             } else {
-                long glyphPtr;
+                long glyphPtr = 0L;
                 if (useNatives) {
                     glyphPtr = getGlyphImageFromNative(glyphCode);
-                } else {
+                } if (glyphPtr == 0L) {
                     glyphPtr = fileFont.getGlyphImage(pScalerContext,
                                                       glyphCode);
                 }
@@ -327,10 +421,11 @@ public class FileFontStrike extends PhysicalStrike {
             } else if ((images[i] = getCachedGlyphPtr(glyphCode)) != 0L) {
                 continue;
             } else {
-                long glyphPtr;
+                long glyphPtr = 0L;
                 if (useNatives) {
                     glyphPtr = getGlyphImageFromNative(glyphCode);
-                } else {
+                }
+                if (glyphPtr == 0L) {
                     glyphPtr = fileFont.getGlyphImage(pScalerContext,
                                                       glyphCode);
                 }
@@ -454,11 +549,16 @@ public class FileFontStrike extends PhysicalStrike {
         }
     }
 
+    float getGlyphAdvance(int glyphCode) {
+        return getGlyphAdvance(glyphCode, true);
+    }
+
     /* Metrics info is always retrieved. If the GlyphInfo address is non-zero
      * then metrics info there is valid and can just be copied.
-     * This is in user space coordinates.
+     * This is in user space coordinates unless getUserAdv == false.
+     * Device space advance should not be propagated out of this class.
      */
-    float getGlyphAdvance(int glyphCode) {
+    private float getGlyphAdvance(int glyphCode, boolean getUserAdv) {
         float advance;
 
         if (glyphCode >= INVISIBLE_GLYPHS) {
@@ -480,11 +580,11 @@ public class FileFontStrike extends PhysicalStrike {
             }
         }
 
-        if (invertDevTx != null) {
+        if (invertDevTx != null || !getUserAdv) {
             /* If there is a device transform need x & y advance to
              * transform back into user space.
              */
-            advance = getGlyphMetrics(glyphCode).x;
+            advance = getGlyphMetrics(glyphCode, getUserAdv).x;
         } else {
             long glyphPtr;
             if (getImageWithAdvance) {
@@ -620,6 +720,10 @@ public class FileFontStrike extends PhysicalStrike {
     }
 
     Point2D.Float getGlyphMetrics(int glyphCode) {
+        return getGlyphMetrics(glyphCode, true);
+    }
+
+    private Point2D.Float getGlyphMetrics(int glyphCode, boolean getUserAdv) {
         Point2D.Float metrics = new Point2D.Float();
 
         // !!! or do we force sgv user glyphs?
@@ -627,7 +731,7 @@ public class FileFontStrike extends PhysicalStrike {
             return metrics;
         }
         long glyphPtr;
-        if (getImageWithAdvance) {
+        if (getImageWithAdvance && getUserAdv) {
             /* A heuristic optimisation says that for most cases its
              * worthwhile retrieving the image at the same time as the
              * metrics. So here we get the image data even if its not
@@ -644,9 +748,9 @@ public class FileFontStrike extends PhysicalStrike {
             metrics.y = StrikeCache.unsafe.getFloat
                 (glyphPtr + StrikeCache.yAdvanceOffset);
             /* advance is currently in device space, need to convert back
-             * into user space.
+             * into user space, unless getUserAdv == false.
              * This must not include the translation component. */
-            if (invertDevTx != null) {
+            if (invertDevTx != null && getUserAdv) {
                 invertDevTx.deltaTransform(metrics, metrics);
             }
         } else {
@@ -675,9 +779,9 @@ public class FileFontStrike extends PhysicalStrike {
             if (value == null) {
                 fileFont.getGlyphMetrics(pScalerContext, glyphCode, metrics);
                 /* advance is currently in device space, need to convert back
-                 * into user space.
+                 * into user space, unless getUserAdv == false.
                  */
-                if (invertDevTx != null) {
+                if (invertDevTx != null && getUserAdv) {
                     invertDevTx.deltaTransform(metrics, metrics);
                 }
                 value = new Point2D.Float(metrics.x, metrics.y);

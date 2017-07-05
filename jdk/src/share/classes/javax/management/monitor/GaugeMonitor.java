@@ -636,28 +636,28 @@ public class GaugeMonitor extends Monitor implements GaugeMonitorMBean {
         Number der;
         switch (o.getType()) {
         case INTEGER:
-            der = new Integer(((Integer)scanGauge).intValue() -
-                              ((Integer)prev).intValue());
+            der = Integer.valueOf(((Integer)scanGauge).intValue() -
+                                  ((Integer)prev).intValue());
             break;
         case BYTE:
-            der = new Byte((byte)(((Byte)scanGauge).byteValue() -
-                                  ((Byte)prev).byteValue()));
+            der = Byte.valueOf((byte)(((Byte)scanGauge).byteValue() -
+                                      ((Byte)prev).byteValue()));
             break;
         case SHORT:
-            der = new Short((short)(((Short)scanGauge).shortValue() -
-                                    ((Short)prev).shortValue()));
+            der = Short.valueOf((short)(((Short)scanGauge).shortValue() -
+                                        ((Short)prev).shortValue()));
             break;
         case LONG:
-            der = new Long(((Long)scanGauge).longValue() -
-                           ((Long)prev).longValue());
+            der = Long.valueOf(((Long)scanGauge).longValue() -
+                               ((Long)prev).longValue());
             break;
         case FLOAT:
-            der = new Float(((Float)scanGauge).floatValue() -
-                            ((Float)prev).floatValue());
+            der = Float.valueOf(((Float)scanGauge).floatValue() -
+                                ((Float)prev).floatValue());
             break;
         case DOUBLE:
-            der = new Double(((Double)scanGauge).doubleValue() -
-                             ((Double)prev).doubleValue());
+            der = Double.valueOf(((Double)scanGauge).doubleValue() -
+                                 ((Double)prev).doubleValue());
             break;
         default:
             // Should never occur...
