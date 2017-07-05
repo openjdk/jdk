@@ -70,7 +70,7 @@ public class SnmpErrorHandlerAgent extends SnmpMibAgent
      * @param server The MBean server to register the service with.
      * @param name The object name.
      *
-     * @return The passed name paramter.
+     * @return The passed name parameter.
      *
      * @exception java.lang.Exception
      */
@@ -99,7 +99,7 @@ public class SnmpErrorHandlerAgent extends SnmpMibAgent
      *
      * @param inRequest The SnmpMibRequest object holding the list of variable to be retrieved.
      *
-     * @exception SnmpStatusException An error occured during the operation.
+     * @exception SnmpStatusException An error occurred during the operation.
      */
 
     @Override
@@ -147,7 +147,7 @@ public class SnmpErrorHandlerAgent extends SnmpMibAgent
      *
      * @param inRequest The SnmpMibRequest object holding the list of variable to be set.
      *
-     * @exception SnmpStatusException An error occured during the operation.
+     * @exception SnmpStatusException An error occurred during the operation.
      */
 
     @Override
@@ -165,7 +165,7 @@ public class SnmpErrorHandlerAgent extends SnmpMibAgent
      *
      * @param inRequest The SnmpMibRequest object holding the list of variables to be retrieved.
      *
-     * @exception SnmpStatusException An error occured during the operation.
+     * @exception SnmpStatusException An error occurred during the operation.
      */
 
     @Override
@@ -190,7 +190,7 @@ public class SnmpErrorHandlerAgent extends SnmpMibAgent
      *
      * @param inRequest The SnmpMibRequest object holding the list of variable to be retrieved.
      *
-     * @exception SnmpStatusException An error occured during the operation.
+     * @exception SnmpStatusException An error occurred during the operation.
      */
 
     @Override

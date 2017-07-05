@@ -143,7 +143,7 @@ public class CookieManager extends CookieHandler
      *
      * @param store     a {@code CookieStore} to be used by cookie manager.
      *                  if {@code null}, cookie manager will use a default one,
-     *                  which is an in-memory CookieStore implmentation.
+     *                  which is an in-memory CookieStore implementation.
      * @param cookiePolicy      a {@code CookiePolicy} instance
      *                          to be used by cookie manager as policy callback.
      *                          if {@code null}, ACCEPT_ORIGINAL_SERVER will

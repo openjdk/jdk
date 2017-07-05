@@ -643,6 +643,14 @@ typedef struct _GThreadFunctions GThreadFunctions;
  */
 const char *getStrFor(JNIEnv *env, jstring value);
 
+/**
+ * Returns :
+ * NULL if the GLib library is compatible with the given version, or a string
+ * describing the version mismatch.
+ */
+gchar* (*fp_glib_check_version)(guint required_major, guint required_minor,
+                       guint required_micro);
+
 /*
  * Check whether the gtk2 library is available and meets the minimum
  * version requirement.  If the library is already loaded this method has no
@@ -663,7 +671,7 @@ gchar* (*fp_gtk_check_version)(guint required_major, guint required_minor,
  * effect and returns success.
  * Returns FALSE on failure and TRUE on success.
  */
-gboolean gtk2_load();
+gboolean gtk2_load(JNIEnv *env);
 
 /*
  * Loads fp_gtk_show_uri function pointer. This initialization is
@@ -800,6 +808,12 @@ void (*fp_gtk_widget_show)(GtkWidget *widget);
 void (*fp_gtk_main)(void);
 guint (*fp_gtk_main_level)(void);
 
+
+/**
+ * This function is available for GLIB > 2.20, so it MUST be
+ * called within (fp_glib_check_version(2, 20, 0) == NULL) check.
+ */
+gboolean (*fp_g_thread_get_initialized)(void);
 
 void (*fp_g_thread_init)(GThreadFunctions *vtable);
 void (*fp_gdk_threads_init)(void);

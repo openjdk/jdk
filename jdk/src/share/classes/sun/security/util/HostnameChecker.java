@@ -212,7 +212,7 @@ public class HostnameChecker {
     /**
      * Return the subject of a certificate as X500Name, by reparsing if
      * necessary. X500Name should only be used if access to name components
-     * is required, in other cases X500Principal is to be prefered.
+     * is required, in other cases X500Principal is to be preferred.
      *
      * This method is currently used from within JSSE, do not remove.
      */

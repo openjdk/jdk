@@ -54,21 +54,21 @@ import java.nio.ByteBuffer;
  *
  * <p>Implementations are free to implement the Cloneable interface.
  * Client applications can test cloneability by attempting cloning
- * and catching the CloneNotSupportedException: <p>
+ * and catching the CloneNotSupportedException:
  *
-* <pre>
-* MessageDigest md = MessageDigest.getInstance("SHA");
-*
-* try {
-*     md.update(toChapter1);
-*     MessageDigest tc1 = md.clone();
-*     byte[] toChapter1Digest = tc1.digest();
-*     md.update(toChapter2);
-*     ...etc.
-* } catch (CloneNotSupportedException cnse) {
-*     throw new DigestException("couldn't make digest of partial content");
-* }
-* </pre>
+ * <pre>{@code
+ * MessageDigest md = MessageDigest.getInstance("SHA");
+ *
+ * try {
+ *     md.update(toChapter1);
+ *     MessageDigest tc1 = md.clone();
+ *     byte[] toChapter1Digest = tc1.digest();
+ *     md.update(toChapter2);
+ *     ...etc.
+ * } catch (CloneNotSupportedException cnse) {
+ *     throw new DigestException("couldn't make digest of partial content");
+ * }
+ * }</pre>
  *
  * <p>Note that if a given implementation is not cloneable, it is
  * still possible to compute intermediate digests by instantiating

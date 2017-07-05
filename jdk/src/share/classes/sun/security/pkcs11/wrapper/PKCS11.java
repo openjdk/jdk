@@ -1503,7 +1503,7 @@ public class PKCS11 {
      *         (PKCS#11 param: CK_FLAGS flags)
      * @param pReserved reserved. Should be null
      *         (PKCS#11 param: CK_VOID_PTR pReserved)
-     * @return the slot ID where the event occured
+     * @return the slot ID where the event occurred
      *         (PKCS#11 param: CK_SLOT_ID_PTR pSlot)
      * @exception PKCS11Exception If function returns other value than CKR_OK.
      * @preconditions (pRserved == null)

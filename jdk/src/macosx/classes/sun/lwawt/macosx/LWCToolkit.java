@@ -548,22 +548,18 @@ public final class LWCToolkit extends LWToolkit {
     // Any selector invoked using ThreadUtilities performOnMainThread will be processed in doAWTRunLoop
     // The InvocationEvent will call LWCToolkit.stopAWTRunLoop() when finished, which will stop our manual runloop
     // Does not dispatch native events while in the loop
-    public static void invokeAndWait(Runnable event, Component component) throws InterruptedException, InvocationTargetException {
+    public static void invokeAndWait(Runnable runnable, Component component) throws InvocationTargetException {
         final long mediator = createAWTRunLoopMediator();
 
         InvocationEvent invocationEvent =
-                new InvocationEvent(component != null ? component : Toolkit.getDefaultToolkit(), event) {
-                    @Override
-                    public void dispatch() {
-                        try {
-                            super.dispatch();
-                        } finally {
+                new InvocationEvent(component != null ? component : Toolkit.getDefaultToolkit(),
+                        runnable,
+                        () -> {
                             if (mediator != 0) {
                                 stopAWTRunLoop(mediator);
                             }
-                        }
-                    }
-                };
+                        },
+                        true);
 
         if (component != null) {
             AppContext appContext = SunToolkit.targetToAppContext(component);

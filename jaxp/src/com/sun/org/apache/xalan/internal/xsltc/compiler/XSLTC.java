@@ -43,6 +43,8 @@ import javax.xml.XMLConstants;
 
 import com.sun.org.apache.bcel.internal.classfile.JavaClass;
 import com.sun.org.apache.xalan.internal.XalanConstants;
+import com.sun.org.apache.xalan.internal.utils.FeatureManager;
+import com.sun.org.apache.xalan.internal.utils.FeatureManager.Feature;
 import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
 import com.sun.org.apache.xalan.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
@@ -148,11 +150,14 @@ public final class XSLTC {
 
     private XMLSecurityManager _xmlSecurityManager;
 
+    private final FeatureManager _featureManager;
+
     /**
      * XSLTC compiler constructor
      */
-    public XSLTC(boolean useServicesMechanism) {
+    public XSLTC(boolean useServicesMechanism, FeatureManager featureManager) {
         _parser = new Parser(this, useServicesMechanism);
+        _featureManager = featureManager;
     }
 
     /**
@@ -180,6 +185,15 @@ public final class XSLTC {
      */
     public void setServicesMechnism(boolean flag) {
         _useServicesMechanism = flag;
+    }
+
+     /**
+     * Return the value of the specified feature
+     * @param name name of the feature
+     * @return true if the feature is enabled, false otherwise
+     */
+    public boolean getFeature(Feature name) {
+        return _featureManager.isFeatureEnabled(name);
     }
 
     /**

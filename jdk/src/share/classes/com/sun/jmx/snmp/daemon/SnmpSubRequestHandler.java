@@ -99,7 +99,7 @@ class SnmpSubRequestHandler implements SnmpDefinitions, Runnable {
     }
 
     /**
-     * SNMP V1/V2 The constuctor initialize the subrequest with the whole varbind list contained
+     * SNMP V1/V2 The constructor initialize the subrequest with the whole varbind list contained
      * in the original request.
      */
     @SuppressWarnings("unchecked")  // cast to NonSyncVector<SnmpVarBind>

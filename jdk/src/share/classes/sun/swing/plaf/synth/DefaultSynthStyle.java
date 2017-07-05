@@ -276,7 +276,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
     /**
      * Returns a SynthGraphicsUtils.
      *
-     * @param context SynthContext indentifying requestor
+     * @param context SynthContext identifying requestor
      * @return SynthGraphicsUtils
      */
     public SynthGraphicsUtils getGraphicsUtils(SynthContext context) {
@@ -300,7 +300,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
      * insets will be placed in it, otherwise a new Insets object will be
      * created and returned.
      *
-     * @param context SynthContext indentifying requestor
+     * @param context SynthContext identifying requestor
      * @param to Where to place Insets
      * @return Insets.
      */
@@ -332,7 +332,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
     /**
      * Returns the Painter for the passed in Component. This may return null.
      *
-     * @param ss SynthContext indentifying requestor
+     * @param ss SynthContext identifying requestor
      * @return Painter for the border
      */
     public SynthPainter getPainter(SynthContext ss) {
@@ -353,7 +353,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
      * to. A Style should NOT assume the opacity will remain this value, the
      * developer may reset it or override it.
      *
-     * @param ss SynthContext indentifying requestor
+     * @param ss SynthContext identifying requestor
      * @return opaque Whether or not the JComponent is opaque.
      */
     public boolean isOpaque(SynthContext ss) {
@@ -382,7 +382,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
     /**
      * Getter for a region specific style property.
      *
-     * @param state SynthContext indentifying requestor
+     * @param state SynthContext identifying requestor
      * @param key Property being requested.
      * @return Value of the named property
      */
@@ -435,7 +435,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
      * Returns the default value for a particular property.  This is only
      * invoked if this style doesn't define a property for <code>key</code>.
      *
-     * @param state SynthContext indentifying requestor
+     * @param state SynthContext identifying requestor
      * @param key Property being requested.
      * @return Value of the named property
      */

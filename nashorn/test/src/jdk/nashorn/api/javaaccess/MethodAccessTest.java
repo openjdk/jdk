@@ -412,7 +412,7 @@ public class MethodAccessTest {
 
     @Test
     public void accessMethodMixedWithEllipsis() throws ScriptException {
-        assertArrayEquals(new Object[] { "Hello", 10, true, -100500, 80 }, (Object[])e.eval("o.methodMixedWithEllipsis('Hello', 10, true, -100500,80.0);"));
+        assertArrayEquals(new Object[] { "Hello", 10, true, -100500, 80d }, (Object[])e.eval("o.methodMixedWithEllipsis('Hello', 10, true, -100500,80.0);"));
         assertArrayEquals(new Object[] { "Nashorn", 15 }, (Object[])e.eval("o.methodMixedWithEllipsis('Nashorn',15);"));
     }
 
@@ -431,8 +431,8 @@ public class MethodAccessTest {
 
     @Test
     public void accessMethodDoubleVSintOverloaded() throws ScriptException {
-        assertEquals("int", e.eval("o.overloadedMethodDoubleVSint(0.0);"));
-        assertEquals("int", e.eval("o.overloadedMethodDoubleVSint(1000.0);"));
+        assertEquals("double", e.eval("o.overloadedMethodDoubleVSint(0.0);"));
+        assertEquals("double", e.eval("o.overloadedMethodDoubleVSint(1000.0);"));
         assertEquals("double", e.eval("o.overloadedMethodDoubleVSint(0.01);"));
         assertEquals("double", e.eval("o.overloadedMethodDoubleVSint(100.02);"));
         assertEquals("int", e.eval("o.overloadedMethodDoubleVSint(0);"));

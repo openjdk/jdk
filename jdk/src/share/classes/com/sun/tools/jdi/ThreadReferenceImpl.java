@@ -62,7 +62,7 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
 
     // This is cached only while this one thread is suspended.  Each time
     // the thread is resumed, we abandon the current cache object and
-    // create a new intialized one.
+    // create a new initialized one.
     private static class LocalCache {
         JDWP.ThreadReference.Status status = null;
         List<StackFrame> frames = null;

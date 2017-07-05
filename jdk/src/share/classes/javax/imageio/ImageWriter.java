@@ -423,7 +423,7 @@ public abstract class ImageWriter implements ImageTranscoder {
     // Thumbnails
 
     /**
-     * Returns the number of thumbnails suported by the format being
+     * Returns the number of thumbnails supported by the format being
      * written, given the image type and any additional write
      * parameters and metadata objects that will be used during
      * encoding.  A return value of <code>-1</code> indicates that
@@ -923,7 +923,7 @@ public abstract class ImageWriter implements ImageTranscoder {
      * <p> The default implementation throws an
      * <code>IllegalStateException</code> if the output is
      * <code>null</code>, and otherwise returns <code>false</code>
-     * withour checking the value of <code>imageIndex</code>.
+     * without checking the value of <code>imageIndex</code>.
      *
      * @param imageIndex the index at which the image is to be
      * inserted.

@@ -310,7 +310,7 @@ sun_jpeg_fill_input_buffer(j_decompress_ptr cinfo)
  * Note that with I/O suspension turned on, the JPEG library requires
  * that all buffer filling be done at the top application level.  Due
  * to the way that backtracking works, this procedure should save all
- * of the data that was left in the buffer when suspension occured and
+ * of the data that was left in the buffer when suspension occurred and
  * only read new data at the end.
  */
 

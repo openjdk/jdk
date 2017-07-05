@@ -32,7 +32,7 @@ import java.io.UnsupportedEncodingException;
  * performance data.
  *
  * <p> The enumeration values for this typesafe enumeration must be
- * kept in sychronization with the PerfDataType enum in the
+ * kept in synchronization with the PerfDataType enum in the
  * globalsDefinitions.hpp file in the HotSpot source base.</p>
  *
  * @author  Brian Doherty

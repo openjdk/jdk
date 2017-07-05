@@ -45,7 +45,7 @@ import java.lang.reflect.Method;
  * is designed to encode its metadata losslessly.  This format will
  * typically be designed specifically to work with a specific file
  * format, so that images may be loaded and saved in the same format
- * with no loss of metadata, but may be less useful for transfering
+ * with no loss of metadata, but may be less useful for transferring
  * metadata between an <code>ImageReader</code> and an
  * <code>ImageWriter</code> for different image formats.  To convert
  * between two native formats as losslessly as the image file formats
@@ -130,9 +130,9 @@ public abstract class IIOMetadata {
 
     /**
      * Constructs an empty <code>IIOMetadata</code> object.  The
-     * subclass is responsible for suppying values for all protected
+     * subclass is responsible for supplying values for all protected
      * instance variables that will allow any non-overridden default
-     * implemtations of methods to satisfy their contracts.  For example,
+     * implementations of methods to satisfy their contracts.  For example,
      * <code>extraMetadataFormatNames</code> should not have length 0.
      */
     protected IIOMetadata() {}
@@ -475,7 +475,7 @@ public abstract class IIOMetadata {
      * Alters the internal state of this <code>IIOMetadata</code>
      * object from a tree of XML DOM <code>Node</code>s whose syntax
      * is defined by the given metadata format.  The previous state is
-     * altered only as necessary to accomodate the nodes that are
+     * altered only as necessary to accommodate the nodes that are
      * present in the given tree.  If the tree structure or contents
      * are invalid, an <code>IIOInvalidTreeException</code> will be
      * thrown.

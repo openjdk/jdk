@@ -174,15 +174,6 @@ abstract public class ORB {
     private static final String ORBSingletonClassKey = "org.omg.CORBA.ORBSingletonClass";
 
     //
-    // The last resort fallback ORB implementation classes in case
-    // no ORB implementation class is dynamically configured through
-    // properties or applet parameters. Change these values to
-    // vendor-specific class names.
-    //
-    private static final String defaultORB = "com.sun.corba.se.impl.orb.ORBImpl";
-    private static final String defaultORBSingleton = "com.sun.corba.se.impl.orb.ORBSingleton";
-
-    //
     // The global instance of the singleton ORB implementation which
     // acts as a factory for typecodes for generated Helper classes.
     // TypeCodes should be immutable since they may be shared across
@@ -294,10 +285,11 @@ abstract public class ORB {
             String className = getSystemProperty(ORBSingletonClassKey);
             if (className == null)
                 className = getPropertyFromFile(ORBSingletonClassKey);
-            if (className == null)
-                className = defaultORBSingleton;
-
-            singleton = create_impl(className);
+            if (className == null) {
+                singleton = new com.sun.corba.se.impl.orb.ORBSingleton();
+            } else {
+                singleton = create_impl(className);
+            }
         }
         return singleton;
     }
@@ -347,10 +339,12 @@ abstract public class ORB {
             className = getSystemProperty(ORBClassKey);
         if (className == null)
             className = getPropertyFromFile(ORBClassKey);
-        if (className == null)
-            className = defaultORB;
+        if (className == null) {
+            orb = new com.sun.corba.se.impl.orb.ORBImpl();
+        } else {
+            orb = create_impl(className);
+        }
 
-        orb = create_impl(className);
         orb.set_parameters(args, props);
         return orb;
     }
@@ -375,10 +369,12 @@ abstract public class ORB {
             className = getSystemProperty(ORBClassKey);
         if (className == null)
             className = getPropertyFromFile(ORBClassKey);
-        if (className == null)
-            className = defaultORB;
+        if (className == null) {
+            orb = new com.sun.corba.se.impl.orb.ORBImpl();
+        } else {
+            orb = create_impl(className);
+        }
 
-        orb = create_impl(className);
         orb.set_parameters(app, props);
         return orb;
     }

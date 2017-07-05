@@ -37,7 +37,7 @@ package com.sun.beans.decoder;
  *     &lt;string&gt;0xFFFF&lt;/string&gt;
  * &lt;/method&gt;</pre>
  * which is equivalent to {@code Long.decode("0xFFFF")} in Java code.
- * <p>The following atribute is supported:
+ * <p>The following attribute is supported:
  * <dl>
  * <dt>id
  * <dd>the identifier of the variable that is intended to store the result

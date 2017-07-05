@@ -39,7 +39,7 @@ import com.sun.rowset.internal.*;
 
 /**
  * The standard implementation of the <code>FilteredRowSet</code> interface. See the interface
- * defintion for full behaviour and implementation requirements.
+ * definition for full behavior and implementation requirements.
  *
  * @see javax.sql.rowset.Predicate
  * @author Jonathan Bruce, Amit Handa

@@ -38,7 +38,7 @@ import javax.swing.SizeRequirements;
  * This is a building block that might be useful to represent
  * things like a collection of lines, paragraphs,
  * lists, columns, pages, etc.  The axis along which the children are tiled is
- * considered the major axis.  The orthoginal axis is the minor axis.
+ * considered the major axis.  The orthogonal axis is the minor axis.
  * <p>
  * Layout for each axis is handled separately by the methods
  * <code>layoutMajorAxis</code> and <code>layoutMinorAxis</code>.
@@ -507,7 +507,7 @@ public class BoxView extends CompositeView {
      * Determines the desired alignment for this view along an
      * axis.  This is implemented to give the total alignment
      * needed to position the children with the alignment points
-     * lined up along the axis orthoginal to the axis that is
+     * lined up along the axis orthogonal to the axis that is
      * being tiled.  The axis being tiled will request to be
      * centered (i.e. 0.5f).
      *
@@ -650,7 +650,7 @@ public class BoxView extends CompositeView {
      * @param x the X coordinate &gt;= 0
      * @param y the Y coordinate &gt;= 0
      * @param alloc the parents inner allocation on entry, which should
-     *   be changed to the childs allocation on exit
+     *   be changed to the child's allocation on exit
      * @return the view
      */
     protected View getViewAtPoint(int x, int y, Rectangle alloc) {
@@ -816,7 +816,7 @@ public class BoxView extends CompositeView {
 
     /**
      * Performs layout for the minor axis of the box (i.e. the
-     * axis orthoginal to the axis that it represents). The results
+     * axis orthogonal to the axis that it represents). The results
      * of the layout (the offset and span for each children) are
      * placed in the given arrays which represent the allocations to
      * the children along the minor axis.
@@ -1102,7 +1102,7 @@ public class BoxView extends CompositeView {
     }
 
     /**
-     * Fetches the span of a particular childs current layout.
+     * Fetches the span of a particular child's current layout.
      * @param axis the axis being studied
      * @param childIndex the index of the requested child
      * @return the span (width or height) of the specified child

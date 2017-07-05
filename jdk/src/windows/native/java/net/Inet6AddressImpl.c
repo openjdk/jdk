@@ -131,18 +131,20 @@ Java_java_net_Inet6AddressImpl_lookupAllHostAddr(JNIEnv *env, jobject this,
 
     error = getaddrinfo(hostname, NULL, &hints, &res);
 
-    if (WSAGetLastError() == WSATRY_AGAIN) {
-        NET_ThrowByNameWithLastError(env,
-                                     JNU_JAVANETPKG "UnknownHostException",
-                                     hostname);
-        JNU_ReleaseStringPlatformChars(env, host, hostname);
-        return NULL;
-    } else if (error) {
-        /* report error */
-        JNU_ThrowByName(env, JNU_JAVANETPKG "UnknownHostException",
-                        (char *)hostname);
-        JNU_ReleaseStringPlatformChars(env, host, hostname);
-        return NULL;
+    if (error) {
+        if (WSAGetLastError() == WSATRY_AGAIN) {
+            NET_ThrowByNameWithLastError(env,
+                                         JNU_JAVANETPKG "UnknownHostException",
+                                         hostname);
+            JNU_ReleaseStringPlatformChars(env, host, hostname);
+            return NULL;
+        } else {
+            /* report error */
+            JNU_ThrowByName(env, JNU_JAVANETPKG "UnknownHostException",
+                            (char *)hostname);
+            JNU_ReleaseStringPlatformChars(env, host, hostname);
+            return NULL;
+        }
     } else {
         int i = 0;
         int inetCount = 0, inet6Count = 0, inetIndex, inet6Index;

@@ -983,7 +983,7 @@ imageio_fill_input_buffer(j_decompress_ptr cinfo)
  * buffer filling be done at the top application level, using this
  * function.  Due to the way that backtracking works, this procedure
  * saves all of the data that was left in the buffer when suspension
- * occured and read new data only at the end.
+ * occurred and read new data only at the end.
  */
 
 GLOBAL(void)

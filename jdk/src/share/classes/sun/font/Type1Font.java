@@ -368,7 +368,7 @@ public class Type1Font extends FileFont {
         String fontType = null;
         try {
             //Parse font looking for explicit FullName, FamilyName and FontName
-            //  (acording to Type1 spec they are optional)
+            //  (according to Type1 spec they are optional)
             while ((fullName == null || familyName == null || psName == null || fontType == null) && !eof) {
                 int tokenType = nextTokenType(bb);
                 if (tokenType == PSNAMETOKEN) {

@@ -14,14 +14,14 @@ Using the Multiplexing Look and Feel
 
 <blockquote>
 <hr>
-<i>
 <p>
+<i>
 This document is based on an article
 originally published in
 <a href="http://java.sun.com/products/jfc/tsc/" target="_top"><em>The Swing
 Connection</em></a>.
-</p>
 </i>
+</p>
 <hr>
 </blockquote>
 
@@ -43,7 +43,6 @@ the Java or Windows look and feel, for example --
 and requires no modifications to work with auxiliary look and feels.
 </p>
 
-</p>
 
 <p>
 This document has the following sections:
@@ -76,14 +75,12 @@ a <em>Swing Connection</em> article.
 </p>
 
 <p> 
-<a name="overview">
+<a name="overview"></a>
 <hr width=100% align=LEFT size=2>
-</a>
 <b>
 <font color="#000080" size="+2">Overview</font>
 </b>
 
-<p></p>
 
 <p>
 
@@ -146,14 +143,12 @@ is called (unsurprisingly)
 the Multiplexing look and feel.
 
 <p> 
-<a name="howtouse">
+<a name="howtouse"></a>
 <hr width=100% align=LEFT size=2>
-</a>
 <b>
 <font color="#000080" size="+2">How to Use Auxiliary Look and Feels</font>
 </b>
 
-<p></p>
 
 <p>
 It's easy to use auxiliary look and feels with Swing. To instruct 
@@ -204,14 +199,12 @@ of the UIs obtained from the default and auxiliary look and feels.
 </p>
 
 <p> 
-<a name="howtowrite">
+<a name="howtowrite"></a>
 <hr width=100% align=LEFT size=2>
-</a>
 <b>
 <font color="#000080" size="+2">Tips for Writing an Auxiliary Look and Feel</font>
 </b>
 
-<p></p>
 
 <p>
 An auxiliary look and feel is like any other look and feel,
@@ -252,7 +245,6 @@ the <code>javax.swing.plaf</code> package.
 <font color="#000080" size="+1"><b>Dos and Don'ts</b></font> 
 </a>
 </p>
-<p></p>
 
 <p>
 The following paragraphs provide some general recommendations for developing 
@@ -264,22 +256,19 @@ auxiliary look and feels.
 to perform all initialization,
 and the <code>uninstallUI</code> method
 to perform all cleanup.</b></font>
-</font>
 </p>
-<ul>
-<p>
+<blockquote>
 The <code>installUI</code> and <code>uninstallUI</code>
 methods are invoked when a component's look and feel is set.
 The <code>installUI</code> method gives the new UI object
 a chance to add listeners on the component and its data model.
 Similarly, the <code>uninstallUI</code> method
 lets the previous UI object remove its listeners.
-</p>
-            </ul>
+</blockquote>
             <p> <font color="#000080"><b>Don't extend 
               visual look and feels.</b></font></p>
-            <ul>
-              <p> We recommended that you <i>don't</i> implement 
+<blockquote>
+               We recommended that you <i>don't</i> implement 
                 UI classes of an auxiliary look and feel as subclasses of the 
                 UI classes of a visual look and feel. Why not? Because they might 
                 accidentally inherit code that installs listeners on a component 
@@ -290,13 +279,13 @@ lets the previous UI object remove its listeners.
                 Instead, we recommend that the UI classes of an auxiliary look 
                 and feel directly extend the abstract UI classes in the <code>javax.swing.plaf</code> 
                 package. By using this strategy, the developer of an auxiliary 
-                look and feel can avoid competing with the default look and feel.</p>
-            </ul>
+                look and feel can avoid competing with the default look and feel.
+</blockquote>
             <p> <font color="#000080"><b>Override all UI-specific methods
 	    your UI classes inherit.</b></font>
 	    </p>
-            <ul>
-              <p> We recommend that each UI class of 
+<blockquote>
+               We recommend that each UI class of 
                 an auxiliary look and feel override the methods 
 		defined in the <code>javax.swing.plaf</code>
                 UI classes it descends from
@@ -309,15 +298,14 @@ lets the previous UI object remove its listeners.
 		if the 
                 component is opaque. If a UI class from a non-visual auxiliary 
                 look and feel does not override this method, all 
-                opaque components appear as blank areas on the screen!</p>
-            </ul>
+                opaque components appear as blank areas on the screen!
+</blockquote>
             <p> 
 
 <br>
 <a name="uidefaults">
 <font color="#000080" size="+1"><b>Extending UIDefaults</b></font> 
 </a>
-            <p></p>
 
             <p>In many cases, you 
               might want an auxiliary look and feel to be &quot;incomplete.&quot; That 
@@ -379,7 +367,6 @@ In the preceding example, an auxiliary look and feel named <code>MyAux</code>
 <a name="defaultui">
 <b><font color="#000080" size="+1">Examining Other UI Objects</font></b> 
 </a>
-<p></p>
 
             <p>In 
               rare instances, a UI object from an auxiliary look and feel 
@@ -395,12 +382,10 @@ In the preceding example, an auxiliary look and feel named <code>MyAux</code>
 	      </p>
 
 <p> 
-<a name="implementation">
+<a name="implementation"></a>
 <hr width=100% align=LEFT size=2>
-</a>
 <font color="#000080" size="+2"><b>How the Multiplexing Look and Feel
 Is Implemented</b></font> 
-<p></p>
 
 <p>
 The Multiplexing look and feel
@@ -437,8 +422,8 @@ all developers and users. It should &quot;just work&quot; -- and
                 and feel is always the first to be created. After that, a UI object 
                 is created from each auxiliary look and feel in the order 
                 they are specified in the <code>swing.auxiliarylaf</code> 
-                property.</li>
-<p>
+                property.<br><br></li>
+
               <li> When a method that requests information 
                 from a UI object is invoked, the multiplexing UI object 
 		invokes the method on all the UI objects, but returns 
@@ -450,8 +435,8 @@ all developers and users. It should &quot;just work&quot; -- and
 		The <code>getPreferredSize</code> method
 		is also invoked on the UI object for each auxiliary look and feel,
 		but the return values are ignored.
-                </li>
-<p>
+                <br><br></li>
+
               <li> When a method that does not request information 
                 from the UI object is invoked, the multiplexing UI object 
                 invokes that method on all UIs --
@@ -474,14 +459,12 @@ all developers and users. It should &quot;just work&quot; -- and
 
 <p> 
 
-<a name="custom">
+<a name="custom"></a>
 <hr width=100% align=LEFT size=2>
-</a>
 <font color="#000080" size="+2"><b>How to Provide a Custom Multiplexing Look
 and Feel</b></font> 
-<p></p>
 
-            <p><font color="#000080" size="+2"><b></b></font>While 
+            <p>While 
               we hope the behavior of the Multiplexing look and feel is 
               flexible enough not to require an alternative multiplexing look 
               and feel, Swing allows the user to specify another multiplexing look 

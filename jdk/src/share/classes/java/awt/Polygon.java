@@ -246,7 +246,7 @@ public class Polygon implements Shape, java.io.Serializable {
     }
 
     /*
-     * Resizes the bounding box to accomodate the specified coordinates.
+     * Resizes the bounding box to accommodate the specified coordinates.
      * @param x,&nbsp;y the specified coordinates
      */
     void updateBounds(int x, int y) {

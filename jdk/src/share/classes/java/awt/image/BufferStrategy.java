@@ -34,7 +34,7 @@ import java.awt.Image;
  * to organize complex memory on a particular <code>Canvas</code> or
  * <code>Window</code>.  Hardware and software limitations determine whether and
  * how a particular buffer strategy can be implemented.  These limitations
- * are detectible through the capabilities of the
+ * are detectable through the capabilities of the
  * <code>GraphicsConfiguration</code> used when creating the
  * <code>Canvas</code> or <code>Window</code>.
  * <p>

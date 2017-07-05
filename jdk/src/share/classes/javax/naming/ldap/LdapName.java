@@ -432,7 +432,7 @@ public class LdapName implements Name {
      * Adds the components of a name -- in order -- at a specified position
      * within this name. Components of this LDAP name at or after the
      * index (if any) of the first new component are shifted up
-     * (away from index 0) to accomodate the new components.
+     * (away from index 0) to accommodate the new components.
      *
      * @param suffix    The non-null components to add.
      * @param posn      The index at which to add the new component.
@@ -467,7 +467,7 @@ public class LdapName implements Name {
      * Adds the RDNs of a name -- in order -- at a specified position
      * within this name. RDNs of this LDAP name at or after the
      * index (if any) of the first new RDN are shifted up (away from index 0) to
-     * accomodate the new RDNs.
+     * accommodate the new RDNs.
      *
      * @param suffixRdns        The non-null suffix <tt>Rdn</tt>s to add.
      * @param posn              The index at which to add the suffix RDNs.

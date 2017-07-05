@@ -1092,7 +1092,7 @@ debugMonitorWait(jrawMonitorID monitor)
      * we don't want to consume it.  It came from
      * user code and is intended for user code, not us.
      * So, we will remember that the interrupt has
-     * occured and re-activate it when this thread
+     * occurred and re-activate it when this thread
      * goes back into user code.
      * That being said, what do we do here?  Since
      * we could have been notified too, here we will

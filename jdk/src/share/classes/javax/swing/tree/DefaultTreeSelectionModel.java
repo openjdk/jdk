@@ -1123,7 +1123,7 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
     /**
      * This method is obsolete and its implementation is now a noop.  It's
      * still called by setSelectionPaths and addSelectionPaths, but only
-     * for backwards compatability.
+     * for backwards compatibility.
      */
     protected void insureUniqueness() {
     }

@@ -63,9 +63,10 @@ import sun.swing.SwingUtilities2;
  * <p>
  * The <code>JInternalFrame</code> content pane
  * is where you add child components.
- * As a conveniance <code>add</code> and its variants, <code>remove</code> and
- * <code>setLayout</code> have been overridden to forward to the
- * <code>contentPane</code> as necessary. This means you can write:
+ * As a convenience, the {@code add}, {@code remove}, and {@code setLayout}
+ * methods of this class are overridden, so that they delegate calls
+ * to the corresponding methods of the {@code ContentPane}.
+ * For example, you can add a child component to an internal frame as follows:
  * <pre>
  *       internalFrame.add(child);
  * </pre>
@@ -445,7 +446,7 @@ public class JInternalFrame extends JComponent implements
      * <code>setLayout</code> are forwarded to the <code>contentPane</code>.
      *
      * @return true if <code>add</code> and <code>setLayout</code>
-     *         are fowarded; false otherwise
+     *         are forwarded; false otherwise
      *
      * @see #addImpl
      * @see #setLayout

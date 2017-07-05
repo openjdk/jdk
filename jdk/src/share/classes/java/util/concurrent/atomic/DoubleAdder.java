@@ -210,18 +210,58 @@ public class DoubleAdder extends Striped64 implements Serializable {
         return (float)sum();
     }
 
-    private void writeObject(java.io.ObjectOutputStream s)
-        throws java.io.IOException {
-        s.defaultWriteObject();
-        s.writeDouble(sum());
+    /**
+     * Serialization proxy, used to avoid reference to the non-public
+     * Striped64 superclass in serialized forms.
+     * @serial include
+     */
+    private static class SerializationProxy implements Serializable {
+        private static final long serialVersionUID = 7249069246863182397L;
+
+        /**
+         * The current value returned by sum().
+         * @serial
+         */
+        private final double value;
+
+        SerializationProxy(DoubleAdder a) {
+            value = a.sum();
+        }
+
+        /**
+         * Returns a {@code DoubleAdder} object with initial state
+         * held by this proxy.
+         *
+         * @return a {@code DoubleAdder} object with initial state
+         * held by this proxy.
+         */
+        private Object readResolve() {
+            DoubleAdder a = new DoubleAdder();
+            a.base = Double.doubleToRawLongBits(value);
+            return a;
+        }
     }
 
+    /**
+     * Returns a
+     * <a href="../../../../serialized-form.html#java.util.concurrent.atomic.DoubleAdder.SerializationProxy">
+     * SerializationProxy</a>
+     * representing the state of this instance.
+     *
+     * @return a {@link SerializationProxy}
+     * representing the state of this instance
+     */
+    private Object writeReplace() {
+        return new SerializationProxy(this);
+    }
+
+    /**
+     * @param s the stream
+     * @throws java.io.InvalidObjectException always
+     */
     private void readObject(java.io.ObjectInputStream s)
-        throws java.io.IOException, ClassNotFoundException {
-        s.defaultReadObject();
-        cellsBusy = 0;
-        cells = null;
-        base = Double.doubleToRawLongBits(s.readDouble());
+        throws java.io.InvalidObjectException {
+        throw new java.io.InvalidObjectException("Proxy required");
     }
 
 }

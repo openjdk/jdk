@@ -948,7 +948,7 @@ Java_sun_awt_windows_WPrinterJob_validatePaper(JNIEnv *env, jobject self,
     // This may happen in other cases too, but was observed for the above.
     // To get a DC compatible with this devmode we should really call
     // CreateDC() again to get a DC for the devmode we are using.
-    // The changes for that are a lot more risk, so to minimise that
+    // The changes for that are a lot more risk, so to minimize that
     // risk, assume its not LANDSCAPE unless width > height, even if the
     // devmode says its LANDSCAPE.
     // if the values were obtained from a rotated device, swap.

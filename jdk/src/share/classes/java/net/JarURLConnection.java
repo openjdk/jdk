@@ -82,7 +82,7 @@ import sun.net.www.ParseUtil;
  *
  * </dl>
  *
- * <p>{@code !/} is refered to as the <em>separator</em>.
+ * <p>{@code !/} is referred to as the <em>separator</em>.
  *
  * <p>When constructing a JAR url via {@code new URL(context, spec)},
  * the following rules apply:
@@ -223,7 +223,7 @@ public abstract class JarURLConnection extends URLConnection {
      * for this connection.
      *
      * @exception IOException if getting the JAR file for this
-     * connection causes an IOException to be trown.
+     * connection causes an IOException to be thrown.
      *
      * @see #getJarFile
      */
@@ -240,7 +240,7 @@ public abstract class JarURLConnection extends URLConnection {
      * the JAR URL for this connection points to a JAR file.
      *
      * @exception IOException if getting the JAR file for this
-     * connection causes an IOException to be trown.
+     * connection causes an IOException to be thrown.
      *
      * @see #getJarFile
      * @see #getJarEntry

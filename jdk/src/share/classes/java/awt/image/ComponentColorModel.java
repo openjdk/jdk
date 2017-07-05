@@ -2318,7 +2318,7 @@ public class ComponentColorModel extends ColorModel {
      * and is not large enough to hold all the color and alpha components
      * (starting at <code>normOffset</code>).
      * <p>
-     * This method must be overrridden by a subclass if that subclass
+     * This method must be overridden by a subclass if that subclass
      * is designed to translate pixel sample values to color component values
      * in a non-default way.  The default translations implemented by this
      * class is described in the class comments.  Any subclass implementing

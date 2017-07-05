@@ -755,7 +755,7 @@ class ChunkedInputStream extends InputStream implements Hurryable {
      * stream. If the last chunk (and optional trailers) can be read without
      * blocking then the stream is considered hurried.
      * <p>
-     * Note that if an error has occured or we can't get to last chunk
+     * Note that if an error has occurred or we can't get to last chunk
      * without blocking then this stream can't be hurried and should be
      * closed.
      */
