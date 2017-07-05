@@ -119,8 +119,13 @@ class ObjectStartArray : public CHeapObj<mtGC> {
 
   MemRegion covered_region() { return _covered_region; }
 
+#define assert_covered_region_contains(addr)                                                                 \
+        assert(_covered_region.contains(addr),                                                               \
+               err_msg(#addr " (" PTR_FORMAT ") is not in covered region [" PTR_FORMAT ", " PTR_FORMAT "]",  \
+                       p2i(addr), p2i(_covered_region.start()), p2i(_covered_region.end())))
+
   void allocate_block(HeapWord* p) {
-    assert(_covered_region.contains(p), "Must be in covered region");
+    assert_covered_region_contains(p);
     jbyte* block = block_for_addr(p);
     HeapWord* block_base = addr_for_block(block);
     size_t offset = pointer_delta(p, block_base, sizeof(HeapWord*));
@@ -135,7 +140,7 @@ class ObjectStartArray : public CHeapObj<mtGC> {
   // object in that block. Scroll backwards by one, and the first
   // object hit should be at the beginning of the block
   HeapWord* object_start(HeapWord* addr) const {
-    assert(_covered_region.contains(addr), "Must be in covered region");
+    assert_covered_region_contains(addr);
     jbyte* block = block_for_addr(addr);
     HeapWord* scroll_forward = offset_addr_for_block(block--);
     while (scroll_forward > addr) {
@@ -153,13 +158,14 @@ class ObjectStartArray : public CHeapObj<mtGC> {
   }
 
   bool is_block_allocated(HeapWord* addr) {
-    assert(_covered_region.contains(addr), "Must be in covered region");
+    assert_covered_region_contains(addr);
     jbyte* block = block_for_addr(addr);
     if (*block == clean_block)
       return false;
 
     return true;
   }
+#undef assert_covered_region_contains
 
   // Return true if an object starts in the range of heap addresses.
   // If an object starts at an address corresponding to

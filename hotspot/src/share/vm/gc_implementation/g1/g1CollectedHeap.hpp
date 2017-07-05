@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,11 +325,11 @@ private:
 
   // Keeps track of how many "old marking cycles" (i.e., Full GCs or
   // concurrent cycles) we have started.
-  volatile unsigned int _old_marking_cycles_started;
+  volatile uint _old_marking_cycles_started;
 
   // Keeps track of how many "old marking cycles" (i.e., Full GCs or
   // concurrent cycles) we have completed.
-  volatile unsigned int _old_marking_cycles_completed;
+  volatile uint _old_marking_cycles_completed;
 
   bool _concurrent_cycle_started;
   bool _heap_summary_sent;
@@ -497,22 +497,22 @@ protected:
   // the mutator alloc region without taking the Heap_lock. This
   // should only be used for non-humongous allocations.
   inline HeapWord* attempt_allocation(size_t word_size,
-                                      unsigned int* gc_count_before_ret,
-                                      int* gclocker_retry_count_ret);
+                                      uint* gc_count_before_ret,
+                                      uint* gclocker_retry_count_ret);
 
   // Second-level mutator allocation attempt: take the Heap_lock and
   // retry the allocation attempt, potentially scheduling a GC
   // pause. This should only be used for non-humongous allocations.
   HeapWord* attempt_allocation_slow(size_t word_size,
                                     AllocationContext_t context,
-                                    unsigned int* gc_count_before_ret,
-                                    int* gclocker_retry_count_ret);
+                                    uint* gc_count_before_ret,
+                                    uint* gclocker_retry_count_ret);
 
   // Takes the Heap_lock and attempts a humongous allocation. It can
   // potentially schedule a GC pause.
   HeapWord* attempt_allocation_humongous(size_t word_size,
-                                         unsigned int* gc_count_before_ret,
-                                         int* gclocker_retry_count_ret);
+                                         uint* gc_count_before_ret,
+                                         uint* gclocker_retry_count_ret);
 
   // Allocation attempt that should be called during safepoints (e.g.,
   // at the end of a successful GC). expect_null_mutator_alloc_region
@@ -686,7 +686,7 @@ public:
   // +ExplicitGCInvokesConcurrent).
   void increment_old_marking_cycles_completed(bool concurrent);
 
-  unsigned int old_marking_cycles_completed() {
+  uint old_marking_cycles_completed() {
     return _old_marking_cycles_completed;
   }
 
@@ -745,7 +745,7 @@ protected:
   // methods that call do_collection_pause() release the Heap_lock
   // before the call, so it's easy to read gc_count_before just before.
   HeapWord* do_collection_pause(size_t         word_size,
-                                unsigned int   gc_count_before,
+                                uint           gc_count_before,
                                 bool*          succeeded,
                                 GCCause::Cause gc_cause);
 
@@ -981,7 +981,7 @@ protected:
   // The heap region entry for a given worker is valid iff
   // the associated time stamp value matches the current value
   // of G1CollectedHeap::_gc_time_stamp.
-  unsigned int* _worker_cset_start_region_time_stamp;
+  uint* _worker_cset_start_region_time_stamp;
 
   enum G1H_process_roots_tasks {
     G1H_PS_filter_satb_buffers,

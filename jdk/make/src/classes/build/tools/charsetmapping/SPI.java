@@ -33,8 +33,10 @@ import java.util.Scanner;
 
 public class SPI {
 
-    public static void genClass(String type, LinkedHashMap<String, Charset> charsets,
-                                String srcDir, String dstDir, String template)
+    public static void genClass(String type,
+                                LinkedHashMap<String, Charset> charsets,
+                                String srcDir, String dstDir, String template,
+                                String os)
         throws Exception
     {
         try (Scanner s = new Scanner(new File(template));
@@ -50,7 +52,8 @@ public class SPI {
                         charsets.values()
                                 .stream()
                                 .filter(cs -> cs.pkgName.equals("sun.nio.cs.ext") &&
-                                              !cs.isInternal)
+                                              !cs.isInternal &&
+                                              (cs.os == null || cs.os.equals(os)))
                                 .forEach( cs -> {
                             out.printf("        charset(\"%s\", \"%s\",%n", cs.csName, cs.clzName);
                             out.printf("                new String[] {%n");

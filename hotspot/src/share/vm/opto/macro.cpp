@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1890,7 +1890,7 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
     // Box is used only in one lock region. Mark this box as eliminated.
     _igvn.hash_delete(oldbox);
     oldbox->as_BoxLock()->set_eliminated(); // This changes box's hash value
-    _igvn.hash_insert(oldbox);
+     _igvn.hash_insert(oldbox);
 
     for (uint i = 0; i < oldbox->outcnt(); i++) {
       Node* u = oldbox->raw_out(i);
@@ -1899,6 +1899,9 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
         // Check lock's box since box could be referenced by Lock's debug info.
         if (alock->box_node() == oldbox) {
           // Mark eliminated all related locks and unlocks.
+#ifdef ASSERT
+          alock->log_lock_optimization(C, "eliminate_lock_set_non_esc4");
+#endif
           alock->set_non_esc_obj();
         }
       }
@@ -1925,6 +1928,9 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
       AbstractLockNode* alock = u->as_AbstractLock();
       if (alock->box_node() == oldbox && alock->obj_node()->eqv_uncast(obj)) {
         // Replace Box and mark eliminated all related locks and unlocks.
+#ifdef ASSERT
+        alock->log_lock_optimization(C, "eliminate_lock_set_non_esc5");
+#endif
         alock->set_non_esc_obj();
         _igvn.rehash_node_delayed(alock);
         alock->set_box_node(newbox);
@@ -1971,26 +1977,38 @@ void PhaseMacroExpand::mark_eliminated_locking_nodes(AbstractLockNode *alock) {
        return;
     } else if (!alock->is_non_esc_obj()) { // Not eliminated or coarsened
       // Only Lock node has JVMState needed here.
-      if (alock->jvms() != NULL && alock->as_Lock()->is_nested_lock_region()) {
-        // Mark eliminated related nested locks and unlocks.
-        Node* obj = alock->obj_node();
-        BoxLockNode* box_node = alock->box_node()->as_BoxLock();
-        assert(!box_node->is_eliminated(), "should not be marked yet");
-        // Note: BoxLock node is marked eliminated only here
-        // and it is used to indicate that all associated lock
-        // and unlock nodes are marked for elimination.
-        box_node->set_eliminated(); // Box's hash is always NO_HASH here
-        for (uint i = 0; i < box_node->outcnt(); i++) {
-          Node* u = box_node->raw_out(i);
-          if (u->is_AbstractLock()) {
-            alock = u->as_AbstractLock();
-            if (alock->box_node() == box_node) {
-              // Verify that this Box is referenced only by related locks.
-              assert(alock->obj_node()->eqv_uncast(obj), "");
-              // Mark all related locks and unlocks.
-              alock->set_nested();
+      // Not that preceding claim is documented anywhere else.
+      if (alock->jvms() != NULL) {
+        if (alock->as_Lock()->is_nested_lock_region()) {
+          // Mark eliminated related nested locks and unlocks.
+          Node* obj = alock->obj_node();
+          BoxLockNode* box_node = alock->box_node()->as_BoxLock();
+          assert(!box_node->is_eliminated(), "should not be marked yet");
+          // Note: BoxLock node is marked eliminated only here
+          // and it is used to indicate that all associated lock
+          // and unlock nodes are marked for elimination.
+          box_node->set_eliminated(); // Box's hash is always NO_HASH here
+          for (uint i = 0; i < box_node->outcnt(); i++) {
+            Node* u = box_node->raw_out(i);
+            if (u->is_AbstractLock()) {
+              alock = u->as_AbstractLock();
+              if (alock->box_node() == box_node) {
+                // Verify that this Box is referenced only by related locks.
+                assert(alock->obj_node()->eqv_uncast(obj), "");
+                // Mark all related locks and unlocks.
+#ifdef ASSERT
+                alock->log_lock_optimization(C, "eliminate_lock_set_nested");
+#endif
+                alock->set_nested();
+              }
             }
           }
+        } else {
+#ifdef ASSERT
+          alock->log_lock_optimization(C, "eliminate_lock_NOT_nested_lock_region");
+          if (C->log() != NULL)
+            alock->as_Lock()->is_nested_lock_region(C); // rerun for debugging output
+#endif
         }
       }
       return;
@@ -2035,19 +2053,10 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
     assert(oldbox->is_eliminated(), "should be done already");
   }
 #endif
-  CompileLog* log = C->log();
-  if (log != NULL) {
-    log->head("eliminate_lock lock='%d'",
-              alock->is_Lock());
-    JVMState* p = alock->jvms();
-    while (p != NULL) {
-      log->elem("jvms bci='%d' method='%d'", p->bci(), log->identify(p->method()));
-      p = p->caller();
-    }
-    log->tail("eliminate_lock");
-  }
 
-  #ifndef PRODUCT
+  alock->log_lock_optimization(C, "eliminate_lock");
+
+#ifndef PRODUCT
   if (PrintEliminateLocks) {
     if (alock->is_Lock()) {
       tty->print_cr("++++ Eliminated: %d Lock", alock->_idx);
@@ -2055,7 +2064,7 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
       tty->print_cr("++++ Eliminated: %d Unlock", alock->_idx);
     }
   }
-  #endif
+#endif
 
   Node* mem  = alock->in(TypeFunc::Memory);
   Node* ctrl = alock->in(TypeFunc::Control);

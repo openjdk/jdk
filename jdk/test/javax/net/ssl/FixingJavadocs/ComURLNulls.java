@@ -46,12 +46,23 @@ import com.sun.net.ssl.HostnameVerifier;
 
 public class ComURLNulls {
 
+    private static class ComSunHTTPSHandlerFactory implements URLStreamHandlerFactory {
+        private static String SUPPORTED_PROTOCOL = "https";
+
+        public URLStreamHandler createURLStreamHandler(String protocol) {
+            if (!protocol.equalsIgnoreCase(SUPPORTED_PROTOCOL))
+                return null;
+
+            return new com.sun.net.ssl.internal.www.protocol.https.Handler();
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         HostnameVerifier reservedHV =
             HttpsURLConnection.getDefaultHostnameVerifier();
         try {
-            System.setProperty("java.protocol.handler.pkgs",
-                                    "com.sun.net.ssl.internal.www.protocol");
+            URL.setURLStreamHandlerFactory(new ComSunHTTPSHandlerFactory());
+
             /**
              * This test does not establish any connection to the specified
              * URL, hence a dummy URL is used.
