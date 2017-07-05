@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/universe.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"

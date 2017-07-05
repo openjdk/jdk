@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1802,6 +1802,9 @@ void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklis
             // The lock could be marked eliminated by lock coarsening
             // code during first IGVN before EA. Replace coarsened flag
             // to eliminate all associated locks/unlocks.
+#ifdef ASSERT
+            alock->log_lock_optimization(C, "eliminate_lock_set_non_esc3");
+#endif
             alock->set_non_esc_obj();
           }
         }

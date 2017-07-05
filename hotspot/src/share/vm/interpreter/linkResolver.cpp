@@ -35,6 +35,7 @@
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.hpp"
+#include "oops/oop.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
 #include "runtime/compilationPolicy.hpp"

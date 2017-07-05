@@ -42,7 +42,7 @@ public class HKSCS {
     private static Pattern hkscs =
         Pattern.compile("(?:0x)?+(\\p{XDigit}++)\\s++(?:0x|U\\+)?+(\\p{XDigit}++)?\\s*+(?:0x|U\\+)?(\\p{XDigit}++)?\\s*+.*");
 
-    static void genClass2008(String srcDir, String dstDir, String pkgName)
+    static void genClass2008(String srcDir, String dstDir, String pkgName, File copyright)
         throws Exception
     {
         // hkscs2008
@@ -53,10 +53,11 @@ public class HKSCS {
                   pkgName,
                   "HKSCSMapping",
                   true,
-                  "");
+                  getCopyright(copyright));
+
     }
 
-    static void genClassXP(String srcDir, String dstDir, String pkgName)
+    static void genClassXP(String srcDir, String dstDir, String pkgName, File copyright)
         throws Exception
     {
         genClass0(new FileInputStream(new File(srcDir, "HKSCS_XP.map")),
@@ -66,7 +67,7 @@ public class HKSCS {
                   pkgName,
                   "HKSCS_XPMapping",
                   false,
-                  "");
+                  getCopyright(copyright));
     }
 
     static void genClass2001(String args[]) throws Exception {

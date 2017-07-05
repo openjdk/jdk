@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2013 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -32,7 +32,6 @@
 #include "memory/resourceArea.hpp"
 #include "nativeInst_ppc.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oop.inline2.hpp"
 
 #define __ masm.
 

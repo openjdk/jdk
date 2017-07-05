@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -985,6 +985,9 @@ public:
   bool is_coarsened()   const { return (_kind == Coarsened); }
   bool is_nested()      const { return (_kind == Nested); }
 
+  const char * kind_as_string() const;
+  void log_lock_optimization(Compile* c, const char * tag) const;
+
   void set_non_esc_obj() { _kind = NonEscObj; set_eliminated_lock_counter(); }
   void set_coarsened()   { _kind = Coarsened; set_eliminated_lock_counter(); }
   void set_nested()      { _kind = Nested; set_eliminated_lock_counter(); }
@@ -1045,15 +1048,24 @@ public:
   }
 
   bool is_nested_lock_region(); // Is this Lock nested?
+  bool is_nested_lock_region(Compile * c); // Why isn't this Lock nested?
 };
 
 //------------------------------Unlock---------------------------------------
 // High-level unlock operation
 class UnlockNode : public AbstractLockNode {
+private:
+#ifdef ASSERT
+  JVMState* const _dbg_jvms;      // Pointer to list of JVM State objects
+#endif
 public:
   virtual int Opcode() const;
   virtual uint size_of() const; // Size is bigger
-  UnlockNode(Compile* C, const TypeFunc *tf) : AbstractLockNode( tf ) {
+  UnlockNode(Compile* C, const TypeFunc *tf) : AbstractLockNode( tf )
+#ifdef ASSERT
+    , _dbg_jvms(NULL)
+#endif
+  {
     init_class_id(Class_Unlock);
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
@@ -1061,6 +1073,14 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   // unlock is never a safepoint
   virtual bool        guaranteed_safepoint()  { return false; }
+#ifdef ASSERT
+  void set_dbg_jvms(JVMState* s) {
+    *(JVMState**)&_dbg_jvms = s;  // override const attribute in the accessor
+  }
+  JVMState* dbg_jvms() const { return _dbg_jvms; }
+#else
+  JVMState* dbg_jvms() const { return NULL; }
+#endif
 };
 
 class GraphKit;

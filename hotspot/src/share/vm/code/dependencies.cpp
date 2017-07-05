@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "ci/ciEnv.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciMethod.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "code/dependencies.hpp"
 #include "compiler/compileLog.hpp"
 #include "oops/oop.inline.hpp"
