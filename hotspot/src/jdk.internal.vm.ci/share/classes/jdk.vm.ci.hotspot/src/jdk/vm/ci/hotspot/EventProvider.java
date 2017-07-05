@@ -24,7 +24,6 @@ package jdk.vm.ci.hotspot;
 
 import jdk.vm.ci.hotspot.EmptyEventProvider.EmptyCompilationEvent;
 import jdk.vm.ci.hotspot.EmptyEventProvider.EmptyCompilerFailureEvent;
-import jdk.vm.ci.services.JVMCIPermission;
 
 /**
  * Service-provider class for logging compiler related events.

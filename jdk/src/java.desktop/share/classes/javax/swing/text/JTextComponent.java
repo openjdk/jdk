@@ -135,7 +135,7 @@ import sun.swing.SwingAccessor;
  * the action (In the case that the <code>ActionEvent</code>
  * sent to the action doesn't contain the target text component as its source).
  * <p>
- * The <a href="../../../../technotes/guides/imf/spec.html">input method framework</a>
+ * The {@extLink imf_overview Input Method Framework}
  * lets text components interact with input methods, separate software
  * components that preprocess events to let users enter thousands of
  * different characters using keyboards with far fewer keys.

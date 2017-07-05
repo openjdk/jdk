@@ -34,7 +34,7 @@
  *          jdk.internal.vm.ci/jdk.vm.ci.amd64
  *          jdk.internal.vm.ci/jdk.vm.ci.sparc
  * @compile CodeInstallationTest.java DebugInfoTest.java TestAssembler.java TestHotSpotVMConfig.java amd64/AMD64TestAssembler.java sparc/SPARCTestAssembler.java
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI jdk.vm.ci.code.test.MaxOopMapStackOffsetTest
+ * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI -Djvmci.Compiler=null jdk.vm.ci.code.test.MaxOopMapStackOffsetTest
  */
 
 package jdk.vm.ci.code.test;

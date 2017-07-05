@@ -151,7 +151,7 @@ import java.util.Arrays;
  * }</pre>
  * </blockquote>
  *
- * <h3><a name="synchronization">Synchronization</a></h3>
+ * <h3><a id="synchronization">Synchronization</a></h3>
  *
  * <p>
  * Choice formats are not synchronized.
