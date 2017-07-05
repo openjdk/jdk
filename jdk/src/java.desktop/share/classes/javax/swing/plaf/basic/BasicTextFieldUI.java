@@ -97,12 +97,7 @@ public class BasicTextFieldUI extends BasicTextUI {
             String kind = elem.getName();
             if (kind != null) {
                 if (kind.equals(AbstractDocument.ContentElementName)) {
-                    return new GlyphView(elem) {
-                        @Override
-                        public int getResizeWeight(int axis) {
-                            return 0;
-                        }
-                    };
+                    return new GlyphView(elem);
                 } else if (kind.equals(AbstractDocument.ParagraphElementName)) {
                     return new I18nFieldView(elem);
                 }

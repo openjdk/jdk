@@ -87,7 +87,7 @@ LRESULT
 AccessBridgeATInstance::initiateIPC() {
     DWORD errorCode;
 
-    PrintDebugString("\r\nin AccessBridgeATInstance::initiateIPC()");
+    PrintDebugString("\r\nIn AccessBridgeATInstance::initiateIPC()");
 
     // open Windows-initiated IPC filemap & map it to a ptr
 

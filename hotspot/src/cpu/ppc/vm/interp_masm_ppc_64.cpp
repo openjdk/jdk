@@ -2187,7 +2187,7 @@ void InterpreterMacroAssembler::get_method_counters(Register method,
 }
 
 void InterpreterMacroAssembler::increment_invocation_counter(Register Rcounters, Register iv_be_count, Register Rtmp_r0) {
-  assert(UseCompiler, "incrementing must be useful");
+  assert(UseCompiler || LogTouchedMethods, "incrementing must be useful");
   Register invocation_count = iv_be_count;
   Register backedge_count   = Rtmp_r0;
   int delta = InvocationCounter::count_increment;

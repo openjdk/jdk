@@ -116,10 +116,10 @@ public abstract class MappedByteBuffer
      * Tells whether or not this buffer's content is resident in physical
      * memory.
      *
-     * <p> A return value of <tt>true</tt> implies that it is highly likely
+     * <p> A return value of {@code true} implies that it is highly likely
      * that all of the data in this buffer is resident in physical memory and
      * may therefore be accessed without incurring any virtual-memory page
-     * faults or I/O operations.  A return value of <tt>false</tt> does not
+     * faults or I/O operations.  A return value of {@code false} does not
      * necessarily imply that the buffer's content is not resident in physical
      * memory.
      *
@@ -127,7 +127,7 @@ public abstract class MappedByteBuffer
      * underlying operating system may have paged out some of the buffer's data
      * by the time that an invocation of this method returns.  </p>
      *
-     * @return  <tt>true</tt> if it is likely that this buffer's content
+     * @return  {@code true} if it is likely that this buffer's content
      *          is resident in physical memory
      */
     public final boolean isLoaded() {

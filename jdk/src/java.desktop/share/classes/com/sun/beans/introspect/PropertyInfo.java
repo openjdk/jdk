@@ -40,7 +40,7 @@ import java.util.TreeMap;
 import static com.sun.beans.finder.ClassFinder.findClass;
 
 public final class PropertyInfo {
-    public enum Name {bound, expert, hidden, preferred, visualUpdate, description, enumerationValues}
+    public enum Name {bound, expert, hidden, preferred, required, visualUpdate, description, enumerationValues}
 
     private static final String VETO_EXCEPTION_NAME = "java.beans.PropertyVetoException";
     private static final Class<?> VETO_EXCEPTION;
@@ -120,6 +120,7 @@ public final class PropertyInfo {
                     put(Name.bound, Boolean.FALSE);
                 }
                 put(Name.expert, annotation.expert());
+                put(Name.required, annotation.required());
                 put(Name.hidden, annotation.hidden());
                 put(Name.preferred, annotation.preferred());
                 put(Name.visualUpdate, annotation.visualUpdate());

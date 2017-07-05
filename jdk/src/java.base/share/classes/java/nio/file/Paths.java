@@ -103,9 +103,9 @@ public final class Paths {
      * <p> The default provider provides a similar <em>round-trip</em> guarantee
      * to the {@link java.io.File} class. For a given {@code Path} <i>p</i> it
      * is guaranteed that
-     * <blockquote><tt>
-     * Paths.get(</tt><i>p</i><tt>.{@link Path#toUri() toUri}()).equals(</tt>
-     * <i>p</i><tt>.{@link Path#toAbsolutePath() toAbsolutePath}())</tt>
+     * <blockquote>{@code
+     * Paths.get(}<i>p</i>{@code .}{@link Path#toUri() toUri}{@code ()).equals(}
+     * <i>p</i>{@code .}{@link Path#toAbsolutePath() toAbsolutePath}{@code ())}
      * </blockquote>
      * so long as the original {@code Path}, the {@code URI}, and the new {@code
      * Path} are all created in (possibly different invocations of) the same
