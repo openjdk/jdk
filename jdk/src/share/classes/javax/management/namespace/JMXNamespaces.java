@@ -292,17 +292,13 @@ public class JMXNamespaces {
         if (path == null || to == null)
             throw new IllegalArgumentException("Null argument");
         checkTrailingSlashes(path);
-        try {
-            String prefix = path;
-            if (!prefix.equals("")) prefix =
-                    ObjectNameRouter.normalizeNamespacePath(
+        String prefix = path;
+        if (!prefix.equals(""))
+            prefix = ObjectNameRouter.normalizeNamespacePath(
                         prefix + NAMESPACE_SEPARATOR,false,false,false);
-            return to.withDomain(
+         return to.withDomain(
                     ObjectNameRouter.normalizeDomain(
                         prefix+to.getDomain(),false));
-        } catch (MalformedObjectNameException x) {
-            throw new IllegalArgumentException(path+": "+x,x);
-        }
     }
 
     /**

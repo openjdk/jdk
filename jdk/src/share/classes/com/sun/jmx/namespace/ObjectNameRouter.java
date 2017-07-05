@@ -27,7 +27,6 @@ package com.sun.jmx.namespace;
 
 import static javax.management.namespace.JMXNamespaces.NAMESPACE_SEPARATOR;
 
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectInstance;
 import javax.management.ObjectName;
 
@@ -83,11 +82,7 @@ public class ObjectNameRouter {
         }
         final String targetDomain =
                 (tlen>0?targetPrefix+NAMESPACE_SEPARATOR+srcDomain:srcDomain);
-        try {
-            return sourceName.withDomain(targetDomain);
-        } catch (MalformedObjectNameException x) {
-            throw new IllegalArgumentException(String.valueOf(sourceName),x);
-        }
+        return sourceName.withDomain(targetDomain);
     }
 
     public final ObjectName toSourceContext(ObjectName targetName,
@@ -113,11 +108,7 @@ public class ObjectNameRouter {
         final String sourceDomain =
                 (slen>0?sourcePrefix+NAMESPACE_SEPARATOR+targetDomain:
                     targetDomain);
-        try {
-            return targetName.withDomain(sourceDomain);
-        } catch (MalformedObjectNameException x) {
-            throw new IllegalArgumentException(String.valueOf(targetName),x);
-        }
+        return targetName.withDomain(sourceDomain);
     }
 
     public final ObjectInstance toTargetContext(ObjectInstance sourceMoi,

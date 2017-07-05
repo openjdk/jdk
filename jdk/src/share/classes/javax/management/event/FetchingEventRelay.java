@@ -39,10 +39,18 @@ import javax.management.MBeanException;
 import javax.management.remote.NotificationResult;
 
 /**
- * This class is an implementation of the {@link EventRelay} interface. It calls
+ * <p>This class is an implementation of the {@link EventRelay} interface. It calls
  * {@link EventClientDelegateMBean#fetchNotifications
  * fetchNotifications(String, long, int, long)} to get
- * notifications and then forwards them to an {@link EventReceiver} object.
+ * notifications and then forwards them to an {@link EventReceiver} object.</p>
+ *
+ * <p>A {@code fetchExecutor} parameter can be specified when creating a
+ * {@code FetchingEventRelay}.  That is then the {@code Executor} that will
+ * be used to perform the {@code fetchNotifications} operation.  Only one
+ * job at a time will be submitted to this {@code Executor}.  The behavior
+ * is unspecified if {@link Executor#execute} throws an exception, including
+ * {@link java.util.concurrent.RejectedExecutionException
+ * RejectedExecutionException}.
  *
  * @since JMX 2.0
  */

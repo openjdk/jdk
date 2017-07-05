@@ -204,7 +204,38 @@
  *      </pre>
  *      An easier way to access MBeans contained in a name space is to
  *      <i>cd</i> inside the name space, as shown in the following paragraph.
- *  </p>
+ *  </p><p id="RejectedNamespacePatterns">
+ *      Although ObjectName patterns where the characters
+ *      <code>*</code> and <code>?</code> appear in the namespace path are
+ *      legal, they are not valid in the {@code name} parameter of the
+ *      MBean Server {@link
+ *      javax.management.MBeanServer#queryNames queryNames} and {@link
+ *      javax.management.MBeanServer#queryMBeans queryMBeans} methods.<br>
+ *      When invoking <code>queryNames</code> or  <code>queryMBeans</code>,
+ *      only ObjectNames of the form:<br>
+ *      [<em>namespace-without-pattern</em>//]*[<em>pattern-without-namespace</em>]:<em>key-properties-with-or-without-pattern</em>
+ *      are valid.<br>
+ *      In other words: in the case of {@link
+ *      javax.management.MBeanServer#queryNames queryNames} and {@link
+ *      javax.management.MBeanServer#queryMBeans queryMBeans}, if a
+ *      namespace path is present, it must not contain any pattern.
+ *  </p><p id="NamespaceAndQueries">
+ *      There is no such restriction for the {@code query} parameter of these
+ *      methods. However, it must be noted that the {@code query} parameter
+ *      will be evaluated in the context of the namespace where the MBeans
+ *      selected by the pattern specified in {@code name} are located.
+ *      This means that if {@code query} parameter is an ObjectName pattern that
+ *      contains a namespace path, no MBean name will match and the result of
+ *      the query will be empty.<br>
+ *      In other words:</p>
+ * <ul><li>{@code queryNames("foo//bar//?a?:*","b?z:type=Monitor,*")} will select
+ *         all MBeans in namespace <em>foo//bar</em> whose names match both
+ *         <em>?a?:*</em> and <em>b?z:type=Monitor,*</em>, but</li>
+ *     <li>{@code queryNames("foo//bar//?a?:*","foo//bar//b?z:type=Monitor,*")}
+ *         will select nothing because no name matching <em>?a?:*</em> will
+ *         also match <em>foo//bar//b?z:type=Monitor,*</em>.
+ *     </li>
+ *  </ul>
  *
  *  <h3 id="ChangeTo">Narrowing Down Into a Name Spaces</h3>
  *  <p>
@@ -228,7 +259,8 @@
  *      to name space {@code "foo"} behaves just like a regular MBean server.
  *      However, it may sometimes throw an {@link
  *      java.lang.UnsupportedOperationException UnsupportedOperationException}
- *      wrapped in a JMX exception if you try to call an operation which is not
+ *      wrapped in a {@link javax.management.RuntimeOperationsException
+ *      RuntimeOperationsException} if you try to call an operation which is not
  *      supported by the underlying name space handler.
  *      <br>For instance, {@link javax.management.MBeanServer#registerMBean
  *      registerMBean} is not supported for name spaces mounted from remote

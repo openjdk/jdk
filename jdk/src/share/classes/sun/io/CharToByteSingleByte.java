@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package sun.io;
 
+import static sun.nio.cs.CharsetMapping.*;
+
 /**
 * A table driven conversion from char to byte for single byte
 * character sets.  Tables will reside in the class CharToByteYYYYY,
@@ -35,6 +37,7 @@ package sun.io;
 *
 * @author Lloyd Honomichl
 * @author Asmus Freytag
+* @version 8/28/96
 */
 
 public abstract class CharToByteSingleByte extends CharToByteConverter {
@@ -42,12 +45,12 @@ public abstract class CharToByteSingleByte extends CharToByteConverter {
     /*
      * 1st level index, provided by subclass
      */
-    protected short index1[];
+    protected char[] index1;
 
     /*
      * 2nd level index, provided by subclass
      */
-    protected String  index2;
+    protected char[] index2;
 
     /*
      * Mask to isolate bits for 1st level index, from subclass
@@ -66,11 +69,11 @@ public abstract class CharToByteSingleByte extends CharToByteConverter {
 
     private char highHalfZoneCode;
 
-    public short[] getIndex1() {
+    public char[] getIndex1() {
         return index1;
     }
 
-    public String getIndex2() {
+    public char[] getIndex2() {
         return index2;
     }
     public int flush(byte[] output, int outStart, int outEnd)
@@ -229,9 +232,18 @@ public abstract class CharToByteSingleByte extends CharToByteConverter {
         return 1;
     }
 
+    int encodeChar(char ch) {
+        char index = index1[ch >> 8];
+        if (index == UNMAPPABLE_ENCODING)
+            return UNMAPPABLE_ENCODING;
+        return index2[index + (ch & 0xff)];
+    }
+
     public byte getNative(char inputChar) {
-        return (byte)index2.charAt(index1[(inputChar & mask1) >> shift]
-                + (inputChar & mask2));
+        int b = encodeChar(inputChar);
+        if (b == UNMAPPABLE_ENCODING)
+            return 0;
+        return (byte)b;
     }
 
     /**
@@ -248,11 +260,6 @@ public abstract class CharToByteSingleByte extends CharToByteConverter {
      * @return true if a character is mappable
      */
     public boolean canConvert(char ch) {
-        // Look it up in the table
-        if (index2.charAt(index1[((ch & mask1) >> shift)] + (ch & mask2)) != '\u0000')
-            return true;
-
-        // Nulls are always mappable
-        return (ch == '\u0000');
+        return encodeChar(ch) != UNMAPPABLE_ENCODING;
     }
 }

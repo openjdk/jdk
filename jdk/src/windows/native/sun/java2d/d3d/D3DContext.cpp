@@ -1174,11 +1174,10 @@ D3DContext::UploadTileToTexture(D3DResource *pTextureRes, void *pixels,
         " rect={%-4d, %-4d, %-4d, %-4d}",
         r.left, r.top, r.right, r.bottom);
 
-    // REMIND: we should also check for dstx, dsty being 0 here,
-    // but they're always 0 in dynamic texture case
-    if (pDesc->Usage == D3DUSAGE_DYNAMIC &&
-        srcWidth == pDesc->Width && srcHeight == pDesc->Height)
-    {
+    if (pDesc->Usage == D3DUSAGE_DYNAMIC) {
+        // it is safe to lock with discard because we don't care about the
+        // contents of dynamic textures and dstx,dsty for this case is
+        // always 0,0 because we are uploading into a tile texture
         dwLockFlags |= D3DLOCK_DISCARD;
         pR = NULL;
     }

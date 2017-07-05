@@ -79,6 +79,9 @@ package javax.management;
  * }
  * </pre>
  *
+ * <p>(Listeners may be invoked in the same thread as the caller of
+ * {@code sender.sendNotification}.)</p>
+ *
  * <p>A field to be injected must not be static.  It is recommended that
  * such fields be declared {@code volatile}.</p>
  *

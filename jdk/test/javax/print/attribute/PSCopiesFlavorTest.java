@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6527316
+ * @bug 6527316 6732647
  * @summary Copies isn't supported for PS flavors.
  * @run main PSCopiesFlavorTest
  */
@@ -50,5 +50,13 @@ public class PSCopiesFlavorTest {
        if (suppVal || us == null) {
            throw new RuntimeException("Copies should be unsupported value");
        }
+
+       Object value = ps.getSupportedAttributeValues(Copies.class, flavor, null);
+
+        //Copies Supported
+        if(value instanceof CopiesSupported) {
+            throw new RuntimeException("Copies should have no supported values.");
+        }
+
    }
 }

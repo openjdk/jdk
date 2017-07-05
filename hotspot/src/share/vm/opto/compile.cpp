@@ -2192,6 +2192,9 @@ static void final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &fpu ) {
 
   case Op_DecodeN:
     assert(!n->in(1)->is_EncodeP(), "should be optimized out");
+    // DecodeN could be pinned on Sparc where it can't be fold into
+    // an address expression, see the code for Op_CastPP above.
+    assert(n->in(0) == NULL || !Matcher::clone_shift_expressions, "no control except on sparc");
     break;
 
   case Op_EncodeP: {

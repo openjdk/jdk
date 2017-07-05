@@ -1210,8 +1210,8 @@ LIR_Opr LIRGenerator::load_constant(LIR_Const* c) {
         break;
       case T_LONG:
       case T_DOUBLE:
-        if (c->as_jint_hi_bits() != other->as_jint_lo_bits()) continue;
-        if (c->as_jint_lo_bits() != other->as_jint_hi_bits()) continue;
+        if (c->as_jint_hi_bits() != other->as_jint_hi_bits()) continue;
+        if (c->as_jint_lo_bits() != other->as_jint_lo_bits()) continue;
         break;
       case T_OBJECT:
         if (c->as_jobject() != other->as_jobject()) continue;

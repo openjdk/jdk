@@ -275,22 +275,9 @@ bool PSMarkSweepDecorator::insert_deadspace(size_t& allowed_deadspace_words,
                                             HeapWord* q, size_t deadlength) {
   if (allowed_deadspace_words >= deadlength) {
     allowed_deadspace_words -= deadlength;
-    oop(q)->set_mark(markOopDesc::prototype()->set_marked());
-    const size_t aligned_min_int_array_size =
-      align_object_size(typeArrayOopDesc::header_size(T_INT));
-    if (deadlength >= aligned_min_int_array_size) {
-      oop(q)->set_klass(Universe::intArrayKlassObj());
-      assert(((deadlength - aligned_min_int_array_size) * (HeapWordSize/sizeof(jint))) < (size_t)max_jint,
-                "deadspace too big for Arrayoop");
-      typeArrayOop(q)->set_length((int)((deadlength - aligned_min_int_array_size)
-                                            * (HeapWordSize/sizeof(jint))));
-    } else {
-      assert((int) deadlength == instanceOopDesc::header_size(),
-             "size for smallest fake dead object doesn't match");
-      oop(q)->set_klass(SystemDictionary::object_klass());
-    }
-    assert((int) deadlength == oop(q)->size(),
-           "make sure size for fake dead object match");
+    CollectedHeap::fill_with_object(q, deadlength);
+    oop(q)->set_mark(oop(q)->mark()->set_marked());
+    assert((int) deadlength == oop(q)->size(), "bad filler object size");
     // Recall that we required "q == compaction_top".
     return true;
   } else {
