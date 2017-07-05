@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,25 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 6505888
- * @summary Tests CheckedRandomAccessList encoding
- * @author Sergey Malenkov
- */
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+// Test Entry - a single entry in a test table
+// that defines a test case
+// See TransformRelatedClasses.java for more details
+public class TestEntry {
+    int testCaseId;
+    boolean transformParent;
+    boolean transformChild;
+    boolean isParentExpectedShared;
+    boolean isChildExpectedShared;
 
-public final class java_util_Collections_CheckedRandomAccessList extends AbstractTest<List<String>> {
-    public static void main(String[] args) {
-        new java_util_Collections_CheckedRandomAccessList().test(true);
-    }
-
-    protected List<String> getObject() {
-        List<String> list = new ArrayList<String>();
-        list.add("string");
-        return Collections.checkedList(list, String.class);
-    }
-
-    protected List<String> getAnotherObject() {
-        List<String> list = new ArrayList<String>();
-        return Collections.checkedList(list, String.class);
+    public TestEntry(int testCaseId,
+                     boolean transformParent, boolean transformChild,
+                     boolean isParentExpectedShared, boolean isChildExpectedShared) {
+        this.testCaseId = testCaseId;
+        this.transformParent = transformParent;
+        this.transformChild = transformChild;
+        this.isParentExpectedShared = isParentExpectedShared;
+        this.isChildExpectedShared = isChildExpectedShared;
     }
 }
+

@@ -687,7 +687,6 @@ XMKMF
 MSVCP_DLL
 MSVCR_DLL
 LIBCXX
-STATIC_CXX_SETTING
 FIXPATH_DETACH_FLAG
 FIXPATH
 BUILD_GTEST
@@ -5092,7 +5091,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1474894604
+DATE_WHEN_GENERATED=1475218974
 
 ###############################################################################
 #
@@ -53087,49 +53086,10 @@ fi
 
 
   if test "x$OPENJDK_TARGET_OS" = xlinux; then
-    # Test if -lstdc++ works.
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if dynamic link of stdc++ is possible" >&5
-$as_echo_n "checking if dynamic link of stdc++ is possible... " >&6; }
-    ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-    OLD_CXXFLAGS="$CXXFLAGS"
-    CXXFLAGS="$CXXFLAGS -lstdc++"
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-return 0;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  has_dynamic_libstdcxx=yes
-else
-  has_dynamic_libstdcxx=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-    CXXFLAGS="$OLD_CXXFLAGS"
-    ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $has_dynamic_libstdcxx" >&5
-$as_echo "$has_dynamic_libstdcxx" >&6; }
-
     # Test if stdc++ can be linked statically.
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if static link of stdc++ is possible" >&5
 $as_echo_n "checking if static link of stdc++ is possible... " >&6; }
-    STATIC_STDCXX_FLAGS="-Wl,-Bstatic -lstdc++ -lgcc -Wl,-Bdynamic"
+    STATIC_STDCXX_FLAGS="-static-libstdc++ -static-libgcc"
     ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -53137,9 +53097,7 @@ ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ex
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
     OLD_LIBS="$LIBS"
-    OLD_CXX="$CXX"
     LIBS="$STATIC_STDCXX_FLAGS"
-    CXX="$CC"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -53159,7 +53117,6 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
     LIBS="$OLD_LIBS"
-    CXX="$OLD_CXX"
     ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -53169,59 +53126,34 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $has_static_libstdcxx" >&5
 $as_echo "$has_static_libstdcxx" >&6; }
 
-    if test "x$has_static_libstdcxx" = xno && test "x$has_dynamic_libstdcxx" = xno; then
-      as_fn_error $? "Cannot link to stdc++, neither dynamically nor statically!" "$LINENO" 5
-    fi
-
     if test "x$with_stdc__lib" = xstatic && test "x$has_static_libstdcxx" = xno; then
       as_fn_error $? "Static linking of libstdc++ was not possible!" "$LINENO" 5
-    fi
-
-    if test "x$with_stdc__lib" = xdynamic && test "x$has_dynamic_libstdcxx" = xno; then
-      as_fn_error $? "Dynamic linking of libstdc++ was not possible!" "$LINENO" 5
     fi
 
     # If dynamic was requested, it's available since it would fail above otherwise.
     # If dynamic wasn't requested, go with static unless it isn't available.
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking how to link with libstdc++" >&5
 $as_echo_n "checking how to link with libstdc++... " >&6; }
-    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno ||   [[ " $JVM_VARIANTS " =~ " zeroshark " ]]  ; then
-      LIBCXX="$LIBCXX -lstdc++"
-      # To help comparisons with old build, put stdc++ first in JVM_LIBS
-      JVM_LIBS="-lstdc++ $JVM_LIBS"
-      # Ideally, we should test stdc++ for the BUILD toolchain separately. For now
-      # just use the same setting as for the TARGET toolchain.
-      OPENJDK_BUILD_JVM_LIBS="-lstdc++ $OPENJDK_BUILD_JVM_LIBS"
-      LDCXX="$CXX"
-      STATIC_CXX_SETTING="STATIC_CXX=false"
+    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno \
+        ||   [[ " $JVM_VARIANTS " =~ " zeroshark " ]]  ; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: dynamic" >&5
 $as_echo "dynamic" >&6; }
     else
       LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"
-      JVM_LDFLAGS="$JVM_LDFLAGS -static-libgcc"
-      # To help comparisons with old build, put stdc++ first in JVM_LIBS
-      JVM_LIBS="-Wl,-Bstatic -lstdc++ -Wl,-Bdynamic $JVM_LIBS"
+      JVM_LDFLAGS="$JVM_LDFLAGS $STATIC_STDCXX_FLAGS"
       # Ideally, we should test stdc++ for the BUILD toolchain separately. For now
       # just use the same setting as for the TARGET toolchain.
-      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS -static-libgcc"
-      OPENJDK_BUILD_JVM_LIBS="-Wl,-Bstatic -lstdc++ -Wl,-Bdynamic $OPENJDK_BUILD_JVM_LIBS"
-      LDCXX="$CC"
-      STATIC_CXX_SETTING="STATIC_CXX=true"
+      OPENJDK_BUILD_JVM_LDFLAGS="$OPENJDK_BUILD_JVM_LDFLAGS $STATIC_STDCXX_FLAGS"
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: static" >&5
 $as_echo "static" >&6; }
     fi
   fi
-
 
   # libCrun is the c++ runtime-library with SunStudio (roughly the equivalent of gcc's libstdc++.so)
   if test "x$TOOLCHAIN_TYPE" = xsolstudio && test "x$LIBCXX" = x; then
     LIBCXX="${SYSROOT}/usr/lib${OPENJDK_TARGET_CPU_ISADIR}/libCrun.so.1"
   fi
 
-  # TODO better (platform agnostic) test
-  if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$LIBCXX" = x && test "x$TOOLCHAIN_TYPE" = xgcc; then
-    LIBCXX="-lstdc++"
-  fi
 
 
   # Setup Windows runtime dlls

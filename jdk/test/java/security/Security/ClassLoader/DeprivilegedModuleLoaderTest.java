@@ -21,6 +21,17 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8159964
+ * @summary Classes from deprivileged modules should get loaded through
+ *          Platform Classloader.
+ * @modules java.xml.crypto
+ *          jdk.security.auth
+ *          jdk.security.jgss
+ * @run main DeprivilegedModuleLoaderTest
+ */
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,13 +41,6 @@ import javax.xml.crypto.dsig.XMLSignatureFactory;
 import com.sun.security.auth.callback.TextCallbackHandler;
 import com.sun.security.jgss.AuthorizationDataEntry;
 
-/*
- * @test
- * @bug 8159964
- * @summary Classes from deprivileged modules should get loaded through
- *          Platform Classloader.
- * @run main DeprivilegedModuleLoaderTest
- */
 public class DeprivilegedModuleLoaderTest {
 
     public static void main(String[] args) {
