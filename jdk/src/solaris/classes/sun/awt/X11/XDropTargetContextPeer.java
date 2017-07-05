@@ -89,12 +89,12 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
         /* If the event was not consumed, send a response to the source. */
         try {
             if (ctxt != 0 && !e.isConsumed()) {
-                Iterator dropTargetProtocols =
+                Iterator<XDropTargetProtocol> dropTargetProtocols =
                     XDragAndDropProtocols.getDropTargetProtocols();
 
                 while (dropTargetProtocols.hasNext()) {
                     XDropTargetProtocol dropTargetProtocol =
-                        (XDropTargetProtocol)dropTargetProtocols.next();
+                        dropTargetProtocols.next();
                     if (dropTargetProtocol.sendResponse(ctxt, e.getID(),
                                                         returnValue)) {
                         break;
@@ -116,12 +116,12 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
 
         if (ctxt != 0) {
             try {
-                Iterator dropTargetProtocols =
+                Iterator<XDropTargetProtocol> dropTargetProtocols =
                     XDragAndDropProtocols.getDropTargetProtocols();
 
                 while (dropTargetProtocols.hasNext()) {
                     XDropTargetProtocol dropTargetProtocol =
-                        (XDropTargetProtocol)dropTargetProtocols.next();
+                        dropTargetProtocols.next();
                     if (dropTargetProtocol.sendDropDone(ctxt, success,
                                                         dropAction)) {
                         break;
@@ -140,12 +140,12 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
         long ctxt = getNativeDragContext();
 
         if (ctxt != 0) {
-            Iterator dropTargetProtocols =
+            Iterator<XDropTargetProtocol> dropTargetProtocols =
                 XDragAndDropProtocols.getDropTargetProtocols();
 
             while (dropTargetProtocols.hasNext()) {
                 XDropTargetProtocol dropTargetProtocol =
-                    (XDropTargetProtocol)dropTargetProtocols.next();
+                    dropTargetProtocols.next();
                 // getData throws IAE if ctxt is not for this protocol.
                 try {
                     return dropTargetProtocol.getData(ctxt, format);
@@ -221,12 +221,11 @@ final class XDropTargetContextPeer extends SunDropTargetContextPeer {
 
     public void forwardEventToEmbedded(long embedded, long ctxt,
                                        int eventID) {
-        Iterator dropTargetProtocols =
+        Iterator<XDropTargetProtocol> dropTargetProtocols =
             XDragAndDropProtocols.getDropTargetProtocols();
 
         while (dropTargetProtocols.hasNext()) {
-            XDropTargetProtocol dropTargetProtocol =
-                (XDropTargetProtocol)dropTargetProtocols.next();
+            XDropTargetProtocol dropTargetProtocol = dropTargetProtocols.next();
             if (dropTargetProtocol.forwardEventToEmbedded(embedded, ctxt,
                                                           eventID)) {
                 break;

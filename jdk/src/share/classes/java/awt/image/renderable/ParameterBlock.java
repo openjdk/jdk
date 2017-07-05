@@ -153,6 +153,7 @@ public class ParameterBlock implements Cloneable, Serializable {
      *
      * @return an Object clone of the <code>ParameterBlock</code>.
      */
+    @SuppressWarnings("unchecked") // casts from clone
     public Object clone() {
         ParameterBlock theClone;
 
@@ -164,10 +165,10 @@ public class ParameterBlock implements Cloneable, Serializable {
         }
 
         if (sources != null) {
-            theClone.setSources((Vector)sources.clone());
+            theClone.setSources((Vector<Object>)sources.clone());
         }
         if (parameters != null) {
-            theClone.setParameters((Vector)parameters.clone());
+            theClone.setParameters((Vector<Object>)parameters.clone());
         }
         return (Object) theClone;
     }
@@ -280,7 +281,7 @@ public class ParameterBlock implements Cloneable, Serializable {
 
     /** Clears the list of source images. */
     public void removeSources() {
-        sources = new Vector();
+        sources = new Vector<>();
     }
 
     /**
@@ -313,7 +314,7 @@ public class ParameterBlock implements Cloneable, Serializable {
 
     /** Clears the list of parameters. */
     public void removeParameters() {
-        parameters = new Vector();
+        parameters = new Vector<>();
     }
 
     /**
@@ -696,9 +697,9 @@ public class ParameterBlock implements Cloneable, Serializable {
      * of the parameters.
      * @return an array of <code>Class</code> objects.
      */
-    public Class [] getParamClasses() {
+    public Class<?>[] getParamClasses() {
         int numParams = getNumParameters();
-        Class [] classes = new Class[numParams];
+        Class<?>[] classes = new Class<?>[numParams];
         int i;
 
         for (i = 0; i < numParams; i++) {

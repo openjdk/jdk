@@ -39,7 +39,7 @@ import java.util.concurrent.*;
 
 import static sun.awt.shell.Win32ShellFolder2.*;
 import sun.awt.OSInfo;
-import sun.misc.ThreadGroupUtils;
+import sun.awt.util.ThreadGroupUtils;
 
 // NOTE: This class supersedes Win32ShellFolderManager, which was removed
 //       from distribution after version 1.4.2.

@@ -49,7 +49,7 @@ public class Spans {
      * Holds a list of individual
      * Span instances.
      */
-    private List mSpans = new Vector(kMaxAddsSinceSort);
+    private List<Span> mSpans = new Vector<>(kMaxAddsSinceSort);
 
     /**
      * The number of <code>Span</code>
@@ -144,7 +144,7 @@ public class Spans {
         Collections.sort(mSpans);
         mAddsSinceSort = 0;
 
-        Iterator iter = mSpans.iterator();
+        Iterator<Span> iter = mSpans.iterator();
 
         /* Have 'span' start at the first span in
          * the collection. The collection may be empty
@@ -152,7 +152,7 @@ public class Spans {
          */
         Span span = null;
         if (iter.hasNext()) {
-            span = (Span) iter.next();
+            span = iter.next();
         }
 
         /* Loop over the spans collapsing those that intersect
@@ -160,7 +160,7 @@ public class Spans {
          */
         while (iter.hasNext()) {
 
-            Span nextSpan = (Span) iter.next();
+            Span nextSpan = iter.next();
 
             /* The spans are in ascending start position
              * order and so the next span's starting point
@@ -202,9 +202,9 @@ public class Spans {
     private void printSpans() {
         System.out.println("----------");
         if (mSpans != null) {
-            Iterator iter = mSpans.iterator();
+            Iterator<Span> iter = mSpans.iterator();
             while (iter.hasNext()) {
-                Span span = (Span) iter.next();
+                Span span = iter.next();
                 System.out.println(span);
             }
         }
@@ -216,7 +216,7 @@ public class Spans {
     /**
      * Holds a single half-open interval.
      */
-    static class Span implements Comparable {
+    static class Span implements Comparable<Span> {
 
         /**
          * The span includes the starting point.
@@ -315,8 +315,7 @@ public class Spans {
          * position. The end position is ignored
          * in this ranking.
          */
-        public int compareTo(Object o) {
-            Span otherSpan = (Span) o;
+        public int compareTo(Span otherSpan) {
             float otherStart = otherSpan.getStart();
             int result;
 
@@ -345,7 +344,7 @@ public class Spans {
      * <code>SpanIntersection.instance</code> to
      * get the single instance of this class.
      */
-    static class SpanIntersection implements Comparator {
+    static class SpanIntersection implements Comparator<Span> {
 
         /**
          * This class is a Singleton and the following
@@ -361,10 +360,8 @@ public class Spans {
 
         }
 
-        public int compare(Object o1, Object o2) {
+        public int compare(Span span1, Span span2) {
             int result;
-            Span span1 = (Span) o1;
-            Span span2 = (Span) o2;
 
             /* Span 1 is entirely to the left of span2.
              * span1:   <-----<

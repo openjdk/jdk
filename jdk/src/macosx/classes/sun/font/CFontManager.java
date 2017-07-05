@@ -40,7 +40,7 @@ import javax.swing.plaf.FontUIResource;
 
 import sun.awt.FontConfiguration;
 import sun.awt.HeadlessToolkit;
-import sun.misc.ThreadGroupUtils;
+import sun.awt.util.ThreadGroupUtils;
 import sun.lwawt.macosx.*;
 
 public class CFontManager extends SunFontManager {

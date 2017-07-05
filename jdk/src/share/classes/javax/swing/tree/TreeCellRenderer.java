@@ -67,7 +67,14 @@ public interface TreeCellRenderer {
      *     }
      * </pre>
      *
-     * @return  the <code>Component</code> that the renderer uses to draw the value
+     * @param tree      the receiver is being configured for
+     * @param value     the value to render
+     * @param selected  whether node is selected
+     * @param expanded  whether node is expanded
+     * @param leaf      whether node is a lead node
+     * @param row       row index
+     * @param hasFocus  whether node has focus
+     * @return          the {@code Component} that the renderer uses to draw the value
      */
     Component getTreeCellRendererComponent(JTree tree, Object value,
                                    boolean selected, boolean expanded,

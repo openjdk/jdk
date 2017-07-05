@@ -41,7 +41,7 @@ package sun.java2d.loops;
  */
 public class GraphicsPrimitiveProxy extends GraphicsPrimitive {
 
-    private Class owner;
+    private Class<?> owner;
     private String relativeClassName;
 
     /**
@@ -53,7 +53,7 @@ public class GraphicsPrimitiveProxy extends GraphicsPrimitive {
      * @param relativeClassName  The name of the class this is a proxy for.
      *          This should not include the package.
      */
-    public GraphicsPrimitiveProxy(Class owner, String relativeClassName,
+    public GraphicsPrimitiveProxy(Class<?> owner, String relativeClassName,
                                   String methodSignature,
                                   int primID,
                                   SurfaceType srctype,
@@ -80,7 +80,7 @@ public class GraphicsPrimitiveProxy extends GraphicsPrimitive {
         String name = getPackageName(owner.getName()) + "."
                         + relativeClassName;
         try {
-            Class clazz = Class.forName(name);
+            Class<?> clazz = Class.forName(name);
             GraphicsPrimitive p = (GraphicsPrimitive) clazz.newInstance();
             if (!satisfiesSameAs(p)) {
                 throw new RuntimeException("Primitive " + p

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,11 @@
 #include "oops/markOop.hpp"
 #include "runtime/thread.inline.hpp"
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
 void markOopDesc::print_on(outputStream* st) const {
   if (is_locked()) {
-    st->print("locked(0x%lx)->", value());
+    st->print("locked(" INTPTR_FORMAT ")->", value());
     markOop(*(markOop*)value())->print_on(st);
   } else {
     assert(is_unlocked() || has_bias_pattern(), "just checking");

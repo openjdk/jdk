@@ -30,7 +30,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 @SuppressWarnings("serial") // JDK-implementation class
-public class XCreateWindowParams extends HashMap {
+public class XCreateWindowParams extends HashMap<Object, Object> {
     public XCreateWindowParams() {
     }
     public XCreateWindowParams(Object[] map) {
@@ -82,9 +82,9 @@ public class XCreateWindowParams extends HashMap {
     }
     public String toString() {
         StringBuffer buf = new StringBuffer();
-        Iterator eIter = entrySet().iterator();
+        Iterator<Map.Entry<Object, Object>> eIter = entrySet().iterator();
         while (eIter.hasNext()) {
-            Map.Entry entry = (Map.Entry)eIter.next();
+            Map.Entry<Object, Object> entry = eIter.next();
             buf.append(entry.getKey() + ": " + entry.getValue() + "\n");
         }
         return buf.toString();

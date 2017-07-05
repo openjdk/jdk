@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/parallelScavenge/parallelScavengeHeap.hpp"
 #endif // INCLUDE_ALL_GCS
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 // HeapInspection
 
@@ -270,6 +272,7 @@ bool KlassInfoHisto::is_selected(const char *col_name) {
   return true;
 }
 
+PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
 void KlassInfoHisto::print_title(outputStream* st, bool csv_format,
                                  bool selected[], int width_table[],
                                  const char *name_table[]) {
@@ -282,7 +285,10 @@ void KlassInfoHisto::print_title(outputStream* st, bool csv_format,
   } else {
     st->print("Index Super");
     for (int c=0; c<KlassSizeStats::_num_columns; c++) {
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
       if (selected[c]) {st->print(str_fmt(width_table[c]), name_table[c]);}
+PRAGMA_DIAG_POP
     }
     st->print(" ClassName");
   }
@@ -395,12 +401,18 @@ void KlassInfoHisto::print_class_stats(outputStream* st,
           case KlassSizeStats::_index_inst_size:
           case KlassSizeStats::_index_inst_count:
           case KlassSizeStats::_index_method_count:
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
             st->print(str_fmt(width_table[c]), "-");
+PRAGMA_DIAG_POP
             break;
           default:
             {
               double perc = (double)(100) * (double)(colsum_table[c]) / (double)sz_sum._total_bytes;
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
               st->print(perc_fmt(width_table[c]), perc);
+PRAGMA_DIAG_POP
             }
           }
         }

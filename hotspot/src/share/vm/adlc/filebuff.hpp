@@ -26,9 +26,6 @@
 #define SHARE_VM_ADLC_FILEBUFF_HPP
 
 // FILEBUFF.HPP - Definitions for parser file buffering routines
-#include <iostream>
-
-using namespace std;
 
 // STRUCTURE FOR HANDLING INPUT AND OUTPUT FILES
 

@@ -59,6 +59,7 @@ import java.io.File;
 
 import java.net.URL;
 
+import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -268,9 +269,9 @@ final class WDataTransferer extends DataTransferer {
         if (format == CFSTR_INETURL &&
                 URL.class.equals(flavor.getRepresentationClass()))
         {
-            String charset = getDefaultTextCharset();
-            if (localeTransferable != null && localeTransferable.
-                                                                    isDataFlavorSupported(javaTextEncodingFlavor))
+            String charset = Charset.defaultCharset().name();
+            if (localeTransferable != null
+                    && localeTransferable.isDataFlavorSupported(javaTextEncodingFlavor))
             {
                 try {
                     charset = new String((byte[])localeTransferable.

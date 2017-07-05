@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ G1CollectedHeap::heap_region_containing_raw(const T addr) const {
   assert(addr != NULL, "invariant");
   assert(_g1_reserved.contains((const void*) addr),
       err_msg("Address "PTR_FORMAT" is outside of the heap ranging from ["PTR_FORMAT" to "PTR_FORMAT")",
-          (void*)addr, _g1_reserved.start(), _g1_reserved.end()));
+          p2i((void*)addr), p2i(_g1_reserved.start()), p2i(_g1_reserved.end())));
   return _hrs.addr_to_region((HeapWord*) addr);
 }
 

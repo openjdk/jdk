@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@ void ciReceiverTypeData::translate_receiver_data_from(const ProfileData* data) {
 
 
 void ciTypeStackSlotEntries::translate_type_data_from(const TypeStackSlotEntries* entries) {
-  for (int i = 0; i < _number_of_entries; i++) {
+  for (int i = 0; i < number_of_entries(); i++) {
     intptr_t k = entries->type(i);
     TypeStackSlotEntries::set_type(i, translate_klass(k));
   }
@@ -242,7 +242,6 @@ ciProfileData* ciMethodData::next_data(ciProfileData* current) {
 }
 
 ciProfileData* ciMethodData::bci_to_extra_data(int bci, ciMethod* m, bool& two_free_slots) {
-  // bci_to_extra_data(bci) ...
   DataLayout* dp  = data_layout_at(data_size());
   DataLayout* end = data_layout_at(data_size() + extra_data_size());
   two_free_slots = false;
@@ -506,6 +505,63 @@ void ciMethodData::print_impl(outputStream* st) {
   ciMetadata::print_impl(st);
 }
 
+void ciMethodData::dump_replay_data_type_helper(outputStream* out, int round, int& count, ProfileData* pdata, ByteSize offset, ciKlass* k) {
+  if (k != NULL) {
+    if (round == 0) {
+      count++;
+    } else {
+      out->print(" %d %s", (int)(dp_to_di(pdata->dp() + in_bytes(offset)) / sizeof(intptr_t)), k->name()->as_quoted_ascii());
+    }
+  }
+}
+
+template<class T> void ciMethodData::dump_replay_data_receiver_type_helper(outputStream* out, int round, int& count, T* vdata) {
+  for (uint i = 0; i < vdata->row_limit(); i++) {
+    dump_replay_data_type_helper(out, round, count, vdata, vdata->receiver_offset(i), vdata->receiver(i));
+  }
+}
+
+template<class T> void ciMethodData::dump_replay_data_call_type_helper(outputStream* out, int round, int& count, T* call_type_data) {
+  if (call_type_data->has_arguments()) {
+    for (int i = 0; i < call_type_data->number_of_arguments(); i++) {
+      dump_replay_data_type_helper(out, round, count, call_type_data, call_type_data->argument_type_offset(i), call_type_data->valid_argument_type(i));
+    }
+  }
+  if (call_type_data->has_return()) {
+    dump_replay_data_type_helper(out, round, count, call_type_data, call_type_data->return_type_offset(), call_type_data->valid_return_type());
+  }
+}
+
+void ciMethodData::dump_replay_data_extra_data_helper(outputStream* out, int round, int& count) {
+  DataLayout* dp  = data_layout_at(data_size());
+  DataLayout* end = data_layout_at(data_size() + extra_data_size());
+
+  for (;dp < end; dp = MethodData::next_extra(dp)) {
+    switch(dp->tag()) {
+    case DataLayout::no_tag:
+    case DataLayout::arg_info_data_tag:
+      return;
+    case DataLayout::bit_data_tag:
+      break;
+    case DataLayout::speculative_trap_data_tag: {
+      ciSpeculativeTrapData* data = new ciSpeculativeTrapData(dp);
+      ciMethod* m = data->method();
+      if (m != NULL) {
+        if (round == 0) {
+          count++;
+        } else {
+          out->print(" %d ", (int)(dp_to_di(((address)dp) + in_bytes(ciSpeculativeTrapData::method_offset())) / sizeof(intptr_t)));
+          m->dump_name_as_ascii(out);
+        }
+      }
+      break;
+    }
+    default:
+      fatal(err_msg("bad tag = %d", dp->tag()));
+    }
+  }
+}
+
 void ciMethodData::dump_replay_data(outputStream* out) {
   ResourceMark rm;
   MethodData* mdo = get_MethodData();
@@ -527,7 +583,7 @@ void ciMethodData::dump_replay_data(outputStream* out) {
   }
 
   // dump the MDO data as raw data
-  int elements = data_size() / sizeof(intptr_t);
+  int elements = (data_size() + extra_data_size()) / sizeof(intptr_t);
   out->print(" data %d", elements);
   for (int i = 0; i < elements; i++) {
     // We could use INTPTR_FORMAT here but that's a zero justified
@@ -544,37 +600,35 @@ void ciMethodData::dump_replay_data(outputStream* out) {
   // and emit pairs of offset and klass name so that they can be
   // reconstructed at runtime.  The first round counts the number of
   // oop references and the second actually emits them.
-  int count = 0;
-  for (int round = 0; round < 2; round++) {
+  ciParametersTypeData* parameters = parameters_type_data();
+  for (int count = 0, round = 0; round < 2; round++) {
     if (round == 1) out->print(" oops %d", count);
     ProfileData* pdata = first_data();
     for ( ; is_valid(pdata); pdata = next_data(pdata)) {
-      if (pdata->is_ReceiverTypeData()) {
-        ciReceiverTypeData* vdata = (ciReceiverTypeData*)pdata;
-        for (uint i = 0; i < vdata->row_limit(); i++) {
-          ciKlass* k = vdata->receiver(i);
-          if (k != NULL) {
-            if (round == 0) {
-              count++;
-            } else {
-              out->print(" %d %s", dp_to_di(vdata->dp() + in_bytes(vdata->receiver_offset(i))) / sizeof(intptr_t), k->name()->as_quoted_ascii());
-            }
-          }
-        }
-      } else if (pdata->is_VirtualCallData()) {
+      if (pdata->is_VirtualCallData()) {
         ciVirtualCallData* vdata = (ciVirtualCallData*)pdata;
-        for (uint i = 0; i < vdata->row_limit(); i++) {
-          ciKlass* k = vdata->receiver(i);
-          if (k != NULL) {
-            if (round == 0) {
-              count++;
-            } else {
-              out->print(" %d %s", dp_to_di(vdata->dp() + in_bytes(vdata->receiver_offset(i))) / sizeof(intptr_t), k->name()->as_quoted_ascii());
-            }
-          }
+        dump_replay_data_receiver_type_helper<ciVirtualCallData>(out, round, count, vdata);
+        if (pdata->is_VirtualCallTypeData()) {
+          ciVirtualCallTypeData* call_type_data = (ciVirtualCallTypeData*)pdata;
+          dump_replay_data_call_type_helper<ciVirtualCallTypeData>(out, round, count, call_type_data);
         }
+      } else if (pdata->is_ReceiverTypeData()) {
+        ciReceiverTypeData* vdata = (ciReceiverTypeData*)pdata;
+        dump_replay_data_receiver_type_helper<ciReceiverTypeData>(out, round, count, vdata);
+      } else if (pdata->is_CallTypeData()) {
+          ciCallTypeData* call_type_data = (ciCallTypeData*)pdata;
+          dump_replay_data_call_type_helper<ciCallTypeData>(out, round, count, call_type_data);
       }
     }
+    if (parameters != NULL) {
+      for (int i = 0; i < parameters->number_of_parameters(); i++) {
+        dump_replay_data_type_helper(out, round, count, parameters, ParametersTypeData::type_offset(i), parameters->valid_parameter_type(i));
+      }
+    }
+  }
+  for (int count = 0, round = 0; round < 2; round++) {
+    if (round == 1) out->print(" methods %d", count);
+    dump_replay_data_extra_data_helper(out, round, count);
   }
   out->cr();
 }
@@ -586,6 +640,10 @@ void ciMethodData::print() {
 
 void ciMethodData::print_data_on(outputStream* st) {
   ResourceMark rm;
+  ciParametersTypeData* parameters = parameters_type_data();
+  if (parameters != NULL) {
+    parameters->print_data_on(st);
+  }
   ciProfileData* data;
   for (data = first_data(); is_valid(data); data = next_data(data)) {
     st->print("%d", dp_to_di(data->dp()));
@@ -606,6 +664,9 @@ void ciMethodData::print_data_on(outputStream* st) {
     case DataLayout::arg_info_data_tag:
       data = new ciArgInfoData(dp);
       dp = end; // ArgInfoData is at the end of extra data section.
+      break;
+    case DataLayout::speculative_trap_data_tag:
+      data = new ciSpeculativeTrapData(dp);
       break;
     default:
       fatal(err_msg("unexpected tag %d", dp->tag()));
@@ -631,7 +692,7 @@ void ciTypeEntries::print_ciklass(outputStream* st, intptr_t k) {
 }
 
 void ciTypeStackSlotEntries::print_data_on(outputStream* st) const {
-  for (int i = 0; i < _number_of_entries; i++) {
+  for (int i = 0; i < number_of_entries(); i++) {
     _pd->tab(st);
     st->print("%d: stack (%u) ", i, stack_slot(i));
     print_ciklass(st, type(i));
@@ -650,12 +711,12 @@ void ciCallTypeData::print_data_on(outputStream* st, const char* extra) const {
   print_shared(st, "ciCallTypeData", extra);
   if (has_arguments()) {
     tab(st, true);
-    st->print("argument types");
+    st->print_cr("argument types");
     args()->print_data_on(st);
   }
   if (has_return()) {
     tab(st, true);
-    st->print("return type");
+    st->print_cr("return type");
     ret()->print_data_on(st);
   }
 }

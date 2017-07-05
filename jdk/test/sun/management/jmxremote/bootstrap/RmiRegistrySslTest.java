@@ -42,10 +42,7 @@ import java.util.regex.Pattern;
  * @library /lib/testlibrary
  * @bug 6228231
  * @summary Test that RMI registry uses SSL.
- * @build jdk.testlibrary.Utils
- * @build jdk.testlibrary.ProcessTools
- * @build jdk.testlibrary.OutputAnalyzer
- * @build RmiRegistrySslTestApp
+ * @build jdk.testlibrary.* RmiRegistrySslTestApp
  * @run main/timeout=300 RmiRegistrySslTest
  * @author Luis-Miguel Alventosa, Taras Ledkov
  */

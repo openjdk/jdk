@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,22 +252,22 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
                   requested_eden_size, requested_survivor_size);
     gclog_or_tty->print_cr("    eden: [" PTR_FORMAT ".." PTR_FORMAT ") "
                   SIZE_FORMAT,
-                  eden_space()->bottom(),
-                  eden_space()->end(),
+                  p2i(eden_space()->bottom()),
+                  p2i(eden_space()->end()),
                   pointer_delta(eden_space()->end(),
                                 eden_space()->bottom(),
                                 sizeof(char)));
     gclog_or_tty->print_cr("    from: [" PTR_FORMAT ".." PTR_FORMAT ") "
                   SIZE_FORMAT,
-                  from_space()->bottom(),
-                  from_space()->end(),
+                  p2i(from_space()->bottom()),
+                  p2i(from_space()->end()),
                   pointer_delta(from_space()->end(),
                                 from_space()->bottom(),
                                 sizeof(char)));
     gclog_or_tty->print_cr("      to: [" PTR_FORMAT ".." PTR_FORMAT ") "
                   SIZE_FORMAT,
-                  to_space()->bottom(),
-                  to_space()->end(),
+                  p2i(to_space()->bottom()),
+                  p2i(to_space()->end()),
                   pointer_delta(  to_space()->end(),
                                   to_space()->bottom(),
                                   sizeof(char)));
@@ -373,18 +373,18 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
     if (PrintAdaptiveSizePolicy && Verbose) {
       gclog_or_tty->print_cr("    [eden_start .. eden_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    eden_start,
-                    eden_end,
+                    p2i(eden_start),
+                    p2i(eden_end),
                     pointer_delta(eden_end, eden_start, sizeof(char)));
       gclog_or_tty->print_cr("    [from_start .. from_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    from_start,
-                    from_end,
+                    p2i(from_start),
+                    p2i(from_end),
                     pointer_delta(from_end, from_start, sizeof(char)));
       gclog_or_tty->print_cr("    [  to_start ..   to_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    to_start,
-                    to_end,
+                    p2i(to_start),
+                    p2i(to_end),
                     pointer_delta(  to_end,   to_start, sizeof(char)));
     }
   } else {
@@ -427,18 +427,18 @@ void ASPSYoungGen::resize_spaces(size_t requested_eden_size,
     if (PrintAdaptiveSizePolicy && Verbose) {
       gclog_or_tty->print_cr("    [eden_start .. eden_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    eden_start,
-                    eden_end,
+                    p2i(eden_start),
+                    p2i(eden_end),
                     pointer_delta(eden_end, eden_start, sizeof(char)));
       gclog_or_tty->print_cr("    [  to_start ..   to_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    to_start,
-                    to_end,
+                    p2i(to_start),
+                    p2i(to_end),
                     pointer_delta(  to_end,   to_start, sizeof(char)));
       gclog_or_tty->print_cr("    [from_start .. from_end): "
                     "[" PTR_FORMAT " .. " PTR_FORMAT ") " SIZE_FORMAT,
-                    from_start,
-                    from_end,
+                    p2i(from_start),
+                    p2i(from_end),
                     pointer_delta(from_end, from_start, sizeof(char)));
     }
   }

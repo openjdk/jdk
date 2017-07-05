@@ -31,7 +31,7 @@ import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.types.*;
 
-public class ciMethodData extends ciMetadata {
+public class ciMethodData extends ciMetadata implements MethodDataInterface<ciKlass,ciMethod> {
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -54,7 +54,9 @@ public class ciMethodData extends ciMetadata {
     extraDataSizeField = new CIntField(type.getCIntegerField("_extra_data_size"), 0);
     dataSizeField = new CIntField(type.getCIntegerField("_data_size"), 0);
     stateField = new CIntField(type.getCIntegerField("_state"), 0);
-    sizeofMethodDataOopDesc = (int)db.lookupType("MethodData").getSize();;
+    Type typeMethodData = db.lookupType("MethodData");
+    sizeofMethodDataOopDesc = (int)typeMethodData.getSize();
+    parametersTypeDataDi = new CIntField(typeMethodData.getCIntegerField("_parameters_type_data_di"), 0);
   }
 
   private static AddressField origField;
@@ -69,9 +71,26 @@ public class ciMethodData extends ciMetadata {
   private static CIntField dataSizeField;
   private static CIntField stateField;
   private static int sizeofMethodDataOopDesc;
+  private static CIntField parametersTypeDataDi;
 
   public ciMethodData(Address addr) {
     super(addr);
+  }
+
+  public ciKlass getKlassAtAddress(Address addr) {
+    return (ciKlass)ciObjectFactory.getMetadata(addr);
+  }
+
+  public ciMethod getMethodAtAddress(Address addr) {
+    return (ciMethod)ciObjectFactory.getMetadata(addr);
+  }
+
+  public void printKlassValueOn(ciKlass klass, PrintStream st) {
+    klass.printValueOn(st);
+  }
+
+  public void printMethodValueOn(ciMethod method, PrintStream st) {
+    method.printValueOn(st);
   }
 
   private byte[] fetchDataAt(Address base, long size) {
@@ -110,6 +129,10 @@ public class ciMethodData extends ciMetadata {
     return (int)dataSizeField.getValue(getAddress());
   }
 
+  int extraDataSize() {
+    return (int)extraDataSizeField.getValue(getAddress());
+  }
+
   int state() {
     return (int)stateField.getValue(getAddress());
   }
@@ -120,6 +143,16 @@ public class ciMethodData extends ciMetadata {
 
   boolean outOfBounds(int dataIndex) {
     return dataIndex >= dataSize();
+  }
+
+  ParametersTypeData<ciKlass,ciMethod> parametersTypeData() {
+    Address base = getAddress().addOffsetTo(origField.getOffset());
+    int di = (int)parametersTypeDataDi.getValue(base);
+    if (di == -1) {
+      return null;
+    }
+    DataLayout dataLayout = new DataLayout(dataField.getValue(getAddress()), di);
+    return new ParametersTypeData<ciKlass,ciMethod>(this, dataLayout);
   }
 
   ProfileData dataAt(int dataIndex) {
@@ -139,15 +172,21 @@ public class ciMethodData extends ciMetadata {
     case DataLayout.jumpDataTag:
       return new JumpData(dataLayout);
     case DataLayout.receiverTypeDataTag:
-      return new ciReceiverTypeData(dataLayout);
+      return new ReceiverTypeData<ciKlass,ciMethod>(this, dataLayout);
     case DataLayout.virtualCallDataTag:
-      return new ciVirtualCallData(dataLayout);
+      return new VirtualCallData<ciKlass,ciMethod>(this, dataLayout);
     case DataLayout.retDataTag:
       return new RetData(dataLayout);
     case DataLayout.branchDataTag:
       return new BranchData(dataLayout);
     case DataLayout.multiBranchDataTag:
       return new MultiBranchData(dataLayout);
+    case DataLayout.callTypeDataTag:
+      return new CallTypeData<ciKlass,ciMethod>(this, dataLayout);
+    case DataLayout.virtualCallTypeDataTag:
+      return new VirtualCallTypeData<ciKlass,ciMethod>(this, dataLayout);
+    case DataLayout.parametersTypeDataTag:
+      return new ParametersTypeData<ciKlass,ciMethod>(this, dataLayout);
     }
   }
 
@@ -164,7 +203,23 @@ public class ciMethodData extends ciMetadata {
   }
   boolean isValid(ProfileData current) { return current != null; }
 
+  DataLayout limitDataPosition() {
+    return new DataLayout(dataField.getValue(getAddress()), dataSize());
+  }
+  DataLayout extraDataBase() {
+    return limitDataPosition();
+  }
+  DataLayout extraDataLimit() {
+    return new DataLayout(dataField.getValue(getAddress()), dataSize() + extraDataSize());
+  }
+  DataLayout nextExtra(DataLayout dataLayout) {
+    return new DataLayout(dataField.getValue(getAddress()), dataLayout.dp() + DataLayout.computeSizeInBytes(MethodData.extraNbCells(dataLayout)));
+  }
+
   public void printDataOn(PrintStream st) {
+    if (parametersTypeData() != null) {
+      parametersTypeData().printDataOn(st);
+    }
     ProfileData data = firstData();
     for ( ; isValid(data); data = nextData(data)) {
       st.print(dpToDi(data.dp()));
@@ -172,16 +227,96 @@ public class ciMethodData extends ciMetadata {
       // st->fillTo(6);
       data.printDataOn(st);
     }
+    st.println("--- Extra data:");
+    DataLayout dp    = extraDataBase();
+    DataLayout end   = extraDataLimit();
+    for (;; dp = nextExtra(dp)) {
+      switch(dp.tag()) {
+      case DataLayout.noTag:
+        continue;
+      case DataLayout.bitDataTag:
+        data = new BitData(dp);
+        break;
+      case DataLayout.speculativeTrapDataTag:
+        data = new SpeculativeTrapData<ciKlass,ciMethod>(this, dp);
+        break;
+      case DataLayout.argInfoDataTag:
+        data = new ArgInfoData(dp);
+        dp = end; // ArgInfoData is at the end of extra data section.
+        break;
+      default:
+        throw new InternalError("unexpected tag " +  dp.tag());
+      }
+      st.print(dpToDi(data.dp()));
+      st.print(" ");
+      data.printDataOn(st);
+      if (dp == end) return;
+    }
+  }
+
+  int dumpReplayDataTypeHelper(PrintStream out, int round, int count, int index, ProfileData pdata, ciKlass k) {
+    if (k != null) {
+      if (round == 0) count++;
+      else out.print(" " + ((pdata.dp() + pdata.cellOffset(index)) / MethodData.cellSize) + " " + k.name());
+    }
+    return count;
+  }
+
+  int dumpReplayDataReceiverTypeHelper(PrintStream out, int round, int count, ReceiverTypeData<ciKlass,ciMethod> vdata) {
+    for (int i = 0; i < vdata.rowLimit(); i++) {
+      ciKlass k = vdata.receiver(i);
+      count = dumpReplayDataTypeHelper(out, round, count, vdata.receiverCellIndex(i), vdata, k);
+    }
+    return count;
+  }
+
+  int dumpReplayDataCallTypeHelper(PrintStream out, int round, int count, CallTypeDataInterface<ciKlass> callTypeData) {
+    if (callTypeData.hasArguments()) {
+      for (int i = 0; i < callTypeData.numberOfArguments(); i++) {
+        count = dumpReplayDataTypeHelper(out, round, count, callTypeData.argumentTypeIndex(i), (ProfileData)callTypeData, callTypeData.argumentType(i));
+      }
+    }
+    if (callTypeData.hasReturn()) {
+      count = dumpReplayDataTypeHelper(out, round, count, callTypeData.returnTypeIndex(), (ProfileData)callTypeData, callTypeData.returnType());
+    }
+    return count;
+  }
+
+  int dumpReplayDataExtraDataHelper(PrintStream out, int round, int count) {
+    DataLayout dp    = extraDataBase();
+    DataLayout end   = extraDataLimit();
+
+    for (;dp != end; dp = nextExtra(dp)) {
+      switch(dp.tag()) {
+      case DataLayout.noTag:
+      case DataLayout.argInfoDataTag:
+        return count;
+      case DataLayout.bitDataTag:
+        break;
+      case DataLayout.speculativeTrapDataTag: {
+        SpeculativeTrapData<ciKlass,ciMethod> data = new SpeculativeTrapData<ciKlass,ciMethod>(this, dp);
+        ciMethod m = data.method();
+        if (m != null) {
+          if (round == 0) {
+            count++;
+          } else {
+            out.print(" " +  (dpToDi(data.dp() + data.cellOffset(SpeculativeTrapData.methodIndex())) / MethodData.cellSize) + " " +  m.nameAsAscii());
+          }
+        }
+        break;
+      }
+      default:
+        throw new InternalError("bad tag "  + dp.tag());
+      }
+    }
+    return count;
   }
 
   public void dumpReplayData(PrintStream out) {
     MethodData mdo = (MethodData)getMetadata();
     Method method = mdo.getMethod();
-    Klass holder = method.getMethodHolder();
     out.print("ciMethodData " +
-              holder.getName().asString() + " " +
-              OopUtilities.escapeString(method.getName().asString()) + " " +
-              method.getSignature().asString() + " " +
+              method.nameAsAscii() + " " +
               state() + " " + currentMileage());
     byte[] orig = orig();
     out.print(" orig " + orig.length);
@@ -195,30 +330,28 @@ public class ciMethodData extends ciMetadata {
       out.print(" 0x" + Long.toHexString(data[i]));
     }
     int count = 0;
+    ParametersTypeData<ciKlass,ciMethod> parameters = parametersTypeData();
     for (int round = 0; round < 2; round++) {
       if (round == 1) out.print(" oops " + count);
       ProfileData pdata = firstData();
       for ( ; isValid(pdata); pdata = nextData(pdata)) {
-        if (pdata instanceof ciReceiverTypeData) {
-          ciReceiverTypeData vdata = (ciReceiverTypeData)pdata;
-          for (int i = 0; i < vdata.rowLimit(); i++) {
-            ciKlass k = vdata.receiverAt(i);
-            if (k != null) {
-              if (round == 0) count++;
-              else out.print(" " + ((vdata.dp() + vdata.cellOffset(vdata.receiverCellIndex(i))) / MethodData.cellSize) + " " + k.name());
-            }
-          }
-        } else if (pdata instanceof ciVirtualCallData) {
-          ciVirtualCallData vdata = (ciVirtualCallData)pdata;
-          for (int i = 0; i < vdata.rowLimit(); i++) {
-            ciKlass k = vdata.receiverAt(i);
-            if (k != null) {
-              if (round == 0) count++;
-              else out.print(" " + ((vdata.dp() + vdata.cellOffset(vdata.receiverCellIndex(i))) / MethodData.cellSize + " " + k.name()));
-            }
-          }
+        if (pdata instanceof ReceiverTypeData) {
+          count = dumpReplayDataReceiverTypeHelper(out, round, count, (ReceiverTypeData<ciKlass,ciMethod>)pdata);
+        }
+        if (pdata instanceof CallTypeDataInterface) {
+          count = dumpReplayDataCallTypeHelper(out, round, count, (CallTypeDataInterface<ciKlass>)pdata);
         }
       }
+      if (parameters != null) {
+        for (int i = 0; i < parameters.numberOfParameters(); i++) {
+          count = dumpReplayDataTypeHelper(out, round, count, ParametersTypeData.typeIndex(i), parameters, parameters.type(i));
+        }
+      }
+    }
+    count = 0;
+    for (int round = 0; round < 2; round++) {
+      if (round == 1) out.print(" methods " + count);
+      count = dumpReplayDataExtraDataHelper(out, round, count);
     }
     out.println();
   }

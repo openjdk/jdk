@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,8 +111,8 @@ public class MemoryImageSource implements ImageProducer {
     Object pixels;
     int pixeloffset;
     int pixelscan;
-    Hashtable properties;
-    Vector theConsumers = new Vector();
+    Hashtable<?, ?> properties;
+    Vector<ImageConsumer> theConsumers = new Vector<>();
     boolean animating;
     boolean fullbuffers;
 
@@ -197,7 +197,7 @@ public class MemoryImageSource implements ImageProducer {
     }
 
     private void initialize(int w, int h, ColorModel cm,
-                            Object pix, int off, int scan, Hashtable props) {
+                            Object pix, int off, int scan, Hashtable<?,?> props) {
         width = w;
         height = h;
         model = cm;
@@ -205,7 +205,7 @@ public class MemoryImageSource implements ImageProducer {
         pixeloffset = off;
         pixelscan = scan;
         if (props == null) {
-            props = new Hashtable();
+            props = new Hashtable<>();
         }
         properties = props;
     }
@@ -343,9 +343,9 @@ public class MemoryImageSource implements ImageProducer {
     public synchronized void setAnimated(boolean animated) {
         this.animating = animated;
         if (!animating) {
-            Enumeration enum_ = theConsumers.elements();
+            Enumeration<ImageConsumer> enum_ = theConsumers.elements();
             while (enum_.hasMoreElements()) {
-                ImageConsumer ic = (ImageConsumer) enum_.nextElement();
+                ImageConsumer ic = enum_.nextElement();
                 ic.imageComplete(ImageConsumer.STATICIMAGEDONE);
                 if (isConsumer(ic)) {
                     ic.imageComplete(ImageConsumer.IMAGEERROR);
@@ -376,9 +376,9 @@ public class MemoryImageSource implements ImageProducer {
         }
         this.fullbuffers = fullbuffers;
         if (animating) {
-            Enumeration enum_ = theConsumers.elements();
+            Enumeration<ImageConsumer> enum_ = theConsumers.elements();
             while (enum_.hasMoreElements()) {
-                ImageConsumer ic = (ImageConsumer) enum_.nextElement();
+                ImageConsumer ic = enum_.nextElement();
                 ic.setHints(fullbuffers
                             ? (ImageConsumer.TOPDOWNLEFTRIGHT |
                                ImageConsumer.COMPLETESCANLINES)
@@ -474,9 +474,9 @@ public class MemoryImageSource implements ImageProducer {
             if ((w <= 0 || h <= 0) && !framenotify) {
                 return;
             }
-            Enumeration enum_ = theConsumers.elements();
+            Enumeration<ImageConsumer> enum_ = theConsumers.elements();
             while (enum_.hasMoreElements()) {
-                ImageConsumer ic = (ImageConsumer) enum_.nextElement();
+                ImageConsumer ic = enum_.nextElement();
                 if (w > 0 && h > 0) {
                     sendPixels(ic, x, y, w, h);
                 }

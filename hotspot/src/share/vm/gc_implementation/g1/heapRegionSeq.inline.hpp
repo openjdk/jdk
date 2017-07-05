@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@
 
 inline HeapRegion* HeapRegionSeq::addr_to_region(HeapWord* addr) const {
   assert(addr < heap_end(),
-        err_msg("addr: "PTR_FORMAT" end: "PTR_FORMAT, addr, heap_end()));
+        err_msg("addr: "PTR_FORMAT" end: "PTR_FORMAT, p2i(addr), p2i(heap_end())));
   assert(addr >= heap_bottom(),
-        err_msg("addr: "PTR_FORMAT" bottom: "PTR_FORMAT, addr, heap_bottom()));
+        err_msg("addr: "PTR_FORMAT" bottom: "PTR_FORMAT, p2i(addr), p2i(heap_bottom())));
 
   HeapRegion* hr = _regions.get_by_address(addr);
   assert(hr != NULL, "invariant");

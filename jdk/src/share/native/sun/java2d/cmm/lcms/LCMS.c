@@ -30,7 +30,7 @@
 #include "jni_util.h"
 #include "Trace.h"
 #include "Disposer.h"
-#include "lcms2.h"
+#include <lcms2.h>
 #include "jlong.h"
 
 
