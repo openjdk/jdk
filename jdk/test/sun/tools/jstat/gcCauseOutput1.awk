@@ -3,15 +3,15 @@
 # that the numerical values conform to a specific pattern, rather than
 # specific values.
 #
-#  S0     S1     E      O      P     YGC     YGCT    FGC    FGCT     GCT    LGCC                 GCC                 
-#  0.00 100.00  14.01   3.06  23.20      1    0.032     0    0.000    0.032 Allocation Failure   No GC           
+#  S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT     GCT    LGCC                 GCC                 
+#  0.00   0.00   0.00   9.97  90.94  87.70      2    0.013     0    0.000    0.013 Allocation Failure   No GC
 
 
 BEGIN	{
 	    headerlines=0; datalines=0; totallines=0
 	}
 
-/^  S0     S1     E      O      M     YGC     YGCT    FGC    FGCT     GCT    LGCC                 GCC                 $/	{
+/^  S0     S1     E      O      M     CCS    YGC     YGCT    FGC    FGCT     GCT    LGCC                 GCC                 $/	{
 	    headerlines++;
 	}
 
@@ -23,7 +23,7 @@ BEGIN	{
 # or more letters and spaces. It also provides for the ".", "(", and ")"
 # characters to allow for the string "System.gc()".
 #
-/^[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[a-zA-Z]+[a-zA-Z \.\(\)]*[ ]*[a-zA-Z]+[a-zA-Z \.\(\)]*$/	{
+/^[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[0-9]+\.[0-9]+[ ]*[a-zA-Z]+[a-zA-Z \.\(\)]*[ ]*[a-zA-Z]+[a-zA-Z \.\(\)]*$/	{
 	    datalines++;
 	}
 

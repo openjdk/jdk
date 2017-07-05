@@ -524,7 +524,7 @@ public class Event implements java.io.Serializable {
      * This field has been replaced by MouseEvent.getClickCount().
      *
      * @serial
-     * @see java.awt.event.MouseEvent#getClickCount().
+     * @see java.awt.event.MouseEvent#getClickCount()
      */
     public int clickCount;
 

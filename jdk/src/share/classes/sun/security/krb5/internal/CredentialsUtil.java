@@ -160,7 +160,7 @@ public class CredentialsUtil {
     /**
      * Gets a TGT to another realm
      * @param localRealm this realm
-     * @param serviceRealm the other realm
+     * @param serviceRealm the other realm, cannot equals to localRealm
      * @param ccreds TGT in this realm
      * @param okAsDelegate an [out] argument to receive the okAsDelegate
      * property. True only if all realms allow delegation.
@@ -173,14 +173,6 @@ public class CredentialsUtil {
 
         // Get a list of realms to traverse
         String[] realms = Realm.getRealmsList(localRealm, serviceRealm);
-
-        if (realms == null || realms.length == 0) {
-            if (DEBUG) {
-                System.out.println(
-                        ">>> Credentials acquireServiceCreds: no realms list");
-            }
-            return null;
-        }
 
         int i = 0, k = 0;
         Credentials cTgt = null, newTgt = null, theTgt = null;
@@ -206,16 +198,14 @@ public class CredentialsUtil {
             if (newTgt == null) {
                 if (DEBUG) {
                     System.out.println(">>> Credentials acquireServiceCreds: "
-                            + "no tgt; searching backwards");
+                            + "no tgt; searching thru capath");
                 }
 
                 /*
-                 * No tgt found. Try to get one for a
-                 * realm as close to the target as possible.
-                 * That means traversing the realms list backwards.
+                 * No tgt found. Let's go thru the realms list one by one.
                  */
-                for (newTgt = null, k = realms.length - 1;
-                        newTgt == null && k > i; k--) {
+                for (newTgt = null, k = i+1;
+                        newTgt == null && k < realms.length; k++) {
                     tempService = PrincipalName.tgsService(realms[k], realms[i]);
                     if (DEBUG) {
                         System.out.println(

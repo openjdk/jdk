@@ -503,7 +503,7 @@ public class TextField extends TextComponent {
      *
      * @see #addActionListener
      * @see #removeActionListener
-     * @see     java.awt.event#ActionListener
+     * @see java.awt.event.ActionListener
      * @since 1.4
      */
     public synchronized ActionListener[] getActionListeners() {

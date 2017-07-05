@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
@@ -2370,11 +2371,14 @@ public final class Class<T> implements java.io.Serializable,
         private static final long reflectionDataOffset;
         // offset of Class.annotationType instance field
         private static final long annotationTypeOffset;
+        // offset of Class.annotationData instance field
+        private static final long annotationDataOffset;
 
         static {
             Field[] fields = Class.class.getDeclaredFields0(false); // bypass caches
             reflectionDataOffset = objectFieldOffset(fields, "reflectionData");
             annotationTypeOffset = objectFieldOffset(fields, "annotationType");
+            annotationDataOffset = objectFieldOffset(fields, "annotationData");
         }
 
         private static long objectFieldOffset(Field[] fields, String fieldName) {
@@ -2396,6 +2400,12 @@ public final class Class<T> implements java.io.Serializable,
                                              AnnotationType newType) {
             return unsafe.compareAndSwapObject(clazz, annotationTypeOffset, oldType, newType);
         }
+
+        static <T> boolean casAnnotationData(Class<?> clazz,
+                                             AnnotationData oldData,
+                                             AnnotationData newData) {
+            return unsafe.compareAndSwapObject(clazz, annotationDataOffset, oldData, newData);
+        }
     }
 
     /**
@@ -2406,7 +2416,7 @@ public final class Class<T> implements java.io.Serializable,
     private static boolean useCaches = true;
 
     // reflection data that might get invalidated when JVM TI RedefineClasses() is called
-    static class ReflectionData<T> {
+    private static class ReflectionData<T> {
         volatile Field[] declaredFields;
         volatile Field[] publicFields;
         volatile Method[] declaredMethods;
@@ -3253,8 +3263,7 @@ public final class Class<T> implements java.io.Serializable,
     public <A extends Annotation> A getAnnotation(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        initAnnotationsIfNecessary();
-        return (A) annotations.get(annotationClass);
+        return (A) annotationData().annotations.get(annotationClass);
     }
 
     /**
@@ -3275,16 +3284,14 @@ public final class Class<T> implements java.io.Serializable,
     public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        initAnnotationsIfNecessary();
-        return AnnotationSupport.getMultipleAnnotations(annotations, annotationClass);
+        return AnnotationSupport.getMultipleAnnotations(annotationData().annotations, annotationClass);
     }
 
     /**
      * @since 1.5
      */
     public Annotation[] getAnnotations() {
-        initAnnotationsIfNecessary();
-        return AnnotationParser.toArray(annotations);
+        return AnnotationParser.toArray(annotationData().annotations);
     }
 
     /**
@@ -3296,8 +3303,7 @@ public final class Class<T> implements java.io.Serializable,
     public <A extends Annotation> A getDeclaredAnnotation(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        initAnnotationsIfNecessary();
-        return (A) declaredAnnotations.get(annotationClass);
+        return (A) annotationData().declaredAnnotations.get(annotationClass);
     }
 
     /**
@@ -3308,52 +3314,85 @@ public final class Class<T> implements java.io.Serializable,
     public <A extends Annotation> A[] getDeclaredAnnotationsByType(Class<A> annotationClass) {
         Objects.requireNonNull(annotationClass);
 
-        initAnnotationsIfNecessary();
-        return AnnotationSupport.getMultipleAnnotations(declaredAnnotations, annotationClass);
+        return AnnotationSupport.getMultipleAnnotations(annotationData().declaredAnnotations, annotationClass);
     }
 
     /**
      * @since 1.5
      */
     public Annotation[] getDeclaredAnnotations()  {
-        initAnnotationsIfNecessary();
-        return AnnotationParser.toArray(declaredAnnotations);
+        return AnnotationParser.toArray(annotationData().declaredAnnotations);
+    }
+
+    // annotation data that might get invalidated when JVM TI RedefineClasses() is called
+    private static class AnnotationData {
+        final Map<Class<? extends Annotation>, Annotation> annotations;
+        final Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
+
+        // Value of classRedefinedCount when we created this AnnotationData instance
+        final int redefinedCount;
+
+        AnnotationData(Map<Class<? extends Annotation>, Annotation> annotations,
+                       Map<Class<? extends Annotation>, Annotation> declaredAnnotations,
+                       int redefinedCount) {
+            this.annotations = annotations;
+            this.declaredAnnotations = declaredAnnotations;
+            this.redefinedCount = redefinedCount;
+        }
     }
 
     // Annotations cache
-    private transient Map<Class<? extends Annotation>, Annotation> annotations;
-    private transient Map<Class<? extends Annotation>, Annotation> declaredAnnotations;
-    // Value of classRedefinedCount when we last cleared the cached annotations and declaredAnnotations fields
-    private  transient int lastAnnotationsRedefinedCount = 0;
+    @SuppressWarnings("UnusedDeclaration")
+    private volatile transient AnnotationData annotationData;
 
-    // Clears cached values that might possibly have been obsoleted by
-    // a class redefinition.
-    private void clearAnnotationCachesOnClassRedefinition() {
-        if (lastAnnotationsRedefinedCount != classRedefinedCount) {
-            annotations = declaredAnnotations = null;
-            lastAnnotationsRedefinedCount = classRedefinedCount;
+    private AnnotationData annotationData() {
+        while (true) { // retry loop
+            AnnotationData annotationData = this.annotationData;
+            int classRedefinedCount = this.classRedefinedCount;
+            if (annotationData != null &&
+                annotationData.redefinedCount == classRedefinedCount) {
+                return annotationData;
+            }
+            // null or stale annotationData -> optimistically create new instance
+            AnnotationData newAnnotationData = createAnnotationData(classRedefinedCount);
+            // try to install it
+            if (Atomic.casAnnotationData(this, annotationData, newAnnotationData)) {
+                // successfully installed new AnnotationData
+                return newAnnotationData;
+            }
         }
     }
 
-    private synchronized void initAnnotationsIfNecessary() {
-        clearAnnotationCachesOnClassRedefinition();
-        if (annotations != null)
-            return;
-        declaredAnnotations = AnnotationParser.parseAnnotations(
-            getRawAnnotations(), getConstantPool(), this);
+    private AnnotationData createAnnotationData(int classRedefinedCount) {
+        Map<Class<? extends Annotation>, Annotation> declaredAnnotations =
+            AnnotationParser.parseAnnotations(getRawAnnotations(), getConstantPool(), this);
         Class<?> superClass = getSuperclass();
-        if (superClass == null) {
+        Map<Class<? extends Annotation>, Annotation> annotations = null;
+        if (superClass != null) {
+            Map<Class<? extends Annotation>, Annotation> superAnnotations =
+                superClass.annotationData().annotations;
+            for (Map.Entry<Class<? extends Annotation>, Annotation> e : superAnnotations.entrySet()) {
+                Class<? extends Annotation> annotationClass = e.getKey();
+                if (AnnotationType.getInstance(annotationClass).isInherited()) {
+                    if (annotations == null) { // lazy construction
+                        annotations = new LinkedHashMap<>((Math.max(
+                                declaredAnnotations.size(),
+                                Math.min(12, declaredAnnotations.size() + superAnnotations.size())
+                            ) * 4 + 2) / 3
+                        );
+                    }
+                    annotations.put(annotationClass, e.getValue());
+                }
+            }
+        }
+        if (annotations == null) {
+            // no inherited annotations -> share the Map with declaredAnnotations
             annotations = declaredAnnotations;
         } else {
-            annotations = new HashMap<>();
-            superClass.initAnnotationsIfNecessary();
-            for (Map.Entry<Class<? extends Annotation>, Annotation> e : superClass.annotations.entrySet()) {
-                Class<? extends Annotation> annotationClass = e.getKey();
-                if (AnnotationType.getInstance(annotationClass).isInherited())
-                    annotations.put(annotationClass, e.getValue());
-            }
+            // at least one inherited annotation -> declared may override inherited
             annotations.putAll(declaredAnnotations);
         }
+        return new AnnotationData(annotations, declaredAnnotations, classRedefinedCount);
     }
 
     // Annotation types cache their internal (AnnotationType) form

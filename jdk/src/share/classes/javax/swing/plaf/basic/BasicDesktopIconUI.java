@@ -34,7 +34,7 @@ import javax.swing.plaf.*;
 import java.beans.*;
 
 /**
- * Basic L&F for a minimized window on a desktop.
+ * Basic L&amp;F for a minimized window on a desktop.
  *
  * @author David Kloba
  * @author Steve Wilson

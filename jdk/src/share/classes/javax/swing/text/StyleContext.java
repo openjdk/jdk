@@ -241,7 +241,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      *
      * @param family the font family (such as "Monospaced")
      * @param style the style of the font (such as Font.PLAIN)
-     * @param size the point size >= 1
+     * @param size the point size &gt;= 1
      * @return the new font
      */
     public Font getFont(String family, int style, int size) {
@@ -1387,7 +1387,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
         /**
          * Gets the number of attributes that are defined.
          *
-         * @return the number of attributes >= 0
+         * @return the number of attributes &gt;= 0
          * @see AttributeSet#getAttributeCount
          */
         public int getAttributeCount() {

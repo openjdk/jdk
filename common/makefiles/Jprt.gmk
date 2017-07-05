@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -200,13 +200,8 @@ $(JPRT_ARCHIVE_BUNDLE): bundles
 	$(RM) $@
 	$(CP) $(BUILD_OUTPUT)/bundles/$(JDK_IMAGE_SUBDIR).zip $@
 
-ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_BITS),solaris-64)
-  SRC_JDK_IMAGE_DIR := $(JDK_OVERLAY_IMAGE_DIR)
-  SRC_JRE_IMAGE_DIR := $(JRE_OVERLAY_IMAGE_DIR)
-else
-  SRC_JDK_IMAGE_DIR := $(JDK_IMAGE_DIR)
-  SRC_JRE_IMAGE_DIR := $(JRE_IMAGE_DIR)
-endif
+SRC_JDK_IMAGE_DIR := $(JDK_IMAGE_DIR)
+SRC_JRE_IMAGE_DIR := $(JRE_IMAGE_DIR)
 SRC_JDK_BUNDLE_DIR := $(JDK_BUNDLE_DIR)
 SRC_JRE_BUNDLE_DIR := $(JRE_BUNDLE_DIR)
 
@@ -215,10 +210,10 @@ bundles: all bundles-only
 bundles-only: start-make
 	@$(call TargetEnter)
 	$(MKDIR) -p $(BUILD_OUTPUT)/bundles
-	$(CD) $(SRC_JDK_IMAGE_DIR) && $(ZIP) -q -r $(BUILD_OUTPUT)/bundles/$(JDK_IMAGE_SUBDIR).zip .
-	$(CD) $(SRC_JRE_IMAGE_DIR) && $(ZIP) -q -r $(BUILD_OUTPUT)/bundles/$(JRE_IMAGE_SUBDIR).zip .
+	$(CD) $(SRC_JDK_IMAGE_DIR) && $(ZIP) -y -q -r $(BUILD_OUTPUT)/bundles/$(JDK_IMAGE_SUBDIR).zip .
+	$(CD) $(SRC_JRE_IMAGE_DIR) && $(ZIP) -y -q -r $(BUILD_OUTPUT)/bundles/$(JRE_IMAGE_SUBDIR).zip .
 	if [ -d  $(BUILD_OUTPUT)/install/bundles ] ; then \
-           $(CD) $(BUILD_OUTPUT)/install/bundles && $(ZIP) -q -r $(JPRT_ARCHIVE_INSTALL_BUNDLE) . ; \
+           $(CD) $(BUILD_OUTPUT)/install/bundles && $(ZIP) -y -q -r $(JPRT_ARCHIVE_INSTALL_BUNDLE) . ; \
         fi
 	@$(call TargetExit)
 

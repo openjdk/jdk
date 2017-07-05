@@ -121,9 +121,13 @@ public class FilterNoMatch extends JDIScaffold {
 
         // We have to filter out all these so that they don't cause the
         // listener to be called.
-        request1.addClassExclusionFilter( "java.*");
-        request1.addClassExclusionFilter( "com.*");
-        request1.addClassExclusionFilter( "sun.*");
+        request1.addClassExclusionFilter("java.*");
+        request1.addClassExclusionFilter("javax.*");
+        request1.addClassExclusionFilter("sun.*");
+        request1.addClassExclusionFilter("com.sun.*");
+        request1.addClassExclusionFilter("com.oracle.*");
+        request1.addClassExclusionFilter("oracle.*");
+        request1.addClassExclusionFilter("jdk.internal.*");
 
         // We want our listener to be called if a pattern does not match.
         // So, here we want patterns that do not match HelloWorld.
