@@ -27,6 +27,7 @@
  * @summary Test the operation of the methods of BitSet class
  * @author Mike McCloskey, Martin Buchholz
  * @run main/othervm BSMethods
+ * @key randomness
  */
 
 import java.util.*;

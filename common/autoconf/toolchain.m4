@@ -189,11 +189,15 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   ORG_CFLAGS="$CFLAGS"
   ORG_CXXFLAGS="$CXXFLAGS"
 
+  # autoconf magic only relies on PATH, so update it if tools dir is specified
+  OLD_PATH="$PATH"
+
   # On Windows, we need to detect the visual studio installation first.
   # This will change the PATH, but we need to keep that new PATH even
   # after toolchain detection is done, since the compiler (on x86) uses
   # it for DLL resolution in runtime.
-  if test "x$OPENJDK_BUILD_OS" = "xwindows" && test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
+  if test "x$OPENJDK_BUILD_OS" = "xwindows" \
+      && test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
     TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV
     # Reset path to VS_PATH. It will include everything that was on PATH at the time we
     # ran TOOLCHAIN_SETUP_VISUAL_STUDIO_ENV.
@@ -202,9 +206,6 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
     export INCLUDE="$VS_INCLUDE"
     export LIB="$VS_LIB"
   fi
-
-  # autoconf magic only relies on PATH, so update it if tools dir is specified
-  OLD_PATH="$PATH"
 
   # For solaris we really need solaris tools, and not the GNU equivalent.
   # The build tools on Solaris reside in /usr/ccs (C Compilation System),

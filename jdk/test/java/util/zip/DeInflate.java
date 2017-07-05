@@ -25,6 +25,7 @@
  * @test
  * @bug 7110149
  * @summary Test basic deflater & inflater functionality
+ * @key randomness
  */
 
 import java.io.*;

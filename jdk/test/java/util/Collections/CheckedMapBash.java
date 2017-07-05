@@ -27,6 +27,7 @@
  * @summary Unit test for Collections.checkedMap
  * @author  Josh Bloch
  * @run testng CheckedMapBash
+ * @key randomness
  */
 
 import java.util.*;

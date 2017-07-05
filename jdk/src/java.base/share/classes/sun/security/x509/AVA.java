@@ -307,7 +307,7 @@ public class AVA implements DerEncoder {
         // doublequote.
         int c = readChar(in, "Quoted string did not end in quote");
 
-        List<Byte> embeddedHex = new ArrayList<Byte>();
+        List<Byte> embeddedHex = new ArrayList<>();
         boolean isPrintableString = true;
         while (c != '"') {
             if (c == '\\') {

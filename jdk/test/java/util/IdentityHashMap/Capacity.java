@@ -39,6 +39,7 @@ import static org.testng.Assert.*;
  * @summary IdentityHashMap reallocates storage when inserting expected
  *          number of elements
  * @run testng Capacity
+ * @key randomness
  */
 
 @Test

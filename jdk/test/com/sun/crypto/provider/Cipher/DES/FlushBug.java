@@ -26,6 +26,7 @@
  * @bug 0000000
  * @summary FlushBug
  * @author Jan Luehe
+ * @key randomness
  */
 import java.io.*;
 import java.security.*;

@@ -58,8 +58,8 @@ import com.sun.net.httpserver.spi.HttpServerProvider;
  * whose path is the longest matching prefix of the request URI's path.
  * Paths are matched literally, which means that the strings are compared
  * case sensitively, and with no conversion to or from any encoded forms.
- * For example. Given a HttpServer with the following HttpContexts configured.<p>
- * <table >
+ * For example. Given a HttpServer with the following HttpContexts configured.
+ * <table>
  * <tr><td><i>Context</i></td><td><i>Context path</i></td></tr>
  * <tr><td>ctx1</td><td>"/"</td></tr>
  * <tr><td>ctx2</td><td>"/apps/"</td></tr>
@@ -67,7 +67,7 @@ import com.sun.net.httpserver.spi.HttpServerProvider;
  * </table>
  * <p>
  * the following table shows some request URIs and which, if any context they would
- * match with.<p>
+ * match with.
  * <table>
  * <tr><td><i>Request URI</i></td><td><i>Matches context</i></td></tr>
  * <tr><td>"http://foo.com/apps/foo/bar"</td><td>ctx3</td></tr>
@@ -181,7 +181,7 @@ public abstract class HttpServer {
      * approximately <i>delay</i> seconds have elapsed (whichever happens
      * sooner). Then, all open TCP connections are closed, the background
      * thread created by start() exits, and the method returns.
-     * Once stopped, a HttpServer cannot be re-used. <p>
+     * Once stopped, a HttpServer cannot be re-used.
      *
      * @param delay the maximum time in seconds to wait until exchanges have finished.
      * @throws IllegalArgumentException if delay is less than zero.

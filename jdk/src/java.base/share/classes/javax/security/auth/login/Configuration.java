@@ -229,7 +229,7 @@ public abstract class Configuration {
             if (configuration == null) {
                 String config_class = null;
                 config_class = AccessController.doPrivileged
-                    (new PrivilegedAction<String>() {
+                    (new PrivilegedAction<>() {
                     public String run() {
                         return java.security.Security.getProperty
                                     ("login.configuration.provider");
@@ -242,7 +242,7 @@ public abstract class Configuration {
                 try {
                     final String finalClass = config_class;
                     Configuration untrustedImpl = AccessController.doPrivileged(
-                            new PrivilegedExceptionAction<Configuration>() {
+                            new PrivilegedExceptionAction<>() {
                                 public Configuration run() throws ClassNotFoundException,
                                         InstantiationException,
                                         IllegalAccessException {
@@ -254,7 +254,7 @@ public abstract class Configuration {
                                 }
                             });
                     AccessController.doPrivileged(
-                            new PrivilegedExceptionAction<Void>() {
+                            new PrivilegedExceptionAction<>() {
                                 public Void run() {
                                     setConfiguration(untrustedImpl);
                                     return null;

@@ -27,6 +27,7 @@
  * @build MulticastSendReceiveTests NetworkConfiguration
  * @run main MulticastSendReceiveTests
  * @run main/othervm -Djava.net.preferIPv4Stack=true MulticastSendReceiveTests
+ * @key randomness
  */
 
 import java.nio.ByteBuffer;
