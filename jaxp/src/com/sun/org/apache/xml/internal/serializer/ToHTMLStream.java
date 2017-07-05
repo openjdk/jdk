@@ -60,7 +60,7 @@ public final class ToHTMLStream extends ToStream
      */
     private static final CharInfo m_htmlcharInfo =
 //        new CharInfo(CharInfo.HTML_ENTITIES_RESOURCE);
-        CharInfo.getCharInfo(CharInfo.HTML_ENTITIES_RESOURCE, Method.HTML);
+        CharInfo.getCharInfoInternal(CharInfo.HTML_ENTITIES_RESOURCE, Method.HTML);
 
     /** A digital search trie for fast, case insensitive lookup of ElemDesc objects. */
     static final Trie m_elementFlags = new Trie();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -269,31 +269,6 @@ frame os::current_frame() {
     return os::get_sender_for_C_frame(&myframe);
   }
 }
-
-static int threadgetstate(thread_t tid, int *flags, lwpid_t *lwp, stack_t *ss, gregset_t rs, lwpstatus_t *lwpstatus) {
-  char lwpstatusfile[PROCFILE_LENGTH];
-  int lwpfd, err;
-
-  if (err = os::Solaris::thr_getstate(tid, flags, lwp, ss, rs))
-    return (err);
-  if (*flags == TRS_LWPID) {
-    sprintf(lwpstatusfile, "/proc/%d/lwp/%d/lwpstatus", getpid(),
-            *lwp);
-    if ((lwpfd = ::open(lwpstatusfile, O_RDONLY)) < 0) {
-      perror("thr_mutator_status: open lwpstatus");
-      return (EINVAL);
-    }
-    if (pread(lwpfd, lwpstatus, sizeof (lwpstatus_t), (off_t)0) !=
-        sizeof (lwpstatus_t)) {
-      perror("thr_mutator_status: read lwpstatus");
-      (void) ::close(lwpfd);
-      return (EINVAL);
-    }
-    (void) ::close(lwpfd);
-  }
-  return (0);
-}
-
 
 bool os::is_allocatable(size_t bytes) {
 #ifdef _LP64

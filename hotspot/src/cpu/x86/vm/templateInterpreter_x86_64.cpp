@@ -1259,7 +1259,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // reset handle block
   __ movptr(t, Address(r15_thread, JavaThread::active_handles_offset()));
-  __ movptr(Address(t, JNIHandleBlock::top_offset_in_bytes()), (int32_t)NULL_WORD);
+  __ movl(Address(t, JNIHandleBlock::top_offset_in_bytes()), (int32_t)NULL_WORD);
 
   // If result is an oop unbox and store it in frame where gc will see it
   // and result handler will pick it up

@@ -3,11 +3,12 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -34,7 +35,6 @@ import com.sun.org.apache.xerces.internal.xni.XNIException;
  *
  * @xerces.internal
  *
- *
  */
 public interface XPointerProcessor {
 
@@ -56,7 +56,6 @@ public interface XPointerProcessor {
      * @throws XNIException Thrown if the xpointer string does not conform to
      *         the XPointer Framework syntax or the syntax of the pointer part does
      *         not conform to its definition for its scheme.
-     *
      */
     public void parseXPointer(String xpointer) throws XNIException;
 
@@ -74,7 +73,6 @@ public interface XPointerProcessor {
      *                2 - An empty element call
      * @return true if the element was resolved by the xpointer
      * @throws XNIException Thrown to signal an error
-     *
      */
     public boolean resolveXPointer(QName element, XMLAttributes attributes,
             Augmentations augs, int event) throws XNIException;
@@ -86,7 +84,6 @@ public interface XPointerProcessor {
      * @return True if the xpointer expression matches a node/fragment in the resource
      *         else returns false.
      * @throws XNIException Thrown to signal an error
-     *
      */
     public boolean isFragmentResolved() throws XNIException;
 
@@ -97,7 +94,6 @@ public interface XPointerProcessor {
      * @return True if the xpointer expression matches a fragment in the resource
      *         else returns false.
      * @throws XNIException Thrown to signal an error
-     *
      */
     public boolean isXPointerResolved() throws XNIException;
 

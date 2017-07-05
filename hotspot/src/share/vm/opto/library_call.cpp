@@ -620,6 +620,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms, Parse* parent_parser) {
     }
     // Push the result from the inlined method onto the stack.
     kit.push_result();
+    C->print_inlining_update(this);
     return kit.transfer_exceptions_into_jvms();
   }
 
@@ -637,6 +638,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms, Parse* parent_parser) {
     }
   }
   C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_failed);
+  C->print_inlining_update(this);
   return NULL;
 }
 

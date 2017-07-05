@@ -68,7 +68,7 @@ final class SignatureAndHashAlgorithm {
 
     // performance optimization
     private final static Set<CryptoPrimitive> SIGNATURE_PRIMITIVE_SET =
-                                    EnumSet.of(CryptoPrimitive.SIGNATURE);
+        Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
 
     // supported pairs of signature and hash algorithm
     private final static Map<Integer, SignatureAndHashAlgorithm> supportedMap;

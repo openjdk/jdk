@@ -438,7 +438,9 @@ public enum JSType {
 
         // encode integer part from least significant digit, then reverse
         do {
-            sb.append(chars.charAt((int) (intPart % radix)));
+            final double remainder = intPart % radix;
+            sb.append(chars.charAt((int) remainder));
+            intPart -= remainder;
             intPart /= radix;
         } while (intPart >= 1.0);
 

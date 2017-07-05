@@ -512,6 +512,17 @@ png_set_PLTE(png_structp png_ptr, png_infop info_ptr,
       }
    }
 
+   if ((num_palette > 0 && palette == NULL) ||
+      (num_palette == 0
+#        ifdef PNG_MNG_FEATURES_SUPPORTED
+            && (png_ptr->mng_features_permitted & PNG_FLAG_MNG_EMPTY_PLTE) == 0
+#        endif
+      ))
+   {
+      png_error(png_ptr, "Invalid palette");
+      return;
+   }
+
    /* It may not actually be necessary to set png_ptr->palette here;
     * we do it for backward compatibility with the way the png_handle_tRNS
     * function used to do the allocation.

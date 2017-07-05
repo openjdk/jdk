@@ -290,7 +290,7 @@ void SATBMarkQueueSet::iterate_closure_all_threads() {
   shared_satb_queue()->apply_closure_and_empty(_closure);
 }
 
-void SATBMarkQueueSet::par_iterate_closure_all_threads(int worker) {
+void SATBMarkQueueSet::par_iterate_closure_all_threads(uint worker) {
   SharedHeap* sh = SharedHeap::heap();
   int parity = sh->strong_roots_parity();
 
@@ -315,7 +315,7 @@ void SATBMarkQueueSet::par_iterate_closure_all_threads(int worker) {
 }
 
 bool SATBMarkQueueSet::apply_closure_to_completed_buffer_work(bool par,
-                                                              int worker) {
+                                                              uint worker) {
   BufferNode* nd = NULL;
   {
     MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
