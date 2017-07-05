@@ -26,6 +26,7 @@
  * @bug     4329937
  * @summary Basic test for making Boolean implement Comparable
  * @author  Josh Bloch
+ * @key randomness
  */
 
 import java.util.*;

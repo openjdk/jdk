@@ -25,6 +25,7 @@
  * @test
  * @bug     7088989
  * @summary Ensure the various message digests works correctly
+ * @key randomness
  */
 
 import java.io.*;

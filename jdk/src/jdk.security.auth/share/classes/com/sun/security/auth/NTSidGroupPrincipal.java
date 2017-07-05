@@ -26,15 +26,15 @@
 package com.sun.security.auth;
 
 /**
- * <p> This class extends <code>NTSid</code>
+ * This class extends {@code NTSid}
  * and represents one of the groups to which a Windows NT user belongs.
  *
- * <p> Principals such as this <code>NTSidGroupPrincipal</code>
- * may be associated with a particular <code>Subject</code>
- * to augment that <code>Subject</code> with an additional
- * identity.  Refer to the <code>Subject</code> class for more information
+ * <p> Principals such as this {@code NTSidGroupPrincipal}
+ * may be associated with a particular {@code Subject}
+ * to augment that {@code Subject} with an additional
+ * identity.  Refer to the {@code Subject} class for more information
  * on how to achieve this.  Authorization decisions can then be based upon
- * the Principals associated with a <code>Subject</code>.
+ * the Principals associated with a {@code Subject}.
  *
  * @see java.security.Principal
  * @see javax.security.auth.Subject
@@ -46,25 +46,21 @@ public class NTSidGroupPrincipal extends NTSid {
     private static final long serialVersionUID = -1373347438636198229L;
 
     /**
-     * Create an <code>NTSidGroupPrincipal</code> with a Windows NT group name.
+     * Create an {@code NTSidGroupPrincipal} with a Windows NT group name.
      *
-     * <p>
+     * @param name the Windows NT group SID for this user.
      *
-     * @param name the Windows NT group SID for this user. <p>
-     *
-     * @exception NullPointerException if the <code>name</code>
-     *                  is <code>null</code>.
+     * @exception NullPointerException if the {@code name}
+     *                  is {@code null}.
      */
     public NTSidGroupPrincipal(String name) {
         super(name);
     }
 
     /**
-     * Return a string representation of this <code>NTSidGroupPrincipal</code>.
+     * Return a string representation of this {@code NTSidGroupPrincipal}.
      *
-     * <p>
-     *
-     * @return a string representation of this <code>NTSidGroupPrincipal</code>.
+     * @return a string representation of this {@code NTSidGroupPrincipal}.
      */
     public String toString() {
         java.text.MessageFormat form = new java.text.MessageFormat
@@ -76,18 +72,16 @@ public class NTSidGroupPrincipal extends NTSid {
     }
 
     /**
-     * Compares the specified Object with this <code>NTSidGroupPrincipal</code>
+     * Compares the specified Object with this {@code NTSidGroupPrincipal}
      * for equality.  Returns true if the given object is also a
-     * <code>NTSidGroupPrincipal</code> and the two NTSidGroupPrincipals
+     * {@code NTSidGroupPrincipal} and the two NTSidGroupPrincipals
      * have the same SID.
      *
-     * <p>
-     *
      * @param o Object to be compared for equality with this
-     *          <code>NTSidGroupPrincipal</code>.
+     *          {@code NTSidGroupPrincipal}.
      *
      * @return true if the specified Object is equal to this
-     *          <code>NTSidGroupPrincipal</code>.
+     *          {@code NTSidGroupPrincipal}.
      */
     public boolean equals(Object o) {
             if (o == null)

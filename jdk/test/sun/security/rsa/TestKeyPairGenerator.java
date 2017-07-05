@@ -26,6 +26,7 @@
  * @bug 4853305 4865198 4888410 4963723
  * @summary Verify that the RSA KeyPairGenerator works
  * @author Andreas Sterbenz
+ * @key randomness
  */
 
 import java.io.*;

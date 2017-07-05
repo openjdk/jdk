@@ -619,8 +619,8 @@ public class X509CertSelector implements CertSelector {
             keyPurposeOIDSet = null;
         } else {
             this.keyPurposeSet =
-                Collections.unmodifiableSet(new HashSet<String>(keyPurposeSet));
-            keyPurposeOIDSet = new HashSet<ObjectIdentifier>();
+                Collections.unmodifiableSet(new HashSet<>(keyPurposeSet));
+            keyPurposeOIDSet = new HashSet<>();
             for (String s : this.keyPurposeSet) {
                 keyPurposeOIDSet.add(new ObjectIdentifier(s));
             }
@@ -815,12 +815,12 @@ public class X509CertSelector implements CertSelector {
         // First, ensure that the name parses
         GeneralNameInterface tempName = makeGeneralNameInterface(type, name);
         if (subjectAlternativeNames == null) {
-            subjectAlternativeNames = new HashSet<List<?>>();
+            subjectAlternativeNames = new HashSet<>();
         }
         if (subjectAlternativeGeneralNames == null) {
-            subjectAlternativeGeneralNames = new HashSet<GeneralNameInterface>();
+            subjectAlternativeGeneralNames = new HashSet<>();
         }
-        List<Object> list = new ArrayList<Object>(2);
+        List<Object> list = new ArrayList<>(2);
         list.add(Integer.valueOf(type));
         list.add(name);
         subjectAlternativeNames.add(list);
@@ -845,7 +845,7 @@ public class X509CertSelector implements CertSelector {
      * @throws IOException if a parsing error occurs
      */
     private static Set<GeneralNameInterface> parseNames(Collection<List<?>> names) throws IOException {
-        Set<GeneralNameInterface> genNames = new HashSet<GeneralNameInterface>();
+        Set<GeneralNameInterface> genNames = new HashSet<>();
         for (List<?> nameList : names) {
             if (nameList.size() != 2) {
                 throw new IOException("name list size not 2");
@@ -1096,10 +1096,10 @@ public class X509CertSelector implements CertSelector {
         } else {
             // Snapshot set and parse it
             Set<String> tempSet = Collections.unmodifiableSet
-                                        (new HashSet<String>(certPolicySet));
+                                        (new HashSet<>(certPolicySet));
             /* Convert to Vector of ObjectIdentifiers */
             Iterator<String> i = tempSet.iterator();
-            Vector<CertificatePolicyId> polIdVector = new Vector<CertificatePolicyId>();
+            Vector<CertificatePolicyId> polIdVector = new Vector<>();
             while (i.hasNext()) {
                 Object o = i.next();
                 if (!(o instanceof String)) {
@@ -1267,10 +1267,10 @@ public class X509CertSelector implements CertSelector {
         // First, ensure that the name parses
         GeneralNameInterface tempName = makeGeneralNameInterface(type, name);
         if (pathToGeneralNames == null) {
-            pathToNames = new HashSet<List<?>>();
-            pathToGeneralNames = new HashSet<GeneralNameInterface>();
+            pathToNames = new HashSet<>();
+            pathToGeneralNames = new HashSet<>();
         }
-        List<Object> list = new ArrayList<Object>(2);
+        List<Object> list = new ArrayList<>(2);
         list.add(Integer.valueOf(type));
         list.add(name);
         pathToNames.add(list);
@@ -1671,10 +1671,10 @@ public class X509CertSelector implements CertSelector {
      */
     private static Set<List<?>> cloneAndCheckNames(Collection<List<?>> names) throws IOException {
         // Copy the Lists and Collection
-        Set<List<?>> namesCopy = new HashSet<List<?>>();
+        Set<List<?>> namesCopy = new HashSet<>();
         for (List<?> o : names)
         {
-            namesCopy.add(new ArrayList<Object>(o));
+            namesCopy.add(new ArrayList<>(o));
         }
 
         // Check the contents of the Lists and clone any byte arrays
@@ -2397,7 +2397,7 @@ public class X509CertSelector implements CertSelector {
              * Convert the Vector of PolicyInformation to a Vector
              * of CertificatePolicyIds for easier comparison.
              */
-            List<CertificatePolicyId> policyIDs = new ArrayList<CertificatePolicyId>(policies.size());
+            List<CertificatePolicyId> policyIDs = new ArrayList<>(policies.size());
             for (PolicyInformation info : policies) {
                 policyIDs.add(info.getPolicyIdentifier());
             }

@@ -34,6 +34,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * @test
  * @bug 8016252
  * @summary Verify that a serialized HashSet may successfully be deserialized.
+ * @key randomness
  */
 public class Serialization {
 

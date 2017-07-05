@@ -24,6 +24,7 @@
 /* @test
  * @bug 4812591 4705328 5019111
  * @summary Test append and insert methods with CharSequence params
+ * @key randomness
  */
 
 import java.util.Random;

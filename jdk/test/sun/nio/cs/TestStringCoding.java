@@ -25,6 +25,7 @@
    @bug 6636323 6636319 7040220 7096080 7183053
    @summary Test if StringCoding and NIO result have the same de/encoding result
  * @run main/othervm/timeout=2000 TestStringCoding
+ * @key randomness
  */
 
 import java.util.*;

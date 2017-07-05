@@ -30,6 +30,7 @@
  * @bug 7031076
  * @summary Allow stale InputStreams from ZipFiles to be GC'd
  * @author Neil Richards <neil.richards@ngmr.net>, <neil_richards@uk.ibm.com>
+ * @key randomness
  */
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;

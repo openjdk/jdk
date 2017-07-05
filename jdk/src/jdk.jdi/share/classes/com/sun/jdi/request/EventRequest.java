@@ -61,14 +61,14 @@ import com.sun.jdi.*;
  * Filters can dramatically improve debugger performance by reducing the
  * amount of event traffic sent from the target VM to the debugger VM.
  * <p>
- * Any method on <code>EventRequest</code> which
- * takes <code>EventRequest</code> as an parameter may throw
+ * Any method on {@code EventRequest} which
+ * takes {@code EventRequest} as an parameter may throw
  * {@link com.sun.jdi.VMDisconnectedException} if the target VM is
  * disconnected and the {@link com.sun.jdi.event.VMDisconnectEvent} has been or is
  * available to be read from the {@link com.sun.jdi.event.EventQueue}.
  * <p>
- * Any method on <code>EventRequest</code> which
- * takes <code>EventRequest</code> as an parameter may throw
+ * Any method on {@code EventRequest} which
+ * takes {@code EventRequest} as an parameter may throw
  * {@link com.sun.jdi.VMOutOfMemoryException} if the target VM has run out of memory.
  *
  * @see com.sun.jdi.event.BreakpointEvent
@@ -84,8 +84,8 @@ public interface EventRequest extends Mirror {
     /**
      * Determines if this event request is currently enabled.
      *
-     * @return <code>true</code> if enabled;
-     * <code>false</code> otherwise.
+     * @return {@code true} if enabled;
+     * {@code false} otherwise.
      */
     boolean isEnabled();
 
@@ -97,18 +97,18 @@ public interface EventRequest extends Mirror {
      * and are included in event request lists such as
      * {@link EventRequestManager#breakpointRequests()}.
      *
-     * @param val <code>true</code> if the event request is to be enabled;
-     * <code>false</code> otherwise.
+     * @param val {@code true} if the event request is to be enabled;
+     * {@code false} otherwise.
      * @throws InvalidRequestStateException if this request
      * has been deleted.
      * @throws IllegalThreadStateException if this is a StepRequest,
-     * <code>val</code> is <code>true</code>, and the
+     * {@code val} is {@code true}, and the
      * thread named in the request has died or is not yet started.
      */
     void setEnabled(boolean val);
 
     /**
-     * Same as {@link #setEnabled <CODE>setEnabled(true)</CODE>}.
+     * Same as {@link #setEnabled setEnabled(true)}.
      * @throws InvalidRequestStateException if this request
      * has been deleted.
      * @throws IllegalThreadStateException if this is a StepRequest
@@ -117,7 +117,7 @@ public interface EventRequest extends Mirror {
     void enable();
 
     /**
-     * Same as {@link #setEnabled <CODE>setEnabled(false)</CODE>}.
+     * Same as {@link #setEnabled setEnabled(false)}.
      * @throws InvalidRequestStateException if this request
      * has been deleted.
      */
@@ -126,7 +126,7 @@ public interface EventRequest extends Mirror {
     /**
      * Limit the requested event to be reported at most once after a
      * given number of occurrences.  The event is not reported
-     * the first <code>count - 1</code> times this filter is reached.
+     * the first {@code count - 1} times this filter is reached.
      * To request a one-off event, call this method with a count of 1.
      * <p>
      * Once the count reaches 0, any subsequent filters in this request
@@ -139,7 +139,7 @@ public interface EventRequest extends Mirror {
      * @throws InvalidRequestStateException if this request is currently
      * enabled or has been deleted.
      * Filters may be added only to disabled requests.
-     * @throws IllegalArgumentException if <CODE>count</CODE>
+     * @throws IllegalArgumentException if {@code count}
      * is less than one.
      */
     void addCountFilter(int count);
@@ -189,7 +189,7 @@ public interface EventRequest extends Mirror {
      * These client-set properties are not used internally
      * by the JDI.
      * <p>
-     * The <code>get/putProperty</code> methods provide access to
+     * The {@code get/putProperty} methods provide access to
      * a small per-instance map. This is <b>not</b> to be confused
      * with {@link java.util.Properties}.
      * <p>

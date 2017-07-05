@@ -203,7 +203,7 @@ public class SignatureFileVerifier {
     private MessageDigest getDigest(String algorithm)
     {
         if (createdDigests == null)
-            createdDigests = new HashMap<String, MessageDigest>();
+            createdDigests = new HashMap<>();
 
         MessageDigest digest = createdDigests.get(algorithm);
 
@@ -523,7 +523,7 @@ public class SignatureFileVerifier {
             ArrayList<X509Certificate> chain = info.getCertificateChain(block);
             CertPath certChain = certificateFactory.generateCertPath(chain);
             if (signers == null) {
-                signers = new ArrayList<CodeSigner>();
+                signers = new ArrayList<>();
             }
             // Append the new code signer
             signers.add(new CodeSigner(certChain, info.getTimestamp()));

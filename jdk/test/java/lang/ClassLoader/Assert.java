@@ -28,6 +28,7 @@
  * @run main/othervm Assert
  * @summary Test the assertion facility
  * @author Mike McCloskey
+ * @key randomness
  */
 
 import package1.*;
