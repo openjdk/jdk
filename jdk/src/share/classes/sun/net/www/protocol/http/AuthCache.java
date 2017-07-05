@@ -25,14 +25,6 @@
 
 package sun.net.www.protocol.http;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.Hashtable;
-import java.util.LinkedList;
-import java.util.ListIterator;
-import java.util.Enumeration;
-import java.util.HashMap;
-
 /**
  * @author Michael McMahon
  *
@@ -49,7 +41,7 @@ public interface AuthCache {
      * A:[B:]C:D:E[:F]   Between 4 and 6 fields separated by ":"
      *          where the fields have the following meaning:
      * A is "s" or "p" for server or proxy authentication respectively
-     * B is optional and is "D", "B", or "N" for digest, basic or ntlm auth.
+     * B is optional and is the {@link AuthScheme}, e.g. BASIC, DIGEST, NTLM, etc
      * C is either "http" or "https"
      * D is the hostname
      * E is the port number

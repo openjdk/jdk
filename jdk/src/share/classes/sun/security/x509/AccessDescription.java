@@ -113,7 +113,7 @@ public final class AccessDescription {
         } else {
             method = accessMethod.toString();
         }
-        return ("accessMethod: " + method +
+        return ("\n   accessMethod: " + method +
                 "\n   accessLocation: " + accessLocation.toString() + "\n");
     }
 }

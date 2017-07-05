@@ -39,7 +39,7 @@ import java.security.*;
  * For a rotating set of files, as each file reaches a given size
  * limit, it is closed, rotated out, and a new file opened.
  * Successively older files are named by adding "0", "1", "2",
- * etc into the base filename.
+ * etc. into the base filename.
  * <p>
  * By default buffering is enabled in the IO libraries but each log
  * record is flushed out when it is complete.
@@ -391,7 +391,7 @@ public class FileHandler extends StreamHandler {
             // Generate a lock file name from the "unique" int.
             lockFileName = generate(pattern, 0, unique).toString() + ".lck";
             // Now try to lock that filename.
-            // Because some systems (e.g. Solaris) can only do file locks
+            // Because some systems (e.g., Solaris) can only do file locks
             // between processes (and not within a process), we first check
             // if we ourself already have the file locked.
             synchronized(locks) {

@@ -136,7 +136,7 @@ public class MemoryHandler extends Handler {
      * @param size    the number of log records to buffer (must be greater than zero)
      * @param pushLevel  message level to push on
      *
-     * @throws IllegalArgumentException is size is <= 0
+     * @throws IllegalArgumentException if size is <= 0
      */
     public MemoryHandler(Handler target, int size, Level pushLevel) {
         if (target == null || pushLevel == null) {
@@ -258,7 +258,7 @@ public class MemoryHandler extends Handler {
      * This method checks if the <tt>LogRecord</tt> has an appropriate level and
      * whether it satisfies any <tt>Filter</tt>.  However it does <b>not</b>
      * check whether the <tt>LogRecord</tt> would result in a "push" of the
-     * buffer contents. It will return false if the <tt>LogRecord</tt> is Null.
+     * buffer contents. It will return false if the <tt>LogRecord</tt> is null.
      * <p>
      * @param record  a <tt>LogRecord</tt>
      * @return true if the <tt>LogRecord</tt> would be logged.

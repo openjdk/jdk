@@ -34,16 +34,18 @@ class Verifier : AllStatic {
    * Otherwise, no exception is thrown and the return indicates the
    * error.
    */
-  static bool verify(instanceKlassHandle klass, Mode mode, TRAPS);
+  static bool verify(instanceKlassHandle klass, Mode mode, bool should_verify_class, TRAPS);
 
-  // Return false if the class is loaded by the bootstrap loader.
-  static bool should_verify_for(oop class_loader);
+  // Return false if the class is loaded by the bootstrap loader,
+  // or if defineClass was called requesting skipping verification
+  // -Xverify:all/none override this value
+  static bool should_verify_for(oop class_loader, bool should_verify_class);
 
   // Relax certain verifier checks to enable some broken 1.1 apps to run on 1.2.
   static bool relax_verify_for(oop class_loader);
 
  private:
-  static bool is_eligible_for_verification(instanceKlassHandle klass);
+  static bool is_eligible_for_verification(instanceKlassHandle klass, bool should_verify_class);
   static symbolHandle inference_verify(
     instanceKlassHandle klass, char* msg, size_t msg_len, TRAPS);
 };

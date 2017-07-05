@@ -179,6 +179,6 @@ clean:
 $(HOTSPOTBUILDSPACE)/classes/MakeDeps.class: $(MakeDepsSources)
 	@if exist $(HOTSPOTBUILDSPACE)\classes rmdir /s /q $(HOTSPOTBUILDSPACE)\classes
 	@mkdir $(HOTSPOTBUILDSPACE)\classes
-	@$(COMPILE_JAVAC) -classpath $(HOTSPOTWORKSPACE)\src\share\tools\MakeDeps -g -d $(HOTSPOTBUILDSPACE)/classes $(MakeDepsSources)
+	@$(COMPILE_JAVAC) -classpath $(HOTSPOTWORKSPACE)\src\share\tools\MakeDeps -d $(HOTSPOTBUILDSPACE)/classes $(MakeDepsSources)
 
 FORCE:

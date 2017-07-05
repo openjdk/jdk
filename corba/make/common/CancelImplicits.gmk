@@ -1,5 +1,5 @@
 #
-# Copyright 1998-1999 Sun Microsystems, Inc.  All Rights Reserved.
+# Copyright 1998-2009 Sun Microsystems, Inc.  All Rights Reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -56,11 +56,3 @@ ifndef USE_IMPLICITS
 %: %.sh
 endif
 
-#
-# If you are using RCS, you must set the variable USE_RCS at the make
-# command line. Otherwise we disable RCS.
-#
-ifndef USE_RCS
-%:: %,v
-%:: RCS/%,v
-endif
