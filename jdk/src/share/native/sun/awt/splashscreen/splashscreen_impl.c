@@ -111,8 +111,9 @@ SplashDone(Splash * splash)
 int
 SplashIsStillLooping(Splash * splash)
 {
-    if (splash->currentFrame < 0)
+    if (splash->currentFrame < 0) {
         return 0;
+    }
     return splash->loopCount != 1 ||
         splash->currentFrame + 1 < splash->frameCount;
 }
@@ -121,17 +122,22 @@ void
 SplashUpdateScreenData(Splash * splash)
 {
     ImageRect srcRect, dstRect;
+    if (splash->currentFrame < 0) {
+        return;
+    }
 
     initRect(&srcRect, 0, 0, splash->width, splash->height, 1,
         splash->width * sizeof(rgbquad_t),
         splash->frames[splash->currentFrame].bitmapBits, &splash->imageFormat);
-    if (splash->screenData)
+    if (splash->screenData) {
         free(splash->screenData);
+    }
     splash->screenStride = splash->width * splash->screenFormat.depthBytes;
-    if (splash->byteAlignment > 1)
+    if (splash->byteAlignment > 1) {
         splash->screenStride =
             (splash->screenStride + splash->byteAlignment - 1) &
             ~(splash->byteAlignment - 1);
+    }
     splash->screenData = malloc(splash->height * splash->screenStride);
     initRect(&dstRect, 0, 0, splash->width, splash->height, 1,
         splash->screenStride, splash->screenData, &splash->screenFormat);
@@ -146,16 +152,19 @@ SplashUpdateScreenData(Splash * splash)
 void
 SplashNextFrame(Splash * splash)
 {
-    if (splash->currentFrame < 0)
+    if (splash->currentFrame < 0) {
         return;
+    }
     do {
-        if (!SplashIsStillLooping(splash))
+        if (!SplashIsStillLooping(splash)) {
             return;
+        }
         splash->time += splash->frames[splash->currentFrame].delay;
         if (++splash->currentFrame >= splash->frameCount) {
             splash->currentFrame = 0;
-            if (splash->loopCount > 0)
+            if (splash->loopCount > 0) {
                 splash->loopCount--;
+            }
         }
     } while (splash->time + splash->frames[splash->currentFrame].delay -
         SplashTime() <= 0);
@@ -183,8 +192,9 @@ BitmapToYXBandedRectangles(ImageRect * pSrcRect, RECT_T * out)
                 pSrc += pSrcRect->depthBytes;
                 ++i;
             }
-            if (i >= pSrcRect->numSamples)
+            if (i >= pSrcRect->numSamples) {
                 break;
+            }
             i0 = i;
             while (i < pSrcRect->numSamples &&
                    getRGBA(pSrc, pSrcRect->format) >= ALPHA_THRESHOLD) {

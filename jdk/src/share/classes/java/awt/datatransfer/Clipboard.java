@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,13 @@ public class Clipboard {
 
     String name;
 
+    /**
+     * The owner of the clipboard.
+     */
     protected ClipboardOwner owner;
+    /**
+     * Contents of the clipboard.
+     */
     protected Transferable contents;
 
     /**
@@ -75,7 +81,7 @@ public class Clipboard {
 
     /**
      * Creates a clipboard object.
-     *
+     * @param name for the clipboard
      * @see java.awt.Toolkit#getSystemClipboard
      */
     public Clipboard(String name) {
@@ -84,6 +90,7 @@ public class Clipboard {
 
     /**
      * Returns the name of this clipboard object.
+     * @return the name of this clipboard object
      *
      * @see java.awt.Toolkit#getSystemClipboard
      */

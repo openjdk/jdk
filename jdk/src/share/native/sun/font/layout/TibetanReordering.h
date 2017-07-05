@@ -39,7 +39,7 @@
  */
 
 #ifndef __TIBETANREORDERING_H
-#define __TIBETANORDERING_H
+#define __TIBETANREORDERING_H
 
 /**
  * \file

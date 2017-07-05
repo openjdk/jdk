@@ -242,11 +242,6 @@
                 _JVM_Yield
                 _JVM_handle_bsd_signal
 
-                # debug _JVM
-                _JVM_AccessVMBooleanFlag
-                _JVM_AccessVMIntFlag
-                _JVM_VMBreakPoint
-
                 # miscellaneous functions
                 _jio_fprintf
                 _jio_printf

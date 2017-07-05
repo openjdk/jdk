@@ -457,8 +457,6 @@ public interface ComponentPeer {
      * @param caps the buffer capabilities
      *
      * @throws AWTException if flip buffering is not supported
-     *
-     * @see Component.FlipBufferStrategy#createBuffers
      */
     void createBuffers(int numBuffers, BufferCapabilities caps)
          throws AWTException;
@@ -467,8 +465,6 @@ public interface ComponentPeer {
      * Returns the back buffer as image.
      *
      * @return the back buffer as image
-     *
-     * @see Component.FlipBufferStrategy#getBackBuffer
      */
     Image getBackBuffer();
 
@@ -480,15 +476,11 @@ public interface ComponentPeer {
      * @param x2 the area to be flipped, lower right X coordinate
      * @param y2 the area to be flipped, lower right Y coordinate
      * @param flipAction the flip action to perform
-     *
-     * @see Component.FlipBufferStrategy#flip
      */
     void flip(int x1, int y1, int x2, int y2, BufferCapabilities.FlipContents flipAction);
 
     /**
      * Destroys all created buffers.
-     *
-     * @see Component.FlipBufferStrategy#destroyBuffers
      */
     void destroyBuffers();
 

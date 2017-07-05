@@ -54,7 +54,7 @@ public final class StreamSupport {
      * <a href="../Spliterator.html#binding">late-binding</a>.  Otherwise,
      * {@link #stream(java.util.function.Supplier, int, boolean)} should be used
      * to reduce the scope of potential interference with the source.  See
-     * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
+     * <a href="package-summary.html#NonInterference">Non-Interference</a> for
      * more details.
      *
      * @param <T> the type of stream elements
@@ -89,7 +89,7 @@ public final class StreamSupport {
      * source.  Since the supplier is only invoked after the terminal operation
      * commences, any modifications to the source up to the start of the
      * terminal operation are reflected in the stream result.  See
-     * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
+     * <a href="package-summary.html#NonInterference">Non-Interference</a> for
      * more details.
      *
      * @param <T> the type of stream elements
@@ -125,7 +125,7 @@ public final class StreamSupport {
      * <a href="../Spliterator.html#binding">late-binding</a>.  Otherwise,
      * {@link #intStream(java.util.function.Supplier, int, boolean)} should be
      * used to reduce the scope of potential interference with the source.  See
-     * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
+     * <a href="package-summary.html#NonInterference">Non-Interference</a> for
      * more details.
      *
      * @param spliterator a {@code Spliterator.OfInt} describing the stream elements
@@ -158,7 +158,7 @@ public final class StreamSupport {
      * source.  Since the supplier is only invoked after the terminal operation
      * commences, any modifications to the source up to the start of the
      * terminal operation are reflected in the stream result.  See
-     * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
+     * <a href="package-summary.html#NonInterference">Non-Interference</a> for
      * more details.
      *
      * @param supplier a {@code Supplier} of a {@code Spliterator.OfInt}
@@ -192,7 +192,7 @@ public final class StreamSupport {
      * <a href="../Spliterator.html#binding">late-binding</a>.  Otherwise,
      * {@link #longStream(java.util.function.Supplier, int, boolean)} should be
      * used to reduce the scope of potential interference with the source.  See
-     * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
+     * <a href="package-summary.html#NonInterference">Non-Interference</a> for
      * more details.
      *
      * @param spliterator a {@code Spliterator.OfLong} describing the stream elements
@@ -226,7 +226,7 @@ public final class StreamSupport {
      * source.  Since the supplier is only invoked after the terminal operation
      * commences, any modifications to the source up to the start of the
      * terminal operation are reflected in the stream result.  See
-     * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
+     * <a href="package-summary.html#NonInterference">Non-Interference</a> for
      * more details.
      *
      * @param supplier a {@code Supplier} of a {@code Spliterator.OfLong}
@@ -260,7 +260,7 @@ public final class StreamSupport {
      * <a href="../Spliterator.html#binding">late-binding</a>.  Otherwise,
      * {@link #doubleStream(java.util.function.Supplier, int, boolean)} should
      * be used to reduce the scope of potential interference with the source.  See
-     * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
+     * <a href="package-summary.html#NonInterference">Non-Interference</a> for
      * more details.
      *
      * @param spliterator A {@code Spliterator.OfDouble} describing the stream elements
@@ -294,7 +294,7 @@ public final class StreamSupport {
      * source.  Since the supplier is only invoked after the terminal operation
      * commences, any modifications to the source up to the start of the
      * terminal operation are reflected in the stream result.  See
-     * <a href="package-summary.html#Non-Interference">Non-Interference</a> for
+     * <a href="package-summary.html#NonInterference">Non-Interference</a> for
      * more details.
      *
      * @param supplier A {@code Supplier} of a {@code Spliterator.OfDouble}

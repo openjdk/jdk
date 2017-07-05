@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ public interface WindowFocusListener extends EventListener {
      * Invoked when the Window is set to be the focused Window, which means
      * that the Window, or one of its subcomponents, will receive keyboard
      * events.
+     * @param e the event to be processed
      */
     public void windowGainedFocus(WindowEvent e);
 
@@ -64,6 +65,7 @@ public interface WindowFocusListener extends EventListener {
      * Invoked when the Window is no longer the focused Window, which means
      * that keyboard events will no longer be delivered to the Window or any of
      * its subcomponents.
+     * @param e the event to be processed
      */
     public void windowLostFocus(WindowEvent e);
 }

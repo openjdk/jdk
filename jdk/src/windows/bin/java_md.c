@@ -1475,7 +1475,7 @@ CreateApplicationArgs(JNIEnv *env, char **strv, int argc)
 
     // expand the arguments that require expansion, the java method will strip
     // out the indicator character.
-    inArray = NewPlatformStringArray(env, nargv, argc);
+    NULL_CHECK0(inArray = NewPlatformStringArray(env, nargv, argc));
     outArray = (*env)->CallStaticObjectMethod(env, cls, mid, inArray);
     for (i = 0; i < argc; i++) {
         JLI_MemFree(nargv[i]);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,8 +155,13 @@ void InstanceMirrorKlass::oop_follow_contents(oop obj) {
   // Follow the klass field in the mirror.
   Klass* klass = java_lang_Class::as_Klass(obj);
   if (klass != NULL) {
-    // For anonymous classes we need to handle the class loader data,
-    // otherwise it won't be claimed and can be unloaded.
+    // An anonymous class doesn't have its own class loader, so the call
+    // to follow_klass will mark and push its java mirror instead of the
+    // class loader. When handling the java mirror for an anonymous class
+    // we need to make sure its class loader data is claimed, this is done
+    // by calling follow_class_loader explicitly. For non-anonymous classes
+    // the call to follow_class_loader is made when the class loader itself
+    // is handled.
     if (klass->oop_is_instance() && InstanceKlass::cast(klass)->is_anonymous()) {
       MarkSweep::follow_class_loader(klass->class_loader_data());
     } else {
@@ -183,7 +188,18 @@ void InstanceMirrorKlass::oop_follow_contents(ParCompactionManager* cm,
   // Follow the klass field in the mirror.
   Klass* klass = java_lang_Class::as_Klass(obj);
   if (klass != NULL) {
-    PSParallelCompact::follow_klass(cm, klass);
+    // An anonymous class doesn't have its own class loader, so the call
+    // to follow_klass will mark and push its java mirror instead of the
+    // class loader. When handling the java mirror for an anonymous class
+    // we need to make sure its class loader data is claimed, this is done
+    // by calling follow_class_loader explicitly. For non-anonymous classes
+    // the call to follow_class_loader is made when the class loader itself
+    // is handled.
+    if (klass->oop_is_instance() && InstanceKlass::cast(klass)->is_anonymous()) {
+      PSParallelCompact::follow_class_loader(cm, klass->class_loader_data());
+    } else {
+      PSParallelCompact::follow_klass(cm, klass);
+    }
   } else {
     // If klass is NULL then this a mirror for a primitive type.
     // We don't have to follow them, since they are handled as strong
@@ -331,17 +347,6 @@ void InstanceMirrorKlass::oop_push_contents(PSPromotionManager* pm, oop obj) {
 int InstanceMirrorKlass::oop_update_pointers(ParCompactionManager* cm, oop obj) {
   int size = oop_size(obj);
   InstanceKlass::oop_update_pointers(cm, obj);
-
-  // Follow the klass field in the mirror.
-  Klass* klass = java_lang_Class::as_Klass(obj);
-  if (klass != NULL) {
-    PSParallelCompact::adjust_klass(cm, klass);
-  } else {
-    // If klass is NULL then this a mirror for a primitive type.
-    // We don't have to follow them, since they are handled as strong
-    // roots in Universe::oops_do.
-    assert(java_lang_Class::is_primitive(obj), "Sanity check");
-  }
 
   InstanceMirrorKlass_OOP_ITERATE(                                            \
     start_of_static_fields(obj), java_lang_Class::static_oop_field_count(obj),\
