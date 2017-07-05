@@ -138,8 +138,8 @@ public class HostIdentifier {
                 String frag = u.getFragment();
                 URI u2 = null;
 
-                int c1index = uriString.indexOf(":");
-                int c2index = uriString.lastIndexOf(":");
+                int c1index = uriString.indexOf(':');
+                int c2index = uriString.lastIndexOf(':');
                 if (c2index != c1index) {
                     /*
                      * this is the scheme:hostname:port case. Attempt to

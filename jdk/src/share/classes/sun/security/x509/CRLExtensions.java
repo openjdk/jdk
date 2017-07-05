@@ -185,7 +185,7 @@ public class CRLExtensions {
         String name;
         String id = attr.getPrefix();
         if (id.equalsIgnoreCase(X509CertImpl.NAME)) { // fully qualified
-            int index = alias.lastIndexOf(".");
+            int index = alias.lastIndexOf('.');
             name = alias.substring(index + 1);
         } else
             name = alias;

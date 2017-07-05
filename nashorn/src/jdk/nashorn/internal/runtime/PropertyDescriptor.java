@@ -154,8 +154,8 @@ public interface PropertyDescriptor {
 
     /**
      * Check existence and compare attributes of descriptors.
-     *
-     * @return true if every field of this desc exists in otherDesc and has the same value.
+     * @param otherDesc other descriptor to compare to
+     * @return true if every field of this descriptor exists in otherDesc and has the same value.
      */
     public boolean hasAndEquals(PropertyDescriptor otherDesc);
 }

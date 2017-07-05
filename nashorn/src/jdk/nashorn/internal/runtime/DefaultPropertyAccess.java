@@ -34,63 +34,63 @@ package jdk.nashorn.internal.runtime;
 public abstract class DefaultPropertyAccess implements PropertyAccess {
 
     @Override
-    public int getInt(final Object key) {
+    public int getInt(final Object key, final int programPoint) {
         return JSType.toInt32(get(key));
     }
 
     @Override
-    public int getInt(final double key) {
-        return getInt(JSType.toObject(key));
+    public int getInt(final double key, final int programPoint) {
+        return getInt(JSType.toObject(key), programPoint);
     }
 
     @Override
-    public int getInt(final long key) {
-        return getInt(JSType.toObject(key));
+    public int getInt(final long key, final int programPoint) {
+        return getInt(JSType.toObject(key), programPoint);
     }
 
     @Override
-    public int getInt(final int key) {
-        return getInt(JSType.toObject(key));
+    public int getInt(final int key, final int programPoint) {
+        return getInt(JSType.toObject(key), programPoint);
     }
 
     @Override
-    public long getLong(final Object key) {
+    public long getLong(final Object key, final int programPoint) {
         return JSType.toLong(get(key));
     }
 
     @Override
-    public long getLong(final double key) {
-        return getLong(JSType.toObject(key));
+    public long getLong(final double key, final int programPoint) {
+        return getLong(JSType.toObject(key), programPoint);
     }
 
     @Override
-    public long getLong(final long key) {
-        return getLong(JSType.toObject(key));
+    public long getLong(final long key, final int programPoint) {
+        return getLong(JSType.toObject(key), programPoint);
     }
 
     @Override
-    public long getLong(final int key) {
-        return getLong(JSType.toObject(key));
+    public long getLong(final int key, final int programPoint) {
+        return getLong(JSType.toObject(key), programPoint);
     }
 
     @Override
-    public double getDouble(final Object key) {
+    public double getDouble(final Object key, final int programPoint) {
         return JSType.toNumber(get(key));
     }
 
     @Override
-    public double getDouble(final double key) {
-        return getDouble(JSType.toObject(key));
+    public double getDouble(final double key, final int programPoint) {
+        return getDouble(JSType.toObject(key), programPoint);
     }
 
     @Override
-    public double getDouble(final long key) {
-        return getDouble(JSType.toObject(key));
+    public double getDouble(final long key, final int programPoint) {
+        return getDouble(JSType.toObject(key), programPoint);
     }
 
     @Override
-    public double getDouble(final int key) {
-        return getDouble(JSType.toObject(key));
+    public double getDouble(final int key, final int programPoint) {
+        return getDouble(JSType.toObject(key), programPoint);
     }
 
     @Override

@@ -303,7 +303,7 @@ public final class ExecOptionPermission extends Permission
 
             offset = pname.length() - 1;
 
-            while ((last = pname.lastIndexOf(".", offset)) != -1) {
+            while ((last = pname.lastIndexOf('.', offset)) != -1) {
 
                 pname = pname.substring(0, last+1) + "*";
                 x = permissions.get(pname);
@@ -318,7 +318,7 @@ public final class ExecOptionPermission extends Permission
             pname = p.getName();
             offset = pname.length() - 1;
 
-            while ((last = pname.lastIndexOf("=", offset)) != -1) {
+            while ((last = pname.lastIndexOf('=', offset)) != -1) {
 
                 pname = pname.substring(0, last+1) + "*";
                 x = permissions.get(pname);

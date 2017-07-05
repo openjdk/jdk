@@ -2036,7 +2036,7 @@ void ClassVerifier::verify_switch(
     while ((bcp + padding_offset) < aligned_bcp) {
       if(*(bcp + padding_offset) != 0) {
         verify_error(ErrorContext::bad_code(bci),
-                     "Nonzero padding byte in lookswitch or tableswitch");
+                     "Nonzero padding byte in lookupswitch or tableswitch");
         return;
       }
       padding_offset++;

@@ -25,16 +25,16 @@
 
 package jdk.nashorn.internal.runtime;
 
-import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
+import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
+import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.SwitchPoint;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
-
 
 /**
  * Instances of this class are quite ephemeral; they only exist for the duration of an invocation of
@@ -43,10 +43,12 @@ import jdk.nashorn.internal.runtime.linker.NashornGuards;
  */
 final class SetMethodCreator {
     // See constructor parameters for description of fields
-    private final ScriptObject sobj;
-    private final PropertyMap map;
-    private final FindProperty find;
+    private final ScriptObject       sobj;
+    private final PropertyMap        map;
+    private final FindProperty       find;
     private final CallSiteDescriptor desc;
+    private final Class<?>           type;
+    private final boolean            explicitInstanceOfCheck;
 
     /**
      * Creates a new property setter method creator.
@@ -55,11 +57,14 @@ final class SetMethodCreator {
      * want to create a setter for. Can be null if the property does not yet exist on the object.
      * @param desc the descriptor of the call site that triggered the property setter lookup
      */
-    SetMethodCreator(final ScriptObject sobj, final FindProperty find, final CallSiteDescriptor desc) {
+    SetMethodCreator(final ScriptObject sobj, final FindProperty find, final CallSiteDescriptor desc, final boolean explicitInstanceOfCheck) {
         this.sobj = sobj;
-        this.map = sobj.getMap();
+        this.map  = sobj.getMap();
         this.find = find;
         this.desc = desc;
+        this.type = desc.getMethodType().parameterType(1);
+        this.explicitInstanceOfCheck = explicitInstanceOfCheck;
+
     }
 
     private String getName() {
@@ -95,7 +100,7 @@ final class SetMethodCreator {
         SetMethod(final MethodHandle methodHandle, final Property property) {
             assert methodHandle != null;
             this.methodHandle = methodHandle;
-            this.property = property;
+            this.property     = property;
         }
 
         /**
@@ -103,9 +108,12 @@ final class SetMethodCreator {
          * @return the composed guarded invocation that represents the dynamic setter method for the property.
          */
         GuardedInvocation createGuardedInvocation() {
-            return new GuardedInvocation(methodHandle, NashornGuards.getGuard(sobj, property, desc));
+            // getGuard() and getException() either both return null, or neither does. The reason for that is that now
+            // getGuard returns a map guard that casts its argument to ScriptObject, and if that fails, we need to
+            // relink on ClassCastException.
+            return new GuardedInvocation(methodHandle, NashornGuards.getGuard(sobj, property, desc, explicitInstanceOfCheck),
+                    (SwitchPoint)null, explicitInstanceOfCheck ? null : ClassCastException.class);
         }
-
     }
 
     private SetMethod createSetMethod() {
@@ -132,7 +140,6 @@ final class SetMethodCreator {
 
     private SetMethod createExistingPropertySetter() {
         final Property property = find.getProperty();
-        final Class<?> type = desc.getMethodType().parameterType(1);
         final MethodHandle methodHandle = find.getSetter(type, NashornCallSiteDescriptor.isStrict(desc));
 
         assert methodHandle != null;
@@ -149,7 +156,7 @@ final class SetMethodCreator {
 
     private SetMethod createGlobalPropertySetter() {
         final ScriptObject global = Context.getGlobal();
-        return new SetMethod(MH.filterArguments(global.addSpill(getName()), 0, ScriptObject.GLOBALFILTER), null);
+        return new SetMethod(MH.filterArguments(global.addSpill(type, getName()), 0, ScriptObject.GLOBALFILTER), null);
     }
 
     private SetMethod createNewPropertySetter() {
@@ -161,38 +168,51 @@ final class SetMethodCreator {
         return sm;
     }
 
-    private SetMethod createNewFieldSetter() {
-        final PropertyMap oldMap = getMap();
-        final Property property = new AccessorProperty(getName(), 0, sobj.getClass(), oldMap.getFieldCount());
-        final PropertyMap newMap = oldMap.addProperty(property);
-        MethodHandle setter = MH.insertArguments(ScriptObject.SETFIELD, 0, desc, oldMap, newMap, property.getSetter(Object.class, newMap));
+    private SetMethod createNewSetter(final Property property) {
+        final PropertyMap oldMap   = getMap();
+        final PropertyMap newMap   = getNewMap(property);
+        final boolean     isStrict = NashornCallSiteDescriptor.isStrict(desc);
+        final String      name     = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
 
-        return new SetMethod(MH.asType(setter, Lookup.SET_OBJECT_TYPE), property);
+        //fast type specific setter
+        final MethodHandle fastSetter = property.getSetter(type, newMap); //0 sobj, 1 value, slot folded for spill property already
+
+        //slow setter, that calls ScriptObject.set with appropraite type and key name
+        MethodHandle slowSetter = ScriptObject.SET_SLOW[getAccessorTypeIndex(type)];
+        slowSetter = MH.insertArguments(slowSetter, 3, NashornCallSiteDescriptor.isStrict(desc));
+        slowSetter = MH.insertArguments(slowSetter, 1, name);
+        slowSetter = MH.asType(slowSetter, slowSetter.type().changeParameterType(0, Object.class));
+
+        assert slowSetter.type().equals(fastSetter.type()) : "slow=" + slowSetter + " != fast=" + fastSetter;
+
+        //cas map used as guard, if true that means we can do the set fast
+        MethodHandle casMap = MH.insertArguments(ScriptObject.CAS_MAP, 1, oldMap, newMap);
+        casMap = MH.dropArguments(casMap, 1, type);
+        casMap = MH.asType(casMap, casMap.type().changeParameterType(0, Object.class));
+        final MethodHandle casGuard = MH.guardWithTest(casMap, fastSetter, slowSetter);
+
+        //outermost level needs an extendable check. if object can be extended, guard is true and
+        //we can run the cas setter. The setter goes to "nop" VOID_RETURN if false or throws an
+        //exception if we are in strict mode and object is not extensible
+        MethodHandle extCheck = MH.insertArguments(ScriptObject.EXTENSION_CHECK, 1, isStrict, name);
+        extCheck = MH.asType(extCheck, extCheck.type().changeParameterType(0, Object.class));
+        extCheck = MH.dropArguments(extCheck, 1, type);
+
+        MethodHandle nop = JSType.VOID_RETURN.methodHandle();
+        nop = MH.dropArguments(nop, 0, Object.class, type);
+
+        return new SetMethod(MH.asType(MH.guardWithTest(extCheck, casGuard, nop), fastSetter.type()), property);
+    }
+
+    private SetMethod createNewFieldSetter() {
+        return createNewSetter(new AccessorProperty(getName(), 0, sobj.getClass(), getMap().getFieldCount(), type));
     }
 
     private SetMethod createNewSpillPropertySetter() {
-        final int nextSpill = getMap().getSpillLength();
-
-        final Property property = new AccessorProperty(getName(), Property.IS_SPILL, nextSpill);
-        return new SetMethod(createSpillMethodHandle(nextSpill, property), property);
+        return createNewSetter(new SpillProperty(getName(), 0, getMap().getSpillLength(), type));
     }
 
-    private MethodHandle createSpillMethodHandle(final int nextSpill, Property property) {
-        final PropertyMap oldMap = getMap();
-        final PropertyMap newMap = getNewMap(property);
-
-        final Object[] spill = sobj.spill;
-        if (spill == null) {
-            return MH.insertArguments(ScriptObject.SETSPILLWITHNEW,  0, desc, oldMap, newMap, nextSpill);
-        } else if (nextSpill < spill.length) {
-            return MH.insertArguments(ScriptObject.SETSPILL,         0, desc, oldMap, newMap, nextSpill);
-        } else {
-            final int newLength = (nextSpill + ScriptObject.SPILL_RATE) / ScriptObject.SPILL_RATE * ScriptObject.SPILL_RATE;
-            return MH.insertArguments(ScriptObject.SETSPILLWITHGROW, 0, desc, oldMap, newMap, nextSpill, newLength);
-        }
-    }
-
-    private PropertyMap getNewMap(Property property) {
+    private PropertyMap getNewMap(final Property property) {
         return getMap().addProperty(property);
     }
 }

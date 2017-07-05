@@ -1017,7 +1017,7 @@ class Socket implements java.io.Closeable {
         if (isClosed())
             throw new SocketException("Socket is closed");
         if (!on) {
-            getImpl().setOption(SocketOptions.SO_LINGER, new Boolean(on));
+            getImpl().setOption(SocketOptions.SO_LINGER, on);
         } else {
             if (linger < 0) {
                 throw new IllegalArgumentException("invalid value for SO_LINGER");

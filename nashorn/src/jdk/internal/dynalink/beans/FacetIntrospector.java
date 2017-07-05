@@ -106,7 +106,7 @@ abstract class FacetIntrospector {
 
     protected final AccessibleMembersLookup membersLookup;
 
-    FacetIntrospector(Class<?> clazz, boolean instance) {
+    FacetIntrospector(final Class<?> clazz, final boolean instance) {
         this.clazz = clazz;
         this.instance = instance;
         isRestricted = CheckRestrictedPackage.isRestrictedClass(clazz);
@@ -135,7 +135,7 @@ abstract class FacetIntrospector {
 
         final Field[] fields = clazz.getFields();
         final Collection<Field> cfields = new ArrayList<>(fields.length);
-        for(Field field: fields) {
+        for(final Field field: fields) {
             final boolean isStatic = Modifier.isStatic(field.getModifiers());
             if(isStatic && clazz != field.getDeclaringClass()) {
                 // ignore inherited static fields
@@ -149,7 +149,7 @@ abstract class FacetIntrospector {
         return cfields;
     }
 
-    boolean isAccessible(Member m) {
+    boolean isAccessible(final Member m) {
         final Class<?> declaring = m.getDeclaringClass();
         // (declaring == clazz) is just an optimization - we're calling this only from code that operates on a
         // non-restriced class, so if the declaring class is identical to the class being inspected, then forego
@@ -166,11 +166,11 @@ abstract class FacetIntrospector {
     }
 
 
-    MethodHandle unreflectGetter(Field field) {
+    MethodHandle unreflectGetter(final Field field) {
         return editMethodHandle(Lookup.PUBLIC.unreflectGetter(field));
     }
 
-    MethodHandle unreflectSetter(Field field) {
+    MethodHandle unreflectSetter(final Field field) {
         return editMethodHandle(Lookup.PUBLIC.unreflectSetter(field));
     }
 

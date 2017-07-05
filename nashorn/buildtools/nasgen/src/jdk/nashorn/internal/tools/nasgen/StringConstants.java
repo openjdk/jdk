@@ -26,9 +26,8 @@
 package jdk.nashorn.internal.tools.nasgen;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.reflect.Method;
-import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import jdk.internal.org.objectweb.asm.Type;

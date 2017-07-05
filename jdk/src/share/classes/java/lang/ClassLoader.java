@@ -2133,7 +2133,7 @@ public abstract class ClassLoader {
                 return result.booleanValue();
 
             // Check for most specific package entry
-            int dotIndex = className.lastIndexOf(".");
+            int dotIndex = className.lastIndexOf('.');
             if (dotIndex < 0) { // default package
                 result = packageAssertionStatus.get(null);
                 if (result != null)
@@ -2144,7 +2144,7 @@ public abstract class ClassLoader {
                 result = packageAssertionStatus.get(className);
                 if (result != null)
                     return result.booleanValue();
-                dotIndex = className.lastIndexOf(".", dotIndex-1);
+                dotIndex = className.lastIndexOf('.', dotIndex-1);
             }
 
             // Return the classloader default

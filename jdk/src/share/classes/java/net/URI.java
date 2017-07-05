@@ -1851,9 +1851,9 @@ public final class URI
             sb.append("//");
             if (authority.startsWith("[")) {
                 // authority should (but may not) contain an embedded IPv6 address
-                int end = authority.indexOf("]");
+                int end = authority.indexOf(']');
                 String doquote = authority, dontquote = "";
-                if (end != -1 && authority.indexOf(":") != -1) {
+                if (end != -1 && authority.indexOf(':') != -1) {
                     // the authority contains an IPv6 address
                     if (end == authority.length()) {
                         dontquote = authority;
@@ -1889,8 +1889,8 @@ public final class URI
              * because we must not quote a literal IPv6 address
              */
             if (opaquePart.startsWith("//[")) {
-                int end =  opaquePart.indexOf("]");
-                if (end != -1 && opaquePart.indexOf(":")!=-1) {
+                int end =  opaquePart.indexOf(']');
+                if (end != -1 && opaquePart.indexOf(':')!=-1) {
                     String doquote, dontquote;
                     if (end == opaquePart.length()) {
                         dontquote = opaquePart;

@@ -92,7 +92,7 @@ final class TestFinder {
         final String testList = System.getProperty(TEST_JS_LIST);
         final String failedTestFileName = System.getProperty(TEST_FAILED_LIST_FILE);
         if(failedTestFileName != null) {
-            File failedTestFile = new File(failedTestFileName);
+            final File failedTestFile = new File(failedTestFileName);
             if(failedTestFile.exists() && failedTestFile.length() > 0L) {
                 try(final BufferedReader r = new BufferedReader(new FileReader(failedTestFile))) {
                     for(;;) {
@@ -195,7 +195,7 @@ final class TestFinder {
         return false;
     }
 
-    private static <T> void handleOneTest(final String framework, final Path testFile, final List<T> tests, final Set<String> orphans, TestFactory<T> factory) throws Exception {
+    private static <T> void handleOneTest(final String framework, final Path testFile, final List<T> tests, final Set<String> orphans, final TestFactory<T> factory) throws Exception {
         final String name = testFile.getFileName().toString();
 
         assert name.lastIndexOf(".js") > 0 : "not a JavaScript: " + name;

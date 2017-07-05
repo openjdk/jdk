@@ -99,7 +99,7 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
     }
 
     @Override
-    public VarNode setAssignmentDest(IdentNode n) {
+    public VarNode setAssignmentDest(final IdentNode n) {
         return setName(n);
     }
 
@@ -123,8 +123,9 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
     @Override
     public Node accept(final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterVarNode(this)) {
-            final IdentNode  newName = (IdentNode)name.accept(visitor);
+            // var is right associative, so visit init before name
             final Expression newInit = init == null ? null : (Expression)init.accept(visitor);
+            final IdentNode  newName = (IdentNode)name.accept(visitor);
             final VarNode    newThis;
             if (name != newName || init != newInit) {
                 newThis = new VarNode(this, newName, newInit, flags);
@@ -137,13 +138,13 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append("var ");
-        name.toString(sb);
+        name.toString(sb, printType);
 
         if (init != null) {
             sb.append(" = ");
-            init.toString(sb);
+            init.toString(sb, printType);
         }
     }
 

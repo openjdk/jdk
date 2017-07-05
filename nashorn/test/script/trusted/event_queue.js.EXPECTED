@@ -1,0 +1,38 @@
+[object Debug]
+
+[JavaClass jdk.nashorn.internal.runtime.events.RuntimeEvent]
+[JavaClass jdk.nashorn.internal.runtime.RewriteException]
+
+4.840000000000001
+13.7
+
+Done with 2 in the event queue
+events = true
+events.length = 2
+event #0
+	event class=class jdk.nashorn.internal.runtime.events.RecompilationEvent
+	valueClass in event=class jdk.nashorn.internal.runtime.RewriteException
+	class of value=class jdk.nashorn.internal.runtime.RewriteException
+	return type=double
+event #1
+	event class=class jdk.nashorn.internal.runtime.events.RecompilationEvent
+	valueClass in event=class jdk.nashorn.internal.runtime.RewriteException
+	class of value=class jdk.nashorn.internal.runtime.RewriteException
+	return type=double
+
+in loop last class = class jdk.nashorn.internal.runtime.events.RecompilationEvent
+in loop last value class = class jdk.nashorn.internal.runtime.RewriteException
+in loop rex class = class jdk.nashorn.internal.runtime.RewriteException
+in loop rex return type = double
+
+true
+
+last class = class jdk.nashorn.internal.runtime.events.RecompilationEvent
+last value class = class jdk.nashorn.internal.runtime.RewriteException
+rex class = class jdk.nashorn.internal.runtime.RewriteException
+rex return type = object
+
+1024
+2048
+
+0

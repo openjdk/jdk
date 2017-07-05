@@ -164,7 +164,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
      * @param args arguments array passed to script engine.
      * @return newly created script engine.
      */
-    public ScriptEngine getScriptEngine(final String[] args) {
+    public ScriptEngine getScriptEngine(final String... args) {
         checkConfigPermission();
         return new NashornScriptEngine(this, args, getAppClassLoader());
     }
@@ -220,7 +220,7 @@ public final class NashornScriptEngineFactory implements ScriptEngineFactory {
         // Revisit: script engine implementation needs the capability to
         // find the class loader of the context in which the script engine
         // is running so that classes will be found and loaded properly
-        ClassLoader ccl = Thread.currentThread().getContextClassLoader();
+        final ClassLoader ccl = Thread.currentThread().getContextClassLoader();
         return (ccl == null)? NashornScriptEngineFactory.class.getClassLoader() : ccl;
     }
 }

@@ -25,14 +25,13 @@
 
 package jdk.nashorn.internal.ir;
 
-import java.util.List;
 import jdk.nashorn.internal.codegen.Label;
 
 /**
  * This class represents a node from which control flow can execute
  * a {@code break} statement
  */
-public interface BreakableNode extends LexicalContextNode {
+public interface BreakableNode extends LexicalContextNode, JoinPredecessor, Labels {
     /**
      * Ensure that any labels in this breakable node are unique so
      * that new jumps won't go to old parts of the tree. Used for
@@ -56,11 +55,4 @@ public interface BreakableNode extends LexicalContextNode {
      */
     public Label getBreakLabel();
 
-    /**
-     * Return the labels associated with this node. Breakable nodes that
-     * aren't LoopNodes only have a break label - the location immediately
-     * afterwards the node in code
-     * @return list of labels representing locations around this node
-     */
-    public List<Label> getLabels();
 }

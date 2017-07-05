@@ -79,9 +79,9 @@ public final class WithNode extends LexicalContextStatement {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append("with (");
-        expression.toString(sb);
+        expression.toString(sb, printType);
         sb.append(')');
     }
 

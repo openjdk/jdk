@@ -38,7 +38,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
 final class BoundScriptFunctionImpl extends ScriptFunctionImpl {
     private final ScriptFunction targetFunction;
 
-    BoundScriptFunctionImpl(ScriptFunctionData data, ScriptFunction targetFunction) {
+    BoundScriptFunctionImpl(final ScriptFunctionData data, final ScriptFunction targetFunction) {
         super(data, Global.instance());
         setPrototype(ScriptRuntime.UNDEFINED);
         this.targetFunction = targetFunction;

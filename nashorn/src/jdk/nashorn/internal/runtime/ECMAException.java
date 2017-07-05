@@ -96,8 +96,8 @@ public final class ECMAException extends NashornException {
         // If thrown object is an Error or sub-object like TypeError, then
         // an ECMAException object has been already initialized at constructor.
         if (thrown instanceof ScriptObject) {
-            ScriptObject sobj = (ScriptObject)thrown;
-            Object exception = getException(sobj);
+            final ScriptObject sobj = (ScriptObject)thrown;
+            final Object exception = getException(sobj);
             if (exception instanceof ECMAException) {
                 // copy over file name, line number and column number.
                 final ECMAException ee = (ECMAException)exception;

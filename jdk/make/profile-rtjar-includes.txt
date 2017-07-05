@@ -88,7 +88,7 @@ PROFILE_2_RTJAR_INCLUDE_PACKAGES := \
     java/sql \
     javax/rmi/ssl \
     javax/sql \
-    javax/transaction \
+    javax/transaction/xa \
     javax/xml \
     org/w3c \
     org/xml/sax \
@@ -223,7 +223,8 @@ FULL_JRE_RTJAR_INCLUDE_TYPES := \
     javax/management/remote/rmi/_RMIConnection_Stub.class \
     javax/management/remote/rmi/_RMIServerImpl_Tie.class \
     javax/management/remote/rmi/_RMIServer_Stub.class \
-    javax/rmi/*.class
+    javax/rmi/*.class \
+    javax/transaction/*.class
 
 FULL_JRE_RTJAR_EXCLUDE_TYPES :=
 

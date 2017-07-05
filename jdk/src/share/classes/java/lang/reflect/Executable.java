@@ -633,7 +633,7 @@ public abstract class Executable extends AccessibleObject
                         getConstantPool(getDeclaringClass()),
                 this,
                 getDeclaringClass(),
-                getParameterTypes(),
+                getGenericParameterTypes(),
                 TypeAnnotation.TypeAnnotationTarget.METHOD_FORMAL_PARAMETER);
     }
 

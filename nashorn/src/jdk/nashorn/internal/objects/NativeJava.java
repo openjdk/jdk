@@ -414,7 +414,7 @@ public final class NativeJava {
         final Context ctx = Global.getThisContext();
         try {
             return ctx.findClass(typeName);
-        } catch(ClassNotFoundException e) {
+        } catch(final ClassNotFoundException e) {
             // The logic below compensates for a frequent user error - when people use dot notation to separate inner
             // class names, i.e. "java.lang.Character.UnicodeBlock" vs."java.lang.Character$UnicodeBlock". The logic
             // below will try alternative class names, replacing dots at the end of the name with dollar signs.
@@ -429,7 +429,7 @@ public final class NativeJava {
                 nextName.setCharAt(lastDot, '$');
                 try {
                     return ctx.findClass(nextName.toString());
-                } catch(ClassNotFoundException cnfe) {
+                } catch(final ClassNotFoundException cnfe) {
                     // Intentionally ignored, so the loop retries with the next name
                 }
             }

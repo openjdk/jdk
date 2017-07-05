@@ -174,7 +174,7 @@ public class XMLFormatter extends Formatter {
         //  Check to see if the parameter was not a messagetext format
         //  or was not null or empty
         if (parameters != null && parameters.length != 0
-                && record.getMessage().indexOf("{") == -1 ) {
+                && record.getMessage().indexOf('{') == -1 ) {
             for (Object parameter : parameters) {
                 sb.append("  <param>");
                 try {
