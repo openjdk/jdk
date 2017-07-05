@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,6 @@ import java.rmi.*;
 import java.rmi.registry.*;
 
 public class RmiIsNoScheme implements Remote, Serializable {
-
-    private static final int REGISTRY_PORT = 2002;
-
     private RmiIsNoScheme() {}
 
     public static void main(String[] args) {
@@ -49,10 +46,11 @@ public class RmiIsNoScheme implements Remote, Serializable {
         System.err.println("\nRegression test for bug 4626311\n");
 
         try {
-            LocateRegistry.createRegistry(REGISTRY_PORT);
-            Naming.rebind("//:" + REGISTRY_PORT + "/RmiIsNoScheme",
+            Registry registry = TestLibrary.createRegistryOnUnusedPort();
+            int registryPort = TestLibrary.getRegistryPort(registry);
+            Naming.rebind("//:" + registryPort + "/RmiIsNoScheme",
                           new RmiIsNoScheme());
-            String name = Naming.list("//:" + REGISTRY_PORT)[0];
+            String name = Naming.list("//:" + registryPort)[0];
             System.err.println("name = " + name);
             if (name.startsWith("rmi:", 0) == false) {
                 System.err.println("TEST PASSED: rmi scheme not present");

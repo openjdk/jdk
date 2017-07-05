@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,7 +238,7 @@ public abstract class UnixFileSystemProvider
             // DirectoryNotEmptyException if not empty
             if (attrs != null && attrs.isDirectory() &&
                 (x.errno() == EEXIST || x.errno() == ENOTEMPTY))
-                throw new DirectoryNotEmptyException(file.getPathForExecptionMessage());
+                throw new DirectoryNotEmptyException(file.getPathForExceptionMessage());
 
             x.rethrowAsIOException(file);
             return false;
@@ -401,7 +401,7 @@ public abstract class UnixFileSystemProvider
                 return new UnixDirectoryStream(dir, ptr, filter);
             } catch (UnixException x) {
                 if (x.errno() == ENOTDIR)
-                    throw new NotDirectoryException(dir.getPathForExecptionMessage());
+                    throw new NotDirectoryException(dir.getPathForExceptionMessage());
                 x.rethrowAsIOException(dir);
             }
         }
@@ -421,7 +421,7 @@ public abstract class UnixFileSystemProvider
             if (dfd2 != -1)
                 UnixNativeDispatcher.close(dfd2);
             if (x.errno() == UnixConstants.ENOTDIR)
-                throw new NotDirectoryException(dir.getPathForExecptionMessage());
+                throw new NotDirectoryException(dir.getPathForExceptionMessage());
             x.rethrowAsIOException(dir);
         }
         return new UnixSecureDirectoryStream(dir, dp, dfd2, filter);
@@ -490,7 +490,7 @@ public abstract class UnixFileSystemProvider
             return new UnixPath(link.getFileSystem(), target);
         } catch (UnixException x) {
            if (x.errno() == UnixConstants.EINVAL)
-                throw new NotLinkException(link.getPathForExecptionMessage());
+                throw new NotLinkException(link.getPathForExceptionMessage());
             x.rethrowAsIOException(link);
             return null;    // keep compiler happy
         }

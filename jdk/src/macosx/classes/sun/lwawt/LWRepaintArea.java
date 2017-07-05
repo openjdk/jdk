@@ -58,9 +58,6 @@ final class LWRepaintArea extends RepaintArea {
 
     private static void flushBuffers(final LWComponentPeer peer) {
         if (peer != null) {
-            if (!peer.getWindowPeerOrSelf().isOpaque()) {
-                peer.flushOffscreenGraphics();
-            }
             peer.flushOnscreenGraphics();
         }
     }

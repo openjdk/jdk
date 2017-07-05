@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,10 @@
  * "interface hash": 4905912898345647071L.
  *
  * @author Peter Jones
+ * @library ../../testlibrary
  * @build InterfaceHash
  * @build ReferenceRegistryStub
+ * @build TestLibrary
  * @run main/othervm InterfaceHash
  */
 
@@ -58,7 +60,7 @@ import sun.rmi.transport.tcp.TCPEndpoint;
 
 public class InterfaceHash {
 
-    private static final int PORT = 2020;
+    private static final int PORT = TestLibrary.getUnusedRandomPort();
     private static final String NAME = "WMM";
 
     public static void main(String[] args) throws Exception {

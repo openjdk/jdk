@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ class LinuxUserDefinedFileAttributeView
         name = USER_NAMESPACE + name;
         byte[] bytes = name.getBytes();
         if (bytes.length > XATTR_NAME_MAX) {
-            throw new FileSystemException(file.getPathForExecptionMessage(),
+            throw new FileSystemException(file.getPathForExceptionMessage(),
                 null, "'" + name + "' is too big");
         }
         return bytes;
@@ -116,7 +116,7 @@ class LinuxUserDefinedFileAttributeView
                         buffer = NativeBuffers.getNativeBuffer(size);
                         continue;
                     }
-                    throw new FileSystemException(file.getPathForExecptionMessage(),
+                    throw new FileSystemException(file.getPathForExceptionMessage(),
                         null, "Unable to get list of extended attributes: " +
                         x.getMessage());
                 }
@@ -138,7 +138,7 @@ class LinuxUserDefinedFileAttributeView
             // fgetxattr returns size if called with size==0
             return fgetxattr(fd, nameAsBytes(file,name), 0L, 0);
         } catch (UnixException x) {
-            throw new FileSystemException(file.getPathForExecptionMessage(),
+            throw new FileSystemException(file.getPathForExceptionMessage(),
                 null, "Unable to get size of extended attribute '" + name +
                 "': " + x.getMessage());
         } finally {
@@ -191,7 +191,7 @@ class LinuxUserDefinedFileAttributeView
             } catch (UnixException x) {
                 String msg = (x.errno() == ERANGE) ?
                     "Insufficient space in buffer" : x.getMessage();
-                throw new FileSystemException(file.getPathForExecptionMessage(),
+                throw new FileSystemException(file.getPathForExceptionMessage(),
                     null, "Error reading extended attribute '" + name + "': " + msg);
             } finally {
                 close(fd);
@@ -243,7 +243,7 @@ class LinuxUserDefinedFileAttributeView
                 src.position(pos + rem);
                 return rem;
             } catch (UnixException x) {
-                throw new FileSystemException(file.getPathForExecptionMessage(),
+                throw new FileSystemException(file.getPathForExceptionMessage(),
                     null, "Error writing extended attribute '" + name + "': " +
                     x.getMessage());
             } finally {
@@ -264,7 +264,7 @@ class LinuxUserDefinedFileAttributeView
         try {
             fremovexattr(fd, nameAsBytes(file,name));
         } catch (UnixException x) {
-            throw new FileSystemException(file.getPathForExecptionMessage(),
+            throw new FileSystemException(file.getPathForExceptionMessage(),
                 null, "Unable to delete extended attribute '" + name + "': " + x.getMessage());
         } finally {
             close(fd);
