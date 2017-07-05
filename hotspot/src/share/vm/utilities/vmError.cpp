@@ -39,6 +39,7 @@
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
 #include "services/memTracker.hpp"
+#include "trace/traceMacros.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
@@ -1164,6 +1165,8 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     // reset signal handlers or exception filter; make sure recursive crashes
     // are handled properly.
     reset_signal_handlers();
+
+    TRACE_VM_ERROR();
 
   } else {
     // If UseOsErrorReporting we call this for each level of the call stack

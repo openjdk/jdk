@@ -68,7 +68,6 @@ void LinearScan::allocate_fpu_stack() {
       if (b->number_of_preds() > 1) {
         int id = b->first_lir_instruction_id();
         ResourceBitMap regs(FrameMap::nof_fpu_regs);
-        regs.clear();
 
         iw.walk_to(id);   // walk after the first instruction (always a label) of the block
         assert(iw.current_position() == id, "did not walk completely to id");

@@ -23,48 +23,59 @@
 
 package jdk.test.lib.jittester;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.function.Function;
 import jdk.test.lib.jittester.visitors.JavaCodeVisitor;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.function.BiFunction;
-
 /**
- * Generates class files from java source code
+ * Generates java source code from IRTree
  */
-class JavaCodeGenerator implements BiFunction<IRNode, IRNode, String> {
-    private final Path testbase = Paths.get(ProductionParams.testbaseDir.value(), "java_tests");
+public class JavaCodeGenerator extends TestsGenerator {
+    private static final String DEFAULT_SUFFIX = "java_tests";
 
-    private String generateJavaCode(IRNode mainClass, IRNode privateClasses) {
+    JavaCodeGenerator() {
+        this(DEFAULT_SUFFIX, JavaCodeGenerator::generatePrerunAction, "");
+    }
+
+    JavaCodeGenerator(String prefix, Function<String, String[]> preRunActions, String jtDriverOptions) {
+        super(prefix, preRunActions, jtDriverOptions);
+    }
+
+    @Override
+    public void accept(IRNode mainClass, IRNode privateClasses) {
+        String mainClassName = mainClass.getName();
+        generateSources(mainClass, privateClasses);
+        compilePrinter();
+        compileJavaFile(mainClassName);
+        generateGoldenOut(mainClassName);
+    }
+
+    private void generateSources(IRNode mainClass, IRNode privateClasses) {
+        String mainClassName = mainClass.getName();
         StringBuilder code = new StringBuilder();
         JavaCodeVisitor vis = new JavaCodeVisitor();
-
-        code.append(Automatic.getJtregHeader(mainClass.getName(), true));
+        code.append(getJtregHeader(mainClassName));
         if (privateClasses != null) {
             code.append(privateClasses.accept(vis));
         }
         code.append(mainClass.accept(vis));
-
-        return code.toString();
+        ensureExisting(generatorDir);
+        writeFile(generatorDir, mainClassName + ".java", code.toString());
     }
 
-    public Path getTestbase() {
-        return testbase;
-    }
-
-    @Override
-    public String apply(IRNode mainClass, IRNode privateClasses) {
-        String code = generateJavaCode(mainClass, privateClasses);
-        Automatic.ensureExisting(testbase);
-        Path fileName = testbase.resolve(mainClass.getName() + ".java");
-        try (FileWriter file = new FileWriter(fileName.toFile())) {
-            file.write(code);
-            return fileName.toString();
-        } catch (IOException ex) {
-            ex.printStackTrace();
+    private void compileJavaFile(String mainClassName) {
+        String classPath = getRoot() + File.pathSeparator + generatorDir;
+        ProcessBuilder pb = new ProcessBuilder(JAVAC, "-cp", classPath,
+                generatorDir.resolve(mainClassName + ".java").toString());
+        try {
+            runProcess(pb, generatorDir.resolve(mainClassName).toString());
+        } catch (IOException | InterruptedException e) {
+            throw new Error("Can't compile sources ", e);
         }
-        return "";
+    }
+
+    private static String[] generatePrerunAction(String mainClassName) {
+        return new String[] {"@compile " + mainClassName + ".java"};
     }
 }
