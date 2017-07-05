@@ -1219,7 +1219,7 @@ static final class sun_swing_PrintColorUIResource_PersistenceDelegate extends Pe
         internalPersistenceDelegates.put("java.sql.Time", new java_util_Date_PersistenceDelegate());
     }
 
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "deprecation"})
     public static synchronized PersistenceDelegate getPersistenceDelegate(Class type) {
         if (type == null) {
             return nullPersistenceDelegate;
@@ -1261,7 +1261,7 @@ static final class sun_swing_PrintColorUIResource_PersistenceDelegate extends Pe
             internalPersistenceDelegates.put(typeName, defaultPersistenceDelegate);
             try {
                 String name =  type.getName();
-                Class c = Class.forName("java.beans.MetaData$" + name.replace('.', '_')
+                Class<?> c = Class.forName("java.beans.MetaData$" + name.replace('.', '_')
                                         + "_PersistenceDelegate");
                 pd = (PersistenceDelegate)c.newInstance();
                 internalPersistenceDelegates.put(typeName, pd);

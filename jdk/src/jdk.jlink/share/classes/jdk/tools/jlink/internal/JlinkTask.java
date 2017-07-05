@@ -134,7 +134,7 @@ public class JlinkTask {
         }, true, "--full-version"),
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.ignoreSigning = true;
-        }, true, "--ignore-signing-information"),};
+        }, "--ignore-signing-information"),};
 
     private static final String PROGNAME = "jlink";
     private final OptionsValues options = new OptionsValues();

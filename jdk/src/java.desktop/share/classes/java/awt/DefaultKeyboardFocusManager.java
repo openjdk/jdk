@@ -75,6 +75,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     private LinkedList<KeyEvent> enqueuedKeyEvents = new LinkedList<KeyEvent>();
     private LinkedList<TypeAheadMarker> typeAheadMarkers = new LinkedList<TypeAheadMarker>();
     private boolean consumeNextKeyTyped;
+    private Component restoreFocusTo;
 
     static {
         AWTAccessor.setDefaultKeyboardFocusManagerAccessor(
@@ -145,19 +146,24 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
     }
     private boolean restoreFocus(Window aWindow, Component vetoedComponent,
                                  boolean clearOnFailure) {
+        restoreFocusTo = null;
         Component toFocus =
             KeyboardFocusManager.getMostRecentFocusOwner(aWindow);
 
         if (toFocus != null && toFocus != vetoedComponent) {
-            Component heavyweight = getHeavyweight(aWindow);
-            if (heavyweight != null) {
-                setNativeFocusOwner(heavyweight);
-                Toolkit.getEventQueue().createSecondaryLoop(
-                        () -> getGlobalFocusedWindow() != aWindow, null, 50)
-                        .enter();
-            }
-            if (getGlobalFocusedWindow() == aWindow &&
-                              doRestoreFocus(toFocus, vetoedComponent, false)) {
+            if (getHeavyweight(aWindow) != getNativeFocusOwner()) {
+                // cannot restore focus synchronously
+                if (!toFocus.isShowing() || !toFocus.canBeFocusOwner()) {
+                    toFocus = toFocus.getNextFocusCandidate();
+                }
+                if (toFocus != null && toFocus != vetoedComponent) {
+                    if (!toFocus.requestFocus(false,
+                                                   FocusEvent.Cause.ROLLBACK)) {
+                        restoreFocusTo = toFocus;
+                    }
+                    return true;
+                }
+            } else if (doRestoreFocus(toFocus, vetoedComponent, false)) {
                 return true;
             }
         }
@@ -423,6 +429,8 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                     // may cause deadlock, thus we don't synchronize this block.
                     Component toFocus = KeyboardFocusManager.
                         getMostRecentFocusOwner(newFocusedWindow);
+                    boolean isFocusRestore = restoreFocusTo != null &&
+                                                      toFocus == restoreFocusTo;
                     if ((toFocus == null) &&
                         newFocusedWindow.isFocusableWindow())
                     {
@@ -441,7 +449,10 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                                        tempLost, toFocus);
                     }
                     if (tempLost != null) {
-                        tempLost.requestFocusInWindow(FocusEvent.Cause.ACTIVATION);
+                        tempLost.requestFocusInWindow(
+                                    isFocusRestore && tempLost == toFocus ?
+                                                FocusEvent.Cause.ROLLBACK :
+                                                FocusEvent.Cause.ACTIVATION);
                     }
 
                     if (toFocus != null && toFocus != tempLost) {
@@ -450,6 +461,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                         toFocus.requestFocusInWindow(FocusEvent.Cause.ACTIVATION);
                     }
                 }
+                restoreFocusTo = null;
 
                 Window realOppositeWindow = this.realOppositeWindowWR.get();
                 if (realOppositeWindow != we.getOppositeWindow()) {
@@ -499,6 +511,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
             }
 
             case FocusEvent.FOCUS_GAINED: {
+                restoreFocusTo = null;
                 FocusEvent fe = (FocusEvent)e;
                 Component oldFocusOwner = getGlobalFocusOwner();
                 Component newFocusOwner = fe.getComponent();

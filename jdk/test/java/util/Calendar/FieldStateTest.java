@@ -144,8 +144,11 @@ public class FieldStateTest extends IntlTest {
         }
 
         logln("Set day of week to SUNDAY and date to 2003/10/31. "
-              + "Then, getTime and set week of year to 43.");
-        cal.setTime(new Date(2003-1990, OCTOBER, 31));
+                + "Then, getTime and set week of year to 43.");
+
+        @SuppressWarnings("deprecation")
+        Date d = new Date(2003 - 1990, OCTOBER, 31);
+        cal.setTime(d);
         cal.set(DAY_OF_WEEK, SUNDAY);
         cal.set(2003, OCTOBER, 31); // 2003/10/31 is Friday.
         cal.set(ZONE_OFFSET, 0);
@@ -166,8 +169,8 @@ public class FieldStateTest extends IntlTest {
      * 4916815: REGRESSION: Problem with java.util.Calendar VM 1.4.2-b28
      */
     public void Test4916815() {
-        logln("Set date to 2003/9/26 (Fri). Roll to Aug and back to Sep. "+
-              "Set dayofweek to Sunday which should be 2003/9/21.");
+        logln("Set date to 2003/9/26 (Fri). Roll to Aug and back to Sep. "
+                + "Set dayofweek to Sunday which should be 2003/9/21.");
         Koyomi cal = new Koyomi();
         cal.clear();
         // 2003/9/26 (Fri)
@@ -192,17 +195,17 @@ public class FieldStateTest extends IntlTest {
         cal.clear();
         cal.set(YEAR, 2004);
         cal.set(WEEK_OF_YEAR, 1);
-        checkDate(cal, SUNDAY,    2003, DECEMBER, 28);
-        checkDate(cal, MONDAY,    2003, DECEMBER, 29);
-        checkDate(cal, TUESDAY,   2003, DECEMBER, 30);
+        checkDate(cal, SUNDAY, 2003, DECEMBER, 28);
+        checkDate(cal, MONDAY, 2003, DECEMBER, 29);
+        checkDate(cal, TUESDAY, 2003, DECEMBER, 30);
         checkDate(cal, WEDNESDAY, 2003, DECEMBER, 31);
-        checkDate(cal, THURSDAY,  2004, JANUARY,   1);
-        checkDate(cal, FRIDAY,    2004, JANUARY,   2);
-        checkDate(cal, SATURDAY,  2004, JANUARY,   3);
+        checkDate(cal, THURSDAY, 2004, JANUARY, 1);
+        checkDate(cal, FRIDAY, 2004, JANUARY, 2);
+        checkDate(cal, SATURDAY, 2004, JANUARY, 3);
     }
 
     private void checkDate(Koyomi cal, int dayOfWeek,
-                           int expectedYear, int expectedMonth, int expectedDayOfMonth) {
+            int expectedYear, int expectedMonth, int expectedDayOfMonth) {
         cal.set(DAY_OF_WEEK, dayOfWeek);
         cal.getTime();
         if (!cal.checkInternalDate(expectedYear, expectedMonth, expectedDayOfMonth, dayOfWeek)) {

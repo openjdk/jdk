@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,7 +163,7 @@ final class PackagesHelper {
         if (fm != null) {
             listPackage(StandardLocation.PLATFORM_CLASS_PATH, pkg, props);
             if (this.modulePathSet) {
-                for (Set<Location> locs : fm.listModuleLocations(StandardLocation.MODULE_PATH)) {
+                for (Set<Location> locs : fm.listLocationsForModules(StandardLocation.MODULE_PATH)) {
                     for (Location loc : locs) {
                         listPackage(loc, pkg, props);
                     }

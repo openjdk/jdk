@@ -157,12 +157,17 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
      */
     private static GuardedInvocation getSamTypeConverter(final Class<?> sourceType, final Class<?> targetType, final Supplier<MethodHandles.Lookup> lookupSupplier) throws Exception {
         // If source type is more generic than ScriptFunction class, we'll need to use a guard
-        final boolean isSourceTypeGeneric = sourceType.isAssignableFrom(ScriptFunction.class);
+        final boolean isSourceTypeGeneric = sourceType.isAssignableFrom(ScriptObject.class);
 
         if ((isSourceTypeGeneric || ScriptFunction.class.isAssignableFrom(sourceType)) && isAutoConvertibleFromFunction(targetType)) {
-            final MethodHandle ctor = JavaAdapterFactory.getConstructor(ScriptFunction.class, targetType, getCurrentLookup(lookupSupplier));
+            final Class<?> paramType = isSourceTypeGeneric ? Object.class : ScriptFunction.class;
+            // Using Object.class as constructor source type means we're getting an overloaded constructor handle,
+            // which is safe but slower than a single constructor handle. If the actual argument is a ScriptFunction it
+            // would be nice if we could change the formal parameter to ScriptFunction.class and add a guard for it
+            // in the main invocation.
+            final MethodHandle ctor = JavaAdapterFactory.getConstructor(paramType, targetType, getCurrentLookup(lookupSupplier));
             assert ctor != null; // if isAutoConvertibleFromFunction() returned true, then ctor must exist.
-            return new GuardedInvocation(ctor, isSourceTypeGeneric ? IS_SCRIPT_FUNCTION : null);
+            return new GuardedInvocation(ctor, isSourceTypeGeneric ? IS_FUNCTION : null);
         }
         return null;
     }
@@ -315,7 +320,7 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
     }
 
     private static final MethodHandle IS_SCRIPT_OBJECT = Guards.isInstance(ScriptObject.class, MH.type(Boolean.TYPE, Object.class));
-    private static final MethodHandle IS_SCRIPT_FUNCTION = Guards.isInstance(ScriptFunction.class, MH.type(Boolean.TYPE, Object.class));
+    private static final MethodHandle IS_FUNCTION = findOwnMH("isFunction", boolean.class, Object.class);
     private static final MethodHandle IS_NATIVE_ARRAY = Guards.isOfClass(NativeArray.class, MH.type(Boolean.TYPE, Object.class));
 
     private static final MethodHandle IS_NASHORN_OR_UNDEFINED_TYPE = findOwnMH("isNashornTypeOrUndefined", Boolean.TYPE, Object.class);
@@ -346,6 +351,11 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
     @SuppressWarnings("unused")
     private static Object createMirror(final Object obj) {
         return obj instanceof ScriptObject? ScriptUtils.wrap((ScriptObject)obj) : obj;
+    }
+
+    @SuppressWarnings("unused")
+    private static boolean isFunction(final Object obj) {
+        return obj instanceof ScriptFunction || obj instanceof ScriptObjectMirror && ((ScriptObjectMirror) obj).isFunction();
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

@@ -23,6 +23,7 @@
 package jaxp.library;
 
 
+import java.net.URL;
 import java.security.CodeSource;
 import java.security.Permission;
 import java.security.PermissionCollection;
@@ -34,6 +35,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.PropertyPermission;
+import java.util.Set;
 import java.util.StringJoiner;
 
 
@@ -107,12 +109,7 @@ public class JAXPPolicyManager {
         addPermission(new SecurityPermission("getPolicy"));
         addPermission(new SecurityPermission("setPolicy"));
         addPermission(new RuntimePermission("setSecurityManager"));
-        //Properties that jtreg and TestNG require
-        addPermission(new PropertyPermission("testng.show.stack.frames", "read"));
         addPermission(new PropertyPermission("test.src", "read"));
-        addPermission(new PropertyPermission("test.classes", "read"));
-        addPermission(new PropertyPermission("dataproviderthreadcount", "read"));
-        addPermission(new PropertyPermission("experimental", "read"));
     }
 
     /*
@@ -163,6 +160,8 @@ public class JAXPPolicyManager {
  * JAXP concrete classes.
  */
 class TestPolicy extends Policy {
+    private final static Set<String> TEST_JARS =
+         Set.of("jtreg.jar", "javatest.jar", "testng.jar", "jcommander.jar");
     private final PermissionCollection permissions = new Permissions();
 
     private ThreadLocal<Map<Integer, Permission>> transientPermissions = new ThreadLocal<>();
@@ -211,6 +210,16 @@ class TestPolicy extends Policy {
         return permissions;
     }
 
+    private boolean isTestMachineryDomain(ProtectionDomain domain) {
+        CodeSource cs = (domain == null) ? null : domain.getCodeSource();
+        URL loc = (cs == null) ? null : cs.getLocation();
+        String path = (loc == null) ? null : loc.getPath();
+        return path != null && TEST_JARS.stream()
+                                .filter(path::endsWith)
+                                .findAny()
+                                .isPresent();
+    }
+
     @Override
     public boolean implies(ProtectionDomain domain, Permission perm) {
         if (allowAll())
@@ -221,8 +230,11 @@ class TestPolicy extends Policy {
 
         if (permissions.implies(perm))
             return true;
-        else
-            return tmpImplies(perm);
+
+        if (isTestMachineryDomain(domain))
+            return true;
+
+        return tmpImplies(perm);
     }
 
     /*

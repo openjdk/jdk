@@ -26,24 +26,31 @@
  * @bug 8159393
  * @summary Test signed jars involved in image creation
  * @modules java.base/jdk.internal.jimage
- *          jdk.jlink/jdk.tools.jlink.internal
- *          jdk.compiler/com.sun.tools.javac
  *          java.base/sun.security.tools.keytool
+ *          jdk.compiler/com.sun.tools.javac
  *          jdk.jartool/sun.security.tools.jarsigner
  *          jdk.jartool/sun.tools.jar
+ *          jdk.jlink/jdk.tools.jlink.internal
  * @run main/othervm JLinkSigningTest
  */
 
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.spi.ToolProvider;
 
 public class JLinkSigningTest {
+    private static final ToolProvider JAR_TOOL = ToolProvider.findFirst("jar")
+            .orElseThrow(() -> new RuntimeException("jar tool not found"));
+    private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
+            .orElseThrow(() -> new RuntimeException("javac tool not found"));
+    private static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
+            .orElseThrow(() -> new RuntimeException("jlink tool not found"));
+
     static final String[] MODULE_INFO = {
         "module test {",
         "}",
@@ -61,22 +68,29 @@ public class JLinkSigningTest {
         System.out.println(command + " " + String.join(" ", Arrays.asList(args)));
     }
 
-    static void javac(String[] args) {
-        report("javac", args);
-        com.sun.tools.javac.Main javac = new com.sun.tools.javac.Main();
+    static void jar(String[] args) {
+        report("jar", args);
+        JAR_TOOL.run(System.out, System.err, args);
+    }
 
-        if (javac.compile(args) != 0) {
-            throw new RuntimeException("javac failed");
+    static void jarsigner(String[] args) {
+        report("jarsigner", args);
+
+        try {
+            sun.security.tools.jarsigner.Main.main(args);
+        } catch (Exception ex) {
+            throw new RuntimeException("jarsigner not found");
         }
     }
 
-    static void jar(String[] args) {
-        report("jar", args);
-        sun.tools.jar.Main jar = new sun.tools.jar.Main(System.out, System.err, "jar");
+    static void javac(String[] args) {
+        report("javac", args);
+        JAVAC_TOOL.run(System.out, System.err, args);
+    }
 
-        if (!jar.run(args)) {
-            throw new RuntimeException("jar failed");
-        }
+    static void jlink(String[] args) {
+        report("jlink", args);
+        JLINK_TOOL.run(System.out, System.err, args);
     }
 
     static void keytool(String[] args) {
@@ -86,28 +100,6 @@ public class JLinkSigningTest {
             sun.security.tools.keytool.Main.main(args);
         } catch (Exception ex) {
             throw new RuntimeException("keytool failed");
-        }
-    }
-
-    static void jarsigner(String[] args) {
-        report("jarsigner", args);
-
-        try {
-            sun.security.tools.jarsigner.Main.main(args);
-        } catch (Exception ex) {
-            throw new RuntimeException("jarsigner failed");
-        }
-    }
-
-    static void jlink(String[] args) {
-        report("jlink", args);
-
-        try {
-            jdk.tools.jlink.internal.Main.run(new PrintWriter(System.out, true),
-                                              new PrintWriter(System.err, true),
-                                              args);
-        } catch (Exception ex) {
-            throw new RuntimeException("jlink failed");
         }
     }
 

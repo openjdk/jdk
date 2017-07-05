@@ -530,6 +530,10 @@ public class Parser implements Constants, ContentHandler {
                 XMLSecurityManager.printWarning(reader.getClass().getName(), lastProperty, se);
             }
 
+            // try setting other JDK-impl properties, ignore if not supported
+            JdkXmlUtils.setXMLReaderPropertyIfSupport(reader, JdkXmlUtils.CDATA_CHUNK_SIZE,
+                _xsltc.getProperty(JdkXmlUtils.CDATA_CHUNK_SIZE), false);
+
             return(parse(reader, input));
         }
         catch (ParserConfigurationException e) {
@@ -1342,12 +1346,14 @@ public class Parser implements Constants, ContentHandler {
         }
         else {
             SyntaxTreeNode parent = _parentStack.peek();
+
             if (element.getClass().isAssignableFrom(Import.class) &&
                     parent.notTypeOf(Import.class)) {
                 ErrorMsg err = new ErrorMsg(ErrorMsg.IMPORT_PRECEDE_OTHERS_ERR,
                                             prefix+':'+localname);
                 throw new SAXException(err.toString());
             }
+
             parent.addElement(element);
             element.setParent(parent);
         }

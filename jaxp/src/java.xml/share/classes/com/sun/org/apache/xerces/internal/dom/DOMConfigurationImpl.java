@@ -292,7 +292,8 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
             JdkXmlUtils.CATALOG_DEFER,
             JdkXmlUtils.CATALOG_FILES,
             JdkXmlUtils.CATALOG_PREFER,
-            JdkXmlUtils.CATALOG_RESOLVE
+            JdkXmlUtils.CATALOG_RESOLVE,
+            JdkXmlUtils.CDATA_CHUNK_SIZE
         };
         addRecognizedProperties(recognizedProperties);
 
@@ -368,6 +369,8 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
         for( CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
             setProperty(f.getPropertyName(), null);
         }
+
+        setProperty(JdkXmlUtils.CDATA_CHUNK_SIZE, JdkXmlUtils.CDATA_CHUNK_SIZE_DEFAULT);
     } // <init>(SymbolTable)
 
 

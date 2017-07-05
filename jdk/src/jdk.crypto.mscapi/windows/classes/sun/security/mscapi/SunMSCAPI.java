@@ -33,6 +33,8 @@ import java.security.InvalidParameterException;
 import java.security.ProviderException;
 import java.util.HashMap;
 import java.util.Arrays;
+import java.util.Map;
+
 import static sun.security.util.SecurityConstants.PROVIDER_VER;
 
 /**
@@ -133,8 +135,11 @@ public final class SunMSCAPI extends Provider {
                 /*
                  * Secure random
                  */
+                HashMap<String, String> srattrs = new HashMap<>(1);
+                srattrs.put("ThreadSafe", "true");
                 putService(new ProviderService(p, "SecureRandom",
-                           "Windows-PRNG", "sun.security.mscapi.PRNG"));
+                           "Windows-PRNG", "sun.security.mscapi.PRNG",
+                           null, srattrs));
 
                 /*
                  * Key store

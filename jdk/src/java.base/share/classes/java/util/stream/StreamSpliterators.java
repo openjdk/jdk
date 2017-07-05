@@ -1346,9 +1346,9 @@ class StreamSpliterators {
         }
 
         static final class OfRef<T> extends InfiniteSupplyingSpliterator<T> {
-            final Supplier<T> s;
+            final Supplier<? extends T> s;
 
-            OfRef(long size, Supplier<T> s) {
+            OfRef(long size, Supplier<? extends T> s) {
                 super(size);
                 this.s = s;
             }

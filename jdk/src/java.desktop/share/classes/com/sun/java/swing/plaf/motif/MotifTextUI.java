@@ -124,6 +124,7 @@ public class MotifTextUI {
          * @param g the graphics context
          * @see #damage
          */
+        @SuppressWarnings("deprecation")
         public void paint(Graphics g) {
             if(isVisible()) {
                 try {

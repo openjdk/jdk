@@ -27,17 +27,20 @@ import static jaxp.library.JAXPTestUtilities.getSystemProperty;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
@@ -47,6 +50,7 @@ import org.testng.AssertJUnit;
 import org.testng.annotations.Listeners;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.ContentHandler;
@@ -69,33 +73,10 @@ import com.sun.org.apache.xml.internal.serialize.XMLSerializer;
  * @run testng/othervm -DrunSecMngr=true transform.TransformerTest
  * @run testng/othervm transform.TransformerTest
  * @summary Transformer Tests
- * @bug 6272879 6305029 6505031 8150704 8162598
+ * @bug 6272879 6305029 6505031 8150704 8162598 8169772
  */
 @Listeners({jaxp.library.FilePolicy.class})
 public class TransformerTest {
-    private Transformer createTransformer() throws TransformerException {
-        return TransformerFactory.newInstance().newTransformer();
-    }
-
-    private Transformer createTransformerFromInputstream(InputStream xslStream) throws TransformerException {
-        return TransformerFactory.newInstance().newTransformer(new StreamSource(xslStream));
-    }
-
-    private Transformer createTransformerFromResource(String xslResource) throws TransformerException {
-        return TransformerFactory.newInstance().newTransformer(new StreamSource(getClass().getResource(xslResource).toString()));
-    }
-
-    private Document transformInputStreamToDocument(Transformer transformer, InputStream sourceStream) throws TransformerException {
-        DOMResult response = new DOMResult();
-        transformer.transform(new StreamSource(sourceStream), response);
-        return (Document)response.getNode();
-    }
-
-    private StringWriter transformResourceToStringWriter(Transformer transformer, String xmlResource) throws TransformerException {
-        StringWriter sw = new StringWriter();
-        transformer.transform(new StreamSource(getClass().getResource(xmlResource).toString()), new StreamResult(sw));
-        return sw;
-    }
 
     /**
      * Reads the contents of the given file into a string.
@@ -302,10 +283,15 @@ public class TransformerTest {
         System.out.println(sourceXml);
         System.out.println();
 
+        // transform to DOM result
+        TransformerFactory tf = TransformerFactory.newInstance();
+        Transformer t = tf.newTransformer(new StreamSource(new ByteArrayInputStream(xsl.getBytes())));
+        DOMResult result = new DOMResult();
+        t.transform(new StreamSource(new ByteArrayInputStream(sourceXml.getBytes())), result);
+        Document document = (Document)result.getNode();
+
         System.out.println("Result after transformation:");
         System.out.println("============================");
-        Document document = transformInputStreamToDocument(createTransformerFromInputstream(new ByteArrayInputStream(xsl.getBytes())),
-            new ByteArrayInputStream(sourceXml.getBytes()));
         OutputFormat format = new OutputFormat();
         format.setIndenting(true);
         new XMLSerializer(System.out, format).serialize(document);
@@ -335,13 +321,14 @@ public class TransformerTest {
         // test SAXSource
         SAXSource saxSource = new SAXSource(new XMLReaderFor6305029(), new InputSource());
         StringWriter resultWriter = new StringWriter();
-        createTransformer().transform(saxSource, new StreamResult(resultWriter));
+        TransformerFactory tf = TransformerFactory.newInstance();
+        tf.newTransformer().transform(saxSource, new StreamResult(resultWriter));
         AssertJUnit.assertEquals("Identity transform of SAXSource", XML_DOCUMENT, resultWriter.toString());
 
         // test StreamSource
         StreamSource streamSource = new StreamSource(new StringReader(XML_DOCUMENT));
         resultWriter = new StringWriter();
-        createTransformer().transform(streamSource, new StreamResult(resultWriter));
+        tf.newTransformer().transform(streamSource, new StreamResult(resultWriter));
         AssertJUnit.assertEquals("Identity transform of StreamSource", XML_DOCUMENT, resultWriter.toString());
     }
 
@@ -351,10 +338,13 @@ public class TransformerTest {
      */
     @Test
     public final void testBug6505031() throws TransformerException {
-        Transformer transformer = createTransformerFromResource("transform.xsl");
-        transformer.setParameter("config", getClass().getResource("config.xml").toString());
-        transformer.setParameter("mapsFile", getClass().getResource("maps.xml").toString());
-        String s = transformResourceToStringWriter(transformer, "template.xml").toString();
+        TransformerFactory tf = TransformerFactory.newInstance();
+        Transformer t = tf.newTransformer(new StreamSource(getClass().getResource("transform.xsl").toString()));
+        t.setParameter("config", getClass().getResource("config.xml").toString());
+        t.setParameter("mapsFile", getClass().getResource("maps.xml").toString());
+        StringWriter sw = new StringWriter();
+        t.transform(new StreamSource(getClass().getResource("template.xml").toString()), new StreamResult(sw));
+        String s = sw.toString();
         Assert.assertTrue(s.contains("map1key1value") && s.contains("map2key1value"));
     }
 
@@ -365,17 +355,20 @@ public class TransformerTest {
     @Test
     public final void testBug8150704() throws TransformerException, IOException {
         System.out.println("Testing transformation of Bug8150704-1.xml...");
-        Transformer transformer = createTransformerFromResource("Bug8150704-1.xsl");
-        StringWriter result = transformResourceToStringWriter(transformer, "Bug8150704-1.xml");
-        String resultstring = result.toString().replaceAll("\\r\\n", "\n").replaceAll("\\r", "\n");
+        TransformerFactory tf = TransformerFactory.newInstance();
+        Transformer t = tf.newTransformer(new StreamSource(getClass().getResource("Bug8150704-1.xsl").toString()));
+        StringWriter sw = new StringWriter();
+        t.transform(new StreamSource(getClass().getResource("Bug8150704-1.xml").toString()), new StreamResult(sw));
+        String resultstring = sw.toString().replaceAll("\\r\\n", "\n").replaceAll("\\r", "\n");
         String reference = getFileContentAsString(new File(getClass().getResource("Bug8150704-1.ref").getPath()));
         Assert.assertEquals(resultstring, reference, "Output of transformation of Bug8150704-1.xml does not match reference");
         System.out.println("Passed.");
 
         System.out.println("Testing transformation of Bug8150704-2.xml...");
-        transformer = createTransformerFromResource("Bug8150704-2.xsl");
-        result = transformResourceToStringWriter(transformer, "Bug8150704-2.xml");
-        resultstring = result.toString().replaceAll("\\r\\n", "\n").replaceAll("\\r", "\n");
+        t = tf.newTransformer(new StreamSource(getClass().getResource("Bug8150704-2.xsl").toString()));
+        sw = new StringWriter();
+        t.transform(new StreamSource(getClass().getResource("Bug8150704-2.xml").toString()), new StreamResult(sw));
+        resultstring = sw.toString().replaceAll("\\r\\n", "\n").replaceAll("\\r", "\n");
         reference = getFileContentAsString(new File(getClass().getResource("Bug8150704-2.ref").getPath()));
         Assert.assertEquals(resultstring, reference, "Output of transformation of Bug8150704-2.xml does not match reference");
         System.out.println("Passed.");
@@ -422,11 +415,15 @@ public class TransformerTest {
         System.out.println(sourceXml);
         System.out.println();
 
+        // transform to DOM result
+        TransformerFactory tf = TransformerFactory.newInstance();
+        Transformer t = tf.newTransformer(new StreamSource(new ByteArrayInputStream(xsl.getBytes())));
+        DOMResult result = new DOMResult();
+        t.transform(new StreamSource(new ByteArrayInputStream(sourceXml.getBytes())), result);
+        Document document = (Document)result.getNode();
+
         System.out.println("Result after transformation:");
         System.out.println("============================");
-        Document document = transformInputStreamToDocument(
-            createTransformerFromInputstream(new ByteArrayInputStream(xsl.getBytes())),
-                                             new ByteArrayInputStream(sourceXml.getBytes()));
         OutputFormat format = new OutputFormat();
         format.setIndenting(true);
         new XMLSerializer(System.out, format).serialize(document);
@@ -437,5 +434,39 @@ public class TransformerTest {
         checkNodeNS8162598(document.getElementsByTagName("test4").item(0), null, null, null);
         checkNodeNS8162598(document.getElementsByTagName("test5").item(0), "ns1", "ns1", null);
         Assert.assertNull(document.getElementsByTagName("test6").item(0).getNamespaceURI(), "unexpected namespace for test6");
+    }
+
+    /**
+     * @bug 8169772
+     * @summary Test transformation of DOM with null valued text node
+     *
+     * This test would throw a NullPointerException during transform when the
+     * fix was not present.
+     */
+    @Test
+    public final void testBug8169772() throws ParserConfigurationException,
+        SAXException, IOException, TransformerException
+    {
+        // create a small DOM
+        Document doc = DocumentBuilderFactory.newInstance().
+            newDocumentBuilder().parse(
+                new ByteArrayInputStream(
+                    "<?xml version=\"1.0\"?><DOCROOT/>".getBytes()
+                )
+            );
+
+        // insert a bad element
+        Element e = doc.createElement("ERROR");
+        e.appendChild(doc.createTextNode(null));
+        doc.getDocumentElement().appendChild(e);
+
+        // transform
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        TransformerFactory.newInstance().newTransformer().transform(
+            new DOMSource(doc.getDocumentElement()), new StreamResult(bos)
+        );
+        System.out.println("Transformation result (DOM with null text node):");
+        System.out.println("================================================");
+        System.out.println(bos);
     }
 }
