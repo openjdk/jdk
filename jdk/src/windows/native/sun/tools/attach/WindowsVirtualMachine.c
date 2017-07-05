@@ -345,7 +345,6 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_WindowsVirtualMachine_enqueue
     DataBlock data;
     DataBlock* pData;
     DWORD* pCode;
-    DWORD numBytes;
     DWORD stubLen;
     HANDLE hProcess, hThread;
     jint argsLen, i;
@@ -400,7 +399,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_WindowsVirtualMachine_enqueue
         JNU_ThrowIOExceptionWithLastError(env, "VirtualAllocEx failed");
         return;
     }
-    WriteProcessMemory( hProcess, (LPVOID)pData, (LPVOID)&data, (DWORD)sizeof(DataBlock), &numBytes );
+    WriteProcessMemory( hProcess, (LPVOID)pData, (LPCVOID)&data, (SIZE_T)sizeof(DataBlock), NULL );
 
 
     stubLen = (DWORD)(*env)->GetArrayLength(env, stub);
@@ -412,7 +411,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_WindowsVirtualMachine_enqueue
         VirtualFreeEx(hProcess, pData, 0, MEM_RELEASE);
         return;
     }
-    WriteProcessMemory( hProcess, (LPVOID)pCode, (LPVOID)stubCode, (DWORD)stubLen, &numBytes );
+    WriteProcessMemory( hProcess, (LPVOID)pCode, (LPCVOID)stubCode, (SIZE_T)stubLen, NULL );
     if (isCopy) {
         (*env)->ReleaseByteArrayElements(env, stub, stubCode, JNI_ABORT);
     }
