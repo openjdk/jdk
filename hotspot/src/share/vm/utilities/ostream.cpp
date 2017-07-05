@@ -30,6 +30,7 @@
 #include "runtime/os.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/top.hpp"
 #include "utilities/xmlstream.hpp"

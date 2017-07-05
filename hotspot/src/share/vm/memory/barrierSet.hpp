@@ -49,7 +49,12 @@ public:
     TargetUninitialized = 1
   };
 protected:
-  int _max_covered_regions;
+  // Some barrier sets create tables whose elements correspond to parts of
+  // the heap; the CardTableModRefBS is an example.  Such barrier sets will
+  // normally reserve space for such tables, and commit parts of the table
+  // "covering" parts of the heap that are committed. At most one covered
+  // region per generation is needed.
+  static const int _max_covered_regions = 2;
   Name _kind;
 
 public:
@@ -159,18 +164,6 @@ public:
 protected:
   virtual void write_region_work(MemRegion mr) = 0;
 public:
-
-  // Some barrier sets create tables whose elements correspond to parts of
-  // the heap; the CardTableModRefBS is an example.  Such barrier sets will
-  // normally reserve space for such tables, and commit parts of the table
-  // "covering" parts of the heap that are committed.  The constructor is
-  // passed the maximum number of independently committable subregions to
-  // be covered, and the "resize_covered_region" function allows the
-  // sub-parts of the heap to inform the barrier set of changes of their
-  // sizes.
-  BarrierSet(int max_covered_regions) :
-    _max_covered_regions(max_covered_regions) {}
-
   // Inform the BarrierSet that the the covered heap region that starts
   // with "base" has been changed to have the given size (possibly from 0,
   // for initialization.)

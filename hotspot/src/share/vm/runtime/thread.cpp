@@ -374,42 +374,7 @@ void check_for_dangling_thread_pointer(Thread *thread) {
 }
 #endif
 
-
-#ifndef PRODUCT
-// Tracing method for basic thread operations
-void Thread::trace(const char* msg, const Thread* const thread) {
-  if (!TraceThreadEvents) return;
-  ResourceMark rm;
-  ThreadCritical tc;
-  const char *name = "non-Java thread";
-  int prio = -1;
-  if (thread->is_Java_thread()
-      && !thread->is_Compiler_thread()) {
-    // The Threads_lock must be held to get information about
-    // this thread but may not be in some situations when
-    // tracing  thread events.
-    bool release_Threads_lock = false;
-    if (!Threads_lock->owned_by_self()) {
-      Threads_lock->lock();
-      release_Threads_lock = true;
-    }
-    JavaThread* jt = (JavaThread *)thread;
-    name = (char *)jt->get_thread_name();
-    oop thread_oop = jt->threadObj();
-    if (thread_oop != NULL) {
-      prio = java_lang_Thread::priority(thread_oop);
-    }
-    if (release_Threads_lock) {
-      Threads_lock->unlock();
-    }
-  }
-  tty->print_cr("Thread::%s " INTPTR_FORMAT " [%lx] %s (prio: %d)", msg, thread, thread->osthread()->thread_id(), name, prio);
-}
-#endif
-
-
 ThreadPriority Thread::get_priority(const Thread* const thread) {
-  trace("get priority", thread);
   ThreadPriority priority;
   // Can return an error!
   (void)os::get_priority(thread, priority);
@@ -418,7 +383,6 @@ ThreadPriority Thread::get_priority(const Thread* const thread) {
 }
 
 void Thread::set_priority(Thread* thread, ThreadPriority priority) {
-  trace("set priority", thread);
   debug_only(check_for_dangling_thread_pointer(thread);)
   // Can return an error!
   (void)os::set_priority(thread, priority);
@@ -426,7 +390,6 @@ void Thread::set_priority(Thread* thread, ThreadPriority priority) {
 
 
 void Thread::start(Thread* thread) {
-  trace("start", thread);
   // Start is different from resume in that its safety is guaranteed by context or
   // being called from a Java method synchronized on the Thread object.
   if (!DisableStartThread) {
@@ -769,13 +732,11 @@ bool JavaThread::profile_last_Java_frame(frame* _fr) {
 }
 
 void Thread::interrupt(Thread* thread) {
-  trace("interrupt", thread);
   debug_only(check_for_dangling_thread_pointer(thread);)
   os::interrupt(thread);
 }
 
 bool Thread::is_interrupted(Thread* thread, bool clear_interrupted) {
-  trace("is_interrupted", thread);
   debug_only(check_for_dangling_thread_pointer(thread);)
   // Note:  If clear_interrupted==false, this simply fetches and
   // returns the value of the field osthread()->interrupted().
@@ -1563,9 +1524,6 @@ JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
                        _dirty_card_queue(&_dirty_card_queue_set)
 #endif // INCLUDE_ALL_GCS
 {
-  if (TraceThreadEvents) {
-    tty->print_cr("creating thread %p", this);
-  }
   initialize();
   _jni_attach_state = _not_attaching_via_jni;
   set_entry_point(entry_point);
@@ -1588,9 +1546,6 @@ JavaThread::JavaThread(ThreadFunction entry_point, size_t stack_sz) :
 }
 
 JavaThread::~JavaThread() {
-  if (TraceThreadEvents) {
-    tty->print_cr("terminate thread %p", this);
-  }
 
   // JSR166 -- return the parker to the free list
   Parker::Release(_parker);
@@ -2872,14 +2827,12 @@ const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
   const char* name_str;
   oop thread_obj = threadObj();
   if (thread_obj != NULL) {
-    typeArrayOop name = java_lang_Thread::name(thread_obj);
+    oop name = java_lang_Thread::name(thread_obj);
     if (name != NULL) {
       if (buf == NULL) {
-        name_str = UNICODE::as_utf8((jchar*) name->base(T_CHAR),
-                                    name->length());
+        name_str = java_lang_String::as_utf8_string(name);
       } else {
-        name_str = UNICODE::as_utf8((jchar*) name->base(T_CHAR),
-                                    name->length(), buf, buflen);
+        name_str = java_lang_String::as_utf8_string(name, buf, buflen);
       }
     } else if (is_attaching_via_jni()) { // workaround for 6412693 - see 6404306
       name_str = "<no-name - thread is attaching>";

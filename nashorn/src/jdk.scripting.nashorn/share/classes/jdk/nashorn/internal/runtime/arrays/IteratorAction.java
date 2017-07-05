@@ -25,11 +25,7 @@
 
 package jdk.nashorn.internal.runtime.arrays;
 
-import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
-
-import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.runtime.Context;
-import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
@@ -98,17 +94,7 @@ public abstract class IteratorAction<T> {
      * @return result of apply
      */
     public final T apply() {
-        final boolean strict;
-        if (callbackfn instanceof ScriptFunction) {
-            strict = ((ScriptFunction)callbackfn).isStrict();
-        } else if (callbackfn instanceof JSObject &&
-            ((JSObject)callbackfn).isFunction()) {
-            strict = ((JSObject)callbackfn).isStrictFunction();
-        } else if (Bootstrap.isDynamicMethod(callbackfn) || Bootstrap.isFunctionalInterfaceObject(callbackfn)) {
-            strict = false;
-        } else {
-            throw typeError("not.a.function", ScriptRuntime.safeToString(callbackfn));
-        }
+        final boolean strict = Bootstrap.isStrictCallable(callbackfn);
 
         // for non-strict callback, need to translate undefined thisArg to be global object
         thisArg = (thisArg == ScriptRuntime.UNDEFINED && !strict)? Context.getGlobal() : thisArg;

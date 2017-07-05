@@ -30,11 +30,8 @@
 
 import java.awt.*;
 
-import sun.awt.SunToolkit;
-
 public class ExceptionOnSetExtendedStateTest {
     private static final int[] frameStates = { Frame.NORMAL, Frame.ICONIFIED, Frame.MAXIMIZED_BOTH };
-    private static final SunToolkit toolkit = (SunToolkit)Toolkit.getDefaultToolkit();
 
     private static boolean validatePlatform() {
         String osName = System.getProperty("os.name");
@@ -53,7 +50,13 @@ public class ExceptionOnSetExtendedStateTest {
         frame.setSize(200, 200);
         frame.setUndecorated(!decoratedFrame);
         frame.setVisible(true);
-        toolkit.realSync();
+        try {
+            Robot robot = new Robot();
+            robot.waitForIdle();
+        }catch(Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Unexpected failure");
+        }
 
         frame.setExtendedState(oldState);
         sleep(1000);

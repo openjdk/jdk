@@ -21,8 +21,6 @@
  * questions.
  */
 
-import sun.awt.SunToolkit;
-
 import javax.swing.*;
 import java.awt.*;
 import java.io.ByteArrayInputStream;
@@ -54,7 +52,8 @@ public class OwnedWindowsSerialization {
             subDialog = new Dialog(dialog, SUBDIALOG_LABEL);
         });
 
-        ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+        Robot robot = new Robot();
+        robot.waitForIdle();
 
         if (!topFrame.isAlwaysOnTop() || !dialog.isAlwaysOnTop() || !subDialog.isAlwaysOnTop()) {
             throw new RuntimeException("TEST FAILED: AlwaysOnTop was not set properly");

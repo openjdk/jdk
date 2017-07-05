@@ -31,12 +31,11 @@
   @run main WarningWindowDisposeTest
 */
 
-import sun.applet.AppletSecurity;
-import sun.awt.SunToolkit;
-
 import java.awt.*;
 import java.awt.Toolkit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.security.Permission;
+import java.io.File;
 
 import test.java.awt.regtesthelpers.process.ProcessCommunicator;
 import test.java.awt.regtesthelpers.process.ProcessResults;
@@ -57,7 +56,9 @@ public class WarningWindowDisposeTest {
         }, "TimeoutThread").start();
 
         String classpath = System.getProperty("java.class.path");
-        ProcessResults pres = ProcessCommunicator.executeChildProcess(TestApplication.class, classpath, new String[0]);
+        String policyPath = System.getProperty("test.src")+File.separatorChar+"policy";
+        System.out.println("policyPath in main: "+policyPath);
+        ProcessResults pres = ProcessCommunicator.executeChildProcess(TestApplication.class, classpath+" -Djava.security.manager -Djava.security.policy="+policyPath, new String[0]);
         passed.set(true);
         if (pres.getStdErr() != null && pres.getStdErr().length() > 0) {
             System.err.println("========= Child VM System.err ========");
@@ -74,14 +75,16 @@ public class WarningWindowDisposeTest {
 
     public static class TestApplication {
         public static void main(String[] args) throws Exception {
-            System.setSecurityManager(new AppletSecurity() {
-                @Override
-                public void checkPackageAccess (String s){
-                }
-            });
+            Robot robot;
+            try{
+                robot = new Robot();
+            }catch(Exception ex) {
+                ex.printStackTrace();
+                throw new RuntimeException("Cannot create Robot");
+            }
             Frame f = new Frame("Test frame");
             f.setVisible(true);
-            ((SunToolkit) Toolkit.getDefaultToolkit()).realSync();
+            robot.waitForIdle();
             Thread.sleep(500);
             f.setVisible(false);
             f.dispose();

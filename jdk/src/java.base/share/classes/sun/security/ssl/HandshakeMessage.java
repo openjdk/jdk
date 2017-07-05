@@ -1963,6 +1963,7 @@ static final class Finished extends HandshakeMessage {
                  * algorithm.  If we ever run across a different
                  * length, this call will need to be updated.
                  */
+                @SuppressWarnings("deprecation")
                 TlsPrfParameterSpec spec = new TlsPrfParameterSpec(
                     masterKey, tlsLabel, seed, 12,
                     prfHashAlg, prfHashLength, prfBlockSize);

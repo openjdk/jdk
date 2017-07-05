@@ -30,7 +30,6 @@
 */
 
 import java.awt.*;
-import sun.awt.SunToolkit;
 
 public class SingleModeDeselect
 {
@@ -50,7 +49,13 @@ public class SingleModeDeselect
         list.select(0);
         list.deselect(1);
 
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
+        try {
+            Robot robot = new Robot();
+            robot.waitForIdle();
+        }catch(Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException("Unexpected failure");
+        }
 
         if (list.getSelectedIndex() != 0){
             throw new RuntimeException("Test failed: List.getSelectedIndex() returns "+list.getSelectedIndex());

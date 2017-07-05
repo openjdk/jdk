@@ -55,7 +55,10 @@ class ageTable VALUE_OBJ_CLASS_SPEC {
 
   // add entry
   void add(oop p, size_t oop_size) {
-    uint age = p->age();
+    add(p->age(), oop_size);
+  }
+
+  void add(uint age, size_t oop_size) {
     assert(age > 0 && age < table_size, "invalid age of object");
     sizes[age] += oop_size;
   }

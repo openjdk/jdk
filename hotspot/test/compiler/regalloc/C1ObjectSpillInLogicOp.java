@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8027751
+ * @requires vm.gc=="G1" | vm.gc=="null"
  * @summary C1 crashes generating G1 post-barrier in Unsafe.getAndSetObject() intrinsic because of the new value spill
  * @run main/othervm -XX:+UseG1GC C1ObjectSpillInLogicOp
  *

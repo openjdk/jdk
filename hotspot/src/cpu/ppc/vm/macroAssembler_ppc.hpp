@@ -27,6 +27,7 @@
 #define CPU_PPC_VM_MACROASSEMBLER_PPC_HPP
 
 #include "asm/assembler.hpp"
+#include "utilities/macros.hpp"
 
 // MacroAssembler extends Assembler by a few frequently used macros.
 

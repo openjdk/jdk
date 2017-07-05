@@ -61,7 +61,7 @@ public class RMIConnector_NPETest {
                     // ignore
                 }
             }
-            rmid.shutdown(rmidPort);
+            rmid.destroy();
         }
 
         if (failureCause != null) {

@@ -33,15 +33,12 @@ import java.awt.*;
 import java.awt.event.*;
 
 import com.sun.awt.AWTUtilities;
-import sun.awt.SunToolkit;
 
 public class WindowOpacity
 {
     //*** test-writer defined static variables go here ***
 
-    private static void realSync() {
-        ((SunToolkit)Toolkit.getDefaultToolkit()).realSync();
-    }
+   private static Robot robot;
 
 
     private static void init()
@@ -59,6 +56,12 @@ public class WindowOpacity
         if (!AWTUtilities.isTranslucencySupported(AWTUtilities.Translucency.TRANSLUCENT)) {
             System.out.println("Either the Toolkit or the native system does not support controlling the window opacity level.");
             pass();
+        }
+        try {
+            robot = new Robot();
+        }catch(Exception ex) {
+            ex.printStackTrace();
+            throw new RuntimeException ("Unexpected failure");
         }
 
         boolean passed;
@@ -137,7 +140,7 @@ public class WindowOpacity
         f.setBounds(100, 100, 300, 200);
         f.setVisible(true);
 
-        realSync();
+        robot.waitForIdle();
 
         curOpacity = AWTUtilities.getWindowOpacity(f);
         if (curOpacity < 0.75f || curOpacity > 0.75f) {
@@ -147,7 +150,7 @@ public class WindowOpacity
 
 
         AWTUtilities.setWindowOpacity(f, 0.5f);
-        realSync();
+        robot.waitForIdle();
 
         curOpacity = AWTUtilities.getWindowOpacity(f);
         if (curOpacity < 0.5f || curOpacity > 0.5f) {

@@ -24,6 +24,8 @@
    @bug 4251301
    @summary Keybinding for show/hide the system menu.
    @author Andrey Pikalev
+   @library ../../../../lib/testlibrary
+   @build jdk.testlibrary.OSInfo
    @run main/manual bug4251301
 */
 
@@ -32,12 +34,10 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.beans.*;
-import sun.awt.OSInfo;
-import sun.awt.SunToolkit;
+import jdk.testlibrary.OSInfo;
 
 
 public class bug4251301 {
-    private static final SunToolkit toolkit = (SunToolkit) Toolkit.getDefaultToolkit();
     static Test test = new Test();
     public static void main(String[] args) throws Exception {
         if (OSInfo.getOSType() == OSInfo.OSType.MACOSX) {
@@ -50,7 +50,8 @@ public class bug4251301 {
                 createAndShowGUI();
             }
         });
-        toolkit.realSync();
+        Robot robot = new Robot();
+        robot.waitForIdle();
         test.waitTestResult();
     }
 

@@ -28,7 +28,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
-import sun.awt.SunToolkit;
+import java.awt.Robot;
 
 /**
  * @test
@@ -65,7 +65,8 @@ public class MaximizedToMaximized {
 
         Rectangle frameBounds = frame.getBounds();
         frame.setExtendedState(Frame.MAXIMIZED_BOTH);
-        ((SunToolkit) toolkit).realSync();
+        Robot robot = new Robot();
+        robot.waitForIdle();
 
         Rectangle maximizedFrameBounds = frame.getBounds();
         if (maximizedFrameBounds.width < frameBounds.width

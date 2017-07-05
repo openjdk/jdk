@@ -27,28 +27,30 @@ package sun.hotspot.code;
 import java.lang.reflect.Executable;
 import sun.hotspot.WhiteBox;
 
-public class NMethod {
+public class NMethod extends CodeBlob {
   private static final WhiteBox wb = WhiteBox.getWhiteBox();
   public static NMethod get(Executable method, boolean isOsr) {
     Object[] obj = wb.getNMethod(method, isOsr);
     return obj == null ? null : new NMethod(obj);
   }
   private NMethod(Object[] obj) {
-    assert obj.length == 3;
-    comp_level = (Integer) obj[0];
-    insts = (byte[]) obj[1];
-    compile_id = (Integer) obj[2];
+    super((Object[])obj[0]);
+    assert obj.length == 4;
+    comp_level = (Integer) obj[1];
+    insts = (byte[]) obj[2];
+    compile_id = (Integer) obj[3];
   }
-  public byte[] insts;
-  public int comp_level;
-  public int compile_id;
+  public final byte[] insts;
+  public final int comp_level;
+  public final int compile_id;
 
   @Override
   public String toString() {
-    return "NMethod{" +
-        "insts=" + insts +
-        ", comp_level=" + comp_level +
-        ", compile_id=" + compile_id +
-        '}';
+    return "NMethod{"
+        + super.toString()
+        + ", insts=" + insts
+        + ", comp_level=" + comp_level
+        + ", compile_id=" + compile_id
+        + '}';
   }
 }

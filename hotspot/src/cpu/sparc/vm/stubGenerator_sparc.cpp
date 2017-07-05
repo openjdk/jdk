@@ -4813,6 +4813,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_atomic_add_entry          = generate_atomic_add();
     StubRoutines::_atomic_xchg_ptr_entry     = StubRoutines::_atomic_xchg_entry;
     StubRoutines::_atomic_cmpxchg_ptr_entry  = StubRoutines::_atomic_cmpxchg_entry;
+    StubRoutines::_atomic_cmpxchg_byte_entry = ShouldNotCallThisStub();
     StubRoutines::_atomic_cmpxchg_long_entry = generate_atomic_cmpxchg_long();
     StubRoutines::_atomic_add_ptr_entry      = StubRoutines::_atomic_add_entry;
 #endif  // COMPILER2 !=> _LP64
