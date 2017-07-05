@@ -26,77 +26,65 @@
 package sun.dyn;
 
 import java.dyn.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Parts of CallSite known to the JVM.
- * FIXME: Merge all this into CallSite proper.
  * @author jrose
  */
 public class CallSiteImpl {
-    // Field used only by the JVM.  Do not use or change.
-    private Object vmmethod;
-
-    // Values supplied by the JVM:
-    protected int callerMID, callerBCI;
-
-    private MethodHandle target;
-    protected final Object caller;  // usually a class
-    protected final String name;
-    protected final MethodType type;
-
-    /** called only directly from CallSite() */
-    protected CallSiteImpl(Access token, Object caller, String name, MethodType type) {
-        Access.check(token);
-        this.caller = caller;
-        this.name = name;
-        this.type = type;
-    }
-
-    /** native version of setTarget */
-    protected void setTarget(MethodHandle mh) {
-        //System.out.println("setTarget "+this+" := "+mh);
-        // XXX I don't know how to fix this properly.
-//         if (false && MethodHandleNatives.JVM_SUPPORT) // FIXME: enable this
-//             MethodHandleNatives.linkCallSite(this, mh);
-//         else
-            this.target = mh;
-    }
-
-    protected MethodHandle getTarget() {
-        return target;
-    }
-
-    private static final MethodHandle PRIVATE_INITIALIZE_CALL_SITE =
-            MethodHandleImpl.IMPL_LOOKUP.findStatic(CallSite.class, "privateInitializeCallSite",
-                MethodType.methodType(void.class, CallSite.class, int.class, int.class));
-
-    // this is the up-call from the JVM:
-    static CallSite makeSite(Class<?> caller, String name, MethodType type,
-                             int callerMID, int callerBCI) {
-        MethodHandle bsm = Linkage.getBootstrapMethod(caller);
-        if (bsm == null)
-            throw new InvokeDynamicBootstrapError("class has no bootstrap method: "+caller);
+    // this implements the upcall from the JVM, MethodHandleNatives.makeDynamicCallSite:
+    static CallSite makeSite(MethodHandle bootstrapMethod,
+                             // Callee information:
+                             String name, MethodType type,
+                             // Call-site attributes, if any:
+                             Object info,
+                             // Caller information:
+                             MemberName callerMethod, int callerBCI) {
+        Class<?> caller = callerMethod.getDeclaringClass();
+        if (bootstrapMethod == null) {
+            // If there is no bootstrap method, throw IncompatibleClassChangeError.
+            // This is a valid generic error type for resolution (JLS 12.3.3).
+            throw new IncompatibleClassChangeError
+                ("Class "+caller.getName()+" has not declared a bootstrap method for invokedynamic");
+        }
         CallSite site;
         try {
-            site = bsm.<CallSite>invoke(caller, name, type);
+            if (bootstrapMethod.type().parameterCount() == 3)
+                site = bootstrapMethod.<CallSite>invokeExact(caller, name, type);
+            else if (bootstrapMethod.type().parameterCount() == 4)
+                site = bootstrapMethod.<CallSite>invokeExact(caller, name, type,
+                                                             !(info instanceof java.lang.annotation.Annotation[]) ? null
+                                                             : (java.lang.annotation.Annotation[]) info);
+            else
+                throw new InternalError("bad BSM: "+bootstrapMethod);
+            if (!(site instanceof CallSite))
+                throw new InvokeDynamicBootstrapError("class bootstrap method failed to create a call site: "+caller);
+            PRIVATE_INITIALIZE_CALL_SITE.<void>invokeExact(site,
+                                                           name, type,
+                                                           callerMethod, callerBCI);
+            assert(site.getTarget() != null);
+            assert(site.getTarget().type().equals(type));
         } catch (Throwable ex) {
-            throw new InvokeDynamicBootstrapError("exception thrown while linking", ex);
-        }
-        if (site == null)
-            throw new InvokeDynamicBootstrapError("class bootstrap method failed to create a call site: "+caller);
-        if (site.type() != type)
-            throw new InvokeDynamicBootstrapError("call site type not initialized correctly: "+site);
-        if (site.callerClass() != caller)
-            throw new InvokeDynamicBootstrapError("call site caller not initialized correctly: "+site);
-        if ((Object)site.name() != name)
-            throw new InvokeDynamicBootstrapError("call site name not initialized correctly: "+site);
-        try {
-            PRIVATE_INITIALIZE_CALL_SITE.<void>invoke(site, callerMID, callerBCI);
-        } catch (Throwable ex) {
-            throw new InvokeDynamicBootstrapError("call site initialization exception", ex);
+            InvokeDynamicBootstrapError bex;
+            if (ex instanceof InvokeDynamicBootstrapError)
+                bex = (InvokeDynamicBootstrapError) ex;
+            else
+                bex = new InvokeDynamicBootstrapError("call site initialization exception", ex);
+            throw bex;
         }
         return site;
+    }
+
+    // This method is private in CallSite because it touches private fields in CallSite.
+    // These private fields (vmmethod, vmindex) are specific to the JVM.
+    private static final MethodHandle PRIVATE_INITIALIZE_CALL_SITE =
+            MethodHandleImpl.IMPL_LOOKUP.findVirtual(CallSite.class, "initializeFromJVM",
+                MethodType.methodType(void.class,
+                                      String.class, MethodType.class,
+                                      MemberName.class, int.class));
+
+    public static void setCallSiteTarget(Access token, CallSite site, MethodHandle target) {
+        Access.check(token);
+        MethodHandleNatives.setCallSiteTarget(site, target);
     }
 }

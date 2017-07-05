@@ -41,7 +41,7 @@ class ValueStack: public CompilationResourceObj {
   }
 
   // helper routine
-  static void apply(Values list, void f(Value*));
+  static void apply(Values list, ValueVisitor* f);
 
  public:
   // creation
@@ -143,7 +143,7 @@ class ValueStack: public CompilationResourceObj {
   void pin_stack_for_linear_scan();
 
   // iteration
-  void values_do(void f(Value*));
+  void values_do(ValueVisitor* f);
 
   // untyped manipulation (for dup_x1, etc.)
   void clear_stack()                             { _stack.clear(); }

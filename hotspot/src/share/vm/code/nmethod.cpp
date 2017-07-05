@@ -99,12 +99,12 @@ struct nmethod_stats_struct {
     code_size           += nm->code_size();
     stub_size           += nm->stub_size();
     consts_size         += nm->consts_size();
+    oops_size           += nm->oops_size();
     scopes_data_size    += nm->scopes_data_size();
     scopes_pcs_size     += nm->scopes_pcs_size();
     dependencies_size   += nm->dependencies_size();
     handler_table_size  += nm->handler_table_size();
     nul_chk_table_size  += nm->nul_chk_table_size();
-    oops_size += nm->oops_size();
   }
   void print_nmethod_stats() {
     if (nmethod_count == 0)  return;
@@ -114,12 +114,12 @@ struct nmethod_stats_struct {
     if (code_size != 0)           tty->print_cr(" main code      = %d", code_size);
     if (stub_size != 0)           tty->print_cr(" stub code      = %d", stub_size);
     if (consts_size != 0)         tty->print_cr(" constants      = %d", consts_size);
+    if (oops_size != 0)           tty->print_cr(" oops           = %d", oops_size);
     if (scopes_data_size != 0)    tty->print_cr(" scopes data    = %d", scopes_data_size);
     if (scopes_pcs_size != 0)     tty->print_cr(" scopes pcs     = %d", scopes_pcs_size);
     if (dependencies_size != 0)   tty->print_cr(" dependencies   = %d", dependencies_size);
     if (handler_table_size != 0)  tty->print_cr(" handler table  = %d", handler_table_size);
     if (nul_chk_table_size != 0)  tty->print_cr(" nul chk table  = %d", nul_chk_table_size);
-    if (oops_size != 0)           tty->print_cr(" oops           = %d", oops_size);
   }
 
   int native_nmethod_count;
@@ -600,7 +600,8 @@ nmethod::nmethod(
 #endif // def HAVE_DTRACE_H
     _stub_offset             = data_offset();
     _consts_offset           = data_offset();
-    _scopes_data_offset      = data_offset();
+    _oops_offset             = data_offset();
+    _scopes_data_offset      = _oops_offset          + round_to(code_buffer->total_oop_size(), oopSize);
     _scopes_pcs_offset       = _scopes_data_offset;
     _dependencies_offset     = _scopes_pcs_offset;
     _handler_table_offset    = _dependencies_offset;
@@ -690,7 +691,8 @@ nmethod::nmethod(
     _orig_pc_offset          = 0;
     _stub_offset             = data_offset();
     _consts_offset           = data_offset();
-    _scopes_data_offset      = data_offset();
+    _oops_offset             = data_offset();
+    _scopes_data_offset      = _oops_offset          + round_to(code_buffer->total_oop_size(), oopSize);
     _scopes_pcs_offset       = _scopes_data_offset;
     _dependencies_offset     = _scopes_pcs_offset;
     _handler_table_offset    = _dependencies_offset;
@@ -805,8 +807,9 @@ nmethod::nmethod(
       _unwind_handler_offset   = -1;
     }
     _consts_offset           = instructions_offset() + code_buffer->total_offset_of(code_buffer->consts()->start());
-    _scopes_data_offset      = data_offset();
-    _scopes_pcs_offset       = _scopes_data_offset   + round_to(debug_info->data_size         (), oopSize);
+    _oops_offset             = data_offset();
+    _scopes_data_offset      = _oops_offset          + round_to(code_buffer->total_oop_size (), oopSize);
+    _scopes_pcs_offset       = _scopes_data_offset   + round_to(debug_info->data_size       (), oopSize);
     _dependencies_offset     = _scopes_pcs_offset    + adjust_pcs_size(debug_info->pcs_size());
     _handler_table_offset    = _dependencies_offset  + round_to(dependencies->size_in_bytes (), oopSize);
     _nul_chk_table_offset    = _handler_table_offset + round_to(handler_table->size_in_bytes(), oopSize);
@@ -987,6 +990,79 @@ void nmethod::print_nmethod(bool printmethod) {
 
 void nmethod::set_version(int v) {
   flags.version = v;
+}
+
+
+// Promote one word from an assembly-time handle to a live embedded oop.
+inline void nmethod::initialize_immediate_oop(oop* dest, jobject handle) {
+  if (handle == NULL ||
+      // As a special case, IC oops are initialized to 1 or -1.
+      handle == (jobject) Universe::non_oop_word()) {
+    (*dest) = (oop) handle;
+  } else {
+    (*dest) = JNIHandles::resolve_non_null(handle);
+  }
+}
+
+
+void nmethod::copy_oops(GrowableArray<jobject>* array) {
+  //assert(oops_size() == 0, "do this handshake just once, please");
+  int length = array->length();
+  assert((address)(oops_begin() + length) <= data_end(), "oops big enough");
+  oop* dest = oops_begin();
+  for (int index = 0 ; index < length; index++) {
+    initialize_immediate_oop(&dest[index], array->at(index));
+  }
+
+  // Now we can fix up all the oops in the code.  We need to do this
+  // in the code because the assembler uses jobjects as placeholders.
+  // The code and relocations have already been initialized by the
+  // CodeBlob constructor, so it is valid even at this early point to
+  // iterate over relocations and patch the code.
+  fix_oop_relocations(NULL, NULL, /*initialize_immediates=*/ true);
+}
+
+
+bool nmethod::is_at_poll_return(address pc) {
+  RelocIterator iter(this, pc, pc+1);
+  while (iter.next()) {
+    if (iter.type() == relocInfo::poll_return_type)
+      return true;
+  }
+  return false;
+}
+
+
+bool nmethod::is_at_poll_or_poll_return(address pc) {
+  RelocIterator iter(this, pc, pc+1);
+  while (iter.next()) {
+    relocInfo::relocType t = iter.type();
+    if (t == relocInfo::poll_return_type || t == relocInfo::poll_type)
+      return true;
+  }
+  return false;
+}
+
+
+void nmethod::fix_oop_relocations(address begin, address end, bool initialize_immediates) {
+  // re-patch all oop-bearing instructions, just in case some oops moved
+  RelocIterator iter(this, begin, end);
+  while (iter.next()) {
+    if (iter.type() == relocInfo::oop_type) {
+      oop_Relocation* reloc = iter.oop_reloc();
+      if (initialize_immediates && reloc->oop_is_immediate()) {
+        oop* dest = reloc->oop_addr();
+        initialize_immediate_oop(dest, (jobject) *dest);
+      }
+      // Refresh the oop-related bits of this instruction.
+      reloc->fix_oop_relocation();
+    }
+
+    // There must not be any interfering patches or breakpoints.
+    assert(!(iter.type() == relocInfo::breakpoint_type
+             && iter.breakpoint_reloc()->active()),
+           "no active breakpoint");
+  }
 }
 
 
@@ -1266,19 +1342,7 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   // and it hasn't already been reported for this nmethod then report it now.
   // (the event may have been reported earilier if the GC marked it for unloading).
   if (state == zombie) {
-
-    DTRACE_METHOD_UNLOAD_PROBE(method());
-
-    if (JvmtiExport::should_post_compiled_method_unload() &&
-        !unload_reported()) {
-      assert(method() != NULL, "checking");
-      {
-        HandleMark hm;
-        JvmtiExport::post_compiled_method_unload_at_safepoint(
-            method()->jmethod_id(), code_begin());
-      }
-      set_unload_reported();
-    }
+    post_compiled_method_unload();
   }
 
 
@@ -1430,6 +1494,12 @@ void nmethod::post_compiled_method_load_event() {
 }
 
 void nmethod::post_compiled_method_unload() {
+  if (unload_reported()) {
+    // During unloading we transition to unloaded and then to zombie
+    // and the unloading is reported during the first transition.
+    return;
+  }
+
   assert(_method != NULL && !is_unloaded(), "just checking");
   DTRACE_METHOD_UNLOAD_PROBE(method());
 
@@ -1439,8 +1509,7 @@ void nmethod::post_compiled_method_unload() {
   if (JvmtiExport::should_post_compiled_method_unload()) {
     assert(!unload_reported(), "already unloaded");
     HandleMark hm;
-    JvmtiExport::post_compiled_method_unload_at_safepoint(
-                      method()->jmethod_id(), code_begin());
+    JvmtiExport::post_compiled_method_unload(method()->jmethod_id(), code_begin());
   }
 
   // The JVMTI CompiledMethodUnload event can be enabled or disabled at
@@ -2282,6 +2351,10 @@ void nmethod::print() const {
                                               consts_begin(),
                                               consts_end(),
                                               consts_size());
+  if (oops_size         () > 0) tty->print_cr(" oops           [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
+                                              oops_begin(),
+                                              oops_end(),
+                                              oops_size());
   if (scopes_data_size  () > 0) tty->print_cr(" scopes data    [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
                                               scopes_data_begin(),
                                               scopes_data_end(),

@@ -31,7 +31,7 @@ inline HeapWord* ThreadLocalAllocBuffer::allocate(size_t size) {
     // Skip mangling the space corresponding to the object header to
     // ensure that the returned space is not considered parsable by
     // any concurrent GC thread.
-    size_t hdr_size = CollectedHeap::min_fill_size();
+    size_t hdr_size = oopDesc::header_size();
     Copy::fill_to_words(obj + hdr_size, size - hdr_size, badHeapWordVal);
 #endif // ASSERT
     // This addition is safe because we know that top is

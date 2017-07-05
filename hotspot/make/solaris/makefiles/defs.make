@@ -80,12 +80,10 @@ ifeq ($(ARCH_DATA_MODEL), 32)
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.so 
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_db.so 
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm_dtrace.so 
-  ifeq ($(ARCH),sparc)
-    EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_db.so
-    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_db.so
-    EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_dtrace.so
-    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_dtrace.so
-  endif
+  EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_db.so
+  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_db.so
+  EXPORT_LIST += $(EXPORT_SERVER_DIR)/64/libjvm_dtrace.so
+  EXPORT_LIST += $(EXPORT_CLIENT_DIR)/64/libjvm_dtrace.so
 endif
 
 EXPORT_LIST += $(EXPORT_JRE_LIB_ARCH_DIR)/libsaproc.so

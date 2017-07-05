@@ -84,7 +84,22 @@ enum {
     JVM_CONSTANT_Fieldref               = 9,
     JVM_CONSTANT_Methodref              = 10,
     JVM_CONSTANT_InterfaceMethodref     = 11,
-    JVM_CONSTANT_NameAndType            = 12
+    JVM_CONSTANT_NameAndType            = 12,
+    JVM_CONSTANT_MethodHandle           = 15,  // JSR 292
+    JVM_CONSTANT_MethodType             = 16   // JSR 292
+};
+
+/* JVM_CONSTANT_MethodHandle subtypes */
+enum {
+    JVM_REF_getField                = 1,
+    JVM_REF_getStatic               = 2,
+    JVM_REF_putField                = 3,
+    JVM_REF_putStatic               = 4,
+    JVM_REF_invokeVirtual           = 5,
+    JVM_REF_invokeStatic            = 6,
+    JVM_REF_invokeSpecial           = 7,
+    JVM_REF_newInvokeSpecial        = 8,
+    JVM_REF_invokeInterface         = 9
 };
 
 /* StackMapTable type item numbers */

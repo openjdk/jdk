@@ -3644,7 +3644,7 @@ void G1CollectedHeap::par_allocate_remaining_space(HeapRegion* r) {
   do {
     free_words = r->free()/HeapWordSize;
     // If there's too little space, no one can allocate, so we're done.
-    if (free_words < (size_t)oopDesc::header_size()) return;
+    if (free_words < CollectedHeap::min_fill_size()) return;
     // Otherwise, try to claim it.
     block = r->par_allocate(free_words);
   } while (block == NULL);
