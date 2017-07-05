@@ -2625,6 +2625,15 @@ Metadata* java_lang_invoke_MemberName::vmtarget(oop mname) {
   return (Metadata*)mname->address_field(_vmtarget_offset);
 }
 
+#if INCLUDE_JVMTI
+// Can be executed on VM thread only
+void java_lang_invoke_MemberName::adjust_vmtarget(oop mname, Metadata* ref) {
+  assert((is_instance(mname) && (flags(mname) & (MN_IS_METHOD | MN_IS_CONSTRUCTOR)) > 0), "wrong type");
+  assert(Thread::current()->is_VM_thread(), "not VM thread");
+  mname->address_field_put(_vmtarget_offset, (address)ref);
+}
+#endif // INCLUDE_JVMTI
+
 void java_lang_invoke_MemberName::set_vmtarget(oop mname, Metadata* ref) {
   assert(is_instance(mname), "wrong type");
   // check the type of the vmtarget

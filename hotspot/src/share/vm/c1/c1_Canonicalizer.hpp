@@ -108,7 +108,9 @@ class Canonicalizer: InstructionVisitor {
   virtual void do_RuntimeCall    (RuntimeCall*     x);
   virtual void do_MemBar         (MemBar*          x);
   virtual void do_RangeCheckPredicate(RangeCheckPredicate* x);
+#ifdef ASSERT
   virtual void do_Assert         (Assert*          x);
+#endif
 };
 
 #endif // SHARE_VM_C1_C1_CANONICALIZER_HPP

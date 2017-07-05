@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,15 +104,19 @@ const char* InvocationCounter::state_as_short_string(State state) {
 
 static address do_nothing(methodHandle method, TRAPS) {
   // dummy action for inactive invocation counters
-  method->invocation_counter()->set_carry();
-  method->invocation_counter()->set_state(InvocationCounter::wait_for_nothing);
+  MethodCounters* mcs = method->method_counters();
+  assert(mcs != NULL, "");
+  mcs->invocation_counter()->set_carry();
+  mcs->invocation_counter()->set_state(InvocationCounter::wait_for_nothing);
   return NULL;
 }
 
 
 static address do_decay(methodHandle method, TRAPS) {
   // decay invocation counters so compilation gets delayed
-  method->invocation_counter()->decay();
+  MethodCounters* mcs = method->method_counters();
+  assert(mcs != NULL, "");
+  mcs->invocation_counter()->decay();
   return NULL;
 }
 

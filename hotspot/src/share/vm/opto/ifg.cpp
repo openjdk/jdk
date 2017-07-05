@@ -286,15 +286,14 @@ void PhaseIFG::verify( const PhaseChaitin *pc ) const {
     uint idx;
     uint last = 0;
     while ((idx = elements.next()) != 0) {
-      assert( idx != i, "Must have empty diagonal");
-      assert( pc->Find_const(idx) == idx, "Must not need Find" );
-      assert( _adjs[idx].member(i), "IFG not square" );
-      assert( !(*_yanked)[idx], "No yanked neighbors" );
-      assert( last < idx, "not sorted increasing");
+      assert(idx != i, "Must have empty diagonal");
+      assert(pc->_lrg_map.find_const(idx) == idx, "Must not need Find");
+      assert(_adjs[idx].member(i), "IFG not square");
+      assert(!(*_yanked)[idx], "No yanked neighbors");
+      assert(last < idx, "not sorted increasing");
       last = idx;
     }
-    assert( !lrgs(i)._degree_valid ||
-            effective_degree(i) == lrgs(i).degree(), "degree is valid but wrong" );
+    assert(!lrgs(i)._degree_valid || effective_degree(i) == lrgs(i).degree(), "degree is valid but wrong");
   }
 }
 #endif
@@ -342,10 +341,10 @@ void PhaseChaitin::build_ifg_virtual( ) {
       Node *n = b->_nodes[j-1];
 
       // Get value being defined
-      uint r = n2lidx(n);
+      uint r = _lrg_map.live_range_id(n);
 
       // Some special values do not allocate
-      if( r ) {
+      if (r) {
 
         // Remove from live-out set
         liveout->remove(r);
@@ -353,16 +352,19 @@ void PhaseChaitin::build_ifg_virtual( ) {
         // Copies do not define a new value and so do not interfere.
         // Remove the copies source from the liveout set before interfering.
         uint idx = n->is_Copy();
-        if( idx ) liveout->remove( n2lidx(n->in(idx)) );
+        if (idx) {
+          liveout->remove(_lrg_map.live_range_id(n->in(idx)));
+        }
 
         // Interfere with everything live
-        interfere_with_live( r, liveout );
+        interfere_with_live(r, liveout);
       }
 
       // Make all inputs live
-      if( !n->is_Phi() ) {      // Phi function uses come from prior block
-        for( uint k = 1; k < n->req(); k++ )
-          liveout->insert( n2lidx(n->in(k)) );
+      if (!n->is_Phi()) {      // Phi function uses come from prior block
+        for(uint k = 1; k < n->req(); k++) {
+          liveout->insert(_lrg_map.live_range_id(n->in(k)));
+        }
       }
 
       // 2-address instructions always have the defined value live
@@ -394,11 +396,12 @@ void PhaseChaitin::build_ifg_virtual( ) {
           n->set_req( 2, tmp );
         }
         // Defined value interferes with all inputs
-        uint lidx = n2lidx(n->in(idx));
-        for( uint k = 1; k < n->req(); k++ ) {
-          uint kidx = n2lidx(n->in(k));
-          if( kidx != lidx )
-            _ifg->add_edge( r, kidx );
+        uint lidx = _lrg_map.live_range_id(n->in(idx));
+        for (uint k = 1; k < n->req(); k++) {
+          uint kidx = _lrg_map.live_range_id(n->in(k));
+          if (kidx != lidx) {
+            _ifg->add_edge(r, kidx);
+          }
         }
       }
     } // End of forall instructions in block
@@ -542,10 +545,10 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
       Node *n = b->_nodes[j - 1];
 
       // Get value being defined
-      uint r = n2lidx(n);
+      uint r = _lrg_map.live_range_id(n);
 
       // Some special values do not allocate
-      if( r ) {
+      if(r) {
         // A DEF normally costs block frequency; rematerialized values are
         // removed from the DEF sight, so LOWER costs here.
         lrgs(r)._cost += n->rematerialize() ? 0 : b->_freq;
@@ -556,9 +559,11 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
           Node *def = n->in(0);
           if( !n->is_Proj() ||
               // Could also be a flags-projection of a dead ADD or such.
-              (n2lidx(def) && !liveout.member(n2lidx(def)) ) ) {
+              (_lrg_map.live_range_id(def) && !liveout.member(_lrg_map.live_range_id(def)))) {
             b->_nodes.remove(j - 1);
-            if( lrgs(r)._def == n ) lrgs(r)._def = 0;
+            if (lrgs(r)._def == n) {
+              lrgs(r)._def = 0;
+            }
             n->disconnect_inputs(NULL, C);
             _cfg._bbs.map(n->_idx,NULL);
             n->replace_by(C->top());
@@ -570,7 +575,7 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
 
           // Fat-projections kill many registers which cannot be used to
           // hold live ranges.
-          if( lrgs(r)._fat_proj ) {
+          if (lrgs(r)._fat_proj) {
             // Count the int-only registers
             RegMask itmp = lrgs(r).mask();
             itmp.AND(*Matcher::idealreg2regmask[Op_RegI]);
@@ -636,12 +641,12 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
           // Copies do not define a new value and so do not interfere.
           // Remove the copies source from the liveout set before interfering.
           uint idx = n->is_Copy();
-          if( idx ) {
-            uint x = n2lidx(n->in(idx));
-            if( liveout.remove( x ) ) {
+          if (idx) {
+            uint x = _lrg_map.live_range_id(n->in(idx));
+            if (liveout.remove(x)) {
               lrgs(x)._area -= cost;
               // Adjust register pressure.
-              lower_pressure( &lrgs(x), j-1, b, pressure, hrp_index );
+              lower_pressure(&lrgs(x), j-1, b, pressure, hrp_index);
               assert( pressure[0] == count_int_pressure  (&liveout), "" );
               assert( pressure[1] == count_float_pressure(&liveout), "" );
             }
@@ -727,18 +732,21 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
         // the flags and assumes it's dead.  This keeps the (useless)
         // flag-setting behavior alive while also keeping the (useful)
         // memory update effect.
-        for( uint k = ((n->Opcode() == Op_SCMemProj) ? 0:1); k < n->req(); k++ ) {
+        for (uint k = ((n->Opcode() == Op_SCMemProj) ? 0:1); k < n->req(); k++) {
           Node *def = n->in(k);
-          uint x = n2lidx(def);
-          if( !x ) continue;
+          uint x = _lrg_map.live_range_id(def);
+          if (!x) {
+            continue;
+          }
           LRG &lrg = lrgs(x);
           // No use-side cost for spilling debug info
-          if( k < debug_start )
+          if (k < debug_start) {
             // A USE costs twice block frequency (once for the Load, once
             // for a Load-delay).  Rematerialized uses only cost once.
             lrg._cost += (def->rematerialize() ? b->_freq : (b->_freq + b->_freq));
+          }
           // It is live now
-          if( liveout.insert( x ) ) {
+          if (liveout.insert(x)) {
             // Newly live things assumed live from here to top of block
             lrg._area += cost;
             // Adjust register pressure

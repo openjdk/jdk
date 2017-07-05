@@ -95,10 +95,28 @@ define add_native_source
         $$($1_$2_OBJ) : $2
         ifeq ($(COMPILER_TYPE),CC)
 		$$(call COMPILING_MSG,$2,$$($1_TARGET))
+          # The Sun studio compiler doesn't output the full path to the object file in the
+          # generated deps files. Fixing it with sed. If compiling assembly, don't try this.
+          ifeq ($(COMPILER_NAME)$$(filter %.s,$2),ossc)
+		$$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEP_FLAG) $$($1_$2_DEP).tmp $(CC_OUT_OPTION)$$($1_$2_OBJ) $2
+		$(SED) 's|^$$(@F):|$$@:|' $$($1_$2_DEP).tmp > $$($1_$2_DEP)
+          else
 		$$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEP_FLAG) $$($1_$2_DEP) $(CC_OUT_OPTION)$$($1_$2_OBJ) $2
         endif
+        endif
+        # The Visual Studio compiler lacks a feature for generating make dependencies, but by
+        # setting -showIncludes, all included files are printed. These are filtered out and 
+        # parsed into make dependences.
         ifeq ($(COMPILER_TYPE),CL)
-		$$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEBUG_OUT_FLAGS) $(CC_OUT_OPTION)$$($1_$2_OBJ) $2
+		$$($1_$2_COMP) $$($1_$2_FLAGS) -showIncludes $$($1_$2_DEBUG_OUT_FLAGS) $(CC_OUT_OPTION)$$($1_$2_OBJ) $2 | $(TEE) $$($1_$2_DEP).raw | $(GREP) -v "^Note: including file:"
+		($(ECHO) $$@: \\ \
+		 && $(SED) -e '/^Note: including file:/!d' \
+			-e 's|Note: including file: *||' \
+			-e 's|\\|/|g' \
+			-e 's|^\([a-zA-Z]\):|/cygdrive/\1|g' \
+			-e '/$(subst /,\/,$(TOPDIR))/!d' \
+			-e 's|$$$$| \\|g' \
+			$$($1_$2_DEP).raw) > $$($1_$2_DEP)
         endif
     endif
 endef

@@ -80,7 +80,7 @@ class PhaseLive : public Phase {
   Block_List *_worklist;        // Worklist for iterative solution
 
   const PhaseCFG &_cfg;         // Basic blocks
-  LRG_List &_names;             // Mapping from Nodes to live ranges
+  const LRG_List &_names;       // Mapping from Nodes to live ranges
   uint _maxlrg;                 // Largest live-range number
   Arena *_arena;
 
@@ -91,7 +91,7 @@ class PhaseLive : public Phase {
   void add_liveout( Block *p, IndexSet *lo, VectorSet &first_pass );
 
 public:
-  PhaseLive( const PhaseCFG &cfg, LRG_List &names, Arena *arena );
+  PhaseLive(const PhaseCFG &cfg, const LRG_List &names, Arena *arena);
   ~PhaseLive() {}
   // Compute liveness info
   void compute(uint maxlrg);

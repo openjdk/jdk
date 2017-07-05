@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -421,7 +421,8 @@ class interpretedNode : public ProfilerNode {
 
    void print_method_on(outputStream* st) {
      ProfilerNode::print_method_on(st);
-     if (Verbose) method()->invocation_counter()->print_short();
+     MethodCounters* mcs = method()->method_counters();
+     if (Verbose && mcs != NULL) mcs->invocation_counter()->print_short();
    }
 };
 
