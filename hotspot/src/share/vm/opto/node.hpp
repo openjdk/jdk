@@ -217,18 +217,6 @@ public:
     return (void*)n;
   }
 
-  // New Operator that takes a Compile pointer, this will eventually
-  // be the "new" New operator.
-  inline void* operator new( size_t x, Compile* C, int y) {
-    Node* n = (Node*)C->node_arena()->Amalloc_D(x + y*sizeof(void*));
-    n->_in = (Node**)(((char*)n) + x);
-#ifdef ASSERT
-    n->_in[y-1] = n; // magic cookie for assertion check
-#endif
-    n->_out = (Node**)C;
-    return (void*)n;
-  }
-
   // Delete is a NOP
   void operator delete( void *ptr ) {}
   // Fancy destructor; eagerly attempt to reclaim Node numberings and storage

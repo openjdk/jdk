@@ -96,7 +96,7 @@ $(LAUNCHER): $(OBJS) $(LIBJVM) $(LAUNCHER_MAPFILE)
 ifeq ($(filter -sbfast -xsbfast, $(CFLAGS_BROWSE)),)
 	$(QUIETLY) echo Linking launcher...
 	$(QUIETLY) $(LINK_LAUNCHER/PRE_HOOK)
-	$(QUIETLY) $(LINK_LAUNCHER) $(LFLAGS_LAUNCHER) -o $@ $(OBJS) $(LIBS_LAUNCHER)
+	$(QUIETLY) $(LINK_LAUNCHER) $(LFLAGS_LAUNCHER) -o $@ $(sort $(OBJS)) $(LIBS_LAUNCHER)
 	$(QUIETLY) $(LINK_LAUNCHER/POST_HOOK)
 endif # filter -sbfast -xsbfast
 

@@ -521,8 +521,7 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   bool purged_class = SystemDictionary::do_unloading(is_alive_closure());
 
   // Follow code cache roots
-  CodeCache::do_unloading(is_alive_closure(), mark_and_push_closure(),
-                          purged_class);
+  CodeCache::do_unloading(is_alive_closure(), purged_class);
   follow_stack(); // Flush marking stack
 
   // Update subklass/sibling/implementor links of live klasses
