@@ -38,7 +38,7 @@ import java.util.logging.Level;
 
 /**
   * Implements the CRAM-MD5 SASL server-side mechanism.
-  * (<A HREF="ftp://ftp.isi.edu/in-notes/rfc2195.txt">RFC 2195</A>).
+  * (<A HREF="http://www.ietf.org/rfc/rfc2195.txt">RFC 2195</A>).
   * CRAM-MD5 has no initial response.
   *
   * client <---- M={random, timestamp, server-fqdn} ------- server

@@ -41,40 +41,45 @@ public class Comment {
         int slashStarComment = 4;
 
         for (int i = 0; i < 8 ; i++) {
-            StreamTokenizer st = new StreamTokenizer(new FileReader(f));
+            FileReader reader = new FileReader(f);
+            try {
+                StreamTokenizer st = new StreamTokenizer(reader);
 
-            /* decide the state of this run */
-            boolean slashCommentFlag = ((i & slashIsCommentStart) != 0);
-            boolean slashSlashCommentFlag = ((i & slashSlashComment) != 0);
-            boolean slashStarCommentFlag = ((i & slashStarComment) != 0);
+                /* decide the state of this run */
+                boolean slashCommentFlag = ((i & slashIsCommentStart) != 0);
+                boolean slashSlashCommentFlag = ((i & slashSlashComment) != 0);
+                boolean slashStarCommentFlag = ((i & slashStarComment) != 0);
 
-            /* set the initial state of the tokenizer */
-            if (!slashCommentFlag) {
-                st.ordinaryChar('/');
-            }
-            st.slashSlashComments(slashSlashCommentFlag);
-            st.slashStarComments(slashStarCommentFlag);
+                /* set the initial state of the tokenizer */
+                if (!slashCommentFlag) {
+                    st.ordinaryChar('/');
+                }
+                st.slashSlashComments(slashSlashCommentFlag);
+                st.slashStarComments(slashStarCommentFlag);
 
-            /* now go throgh the input file */
-            while(st.nextToken() != StreamTokenizer.TT_EOF)
-            {
-                String token = st.sval;
-                if (token == null) {
-                    continue;
-                } else {
-                    if ((token.compareTo("Error1") == 0) && slashStarCommentFlag) {
-                        throw new Exception("Failed to pass one line C comments!");
-                    }
-                    if ((token.compareTo("Error2") == 0) && slashStarCommentFlag) {
-                        throw new Exception("Failed to pass multi line C comments!");
-                    }
-                    if ((token.compareTo("Error3") == 0) && slashSlashCommentFlag) {
-                        throw new Exception("Failed to pass C++ comments!");
-                    }
-                    if ((token.compareTo("Error4") == 0) && slashCommentFlag) {
-                        throw new Exception("Failed to pass / comments!");
+                /* now go throgh the input file */
+                while(st.nextToken() != StreamTokenizer.TT_EOF)
+                {
+                    String token = st.sval;
+                    if (token == null) {
+                        continue;
+                    } else {
+                        if ((token.compareTo("Error1") == 0) && slashStarCommentFlag) {
+                            throw new Exception("Failed to pass one line C comments!");
+                        }
+                        if ((token.compareTo("Error2") == 0) && slashStarCommentFlag) {
+                            throw new Exception("Failed to pass multi line C comments!");
+                        }
+                        if ((token.compareTo("Error3") == 0) && slashSlashCommentFlag) {
+                            throw new Exception("Failed to pass C++ comments!");
+                        }
+                        if ((token.compareTo("Error4") == 0) && slashCommentFlag) {
+                            throw new Exception("Failed to pass / comments!");
+                        }
                     }
                 }
+            } finally {
+                reader.close();
             }
         }
     }

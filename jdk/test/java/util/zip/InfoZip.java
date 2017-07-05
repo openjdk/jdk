@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,19 +103,25 @@ public class InfoZip {
         os.close();
 
         ZipFile zf = new ZipFile(f);
-        Enumeration<? extends ZipEntry> entries = zf.entries();
-        ZipEntry ze = entries.nextElement();
-        check(! entries.hasMoreElements());
-        checkZipEntry(ze, contents(zf, ze));
-        zf.close();
+        ZipEntry ze = null;
+        try {
+            Enumeration<? extends ZipEntry> entries = zf.entries();
+            ze = entries.nextElement();
+            check(! entries.hasMoreElements());
+            checkZipEntry(ze, contents(zf, ze));
+        } finally {
+            zf.close();
+        }
 
         ZipInputStream is = new ZipInputStream(new FileInputStream(f));
-        ze = is.getNextEntry();
-        checkZipEntry(ze, contents(is));
-        check(is.getNextEntry() == null);
-
+        try {
+            ze = is.getNextEntry();
+            checkZipEntry(ze, contents(is));
+            check(is.getNextEntry() == null);
+        } finally {
+            is.close();
+        }
         f.delete();
-
         System.out.printf("passed = %d, failed = %d%n", passed, failed);
         if (failed > 0) throw new Exception("Some tests failed");
     }

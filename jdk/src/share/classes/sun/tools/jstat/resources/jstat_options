@@ -37,7 +37,7 @@ option timestamp {
 option class {
   column {
     header "^Loaded^"	/* Number of classes loaded */
-    data java.cls.loadedClasses
+    data (java.cls.loadedClasses + java.cls.sharedLoadedClasses)
     align right
     scale raw
     width 5
@@ -45,7 +45,7 @@ option class {
   }
   column {
     header "^Bytes^"	/* Accumulated Size of classes loaded */
-    data sun.cls.loadedBytes
+    data (sun.cls.loadedBytes + sun.cls.sharedLoadedBytes)
     align right
     scale K
     width 7
@@ -53,7 +53,7 @@ option class {
   }
   column {
     header "^Unloaded^"	/* Number of classes unloaded */
-    data java.cls.unloadedClasses
+    data (java.cls.unloadedClasses + java.cls.sharedUnloadedClasses)
     align right
     width 5
     scale raw
@@ -61,7 +61,7 @@ option class {
   }
   column {
     header "^Bytes^"	/* Accumulated size of classes unloaded */
-    data sun.cls.unloadedBytes
+    data (sun.cls.unloadedBytes + sun.cls.sharedUnloadedBytes)
     align right
     scale K
     width 7

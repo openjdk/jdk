@@ -589,7 +589,7 @@ abstract public class ORB {
                 this.getClass().getMethod("create_operation_list", argc);
 
             // OK, the method exists, so invoke it and be happy.
-            Object[] argx = { oper };
+            java.lang.Object[] argx = { oper };
             return (org.omg.CORBA.NVList)meth.invoke(this, argx);
         }
         catch( java.lang.reflect.InvocationTargetException exs ) {

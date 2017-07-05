@@ -37,6 +37,8 @@ import java.util.Properties;
  * Linux implementation of HotSpotVirtualMachine
  */
 public class LinuxVirtualMachine extends HotSpotVirtualMachine {
+    // temp directory for socket file
+    private static final String tmpdir = System.getProperty("java.io.tmpdir");
 
     // Indicates if this machine uses the old LinuxThreads
     static boolean isLinuxThreads;
@@ -260,7 +262,7 @@ public class LinuxVirtualMachine extends HotSpotVirtualMachine {
 
     // Return the socket file for the given process.
     // Checks working directory of process for .java_pid<pid>. If not
-    // found it looks in /tmp.
+    // found it looks in temp directory.
     private String findSocketFile(int pid) {
         // First check for a .java_pid<pid> file in the working directory
         // of the target process
@@ -268,20 +270,17 @@ public class LinuxVirtualMachine extends HotSpotVirtualMachine {
         String path = "/proc/" + pid + "/cwd/" + fn;
         File f = new File(path);
         if (!f.exists()) {
-            // Not found, so try /tmp
-            path = "/tmp/" + fn;
-            f = new File(path);
-            if (!f.exists()) {
-                return null;            // not found
-            }
+            // Not found, so try temp directory
+            f = new File(tmpdir, fn);
+            path = f.exists() ? f.getPath() : null;
         }
         return path;
     }
 
     // On Solaris/Linux a simple handshake is used to start the attach mechanism
     // if not already started. The client creates a .attach_pid<pid> file in the
-    // target VM's working directory (or /tmp), and the SIGQUIT handler checks
-    // for the file.
+    // target VM's working directory (or temp directory), and the SIGQUIT handler
+    // checks for the file.
     private File createAttachFile(int pid) throws IOException {
         String fn = ".attach_pid" + pid;
         String path = "/proc/" + pid + "/cwd/" + fn;
@@ -289,8 +288,7 @@ public class LinuxVirtualMachine extends HotSpotVirtualMachine {
         try {
             f.createNewFile();
         } catch (IOException x) {
-            path = "/tmp/" + fn;
-            f = new File(path);
+            f = new File(tmpdir, fn);
             f.createNewFile();
         }
         return f;

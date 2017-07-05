@@ -38,21 +38,31 @@ public class Test {
          * serialized String object followed by an illegal handle
          */
         File f = new File(base, "negativeHandle.ser");
-        ObjectInputStream oin = new ObjectInputStream(new FileInputStream(f));
-        oin.readObject();
+        FileInputStream in = new FileInputStream(f);
         try {
+            ObjectInputStream oin = new ObjectInputStream(in);
             oin.readObject();
-            throw new Error("negative handle read should not succeed");
-        } catch (StreamCorruptedException ex) {
+            try {
+                oin.readObject();
+                throw new Error("negative handle read should not succeed");
+            } catch (StreamCorruptedException ex) {
+            }
+        } finally {
+            in.close();
         }
 
         f = new File(base, "tooHighHandle.ser");
-        oin = new ObjectInputStream(new FileInputStream(f));
-        oin.readObject();
+        in = new FileInputStream(f);
         try {
+            ObjectInputStream oin = new ObjectInputStream(in);
             oin.readObject();
-            throw new Error("too-high handle read should not succeed");
-        } catch (StreamCorruptedException ex) {
+            try {
+                oin.readObject();
+                throw new Error("too-high handle read should not succeed");
+            } catch (StreamCorruptedException ex) {
+            }
+        } finally {
+            in.close();
         }
     }
 }

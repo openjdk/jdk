@@ -141,7 +141,7 @@ public class ByteToCharISO2022JP extends ByteToCharJIS0208 {
                         } else {
                             savedSize = 2;
                             savedBytes[0] = (byte)byte1;
-                            savedBytes[1] = (byte)input[readOff + inputSize];
+                            savedBytes[1] = input[readOff + inputSize];
                             inputSize++;
                         }
                         break;

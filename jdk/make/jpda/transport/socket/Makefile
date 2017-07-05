@@ -38,11 +38,11 @@ FILES_m = mapfile-vers
 include $(BUILDDIR)/common/Defs.gmk
 
 ifeq ($(PLATFORM), linux)
-  OTHER_LDLIBS += -lnsl $(LIBSOCKET) -lpthread
+  OTHER_LDLIBS += $(LIBNSL) $(LIBSOCKET) -lpthread
 endif
 
 ifeq ($(PLATFORM), solaris)
-  OTHER_LDLIBS += -lnsl $(LIBSOCKET)
+  OTHER_LDLIBS += $(LIBNSL) $(LIBSOCKET)
 endif
 
 ifeq ($(PLATFORM), windows)

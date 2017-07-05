@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2010 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@ import java.util.zip.*;
  */
 public class Pack200Test {
 
-    private static ArrayList <File> jarList = new ArrayList();
-    private static final String PACKEXT = ".pack";
+    private static ArrayList <File> jarList = new ArrayList<File>();
+    static final String PACKEXT = ".pack";
 
     /** Creates a new instance of Pack200Test */
     private Pack200Test() {}
@@ -48,7 +48,7 @@ public class Pack200Test {
     private static void doPackUnpack() {
         for (File in : jarList) {
             Pack200.Packer packer = Pack200.newPacker();
-            Map p = packer.properties();
+            Map<String, String> p = packer.properties();
             // Take the time optimization vs. space
             p.put(packer.EFFORT, "1");  // CAUTION: do not use 0.
             // Make the memory consumption as effective as possible
@@ -96,7 +96,7 @@ public class Pack200Test {
     }
 
     private static ArrayList <String> getZipFileEntryNames(ZipFile z) {
-        ArrayList <String> out = new ArrayList();
+        ArrayList <String> out = new ArrayList<String>();
         for (ZipEntry ze : Collections.list(z.entries())) {
             out.add(ze.getName());
         }

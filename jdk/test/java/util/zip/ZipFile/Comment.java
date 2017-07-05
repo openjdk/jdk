@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,13 +58,16 @@ public class Comment {
         throws IOException
     {
         ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(name));
-        zos.setComment(comment);
-        ZipEntry ze = new ZipEntry(entryName);
-        ze.setMethod(ZipEntry.DEFLATED);
-        zos.putNextEntry(ze);
-        new DataOutputStream(zos).writeUTF(entryContents);
-        zos.closeEntry();
-        zos.close();
+        try {
+            zos.setComment(comment);
+            ZipEntry ze = new ZipEntry(entryName);
+            ze.setMethod(ZipEntry.DEFLATED);
+            zos.putNextEntry(ze);
+            new DataOutputStream(zos).writeUTF(entryContents);
+            zos.closeEntry();
+        } finally {
+            zos.close();
+        }
     }
 
     private static void verifyZipFile(String name, String comment)
@@ -91,6 +94,8 @@ public class Comment {
         file.seek(file.length() - comment.length());
         byte [] bytes = new byte [comment.length()];
         file.readFully(bytes);
+        zipFile.close();
+        file.close();
         if (! comment.equals(new String(bytes, "UTF8")))
             throw new Exception("Zip file comment corrupted");
     }

@@ -320,6 +320,7 @@ override LIBCXX                  = -lstdc++
 endif
 override LIBPOSIX4               =
 override LIBSOCKET               =
+override LIBNSL                  =
 override LIBTHREAD               =
 override MOOT_PRIORITIES         = true
 override NO_INTERRUPTIBLE_IO     = true

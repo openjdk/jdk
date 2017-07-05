@@ -31,20 +31,22 @@
 import java.io.*;
 
 public class CircularList {
-   public static void main (String argv[]) {
+   public static void main (String argv[]) throws IOException {
        System.err.println("\nRegression test for testing of " +
             "serialization/deserialization of " +
             "objects with CirculalListType types \n");
 
+       FileInputStream istream = null;
+       FileOutputStream ostream = null;
        try {
-           FileOutputStream ostream = new FileOutputStream("piotest7.tmp");
+           ostream = new FileOutputStream("piotest7.tmp");
            ObjectOutputStream p = new ObjectOutputStream(ostream);
 
            CircularListTest.setup();
            p.writeObject(CircularListTest.list);
            p.flush();
 
-           FileInputStream istream = new FileInputStream("piotest7.tmp");
+           istream = new FileInputStream("piotest7.tmp");
            ObjectInputStream q = new ObjectInputStream(istream);
 
            CircularListTest cv = (CircularListTest)q.readObject();
@@ -58,6 +60,9 @@ public class CircularList {
            System.err.print("TEST FAILED: ");
            e.printStackTrace();
            throw new Error();
+        } finally {
+           if (istream != null) istream.close();
+           if (ostream != null) ostream.close();
         }
     }
 }

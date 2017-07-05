@@ -155,7 +155,7 @@ public class GenerifyStackTraces {
             printStack(t, stack);
         }
         int frame = stack.length - 1;
-        for (int i = 0; i < depth; i++) {
+        for (int i = 0; i < depth && frame >= 0; i++) {
             if (! stack[frame].getMethodName().equals(methodNames[i])) {
                 throw new RuntimeException("Expected " + methodNames[i] +
                                            " in frame " + frame + " but got " +

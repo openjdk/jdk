@@ -95,14 +95,18 @@ class F extends E {
 
 public class Read {
     public static void main(String[] args) throws Exception {
-        ObjectInputStream oin =
-            new ObjectInputStream(new FileInputStream("tmp.ser"));
-        F f = (F) oin.readObject();
-        if (f.aCalled || f.bCalled || f.dCalled || f.eCalled) {
-            throw new Error("readObjectNoData invoked erroneously");
-        }
-        if (! f.cCalled) {
-            throw new Error("readObjectNoData not invoked");
+        FileInputStream in = new FileInputStream("tmp.ser");
+        try {
+            ObjectInputStream oin = new ObjectInputStream(in);
+            F f = (F) oin.readObject();
+            if (f.aCalled || f.bCalled || f.dCalled || f.eCalled) {
+                throw new Error("readObjectNoData invoked erroneously");
+            }
+            if (! f.cCalled) {
+                throw new Error("readObjectNoData not invoked");
+            }
+        } finally {
+            in.close();
         }
     }
 }

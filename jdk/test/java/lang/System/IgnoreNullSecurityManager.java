@@ -26,6 +26,7 @@
  * @bug 4213876
  * @summary Make sure "null" security manager is ignored, as specified in the
  * javadocs
+ * @run main/othervm IgnoreNullSecurityManager
  */
 
 public class IgnoreNullSecurityManager {
