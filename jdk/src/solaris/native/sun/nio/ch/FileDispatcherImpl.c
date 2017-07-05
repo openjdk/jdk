@@ -191,7 +191,7 @@ Java_sun_nio_ch_FileDispatcherImpl_lock0(JNIEnv *env, jobject this, jobject fdo,
     }
     lockResult = fcntl(fd, cmd, &fl);
     if (lockResult < 0) {
-        if ((cmd == F_SETLK64) && (errno == EAGAIN))
+        if ((cmd == F_SETLK64) && (errno == EAGAIN || errno == EACCES))
             return sun_nio_ch_FileDispatcherImpl_NO_LOCK;
         if (errno == EINTR)
             return sun_nio_ch_FileDispatcherImpl_INTERRUPTED;

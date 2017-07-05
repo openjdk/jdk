@@ -1100,6 +1100,19 @@ public final class System {
     public static native String mapLibraryName(String libname);
 
     /**
+     * Create PrintStream for stdout/err based on encoding.
+     */
+    private static PrintStream newPrintStream(FileOutputStream fos, String enc) {
+       if (enc != null) {
+            try {
+                return new PrintStream(new BufferedOutputStream(fos, 128), true, enc);
+            } catch (UnsupportedEncodingException uee) {}
+        }
+        return new PrintStream(new BufferedOutputStream(fos, 128), true);
+    }
+
+
+    /**
      * Initialize the system class.  Called after thread initialization.
      */
     private static void initializeSystemClass() {
@@ -1139,8 +1152,9 @@ public final class System {
         FileOutputStream fdOut = new FileOutputStream(FileDescriptor.out);
         FileOutputStream fdErr = new FileOutputStream(FileDescriptor.err);
         setIn0(new BufferedInputStream(fdIn));
-        setOut0(new PrintStream(new BufferedOutputStream(fdOut, 128), true));
-        setErr0(new PrintStream(new BufferedOutputStream(fdErr, 128), true));
+        setOut0(newPrintStream(fdOut, props.getProperty("sun.stdout.encoding")));
+        setErr0(newPrintStream(fdErr, props.getProperty("sun.stderr.encoding")));
+
         // Load the zip library now in order to keep java.util.zip.ZipFile
         // from trying to use itself to load this library later.
         loadLibrary("zip");
