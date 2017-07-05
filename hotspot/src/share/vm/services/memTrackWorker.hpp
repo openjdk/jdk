@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,8 +90,8 @@ class MemTrackWorker : public NamedThread {
  public:
   MemTrackWorker(MemSnapshot* snapshot);
   ~MemTrackWorker();
-  _NOINLINE_ void* operator new(size_t size);
-  _NOINLINE_ void* operator new(size_t size, const std::nothrow_t& nothrow_constant);
+  _NOINLINE_ void* operator new(size_t size) throw();
+  _NOINLINE_ void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw();
 
   void start();
   void run();
