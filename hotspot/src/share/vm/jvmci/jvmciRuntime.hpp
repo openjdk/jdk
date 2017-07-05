@@ -141,8 +141,6 @@ class JVMCIRuntime: public AllStatic {
   static address exception_handler_for_pc(JavaThread* thread);
   static void monitorenter(JavaThread* thread, oopDesc* obj, BasicLock* lock);
   static void monitorexit (JavaThread* thread, oopDesc* obj, BasicLock* lock);
-  static void create_null_exception(JavaThread* thread);
-  static void create_out_of_bounds_exception(JavaThread* thread, jint index);
   static void vm_error(JavaThread* thread, jlong where, jlong format, jlong value);
   static oopDesc* load_and_clear_exception(JavaThread* thread);
   static void log_printf(JavaThread* thread, oopDesc* format, jlong v1, jlong v2, jlong v3);
@@ -156,6 +154,12 @@ class JVMCIRuntime: public AllStatic {
   static void write_barrier_post(JavaThread* thread, void* card);
   static jboolean validate_object(JavaThread* thread, oopDesc* parent, oopDesc* child);
   static void new_store_pre_barrier(JavaThread* thread);
+
+  // used to throw exceptions from compiled JVMCI code
+  static void throw_and_post_jvmti_exception(JavaThread* thread, Symbol* exception, const char* message);
+  // helper methods to throw exception with complex messages
+  static void throw_klass_external_name_exception(JavaThread* thread, Symbol* exception, Klass* klass);
+  static void throw_class_cast_exception(JavaThread* thread, Symbol* exception, Klass* caster_klass, Klass* target_klass);
 
   // Test only function
   static int test_deoptimize_call_int(JavaThread* thread, int value);

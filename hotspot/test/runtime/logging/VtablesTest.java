@@ -31,7 +31,7 @@
  *          p2/B.jcod
  *          p1/C.java
  *          p2/D.java
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver VtablesTest
  */

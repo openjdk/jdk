@@ -2101,13 +2101,39 @@ public final class SunGraphics2D
         if (w <= 0 || h <= 0) {
             return;
         }
+
+        if (transformState == SunGraphics2D.TRANSFORM_ISIDENT) {
+            // do nothing
+        } else if (transformState <= SunGraphics2D.TRANSFORM_ANY_TRANSLATE) {
+            x += transX;
+            y += transY;
+        } else if (transformState == SunGraphics2D.TRANSFORM_TRANSLATESCALE) {
+            final double[] coords = {x, y, x + w, y + h, x + dx, y + dy};
+            transform.transform(coords, 0, coords, 0, 3);
+            x = (int) Math.ceil(coords[0] - 0.5);
+            y = (int) Math.ceil(coords[1] - 0.5);
+            w = ((int) Math.ceil(coords[2] - 0.5)) - x;
+            h = ((int) Math.ceil(coords[3] - 0.5)) - y;
+            dx = ((int) Math.ceil(coords[4] - 0.5)) - x;
+            dy = ((int) Math.ceil(coords[5] - 0.5)) - y;
+            // In case of negative scale transform, reflect the rect coords.
+            if (w < 0) {
+                w = -w;
+                x -= w;
+            }
+            if (h < 0) {
+                h = -h;
+                y -= h;
+            }
+        } else {
+            throw new InternalError("transformed copyArea not implemented yet");
+        }
+
         SurfaceData theData = surfaceData;
         if (theData.copyArea(this, x, y, w, h, dx, dy)) {
             return;
         }
-        if (transformState > TRANSFORM_TRANSLATESCALE) {
-            throw new InternalError("transformed copyArea not implemented yet");
-        }
+
         // REMIND: This method does not deal with missing data from the
         // source object (i.e. it does not send exposure events...)
 
@@ -2124,26 +2150,6 @@ public final class SunGraphics2D
             }
             lastCAblit = Blit.locate(dsttype, comptype, dsttype);
             lastCAcomp = comp;
-        }
-
-        double[] coords = {x, y, x + w, y + h, x + dx, y + dy};
-        transform.transform(coords, 0, coords, 0, 3);
-
-        x = (int)Math.ceil(coords[0] - 0.5);
-        y = (int)Math.ceil(coords[1] - 0.5);
-        w = ((int)Math.ceil(coords[2] - 0.5)) - x;
-        h = ((int)Math.ceil(coords[3] - 0.5)) - y;
-        dx = ((int)Math.ceil(coords[4] - 0.5)) - x;
-        dy = ((int)Math.ceil(coords[5] - 0.5)) - y;
-
-        // In case of negative scale transform, reflect the rect coords.
-        if (w < 0) {
-            w *= -1;
-            x -= w;
-        }
-        if (h < 0) {
-            h *= -1;
-            y -= h;
         }
 
         Blit ob = lastCAblit;
@@ -2167,7 +2173,7 @@ public final class SunGraphics2D
             }
             return;
         }
-        ob.Blit(theData, theData, comp, clip, x, y, x+dx, y+dy, w, h);
+            ob.Blit(theData, theData, comp, clip, x, y, x+dx, y+dy, w, h);
     }
 
     /*

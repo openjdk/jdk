@@ -3952,6 +3952,38 @@ public class CompletableFutureTest extends JSR166TestCase {
                                  Monad.plus(godot, Monad.unit(5L)));
     }
 
+    /**
+     * A single CompletableFuture with many dependents.
+     * A demo of scalability - runtime is O(n).
+     */
+    public void testManyDependents() throws Throwable {
+        final int n = 1_000;
+        final CompletableFuture<Void> head = new CompletableFuture<>();
+        final CompletableFuture<Void> complete = CompletableFuture.completedFuture((Void)null);
+        final AtomicInteger count = new AtomicInteger(0);
+        for (int i = 0; i < n; i++) {
+            head.thenRun(() -> count.getAndIncrement());
+            head.thenAccept((x) -> count.getAndIncrement());
+            head.thenApply((x) -> count.getAndIncrement());
+
+            head.runAfterBoth(complete, () -> count.getAndIncrement());
+            head.thenAcceptBoth(complete, (x, y) -> count.getAndIncrement());
+            head.thenCombine(complete, (x, y) -> count.getAndIncrement());
+            complete.runAfterBoth(head, () -> count.getAndIncrement());
+            complete.thenAcceptBoth(head, (x, y) -> count.getAndIncrement());
+            complete.thenCombine(head, (x, y) -> count.getAndIncrement());
+
+            head.runAfterEither(new CompletableFuture<Void>(), () -> count.getAndIncrement());
+            head.acceptEither(new CompletableFuture<Void>(), (x) -> count.getAndIncrement());
+            head.applyToEither(new CompletableFuture<Void>(), (x) -> count.getAndIncrement());
+            new CompletableFuture<Void>().runAfterEither(head, () -> count.getAndIncrement());
+            new CompletableFuture<Void>().acceptEither(head, (x) -> count.getAndIncrement());
+            new CompletableFuture<Void>().applyToEither(head, (x) -> count.getAndIncrement());
+        }
+        head.complete(null);
+        assertEquals(5 * 3 * n, count.get());
+    }
+
 //     static <U> U join(CompletionStage<U> stage) {
 //         CompletableFuture<U> f = new CompletableFuture<>();
 //         stage.whenComplete((v, ex) -> {

@@ -86,8 +86,8 @@ public final class InnocuousThread extends Thread {
 
     private InnocuousThread(ThreadGroup group, Runnable target, String name, ClassLoader tccl) {
         super(group, target, name, 0L, false);
-        UNSAFE.putOrderedObject(this, INHERITEDACCESSCONTROLCONTEXT, ACC);
-        UNSAFE.putOrderedObject(this, CONTEXTCLASSLOADER, tccl);
+        UNSAFE.putObjectRelease(this, INHERITEDACCESSCONTROLCONTEXT, ACC);
+        UNSAFE.putObjectRelease(this, CONTEXTCLASSLOADER, tccl);
     }
 
     @Override

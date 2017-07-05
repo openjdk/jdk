@@ -26,7 +26,7 @@
  * @requires vm.compMode != "Xcomp"
  * @summary Verifies behaviour of Unsafe.allocateMemory
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:MallocMaxTestWords=100m AllocateMemory
  */

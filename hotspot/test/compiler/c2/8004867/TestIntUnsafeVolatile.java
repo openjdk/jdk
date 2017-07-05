@@ -27,7 +27,7 @@
  * @bug 8004867
  * @summary VM crashing with assert "share/vm/opto/node.hpp:357 - assert(i < _max) failed: oob"
  *
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  * @run main/othervm/timeout=300 -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:-OptimizeFill TestIntUnsafeVolatile
  * @run main/othervm/timeout=300 -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:+OptimizeFill TestIntUnsafeVolatile
  */

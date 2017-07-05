@@ -28,7 +28,7 @@ import sun.hotspot.code.BlobType;
 /*
  * @test UsageThresholdNotExceededTest
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build UsageThresholdNotExceededTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,7 @@ AWT_ASSERT_APPKIT_THREAD;
 
 @synthesize fPreferencesMenu;
 @synthesize fAboutMenu;
+@synthesize fProgressIndicator;
 
 @synthesize fDockMenu;
 @synthesize fDefaultMenuBar;
@@ -200,6 +201,18 @@ AWT_ASSERT_APPKIT_THREAD;
 
     self.fPreferencesMenu = (NSMenuItem*)[appMenu itemWithTag:PREFERENCES_TAG];
     self.fAboutMenu = (NSMenuItem*)[appMenu itemAtIndex:0];
+    
+    NSDockTile *dockTile = [NSApp dockTile];
+    self.fProgressIndicator = [[NSProgressIndicator alloc]
+                                initWithFrame:NSMakeRect(3.f, 0.f, dockTile.size.width - 6.f, 20.f)];
+    
+    [fProgressIndicator setStyle:NSProgressIndicatorBarStyle];
+    [fProgressIndicator setIndeterminate:NO];
+    [[dockTile contentView] addSubview:fProgressIndicator];
+    [fProgressIndicator setMinValue:0];
+    [fProgressIndicator setMaxValue:100];
+    [fProgressIndicator setHidden:YES];
+    [fProgressIndicator release];
 
     // If the java application has a bundle with an Info.plist file with
     //  a CFBundleDocumentTypes entry, then it is set up to handle Open Doc
@@ -252,6 +265,7 @@ AWT_ASSERT_APPKIT_THREAD;
     self.fAboutMenu = nil;
     self.fDockMenu = nil;
     self.fDefaultMenuBar = nil;
+    self.fProgressIndicator = nil;
 
     [super dealloc];
 }
@@ -468,11 +482,28 @@ AWT_ASSERT_APPKIT_THREAD;
     [dockImageView setImageScaling:NSImageScaleProportionallyUpOrDown];
     [dockImageView setImage:image];
 
+    [[ApplicationDelegate sharedDelegate].fProgressIndicator removeFromSuperview];
+    [dockImageView addSubview:[ApplicationDelegate sharedDelegate].fProgressIndicator];
+
     // add it to the NSDockTile
     [dockTile setContentView: dockImageView];
     [dockTile display];
 
     [dockImageView release];
+}
+
++ (void)_setDockIconProgress:(NSNumber *)value {
+AWT_ASSERT_APPKIT_THREAD;
+
+    ApplicationDelegate *delegate = [ApplicationDelegate sharedDelegate];
+    if ([value doubleValue] >= 0 && [value doubleValue] <=100) {
+        [delegate.fProgressIndicator setDoubleValue:[value doubleValue]];
+        [delegate.fProgressIndicator setHidden:NO];
+    } else {
+        [delegate.fProgressIndicator setHidden:YES];
+    }
+
+    [[NSApp dockTile] display];
 }
 
 // Obtains the image of the Dock icon, either manually set, a drawn copy, or the default NSApplicationIcon
@@ -606,6 +637,24 @@ JNF_COCOA_ENTER(env);
                            waitUntilDone:NO];
 
 JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     com_apple_eawt__AppDockIconHandler
+ * Method:    nativeSetDockIconProgress
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_com_apple_eawt__1AppDockIconHandler_nativeSetDockIconProgress
+  (JNIEnv *env, jclass clz, jint value)
+{
+    JNF_COCOA_ENTER(env);
+
+     [ThreadUtilities performOnMainThread:@selector(_setDockIconProgress:)
+                                       on:[ApplicationDelegate class]
+                               withObject:[NSNumber numberWithInt:value]
+                            waitUntilDone:NO];
+
+    JNF_COCOA_EXIT(env);
 }
 
 /*

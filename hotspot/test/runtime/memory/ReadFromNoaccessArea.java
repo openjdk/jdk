@@ -25,7 +25,7 @@
  * @test
  * @summary Test that touching noaccess area in class ReservedHeapSpace results in SIGSEGV/ACCESS_VIOLATION
  * @library /testlibrary /test/lib
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @build ReadFromNoaccessArea
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

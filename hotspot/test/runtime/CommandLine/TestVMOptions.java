@@ -26,7 +26,7 @@
  * @bug 8060256
  * @summary Test various command line options
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main TestVMOptions
  */

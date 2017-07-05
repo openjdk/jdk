@@ -28,7 +28,7 @@
  * @key gc
  * @key regression
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm GuardShrinkWarning
  * @author jon.masamitsu@oracle.com

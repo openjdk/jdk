@@ -1457,25 +1457,7 @@ public final class Unsafe {
     @HotSpotIntrinsicCandidate
     public native void    putDoubleVolatile(Object o, long offset, double x);
 
-    /**
-     * Version of {@link #putObjectVolatile(Object, long, Object)}
-     * that does not guarantee immediate visibility of the store to
-     * other threads. This method is generally only useful if the
-     * underlying field is a Java volatile (or if an array cell, one
-     * that is otherwise only accessed using volatile accesses).
-     *
-     * Corresponds to C11 atomic_store_explicit(..., memory_order_release).
-     */
-    @HotSpotIntrinsicCandidate
-    public native void    putOrderedObject(Object o, long offset, Object x);
 
-    /** Ordered/Lazy version of {@link #putIntVolatile(Object, long, int)}  */
-    @HotSpotIntrinsicCandidate
-    public native void    putOrderedInt(Object o, long offset, int x);
-
-    /** Ordered/Lazy version of {@link #putLongVolatile(Object, long, long)} */
-    @HotSpotIntrinsicCandidate
-    public native void    putOrderedLong(Object o, long offset, long x);
 
     /** Acquire version of {@link #getObjectVolatile(Object, long)} */
     @HotSpotIntrinsicCandidate
@@ -1530,6 +1512,16 @@ public final class Unsafe {
     public final double getDoubleAcquire(Object o, long offset) {
         return getDoubleVolatile(o, offset);
     }
+
+    /*
+      * Versions of {@link #putObjectVolatile(Object, long, Object)}
+      * that do not guarantee immediate visibility of the store to
+      * other threads. This method is generally only useful if the
+      * underlying field is a Java volatile (or if an array cell, one
+      * that is otherwise only accessed using volatile accesses).
+      *
+      * Corresponds to C11 atomic_store_explicit(..., memory_order_release).
+      */
 
     /** Release version of {@link #putObjectVolatile(Object, long, Object)} */
     @HotSpotIntrinsicCandidate

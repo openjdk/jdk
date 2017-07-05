@@ -25,7 +25,7 @@
  * @summary Tests that the flag -XX:LargePageSizeInBytes does not cause warnings on Solaris
  * @bug 8049536
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run driver TestLargePageSizeInBytes
  */

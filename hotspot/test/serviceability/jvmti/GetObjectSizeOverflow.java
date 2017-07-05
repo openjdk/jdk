@@ -29,7 +29,7 @@ import jdk.test.lib.*;
  * @test
  * @bug 8027230
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.compiler
  *          java.instrument
  *          java.management

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
  */
 package javax.swing.text;
 
-import java.util.Vector;
+import java.util.*;
 import java.awt.*;
 import javax.swing.event.*;
 import javax.swing.SwingConstants;
@@ -182,9 +182,11 @@ public abstract class CompositeView extends View {
             views = ZERO;
         }
 
+        Set<View> set = new HashSet<>(Arrays.asList(views));
         // update parent reference on removed views
         for (int i = offset; i < offset + length; i++) {
-            if (children[i].getParent() == this) {
+            View child = children[i];
+            if (child.getParent() == this && !set.contains(child)) {
                 // in FlowView.java view might be referenced
                 // from two super-views as a child. see logicalView
                 children[i].setParent(null);

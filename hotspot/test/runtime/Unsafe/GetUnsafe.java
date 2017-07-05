@@ -25,7 +25,7 @@
  * @test
  * @summary Verifies that getUnsafe() actually throws SecurityException when unsafeAccess is prohibited.
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  * @run main GetUnsafe
  */
 

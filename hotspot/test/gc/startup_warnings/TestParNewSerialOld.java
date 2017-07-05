@@ -27,7 +27,7 @@
 * @bug 8065972
 * @summary Test that the unsupported ParNew+SerialOld combination does not start
 * @library /testlibrary
-* @modules java.base/sun.misc
+* @modules java.base/jdk.internal.misc
 *          java.management
 */
 

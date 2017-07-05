@@ -25,12 +25,15 @@
 
 package java.lang.invoke;
 
+import jdk.internal.ref.CleanerFactory;
+import sun.invoke.util.Wrapper;
+
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Field;
+
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
-import static java.lang.invoke.MethodHandleStatics.*;
+import static java.lang.invoke.MethodHandleStatics.TRACE_METHOD_LINKAGE;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
-import jdk.internal.ref.CleanerFactory;
 
 /**
  * The JVM interface for the method handles package is all here.
@@ -367,8 +370,14 @@ class MethodHandleNatives {
                                      Class<?> defc, String name, Object type,
                                      Object[] appendixResult) {
         try {
-            if (defc == MethodHandle.class && refKind == REF_invokeVirtual) {
-                return Invokers.methodHandleInvokeLinkerMethod(name, fixMethodType(callerClass, type), appendixResult);
+            if (refKind == REF_invokeVirtual) {
+                if (defc == MethodHandle.class) {
+                    return Invokers.methodHandleInvokeLinkerMethod(
+                            name, fixMethodType(callerClass, type), appendixResult);
+                } else if (defc == VarHandle.class) {
+                    return varHandleOperationLinkerMethod(
+                            name, fixMethodType(callerClass, type), appendixResult);
+                }
             }
         } catch (Throwable ex) {
             if (ex instanceof LinkageError)
@@ -400,6 +409,80 @@ class MethodHandleNatives {
         }
     }
 
+    /**
+     * Obtain the method to link to the VarHandle operation.
+     * This method is located here and not in Invokers to avoid
+     * intializing that and other classes early on in VM bootup.
+     */
+    private static MemberName varHandleOperationLinkerMethod(String name,
+                                                             MethodType mtype,
+                                                             Object[] appendixResult) {
+        // Get the signature method type
+        MethodType sigType = mtype.basicType();
+
+        // Get the access kind from the method name
+        VarHandle.AccessMode ak;
+        try {
+            ak = VarHandle.AccessMode.valueOf(name);
+        } catch (IllegalArgumentException e) {
+            throw MethodHandleStatics.newInternalError(e);
+        }
+
+        // If not polymorphic in the return type, such as the compareAndSet
+        // methods that return boolean
+        if (ak.isPolyMorphicInReturnType) {
+            if (ak.returnType != mtype.returnType()) {
+                // The caller contains a different return type than that
+                // defined by the method
+                throw newNoSuchMethodErrorOnVarHandle(name, mtype);
+            }
+            // Adjust the return type of the signature method type
+            sigType = sigType.changeReturnType(ak.returnType);
+        }
+
+        // Get the guard method type for linking
+        MethodType guardType = sigType
+                // VarHandle at start
+                .insertParameterTypes(0, VarHandle.class)
+                // Access descriptor at end
+                .appendParameterTypes(VarHandle.AccessDescriptor.class);
+
+        // Create the appendix descriptor constant
+        VarHandle.AccessDescriptor ad = new VarHandle.AccessDescriptor(mtype, ak.at.ordinal(), ak.ordinal());
+        appendixResult[0] = ad;
+
+        if (MethodHandleStatics.VAR_HANDLE_GUARDS) {
+            MemberName linker = new MemberName(
+                    VarHandleGuards.class, "guard_" + getVarHandleMethodSignature(sigType),
+                    guardType, REF_invokeStatic);
+            try {
+                return MemberName.getFactory().resolveOrFail(
+                        REF_invokeStatic, linker, VarHandleGuards.class, ReflectiveOperationException.class);
+            } catch (ReflectiveOperationException ex) {
+                // Fall back to lambda form linkage if guard method is not available
+                // TODO Optionally log fallback ?
+            }
+        }
+        return Invokers.varHandleInvokeLinkerMethod(name, mtype);
+    }
+    static String getVarHandleMethodSignature(MethodType mt) {
+        StringBuilder sb = new StringBuilder(mt.parameterCount() + 1);
+
+        for (int i = 0; i < mt.parameterCount(); i++) {
+            Class<?> pt = mt.parameterType(i);
+            sb.append(getCharType(pt));
+        }
+
+        sb.append('_').append(getCharType(mt.returnType()));
+
+        return sb.toString();
+    }
+    static char getCharType(Class<?> pt) {
+        return Wrapper.forBasicType(pt).basicTypeChar();
+    }
+    static NoSuchMethodError newNoSuchMethodErrorOnVarHandle(String name, MethodType mtype) {
+        return new NoSuchMethodError("VarHandle." + name + mtype);
+    }
 
     /**
      * The JVM is resolving a CONSTANT_MethodHandle CP entry.  And it wants our help.

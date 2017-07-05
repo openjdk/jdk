@@ -363,6 +363,23 @@ import java.util.Objects;
             return false;
         }
     }
+    public boolean isVarHandleMethodInvoke() {
+        final int bits = MH_INVOKE_MODS &~ Modifier.PUBLIC;
+        final int negs = Modifier.STATIC;
+        if (testFlags(bits | negs, bits) &&
+            clazz == VarHandle.class) {
+            return isVarHandleMethodInvokeName(name);
+        }
+        return false;
+    }
+    public static boolean isVarHandleMethodInvokeName(String name) {
+        try {
+            VarHandle.AccessMode.valueOf(name);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
     private static final int MH_INVOKE_MODS = Modifier.NATIVE | Modifier.FINAL | Modifier.PUBLIC;
 
     /** Utility method to query the modifier flags of this member. */
@@ -538,6 +555,17 @@ import java.util.Objects;
                 if (isMethodHandleInvoke())
                     return;
             }
+            if (m.getDeclaringClass() == VarHandle.class &&
+                isVarHandleMethodInvokeName(m.getName())) {
+                // The JVM did not reify this signature-polymorphic instance.
+                // Need a special case here.
+                // See comments on MethodHandleNatives.linkMethod.
+                MethodType type = MethodType.methodType(m.getReturnType(), m.getParameterTypes());
+                int flags = flagsMods(IS_METHOD, m.getModifiers(), REF_invokeVirtual);
+                init(VarHandle.class, m.getName(), type, flags);
+                if (isVarHandleMethodInvoke())
+                    return;
+            }
             throw new LinkageError(m.toString());
         }
         assert(isResolved() && this.clazz != null);
@@ -663,6 +691,16 @@ import java.util.Objects;
         MemberName mem = new MemberName(MethodHandle.class, name, type, REF_invokeVirtual);
         mem.flags |= mods;  // it's not resolved, but add these modifiers anyway
         assert(mem.isMethodHandleInvoke()) : mem;
+        return mem;
+    }
+
+    static MemberName makeVarHandleMethodInvoke(String name, MethodType type) {
+        return makeVarHandleMethodInvoke(name, type, MH_INVOKE_MODS | SYNTHETIC);
+    }
+    static MemberName makeVarHandleMethodInvoke(String name, MethodType type, int mods) {
+        MemberName mem = new MemberName(VarHandle.class, name, type, REF_invokeVirtual);
+        mem.flags |= mods;  // it's not resolved, but add these modifiers anyway
+        assert(mem.isVarHandleMethodInvoke()) : mem;
         return mem;
     }
 

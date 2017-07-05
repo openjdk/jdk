@@ -30,7 +30,6 @@
  *          java.base/sun.security.util
  *          java.base/sun.security.provider
  *          java.base/sun.security.x509
- *          java.base/sun.misc
  * @compile -XDignore.symbol.file PKCS8Test.java
  * @run main PKCS8Test
  */

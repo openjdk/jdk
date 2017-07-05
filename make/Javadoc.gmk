@@ -74,6 +74,7 @@ ATTACH_FIRST_COPYRIGHT_YEAR = 2005
 JCONSOLE_FIRST_COPYRIGHT_YEAR = 2006
 SCTPAPI_FIRST_COPYRIGHT_YEAR = 2009
 TRACING_FIRST_COPYRIGHT_YEAR = 2008
+JSHELLAPI_FIRST_COPYRIGHT_YEAR = 2015
 TREEAPI_FIRST_COPYRIGHT_YEAR = 2005
 NASHORNAPI_FIRST_COPYRIGHT_YEAR = 2014
 DYNALINKAPI_FIRST_COPYRIGHT_YEAR = 2015
@@ -1196,6 +1197,65 @@ $(JCONSOLE_OPTIONS_FILE):
 $(JCONSOLE_PACKAGES_FILE): $(call PackageDependencies,$(JCONSOLE_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(JCONSOLE_PKGS))
+
+#############################################################
+#
+# jshellapidocs
+#
+
+ALL_OTHER_TARGETS += jshellapidocs
+
+JSHELLAPI_DOCDIR := $(JDK_API_DOCSDIR)/jshell
+JSHELLAPI2COREAPI := ../../$(JDKJRE2COREAPI)
+JSHELLAPI_DOCTITLE := JShell API
+JSHELLAPI_WINDOWTITLE := JShell API
+JSHELLAPI_HEADER := <strong>JSHELL API</strong>
+JSHELLAPI_BOTTOM := $(call CommonBottom,$(JSHELLAPI_FIRST_COPYRIGHT_YEAR))
+JSHELLAPI_GROUPNAME := Packages
+JSHELLAPI_REGEXP := jdk.jshell.*
+# JSHELLAPI_PKGS is located in NON_CORE_PKGS.gmk
+
+JSHELLAPI_INDEX_HTML = $(JSHELLAPI_DOCDIR)/index.html
+JSHELLAPI_OPTIONS_FILE = $(DOCSTMPDIR)/jshellapi.options
+JSHELLAPI_PACKAGES_FILE = $(DOCSTMPDIR)/jshellapi.packages
+
+# The modules required to be documented
+JSHELLAPI_MODULES = jdk.jshell
+
+jshellapidocs: $(JSHELLAPI_INDEX_HTML)
+
+# Set relative location to core api document root
+$(JSHELLAPI_INDEX_HTML): GET2DOCSDIR=$(JSHELLAPI2COREAPI)/..
+
+# Run javadoc if the index file is out of date or missing
+$(JSHELLAPI_INDEX_HTML): $(JSHELLAPI_OPTIONS_FILE) $(JSHELLAPI_PACKAGES_FILE) $(COREAPI_INDEX_FILE)
+	$(prep-javadoc)
+	$(call JavadocSummary,$(JSHELLAPI_OPTIONS_FILE),$(JSHELLAPI_PACKAGES_FILE))
+	$(JAVADOC_CMD_SMALL) -d $(@D) \
+	    @$(JSHELLAPI_OPTIONS_FILE) @$(JSHELLAPI_PACKAGES_FILE)
+
+# Create file with javadoc options in it
+$(JSHELLAPI_OPTIONS_FILE):
+	$(prep-target)
+	@($(call COMMON_JAVADOCFLAGS) ; \
+          $(call COMMON_JAVADOCTAGS) ; \
+	  $(call OptionOnly,-Xdoclint:all) ; \
+          $(call OptionPair,-system,none) ; \
+	  $(call OptionPair,-modulesourcepath,$(RELEASEDOCS_MODULESOURCEPATH)) ; \
+	  $(call OptionPair,-addmods,$(JSHELLAPI_MODULES)) ; \
+	  $(call OptionPair,-encoding,ascii) ; \
+	  $(call OptionPair,-doctitle,$(JSHELLAPI_DOCTITLE)) ; \
+	  $(call OptionPair,-windowtitle,$(JSHELLAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
+	  $(call OptionPair,-header,$(JSHELLAPI_HEADER)$(DRAFT_HEADER)) ; \
+	  $(call OptionPair,-bottom,$(JSHELLAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
+	  $(call OptionTrip,-group,$(JSHELLAPI_GROUPNAME),$(JSHELLAPI_REGEXP)); \
+	  $(call OptionTrip,-linkoffline,$(JSHELLAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
+	) >> $@
+
+# Create a file with the package names in it
+$(JSHELLAPI_PACKAGES_FILE): $(call PackageDependencies,$(JSHELLAPI_PKGS))
+	$(prep-target)
+	$(call PackageFilter,$(JSHELLAPI_PKGS))
 
 #############################################################
 #

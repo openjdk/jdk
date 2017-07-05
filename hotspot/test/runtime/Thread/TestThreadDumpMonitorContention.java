@@ -29,7 +29,7 @@
  *      whether jstack reports "locked" by more than one thread.
  *
  * @library /testlibrary
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  *          java.management
  * @run main/othervm TestThreadDumpMonitorContention
  */
