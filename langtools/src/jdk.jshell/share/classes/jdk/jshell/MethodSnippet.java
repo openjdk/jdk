@@ -35,6 +35,8 @@ import jdk.jshell.Key.MethodKey;
  * <code>MethodSnippet</code> is immutable: an access to
  * any of its methods will always return the same result.
  * and thus is thread-safe.
+ *
+ * @since 9
  * @jls 8.4: MethodDeclaration.
  */
 public class MethodSnippet extends DeclarationSnippet {

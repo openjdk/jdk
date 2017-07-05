@@ -28,7 +28,7 @@
  * @summary Test that Open*MBeanInfo classes include "openType" in descriptor
  *          and also test serial compatibility with Java 5.
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean OpenTypeDescriptorTest
  * @run build OpenTypeDescriptorTest
  * @run main OpenTypeDescriptorTest
