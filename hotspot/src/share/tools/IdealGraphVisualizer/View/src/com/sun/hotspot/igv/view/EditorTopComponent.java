@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -289,7 +289,10 @@ public final class EditorTopComponent extends TopComponent implements PropertyCh
             quicksearch = (Component) quicksearch.getClass().getConstructor(KeyStroke.class).newInstance(new Object[]{null});
         } catch (ReflectiveOperationException | IllegalArgumentException | SecurityException e) {
         }
-        quicksearch.setMinimumSize(quicksearch.getPreferredSize()); // necessary for GTK LAF
+        Dimension preferredSize = quicksearch.getPreferredSize();
+        preferredSize = new Dimension((int) preferredSize.getWidth() * 2, (int) preferredSize.getHeight());
+        quicksearch.setMinimumSize(preferredSize); // necessary for GTK LAF
+        quicksearch.setPreferredSize(preferredSize);
         toolBar.add(quicksearch);
 
         centerPanel = new JPanel();

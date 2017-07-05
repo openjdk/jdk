@@ -44,9 +44,6 @@ GCTaskThread::GCTaskThread(GCTaskManager* manager,
   _time_stamps(NULL),
   _time_stamp_index(0)
 {
-  if (!os::create_thread(this, os::pgc_thread))
-    vm_exit_out_of_memory(0, OOM_MALLOC_ERROR, "Cannot create GC thread. Out of system resources.");
-
   set_id(which);
   set_name("ParGC Thread#%d", which);
 }
@@ -55,10 +52,6 @@ GCTaskThread::~GCTaskThread() {
   if (_time_stamps != NULL) {
     FREE_C_HEAP_ARRAY(GCTaskTimeStamp, _time_stamps);
   }
-}
-
-void GCTaskThread::start() {
-  os::start_thread(this);
 }
 
 GCTaskTimeStamp* GCTaskThread::time_stamp_at(uint index) {

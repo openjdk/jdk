@@ -185,6 +185,22 @@ final class NashornCompleter implements Completer {
         }
     }
 
+    public boolean isComplete(String input) {
+        try {
+            parser.parse("<shell>", input, null);
+        } catch (final Exception pexp) {
+            // Do we have a parse error at the end of current line?
+            // If so, read more lines from the console.
+            int line = input.split("\n").length;
+            int lastLineLen = input.length() - (input.lastIndexOf("\n") + 1);
+
+            if (isParseErrorAt(pexp, line, lastLineLen)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // Pattern to match a unfinished member selection expression. object part and "."
     // but property name missing pattern.
     private static final Pattern SELECT_PROP_MISSING = Pattern.compile(".*\\.\\s*");

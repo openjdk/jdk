@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 public final class WaveFileReader extends SunFileReader {
 
     @Override
-    AudioFileFormat getAudioFileFormatImpl(final InputStream stream)
+    StandardFileFormat getAudioFileFormatImpl(final InputStream stream)
             throws UnsupportedAudioFileException, IOException {
 
         // assumes sream is rewound
@@ -64,9 +64,9 @@ public final class WaveFileReader extends SunFileReader {
         DataInputStream dis = new DataInputStream( stream );
 
         int magic = dis.readInt();
-        int fileLength = rllong(dis);
+        long /* unsigned int */ fileLength = rllong(dis) & 0xffffffffL;
         int waveMagic = dis.readInt();
-        int totallength;
+        long totallength;
         if (fileLength <= 0) {
             fileLength = AudioSystem.NOT_SPECIFIED;
             totallength = AudioSystem.NOT_SPECIFIED;
@@ -186,19 +186,18 @@ public final class WaveFileReader extends SunFileReader {
             }
         }
         // this is the length of the data chunk
-        int dataLength = rllong(dis); nread += 4;
+        long /* unsigned int */ dataLength = rllong(dis) & 0xffffffffL; nread += 4;
 
         // now build the new AudioFileFormat and return
-
+        final int frameSize = calculatePCMFrameSize(sampleSizeInBits, channels);
         AudioFormat format = new AudioFormat(encoding,
                                              (float)sampleRate,
                                              sampleSizeInBits, channels,
-                                             calculatePCMFrameSize(sampleSizeInBits, channels),
+                                             frameSize,
                                              (float)sampleRate, false);
 
-        return new WaveFileFormat(AudioFileFormat.Type.WAVE,
-                                  totallength,
-                                  format,
-                                  dataLength / format.getFrameSize());
+        long frameLength = dataLength / format.getFrameSize();
+        return new WaveFileFormat(AudioFileFormat.Type.WAVE, totallength,
+                                  format, frameLength);
     }
 }

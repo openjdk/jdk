@@ -40,6 +40,7 @@ import static org.testng.Assert.*;
 
 public class SunMiscUnsafeAccessTestInt {
     static final int ITERS = Integer.getInteger("iters", 1);
+    static final int WEAK_ATTEMPTS = Integer.getInteger("weakAttempts", 10);
 
     static final sun.misc.Unsafe UNSAFE;
 
@@ -165,7 +166,6 @@ public class SunMiscUnsafeAccessTestInt {
 
 
 
-
         UNSAFE.putInt(base, offset, 1);
 
         // Compare
@@ -183,7 +183,7 @@ public class SunMiscUnsafeAccessTestInt {
             assertEquals(x, 2, "failing compareAndSwap int value");
         }
 
-
+        UNSAFE.putInt(base, offset, 2);
 
         // Compare set and get
         {
@@ -200,7 +200,7 @@ public class SunMiscUnsafeAccessTestInt {
             int o = UNSAFE.getAndAddInt(base, offset, 2);
             assertEquals(o, 1, "getAndAdd int");
             int x = UNSAFE.getInt(base, offset);
-            assertEquals(x, 1 + 2, "weakCompareAndSwapRelease int");
+            assertEquals(x, 1 + 2, "getAndAdd int");
         }
     }
 
@@ -213,5 +213,4 @@ public class SunMiscUnsafeAccessTestInt {
         }
     }
 }
-
 

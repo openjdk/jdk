@@ -28,6 +28,7 @@
  * @summary Test if package p2 in module m2 is exported to all unnamed,
  *          then class p1.c1 in an unnamed module can read p2.c2 in module m2.
  * @library /testlibrary /test/lib
+ * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.module
  * @compile myloaders/MySameClassLoader.java
  * @compile p2/c2.java
@@ -92,7 +93,7 @@ public class ExportAllUnnamed {
         // Resolves "m1"
         Configuration cf = Layer.boot()
                 .configuration()
-                .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+                .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
         // map each module to differing class loaders for this test
         Map<String, ClassLoader> map = new HashMap<>();

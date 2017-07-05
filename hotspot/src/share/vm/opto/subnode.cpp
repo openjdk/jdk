@@ -1533,25 +1533,3 @@ const Type* SqrtDNode::Value(PhaseGVN* phase) const {
   if( d < 0.0 ) return Type::DOUBLE;
   return TypeD::make( sqrt( d ) );
 }
-
-//=============================================================================
-//------------------------------Value------------------------------------------
-// Compute tan
-const Type* TanDNode::Value(PhaseGVN* phase) const {
-  const Type *t1 = phase->type( in(1) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
-  double d = t1->getd();
-  return TypeD::make( StubRoutines::intrinsic_tan( d ) );
-}
-
-//=============================================================================
-//------------------------------Value------------------------------------------
-// Compute log10
-const Type* Log10DNode::Value(PhaseGVN* phase) const {
-  const Type *t1 = phase->type( in(1) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
-  double d = t1->getd();
-  return TypeD::make( StubRoutines::intrinsic_log10( d ) );
-}

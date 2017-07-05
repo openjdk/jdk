@@ -25,6 +25,7 @@
  * @test
  * @library /testlibrary
  * @summary Proof of concept test for RedefineClassHelper
+ * @modules java.base/jdk.internal.misc
  * @modules java.compiler
  *          java.instrument
  *          jdk.jartool/sun.tools.jar

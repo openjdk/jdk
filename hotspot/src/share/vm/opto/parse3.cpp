@@ -149,9 +149,9 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
   // Does this field have a constant value?  If so, just push the value.
   if (field->is_constant()) {
     // final or stable field
-    const Type* con_type = Type::make_constant(field, obj);
-    if (con_type != NULL) {
-      push_node(con_type->basic_type(), makecon(con_type));
+    Node* con = make_constant_from_field(field, obj);
+    if (con != NULL) {
+      push_node(field->layout_type(), con);
       return;
     }
   }
@@ -174,12 +174,16 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
     if (!field->type()->is_loaded()) {
       type = TypeInstPtr::BOTTOM;
       must_assert_null = true;
-    } else if (field->is_constant() && field->is_static()) {
+    } else if (field->is_static_constant()) {
       // This can happen if the constant oop is non-perm.
       ciObject* con = field->constant_value().as_object();
       // Do not "join" in the previous type; it doesn't add value,
       // and may yield a vacuous result if the field is of interface type.
-      type = TypeOopPtr::make_from_constant(con)->isa_oopptr();
+      if (con->is_null_object()) {
+        type = TypePtr::NULL_PTR;
+      } else {
+        type = TypeOopPtr::make_from_constant(con)->isa_oopptr();
+      }
       assert(type != NULL, "field singleton type must be consistent");
     } else {
       type = TypeOopPtr::make_from_klass(field_klass->as_klass());

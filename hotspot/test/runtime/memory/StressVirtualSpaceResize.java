@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Stress test that expands/shrinks VirtualSpace
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @build StressVirtualSpaceResize
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

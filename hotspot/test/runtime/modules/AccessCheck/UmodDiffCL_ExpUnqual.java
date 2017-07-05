@@ -28,6 +28,7 @@
  * @summary class p1.c1 defined in an unnamed module tries to access p2.c2 defined in m2.
  *          Access allowed, an unnamed module can read all modules and p2 in module m2
  *          which is exported unqualifiedly.
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary /test/lib
  * @compile myloaders/MyDiffClassLoader.java
  * @compile p2/c2.java
@@ -91,7 +92,7 @@ public class UmodDiffCL_ExpUnqual {
         // Resolves "m1"
         Configuration cf = Layer.boot()
                 .configuration()
-                .resolveRequires(finder, ModuleFinder.empty(), Set.of("m1"));
+                .resolveRequires(finder, ModuleFinder.of(), Set.of("m1"));
 
         // map each module to differing class loaders for this test
         Map<String, ClassLoader> map = new HashMap<>();

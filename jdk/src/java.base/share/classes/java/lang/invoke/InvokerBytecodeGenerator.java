@@ -706,6 +706,9 @@ class InvokerBytecodeGenerator {
                 case ARRAY_STORE:
                     emitArrayStore(name);
                     continue;
+                case ARRAY_LENGTH:
+                    emitArrayLength(name);
+                    continue;
                 case IDENTITY:
                     assert(name.arguments.length == 1);
                     emitPushArguments(name);
@@ -740,15 +743,16 @@ class InvokerBytecodeGenerator {
         return classFile;
     }
 
-    void emitArrayLoad(Name name)  { emitArrayOp(name, Opcodes.AALOAD);  }
-    void emitArrayStore(Name name) { emitArrayOp(name, Opcodes.AASTORE); }
+    void emitArrayLoad(Name name)   { emitArrayOp(name, Opcodes.AALOAD);      }
+    void emitArrayStore(Name name)  { emitArrayOp(name, Opcodes.AASTORE);     }
+    void emitArrayLength(Name name) { emitArrayOp(name, Opcodes.ARRAYLENGTH); }
 
     void emitArrayOp(Name name, int arrayOpcode) {
-        assert arrayOpcode == Opcodes.AALOAD || arrayOpcode == Opcodes.AASTORE;
+        assert arrayOpcode == Opcodes.AALOAD || arrayOpcode == Opcodes.AASTORE || arrayOpcode == Opcodes.ARRAYLENGTH;
         Class<?> elementType = name.function.methodType().parameterType(0).getComponentType();
         assert elementType != null;
         emitPushArguments(name);
-        if (elementType.isPrimitive()) {
+        if (arrayOpcode != Opcodes.ARRAYLENGTH && elementType.isPrimitive()) {
             Wrapper w = Wrapper.forPrimitiveType(elementType);
             arrayOpcode = arrayInsnOpcode(arrayTypeCode(w), arrayOpcode);
         }

@@ -537,37 +537,42 @@ void SymbolTable::dump(outputStream* st, bool verbose) {
   }
 }
 
-bool SymbolTable::copy_compact_table(char** top, char*end) {
+void SymbolTable::serialize(SerializeClosure* soc) {
 #if INCLUDE_CDS
-  CompactHashtableWriter ch_table(CompactHashtable<Symbol*, char>::_symbol_table,
-                                  the_table()->number_of_entries(),
-                                  &MetaspaceShared::stats()->symbol);
-  if (*top + ch_table.get_required_bytes() > end) {
-    // not enough space left
-    return false;
-  }
-
-  for (int i = 0; i < the_table()->table_size(); ++i) {
-    HashtableEntry<Symbol*, mtSymbol>* p = the_table()->bucket(i);
-    for ( ; p != NULL; p = p->next()) {
-      Symbol* s = (Symbol*)(p->literal());
+  _shared_table.reset();
+  if (soc->writing()) {
+    int num_buckets = the_table()->number_of_entries() /
+                            SharedSymbolTableBucketSize;
+    CompactSymbolTableWriter writer(num_buckets,
+                                    &MetaspaceShared::stats()->symbol);
+    for (int i = 0; i < the_table()->table_size(); ++i) {
+      HashtableEntry<Symbol*, mtSymbol>* p = the_table()->bucket(i);
+      for ( ; p != NULL; p = p->next()) {
+        Symbol* s = (Symbol*)(p->literal());
       unsigned int fixed_hash =  hash_shared_symbol((char*)s->bytes(), s->utf8_length());
-      assert(fixed_hash == p->hash(), "must not rehash during dumping");
-      ch_table.add(fixed_hash, s);
+        assert(fixed_hash == p->hash(), "must not rehash during dumping");
+        writer.add(fixed_hash, s);
+      }
     }
+
+    writer.dump(&_shared_table);
   }
 
-  ch_table.dump(top, end);
+  _shared_table.set_type(CompactHashtable<Symbol*, char>::_symbol_table);
+  _shared_table.serialize(soc);
 
-  *top = (char*)align_ptr_up(*top, sizeof(void*));
+  if (soc->writing()) {
+    // Verify table is correct
+    Symbol* sym = vmSymbols::java_lang_Object();
+    const char* name = (const char*)sym->bytes();
+    int len = sym->utf8_length();
+    unsigned int hash = hash_symbol(name, len);
+    assert(sym == _shared_table.lookup(name, hash, len), "sanity");
+
+    // Sanity. Make sure we don't use the shared table at dump time
+    _shared_table.reset();
+  }
 #endif
-  return true;
-}
-
-const char* SymbolTable::init_shared_table(const char* buffer) {
-  const char* end = _shared_table.init(
-          CompactHashtable<Symbol*, char>::_symbol_table, buffer);
-  return (const char*)align_ptr_up(end, sizeof(void*));
 }
 
 //---------------------------------------------------------------------------

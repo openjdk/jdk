@@ -320,7 +320,7 @@ u1* ClassPathZipEntry::open_entry(const char* name, jint* filesize, bool nul_ter
 #if INCLUDE_CDS
 u1* ClassPathZipEntry::open_versioned_entry(const char* name, jint* filesize, TRAPS) {
   u1* buffer = NULL;
-  if (DumpSharedSpaces) {
+  if (DumpSharedSpaces && !_is_boot_append) {
     // We presume default is multi-release enabled
     const char* multi_ver = Arguments::get_property("jdk.util.jar.enableMultiRelease");
     const char* verstr = Arguments::get_property("jdk.util.jar.version");
@@ -539,7 +539,7 @@ bool ClassPathImageEntry::is_jrt() {
 #if INCLUDE_CDS
 void ClassLoader::exit_with_path_failure(const char* error, const char* message) {
   assert(DumpSharedSpaces, "only called at dump time");
-  tty->print_cr("Hint: enable -Xlog:classpath=info to diagnose the failure");
+  tty->print_cr("Hint: enable -Xlog:class+path=info to diagnose the failure");
   vm_exit_during_initialization(error, message);
 }
 #endif
@@ -572,9 +572,9 @@ void ModuleClassPathList::add_to_list(ClassPathEntry* new_entry) {
 }
 
 void ClassLoader::trace_class_path(const char* msg, const char* name) {
-  if (log_is_enabled(Info, classpath)) {
+  if (log_is_enabled(Info, class, path)) {
     ResourceMark rm;
-    outputStream* out = Log(classpath)::info_stream();
+    outputStream* out = Log(class, path)::info_stream();
     if (msg) {
       out->print("%s", msg);
     }
@@ -795,12 +795,12 @@ ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const str
         }
       }
     }
-    log_info(classpath)("opened: %s", path);
-    log_info(classload)("opened: %s", path);
+    log_info(class, path)("opened: %s", path);
+    log_info(class, load)("opened: %s", path);
   } else {
     // Directory
     new_entry = new ClassPathDirEntry(path);
-    log_info(classload)("path: %s", path);
+    log_info(class, load)("path: %s", path);
   }
   return new_entry;
 }
@@ -1046,6 +1046,10 @@ int ClassLoader::crc32(int crc, const char* buf, int len) {
 
 #if INCLUDE_CDS
 void ClassLoader::initialize_module_loader_map(JImageFile* jimage) {
+  if (!DumpSharedSpaces) {
+    return; // only needed for CDS dump time
+  }
+
   ResourceMark rm;
   jlong size;
   JImageLocationRef location = (*JImageFindResource)(jimage, "java.base", get_jimage_version_string(), MODULE_LOADER_MAP, &size);
@@ -1053,7 +1057,8 @@ void ClassLoader::initialize_module_loader_map(JImageFile* jimage) {
     vm_exit_during_initialization(
       "Cannot find ModuleLoaderMap location from modules jimage.", NULL);
   }
-  char* buffer = NEW_RESOURCE_ARRAY(char, size);
+  char* buffer = NEW_RESOURCE_ARRAY(char, size + 1);
+  buffer[size] = '\0';
   jlong read = (*JImageGetResource)(jimage, location, buffer, size);
   if (read != size) {
     vm_exit_during_initialization(
@@ -1190,6 +1195,7 @@ objArrayOop ClassLoader::get_system_packages(TRAPS) {
 #if INCLUDE_CDS
 s2 ClassLoader::module_to_classloader(const char* module_name) {
 
+  assert(DumpSharedSpaces, "dump time only");
   assert(_boot_modules_array != NULL, "_boot_modules_array is NULL");
   assert(_platform_modules_array != NULL, "_platform_modules_array is NULL");
 
@@ -1209,10 +1215,10 @@ s2 ClassLoader::module_to_classloader(const char* module_name) {
 
   return APP_LOADER;
 }
-#endif
 
 s2 ClassLoader::classloader_type(Symbol* class_name, ClassPathEntry* e, int classpath_index, TRAPS) {
-#if INCLUDE_CDS
+  assert(DumpSharedSpaces, "Only used for CDS dump time");
+
   // obtain the classloader type based on the class name.
   // First obtain the package name based on the class name. Then obtain
   // the classloader type based on the package name from the jimage using
@@ -1237,10 +1243,8 @@ s2 ClassLoader::classloader_type(Symbol* class_name, ClassPathEntry* e, int clas
     loader_type = ClassLoader::BOOT_LOADER;
   }
   return loader_type;
-#endif
-  return ClassLoader::BOOT_LOADER; // the classloader type is ignored in non-CDS cases
 }
-
+#endif
 
 // caller needs ResourceMark
 const char* ClassLoader::file_name_for_class_name(const char* class_name,
@@ -1424,8 +1428,7 @@ instanceKlassHandle ClassLoader::load_class(Symbol* name, bool search_append_onl
     return NULL;
   }
 
-  jshort loader_type = classloader_type(name, e, classpath_index, CHECK_NULL);
-  return context.record_result(classpath_index, loader_type, e, result, THREAD);
+  return context.record_result(name, e, classpath_index, result, THREAD);
 }
 
 // Initialize the class loader's access to methods in libzip.  Parse and
@@ -1831,7 +1834,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
               }
               // Force compilation
               CompileBroker::compile_method(m, InvocationEntryBci, comp_level,
-                                            methodHandle(), 0, "CTW", THREAD);
+                                            methodHandle(), 0, CompileTask::Reason_CTW, THREAD);
               if (HAS_PENDING_EXCEPTION) {
                 clear_pending_exception_if_not_oom(CHECK);
                 tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name_and_sig_as_C_string());
@@ -1840,14 +1843,14 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
               }
               if (TieredCompilation && TieredStopAtLevel >= CompLevel_full_optimization) {
                 // Clobber the first compile and force second tier compilation
-                nmethod* nm = m->code();
+                CompiledMethod* nm = m->code();
                 if (nm != NULL && !m->is_method_handle_intrinsic()) {
                   // Throw out the code so that the code cache doesn't fill up
                   nm->make_not_entrant();
                   m->clear_code();
                 }
                 CompileBroker::compile_method(m, InvocationEntryBci, CompLevel_full_optimization,
-                                              methodHandle(), 0, "CTW", THREAD);
+                                              methodHandle(), 0, CompileTask::Reason_CTW, THREAD);
                 if (HAS_PENDING_EXCEPTION) {
                   clear_pending_exception_if_not_oom(CHECK);
                   tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name_and_sig_as_C_string());
@@ -1859,7 +1862,7 @@ void ClassLoader::compile_the_world_in(char* name, Handle loader, TRAPS) {
               tty->print_cr("CompileTheWorld (%d) : Skipping method: %s", _compile_the_world_class_counter, m->name_and_sig_as_C_string());
             }
 
-            nmethod* nm = m->code();
+            CompiledMethod* nm = m->code();
             if (nm != NULL && !m->is_method_handle_intrinsic()) {
               // Throw out the code so that the code cache doesn't fill up
               nm->make_not_entrant();

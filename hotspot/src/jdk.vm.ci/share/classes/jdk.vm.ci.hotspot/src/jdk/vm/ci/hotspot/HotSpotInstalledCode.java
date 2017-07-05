@@ -25,7 +25,7 @@ package jdk.vm.ci.hotspot;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.inittimer.SuppressFBWarnings;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Implementation of {@link InstalledCode} for HotSpot.

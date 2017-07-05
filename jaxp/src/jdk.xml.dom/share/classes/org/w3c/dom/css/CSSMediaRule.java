@@ -49,7 +49,7 @@ import org.w3c.dom.stylesheets.MediaList;
  * style sheet. A <code>@media</code> rule can be used to delimit style
  * rules for specific media types.
  * <p>See also the <a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Style-20001113'>Document Object Model (DOM) Level 2 Style Specification</a>.
- * @since DOM Level 2
+ * @since 1.4, DOM Level 2
  */
 public interface CSSMediaRule extends CSSRule {
     /**

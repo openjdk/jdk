@@ -149,6 +149,8 @@ public:
   size_t predict_rs_lengths() const;
   size_t predict_pending_cards() const;
 
+  double predict_cost_per_byte_ms() const;
+
   // Add a new GC of the given duration and end time to the record.
   void update_recent_gc_times(double end_time_sec, double elapsed_ms);
   void compute_pause_time_ratio(double interval_ms, double pause_time_ms);

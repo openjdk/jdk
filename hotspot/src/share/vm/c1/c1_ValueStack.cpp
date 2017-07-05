@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ ValueStack::ValueStack(IRScope* scope, ValueStack* caller_state)
 , _caller_state(caller_state)
 , _bci(-99)
 , _kind(Parsing)
-, _locals(scope->method()->max_locals(), NULL)
+, _locals(scope->method()->max_locals(), scope->method()->max_locals(), NULL)
 , _stack(scope->method()->max_stack())
 , _locks()
 {
@@ -178,7 +178,7 @@ void ValueStack::setup_phi_for_stack(BlockBegin* b, int index) {
 
   ValueType* t = stack_at(index)->type();
   Value phi = new Phi(t, b, -index - 1);
-  _stack[index] = phi;
+  _stack.at_put(index, phi);
 
   assert(!t->is_double_word() || _stack.at(index + 1) == NULL, "hi-word of doubleword value must be NULL");
 }
@@ -225,7 +225,7 @@ void ValueStack::print() {
   if (locals_size() > 0) {
     InstructionPrinter ip;
     for (int i = 0; i < locals_size();) {
-      Value l = _locals[i];
+      Value l = _locals.at(i);
       tty->print("local %d ", i);
       if (l == NULL) {
         tty->print("null");

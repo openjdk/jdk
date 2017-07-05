@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "logging/log.hpp"
+#include "logging/logConfiguration.hpp"
 #include "memory/resourceArea.hpp"
 #include "prims/jvmtiTrace.hpp"
 
@@ -80,6 +82,17 @@ void JvmtiTrace::initialize() {
   } else {
     curr = "";  // hack in fixed tracing here
   }
+
+  // Enable UL for JVMTI tracing
+  if (strlen(curr) > 0) {
+    if (!log_is_enabled(Trace, jvmti)) {
+      log_warning(arguments)("-XX:+TraceJVMTI specified, "
+         "but no log output configured for the 'jvmti' tag on Trace level. "
+         "Defaulting to -Xlog:jvmti=trace");
+      LogConfiguration::configure_stdout(LogLevel::Trace, true, LOG_TAGS(jvmti));
+    }
+  }
+
   very_end = curr + strlen(curr);
   while (curr < very_end) {
     const char *curr_end = strchr(curr, ',');
@@ -127,7 +140,7 @@ void JvmtiTrace::initialize() {
         bits |= SHOW_EVENT_SENT;
         break;
       default:
-        tty->print_cr("Invalid trace flag '%c'", *flags);
+        log_warning(jvmti)("Invalid trace flag '%c'", *flags);
         break;
       }
     }
@@ -152,7 +165,7 @@ void JvmtiTrace::initialize() {
       domain = ALL_EVENT | EVENT;
     } else if (len==2 && strncmp(curr, "ec", 2)==0) {
       _trace_event_controller = true;
-      tty->print_cr("JVMTI Tracing the event controller");
+      log_trace(jvmti)("Tracing the event controller");
     } else {
       domain = FUNC | EVENT;  // go searching
     }
@@ -161,9 +174,9 @@ void JvmtiTrace::initialize() {
     if (domain & FUNC) {
       if (domain & ALL_FUNC) {
         if (domain & EXCLUDE) {
-          tty->print("JVMTI Tracing all significant functions");
+          log_trace(jvmti)("Tracing all significant functions");
         } else {
-          tty->print_cr("JVMTI Tracing all functions");
+          log_trace(jvmti)("Tracing all functions");
         }
       }
       for (int i = 0; i <= _max_function_index; ++i) {
@@ -178,7 +191,7 @@ void JvmtiTrace::initialize() {
             if (fname != NULL) {
               size_t fnlen = strlen(fname);
               if (len==fnlen && strncmp(curr, fname, fnlen)==0) {
-                tty->print_cr("JVMTI Tracing the function: %s", fname);
+                log_trace(jvmti)("Tracing the function: %s", fname);
                 do_op = true;
               }
             }
@@ -196,7 +209,7 @@ void JvmtiTrace::initialize() {
     }
     if (domain & EVENT) {
       if (domain & ALL_EVENT) {
-        tty->print_cr("JVMTI Tracing all events");
+        log_trace(jvmti)("Tracing all events");
       }
       for (int i = 0; i <= _max_event_index; ++i) {
         bool do_op = false;
@@ -207,7 +220,7 @@ void JvmtiTrace::initialize() {
           if (ename != NULL) {
             size_t evtlen = strlen(ename);
             if (len==evtlen && strncmp(curr, ename, evtlen)==0) {
-              tty->print_cr("JVMTI Tracing the event: %s", ename);
+              log_trace(jvmti)("Tracing the event: %s", ename);
               do_op = true;
             }
           }
@@ -223,7 +236,7 @@ void JvmtiTrace::initialize() {
       }
     }
     if (!_on && (domain & (FUNC|EVENT))) {
-      tty->print_cr("JVMTI Trace domain not found");
+      log_warning(jvmti)("Trace domain not found");
     }
     curr = curr_end + 1;
   }

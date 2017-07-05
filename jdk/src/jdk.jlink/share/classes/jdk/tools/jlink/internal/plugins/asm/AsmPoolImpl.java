@@ -41,15 +41,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.tools.jlink.internal.ImageFileCreator;
-import jdk.tools.jlink.internal.PoolImpl;
+import jdk.tools.jlink.internal.ModulePoolImpl;
+import jdk.tools.jlink.plugin.ModuleEntry;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.plugin.Pool;
-import jdk.tools.jlink.plugin.Pool.ModuleData;
+import jdk.tools.jlink.plugin.ModulePool;
 
 /**
  * A pool of ClassReader and other resource files. This class allows to
@@ -94,7 +93,7 @@ final class AsmPoolImpl implements AsmModulePool {
             }
 
             byte[] content = writer.toByteArray();
-            ModuleData res = Pool.newResource(path,
+            ModuleEntry res = ModuleEntry.create(path,
                     new ByteArrayInputStream(content), content.length);
             transformedClasses.put(className, res);
         }
@@ -108,7 +107,7 @@ final class AsmPoolImpl implements AsmModulePool {
         public void forgetClass(String className) {
             Objects.requireNonNull(className);
             // do we have a resource?
-            ModuleData res = transformedClasses.get(className);
+            ModuleEntry res = transformedClasses.get(className);
             if (res == null) {
                 res = inputClasses.get(className);
                 if (res == null) {
@@ -130,7 +129,7 @@ final class AsmPoolImpl implements AsmModulePool {
         @Override
         public ClassReader getClassReader(String binaryName) {
             Objects.requireNonNull(binaryName);
-            ModuleData res = transformedClasses.get(binaryName);
+            ModuleEntry res = transformedClasses.get(binaryName);
             ClassReader reader = null;
             if (res != null) {
                 reader = getClassReader(res);
@@ -144,16 +143,16 @@ final class AsmPoolImpl implements AsmModulePool {
          * @return The array of transformed classes.
          */
         @Override
-        public Collection<ModuleData> getClasses() {
-            List<ModuleData> classes = new ArrayList<>();
-            for (Entry<String, ModuleData> entry : transformedClasses.entrySet()) {
+        public Collection<ModuleEntry> getClasses() {
+            List<ModuleEntry> classes = new ArrayList<>();
+            for (Entry<String, ModuleEntry> entry : transformedClasses.entrySet()) {
                 classes.add(entry.getValue());
             }
             return classes;
         }
 
         @Override
-        public ClassReader getClassReader(ModuleData res) {
+        public ClassReader getClassReader(ModuleEntry res) {
             return newClassReader(res.getBytes());
         }
     }
@@ -176,7 +175,7 @@ final class AsmPoolImpl implements AsmModulePool {
         public void addResourceFile(ResourceFile resFile) {
             Objects.requireNonNull(resFile);
             String path = toResourceNamePath(resFile.getPath());
-            ModuleData res = Pool.newResource(path, resFile.getContent());
+            ModuleEntry res = ModuleEntry.create(path, resFile.getContent());
             transformedResources.put(resFile.getPath(), res);
         }
 
@@ -191,7 +190,7 @@ final class AsmPoolImpl implements AsmModulePool {
             Objects.requireNonNull(resourceName);
             String path = toResourceNamePath(resourceName);
             // do we have a resource?
-            ModuleData res = transformedResources.get(resourceName);
+            ModuleEntry res = transformedResources.get(resourceName);
             if (res == null) {
                 res = inputResources.get(resourceName);
                 if (res == null) {
@@ -212,7 +211,7 @@ final class AsmPoolImpl implements AsmModulePool {
         @Override
         public ResourceFile getResourceFile(String name) {
             Objects.requireNonNull(name);
-            ModuleData res = transformedResources.get(name);
+            ModuleEntry res = transformedResources.get(name);
             ResourceFile resFile = null;
             if (res != null) {
                 resFile = getResourceFile(res);
@@ -226,24 +225,24 @@ final class AsmPoolImpl implements AsmModulePool {
          * @return The array of transformed classes.
          */
         @Override
-        public Collection<ModuleData> getResourceFiles() {
-            List<ModuleData> resources = new ArrayList<>();
-            for (Entry<String, ModuleData> entry : transformedResources.entrySet()) {
+        public Collection<ModuleEntry> getResourceFiles() {
+            List<ModuleEntry> resources = new ArrayList<>();
+            for (Entry<String, ModuleEntry> entry : transformedResources.entrySet()) {
                 resources.add(entry.getValue());
             }
             return resources;
         }
 
         @Override
-        public ResourceFile getResourceFile(ModuleData res) {
+        public ResourceFile getResourceFile(ModuleEntry res) {
             return new ResourceFile(toJavaBinaryResourceName(res.getPath()),
                     res.getBytes());
         }
     }
 
-    private final Pool jimageResources;
-    private final Map<String, ModuleData> inputClasses;
-    private final Map<String, ModuleData> inputResources;
+    private final ModulePool jimageResources;
+    private final Map<String, ModuleEntry> inputClasses;
+    private final Map<String, ModuleEntry> inputResources;
     private final Map<String, String> inputClassPackageMapping;
     private final Map<String, String> inputOtherPackageMapping;
 
@@ -254,9 +253,9 @@ final class AsmPoolImpl implements AsmModulePool {
 
     private Sorter sorter;
 
-    private final Map<String, ModuleData> transformedClasses
+    private final Map<String, ModuleEntry> transformedClasses
             =            new LinkedHashMap<>();
-    private final Map<String, ModuleData> transformedResources
+    private final Map<String, ModuleEntry> transformedResources
             =            new LinkedHashMap<>();
     private final List<String> forgetResources = new ArrayList<>();
     private final Map<String, String> newPackageMapping = new HashMap<>();
@@ -274,7 +273,7 @@ final class AsmPoolImpl implements AsmModulePool {
      * @param pools The resource pools.
      * @param descriptor The module descriptor.
      */
-    AsmPoolImpl(Pool inputResources, String moduleName,
+    AsmPoolImpl(ModulePool inputResources, String moduleName,
             AsmPools pools,
             ModuleDescriptor descriptor) {
         Objects.requireNonNull(inputResources);
@@ -285,11 +284,11 @@ final class AsmPoolImpl implements AsmModulePool {
         this.moduleName = moduleName;
         this.pools = pools;
         this.descriptor = descriptor;
-        Map<String, ModuleData> classes = new LinkedHashMap<>();
-        Map<String, ModuleData> resources = new LinkedHashMap<>();
+        Map<String, ModuleEntry> classes = new LinkedHashMap<>();
+        Map<String, ModuleEntry> resources = new LinkedHashMap<>();
         Map<String, String> packageClassToModule = new HashMap<>();
         Map<String, String> packageOtherToModule = new HashMap<>();
-        for (ModuleData res : inputResources.getContent()) {
+        inputResources.entries().forEach(res -> {
             if (res.getPath().endsWith(".class")) {
                 classes.put(toJavaBinaryClassName(res.getPath()), res);
             } else {
@@ -305,7 +304,7 @@ final class AsmPoolImpl implements AsmModulePool {
                     packageOtherToModule.put(split[1], res.getModule());
                 }
             }
-        }
+        });
         this.inputClasses = Collections.unmodifiableMap(classes);
         this.inputResources = Collections.unmodifiableMap(resources);
 
@@ -356,7 +355,7 @@ final class AsmPoolImpl implements AsmModulePool {
      * @return The array of classes.
      */
     @Override
-    public Collection<ModuleData> getClasses() {
+    public Collection<ModuleEntry> getClasses() {
         return inputClasses.values();
     }
 
@@ -367,7 +366,7 @@ final class AsmPoolImpl implements AsmModulePool {
      * @return The array of classes.
      */
     @Override
-    public Collection<ModuleData> getResourceFiles() {
+    public Collection<ModuleEntry> getResourceFiles() {
         return inputResources.values();
     }
 
@@ -385,7 +384,7 @@ final class AsmPoolImpl implements AsmModulePool {
     @Override
     public ResourceFile getResourceFile(String binaryName) {
         Objects.requireNonNull(binaryName);
-        ModuleData res = inputResources.get(binaryName);
+        ModuleEntry res = inputResources.get(binaryName);
         ResourceFile resFile = null;
         if (res != null) {
             resFile = getResourceFile(res);
@@ -402,7 +401,7 @@ final class AsmPoolImpl implements AsmModulePool {
     @Override
     public ClassReader getClassReader(String binaryName) {
         Objects.requireNonNull(binaryName);
-        ModuleData res = inputClasses.get(binaryName);
+        ModuleEntry res = inputClasses.get(binaryName);
         ClassReader reader = null;
         if (res != null) {
             reader = getClassReader(res);
@@ -411,13 +410,13 @@ final class AsmPoolImpl implements AsmModulePool {
     }
 
     @Override
-    public ResourceFile getResourceFile(ModuleData res) {
+    public ResourceFile getResourceFile(ModuleEntry res) {
         return new ResourceFile(toJavaBinaryResourceName(res.getPath()),
                 res.getBytes());
     }
 
     @Override
-    public ClassReader getClassReader(ModuleData res) {
+    public ClassReader getClassReader(ModuleEntry res) {
         return newClassReader(res.getBytes());
     }
 
@@ -505,7 +504,7 @@ final class AsmPoolImpl implements AsmModulePool {
     @Override
     public void visitClassReaders(ClassReaderVisitor visitor) {
         Objects.requireNonNull(visitor);
-        for (ModuleData res : getClasses()) {
+        for (ModuleEntry res : getClasses()) {
             ClassReader reader = newClassReader(res.getBytes());
             ClassWriter writer = visitor.visit(reader);
             if (writer != null) {
@@ -523,7 +522,7 @@ final class AsmPoolImpl implements AsmModulePool {
     @Override
     public void visitResourceFiles(ResourceFileVisitor visitor) {
         Objects.requireNonNull(visitor);
-        for (ModuleData resource : getResourceFiles()) {
+        for (ModuleEntry resource : getResourceFiles()) {
             ResourceFile resFile
                     = new ResourceFile(toJavaBinaryResourceName(resource.getPath()),
                             resource.getBytes());
@@ -540,18 +539,18 @@ final class AsmPoolImpl implements AsmModulePool {
      * been set, it is used to sort the returned resources.     *
      */
     @Override
-    public void fillOutputResources(Pool outputResources) {
+    public void fillOutputResources(ModulePool outputResources) {
         List<String> added = new ArrayList<>();
         // If the sorter is null, use the input order.
         // New resources are added at the end
         // First input classes that have not been removed
-        Pool output = new PoolImpl(outputResources.getByteOrder(),
-                ((PoolImpl)outputResources).getStringTable());
-        for (ModuleData inResource : jimageResources.getContent()) {
+        ModulePool output = new ModulePoolImpl(outputResources.getByteOrder(),
+                ((ModulePoolImpl)outputResources).getStringTable());
+        jimageResources.entries().forEach(inResource -> {
             if (!forgetResources.contains(inResource.getPath())) {
-                ModuleData resource = inResource;
+                ModuleEntry resource = inResource;
                 // Do we have a transformed class with the same name?
-                ModuleData res = transformedResources.
+                ModuleEntry res = transformedResources.
                         get(toJavaBinaryResourceName(inResource.getPath()));
                 if (res != null) {
                     resource = res;
@@ -565,10 +564,10 @@ final class AsmPoolImpl implements AsmModulePool {
                 output.add(resource);
                 added.add(resource.getPath());
             }
-        }
+        });
         // Then new resources
-        for (Map.Entry<String, ModuleData> entry : transformedResources.entrySet()) {
-            ModuleData resource = entry.getValue();
+        for (Map.Entry<String, ModuleEntry> entry : transformedResources.entrySet()) {
+            ModuleEntry resource = entry.getValue();
             if (!forgetResources.contains(resource.getPath())) {
                 if (!added.contains(resource.getPath())) {
                     output.add(resource);
@@ -576,8 +575,8 @@ final class AsmPoolImpl implements AsmModulePool {
             }
         }
         // And new classes
-        for (Map.Entry<String, ModuleData> entry : transformedClasses.entrySet()) {
-            ModuleData resource = entry.getValue();
+        for (Map.Entry<String, ModuleEntry> entry : transformedClasses.entrySet()) {
+            ModuleEntry resource = entry.getValue();
             if (!forgetResources.contains(resource.getPath())) {
                 if (!added.contains(resource.getPath())) {
                     output.add(resource);

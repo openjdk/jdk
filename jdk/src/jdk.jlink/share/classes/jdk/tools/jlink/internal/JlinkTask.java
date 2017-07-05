@@ -371,7 +371,7 @@ public class JlinkTask {
 
         Configuration cf = Configuration.empty()
                 .resolveRequires(finder,
-                                 ModuleFinder.empty(),
+                                 ModuleFinder.of(),
                                  addMods);
 
         Map<String, Path> mods = cf.modules().stream()
@@ -390,7 +390,7 @@ public class JlinkTask {
         // resolve all root modules
         Configuration cf = Configuration.empty()
                 .resolveRequires(finder,
-                                 ModuleFinder.empty(),
+                                 ModuleFinder.of(),
                                  roots);
 
         // module name -> reference

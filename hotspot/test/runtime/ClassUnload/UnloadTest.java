@@ -23,6 +23,7 @@
 
 /*
  * @test UnloadTest
+ * @modules java.base/jdk.internal.misc
  * @library /runtime/testlibrary /testlibrary /test/lib
  * @library classes
  * @build ClassUnloadCommon test.Empty

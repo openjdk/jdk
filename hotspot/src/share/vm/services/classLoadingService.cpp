@@ -138,9 +138,9 @@ void ClassLoadingService::notify_class_unloaded(InstanceKlass* k) {
     }
   }
 
-  if (log_is_enabled(Info, classunload)) {
+  if (log_is_enabled(Info, class, unload)) {
     ResourceMark rm;
-    log_info(classunload)("unloading class %s " INTPTR_FORMAT , k->external_name(), p2i(k));
+    log_info(class, unload)("unloading class %s " INTPTR_FORMAT , k->external_name(), p2i(k));
   }
 }
 
@@ -184,9 +184,9 @@ bool ClassLoadingService::set_verbose(bool verbose) {
   MutexLocker m(Management_lock);
   // verbose will be set to the previous value
   if (verbose) {
-    LogConfiguration::parse_log_arguments("stdout", "classload=info", NULL, NULL, NULL);
+    LogConfiguration::parse_log_arguments("stdout", "class+load=info", NULL, NULL, NULL);
   } else {
-    LogConfiguration::parse_log_arguments("stdout", "classload=off", NULL, NULL, NULL);
+    LogConfiguration::parse_log_arguments("stdout", "class+load=off", NULL, NULL, NULL);
   }
   reset_trace_class_unloading();
   return verbose;
@@ -197,9 +197,9 @@ void ClassLoadingService::reset_trace_class_unloading() {
   assert(Management_lock->owned_by_self(), "Must own the Management_lock");
   bool value = MemoryService::get_verbose() || ClassLoadingService::get_verbose();
   if (value) {
-    LogConfiguration::parse_log_arguments("stdout", "classunload=info", NULL, NULL, NULL);
+    LogConfiguration::parse_log_arguments("stdout", "class+unload=info", NULL, NULL, NULL);
   } else {
-    LogConfiguration::parse_log_arguments("stdout", "classunload=off", NULL, NULL, NULL);
+    LogConfiguration::parse_log_arguments("stdout", "class+unload=off", NULL, NULL, NULL);
   }
 }
 

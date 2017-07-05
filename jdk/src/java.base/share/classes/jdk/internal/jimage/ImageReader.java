@@ -149,6 +149,17 @@ public final class ImageReader implements AutoCloseable {
         return reader.getEntryNames();
     }
 
+    public String[] getModuleNames() {
+        Objects.requireNonNull(reader, "image file closed");
+        int off = "/modules/".length();
+        return reader.findNode("/modules")
+                     .getChildren()
+                     .stream()
+                     .map(Node::getNameString)
+                     .map(s -> s.substring(off, s.length()))
+                     .toArray(String[]::new);
+    }
+
     public long[] getAttributes(int offset) {
         Objects.requireNonNull(reader, "image file closed");
         return reader.getAttributes(offset);

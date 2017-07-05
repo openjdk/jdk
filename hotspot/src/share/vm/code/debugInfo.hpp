@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,11 +261,11 @@ class MonitorValue: public ResourceObj {
 
 class DebugInfoReadStream : public CompressedReadStream {
  private:
-  const nmethod* _code;
-  const nmethod* code() const { return _code; }
+  const CompiledMethod* _code;
+  const CompiledMethod* code() const { return _code; }
   GrowableArray<ScopeValue*>* _obj_pool;
  public:
-  DebugInfoReadStream(const nmethod* code, int offset, GrowableArray<ScopeValue*>* obj_pool = NULL) :
+  DebugInfoReadStream(const CompiledMethod* code, int offset, GrowableArray<ScopeValue*>* obj_pool = NULL) :
     CompressedReadStream(code->scopes_data_begin(), offset) {
     _code = code;
     _obj_pool = obj_pool;

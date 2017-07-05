@@ -378,11 +378,10 @@ void CellTypeState::print(outputStream *os) {
 // Basicblock handling methods
 //
 
-void GenerateOopMap ::initialize_bb() {
+void GenerateOopMap::initialize_bb() {
   _gc_points = 0;
   _bb_count  = 0;
-  _bb_hdr_bits.clear();
-  _bb_hdr_bits.resize(method()->code_size());
+  _bb_hdr_bits.reinitialize(method()->code_size());
 }
 
 void GenerateOopMap::bb_mark_fct(GenerateOopMap *c, int bci, int *data) {
@@ -1041,13 +1040,7 @@ void GenerateOopMap::update_basic_blocks(int bci, int delta,
   assert(new_method_size >= method()->code_size() + delta,
          "new method size is too small");
 
-  BitMap::bm_word_t* new_bb_hdr_bits =
-    NEW_RESOURCE_ARRAY(BitMap::bm_word_t,
-                       BitMap::word_align_up(new_method_size));
-  _bb_hdr_bits.set_map(new_bb_hdr_bits);
-  _bb_hdr_bits.set_size(new_method_size);
-  _bb_hdr_bits.clear();
-
+  _bb_hdr_bits.reinitialize(new_method_size);
 
   for(int k = 0; k < _bb_count; k++) {
     if (_basic_blocks[k]._bci > bci) {

@@ -26,7 +26,6 @@ package sun.jvm.hotspot.tools;
 
 import sun.jvm.hotspot.utilities.HeapHprofBinWriter;
 import sun.jvm.hotspot.debugger.JVMDebugger;
-import jdk.internal.vm.agent.spi.ToolProvider;
 
 import java.io.IOException;
 
@@ -35,7 +34,7 @@ import java.io.IOException;
  * process/core as a HPROF binary file. It can also be used as a standalone
  * tool if required.
  */
-public class HeapDumper extends Tool implements ToolProvider {
+public class HeapDumper extends Tool {
 
     private static String DEFAULT_DUMP_FILE = "heap.bin";
 
@@ -81,11 +80,10 @@ public class HeapDumper extends Tool implements ToolProvider {
     //   HeapDumper -f <file> <args...>
     public static void main(String args[]) {
         HeapDumper dumper = new HeapDumper();
-        dumper.run(args);
+        dumper.runWithArgs(args);
     }
 
-    @Override
-    public void run(String... args) {
+    public void runWithArgs(String... args) {
         if (args.length > 2) {
             if (args[0].equals("-f")) {
                 this.dumpFile = args[1];

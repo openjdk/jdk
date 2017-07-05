@@ -34,7 +34,8 @@ tier1 = \
     sun/nio/cs/ISO8859x.java \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
-    :jdk_math
+    :jdk_math \
+    tools/pack200
 
 tier2 = \
     java/lang/ProcessHandle/TreeTest.java \
@@ -50,6 +51,7 @@ tier2 = \
     -com/sun/crypto/provider/Cipher \
     :jdk_text \
     :core_tools \
+    -tools/pack200 \
     :jdk_other
 
 tier3 = \
@@ -76,6 +78,7 @@ jdk_lang = \
     jdk/lambda \
     jdk/internal/misc \
     jdk/internal/ref \
+    jdk/internal/jimage \
     jdk/modules \
     vm
 
@@ -352,7 +355,7 @@ jdk_desktop = \
 # SwingSet3 tests.
 jdk_client_sanity = \
     sanity/client/SwingSet
-    
+
 ###############################################################################
 #
 # Serviceability sanity groups

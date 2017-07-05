@@ -353,6 +353,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
+  case vmIntrinsics::_vectorizedMismatch:
     return true;
   default:
     return false;
@@ -384,6 +385,7 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   case vmIntrinsics::_updateCRC32:
   case vmIntrinsics::_updateBytesCRC32:
   case vmIntrinsics::_updateByteBufferCRC32:
+  case vmIntrinsics::_vectorizedMismatch:
     return false;
   default:
     return true;
@@ -578,20 +580,6 @@ bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
   case vmIntrinsics::_putLongOpaque:
   case vmIntrinsics::_putFloatOpaque:
   case vmIntrinsics::_putDoubleOpaque:
-  case vmIntrinsics::_getByte_raw:
-  case vmIntrinsics::_getShort_raw:
-  case vmIntrinsics::_getChar_raw:
-  case vmIntrinsics::_getInt_raw:
-  case vmIntrinsics::_getLong_raw:
-  case vmIntrinsics::_getFloat_raw:
-  case vmIntrinsics::_getDouble_raw:
-  case vmIntrinsics::_putByte_raw:
-  case vmIntrinsics::_putShort_raw:
-  case vmIntrinsics::_putChar_raw:
-  case vmIntrinsics::_putInt_raw:
-  case vmIntrinsics::_putLong_raw:
-  case vmIntrinsics::_putFloat_raw:
-  case vmIntrinsics::_putDouble_raw:
   case vmIntrinsics::_getAndAddInt:
   case vmIntrinsics::_getAndAddLong:
   case vmIntrinsics::_getAndSetInt:
@@ -632,8 +620,6 @@ bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
   case vmIntrinsics::_putIntUnaligned:
   case vmIntrinsics::_putLongUnaligned:
   case vmIntrinsics::_allocateInstance:
-  case vmIntrinsics::_getAddress_raw:
-  case vmIntrinsics::_putAddress_raw:
     if (!InlineUnsafeOps || !UseUnalignedAccesses) return true;
     break;
   case vmIntrinsics::_hashCode:
@@ -668,6 +654,9 @@ bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
     if (!UseCRC32CIntrinsics) return true;
+    break;
+  case vmIntrinsics::_vectorizedMismatch:
+    if (!UseVectorizedMismatchIntrinsic) return true;
     break;
   case vmIntrinsics::_updateBytesAdler32:
   case vmIntrinsics::_updateByteBufferAdler32:
@@ -733,9 +722,6 @@ bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
     break;
   case vmIntrinsics::_montgomerySquare:
     if (!UseMontgomerySquareIntrinsic) return true;
-    break;
-  case vmIntrinsics::_vectorizedMismatch:
-    if (!UseVectorizedMismatchIntrinsic) return true;
     break;
   case vmIntrinsics::_addExactI:
   case vmIntrinsics::_addExactL:

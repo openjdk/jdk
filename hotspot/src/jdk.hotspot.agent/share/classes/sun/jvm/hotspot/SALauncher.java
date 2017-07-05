@@ -73,6 +73,7 @@ public class SALauncher {
         System.out.println("    <no option>\tto print same info as Solaris pmap");
         System.out.println("    --heap\tto print java heap summary");
         System.out.println("    --binaryheap\tto dump java heap in hprof binary format");
+        System.out.println("    --dumpfile\tname of the dump file");
         System.out.println("    --histo\tto print histogram of java object heap");
         System.out.println("    --clstats\tto print class loader statistics");
         System.out.println("    --finalizerinfo\tto print information on objects awaiting finalization");
@@ -241,13 +242,15 @@ public class SALauncher {
     private static void runJMAP(String[] oldArgs) {
         SAGetopt sg = new SAGetopt(oldArgs);
         String[] longOpts = {"exe=", "core=", "pid=",
-              "heap", "binaryheap", "histo", "clstats", "finalizerinfo"};
+              "heap", "binaryheap", "dumpfile=", "histo", "clstats", "finalizerinfo"};
 
         ArrayList<String> newArgs = new ArrayList();
         String pid = null;
         String exe = null;
         String core = null;
         String s = null;
+        String dumpfile = null;
+        boolean requestHeapdump = false;
 
         while((s = sg.next(null, longOpts)) != null) {
             if (s.equals("exe")) {
@@ -267,7 +270,11 @@ public class SALauncher {
                 continue;
             }
             if (s.equals("binaryheap")) {
-                newArgs.add("-heap:format=b");
+                requestHeapdump = true;
+                continue;
+            }
+            if (s.equals("dumpfile")) {
+                dumpfile = sg.getOptarg();
                 continue;
             }
             if (s.equals("histo")) {
@@ -281,6 +288,17 @@ public class SALauncher {
             if (s.equals("finalizerinfo")) {
                 newArgs.add("-finalizerinfo");
                 continue;
+            }
+        }
+
+        if (!requestHeapdump && (dumpfile != null)) {
+            throw new IllegalArgumentException("Unexpected argument dumpfile");
+        }
+        if (requestHeapdump) {
+            if (dumpfile == null) {
+                newArgs.add("-heap:format=b");
+            } else {
+                newArgs.add("-heap:format=b,file=" + dumpfile);
             }
         }
 

@@ -105,15 +105,30 @@ security.provider.tbd=SunPKCS11
 # The provider is the name of the provider. Any provider that does not
 # also appear in the registered list will be ignored.
 #
+# There is a special serviceType for this property only to group a set of
+# algorithms together. The type is "Group" and is followed by an algorithm
+# keyword. Groups are to simplify and lessen the entries on the property
+# line. Current groups are:
+#   Group.SHA2 = SHA-224, SHA-256, SHA-384, SHA-512, SHA-512/224, SHA-512/256
+#   Group.HmacSHA2 = HmacSHA224, HmacSHA256, HmacSHA384, HmacSHA512
+#   Group.SHA2RSA = SHA224withRSA, SHA256withRSA, SHA384withRSA, SHA512withRSA
+#   Group.SHA2DSA = SHA224withDSA, SHA256withDSA, SHA384withDSA, SHA512withDSA
+#   Group.SHA2ECDSA = SHA224withECDSA, SHA256withECDSA, SHA384withECDSA, \
+#                     SHA512withECDSA
+#   Group.SHA3 = SHA3-224, SHA3-256, SHA3-384, SHA3-512
+#   Group.HmacSHA3 = HmacSHA3-224, HmacSHA3-256, HmacSHA3-384, HmacSHA3-512
+#
 # Example:
 #   jdk.security.provider.preferred=AES/GCM/NoPadding:SunJCE, \
-#         MessageDigest.SHA-256:SUN
+#         MessageDigest.SHA-256:SUN, Group.HmacSHA2:SunJCE
 #ifdef solaris-sparc
-jdk.security.provider.preferred=AES:SunJCE, SHA1:SUN, SHA-224:SUN, \
-      SHA-256:SUN, SHA-384:SUN, SHA-512:SUN
+jdk.security.provider.preferred=AES:SunJCE, SHA1:SUN, Group.SHA2:SUN, \
+      HmacSHA1:SunJCE, Group.HmacSHA2:SunJCE
 #endif
 #ifdef solaris-x86
-jdk.security.provider.preferred=AES:SunJCE, RSA:SunRsaSign
+jdk.security.provider.preferred=AES:SunJCE, SHA1:SUN, Group.SHA2:SUN, \
+      HmacSHA1:SunJCE, Group.HmacSHA2:SunJCE, RSA:SunRsaSign, \
+      SHA1withRSA:SunRsaSign, Group.SHA2RSA:SunRsaSign
 #endif
 
 
@@ -613,14 +628,14 @@ krb5.kdc.bad.policy = tryLast
 # "CertConstraint" specifies additional constraints for
 # certificates that contain algorithms that are restricted:
 #
-#   "jdkCA" prohibits the specified algorithm only if the algorithm is used
-#     in a certificate chain that terminates at a marked trust anchor in the
-#     lib/security/cacerts keystore.  All other chains are not affected.
-#     If the jdkCA constraint is not set, then all chains using the
-#     specified algorithm are restricted.  jdkCA may only be used once in
+#   "jdkCA" prohibits the specified algorithm only if the algorithm is used
+#     in a certificate chain that terminates at a marked trust anchor in the
+#     lib/security/cacerts keystore.  All other chains are not affected.
+#     If the jdkCA constraint is not set, then all chains using the
+#     specified algorithm are restricted.  jdkCA may only be used once in
 #     a DisabledAlgorithm expression.
-#     Example:  To apply this constraint to SHA-1 certificates, include
-#     the following:  "SHA1 jdkCA"
+#     Example:  To apply this constraint to SHA-1 certificates, include
+#     the following:  "SHA1 jdkCA"
 #
 # When an algorithm must satisfy more than one constraint, it must be
 # delimited by an ampersand '&'.  For example, to restrict certificates in a
@@ -712,6 +727,12 @@ jdk.tls.disabledAlgorithms=SSLv3, RC4, MD5withRSA, DH keySize < 1024
 #
 # See SSL/TLS specifications and "Java Cryptography Architecture Standard
 # Algorithm Name Documentation" for information about the algorithm names.
+#
+# Note: If a legacy algorithm is also restricted through the
+# jdk.tls.disabledAlgorithms property or the
+# java.security.AlgorithmConstraints API (See
+# javax.net.ssl.SSLParameters.setAlgorithmConstraints()),
+# then the algorithm is completely disabled and will not be negotiated.
 #
 # Note: This property is currently used by Oracle's JSSE implementation.
 # It is not guaranteed to be examined and used by other implementations.

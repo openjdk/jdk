@@ -46,7 +46,7 @@ public class ThreadedMallocTestType {
     final WhiteBox wb = WhiteBox.getWhiteBox();
 
     // Grab my own PID
-    String pid = Integer.toString(ProcessTools.getProcessId());
+    String pid = Long.toString(ProcessTools.getProcessId());
     ProcessBuilder pb = new ProcessBuilder();
 
     Thread allocThread = new Thread() {

@@ -51,7 +51,7 @@ public class NoAccess {
         Configuration parent = bootLayer.configuration();
 
         Configuration cf = parent.resolveRequiresAndUses(finder,
-                                                         ModuleFinder.empty(),
+                                                         ModuleFinder.of(),
                                                          Set.of("m1", "m2"));
 
         ClassLoader scl = ClassLoader.getSystemClassLoader();

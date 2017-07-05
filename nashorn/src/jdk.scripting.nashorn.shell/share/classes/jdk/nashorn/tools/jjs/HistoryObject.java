@@ -36,7 +36,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import jdk.internal.jline.console.history.FileHistory;
 import jdk.internal.jline.console.history.History;
 import jdk.nashorn.api.scripting.AbstractJSObject;
 import jdk.nashorn.api.scripting.JSObject;
@@ -61,11 +60,11 @@ final class HistoryObject extends AbstractJSObject {
         props = Collections.unmodifiableSet(s);
     }
 
-    private final FileHistory hist;
+    private final History hist;
     private final PrintWriter err;
     private final Consumer<String> evaluator;
 
-    HistoryObject(final FileHistory hist, final PrintWriter err,
+    HistoryObject(final History hist, final PrintWriter err,
             final Consumer<String> evaluator) {
         this.hist = hist;
         this.err = err;

@@ -107,9 +107,9 @@ void Verifier::trace_class_resolution(Klass* resolve_class, InstanceKlass* verif
   const char* resolve = resolve_class->external_name();
   // print in a single call to reduce interleaving between threads
   if (source_file != NULL) {
-    log_debug(classresolve)("%s %s %s (verification)", verify, resolve, source_file);
+    log_debug(class, resolve)("%s %s %s (verification)", verify, resolve, source_file);
   } else {
-    log_debug(classresolve)("%s %s (verification)", verify, resolve);
+    log_debug(class, resolve)("%s %s (verification)", verify, resolve);
   }
 }
 
@@ -169,7 +169,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
   bool can_failover = FailOverToOldVerifier &&
      klass->major_version() < NOFAILOVER_MAJOR_VERSION;
 
-  log_info(classinit)("Start class verification for: %s", klassName);
+  log_info(class, init)("Start class verification for: %s", klassName);
   if (klass->major_version() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
     ClassVerifier split_verifier(klass, THREAD);
     split_verifier.verify_class(THREAD);
@@ -178,7 +178,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
         (exception_name == vmSymbols::java_lang_VerifyError() ||
          exception_name == vmSymbols::java_lang_ClassFormatError())) {
       log_info(verification)("Fail over class verification to old verifier for: %s", klassName);
-      log_info(classinit)("Fail over class verification to old verifier for: %s", klassName);
+      log_info(class, init)("Fail over class verification to old verifier for: %s", klassName);
       exception_name = inference_verify(
         klass, message_buffer, message_buffer_len, THREAD);
     }
@@ -190,8 +190,8 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
         klass, message_buffer, message_buffer_len, THREAD);
   }
 
-  if (log_is_enabled(Info, classinit)){
-    log_end_verification(Log(classinit)::info_stream(), klassName, exception_name, THREAD);
+  if (log_is_enabled(Info, class, init)){
+    log_end_verification(Log(class, init)::info_stream(), klassName, exception_name, THREAD);
   }
   if (log_is_enabled(Info, verification)){
     log_end_verification(Log(verification)::info_stream(), klassName, exception_name, THREAD);
@@ -205,7 +205,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
     ResourceMark rm(THREAD);
     instanceKlassHandle kls =
       SystemDictionary::resolve_or_fail(exception_name, true, CHECK_false);
-    if (log_is_enabled(Debug, classresolve)) {
+    if (log_is_enabled(Debug, class, resolve)) {
       Verifier::trace_class_resolution(kls(), klass());
     }
 
@@ -601,7 +601,7 @@ void ClassVerifier::verify_class(TRAPS) {
 
   if (was_recursively_verified()){
     log_info(verification)("Recursive verification detected for: %s", _klass->external_name());
-    log_info(classinit)("Recursive verification detected for: %s",
+    log_info(class, init)("Recursive verification detected for: %s",
                         _klass->external_name());
   }
 }
@@ -1994,7 +1994,7 @@ Klass* ClassVerifier::load_class(Symbol* name, TRAPS) {
     name, Handle(THREAD, loader), Handle(THREAD, protection_domain),
     true, THREAD);
 
-  if (log_is_enabled(Debug, classresolve)) {
+  if (log_is_enabled(Debug, class, resolve)) {
     instanceKlassHandle cur_class = current_class();
     Verifier::trace_class_resolution(kls, cur_class());
   }

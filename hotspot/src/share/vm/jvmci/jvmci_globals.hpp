@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,16 @@
 // to be accessible to the JVMCI C++ code should be defined here. All other
 // JVMCI flags should be defined in JVMCIOptions.java.
 //
-#define JVMCI_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, range, constraint) \
+#define JVMCI_FLAGS(develop, \
+                    develop_pd, \
+                    product, \
+                    product_pd, \
+                    diagnostic, \
+                    experimental, \
+                    notproduct, \
+                    range, \
+                    constraint, \
+                    writeable) \
                                                                             \
   experimental(bool, EnableJVMCI, false,                                    \
           "Enable JVMCI")                                                   \
@@ -96,7 +105,8 @@ JVMCI_FLAGS(DECLARE_DEVELOPER_FLAG, \
             DECLARE_EXPERIMENTAL_FLAG, \
             DECLARE_NOTPRODUCT_FLAG, \
             IGNORE_RANGE, \
-            IGNORE_CONSTRAINT)
+            IGNORE_CONSTRAINT, \
+            IGNORE_WRITEABLE)
 
 class JVMCIGlobals {
  public:

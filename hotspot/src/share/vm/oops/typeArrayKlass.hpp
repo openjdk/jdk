@@ -150,6 +150,9 @@ class TypeArrayKlass : public ArrayKlass {
 
  public:
   const char* internal_name() const;
+
+  ModuleEntry* module() const;
+  PackageEntry* package() const;
 };
 
 #endif // SHARE_VM_OOPS_TYPEARRAYKLASS_HPP

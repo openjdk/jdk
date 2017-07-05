@@ -30,7 +30,7 @@ import jdk.test.lib.jittester.SymbolTable;
 import jdk.test.lib.jittester.TernaryOperator;
 import jdk.test.lib.jittester.Type;
 import jdk.test.lib.jittester.TypeList;
-import jdk.test.lib.jittester.TypeUtil;
+import jdk.test.lib.jittester.utils.TypeUtil;
 import jdk.test.lib.jittester.types.TypeKlass;
 import jdk.test.lib.jittester.types.TypeBoolean;
 import jdk.test.lib.jittester.utils.PseudoRandom;

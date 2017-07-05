@@ -113,36 +113,40 @@ do
       ;;
   esac
 
+  # The value of `value3` is chosen such that when added to `value1` or `value2`
+  # it will result in carrying of bits over to the next byte, thereby detecting
+  # possible errors in endianness conversion e.g. if say for atomic addition the
+  # augend is incorrectly processed
   case $type in
     short)
       value1=(short)0x0102
       value2=(short)0x1112
-      value3=(short)0x2122
+      value3=(short)0xFFFE
       ;;
     char)
       value1=(char)0x0102
       value2=(char)0x1112
-      value3=(char)0x2122
+      value3=(char)0xFFFE
       ;;
     int)
       value1=0x01020304
       value2=0x11121314
-      value3=0x21222324
+      value3=0xFFFEFDFC
       ;;
     long)
       value1=0x0102030405060708L
       value2=0x1112131415161718L
-      value3=0x2122232425262728L
+      value3=0xFFFEFDFCFBFAF9F8L
       ;;
     float)
       value1=0x01020304
       value2=0x11121314
-      value3=0x21222324
+      value3=0xFFFEFDFC
       ;;
     double)
       value1=0x0102030405060708L
       value2=0x1112131415161718L
-      value3=0x2122232425262728L
+      value3=0xFFFEFDFCFBFAF9F8L
       ;;
   esac
 

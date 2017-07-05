@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.ProcessTools;
 import java.util.ArrayList;
 import java.util.Collections;
+import jdk.test.lib.Utils;
 
 class RunSystemGC {
   public static void main(String args[]) throws Exception {
@@ -43,19 +44,11 @@ class RunSystemGC {
 
 
 public class TestVerifySilently {
-  private static String[] getTestJavaOpts() {
-    String testVmOptsStr = System.getProperty("test.java.opts");
-    if (!testVmOptsStr.isEmpty()) {
-      return testVmOptsStr.split(" ");
-    } else {
-      return new String[] {};
-    }
-  }
 
   private static OutputAnalyzer runTest(boolean verifySilently) throws Exception {
     ArrayList<String> vmOpts = new ArrayList();
 
-    Collections.addAll(vmOpts, getTestJavaOpts());
+    Collections.addAll(vmOpts, Utils.getFilteredTestJavaOpts("-Xlog.*"));
     Collections.addAll(vmOpts, new String[] {"-XX:+UnlockDiagnosticVMOptions",
                                              "-XX:+VerifyDuringStartup",
                                              "-XX:+VerifyBeforeGC",

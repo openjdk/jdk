@@ -44,7 +44,7 @@ include NON_CORE_PKGS.gmk
 # Definitions for directories
 #
 
-DOCSDIR := $(IMAGES_OUTPUTDIR)/docs
+DOCSDIR := $(DOCS_IMAGE_DIR)
 DOCSTMPDIR = $(SUPPORT_OUTPUTDIR)/docs
 
 HOTSPOT_DOCS_IMPORT_PATH=$(HOTSPOT_OUTPUTDIR)/docs
@@ -1437,7 +1437,6 @@ $(DYNALINKAPI_OPTIONS_FILE):
 	  $(call OptionPair,-windowtitle,$(DYNALINKAPI_WINDOWTITLE) $(DRAFT_WINTITLE)); \
 	  $(call OptionPair,-header,$(DYNALINKAPI_HEADER)$(DRAFT_HEADER)) ; \
 	  $(call OptionPair,-bottom,$(DYNALINKAPI_BOTTOM)$(DRAFT_BOTTOM)) ; \
-	  $(call OptionTrip,-group,$(DYNALINKAPI_GROUPNAME),$(DYNALINKAPI_REGEXP)); \
 	  $(call OptionTrip,-linkoffline,$(DYNALINKAPI2COREAPI),$(COREAPI_DOCSDIR)/); \
 	) >> $@
 
@@ -1634,9 +1633,7 @@ JLINK_PLUGIN_DOCTITLE := JLink Plugin API - EXPERIMENTAL
 JLINK_PLUGIN_WINDOWTITLE := JLink Plugin API - EXPERIMENTAL
 JLINK_PLUGIN_HEADER := <strong>JLink Plugin API - EXPERIMENTAL</strong>
 JLINK_PLUGIN_BOTTOM := $(call CommonBottom,$(JLINK_PLUGIN_FIRST_COPYRIGHT_YEAR))
-JLINK_PLUGIN_PKGS = jdk.tools.jlink \
-    jdk.tools.jlink.builder \
-    jdk.tools.jlink.plugin
+JLINK_PLUGIN_PKGS = jdk.tools.jlink.plugin
 
 JLINK_PLUGIN_INDEX_HTML = $(JLINK_PLUGIN_DOCDIR)/index.html
 JLINK_PLUGIN_OPTIONS_FILE = $(DOCSTMPDIR)/jlinkplugins.options

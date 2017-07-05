@@ -26,6 +26,7 @@
  * @test
  * @bug 8033626
  * @summary assert(ex_map->jvms()->same_calls_as(_exceptions->jvms())) failed: all collected exceptions must come from the same place
+ * @modules java.base/jdk.internal.misc
  * @library /testlibrary
  * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:CompileOnly=TestObjectClone::f TestObjectClone
  */

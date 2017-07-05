@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,210 +22,194 @@
  */
 
 /*
-  test
-  @bug 6365992 6379599
-  @summary REG: Showing and disposing a native print dialog makes the main frame inactive, Win32
-  @author Dmitry.Cherepanov@SUN.COM area=awt.printdialog
-  @run applet/manual=yesno RestoreActiveWindowTest.html
-*/
-
-import java.applet.Applet;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.print.*;
-import javax.print.attribute.*;
-
-public class RestoreActiveWindowTest extends Applet
-{
-    Button showBtn1 = new Button("show a native print dialog");
-    Button showBtn2 = new Button("show a native page dialog");
-
-    public void init()
-    {
-        showBtn1.addActionListener(new ActionListener(){
-                public void actionPerformed(ActionEvent ae) {
-                    PrinterJob.getPrinterJob().printDialog();
-                }
-            });
-        showBtn2.addActionListener(new ActionListener(){
-                public void actionPerformed(ActionEvent ae){
-                    PrinterJob.getPrinterJob().pageDialog(new PageFormat());
-                }
-            });
-
-        add(showBtn1);
-        add(showBtn2);
-
-        String[] instructions = {
-            "1.1) Click on 'show a native print dialog'. A native print dialog will come up.",
-            "1.2) Click on the 'close'(X) button. The dialog will be closed.",
-            "1.3) After the dialog closing another window should become the active window.",
-            "1.4) If there no any active window then the test failed.",
-            "2.1) Click on 'show a native page dialog'. A native page dialog will come up.",
-            "2.2) Click on the 'close'(X) button. The dialog will be closed.",
-            "2.3) After the dialog closing another window should become the active window.",
-            "2.4) If there no any active window then the test failed.",
-            "3) Test Passed."
-        };
-
-        Sysout.createDialogWithInstructions( instructions );
-
-    }//End  init()
-
-   public void start ()
-    {
-      //Get things going.  Request focus, set size, et cetera
-      setSize (200,200);
-      show();
-
-    }// start()
-
-    //The rest of this class is the actions which perform the test...
-
-    //Use Sysout.println to communicate with the user NOT System.out!!
-    //Sysout.println ("Something Happened!");
-
-}// class ManualYesNoTest
-
-/* Place other classes related to the test after this line */
-
-
-
-
-
-/****************************************************
- Standard Test Machinery
- DO NOT modify anything below -- it's a standard
-  chunk of code whose purpose is to make user
-  interaction uniform, and thereby make it simpler
-  to read and understand someone else's test.
- ****************************************************/
-
-/**
- This is part of the standard test machinery.
- It creates a dialog (with the instructions), and is the interface
-  for sending text messages to the user.
- To print the instructions, send an array of strings to Sysout.createDialog
-  WithInstructions method.  Put one line of instructions per array entry.
- To display a message for the tester to see, simply call Sysout.println
-  with the string to be displayed.
- This mimics System.out.println but works within the test harness as well
-  as standalone.
+ * @test
+ * @bug 6365992 6379599 8137137
+ * @summary REG: Showing and disposing a native print dialog makes the main
+ *  frame inactive, Win32
+ * @run main/manual RestoreActiveWindowTest
  */
+import java.awt.Frame;
+import java.awt.Button;
+import java.awt.GridBagLayout;
+import java.awt.Panel;
+import java.awt.TextArea;
+import java.awt.GridLayout;
+import java.awt.GridBagConstraints;
+import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.print.PrinterJob;
+import java.awt.print.PageFormat;
 
-class Sysout
-{
-    private static TestDialog dialog;
+public class RestoreActiveWindowTest implements ActionListener {
 
-    public static void createDialogWithInstructions( String[] instructions )
-    {
-        dialog = new TestDialog( new Frame(), "Instructions" );
-        dialog.printInstructions( instructions );
-        dialog.setVisible(true);
-        println( "Any messages for the tester will display here." );
+    private static Frame mainFrame;
+    private static Button printDialogButton;
+    private static Button pageDialogButton;
+    private static Frame instructionFrame;
+    private static GridBagLayout layout;
+    private static Panel mainControlPanel;
+    private static Panel resultButtonPanel;
+    private static TextArea instructionTextArea;
+    private static Button passButton;
+    private static Button failButton;
+    private static Thread mainThread = null;
+    private static boolean testPassed = false;
+    private static boolean isInterrupted = false;
+    private static final int testTimeOut = 300000;
+    private static String testFailMessage;
+
+    public void createAndShowGUI() {
+        mainFrame = new Frame("Test");
+        mainFrame.setSize(200, 200);
+        mainFrame.setLocationRelativeTo(null);
+        mainFrame.setLayout(new GridLayout(2, 1));
+
+        printDialogButton = new Button("show a native print dialog");
+        pageDialogButton = new Button("show a native page dialog");
+        printDialogButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                PrinterJob.getPrinterJob().printDialog();
+                setButtonEnable(true);
+                testFailMessage = "Print dialog test failed.";
+            }
+        });
+        pageDialogButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent ae) {
+                PrinterJob.getPrinterJob().pageDialog(new PageFormat());
+                setButtonEnable(true);
+                testFailMessage = "Page dialog test failed.";
+            }
+        });
+
+        mainFrame.add(printDialogButton);
+        mainFrame.add(pageDialogButton);
+        mainFrame.setVisible(true);
+
+       mainFrame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent we) {
+                cleanUp();
+                throw new RuntimeException("User has closed the test window "
+                        + "without clicking Pass or Fail.");
+            }
+        });
     }
 
-    public static void createDialog( )
-    {
-        dialog = new TestDialog( new Frame(), "Instructions" );
-        String[] defInstr = { "Instructions will appear here. ", "" } ;
-        dialog.printInstructions( defInstr );
-        dialog.setVisible(true);
-        println( "Any messages for the tester will display here." );
+    private void createInstructionUI() {
+        instructionFrame = new Frame("Native Print Dialog and Page Dialog");
+        layout = new GridBagLayout();
+        mainControlPanel = new Panel(layout);
+        resultButtonPanel = new Panel(layout);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        String instructions
+                = "\nINSTRUCTIONS:\n"
+                + "\n   1. Click on the 'show a native print dialog' button. A "
+                + "native print dialog will come up."
+                + "\n   2. Click on the 'Cancel' button on Mac OS X or "
+                + "'close'(X) on other paltforms. Dialog will be closed."
+                + "\n   3. After the dialog is closed another window should "
+                + "become the active window."
+                + "\n   4. If there no any active window then the test has "
+                + "failed. Click on 'Fail' Button."
+                + "\n   5. Click on the 'show a native page dialog' button. A "
+                + "native page dialog will come up."
+                + "\n   6. Click on the 'Cancel' button on Mac OS X or "
+                + "'close'(X) on other paltforms. Dialog will be closed."
+                + "\n   7. After the dialog is closed another window should "
+                + "become the active window."
+                + "\n   8. If there no any active window then the test has "
+                + "failed. Click on 'Fail' Button."
+                + "\n   9. Test Passed. Click on 'Pass' Button.";
+
+        instructionTextArea = new TextArea(13, 80);
+        instructionTextArea.setText(instructions);
+        instructionTextArea.setEnabled(false);
+        instructionTextArea.setBackground(Color.white);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0.5;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        mainControlPanel.add(instructionTextArea, gbc);
+
+        passButton = new Button("Pass");
+        passButton.setName("Pass");
+        passButton.addActionListener((ActionListener) this);
+
+        failButton = new Button("Fail");
+        failButton.setName("Fail");
+        failButton.addActionListener((ActionListener) this);
+
+        setButtonEnable(false);
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        resultButtonPanel.add(passButton, gbc);
+        gbc.gridx = 1;
+        gbc.gridy = 0;
+        resultButtonPanel.add(failButton, gbc);
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        mainControlPanel.add(resultButtonPanel, gbc);
+
+        instructionFrame.add(mainControlPanel);
+        instructionFrame.pack();
+        instructionFrame.setVisible(true);
     }
 
-
-    public static void printInstructions( String[] instructions )
-    {
-        dialog.printInstructions( instructions );
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+        if (ae.getSource() instanceof Button) {
+            Button btn = (Button) ae.getSource();
+            switch (btn.getName()) {
+                case "Pass":
+                    testPassed = true;
+                    isInterrupted = true;
+                    mainThread.interrupt();
+                    break;
+                case "Fail":
+                    testPassed = false;
+                    isInterrupted = true;
+                    mainThread.interrupt();
+                    break;
+            }
+        }
     }
 
-
-    public static void println( String messageIn )
-    {
-        dialog.displayMessage( messageIn );
+    private static void setButtonEnable(boolean status) {
+        passButton.setEnabled(status);
+        failButton.setEnabled(status);
     }
 
-}// Sysout  class
-
-/**
-  This is part of the standard test machinery.  It provides a place for the
-   test instructions to be displayed, and a place for interactive messages
-   to the user to be displayed.
-  To have the test instructions displayed, see Sysout.
-  To have a message to the user be displayed, see Sysout.
-  Do not call anything in this dialog directly.
-  */
-class TestDialog extends Dialog
-{
-
-    TextArea instructionsText;
-    TextArea messageText;
-    int maxStringLength = 80;
-
-    //DO NOT call this directly, go through Sysout
-    public TestDialog( Frame frame, String name )
-    {
-        super( frame, name );
-        int scrollBoth = TextArea.SCROLLBARS_BOTH;
-        instructionsText = new TextArea( "", 15, maxStringLength, scrollBoth );
-        add( "North", instructionsText );
-
-        messageText = new TextArea( "", 5, maxStringLength, scrollBoth );
-        add("Center", messageText);
-
-        pack();
-
-        setVisible(true);
-    }// TestDialog()
-
-    //DO NOT call this directly, go through Sysout
-    public void printInstructions( String[] instructions )
-    {
-        //Clear out any current instructions
-        instructionsText.setText( "" );
-
-        //Go down array of instruction strings
-
-        String printStr, remainingStr;
-        for( int i=0; i < instructions.length; i++ )
-        {
-            //chop up each into pieces maxSringLength long
-            remainingStr = instructions[ i ];
-            while( remainingStr.length() > 0 )
-            {
-                //if longer than max then chop off first max chars to print
-                if( remainingStr.length() >= maxStringLength )
-                {
-                    //Try to chop on a word boundary
-                    int posOfSpace = remainingStr.
-                        lastIndexOf( ' ', maxStringLength - 1 );
-
-                    if( posOfSpace <= 0 ) posOfSpace = maxStringLength - 1;
-
-                    printStr = remainingStr.substring( 0, posOfSpace + 1 );
-                    remainingStr = remainingStr.substring( posOfSpace + 1 );
-                }
-                //else just print
-                else
-                {
-                    printStr = remainingStr;
-                    remainingStr = "";
-                }
-
-                instructionsText.append( printStr + "\n" );
-
-            }// while
-
-        }// for
-
-    }//printInstructions()
-
-    //DO NOT call this directly, go through Sysout
-    public void displayMessage( String messageIn )
-    {
-        messageText.append( messageIn + "\n" );
-        System.out.println(messageIn);
+    private static void cleanUp() {
+        mainFrame.dispose();
+        instructionFrame.dispose();
     }
 
-}// TestDialog  class
+    public static void main(String args[]) {
+        RestoreActiveWindowTest printDialogs = new RestoreActiveWindowTest();
+        printDialogs.createInstructionUI();
+        printDialogs.createAndShowGUI();
+
+        mainThread = Thread.currentThread();
+        try {
+            mainThread.sleep(testTimeOut);
+        } catch (InterruptedException ex) {
+            if (!testPassed) {
+                throw new RuntimeException(testFailMessage);
+            }
+        } finally {
+            cleanUp();
+        }
+
+        if (!isInterrupted) {
+            throw new RuntimeException("Test Timed out after "
+                    + testTimeOut / 1000 + " seconds");
+        }
+    }
+}

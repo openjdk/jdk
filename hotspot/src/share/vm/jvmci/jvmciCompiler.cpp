@@ -85,7 +85,7 @@ void JVMCICompiler::bootstrap() {
     if (!mh->is_native() && !mh->is_static() && !mh->is_initializer()) {
       ResourceMark rm;
       int hot_count = 10; // TODO: what's the appropriate value?
-      CompileBroker::compile_method(mh, InvocationEntryBci, CompLevel_full_optimization, mh, hot_count, "bootstrap", THREAD);
+      CompileBroker::compile_method(mh, InvocationEntryBci, CompLevel_full_optimization, mh, hot_count, CompileTask::Reason_Bootstrap, THREAD);
     }
   }
 

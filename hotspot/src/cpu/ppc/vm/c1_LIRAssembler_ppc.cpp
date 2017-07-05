@@ -2845,6 +2845,9 @@ void LIR_Assembler::membar_storeload() {
   __ membar(Assembler::StoreLoad);
 }
 
+void LIR_Assembler::on_spin_wait() {
+  Unimplemented();
+}
 
 void LIR_Assembler::leal(LIR_Opr addr_opr, LIR_Opr dest) {
   LIR_Address* addr = addr_opr->as_address_ptr();

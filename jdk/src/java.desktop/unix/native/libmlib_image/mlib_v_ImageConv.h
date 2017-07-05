@@ -34,18 +34,6 @@ extern "C" {
 
 #if defined ( VIS ) && VIS == 0x200
 
-mlib_status mlib_conv2x2_8nw_f(mlib_image       *dst,
-                               const mlib_image *src,
-                               const mlib_s32   *kern,
-                               mlib_s32         scale,
-                               mlib_s32         cmask);
-
-mlib_status mlib_conv3x3_8nw_f(mlib_image       *dst,
-                               const mlib_image *src,
-                               const mlib_s32   *kern,
-                               mlib_s32         scale,
-                               mlib_s32         cmask);
-
 mlib_status mlib_convMxN_8nw_f(mlib_image       *dst,
                                const mlib_image *src,
                                mlib_s32         m,
@@ -57,16 +45,6 @@ mlib_status mlib_convMxN_8nw_f(mlib_image       *dst,
                                mlib_s32         cmask);
 
 #else
-
-mlib_status mlib_conv2x2_8nw_f(mlib_image       *dst,
-                               const mlib_image *src,
-                               const mlib_s32   *kern,
-                               mlib_s32         scale);
-
-mlib_status mlib_conv3x3_8nw_f(mlib_image       *dst,
-                               const mlib_image *src,
-                               const mlib_s32   *kern,
-                               mlib_s32         scale);
 
 mlib_status mlib_convMxN_8nw_f(mlib_image       *dst,
                                const mlib_image *src,

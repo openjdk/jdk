@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,6 +161,10 @@ inline BasicObjectLock* frame::interpreter_frame_monitors() const {
 
 inline void frame::interpreter_frame_set_monitors(BasicObjectLock* monitors) {
   *interpreter_frame_monitors_addr() = monitors;
+}
+
+inline oop* frame::interpreter_frame_mirror_addr() const {
+  return (oop*)(fp() + interpreter_frame_mirror_offset);
 }
 
 // Constant pool cache

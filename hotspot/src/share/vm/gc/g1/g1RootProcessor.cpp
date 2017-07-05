@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@
 #include "gc/g1/bufferingOopClosure.hpp"
 #include "gc/g1/g1CodeBlobClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
@@ -152,7 +152,6 @@ public:
 
   CLDClosure* weak_clds()        { return NULL; }
   CLDClosure* strong_clds()      { return _clds; }
-  CLDClosure* thread_root_clds() { return _clds; }
 
   CodeBlobClosure* strong_codeblobs() { return _blobs; }
 };
@@ -184,9 +183,6 @@ public:
   // system.
   CLDClosure* weak_clds() { return _clds; }
   CLDClosure* strong_clds() { return _clds; }
-  // We don't want to visit CLDs more than once, so we return NULL for the
-  // thread root CLDs.
-  CLDClosure* thread_root_clds() { return NULL; }
 
   // We don't want to visit code blobs more than once, so we return NULL for the
   // strong case and walk the entire code cache as a separate step.
@@ -211,7 +207,6 @@ void G1RootProcessor::process_all_roots(OopClosure* oops,
 void G1RootProcessor::process_java_roots(G1RootClosures* closures,
                                          G1GCPhaseTimes* phase_times,
                                          uint worker_i) {
-  assert(closures->thread_root_clds() == NULL || closures->weak_clds() == NULL, "There is overlap between those, only one may be set");
   // Iterating over the CLDG and the Threads are done early to allow us to
   // first process the strong CLDs and nmethods and then, after a barrier,
   // let the thread process the weak CLDs and nmethods.
@@ -227,7 +222,6 @@ void G1RootProcessor::process_java_roots(G1RootClosures* closures,
     bool is_par = n_workers() > 1;
     Threads::possibly_parallel_oops_do(is_par,
                                        closures->strong_oops(),
-                                       closures->thread_root_clds(),
                                        closures->strong_codeblobs());
   }
 }

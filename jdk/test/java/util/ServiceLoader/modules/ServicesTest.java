@@ -157,7 +157,7 @@ public class ServicesTest {
         Layer bootLayer = Layer.boot();
         Configuration parent = bootLayer.configuration();
         Configuration cf
-            = parent.resolveRequiresAndUses(finder, ModuleFinder.empty(), Set.of());
+            = parent.resolveRequiresAndUses(finder, ModuleFinder.of(), Set.of());
         ClassLoader scl = ClassLoader.getSystemClassLoader();
         Layer layer = bootLayer.defineModulesWithOneLoader(cf, scl);
 

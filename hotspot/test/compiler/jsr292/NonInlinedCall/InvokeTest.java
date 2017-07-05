@@ -25,14 +25,15 @@
  * @test
  * @bug 8072008
  * @library /testlibrary /test/lib / ../patches
+ * @modules java.base/jdk.internal.misc
  * @modules java.base/jdk.internal.vm.annotation
  * @build java.base/java.lang.invoke.MethodHandleHelper
  * @build sun.hotspot.WhiteBox
  * @build compiler.jsr292.NonInlinedCall.InvokeTest
  * @run main/bootclasspath/othervm -XX:+IgnoreUnrecognizedVMOptions
- *                         -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                         -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1
- *                         compiler.jsr292.NonInlinedCall.InvokeTest
+ *                                 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                                 -Xbatch -XX:-TieredCompilation -XX:CICompilerCount=1
+ *                                 compiler.jsr292.NonInlinedCall.InvokeTest
  */
 
 package compiler.jsr292.NonInlinedCall;

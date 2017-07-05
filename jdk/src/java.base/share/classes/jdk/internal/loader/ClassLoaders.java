@@ -68,13 +68,14 @@ public class ClassLoaders {
         if (s != null && s.length() > 0)
             bcp = toURLClassPath(s);
 
-        // we have a class path if -cp is specified or -m is not specified
+        // we have a class path if -cp is specified or -m is not specified.
+        // If neither is specified then default to -cp <working directory>.
         URLClassPath ucp = null;
         String mainMid = System.getProperty("jdk.module.main");
         String cp = System.getProperty("java.class.path");
-        if (mainMid == null && (cp == null || cp.length() == 0))
-            cp = ".";
-        if (cp != null && cp.length() > 0)
+        if (mainMid == null && cp == null)
+            cp = "";
+        if (cp != null)
             ucp = toURLClassPath(cp);
 
 
@@ -197,7 +198,7 @@ public class ClassLoaders {
          * @see java.lang.instrument.Instrumentation#appendToSystemClassLoaderSearch
          */
         void appendToClassPathForInstrumentation(String path) {
-            appendToUCP(path, ucp);
+            addClassPathToUCP(path, ucp);
         }
 
         /**
@@ -224,7 +225,7 @@ public class ClassLoaders {
      */
     private static URLClassPath toURLClassPath(String cp) {
         URLClassPath ucp = new URLClassPath(new URL[0]);
-        appendToUCP(cp, ucp);
+        addClassPathToUCP(cp, ucp);
         return ucp;
     }
 
@@ -232,20 +233,28 @@ public class ClassLoaders {
      * Converts the elements in the given class path to file URLs and adds
      * them to the given URLClassPath.
      */
-    private static void appendToUCP(String cp, URLClassPath ucp) {
-        String[] elements = cp.split(File.pathSeparator);
-        if (elements.length == 0) {
-            // contains path separator(s) only, default to current directory
-            // to be compatible with long standing behavior
-            elements = new String[] { "" };
+    private static void addClassPathToUCP(String cp, URLClassPath ucp) {
+        int off = 0;
+        int next;
+        while ((next = cp.indexOf(File.pathSeparator, off)) != -1) {
+            addURLToUCP(cp.substring(off, next), ucp);
+            off = next + 1;
         }
-        for (String s: elements) {
-            try {
-                URL url = Paths.get(s).toRealPath().toUri().toURL();
-                ucp.addURL(url);
-            } catch (InvalidPathException | IOException ignore) {
-                // malformed path string or class path element does not exist
-            }
+
+        // remaining
+        addURLToUCP(cp.substring(off), ucp);
+    }
+
+    /**
+     * Attempts to convert to the given string to a file URL and adds it
+     * to the given URLClassPath.
+     */
+    private static void addURLToUCP(String s, URLClassPath ucp) {
+        try {
+            URL url = Paths.get(s).toRealPath().toUri().toURL();
+            ucp.addURL(url);
+        } catch (InvalidPathException | IOException ignore) {
+            // malformed path string or class path element does not exist
         }
     }
 

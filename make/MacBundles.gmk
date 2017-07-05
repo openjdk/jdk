@@ -34,7 +34,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 
   bundles: jre-bundle jdk-bundle
 
-  # JDK_MACOSX_BUNDLE_DIR and JRE_MACOSX_BUNDLE_DIR are defined in SPEC.
+  # JDK_MACOSX_CONTENTS_DIR and JRE_MACOSX_CONTENTS_DIR are defined in SPEC.
 
   MACOSX_PLIST_SRC := $(JDK_TOPDIR)/make/data/bundle
 
@@ -52,27 +52,27 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   JDK_FILE_LIST := $(shell $(FIND) $(JDK_IMAGE_DIR))
   JRE_FILE_LIST := $(shell $(FIND) $(JRE_IMAGE_DIR))
 
-  JDK_TARGET_LIST := $(subst $(JDK_IMAGE_DIR)/,$(JDK_MACOSX_BUNDLE_DIR)/Home/,$(JDK_FILE_LIST))
-  JRE_TARGET_LIST := $(subst $(JRE_IMAGE_DIR)/,$(JRE_MACOSX_BUNDLE_DIR)/Home/,$(JRE_FILE_LIST))
+  JDK_TARGET_LIST := $(subst $(JDK_IMAGE_DIR)/,$(JDK_MACOSX_CONTENTS_DIR)/Home/,$(JDK_FILE_LIST))
+  JRE_TARGET_LIST := $(subst $(JRE_IMAGE_DIR)/,$(JRE_MACOSX_CONTENTS_DIR)/Home/,$(JRE_FILE_LIST))
 
   # Copy empty directories (jre/lib/applet).
-  $(JDK_MACOSX_BUNDLE_DIR)/Home/%: $(JDK_IMAGE_DIR)/%
+  $(JDK_MACOSX_CONTENTS_DIR)/Home/%: $(JDK_IMAGE_DIR)/%
 	$(call LogInfo, Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(MKDIR) -p $(@D)
 	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -P '$<' '$@'; fi
 
-  $(JRE_MACOSX_BUNDLE_DIR)/Home/%: $(JRE_IMAGE_DIR)/%
+  $(JRE_MACOSX_CONTENTS_DIR)/Home/%: $(JRE_IMAGE_DIR)/%
 	$(call LogInfo, Copying $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(MKDIR) -p $(@D)
 	if [ -d "$<" ]; then $(MKDIR) -p $@; else $(CP) -f -R -P '$<' '$@'; fi
 
-  $(JDK_MACOSX_BUNDLE_DIR)/MacOS/libjli.dylib:
+  $(JDK_MACOSX_CONTENTS_DIR)/MacOS/libjli.dylib:
 	$(call LogInfo, Creating link $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(MKDIR) -p $(@D)
 	$(RM) $@
 	$(LN) -s ../Home/lib/jli/libjli.dylib $@
 
-  $(JRE_MACOSX_BUNDLE_DIR)/MacOS/libjli.dylib:
+  $(JRE_MACOSX_CONTENTS_DIR)/MacOS/libjli.dylib:
 	$(call LogInfo, Creating link $(patsubst $(OUTPUT_ROOT)/%,%,$@))
 	$(MKDIR) -p $(@D)
 	$(RM) $@
@@ -80,7 +80,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 
   $(eval $(call SetupTextFileProcessing, BUILD_JDK_PLIST, \
       SOURCE_FILES := $(MACOSX_PLIST_SRC)/JDK-Info.plist, \
-      OUTPUT_FILE := $(JDK_MACOSX_BUNDLE_DIR)/Info.plist, \
+      OUTPUT_FILE := $(JDK_MACOSX_CONTENTS_DIR)/Info.plist, \
       REPLACEMENTS := \
           @@ID@@ => $(BUNDLE_ID).jdk ; \
           @@NAME@@ => $(BUNDLE_NAME) ; \
@@ -92,7 +92,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 
   $(eval $(call SetupTextFileProcessing, BUILD_JRE_PLIST, \
       SOURCE_FILES := $(MACOSX_PLIST_SRC)/JRE-Info.plist, \
-      OUTPUT_FILE := $(JRE_MACOSX_BUNDLE_DIR)/Info.plist, \
+      OUTPUT_FILE := $(JRE_MACOSX_CONTENTS_DIR)/Info.plist, \
       REPLACEMENTS := \
           @@ID@@ => $(BUNDLE_ID).jre ; \
           @@NAME@@ => $(BUNDLE_NAME) ; \
@@ -102,13 +102,13 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           @@VENDOR@@ => $(BUNDLE_VENDOR) , \
   ))
 
-  jdk-bundle: $(JDK_TARGET_LIST) $(JDK_MACOSX_BUNDLE_DIR)/MacOS/libjli.dylib \
+  jdk-bundle: $(JDK_TARGET_LIST) $(JDK_MACOSX_CONTENTS_DIR)/MacOS/libjli.dylib \
       $(BUILD_JDK_PLIST)
-	$(SETFILE) -a B $(dir $(JDK_MACOSX_BUNDLE_DIR))
+	$(SETFILE) -a B $(dir $(JDK_MACOSX_CONTENTS_DIR))
 
-  jre-bundle: $(JRE_TARGET_LIST) $(JRE_MACOSX_BUNDLE_DIR)/MacOS/libjli.dylib \
+  jre-bundle: $(JRE_TARGET_LIST) $(JRE_MACOSX_CONTENTS_DIR)/MacOS/libjli.dylib \
       $(BUILD_JRE_PLIST)
-	$(SETFILE) -a B $(dir $(JRE_MACOSX_BUNDLE_DIR))
+	$(SETFILE) -a B $(dir $(JRE_MACOSX_CONTENTS_DIR))
 
 else # Not macosx
 

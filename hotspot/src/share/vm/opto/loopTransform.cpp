@@ -2819,7 +2819,7 @@ bool IdealLoopTree::iteration_split_impl( PhaseIdealLoop *phase, Node_List &old_
       if (phase->do_range_check(this, old_new) != 0) {
         cl->mark_has_range_checks();
       }
-    } else {
+    } else if (PostLoopMultiversioning) {
       phase->has_range_checks(this);
     }
 

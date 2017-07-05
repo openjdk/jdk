@@ -390,13 +390,11 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
         // BugId 4454115: A read from a MappedByteBuffer can fault here if the
         // underlying file has been truncated. Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob_unsafe(pc);
-        nmethod* nm = cb->is_nmethod() ? (nmethod*)cb : NULL;
+        CompiledMethod* nm = cb->as_compiled_method_or_null();
         if (nm != NULL && nm->has_unsafe_access()) {
-          // We don't really need a stub here! Just set the pending exeption and
-          // continue at the next instruction after the faulting read. Returning
-          // garbage from this read is ok.
-          thread->set_pending_unsafe_access_error();
-          os::Aix::ucontext_set_pc(uc, pc + 4);
+          address next_pc = pc + 4;
+          next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
+          os::Aix::ucontext_set_pc(uc, next_pc);
           return 1;
         }
       }
@@ -415,11 +413,9 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
       }
       else if (thread->thread_state() == _thread_in_vm &&
                sig == SIGBUS && thread->doing_unsafe_access()) {
-        // We don't really need a stub here! Just set the pending exeption and
-        // continue at the next instruction after the faulting read. Returning
-        // garbage from this read is ok.
-        thread->set_pending_unsafe_access_error();
-        os::Aix::ucontext_set_pc(uc, pc + 4);
+        address next_pc = pc + 4;
+        next_pc = SharedRuntime::handle_unsafe_access(thread, next_pc);
+        os::Aix::ucontext_set_pc(uc, next_pc);
         return 1;
       }
     }
