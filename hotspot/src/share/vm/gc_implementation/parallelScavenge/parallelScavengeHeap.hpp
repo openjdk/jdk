@@ -58,9 +58,9 @@ class ParallelScavengeHeap : public CollectedHeap {
 
  public:
   ParallelScavengeHeap() : CollectedHeap() {
-    set_alignment(_perm_gen_alignment, intra_generation_alignment());
-    set_alignment(_young_gen_alignment, intra_generation_alignment());
-    set_alignment(_old_gen_alignment, intra_generation_alignment());
+    set_alignment(_perm_gen_alignment, intra_heap_alignment());
+    set_alignment(_young_gen_alignment, intra_heap_alignment());
+    set_alignment(_old_gen_alignment, intra_heap_alignment());
   }
 
   // For use by VM operations
@@ -92,14 +92,14 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   void post_initialize();
   void update_counters();
-
   // The alignment used for the various generations.
   size_t perm_gen_alignment()  const { return _perm_gen_alignment; }
   size_t young_gen_alignment() const { return _young_gen_alignment; }
   size_t old_gen_alignment()  const { return _old_gen_alignment; }
 
-  // The alignment used for eden and survivors within the young gen.
-  size_t intra_generation_alignment() const { return 64 * K; }
+  // The alignment used for eden and survivors within the young gen
+  // and for boundary between young gen and old gen.
+  size_t intra_heap_alignment() const { return 64 * K; }
 
   size_t capacity() const;
   size_t used() const;
@@ -217,6 +217,6 @@ class ParallelScavengeHeap : public CollectedHeap {
 inline size_t ParallelScavengeHeap::set_alignment(size_t& var, size_t val)
 {
   assert(is_power_of_2((intptr_t)val), "must be a power of 2");
-  var = round_to(val, intra_generation_alignment());
+  var = round_to(val, intra_heap_alignment());
   return var;
 }

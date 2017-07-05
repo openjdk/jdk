@@ -10970,7 +10970,7 @@ instruct convI2D_reg(regD dst, stackSlotI src) %{
 %}
 
 instruct convI2XD_reg(regXD dst, eRegI src) %{
-  predicate( UseSSE>=2 );
+  predicate( UseSSE>=2 && !UseXmmI2D );
   match(Set dst (ConvI2D src));
   format %{ "CVTSI2SD $dst,$src" %}
   opcode(0xF2, 0x0F, 0x2A);
@@ -10985,6 +10985,20 @@ instruct convI2XD_mem(regXD dst, memory mem) %{
   opcode(0xF2, 0x0F, 0x2A);
   ins_encode( OpcP, OpcS, Opcode(tertiary), RegMem(dst, mem));
   ins_pipe( pipe_slow );
+%}
+
+instruct convXI2XD_reg(regXD dst, eRegI src)
+%{
+  predicate( UseSSE>=2 && UseXmmI2D );
+  match(Set dst (ConvI2D src));
+
+  format %{ "MOVD  $dst,$src\n\t"
+            "CVTDQ2PD $dst,$dst\t# i2d" %}
+  ins_encode %{
+    __ movd($dst$$XMMRegister, $src$$Register);
+    __ cvtdq2pd($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow); // XXX
 %}
 
 instruct convI2D_mem(regD dst, memory mem) %{
@@ -11062,13 +11076,27 @@ instruct convI2F_mem(regF dst, memory mem) %{
 
 // Convert an int to a float in xmm; no rounding step needed.
 instruct convI2X_reg(regX dst, eRegI src) %{
-  predicate(UseSSE>=1);
+  predicate( UseSSE==1 || UseSSE>=2 && !UseXmmI2F );
   match(Set dst (ConvI2F src));
   format %{ "CVTSI2SS $dst, $src" %}
 
   opcode(0xF3, 0x0F, 0x2A);  /* F3 0F 2A /r */
   ins_encode( OpcP, OpcS, Opcode(tertiary), RegReg(dst, src));
   ins_pipe( pipe_slow );
+%}
+
+ instruct convXI2X_reg(regX dst, eRegI src)
+%{
+  predicate( UseSSE>=2 && UseXmmI2F );
+  match(Set dst (ConvI2F src));
+
+  format %{ "MOVD  $dst,$src\n\t"
+            "CVTDQ2PS $dst,$dst\t# i2f" %}
+  ins_encode %{
+    __ movd($dst$$XMMRegister, $src$$Register);
+    __ cvtdq2ps($dst$$XMMRegister, $dst$$XMMRegister);
+  %}
+  ins_pipe(pipe_slow); // XXX
 %}
 
 instruct convI2L_reg( eRegL dst, eRegI src, eFlagsReg cr) %{

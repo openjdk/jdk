@@ -2037,7 +2037,7 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
 
 
 int LIR_Assembler::shift_amount(BasicType t) {
-  int elem_size = type2aelembytes[t];
+  int elem_size = type2aelembytes(t);
   switch (elem_size) {
     case 1 : return 0;
     case 2 : return 1;
@@ -2360,7 +2360,7 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
                       op->tmp2()->as_register(),
                       op->tmp3()->as_register(),
                       arrayOopDesc::header_size(op->type()),
-                      type2aelembytes[op->type()],
+                      type2aelembytes(op->type()),
                       op->klass()->as_register(),
                       *op->stub()->entry());
   }

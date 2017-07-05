@@ -42,6 +42,8 @@ ciMethodData::ciMethodData(methodDataHandle h_md) : ciObject(h_md) {
   // Set an initial hint. Don't use set_hint_di() because
   // first_di() may be out of bounds if data_size is 0.
   _hint_di = first_di();
+  // Initialize the escape information (to "don't know.");
+  _eflags = _arg_local = _arg_stack = _arg_returned = 0;
 }
 
 // ------------------------------------------------------------------
@@ -59,6 +61,8 @@ ciMethodData::ciMethodData() : ciObject() {
   // Set an initial hint. Don't use set_hint_di() because
   // first_di() may be out of bounds if data_size is 0.
   _hint_di = first_di();
+  // Initialize the escape information (to "don't know.");
+  _eflags = _arg_local = _arg_stack = _arg_returned = 0;
 }
 
 void ciMethodData::load_data() {
@@ -142,6 +146,8 @@ ciProfileData* ciMethodData::data_at(int data_index) {
     return new ciBranchData(data_layout);
   case DataLayout::multi_branch_data_tag:
     return new ciMultiBranchData(data_layout);
+  case DataLayout::arg_info_data_tag:
+    return new ciArgInfoData(data_layout);
   };
 }
 
@@ -171,6 +177,9 @@ ciProfileData* ciMethodData::bci_to_data(int bci) {
     if (dp->tag() == DataLayout::no_tag) {
       _saw_free_extra_data = true;  // observed an empty slot (common case)
       return NULL;
+    }
+    if (dp->tag() == DataLayout::arg_info_data_tag) {
+      break; // ArgInfoData is at the end of extra data section.
     }
     if (dp->bci() == bci) {
       assert(dp->tag() == DataLayout::bit_data_tag, "sane");
@@ -217,8 +226,14 @@ int ciMethodData::trap_recompiled_at(ciProfileData* data) {
 void ciMethodData::clear_escape_info() {
   VM_ENTRY_MARK;
   methodDataOop mdo = get_methodDataOop();
-  if (mdo != NULL)
+  if (mdo != NULL) {
     mdo->clear_escape_info();
+    ArgInfoData *aid = arg_info();
+    int arg_count = (aid == NULL) ? 0 : aid->number_of_args();
+    for (int i = 0; i < arg_count; i++) {
+      set_arg_modified(i, 0);
+    }
+  }
   _eflags = _arg_local = _arg_stack = _arg_returned = 0;
 }
 
@@ -231,6 +246,10 @@ void ciMethodData::update_escape_info() {
     mdo->set_arg_local(_arg_local);
     mdo->set_arg_stack(_arg_stack);
     mdo->set_arg_returned(_arg_returned);
+    int arg_count = mdo->method()->size_of_parameters();
+    for (int i = 0; i < arg_count; i++) {
+      mdo->set_arg_modified(i, arg_modified(i));
+    }
   }
 }
 
@@ -262,6 +281,14 @@ void ciMethodData::set_arg_returned(int i) {
   set_nth_bit(_arg_returned, i);
 }
 
+void ciMethodData::set_arg_modified(int arg, uint val) {
+  ArgInfoData *aid = arg_info();
+  if (aid == NULL)
+    return;
+  assert(arg >= 0 && arg < aid->number_of_args(), "valid argument number");
+  aid->set_arg_modified(arg, val);
+}
+
 bool ciMethodData::is_arg_local(int i) const {
   return is_set_nth_bit(_arg_local, i);
 }
@@ -272,6 +299,14 @@ bool ciMethodData::is_arg_stack(int i) const {
 
 bool ciMethodData::is_arg_returned(int i) const {
   return is_set_nth_bit(_arg_returned, i);
+}
+
+uint ciMethodData::arg_modified(int arg) const {
+  ArgInfoData *aid = arg_info();
+  if (aid == NULL)
+    return 0;
+  assert(arg >= 0 && arg < aid->number_of_args(), "valid argument number");
+  return aid->arg_modified(arg);
 }
 
 ByteSize ciMethodData::offset_of_slot(ciProfileData* data, ByteSize slot_offset_in_data) {
@@ -287,6 +322,18 @@ ByteSize ciMethodData::offset_of_slot(ciProfileData* data, ByteSize slot_offset_
   return in_ByteSize(offset);
 }
 
+ciArgInfoData *ciMethodData::arg_info() const {
+  // Should be last, have to skip all traps.
+  DataLayout* dp  = data_layout_at(data_size());
+  DataLayout* end = data_layout_at(data_size() + extra_data_size());
+  for (; dp < end; dp = methodDataOopDesc::next_extra(dp)) {
+    if (dp->tag() == DataLayout::arg_info_data_tag)
+      return new ciArgInfoData(dp);
+  }
+  return NULL;
+}
+
+
 // Implementation of the print method.
 void ciMethodData::print_impl(outputStream* st) {
   ciObject::print_impl(st);
@@ -301,6 +348,22 @@ void ciMethodData::print_data_on(outputStream* st) {
   ResourceMark rm;
   ciProfileData* data;
   for (data = first_data(); is_valid(data); data = next_data(data)) {
+    st->print("%d", dp_to_di(data->dp()));
+    st->fill_to(6);
+    data->print_data_on(st);
+  }
+  st->print_cr("--- Extra data:");
+  DataLayout* dp  = data_layout_at(data_size());
+  DataLayout* end = data_layout_at(data_size() + extra_data_size());
+  for (; dp < end; dp = methodDataOopDesc::next_extra(dp)) {
+    if (dp->tag() == DataLayout::no_tag)  continue;
+    if (dp->tag() == DataLayout::bit_data_tag) {
+      data = new BitData(dp);
+    } else {
+      assert(dp->tag() == DataLayout::arg_info_data_tag, "must be BitData or ArgInfo");
+      data = new ciArgInfoData(dp);
+      dp = end; // ArgInfoData is at the end of extra data section.
+    }
     st->print("%d", dp_to_di(data->dp()));
     st->fill_to(6);
     data->print_data_on(st);

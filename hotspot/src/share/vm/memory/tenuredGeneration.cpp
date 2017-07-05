@@ -409,10 +409,11 @@ void TenuredGeneration::retire_alloc_buffers_before_full_gc() {
 void TenuredGeneration::verify_alloc_buffers_clean() {
   if (UseParNewGC) {
     for (uint i = 0; i < ParallelGCThreads; i++) {
-      _rs->verify_empty(_alloc_buffers[i]->range());
+      _rs->verify_aligned_region_empty(_alloc_buffers[i]->range());
     }
   }
 }
+
 #else  // SERIALGC
 void TenuredGeneration::retire_alloc_buffers_before_full_gc() {}
 void TenuredGeneration::verify_alloc_buffers_clean() {}

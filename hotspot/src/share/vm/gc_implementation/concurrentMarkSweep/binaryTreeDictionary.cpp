@@ -1071,85 +1071,56 @@ void BinaryTreeDictionary::reportStatistics() const {
 // for each list in the tree.  Also print some summary
 // information.
 class printTreeCensusClosure : public AscendTreeCensusClosure {
+  int _print_line;
   size_t _totalFree;
-  AllocationStats _totals;
-  size_t _count;
+  FreeList _total;
 
  public:
   printTreeCensusClosure() {
+    _print_line = 0;
     _totalFree = 0;
-    _count = 0;
-    _totals.initialize();
   }
-  AllocationStats* totals() { return &_totals; }
-  size_t count() { return _count; }
-  void increment_count_by(size_t v) { _count += v; }
+  FreeList* total() { return &_total; }
   size_t totalFree() { return _totalFree; }
-  void increment_totalFree_by(size_t v) { _totalFree += v; }
   void do_list(FreeList* fl) {
-    bool nl = false; // "maybe this is not needed" isNearLargestChunk(fl->head());
-
-    gclog_or_tty->print("%c %4d\t\t" "%7d\t" "%7d\t"
-               "%7d\t"      "%7d\t" "%7d\t" "%7d\t"
-               "%7d\t"      "%7d\t" "%7d\t"
-               "%7d\t" "\n",
-               " n"[nl], fl->size(), fl->bfrSurp(), fl->surplus(),
-               fl->desired(), fl->prevSweep(), fl->beforeSweep(), fl->count(),
-               fl->coalBirths(), fl->coalDeaths(), fl->splitBirths(),
-               fl->splitDeaths());
-
-    increment_totalFree_by(fl->count() * fl->size());
-    increment_count_by(fl->count());
-    totals()->set_bfrSurp(totals()->bfrSurp() + fl->bfrSurp());
-    totals()->set_surplus(totals()->splitDeaths()     + fl->surplus());
-    totals()->set_prevSweep(totals()->prevSweep()   + fl->prevSweep());
-    totals()->set_beforeSweep(totals()->beforeSweep() + fl->beforeSweep());
-    totals()->set_coalBirths(totals()->coalBirths()  + fl->coalBirths());
-    totals()->set_coalDeaths(totals()->coalDeaths()  + fl->coalDeaths());
-    totals()->set_splitBirths(totals()->splitBirths() + fl->splitBirths());
-    totals()->set_splitDeaths(totals()->splitDeaths() + fl->splitDeaths());
+    if (++_print_line >= 40) {
+      FreeList::print_labels_on(gclog_or_tty, "size");
+      _print_line = 0;
+    }
+    fl->print_on(gclog_or_tty);
+    _totalFree +=            fl->count()            * fl->size()        ;
+    total()->set_count(      total()->count()       + fl->count()      );
+    total()->set_bfrSurp(    total()->bfrSurp()     + fl->bfrSurp()    );
+    total()->set_surplus(    total()->splitDeaths() + fl->surplus()    );
+    total()->set_desired(    total()->desired()     + fl->desired()    );
+    total()->set_prevSweep(  total()->prevSweep()   + fl->prevSweep()  );
+    total()->set_beforeSweep(total()->beforeSweep() + fl->beforeSweep());
+    total()->set_coalBirths( total()->coalBirths()  + fl->coalBirths() );
+    total()->set_coalDeaths( total()->coalDeaths()  + fl->coalDeaths() );
+    total()->set_splitBirths(total()->splitBirths() + fl->splitBirths());
+    total()->set_splitDeaths(total()->splitDeaths() + fl->splitDeaths());
   }
 };
 
 void BinaryTreeDictionary::printDictCensus(void) const {
 
   gclog_or_tty->print("\nBinaryTree\n");
-  gclog_or_tty->print(
-             "%4s\t\t" "%7s\t"   "%7s\t"    "%7s\t"    "%7s\t"    "%7s\t"
-             "%7s\t"   "%7s\t"   "%7s\t"    "%7s\t"    "%7s\t"     "\n",
-             "size",  "bfrsurp", "surplus", "desired", "prvSwep", "bfrSwep",
-             "count", "cBirths", "cDeaths", "sBirths", "sDeaths");
-
+  FreeList::print_labels_on(gclog_or_tty, "size");
   printTreeCensusClosure ptc;
   ptc.do_tree(root());
 
+  FreeList* total = ptc.total();
+  FreeList::print_labels_on(gclog_or_tty, " ");
+  total->print_on(gclog_or_tty, "TOTAL\t");
   gclog_or_tty->print(
-             "\t\t"    "%7s\t"    "%7s\t"    "%7s\t"    "%7s\t"
-             "%7s\t"   "%7s\t"    "%7s\t"    "%7s\t"    "%7s\t"     "\n",
-                       "bfrsurp", "surplus", "prvSwep", "bfrSwep",
-             "count",  "cBirths", "cDeaths", "sBirths", "sDeaths");
-  gclog_or_tty->print(
-             "%s\t\t"  "%7d\t"    "%7d\t"     "%7d\t"    "%7d\t"
-             "%7d\t"   "%7d\t"    "%7d\t"     "%7d\t"    "%7d\t"    "\n",
-             "totl",
-             ptc.totals()->bfrSurp(),
-             ptc.totals()->surplus(),
-             ptc.totals()->prevSweep(),
-             ptc.totals()->beforeSweep(),
-             ptc.count(),
-             ptc.totals()->coalBirths(),
-             ptc.totals()->coalDeaths(),
-             ptc.totals()->splitBirths(),
-             ptc.totals()->splitDeaths());
-  gclog_or_tty->print("totalFree(words): %7d growth: %8.5f  deficit: %8.5f\n",
+              "totalFree(words): " SIZE_FORMAT_W(16)
+              " growth: %8.5f  deficit: %8.5f\n",
               ptc.totalFree(),
-              (double)(ptc.totals()->splitBirths()+ptc.totals()->coalBirths()
-                       -ptc.totals()->splitDeaths()-ptc.totals()->coalDeaths())
-              /(ptc.totals()->prevSweep() != 0 ?
-                (double)ptc.totals()->prevSweep() : 1.0),
-             (double)(ptc.totals()->desired() - ptc.count())
-             /(ptc.totals()->desired() != 0 ?
-               (double)ptc.totals()->desired() : 1.0));
+              (double)(total->splitBirths() + total->coalBirths()
+                     - total->splitDeaths() - total->coalDeaths())
+              /(total->prevSweep() != 0 ? (double)total->prevSweep() : 1.0),
+             (double)(total->desired() - total->count())
+             /(total->desired() != 0 ? (double)total->desired() : 1.0));
 }
 
 // Verify the following tree invariants:

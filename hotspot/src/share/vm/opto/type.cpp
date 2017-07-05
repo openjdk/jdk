@@ -3164,7 +3164,7 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
     case TopPTR:
       // Compute new klass on demand, do not use tap->_klass
       xk = (tap->_klass_is_exact | this->_klass_is_exact);
-      return make( ptr, const_oop(), tary, lazy_klass, xk, off );
+      return make( ptr, const_oop(), tary, lazy_klass, xk, off, iid );
     case Constant: {
       ciObject* o = const_oop();
       if( _ptr == Constant ) {
@@ -3176,7 +3176,7 @@ const Type *TypeAryPtr::xmeet( const Type *t ) const {
         o = tap->const_oop();
       }
       xk = true;
-      return TypeAryPtr::make( ptr, o, tary, tap->_klass, xk, off );
+      return TypeAryPtr::make( ptr, o, tary, tap->_klass, xk, off, iid );
     }
     case NotNull:
     case BotPTR:
@@ -3263,14 +3263,21 @@ void TypeAryPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
     break;
   }
 
-  st->print("*");
+  if( _offset != 0 ) {
+    int header_size = objArrayOopDesc::header_size() * wordSize;
+    if( _offset == OffsetTop )       st->print("+undefined");
+    else if( _offset == OffsetBot )  st->print("+any");
+    else if( _offset < header_size ) st->print("+%d", _offset);
+    else {
+      BasicType basic_elem_type = elem()->basic_type();
+      int array_base = arrayOopDesc::base_offset_in_bytes(basic_elem_type);
+      int elem_size = type2aelembytes(basic_elem_type);
+      st->print("[%d]", (_offset - array_base)/elem_size);
+    }
+  }
+  st->print(" *");
   if (_instance_id != UNKNOWN_INSTANCE)
     st->print(",iid=%d",_instance_id);
-  if( !_offset ) return;
-  if( _offset == OffsetTop )      st->print("+undefined");
-  else if( _offset == OffsetBot ) st->print("+any");
-  else if( _offset < 12 )         st->print("+%d",_offset);
-  else                            st->print("[%d]", (_offset-12)/4 );
 }
 #endif
 

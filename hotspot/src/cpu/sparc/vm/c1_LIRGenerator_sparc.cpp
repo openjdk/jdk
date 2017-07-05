@@ -179,7 +179,7 @@ LIR_Address* LIRGenerator::generate_address(LIR_Opr base, LIR_Opr index,
 
 LIR_Address* LIRGenerator::emit_array_address(LIR_Opr array_opr, LIR_Opr index_opr,
                                               BasicType type, bool needs_card_mark) {
-  int elem_size = type2aelembytes[type];
+  int elem_size = type2aelembytes(type);
   int shift = exact_log2(elem_size);
 
   LIR_Opr base_opr;

@@ -432,6 +432,8 @@ class instanceKlass: public Klass {
                                                         _enclosing_method_method_index = method_index; }
 
   // jmethodID support
+  static jmethodID get_jmethod_id(instanceKlassHandle ik_h, size_t idnum,
+                                  jmethodID new_id, jmethodID* new_jmeths);
   static jmethodID jmethod_id_for_impl(instanceKlassHandle ik_h, methodHandle method_h);
   jmethodID jmethod_id_or_null(methodOop method);
 
@@ -838,11 +840,20 @@ class BreakpointInfo;
 // A collection point for interesting information about the previous
 // version(s) of an instanceKlass. This class uses weak references to
 // the information so that the information may be collected as needed
-// by the system. A GrowableArray of PreviousVersionNodes is attached
+// by the system. If the information is shared, then a regular
+// reference must be used because a weak reference would be seen as
+// collectible. A GrowableArray of PreviousVersionNodes is attached
 // to the instanceKlass as needed. See PreviousVersionWalker below.
 class PreviousVersionNode : public CHeapObj {
  private:
-  jweak _prev_constant_pool;
+  // A shared ConstantPool is never collected so we'll always have
+  // a reference to it so we can update items in the cache. We'll
+  // have a weak reference to a non-shared ConstantPool until all
+  // of the methods (EMCP or obsolete) have been collected; the
+  // non-shared ConstantPool becomes collectible at that point.
+  jobject _prev_constant_pool;  // regular or weak reference
+  bool    _prev_cp_is_weak;     // true if not a shared ConstantPool
+
   // If the previous version of the instanceKlass doesn't have any
   // EMCP methods, then _prev_EMCP_methods will be NULL. If all the
   // EMCP methods have been collected, then _prev_EMCP_methods can
@@ -850,10 +861,10 @@ class PreviousVersionNode : public CHeapObj {
   GrowableArray<jweak>* _prev_EMCP_methods;
 
 public:
-  PreviousVersionNode(jweak prev_constant_pool,
+  PreviousVersionNode(jobject prev_constant_pool, bool prev_cp_is_weak,
     GrowableArray<jweak>* prev_EMCP_methods);
   ~PreviousVersionNode();
-  jweak prev_constant_pool() const {
+  jobject prev_constant_pool() const {
     return _prev_constant_pool;
   }
   GrowableArray<jweak>* prev_EMCP_methods() const {

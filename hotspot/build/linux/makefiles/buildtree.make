@@ -63,7 +63,11 @@ QUIETLY$(MAKE_VERBOSE)	= @
 # For now, until the compiler is less wobbly:
 TESTFLAGS	= -Xbatch -showversion
 
-PLATFORM_FILE	= $(GAMMADIR)/build/$(OS_FAMILY)/platform_$(BUILDARCH)
+ifdef USE_SUNCC
+PLATFORM_FILE	= $(GAMMADIR)/build/$(OS_FAMILY)/platform_$(BUILDARCH).suncc
+else
+PLATFORM_FILE   = $(GAMMADIR)/build/$(OS_FAMILY)/platform_$(BUILDARCH)
+endif
 
 ifdef FORCE_TIERED
 ifeq		($(VARIANT),tiered)

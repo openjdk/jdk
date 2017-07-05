@@ -129,7 +129,8 @@ public:
     return reg()->reg2stack();
   }
 
-  void print( ) const PRODUCT_RETURN;
+  void print_on(outputStream* st) const PRODUCT_RETURN;
+  void print() const { print_on(tty); }
 };
 
 
