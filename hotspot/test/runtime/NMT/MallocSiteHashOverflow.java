@@ -27,7 +27,6 @@
  * @requires sun.arch.data.model == "32"
  * @key nmt jcmd stress
  * @library /testlibrary /testlibrary/whitebox
- * @ignore 8062870
  * @build MallocSiteHashOverflow
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail MallocSiteHashOverflow

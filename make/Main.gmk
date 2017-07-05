@@ -40,7 +40,7 @@ include $(SRC_ROOT)/make/common/MakeBase.gmk
 include $(SRC_ROOT)/make/common/Modules.gmk
 
 # Declare ALL_TARGETS as an immediate variable. This variable is a list of all
-# valid top level targets. It's used to declare them all as PHONY and to 
+# valid top level targets. It's used to declare them all as PHONY and to
 # generate the -only targets.
 ALL_TARGETS :=
 
@@ -285,9 +285,9 @@ ALL_TARGETS += install
 
 ################################################################################
 #
-# Dependency declarations between targets. 
+# Dependency declarations between targets.
 #
-# These are declared in two groups. First all dependencies between targets that 
+# These are declared in two groups. First all dependencies between targets that
 # have recipes above as these dependencies may be disabled. Then the aggregator
 # targets that do not have recipes of their own, which will never have their
 # dependencies disabled.
@@ -295,10 +295,10 @@ ALL_TARGETS += install
 ################################################################################
 # Targets with recipes above
 
-# If running an *-only target, parallel execution and dependencies between 
-# recipe targets are disabled. This makes it possible to run a select set of 
+# If running an *-only target, parallel execution and dependencies between
+# recipe targets are disabled. This makes it possible to run a select set of
 # recipe targets in order. It's the responsibility of the user to make sure
-# all prerequisites are fulfilled. 
+# all prerequisites are fulfilled.
 ifneq ($(findstring -only, $(MAKECMDGOALS)), )
   .NOTPARALLEL:
 else
@@ -349,11 +349,11 @@ else
   # Declare dependencies from all other <module>-lib to java.base-lib
   $(foreach t, $(filter-out java.base-libs, $(LIBS_TARGETS)), \
       $(eval $t: java.base-libs))
-  # Declare the special case dependency for jdk.deploy.osx where libosx 
+  # Declare the special case dependency for jdk.deploy.osx where libosx
   # links against libosxapp.
   jdk.deploy.osx-libs: java.desktop-libs
 
-  # This dependency needs to be explicitly declared as jdk.jdi-gensrc generates a 
+  # This dependency needs to be explicitly declared. jdk.jdi-gensrc generates a
   # header file used by jdk.jdwp.agent-libs. The jdk.jdwp.agent-gensrc is a
   # virtual target.
   jdk.jdwp.agent-libs: jdk.jdwp.agent-gensrc
@@ -467,7 +467,7 @@ ALL_TARGETS += default all
 # Clean targets
 #
 ################################################################################
-# Clean targets are automatically run serially by the Makefile calling this 
+# Clean targets are automatically run serially by the Makefile calling this
 # file.
 
 CLEAN_DIRS += hotspot jdk bootcycle-build test buildtools support \
@@ -525,8 +525,8 @@ ALL_TARGETS += clean dist-clean $(CLEAN_DIR_TARGETS) $(CLEAN_PHASE_TARGETS) \
 
 ################################################################################
 
-# Setup a rule for SPEC file that fails if executed. This check makes sure the 
-# configuration is up to date after changes to configure. 
+# Setup a rule for SPEC file that fails if executed. This check makes sure the
+# configuration is up to date after changes to configure.
 ifeq ($(findstring reconfigure, $(MAKECMDGOALS)), )
   $(SPEC): $(wildcard $(SRC_ROOT)/common/autoconf/*)
 	@$(ECHO) "ERROR: $(SPEC) is not up to date."

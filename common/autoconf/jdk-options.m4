@@ -549,7 +549,15 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VERSION_NUMBERS],
   AC_SUBST(MACOSX_BUNDLE_NAME_BASE)
   AC_SUBST(MACOSX_BUNDLE_ID_BASE)
 
-  COPYRIGHT_YEAR=`date +'%Y'`
+  AC_ARG_WITH(copyright-year, [AS_HELP_STRING([--with-copyright-year],
+      [Set copyright year value for build @<:@current year@:>@])])
+  if test "x$with_copyright_year" = xyes; then
+    AC_MSG_ERROR([Copyright year must have a value])
+  elif test "x$with_copyright_year" != x; then
+    COPYRIGHT_YEAR="$with_copyright_year"
+  else
+    COPYRIGHT_YEAR=`date +'%Y'`
+  fi
   AC_SUBST(COPYRIGHT_YEAR)
 
   if test "x$JDK_UPDATE_VERSION" != x; then

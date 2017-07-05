@@ -189,7 +189,7 @@ objArrayOop ObjArrayKlass::allocate(int length, TRAPS) {
     if (length <= arrayOopDesc::max_array_length(T_OBJECT)) {
       int size = objArrayOopDesc::object_size(length);
       KlassHandle h_k(THREAD, this);
-      return (objArrayOop)CollectedHeap::array_allocate(h_k, size, length, CHECK_NULL);
+      return (objArrayOop)CollectedHeap::array_allocate(h_k, size, length, THREAD);
     } else {
       report_java_out_of_memory("Requested array size exceeds VM limit");
       JvmtiExport::post_array_size_exhausted();
@@ -362,11 +362,11 @@ Klass* ObjArrayKlass::array_klass_impl(bool or_null, int n, TRAPS) {
   if (or_null) {
     return ak->array_klass_or_null(n);
   }
-  return ak->array_klass(n, CHECK_NULL);
+  return ak->array_klass(n, THREAD);
 }
 
 Klass* ObjArrayKlass::array_klass_impl(bool or_null, TRAPS) {
-  return array_klass_impl(or_null, dimension() +  1, CHECK_NULL);
+  return array_klass_impl(or_null, dimension() +  1, THREAD);
 }
 
 bool ObjArrayKlass::can_be_primary_super_slow() const {

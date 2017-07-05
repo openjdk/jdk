@@ -594,9 +594,35 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  // Support for jint atomic::atomic_cmpxchg_long(jlong exchange_value,
-  //                                             volatile jlong* dest,
-  //                                             jlong compare_value)
+  // Support for jbyte atomic::atomic_cmpxchg(jbyte exchange_value, volatile jbyte* dest,
+  //                                          jbyte compare_value)
+  //
+  // Arguments :
+  //    c_rarg0: exchange_value
+  //    c_rarg1: dest
+  //    c_rarg2: compare_value
+  //
+  // Result:
+  //    if ( compare_value == *dest ) {
+  //       *dest = exchange_value
+  //       return compare_value;
+  //    else
+  //       return *dest;
+  address generate_atomic_cmpxchg_byte() {
+    StubCodeMark mark(this, "StubRoutines", "atomic_cmpxchg_byte");
+    address start = __ pc();
+
+    __ movsbq(rax, c_rarg2);
+   if ( os::is_MP() ) __ lock();
+    __ cmpxchgb(c_rarg0, Address(c_rarg1, 0));
+    __ ret(0);
+
+    return start;
+  }
+
+  // Support for jlong atomic::atomic_cmpxchg(jlong exchange_value,
+  //                                          volatile jlong* dest,
+  //                                          jlong compare_value)
   // Arguments :
   //    c_rarg0: exchange_value
   //    c_rarg1: dest
@@ -3894,6 +3920,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_atomic_xchg_entry         = generate_atomic_xchg();
     StubRoutines::_atomic_xchg_ptr_entry     = generate_atomic_xchg_ptr();
     StubRoutines::_atomic_cmpxchg_entry      = generate_atomic_cmpxchg();
+    StubRoutines::_atomic_cmpxchg_byte_entry = generate_atomic_cmpxchg_byte();
     StubRoutines::_atomic_cmpxchg_long_entry = generate_atomic_cmpxchg_long();
     StubRoutines::_atomic_add_entry          = generate_atomic_add();
     StubRoutines::_atomic_add_ptr_entry      = generate_atomic_add_ptr();

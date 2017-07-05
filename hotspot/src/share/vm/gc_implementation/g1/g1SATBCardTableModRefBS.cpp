@@ -32,9 +32,8 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
-G1SATBCardTableModRefBS::G1SATBCardTableModRefBS(MemRegion whole_heap,
-                                                 int max_covered_regions) :
-    CardTableModRefBSForCTRS(whole_heap, max_covered_regions)
+G1SATBCardTableModRefBS::G1SATBCardTableModRefBS(MemRegion whole_heap) :
+    CardTableModRefBSForCTRS(whole_heap)
 {
   _kind = G1SATBCT;
 }
@@ -132,9 +131,8 @@ void G1SATBCardTableLoggingModRefBSChangedListener::on_commit(uint start_idx, si
 }
 
 G1SATBCardTableLoggingModRefBS::
-G1SATBCardTableLoggingModRefBS(MemRegion whole_heap,
-                               int max_covered_regions) :
-  G1SATBCardTableModRefBS(whole_heap, max_covered_regions),
+G1SATBCardTableLoggingModRefBS(MemRegion whole_heap) :
+  G1SATBCardTableModRefBS(whole_heap),
   _dcqs(JavaThread::dirty_card_queue_set()),
   _listener()
 {

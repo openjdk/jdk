@@ -69,7 +69,7 @@ void Node::verify_construction() {
   Compile::set_debug_idx(new_debug_idx);
   set_debug_idx( new_debug_idx );
   assert(Compile::current()->unique() < (INT_MAX - 1), "Node limit exceeded INT_MAX");
-  assert(Compile::current()->live_nodes() < (uint)MaxNodeLimit, "Live Node limit exceeded limit");
+  assert(Compile::current()->live_nodes() < Compile::current()->max_node_limit(), "Live Node limit exceeded limit");
   if (BreakAtNode != 0 && (_debug_idx == BreakAtNode || (int)_idx == BreakAtNode)) {
     tty->print_cr("BreakAtNode: _idx=%d _debug_idx=%d", _idx, _debug_idx);
     BREAKPOINT;
@@ -313,7 +313,7 @@ inline int Node::Init(int req) {
 Node::Node(uint req)
   : _idx(Init(req))
 {
-  assert( req < (uint)(MaxNodeLimit - NodeLimitFudgeFactor), "Input limit exceeded" );
+  assert( req < Compile::current()->max_node_limit() - NodeLimitFudgeFactor, "Input limit exceeded" );
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
   if (req == 0) {

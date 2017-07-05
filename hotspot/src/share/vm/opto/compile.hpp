@@ -289,6 +289,7 @@ class Compile : public Phase {
   int                   _freq_inline_size;      // Max hot method inline size for this compilation
   int                   _fixed_slots;           // count of frame slots not allocated by the register
                                                 // allocator i.e. locks, original deopt pc, etc.
+  uintx                 _max_node_limit;        // Max unique node count during a single compilation.
   // For deopt
   int                   _orig_pc_slot;
   int                   _orig_pc_slot_offset_in_bytes;
@@ -597,6 +598,9 @@ class Compile : public Phase {
   void          set_rtm_state(RTMState s)        { _rtm_state = s; }
   bool              use_rtm() const              { return (_rtm_state & NoRTM) == 0; }
   bool          profile_rtm() const              { return _rtm_state == ProfileRTM; }
+  uint              max_node_limit() const       { return (uint)_max_node_limit; }
+  void          set_max_node_limit(uint n)       { _max_node_limit = n; }
+
   // check the CompilerOracle for special behaviours for this compile
   bool          method_has_option(const char * option) {
     return method() != NULL && method()->has_option(option);
@@ -735,7 +739,7 @@ class Compile : public Phase {
     record_method_not_compilable(reason, true);
   }
   bool check_node_count(uint margin, const char* reason) {
-    if (live_nodes() + margin > (uint)MaxNodeLimit) {
+    if (live_nodes() + margin > max_node_limit()) {
       record_method_not_compilable(reason);
       return true;
     } else {
