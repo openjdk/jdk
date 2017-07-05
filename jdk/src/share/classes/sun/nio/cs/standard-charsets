@@ -35,7 +35,7 @@
 # which is lazy initialized.
 
 # This year should only change if the generated source is modified.
-copyright 2000
+copyright 2000, 2007,
 package sun.nio.cs
 class StandardCharsets
 
