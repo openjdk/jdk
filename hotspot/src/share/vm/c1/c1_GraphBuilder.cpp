@@ -34,6 +34,7 @@
 #include "ci/ciMemberName.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/bytecode.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/vm_version.hpp"

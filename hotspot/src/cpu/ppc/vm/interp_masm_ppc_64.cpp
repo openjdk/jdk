@@ -29,6 +29,7 @@
 #include "interp_masm_ppc_64.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) // nothing

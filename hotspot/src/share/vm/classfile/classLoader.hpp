@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,18 +31,6 @@
 
 // The VM class loader.
 #include <sys/stat.h>
-
-
-// Meta-index (optional, to be able to skip opening boot classpath jar files)
-class MetaIndex: public CHeapObj<mtClass> {
- private:
-  char** _meta_package_names;
-  int    _num_meta_package_names;
- public:
-  MetaIndex(char** meta_package_names, int num_meta_package_names);
-  ~MetaIndex();
-  bool may_contain(const char* class_name);
-};
 
 
 // Class path entry (directory or zip file)
@@ -122,7 +110,6 @@ class LazyClassPathEntry: public ClassPathEntry {
  private:
   const char* _path; // dir or file
   struct stat _st;
-  MetaIndex* _meta_index;
   bool _has_error;
   bool _throw_exception;
   volatile ClassPathEntry* _resolved_entry;
@@ -135,7 +122,6 @@ class LazyClassPathEntry: public ClassPathEntry {
   u1* open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS);
 
   ClassFileStream* open_stream(const char* name, TRAPS);
-  void set_meta_index(MetaIndex* meta_index) { _meta_index = meta_index; }
   virtual bool is_lazy();
   // Debugging
   NOT_PRODUCT(void compile_the_world(Handle loader, TRAPS);)
@@ -231,9 +217,6 @@ class ClassLoader: AllStatic {
   static bool add_package(const char *pkgname, int classpath_index, TRAPS);
 
   // Initialization
-  static void setup_bootstrap_meta_index();
-  static void setup_meta_index(const char* meta_index_path, const char* meta_index_dir,
-                               int start_index);
   static void setup_bootstrap_search_path();
   static void setup_search_path(const char *class_path);
 

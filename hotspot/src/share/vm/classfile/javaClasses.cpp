@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/debugInfo.hpp"
@@ -39,6 +39,8 @@
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
+#include "oops/objArrayOop.inline.hpp"
+#include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
@@ -148,6 +150,10 @@ int java_lang_String::count_offset  = 0;
 int java_lang_String::hash_offset   = 0;
 
 bool java_lang_String::initialized  = false;
+
+bool java_lang_String::is_instance(oop obj) {
+  return is_instance_inlined(obj);
+}
 
 void java_lang_String::compute_offsets() {
   assert(!initialized, "offsets should be initialized only once");
@@ -2730,6 +2736,11 @@ void java_lang_invoke_LambdaForm::compute_offsets() {
   }
 }
 
+bool java_lang_invoke_LambdaForm::is_instance(oop obj) {
+  return obj != NULL && is_subclass(obj->klass());
+}
+
+
 oop java_lang_invoke_MethodHandle::type(oop mh) {
   return mh->obj_field(_type_offset);
 }
@@ -3074,6 +3085,10 @@ bool java_lang_ClassLoader::isAncestor(oop loader, oop cl) {
     assert(++loop_count > 0, "loop_count overflow");
   } while (acl != NULL);
   return false;
+}
+
+bool java_lang_ClassLoader::is_instance(oop obj) {
+  return obj != NULL && is_subclass(obj->klass());
 }
 
 
