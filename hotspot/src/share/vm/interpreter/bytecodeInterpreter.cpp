@@ -32,6 +32,7 @@
 #include "interpreter/interpreterRuntime.hpp"
 #include "memory/cardTableModRefBS.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/methodCounters.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -304,11 +305,12 @@
 
 
 #define METHOD istate->method()
-#define INVOCATION_COUNT METHOD->invocation_counter()
-#define BACKEDGE_COUNT METHOD->backedge_counter()
+#define GET_METHOD_COUNTERS(res)    \
+  res = METHOD->method_counters();  \
+  if (res == NULL) {                \
+    CALL_VM(res = InterpreterRuntime::build_method_counters(THREAD, METHOD), handle_exception); \
+  }
 
-
-#define INCR_INVOCATION_COUNT INVOCATION_COUNT->increment()
 #define OSR_REQUEST(res, branch_pc) \
             CALL_VM(res=InterpreterRuntime::frequency_counter_overflow(THREAD, branch_pc), handle_exception);
 /*
@@ -325,10 +327,12 @@
 
 #define DO_BACKEDGE_CHECKS(skip, branch_pc)                                                         \
     if ((skip) <= 0) {                                                                              \
+      MethodCounters* mcs;                                                                          \
+      GET_METHOD_COUNTERS(mcs);                                                                     \
       if (UseLoopCounter) {                                                                         \
         bool do_OSR = UseOnStackReplacement;                                                        \
-        BACKEDGE_COUNT->increment();                                                                \
-        if (do_OSR) do_OSR = BACKEDGE_COUNT->reached_InvocationLimit();                             \
+        mcs->backedge_counter()->increment();                                                       \
+        if (do_OSR) do_OSR = mcs->backedge_counter()->reached_InvocationLimit();                    \
         if (do_OSR) {                                                                               \
           nmethod*  osr_nmethod;                                                                    \
           OSR_REQUEST(osr_nmethod, branch_pc);                                                      \
@@ -341,7 +345,7 @@
           }                                                                                         \
         }                                                                                           \
       }  /* UseCompiler ... */                                                                      \
-      INCR_INVOCATION_COUNT;                                                                        \
+      mcs->invocation_counter()->increment();                                                       \
       SAFEPOINT;                                                                                    \
     }
 
@@ -618,11 +622,13 @@ BytecodeInterpreter::run(interpreterState istate) {
       // count invocations
       assert(initialized, "Interpreter not initialized");
       if (_compiling) {
+        MethodCounters* mcs;
+        GET_METHOD_COUNTERS(mcs);
         if (ProfileInterpreter) {
-          METHOD->increment_interpreter_invocation_count();
+          METHOD->increment_interpreter_invocation_count(THREAD);
         }
-        INCR_INVOCATION_COUNT;
-        if (INVOCATION_COUNT->reached_InvocationLimit()) {
+        mcs->invocation_counter()->increment();
+        if (mcs->invocation_counter()->reached_InvocationLimit()) {
             CALL_VM((void)InterpreterRuntime::frequency_counter_overflow(THREAD, NULL), handle_exception);
 
             // We no longer retry on a counter overflow

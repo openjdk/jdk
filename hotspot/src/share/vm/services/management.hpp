@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,8 @@ private:
   static Klass*             _garbageCollectorMXBean_klass;
   static Klass*             _managementFactory_klass;
   static Klass*             _garbageCollectorImpl_klass;
+  static Klass*             _diagnosticCommandImpl_klass;
+  static Klass*             _managementFactoryHelper_klass;
   static Klass*             _gcInfo_klass;
 
   static Klass* load_and_initialize_klass(Symbol* sh, TRAPS);
@@ -98,6 +100,10 @@ public:
   static Klass* sun_management_GarbageCollectorImpl_klass(TRAPS)
       NOT_MANAGEMENT_RETURN_(NULL);
   static Klass* com_sun_management_GcInfo_klass(TRAPS)
+      NOT_MANAGEMENT_RETURN_(NULL);
+  static Klass* sun_management_DiagnosticCommandImpl_klass(TRAPS)
+      NOT_MANAGEMENT_RETURN_(NULL);
+  static Klass* sun_management_ManagementFactoryHelper_klass(TRAPS)
       NOT_MANAGEMENT_RETURN_(NULL);
 
   static instanceOop create_thread_info_instance(ThreadSnapshot* snapshot, TRAPS);

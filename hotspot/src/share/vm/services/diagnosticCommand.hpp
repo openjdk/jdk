@@ -51,7 +51,7 @@ public:
   }
   static const char* impact() { return "Low"; }
   static int num_arguments();
-  virtual void execute(TRAPS);
+  virtual void execute(DCmdSource source, TRAPS);
 };
 
 class VersionDCmd : public DCmd {
@@ -62,8 +62,13 @@ public:
     return "Print JVM version information.";
   }
   static const char* impact() { return "Low"; }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.util.PropertyPermission",
+                        "java.vm.version", "read"};
+    return p;
+  }
   static int num_arguments() { return 0; }
-  virtual void execute(TRAPS);
+  virtual void execute(DCmdSource source, TRAPS);
 };
 
 class CommandLineDCmd : public DCmd {
@@ -74,8 +79,13 @@ public:
     return "Print the command line used to start this VM instance.";
   }
   static const char* impact() { return "Low"; }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
   static int num_arguments() { return 0; }
-  virtual void execute(TRAPS) {
+  virtual void execute(DCmdSource source, TRAPS) {
     Arguments::print_on(_output);
   }
 };
@@ -91,8 +101,13 @@ public:
     static const char* impact() {
       return "Low";
     }
+    static const JavaPermission permission() {
+      JavaPermission p = {"java.util.PropertyPermission",
+                          "*", "read"};
+      return p;
+    }
     static int num_arguments() { return 0; }
-    virtual void execute(TRAPS);
+    virtual void execute(DCmdSource source, TRAPS);
 };
 
 // See also: print_flag in attachListener.cpp
@@ -108,8 +123,13 @@ public:
   static const char* impact() {
     return "Low";
   }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
   static int num_arguments();
-  virtual void execute(TRAPS);
+  virtual void execute(DCmdSource source, TRAPS);
 };
 
 class VMUptimeDCmd : public DCmdWithParser {
@@ -125,7 +145,7 @@ public:
     return "Low";
   }
   static int num_arguments();
-  virtual void execute(TRAPS);
+  virtual void execute(DCmdSource source, TRAPS);
 };
 
 class SystemGCDCmd : public DCmd {
@@ -139,7 +159,7 @@ public:
       return "Medium: Depends on Java heap size and content.";
     }
     static int num_arguments() { return 0; }
-    virtual void execute(TRAPS);
+    virtual void execute(DCmdSource source, TRAPS);
 };
 
 class RunFinalizationDCmd : public DCmd {
@@ -153,7 +173,7 @@ public:
       return "Medium: Depends on Java content.";
     }
     static int num_arguments() { return 0; }
-    virtual void execute(TRAPS);
+    virtual void execute(DCmdSource source, TRAPS);
 };
 
 #if INCLUDE_SERVICES   // Heap dumping supported
@@ -174,8 +194,13 @@ public:
     return "High: Depends on Java heap size and content. "
            "Request a full GC unless the '-all' option is specified.";
   }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
   static int num_arguments();
-  virtual void execute(TRAPS);
+  virtual void execute(DCmdSource source, TRAPS);
 };
 #endif // INCLUDE_SERVICES
 
@@ -194,8 +219,13 @@ public:
   static const char* impact() {
     return "High: Depends on Java heap size and content.";
   }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
   static int num_arguments();
-  virtual void execute(TRAPS);
+  virtual void execute(DCmdSource source, TRAPS);
 };
 
 class ClassStatsDCmd : public DCmdWithParser {
@@ -216,7 +246,7 @@ public:
     return "High: Depends on Java heap size and content.";
   }
   static int num_arguments();
-  virtual void execute(TRAPS);
+  virtual void execute(DCmdSource source, TRAPS);
 };
 
 // See also: thread_dump in attachListener.cpp
@@ -232,8 +262,13 @@ public:
   static const char* impact() {
     return "Medium: Depends on the number of threads.";
   }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
   static int num_arguments();
-  virtual void execute(TRAPS);
+  virtual void execute(DCmdSource source, TRAPS);
 };
 
 // Enhanced JMX Agent support
@@ -281,7 +316,7 @@ public:
 
   static int num_arguments();
 
-  virtual void execute(TRAPS);
+  virtual void execute(DCmdSource source, TRAPS);
 
 };
 
@@ -302,7 +337,7 @@ public:
     return "Start local management agent.";
   }
 
-  virtual void execute(TRAPS);
+  virtual void execute(DCmdSource source, TRAPS);
 
 };
 
@@ -321,7 +356,7 @@ public:
     return "Stop remote management agent.";
   }
 
-  virtual void execute(TRAPS);
+  virtual void execute(DCmdSource source, TRAPS);
 };
 
 #endif // SHARE_VM_SERVICES_DIAGNOSTICCOMMAND_HPP

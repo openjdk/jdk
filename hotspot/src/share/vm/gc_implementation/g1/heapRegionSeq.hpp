@@ -92,14 +92,19 @@ class HeapRegionSeq: public CHeapObj<mtGC> {
   // address is valid.
   inline uintx addr_to_index_biased(HeapWord* addr) const;
 
-  void increment_length(uint* length) {
-    assert(*length < _max_length, "pre-condition");
-    *length += 1;
+  void increment_allocated_length() {
+    assert(_allocated_length < _max_length, "pre-condition");
+    _allocated_length++;
   }
 
-  void decrement_length(uint* length) {
-    assert(*length > 0, "pre-condition");
-    *length -= 1;
+  void increment_length() {
+    assert(_length < _max_length, "pre-condition");
+    _length++;
+  }
+
+  void decrement_length() {
+    assert(_length > 0, "pre-condition");
+    _length--;
   }
 
  public:
@@ -153,11 +158,9 @@ class HeapRegionSeq: public CHeapObj<mtGC> {
   void iterate_from(HeapRegion* hr, HeapRegionClosure* blk) const;
 
   // Tag as uncommitted as many regions that are completely free as
-  // possible, up to shrink_bytes, from the suffix of the committed
-  // sequence. Return a MemRegion that corresponds to the address
-  // range of the uncommitted regions. Assume shrink_bytes is page and
-  // heap region aligned.
-  MemRegion shrink_by(size_t shrink_bytes, uint* num_regions_deleted);
+  // possible, up to num_regions_to_remove, from the suffix of the committed
+  // sequence. Return the actual number of removed regions.
+  uint shrink_by(uint num_regions_to_remove);
 
   // Do some sanity checking.
   void verify_optional() PRODUCT_RETURN;

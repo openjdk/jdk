@@ -24,14 +24,25 @@
 
 package sun.jvm.hotspot.debugger.linux;
 
-import java.io.*;
-import java.net.*;
-import java.util.*;
-import sun.jvm.hotspot.debugger.*;
-import sun.jvm.hotspot.debugger.x86.*;
-import sun.jvm.hotspot.debugger.cdbg.*;
-import sun.jvm.hotspot.utilities.*;
-import java.lang.reflect.*;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.debugger.DebuggerBase;
+import sun.jvm.hotspot.debugger.DebuggerException;
+import sun.jvm.hotspot.debugger.DebuggerUtilities;
+import sun.jvm.hotspot.debugger.MachineDescription;
+import sun.jvm.hotspot.debugger.NotInHeapException;
+import sun.jvm.hotspot.debugger.OopHandle;
+import sun.jvm.hotspot.debugger.ReadResult;
+import sun.jvm.hotspot.debugger.ThreadProxy;
+import sun.jvm.hotspot.debugger.UnalignedAddressException;
+import sun.jvm.hotspot.debugger.UnmappedAddressException;
+import sun.jvm.hotspot.debugger.cdbg.CDebugger;
+import sun.jvm.hotspot.debugger.cdbg.ClosestSymbol;
+import sun.jvm.hotspot.debugger.cdbg.LoadObject;
+import sun.jvm.hotspot.utilities.PlatformInfo;
 
 /** <P> An implementation of the JVMDebugger interface. The basic debug
     facilities are implemented through ptrace interface in the JNI code
@@ -238,8 +249,7 @@ public class LinuxDebuggerLocal extends DebuggerBase implements LinuxDebugger {
 
     /* called from attach methods */
     private void findABIVersion() throws DebuggerException {
-        if (lookupByName0("libjvm.so", "__vt_10JavaThread") != 0 ||
-            lookupByName0("libjvm_g.so", "__vt_10JavaThread") != 0) {
+        if (lookupByName0("libjvm.so", "__vt_10JavaThread") != 0) {
             // old C++ ABI
             useGCC32ABI = false;
         } else {
