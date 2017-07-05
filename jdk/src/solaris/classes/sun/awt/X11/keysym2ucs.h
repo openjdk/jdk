@@ -695,25 +695,25 @@ SOFTWARE.
 0x0000 #define    XK_ISO_Center_Object                0xFE33
 0x0000 #define    XK_ISO_Enter                    0xFE34
 
-0x0000 #define    XK_dead_grave                    0xFE50
-0x0000 #define    XK_dead_acute                    0xFE51
-0x0000 #define    XK_dead_circumflex                0xFE52
-0x0000 #define    XK_dead_tilde                    0xFE53
-0x0000 #define    XK_dead_macron                    0xFE54
-0x0000 #define    XK_dead_breve                    0xFE55
-0x0000 #define    XK_dead_abovedot                0xFE56
-0x0000 #define    XK_dead_diaeresis                0xFE57
-0x0000 #define    XK_dead_abovering                0xFE58
-0x0000 #define    XK_dead_doubleacute                0xFE59
-0x0000 #define    XK_dead_caron                    0xFE5A
-0x0000 #define    XK_dead_cedilla                    0xFE5B
-0x0000 #define    XK_dead_ogonek                    0xFE5C
-0x0000 #define    XK_dead_iota                    0xFE5D
-0x0000 #define    XK_dead_voiced_sound                0xFE5E
-0x0000 #define    XK_dead_semivoiced_sound            0xFE5F
-0x0000 #define    XK_dead_belowdot                0xFE60
-0x0000 #define XK_dead_hook                    0xFE61
-0x0000 #define XK_dead_horn                    0xFE62
+0x02CB #define    XK_dead_grave                    0xFE50
+0x02CA #define    XK_dead_acute                    0xFE51
+0x02C6 #define    XK_dead_circumflex                0xFE52
+0x02DC #define    XK_dead_tilde                    0xFE53
+0x02C9 #define    XK_dead_macron                    0xFE54
+0x02D8 #define    XK_dead_breve                    0xFE55
+0x02D9 #define    XK_dead_abovedot                0xFE56
+0x00A8 #define    XK_dead_diaeresis                0xFE57
+0x02DA #define    XK_dead_abovering                0xFE58
+0x02DD #define    XK_dead_doubleacute                0xFE59
+0x02C7 #define    XK_dead_caron                    0xFE5A
+0x00B8 #define    XK_dead_cedilla                    0xFE5B
+0x02DB #define    XK_dead_ogonek                    0xFE5C
+0x0269 #define    XK_dead_iota                    0xFE5D
+0x3099 #define    XK_dead_voiced_sound                0xFE5E
+0x309A #define    XK_dead_semivoiced_sound            0xFE5F
+0x0323 #define    XK_dead_belowdot                0xFE60
+0x0321 #define XK_dead_hook                    0xFE61
+0x031B #define XK_dead_horn                    0xFE62
 
 0x0000 #define    XK_First_Virtual_Screen                0xFED0
 0x0000 #define    XK_Prev_Virtual_Screen                0xFED1
@@ -2466,6 +2466,7 @@ tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Alt_
 tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Meta_L),     new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_META, java.awt.event.KeyEvent.KEY_LOCATION_LEFT));
 tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Meta_R),     new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_META, java.awt.event.KeyEvent.KEY_LOCATION_RIGHT));
 tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Caps_Lock),     new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_CAPS_LOCK, java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
+tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Shift_Lock),     new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_CAPS_LOCK, java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
 tojava
 tojava             /* Misc Functions */
 tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Print),     new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_PRINTSCREEN, java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
@@ -2640,6 +2641,21 @@ tojava             /* Type 5c Japanese keyboard: henkan */
 tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Kanji),     new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_CONVERT, java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
 tojava             /* Type 5c Japanese keyboard: nihongo */
 tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Henkan_Mode),     new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_INPUT_METHOD_ON_OFF, java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
+tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Eisu_Shift   ), new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_ALPHANUMERIC       , java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
+tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Eisu_toggle  ), new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_ALPHANUMERIC       , java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
+tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Zenkaku      ), new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_FULL_WIDTH         , java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
+tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Hankaku      ), new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_HALF_WIDTH         , java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
+tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Hiragana     ), new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_HIRAGANA           , java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
+tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Katakana     ), new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_KATAKANA           , java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
+tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Romaji       ), new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_JAPANESE_ROMAN     , java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
+tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Kana_Shift   ), new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_KANA               , java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
+tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Kana_Lock    ), new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_KANA_LOCK          , java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
+tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Muhenkan     ), new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_NONCONVERT         , java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
+tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Zen_Koho     ), new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_ALL_CANDIDATES     , java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
+tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Kanji_Bangou ), new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_CODE_INPUT         , java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
+tojava         keysym2JavaKeycodeHash.put( Long.valueOf(XKeySymConstants.XK_Mae_Koho     ), new Keysym2JavaKeycode(java.awt.event.KeyEvent.VK_PREVIOUS_CANDIDATE , java.awt.event.KeyEvent.KEY_LOCATION_STANDARD));
+tojava
+tojava
 tojava             /* VK_KANA_LOCK is handled separately because it generates the
 tojava              * same keysym as ALT_GRAPH in spite of its different behavior.
 tojava              */

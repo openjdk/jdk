@@ -25,14 +25,14 @@
 
 GENSRC_BUFFER :=
 
-GENSRC_BUFFER_TMP := $(JDK_OUTPUTDIR)/gensrc_buffer
-GENSRC_BUFFER_DST := $(JDK_OUTPUTDIR)/gensrc_buffer/java/nio
+GENSRC_BUFFER_TMP := $(JDK_OUTPUTDIR)/gensrc
+GENSRC_BUFFER_DST := $(JDK_OUTPUTDIR)/gensrc/java/nio
 
 GENSRC_BUFFER_SRC := $(JDK_TOPDIR)/src/share/classes/java/nio
 
 ###
 
-$(GENSRC_BUFFER_DST)/_the.dir :
+$(GENSRC_BUFFER_DST)/_the.buffer.dir :
 	$(ECHO) "Generating buffer classes"
 	$(MKDIR) -p $(@D)
 	$(TOUCH) $@
@@ -198,7 +198,9 @@ define SetupGenBuffer
 	$(if $(12),$1_$(strip $(12)))
 	$(if $(13),$1_$(strip $(13)))
 	$(if $(14),$1_$(strip $(14)))
-	$(if $(15),$(error Internal makefile error: Too many arguments to SetupGenBuffer, please update GensrcBuffer.gmk))
+	$(foreach i,3 4 5 6 7 8 9 10 11 12 13 14 15,$(if $($i),$1_$(strip $($i)))$(NEWLINE))
+	$(call LogSetupMacroEntry,SetupGenBuffer($1),$2,$3,$4,$5,$6,$7,$8,$9,$(10),$(11),$(12),$(13),$(14),$(15))
+	$(if $(16),$(error Internal makefile error: Too many arguments to SetupGenBuffer, please update GensrcBuffer.gmk))
 
 	$(call fixRw,$1,$$($1_RW))
 	$(call typesAndBits,$1,$$($1_type),$$($1_BO))
@@ -225,7 +227,7 @@ define SetupGenBuffer
 		$(call genBinOps,$1_double,double,$$($1_BO),$$($1_RW),eight,seven)
 	endif
 
-$$($1_DST) : $$($1_DEP) $(GENSRC_BUFFER_DST)/_the.dir
+$$($1_DST) : $$($1_DEP) $(GENSRC_BUFFER_DST)/_the.buffer.dir
 	$(TOOL_SPP) < $$($1_SRC) > $$($1_OUT).tmp \
 		-K$$($1_type) \
 		-K$$($1_category) \

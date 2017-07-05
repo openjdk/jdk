@@ -24,9 +24,11 @@
 /*
  * @test
  * @bug 7158329
+ * @bug 8001208
  * @summary NPE in sun.security.krb5.Credentials.acquireDefaultCreds()
  * @compile -XDignore.symbol.file EmptyCC.java
- * @run main EmptyCC
+ * @run main EmptyCC tmpcc
+ * @run main EmptyCC FILE:tmpcc
  */
 import java.io.File;
 import java.io.InputStream;
@@ -40,9 +42,9 @@ import sun.security.krb5.internal.ccache.CredentialsCache;
 public class EmptyCC {
     public static void main(String[] args) throws Exception {
         final PrincipalName pn = new PrincipalName("dummy@FOO.COM");
-        final String ccache = "tmpcc";
+        final String ccache = args[0];
 
-        if (args.length == 0) {
+        if (args.length == 1) {
             // Main process, write the ccache and launch sub process
             CredentialsCache cache = CredentialsCache.create(pn, ccache);
             cache.save();
@@ -54,6 +56,7 @@ public class EmptyCC {
                     "-cp",
                     System.getProperty("test.classes"),
                     "EmptyCC",
+                    ccache,
                     "readcc"
                     );
 
@@ -76,6 +79,14 @@ public class EmptyCC {
             String cc = System.getenv("KRB5CCNAME");
             if (!cc.equals(ccache)) {
                 throw new Exception("env not set correctly");
+            }
+            // 8001208: Fix for KRB5CCNAME not complete
+            // Make sure the ccache is created with bare file name
+            if (CredentialsCache.getInstance() == null) {
+                throw new Exception("Cache not instantiated");
+            }
+            if (!new File("tmpcc").exists()) {
+                throw new Exception("File not found");
             }
             Credentials.acquireTGTFromCache(pn, null);
         }

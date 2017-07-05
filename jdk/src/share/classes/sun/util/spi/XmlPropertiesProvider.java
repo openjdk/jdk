@@ -55,6 +55,9 @@ public abstract class XmlPropertiesProvider {
      * @param props the properties table to populate
      * @param in the input stream from which to read the XML document
      * @throws IOException if reading from the specified input stream fails
+     * @throws java.io.UnsupportedEncodingException if the document's encoding
+     *         declaration can be read and it specifies an encoding that is not
+     *         supported
      * @throws InvalidPropertiesFormatException Data on input stream does not
      *         constitute a valid XML document with the mandated document type.
      *
@@ -73,6 +76,8 @@ public abstract class XmlPropertiesProvider {
      * @param encoding the name of a supported character encoding
      *
      * @throws IOException if writing to the specified output stream fails
+     * @throws java.io.UnsupportedEncodingException if the encoding is not
+     *         supported by the implementation
      * @throws NullPointerException if {@code out} is null.
      * @throws ClassCastException  if this {@code Properties} object
      *         contains any keys or values that are not

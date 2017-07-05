@@ -109,6 +109,16 @@ final public class SSLSocketFactoryImpl extends SSLSocketFactory {
         return new SSLSocketImpl(context, s, host, port, autoClose);
     }
 
+    @Override
+    public Socket createSocket(Socket s, InputStream consumed,
+            boolean autoClose) throws IOException {
+        if (s == null) {
+            throw new NullPointerException(
+                    "the existing socket cannot be null");
+        }
+
+        return new SSLSocketImpl(context, s, consumed, autoClose);
+    }
 
     /**
      * Constructs an SSL connection to a server at a specified address

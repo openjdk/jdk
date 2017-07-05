@@ -143,13 +143,11 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
 endif
 # END: Swing plaf resources
 
-# The exception handling of swing beaninfo
-# These resources violates the convention of having code and resources together under
-# $(JDK_TOPDIR)/src/.../classes directories 
 SWING_BEANINFO_RESOURCES_SRC_DIR = $(JDK_TOPDIR)/make/tools/swing-beans/beaninfo/images
 SWING_BEANINFO_RESOURCES_SRC = $(wildcard $(SWING_BEANINFO_RESOURCES_SRC_DIR)/*.gif)
-OUT_BEANINFO_RESOURCES = $(addprefix $(JDK_OUTPUTDIR)/classes/javax/swing/beaninfo/images/,\
-	$(shell $(PRINTF) "$(SWING_BEANINFO_RESOURCES_SRC)\n" | $(SED) -e 's|/[^ ]*/beaninfo/images/||g'))
+OUT_BEANINFO_RESOURCES = $(patsubst $(SWING_BEANINFO_RESOURCES_SRC_DIR)%,\
+				    $(JDK_OUTPUTDIR)/classes/javax/swing/beaninfo/images/%,\
+				    $(SWING_BEANINFO_RESOURCES_SRC))
 
 COPY_EXTRA += $(OUT_BEANINFO_RESOURCES)
 # END: Swing beaninfo resources
@@ -228,7 +226,7 @@ META-INF_RULES_SERVICES:=$(RULES_SERVICES_PRINT) $(join $(OUT_SERVICES_FILES_COL
 # Eval the newly created rules to incorporate them into the make tree.
 define addto_meta-inf_services
 $1
-	echo Installing META-INF/services/$$(@F) 
+	echo $(LOG_INFO) Installing META-INF/services/$$(@F) 
 	$(CAT) $$< | $(SED) -e "s/^#\[$(OPENJDK_TARGET_OS)\]//" > $$@
 endef
 $(foreach i,$(META-INF_RULES_SERVICES),$(eval $(call addto_meta-inf_services,$i)))

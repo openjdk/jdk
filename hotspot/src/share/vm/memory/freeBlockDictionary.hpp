@@ -66,7 +66,7 @@ class FreeBlockDictionary: public CHeapObj<mtGC> {
   virtual void       reset(HeapWord* addr, size_t size) = 0;
   virtual void       reset() = 0;
 
-  virtual void       dict_census_udpate(size_t size, bool split, bool birth) = 0;
+  virtual void       dict_census_update(size_t size, bool split, bool birth) = 0;
   virtual bool       coal_dict_over_populated(size_t size) = 0;
   virtual void       begin_sweep_dict_census(double coalSurplusPercent,
                        float inter_sweep_current, float inter_sweep_estimate,

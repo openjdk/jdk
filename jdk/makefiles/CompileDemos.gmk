@@ -107,10 +107,7 @@ define SetupDemo
         $1_JARFILE := $1.jar
     endif
 
-    # Compile java classes if there are any.
-    $1_JAVA_FILES_EXIST := $$(shell $$(FIND) $$($1_MAIN_SRC) -name "*.java")
-
-    ifneq ($$($1_JAVA_FILES_EXIST),)
+    ifeq ($(findstring $1,Laffy SwingSet3),)
         $$(eval $$(call SetupJavaCompilation,BUILD_DEMO_$1,\
                 SETUP:=GENERATE_USINGJDKBYTECODE,\
                 ADD_JAVAC_FLAGS:=$3,\
@@ -264,9 +261,9 @@ define SetupJVMTIDemo
 		LDFLAGS_SUFFIX_linux:=$8,\
 		VERSIONINFO_RESOURCE:=$(JDK_TOPDIR)/src/windows/resource/version.rc,\
 		RC_FLAGS:=$$(RC_FLAGS) \
-			  /D "JDK_FNAME=$1.dll" \
-			  /D "JDK_INTERNAL_NAME=$1" \
-			  /D "JDK_FTYPE=0x2L",\
+			  -D "JDK_FNAME=$1.dll" \
+			  -D "JDK_INTERNAL_NAME=$1" \
+			  -D "JDK_FTYPE=0x2L",\
 		OBJECT_DIR:=$(JDK_OUTPUTDIR)/demoobjs/jvmti/$1,\
 		OUTPUT_DIR:=$(JDK_OUTPUTDIR)/demo/jvmti/$1/lib,\
 		LIBRARY:=$1))
@@ -456,7 +453,7 @@ ifndef OPENJDK
     $(JDK_OUTPUTDIR)/demo/_the.db.unzipped: $(DB_DEMO_ZIPFILE)
 	$(MKDIR) -p $(@D)
 	$(RM) -r $(JDK_OUTPUTDIR)/demo/db $(JDK_OUTPUTDIR)/demo/demo
-	$(CD) $(JDK_OUTPUTDIR)/demo && $(UNZIP) -o $<
+	$(CD) $(JDK_OUTPUTDIR)/demo && $(UNZIP) -q -o $<
 	$(MV) $(JDK_OUTPUTDIR)/demo/demo $(JDK_OUTPUTDIR)/demo/db
 	$(TOUCH) $@
 

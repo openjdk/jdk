@@ -172,9 +172,15 @@ fi
 AC_LANG_PUSH(C)
 OLD_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS $X_CFLAGS"
+
+# Need to include Xlib.h and Xutil.h to avoid "present but cannot be compiled" warnings on Solaris 10
 AC_CHECK_HEADERS([X11/extensions/shape.h X11/extensions/Xrender.h X11/extensions/XTest.h],
-                [X11_A_OK=yes],
-                [X11_A_OK=no])
+                 [X11_A_OK=yes],
+                 [X11_A_OK=no],
+                 [ # include <X11/Xlib.h>
+                   # include <X11/Xutil.h>
+                 ])
+
 CFLAGS="$OLD_CFLAGS"
 AC_LANG_POP(C)
 
@@ -196,36 +202,28 @@ AC_DEFUN_ONCE([LIB_SETUP_CUPS],
 #
 AC_ARG_WITH(cups, [AS_HELP_STRING([--with-cups],
     [specify prefix directory for the cups package
-	 (expecting the libraries under PATH/lib and the headers under PATH/include)])])
+	 (expecting the headers under PATH/include)])])
 AC_ARG_WITH(cups-include, [AS_HELP_STRING([--with-cups-include],
 	[specify directory for the cups include files])])
-AC_ARG_WITH(cups-lib, [AS_HELP_STRING([--with-cups-lib],
-	[specify directory for the cups library])])
 
 if test "x$CUPS_NOT_NEEDED" = xyes; then
-	if test "x${with_cups}" != x || test "x${with_cups_include}" != x || test "x${with_cups_lib}" != x; then
+	if test "x${with_cups}" != x || test "x${with_cups_include}" != x; then
 		AC_MSG_WARN([cups not used, so --with-cups is ignored])
 	fi
 	CUPS_CFLAGS=
-	CUPS_LIBS=
 else
 	CUPS_FOUND=no
 
-	if test "x${with_cups}" = xno || test "x${with_cups_include}" = xno || test "x${with_cups_lib}" = xno; then
+	if test "x${with_cups}" = xno || test "x${with_cups_include}" = xno; then
 	    AC_MSG_ERROR([It is not possible to disable the use of cups. Remove the --without-cups option.])
 	fi
 
 	if test "x${with_cups}" != x; then
-	    CUPS_LIBS="-L${with_cups}/lib -lcups"
 	    CUPS_CFLAGS="-I${with_cups}/include"
 	    CUPS_FOUND=yes
 	fi
 	if test "x${with_cups_include}" != x; then
 	    CUPS_CFLAGS="-I${with_cups_include}"
-	    CUPS_FOUND=yes
-	fi
-	if test "x${with_cups_lib}" != x; then
-	    CUPS_LIBS="-L${with_cups_lib} -lcups"
 	    CUPS_FOUND=yes
 	fi
 	if test "x$CUPS_FOUND" = xno; then
@@ -236,23 +234,20 @@ else
 	    AC_CHECK_HEADERS([cups/cups.h cups/ppd.h],
 	                     [CUPS_FOUND=yes
 	                      CUPS_CFLAGS=
-	                      CUPS_LIBS="-lcups"
 	                      DEFAULT_CUPS=yes])
 	fi
 	if test "x$CUPS_FOUND" = xno; then
 	    # Getting nervous now? Lets poke around for standard Solaris third-party
 	    # package installation locations.
-	    AC_MSG_CHECKING([for cups headers and libs])
+	    AC_MSG_CHECKING([for cups headers])
 	    if test -s /opt/sfw/cups/include/cups/cups.h; then
 	       # An SFW package seems to be installed!
 	       CUPS_FOUND=yes
 	       CUPS_CFLAGS="-I/opt/sfw/cups/include"
-	       CUPS_LIBS="-L/opt/sfw/cups/lib -lcups"
 	    elif test -s /opt/csw/include/cups/cups.h; then
 	       # A CSW package seems to be installed!
 	       CUPS_FOUND=yes
 	       CUPS_CFLAGS="-I/opt/csw/include"
-	       CUPS_LIBS="-L/opt/csw/lib -lcups"
 	    fi
 	    AC_MSG_RESULT([$CUPS_FOUND])
 	fi
@@ -263,7 +258,6 @@ else
 fi
 
 AC_SUBST(CUPS_CFLAGS)
-AC_SUBST(CUPS_LIBS)
 
 ])
 
@@ -292,17 +286,21 @@ else
 	FREETYPE2_FOUND=no
 
 	if test "x$with_freetype" != x; then
-            SPACESAFE(with_freetype,[the path to freetype])
+            BASIC_FIXUP_PATH(with_freetype)
 	    FREETYPE2_LIBS="-L$with_freetype/lib -lfreetype"
+            FREETYPE2_LIB_PATH="$with_freetype/lib"
+            if test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64 && test -d "$with_freetype/lib/amd64"; then
+                FREETYPE2_LIBS="-L$with_freetype/lib/amd64 -lfreetype"
+                FREETYPE2_LIB_PATH="$with_freetype/lib/amd64"
+            fi
             if test "x$OPENJDK_TARGET_OS" = xwindows; then
                 FREETYPE2_LIBS="$with_freetype/lib/freetype.lib"
             fi
-            FREETYPE2_LIB_PATH="$with_freetype/lib"
 	    FREETYPE2_CFLAGS="-I$with_freetype/include"
             if test -s $with_freetype/include/ft2build.h && test -d $with_freetype/include/freetype2/freetype; then
                 FREETYPE2_CFLAGS="-I$with_freetype/include/freetype2 -I$with_freetype/include"
             fi
-	    FREETYPE2_FOUND=yes
+ 	    FREETYPE2_FOUND=yes
    	    if test "x$FREETYPE2_FOUND" = xyes; then
 	        # Verify that the directories exist 
                 if ! test -d "$with_freetype/lib" || ! test -d "$with_freetype/include"; then
@@ -311,7 +309,7 @@ else
 	        # List the contents of the lib.
 		FREETYPELIB=`ls $with_freetype/lib/libfreetype.so $with_freetype/lib/freetype.dll 2> /dev/null`
                 if test "x$FREETYPELIB" = x; then
-		   AC_MSG_ERROR([Could not find libfreetype.se nor freetype.dll in $with_freetype/lib])
+		   AC_MSG_ERROR([Could not find libfreetype.so nor freetype.dll in $with_freetype/lib])
 		fi
 	        # Check one h-file
                 if ! test -s "$with_freetype/include/ft2build.h"; then
@@ -323,9 +321,34 @@ else
 	    BDEPS_CHECK_MODULE(FREETYPE2, freetype2, xxx, [FREETYPE2_FOUND=yes], [FREETYPE2_FOUND=no])
             USING_SYSTEM_FT_LIB=true
 	fi
+	if test "x$FREETYPE2_FOUND" = xno && test "x$OPENJDK_TARGET_OS" = xwindows; then
+            FREETYPELOCATION="$PROGRAMFILES/GnuWin32"
+            BASIC_FIXUP_PATH(FREETYPELOCATION)
+	    AC_MSG_CHECKING([for freetype in some standard windows locations])
+	    if test -s "$FREETYPELOCATION/include/ft2build.h" && test -d "$FREETYPELOCATION/include/freetype2/freetype"; then
+	        FREETYPE2_CFLAGS="-I$FREETYPELOCATION/include/freetype2 -I$FREETYPELOCATION/include"
+	        FREETYPE2_LIBS="$FREETYPELOCATION/lib/freetype.lib"
+ 	        FREETYPE2_LIB_PATH="$FREETYPELOCATION/lib"
+                if ! test -s "$FREETYPE2_LIBS"; then
+		   AC_MSG_ERROR([Could not find $FREETYPE2_LIBS])
+		fi
+                if ! test -s "$FREETYPE2_LIB_PATH/freetype.dll"; then
+		   AC_MSG_ERROR([Could not find $FREETYPE2_LIB_PATH/freetype.dll])
+		fi
+                USING_SYSTEM_FT_LIB=true
+                FREETYPE2_FOUND=yes
+	    fi
+	    AC_MSG_RESULT([$FREETYPE2_FOUND])         
+        fi
 	if test "x$FREETYPE2_FOUND" = xno; then
 	    PKG_CHECK_MODULES(FREETYPE2, freetype2, [FREETYPE2_FOUND=yes], [FREETYPE2_FOUND=no])
+            # On solaris, pkg_check adds -lz to freetype libs, which isn't necessary for us.
+            FREETYPE2_LIBS=`$ECHO $FREETYPE2_LIBS | $SED 's/-lz//g'` 
             USING_SYSTEM_FT_LIB=true
+            # 64-bit libs for Solaris x86 are installed in the amd64 subdirectory, change lib to lib/amd64
+            if test "x$FREETYPE2_FOUND" = xyes && test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+              FREETYPE2_LIBS=`$ECHO $FREETYPE2_LIBS | $SED 's?/lib?/lib/amd64?g'`
+            fi
 	fi
 	if test "x$FREETYPE2_FOUND" = xno; then
 	    AC_MSG_CHECKING([for freetype in some standard locations])
@@ -364,7 +387,15 @@ else
 	if test "x$FREETYPE2_FOUND" = xno; then
 		HELP_MSG_MISSING_DEPENDENCY([freetype2])
 		AC_MSG_ERROR([Could not find freetype2! $HELP_MSG ])
-	fi    
+	fi
+
+        if test "x$OPENJDK_TARGET_OS" != xwindows; then
+            # AC_CHECK_LIB does not support use of cl.exe
+            PREV_LDFLAGS="$LDFLAGS"
+            LDFLAGS="$FREETYPE2_LIBS"
+            AC_CHECK_LIB(freetype, FT_Init_FreeType, [], AC_MSG_ERROR([Could not find freetype2! $HELP_MSG ]))
+            LDFLAGS="$PREV_LDFLAGS"
+        fi
 fi
 
 AC_SUBST(USING_SYSTEM_FT_LIB)
@@ -621,13 +652,16 @@ if test "x$OPENJDK_TARGET_OS" = xlinux; then
     if test "x$enable_static_link_stdc__" = xyes; then
         LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"
         LDCXX="$CC"
+        STATIC_CXX_SETTING="STATIC_CXX=true"
         AC_MSG_RESULT([static])
     else
         LIBCXX="$LIBCXX -lstdc++"
         LDCXX="$CXX"
+        STATIC_CXX_SETTING="STATIC_CXX=false"
         AC_MSG_RESULT([dynamic])
     fi
 fi
+AC_SUBST(STATIC_CXX_SETTING)
 
 # libCrun is the c++ runtime-library with SunStudio (roughly the equivalent of gcc's libstdc++.so)
 if test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$LIBCXX" = x; then

@@ -342,8 +342,9 @@ public interface PreparedStatement extends Statement {
      * this method is called on a closed <code>PreparedStatement</code>
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method
-     * @deprecated
+     * @deprecated Use {@code setCharacterStream}
      */
+    @Deprecated
     void setUnicodeStream(int parameterIndex, java.io.InputStream x,
                           int length) throws SQLException;
 
