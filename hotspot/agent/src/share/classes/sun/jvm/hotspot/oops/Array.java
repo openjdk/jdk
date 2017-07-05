@@ -59,7 +59,7 @@ public class Array extends Oop {
     if (headerSize != 0) {
       return headerSize;
     }
-    if (VM.getVM().isCompressedHeadersEnabled()) {
+    if (VM.getVM().isCompressedKlassPointersEnabled()) {
       headerSize = typeSize;
     } else {
       headerSize = VM.getVM().alignUp(typeSize + VM.getVM().getIntSize(),
@@ -80,7 +80,7 @@ public class Array extends Oop {
     if (lengthOffsetInBytes != 0) {
       return lengthOffsetInBytes;
     }
-    if (VM.getVM().isCompressedHeadersEnabled()) {
+    if (VM.getVM().isCompressedKlassPointersEnabled()) {
       lengthOffsetInBytes = typeSize - VM.getVM().getIntSize();
     } else {
       lengthOffsetInBytes = typeSize;

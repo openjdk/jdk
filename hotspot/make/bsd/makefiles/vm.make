@@ -190,7 +190,7 @@ SHARK_SPECIFIC_FILES     := shark
 ZERO_SPECIFIC_FILES      := zero
 
 # Always exclude these.
-Src_Files_EXCLUDE := jsig.c jvmtiEnvRecommended.cpp jvmtiEnvStub.cpp
+Src_Files_EXCLUDE += jsig.c jvmtiEnvRecommended.cpp jvmtiEnvStub.cpp
 
 # Exclude per type.
 Src_Files_EXCLUDE/CORE      := $(COMPILER1_SPECIFIC_FILES) $(COMPILER2_SPECIFIC_FILES) $(ZERO_SPECIFIC_FILES) $(SHARK_SPECIFIC_FILES) ciTypeFlow.cpp

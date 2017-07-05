@@ -286,13 +286,13 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaT
   if (Klass::cast(array_type)->oop_is_typeArray()) {
     // The oopFactory likes to work with the element type.
     // (We could bypass the oopFactory, since it doesn't add much value.)
-    BasicType elem_type = typeArrayKlass::cast(array_type)->element_type();
+    BasicType elem_type = TypeArrayKlass::cast(array_type)->element_type();
     result = oopFactory::new_typeArray(elem_type, len, THREAD);
   } else {
     // Although the oopFactory likes to work with the elem_type,
     // the compiler prefers the array_type, since it must already have
     // that latter value in hand for the fast path.
-    Klass* elem_type = objArrayKlass::cast(array_type)->element_klass();
+    Klass* elem_type = ObjArrayKlass::cast(array_type)->element_klass();
     result = oopFactory::new_objArray(elem_type, len, THREAD);
   }
 
@@ -323,7 +323,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
 
   assert(Klass::cast(array_type)->oop_is_typeArray(), "should be called only for type array");
   // The oopFactory likes to work with the element type.
-  BasicType elem_type = typeArrayKlass::cast(array_type)->element_type();
+  BasicType elem_type = TypeArrayKlass::cast(array_type)->element_type();
   result = oopFactory::new_typeArray_nozero(elem_type, len, THREAD);
 
   // Pass oops back through thread local storage.  Our apparent type to Java
@@ -344,7 +344,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_nozero_C(Klass* array_type, int len
       is_deoptimized_caller_frame(thread)) {
     // Zero array here if the caller is deoptimized.
     int size = ((typeArrayOop)result)->object_size();
-    BasicType elem_type = typeArrayKlass::cast(array_type)->element_type();
+    BasicType elem_type = TypeArrayKlass::cast(array_type)->element_type();
     const size_t hs = arrayOopDesc::header_size(elem_type);
     // Align to next 8 bytes to avoid trashing arrays's length.
     const size_t aligned_hs = align_object_offset(hs);
@@ -370,7 +370,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarray2_C(Klass* elem_type, int len1, int l
   jint dims[2];
   dims[0] = len1;
   dims[1] = len2;
-  oop obj = arrayKlass::cast(elem_type)->multi_allocate(2, dims, THREAD);
+  oop obj = ArrayKlass::cast(elem_type)->multi_allocate(2, dims, THREAD);
   deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
   thread->set_vm_result(obj);
 JRT_END
@@ -386,7 +386,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarray3_C(Klass* elem_type, int len1, int l
   dims[0] = len1;
   dims[1] = len2;
   dims[2] = len3;
-  oop obj = arrayKlass::cast(elem_type)->multi_allocate(3, dims, THREAD);
+  oop obj = ArrayKlass::cast(elem_type)->multi_allocate(3, dims, THREAD);
   deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
   thread->set_vm_result(obj);
 JRT_END
@@ -403,7 +403,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarray4_C(Klass* elem_type, int len1, int l
   dims[1] = len2;
   dims[2] = len3;
   dims[3] = len4;
-  oop obj = arrayKlass::cast(elem_type)->multi_allocate(4, dims, THREAD);
+  oop obj = ArrayKlass::cast(elem_type)->multi_allocate(4, dims, THREAD);
   deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
   thread->set_vm_result(obj);
 JRT_END
@@ -421,7 +421,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarray5_C(Klass* elem_type, int len1, int l
   dims[2] = len3;
   dims[3] = len4;
   dims[4] = len5;
-  oop obj = arrayKlass::cast(elem_type)->multi_allocate(5, dims, THREAD);
+  oop obj = ArrayKlass::cast(elem_type)->multi_allocate(5, dims, THREAD);
   deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
   thread->set_vm_result(obj);
 JRT_END
@@ -438,7 +438,7 @@ JRT_ENTRY(void, OptoRuntime::multianewarrayN_C(Klass* elem_type, arrayOopDesc* d
   jint *c_dims = NEW_RESOURCE_ARRAY(jint, len);
   Copy::conjoint_jints_atomic(j_dims, c_dims, len);
 
-  oop obj = arrayKlass::cast(elem_type)->multi_allocate(len, c_dims, THREAD);
+  oop obj = ArrayKlass::cast(elem_type)->multi_allocate(len, c_dims, THREAD);
   deoptimize_caller_frame(thread, HAS_PENDING_EXCEPTION);
   thread->set_vm_result(obj);
 JRT_END

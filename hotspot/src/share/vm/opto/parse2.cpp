@@ -1239,7 +1239,7 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob,
 
 static Node* extract_obj_from_klass_load(PhaseGVN* gvn, Node* n) {
   Node* ldk;
-  if (n->is_DecodeN()) {
+  if (n->is_DecodeNKlass()) {
     if (n->in(1)->Opcode() != Op_LoadNKlass) {
       return NULL;
     } else {

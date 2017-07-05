@@ -233,6 +233,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
         return_value = Handle(thread, result);
         assert(Universe::heap()->is_in_or_null(result), "must be heap pointer");
         if (TraceDeoptimization) {
+          ttyLocker ttyl;
           tty->print_cr("SAVED OOP RESULT " INTPTR_FORMAT " in thread " INTPTR_FORMAT, result, thread);
         }
       }
@@ -493,6 +494,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
 
   if (array->frames() > 1) {
     if (VerifyStack && TraceDeoptimization) {
+      ttyLocker ttyl;
       tty->print_cr("Deoptimizing method containing inlining");
     }
   }
@@ -573,6 +575,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
 
 #ifndef PRODUCT
   if (TraceDeoptimization) {
+    ttyLocker ttyl;
     tty->print_cr("DEOPT UNPACKING thread " INTPTR_FORMAT " vframeArray " INTPTR_FORMAT " mode %d", thread, array, exec_mode);
   }
 #endif
@@ -755,12 +758,12 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, GrowableArra
       InstanceKlass* ik = InstanceKlass::cast(k());
       obj = ik->allocate_instance(CHECK_(false));
     } else if (k->oop_is_typeArray()) {
-      typeArrayKlass* ak = typeArrayKlass::cast(k());
+      TypeArrayKlass* ak = TypeArrayKlass::cast(k());
       assert(sv->field_size() % type2size[ak->element_type()] == 0, "non-integral array length");
       int len = sv->field_size() / type2size[ak->element_type()];
       obj = ak->allocate(len, CHECK_(false));
     } else if (k->oop_is_objArray()) {
-      objArrayKlass* ak = objArrayKlass::cast(k());
+      ObjArrayKlass* ak = ObjArrayKlass::cast(k());
       obj = ak->allocate(sv->field_size(), CHECK_(false));
     }
 
@@ -923,7 +926,7 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
       FieldReassigner reassign(fr, reg_map, sv, obj());
       ik->do_nonstatic_fields(&reassign);
     } else if (k->oop_is_typeArray()) {
-      typeArrayKlass* ak = typeArrayKlass::cast(k());
+      TypeArrayKlass* ak = TypeArrayKlass::cast(k());
       reassign_type_array_elements(fr, reg_map, sv, (typeArrayOop) obj(), ak->element_type());
     } else if (k->oop_is_objArray()) {
       reassign_object_array_elements(fr, reg_map, sv, (objArrayOop) obj());
@@ -1322,9 +1325,9 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
       if (TraceDeoptimization) {  // make noise on the tty
         tty->print("Uncommon trap occurred in");
         nm->method()->print_short_name(tty);
-        tty->print(" (@" INTPTR_FORMAT ") thread=%d reason=%s action=%s unloaded_class_index=%d",
+        tty->print(" (@" INTPTR_FORMAT ") thread=" UINTX_FORMAT " reason=%s action=%s unloaded_class_index=%d",
                    fr.pc(),
-                   (int) os::current_thread_id(),
+                   os::current_thread_id(),
                    trap_reason_name(reason),
                    trap_action_name(action),
                    unloaded_class_index);

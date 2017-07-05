@@ -712,7 +712,8 @@ void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report)
   }
   if ((TraceDeoptimization || LogCompilation) && (xtty != NULL)) {
     ttyLocker ttyl;
-    xtty->begin_elem("make_not_%scompilable thread='%d'", is_osr ? "osr_" : "", (int) os::current_thread_id());
+    xtty->begin_elem("make_not_%scompilable thread='" UINTX_FORMAT "'",
+                     is_osr ? "osr_" : "", os::current_thread_id());
     xtty->method(this);
     xtty->stamp();
     xtty->end_elem();
@@ -1065,7 +1066,7 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
 Klass* Method::check_non_bcp_klass(Klass* klass) {
   if (klass != NULL && Klass::cast(klass)->class_loader() != NULL) {
     if (Klass::cast(klass)->oop_is_objArray())
-      klass = objArrayKlass::cast(klass)->bottom_klass();
+      klass = ObjArrayKlass::cast(klass)->bottom_klass();
     return klass;
   }
   return NULL;

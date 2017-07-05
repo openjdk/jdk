@@ -41,7 +41,11 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/threadLocalStorage.hpp"
 #include "runtime/unhandledOops.hpp"
+
+#if INCLUDE_NMT
 #include "services/memRecorder.hpp"
+#endif // INCLUDE_NMT
+
 #include "trace/tracing.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/top.hpp"
@@ -1038,6 +1042,7 @@ class JavaThread: public Thread {
   bool do_not_unlock_if_synchronized()             { return _do_not_unlock_if_synchronized; }
   void set_do_not_unlock_if_synchronized(bool val) { _do_not_unlock_if_synchronized = val; }
 
+#if INCLUDE_NMT
   // native memory tracking
   inline MemRecorder* get_recorder() const          { return (MemRecorder*)_recorder; }
   inline void         set_recorder(MemRecorder* rc) { _recorder = (volatile MemRecorder*)rc; }
@@ -1045,6 +1050,7 @@ class JavaThread: public Thread {
  private:
   // per-thread memory recorder
   volatile MemRecorder* _recorder;
+#endif // INCLUDE_NMT
 
   // Suspend/resume support for JavaThread
  private:

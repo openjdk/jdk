@@ -79,6 +79,11 @@ class BsdAddress implements Address {
         return debugger.readCompOopAddress(addr + offset);
     }
 
+    public Address getCompKlassAddressAt(long offset)
+            throws UnalignedAddressException, UnmappedAddressException {
+        return debugger.readCompOopAddress(addr + offset);
+    }
+
     //
     // Java-related routines
     //
