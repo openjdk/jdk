@@ -426,7 +426,7 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
 
 // Generate loads from source of the arraycopy for fields of
 // destination needed at a deoptimization point
-Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, BasicType ft, const Type *ftype, AllocateNode *alloc) {
+Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, Node* ctl, Node* mem, BasicType ft, const Type *ftype, AllocateNode *alloc) {
   BasicType bt = ft;
   const Type *type = ftype;
   if (ft == T_NARROWOOP) {
@@ -438,8 +438,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
     Node* base = ac->in(ArrayCopyNode::Src)->in(AddPNode::Base);
     Node* adr = _igvn.transform(new AddPNode(base, base, MakeConX(offset)));
     const TypePtr* adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
-    Node* m = ac->in(TypeFunc::Memory);
-    res = LoadNode::make(_igvn, ctl, m, adr, adr_type, type, bt, MemNode::unordered, LoadNode::Pinned);
+    res = LoadNode::make(_igvn, ctl, mem, adr, adr_type, type, bt, MemNode::unordered, LoadNode::Pinned);
   } else {
     if (ac->modifies(offset, offset, &_igvn, true)) {
       assert(ac->in(ArrayCopyNode::Dest) == alloc->result_cast(), "arraycopy destination should be allocation's result");
@@ -454,8 +453,7 @@ Node* PhaseMacroExpand::make_arraycopy_load(ArrayCopyNode* ac, intptr_t offset, 
       Node* base = ac->in(ArrayCopyNode::Src);
       Node* adr = _igvn.transform(new AddPNode(base, base, off));
       const TypePtr* adr_type = _igvn.type(base)->is_ptr()->add_offset(offset);
-      Node* m = ac->in(TypeFunc::Memory);
-      res = LoadNode::make(_igvn, ctl, m, adr, adr_type, type, bt, MemNode::unordered, LoadNode::Pinned);
+      res = LoadNode::make(_igvn, ctl, mem, adr, adr_type, type, bt, MemNode::unordered, LoadNode::Pinned);
     }
   }
   if (res != NULL) {
@@ -544,7 +542,7 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         assert(false, "Object is not scalar replaceable if a LoadStore node accesses its field");
         return NULL;
       } else if (val->is_ArrayCopy()) {
-        Node* res = make_arraycopy_load(val->as_ArrayCopy(), offset, val->in(0), ft, phi_type, alloc);
+        Node* res = make_arraycopy_load(val->as_ArrayCopy(), offset, val->in(0), val->in(TypeFunc::Memory), ft, phi_type, alloc);
         if (res == NULL) {
           return NULL;
         }
@@ -657,11 +655,13 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
       }
     } else if (mem->is_ArrayCopy()) {
       Node* ctl = mem->in(0);
+      Node* m = mem->in(TypeFunc::Memory);
       if (sfpt_ctl->is_Proj() && sfpt_ctl->as_Proj()->is_uncommon_trap_proj(Deoptimization::Reason_none)) {
         // pin the loads in the uncommon trap path
         ctl = sfpt_ctl;
+        m = sfpt_mem;
       }
-      return make_arraycopy_load(mem->as_ArrayCopy(), offset, ctl, ft, ftype, alloc);
+      return make_arraycopy_load(mem->as_ArrayCopy(), offset, ctl, m, ft, ftype, alloc);
     }
   }
   // Something go wrong.

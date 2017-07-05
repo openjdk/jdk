@@ -445,7 +445,7 @@ public class TestExplicitRangeChecks {
                 success = false;
             }
             // Only perform these additional checks if C2 is available
-            if (Platform.isServer() &&
+            if (Platform.isServer() && !Platform.isEmulatedClient() &&
                 TIERED_STOP_AT_LEVEL == CompilerWhiteBoxTest.COMP_LEVEL_FULL_OPTIMIZATION) {
                 if (deoptimize && WHITE_BOX.isMethodCompiled(m)) {
                     System.out.println(name + " not deoptimized on invalid access");

@@ -233,9 +233,11 @@ void ThreadLocalAllocBuffer::startup_initialization() {
   // If the C2 compiler is not present, no space is reserved.
 
   // +1 for rounding up to next cache line, +1 to be safe
-  int lines =  MAX2(AllocatePrefetchLines, AllocateInstancePrefetchLines) + 2;
-  _reserve_for_allocation_prefetch = (AllocatePrefetchDistance + AllocatePrefetchStepSize * lines) /
-                                     (int)HeapWordSize;
+  if (is_server_compilation_mode_vm()) {
+    int lines =  MAX2(AllocatePrefetchLines, AllocateInstancePrefetchLines) + 2;
+    _reserve_for_allocation_prefetch = (AllocatePrefetchDistance + AllocatePrefetchStepSize * lines) /
+                                       (int)HeapWordSize;
+  }
 #endif
 
   // During jvm startup, the main (primordial) thread is initialized

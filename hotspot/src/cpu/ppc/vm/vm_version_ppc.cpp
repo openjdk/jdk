@@ -327,7 +327,10 @@ void VM_Version::initialize() {
       warning("RTMAbortRatio must be in the range 0 to 100, resetting it to 50");
       FLAG_SET_DEFAULT(RTMAbortRatio, 50);
     }
-    guarantee(RTMSpinLoopCount > 0, "unsupported");
+    if (RTMSpinLoopCount < 0) {
+      warning("RTMSpinLoopCount must not be a negative value, resetting it to 0");
+      FLAG_SET_DEFAULT(RTMSpinLoopCount, 0);
+    }
 #else
     // Only C2 does RTM locking optimization.
     // Can't continue because UseRTMLocking affects UseBiasedLocking flag

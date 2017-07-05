@@ -48,8 +48,9 @@ public class XShareAuto {
             "-server", "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=./XShareAuto.jsa", "-version");
         output = new OutputAnalyzer(pb.start());
+        String outputString = output.getOutput();
         // We asked for server but it could be aliased to something else
-        if (output.getOutput().contains("Server VM")) {
+        if (outputString.contains("Server VM") && !outputString.contains("emulated-client")) {
             // In server case we don't expect to see sharing flag
             output.shouldNotContain("sharing");
             output.shouldHaveExitValue(0);

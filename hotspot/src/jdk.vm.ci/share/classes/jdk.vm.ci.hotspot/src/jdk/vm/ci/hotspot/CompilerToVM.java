@@ -100,15 +100,19 @@ final class CompilerToVM {
     native long getExceptionTableStart(HotSpotResolvedJavaMethodImpl method);
 
     /**
-     * Determines if {@code method} can be inlined. A method may not be inlinable for a number of
-     * reasons such as:
-     * <ul>
-     * <li>a CompileOracle directive may prevent inlining or compilation of methods</li>
-     * <li>the method may have a bytecode breakpoint set</li>
-     * <li>the method may have other bytecode features that require special handling by the VM</li>
-     * </ul>
+     * Determines whether {@code method} is currently compilable by the JVMCI compiler being used by
+     * the VM. This can return false if JVMCI compilation failed earlier for {@code method}, a
+     * breakpoint is currently set in {@code method} or {@code method} contains other bytecode
+     * features that require special handling by the VM.
      */
-    native boolean canInlineMethod(HotSpotResolvedJavaMethodImpl method);
+    native boolean isCompilable(HotSpotResolvedJavaMethodImpl method);
+
+    /**
+     * Determines if {@code method} is targeted by a VM directive (e.g.,
+     * {@code -XX:CompileCommand=dontinline,<pattern>}) or annotation (e.g.,
+     * {@code jdk.internal.vm.annotation.DontInline}) that specifies it should not be inlined.
+     */
+    native boolean hasNeverInlineDirective(HotSpotResolvedJavaMethodImpl method);
 
     /**
      * Determines if {@code method} should be inlined at any cost. This could be because:

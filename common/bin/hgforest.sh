@@ -309,8 +309,8 @@ if [ "${command}" = "serve" ] ; then
 
       echo "serving root repo ${serving}" > ${status_output}
 
-      echo "hg${global_opts} serve" > ${status_output}
-      (PYTHONUNBUFFERED=true hg${global_opts} serve -A ${status_output} -E ${status_output} --pid-file ${tmp}/serve.pid --web-conf ${tmp}/serve.web-conf; echo "$?" > ${tmp}/serve.pid.rc ) 2>&1 &
+      echo "hg${global_opts} serve ${@}" > ${status_output}
+      (PYTHONUNBUFFERED=true hg${global_opts} serve -A ${status_output} -E ${status_output} --pid-file ${tmp}/serve.pid --web-conf ${tmp}/serve.web-conf "${@}"; echo "$?" > ${tmp}/serve.pid.rc ) 2>&1 &
     ) 2>&1 | sed -e "s@^@serve:   @" > ${status_output}
   ) &
 else

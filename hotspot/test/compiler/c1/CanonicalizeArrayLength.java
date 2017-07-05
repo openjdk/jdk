@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8150102 8150514 8150534
+ * @bug 8150102 8150514 8150534 8171435
  * @summary C1 crashes in Canonicalizer::do_ArrayLength() after fix for JDK-8150102
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
@@ -31,7 +31,7 @@
  *                   -XX:-BackgroundCompilation
  *                   compiler.c1.CanonicalizeArrayLength
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:CompileThreshold=100 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                   -XX:CompileThreshold=100 -XX:+TieredCompilation -XX:TieredStopAtLevel=3
  *                   -XX:-BackgroundCompilation
  *                   -XX:+PatchALot
  *                   compiler.c1.CanonicalizeArrayLength

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,23 +20,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.tools.jaotc.collect.classname;
 
-package compiler.aot.fingerprint;
+import jdk.tools.jaotc.collect.ClassSource;
 
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
+import java.util.function.BiConsumer;
 
-// Usage:
-// java CDSRunner <vmargs> <class> <args> ...
-public class CDSRunner {
-    public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+public class ClassNameSource implements ClassSource {
+    private final String name;
+    private final ClassLoader classLoader;
 
-        System.out.println("[stdout = " + output.getStdout() + "]");
-        System.out.println("[stderr = " + output.getStderr() + "]");
+    public ClassNameSource(String name, ClassLoader classLoader) {
+        this.name = name;
+        this.classLoader = classLoader;
+    }
 
-        output.shouldContain("PASSED");
-        output.shouldHaveExitValue(0);
+    @Override
+    public void eachClass(BiConsumer<String, ClassLoader> consumer) {
+        consumer.accept(name, classLoader);
     }
 }
