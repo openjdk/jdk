@@ -456,6 +456,23 @@ void Matcher::init_first_stack_mask() {
   *idealreg2spillmask[Op_RegP] = *idealreg2regmask[Op_RegP];
    idealreg2spillmask[Op_RegP]->OR(C->FIRST_STACK_mask());
 
+   if (UseFPUForSpilling) {
+     // This mask logic assumes that the spill operations are
+     // symmetric and that the registers involved are the same size.
+     // On sparc for instance we may have to use 64 bit moves will
+     // kill 2 registers when used with F0-F31.
+     idealreg2spillmask[Op_RegI]->OR(*idealreg2regmask[Op_RegF]);
+     idealreg2spillmask[Op_RegF]->OR(*idealreg2regmask[Op_RegI]);
+#ifdef _LP64
+     idealreg2spillmask[Op_RegN]->OR(*idealreg2regmask[Op_RegF]);
+     idealreg2spillmask[Op_RegL]->OR(*idealreg2regmask[Op_RegD]);
+     idealreg2spillmask[Op_RegD]->OR(*idealreg2regmask[Op_RegL]);
+     idealreg2spillmask[Op_RegP]->OR(*idealreg2regmask[Op_RegD]);
+#else
+     idealreg2spillmask[Op_RegP]->OR(*idealreg2regmask[Op_RegF]);
+#endif
+   }
+
   // Make up debug masks.  Any spill slot plus callee-save registers.
   // Caller-save registers are assumed to be trashable by the various
   // inline-cache fixup routines.

@@ -149,8 +149,13 @@ public:
   }
   static void track_memory_pool_usage(MemoryPool* pool);
 
-  static void gc_begin(bool fullGC);
-  static void gc_end(bool fullGC);
+  static void gc_begin(bool fullGC, bool recordGCBeginTime,
+                       bool recordAccumulatedGCTime,
+                       bool recordPreGCUsage, bool recordPeakUsage);
+  static void gc_end(bool fullGC, bool recordPostGCUsage,
+                     bool recordAccumulatedGCTime,
+                     bool recordGCEndTime, bool countCollection);
+
 
   static void oops_do(OopClosure* f);
 
@@ -164,8 +169,34 @@ public:
 class TraceMemoryManagerStats : public StackObj {
 private:
   bool         _fullGC;
+  bool         _recordGCBeginTime;
+  bool         _recordPreGCUsage;
+  bool         _recordPeakUsage;
+  bool         _recordPostGCUsage;
+  bool         _recordAccumulatedGCTime;
+  bool         _recordGCEndTime;
+  bool         _countCollection;
+
 public:
-  TraceMemoryManagerStats(bool fullGC);
+  TraceMemoryManagerStats() {}
+  TraceMemoryManagerStats(bool fullGC,
+                          bool recordGCBeginTime = true,
+                          bool recordPreGCUsage = true,
+                          bool recordPeakUsage = true,
+                          bool recordPostGCUsage = true,
+                          bool recordAccumulatedGCTime = true,
+                          bool recordGCEndTime = true,
+                          bool countCollection = true);
+
+  void initialize(bool fullGC,
+                  bool recordGCBeginTime,
+                  bool recordPreGCUsage,
+                  bool recordPeakUsage,
+                  bool recordPostGCUsage,
+                  bool recordAccumulatedGCTime,
+                  bool recordGCEndTime,
+                  bool countCollection);
+
   TraceMemoryManagerStats(Generation::Name kind);
   ~TraceMemoryManagerStats();
 };

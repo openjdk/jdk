@@ -711,7 +711,6 @@ class instanceKlass: public Klass {
 
 #ifndef SERIALGC
   // Parallel Scavenge
-  void copy_static_fields(PSPromotionManager* pm);
   void push_static_fields(PSPromotionManager* pm);
 
   // Parallel Old

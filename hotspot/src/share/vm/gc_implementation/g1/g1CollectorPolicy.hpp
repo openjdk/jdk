@@ -63,8 +63,6 @@ class MainBodySummary: public CHeapObj {
     define_num_seq(mark_stack_scan)
     define_num_seq(update_rs)
     define_num_seq(scan_rs)
-    define_num_seq(scan_new_refs) // Only for temp use; added to
-                                  // in parallel case.
     define_num_seq(obj_copy)
     define_num_seq(termination) // parallel only
     define_num_seq(parallel_other) // parallel only
@@ -76,9 +74,6 @@ class Summary: public PauseSummary,
                public MainBodySummary {
 public:
   virtual MainBodySummary*    main_body_summary()    { return this; }
-};
-
-class AbandonedSummary: public PauseSummary {
 };
 
 class G1CollectorPolicy: public CollectorPolicy {
@@ -150,7 +145,6 @@ protected:
   TruncatedSeq* _concurrent_mark_cleanup_times_ms;
 
   Summary*           _summary;
-  AbandonedSummary*  _abandoned_summary;
 
   NumberSeq* _all_pause_times_ms;
   NumberSeq* _all_full_gc_times_ms;
@@ -177,7 +171,6 @@ protected:
   double* _par_last_update_rs_times_ms;
   double* _par_last_update_rs_processed_buffers;
   double* _par_last_scan_rs_times_ms;
-  double* _par_last_scan_new_refs_times_ms;
   double* _par_last_obj_copy_times_ms;
   double* _par_last_termination_times_ms;
   double* _par_last_termination_attempts;
@@ -576,7 +569,6 @@ protected:
                          NumberSeq* calc_other_times_ms) const;
 
   void print_summary (PauseSummary* stats) const;
-  void print_abandoned_summary(PauseSummary* summary) const;
 
   void print_summary (int level, const char* str, NumberSeq* seq) const;
   void print_summary_sd (int level, const char* str, NumberSeq* seq) const;
@@ -889,7 +881,7 @@ public:
   virtual void record_collection_pause_end_CH_strong_roots();
   virtual void record_collection_pause_end_G1_strong_roots();
 
-  virtual void record_collection_pause_end(bool abandoned);
+  virtual void record_collection_pause_end();
 
   // Record the fact that a full collection occurred.
   virtual void record_full_collection_start();
@@ -931,14 +923,6 @@ public:
 
   void record_scan_rs_time(int thread, double ms) {
     _par_last_scan_rs_times_ms[thread] = ms;
-  }
-
-  void record_scan_new_refs_time(int thread, double ms) {
-    _par_last_scan_new_refs_times_ms[thread] = ms;
-  }
-
-  double get_scan_new_refs_time(int thread) {
-    return _par_last_scan_new_refs_times_ms[thread];
   }
 
   void reset_obj_copy_time(int thread) {
@@ -1010,7 +994,7 @@ public:
   // Choose a new collection set.  Marks the chosen regions as being
   // "in_collection_set", and links them together.  The head and number of
   // the collection set are available via access methods.
-  virtual bool choose_collection_set(double target_pause_time_ms) = 0;
+  virtual void choose_collection_set(double target_pause_time_ms) = 0;
 
   // The head of the list (via "next_in_collection_set()") representing the
   // current collection set.
@@ -1267,7 +1251,7 @@ class G1CollectorPolicy_BestRegionsFirst: public G1CollectorPolicy {
   // If the estimated is less then desirable, resize if possible.
   void expand_if_possible(size_t numRegions);
 
-  virtual bool choose_collection_set(double target_pause_time_ms);
+  virtual void choose_collection_set(double target_pause_time_ms);
   virtual void record_collection_pause_start(double start_time_sec,
                                              size_t start_used);
   virtual void record_concurrent_mark_cleanup_end(size_t freed_bytes,
@@ -1278,7 +1262,7 @@ public:
   G1CollectorPolicy_BestRegionsFirst() {
     _collectionSetChooser = new CollectionSetChooser();
   }
-  void record_collection_pause_end(bool abandoned);
+  void record_collection_pause_end();
   bool should_do_collection_pause(size_t word_size);
   // This is not needed any more, after the CSet choosing code was
   // changed to use the pause prediction work. But let's leave the

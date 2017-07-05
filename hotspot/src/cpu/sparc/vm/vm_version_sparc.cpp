@@ -112,6 +112,11 @@ void VM_Version::initialize() {
     }
   }
 
+#ifdef COMPILER2
+  // Currently not supported anywhere.
+  FLAG_SET_DEFAULT(UseFPUForSpilling, false);
+#endif
+
   char buf[512];
   jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s%s",
                (has_v8() ? ", has_v8" : ""),
