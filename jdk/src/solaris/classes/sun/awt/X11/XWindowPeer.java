@@ -740,15 +740,67 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
     public void paletteChanged() {
     }
 
+    private Point queryXLocation()
+    {
+        return XlibUtil.translateCoordinates(
+            getContentWindow(),
+            XlibWrapper.RootWindow(XToolkit.getDisplay(), getScreenNumber()),
+            new Point(0, 0));
+    }
+
+    protected Point getNewLocation(XConfigureEvent xe, int leftInset, int topInset) {
+        // Bounds of the window
+        Rectangle targetBounds = AWTAccessor.getComponentAccessor().getBounds((Component)target);
+
+        int runningWM = XWM.getWMID();
+        Point newLocation = targetBounds.getLocation();
+        if (xe.get_send_event() || runningWM == XWM.NO_WM || XWM.isNonReparentingWM()) {
+            // Location, Client size + insets
+            newLocation = new Point(xe.get_x() - leftInset, xe.get_y() - topInset);
+        } else {
+            // ICCCM 4.1.5 states that a real ConfigureNotify will be sent when
+            // a window is resized but the client can not tell if the window was
+            // moved or not. The client should consider the position as unkown
+            // and use TranslateCoordinates to find the actual position.
+            //
+            // TODO this should be the default for every case.
+            switch (runningWM) {
+                case XWM.CDE_WM:
+                case XWM.MOTIF_WM:
+                case XWM.METACITY_WM:
+                case XWM.MUTTER_WM:
+                case XWM.SAWFISH_WM:
+                {
+                    Point xlocation = queryXLocation();
+                    if (log.isLoggable(PlatformLogger.Level.FINE)) {
+                        log.fine("New X location: {0}", xlocation);
+                    }
+                    if (xlocation != null) {
+                        newLocation = xlocation;
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+        return newLocation;
+    }
+
     /*
      * Overridden to check if we need to update our GraphicsDevice/Config
      * Added for 4934052.
      */
     @Override
     public void handleConfigureNotifyEvent(XEvent xev) {
-        // TODO: We create an XConfigureEvent every time we override
-        // handleConfigureNotify() - too many!
         XConfigureEvent xe = xev.get_xconfigure();
+        /*
+         * Correct window location which could be wrong in some cases.
+         * See getNewLocation() for the details.
+         */
+        Point newLocation = getNewLocation(xe, 0, 0);
+        xe.set_x(newLocation.x);
+        xe.set_y(newLocation.y);
         checkIfOnNewScreen(new Rectangle(xe.get_x(),
                                          xe.get_y(),
                                          xe.get_width(),

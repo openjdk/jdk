@@ -326,6 +326,48 @@ final class P11Signature extends SignatureSpi {
         }
     }
 
+    private void checkKeySize(String keyAlgo, Key key)
+        throws InvalidKeyException {
+        CK_MECHANISM_INFO mechInfo = null;
+        try {
+            mechInfo = token.getMechanismInfo(mechanism);
+        } catch (PKCS11Exception e) {
+            // should not happen, ignore for now.
+        }
+        if (mechInfo == null) {
+            // skip the check if no native info available
+            return;
+        }
+        int minKeySize = (int) mechInfo.ulMinKeySize;
+        int maxKeySize = (int) mechInfo.ulMaxKeySize;
+
+        int keySize = 0;
+        if (key instanceof P11Key) {
+            keySize = ((P11Key) key).length();
+        } else {
+            if (keyAlgo.equals("RSA")) {
+                keySize = ((RSAKey) key).getModulus().bitLength();
+            } else if (keyAlgo.equals("DSA")) {
+                keySize = ((DSAKey) key).getParams().getP().bitLength();
+            } else if (keyAlgo.equals("EC")) {
+                keySize = ((ECKey) key).getParams().getCurve().getField().getFieldSize();
+            } else {
+                throw new ProviderException("Error: unsupported algo " + keyAlgo);
+            }
+        }
+        if ((minKeySize != -1) && (keySize < minKeySize)) {
+            throw new InvalidKeyException(keyAlgo +
+                " key must be at least " + minKeySize + " bits");
+        }
+        if ((maxKeySize != -1) && (keySize > maxKeySize)) {
+            throw new InvalidKeyException(keyAlgo +
+                " key must be at most " + maxKeySize + " bits");
+        }
+        if (keyAlgo.equals("RSA")) {
+            checkRSAKeyLength(keySize);
+        }
+    }
+
     private void checkRSAKeyLength(int len) throws InvalidKeyException {
         RSAPadding padding;
         try {
@@ -364,15 +406,9 @@ final class P11Signature extends SignatureSpi {
         if (publicKey == null) {
             throw new InvalidKeyException("Key must not be null");
         }
-        // Need to check RSA key length whenever a new key is set
-        if (keyAlgorithm.equals("RSA") && publicKey != p11Key) {
-            int keyLen;
-            if (publicKey instanceof P11Key) {
-                keyLen = ((P11Key) publicKey).length();
-            } else {
-                keyLen = ((RSAKey) publicKey).getModulus().bitLength();
-            }
-            checkRSAKeyLength(keyLen);
+        // Need to check key length whenever a new key is set
+        if (publicKey != p11Key) {
+            checkKeySize(keyAlgorithm, publicKey);
         }
         cancelOperation();
         mode = M_VERIFY;
@@ -387,14 +423,8 @@ final class P11Signature extends SignatureSpi {
             throw new InvalidKeyException("Key must not be null");
         }
         // Need to check RSA key length whenever a new key is set
-        if (keyAlgorithm.equals("RSA") && privateKey != p11Key) {
-            int keyLen;
-            if (privateKey instanceof P11Key) {
-                keyLen = ((P11Key) privateKey).keyLength;
-            } else {
-                keyLen = ((RSAKey) privateKey).getModulus().bitLength();
-            }
-            checkRSAKeyLength(keyLen);
+        if (privateKey != p11Key) {
+            checkKeySize(keyAlgorithm, privateKey);
         }
         cancelOperation();
         mode = M_SIGN;

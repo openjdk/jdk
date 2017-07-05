@@ -58,7 +58,7 @@ public class XMLFormatter extends Formatter {
     private void appendISO8601(StringBuilder sb, long millis) {
         GregorianCalendar cal = new GregorianCalendar();
         cal.setTimeInMillis(millis);
-        sb.append(cal.get(Calendar.YEAR) + 1900);
+        sb.append(cal.get(Calendar.YEAR));
         sb.append('-');
         a2(sb, cal.get(Calendar.MONTH) + 1);
         sb.append('-');

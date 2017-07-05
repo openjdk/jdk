@@ -202,7 +202,7 @@ public class TimestampCheck {
             SignerInfo signerInfo = new SignerInfo(
                     new X500Name(signer.getIssuerX500Principal().getName()),
                     signer.getSerialNumber(),
-                    aid, AlgorithmId.get("DSA"), sig.sign());
+                    aid, AlgorithmId.get("RSA"), sig.sign());
 
             SignerInfo[] signerInfos = {signerInfo};
             PKCS7 p7 =

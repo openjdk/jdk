@@ -1113,14 +1113,15 @@ fi
 if [ -d "$THIS/install/j2sdk-image" ]; then
     THIS_J2SDK="$THIS/install/j2sdk-image"
     THIS_J2RE="$THIS/install/j2re-image"
-    echo "Comparing install images"
+    echo "Selecting install images in this build"
 elif [ -d "$THIS/deploy/j2sdk-image" ]; then
     THIS_J2SDK="$THIS/deploy/j2sdk-image"
     THIS_J2RE="$THIS/deploy/j2re-image"
-    echo "Comparing deploy images"
+    echo "Selecting deploy images in this build"
 elif [ -d "$THIS/images/j2sdk-image" ]; then
     THIS_J2SDK="$THIS/images/j2sdk-image"
     THIS_J2RE="$THIS/images/j2re-image"
+    echo "Selecting jdk images in this build"
 fi
 
 if [ -d "$THIS/images/j2sdk-overlay-image" ]; then
@@ -1128,15 +1129,18 @@ if [ -d "$THIS/images/j2sdk-overlay-image" ]; then
         # If there is an install image, prefer that, it's also overlay
         THIS_J2SDK_OVERLAY="$THIS/install/j2sdk-image"
         THIS_J2RE_OVERLAY="$THIS/install/j2re-image"
+        echo "Selecting install overlay images in this build"
     else
         THIS_J2SDK_OVERLAY="$THIS/images/j2sdk-overlay-image"
         THIS_J2RE_OVERLAY="$THIS/images/j2re-overlay-image"
+        echo "Selecting jdk overlay images in this build"
     fi
 fi
 
 if [ -d "$THIS/images/j2sdk-bundle" ]; then
     THIS_J2SDK_BUNDLE="$THIS/images/j2sdk-bundle"
     THIS_J2RE_BUNDLE="$THIS/images/j2re-bundle"
+    echo "Selecting bundles in this build"
 fi
 
 # Figure out the layout of the other build (old or new, normal or overlay image)
@@ -1144,21 +1148,34 @@ if [ -d "$OTHER/j2sdk-image" ]; then
     if [ -f "$OTHER/j2sdk-image/LICENSE" ]; then
         OTHER_J2SDK="$OTHER/j2sdk-image"
         OTHER_J2RE="$OTHER/j2re-image"
+        echo "Selecting old-style images in other build"
     else
         OTHER_J2SDK_OVERLAY="$OTHER/j2sdk-image"
         OTHER_J2RE_OVERLAY="$OTHER/j2re-image"
+        echo "Selecting overlay images in other build"
     fi
+elif [ -d "$OTHER/install/j2sdk-image" ]; then
+    OTHER_J2SDK="$OTHER/install/j2sdk-image"
+    OTHER_J2RE="$OTHER/install/j2re-image"
+    echo "Selecting install images in other build"
+elif [ -d "$OTHER/deploy/j2sdk-image" ]; then
+    OTHER_J2SDK="$OTHER/deploy/j2sdk-image"
+    OTHER_J2RE="$OTHER/deploy/j2re-image"
+    echo "Selecting deploy images in other build"
 elif [ -d "$OTHER/images/j2sdk-image" ]; then
     OTHER_J2SDK="$OTHER/images/j2sdk-image"
     OTHER_J2RE="$OTHER/images/j2re-image"
+    echo "Selecting jdk images in other build"
 fi
 
 if [ -d "$OTHER/j2sdk-bundle" ]; then
     OTHER_J2SDK_BUNDLE="$OTHER/j2sdk-bundle"
     OTHER_J2RE_BUNDLE="$OTHER/j2re-bundle"
+    echo "Selecting bundles in other build"
 elif [ -d "$OTHER/images/j2sdk-bundle" ]; then
     OTHER_J2SDK_BUNDLE="$OTHER/images/j2sdk-bundle"
     OTHER_J2RE_BUNDLE="$OTHER/images/j2re-bundle"
+    echo "Selecting jdk bundles in other build"
 fi
 
 if [ -z "$THIS_J2SDK" ] || [ -z "$THIS_J2RE" ]; then
