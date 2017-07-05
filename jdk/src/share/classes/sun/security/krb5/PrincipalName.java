@@ -38,15 +38,25 @@ import java.util.Vector;
 import java.util.Locale;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.Arrays;
 import sun.security.krb5.internal.ccache.CCacheOutputStream;
 import sun.security.krb5.internal.util.KerberosString;
 
 
 /**
- * This class encapsulates a Kerberos principal.
+ * Implements the ASN.1 PrincipalName type and its realm in a single class.
+ * <xmp>
+ *    Realm           ::= KerberosString
+ *
+ *    PrincipalName   ::= SEQUENCE {
+ *            name-type       [0] Int32,
+ *            name-string     [1] SEQUENCE OF KerberosString
+ *    }
+ * </xmp>
+ * This class is immutable.
+ * @see Realm
  */
-public class PrincipalName
-    implements Cloneable {
+public class PrincipalName implements Cloneable {
 
     //name types
 
@@ -80,8 +90,6 @@ public class PrincipalName
      */
     public static final int KRB_NT_UID = 5;
 
-
-
     /**
      * TGS Name
      */
@@ -96,98 +104,109 @@ public class PrincipalName
     public static final String NAME_REALM_SEPARATOR_STR = "@";
     public static final String REALM_COMPONENT_SEPARATOR_STR = ".";
 
-    private int nameType;
-    private String[] nameStrings;  // Principal names don't mutate often
+    // Instance fields.
 
-    private Realm nameRealm;  // optional; a null realm means use default
-    // Note: the nameRealm is not included in the default ASN.1 encoding
+    /**
+     * The name type, from PrincipalName's name-type field.
+     */
+    private final int nameType;
 
-    // cached salt, might be changed by KDC info, not used in clone
-    private String salt = null;
+    /**
+     * The name strings, from PrincipalName's name-strings field. This field
+     * must be neither null nor empty. Each entry of it must also be neither
+     * null nor empty. Make sure to clone the field when it's passed in or out.
+     */
+    private final String[] nameStrings;
 
-    protected PrincipalName() {
+    /**
+     * The realm this principal belongs to.
+     */
+    private final Realm nameRealm;      // not null
+
+    // cached default salt, not used in clone
+    private transient String salt = null;
+
+    // There are 3 basic constructors. All other constructors must call them.
+    // All basic constructors must call validateNameStrings.
+    // 1. From name components
+    // 2. From name
+    // 3. From DER encoding
+
+    /**
+     * Creates a PrincipalName.
+     */
+    public PrincipalName(int nameType, String[] nameStrings, Realm nameRealm) {
+        if (nameRealm == null) {
+            throw new IllegalArgumentException("Null realm not allowed");
+        }
+        validateNameStrings(nameStrings);
+        this.nameType = nameType;
+        this.nameStrings = nameStrings.clone();
+        this.nameRealm = nameRealm;
+    }
+
+    // This method is called by Windows NativeCred.c
+    public PrincipalName(String[] nameParts, String realm) throws RealmException {
+        this(KRB_NT_UNKNOWN, nameParts, new Realm(realm));
     }
 
     public PrincipalName(String[] nameParts, int type)
-        throws IllegalArgumentException, IOException {
-        if (nameParts == null) {
-            throw new IllegalArgumentException("Null input not allowed");
-        }
-        nameStrings = new String[nameParts.length];
-        System.arraycopy(nameParts, 0, nameStrings, 0, nameParts.length);
-        nameType = type;
-        nameRealm = null;
+            throws IllegalArgumentException, RealmException {
+        this(type, nameParts, Realm.getDefault());
     }
 
-    public PrincipalName(String[] nameParts) throws IOException {
-        this(nameParts, KRB_NT_UNKNOWN);
+    // Validate a nameStrings argument
+    private static void validateNameStrings(String[] ns) {
+        if (ns == null) {
+            throw new IllegalArgumentException("Null nameStrings not allowed");
+        }
+        if (ns.length == 0) {
+            throw new IllegalArgumentException("Empty nameStrings not allowed");
+        }
+        for (String s: ns) {
+            if (s == null) {
+                throw new IllegalArgumentException("Null nameString not allowed");
+            }
+            if (s.isEmpty()) {
+                throw new IllegalArgumentException("Empty nameString not allowed");
+            }
+        }
     }
 
     public Object clone() {
         try {
             PrincipalName pName = (PrincipalName) super.clone();
-            // Re-assign mutable fields
-            if (nameStrings != null) {
-                pName.nameStrings = nameStrings.clone();
-            }
-            if (nameRealm != null) {
-                pName.nameRealm = (Realm)nameRealm.clone();
-            }
+            UNSAFE.putObject(this, NAME_STRINGS_OFFSET, nameStrings.clone());
             return pName;
         } catch (CloneNotSupportedException ex) {
             throw new AssertionError("Should never happen");
         }
     }
 
-    /*
-     * Added to workaround a bug where the equals method that takes a
-     * PrincipalName is not being called but Object.equals(Object) is
-     * being called.
-     */
+    private static final long NAME_STRINGS_OFFSET;
+    private static final sun.misc.Unsafe UNSAFE;
+    static {
+        try {
+            sun.misc.Unsafe unsafe = sun.misc.Unsafe.getUnsafe();
+            NAME_STRINGS_OFFSET = unsafe.objectFieldOffset(
+                    PrincipalName.class.getDeclaredField("nameStrings"));
+            UNSAFE = unsafe;
+        } catch (ReflectiveOperationException e) {
+            throw new Error(e);
+        }
+    }
+
+    @Override
     public boolean equals(Object o) {
-        if (o instanceof PrincipalName)
-            return equals((PrincipalName)o);
-        else
-            return false;
-    }
-
-    public boolean equals(PrincipalName other) {
-
-
-        if (!equalsWithoutRealm(other)) {
-            return false;
+        if (this == o) {
+            return true;
         }
-
-        if ((nameRealm != null && other.nameRealm == null) ||
-            (nameRealm == null && other.nameRealm != null)) {
-            return false;
+        if (o instanceof PrincipalName) {
+            PrincipalName other = (PrincipalName)o;
+            return nameRealm.equals(other.nameRealm) &&
+                    Arrays.equals(nameStrings, other.nameStrings);
         }
-
-        if (nameRealm != null && other.nameRealm != null) {
-            if (!nameRealm.equals(other.nameRealm)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    boolean equalsWithoutRealm(PrincipalName other) {
-
-        if ((nameStrings != null && other.nameStrings == null) ||
-            (nameStrings == null && other.nameStrings != null))
-            return false;
-
-        if (nameStrings != null && other.nameStrings != null) {
-            if (nameStrings.length != other.nameStrings.length)
-                return false;
-            for (int i = 0; i < nameStrings.length; i++)
-                if (!nameStrings[i].equals(other.nameStrings[i]))
-                    return false;
-        }
-
-        return true;
-
+        return false;
     }
 
     /**
@@ -208,20 +227,23 @@ public class PrincipalName
      * http://www.ietf.org/rfc/rfc4120.txt</a>.
      *
      * @param encoding a Der-encoded data.
+     * @param realm the realm for this name
      * @exception Asn1Exception if an error occurs while decoding
      * an ASN1 encoded data.
      * @exception Asn1Exception if there is an ASN1 encoding error
      * @exception IOException if an I/O error occurs
      * @exception IllegalArgumentException if encoding is null
      * reading encoded data.
-     *
      */
-    public PrincipalName(DerValue encoding)
-        throws Asn1Exception, IOException {
-        nameRealm = null;
+    public PrincipalName(DerValue encoding, Realm realm)
+            throws Asn1Exception, IOException {
+        if (realm == null) {
+            throw new IllegalArgumentException("Null realm not allowed");
+        }
+        nameRealm = realm;
         DerValue der;
         if (encoding == null) {
-            throw new IllegalArgumentException("Null input not allowed");
+            throw new IllegalArgumentException("Null encoding not allowed");
         }
         if (encoding.getTag() != DerValue.tag_Sequence) {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
@@ -243,14 +265,12 @@ public class PrincipalName
             DerValue subSubDer;
             while(subDer.getData().available() > 0) {
                 subSubDer = subDer.getData().getDerValue();
-                v.addElement(new KerberosString(subSubDer).toString());
+                String namePart = new KerberosString(subSubDer).toString();
+                v.addElement(namePart);
             }
-            if (v.size() > 0) {
-                nameStrings = new String[v.size()];
-                v.copyInto(nameStrings);
-            } else {
-                nameStrings = new String[] {""};
-            }
+            nameStrings = new String[v.size()];
+            v.copyInto(nameStrings);
+            validateNameStrings(nameStrings);
         } else  {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
         }
@@ -267,32 +287,35 @@ public class PrincipalName
      * more marshaled value.
      * @param explicitTag tag number.
      * @param optional indicate if this data field is optional
-     * @return an instance of <code>PrincipalName</code>.
-     *
+     * @param realm the realm for the name
+     * @return an instance of <code>PrincipalName</code>, or null if the
+     * field is optional and missing.
      */
     public static PrincipalName parse(DerInputStream data,
                                       byte explicitTag, boolean
-                                      optional)
-        throws Asn1Exception, IOException {
+                                      optional,
+                                      Realm realm)
+        throws Asn1Exception, IOException, RealmException {
 
         if ((optional) && (((byte)data.peekByte() & (byte)0x1F) !=
                            explicitTag))
             return null;
         DerValue der = data.getDerValue();
-        if (explicitTag != (der.getTag() & (byte)0x1F))
+        if (explicitTag != (der.getTag() & (byte)0x1F)) {
             throw new Asn1Exception(Krb5.ASN1_BAD_ID);
-        else {
+        } else {
             DerValue subDer = der.getData().getDerValue();
-            return new PrincipalName(subDer);
+            if (realm == null) {
+                realm = Realm.getDefault();
+            }
+            return new PrincipalName(subDer, realm);
         }
     }
 
 
-    // This is protected because the definition of a principal
-    // string is fixed
     // XXX Error checkin consistent with MIT krb5_parse_name
     // Code repetition, realm parsed again by class Realm
-    protected static String[] parseName(String name) {
+    private static String[] parseName(String name) {
 
         Vector<String> tempStrings = new Vector<>();
         String temp = name;
@@ -312,13 +335,13 @@ public class PrincipalName
                     continue;
                 }
                 else {
-                    if (componentStart < i) {
+                    if (componentStart <= i) {
                         component = temp.substring(componentStart, i);
                         tempStrings.addElement(component);
                     }
                     componentStart = i + 1;
                 }
-            } else
+            } else {
                 if (temp.charAt(i) == NAME_REALM_SEPARATOR) {
                     /*
                      * If this separator is escaped then don't treat it
@@ -337,11 +360,11 @@ public class PrincipalName
                         break;
                     }
                 }
+            }
             i++;
         }
 
-        if (i == temp.length())
-        if (componentStart < i) {
+        if (i == temp.length()) {
             component = temp.substring(componentStart, i);
             tempStrings.addElement(component);
         }
@@ -351,30 +374,26 @@ public class PrincipalName
         return result;
     }
 
-    public PrincipalName(String name, int type)
-        throws RealmException {
+    /**
+     * Constructs a PrincipalName from a string.
+     * @param name the name
+     * @param type the type
+     * @param realm the realm, null if not known. Note that when realm is not
+     * null, it will be always used even if there is a realm part in name. When
+     * realm is null, will read realm part from name, or try to map a realm
+     * (for KRB_NT_SRV_HST), or use the default realm, or fail
+     * @throws RealmException
+     */
+    public PrincipalName(String name, int type, String realm)
+            throws RealmException {
         if (name == null) {
             throw new IllegalArgumentException("Null name not allowed");
         }
         String[] nameParts = parseName(name);
-        Realm tempRealm = null;
-        String realmString = Realm.parseRealmAtSeparator(name);
-
-        if (realmString == null) {
-            try {
-                Config config = Config.getInstance();
-                realmString = config.getDefaultRealm();
-            } catch (KrbException e) {
-                RealmException re =
-                    new RealmException(e.getMessage());
-                re.initCause(e);
-                throw re;
-            }
+        validateNameStrings(nameParts);
+        if (realm == null) {
+            realm = Realm.parseRealmAtSeparator(name);
         }
-
-        if (realmString != null)
-            tempRealm = new Realm(realmString);
-
         switch (type) {
         case KRB_NT_SRV_HST:
             if (nameParts.length >= 2) {
@@ -401,18 +420,22 @@ public class PrincipalName
             }
             nameStrings = nameParts;
             nameType = type;
+
+            if (realm != null) {
+                nameRealm = new Realm(realm);
+            } else {
                 // We will try to get realm name from the mapping in
                 // the configuration. If it is not specified
                 // we will use the default realm. This nametype does
                 // not allow a realm to be specified. The name string must of
                 // the form service@host and this is internally changed into
                 // service/host by Kerberos
-
-            String mapRealm =  mapHostToRealm(nameParts[1]);
-            if (mapRealm != null) {
-                nameRealm = new Realm(mapRealm);
-            } else {
-                nameRealm = tempRealm;
+                String mapRealm =  mapHostToRealm(nameParts[1]);
+                if (mapRealm != null) {
+                    nameRealm = new Realm(mapRealm);
+                } else {
+                    nameRealm = Realm.getDefault();
+                }
             }
             break;
         case KRB_NT_UNKNOWN:
@@ -422,11 +445,19 @@ public class PrincipalName
         case KRB_NT_UID:
             nameStrings = nameParts;
             nameType = type;
-            nameRealm = tempRealm;
+            if (realm != null) {
+                nameRealm = new Realm(realm);
+            } else {
+                nameRealm = Realm.getDefault();
+            }
             break;
         default:
             throw new IllegalArgumentException("Illegal name type");
         }
+    }
+
+    public PrincipalName(String name, int type) throws RealmException {
+        this(name, type, (String)null);
     }
 
     public PrincipalName(String name) throws RealmException {
@@ -434,8 +465,14 @@ public class PrincipalName
     }
 
     public PrincipalName(String name, String realm) throws RealmException {
-        this(name, KRB_NT_UNKNOWN);
-        nameRealm = new Realm(realm);
+        this(name, KRB_NT_UNKNOWN, realm);
+    }
+
+    public static PrincipalName tgsService(String r1, String r2)
+            throws KrbException {
+        return new PrincipalName(PrincipalName.KRB_NT_SRV_INST,
+                new String[] {PrincipalName.TGS_DEFAULT_SRV_NAME, r1},
+                new Realm(r2));
     }
 
     public String getRealmAsString() {
@@ -475,29 +512,17 @@ public class PrincipalName
     }
 
     public String getRealmString() {
-        if (nameRealm != null)
-            return nameRealm.toString();
-        return null;
+        return nameRealm.toString();
     }
 
     public Realm getRealm() {
         return nameRealm;
     }
 
-    public void setRealm(Realm new_nameRealm) throws RealmException {
-        nameRealm = new_nameRealm;
-    }
-
-    public void setRealm(String realmsString) throws RealmException {
-        nameRealm = new Realm(realmsString);
-    }
-
     public String getSalt() {
         if (salt == null) {
             StringBuffer salt = new StringBuffer();
-            if (nameRealm != null) {
-                salt.append(nameRealm.toString());
-            }
+            salt.append(nameRealm.toString());
             for (int i = 0; i < nameStrings.length; i++) {
                 salt.append(nameStrings[i]);
             }
@@ -513,11 +538,8 @@ public class PrincipalName
                 str.append("/");
             str.append(nameStrings[i]);
         }
-        if (nameRealm != null) {
-            str.append("@");
-            str.append(nameRealm.toString());
-        }
-
+        str.append("@");
+        str.append(nameRealm.toString());
         return str.toString();
     }
 
@@ -532,7 +554,8 @@ public class PrincipalName
     }
 
     /**
-     * Encodes a <code>PrincipalName</code> object.
+     * Encodes a <code>PrincipalName</code> object. Note that only the type and
+     * names are encoded. To encode the realm, call getRealm().asn1Encode().
      * @return the byte array of the encoded PrncipalName object.
      * @exception Asn1Exception if an error occurs while decoding an ASN1 encoded data.
      * @exception IOException if an I/O error occurs while reading encoded data.
@@ -597,43 +620,16 @@ public class PrincipalName
     public void writePrincipal(CCacheOutputStream cos) throws IOException {
         cos.write32(nameType);
         cos.write32(nameStrings.length);
-        if (nameRealm != null) {
-            byte[] realmBytes = null;
-            realmBytes = nameRealm.toString().getBytes();
-            cos.write32(realmBytes.length);
-            cos.write(realmBytes, 0, realmBytes.length);
-        }
+        byte[] realmBytes = null;
+        realmBytes = nameRealm.toString().getBytes();
+        cos.write32(realmBytes.length);
+        cos.write(realmBytes, 0, realmBytes.length);
         byte[] bytes = null;
         for (int i = 0; i < nameStrings.length; i++) {
             bytes = nameStrings[i].getBytes();
             cos.write32(bytes.length);
             cos.write(bytes, 0, bytes.length);
         }
-    }
-
-    /**
-     * Creates a KRB_NT_SRV_INST name from the supplied
-     * name components and realm.
-     * @param primary the primary component of the name
-     * @param instance the instance component of the name
-     * @param realm the realm
-     * @throws KrbException
-     */
-    protected PrincipalName(String primary, String instance, String realm,
-                            int type)
-        throws KrbException {
-
-        if (type != KRB_NT_SRV_INST) {
-            throw new KrbException(Krb5.KRB_ERR_GENERIC, "Bad name type");
-        }
-
-        String[] nParts = new String[2];
-        nParts[0] = primary;
-        nParts[1] = instance;
-
-        this.nameStrings = nParts;
-        this.nameRealm = new Realm(realm);
-        this.nameType = type;
     }
 
     /**

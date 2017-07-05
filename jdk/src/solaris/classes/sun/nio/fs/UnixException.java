@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,8 +97,8 @@ class UnixException extends Exception {
     }
 
     void rethrowAsIOException(UnixPath file, UnixPath other) throws IOException {
-        String a = (file == null) ? null : file.getPathForExecptionMessage();
-        String b = (other == null) ? null : other.getPathForExecptionMessage();
+        String a = (file == null) ? null : file.getPathForExceptionMessage();
+        String b = (other == null) ? null : other.getPathForExceptionMessage();
         IOException x = translateToIOException(a, b);
         throw x;
     }
@@ -108,6 +108,6 @@ class UnixException extends Exception {
     }
 
     IOException asIOException(UnixPath file) {
-        return translateToIOException(file.getPathForExecptionMessage(), null);
+        return translateToIOException(file.getPathForExceptionMessage(), null);
     }
 }

@@ -67,7 +67,6 @@ jmethodID encryptionKeyConstructor = 0;
 jmethodID ticketFlagsConstructor = 0;
 jmethodID kerberosTimeConstructor = 0;
 jmethodID krbcredsConstructor = 0;
-jmethodID setRealmMethod = 0;
 
 /*
  * Function prototypes for internal routines
@@ -279,7 +278,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(
     }
 
     principalNameConstructor = (*env)->GetMethodID(env, principalNameClass,
-                                    "<init>", "([Ljava/lang/String;)V");
+                        "<init>", "([Ljava/lang/String;Ljava/lang/String;)V");
     if (principalNameConstructor == 0) {
         printf("LSA: Couldn't find PrincipalName constructor\n");
         return JNI_ERR;
@@ -316,14 +315,6 @@ JNIEXPORT jint JNICALL JNI_OnLoad(
     }
     if (native_debug) {
         printf("LSA: Found KerberosTime constructor\n");
-    }
-
-    // load the setRealm method in PrincipalName
-    setRealmMethod = (*env)->GetMethodID(env, principalNameClass,
-                                    "setRealm", "(Ljava/lang/String;)V");
-    if (setRealmMethod == 0) {
-        printf("LSA: Couldn't find setRealm in PrincipalName\n");
-        return JNI_ERR;
     }
 
     if (native_debug) {
@@ -952,13 +943,12 @@ jobject BuildPrincipal(JNIEnv *env, PKERB_EXTERNAL_NAME principalName,
 
         // Do I have to worry about storage reclamation here?
     }
-    principal = (*env)->NewObject(env, principalNameClass,
-                    principalNameConstructor, stringArray);
-
     // now set the realm in the principal
     realmLen = (ULONG)wcslen((PWCHAR)realm);
     realmStr = (*env)->NewString(env, (PWCHAR)realm, (USHORT)realmLen);
-    (*env)->CallVoidMethod(env, principal, setRealmMethod, realmStr);
+
+    principal = (*env)->NewObject(env, principalNameClass,
+                    principalNameConstructor, stringArray, realmStr);
 
     // free local resources
     LocalFree(realm);

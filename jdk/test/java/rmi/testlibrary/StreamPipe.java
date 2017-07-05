@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,9 @@ public class StreamPipe extends Thread {
                 w.flush();
                 line = r.readLine();
             }
-
+        } catch (InterruptedIOException iioe) {
+            // Thread interrupted during IO operation. Terminate StreamPipe.
+            return;
         } catch (IOException e) {
             System.err.println("*** IOException in StreamPipe.run:");
             e.printStackTrace();

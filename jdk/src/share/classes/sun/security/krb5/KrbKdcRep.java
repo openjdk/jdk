@@ -35,28 +35,17 @@ import sun.security.krb5.internal.*;
 abstract class KrbKdcRep {
 
     static void check(
+                      boolean isAsReq,
                       KDCReq req,
                       KDCRep rep
                       ) throws KrbApErrException {
 
-        if (!req.reqBody.cname.equalsWithoutRealm(rep.cname)) {
+        if (isAsReq && !req.reqBody.cname.equals(rep.cname)) {
             rep.encKDCRepPart.key.destroy();
             throw new KrbApErrException(Krb5.KRB_AP_ERR_MODIFIED);
         }
 
-        /**** XXX
-              if (!req.reqBody.crealm.equals(rep.crealm)) {
-              rep.encKDCRepPart.key.destroy();
-              throw new KrbApErrException(Krb5.KRB_AP_ERR_MODIFIED);
-              }
-        *****/
-
-        if (!req.reqBody.sname.equalsWithoutRealm(rep.encKDCRepPart.sname)) {
-            rep.encKDCRepPart.key.destroy();
-            throw new KrbApErrException(Krb5.KRB_AP_ERR_MODIFIED);
-        }
-
-        if (!req.reqBody.crealm.equals(rep.encKDCRepPart.srealm)) {
+        if (!req.reqBody.sname.equals(rep.encKDCRepPart.sname)) {
             rep.encKDCRepPart.key.destroy();
             throw new KrbApErrException(Krb5.KRB_AP_ERR_MODIFIED);
         }
@@ -72,7 +61,6 @@ abstract class KrbKdcRep {
             rep.encKDCRepPart.key.destroy();
             throw new KrbApErrException(Krb5.KRB_AP_ERR_MODIFIED);
         }
-
 
         for (int i = 1; i < 6; i++) {
             if (req.reqBody.kdcOptions.get(i) !=

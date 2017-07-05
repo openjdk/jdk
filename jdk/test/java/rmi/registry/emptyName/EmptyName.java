@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
 /* @test
  * @bug 4399304
  * @summary check that registry allows empty names
+ * @library ../../testlibrary
+ * @build TestLibrary
  * @run main/othervm EmptyName
  */
 import java.rmi.registry.LocateRegistry;
@@ -32,7 +34,7 @@ import java.rmi.server.RemoteObject;
 
 public class EmptyName {
     public static void main(String[] args) throws Exception {
-        Registry impl = LocateRegistry.createRegistry(0);
+        Registry impl = TestLibrary.createRegistryOnUnusedPort();
         Registry stub = (Registry) RemoteObject.toStub(impl);
         stub.bind("", stub);
         stub.lookup("");
