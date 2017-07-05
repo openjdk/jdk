@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ CodeHeap::CodeHeap(const char* name, const int code_blob_type)
 
 
 void CodeHeap::mark_segmap_as_free(size_t beg, size_t end) {
-  assert(0   <= beg && beg <  _number_of_committed_segments, "interval begin out of bounds");
+  assert(              beg <  _number_of_committed_segments, "interval begin out of bounds");
   assert(beg <  end && end <= _number_of_committed_segments, "interval end   out of bounds");
   // setup _segmap pointers for faster indexing
   address p = (address)_segmap.low() + beg;
@@ -63,7 +63,7 @@ void CodeHeap::mark_segmap_as_free(size_t beg, size_t end) {
 
 
 void CodeHeap::mark_segmap_as_used(size_t beg, size_t end) {
-  assert(0   <= beg && beg <  _number_of_committed_segments, "interval begin out of bounds");
+  assert(              beg <  _number_of_committed_segments, "interval begin out of bounds");
   assert(beg <  end && end <= _number_of_committed_segments, "interval end   out of bounds");
   // setup _segmap pointers for faster indexing
   address p = (address)_segmap.low() + beg;

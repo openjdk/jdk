@@ -292,7 +292,7 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_getUnusedInput(JNIEnv *env, jobject
 
   if (uPtr->aborting()) {
     THROW_IOE(uPtr->get_abort_message());
-    return false;
+    return null;
   }
 
   // We have fetched all the files.
@@ -310,7 +310,7 @@ Java_com_sun_java_util_jar_pack_NativeUnpack_getUnusedInput(JNIEnv *env, jobject
 JNIEXPORT jlong JNICALL
 Java_com_sun_java_util_jar_pack_NativeUnpack_finish(JNIEnv *env, jobject pObj) {
   unpacker* uPtr = get_unpacker(env, pObj, false);
-  CHECK_EXCEPTION_RETURN_VALUE(uPtr, NULL);
+  CHECK_EXCEPTION_RETURN_VALUE(uPtr, 0);
   size_t consumed = uPtr->input_consumed();
   free_unpacker(env, pObj, uPtr);
   return consumed;
@@ -320,6 +320,7 @@ JNIEXPORT jboolean JNICALL
 Java_com_sun_java_util_jar_pack_NativeUnpack_setOption(JNIEnv *env, jobject pObj,
                                        jstring pProp, jstring pValue) {
   unpacker*   uPtr  = get_unpacker(env, pObj);
+  CHECK_EXCEPTION_RETURN_VALUE(uPtr, false);
   const char* prop  = env->GetStringUTFChars(pProp, JNI_FALSE);
   CHECK_EXCEPTION_RETURN_VALUE(prop, false);
   const char* value = env->GetStringUTFChars(pValue, JNI_FALSE);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ void HeapRegionSetBase::verify() {
   check_mt_safety();
 
   guarantee(( is_empty() && length() == 0 && total_capacity_bytes() == 0) ||
-            (!is_empty() && length() >= 0 && total_capacity_bytes() >= 0),
+            (!is_empty() && length() > 0  && total_capacity_bytes() > 0) ,
             hrs_ext_msg(this, "invariant"));
 }
 

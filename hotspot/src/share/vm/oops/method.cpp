@@ -1970,9 +1970,10 @@ void Method::set_on_stack(const bool value) {
   // on stack means some method referring to it is also on the stack.
   constants()->set_on_stack(value);
 
-  bool succeeded = _access_flags.set_on_stack(value);
-  if (value && succeeded) {
-    MetadataOnStackMark::record(this, Thread::current());
+  bool already_set = on_stack();
+  _access_flags.set_on_stack(value);
+  if (value && !already_set) {
+    MetadataOnStackMark::record(this);
   }
 }
 

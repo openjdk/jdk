@@ -602,7 +602,7 @@ void PhaseChaitin::Register_Allocate() {
 
   // This frame must preserve the required fp alignment
   _framesize = round_to(_framesize, Matcher::stack_alignment_in_slots());
-  assert( _framesize >= 0 && _framesize <= 1000000, "sanity check" );
+  assert(_framesize <= 1000000, "sanity check");
 #ifndef PRODUCT
   _total_framesize += _framesize;
   if ((int)_framesize > _max_framesize) {

@@ -697,21 +697,6 @@ final class HttpsClient extends HttpClient
     }
 
     /**
-     * Returns the X.509 certificate chain with which the server
-     * authenticated itself, or null if the server did not authenticate.
-     *
-     * @deprecated This method returns the deprecated
-     *  {@code javax.security.cert.X509Certificate} type.
-     *  Use {@code getServerCertificates()} instead.
-     */
-    @Deprecated
-    javax.security.cert.X509Certificate [] getServerCertificateChain()
-            throws SSLPeerUnverifiedException
-    {
-        return session.getPeerCertificateChain();
-    }
-
-    /**
      * Returns the principal with which the server authenticated
      * itself, or throw a SSLPeerUnverifiedException if the
      * server did not authenticate.

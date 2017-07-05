@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -335,7 +335,8 @@ public:
 
   // Unload (that is, break root links to) all unmarked classes and
   // loaders.  Returns "true" iff something was unloaded.
-  static bool do_unloading(BoolObjectClosure* is_alive, bool clean_alive = true);
+  static bool do_unloading(BoolObjectClosure* is_alive,
+                           bool clean_previous_versions = true);
 
   // Used by DumpSharedSpaces only to remove classes that failed verification
   static void remove_classes_in_error_state();
