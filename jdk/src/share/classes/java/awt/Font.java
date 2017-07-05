@@ -445,18 +445,19 @@ public class Font implements java.io.Serializable
      */
     private AttributeValues getAttributeValues() {
         if (values == null) {
-            values = new AttributeValues();
-            values.setFamily(name);
-            values.setSize(pointSize); // expects the float value.
+            AttributeValues valuesTmp = new AttributeValues();
+            valuesTmp.setFamily(name);
+            valuesTmp.setSize(pointSize); // expects the float value.
 
             if ((style & BOLD) != 0) {
-                values.setWeight(2); // WEIGHT_BOLD
+                valuesTmp.setWeight(2); // WEIGHT_BOLD
             }
 
             if ((style & ITALIC) != 0) {
-                values.setPosture(.2f); // POSTURE_OBLIQUE
+                valuesTmp.setPosture(.2f); // POSTURE_OBLIQUE
             }
-            values.defineAll(PRIMARY_MASK); // for streaming compatibility
+            valuesTmp.defineAll(PRIMARY_MASK); // for streaming compatibility
+            values = valuesTmp;
         }
 
         return values;

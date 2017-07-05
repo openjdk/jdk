@@ -1783,7 +1783,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
 
 
     struct jpeg_source_mgr *src;
-    JSAMPROW scanLinePtr;
+    JSAMPROW scanLinePtr = NULL;
     jint bands[MAX_BANDS];
     int i, j;
     jint *body;
@@ -1819,7 +1819,7 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
 
     cinfo = (j_decompress_ptr) data->jpegObj;
 
-    if ((numBands < 1) || (numBands > cinfo->num_components) ||
+    if ((numBands < 1) ||
         (sourceXStart < 0) || (sourceXStart >= (jint)cinfo->image_width) ||
         (sourceYStart < 0) || (sourceYStart >= (jint)cinfo->image_height) ||
         (sourceWidth < 1) || (sourceWidth > (jint)cinfo->image_width) ||
@@ -1877,16 +1877,6 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
         return data->abortFlag;  // We already threw an out of memory exception
     }
 
-    // Allocate a 1-scanline buffer
-    scanLinePtr = (JSAMPROW)malloc(cinfo->image_width*cinfo->num_components);
-    if (scanLinePtr == NULL) {
-        RELEASE_ARRAYS(env, data, src->next_input_byte);
-        JNU_ThrowByName( env,
-                         "java/lang/OutOfMemoryError",
-                         "Reading JPEG Stream");
-        return data->abortFlag;
-    }
-
     /* Establish the setjmp return context for sun_jpeg_error_exit to use. */
     jerr = (sun_jpeg_error_ptr) cinfo->err;
 
@@ -1900,7 +1890,10 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
                                           buffer);
             JNU_ThrowByName(env, "javax/imageio/IIOException", buffer);
         }
-        free(scanLinePtr);
+        if (scanLinePtr != NULL) {
+            free(scanLinePtr);
+            scanLinePtr = NULL;
+        }
         return data->abortFlag;
     }
 
@@ -1938,6 +1931,23 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
 
     jpeg_start_decompress(cinfo);
 
+    if (numBands !=  cinfo->output_components) {
+        JNU_ThrowByName(env, "javax/imageio/IIOException",
+                        "Invalid argument to native readImage");
+        return data->abortFlag;
+    }
+
+
+    // Allocate a 1-scanline buffer
+    scanLinePtr = (JSAMPROW)malloc(cinfo->image_width*cinfo->output_components);
+    if (scanLinePtr == NULL) {
+        RELEASE_ARRAYS(env, data, src->next_input_byte);
+        JNU_ThrowByName( env,
+                         "java/lang/OutOfMemoryError",
+                         "Reading JPEG Stream");
+        return data->abortFlag;
+    }
+
     // loop over progressive passes
     done = FALSE;
     while (!done) {
@@ -1965,9 +1975,9 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
 
         scanlineLimit = sourceYStart+sourceHeight;
         pixelLimit = scanLinePtr
-            +(sourceXStart+sourceWidth)*cinfo->num_components;
+            +(sourceXStart+sourceWidth)*cinfo->output_components;
 
-        pixelStride = stepX*cinfo->num_components;
+        pixelStride = stepX*cinfo->output_components;
         targetLine = 0;
 
         while ((data->abortFlag == JNI_FALSE)
@@ -1982,12 +1992,12 @@ Java_com_sun_imageio_plugins_jpeg_JPEGImageReader_readImage
                 // Optimization: The component bands are ordered sequentially,
                 // so we can simply use memcpy() to copy the intermediate
                 // scanline buffer into the raster.
-                in = scanLinePtr + (sourceXStart * cinfo->num_components);
+                in = scanLinePtr + (sourceXStart * cinfo->output_components);
                 if (pixelLimit > in) {
                     memcpy(out, in, pixelLimit - in);
                 }
             } else {
-                for (in = scanLinePtr+sourceXStart*cinfo->num_components;
+                for (in = scanLinePtr+sourceXStart*cinfo->output_components;
                      in < pixelLimit;
                      in += pixelStride) {
                     for (i = 0; i < numBands; i++) {
