@@ -46,4 +46,32 @@
 
 #undef SHARE_VM_RUNTIME_THREAD_INLINE_HPP_SCOPE
 
+inline jlong Thread::cooked_allocated_bytes() {
+  jlong allocated_bytes = OrderAccess::load_acquire(&_allocated_bytes);
+  if (UseTLAB) {
+    size_t used_bytes = tlab().used_bytes();
+    if ((ssize_t)used_bytes > 0) {
+      // More-or-less valid tlab. The load_acquire above should ensure
+      // that the result of the add is <= the instantaneous value.
+      return allocated_bytes + used_bytes;
+    }
+  }
+  return allocated_bytes;
+}
+
+#ifdef PPC64
+inline JavaThreadState JavaThread::thread_state() const    {
+  return (JavaThreadState) OrderAccess::load_acquire((volatile jint*)&_thread_state);
+}
+
+inline void JavaThread::set_thread_state(JavaThreadState s) {
+  OrderAccess::release_store((volatile jint*)&_thread_state, (jint)s);
+}
+#endif
+
+inline void JavaThread::set_done_attaching_via_jni() {
+  _jni_attach_state = _attached_via_jni;
+  OrderAccess::fence();
+}
+
 #endif // SHARE_VM_RUNTIME_THREAD_INLINE_HPP

@@ -380,7 +380,6 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register Rdst, int bcp_of
   if (index_size == sizeof(u2)) {
     get_2_byte_integer_at_bcp(bcp_offset, Rdst, Unsigned);
   } else if (index_size == sizeof(u4)) {
-    assert(EnableInvokeDynamic, "giant index used only for JSR 292");
     get_4_byte_integer_at_bcp(bcp_offset, Rdst, Signed);
     assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
     nand(Rdst, Rdst, Rdst); // convert to plain index

@@ -29,33 +29,22 @@
 #error "This file should only be included from thread.inline.hpp"
 #endif
 
-#include "runtime/atomic.hpp"
 #include "runtime/prefetch.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadLocalStorage.hpp"
 #ifdef TARGET_OS_ARCH_linux_x86
-# include "atomic_linux_x86.inline.hpp"
-# include "orderAccess_linux_x86.inline.hpp"
 # include "prefetch_linux_x86.inline.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_linux_sparc
-# include "atomic_linux_sparc.inline.hpp"
-# include "orderAccess_linux_sparc.inline.hpp"
 # include "prefetch_linux_sparc.inline.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_linux_zero
-# include "atomic_linux_zero.inline.hpp"
-# include "orderAccess_linux_zero.inline.hpp"
 # include "prefetch_linux_zero.inline.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_linux_arm
-# include "atomic_linux_arm.inline.hpp"
-# include "orderAccess_linux_arm.inline.hpp"
 # include "prefetch_linux_arm.inline.hpp"
 #endif
 #ifdef TARGET_OS_ARCH_linux_ppc
-# include "atomic_linux_ppc.inline.hpp"
-# include "orderAccess_linux_ppc.inline.hpp"
 # include "prefetch_linux_ppc.inline.hpp"
 #endif
 

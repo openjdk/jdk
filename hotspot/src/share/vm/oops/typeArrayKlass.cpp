@@ -39,6 +39,7 @@
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "utilities/macros.hpp"
 
 bool TypeArrayKlass::compute_is_subtype_of(Klass* k) {

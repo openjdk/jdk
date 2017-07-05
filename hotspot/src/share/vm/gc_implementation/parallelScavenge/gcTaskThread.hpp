@@ -69,8 +69,6 @@ private:
   void start();
 
   void print_task_time_stamps();
-  void print_on(outputStream* st) const;
-  void print() const                                { print_on(tty); }
 
 protected:
   // Constructor.  Clients use factory, but there could be subclasses.
