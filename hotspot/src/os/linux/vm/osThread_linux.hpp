@@ -24,6 +24,8 @@
 
 #ifndef OS_LINUX_VM_OSTHREAD_LINUX_HPP
 #define OS_LINUX_VM_OSTHREAD_LINUX_HPP
+ public:
+  typedef pid_t thread_id_t;
 
  private:
   int _thread_type;
@@ -37,13 +39,6 @@
     _thread_type = type;
   }
 
- private:
-
-  // _thread_id is kernel thread id (similar to LWP id on Solaris). Each
-  // thread has a unique thread_id (LinuxThreads or NPTL). It can be used
-  // to access /proc.
-  pid_t     _thread_id;
-
   // _pthread_id is the pthread id, which is used by library calls
   // (e.g. pthread_kill).
   pthread_t _pthread_id;
@@ -56,11 +51,6 @@
   sigset_t  caller_sigmask() const       { return _caller_sigmask; }
   void    set_caller_sigmask(sigset_t sigmask)  { _caller_sigmask = sigmask; }
 
-  static size_t thread_id_size()         { return sizeof(pid_t); }
-
-  pid_t thread_id() const {
-    return _thread_id;
-  }
 #ifndef PRODUCT
   // Used for debugging, return a unique integer for each thread.
   int thread_identifier() const   { return _thread_id; }
@@ -72,9 +62,6 @@
     return false;
   }
 #endif // ASSERT
-  void set_thread_id(pid_t id) {
-    _thread_id = id;
-  }
   pthread_t pthread_id() const {
     return _pthread_id;
   }

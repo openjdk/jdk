@@ -2763,7 +2763,7 @@ class ClassStatistics: AllStatic {
       class_size += ik->local_interfaces()->size();
       class_size += ik->transitive_interfaces()->size();
       // We do not have to count implementors, since we only store one!
-      class_size += ik->all_fields_count() * FieldInfo::field_slots;
+      class_size += ik->fields()->length();
     }
   }
 
