@@ -26,6 +26,7 @@
 package sun.util.locale.provider;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.IllformedLocaleException;
@@ -177,7 +178,7 @@ public final class LocaleServiceProviderPool {
             for (Class<? extends LocaleServiceProvider> c : spiClasses) {
                 LocaleServiceProviderPool pool =
                     LocaleServiceProviderPool.getPool(c);
-                all.addAll(pool.getAvailableLocaleList());
+                all.addAll(pool.getAvailableLocaleSet());
             }
 
             allAvailableLocales = all.toArray(new Locale[0]);
@@ -207,13 +208,23 @@ public final class LocaleServiceProviderPool {
      * @return an array of the available locales
      */
     public Locale[] getAvailableLocales() {
-        Set<Locale> locList = getAvailableLocaleList();
+        Set<Locale> locList = new HashSet<>();
+        locList.addAll(getAvailableLocaleSet());
+        // Make sure it all contains JRE's locales for compatibility.
+        locList.addAll(Arrays.asList(LocaleProviderAdapter.forJRE().getAvailableLocales()));
         Locale[] tmp = new Locale[locList.size()];
         locList.toArray(tmp);
         return tmp;
     }
 
-    private synchronized Set<Locale> getAvailableLocaleList() {
+    /**
+     * Returns the union of locale sets that are available from
+     * each service provider. This method does NOT return the
+     * defensive copy.
+     *
+     * @return a set of available locales
+     */
+    private synchronized Set<Locale> getAvailableLocaleSet() {
         if (availableLocales == null) {
             availableLocales = new HashSet<>();
             for (LocaleServiceProvider lsp : providers.values()) {
@@ -222,9 +233,6 @@ public final class LocaleServiceProviderPool {
                     availableLocales.add(getLookupLocale(locale));
                 }
             }
-
-            // Remove Locale.ROOT for the compatibility.
-            availableLocales.remove(Locale.ROOT);
         }
 
         return availableLocales;
@@ -295,7 +303,7 @@ public final class LocaleServiceProviderPool {
 
         List<Locale> lookupLocales = getLookupLocales(locale);
 
-        Set<Locale> available = getAvailableLocaleList();
+        Set<Locale> available = getAvailableLocaleSet();
         for (Locale current : lookupLocales) {
             if (available.contains(current)) {
                 S providersObj;

@@ -254,7 +254,7 @@ Rule	Arg	2000	only	-	Mar	3	0:00	0	-
 Rule	Arg	2007	only	-	Dec	30	0:00	1:00	S
 Rule	Arg	2008	2009	-	Mar	Sun>=15	0:00	0	-
 Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
- 
+
 # From Mariano Absatz (2004-05-21):
 # Today it was officially published that the Province of Mendoza is changing
 # its timezone this winter... starting tomorrow night....
@@ -344,9 +344,9 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 # confirms what Alex Krivenyshev has earlier sent to the tz
 # emailing list about that San Luis plans to return to standard
 # time much earlier than the rest of the country. It also
-# confirms that upon request the provinces San Juan and Mendoza 
-# refused to follow San Luis in this change. 
-# 
+# confirms that upon request the provinces San Juan and Mendoza
+# refused to follow San Luis in this change.
+#
 # The change is supposed to take place Monday the 21.st at 0:00
 # hours. As far as I understand it if this goes ahead, we need
 # a new timezone for San Luis (although there are also documented
@@ -408,7 +408,7 @@ Rule	Arg	2008	only	-	Oct	Sun>=15	0:00	1:00	S
 # <a href="http://www.lanacion.com.ar/nota.asp?nota_id=1107912">
 # http://www.lanacion.com.ar/nota.asp?nota_id=1107912
 # </a>
-# 
+#
 # The press release says:
 #  (...) anunció que el próximo domingo a las 00:00 los puntanos deberán
 # atrasar una hora sus relojes.
@@ -822,8 +822,8 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 #
 # From Alexander Krivenyshev (2011-10-04):
 # State Bahia will return to Daylight savings time this year after 8 years off.
-# The announcement was made by Governor Jaques Wagner in an interview to a 
-# television station in Salvador. 
+# The announcement was made by Governor Jaques Wagner in an interview to a
+# television station in Salvador.
 
 # In Portuguese:
 # <a href="http://g1.globo.com/bahia/noticia/2011/10/governador-jaques-wagner-confirma-horario-de-verao-na-bahia.html">
@@ -852,6 +852,15 @@ Zone	America/La_Paz	-4:32:36 -	LMT	1890
 # http://www.in.gov.br/visualiza/index.jsp?data=13/10/2011&jornal=1000&pagina=6&totalArquivos=6
 # </a>
 
+# From Kelley Cook (2012-10-16):
+# The governor of state of Bahia in Brazil announced on Thursday that
+# due to public pressure, he is reversing the DST policy they implemented
+# last year and will not be going to Summer Time on October 21st....
+# http://www.correio24horas.com.br/r/artigo/apos-pressoes-wagner-suspende-horario-de-verao-na-bahia
+
+# From Rodrigo Severo (2012-10-16):
+# Tocantins state will have DST.
+# http://noticias.terra.com.br/brasil/noticias/0,,OI6232536-EI306.html
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 # Decree <a href="http://pcdsh01.on.br/HV20466.htm">20,466</a> (1931-10-01)
@@ -1071,7 +1080,8 @@ Zone America/Araguaina	-3:12:48 -	LMT	1914
 			-3:00	Brazil	BR%sT	1990 Sep 17
 			-3:00	-	BRT	1995 Sep 14
 			-3:00	Brazil	BR%sT	2003 Sep 24
-			-3:00	-	BRT
+			-3:00	-	BRT	2012 Oct 21
+			-3:00	Brazil	BR%sT
 #
 # Alagoas (AL), Sergipe (SE)
 Zone America/Maceio	-2:22:52 -	LMT	1914
@@ -1090,7 +1100,8 @@ Zone America/Maceio	-2:22:52 -	LMT	1914
 Zone America/Bahia	-2:34:04 -	LMT	1914
 			-3:00	Brazil	BR%sT	2003 Sep 24
 			-3:00	-	BRT	2011 Oct 16
-			-3:00	Brazil	BR%sT
+			-3:00	Brazil	BR%sT	2012 Oct 21
+			-3:00	-	BRT
 #
 # Goias (GO), Distrito Federal (DF), Minas Gerais (MG),
 # Espirito Santo (ES), Rio de Janeiro (RJ), Sao Paulo (SP), Parana (PR),
@@ -1182,7 +1193,7 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 # Due to drought, Chile extends Daylight Time in three weeks.  This
 # is one-time change (Saturday 3/29 at 24:00 for America/Santiago
 # and Saturday 3/29 at 22:00 for Pacific/Easter)
-# The Supreme Decree is located at 
+# The Supreme Decree is located at
 # <a href="http://www.shoa.cl/servicios/supremo316.pdf">
 # http://www.shoa.cl/servicios/supremo316.pdf
 # </a>
@@ -1193,7 +1204,7 @@ Zone America/Rio_Branco	-4:31:12 -	LMT	1914
 
 # From Jose Miguel Garrido (2008-03-05):
 # ...
-# You could see the announces of the change on 
+# You could see the announces of the change on
 # <a href="http://www.shoa.cl/noticias/2008/04hora/hora.htm">
 # http://www.shoa.cl/noticias/2008/04hora/hora.htm
 # </a>.

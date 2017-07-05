@@ -306,9 +306,9 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # </a>
 
 # From Alexander Krivenyshev (2010-10-24):
-# According to Radio Fiji and Fiji Times online, Fiji will end DST 3 
+# According to Radio Fiji and Fiji Times online, Fiji will end DST 3
 # weeks earlier than expected - on March 6, 2011, not March 27, 2011...
-# Here is confirmation from Government of the Republic of the Fiji Islands, 
+# Here is confirmation from Government of the Republic of the Fiji Islands,
 # Ministry of Information (fiji.gov.fj) web site:
 # <a href="http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=2608:daylight-savings&catid=71:press-releases&Itemid=155">
 # http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=2608:daylight-savings&catid=71:press-releases&Itemid=155
@@ -319,15 +319,15 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # </a>
 
 # From Steffen Thorsen (2011-10-03):
-# Now the dates have been confirmed, and at least our start date 
+# Now the dates have been confirmed, and at least our start date
 # assumption was correct (end date was one week wrong).
 #
 # <a href="http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=4966:daylight-saving-starts-in-fiji&catid=71:press-releases&Itemid=155">
 # www.fiji.gov.fj/index.php?option=com_content&view=article&id=4966:daylight-saving-starts-in-fiji&catid=71:press-releases&Itemid=155
 # </a>
 # which says
-# Members of the public are reminded to change their time to one hour in 
-# advance at 2am to 3am on October 23, 2011 and one hour back at 3am to 
+# Members of the public are reminded to change their time to one hour in
+# advance at 2am to 3am on October 23, 2011 and one hour back at 3am to
 # 2am on February 26 next year.
 
 # From Ken Rylander (2011-10-24)
@@ -344,15 +344,23 @@ Zone	Indian/Cocos	6:27:40	-	LMT	1900
 # The commencement of daylight saving will remain unchanged and start
 # on the  23rd of October, 2011.
 
+# From the Fiji Government Online Portal (2012-08-21) via Steffen Thorsen:
+# The Minister for Labour, Industrial Relations and Employment Mr Jone Usamate
+# today confirmed that Fiji will start daylight savings at 2 am on Sunday 21st
+# October 2012 and end at 3 am on Sunday 20th January 2013.
+# http://www.fiji.gov.fj/index.php?option=com_content&view=article&id=6702&catid=71&Itemid=155
+#
+# From Paul Eggert (2012-08-31):
+# For now, guess a pattern of the penultimate Sundays in October and January.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Fiji	1998	1999	-	Nov	Sun>=1	2:00	1:00	S
 Rule	Fiji	1999	2000	-	Feb	lastSun	3:00	0	-
 Rule	Fiji	2009	only	-	Nov	29	2:00	1:00	S
 Rule	Fiji	2010	only	-	Mar	lastSun	3:00	0	-
-Rule	Fiji	2010	only	-	Oct	24	2:00	1:00	S
+Rule	Fiji	2010	max	-	Oct	Sun>=18	2:00	1:00	S
 Rule	Fiji	2011	only	-	Mar	Sun>=1	3:00	0	-
-Rule	Fiji	2011	only	-	Oct	23	2:00	1:00	S
-Rule	Fiji	2012	only	-	Jan	22	3:00	0	-
+Rule	Fiji	2012	max	-	Jan	Sun>=18	3:00	0	-
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fiji	11:53:40 -	LMT	1915 Oct 26	# Suva
 			12:00	Fiji	FJ%sT	# Fiji Time
@@ -581,7 +589,7 @@ Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1879 Jul  5
 
 # From David Zuelke (2011-05-09):
 # Subject: Samoa to move timezone from east to west of international date line
-# 
+#
 # <a href="http://www.morningstar.co.uk/uk/markets/newsfeeditem.aspx?id=138501958347963">
 # http://www.morningstar.co.uk/uk/markets/newsfeeditem.aspx?id=138501958347963
 # </a>
@@ -643,6 +651,23 @@ Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1879 Jul  5
 # Although Samoa has used Daylight Saving Time in the 2010-2011 and 2011-2012
 # seasons, there is not yet any indication that this trend will continue on
 # a regular basis. For now, we have explicitly listed the transitions below.
+#
+# From Nicky (2012-09-10):
+# Daylight Saving Time commences on Sunday 30th September 2012 and
+# ends on Sunday 7th of April 2013.
+#
+# Please find link below for more information.
+# http://www.mcil.gov.ws/mcil_publications.html
+#
+# That publication also includes dates for Summer of 2013/4 as well
+# which give the impression of a pattern in selecting dates for the
+# future, so for now, we will guess this will continue.
+
+# Western Samoa
+# Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
+Rule	WS	2012	max	-	Sep	lastSun	3:00	1	D
+Rule	WS	2012	max	-	Apr	Sun>=1	4:00	0	-
+# Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone Pacific/Apia	 12:33:04 -	LMT	1879 Jul  5
 			-11:26:56 -	LMT	1911
 			-11:30	-	SAMT	1950		# Samoa Time
@@ -650,8 +675,8 @@ Zone Pacific/Apia	 12:33:04 -	LMT	1879 Jul  5
 			-11:00	1:00	WSDT	2011 Apr 2 4:00
 			-11:00	-	WST	2011 Sep 24 3:00
 			-11:00	1:00	WSDT	2011 Dec 30
-			 13:00	1:00	WSDT	2012 Apr 1 4:00
-			 13:00	-	WST
+			 13:00	1:00	WSDT	2012 Apr Sun>=1 4:00
+			 13:00	WS	WS%sT
 
 # Solomon Is
 # excludes Bougainville, for which see Papua New Guinea
@@ -663,25 +688,25 @@ Zone Pacific/Guadalcanal 10:39:48 -	LMT	1912 Oct	# Honiara
 #
 # From Gwillim Law (2011-12-29)
 # A correspondent informed me that Tokelau, like Samoa, will be skipping
-# December 31 this year, thereby changing its time zone from UTC-10 to
-# UTC+14. When I tried to verify this statement, I found a confirming
-# article in Time magazine online
-# <a href="http://www.time.com/time/world/article/0,8599,2103243,00.html">
-# (http://www.time.com/time/world/article/0,8599,2103243,00.html).
-# </a>
+# December 31 this year ...
 #
-# From Jonathan Leffler (2011-12-29)
-# Information from the BBC to the same effect:
-# <a href="http://www.bbc.co.uk/news/world-asia-16351377">
-# http://www.bbc.co.uk/news/world-asia-16351377
-# </a>
+# From Steffen Thorsen (2012-07-25)
+# ... we double checked by calling hotels and offices based in Tokelau asking
+# about the time there, and they all told a time that agrees with UTC+13....
+# Shanks says UTC-10 from 1901 [but] ... there is a good chance the change
+# actually was to UTC-11 back then.
 #
-# Patch supplied by Tim Parenti (2011-12-29)
+# From Paul Eggert (2012-07-25)
+# A Google Books snippet of Appendix to the Journals of the House of
+# Representatives of New Zealand, Session 1948,
+# <http://books.google.com/books?id=ZaVCAQAAIAAJ>, page 65, says Tokelau
+# was "11 hours slow on G.M.T."  Go with Thorsen and assume Shanks & Pottenger
+# are off by an hour starting in 1901.
 
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Pacific/Fakaofo	-11:24:56 -	LMT	1901
-			-10:00	-	TKT 2011 Dec 30	# Tokelau Time
-			14:00	-	TKT
+			-11:00	-	TKT 2011 Dec 30	# Tokelau Time
+			13:00	-	TKT
 
 # Tonga
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
@@ -1362,22 +1387,22 @@ Zone	Pacific/Wallis	12:15:20 -	LMT	1901
 # See "southeast Australia" above for 2008 and later.
 
 # From Steffen Thorsen (2009-04-28):
-# According to the official press release, South Australia's extended daylight 
-# saving period will continue with the same rules as used during the 2008-2009 
+# According to the official press release, South Australia's extended daylight
+# saving period will continue with the same rules as used during the 2008-2009
 # summer (southern hemisphere).
-# 
+#
 # From
 # <a href="http://www.safework.sa.gov.au/uploaded_files/DaylightDatesSet.pdf">
 # http://www.safework.sa.gov.au/uploaded_files/DaylightDatesSet.pdf
 # </a>
-# The extended daylight saving period that South Australia has been trialling 
+# The extended daylight saving period that South Australia has been trialling
 # for over the last year is now set to be ongoing.
-# Daylight saving will continue to start on the first Sunday in October each 
+# Daylight saving will continue to start on the first Sunday in October each
 # year and finish on the first Sunday in April the following year.
-# Industrial Relations Minister, Paul Caica, says this provides South Australia 
-# with a consistent half hour time difference with NSW, Victoria, Tasmania and 
+# Industrial Relations Minister, Paul Caica, says this provides South Australia
+# with a consistent half hour time difference with NSW, Victoria, Tasmania and
 # the ACT for all 52 weeks of the year...
-# 
+#
 # We have a wrap-up here:
 # <a href="http://www.timeanddate.com/news/time/south-australia-extends-dst.html">
 # http://www.timeanddate.com/news/time/south-australia-extends-dst.html

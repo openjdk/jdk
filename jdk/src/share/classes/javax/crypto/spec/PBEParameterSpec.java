@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ public class PBEParameterSpec implements AlgorithmParameterSpec {
 
     private byte[] salt;
     private int iterationCount;
+    private AlgorithmParameterSpec paramSpec = null;
 
     /**
      * Constructs a parameter set for password-based encryption as defined in
@@ -54,6 +55,25 @@ public class PBEParameterSpec implements AlgorithmParameterSpec {
     public PBEParameterSpec(byte[] salt, int iterationCount) {
         this.salt = salt.clone();
         this.iterationCount = iterationCount;
+    }
+
+    /**
+     * Constructs a parameter set for password-based encryption as defined in
+     * the PKCS #5 standard.
+     *
+     * @param salt the salt. The contents of <code>salt</code> are copied
+     * to protect against subsequent modification.
+     * @param iterationCount the iteration count.
+     * @param paramSpec the cipher algorithm parameter specification.
+     * @exception NullPointerException if <code>salt</code> is null.
+     *
+     * @since 1.8
+     */
+    public PBEParameterSpec(byte[] salt, int iterationCount,
+            AlgorithmParameterSpec paramSpec) {
+        this.salt = salt.clone();
+        this.iterationCount = iterationCount;
+        this.paramSpec = paramSpec;
     }
 
     /**
@@ -73,5 +93,16 @@ public class PBEParameterSpec implements AlgorithmParameterSpec {
      */
     public int getIterationCount() {
         return this.iterationCount;
+    }
+
+    /**
+     * Returns the cipher algorithm parameter specification.
+     *
+     * @return the parameter specification, or null if none was set.
+     *
+     * @since 1.8
+     */
+    public AlgorithmParameterSpec getParameterSpec() {
+        return this.paramSpec;
     }
 }

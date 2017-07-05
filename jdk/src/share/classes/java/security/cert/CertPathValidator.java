@@ -327,12 +327,14 @@ public class CertPathValidator {
      * Returns a {@code CertPathChecker} that the encapsulated
      * {@code CertPathValidatorSpi} implementation uses to check the revocation
      * status of certificates. A PKIX implementation returns objects of
-     * type {@code PKIXRevocationChecker}.
+     * type {@code PKIXRevocationChecker}. Each invocation of this method
+     * returns a new instance of {@code CertPathChecker}.
      *
      * <p>The primary purpose of this method is to allow callers to specify
      * additional input parameters and options specific to revocation checking.
      * See the class description for an example.
      *
+     * @return a {@code CertPathChecker}
      * @throws UnsupportedOperationException if the service provider does not
      *         support this method
      * @since 1.8

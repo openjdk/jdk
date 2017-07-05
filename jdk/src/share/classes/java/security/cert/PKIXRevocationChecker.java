@@ -63,8 +63,8 @@ import java.util.Set;
  * and then the {@code PKIXParameters} is passed along with the {@code CertPath}
  * to be validated to the {@link CertPathValidator#validate validate} method
  * of a PKIX {@code CertPathValidator}. When supplying a revocation checker in
- * this manner, do not enable the default revocation checking mechanism (by
- * calling {@link PKIXParameters#setRevocationEnabled}.
+ * this manner, it will be used to check revocation irrespective of the setting
+ * of the {@link PKIXParameters#isRevocationEnabled RevocationEnabled} flag.
  *
  * <p>Note that when a {@code PKIXRevocationChecker} is added to
  * {@code PKIXParameters}, it clones the {@code PKIXRevocationChecker};
@@ -88,7 +88,7 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
     private URI ocspResponder;
     private X509Certificate ocspResponderCert;
     private List<Extension> ocspExtensions = Collections.<Extension>emptyList();
-    private Map<X509Certificate, byte[]> ocspStapled = Collections.emptyMap();
+    private Map<X509Certificate, byte[]> ocspResponses = Collections.emptyMap();
     private Set<Option> options = Collections.emptySet();
 
     protected PKIXRevocationChecker() {}
@@ -169,40 +169,40 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
     }
 
     /**
-     * Sets the stapled OCSP responses. These responses are used to determine
+     * Sets the OCSP responses. These responses are used to determine
      * the revocation status of the specified certificates when OCSP is used.
      *
-     * @param responses a map of stapled OCSP responses. Each key is an
+     * @param responses a map of OCSP responses. Each key is an
      *        {@code X509Certificate} that maps to the corresponding
      *        DER-encoded OCSP response for that certificate. A deep copy of
      *        the map is performed to protect against subsequent modification.
      */
-    public void setOCSPStapledResponses(Map<X509Certificate, byte[]> responses)
+    public void setOCSPResponses(Map<X509Certificate, byte[]> responses)
     {
         if (responses == null) {
-            this.ocspStapled = Collections.<X509Certificate, byte[]>emptyMap();
+            this.ocspResponses = Collections.<X509Certificate, byte[]>emptyMap();
         } else {
             Map<X509Certificate, byte[]> copy = new HashMap<>(responses.size());
             for (Map.Entry<X509Certificate, byte[]> e : responses.entrySet()) {
                 copy.put(e.getKey(), e.getValue().clone());
             }
-            this.ocspStapled = copy;
+            this.ocspResponses = copy;
         }
     }
 
     /**
-     * Gets the stapled OCSP responses. These responses are used to determine
+     * Gets the OCSP responses. These responses are used to determine
      * the revocation status of the specified certificates when OCSP is used.
      *
-     * @return a map of stapled OCSP responses. Each key is an
+     * @return a map of OCSP responses. Each key is an
      *        {@code X509Certificate} that maps to the corresponding
      *        DER-encoded OCSP response for that certificate. A deep copy of
      *        the map is returned to protect against subsequent modification.
      *        Returns an empty map if no responses have been specified.
      */
-    public Map<X509Certificate, byte[]> getOCSPStapledResponses() {
-        Map<X509Certificate, byte[]> copy = new HashMap<>(ocspStapled.size());
-        for (Map.Entry<X509Certificate, byte[]> e : ocspStapled.entrySet()) {
+    public Map<X509Certificate, byte[]> getOCSPResponses() {
+        Map<X509Certificate, byte[]> copy = new HashMap<>(ocspResponses.size());
+        for (Map.Entry<X509Certificate, byte[]> e : ocspResponses.entrySet()) {
             copy.put(e.getKey(), e.getValue().clone());
         }
         return copy;
@@ -234,10 +234,10 @@ public abstract class PKIXRevocationChecker extends PKIXCertPathChecker {
     public Object clone() {
         PKIXRevocationChecker copy = (PKIXRevocationChecker)super.clone();
         copy.ocspExtensions = new ArrayList<>(ocspExtensions);
-        copy.ocspStapled = new HashMap<>(ocspStapled);
-        // deep-copy the encoded stapled responses, since they are mutable
+        copy.ocspResponses = new HashMap<>(ocspResponses);
+        // deep-copy the encoded responses, since they are mutable
         for (Map.Entry<X509Certificate, byte[]> entry :
-                 copy.ocspStapled.entrySet())
+                 copy.ocspResponses.entrySet())
         {
             byte[] encoded = entry.getValue();
             entry.setValue(encoded.clone());

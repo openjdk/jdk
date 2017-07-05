@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,22 +27,17 @@
  * @library ..
  */
 
-import java.net.*;
 import java.io.*;
-import java.nio.*;
+import java.net.*;
 import java.nio.channels.*;
-import java.nio.charset.*;
 
 
 public class Stream {
 
-    static final int DAYTIME_PORT = 13;
-    static final String DAYTIME_HOST = TestUtil.HOST;
-
-    static void test() throws Exception {
+    static void test(TestServers.DayTimeServer daytimeServer) throws Exception {
         InetSocketAddress isa
-            = new InetSocketAddress(InetAddress.getByName(DAYTIME_HOST),
-                                    DAYTIME_PORT);
+            = new InetSocketAddress(daytimeServer.getAddress(),
+                                    daytimeServer.getPort());
         SocketChannel sc = SocketChannel.open();
         sc.connect(isa);
         sc.configureBlocking(false);
@@ -58,7 +53,9 @@ public class Stream {
     }
 
     public static void main(String[] args) throws Exception {
-        test();
+        try (TestServers.DayTimeServer dayTimeServer
+                = TestServers.DayTimeServer.startNewServer(100)) {
+            test(dayTimeServer);
+        }
     }
-
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2008, 2012, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ FILES_java = \
 
 # The sources built here use new language syntax to generate
 # method handle calls.  Let's be sure we are using that format.
-LANGUAGE_VERSION = -source 7
-CLASS_VERSION = -target 7
+LANGUAGE_VERSION = -source 8
+CLASS_VERSION = -target 8
 
 include $(BUILDDIR)/common/Classes.gmk
