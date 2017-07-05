@@ -431,6 +431,8 @@ if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
 
   ACCEPTED_JARZIP_CONTENTS="
       /modules_libs/java.security.jgss/w2k_lsa_auth.diz
+      /modules_libs/java.security.jgss/w2k_lsa_auth.pdb
+      /modules_libs/java.security.jgss/w2k_lsa_auth.map
       /modules_libs/java.security.jgss/w2k_lsa_auth.dll
       "
 
