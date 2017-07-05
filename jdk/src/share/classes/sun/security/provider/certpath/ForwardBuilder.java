@@ -32,6 +32,7 @@ import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertPathValidatorException;
+import java.security.cert.PKIXReason;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreException;
 import java.security.cert.PKIXBuilderParameters;
@@ -732,8 +733,9 @@ class ForwardBuilder extends Builder {
                     PKIXExtensions.ExtendedKeyUsage_Id.toString());
 
                 if (!unresCritExts.isEmpty())
-                    throw new CertificateException("Unrecognized critical "
-                        + "extension(s)");
+                    throw new CertPathValidatorException
+                        ("Unrecognized critical extension(s)", null, null, -1,
+                         PKIXReason.UNRECOGNIZED_CRIT_EXT);
             }
         }
 

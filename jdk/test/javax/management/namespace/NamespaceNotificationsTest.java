@@ -25,6 +25,7 @@
  *
  * @test NamespaceNotificationsTest.java 1.12
  * @summary General Namespace & Notifications test.
+ * @bug 5072476
  * @author Daniel Fuchs
  * @run clean NamespaceNotificationsTest
  *            Wombat WombatMBean JMXRemoteTargetNamespace

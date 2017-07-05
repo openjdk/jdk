@@ -26,6 +26,7 @@
  * @test VirtualNamespaceQueryTest.java
  * @summary General VirtualNamespaceQueryTest test.
  * @author Daniel Fuchs
+ * @bug 5072476
  * @run clean VirtualNamespaceQueryTest Wombat WombatMBean
  *            NamespaceController NamespaceControllerMBean
  *            JMXRemoteTargetNamespace

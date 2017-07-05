@@ -25,6 +25,7 @@
  * @test RemoveNotificationListenerTest.java 1.8
  * @summary General RemoveNotificationListenerTest test.
  * @author Daniel Fuchs
+ * @bug 5072476
  * @run clean RemoveNotificationListenerTest JMXRemoteTargetNamespace
  * @compile -XDignore.symbol.file=true  JMXRemoteTargetNamespace.java
  * @run build RemoveNotificationListenerTest JMXRemoteTargetNamespace

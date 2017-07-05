@@ -33,6 +33,7 @@ import java.security.Principal;
 import java.security.PrivilegedAction;
 import java.security.Security;
 import java.security.cert.*;
+import java.security.cert.CertPathValidatorException.BasicReason;
 import java.net.*;
 import javax.security.auth.x500.X500Principal;
 
@@ -381,17 +382,18 @@ class OCSPChecker extends PKIXCertPathChecker {
             }
 
             if (certOCSPStatus == OCSPResponse.CERT_STATUS_REVOKED) {
-                throw new CertPathValidatorException(
-                    new CertificateRevokedException(
+                Throwable t = new CertificateRevokedException(
                         ocspResponse.getRevocationTime(),
                         ocspResponse.getRevocationReason(),
                         responderCert.getSubjectX500Principal(),
-                        ocspResponse.getSingleExtensions()));
+                        ocspResponse.getSingleExtensions());
+                throw new CertPathValidatorException(t.getMessage(), t,
+                        null, -1, BasicReason.REVOKED);
 
             } else if (certOCSPStatus == OCSPResponse.CERT_STATUS_UNKNOWN) {
                 throw new CertPathValidatorException(
                     "Certificate's revocation status is unknown", null, cp,
-                    remainingCerts);
+                    remainingCerts, BasicReason.UNDETERMINED_REVOCATION_STATUS);
             }
         } catch (Exception e) {
             throw new CertPathValidatorException(e);
