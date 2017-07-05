@@ -272,10 +272,10 @@ public class OctaneTest {
         Double nashornToRhino = null;
         Double nashornToV8 = null;
         if (rhino != null && rhino != 0) {
-            nashornToRhino = nashorn.doubleValue() / rhino.doubleValue();
+            nashornToRhino = nashorn / rhino;
         }
         if (v8 != null && rhino != 0) {
-            nashornToV8 = nashorn.doubleValue() / v8.doubleValue();
+            nashornToV8 = nashorn / v8;
         }
         final String normalizedBenchmark=benchmark.replace("-", "");
         System.out.println("benchmark-" + normalizedBenchmark + "-nashorn=" + nashorn);
@@ -300,20 +300,12 @@ public class OctaneTest {
 
     boolean checkRhinoPresence() {
         final String rhinojar = System.getProperty("rhino.jar");
-        if (rhinojar != null) {
-            // System.out.println("Rhino jar found; performing comparison testing");
-            return true;
-        }
-        return false;
+        return rhinojar != null;
     }
 
     boolean checkV8Presence() {
         final String v8shell = System.getProperty("v8.shell.full.path");
-        if (v8shell != null) {
-            // System.out.println("d8 found; performing comparison testing");
-            return true;
-        }
-        return false;
+        return v8shell != null;
     }
 
 }

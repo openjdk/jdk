@@ -89,7 +89,7 @@ class IntType extends BitwiseType {
     public Type ldc(final MethodVisitor method, final Object c) {
         assert c instanceof Integer;
 
-        final int value = ((Integer) c).intValue();
+        final int value = ((Integer) c);
 
         switch (value) {
         case -1:

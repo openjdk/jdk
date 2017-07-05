@@ -573,7 +573,7 @@ public class ScriptEngineTest {
     }
 
     // properties that can be read by any code
-    private static String[] propNames = {
+    private static final String[] PROP_NAMES = {
         "java.version",
         "java.vendor",
         "java.vendor.url",
@@ -601,7 +601,7 @@ public class ScriptEngineTest {
         final ScriptEngineManager m = new ScriptEngineManager();
         final ScriptEngine e = m.getEngineByName("nashorn");
 
-        for (final String name : propNames) {
+        for (final String name : PROP_NAMES) {
             checkProperty(e, name);
         }
     }

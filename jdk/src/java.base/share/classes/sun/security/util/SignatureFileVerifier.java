@@ -55,7 +55,7 @@ public class SignatureFileVerifier {
     private PKCS7 block;
 
     /** the raw bytes of the .SF file */
-    private byte sfBytes[];
+    private byte[] sfBytes;
 
     /** the name of the signature block file, uppercased and without
      *  the extension (.DSA/.RSA/.EC)
@@ -84,7 +84,7 @@ public class SignatureFileVerifier {
     public SignatureFileVerifier(ArrayList<CodeSigner[]> signerCache,
                                  ManifestDigester md,
                                  String name,
-                                 byte rawBytes[])
+                                 byte[] rawBytes)
         throws IOException, CertificateException
     {
         // new PKCS7() calls CertificateFactory.getInstance()
@@ -129,7 +129,7 @@ public class SignatureFileVerifier {
      * used to set the raw bytes of the .SF file when it
      * is external to the signature block file.
      */
-    public void setSignatureFile(byte sfBytes[])
+    public void setSignatureFile(byte[] sfBytes)
     {
         this.sfBytes = sfBytes;
     }
@@ -511,7 +511,7 @@ public class SignatureFileVerifier {
      * CodeSigner objects. We do this only *once* for a given
      * signature block file.
      */
-    private CodeSigner[] getSigners(SignerInfo infos[], PKCS7 block)
+    private CodeSigner[] getSigners(SignerInfo[] infos, PKCS7 block)
         throws IOException, NoSuchAlgorithmException, SignatureException,
             CertificateException {
 

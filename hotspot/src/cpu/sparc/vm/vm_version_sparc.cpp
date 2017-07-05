@@ -230,7 +230,7 @@ void VM_Version::initialize() {
   assert((OptoLoopAlignment % relocInfo::addr_unit()) == 0, "alignment is not a multiple of NOP size");
 
   char buf[512];
-  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                (has_v9() ? ", v9" : (has_v8() ? ", v8" : "")),
                (has_hardware_popc() ? ", popc" : ""),
                (has_vis1() ? ", vis1" : ""),
@@ -242,6 +242,7 @@ void VM_Version::initialize() {
                (has_sha1() ? ", sha1" : ""),
                (has_sha256() ? ", sha256" : ""),
                (has_sha512() ? ", sha512" : ""),
+               (has_crc32c() ? ", crc32c" : ""),
                (is_ultra3() ? ", ultra3" : ""),
                (is_sun4v() ? ", sun4v" : ""),
                (is_niagara_plus() ? ", niagara_plus" : (is_niagara() ? ", niagara" : "")),
@@ -361,6 +362,23 @@ void VM_Version::initialize() {
     if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA, false);
     }
+  }
+
+  // SPARC T4 and above should have support for CRC32C instruction
+  if (has_crc32c()) {
+    if (UseVIS > 2) { // CRC32C intrinsics use VIS3 instructions
+      if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
+        FLAG_SET_DEFAULT(UseCRC32CIntrinsics, true);
+      }
+    } else {
+      if (UseCRC32CIntrinsics) {
+        warning("SPARC CRC32C intrinsics require VIS3 instruction support. Intrinsics will be disabled.");
+        FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
+      }
+    }
+  } else if (UseCRC32CIntrinsics) {
+    warning("CRC32C instruction is not available on this CPU");
+    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
 
   if (FLAG_IS_DEFAULT(ContendedPaddingWidth) &&

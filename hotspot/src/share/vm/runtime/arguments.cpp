@@ -3753,8 +3753,12 @@ jint Arguments::apply_ergo() {
   if (TieredCompilation) {
     set_tiered_flags();
   } else {
-    // Check if the policy is valid. Policies 0 and 1 are valid for non-tiered setup.
-    if (CompilationPolicyChoice >= 2) {
+    int max_compilation_policy_choice = 1;
+#ifdef COMPILER2
+    max_compilation_policy_choice = 2;
+#endif
+    // Check if the policy is valid.
+    if (CompilationPolicyChoice >= max_compilation_policy_choice) {
       vm_exit_during_initialization(
         "Incompatible compilation policy selected", NULL);
     }

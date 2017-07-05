@@ -67,7 +67,7 @@ public class ParseAPITest {
             parseTestSet(TEST262_SUITE_DIR, new TestFilter() {
                 @Override
                 public boolean exclude(final File file, final String content) {
-                    return content.indexOf("@negative") != -1;
+                    return content.contains("@negative");
                 }
             });
         }

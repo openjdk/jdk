@@ -213,7 +213,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     private static final Type ITERATOR_TYPE = Type.typeFor(ITERATOR_CLASS);
     private static final Type EXCEPTION_TYPE = Type.typeFor(CompilerConstants.EXCEPTION_PREFIX.type());
 
-    private static final Integer INT_ZERO = Integer.valueOf(0);
+    private static final Integer INT_ZERO = 0;
 
     /** Constant data & installation. The only reason the compiler keeps this is because it is assigned
      *  by reflection in class installation */
@@ -742,7 +742,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         method.convert(Type.NUMBER);
     }
 
-    private static final Type undefinedToNumber(final Type type) {
+    private static Type undefinedToNumber(final Type type) {
         return type == Type.UNDEFINED ? Type.NUMBER : type;
     }
 
@@ -4877,7 +4877,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             if(propertyValue instanceof String || propertyValue == null) {
                 method.load((String)propertyValue);
             } else if(propertyValue instanceof Integer) {
-                method.load(((Integer)propertyValue).intValue());
+                method.load(((Integer)propertyValue));
                 method.convert(Type.OBJECT);
             } else {
                 throw new AssertionError();

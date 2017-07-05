@@ -81,7 +81,7 @@ public class NTLoginModule implements LoginModule {
     private NTDomainPrincipal userDomain;               // user domain
     private NTSidDomainPrincipal domainSID;             // domain SID
     private NTSidPrimaryGroupPrincipal primaryGroup;    // primary group
-    private NTSidGroupPrincipal groups[];               // supplementary groups
+    private NTSidGroupPrincipal[] groups;               // supplementary groups
     private NTNumericCredential iToken;                 // impersonation token
 
     /**
@@ -194,7 +194,7 @@ public class NTLoginModule implements LoginModule {
         if (ntSystem.getGroupIDs() != null &&
             ntSystem.getGroupIDs().length > 0) {
 
-            String groupSIDs[] = ntSystem.getGroupIDs();
+            String[] groupSIDs = ntSystem.getGroupIDs();
             groups = new NTSidGroupPrincipal[groupSIDs.length];
             for (int i = 0; i < groupSIDs.length; i++) {
                 groups[i] = new NTSidGroupPrincipal(groupSIDs[i]);

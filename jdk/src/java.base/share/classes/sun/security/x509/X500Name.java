@@ -1119,25 +1119,25 @@ public class X500Name implements GeneralNameInterface, Principal {
      * Includes all those specified in RFC 5280 as MUST or SHOULD
      * be recognized
      */
-    private static final int commonName_data[] = { 2, 5, 4, 3 };
-    private static final int SURNAME_DATA[] = { 2, 5, 4, 4 };
-    private static final int SERIALNUMBER_DATA[] = { 2, 5, 4, 5 };
-    private static final int countryName_data[] = { 2, 5, 4, 6 };
-    private static final int localityName_data[] = { 2, 5, 4, 7 };
-    private static final int stateName_data[] = { 2, 5, 4, 8 };
-    private static final int streetAddress_data[] = { 2, 5, 4, 9 };
-    private static final int orgName_data[] = { 2, 5, 4, 10 };
-    private static final int orgUnitName_data[] = { 2, 5, 4, 11 };
-    private static final int title_data[] = { 2, 5, 4, 12 };
-    private static final int GIVENNAME_DATA[] = { 2, 5, 4, 42 };
-    private static final int INITIALS_DATA[] = { 2, 5, 4, 43 };
-    private static final int GENERATIONQUALIFIER_DATA[] = { 2, 5, 4, 44 };
-    private static final int DNQUALIFIER_DATA[] = { 2, 5, 4, 46 };
+    private static final int[] commonName_data = { 2, 5, 4, 3 };
+    private static final int[] SURNAME_DATA = { 2, 5, 4, 4 };
+    private static final int[] SERIALNUMBER_DATA = { 2, 5, 4, 5 };
+    private static final int[] countryName_data = { 2, 5, 4, 6 };
+    private static final int[] localityName_data = { 2, 5, 4, 7 };
+    private static final int[] stateName_data = { 2, 5, 4, 8 };
+    private static final int[] streetAddress_data = { 2, 5, 4, 9 };
+    private static final int[] orgName_data = { 2, 5, 4, 10 };
+    private static final int[] orgUnitName_data = { 2, 5, 4, 11 };
+    private static final int[] title_data = { 2, 5, 4, 12 };
+    private static final int[] GIVENNAME_DATA = { 2, 5, 4, 42 };
+    private static final int[] INITIALS_DATA = { 2, 5, 4, 43 };
+    private static final int[] GENERATIONQUALIFIER_DATA = { 2, 5, 4, 44 };
+    private static final int[] DNQUALIFIER_DATA = { 2, 5, 4, 46 };
 
-    private static final int ipAddress_data[] = { 1, 3, 6, 1, 4, 1, 42, 2, 11, 2, 1 };
-    private static final int DOMAIN_COMPONENT_DATA[] =
+    private static final int[] ipAddress_data = { 1, 3, 6, 1, 4, 1, 42, 2, 11, 2, 1 };
+    private static final int[] DOMAIN_COMPONENT_DATA =
         { 0, 9, 2342, 19200300, 100, 1, 25 };
-    private static final int userid_data[] =
+    private static final int[] userid_data =
         { 0, 9, 2342, 19200300, 100, 1, 1 };
 
 
