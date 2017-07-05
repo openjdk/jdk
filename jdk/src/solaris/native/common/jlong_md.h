@@ -1,5 +1,5 @@
 /*
- * Copyright 1997-2002 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1997-2008 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 
 /* Make sure ptrdiff_t is defined */
 #include <stddef.h>
-#include "typedefs.h"
+#include <stdint.h>  /* For uintptr_t */
 
 #define jlong_high(a)   ((jint)((a)>>32))
 #define jlong_low(a)    ((jint)(a))

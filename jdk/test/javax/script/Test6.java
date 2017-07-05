@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6249843
+ * @bug 6249843 6705893
  * @summary Test basic script compilation. Value eval'ed from
  * compiled and interpreted scripts should be same.
  */
@@ -35,7 +35,11 @@ public class Test6 {
         public static void main(String[] args) throws Exception {
             System.out.println("\nTest6\n");
             ScriptEngineManager m = new ScriptEngineManager();
-            ScriptEngine engine = m.getEngineByName("js");
+            ScriptEngine engine = Helper.getJsEngine(m);
+            if (engine == null) {
+                System.out.println("Warning: No js engine found; test vacuously passes.");
+                return;
+            }
             Reader reader = new FileReader(
                 new File(System.getProperty("test.src", "."), "Test6.js"));
             engine.eval(reader);

@@ -258,6 +258,7 @@ c1_LIRGenerator_<arch>.cpp             ciArray.hpp
 c1_LIRGenerator_<arch>.cpp             ciObjArrayKlass.hpp
 c1_LIRGenerator_<arch>.cpp             ciTypeArrayKlass.hpp
 c1_LIRGenerator_<arch>.cpp             sharedRuntime.hpp
+c1_LIRGenerator_<arch>.cpp             vmreg_<arch>.inline.hpp
 
 c1_LinearScan.cpp                       c1_CFGPrinter.hpp
 c1_LinearScan.cpp                       c1_Compilation.hpp
@@ -281,7 +282,7 @@ c1_LinearScan_<arch>.cpp                c1_LinearScan.hpp
 c1_LinearScan_<arch>.hpp                generate_platform_dependent_include
 
 c1_MacroAssembler.hpp                   assembler.hpp
-c1_MacroAssembler.hpp                   assembler_<arch_model>.inline.hpp
+c1_MacroAssembler.hpp                   assembler_<arch>.inline.hpp
 
 c1_MacroAssembler_<arch>.cpp            arrayOop.hpp
 c1_MacroAssembler_<arch>.cpp            biasedLocking.hpp

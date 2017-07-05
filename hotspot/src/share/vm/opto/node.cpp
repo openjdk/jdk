@@ -1166,16 +1166,15 @@ bool Node::dominates(Node* sub, Node_List &nlist) {
 // using it dead as well.  This will happen normally via the usual IterGVN
 // worklist but this call is more efficient.  Do not update use-def info
 // inside the dead region, just at the borders.
-static bool kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
+static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
   // Con's are a popular node to re-hit in the hash table again.
-  if( dead->is_Con() ) return false;
+  if( dead->is_Con() ) return;
 
   // Can't put ResourceMark here since igvn->_worklist uses the same arena
   // for verify pass with +VerifyOpto and we add/remove elements in it here.
   Node_List  nstack(Thread::current()->resource_area());
 
   Node *top = igvn->C->top();
-  bool progress = false;
   nstack.push(dead);
 
   while (nstack.size() > 0) {
@@ -1214,7 +1213,6 @@ static bool kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
       for (uint i=0; i < dead->req(); i++) {
         Node *n = dead->in(i);      // Get input to dead guy
         if (n != NULL && !n->is_top()) { // Input is valid?
-          progress = true;
           dead->set_req(i, top);    // Smash input away
           if (n->outcnt() == 0) {   // Input also goes dead?
             if (!n->is_Con())
@@ -1233,7 +1231,7 @@ static bool kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
       }
     } // (dead->outcnt() == 0)
   }   // while (nstack.size() > 0) for outputs
-  return progress;
+  return;
 }
 
 //------------------------------remove_dead_region-----------------------------
@@ -1243,7 +1241,8 @@ bool Node::remove_dead_region(PhaseGVN *phase, bool can_reshape) {
   // Lost control into this guy?  I.e., it became unreachable?
   // Aggressively kill all unreachable code.
   if (can_reshape && n->is_top()) {
-    return kill_dead_code(this, phase->is_IterGVN());
+    kill_dead_code(this, phase->is_IterGVN());
+    return false; // Node is dead.
   }
 
   if( n->is_Region() && n->as_Region()->is_copy() ) {

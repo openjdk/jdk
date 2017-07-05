@@ -30,11 +30,11 @@ void Relocation::pd_set_data_value(address x, intptr_t o) {
 #ifdef AMD64
   x += o;
   typedef Assembler::WhichOperand WhichOperand;
-  WhichOperand which = (WhichOperand) format(); // that is, disp32 or imm64, call32, narrow oop
+  WhichOperand which = (WhichOperand) format(); // that is, disp32 or imm, call32, narrow oop
   assert(which == Assembler::disp32_operand ||
          which == Assembler::narrow_oop_operand ||
-         which == Assembler::imm64_operand, "format unpacks ok");
-  if (which == Assembler::imm64_operand) {
+         which == Assembler::imm_operand, "format unpacks ok");
+  if (which == Assembler::imm_operand) {
     *pd_address_in_code() = x;
   } else if (which == Assembler::narrow_oop_operand) {
     address disp = Assembler::locate_operand(addr(), which);
@@ -81,11 +81,16 @@ void Relocation::pd_set_call_destination(address x) {
     nativeCall_at(addr())->set_destination(x);
   } else if (ni->is_jump()) {
     NativeJump* nj = nativeJump_at(addr());
-#ifdef AMD64
+
+    // Unresolved jumps are recognized by a destination of -1
+    // However 64bit can't actually produce such an address
+    // and encodes a jump to self but jump_destination will
+    // return a -1 as the signal. We must not relocate this
+    // jmp or the ic code will not see it as unresolved.
+
     if (nj->jump_destination() == (address) -1) {
-      x = (address) -1; // retain jump to self
+      x = addr(); // jump to self
     }
-#endif // AMD64
     nj->set_jump_destination(x);
   } else if (ni->is_cond_jump()) {
     // %%%% kludge this, for now, until we get a jump_destination method
@@ -106,19 +111,19 @@ address* Relocation::pd_address_in_code() {
   // we must parse the instruction a bit to find the embedded word.
   assert(is_data(), "must be a DataRelocation");
   typedef Assembler::WhichOperand WhichOperand;
-  WhichOperand which = (WhichOperand) format(); // that is, disp32 or imm64/imm32
+  WhichOperand which = (WhichOperand) format(); // that is, disp32 or imm/imm32
 #ifdef AMD64
   assert(which == Assembler::disp32_operand ||
          which == Assembler::call32_operand ||
-         which == Assembler::imm64_operand, "format unpacks ok");
-  if (which != Assembler::imm64_operand) {
+         which == Assembler::imm_operand, "format unpacks ok");
+  if (which != Assembler::imm_operand) {
     // The "address" in the code is a displacement can't return it as
     // and address* since it is really a jint*
     ShouldNotReachHere();
     return NULL;
   }
 #else
-  assert(which == Assembler::disp32_operand || which == Assembler::imm32_operand, "format unpacks ok");
+  assert(which == Assembler::disp32_operand || which == Assembler::imm_operand, "format unpacks ok");
 #endif // AMD64
   return (address*) Assembler::locate_operand(addr(), which);
 }
@@ -131,11 +136,11 @@ address Relocation::pd_get_address_from_code() {
   // we must parse the instruction a bit to find the embedded word.
   assert(is_data(), "must be a DataRelocation");
   typedef Assembler::WhichOperand WhichOperand;
-  WhichOperand which = (WhichOperand) format(); // that is, disp32 or imm64/imm32
+  WhichOperand which = (WhichOperand) format(); // that is, disp32 or imm/imm32
   assert(which == Assembler::disp32_operand ||
          which == Assembler::call32_operand ||
-         which == Assembler::imm64_operand, "format unpacks ok");
-  if (which != Assembler::imm64_operand) {
+         which == Assembler::imm_operand, "format unpacks ok");
+  if (which != Assembler::imm_operand) {
     address ip = addr();
     address disp = Assembler::locate_operand(ip, which);
     address next_ip = Assembler::locate_next_instruction(ip);
@@ -168,4 +173,45 @@ void Relocation::pd_swap_out_breakpoint(address x, short* instrs, int instrlen) 
   assert(NativeIllegalInstruction::instruction_size == sizeof(short), "right address unit for update");
   NativeInstruction* ni = nativeInstruction_at(x);
   *(short*)ni->addr_at(0) = instrs[0];
+}
+
+void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
+#ifdef _LP64
+  typedef Assembler::WhichOperand WhichOperand;
+  WhichOperand which = (WhichOperand) format();
+  // This format is imm but it is really disp32
+  which = Assembler::disp32_operand;
+  address orig_addr = old_addr_for(addr(), src, dest);
+  NativeInstruction* oni = nativeInstruction_at(orig_addr);
+  int32_t* orig_disp = (int32_t*) Assembler::locate_operand(orig_addr, which);
+  // This poll_addr is incorrect by the size of the instruction it is irrelevant
+  intptr_t poll_addr = (intptr_t)oni + *orig_disp;
+
+  NativeInstruction* ni = nativeInstruction_at(addr());
+  intptr_t new_disp = poll_addr - (intptr_t) ni;
+
+  int32_t* disp = (int32_t*) Assembler::locate_operand(addr(), which);
+  * disp = (int32_t)new_disp;
+
+#endif // _LP64
+}
+
+void poll_return_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
+#ifdef _LP64
+  typedef Assembler::WhichOperand WhichOperand;
+  WhichOperand which = (WhichOperand) format();
+  // This format is imm but it is really disp32
+  which = Assembler::disp32_operand;
+  address orig_addr = old_addr_for(addr(), src, dest);
+  NativeInstruction* oni = nativeInstruction_at(orig_addr);
+  int32_t* orig_disp = (int32_t*) Assembler::locate_operand(orig_addr, which);
+  // This poll_addr is incorrect by the size of the instruction it is irrelevant
+  intptr_t poll_addr = (intptr_t)oni + *orig_disp;
+
+  NativeInstruction* ni = nativeInstruction_at(addr());
+  intptr_t new_disp = poll_addr - (intptr_t) ni;
+
+  int32_t* disp = (int32_t*) Assembler::locate_operand(addr(), which);
+  * disp = (int32_t)new_disp;
+#endif // _LP64
 }
