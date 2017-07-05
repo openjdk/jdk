@@ -209,6 +209,7 @@ jvmtiManageCapabilities.cpp             jvmtiManageCapabilities.hpp
 jvmtiManageCapabilities.hpp             allocation.hpp
 jvmtiManageCapabilities.hpp             jvmti.h
 
+jvmtiRedefineClasses.cpp                bitMap.inline.hpp
 jvmtiRedefineClasses.cpp                codeCache.hpp
 jvmtiRedefineClasses.cpp                deoptimization.hpp
 jvmtiRedefineClasses.cpp                gcLocker.hpp

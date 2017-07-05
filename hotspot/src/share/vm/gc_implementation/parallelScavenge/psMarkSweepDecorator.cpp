@@ -152,20 +152,15 @@ void PSMarkSweepDecorator::precompact() {
         oop(q)->forward_to(oop(compact_top));
         assert(oop(q)->is_gc_marked(), "encoding the pointer should preserve the mark");
       } else {
-        // Don't clear the mark since it's confuses parallel old
-        // verification.
-        if (!UseParallelOldGC || !VerifyParallelOldWithMarkSweep) {
-          // if the object isn't moving we can just set the mark to the default
-          // mark and handle it specially later on.
-          oop(q)->init_mark();
-        }
+        // if the object isn't moving we can just set the mark to the default
+        // mark and handle it specially later on.
+        oop(q)->init_mark();
         assert(oop(q)->forwardee() == NULL, "should be forwarded to NULL");
       }
 
       // Update object start array
-      if (!UseParallelOldGC || !VerifyParallelOldWithMarkSweep) {
-        if (start_array)
-          start_array->allocate_block(compact_top);
+      if (start_array) {
+        start_array->allocate_block(compact_top);
       }
 
       VALIDATE_MARK_SWEEP_ONLY(MarkSweep::register_live_oop(oop(q), size));
@@ -219,19 +214,14 @@ void PSMarkSweepDecorator::precompact() {
             assert(oop(q)->is_gc_marked(), "encoding the pointer should preserve the mark");
           } else {
             // if the object isn't moving we can just set the mark to the default
-            // Don't clear the mark since it's confuses parallel old
-            // verification.
-            if (!UseParallelOldGC || !VerifyParallelOldWithMarkSweep) {
-              // mark and handle it specially later on.
-              oop(q)->init_mark();
-            }
+            // mark and handle it specially later on.
+            oop(q)->init_mark();
             assert(oop(q)->forwardee() == NULL, "should be forwarded to NULL");
           }
 
-          if (!UseParallelOldGC || !VerifyParallelOldWithMarkSweep) {
-            // Update object start array
-            if (start_array)
-              start_array->allocate_block(compact_top);
+          // Update object start array
+          if (start_array) {
+            start_array->allocate_block(compact_top);
           }
 
           VALIDATE_MARK_SWEEP_ONLY(MarkSweep::register_live_oop(oop(q), sz));

@@ -152,6 +152,14 @@ const Type *MulNode::Value( PhaseTransform *phase ) const {
   if( t1 == Type::BOTTOM || t2 == Type::BOTTOM )
     return bottom_type();
 
+#if defined(IA32)
+  // Can't trust native compilers to properly fold strict double
+  // multiplication with round-to-zero on this platform.
+  if (op == Op_MulD && phase->C->method()->is_strict()) {
+    return TypeD::DOUBLE;
+  }
+#endif
+
   return mul_ring(t1,t2);            // Local flavor of type multiplication
 }
 
@@ -360,7 +368,7 @@ const Type *MulFNode::mul_ring(const Type *t0, const Type *t1) const {
 // Compute the product type of two double ranges into this node.
 const Type *MulDNode::mul_ring(const Type *t0, const Type *t1) const {
   if( t0 == Type::DOUBLE || t1 == Type::DOUBLE ) return Type::DOUBLE;
-  // We must be adding 2 double constants.
+  // We must be multiplying 2 double constants.
   return TypeD::make( t0->getd() * t1->getd() );
 }
 

@@ -191,6 +191,9 @@ public abstract class SelectableChannel
      * @throws  ClosedChannelException
      *          If this channel is closed
      *
+     * @throws  ClosedSelectorException
+     *          If the selector is closed
+     *
      * @throws  IllegalBlockingModeException
      *          If this channel is in blocking mode
      *
@@ -245,6 +248,9 @@ public abstract class SelectableChannel
      *
      * @throws  ClosedChannelException
      *          If this channel is closed
+     *
+     * @throws  ClosedSelectorException
+     *          If the selector is closed
      *
      * @throws  IllegalBlockingModeException
      *          If this channel is in blocking mode

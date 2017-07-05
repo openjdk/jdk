@@ -755,18 +755,21 @@ public:
   virtual int Opcode() const;
   virtual uint size_of() const; // Size is bigger
 
+  // Dig the length operand out of a array allocation site.
+  Node* Ideal_length() {
+    return in(AllocateNode::ALength);
+  }
+
+  // Dig the length operand out of a array allocation site and narrow the
+  // type with a CastII, if necesssary
+  Node* make_ideal_length(const TypeOopPtr* ary_type, PhaseTransform *phase, bool can_create = true);
+
   // Pattern-match a possible usage of AllocateArrayNode.
   // Return null if no allocation is recognized.
   static AllocateArrayNode* Ideal_array_allocation(Node* ptr, PhaseTransform* phase) {
     AllocateNode* allo = Ideal_allocation(ptr, phase);
     return (allo == NULL || !allo->is_AllocateArray())
            ? NULL : allo->as_AllocateArray();
-  }
-
-  // Dig the length operand out of a (possible) array allocation site.
-  static Node* Ideal_length(Node* ptr, PhaseTransform* phase) {
-    AllocateArrayNode* allo = Ideal_array_allocation(ptr, phase);
-    return (allo == NULL) ? NULL : allo->in(AllocateNode::ALength);
   }
 };
 
