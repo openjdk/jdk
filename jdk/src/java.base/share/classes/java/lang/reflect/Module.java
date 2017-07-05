@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import java.net.URI;
 import java.net.URL;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -74,16 +73,15 @@ import sun.security.util.SecurityConstants;
  * Java Virtual Machine when a graph of modules is defined to the Java virtual
  * machine to create a module {@link Layer Layer}. </p>
  *
- * <p> An unnamed module does not have a name. There is an unnamed module
- * per {@link ClassLoader ClassLoader} that is obtained by invoking the class
- * loader's {@link ClassLoader#getUnnamedModule() getUnnamedModule} method. The
- * {@link Class#getModule() getModule} method of all types defined by a class
- * loader that are not in a named module return the class loader's unnamed
+ * <p> An unnamed module does not have a name. There is an unnamed module for
+ * each {@link ClassLoader ClassLoader}, obtained by invoking its {@link
+ * ClassLoader#getUnnamedModule() getUnnamedModule} method. All types that are
+ * not in a named module are members of their defining class loader's unnamed
  * module. </p>
  *
  * <p> The package names that are parameters or returned by methods defined in
  * this class are the fully-qualified names of the packages as defined in
- * section 6.5.3 of <cite>The Java&trade; Language Specification </cite>, for
+ * section 6.5.3 of <cite>The Java&trade; Language Specification</cite>, for
  * example, {@code "java.lang"}. </p>
  *
  * <p> Unless otherwise specified, passing a {@code null} argument to a method
@@ -91,6 +89,7 @@ import sun.security.util.SecurityConstants;
  * be thrown. </p>
  *
  * @since 9
+ * @spec JPMS
  * @see java.lang.Class#getModule
  */
 
@@ -327,8 +326,9 @@ public final class Module implements AnnotatedElement {
      *
      * @return this module
      *
-     * @throws IllegalStateException
-     *         If this is a named module and the caller is not this module
+     * @throws IllegalCallerException
+     *         If this is a named module and the caller's module is not this
+     *         module
      *
      * @see #canRead
      */
@@ -338,7 +338,7 @@ public final class Module implements AnnotatedElement {
         if (this.isNamed()) {
             Module caller = Reflection.getCallerClass().getModule();
             if (caller != this) {
-                throw new IllegalStateException(caller + " != " + this);
+                throw new IllegalCallerException(caller + " != " + this);
             }
             implAddReads(other, true);
         }
@@ -533,8 +533,8 @@ public final class Module implements AnnotatedElement {
         if (other == this && containsPackage(pn))
             return true;
 
-        // all packages in open modules are open
-        if (descriptor.isOpen())
+        // all packages in open and automatic modules are open
+        if (descriptor.isOpen() || descriptor.isAutomatic())
             return containsPackage(pn);
 
         // exported/opened via module declaration/descriptor
@@ -634,8 +634,7 @@ public final class Module implements AnnotatedElement {
      * the given package to the given module.
      *
      * <p> This method has no effect if the package is already exported (or
-     * <em>open</em>) to the given module. It also has no effect if
-     * invoked on an {@link ModuleDescriptor#isOpen open} module. </p>
+     * <em>open</em>) to the given module. </p>
      *
      * @apiNote As specified in section 5.4.3 of the <cite>The Java&trade;
      * Virtual Machine Specification </cite>, if an attempt to resolve a
@@ -653,8 +652,9 @@ public final class Module implements AnnotatedElement {
      * @throws IllegalArgumentException
      *         If {@code pn} is {@code null}, or this is a named module and the
      *         package {@code pn} is not a package in this module
-     * @throws IllegalStateException
-     *         If this is a named module and the caller is not this module
+     * @throws IllegalCallerException
+     *         If this is a named module and the caller's module is not this
+     *         module
      *
      * @jvms 5.4.3 Resolution
      * @see #isExported(String,Module)
@@ -665,10 +665,10 @@ public final class Module implements AnnotatedElement {
             throw new IllegalArgumentException("package is null");
         Objects.requireNonNull(other);
 
-        if (isNamed() && !descriptor.isOpen()) {
+        if (isNamed()) {
             Module caller = Reflection.getCallerClass().getModule();
             if (caller != this) {
-                throw new IllegalStateException(caller + " != " + this);
+                throw new IllegalCallerException(caller + " != " + this);
             }
             implAddExportsOrOpens(pn, other, /*open*/false, /*syncVM*/true);
         }
@@ -686,8 +686,7 @@ public final class Module implements AnnotatedElement {
      * access control checks.
      *
      * <p> This method has no effect if the package is already <em>open</em>
-     * to the given module. It also has no effect if invoked on an {@link
-     * ModuleDescriptor#isOpen open} module. </p>
+     * to the given module. </p>
      *
      * @param  pn
      *         The package name
@@ -699,9 +698,9 @@ public final class Module implements AnnotatedElement {
      * @throws IllegalArgumentException
      *         If {@code pn} is {@code null}, or this is a named module and the
      *         package {@code pn} is not a package in this module
-     * @throws IllegalStateException
+     * @throws IllegalCallerException
      *         If this is a named module and this module has not opened the
-     *         package to at least the caller
+     *         package to at least the caller's module
      *
      * @see #isOpen(String,Module)
      * @see AccessibleObject#setAccessible(boolean)
@@ -713,10 +712,10 @@ public final class Module implements AnnotatedElement {
             throw new IllegalArgumentException("package is null");
         Objects.requireNonNull(other);
 
-        if (isNamed() && !descriptor.isOpen()) {
+        if (isNamed()) {
             Module caller = Reflection.getCallerClass().getModule();
             if (caller != this && !isOpen(pn, caller))
-                throw new IllegalStateException(pn + " is not open to " + caller);
+                throw new IllegalCallerException(pn + " is not open to " + caller);
             implAddExportsOrOpens(pn, other, /*open*/true, /*syncVM*/true);
         }
 
@@ -767,8 +766,8 @@ public final class Module implements AnnotatedElement {
         Objects.requireNonNull(other);
         Objects.requireNonNull(pn);
 
-        // all packages are open in unnamed and open modules
-        if (!isNamed() || descriptor.isOpen())
+        // all packages are open in unnamed, open, and automatic modules
+        if (!isNamed() || descriptor.isOpen() || descriptor.isAutomatic())
             return;
 
         // nothing to do if already exported/open to other
@@ -819,17 +818,17 @@ public final class Module implements AnnotatedElement {
      * passed a reference to the service type by other code. This method is
      * a no-op when invoked on an unnamed module or an automatic module.
      *
-     * <p> This method does not cause {@link
-     * Configuration#resolveRequiresAndUses resolveRequiresAndUses} to be
-     * re-run. </p>
+     * <p> This method does not cause {@link Configuration#resolveAndBind
+     * resolveAndBind} to be re-run. </p>
      *
      * @param  service
      *         The service type
      *
      * @return this module
      *
-     * @throws IllegalStateException
-     *         If this is a named module and the caller is not this module
+     * @throws IllegalCallerException
+     *         If this is a named module and the caller's module is not this
+     *         module
      *
      * @see #canUse(Class)
      * @see ModuleDescriptor#uses()
@@ -841,7 +840,7 @@ public final class Module implements AnnotatedElement {
         if (isNamed() && !descriptor.isAutomatic()) {
             Module caller = Reflection.getCallerClass().getModule();
             if (caller != this) {
-                throw new IllegalStateException(caller + " != " + this);
+                throw new IllegalCallerException(caller + " != " + this);
             }
             implAddUses(service);
         }
@@ -894,14 +893,13 @@ public final class Module implements AnnotatedElement {
     // -- packages --
 
     // Additional packages that are added to the module at run-time.
-    // The field is volatile as it may be replaced at run-time
-    private volatile Set<String> extraPackages;
+    private volatile Map<String, Boolean> extraPackages;
 
     private boolean containsPackage(String pn) {
         if (descriptor.packages().contains(pn))
             return true;
-        Set<String> extraPackages = this.extraPackages;
-        if (extraPackages != null && extraPackages.contains(pn))
+        Map<String, Boolean> extraPackages = this.extraPackages;
+        if (extraPackages != null && extraPackages.containsKey(pn))
             return true;
         return false;
     }
@@ -915,7 +913,7 @@ public final class Module implements AnnotatedElement {
      * added to the module, <a href="Proxy.html#dynamicmodule">dynamic modules</a>
      * for example, after it was loaded.
      *
-     * <p> For unnamed modules, this method is the equivalent of invoking the
+     * <p> For unnamed modules, this method is the equivalent to invoking the
      * {@link ClassLoader#getDefinedPackages() getDefinedPackages} method of
      * this module's class loader and returning the array of package names. </p>
      *
@@ -930,12 +928,12 @@ public final class Module implements AnnotatedElement {
         if (isNamed()) {
 
             Set<String> packages = descriptor.packages();
-            Set<String> extraPackages = this.extraPackages;
+            Map<String, Boolean> extraPackages = this.extraPackages;
             if (extraPackages == null) {
                 return packages.toArray(new String[0]);
             } else {
                 return Stream.concat(packages.stream(),
-                                     extraPackages.stream())
+                                     extraPackages.keySet().stream())
                         .toArray(String[]::new);
             }
 
@@ -955,10 +953,6 @@ public final class Module implements AnnotatedElement {
      * Add a package to this module.
      *
      * @apiNote This method is for Proxy use.
-     *
-     * @apiNote This is an expensive operation, not expected to be used often.
-     * At this time then it does not validate that the package name is a
-     * valid java identifier.
      */
     void addPackage(String pn) {
         implAddPackage(pn, true);
@@ -976,49 +970,52 @@ public final class Module implements AnnotatedElement {
     /**
      * Add a package to this module.
      *
-     * If {@code syncVM} is {@code true} then the VM is notified.
+     * If {@code syncVM} is {@code true} then the VM is notified. This method is
+     * a no-op if this is an unnamed module or the module already contains the
+     * package.
+     *
+     * @throws IllegalArgumentException if the package name is not legal
+     * @throws IllegalStateException if the package is defined to another module
      */
     private void implAddPackage(String pn, boolean syncVM) {
+        // no-op if unnamed module
         if (!isNamed())
-            throw new InternalError("adding package to unnamed module?");
-        if (descriptor.isOpen())
-            throw new InternalError("adding package to open module?");
+            return;
+
+        // no-op if module contains the package
+        if (containsPackage(pn))
+            return;
+
+        // check package name is legal for named modules
         if (pn.isEmpty())
-            throw new InternalError("adding <unnamed> package to module?");
-
-        if (descriptor.packages().contains(pn)) {
-            // already in module
-            return;
-        }
-
-        Set<String> extraPackages = this.extraPackages;
-        if (extraPackages != null && extraPackages.contains(pn)) {
-            // already added
-            return;
-        }
-        synchronized (this) {
-            // recheck under lock
-            extraPackages = this.extraPackages;
-            if (extraPackages != null) {
-                if (extraPackages.contains(pn)) {
-                    // already added
-                    return;
-                }
-
-                // copy the set
-                extraPackages = new HashSet<>(extraPackages);
-                extraPackages.add(pn);
-            } else {
-                extraPackages = Collections.singleton(pn);
+            throw new IllegalArgumentException("Cannot add <unnamed> package");
+        for (int i=0; i<pn.length(); i++) {
+            char c = pn.charAt(i);
+            if (c == '/' || c == ';' || c == '[') {
+                throw new IllegalArgumentException("Illegal character: " + c);
             }
-
-            // update VM first, just in case it fails
-            if (syncVM)
-                addPackage0(this, pn);
-
-            // replace with new set
-            this.extraPackages = extraPackages; // volatile write
         }
+
+        // create extraPackages if needed
+        Map<String, Boolean> extraPackages = this.extraPackages;
+        if (extraPackages == null) {
+            synchronized (this) {
+                extraPackages = this.extraPackages;
+                if (extraPackages == null)
+                    this.extraPackages = extraPackages = new ConcurrentHashMap<>();
+            }
+        }
+
+        // update VM first in case it fails. This is a no-op if another thread
+        // beats us to add the package first
+        if (syncVM) {
+            // throws IllegalStateException if defined to another module
+            addPackage0(this, pn);
+            if (descriptor.isOpen() || descriptor.isAutomatic()) {
+                addExportsToAll0(this, pn);
+            }
+        }
+        extraPackages.putIfAbsent(pn, Boolean.TRUE);
     }
 
 
@@ -1169,8 +1166,9 @@ public final class Module implements AnnotatedElement {
                                             Map<String, Module> nameToModule,
                                             Module m)
     {
-        // The VM doesn't know about open modules so need to export all packages
-        if (descriptor.isOpen()) {
+        // The VM doesn't special case open or automatic modules so need to
+        // export all packages
+        if (descriptor.isOpen() || descriptor.isAutomatic()) {
             assert descriptor.opens().isEmpty();
             for (String source : descriptor.packages()) {
                 addExportsToAll0(m, source);
@@ -1375,35 +1373,44 @@ public final class Module implements AnnotatedElement {
 
 
     /**
-     * Returns an input stream for reading a resource in this module. The
-     * {@code name} parameter is a {@code '/'}-separated path name that
-     * identifies the resource.
+     * Returns an input stream for reading a resource in this module.
+     * The {@code name} parameter is a {@code '/'}-separated path name that
+     * identifies the resource. As with {@link Class#getResourceAsStream
+     * Class.getResourceAsStream}, this method delegates to the module's class
+     * loader {@link ClassLoader#findResource(String,String)
+     * findResource(String,String)} method, invoking it with the module name
+     * (or {@code null} when the module is unnamed) and the name of the
+     * resource. If the resource name has a leading slash then it is dropped
+     * before delegation.
      *
-     * <p> A resource in a named modules may be <em>encapsulated</em> so that
+     * <p> A resource in a named module may be <em>encapsulated</em> so that
      * it cannot be located by code in other modules. Whether a resource can be
-     * located or not is determined as follows:
+     * located or not is determined as follows: </p>
      *
      * <ul>
-     *     <li> The <em>package name</em> of the resource is derived from the
-     *     subsequence of characters that precedes the last {@code '/'} and then
-     *     replacing each {@code '/'} character in the subsequence with
-     *     {@code '.'}. For example, the package name derived for a resource
-     *     named "{@code a/b/c/foo.properties}" is "{@code a.b.c}". </li>
+     *     <li> If the resource name ends with  "{@code .class}" then it is not
+     *     encapsulated. </li>
      *
-     *     <li> If the package name is a package in the module then the package
-     *     must be {@link #isOpen open} the module of the caller of this method.
-     *     If the package is not in the module then the resource is not
-     *     encapsulated. Resources in the unnamed package or "{@code META-INF}",
-     *     for example, are never encapsulated because they can never be
-     *     packages in a named module. </li>
-     *
-     *     <li> As a special case, resources ending with "{@code .class}" are
-     *     never encapsulated. </li>
+     *     <li> A <em>package name</em> is derived from the resource name. If
+     *     the package name is a {@link #getPackages() package} in the module
+     *     then the resource can only be located by the caller of this method
+     *     when the package is {@link #isOpen(String,Module) open} to at least
+     *     the caller's module. If the resource is not in a package in the module
+     *     then the resource is not encapsulated. </li>
      * </ul>
+     *
+     * <p> In the above, the <em>package name</em> for a resource is derived
+     * from the subsequence of characters that precedes the last {@code '/'} in
+     * the name and then replacing each {@code '/'} character in the subsequence
+     * with {@code '.'}. A leading slash is ignored when deriving the package
+     * name. As an example, the package name derived for a resource named
+     * "{@code a/b/c/foo.properties}" is "{@code a.b.c}". A resource name
+     * with the name "{@code META-INF/MANIFEST.MF}" is never encapsulated
+     * because "{@code META-INF}" is not a legal package name. </p>
      *
      * <p> This method returns {@code null} if the resource is not in this
      * module, the resource is encapsulated and cannot be located by the caller,
-     * or access to the resource is denied by the security manager.
+     * or access to the resource is denied by the security manager. </p>
      *
      * @param  name
      *         The resource name
@@ -1413,11 +1420,13 @@ public final class Module implements AnnotatedElement {
      * @throws IOException
      *         If an I/O error occurs
      *
-     * @see java.lang.module.ModuleReader#open(String)
+     * @see Class#getResourceAsStream(String)
      */
     @CallerSensitive
     public InputStream getResourceAsStream(String name) throws IOException {
-        Objects.requireNonNull(name);
+        if (name.startsWith("/")) {
+            name = name.substring(1);
+        }
 
         if (isNamed() && !ResourceHelper.isSimpleResource(name)) {
             Module caller = Reflection.getCallerClass().getModule();

@@ -1169,6 +1169,7 @@ public class KeyEvent extends InputEvent {
      * @see #getKeyLocation()
      * @since 1.4
      */
+    @SuppressWarnings("deprecation")
     public KeyEvent(Component source, int id, long when, int modifiers,
                     int keyCode, char keyChar, int keyLocation) {
         super(source, id, when, modifiers);
@@ -1561,7 +1562,10 @@ public class KeyEvent extends InputEvent {
      * @return string a text description of the combination of modifier
      *                keys that were held down during the event
      * @see InputEvent#getModifiersExText(int)
+     * @deprecated It is recommended that extended modifier keys and
+     *             {@link InputEvent#getModifiersExText(int)} be used instead
      */
+    @Deprecated(since = "9")
     public static String getKeyModifiersText(int modifiers) {
         StringBuilder buf = new StringBuilder();
         if ((modifiers & InputEvent.META_MASK) != 0) {
@@ -1696,6 +1700,7 @@ public class KeyEvent extends InputEvent {
      *
      * @return a string identifying the event and its attributes
      */
+    @SuppressWarnings("deprecation")
     public String paramString() {
         StringBuilder str = new StringBuilder(100);
 
@@ -1821,6 +1826,7 @@ public class KeyEvent extends InputEvent {
      * Sets new modifiers by the old ones. The key modifiers
      * override overlapping mouse modifiers.
      */
+    @SuppressWarnings("deprecation")
     private void setNewModifiers() {
         if ((modifiers & SHIFT_MASK) != 0) {
             modifiers |= SHIFT_DOWN_MASK;
@@ -1845,6 +1851,7 @@ public class KeyEvent extends InputEvent {
     /**
      * Sets old modifiers by the new ones.
      */
+    @SuppressWarnings("deprecation")
     private void setOldModifiers() {
         if ((modifiers & SHIFT_DOWN_MASK) != 0) {
             modifiers |= SHIFT_MASK;
@@ -1871,6 +1878,7 @@ public class KeyEvent extends InputEvent {
      * override overlapping mouse modifiers.
      * @serial
      */
+    @SuppressWarnings("deprecation")
     private void readObject(ObjectInputStream s)
       throws IOException, ClassNotFoundException {
         s.defaultReadObject();

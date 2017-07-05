@@ -25,6 +25,8 @@
 
 /**
  * Defines the attach API.
+ *
+ * @since 9
  */
 module jdk.attach {
     requires jdk.internal.jvmstat;
