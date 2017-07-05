@@ -54,7 +54,7 @@ import java.util.Date;
  * <b>Security permissions</b>
  * <p>
  * If a security manager is installed, and if a method is called which results in an
- * attempt to open a connection, the caller must possess either:-
+ * attempt to open a connection, the caller must possess either:
  * <ul><li>a "connect" {@link SocketPermission} to the host/port combination of the
  * destination URL or</li>
  * <li>a {@link URLPermission} that permits this request.</li>
