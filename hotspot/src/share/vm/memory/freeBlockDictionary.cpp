@@ -29,18 +29,7 @@
 #include "memory/freeBlockDictionary.hpp"
 #include "memory/metablock.hpp"
 #include "memory/metachunk.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "thread_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "thread_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "thread_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "thread_bsd.inline.hpp"
-#endif
+#include "runtime/thread.inline.hpp"
 
 #ifndef PRODUCT
 template <class Chunk> Mutex* FreeBlockDictionary<Chunk>::par_lock() const {

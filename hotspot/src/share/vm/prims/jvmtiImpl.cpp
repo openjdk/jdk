@@ -41,22 +41,11 @@
 #include "runtime/os.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/signature.hpp"
+#include "runtime/thread.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vm_operations.hpp"
 #include "utilities/exceptions.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "thread_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "thread_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "thread_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "thread_bsd.inline.hpp"
-#endif
 
 //
 // class JvmtiAgentThread

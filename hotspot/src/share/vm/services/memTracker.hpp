@@ -109,10 +109,6 @@ class MemTracker : AllStatic {
 #include "services/memSnapshot.hpp"
 #include "services/memTrackWorker.hpp"
 
-#ifdef SOLARIS
-#include "thread_solaris.inline.hpp"
-#endif
-
 extern bool NMT_track_callsite;
 
 #ifdef ASSERT
