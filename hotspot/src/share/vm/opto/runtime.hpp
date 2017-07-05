@@ -175,6 +175,7 @@ private:
   static address handle_exception_C_helper(JavaThread* thread, nmethod*& nm);
   static address rethrow_C                (oopDesc* exception, JavaThread *thread, address return_pc );
   static void deoptimize_caller_frame     (JavaThread *thread, bool doit);
+  static bool is_deoptimized_caller_frame (JavaThread *thread);
 
   // CodeBlob support
   // ===================================================================

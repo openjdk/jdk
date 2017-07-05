@@ -1672,9 +1672,12 @@ IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(methodOopDesc* method, addr
   nmethod* nm = cb->as_nmethod_or_null();
   assert(nm, "must be");
 
-  // Don't fixup MethodHandle call sites as c2i/i2c adapters are used
-  // to implement MethodHandle actions.
-  if (nm->is_method_handle_return(caller_pc)) {
+  // Get the return PC for the passed caller PC.
+  address return_pc = caller_pc + frame::pc_return_offset;
+
+  // Don't fixup method handle call sites as the executed method
+  // handle adapters are doing the required MethodHandle chain work.
+  if (nm->is_method_handle_return(return_pc)) {
     return;
   }
 
@@ -1693,8 +1696,8 @@ IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(methodOopDesc* method, addr
 
     // Expect to find a native call there (unless it was no-inline cache vtable dispatch)
     MutexLockerEx ml_patch(Patching_lock, Mutex::_no_safepoint_check_flag);
-    if (NativeCall::is_call_before(caller_pc + frame::pc_return_offset)) {
-      NativeCall *call = nativeCall_before(caller_pc + frame::pc_return_offset);
+    if (NativeCall::is_call_before(return_pc)) {
+      NativeCall *call = nativeCall_before(return_pc);
       //
       // bug 6281185. We might get here after resolving a call site to a vanilla
       // virtual call. Because the resolvee uses the verified entry it may then
@@ -1744,7 +1747,6 @@ IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(methodOopDesc* method, addr
       }
     }
   }
-
 IRT_END
 
 

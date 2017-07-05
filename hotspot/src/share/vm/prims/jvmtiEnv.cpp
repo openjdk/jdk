@@ -173,7 +173,7 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
     // from native so as to resolve the jthread.
 
     ThreadInVMfromNative __tiv(current_thread);
-    __ENTRY(jvmtiError, JvmtiEnv::GetThreadLocalStorage , current_thread)
+    VM_ENTRY_BASE(jvmtiError, JvmtiEnv::GetThreadLocalStorage , current_thread)
     debug_only(VMNativeEntryWrapper __vew;)
 
     oop thread_oop = JNIHandles::resolve_external_guard(thread);

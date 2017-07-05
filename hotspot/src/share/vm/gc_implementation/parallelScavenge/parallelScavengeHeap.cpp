@@ -863,8 +863,6 @@ void ParallelScavengeHeap::prepare_for_verify() {
   ensure_parsability(false);  // no need to retire TLABs for verification
 }
 
-void ParallelScavengeHeap::print() const { print_on(tty); }
-
 void ParallelScavengeHeap::print_on(outputStream* st) const {
   young_gen()->print_on(st);
   old_gen()->print_on(st);

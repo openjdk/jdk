@@ -71,7 +71,7 @@ include $(BUILDDIR)/common/internal/ImportComponents.gmk
 ifeq ($(ARCH_DATA_MODEL),64)
   MAX_VM_MEMORY = 1024
 else
-  MAX_VM_MEMORY = 512
+  MAX_VM_MEMORY = 612
 endif
 
 # List of all possible directories for javadoc to look for sources

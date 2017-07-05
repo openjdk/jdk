@@ -681,6 +681,23 @@ JRT_LEAF(void, Runtime1::monitorexit(JavaThread* thread, BasicObjectLock* lock))
   }
 JRT_END
 
+// Cf. OptoRuntime::deoptimize_caller_frame
+JRT_ENTRY(void, Runtime1::deoptimize(JavaThread* thread))
+  // Called from within the owner thread, so no need for safepoint
+  RegisterMap reg_map(thread, false);
+  frame stub_frame = thread->last_frame();
+  assert(stub_frame.is_runtime_frame(), "sanity check");
+  frame caller_frame = stub_frame.sender(&reg_map);
+
+  // We are coming from a compiled method; check this is true.
+  assert(CodeCache::find_nmethod(caller_frame.pc()) != NULL, "sanity");
+
+  // Deoptimize the caller frame.
+  Deoptimization::deoptimize_frame(thread, caller_frame.id());
+
+  // Return to the now deoptimized frame.
+JRT_END
+
 
 static klassOop resolve_field_return_klass(methodHandle caller, int bci, TRAPS) {
   Bytecode_field field_access(caller, bci);

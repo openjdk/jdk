@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1995, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1995, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -216,6 +216,15 @@ servertest: prep $(PRODUCT_HOME)
 	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -X
 
 PHONY_LIST += servertest
+
+################################################################
+
+# internalvmtests (run internal unit tests inside the VM)
+
+internalvmtests: prep $(PRODUCT_HOME)
+	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -XX:+ExecuteInternalVMTests -version
+
+PHONY_LIST += internalvmtests
 
 ################################################################
 
