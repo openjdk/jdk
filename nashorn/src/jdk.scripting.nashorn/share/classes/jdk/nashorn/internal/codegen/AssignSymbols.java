@@ -783,12 +783,13 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
             // If this is a declared variable or a function parameter, delete always fails (except for globals).
             final String name = ident.getName();
             final Symbol symbol = ident.getSymbol();
-            final boolean failDelete = strictMode || (!symbol.isScope() && (symbol.isParam() || (symbol.isVar() && !symbol.isProgramLevel())));
 
-            if (failDelete && symbol.isThis()) {
+            if (symbol.isThis()) {
+                // Can't delete "this", ignore and return true
                 return LiteralNode.newInstance(unaryNode, true).accept(this);
             }
             final Expression literalNode = (Expression)LiteralNode.newInstance(unaryNode, name).accept(this);
+            final boolean failDelete = strictMode || (!symbol.isScope() && (symbol.isParam() || (symbol.isVar() && !symbol.isProgramLevel())));
 
             if (!failDelete) {
                 args.add(compilerConstantIdentifier(SCOPE));
@@ -798,6 +799,8 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
 
             if (failDelete) {
                 request = Request.FAIL_DELETE;
+            } else if (symbol.isGlobal() && !symbol.isFunctionDeclaration()) {
+                request = Request.SLOW_DELETE;
             }
         } else if (rhs instanceof AccessNode) {
             final Expression base     = ((AccessNode)rhs).getBase();
