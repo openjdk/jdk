@@ -136,11 +136,11 @@ public abstract class FileLock implements AutoCloseable {
      *
      * @param  size
      *         The size of the locked region; must be non-negative, and the sum
-     *         <tt>position</tt>&nbsp;+&nbsp;<tt>size</tt> must be non-negative
+     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
      *
      * @param  shared
-     *         <tt>true</tt> if this lock is shared,
-     *         <tt>false</tt> if it is exclusive
+     *         {@code true} if this lock is shared,
+     *         {@code false} if it is exclusive
      *
      * @throws IllegalArgumentException
      *         If the preconditions on the parameters do not hold
@@ -173,11 +173,11 @@ public abstract class FileLock implements AutoCloseable {
      *
      * @param  size
      *         The size of the locked region; must be non-negative, and the sum
-     *         <tt>position</tt>&nbsp;+&nbsp;<tt>size</tt> must be non-negative
+     *         {@code position}&nbsp;+&nbsp;{@code size} must be non-negative
      *
      * @param  shared
-     *         <tt>true</tt> if this lock is shared,
-     *         <tt>false</tt> if it is exclusive
+     *         {@code true} if this lock is shared,
+     *         {@code false} if it is exclusive
      *
      * @throws IllegalArgumentException
      *         If the preconditions on the parameters do not hold
@@ -254,8 +254,8 @@ public abstract class FileLock implements AutoCloseable {
     /**
      * Tells whether this lock is shared.
      *
-     * @return <tt>true</tt> if lock is shared,
-     *         <tt>false</tt> if it is exclusive
+     * @return {@code true} if lock is shared,
+     *         {@code false} if it is exclusive
      */
     public final boolean isShared() {
         return shared;
@@ -269,7 +269,7 @@ public abstract class FileLock implements AutoCloseable {
      * @param   size
      *          The size of the lock range
      *
-     * @return  <tt>true</tt> if, and only if, this lock and the given lock
+     * @return  {@code true} if, and only if, this lock and the given lock
      *          range overlap by at least one byte
      */
     public final boolean overlaps(long position, long size) {
@@ -286,7 +286,7 @@ public abstract class FileLock implements AutoCloseable {
      * <p> A lock object remains valid until it is released or the associated
      * file channel is closed, whichever comes first.  </p>
      *
-     * @return  <tt>true</tt> if, and only if, this lock is valid
+     * @return  {@code true} if, and only if, this lock is valid
      */
     public abstract boolean isValid();
 

@@ -229,9 +229,11 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
                 if (m.peer == null) {
                     m.addNotify();
                 }
+                menus.addElement(m);
                 peer.addMenu(m);
+            } else {
+                menus.addElement(m);
             }
-            menus.addElement(m);
             return m;
         }
     }

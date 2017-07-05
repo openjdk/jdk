@@ -413,24 +413,24 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <p>For compatibility reasons, two
  * non-conforming locales are treated as special cases.  These are
- * <b><tt>ja_JP_JP</tt></b> and <b><tt>th_TH_TH</tt></b>. These are ill-formed
+ * <b>{@code ja_JP_JP}</b> and <b>{@code th_TH_TH}</b>. These are ill-formed
  * in BCP 47 since the variants are too short. To ease migration to BCP 47,
  * these are treated specially during construction.  These two cases (and only
  * these) cause a constructor to generate an extension, all other values behave
  * exactly as they did prior to Java 7.
  *
- * <p>Java has used <tt>ja_JP_JP</tt> to represent Japanese as used in
+ * <p>Java has used {@code ja_JP_JP} to represent Japanese as used in
  * Japan together with the Japanese Imperial calendar. This is now
  * representable using a Unicode locale extension, by specifying the
- * Unicode locale key <tt>ca</tt> (for "calendar") and type
- * <tt>japanese</tt>. When the Locale constructor is called with the
+ * Unicode locale key {@code ca} (for "calendar") and type
+ * {@code japanese}. When the Locale constructor is called with the
  * arguments "ja", "JP", "JP", the extension "u-ca-japanese" is
  * automatically added.
  *
- * <p>Java has used <tt>th_TH_TH</tt> to represent Thai as used in
+ * <p>Java has used {@code th_TH_TH} to represent Thai as used in
  * Thailand together with Thai digits. This is also now representable using
  * a Unicode locale extension, by specifying the Unicode locale key
- * <tt>nu</tt> (for "number") and value <tt>thai</tt>. When the Locale
+ * {@code nu} (for "number") and value {@code thai}. When the Locale
  * constructor is called with the arguments "th", "TH", "TH", the
  * extension "u-nu-thai" is automatically added.
  *
@@ -446,9 +446,9 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <h5>Legacy language codes</h5>
  *
  * <p>Locale's constructor has always converted three language codes to
- * their earlier, obsoleted forms: <tt>he</tt> maps to <tt>iw</tt>,
- * <tt>yi</tt> maps to <tt>ji</tt>, and <tt>id</tt> maps to
- * <tt>in</tt>.  This continues to be the case, in order to not break
+ * their earlier, obsoleted forms: {@code he} maps to {@code iw},
+ * {@code yi} maps to {@code ji}, and {@code id} maps to
+ * {@code in}.  This continues to be the case, in order to not break
  * backwards compatibility.
  *
  * <p>The APIs added in 1.7 map between the old and new language codes,
@@ -1272,14 +1272,14 @@ public final class Locale implements Cloneable, Serializable {
      * {@link #toLanguageTag}.
      *
      * <p>Examples: <ul>
-     * <li><tt>en</tt></li>
-     * <li><tt>de_DE</tt></li>
-     * <li><tt>_GB</tt></li>
-     * <li><tt>en_US_WIN</tt></li>
-     * <li><tt>de__POSIX</tt></li>
-     * <li><tt>zh_CN_#Hans</tt></li>
-     * <li><tt>zh_TW_#Hant-x-java</tt></li>
-     * <li><tt>th_TH_TH_#u-nu-thai</tt></li></ul>
+     * <li>{@code en}</li>
+     * <li>{@code de_DE}</li>
+     * <li>{@code _GB}</li>
+     * <li>{@code en_US_WIN}</li>
+     * <li>{@code de__POSIX}</li>
+     * <li>{@code zh_CN_#Hans}</li>
+     * <li>{@code zh_TW_#Hant-x-java}</li>
+     * <li>{@code th_TH_TH_#u-nu-thai}</li></ul>
      *
      * @return A string representation of the Locale, for debugging.
      * @see #getDisplayName

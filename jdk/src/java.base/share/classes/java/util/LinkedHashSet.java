@@ -26,15 +26,15 @@
 package java.util;
 
 /**
- * <p>Hash table and linked list implementation of the <tt>Set</tt> interface,
+ * <p>Hash table and linked list implementation of the {@code Set} interface,
  * with predictable iteration order.  This implementation differs from
- * <tt>HashSet</tt> in that it maintains a doubly-linked list running through
+ * {@code HashSet} in that it maintains a doubly-linked list running through
  * all of its entries.  This linked list defines the iteration ordering,
  * which is the order in which elements were inserted into the set
  * (<i>insertion-order</i>).  Note that insertion order is <i>not</i> affected
- * if an element is <i>re-inserted</i> into the set.  (An element <tt>e</tt>
- * is reinserted into a set <tt>s</tt> if <tt>s.add(e)</tt> is invoked when
- * <tt>s.contains(e)</tt> would return <tt>true</tt> immediately prior to
+ * if an element is <i>re-inserted</i> into the set.  (An element {@code e}
+ * is reinserted into a set {@code s} if {@code s.add(e)} is invoked when
+ * {@code s.contains(e)} would return {@code true} immediately prior to
  * the invocation.)
  *
  * <p>This implementation spares its clients from the unspecified, generally
@@ -53,22 +53,22 @@ package java.util;
  * the copy.  (Clients generally appreciate having things returned in the same
  * order they were presented.)
  *
- * <p>This class provides all of the optional <tt>Set</tt> operations, and
- * permits null elements.  Like <tt>HashSet</tt>, it provides constant-time
- * performance for the basic operations (<tt>add</tt>, <tt>contains</tt> and
- * <tt>remove</tt>), assuming the hash function disperses elements
+ * <p>This class provides all of the optional {@code Set} operations, and
+ * permits null elements.  Like {@code HashSet}, it provides constant-time
+ * performance for the basic operations ({@code add}, {@code contains} and
+ * {@code remove}), assuming the hash function disperses elements
  * properly among the buckets.  Performance is likely to be just slightly
- * below that of <tt>HashSet</tt>, due to the added expense of maintaining the
- * linked list, with one exception: Iteration over a <tt>LinkedHashSet</tt>
+ * below that of {@code HashSet}, due to the added expense of maintaining the
+ * linked list, with one exception: Iteration over a {@code LinkedHashSet}
  * requires time proportional to the <i>size</i> of the set, regardless of
- * its capacity.  Iteration over a <tt>HashSet</tt> is likely to be more
+ * its capacity.  Iteration over a {@code HashSet} is likely to be more
  * expensive, requiring time proportional to its <i>capacity</i>.
  *
  * <p>A linked hash set has two parameters that affect its performance:
  * <i>initial capacity</i> and <i>load factor</i>.  They are defined precisely
- * as for <tt>HashSet</tt>.  Note, however, that the penalty for choosing an
+ * as for {@code HashSet}.  Note, however, that the penalty for choosing an
  * excessively high value for initial capacity is less severe for this class
- * than for <tt>HashSet</tt>, as iteration times for this class are unaffected
+ * than for {@code HashSet}, as iteration times for this class are unaffected
  * by capacity.
  *
  * <p><strong>Note that this implementation is not synchronized.</strong>
@@ -83,9 +83,9 @@ package java.util;
  * unsynchronized access to the set: <pre>
  *   Set s = Collections.synchronizedSet(new LinkedHashSet(...));</pre>
  *
- * <p>The iterators returned by this class's <tt>iterator</tt> method are
+ * <p>The iterators returned by this class's {@code iterator} method are
  * <em>fail-fast</em>: if the set is modified at any time after the iterator
- * is created, in any way except through the iterator's own <tt>remove</tt>
+ * is created, in any way except through the iterator's own {@code remove}
  * method, the iterator will throw a {@link ConcurrentModificationException}.
  * Thus, in the face of concurrent modification, the iterator fails quickly
  * and cleanly, rather than risking arbitrary, non-deterministic behavior at
@@ -94,7 +94,7 @@ package java.util;
  * <p>Note that the fail-fast behavior of an iterator cannot be guaranteed
  * as it is, generally speaking, impossible to make any hard guarantees in the
  * presence of unsynchronized concurrent modification.  Fail-fast iterators
- * throw <tt>ConcurrentModificationException</tt> on a best-effort basis.
+ * throw {@code ConcurrentModificationException} on a best-effort basis.
  * Therefore, it would be wrong to write a program that depended on this
  * exception for its correctness:   <i>the fail-fast behavior of iterators
  * should be used only to detect bugs.</i>

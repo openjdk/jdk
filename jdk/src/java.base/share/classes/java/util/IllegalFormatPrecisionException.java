@@ -27,7 +27,7 @@ package java.util;
 
 /**
  * Unchecked exception thrown when the precision is a negative value other than
- * <tt>-1</tt>, the conversion does not support a precision, or the value is
+ * {@code -1}, the conversion does not support a precision, or the value is
  * otherwise unsupported.
  *
  * @since 1.5
