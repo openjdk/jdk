@@ -138,7 +138,7 @@ class InvokerBytecodeGenerator {
                 DUMP_CLASS_FILES_DIR = dumpDir;
                 System.out.println("Dumping class files to "+DUMP_CLASS_FILES_DIR+"/...");
             } catch (Exception e) {
-                throw new InternalError(e);
+                throw newInternalError(e);
             }
         } else {
             DUMP_CLASS_FILES_COUNTERS = null;
@@ -162,7 +162,7 @@ class InvokerBytecodeGenerator {
                         file.close();
                         return null;
                     } catch (IOException ex) {
-                        throw new InternalError(ex);
+                        throw newInternalError(ex);
                     }
                 }
             });
@@ -279,7 +279,7 @@ class InvokerBytecodeGenerator {
         try {
             member = MEMBERNAME_FACTORY.resolveOrFail(REF_invokeStatic, member, HOST_CLASS, ReflectiveOperationException.class);
         } catch (ReflectiveOperationException e) {
-            throw new InternalError(e);
+            throw newInternalError(e);
         }
         //System.out.println("resolveInvokerMember => "+member);
         return member;

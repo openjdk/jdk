@@ -65,6 +65,8 @@ PLATFORM_SHARED=done
 #     REQUIRED_WINDOWS_NAME       windows only: basic name of windows
 #     REQUIRED_WINDOWS_VERSION    windows only: specific version of windows
 #     USING_CYGWIN                windows only: true or false
+#     USING_MSYS                  windows only: true or false
+#     USING_MKS                   windows only: true or false
 #     WINDOWS_NT_VERSION_STRING   windows only: long version name
 #     REQUIRED_OS_VERSION         required OS version, e.g. 5.10, 2.4
 #     REQUIRED_FREE_SPACE         minimum disk space needed for outputdir
@@ -327,6 +329,8 @@ endif
 # Windows with and without CYGWIN will be slightly different
 ifeq ($(SYSTEM_UNAME), Windows_NT)
   PLATFORM = windows
+  USING_MKS = true
+  export USING_MKS
   OS_VERSION := $(shell uname -r)
   WINDOWS_NT_VERSION_STRING=Windows_NT
   REQUIRED_MKS_VER=6.1
@@ -338,6 +342,11 @@ ifneq (,$(findstring CYGWIN,$(SYSTEM_UNAME)))
   export USING_CYGWIN
   WINDOWS_NT_VERSION_STRING=CYGWIN_NT
   REQUIRED_CYGWIN_VER=4.0
+endif
+ifneq (,$(findstring MINGW,$(SYSTEM_UNAME)))
+  PLATFORM = windows
+  USING_MSYS = true
+  export USING_MSYS
 endif
 
 # Platform settings specific to Windows
