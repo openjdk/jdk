@@ -114,7 +114,7 @@ case "${TYPE}" in
     "shark")     Src_Dirs="${CORE_PATHS}" ;;
 esac
 
-COMPILER2_SPECIFIC_FILES="opto libadt bcEscapeAnalyzer.cpp chaitin* c2_* runtime_*"
+COMPILER2_SPECIFIC_FILES="opto libadt bcEscapeAnalyzer.cpp c2_* runtime_*"
 COMPILER1_SPECIFIC_FILES="c1_*"
 SHARK_SPECIFIC_FILES="shark"
 ZERO_SPECIFIC_FILES="zero"

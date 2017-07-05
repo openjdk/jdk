@@ -436,14 +436,19 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
               ref_index, CHECK_(nullHandle));
             break;
           case JVM_REF_invokeVirtual:
-          case JVM_REF_invokeStatic:
-          case JVM_REF_invokeSpecial:
           case JVM_REF_newInvokeSpecial:
             check_property(
               tag.is_method(),
               "Invalid constant pool index %u in class file %s (not a method)",
               ref_index, CHECK_(nullHandle));
             break;
+          case JVM_REF_invokeStatic:
+          case JVM_REF_invokeSpecial:
+            check_property(
+               tag.is_method() || tag.is_interface_method(),
+               "Invalid constant pool index %u in class file %s (not a method)",
+               ref_index, CHECK_(nullHandle));
+             break;
           case JVM_REF_invokeInterface:
             check_property(
               tag.is_interface_method(),
@@ -3837,7 +3842,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     }
 
     if (TraceClassLoadingPreorder) {
-      tty->print("[Loading %s", name->as_klass_external_name());
+      tty->print("[Loading %s", (name != NULL) ? name->as_klass_external_name() : "NoName");
       if (cfs->source() != NULL) tty->print(" from %s", cfs->source());
       tty->print_cr("]");
     }

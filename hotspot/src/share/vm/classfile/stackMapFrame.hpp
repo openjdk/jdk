@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -175,14 +175,14 @@ class StackMapFrame : public ResourceObj {
       ErrorContext* ctx, TRAPS) const;
 
   inline void set_mark() {
-#ifdef DEBUG
+#ifdef ASSERT
     // Put bogus type to indicate it's no longer valid.
     if (_stack_mark != -1) {
       for (int i = _stack_mark - 1; i >= _stack_size; --i) {
         _stack[i] = VerificationType::bogus_type();
       }
     }
-#endif // def DEBUG
+#endif // def ASSERT
     _stack_mark = _stack_size;
   }
 
