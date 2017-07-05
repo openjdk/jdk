@@ -48,7 +48,6 @@ import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLPermission;
 
-import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.x500.X500Principal;
 
 import static sun.security.ssl.CipherSuite.*;
@@ -469,8 +468,8 @@ final class SSLSessionImpl implements SSLSession {
      * defining the session.
      *
      * @return the peer's principal. Returns an X500Principal of the
-     * end-entity certiticate for X509-based cipher suites, and
-     * KerberosPrincipal for Kerberos cipher suites.
+     * end-entity certificate for X509-based cipher suites, and
+     * Principal for Kerberos cipher suites.
      *
      * @throws SSLPeerUnverifiedException if the peer's identity has not
      *          been verified
@@ -483,7 +482,8 @@ final class SSLSessionImpl implements SSLSession {
             if (peerPrincipal == null) {
                 throw new SSLPeerUnverifiedException("peer not authenticated");
             } else {
-                return (KerberosPrincipal)peerPrincipal;
+                // Eliminate dependency on KerberosPrincipal
+                return peerPrincipal;
             }
         }
         if (peerCerts == null) {
@@ -497,15 +497,15 @@ final class SSLSessionImpl implements SSLSession {
      *
      * @return the principal sent to the peer. Returns an X500Principal
      * of the end-entity certificate for X509-based cipher suites, and
-     * KerberosPrincipal for Kerberos cipher suites. If no principal was
+     * Principal for Kerberos cipher suites. If no principal was
      * sent, then null is returned.
      */
     public Principal getLocalPrincipal() {
 
         if ((cipherSuite.keyExchange == K_KRB5) ||
             (cipherSuite.keyExchange == K_KRB5_EXPORT)) {
-                return (localPrincipal == null ? null :
-                        (KerberosPrincipal)localPrincipal);
+                // Eliminate dependency on KerberosPrincipal
+                return (localPrincipal == null ? null : localPrincipal);
         }
         return (localCerts == null ? null :
                 localCerts[0].getSubjectX500Principal());

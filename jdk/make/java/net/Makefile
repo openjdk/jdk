@@ -83,7 +83,7 @@ endif
 #
 # Find platform specific native code
 #
-vpath %.c $(PLATFORM_SRC)/native/sun/net/dns $(PLATFORM_SRC)/native/sun/net/www/protocol/http $(PLATFORM_SRC)/native/sun/net/spi
+vpath %.c $(PLATFORM_SRC)/native/sun/net/dns $(PLATFORM_SRC)/native/sun/net/www/protocol/http/ntlm $(PLATFORM_SRC)/native/sun/net/spi
 
 #
 # Include rules

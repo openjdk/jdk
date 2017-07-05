@@ -45,7 +45,7 @@ class Flag {
     Flag(String name, Object value, boolean writeable,
          boolean external, Origin origin) {
         this.name = name;
-        this.value = value;
+        this.value = value == null ? "" : value ;
         this.origin = origin;
         this.writeable = writeable;
         this.external = external;
@@ -64,8 +64,7 @@ class Flag {
     }
 
     VMOption getVMOption() {
-        String val = value == null ? "" : value.toString();
-        return new VMOption(name, val, writeable, origin);
+        return new VMOption(name, value.toString(), writeable, origin);
     }
 
     static Flag getFlag(String name) {

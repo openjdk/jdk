@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4811913
+ * @bug 4811913 6894950
  * @summary Test bounds checking in zip package
  */
 

@@ -52,4 +52,6 @@ class LongCounterSnapshot extends AbstractCounter
     public long longValue() {
         return value;
     }
+
+    private static final long serialVersionUID = 2054263861474565758L;
 }

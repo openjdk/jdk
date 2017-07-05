@@ -32,6 +32,7 @@ import javax.swing.border.*;
 import javax.swing.plaf.*;
 import javax.swing.text.View;
 import sun.swing.SwingUtilities2;
+import sun.awt.AppContext;
 
 
 /**
@@ -41,7 +42,7 @@ import sun.swing.SwingUtilities2;
  */
 public class BasicRadioButtonUI extends BasicToggleButtonUI
 {
-    private final static BasicRadioButtonUI radioButtonUI = new BasicRadioButtonUI();
+    private static final Object BASIC_RADIO_BUTTON_UI_KEY = new Object();
 
     protected Icon icon;
 
@@ -53,6 +54,13 @@ public class BasicRadioButtonUI extends BasicToggleButtonUI
     //        Create PLAF
     // ********************************
     public static ComponentUI createUI(JComponent b) {
+        AppContext appContext = AppContext.getAppContext();
+        BasicRadioButtonUI radioButtonUI =
+                (BasicRadioButtonUI) appContext.get(BASIC_RADIO_BUTTON_UI_KEY);
+        if (radioButtonUI == null) {
+            radioButtonUI = new BasicRadioButtonUI();
+            appContext.put(BASIC_RADIO_BUTTON_UI_KEY, radioButtonUI);
+        }
         return radioButtonUI;
     }
 

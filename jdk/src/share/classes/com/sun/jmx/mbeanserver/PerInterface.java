@@ -1,5 +1,5 @@
 /*
- * Copyright 2005-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2005-2006 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,7 +231,7 @@ final class PerInterface<M> {
     /**
      * Visitor that sets up the method maps (operations, getters, setters).
      */
-    private class InitMaps implements MBeanAnalyzer.MBeanVisitor<M, RuntimeException> {
+    private class InitMaps implements MBeanAnalyzer.MBeanVisitor<M> {
         public void visitAttribute(String attributeName,
                                    M getter,
                                    M setter) {

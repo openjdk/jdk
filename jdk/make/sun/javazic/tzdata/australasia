@@ -465,10 +465,56 @@ Zone Pacific/Pago_Pago	 12:37:12 -	LMT	1879 Jul  5
 # http://www.worldtimezone.com/dst_news/dst_news_samoa01.html
 # </a>
 
+# From Steffen Thorsen (2009-08-27):
+# Samoa's parliament passed the Daylight Saving Bill 2009, and will start 
+# daylight saving time on the first Sunday of October 2009 and end on the 
+# last Sunday of March 2010. We hope that the full text will be published 
+# soon, but we believe that the bill is only valid for 2009-2010. Samoa's 
+# Daylight Saving Act 2009 will be enforced as soon as the Head of State 
+# executes a proclamation publicizing this Act.
+#
+# Some background information here, which will be updated once we have 
+# more details:
+# <a href="http://www.timeanddate.com/news/time/samoa-dst-plan-2009.html">
+# http://www.timeanddate.com/news/time/samoa-dst-plan-2009.html
+# </a>
+
+# From Alexander Krivenyshev (2009-10-03):
+# First, my deepest condolences to people of Samoa islands and all families and
+# loved ones around the world who lost their lives in the earthquake and tsunami.
+#
+# Considering the recent devastation on Samoa by earthquake and tsunami and that
+# many government offices/ ministers are closed- not sure if "Daylight Saving
+# Bill 2009" will be implemented in next few days- on October 4, 2009.
+#
+# Here is reply from Consulate-General of Samoa in New Zealand
+# ---------------------------
+# Consul General
+# consulgeneral@samoaconsulate.org.nz
+#
+# Talofa Alexander,
+#
+# Thank you for your sympathy for our country but at this time we have not
+# been informed about the Daylight Savings Time Change.  Most Ministries in
+# Apia are closed or relocating due to weather concerns.
+#
+# When we do find out if they are still proceeding with the time change we
+# will advise you soonest.
+#
+# Kind Regards,
+# Lana
+# for: Consul General
+
+# From Steffen Thorsen (2009-10-05):
+# We have called a hotel in Samoa and asked about local time there - they 
+# are still on standard time.
+
 Zone Pacific/Apia	 12:33:04 -	LMT	1879 Jul  5
 			-11:26:56 -	LMT	1911
 			-11:30	-	SAMT	1950		# Samoa Time
-			-11:00	-	WST			# Samoa Time
+			-11:00	-	WST	2009 Oct 4
+			-11:00	1:00	WSDT	2010 Mar 28
+			-11:00	-	WST
 
 # Solomon Is
 # excludes Bougainville, for which see Papua New Guinea

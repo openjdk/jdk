@@ -120,4 +120,6 @@ public class StackTraceElementCompositeData extends LazyCompositeData {
                 "Unexpected composite type for StackTraceElement");
         }
     }
+
+    private static final long serialVersionUID = -2704607706598396827L;
 }

@@ -143,6 +143,11 @@ struct RepositionSecurityWarningStruct {
     jobject window;
 };
 
+struct SetFullScreenExclusiveModeStateStruct {
+    jobject window;
+    jboolean isFSEMState;
+};
+
 
 /************************************************************************
  * AwtWindow fields
@@ -915,7 +920,9 @@ void AwtWindow::UpdateSecurityWarningVisibility()
 
     bool show = false;
 
-    if (IsVisible() && currentWmSizeState != SIZE_MINIMIZED) {
+    if (IsVisible() && currentWmSizeState != SIZE_MINIMIZED &&
+            !isFullScreenExclusiveMode())
+    {
         if (AwtComponent::GetFocusedWindow() == GetHWnd()) {
             show = true;
         }
@@ -2954,6 +2961,25 @@ void AwtWindow::_UpdateWindow(void* param)
     delete uws;
 }
 
+void AwtWindow::_SetFullScreenExclusiveModeState(void *param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    SetFullScreenExclusiveModeStateStruct * data =
+        (SetFullScreenExclusiveModeStateStruct*)param;
+    jobject self = data->window;
+    jboolean state = data->isFSEMState;
+
+    PDATA pData;
+    JNI_CHECK_PEER_GOTO(self, ret);
+    AwtWindow *window = (AwtWindow *)pData;
+
+    window->setFullScreenExclusiveModeState(state != 0);
+
+  ret:
+    env->DeleteGlobalRef(self);
+    delete data;
+}
 
 extern "C" {
 
@@ -3331,6 +3357,29 @@ Java_sun_awt_windows_WWindowPeer_getScreenImOn(JNIEnv *env, jobject self)
     // global ref is deleted in _GetScreenImOn()
 
     CATCH_BAD_ALLOC_RET(-1);
+}
+
+/*
+ * Class:     sun_awt_windows_WWindowPeer
+ * Method:    setFullScreenExclusiveModeState
+ * Signature: (Z)V
+ */
+JNIEXPORT void JNICALL
+Java_sun_awt_windows_WWindowPeer_setFullScreenExclusiveModeState(JNIEnv *env,
+        jobject self, jboolean state)
+{
+    TRY;
+
+    SetFullScreenExclusiveModeStateStruct *data =
+        new SetFullScreenExclusiveModeStateStruct;
+    data->window = env->NewGlobalRef(self);
+    data->isFSEMState = state;
+
+    AwtToolkit::GetInstance().SyncCall(
+            AwtWindow::_SetFullScreenExclusiveModeState, data);
+    // global ref and data are deleted in the invoked method
+
+    CATCH_BAD_ALLOC;
 }
 
 /*

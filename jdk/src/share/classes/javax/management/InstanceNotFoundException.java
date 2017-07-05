@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1999-2003 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,17 +50,5 @@ public class InstanceNotFoundException extends OperationsException   {
      */
     public InstanceNotFoundException(String message) {
         super(message);
-    }
-
-    /**
-     * Constructor for the frequent case where the message is the ObjectName
-     * of the missing MBean.
-     *
-     * @param name the ObjectName of the missing MBean.
-     *
-     * @since 1.7
-     */
-    public InstanceNotFoundException(ObjectName name) {
-        this(String.valueOf(name));
     }
 }

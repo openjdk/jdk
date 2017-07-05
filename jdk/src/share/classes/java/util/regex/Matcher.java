@@ -688,7 +688,7 @@ public final class Matcher implements MatchResult {
      *
      * <p> The replacement string may contain references to subsequences
      * captured during the previous match: Each occurrence of
-     * <tt>$</tt>&lt;<i>name</i>&gt; or <tt>$</tt><i>g</i>
+     * <tt>${</tt><i>name</i><tt>}</tt> or <tt>$</tt><i>g</i>
      * will be replaced by the result of evaluating the corresponding
      * {@link #group(String) group(name)} or {@link #group(int) group(g)</tt>}
      * respectively. For  <tt>$</tt><i>g</i><tt></tt>,
@@ -770,7 +770,7 @@ public final class Matcher implements MatchResult {
                 // more appropriate.
                 nextChar = replacement.charAt(cursor);
                 int refNum = -1;
-                if (nextChar == '<') {
+                if (nextChar == '{') {
                     cursor++;
                     StringBuilder gsb = new StringBuilder();
                     while (cursor < replacement.length()) {
@@ -787,13 +787,17 @@ public final class Matcher implements MatchResult {
                     if (gsb.length() == 0)
                         throw new IllegalArgumentException(
                             "named capturing group has 0 length name");
-                    if (nextChar != '>')
+                    if (nextChar != '}')
                         throw new IllegalArgumentException(
-                            "named capturing group is missing trailing '>'");
+                            "named capturing group is missing trailing '}'");
                     String gname = gsb.toString();
+                    if (ASCII.isDigit(gname.charAt(0)))
+                        throw new IllegalArgumentException(
+                            "capturing group name {" + gname +
+                            "} starts with digit character");
                     if (!parentPattern.namedGroups().containsKey(gname))
                         throw new IllegalArgumentException(
-                            "No group with name <" + gname + ">");
+                            "No group with name {" + gname + "}");
                     refNum = parentPattern.namedGroups().get(gname);
                     cursor++;
                 } else {

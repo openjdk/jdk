@@ -230,6 +230,21 @@ public class Applet extends Panel {
     }
 
     /**
+     * Indicates if this container is a validate root.
+     * <p>
+     * {@code Applet} objects are the validate roots, and, therefore, they
+     * override this method to return {@code true}.
+     *
+     * @return {@code true}
+     * @since 1.7
+     * @see java.awt.Container#isValidateRoot
+     */
+    @Override
+    public boolean isValidateRoot() {
+        return true;
+    }
+
+    /**
      * Requests that the argument string be displayed in the
      * "status window". Many browsers and applet viewers
      * provide such a window, where the application can inform users of

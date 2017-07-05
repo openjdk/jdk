@@ -86,4 +86,5 @@ public class PerfStringCounter extends PerfByteArrayCounter
                                          stringValue());
     }
 
+    private static final long serialVersionUID = 6802913433363692452L;
 }

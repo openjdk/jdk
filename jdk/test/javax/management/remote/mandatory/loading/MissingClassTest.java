@@ -124,16 +124,7 @@ public class MissingClassTest {
     }
 
     private static boolean test(String proto) throws Exception {
-        boolean ok = true;
-        for (boolean eventService : new boolean[] {false, true})
-            ok &= test(proto, eventService);
-        return ok;
-    }
-
-    private static boolean test(String proto, boolean eventService)
-            throws Exception {
-        System.out.println("Testing for proto " + proto + " with" +
-                (eventService ? "" : "out") + " Event Service");
+        System.out.println("Testing for proto " + proto);
 
         boolean ok = true;
 
@@ -145,8 +136,6 @@ public class MissingClassTest {
         Map serverMap = new HashMap();
         serverMap.put(JMXConnectorServerFactory.DEFAULT_CLASS_LOADER,
                       serverLoader);
-        serverMap.put(RMIConnectorServer.DELEGATE_TO_EVENT_SERVICE,
-                Boolean.toString(eventService));
 
         // make sure no auto-close at server side
         serverMap.put("jmx.remote.x.server.connection.timeout", "888888888");
