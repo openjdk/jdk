@@ -78,11 +78,13 @@ bool PhaseChaitin::may_be_copy_of_callee( Node *def ) const {
 // Helper function for yank_if_dead
 int PhaseChaitin::yank( Node *old, Block *current_block, Node_List *value, Node_List *regnd ) {
   int blk_adjust=0;
-  Block *oldb = _cfg._bbs[old->_idx];
+  Block *oldb = _cfg.get_block_for_node(old);
   oldb->find_remove(old);
   // Count 1 if deleting an instruction from the current block
-  if( oldb == current_block ) blk_adjust++;
-  _cfg._bbs.map(old->_idx,NULL);
+  if (oldb == current_block) {
+    blk_adjust++;
+  }
+  _cfg.unmap_node_from_block(old);
   OptoReg::Name old_reg = lrgs(_lrg_map.live_range_id(old)).reg();
   if( regnd && (*regnd)[old_reg]==old ) { // Instruction is currently available?
     value->map(old_reg,NULL);  // Yank from value/regnd maps
@@ -433,7 +435,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
     bool missing_some_inputs = false;
     Block *freed = NULL;
     for( j = 1; j < b->num_preds(); j++ ) {
-      Block *pb = _cfg._bbs[b->pred(j)->_idx];
+      Block *pb = _cfg.get_block_for_node(b->pred(j));
       // Remove copies along phi edges
       for( uint k=1; k<phi_dex; k++ )
         elide_copy( b->_nodes[k], j, b, *blk2value[pb->_pre_order], *blk2regnd[pb->_pre_order], false );
@@ -478,7 +480,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
     } else {
       if( !freed ) {            // Didn't get a freebie prior block
         // Must clone some data
-        freed = _cfg._bbs[b->pred(1)->_idx];
+        freed = _cfg.get_block_for_node(b->pred(1));
         Node_List &f_value = *blk2value[freed->_pre_order];
         Node_List &f_regnd = *blk2regnd[freed->_pre_order];
         for( uint k = 0; k < (uint)_max_reg; k++ ) {
@@ -488,7 +490,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
       }
       // Merge all inputs together, setting to NULL any conflicts.
       for( j = 1; j < b->num_preds(); j++ ) {
-        Block *pb = _cfg._bbs[b->pred(j)->_idx];
+        Block *pb = _cfg.get_block_for_node(b->pred(j));
         if( pb == freed ) continue; // Did self already via freelist
         Node_List &p_regnd = *blk2regnd[pb->_pre_order];
         for( uint k = 0; k < (uint)_max_reg; k++ ) {
@@ -515,8 +517,9 @@ void PhaseChaitin::post_allocate_copy_removal() {
           u = u ? NodeSentinel : x; // Capture unique input, or NodeSentinel for 2nd input
       }
       if( u != NodeSentinel ) {    // Junk Phi.  Remove
-        b->_nodes.remove(j--); phi_dex--;
-        _cfg._bbs.map(phi->_idx,NULL);
+        b->_nodes.remove(j--);
+        phi_dex--;
+        _cfg.unmap_node_from_block(phi);
         phi->replace_by(u);
         phi->disconnect_inputs(NULL, C);
         continue;

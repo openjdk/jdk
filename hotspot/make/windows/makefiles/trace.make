@@ -90,25 +90,25 @@ $(TraceOutDir)/traceTypes.hpp: $(TraceSrcDir)/trace.xml $(TraceSrcDir)/traceType
 !if "$(OPENJDK)" == "true"
 
 $(TraceOutDir)/traceEventClasses.hpp: $(TraceSrcDir)/trace.xml $(TraceSrcDir)/traceEventClasses.xsl $(XML_DEPS)
-	@echo Generating $@
+	@echo Generating OpenJDK $@
 	@$(XSLT) -IN $(TraceSrcDir)/trace.xml -XSL $(TraceSrcDir)/traceEventClasses.xsl -OUT $(TraceOutDir)/traceEventClasses.hpp
 
 !else
 
 $(TraceOutDir)/traceEventClasses.hpp: $(TraceSrcDir)/trace.xml $(TraceAltSrcDir)/traceEventClasses.xsl $(XML_DEPS)
-	@echo Generating $@
+	@echo Generating AltSrc $@
 	@$(XSLT) -IN $(TraceSrcDir)/trace.xml -XSL $(TraceAltSrcDir)/traceEventClasses.xsl -OUT $(TraceOutDir)/traceEventClasses.hpp
 
 $(TraceOutDir)/traceProducer.cpp: $(TraceSrcDir)/trace.xml $(TraceAltSrcDir)/traceProducer.xsl $(XML_DEPS)
-	@echo Generating $@
+	@echo Generating AltSrc $@
 	@$(XSLT) -IN $(TraceSrcDir)/trace.xml -XSL $(TraceAltSrcDir)/traceProducer.xsl -OUT $(TraceOutDir)/traceProducer.cpp
 
 $(TraceOutDir)/traceRequestables.hpp: $(TraceSrcDir)/trace.xml $(TraceAltSrcDir)/traceRequestables.xsl $(XML_DEPS)
-	@echo Generating $@
+	@echo Generating AltSrc $@
 	@$(XSLT) -IN $(TraceSrcDir)/trace.xml -XSL $(TraceAltSrcDir)/traceRequestables.xsl -OUT $(TraceOutDir)/traceRequestables.hpp
 
 $(TraceOutDir)/traceEventControl.hpp: $(TraceSrcDir)/trace.xml $(TraceAltSrcDir)/traceEventControl.xsl $(XML_DEPS)
-	@echo Generating $@
+	@echo Generating AltSrc $@
 	@$(XSLT) -IN $(TraceSrcDir)/trace.xml -XSL $(TraceAltSrcDir)/traceEventControl.xsl -OUT $(TraceOutDir)/traceEventControl.hpp
 
 !endif

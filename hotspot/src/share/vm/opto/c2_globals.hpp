@@ -179,6 +179,9 @@
   product_pd(intx,  LoopUnrollLimit,                                        \
           "Unroll loop bodies with node count less than this")              \
                                                                             \
+  product(intx,  LoopMaxUnroll, 16,                                         \
+          "Maximum number of unrolls for main loop")                        \
+                                                                            \
   product(intx,  LoopUnrollMin, 4,                                          \
           "Minimum number of unroll loop bodies before checking progress"   \
           "of rounds of unroll,optimize,..")                                \
