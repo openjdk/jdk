@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,7 +252,7 @@ inline void CMTask::push(oop obj) {
     assert(success, "invariant");
   }
 
-  statsOnly( int tmp_size = _task_queue->size();
+  statsOnly( size_t tmp_size = (size_t)_task_queue->size();
              if (tmp_size > _local_max_size) {
                _local_max_size = tmp_size;
              }

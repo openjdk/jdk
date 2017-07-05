@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -176,21 +176,13 @@ ARCHFLAG/aarch64 =
 ARCHFLAG/ia64    =
 ARCHFLAG/sparc   = -m32 -mcpu=v9
 ARCHFLAG/sparcv9 = -m64 -mcpu=v9
-ARCHFLAG/arm     =  -fsigned-char
 ARCHFLAG/zero    = $(ZERO_ARCHFLAG)
-ifndef E500V2
-ARCHFLAG/ppc     =  -mcpu=powerpc
-endif
 ARCHFLAG/ppc64   =  -m64
 
 CFLAGS     += $(ARCHFLAG)
 AOUT_FLAGS += $(ARCHFLAG)
 LFLAGS     += $(ARCHFLAG)
 ASFLAGS    += $(ARCHFLAG)
-
-ifdef E500V2
-CFLAGS += -DE500V2
-endif
 
 # Use C++ Interpreter
 ifdef CC_INTERP
@@ -391,3 +383,5 @@ endif
 ifndef USE_SUNCC
   CFLAGS += -fno-omit-frame-pointer
 endif
+
+-include $(HS_ALT_MAKE)/linux/makefiles/gcc.make

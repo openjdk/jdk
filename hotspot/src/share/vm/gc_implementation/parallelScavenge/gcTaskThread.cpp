@@ -53,7 +53,7 @@ GCTaskThread::GCTaskThread(GCTaskManager* manager,
     guarantee(_time_stamps != NULL, "Sanity");
   }
   set_id(which);
-  set_name("GC task thread#%d (ParallelGC)", which);
+  set_name("ParGC Thread#%d", which);
 }
 
 GCTaskThread::~GCTaskThread() {

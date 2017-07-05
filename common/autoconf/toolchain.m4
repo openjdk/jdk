@@ -763,7 +763,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_JTREG],
       BASIC_FIXUP_PATH([JT_HOME])
 
       # jtreg win32 script works for everybody
-      JTREGEXE="$JT_HOME/win32/bin/jtreg"
+      JTREGEXE="$JT_HOME/bin/jtreg"
 
       if test ! -f "$JTREGEXE"; then
         AC_MSG_ERROR([JTReg executable does not exist: $JTREGEXE])
