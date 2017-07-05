@@ -335,7 +335,6 @@ public class ObjectHeap {
           }
           if (obj == null) {
              //Find the object size using Printezis bits and skip over
-             System.err.println("Finding object size using Printezis bits and skipping over...");
              long size = 0;
 
              if ( (cmsSpaceOld != null) && cmsSpaceOld.contains(handle) ){
