@@ -46,6 +46,7 @@ class WindowsFileAttributeViews {
 
         @Override
         public WindowsFileAttributes readAttributes() throws IOException {
+            file.checkRead();
             try {
                 return WindowsFileAttributes.get(file, followLinks);
             } catch (WindowsException x) {

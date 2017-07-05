@@ -39,6 +39,8 @@ class Atomic : AllStatic {
   static void store_ptr(intptr_t store_value, volatile intptr_t* dest);
   static void store_ptr(void*    store_value, volatile void*     dest);
 
+  static jlong load(volatile jlong* src);
+
   // Atomically add to a location, return updated value
   static jint     add    (jint     add_value, volatile jint*     dest);
   static intptr_t add_ptr(intptr_t add_value, volatile intptr_t* dest);

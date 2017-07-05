@@ -32,11 +32,9 @@ package java.nio.channels;
  * handler to be specified to consume the result of an asynchronous operation.
  * The {@link #completed completed} method is invoked when the I/O operation
  * completes successfully. The {@link #failed failed} method is invoked if the
- * I/O operations fails. The {@link #cancelled cancelled} method is invoked when
- * the I/O operation is cancelled by invoking the {@link
- * java.util.concurrent.Future#cancel cancel} method. The implementations of
- * these methods should complete in a timely manner so as to avoid keeping the
- * invoking thread from dispatching to other completion handlers.
+ * I/O operations fails. The implementations of these methods should complete
+ * in a timely manner so as to avoid keeping the invoking thread from dispatching
+ * to other completion handlers.
  *
  * @param   <V>     The result type of the I/O operation
  * @param   <A>     The type of the object attached to the I/O operation
@@ -65,13 +63,4 @@ public interface CompletionHandler<V,A> {
      *          The object attached to the I/O operation when it was initiated.
      */
     void failed(Throwable exc, A attachment);
-
-    /**
-     * Invoked when an operation is cancelled by invoking the {@link
-     * java.util.concurrent.Future#cancel cancel} method.
-     *
-     * @param   attachment
-     *          The object attached to the I/O operation when it was initiated.
-     */
-    void cancelled(A attachment);
 }

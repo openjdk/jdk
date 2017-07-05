@@ -80,6 +80,7 @@ typeArrayOop typeArrayKlass::allocate(int length, TRAPS) {
       assert(t->is_parsable(), "Don't publish unless parsable");
       return t;
     } else {
+      report_java_out_of_memory("Requested array size exceeds VM limit");
       THROW_OOP_0(Universe::out_of_memory_error_array_size());
     }
   } else {

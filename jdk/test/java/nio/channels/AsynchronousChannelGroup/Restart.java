@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4607272
+ * @bug 4607272 6842687
  * @summary Unit test for AsynchronousChannelGroup
  * @build Restart
  * @run main/othervm -XX:-UseVMInterruptibleIO Restart
@@ -110,8 +110,6 @@ public class Restart {
                     }
                 }
                 public void failed(Throwable exc, Void att) {
-                }
-                public void cancelled(Void att) {
                 }
             });
 

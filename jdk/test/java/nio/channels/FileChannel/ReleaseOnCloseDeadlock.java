@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6543863
+ * @bug 6543863 6842687
  * @summary Try to cause a deadlock between (Asynchronous)FileChannel.close
  *   and FileLock.release
  */
@@ -56,7 +56,7 @@ public class ReleaseOnCloseDeadlock {
         AsynchronousFileChannel ch = AsynchronousFileChannel.open(file, READ, WRITE);
         for (int i=0; i<LOCK_COUNT; i++) {
             try {
-                locks[i] = ch.lock(i, 1, true, null, null).get();
+                locks[i] = ch.lock(i, 1, true).get();
             } catch (InterruptedException x) {
                 throw new RuntimeException(x);
             } catch (ExecutionException x) {

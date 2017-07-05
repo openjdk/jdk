@@ -34,13 +34,13 @@ import java.io.IOException;
  * attachment of an additional arbitrary context object and a timer task.
  */
 
-final class PendingFuture<V,A>
-    extends AbstractFuture<V,A>
-{
+final class PendingFuture<V,A> implements Future<V> {
     private static final CancellationException CANCELLED =
         new CancellationException();
 
+    private final AsynchronousChannel channel;
     private final CompletionHandler<V,? super A> handler;
+    private final A attachment;
 
     // true if result (or exception) is available
     private volatile boolean haveResult;
@@ -56,14 +56,14 @@ final class PendingFuture<V,A>
     // optional context object
     private volatile Object context;
 
-
     PendingFuture(AsynchronousChannel channel,
                   CompletionHandler<V,? super A> handler,
                   A attachment,
                   Object context)
     {
-        super(channel, attachment);
+        this.channel = channel;
         this.handler = handler;
+        this.attachment = attachment;
         this.context = context;
     }
 
@@ -71,12 +71,29 @@ final class PendingFuture<V,A>
                   CompletionHandler<V,? super A> handler,
                   A attachment)
     {
-        super(channel, attachment);
+        this.channel = channel;
         this.handler = handler;
+        this.attachment = attachment;
+    }
+
+    PendingFuture(AsynchronousChannel channel) {
+        this(channel, null, null);
+    }
+
+    PendingFuture(AsynchronousChannel channel, Object context) {
+        this(channel, null, null, context);
+    }
+
+    AsynchronousChannel channel() {
+        return channel;
     }
 
     CompletionHandler<V,? super A> handler() {
         return handler;
+    }
+
+    A attachment() {
+        return attachment;
     }
 
     void setContext(Object context) {
@@ -113,36 +130,45 @@ final class PendingFuture<V,A>
     /**
      * Sets the result, or a no-op if the result or exception is already set.
      */
-    boolean setResult(V res) {
+    void setResult(V res) {
         synchronized (this) {
             if (haveResult)
-                return false;
+                return;
             result = res;
             haveResult = true;
             if (timeoutTask != null)
                 timeoutTask.cancel(false);
             if (latch != null)
                 latch.countDown();
-            return true;
         }
     }
 
     /**
      * Sets the result, or a no-op if the result or exception is already set.
      */
-    boolean setFailure(Throwable x) {
+    void setFailure(Throwable x) {
         if (!(x instanceof IOException) && !(x instanceof SecurityException))
             x = new IOException(x);
         synchronized (this) {
             if (haveResult)
-                return false;
+                return;
             exc = x;
             haveResult = true;
             if (timeoutTask != null)
                 timeoutTask.cancel(false);
             if (latch != null)
                 latch.countDown();
-            return true;
+        }
+    }
+
+    /**
+     * Sets the result
+     */
+    void setResult(V res, Throwable x) {
+        if (x == null) {
+            setResult(res);
+        } else {
+            setFailure(x);
         }
     }
 
@@ -178,12 +204,10 @@ final class PendingFuture<V,A>
         return result;
     }
 
-    @Override
     Throwable exception() {
         return (exc != CANCELLED) ? exc : null;
     }
 
-    @Override
     V value() {
         return result;
     }
@@ -204,33 +228,6 @@ final class PendingFuture<V,A>
             if (haveResult)
                 return false;    // already completed
 
-            // A shutdown of the channel group will close all channels and
-            // shutdown the executor. To ensure that the completion handler
-            // is executed we queue the task while holding the lock.
-            if (handler != null) {
-                prepareForWait();
-                Runnable cancelTask = new Runnable() {
-                    public void run() {
-                        while (!haveResult) {
-                            try {
-                                latch.await();
-                            } catch (InterruptedException ignore) { }
-                        }
-                        handler.cancelled(attachment());
-                    }
-                };
-                AsynchronousChannel ch = channel();
-                if (ch instanceof Groupable) {
-                    ((Groupable)ch).group().executeOnPooledThread(cancelTask);
-                } else {
-                    if (ch instanceof AsynchronousFileChannelImpl) {
-                        ((AsynchronousFileChannelImpl)ch).executor().execute(cancelTask);
-                    } else {
-                        throw new AssertionError("Should not get here");
-                    }
-                }
-            }
-
             // notify channel
             if (channel() instanceof Cancellable)
                 ((Cancellable)channel()).onCancel(this);
@@ -249,7 +246,7 @@ final class PendingFuture<V,A>
             } catch (IOException ignore) { }
         }
 
-        // release waiters (this also releases the invoker)
+        // release waiters
         if (latch != null)
             latch.countDown();
         return true;

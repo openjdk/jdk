@@ -388,9 +388,9 @@ abstract class ISO2022
 
     protected static class Encoder extends CharsetEncoder {
         private final Surrogate.Parser sgp = new Surrogate.Parser();
-        private final byte SS2 = (byte)0x8e;
-        private final byte PLANE2 = (byte)0xA2;
-        private final byte PLANE3 = (byte)0xA3;
+        public static final byte SS2 = (byte)0x8e;
+        public static final byte PLANE2 = (byte)0xA2;
+        public static final byte PLANE3 = (byte)0xA3;
         private final byte MSB = (byte)0x80;
 
         protected final byte maximumDesignatorLength = 4;

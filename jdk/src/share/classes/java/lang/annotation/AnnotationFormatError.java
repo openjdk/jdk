@@ -28,8 +28,12 @@ package java.lang.annotation;
 /**
  * Thrown when the annotation parser attempts to read an annotation
  * from a class file and determines that the annotation is malformed.
+ * This error can be thrown by the {@linkplain
+ * java.lang.reflect.AnnotatedElement API used to read annotations
+ * reflectively}.
  *
  * @author  Josh Bloch
+ * @see     java.lang.reflect.AnnotatedElement
  * @since   1.5
  */
 public class AnnotationFormatError extends Error {
