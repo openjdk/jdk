@@ -63,7 +63,7 @@ BOOT_MODULES += \
     jdk.net \
     jdk.sctp \
     jdk.unsupported \
-    jdk.vm.ci \
+    jdk.internal.vm.ci \
     #
 
 # to be deprivileged
@@ -114,7 +114,7 @@ PLATFORM_MODULES += \
     jdk.scripting.nashorn \
     jdk.security.auth \
     jdk.security.jgss \
-    jdk.vm.compiler \
+    jdk.internal.vm.compiler \
     jdk.xml.dom \
     jdk.zipfs \
     #
@@ -147,7 +147,7 @@ endif
 # Filter out Graal specific modules if Graal build is disabled
 
 ifeq ($(INCLUDE_GRAAL), false)
-  MODULES_FILTER += jdk.vm.compiler
+  MODULES_FILTER += jdk.internal.vm.compiler
 endif
 
 ################################################################################

@@ -53,16 +53,14 @@ import jdk.internal.vm.annotation.ReservedStackAccess;
  *
  * <dl>
  * <dt><b><i>Non-fair mode (default)</i></b>
- * <dd style="font-family:'DejaVu Sans', Arial, Helvetica, sans-serif">
- * When constructed as non-fair (the default), the order of entry
+ * <dd>When constructed as non-fair (the default), the order of entry
  * to the read and write lock is unspecified, subject to reentrancy
  * constraints.  A nonfair lock that is continuously contended may
  * indefinitely postpone one or more reader or writer threads, but
  * will normally have higher throughput than a fair lock.
  *
  * <dt><b><i>Fair mode</i></b>
- * <dd style="font-family:'DejaVu Sans', Arial, Helvetica, sans-serif">
- * When constructed as fair, threads contend for entry using an
+ * <dd>When constructed as fair, threads contend for entry using an
  * approximately arrival-order policy. When the currently held lock
  * is released, either the longest-waiting single writer thread will
  * be assigned the write lock, or if there is a group of reader threads

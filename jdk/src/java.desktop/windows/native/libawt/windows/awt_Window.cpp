@@ -156,8 +156,10 @@ struct SetFullScreenExclusiveModeStateStruct {
 // struct for _WindowDPIChange() method
 struct ScaleStruct {
     jobject window;
+    jint prevScreen;
     jfloat prevScaleX;
     jfloat prevScaleY;
+    jint screen;
     jfloat scaleX;
     jfloat scaleY;
 };
@@ -236,6 +238,8 @@ AwtWindow::AwtWindow() {
     m_alwaysOnTop = false;
 
     fullScreenExclusiveModeState = FALSE;
+    m_winSizeMove = FALSE;
+    prevScaleRec = { -1, -1, -1 };
 }
 
 AwtWindow::~AwtWindow()
@@ -1761,9 +1765,6 @@ MsgRouting AwtWindow::WmMove(int x, int y)
     (env)->SetIntField(peer, AwtWindow::sysYID, ScaleDownY(rect.top));
     SendComponentEvent(java_awt_event_ComponentEvent_COMPONENT_MOVED);
 
-    prevX = rect.left;
-    prevY = rect.top;
-
     env->DeleteLocalRef(target);
     return AwtComponent::WmMove(x, y);
 }
@@ -1800,6 +1801,19 @@ MsgRouting AwtWindow::WmSizing()
     JNU_CallMethodByName(env, NULL, peer, "dynamicallyLayoutContainer", "()V");
     DASSERT(!safe_ExceptionOccurred(env));
 
+    return mrDoDefault;
+}
+
+MsgRouting AwtWindow::WmEnterSizeMove()
+{
+    m_winSizeMove = TRUE;
+    return mrDoDefault;
+}
+
+MsgRouting AwtWindow::WmExitSizeMove()
+{
+    m_winSizeMove = FALSE;
+    CheckWindowDPIChange();
     return mrDoDefault;
 }
 
@@ -2064,8 +2078,6 @@ void AwtWindow::CheckIfOnNewScreen() {
     int curScrn = GetScreenImOn();
 
     if (curScrn != m_screenNum) {  // we've been moved
-        int prevScrn = m_screenNum;
-
         JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
         jclass peerCls = env->GetObjectClass(m_peerObject);
@@ -2081,79 +2093,71 @@ void AwtWindow::CheckIfOnNewScreen() {
         }
 
         env->CallVoidMethod(m_peerObject, draggedID);
-
         m_screenNum = curScrn;
-        WindowDPIChange(prevScrn, curScrn);
 
         env->DeleteLocalRef(peerCls);
     }
 }
 
-int Disposition(int x1, int x2, int x) {
-    return x < x1 ? -1 : (x > x2 ? 1 : 0);
-}
+void AwtWindow::CheckWindowDPIChange() {
 
-void AwtWindow::WindowDPIChange(int prevScreen, int screen) {
-    Devices::InstanceAccess devices;
-    AwtWin32GraphicsDevice* prevDevice = devices->GetDevice(prevScreen);
-    AwtWin32GraphicsDevice* device = devices->GetDevice(screen);
+    if (prevScaleRec.screen != -1 ) {
+        float prevScaleX = prevScaleRec.scaleX;
+        float prevScaleY = prevScaleRec.scaleY;
 
-    if (prevDevice && device) {
-        RECT prevBounds;
-        RECT bounds;
-
-        if (MonitorBounds(prevDevice->GetMonitor(), &prevBounds)
-            && MonitorBounds(device->GetMonitor(), &bounds)) {
-            int x;
-            int y;
-            int dx;
-            int dy;
-            RECT rect;
-
-            ::GetWindowRect(GetHWnd(), &rect);
-            x = rect.left;
-            y = rect.top;
-            dx = x - prevX;
-            dy = y - prevY;
-
-            if (dx != 0 || dy != 0) {
-                int w = rect.right - rect.left;
-                int h = rect.bottom - rect.top;
-                int dispX = Disposition(prevBounds.left, prevBounds.right,
-                    (bounds.left + bounds.right) / 2);
-                int dispY = Disposition(prevBounds.top, prevBounds.bottom,
-                    (bounds.top + bounds.bottom) / 2);
-
-                w = w * device->GetScaleX() / prevDevice->GetScaleX();
-                h = h * device->GetScaleY() / prevDevice->GetScaleY();
-
-                prevX = x;
-                prevY = y;
-
-                if (dx != 0 && dispX != 0) {
-                    x = dispX > 0 ? bounds.left : bounds.right - w;
-                    y = min(y, bounds.top);
-                    ReshapeNoScale(x, y, w, h);
-                } else if (dy != 0 && dispY != 0) {
-                    x = max(x, bounds.left);
-                    y = dispY > 0 ? bounds.top : bounds.bottom - h;
-                    ReshapeNoScale(x, y, w, h);
+        if (prevScaleX >= 1 && prevScaleY >= 1) {
+            Devices::InstanceAccess devices;
+            AwtWin32GraphicsDevice* device = devices->GetDevice(m_screenNum);
+            if (device) {
+                float scaleX = device->GetScaleX();
+                float scaleY = device->GetScaleY();
+                if (prevScaleX != scaleX || prevScaleY != scaleY) {
+                    WindowDPIChange(prevScaleRec.screen, prevScaleX, prevScaleY,
+                                    m_screenNum, scaleX, scaleY);
                 }
             }
         }
+        prevScaleRec.screen = -1;
     }
 }
 
-void AwtWindow::WindowDPIChange(float prevScaleX, float prevScaleY, float scaleX, float scaleY) {
+void AwtWindow::WindowDPIChange(int prevScreen,
+                                float prevScaleX, float prevScaleY,
+                                int screen, float scaleX,
+                                float scaleY)
+{
+    int x;
+    int y;
     int w;
     int h;
     RECT rect;
 
-    ::GetWindowRect(GetHWnd(), &rect);
+    if (prevScaleX == scaleX && prevScaleY == scaleY) {
+        return;
+    }
 
+    ::GetWindowRect(GetHWnd(), &rect);
+    x = rect.left;
+    y = rect.top;
     w = (rect.right - rect.left) * scaleX / prevScaleX;
     h = (rect.bottom - rect.top) * scaleY / prevScaleY;
-    ReshapeNoScale(rect.left, rect.top, w, h);
+
+    if (prevScreen != screen) {
+        Devices::InstanceAccess devices;
+        AwtWin32GraphicsDevice* device = devices->GetDevice(screen);
+        if (device) {
+            RECT bounds;
+            if (MonitorBounds(device->GetMonitor(), &bounds)) {
+                x = x < bounds.left ? bounds.left : x;
+                y = y < bounds.top ? bounds.top : y;
+
+                x = (x + w > bounds.right) ? bounds.right - w : x;
+                y = (y + h > bounds.bottom) ? bounds.bottom - h : y;
+            }
+        }
+    }
+
+    ReshapeNoScale(x, y, w, h);
 }
 
 BOOL AwtWindow::IsFocusableWindow() {
@@ -3191,8 +3195,10 @@ void AwtWindow::_WindowDPIChange(void* param)
 
     ScaleStruct *ss = (ScaleStruct *)param;
     jobject self = ss->window;
+    jint prevScreen = ss->prevScreen;
     jfloat prevScaleX = ss->prevScaleX;
     jfloat prevScaleY = ss->prevScaleY;
+    jint screen = ss->screen;
     jfloat scaleX = ss->scaleX;
     jfloat scaleY = ss->scaleY;
 
@@ -3200,7 +3206,17 @@ void AwtWindow::_WindowDPIChange(void* param)
     JNI_CHECK_PEER_GOTO(self, ret);
     AwtWindow *window = (AwtWindow *)pData;
 
-    window->WindowDPIChange(prevScaleX, prevScaleY, scaleX, scaleY);
+    if (window->m_winSizeMove) {
+        if (window->prevScaleRec.screen == -1) {
+            window->prevScaleRec.screen = prevScreen;
+            window->prevScaleRec.scaleX = prevScaleX;
+            window->prevScaleRec.scaleY = prevScaleY;
+        }
+    }
+    else {
+        window->WindowDPIChange(prevScreen, prevScaleX, prevScaleY,
+                                screen, scaleX, scaleY);
+    }
 
 ret:
     env->DeleteGlobalRef(self);
@@ -3908,18 +3924,21 @@ Java_sun_awt_windows_WWindowPeer_repositionSecurityWarning(JNIEnv *env,
 /*
 * Class:     sun_awt_windows_WWindowPeer
 * Method:    windowDPIChange
-* Signature: (FFFF)V
+* Signature: (IFFIFF)V
 */
 JNIEXPORT void JNICALL
 Java_sun_awt_windows_WWindowPeer_windowDPIChange(JNIEnv *env, jobject self,
-    jfloat prevScaleX, jfloat prevScaleY, jfloat scaleX, jfloat scaleY)
+    jint prevScreen, jfloat prevScaleX, jfloat prevScaleY,
+    jint screen, jfloat scaleX, jfloat scaleY)
 {
     TRY;
 
     ScaleStruct *ss = new ScaleStruct;
     ss->window = env->NewGlobalRef(self);
+    ss->prevScreen = prevScreen;
     ss->prevScaleX = prevScaleX;
     ss->prevScaleY = prevScaleY;
+    ss->screen = screen;
     ss->scaleX = scaleX;
     ss->scaleY = scaleY;
 
