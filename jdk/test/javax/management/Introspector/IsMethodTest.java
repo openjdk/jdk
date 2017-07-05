@@ -26,7 +26,7 @@
  * @bug 4947001 4954369 4954409 4954410
  * @summary Test that "Boolean isX()" and "int isX()" define operations
  * @author Eamonn McManus
- * @modules java.management
+ *
  * @run clean IsMethodTest
  * @run build IsMethodTest
  * @run main IsMethodTest

@@ -68,19 +68,19 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * (word, line, sentence, and so on). You must use a different iterator
  * for each unit boundary analysis you wish to perform.
  *
- * <p><a name="line"></a>
+ * <p><a id="line"></a>
  * Line boundary analysis determines where a text string can be
  * broken when line-wrapping. The mechanism correctly handles
  * punctuation and hyphenated words. Actual line breaking needs
  * to also consider the available line width and is handled by
  * higher-level software.
  *
- * <p><a name="sentence"></a>
+ * <p><a id="sentence"></a>
  * Sentence boundary analysis allows selection with correct interpretation
  * of periods within numbers and abbreviations, and trailing punctuation
  * marks such as quotation marks and parentheses.
  *
- * <p><a name="word"></a>
+ * <p><a id="word"></a>
  * Word boundary analysis is used by search and replace functions, as
  * well as within text editing applications that allow the user to
  * select words with a double click. Word selection provides correct
@@ -88,7 +88,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * words. Characters that are not part of a word, such as symbols
  * or punctuation marks, have word-breaks on both sides.
  *
- * <p><a name="character"></a>
+ * <p><a id="character"></a>
  * Character boundary analysis allows users to interact with characters
  * as they expect to, for example, when moving the cursor through a text
  * string. Character boundary analysis provides correct navigation

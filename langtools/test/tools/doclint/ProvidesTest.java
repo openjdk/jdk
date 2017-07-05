@@ -10,20 +10,20 @@
 /**
  * Invalid use of provides in class documentation.
  *
- * @provides UsesTest
+ * @provides NotFound
  */
 public class ProvidesTest {
     /**
      * Invalid use of provides in field documentation
      *
-     * @provides UsesTest Test description.
+     * @provides NotFound Test description.
      */
     public int invalid_param;
 
     /**
      * Invalid use of provides in method documentation
      *
-     * @provides UsesTest Test description.
+     * @provides NotFound Test description.
      */
     public class InvalidParam { }
 }
