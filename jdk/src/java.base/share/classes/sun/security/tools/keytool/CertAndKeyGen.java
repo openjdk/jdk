@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -158,8 +158,8 @@ public final class CertAndKeyGen {
         // publicKey's format must be X.509 otherwise
         // the whole CertGen part of this class is broken.
         if (!"X.509".equalsIgnoreCase(publicKey.getFormat())) {
-            throw new IllegalArgumentException("publicKey's is not X.509, but "
-                    + publicKey.getFormat());
+            throw new IllegalArgumentException("Public key format is "
+                + publicKey.getFormat() + ", must be X.509");
         }
     }
 
