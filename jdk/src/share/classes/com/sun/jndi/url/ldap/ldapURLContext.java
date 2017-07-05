@@ -562,7 +562,7 @@ final public class ldapURLContext
     }
 
     // Search using the LDAP URL in name.
-    // LDAP URL query components override the search argments.
+    // LDAP URL query components override the search arguments.
     private NamingEnumeration<SearchResult> searchUsingURL(String name)
         throws NamingException {
 

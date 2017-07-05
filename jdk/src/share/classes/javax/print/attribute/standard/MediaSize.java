@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,6 @@ import javax.print.attribute.Attribute;
  * to find the physical dimensions of the MediaSizeName instances
  * enumerated in this API. This is useful for clients which need this
  * information to format {@literal &} paginate printing.
- * <P>
  *
  * @author  Phil Race, Alan Kaminsky
  */

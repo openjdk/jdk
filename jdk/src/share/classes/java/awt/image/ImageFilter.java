@@ -225,7 +225,7 @@ public class ImageFilter implements ImageConsumer, Cloneable {
      *
      * <li>
      * Override the method to simply send the data.
-     * This is appropriate if the filter can handle the request itself &#151;
+     * This is appropriate if the filter can handle the request itself &#8212;
      * for example,
      * if the generated pixels have been saved in some sort of buffer.
      *

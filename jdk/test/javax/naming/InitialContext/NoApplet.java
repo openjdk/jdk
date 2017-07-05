@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,11 @@ import javax.naming.*;
 import java.util.Hashtable;
 
 public class NoApplet {
+    @SuppressWarnings("deprecation")
     public static void main(String[] args) throws NamingException {
-         Hashtable<Object,Object> env = new Hashtable<>();
-         env.put(Context.APPLET, new Object());
-         try {
-             Context ctxt = new InitialContext(env);
-             throw new RuntimeException("ClassCastException expected");
-         } catch (ClassCastException expected) { }
+        Hashtable<Object,Object> env = new Hashtable<>();
+        env.put(Context.APPLET, new Object());
+        Context ctxt = new InitialContext(env);
+        ctxt.close();
     }
 }

@@ -49,7 +49,7 @@ class ExprExpression extends UnaryExpression {
      * Check a condition.  We must pass it on to our unparenthesised form.
      */
     public void checkCondition(Environment env, Context ctx, Vset vset,
-                               Hashtable exp, ConditionVars cvars) {
+                               Hashtable<Object, Object> exp, ConditionVars cvars) {
         right.checkCondition(env, ctx, vset, exp, cvars);
         type = right.type;
     }
@@ -60,7 +60,7 @@ class ExprExpression extends UnaryExpression {
      * (Part of fix for 4090372)
      */
     public Vset checkAssignOp(Environment env, Context ctx,
-                              Vset vset, Hashtable exp, Expression outside) {
+                              Vset vset, Hashtable<Object, Object> exp, Expression outside) {
         vset = right.checkAssignOp(env, ctx, vset, exp, outside);
         type = right.type;
         return vset;
@@ -80,7 +80,7 @@ class ExprExpression extends UnaryExpression {
     // going to clammer for this one.
     //
     // public Vset checkLHS(Environment env, Context ctx,
-    //     Vset vset, Hashtable exp) {
+    //     Vset vset, Hashtable<Object, Object> exp) {
     //     vset = right.check(env, ctx, vset, exp);
     //     type = right.type;
     //     return vset;

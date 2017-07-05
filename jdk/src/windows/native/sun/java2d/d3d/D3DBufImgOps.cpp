@@ -201,6 +201,9 @@ D3DBufImgOps_EnableLookupOp(D3DContext *d3dc,
     int i;
     jint flags = 0;
 
+    for (i = 0; i < 4; i++) {
+        bands[i] = NULL;
+    }
     J2dTraceLn4(J2D_TRACE_INFO,
                 "D3DBufImgOps_EnableLookupOp: short=%d num=%d len=%d off=%d",
                 shortData, numBands, bandLength, offset);

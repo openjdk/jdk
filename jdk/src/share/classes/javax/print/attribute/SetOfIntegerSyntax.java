@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,6 @@ import java.util.Vector;
  * Class SetOfIntegerSyntax has operations to return the set's members in
  * canonical array form, to test whether a given integer is a member of the
  * set, and to iterate through the members of the set.
- * <P>
  *
  * @author  David Mendenhall
  * @author  Alan Kaminsky

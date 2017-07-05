@@ -1088,7 +1088,7 @@ void GenCollectedHeap::prepare_for_compaction() {
   guarantee(_n_gens = 2, "Wrong number of generations");
   Generation* old_gen = _gens[1];
   // Start by compacting into same gen.
-  CompactPoint cp(old_gen, NULL, NULL);
+  CompactPoint cp(old_gen);
   old_gen->prepare_for_compaction(&cp);
   Generation* young_gen = _gens[0];
   young_gen->prepare_for_compaction(&cp);

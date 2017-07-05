@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -470,10 +470,7 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      * code is not necessarily equivalent to the summation computation
      * done by this method.
      *
-     * <p>If any stream element is a NaN or the sum is at any point a NaN
-     * then the sum will be NaN.
-     *
-     * The value of a floating-point sum is a function both
+     * <p>The value of a floating-point sum is a function both
      * of the input values as well as the order of addition
      * operations. The order of addition operations of this method is
      * intentionally not defined to allow for implementation
@@ -484,6 +481,44 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      * summation or other technique to reduce the error bound in the
      * numerical sum compared to a simple summation of {@code double}
      * values.
+     *
+     * Because of the unspecified order of operations and the
+     * possibility of using differing summation schemes, the output of
+     * this method may vary on the same input elements.
+     *
+     * <p>Various conditions can result in a non-finite sum being
+     * computed. This can occur even if the all the elements
+     * being summed are finite. If any element is non-finite,
+     * the sum will be non-finite:
+     *
+     * <ul>
+     *
+     * <li>If any element is a NaN, then the final sum will be
+     * NaN.
+     *
+     * <li>If the elements contain one or more infinities, the
+     * sum will be infinite or NaN.
+     *
+     * <ul>
+     *
+     * <li>If the elements contain infinities of opposite sign,
+     * the sum will be NaN.
+     *
+     * <li>If the elements contain infinities of one sign and
+     * an intermediate sum overflows to an infinity of the opposite
+     * sign, the sum may be NaN.
+     *
+     * </ul>
+     *
+     * </ul>
+     *
+     * It is possible for intermediate sums of finite values to
+     * overflow into opposite-signed infinities; if that occurs, the
+     * final sum will be NaN even if the elements are all
+     * finite.
+     *
+     * If all the elements are zero, the sign of zero is
+     * <em>not</em> guaranteed to be preserved in the final sum.
      *
      * <p>This is a <a href="package-summary.html#StreamOps">terminal
      * operation</a>.
@@ -555,15 +590,9 @@ public interface DoubleStream extends BaseStream<Double, DoubleStream> {
      * mean of elements of this stream, or an empty optional if this
      * stream is empty.
      *
-     * If any recorded value is a NaN or the sum is at any point a NaN
-     * then the average will be NaN.
-     *
-     * <p>The average returned can vary depending upon the order in
-     * which values are recorded.
-     *
-     * This method may be implemented using compensated summation or
-     * other technique to reduce the error bound in the {@link #sum
-     * numerical sum} used to compute the average.
+     * <p>The computed average can vary numerically and have the
+     * special case behavior as computing the sum; see {@link #sum}
+     * for details.
      *
      *  <p>The average is a special case of a <a
      *  href="package-summary.html#Reduction">reduction</a>.

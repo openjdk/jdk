@@ -1145,7 +1145,7 @@ public class CNCtx implements javax.naming.Context {
 
         // Never destroy an orb in CNCtx.
         // The orb we have is either the shared/default orb, or one passed in to a constructor
-        // from elsewhere, so that orb is somebody else's reponsibility.
+        // from elsewhere, so that orb is somebody else's responsibility.
     }
 
     protected void finalize() {

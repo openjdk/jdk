@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -334,8 +334,8 @@ public interface LdapContext extends DirContext {
      * qualified class names of factory classes that will create a control
      * given another control. See
      * <tt>ControlFactory.getControlInstance()</tt> for details.
-     * This property may be specified in the environment, an applet
-     * parameter, a system property, or one or more resource files.
+     * This property may be specified in the environment, a system property,
+     * or one or more resource files.
      *<p>
      * The value of this constant is "java.naming.factory.control".
      *

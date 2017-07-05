@@ -2556,7 +2556,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
             if (caretPos != dot) {
                 // the caret moved
                 firePropertyChange(ACCESSIBLE_CARET_PROPERTY,
-                    new Integer(caretPos), new Integer(dot));
+                    caretPos, dot);
                 caretPos = dot;
 
                 try {

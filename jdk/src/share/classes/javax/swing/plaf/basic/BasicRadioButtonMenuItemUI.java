@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,12 @@ import javax.swing.border.*;
  */
 public class BasicRadioButtonMenuItemUI extends BasicMenuItemUI
 {
+    /**
+     * Returns a new instance of {@code BasicRadioButtonMenuItemUI}.
+     *
+     * @param b a component
+     * @return a new instance of {@code BasicRadioButtonMenuItemUI}
+     */
     public static ComponentUI createUI(JComponent b) {
         return new BasicRadioButtonMenuItemUI();
     }
@@ -47,6 +53,14 @@ public class BasicRadioButtonMenuItemUI extends BasicMenuItemUI
         return "RadioButtonMenuItem";
     }
 
+    /**
+     * Invoked when mouse event occurs.
+     *
+     * @param item a menu item
+     * @param e a mouse event
+     * @param path an array of {@code MenuElement}
+     * @param manager an instance of {@code MenuSelectionManager}
+     */
     public void processMouseEvent(JMenuItem item,MouseEvent e,MenuElement path[],MenuSelectionManager manager) {
         Point p = e.getPoint();
         if(p.x >= 0 && p.x < item.getWidth() &&

@@ -192,18 +192,18 @@ class Expression extends Node {
     /**
      * Check an expression
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         return vset;
     }
-    public Vset checkInitializer(Environment env, Context ctx, Vset vset, Type t, Hashtable exp) {
+    public Vset checkInitializer(Environment env, Context ctx, Vset vset, Type t, Hashtable<Object, Object> exp) {
         return checkValue(env, ctx, vset, exp);
     }
-    public Vset check(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset check(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         throw new CompilerError("check failed");
     }
 
     public Vset checkLHS(Environment env, Context ctx,
-                            Vset vset, Hashtable exp) {
+                            Vset vset, Hashtable<Object, Object> exp) {
         env.error(where, "invalid.lhs.assignment");
         type = Type.tError;
         return vset;
@@ -243,7 +243,7 @@ class Expression extends Node {
     }
 
     public Vset checkAssignOp(Environment env, Context ctx,
-                              Vset vset, Hashtable exp, Expression outside) {
+                              Vset vset, Hashtable<Object, Object> exp, Expression outside) {
         if (outside instanceof IncDecExpression)
             env.error(where, "invalid.arg", opNames[outside.op]);
         else
@@ -266,7 +266,7 @@ class Expression extends Node {
      * and act appropriately to verify the full package name.
      * @arg loc the expression containing the ambiguous expression
      */
-    public Vset checkAmbigName(Environment env, Context ctx, Vset vset, Hashtable exp,
+    public Vset checkAmbigName(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp,
                                UnaryExpression loc) {
         return checkValue(env, ctx, vset, exp);
     }
@@ -277,7 +277,7 @@ class Expression extends Node {
      * the condition is false.
      */
     public ConditionVars checkCondition(Environment env, Context ctx,
-                                        Vset vset, Hashtable exp) {
+                                        Vset vset, Hashtable<Object, Object> exp) {
         ConditionVars cvars = new ConditionVars();
         checkCondition(env, ctx, vset, exp, cvars);
         return cvars;
@@ -295,7 +295,7 @@ class Expression extends Node {
      */
 
     public void checkCondition(Environment env, Context ctx,
-                               Vset vset, Hashtable exp, ConditionVars cvars) {
+                               Vset vset, Hashtable<Object, Object> exp, ConditionVars cvars) {
         cvars.vsTrue = cvars.vsFalse = checkValue(env, ctx, vset, exp);
         // unshare side effects:
         cvars.vsFalse = cvars.vsFalse.copy();
