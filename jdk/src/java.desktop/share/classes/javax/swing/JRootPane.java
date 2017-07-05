@@ -72,7 +72,7 @@ import sun.security.action.GetBooleanAction;
  * </blockquote>
  * <table style="float:right" border="0" summary="layout">
  * <tr>
- * <td align="center">
+ * <td style="text-align:center">
  * <img src="doc-files/JRootPane-2.gif"
  * alt="The following text describes this graphic." HEIGHT=386 WIDTH=349>
  * </td>

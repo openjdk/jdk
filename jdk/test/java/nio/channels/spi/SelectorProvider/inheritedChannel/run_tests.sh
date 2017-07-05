@@ -47,12 +47,7 @@ if [ -z "$TESTJAVA" ]; then
     TESTCLASSES=`pwd`
     JAVA=java
     which $JAVA
-    ${JAVA} -d64 -version > /dev/null 2<&1
-    if [ $? = 1 ]; then
 	${JAVA} -version
-    else
-	${JAVA} -d64 -version
-    fi
 else
     JAVA="${TESTJAVA}/bin/java"
 fi

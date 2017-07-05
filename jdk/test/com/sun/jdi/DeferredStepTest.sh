@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2002, 2014 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class $classname {
   static class  jj1 implements Runnable {
     public void  run() {
         int count = 0;
-        
+
         for ( int ii = 0; ii < 10; ii++) {  // line 6
             int intInPotato04 = 666;        // line 7
             ++count;                        // line 8; @1 breakpoint
@@ -65,7 +65,7 @@ public class $classname {
   static class jj2 implements Runnable {
     public void run() {
         int count2 = 0;
-        
+
         for (int ii = 0; ii < 10; ii++) {      // line 18
             String StringInPotato05 = "I am";  // line 19
             ++count2;                          // line 20; @1 breakpoint
@@ -139,7 +139,7 @@ mysetup()
 
     for ii in . $TESTSRC $TESTSRC/.. ; do
         if [ -r "$ii/ShellScaffold.sh" ] ; then
-            . $ii/ShellScaffold.sh 
+            . $ii/ShellScaffold.sh
             break
         fi
     done
@@ -157,7 +157,7 @@ This test should be run and checked manually.
 If this works right, you should see StepEvents/Breakpoint events for lines
    8, 9, 6, 7, 8, 9, 6, ....   for thread jj11
 and
-  20, 21, 18, 19, 20, 21, 18, ... for thread jj2 
+  20, 21, 18, 19, 20, 21, 18, ... for thread jj2
 
 Since both threads are running at the same time, these
 events can be intermixed.
@@ -179,5 +179,5 @@ Kill the test and rerun it if this happens.
 
 EOF
 runit
-#jdbFailIfPresent "Nothing suspended" 
+#jdbFailIfPresent "Nothing suspended"
 #pass

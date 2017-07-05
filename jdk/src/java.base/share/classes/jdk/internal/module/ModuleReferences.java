@@ -25,6 +25,7 @@
 
 package jdk.internal.module;
 
+import java.io.File;
 import java.io.IOError;
 import java.io.IOException;
 import java.io.InputStream;
@@ -226,8 +227,8 @@ class ModuleReferences {
 
         static JarFile newJarFile(Path path) {
             try {
-                return new JarFile(path.toFile(),
-                                   true,               // verify
+                return new JarFile(new File(path.toString()),
+                                   true,                       // verify
                                    ZipFile.OPEN_READ,
                                    JarFile.runtimeVersion());
             } catch (IOException ioe) {

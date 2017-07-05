@@ -698,6 +698,7 @@ void MacroAssembler::call_VM_helper(Register oop_result, address entry_point, in
 // trampolines won't be emitted.
 
 address MacroAssembler::trampoline_call(Address entry, CodeBuffer *cbuf) {
+  assert(JavaThread::current()->is_Compiler_thread(), "just checking");
   assert(entry.rspec().type() == relocInfo::runtime_call_type
          || entry.rspec().type() == relocInfo::opt_virtual_call_type
          || entry.rspec().type() == relocInfo::static_call_type
@@ -4944,34 +4945,67 @@ void MacroAssembler::arrays_equals(Register a1, Register a2,
 }
 
 
-// base:     Address of a buffer to be zeroed, 8 bytes aligned.
-// cnt:      Count in HeapWords.
-// is_large: True when 'cnt' is known to be >= BlockZeroingLowLimit.
-void MacroAssembler::zero_words(Register base, Register cnt)
+// The size of the blocks erased by the zero_blocks stub.  We must
+// handle anything smaller than this ourselves in zero_words().
+const int MacroAssembler::zero_words_block_size = 8;
+
+// zero_words() is used by C2 ClearArray patterns.  It is as small as
+// possible, handling small word counts locally and delegating
+// anything larger to the zero_blocks stub.  It is expanded many times
+// in compiled code, so it is important to keep it short.
+
+// ptr:   Address of a buffer to be zeroed.
+// cnt:   Count in HeapWords.
+//
+// ptr, cnt, rscratch1, and rscratch2 are clobbered.
+void MacroAssembler::zero_words(Register ptr, Register cnt)
 {
-  if (UseBlockZeroing) {
-    block_zero(base, cnt);
-  } else {
-    fill_words(base, cnt, zr);
+  assert(is_power_of_2(zero_words_block_size), "adjust this");
+  assert(ptr == r10 && cnt == r11, "mismatch in register usage");
+
+  BLOCK_COMMENT("zero_words {");
+  cmp(cnt, zero_words_block_size);
+  Label around, done, done16;
+  br(LO, around);
+  {
+    RuntimeAddress zero_blocks =  RuntimeAddress(StubRoutines::aarch64::zero_blocks());
+    assert(zero_blocks.target() != NULL, "zero_blocks stub has not been generated");
+    if (StubRoutines::aarch64::complete()) {
+      trampoline_call(zero_blocks);
+    } else {
+      bl(zero_blocks);
+    }
   }
+  bind(around);
+  for (int i = zero_words_block_size >> 1; i > 1; i >>= 1) {
+    Label l;
+    tbz(cnt, exact_log2(i), l);
+    for (int j = 0; j < i; j += 2) {
+      stp(zr, zr, post(ptr, 16));
+    }
+    bind(l);
+  }
+  {
+    Label l;
+    tbz(cnt, 0, l);
+    str(zr, Address(ptr));
+    bind(l);
+  }
+  BLOCK_COMMENT("} zero_words");
 }
 
-// r10 = base:   Address of a buffer to be zeroed, 8 bytes aligned.
+// base:         Address of a buffer to be zeroed, 8 bytes aligned.
 // cnt:          Immediate count in HeapWords.
-// r11 = tmp:    For use as cnt if we need to call out
-#define ShortArraySize (18 * BytesPerLong)
+#define SmallArraySize (18 * BytesPerLong)
 void MacroAssembler::zero_words(Register base, u_int64_t cnt)
 {
-  Register tmp = r11;
+  BLOCK_COMMENT("zero_words {");
   int i = cnt & 1;  // store any odd word to start
   if (i) str(zr, Address(base));
 
-  if (cnt <= ShortArraySize / BytesPerLong) {
+  if (cnt <= SmallArraySize / BytesPerLong) {
     for (; i < (int)cnt; i += 2)
       stp(zr, zr, Address(base, i * wordSize));
-  } else if (UseBlockZeroing && cnt >= (u_int64_t)(BlockZeroingLowLimit >> LogBytesPerWord)) {
-    mov(tmp, cnt);
-    block_zero(base, tmp, true);
   } else {
     const int unroll = 4; // Number of stp(zr, zr) instructions we'll unroll
     int remainder = cnt % (2 * unroll);
@@ -4992,6 +5026,51 @@ void MacroAssembler::zero_words(Register base, u_int64_t cnt)
     stp(zr, zr, Address(pre(loop_base, 2 * unroll * wordSize)));
     cbnz(cnt_reg, loop);
   }
+  BLOCK_COMMENT("} zero_words");
+}
+
+// Zero blocks of memory by using DC ZVA.
+//
+// Aligns the base address first sufficently for DC ZVA, then uses
+// DC ZVA repeatedly for every full block.  cnt is the size to be
+// zeroed in HeapWords.  Returns the count of words left to be zeroed
+// in cnt.
+//
+// NOTE: This is intended to be used in the zero_blocks() stub.  If
+// you want to use it elsewhere, note that cnt must be >= 2*zva_length.
+void MacroAssembler::zero_dcache_blocks(Register base, Register cnt) {
+  Register tmp = rscratch1;
+  Register tmp2 = rscratch2;
+  int zva_length = VM_Version::zva_length();
+  Label initial_table_end, loop_zva;
+  Label fini;
+
+  // Base must be 16 byte aligned. If not just return and let caller handle it
+  tst(base, 0x0f);
+  br(Assembler::NE, fini);
+  // Align base with ZVA length.
+  neg(tmp, base);
+  andr(tmp, tmp, zva_length - 1);
+
+  // tmp: the number of bytes to be filled to align the base with ZVA length.
+  add(base, base, tmp);
+  sub(cnt, cnt, tmp, Assembler::ASR, 3);
+  adr(tmp2, initial_table_end);
+  sub(tmp2, tmp2, tmp, Assembler::LSR, 2);
+  br(tmp2);
+
+  for (int i = -zva_length + 16; i < 0; i += 16)
+    stp(zr, zr, Address(base, i));
+  bind(initial_table_end);
+
+  sub(cnt, cnt, zva_length >> 3);
+  bind(loop_zva);
+  dc(Assembler::ZVA, base);
+  subs(cnt, cnt, zva_length >> 3);
+  add(base, base, zva_length);
+  br(Assembler::GE, loop_zva);
+  add(cnt, cnt, zva_length >> 3); // count not zeroed by DC ZVA
+  bind(fini);
 }
 
 // base:   Address of a buffer to be filled, 8 bytes aligned.
@@ -5050,69 +5129,6 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
   tbz(cnt, 0, fini);
   str(value, Address(post(base, 8)));
   bind(fini);
-}
-
-// Use DC ZVA to do fast zeroing.
-// base:   Address of a buffer to be zeroed, 8 bytes aligned.
-// cnt:    Count in HeapWords.
-// is_large: True when 'cnt' is known to be >= BlockZeroingLowLimit.
-void MacroAssembler::block_zero(Register base, Register cnt, bool is_large)
-{
-  Label small;
-  Label store_pair, loop_store_pair, done;
-  Label base_aligned;
-
-  assert_different_registers(base, cnt, rscratch1);
-  guarantee(base == r10 && cnt == r11, "fix register usage");
-
-  Register tmp = rscratch1;
-  Register tmp2 = rscratch2;
-  int zva_length = VM_Version::zva_length();
-
-  // Ensure ZVA length can be divided by 16. This is required by
-  // the subsequent operations.
-  assert (zva_length % 16 == 0, "Unexpected ZVA Length");
-
-  if (!is_large) cbz(cnt, done);
-  tbz(base, 3, base_aligned);
-  str(zr, Address(post(base, 8)));
-  sub(cnt, cnt, 1);
-  bind(base_aligned);
-
-  // Ensure count >= zva_length * 2 so that it still deserves a zva after
-  // alignment.
-  if (!is_large || !(BlockZeroingLowLimit >= zva_length * 2)) {
-    int low_limit = MAX2(zva_length * 2, (int)BlockZeroingLowLimit);
-    subs(tmp, cnt, low_limit >> 3);
-    br(Assembler::LT, small);
-  }
-
-  far_call(StubRoutines::aarch64::get_zero_longs());
-
-  bind(small);
-
-  const int unroll = 8; // Number of stp instructions we'll unroll
-  Label small_loop, small_table_end;
-
-  andr(tmp, cnt, (unroll-1) * 2);
-  sub(cnt, cnt, tmp);
-  add(base, base, tmp, Assembler::LSL, 3);
-  adr(tmp2, small_table_end);
-  sub(tmp2, tmp2, tmp, Assembler::LSL, 1);
-  br(tmp2);
-
-  bind(small_loop);
-  add(base, base, unroll * 16);
-  for (int i = -unroll; i < 0; i++)
-    stp(zr, zr, Address(base, i * 16));
-  bind(small_table_end);
-  subs(cnt, cnt, unroll * 2);
-  br(Assembler::GE, small_loop);
-
-  tbz(cnt, 0, done);
-  str(zr, Address(post(base, 8)));
-
-  bind(done);
 }
 
 // Intrinsic for sun/nio/cs/ISO_8859_1$Encoder.implEncodeISOArray and

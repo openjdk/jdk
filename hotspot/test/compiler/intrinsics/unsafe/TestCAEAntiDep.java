@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -53,7 +54,7 @@ public class TestCAEAntiDep {
     }
 
     static int m(TestCAEAntiDep test, Object expected, Object x) {
-        C old = (C)UNSAFE.compareAndExchangeObjectVolatile(test, O_OFFSET, expected, x);
+        C old = (C)UNSAFE.compareAndExchangeObject(test, O_OFFSET, expected, x);
         int res = old.f1;
         old.f1 = 0x42;
         return res;

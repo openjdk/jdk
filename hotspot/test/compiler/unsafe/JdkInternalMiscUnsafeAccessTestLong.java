@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,32 +198,32 @@ public class JdkInternalMiscUnsafeAccessTestLong {
 
         // Compare
         {
-            boolean r = UNSAFE.compareAndSwapLong(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
-            assertEquals(r, true, "success compareAndSwap long");
+            boolean r = UNSAFE.compareAndSetLong(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
+            assertEquals(r, true, "success compareAndSet long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 0xCAFEBABECAFEBABEL, "success compareAndSwap long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "success compareAndSet long value");
         }
 
         {
-            boolean r = UNSAFE.compareAndSwapLong(base, offset, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
-            assertEquals(r, false, "failing compareAndSwap long");
+            boolean r = UNSAFE.compareAndSetLong(base, offset, 0x0123456789ABCDEFL, 0xDEADBEEFDEADBEEFL);
+            assertEquals(r, false, "failing compareAndSet long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 0xCAFEBABECAFEBABEL, "failing compareAndSwap long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "failing compareAndSet long value");
         }
 
         // Advanced compare
         {
-            long r = UNSAFE.compareAndExchangeLongVolatile(base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
-            assertEquals(r, 0xCAFEBABECAFEBABEL, "success compareAndExchangeVolatile long");
+            long r = UNSAFE.compareAndExchangeLong(base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+            assertEquals(r, 0xCAFEBABECAFEBABEL, "success compareAndExchange long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 0x0123456789ABCDEFL, "success compareAndExchangeVolatile long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "success compareAndExchange long value");
         }
 
         {
-            long r = UNSAFE.compareAndExchangeLongVolatile(base, offset, 0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
-            assertEquals(r, 0x0123456789ABCDEFL, "failing compareAndExchangeVolatile long");
+            long r = UNSAFE.compareAndExchangeLong(base, offset, 0xCAFEBABECAFEBABEL, 0xDEADBEEFDEADBEEFL);
+            assertEquals(r, 0x0123456789ABCDEFL, "failing compareAndExchange long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 0x0123456789ABCDEFL, "failing compareAndExchangeVolatile long value");
+            assertEquals(x, 0x0123456789ABCDEFL, "failing compareAndExchange long value");
         }
 
         {
@@ -257,41 +257,41 @@ public class JdkInternalMiscUnsafeAccessTestLong {
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapLong(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
+                success = UNSAFE.weakCompareAndSetLongPlain(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
             }
-            assertEquals(success, true, "weakCompareAndSwap long");
+            assertEquals(success, true, "weakCompareAndSetPlain long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSwap long value");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSetPlain long value");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapLongAcquire(base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+                success = UNSAFE.weakCompareAndSetLongAcquire(base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
             }
-            assertEquals(success, true, "weakCompareAndSwapAcquire long");
+            assertEquals(success, true, "weakCompareAndSetAcquire long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSwapAcquire long");
+            assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSetAcquire long");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapLongRelease(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
+                success = UNSAFE.weakCompareAndSetLongRelease(base, offset, 0x0123456789ABCDEFL, 0xCAFEBABECAFEBABEL);
             }
-            assertEquals(success, true, "weakCompareAndSwapRelease long");
+            assertEquals(success, true, "weakCompareAndSetRelease long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSwapRelease long");
+            assertEquals(x, 0xCAFEBABECAFEBABEL, "weakCompareAndSetRelease long");
         }
 
         {
             boolean success = false;
             for (int c = 0; c < WEAK_ATTEMPTS && !success; c++) {
-                success = UNSAFE.weakCompareAndSwapLongVolatile(base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
+                success = UNSAFE.weakCompareAndSetLong(base, offset, 0xCAFEBABECAFEBABEL, 0x0123456789ABCDEFL);
             }
-            assertEquals(success, true, "weakCompareAndSwapVolatile long");
+            assertEquals(success, true, "weakCompareAndSet long");
             long x = UNSAFE.getLong(base, offset);
-            assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSwapVolatile long");
+            assertEquals(x, 0x0123456789ABCDEFL, "weakCompareAndSet long");
         }
 
         UNSAFE.putLong(base, offset, 0xCAFEBABECAFEBABEL);
@@ -324,4 +324,3 @@ public class JdkInternalMiscUnsafeAccessTestLong {
         }
     }
 }
-

@@ -33,7 +33,7 @@
  * languages and the use of entirely different input mechanisms, such as
  * handwriting recognition.
  *
- * <h2><a name="Packaging"></a>Packaging Input Methods</h2>
+ * <h2><a id="Packaging"></a>Packaging Input Methods</h2>
  * Input methods can be made available by adding them to the application's class
  * path. The main JAR file of an input method must contain the file:
  * <pre>
@@ -61,14 +61,14 @@
  * that loading of the class implementing {@code InputMethod} can be deferred
  * until actually needed.
  *
- * <h2><a name="Loading"></a>Loading Input Methods</h2>
+ * <h2><a id="Loading"></a>Loading Input Methods</h2>
  * The input method framework will usually defer loading of input  method
  * classes until they are absolutely needed. It loads only the
  * {@code InputMethodDescriptor} implementations during AWT initialization. It
  * loads an {@code InputMethod} implementation when the input method has been
  * selected.
  *
- * <h2><a name="PeeredComponents"></a>Java Input Methods and Peered Text
+ * <h2><a id="PeeredComponents"></a>Java Input Methods and Peered Text
  * Components</h2>
  * The Java input method framework intends to support all combinations of input
  * methods (host input methods and Java input methods) and components (peered
