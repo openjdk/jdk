@@ -956,18 +956,18 @@ void ciEnv::register_method(ciMethod* target,
       if (task() != NULL)  task()->set_code(nm);
 
       if (entry_bci == InvocationEntryBci) {
-#ifdef TIERED
-        // If there is an old version we're done with it
-        nmethod* old = method->code();
-        if (TraceMethodReplacement && old != NULL) {
-          ResourceMark rm;
-          char *method_name = method->name_and_sig_as_C_string();
-          tty->print_cr("Replacing method %s", method_name);
+        if (TieredCompilation) {
+          // If there is an old version we're done with it
+          nmethod* old = method->code();
+          if (TraceMethodReplacement && old != NULL) {
+            ResourceMark rm;
+            char *method_name = method->name_and_sig_as_C_string();
+            tty->print_cr("Replacing method %s", method_name);
+          }
+          if (old != NULL ) {
+            old->make_not_entrant();
+          }
         }
-        if (old != NULL ) {
-          old->make_not_entrant();
-        }
-#endif // TIERED
         if (TraceNMethodInstalls ) {
           ResourceMark rm;
           char *method_name = method->name_and_sig_as_C_string();
@@ -1011,7 +1011,7 @@ ciKlass* ciEnv::find_system_klass(ciSymbol* klass_name) {
 // ------------------------------------------------------------------
 // ciEnv::comp_level
 int ciEnv::comp_level() {
-  if (task() == NULL)  return CompLevel_full_optimization;
+  if (task() == NULL)  return CompLevel_highest_tier;
   return task()->comp_level();
 }
 

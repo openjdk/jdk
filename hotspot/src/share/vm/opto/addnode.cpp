@@ -705,6 +705,9 @@ int AddPNode::unpack_offsets(Node* elements[], int length) {
     }
     addr = addr->in(AddPNode::Address);
   }
+  if (addr != base) {
+    return -1;
+  }
   return count;
 }
 

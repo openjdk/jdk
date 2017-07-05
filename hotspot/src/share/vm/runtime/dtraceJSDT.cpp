@@ -65,7 +65,7 @@ jlong DTraceJSDT::activate(
         THROW_MSG_0(vmSymbols::java_lang_RuntimeException(),
           "Unable to register DTrace probes (CodeCache: no room for DTrace nmethods).");
       }
-      h_method()->set_not_compilable(CompLevel_highest_tier);
+      h_method()->set_not_compilable();
       h_method()->set_code(h_method, nm);
       probes->nmethod_at_put(count++, nm);
     }

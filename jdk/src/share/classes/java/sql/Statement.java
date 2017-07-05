@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,20 +40,27 @@ package java.sql;
  * @see Connection#createStatement
  * @see ResultSet
  */
-public interface Statement extends Wrapper {
+public interface Statement extends Wrapper, AutoCloseable {
 
     /**
      * Executes the given SQL statement, which returns a single
      * <code>ResultSet</code> object.
-     *
+     *<p>
+     * <strong>Note:</strong>This method cannot be called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>.
      * @param sql an SQL statement to be sent to the database, typically a
      *        static SQL <code>SELECT</code> statement
      * @return a <code>ResultSet</code> object that contains the data produced
      *         by the given query; never <code>null</code>
      * @exception SQLException if a database access error occurs,
-     * this method is called on a closed <code>Statement</code> or the given
+     * this method is called on a closed <code>Statement</code>, the given
      *            SQL statement produces anything other than a single
-     *            <code>ResultSet</code> object
+     *            <code>ResultSet</code> object, the method is called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>
+     * @throws SQLTimeoutException when the driver has determined that the
+     * timeout value that was specified by the {@code setQueryTimeout}
+     * method has been exceeded and has at least attempted to cancel
+     * the currently running {@code Statement}
      */
     ResultSet executeQuery(String sql) throws SQLException;
 
@@ -61,7 +68,9 @@ public interface Statement extends Wrapper {
      * Executes the given SQL statement, which may be an <code>INSERT</code>,
      * <code>UPDATE</code>, or <code>DELETE</code> statement or an
      * SQL statement that returns nothing, such as an SQL DDL statement.
-     *
+     *<p>
+     * <strong>Note:</strong>This method cannot be called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>.
      * @param sql an SQL Data Manipulation Language (DML) statement, such as <code>INSERT</code>, <code>UPDATE</code> or
      * <code>DELETE</code>; or an SQL statement that returns nothing,
      * such as a DDL statement.
@@ -70,8 +79,13 @@ public interface Statement extends Wrapper {
      *         or (2) 0 for SQL statements that return nothing
      *
      * @exception SQLException if a database access error occurs,
-     * this method is called on a closed <code>Statement</code> or the given
-     *            SQL statement produces a <code>ResultSet</code> object
+     * this method is called on a closed <code>Statement</code>, the given
+     * SQL statement produces a <code>ResultSet</code> object, the method is called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>
+     * @throws SQLTimeoutException when the driver has determined that the
+     * timeout value that was specified by the {@code setQueryTimeout}
+     * method has been exceeded and has at least attempted to cancel
+     * the currently running {@code Statement}
      */
     int executeUpdate(String sql) throws SQLException;
 
@@ -198,11 +212,21 @@ public interface Statement extends Wrapper {
     /**
      * Sets the number of seconds the driver will wait for a
      * <code>Statement</code> object to execute to the given number of seconds.
-     * If the limit is exceeded, an <code>SQLException</code> is thrown. A JDBC
-     * driver must apply this limit to the <code>execute</code>,
-     * <code>executeQuery</code> and <code>executeUpdate</code> methods. JDBC driver
-     * implementations may also apply this limit to <code>ResultSet</code> methods
+     *By default there is no limit on the amount of time allowed for a running
+     * statement to complete. If the limit is exceeded, an
+     * <code>SQLTimeoutException</code> is thrown.
+     * A JDBC driver must apply this limit to the <code>execute</code>,
+     * <code>executeQuery</code> and <code>executeUpdate</code> methods.
+     * <p>
+     * <strong>Note:</strong> JDBC driver implementations may also apply this
+     * limit to {@code ResultSet} methods
      * (consult your driver vendor documentation for details).
+     * <p>
+     * <strong>Note:</strong> In the case of {@code Statement} batching, it is
+     * implementation defined as to whether the time-out is applied to
+     * individual SQL commands added via the {@code addBatch} method or to
+     * the entire batch of SQL commands invoked by the {@code executeBatch}
+     * method (consult your driver vendor documentation for details).
      *
      * @param seconds the new query timeout limit in seconds; zero means
      *        there is no limit
@@ -300,13 +324,21 @@ public interface Statement extends Wrapper {
      * <code>getResultSet</code> or <code>getUpdateCount</code>
      * to retrieve the result, and <code>getMoreResults</code> to
      * move to any subsequent result(s).
-     *
+     * <p>
+     *<strong>Note:</strong>This method cannot be called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>.
      * @param sql any SQL statement
      * @return <code>true</code> if the first result is a <code>ResultSet</code>
      *         object; <code>false</code> if it is an update count or there are
      *         no results
-     * @exception SQLException if a database access error occurs or
-     * this method is called on a closed <code>Statement</code>
+     * @exception SQLException if a database access error occurs,
+     * this method is called on a closed <code>Statement</code>,
+     * the method is called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>
+     * @throws SQLTimeoutException when the driver has determined that the
+     * timeout value that was specified by the {@code setQueryTimeout}
+     * method has been exceeded and has at least attempted to cancel
+     * the currently running {@code Statement}
      * @see #getResultSet
      * @see #getUpdateCount
      * @see #getMoreResults
@@ -465,12 +497,14 @@ public interface Statement extends Wrapper {
      * <code>Statement</code> object. The commands in this list can be
      * executed as a batch by calling the method <code>executeBatch</code>.
      * <P>
-     *
+     *<strong>Note:</strong>This method cannot be called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>.
      * @param sql typically this is a SQL <code>INSERT</code> or
      * <code>UPDATE</code> statement
      * @exception SQLException if a database access error occurs,
-     * this method is called on a closed <code>Statement</code> or the
-     * driver does not support batch updates
+     * this method is called on a closed <code>Statement</code>, the
+     * driver does not support batch updates, the method is called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>
      * @see #executeBatch
      * @see DatabaseMetaData#supportsBatchUpdates
      * @since 1.2
@@ -536,7 +570,10 @@ public interface Statement extends Wrapper {
      * driver does not support batch statements. Throws {@link BatchUpdateException}
      * (a subclass of <code>SQLException</code>) if one of the commands sent to the
      * database fails to execute properly or attempts to return a result set.
-     *
+     * @throws SQLTimeoutException when the driver has determined that the
+     * timeout value that was specified by the {@code setQueryTimeout}
+     * method has been exceeded and has at least attempted to cancel
+     * the currently running {@code Statement}
      *
      * @see #addBatch
      * @see DatabaseMetaData#supportsBatchUpdates
@@ -678,7 +715,9 @@ public interface Statement extends Wrapper {
      * flag if the SQL statement
      * is not an <code>INSERT</code> statement, or an SQL statement able to return
      * auto-generated keys (the list of such statements is vendor-specific).
-     *
+     *<p>
+     * <strong>Note:</strong>This method cannot be called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>.
      * @param sql an SQL Data Manipulation Language (DML) statement, such as <code>INSERT</code>, <code>UPDATE</code> or
      * <code>DELETE</code>; or an SQL statement that returns nothing,
      * such as a DDL statement.
@@ -693,10 +732,15 @@ public interface Statement extends Wrapper {
      *
      * @exception SQLException if a database access error occurs,
      *  this method is called on a closed <code>Statement</code>, the given
-     *            SQL statement returns a <code>ResultSet</code> object, or
-     *            the given constant is not one of those allowed
+     *            SQL statement returns a <code>ResultSet</code> object,
+     *            the given constant is not one of those allowed, the method is called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method with a constant of Statement.RETURN_GENERATED_KEYS
+     * @throws SQLTimeoutException when the driver has determined that the
+     * timeout value that was specified by the {@code setQueryTimeout}
+     * method has been exceeded and has at least attempted to cancel
+     * the currently running {@code Statement}
      * @since 1.4
      */
     int executeUpdate(String sql, int autoGeneratedKeys) throws SQLException;
@@ -709,7 +753,9 @@ public interface Statement extends Wrapper {
      * available. The driver will ignore the array if the SQL statement
      * is not an <code>INSERT</code> statement, or an SQL statement able to return
      * auto-generated keys (the list of such statements is vendor-specific).
-     *
+     *<p>
+     * <strong>Note:</strong>This method cannot be called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>.
      * @param sql an SQL Data Manipulation Language (DML) statement, such as <code>INSERT</code>, <code>UPDATE</code> or
      * <code>DELETE</code>; or an SQL statement that returns nothing,
      * such as a DDL statement.
@@ -721,10 +767,15 @@ public interface Statement extends Wrapper {
      *
      * @exception SQLException if a database access error occurs,
      * this method is called on a closed <code>Statement</code>, the SQL
-     *            statement returns a <code>ResultSet</code> object, or the
-     *            second argument supplied to this method is not an <code>int</code> array
-     *            whose elements are valid column indexes
+     * statement returns a <code>ResultSet</code> object,the second argument
+     * supplied to this method is not an
+     * <code>int</code> array whose elements are valid column indexes, the method is called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
+     * @throws SQLTimeoutException when the driver has determined that the
+     * timeout value that was specified by the {@code setQueryTimeout}
+     * method has been exceeded and has at least attempted to cancel
+     * the currently running {@code Statement}
      * @since 1.4
      */
     int executeUpdate(String sql, int columnIndexes[]) throws SQLException;
@@ -737,7 +788,9 @@ public interface Statement extends Wrapper {
      * available. The driver will ignore the array if the SQL statement
      * is not an <code>INSERT</code> statement, or an SQL statement able to return
      * auto-generated keys (the list of such statements is vendor-specific).
-     *
+     *<p>
+     * <strong>Note:</strong>This method cannot be called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>.
      * @param sql an SQL Data Manipulation Language (DML) statement, such as <code>INSERT</code>, <code>UPDATE</code> or
      * <code>DELETE</code>; or an SQL statement that returns nothing,
      * such as a DDL statement.
@@ -748,11 +801,15 @@ public interface Statement extends Wrapper {
      *         that return nothing
      * @exception SQLException if a database access error occurs,
      *  this method is called on a closed <code>Statement</code>, the SQL
-     *            statement returns a <code>ResultSet</code> object, or the
+     *            statement returns a <code>ResultSet</code> object, the
      *            second argument supplied to this method is not a <code>String</code> array
-     *            whose elements are valid column names
-     *
+     *            whose elements are valid column names, the method is called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
+     * @throws SQLTimeoutException when the driver has determined that the
+     * timeout value that was specified by the {@code setQueryTimeout}
+     * method has been exceeded and has at least attempted to cancel
+     * the currently running {@code Statement}
      * @since 1.4
      */
     int executeUpdate(String sql, String columnNames[]) throws SQLException;
@@ -776,7 +833,9 @@ public interface Statement extends Wrapper {
      * <code>getResultSet</code> or <code>getUpdateCount</code>
      * to retrieve the result, and <code>getMoreResults</code> to
      * move to any subsequent result(s).
-     *
+     *<p>
+     *<strong>Note:</strong>This method cannot be called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>.
      * @param sql any SQL statement
      * @param autoGeneratedKeys a constant indicating whether auto-generated
      *        keys should be made available for retrieval using the method
@@ -787,12 +846,18 @@ public interface Statement extends Wrapper {
      *         object; <code>false</code> if it is an update count or there are
      *         no results
      * @exception SQLException if a database access error occurs,
-     * this method is called on a closed <code>Statement</code> or the second
+     * this method is called on a closed <code>Statement</code>, the second
      *         parameter supplied to this method is not
      *         <code>Statement.RETURN_GENERATED_KEYS</code> or
-     *         <code>Statement.NO_GENERATED_KEYS</code>.
+     *         <code>Statement.NO_GENERATED_KEYS</code>,
+     * the method is called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
      * this method with a constant of Statement.RETURN_GENERATED_KEYS
+     * @throws SQLTimeoutException when the driver has determined that the
+     * timeout value that was specified by the {@code setQueryTimeout}
+     * method has been exceeded and has at least attempted to cancel
+     * the currently running {@code Statement}
      * @see #getResultSet
      * @see #getUpdateCount
      * @see #getMoreResults
@@ -823,7 +888,9 @@ public interface Statement extends Wrapper {
      * <code>getResultSet</code> or <code>getUpdateCount</code>
      * to retrieve the result, and <code>getMoreResults</code> to
      * move to any subsequent result(s).
-     *
+     *<p>
+     * <strong>Note:</strong>This method cannot be called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>.
      * @param sql any SQL statement
      * @param columnIndexes an array of the indexes of the columns in the
      *        inserted row that should be  made available for retrieval by a
@@ -832,10 +899,15 @@ public interface Statement extends Wrapper {
      *         object; <code>false</code> if it is an update count or there
      *         are no results
      * @exception SQLException if a database access error occurs,
-     * this method is called on a closed <code>Statement</code> or the
+     * this method is called on a closed <code>Statement</code>, the
      *            elements in the <code>int</code> array passed to this method
-     *            are not valid column indexes
+     *            are not valid column indexes, the method is called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
+     * @throws SQLTimeoutException when the driver has determined that the
+     * timeout value that was specified by the {@code setQueryTimeout}
+     * method has been exceeded and has at least attempted to cancel
+     * the currently running {@code Statement}
      * @see #getResultSet
      * @see #getUpdateCount
      * @see #getMoreResults
@@ -865,7 +937,9 @@ public interface Statement extends Wrapper {
      * <code>getResultSet</code> or <code>getUpdateCount</code>
      * to retrieve the result, and <code>getMoreResults</code> to
      * move to any subsequent result(s).
-     *
+     *<p>
+     * <strong>Note:</strong>This method cannot be called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>.
      * @param sql any SQL statement
      * @param columnNames an array of the names of the columns in the inserted
      *        row that should be made available for retrieval by a call to the
@@ -874,10 +948,15 @@ public interface Statement extends Wrapper {
      *         object; <code>false</code> if it is an update count or there
      *         are no more results
      * @exception SQLException if a database access error occurs,
-     * this method is called on a closed <code>Statement</code> or the
+     * this method is called on a closed <code>Statement</code>,the
      *          elements of the <code>String</code> array passed to this
-     *          method are not valid column names
+     *          method are not valid column names, the method is called on a
+     * <code>PreparedStatement</code> or <code>CallableStatement</code>
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
+     * @throws SQLTimeoutException when the driver has determined that the
+     * timeout value that was specified by the {@code setQueryTimeout}
+     * method has been exceeded and has at least attempted to cancel
+     * the currently running {@code Statement}
      * @see #getResultSet
      * @see #getUpdateCount
      * @see #getMoreResults
@@ -950,5 +1029,35 @@ public interface Statement extends Wrapper {
          */
         boolean isPoolable()
                 throws SQLException;
+
+    //--------------------------JDBC 4.1 -----------------------------
+
+    /**
+     * Specifies that this {@code Statement} will be closed when all its
+     * dependent result sets are closed. If execution of the {@code Statement}
+     * does not produce any result sets, this method has no effect.
+     * <p>
+     * <strong>Note:</strong> Multiple calls to {@code closeOnCompletion} do
+     * not toggle the effect on this {@code Statement}. However, a call to
+     * {@code closeOnCompletion} does effect both the subsequent execution of
+     * statements, and statements that currently have open, dependent,
+     * result sets.
+     *
+     * @throws SQLException if this method is called on a closed
+     * {@code Statement}
+     * @since 1.7
+     */
+    public void closeOnCompletion() throws SQLException;
+
+    /**
+     * Returns a value indicating whether this {@code Statement} will be
+     * closed when all dependent objects such as resultsets are closed.
+     * @return {@code true} if the {@code Statement} will be closed when all
+     * of its dependent objects are closed; {@code false} otherwise
+     * @throws SQLException if this method is called on a closed
+     * {@code Statement}
+     * @since 1.7
+     */
+    public boolean isCloseOnCompletion() throws SQLException;
 
 }

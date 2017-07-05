@@ -498,8 +498,8 @@ public class Throwable implements Serializable {
      * }
      * </pre>
      * As of release 7, the platform supports the notion of
-     * <i>suppressed exceptions</i> (in conjunction with automatic
-     * resource management blocks). Any exceptions that were
+     * <i>suppressed exceptions</i> (in conjunction with the {@code
+     * try}-with-resources statement). Any exceptions that were
      * suppressed in order to deliver an exception are printed out
      * beneath the stack trace.  The format of this information
      * depends on the implementation, but the following example may be
@@ -805,7 +805,7 @@ public class Throwable implements Serializable {
 
     /**
      * Adds the specified exception to the list of exceptions that
-     * were suppressed, typically by the automatic resource management
+     * were suppressed, typically by the {@code try}-with-resources
      * statement, in order to deliver this exception.
      *
      * <p>Note that when one exception {@linkplain
@@ -839,7 +839,7 @@ public class Throwable implements Serializable {
 
     /**
      * Returns an array containing all of the exceptions that were
-     * suppressed, typically by the automatic resource management
+     * suppressed, typically by the {@code try}-with-resources
      * statement, in order to deliver this exception.
      *
      * @return an array containing all of the exceptions that were

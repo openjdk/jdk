@@ -104,20 +104,20 @@ public class Basic {
             stream.close();
         }
 
-        // check that IOExceptions throws by filters are propagated
+        // check that an IOException thrown by a filter is propagated
         filter = new DirectoryStream.Filter<Path>() {
             public boolean accept(Path file) throws IOException {
-                throw new IOException();
+                throw new java.util.zip.ZipException();
             }
         };
         stream = dir.newDirectoryStream(filter);
         try {
             stream.iterator().hasNext();
-            throw new RuntimeException("ConcurrentModificationException expected");
-        } catch (ConcurrentModificationException x) {
-            Throwable t = x.getCause();
-            if (!(t instanceof IOException))
-                throw new RuntimeException("Cause is not IOException as expected");
+            throw new RuntimeException("DirectoryIteratorException expected");
+        } catch (DirectoryIteratorException x) {
+            IOException cause = x.getCause();
+            if (!(cause instanceof java.util.zip.ZipException))
+                throw new RuntimeException("Expected IOException not propagated");
         } finally {
             stream.close();
         }
@@ -142,58 +142,49 @@ public class Basic {
         } catch (NotDirectoryException x) {
         }
 
-        // test iterator remove method
-        stream = dir.newDirectoryStream();
-        Iterator<Path> i = stream.iterator();
-        while (i.hasNext()) {
-            Path entry = i.next();
-            if (!entry.getName().equals(foo))
-                throw new RuntimeException("entry not expected");
-            i.remove();
-        }
-        stream.close();
-
-        // test IllegalStateException
-        dir.resolve(foo).createFile();
+        // test UnsupportedOperationException
         stream =  dir.newDirectoryStream();
-        i = stream.iterator();
+        Iterator<Path> i = stream.iterator();
         i.next();
         try {
+            i.remove();
+            throw new RuntimeException("UnsupportedOperationException expected");
+        } catch (UnsupportedOperationException uoe) {
+        }
+
+        // test IllegalStateException
+        stream =  dir.newDirectoryStream();
+        stream.iterator();
+        try {
+            // attempt to obtain second iterator
             stream.iterator();
             throw new RuntimeException("IllegalStateException not thrown as expected");
         } catch (IllegalStateException x) {
         }
         stream.close();
+
+        stream =  dir.newDirectoryStream();
+        stream.close();
         try {
+            // attempt to obtain iterator after stream is closed
             stream.iterator();
             throw new RuntimeException("IllegalStateException not thrown as expected");
         } catch (IllegalStateException x) {
         }
-        try {
-            i.hasNext();
-            throw new RuntimeException("ConcurrentModificationException not thrown as expected");
-        } catch (ConcurrentModificationException x) {
-            Throwable t = x.getCause();
-            if (!(t instanceof ClosedDirectoryStreamException))
-                throw new RuntimeException("Cause is not ClosedDirectoryStreamException as expected");
-        }
-        try {
-            i.next();
-            throw new RuntimeException("ConcurrentModificationException not thrown as expected");
-        } catch (ConcurrentModificationException x) {
-            Throwable t = x.getCause();
-            if (!(t instanceof ClosedDirectoryStreamException))
-                throw new RuntimeException("Cause is not ClosedDirectoryStreamException as expected");
-        }
-        try {
-            i.remove();
-            throw new RuntimeException("ConcurrentModificationException not thrown as expected");
-        } catch (ConcurrentModificationException x) {
-            Throwable t = x.getCause();
-            if (!(t instanceof ClosedDirectoryStreamException))
-                throw new RuntimeException("Cause is not ClosedDirectoryStreamException as expected");
-        }
 
+        // test that iterator reads to end of stream when closed
+        stream =  dir.newDirectoryStream();
+        i = stream.iterator();
+        stream.close();
+        while (i.hasNext())
+            i.next();
+
+        stream =  dir.newDirectoryStream();
+        i = stream.iterator();
+        stream.close();
+        try {
+            for (;;) i.next();
+        } catch (NoSuchElementException expected) { }
     }
 
     public static void main(String[] args) throws IOException {

@@ -1480,3 +1480,17 @@ void InterpreterMacroAssembler::notify_method_exit(
     NOT_CC_INTERP(pop(state));
   }
 }
+
+// Jump if ((*counter_addr += increment) & mask) satisfies the condition.
+void InterpreterMacroAssembler::increment_mask_and_jump(Address counter_addr,
+                                                        int increment, int mask,
+                                                        Register scratch, bool preloaded,
+                                                        Condition cond, Label* where) {
+  if (!preloaded) {
+    movl(scratch, counter_addr);
+  }
+  incrementl(scratch, increment);
+  movl(counter_addr, scratch);
+  andl(scratch, mask);
+  jcc(cond, *where);
+}

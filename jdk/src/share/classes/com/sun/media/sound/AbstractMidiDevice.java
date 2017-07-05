@@ -474,7 +474,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
         This is necessary for Receivers retrieved via MidiSystem.getReceiver()
         (which opens the device implicitely).
      */
-    protected abstract class AbstractReceiver implements Receiver {
+    protected abstract class AbstractReceiver implements MidiDeviceReceiver {
         private boolean open = true;
 
 
@@ -508,6 +508,10 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
             AbstractMidiDevice.this.closeInternal(this);
         }
 
+        public MidiDevice getMidiDevice() {
+            return AbstractMidiDevice.this;
+        }
+
         protected boolean isOpen() {
             return open;
         }
@@ -529,7 +533,7 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
      * Also, it has some optimizations regarding sending to the Receivers,
      * for known Receivers, and managing itself in the TransmitterList.
      */
-    protected class BasicTransmitter implements Transmitter {
+    protected class BasicTransmitter implements MidiDeviceTransmitter {
 
         private Receiver receiver = null;
         TransmitterList tlist = null;
@@ -568,6 +572,9 @@ abstract class AbstractMidiDevice implements MidiDevice, ReferenceCountingDevice
             }
         }
 
+        public MidiDevice getMidiDevice() {
+            return AbstractMidiDevice.this;
+        }
 
     } // class BasicTransmitter
 

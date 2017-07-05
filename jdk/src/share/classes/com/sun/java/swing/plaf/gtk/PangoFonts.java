@@ -150,11 +150,6 @@ class PangoFonts {
          * case for it to be a problem the values would have to be different.
          * It also seems unlikely to arise except when a user explicitly
          * deletes the X resource database entry.
-         * 3) Because of rounding errors sizes may differ very slightly
-         * between JDK and GTK. To fix that would at the very least require
-         * Swing to specify floating pt font sizes.
-         * Eg "10 pts" for GTK at 96 dpi to get the same size at Java 2D's
-         * 72 dpi you'd need to specify exactly 13.33.
          * There also some other issues to be aware of for the future:
          * GTK specifies the Xft.dpi value as server-wide which when used
          * on systems with 2 distinct X screens with different physical DPI
@@ -197,11 +192,16 @@ class PangoFonts {
         String fcFamilyLC = family.toLowerCase();
         if (FontUtilities.mapFcName(fcFamilyLC) != null) {
             /* family is a Fc/Pango logical font which we need to expand. */
-           return FontUtilities.getFontConfigFUIR(fcFamilyLC, style, size);
+            Font font =  FontUtilities.getFontConfigFUIR(fcFamilyLC, style, size);
+            font = font.deriveFont(style, (float)dsize);
+            return new FontUIResource(font);
         } else {
             /* It's a physical font which we will create with a fallback */
-            Font font = new FontUIResource(family, style, size);
-            return FontUtilities.getCompositeFontUIResource(font);
+            Font font = new Font(family, style, size);
+            /* a roundabout way to set the font size in floating points */
+            font = font.deriveFont(style, (float)dsize);
+            FontUIResource fuir = new FontUIResource(font);
+            return FontUtilities.getCompositeFontUIResource(fuir);
         }
     }
 

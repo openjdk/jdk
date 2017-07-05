@@ -329,9 +329,10 @@ void JavaCalls::call_helper(JavaValue* result, methodHandle* m, JavaCallArgument
 
 
   assert(!thread->is_Compiler_thread(), "cannot compile from the compiler");
-  if (CompilationPolicy::mustBeCompiled(method)) {
+  if (CompilationPolicy::must_be_compiled(method)) {
     CompileBroker::compile_method(method, InvocationEntryBci,
-                                  methodHandle(), 0, "mustBeCompiled", CHECK);
+                                  CompLevel_initial_compile,
+                                  methodHandle(), 0, "must_be_compiled", CHECK);
   }
 
   // Since the call stub sets up like the interpreter we call the from_interpreted_entry

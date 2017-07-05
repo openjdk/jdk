@@ -58,19 +58,10 @@ PLATFORM_SHARED=done
 #     ARCH                        sparc, sparcv9, i586, amd64, or ia64
 #     ARCH_FAMILY                 sparc or i586
 #     ARCHPROP                    sparc or x86
-#     ARCH_VM_SUBDIR              jre/bin, jre/lib/sparc, etc.
-#     LIBARCH                     sparc, sparcv9, i386, amd64, or ia64
 #     DEV_NULL                    destination of /dev/null, NUL or /dev/NULL
 #     CLASSPATH_SEPARATOR         separator in classpath, ; or :
-#     LIB_PREFIX                  dynamic or static library prefix, lib or empty
-#     LIB_SUFFIX                  static library file suffix, .lib or .a?
-#     LIBRARY_SUFFIX              dynamic library file suffix, .dll or .so
-#     OBJECT_SUFFIX               object file suffix, .o or .obj
-#     EXE_SUFFIX                  executable file suffix, .exe or empty
 #     BUNDLE_FILE_SUFFIX          suffix for bundles: .tar or .tar.gz
 #     ISA_DIR                     solaris only: /sparcv9 or /amd64
-#     LIBARCH32                   solaris only: sparc or i386
-#     LIBARCH64                   solaris only: sparcv9 or amd64
 #     REQUIRED_WINDOWS_NAME       windows only: basic name of windows 
 #     REQUIRED_WINDOWS_VERSION    windows only: specific version of windows 
 #     USING_CYGWIN                windows only: true or false
@@ -129,7 +120,6 @@ ifeq ($(SYSTEM_UNAME), SunOS)
   # Need to maintain the jre/lib/i386 location for 32-bit Intel
   ifeq ($(ARCH), i586)
      ARCH_FAMILY = $(ARCH)
-     LIBARCH     = i386
      # Value of Java os.arch property
      ARCHPROP    = x86
   else
@@ -138,17 +128,8 @@ ifeq ($(SYSTEM_UNAME), SunOS)
      else
         ARCH_FAMILY = sparc
      endif
-     LIBARCH  = $(ARCH)
      # Value of Java os.arch property
-     ARCHPROP = $(LIBARCH)
-  endif
-  # The two LIBARCH names
-  ifeq ($(ARCH_FAMILY), sparc)
-    LIBARCH32 = sparc
-    LIBARCH64 = sparcv9
-  else
-    LIBARCH32 = i386
-    LIBARCH64 = amd64
+     ARCHPROP = $(ARCH)
   endif
   # Suffix for file bundles used in previous release
   BUNDLE_FILE_SUFFIX=.tar
@@ -218,15 +199,11 @@ ifeq ($(SYSTEM_UNAME), Linux)
     endif
   endif
 
-  # Need to maintain the jre/lib/i386 location for 32-bit Intel
   ifeq ($(ARCH), i586)
-    LIBARCH = i386
+    ARCHPROP = i386
   else
-    LIBARCH = $(ARCH)
+    ARCHPROP = $(ARCH)
   endif
-
-  # Value of Java os.arch property
-  ARCHPROP  = $(LIBARCH)
 
   # Suffix for file bundles used in previous release
   BUNDLE_FILE_SUFFIX=.tar.gz
@@ -303,9 +280,7 @@ ifeq ($(PLATFORM), windows)
     endif
   endif
   export ARCH_DATA_MODEL
-  # LIBARCH is used to preserve the jre/lib/i386 directory name for 32-bit intel
   ARCH=i586
-  LIBARCH=i386
   # Value of Java os.arch property
   ARCHPROP=x86
   REQUIRED_WINDOWS_NAME=Windows Professional 2000
@@ -323,9 +298,8 @@ ifeq ($(PLATFORM), windows)
         ARCH=ia64
       endif
     endif
-    LIBARCH=$(ARCH)
     # Value of Java os.arch property
-    ARCHPROP=$(LIBARCH)
+    ARCHPROP=$(ARCH)
   endif
   ARCH_FAMILY = $(ARCH)
   # Where is unwanted output to be delivered?
@@ -337,14 +311,6 @@ ifeq ($(PLATFORM), windows)
   export DEV_NULL
   # Classpath separator
   CLASSPATH_SEPARATOR = ;
-  # The suffix used for object file (.o for unix .obj for windows)
-  OBJECT_SUFFIX = obj
-  # The suffix applied to executables (.exe for windows, nothing for solaris)
-  EXE_SUFFIX = .exe
-  # The prefix applied to library files (lib for solaris, nothing for windows)
-  LIB_PREFIX=
-  LIBRARY_SUFFIX = dll
-  LIB_SUFFIX     = lib
   # User name determination (set _USER)
   ifndef USER
     ifdef USERNAME
@@ -359,8 +325,6 @@ ifeq ($(PLATFORM), windows)
   else
     _USER:=$(USER)
   endif
-  # Location of client/server directories
-  ARCH_VM_SUBDIR=jre/bin
   # Suffix for file bundles used in previous release
   BUNDLE_FILE_SUFFIX=.tar
   # Minimum disk space needed as determined by running 'du -sk' on 
@@ -430,16 +394,6 @@ ifneq ($(PLATFORM), windows)
   export DEV_NULL
   # Character used between entries in classpath 
   CLASSPATH_SEPARATOR = :
-  # suffix used for object file (.o for unix .obj for windows)
-  OBJECT_SUFFIX = o
-  # The suffix applied to runtime libraries
-  LIBRARY_SUFFIX = so
-  # The suffix applied to link libraries
-  LIB_SUFFIX = so
-  # The suffix applied to executables (.exe for windows, nothing for solaris)
-  EXE_SUFFIX =
-  # The prefix applied to library files (lib for solaris, nothing for windows)
-  LIB_PREFIX = lib
   # User name determination (set _USER)
   ifndef USER
     ifdef LOGNAME
@@ -450,8 +404,6 @@ ifneq ($(PLATFORM), windows)
   else
     _USER:=$(USER)
   endif
-  # Location of client/server directories
-  ARCH_VM_SUBDIR=jre/lib/$(LIBARCH)
 endif
 
 # If blanks in the username, use the first 4 words and pack them together

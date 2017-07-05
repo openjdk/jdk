@@ -452,7 +452,7 @@ public final class Currency implements Serializable {
      * @return the symbol of this currency for the default locale
      */
     public String getSymbol() {
-        return getSymbol(Locale.getDefault());
+        return getSymbol(Locale.getDefault(Locale.Category.DISPLAY));
     }
 
     /**
@@ -528,7 +528,7 @@ public final class Currency implements Serializable {
      * @since 1.7
      */
     public String getDisplayName() {
-        return getDisplayName(Locale.getDefault());
+        return getDisplayName(Locale.getDefault(Locale.Category.DISPLAY));
     }
 
     /**

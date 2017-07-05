@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,14 +34,7 @@ define_pd_global(bool, ProfileTraps,                 false);
 define_pd_global(bool, UseOnStackReplacement,        true );
 define_pd_global(bool, TieredCompilation,            false);
 define_pd_global(intx, CompileThreshold,             1000 ); // Design center runs on 1.3.1
-define_pd_global(intx, Tier2CompileThreshold,        1500 );
-define_pd_global(intx, Tier3CompileThreshold,        2000 );
-define_pd_global(intx, Tier4CompileThreshold,        2500 );
-
 define_pd_global(intx, BackEdgeThreshold,            100000);
-define_pd_global(intx, Tier2BackEdgeThreshold,       100000);
-define_pd_global(intx, Tier3BackEdgeThreshold,       100000);
-define_pd_global(intx, Tier4BackEdgeThreshold,       100000);
 
 define_pd_global(intx, OnStackReplacePercentage,     1400 );
 define_pd_global(bool, UseTLAB,                      true );

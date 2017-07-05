@@ -740,9 +740,9 @@ void BlockBegin::block_values_do(ValueVisitor* f) {
 
 
 #ifndef PRODUCT
-  #define TRACE_PHI(code) if (PrintPhiFunctions) { code; }
+   #define TRACE_PHI(code) if (PrintPhiFunctions) { code; }
 #else
-  #define TRACE_PHI(coce)
+   #define TRACE_PHI(coce)
 #endif
 
 
@@ -1010,4 +1010,8 @@ int Phi::operand_count() const {
 
 void Throw::state_values_do(ValueVisitor* f) {
   BlockEnd::state_values_do(f);
+}
+
+void ProfileInvoke::state_values_do(ValueVisitor* f) {
+  if (state() != NULL) state()->values_do(f);
 }

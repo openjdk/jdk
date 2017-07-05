@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,8 @@ import javax.swing.plaf.basic.*;
 
 import java.awt.Component;
 import java.awt.Insets;
-import java.awt.Dimension;
-import java.awt.Image;
-import java.awt.Rectangle;
 import java.awt.Color;
 import java.awt.Graphics;
-import java.io.Serializable;
 
 import static com.sun.java.swing.plaf.windows.TMSchema.*;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
@@ -159,6 +155,9 @@ public class WindowsBorders {
 
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
+            if (!(c instanceof JToolBar)) {
+                return;
+            }
             g.translate(x, y);
 
             XPStyle xp = XPStyle.getXP();
@@ -190,33 +189,33 @@ public class WindowsBorders {
 
                 } else {
 
-                if (!vertical) {
-                    if (c.getComponentOrientation().isLeftToRight()) {
+                    if (!vertical) {
+                        if (c.getComponentOrientation().isLeftToRight()) {
+                            g.setColor(shadow);
+                            g.drawLine(4, 3, 4, height - 4);
+                            g.drawLine(4, height - 4, 2, height - 4);
+
+                            g.setColor(highlight);
+                            g.drawLine(2, 3, 3, 3);
+                            g.drawLine(2, 3, 2, height - 5);
+                        } else {
+                            g.setColor(shadow);
+                            g.drawLine(width - 3, 3, width - 3, height - 4);
+                            g.drawLine(width - 4, height - 4, width - 4, height - 4);
+
+                            g.setColor(highlight);
+                            g.drawLine(width - 5, 3, width - 4, 3);
+                            g.drawLine(width - 5, 3, width - 5, height - 5);
+                        }
+                    } else { // Vertical
                         g.setColor(shadow);
-                        g.drawLine(4, 3, 4, height - 4);
-                        g.drawLine(4, height - 4, 2, height - 4);
+                        g.drawLine(3, 4, width - 4, 4);
+                        g.drawLine(width - 4, 2, width - 4, 4);
 
                         g.setColor(highlight);
-                        g.drawLine(2, 3, 3, 3);
-                        g.drawLine(2, 3, 2, height - 5);
-                    } else {
-                        g.setColor(shadow);
-                        g.drawLine(width - 3, 3, width - 3, height - 4);
-                        g.drawLine(width - 4, height - 4, width - 4, height - 4);
-
-                        g.setColor(highlight);
-                        g.drawLine(width - 5, 3, width - 4, 3);
-                        g.drawLine(width - 5, 3, width - 5, height - 5);
+                        g.drawLine(3, 2, width - 4, 2);
+                        g.drawLine(3, 2, 3, 3);
                     }
-                } else { // Vertical
-                    g.setColor(shadow);
-                    g.drawLine(3, 4, width - 4, 4);
-                    g.drawLine(width - 4, 2, width - 4, 4);
-
-                    g.setColor(highlight);
-                    g.drawLine(3, 2, width - 4, 2);
-                    g.drawLine(3, 2, 3, 3);
-                }
                 }
             }
 
@@ -225,6 +224,9 @@ public class WindowsBorders {
 
         public Insets getBorderInsets(Component c, Insets insets) {
             insets.set(1,1,1,1);
+            if (!(c instanceof JToolBar)) {
+                return insets;
+            }
             if (((JToolBar)c).isFloatable()) {
                 int gripInset = (XPStyle.getXP() != null) ? 12 : 9;
                 if (((JToolBar)c).getOrientation() == HORIZONTAL) {

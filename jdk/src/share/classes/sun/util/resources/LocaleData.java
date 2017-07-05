@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,6 +177,11 @@ public class LocaleData {
 
             for (Iterator<Locale> l = candidates.iterator(); l.hasNext(); ) {
                 String lstr = l.next().toString();
+                /* truncate extra segment introduced by Java 7 for script and extesions */
+                int idx = lstr.indexOf("_#");
+                if (idx >= 0) {
+                    lstr = lstr.substring(0, idx);
+                }
                 /* Every locale string in the locale string list returned from
                    the above getSupportedLocaleString is enclosed
                    within two white spaces so that we could check some locale

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,6 +152,7 @@ void StackMapTable::print() const {
 
 int32_t StackMapReader::chop(
     VerificationType* locals, int32_t length, int32_t chops) {
+  if (locals == NULL) return -1;
   int32_t pos = length - 1;
   for (int32_t i=0; i<chops; i++) {
     if (locals[pos].is_category2_2nd()) {
