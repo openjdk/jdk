@@ -42,6 +42,7 @@ VM_G1CollectForAllocation::VM_G1CollectForAllocation(
 
 void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  GCCauseSetter x(g1h, _gc_cause);
   _result = g1h->satisfy_failed_allocation(_word_size, &_pause_succeeded);
   assert(_result == NULL || _pause_succeeded,
          "if we get back a result, the pause should have succeeded");
