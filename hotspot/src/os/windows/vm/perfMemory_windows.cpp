@@ -195,7 +195,7 @@ static int filename_to_pid(const char* filename) {
 // check if the given path is considered a secure directory for
 // the backing store files. Returns true if the directory exists
 // and is considered a secure location. Returns false if the path
-// is a symbolic link or if an error occured.
+// is a symbolic link or if an error occurred.
 //
 static bool is_directory_secure(const char* path) {
 
@@ -994,7 +994,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
     return false;
   }
 
-  // if running on windows 2000 or later, set the automatic inheritence
+  // if running on windows 2000 or later, set the automatic inheritance
   // control flags.
   SetSecurityDescriptorControlFnPtr _SetSecurityDescriptorControl;
   _SetSecurityDescriptorControl = (SetSecurityDescriptorControlFnPtr)
@@ -1002,7 +1002,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
                       "SetSecurityDescriptorControl");
 
   if (_SetSecurityDescriptorControl != NULL) {
-    // We do not want to further propogate inherited DACLs, so making them
+    // We do not want to further propagate inherited DACLs, so making them
     // protected prevents that.
     if (!_SetSecurityDescriptorControl(pSD, SE_DACL_PROTECTED,
                                             SE_DACL_PROTECTED)) {

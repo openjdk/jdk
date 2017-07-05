@@ -419,7 +419,7 @@ main(int argc, char ** argv)
             goto leave;
         }
         mainClass = LoadClass(env, classname);
-        if(mainClass == NULL) { /* exception occured */
+        if(mainClass == NULL) { /* exception occurred */
             ReportExceptionDescription(env);
             message = "Could not find the main class.  Program will exit.";
             goto leave;
@@ -441,7 +441,7 @@ main(int argc, char ** argv)
         goto leave;
       }
       mainClass = LoadClass(env, classname);
-      if(mainClass == NULL) { /* exception occured */
+      if(mainClass == NULL) { /* exception occurred */
         ReportExceptionDescription(env);
         message = "Could not find the main class. Program will exit.";
         goto leave;

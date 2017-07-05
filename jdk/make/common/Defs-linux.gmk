@@ -116,6 +116,14 @@ LDFLAGS_COMMON_sparc    += -m32 -mcpu=v9
 CFLAGS_REQUIRED         =  $(CFLAGS_REQUIRED_$(ARCH))
 LDFLAGS_COMMON          += $(LDFLAGS_COMMON_$(ARCH))
 
+# If this is a --hash-style=gnu system, use --hash-style=both
+#   The gnu .hash section won't work on some Linux systems like SuSE 10.
+_HAS_HASH_STYLE_GNU:=$(shell $(CC) -dumpspecs | $(GREP) -- '--hash-style=gnu')
+ifneq ($(_HAS_HASH_STYLE_GNU),)
+  LDFLAGS_HASH_STYLE = -Wl,--hash-style=both
+endif
+LDFLAGS_COMMON          += $(LDFLAGS_HASH_STYLE)
+
 #
 # Selection of warning messages
 #

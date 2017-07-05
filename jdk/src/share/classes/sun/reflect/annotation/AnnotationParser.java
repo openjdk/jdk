@@ -788,4 +788,16 @@ public class AnnotationParser {
         for (int i = 0; i < length; i++)
             skipMemberValue(buf);
     }
+
+    /*
+     * This method converts the annotation map returned by the parseAnnotations()
+     * method to an array.  It is called by Field.getDeclaredAnnotations(),
+     * Method.getDeclaredAnnotations(), and Constructor.getDeclaredAnnotations().
+     * This avoids the reflection classes to load the Annotation class until
+     * it is needed.
+     */
+    private static final Annotation[] EMPTY_ANNOTATION_ARRAY = new Annotation[0];
+    public static Annotation[] toArray(Map<Class, Annotation> annotations) {
+        return annotations.values().toArray(EMPTY_ANNOTATION_ARRAY);
+    }
 }

@@ -136,7 +136,7 @@ void MachNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 // Size of instruction in bytes
 uint MachNode::size(PhaseRegAlloc *ra_) const {
   // If a virtual was not defined for this specific instruction,
-  // Call the helper which finds the size by emiting the bits.
+  // Call the helper which finds the size by emitting the bits.
   return MachNode::emit_size(ra_);
 }
 

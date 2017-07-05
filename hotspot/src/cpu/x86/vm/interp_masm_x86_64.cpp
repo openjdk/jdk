@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2003-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,7 +190,7 @@ void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache,
                                                            int bcp_offset) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   assert(cache != index, "must use different registers");
-  load_unsigned_word(index, Address(r13, bcp_offset));
+  load_unsigned_short(index, Address(r13, bcp_offset));
   movptr(cache, Address(rbp, frame::interpreter_frame_cache_offset * wordSize));
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // convert from field index to ConstantPoolCacheEntry index
@@ -203,7 +203,7 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
                                                                int bcp_offset) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   assert(cache != tmp, "must use different register");
-  load_unsigned_word(tmp, Address(r13, bcp_offset));
+  load_unsigned_short(tmp, Address(r13, bcp_offset));
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // convert from field index to ConstantPoolCacheEntry index
   // and from word offset to byte offset
@@ -1063,8 +1063,8 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
 
   // If the mdp is valid, it will point to a DataLayout header which is
   // consistent with the bcp.  The converse is highly probable also.
-  load_unsigned_word(c_rarg2,
-                     Address(c_rarg3, in_bytes(DataLayout::bci_offset())));
+  load_unsigned_short(c_rarg2,
+                      Address(c_rarg3, in_bytes(DataLayout::bci_offset())));
   addptr(c_rarg2, Address(rbx, methodOopDesc::const_offset()));
   lea(c_rarg2, Address(c_rarg2, constMethodOopDesc::codes_offset()));
   cmpptr(c_rarg2, r13);
@@ -1592,6 +1592,14 @@ void InterpreterMacroAssembler::notify_method_entry() {
     get_method(c_rarg1);
     call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
                  r15_thread, c_rarg1);
+  }
+
+  // RedefineClasses() tracing support for obsolete method entry
+  if (RC_TRACE_IN_RANGE(0x00001000, 0x00002000)) {
+    get_method(c_rarg1);
+    call_VM_leaf(
+      CAST_FROM_FN_PTR(address, SharedRuntime::rc_trace_method_entry),
+      r15_thread, c_rarg1);
   }
 }
 

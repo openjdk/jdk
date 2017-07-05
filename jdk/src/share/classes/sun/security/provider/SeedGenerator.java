@@ -1,5 +1,5 @@
 /*
- * Copyright 1996-2006 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 1996-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,9 @@ import java.io.*;
 import java.util.Properties;
 import java.util.Enumeration;
 import java.net.*;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Path;
+import java.util.Random;
 import sun.security.util.Debug;
 
 abstract class SeedGenerator {
@@ -180,10 +183,27 @@ abstract class SeedGenerator {
 
                         // The temporary dir
                         File f = new File(p.getProperty("java.io.tmpdir"));
-                        String[] sa = f.list();
-                        for(int i = 0; i < sa.length; i++)
-                            md.update(sa[i].getBytes());
-
+                        int count = 0;
+                        DirectoryStream<Path> ds
+                                = f.toPath().newDirectoryStream();
+                        try {
+                            // We use a Random object to choose what file names
+                            // should be used. Otherwise on a machine with too
+                            // many files, the same first 1024 files always get
+                            // used. Any, We make sure the first 512 files are
+                            // always used.
+                            Random r = new Random();
+                            for (Path path: ds) {
+                                if (count < 512 || r.nextBoolean()) {
+                                    md.update(path.getName().toString().getBytes());
+                                }
+                                if (count++ > 1024) {
+                                    break;
+                                }
+                            }
+                        } finally {
+                            ds.close();
+                        }
                     } catch (Exception ex) {
                         md.update((byte)ex.hashCode());
                     }

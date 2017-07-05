@@ -131,7 +131,7 @@ void PhaseIdealLoop::do_unswitching (IdealLoopTree *loop, Node_List &old_new) {
 
   ProjNode* proj_false = invar_iff->proj_out(0)->as_Proj();
 
-  // Hoist invariant casts out of each loop to the appropiate
+  // Hoist invariant casts out of each loop to the appropriate
   // control projection.
 
   Node_List worklist;

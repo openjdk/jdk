@@ -1,5 +1,5 @@
 //
-// Copyright 2001-2005 Sun Microsystems, Inc.  All Rights Reserved.
+// Copyright 2001-2009 Sun Microsystems, Inc.  All Rights Reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,12 @@
 
 collectedHeap.cpp                       collectedHeap.hpp
 collectedHeap.cpp                       collectedHeap.inline.hpp
+collectedHeap.cpp                       heapDumper.hpp
 collectedHeap.cpp                       init.hpp
 collectedHeap.cpp                       oop.inline.hpp
 collectedHeap.cpp                       systemDictionary.hpp
 collectedHeap.cpp                       thread_<os_family>.inline.hpp
+collectedHeap.cpp                       vmGCOperations.hpp
 
 collectedHeap.hpp                       allocation.hpp
 collectedHeap.hpp                       barrierSet.hpp

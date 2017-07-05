@@ -282,13 +282,27 @@ endif
 
 # Compilers for 64bit are from SDK
 ifeq ($(ARCH_DATA_MODEL), 64)
-  ifneq ($(_ms_sdk),)
+  xMSSDK61 :="C:/Program Files/Microsoft SDKs/Windows/v6.1/"
+  MSSDK61 :=$(call FullPath,$(xMSSDK61))
+  xVS2008 :="C:/Program Files (x86)/Microsoft Visual Studio 9.0/"
+  _vs2008 :=$(call FullPath,$(xVS2008))
+  ifneq ($(_vs2008),)
     ifeq ($(ARCH), ia64)
-      _compiler_bin :=$(_ms_sdk)/Bin/Win64
+      _compiler_bin :=$(_vs2008)/VC/Bin/x86_ia64
     endif
     ifeq ($(ARCH), amd64)
-      _compiler_bin :=$(_ms_sdk)/Bin/Win64/x86/$(ARCH)
-      _redist_sdk   :=$(_ms_sdk)/redist/win64/AMD64
+      _compiler_bin :=$(_vs2008)/VC/Bin/$(ARCH)
+      _redist_sdk   :=$(MSSDK61)/VC/redist
+    endif
+  else
+    ifneq ($(_ms_sdk),)
+      ifeq ($(ARCH), ia64)
+        _compiler_bin :=$(_ms_sdk)/Bin/Win64
+      endif
+      ifeq ($(ARCH), amd64)
+        _compiler_bin :=$(_ms_sdk)/Bin/Win64/x86/$(ARCH)
+        _redist_sdk   :=$(_ms_sdk)/redist/win64/AMD64
+      endif
     endif
   endif
 endif
