@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -550,18 +550,21 @@ public interface Path
      * <p> If this path is relative then its absolute path is first obtained,
      * as if by invoking the {@link #toAbsolutePath toAbsolutePath} method.
      *
-     * <p> The {@code resolveLinks} parameter specifies if symbolic links
-     * should be resolved. This parameter is ignored when symbolic links are
-     * not supported. Where supported, and the parameter has the value {@code
-     * true} then symbolic links are resolved to their final target. Where the
-     * parameter has the value {@code false} then this method does not resolve
-     * symbolic links. Some implementations allow special names such as
-     * "{@code ..}" to refer to the parent directory. When deriving the <em>real
-     * path</em>, and a "{@code ..}" (or equivalent) is preceded by a
-     * non-"{@code ..}" name then an implementation will typically causes both
-     * names to be removed. When not resolving symbolic links and the preceding
-     * name is a symbolic link then the names are only removed if it guaranteed
-     * that the resulting path will locate the same file as this path.
+     * <p> The {@code options} array may be used to indicate how symbolic links
+     * are handled. By default, symbolic links are resolved to their final
+     * target. If the option {@link LinkOption#NOFOLLOW_LINKS NOFOLLOW_LINKS} is
+     * present then this method does not resolve symbolic links.
+     *
+     * Some implementations allow special names such as "{@code ..}" to refer to
+     * the parent directory. When deriving the <em>real path</em>, and a
+     * "{@code ..}" (or equivalent) is preceded by a non-"{@code ..}" name then
+     * an implementation will typically cause both names to be removed. When
+     * not resolving symbolic links and the preceding name is a symbolic link
+     * then the names are only removed if it guaranteed that the resulting path
+     * will locate the same file as this path.
+     *
+     * @param   options
+     *          options indicating how symbolic links are handled
      *
      * @return  an absolute path represent the <em>real</em> path of the file
      *          located by this object
@@ -576,7 +579,7 @@ public interface Path
      *          checkPropertyAccess} method is invoked to check access to the
      *          system property {@code user.dir}
      */
-    Path toRealPath(boolean resolveLinks) throws IOException;
+    Path toRealPath(LinkOption... options) throws IOException;
 
     /**
      * Returns a {@link File} object representing this path. Where this {@code

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -461,7 +461,12 @@ public class SinglePixelPackedSampleModel extends SampleModel
      */
     public int[] getPixels(int x, int y, int w, int h,
                            int iArray[], DataBuffer data) {
-        if ((x < 0) || (y < 0) || (x + w > width) || (y + h > height)) {
+        int x1 = x + w;
+        int y1 = y + h;
+
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 >  height)
+        {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }
@@ -659,7 +664,12 @@ public class SinglePixelPackedSampleModel extends SampleModel
      */
     public void setPixels(int x, int y, int w, int h,
                           int iArray[], DataBuffer data) {
-        if ((x < 0) || (y < 0) || (x + w > width) || (y + h > height)) {
+        int x1 = x + w;
+        int y1 = y + h;
+
+        if (x < 0 || x >= width || w > width || x1 < 0 || x1 > width ||
+            y < 0 || y >= height || h > height || y1 < 0 || y1 >  height)
+        {
             throw new ArrayIndexOutOfBoundsException
                 ("Coordinate out of bounds!");
         }

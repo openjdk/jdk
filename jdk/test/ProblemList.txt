@@ -1,6 +1,6 @@
 ###########################################################################
 #
-# Copyright (c) 2009, 2010, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -689,6 +689,9 @@ sun/tools/jconsole/ResourceCheckTest.sh				generic-all
 ############################################################################
 
 # jdk_util
+
+# Filed 7027061
+java/util/Locale/Bug6989440.java				windows-all
 
 # Filed 6933803
 java/util/concurrent/ThreadPoolExecutor/CoreThreadTimeOut.java	generic-all

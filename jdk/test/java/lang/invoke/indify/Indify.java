@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,18 +89,14 @@ import java.util.regex.*;
 $ JAVA_HOME=(some recent OpenJDK 7 build)
 $ ant
 $ $JAVA_HOME/bin/java -cp build/classes indify.Indify --overwrite --dest build/testout build/classes/indify/Example.class
-$ $JAVA_HOME/bin/java -XX:+UnlockExperimentalVMOptions -XX:+EnableInvokeDynamic -cp build/classes indify.Example
+$ $JAVA_HOME/bin/java -cp build/classes indify.Example
 MT = (java.lang.Object)java.lang.Object
 MH = adder(int,int)java.lang.Integer
 adder(1,2) = 3
 calling indy:  42
-$ $JAVA_HOME/bin/java -XX:+UnlockExperimentalVMOptions -XX:+EnableInvokeDynamic -cp build/testout indify.Example
+$ $JAVA_HOME/bin/java -cp build/testout indify.Example
 (same output as above)
  * </pre></blockquote>
- * <p>
- * Before OpenJDK build b123, the format of {@code CONSTANT_InvokeDynamic} is in transition,
- * and the switch {@code --transitionalJSR292=yes} is recommended.
- * It is turned <em>off</em> by default, but users of earlier builds may need to turn it on.
  * <p>
  * A version of this transformation built on top of <a href="http://asm.ow2.org/">http://asm.ow2.org/</a> would be welcome.
  * @author John Rose
@@ -117,7 +113,6 @@ public class Indify {
     public boolean overwrite = false;
     public boolean quiet = false;
     public boolean verbose = false;
-    public boolean transitionalJSR292 = false;  // final version is distributed
     public boolean all = false;
     public int verifySpecifierCount = -1;
 
@@ -202,9 +197,6 @@ public class Indify {
                     break;
                 case "-v": case "--verbose": case "--verbose=":
                     verbose = booleanOption(a2);  // more output
-                    break;
-                case "--transitionalJSR292": case "--transitionalJSR292=":
-                    transitionalJSR292 = booleanOption(a2);  // use older invokedynamic format
                     break;
                 default:
                     throw new IllegalArgumentException("unrecognized flag: "+a);
@@ -330,10 +322,14 @@ public class Indify {
                         if (resolve)  resolveClass(c);
                         return c;
                     }
+                } catch (ClassNotFoundException ex) {
+                    // fall through
+                } catch (IOException ex) {
+                    // fall through
                 } catch (Exception ex) {
-                    if (ex instanceof IllegalArgumentException)
-                        // pass error from reportPatternMethods
-                        throw (IllegalArgumentException) ex;
+                    // pass error from reportPatternMethods, etc.
+                    if (ex instanceof RuntimeException)  throw (RuntimeException) ex;
+                    throw new RuntimeException(ex);
                 }
             }
             return super.loadClass(name, resolve);
@@ -403,8 +399,7 @@ public class Indify {
                     if (blab++ == 0 && !quiet)
                         System.err.println("patching "+cf.nameString()+"."+m);
                     //if (blab == 1) { for (Instruction j = m.instructions(); j != null; j = j.next()) System.out.println("  |"+j); }
-                    if (con.tag == CONSTANT_InvokeDynamic ||
-                        con.tag == CONSTANT_InvokeDynamic_17) {
+                    if (con.tag == CONSTANT_InvokeDynamic) {
                         // need to patch the following instruction too,
                         // but there are usually intervening argument pushes too
                         Instruction i2 = findPop(i);
@@ -566,7 +561,7 @@ public class Indify {
                         short nt = n12[1];
                         char cmark = poolMarks[(char)cl];
                         if (cmark != 0) {
-                            mark = cmark;  // it is a java.dyn.* or java.lang.* method
+                            mark = cmark;  // it is a java.lang.invoke.* or java.lang.* method
                             break;
                         }
                         String cls = cf.pool.getString(CONSTANT_Class, cl);
@@ -597,8 +592,6 @@ public class Indify {
             if (s.startsWith("MT_"))                return 'T';
             else if (s.startsWith("MH_"))           return 'H';
             else if (s.startsWith("INDY_"))         return 'I';
-            else if (transitionalJSR292 &&
-                     s.startsWith("java/dyn/"))     return 'D';
             else if (s.startsWith("java/lang/invoke/"))  return 'D';
             else if (s.startsWith("java/lang/"))    return 'J';
             return 0;
@@ -623,10 +616,6 @@ public class Indify {
 
         boolean matchType(String descr, String requiredType) {
             if (descr.equals(requiredType))  return true;
-            if (transitionalJSR292) {
-                String oldType = requiredType.replace("Ljava/lang/invoke/", "Ljava/dyn/");
-                if (descr.equals(oldType))  return true;
-            }
             return false;
         }
 
@@ -872,6 +861,7 @@ public class Indify {
                             continue;
                         }
                         break;
+                    case "invoke":
                     case "invokeGeneric":
                     case "invokeWithArguments":
                         if (patternMark != 'I')  break decode;
@@ -1022,7 +1012,7 @@ public class Indify {
         private Constant makeInvokeDynamicCon(List<Object> args) {
             // E.g.: MH_bsm.invokeGeneric(lookup(), "name", MethodType, "extraArg")
             removeEmptyJVMSlots(args);
-            if (args.size() != 4 && args.size() != 5)  return null;
+            if (args.size() < 4)  return null;
             int argi = 0;
             short nindex, tindex, ntindex, bsmindex;
             Object con;
@@ -1035,22 +1025,17 @@ public class Indify {
             tindex = ((Constant)con).itemIndex();
             ntindex = (short) cf.pool.addConstant(CONSTANT_NameAndType,
                                                   new Short[]{ nindex, tindex }).index;
-            if (transitionalJSR292) {
-                if (argi != args.size()) {
-                    System.err.println("BSM specifier has extra arguments but transitionalJSR292=1");
-                    return null;
-                }
-                return cf.pool.addConstant(CONSTANT_InvokeDynamic_17,
-                        new Short[]{ bsmindex, ntindex });
-            }
-            List<Object> extraArgs = Collections.emptyList();
+            List<Object> extraArgs = new ArrayList<Object>();
             if (argi < args.size()) {
-                Object arg = args.get(argi);
-                if (arg instanceof List)
-                    extraArgs = (List<Object>) arg;
-                else
-                    extraArgs = Arrays.asList(arg);
-                removeEmptyJVMSlots(args);
+                extraArgs.addAll(args.subList(argi, args.size() - 1));
+                Object lastArg = args.get(args.size() - 1);
+                if (lastArg instanceof List) {
+                    List<Object> lastArgs = (List<Object>) lastArg;
+                    removeEmptyJVMSlots(lastArgs);
+                    extraArgs.addAll(lastArgs);
+                } else {
+                    extraArgs.add(lastArg);
+                }
             }
             List<Short> extraArgIndexes = new CountedList<>(Short.class);
             for (Object x : extraArgs) {
@@ -1062,7 +1047,10 @@ public class Indify {
                     if (x instanceof Double)  { num = Double.doubleToRawLongBits((Double)x); numTag = CONSTANT_Double; }
                     if (num != null)  x = cf.pool.addConstant(numTag, x);
                 }
-                if (!(x instanceof Constant))  return null;
+                if (!(x instanceof Constant)) {
+                    System.err.println("warning: unrecognized BSM argument "+x);
+                    return null;
+                }
                 extraArgIndexes.add((short) ((Constant)x).index);
             }
             List<Object[]> specs = bootstrapMethodSpecifiers(true);
@@ -1359,7 +1347,6 @@ public class Indify {
             case CONSTANT_Method:
             case CONSTANT_InterfaceMethod:
             case CONSTANT_NameAndType:
-            case CONSTANT_InvokeDynamic_17:
             case CONSTANT_InvokeDynamic:
                 // read an ordered pair
                 arg = new Short[] { in.readShort(), in.readShort() };
@@ -1634,7 +1621,6 @@ public class Indify {
         CONSTANT_NameAndType       = 12,
         CONSTANT_MethodHandle      = 15,  // JSR 292
         CONSTANT_MethodType        = 16,  // JSR 292
-        CONSTANT_InvokeDynamic_17  = 17,  // JSR 292, only occurs in old class files
         CONSTANT_InvokeDynamic     = 18;  // JSR 292
     private static final byte
         REF_getField               = 1,
