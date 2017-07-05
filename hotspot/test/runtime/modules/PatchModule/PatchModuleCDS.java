@@ -23,41 +23,83 @@
 
 /*
  * @test
+ * @summary test that --patch-module works with CDS
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
+ *          jdk.jartool/sun.tools.jar
+ * @build PatchModuleMain
  * @run main PatchModuleCDS
  */
 
 import java.io.File;
+import jdk.test.lib.InMemoryJavaCompiler;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class PatchModuleCDS {
 
     public static void main(String args[]) throws Throwable {
-        System.out.println("Test that --patch-module and -Xshare:dump are incompatibable");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("--patch-module=java.naming=mods/java.naming", "-Xshare:dump");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Cannot use the following option when dumping the shared archive: --patch-module");
 
-        System.out.println("Test that --patch-module and -Xshare:on are incompatibable");
+        // Case 1: Test that --patch-module and -Xshare:dump are compatible
         String filename = "patch_module.jsa";
-        pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=" + filename,
-            "-Xshare:dump");
-        output = new OutputAnalyzer(pb.start());
-        output.shouldContain("ro space:"); // Make sure archive got created.
-
-        pb = ProcessTools.createJavaProcessBuilder(
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:SharedArchiveFile=" + filename,
-            "-Xshare:on",
-            "--patch-module=java.naming=mods/java.naming",
+            "-Xshare:dump",
+            "--patch-module=java.naming=no/such/directory",
+            "-Xlog:class+path=info",
             "-version");
-        output = new OutputAnalyzer(pb.start());
-        output.shouldContain("The shared archive file cannot be used with --patch-module");
+        new OutputAnalyzer(pb.start())
+            .shouldContain("ro space:"); // Make sure archive got created.
 
-        output.shouldHaveExitValue(1);
+       // Case 2: Test that only jar file in --patch-module is supported for CDS dumping
+        // Create a class file in the module java.base.
+        String source = "package javax.naming.spi; "                +
+                        "public class NamingManager { "             +
+                        "    static { "                             +
+                        "        System.out.println(\"I pass!\"); " +
+                        "    } "                                    +
+                        "}";
+
+        ClassFileInstaller.writeClassToDisk("javax/naming/spi/NamingManager",
+             InMemoryJavaCompiler.compile("javax.naming.spi.NamingManager", source, "-Xmodule:java.naming"),
+             System.getProperty("test.classes"));
+
+        pb = ProcessTools.createJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:SharedArchiveFile=" + filename,
+            "-Xshare:dump",
+            "--patch-module=java.base=" + System.getProperty("test.classes"),
+            "-Xlog:class+path=info",
+            "-version");
+        new OutputAnalyzer(pb.start())
+            .shouldContain("--patch-module requires a regular file during dumping");
+
+        // Case 3a: Test CDS dumping with jar file in --patch-module
+        BasicJarBuilder.build("javanaming", "javax/naming/spi/NamingManager");
+        String moduleJar = BasicJarBuilder.getTestJar("javanaming.jar");
+        pb = ProcessTools.createJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:SharedArchiveFile=" + filename,
+            "-Xshare:dump",
+            "--patch-module=java.naming=" + moduleJar,
+            "-Xlog:class+load",
+            "-Xlog:class+path=info",
+            "PatchModuleMain", "javax.naming.spi.NamingManager");
+        new OutputAnalyzer(pb.start())
+            .shouldContain("ro space:"); // Make sure archive got created.
+
+        // Case 3b: Test CDS run with jar file in --patch-module
+        pb = ProcessTools.createJavaProcessBuilder(
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:SharedArchiveFile=" + filename,
+            "-Xshare:auto",
+            "--patch-module=java.naming=" + moduleJar,
+            "-Xlog:class+load",
+            "-Xlog:class+path=info",
+            "PatchModuleMain", "javax.naming.spi.NamingManager");
+        new OutputAnalyzer(pb.start())
+            .shouldContain("I pass!")
+            .shouldHaveExitValue(0);
     }
 }

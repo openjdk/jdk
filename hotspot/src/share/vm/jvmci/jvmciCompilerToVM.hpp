@@ -58,7 +58,7 @@ class CompilerToVM {
 
     static bool _supports_inline_contig_alloc;
     static HeapWord** _heap_end_addr;
-    static HeapWord** _heap_top_addr;
+    static HeapWord* volatile* _heap_top_addr;
     static int _max_oop_map_stack_offset;
 
     static jbyte* cardtable_start_address;

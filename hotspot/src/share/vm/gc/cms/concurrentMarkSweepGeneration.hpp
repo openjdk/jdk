@@ -540,7 +540,7 @@ class CMSCollector: public CHeapObj<mtGC> {
 
   // Overflow list of grey objects, threaded through mark-word
   // Manipulated with CAS in the parallel/multi-threaded case.
-  oop _overflow_list;
+  oopDesc* volatile _overflow_list;
   // The following array-pair keeps track of mark words
   // displaced for accommodating overflow list above.
   // This code will likely be revisited under RFE#4922830.
@@ -724,12 +724,12 @@ class CMSCollector: public CHeapObj<mtGC> {
   // Support for parallelizing young gen rescan in CMS remark phase
   ParNewGeneration* _young_gen;
 
-  HeapWord** _top_addr;    // ... Top of Eden
-  HeapWord** _end_addr;    // ... End of Eden
-  Mutex*     _eden_chunk_lock;
-  HeapWord** _eden_chunk_array; // ... Eden partitioning array
-  size_t     _eden_chunk_index; // ... top (exclusive) of array
-  size_t     _eden_chunk_capacity;  // ... max entries in array
+  HeapWord* volatile* _top_addr;    // ... Top of Eden
+  HeapWord**          _end_addr;    // ... End of Eden
+  Mutex*              _eden_chunk_lock;
+  HeapWord**          _eden_chunk_array; // ... Eden partitioning array
+  size_t              _eden_chunk_index; // ... top (exclusive) of array
+  size_t              _eden_chunk_capacity;  // ... max entries in array
 
   // Support for parallelizing survivor space rescan
   HeapWord** _survivor_chunk_array;

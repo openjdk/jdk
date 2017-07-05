@@ -29,31 +29,34 @@
 #include "oops/oop.hpp"
 #include "runtime/vframe.hpp"
 
-//
-// JavaFrameStream is used by StackWalker to iterate through Java stack frames
-// on the given JavaThread.
-//
-class JavaFrameStream : public StackObj {
+// BaseFrameStream is an abstract base class for encapsulating the VM-side
+// implementation of the StackWalker API.  There are two concrete subclasses:
+// - JavaFrameStream:
+//     -based on vframeStream; used in most instances
+// - LiveFrameStream:
+//     -based on javaVFrame; used for retrieving locals/monitors/operands for
+//      LiveStackFrame
+class BaseFrameStream : public StackObj {
 private:
   enum {
     magic_pos = 0
   };
 
   JavaThread*           _thread;
-  javaVFrame*           _jvf;
   jlong                 _anchor;
+protected:
+  void fill_stackframe(Handle stackFrame, const methodHandle& method);
 public:
-  JavaFrameStream(JavaThread* thread, RegisterMap* rm)
-    : _thread(thread), _anchor(0L) {
-    _jvf = _thread->last_java_vframe(rm);
-  }
+  BaseFrameStream(JavaThread* thread) : _thread(thread), _anchor(0L) {}
 
-  javaVFrame*     java_frame()        { return _jvf; }
-  void            next()              { _jvf = _jvf->java_sender(); }
-  bool            at_end()            { return _jvf == NULL; }
+  virtual void    next()=0;
+  virtual bool    at_end()=0;
 
-  Method* method()                    { return _jvf->method(); }
-  int bci()                           { return _jvf->bci(); }
+  virtual Method* method()=0;
+  virtual int     bci()=0;
+
+  virtual void    fill_frame(int index, objArrayHandle  frames_array,
+                             const methodHandle& method, TRAPS)=0;
 
   void setup_magic_on_entry(objArrayHandle frames_array);
   bool check_magic(objArrayHandle frames_array);
@@ -67,20 +70,57 @@ public:
     return (jlong) castable_address(this);
   }
 
-  static JavaFrameStream* from_current(JavaThread* thread, jlong magic, objArrayHandle frames_array);
+  static BaseFrameStream* from_current(JavaThread* thread, jlong magic, objArrayHandle frames_array);
+};
+
+class JavaFrameStream : public BaseFrameStream {
+private:
+  vframeStream          _vfst;
+  bool                  _need_method_info;
+public:
+  JavaFrameStream(JavaThread* thread, int mode);
+
+  void next()      { _vfst.next();}
+  bool at_end()    { return _vfst.at_end(); }
+
+  Method* method() { return _vfst.method(); }
+  int bci()        { return _vfst.bci(); }
+
+  void fill_frame(int index, objArrayHandle  frames_array,
+                  const methodHandle& method, TRAPS);
+};
+
+class LiveFrameStream : public BaseFrameStream {
+private:
+  javaVFrame*           _jvf;
+
+  void fill_live_stackframe(Handle stackFrame, const methodHandle& method, TRAPS);
+  static oop create_primitive_value_instance(StackValueCollection* values,
+                                             int i, TRAPS);
+  static objArrayHandle monitors_to_object_array(GrowableArray<MonitorInfo*>* monitors,
+                                                 TRAPS);
+  static objArrayHandle values_to_object_array(StackValueCollection* values, TRAPS);
+public:
+  LiveFrameStream(JavaThread* thread, RegisterMap* rm) : BaseFrameStream(thread) {
+    _jvf = thread->last_java_vframe(rm);
+  }
+
+  void next()      { _jvf = _jvf->java_sender(); }
+  bool at_end()    { return _jvf == NULL; }
+
+  Method* method() { return _jvf->method(); }
+  int bci()        { return _jvf->bci(); }
+
+  void fill_frame(int index, objArrayHandle  frames_array,
+                  const methodHandle& method, TRAPS);
 };
 
 class StackWalk : public AllStatic {
 private:
-  static int fill_in_frames(jlong mode, JavaFrameStream& stream,
+  static int fill_in_frames(jlong mode, BaseFrameStream& stream,
                             int max_nframes, int start_index,
                             objArrayHandle frames_array,
                             int& end_index, TRAPS);
-
-  static void fill_stackframe(Handle stackFrame, const methodHandle& method, int bci);
-
-  static void fill_live_stackframe(Handle stackFrame, const methodHandle& method, int bci,
-                                   javaVFrame* jvf, TRAPS);
 
   static inline bool get_caller_class(int mode) {
     return (mode & JVM_STACKWALK_GET_CALLER_CLASS) != 0;
@@ -88,14 +128,14 @@ private:
   static inline bool skip_hidden_frames(int mode) {
     return (mode & JVM_STACKWALK_SHOW_HIDDEN_FRAMES) == 0;
   }
-  static inline bool need_method_info(int mode) {
-    return (mode & JVM_STACKWALK_FILL_CLASS_REFS_ONLY) == 0;
-  }
   static inline bool live_frame_info(int mode) {
     return (mode & JVM_STACKWALK_FILL_LIVE_STACK_FRAMES) != 0;
   }
 
 public:
+  static inline bool need_method_info(int mode) {
+    return (mode & JVM_STACKWALK_FILL_CLASS_REFS_ONLY) == 0;
+  }
   static inline bool use_frames_array(int mode) {
     return (mode & JVM_STACKWALK_FILL_CLASS_REFS_ONLY) == 0;
   }
@@ -104,9 +144,12 @@ public:
                   objArrayHandle frames_array,
                   TRAPS);
 
-  static jint moreFrames(Handle stackStream, jlong mode, jlong magic,
-                         int frame_count, int start_index,
-                         objArrayHandle frames_array,
-                         TRAPS);
+  static oop fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
+                             jlong mode, int skip_frames, int frame_count,
+                             int start_index, objArrayHandle frames_array, TRAPS);
+
+  static jint fetchNextBatch(Handle stackStream, jlong mode, jlong magic,
+                             int frame_count, int start_index,
+                             objArrayHandle frames_array, TRAPS);
 };
 #endif // SHARE_VM_PRIMS_STACKWALK_HPP

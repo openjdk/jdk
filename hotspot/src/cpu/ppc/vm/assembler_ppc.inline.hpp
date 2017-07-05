@@ -349,6 +349,9 @@ inline void Assembler::stdx( Register d, Register s1, Register s2) { emit_int32(
 inline void Assembler::stdu( Register d, int si16,    Register s1) { emit_int32(STDU_OPCODE | rs(d) | ds(si16)   | rta0mem(s1));}
 inline void Assembler::stdux(Register s, Register a,  Register b)  { emit_int32(STDUX_OPCODE| rs(s) | rta0mem(a) | rb(b));}
 
+inline void Assembler::st_ptr(Register d, int b, Register s1) { std(d, b, s1); }
+DEBUG_ONLY(inline void Assembler::st_ptr(Register d, ByteSize b, Register s1) { std(d, in_bytes(b), s1); })
+
 // PPC 1, section 3.3.13 Move To/From System Register Instructions
 inline void Assembler::mtlr( Register s1)         { emit_int32(MTLR_OPCODE  | rs(s1)); }
 inline void Assembler::mflr( Register d )         { emit_int32(MFLR_OPCODE  | rt(d)); }
@@ -733,6 +736,8 @@ inline void Assembler::lvsr(  VectorRegister d, Register s1, Register s2) { emit
 // Vector-Scalar (VSX) instructions.
 inline void Assembler::lxvd2x (VectorSRegister d, Register s1, Register s2) { emit_int32( LXVD2X_OPCODE  | vsrt(d) | ra(s1) | rb(s2)); }
 inline void Assembler::stxvd2x(VectorSRegister d, Register s1, Register s2) { emit_int32( STXVD2X_OPCODE | vsrt(d) | ra(s1) | rb(s2)); }
+inline void Assembler::mtvrd(  VectorRegister  d, Register a)               { emit_int32( MTVSRD_OPCODE  | vrt(d)  | ra(a)  | 1u); } // 1u: d is treated as Vector (VMX/Altivec).
+inline void Assembler::mfvrd(  Register        a, VectorRegister d)         { emit_int32( MFVSRD_OPCODE  | vrt(d)  | ra(a)  | 1u); } // 1u: d is treated as Vector (VMX/Altivec).
 
 inline void Assembler::vpkpx(   VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VPKPX_OPCODE   | vrt(d) | vra(a) | vrb(b)); }
 inline void Assembler::vpkshss( VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VPKSHSS_OPCODE | vrt(d) | vra(a) | vrb(b)); }

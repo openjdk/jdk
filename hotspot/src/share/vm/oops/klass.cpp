@@ -734,27 +734,3 @@ bool Klass::verify_itable_index(int i) {
 }
 
 #endif
-
-/////////////// Unit tests ///////////////
-
-#ifndef PRODUCT
-
-class TestKlass {
- public:
-  static void test_oop_is_instanceClassLoader() {
-    Klass* klass = SystemDictionary::ClassLoader_klass();
-    guarantee(klass->is_instance_klass(), "assert");
-    guarantee(InstanceKlass::cast(klass)->is_class_loader_instance_klass(), "test failed");
-
-    klass = SystemDictionary::String_klass();
-    guarantee(!klass->is_instance_klass() ||
-              !InstanceKlass::cast(klass)->is_class_loader_instance_klass(),
-              "test failed");
-  }
-};
-
-void TestKlass_test() {
-  TestKlass::test_oop_is_instanceClassLoader();
-}
-
-#endif  // PRODUCT

@@ -45,6 +45,8 @@ enum platform_dependent_constants {
 #else
   #define CRC32_TABLES 1
 #endif
+#define CRC32_CONSTANTS_SIZE 1084
+#define CRC32_BARRET_CONSTANTS 10
 
 class ppc64 {
  friend class StubGenerator;
@@ -53,11 +55,17 @@ class ppc64 {
 
   // CRC32 Intrinsics.
   static juint _crc_table[CRC32_TABLES][CRC32_COLUMN_SIZE];
+  static juint* _constants;
+  static juint* _barret_constants;
 
  public:
 
   // CRC32 Intrinsics.
   static void generate_load_crc_table_addr(MacroAssembler* masm, Register table);
+  static void generate_load_crc_constants_addr(MacroAssembler* masm, Register table);
+  static void generate_load_crc_barret_constants_addr(MacroAssembler* masm, Register table);
+  static juint* generate_crc_constants();
+  static juint* generate_crc_barret_constants();
 
 };
 
