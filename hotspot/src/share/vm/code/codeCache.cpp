@@ -939,7 +939,9 @@ void CodeCache::print_bounds(outputStream* st) {
                _heap->high(),
                _heap->high_boundary());
   st->print_cr(" total_blobs=" UINT32_FORMAT " nmethods=" UINT32_FORMAT
-               " adapters=" UINT32_FORMAT " free_code_cache=" SIZE_FORMAT,
+               " adapters=" UINT32_FORMAT " free_code_cache=" SIZE_FORMAT
+               " largest_free_block=" SIZE_FORMAT,
                CodeCache::nof_blobs(), CodeCache::nof_nmethods(),
-               CodeCache::nof_adapters(), CodeCache::unallocated_capacity());
+               CodeCache::nof_adapters(), CodeCache::unallocated_capacity(),
+               CodeCache::largest_free_block());
 }
