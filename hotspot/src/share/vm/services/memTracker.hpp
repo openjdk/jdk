@@ -126,6 +126,8 @@ class MemTracker : AllStatic {
         return "Native memory tracking has been shutdown by user";
       case NMT_normal:
         return "Native memory tracking has been shutdown due to process exiting";
+      case NMT_out_of_memory:
+        return "Native memory tracking has been shutdown due to out of native memory";
       case NMT_initialization:
         return "Native memory tracking failed to initialize";
       case NMT_error_reporting:
@@ -326,7 +328,7 @@ class MemTracker : AllStatic {
   static void create_memory_record(address addr, MEMFLAGS type,
                    size_t size, address pc, Thread* thread);
   static void create_record_in_recorder(address addr, MEMFLAGS type,
-                   size_t size, address pc, Thread* thread);
+                   size_t size, address pc, JavaThread* thread);
 
  private:
   // global memory snapshot
@@ -336,7 +338,7 @@ class MemTracker : AllStatic {
   static MemBaseline      _baseline;
 
   // query lock
-  static Mutex            _query_lock;
+  static Mutex*           _query_lock;
 
   // a thread can start to allocate memory before it is attached
   // to VM 'Thread', those memory activities are recorded here.
