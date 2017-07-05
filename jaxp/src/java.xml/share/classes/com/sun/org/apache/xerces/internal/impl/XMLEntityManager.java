@@ -1015,7 +1015,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             //          is this the right solution? -SG
             //if (systemId != null)
             staxInputSource = new StaxXMLInputSource(
-                    new XMLInputSource(publicId, literalSystemId, baseSystemId), false);
+                    new XMLInputSource(publicId, literalSystemId, baseSystemId, true), false);
         }else if(staxInputSource.hasXMLStreamOrXMLEventReader()){
             //Waiting for the clarification from EG. - nb
         }
@@ -1094,7 +1094,7 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
             // REVISIT: when systemId is null, I think we should return null.
             //          is this the right solution? -SG
             //if (systemId != null)
-            xmlInputSource = new XMLInputSource(publicId, literalSystemId, baseSystemId);
+            xmlInputSource = new XMLInputSource(publicId, literalSystemId, baseSystemId, false);
         }
 
         if (DEBUG_RESOLVER) {

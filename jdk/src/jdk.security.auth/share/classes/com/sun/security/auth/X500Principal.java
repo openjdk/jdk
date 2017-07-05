@@ -47,9 +47,10 @@ import sun.security.x509.X500Name;
  *             This X500Principal classs is entirely deprecated and
  *             is here to allow for a smooth transition to the new
  *             class.
+ * This class is subject to removal in a future version of Java SE.
  * @see javax.security.auth.x500.X500Principal
 */
-@Deprecated
+@Deprecated(since="1.4", forRemoval=true)
 public class X500Principal implements Principal, java.io.Serializable {
 
     private static final long serialVersionUID = -8222422609431628648L;

@@ -34,14 +34,13 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 
 /**
- * A class representing a set of TIFF tags.  Each tag in the set must
- * have a unique number (this is a limitation of the TIFF
- * specification itself).
+ * A class representing a set of TIFF tags.  Each tag in the set must have
+ * a unique number (this is a limitation of the TIFF specification itself).
  *
  * <p> This class and its subclasses are responsible for mapping
  * between raw tag numbers and {@code TIFFTag} objects, which
  * contain additional information about each tag, such as the tag's
- * name, legal data types, and mnemonic names for some or all of ts
+ * name, legal data types, and mnemonic names for some or all of its
  * data values.
  *
  * @since 9

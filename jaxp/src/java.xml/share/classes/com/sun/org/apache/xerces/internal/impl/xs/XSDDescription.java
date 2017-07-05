@@ -181,7 +181,7 @@ public class XSDDescription extends XMLResourceIdentifierImpl
     }
 
     /**
-     * @return true is the schema is external
+     * @return true if the schema is external
      */
     public boolean isExternal() {
         return fContextType == CONTEXT_INCLUDE ||

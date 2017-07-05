@@ -559,10 +559,9 @@ public class JEditorPane extends JTextComponent {
             in = new BufferedInputStream(in, READ_LIMIT);
             in.mark(READ_LIMIT);
         }
-        try {
-            String charset = (String) getClientProperty("charset");
-            Reader r = (charset != null) ? new InputStreamReader(in, charset) :
-                new InputStreamReader(in);
+        String charset = (String) getClientProperty("charset");
+        try(Reader r = (charset != null) ? new InputStreamReader(in, charset) :
+                new InputStreamReader(in)) {
             kit.read(r, doc, 0);
         } catch (BadLocationException e) {
             throw new IOException(e.getMessage());
@@ -1186,7 +1185,7 @@ public class JEditorPane extends JTextComponent {
         if (k == null) {
             // try to dynamically load the support
             String classname = getKitTypeRegistry().get(type);
-            ClassLoader loader = getKitLoaderRegistry().get(type);
+            ClassLoader loader = getKitLoaderRegistry().get(type).orElse(null);
             try {
                 Class<?> c;
                 if (loader != null) {
@@ -1243,7 +1242,7 @@ public class JEditorPane extends JTextComponent {
      */
     public static void registerEditorKitForContentType(String type, String classname, ClassLoader loader) {
         getKitTypeRegistry().put(type, classname);
-        getKitLoaderRegistry().put(type, loader);
+        getKitLoaderRegistry().put(type, Optional.ofNullable(loader));
         getKitRegisty().remove(type);
     }
 
@@ -1268,10 +1267,10 @@ public class JEditorPane extends JTextComponent {
         return tmp;
     }
 
-    private static Hashtable<String, ClassLoader> getKitLoaderRegistry() {
+    private static Hashtable<String, Optional<ClassLoader>> getKitLoaderRegistry() {
         loadDefaultKitsIfNecessary();
         @SuppressWarnings("unchecked")
-        Hashtable<String, ClassLoader> tmp =
+        Hashtable<String,  Optional<ClassLoader>> tmp =
             (Hashtable)SwingUtilities.appContextGet(kitLoaderRegistryKey);
         return tmp;
     }

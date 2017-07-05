@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key headful
  * @bug 6430601
  * @summary Verifies that copyArea() works properly when the
  * destination parameters are outside the destination bounds.

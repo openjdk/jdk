@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XMLErrorResources_ko.java /st_wptg_1.8.0.0.0jdk/2 2013/09/16 02:31:34 gmolloy Exp $
+ * $Id: XMLErrorResources_ko.java /st_wptg_1.9.0.0.0jdk/2 2016/04/12 02:39:51 gmolloy Exp $
  */
 package com.sun.org.apache.xml.internal.res;
 
@@ -254,7 +254,7 @@ public class XMLErrorResources_ko extends ListResourceBundle
        "\uAD6C\uBB38 \uBD84\uC11D\uAE30\uB97C \uCD08\uAE30\uD654\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
 
     { ER_EXCEPTION_CREATING_POOL,
-       "\uD480\uC5D0 \uB300\uD55C \uC0C8 \uC778\uC2A4\uD134\uC2A4\uB97C \uC0DD\uC131\uD558\uB294 \uC911 \uC608\uC678 \uC0AC\uD56D\uC774 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."},
+       "\uD480\uC5D0 \uB300\uD55C \uC0C8 \uC778\uC2A4\uD134\uC2A4\uB97C \uC0DD\uC131\uD558\uB294 \uC911 \uC608\uC678\uC0AC\uD56D\uC774 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."},
 
     { ER_PATH_CONTAINS_INVALID_ESCAPE_SEQUENCE,
        "\uACBD\uB85C\uC5D0 \uBD80\uC801\uD569\uD55C \uC774\uC2A4\uCF00\uC774\uD504 \uC2DC\uD000\uC2A4\uAC00 \uD3EC\uD568\uB418\uC5B4 \uC788\uC2B5\uB2C8\uB2E4."},
@@ -377,7 +377,7 @@ public class XMLErrorResources_ko extends ListResourceBundle
       "\uC774\uB984\uC740 \uCF5C\uB860\uC73C\uB85C \uC2DC\uC791\uD560 \uC218 \uC5C6\uC2B5\uB2C8\uB2E4."},
 
     { "BAD_CODE", "createMessage\uC5D0 \uB300\uD55C \uB9E4\uAC1C\uBCC0\uC218\uAC00 \uBC94\uC704\uB97C \uBC97\uC5B4\uB0AC\uC2B5\uB2C8\uB2E4."},
-    { "FORMAT_FAILED", "messageFormat \uD638\uCD9C \uC911 \uC608\uC678 \uC0AC\uD56D\uC774 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."},
+    { "FORMAT_FAILED", "messageFormat \uD638\uCD9C \uC911 \uC608\uC678\uC0AC\uD56D\uC774 \uBC1C\uC0DD\uD588\uC2B5\uB2C8\uB2E4."},
     { "line", "\uD589 \uBC88\uD638"},
     { "column","\uC5F4 \uBC88\uD638"},
 

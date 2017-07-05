@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.util.TimerTask;
 
 /*
   @test
+  @key headful
   @bug 7080109
   @summary Dialog.show() lacks doPrivileged() to access system event queue.
   @author sergey.bylokhov@oracle.com: area=awt.dialog

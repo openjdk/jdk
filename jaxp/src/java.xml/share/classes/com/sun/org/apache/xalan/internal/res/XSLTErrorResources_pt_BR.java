@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 /*
- * $Id: XSLTErrorResources_pt_BR.java /st_wptg_1.8.0.0.0jdk/2 2013/09/11 12:46:53 gmolloy Exp $
+ * $Id: XSLTErrorResources_pt_BR.java /st_wptg_1.9.0.0.0jdk/2 2016/04/12 18:01:34 gmolloy Exp $
  */
 package com.sun.org.apache.xalan.internal.res;
 
@@ -672,7 +672,7 @@ public class XSLTErrorResources_pt_BR extends ListResourceBundle
       "result-ns n\u00E3o \u00E9 mais suportado! Em vez disso, use xsl:output."},
 
     { ER_DEFAULTSPACE_NOT_SUPPORTED,
-      "default-space n\u00E3o \u00E9 mais suportado! Em vez disso, use xsl:strip-space ou xsl:preserve-space."},
+      "padr\u00E3o-space n\u00E3o \u00E9 mais suportado! Em vez disso, use xsl:strip-space ou xsl:preserve-space."},
 
     { ER_INDENTRESULT_NOT_SUPPORTED,
       "indent-result n\u00E3o \u00E9 mais suportado! Em vez disso, use xsl:output."},
@@ -907,10 +907,10 @@ public class XSLTErrorResources_pt_BR extends ListResourceBundle
         "2 ou 3"},
 
     { ER_COULD_NOT_LOAD_RESOURCE,
-        "N\u00E3o foi poss\u00EDvel carregar {0} (verificar CLASSPATH); usando agora apenas os defaults"},
+        "N\u00E3o foi poss\u00EDvel carregar {0} (verificar CLASSPATH); usando agora apenas os padr\u00F5es"},
 
     { ER_CANNOT_INIT_DEFAULT_TEMPLATES,
-        "N\u00E3o \u00E9 poss\u00EDvel inicializar os modelos default"},
+        "N\u00E3o \u00E9 poss\u00EDvel inicializar os modelos padr\u00E3o"},
 
     { ER_RESULT_NULL,
         "O resultado n\u00E3o deve ser nulo"},
@@ -1186,7 +1186,7 @@ public class XSLTErrorResources_pt_BR extends ListResourceBundle
      "O valor do par\u00E2metro {0} deve ser um Objeto Java v\u00E1lido"},
 
     { ER_INVALID_NAMESPACE_URI_VALUE_FOR_RESULT_PREFIX_FOR_DEFAULT,
-      "O atributo result-prefix de um elemento xsl:namespace-alias tem o valor '#default', mas n\u00E3o h\u00E1 declara\u00E7\u00E3o do namespace default no escopo do elemento"},
+      "O atributo result-prefix de um elemento xsl:namespace-alias tem o valor '#padr\u00E3o', mas n\u00E3o h\u00E1 declara\u00E7\u00E3o do namespace padr\u00E3o no escopo do elemento"},
 
     { ER_INVALID_NAMESPACE_URI_VALUE_FOR_RESULT_PREFIX,
       "O atributo result-prefix de um elemento xsl:namespace-alias tem o valor ''{0}'', mas n\u00E3o h\u00E1 declara\u00E7\u00E3o de namespace para o prefixo ''{0}'' no escopo do elemento."},
@@ -1271,7 +1271,7 @@ public class XSLTErrorResources_pt_BR extends ListResourceBundle
      "Namespace de XSLT n\u00E3o encontrado ou incorreto. "},
 
     { WG_ONE_DEFAULT_XSLDECIMALFORMAT_ALLOWED,
-      "\u00C9 permitida somente uma declara\u00E7\u00E3o de xsl:decimal-format default."},
+      "\u00C9 permitida somente uma declara\u00E7\u00E3o de xsl:decimal-format padr\u00E3o."},
 
     { WG_XSLDECIMALFORMAT_NAMES_MUST_BE_UNIQUE,
       "os nomes de xsl:decimal-format devem ser exclusivos. O nome \"{0}\" foi duplicado."},
@@ -1363,16 +1363,16 @@ public class XSLTErrorResources_pt_BR extends ListResourceBundle
   {  "optionV",  "   [-E (N\u00E3o expandir refer\u00EAncias da entidade)]"},
   {  "optionQC", "   [-QC (Advert\u00EAncias de Conflitos do Padr\u00E3o Silencioso)]"},
   {  "optionQ", "   [-Q  (Modo Silencioso)]"},
-  {  "optionLF", "   [-LF (Usar alimenta\u00E7\u00F5es de linha somente na sa\u00EDda {o default \u00E9 CR/LF})]"},
-  {  "optionCR", "   [-CR (Use retornos de carro somente na sa\u00EDda {o default \u00E9 CR/LF})]"},
-  { "optionESCAPE", "   [-ESCAPE (Quais caracteres devem ser identificados como escape {o default \u00E9 <>&\"'\\r\\n}]"},
-  { "optionINDENT", "   [-INDENT (Controla quantos espa\u00E7os devem ser recuados {o default \u00E9 0})]"},
+  {  "optionLF", "   [-LF (Usar alimenta\u00E7\u00F5es de linha somente na sa\u00EDda {o padr\u00E3o \u00E9 CR/LF})]"},
+  {  "optionCR", "   [-CR (Use retornos de carro somente na sa\u00EDda {o padr\u00E3o \u00E9 CR/LF})]"},
+  { "optionESCAPE", "   [-ESCAPE (Quais caracteres devem ser identificados como escape {o padr\u00E3o \u00E9 <>&\"'\\r\\n}]"},
+  { "optionINDENT", "   [-INDENT (Controla quantos espa\u00E7os devem ser recuados {o padr\u00E3o \u00E9 0})]"},
   { "optionTT", "   [-TT (Rastreia os modelos \u00E0 medida que s\u00E3o chamados.)]"},
   { "optionTG", "   [-TG (Rastreia cada evento de gera\u00E7\u00E3o.)]"},
   { "optionTS", "   [-TS (Rastreia cada evento de sele\u00E7\u00E3o.)]"},
   {  "optionTTC", "   [-TTC (Rastreia os filhos do modelo \u00E0 medida que s\u00E3o processados.)]"},
   { "optionTCLASS", "   [-TCLASS (Classe TraceListener para extens\u00F5es de rastreamento.)]"},
-  { "optionVALIDATE", "   [-VALIDATE (Define se ocorre valida\u00E7\u00E3o. Por default, a valida\u00E7\u00E3o fica desativada.)]"},
+  { "optionVALIDATE", "   [-VALIDATE (Define se ocorre valida\u00E7\u00E3o. Por padr\u00E3o, a valida\u00E7\u00E3o fica desativada.)]"},
   { "optionEDUMP", "   [-EDUMP {nome do arquivo opcional} (Execute um dump de pilha em caso de erro.)]"},
   {  "optionXML", "   [-XML (Use o formatador XML e adicione o cabe\u00E7alho XML.)]"},
   {  "optionTEXT", "   [-TEXT (Use o formatador de Texto simples.)]"},

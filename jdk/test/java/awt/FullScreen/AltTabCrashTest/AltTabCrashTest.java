@@ -23,6 +23,7 @@
 
 /*
  @test
+ @key headful
  @bug 6275887 6429971 6459792
  @summary Test that we don't crash when alt+tabbing in and out of
          fullscreen app

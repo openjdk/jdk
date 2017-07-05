@@ -26,6 +26,7 @@ import java.awt.Cursor;
 
 /**
  * @test
+ * @key headful
  * @bug 8039269
  * @author Sergey Bylokhov
  */
