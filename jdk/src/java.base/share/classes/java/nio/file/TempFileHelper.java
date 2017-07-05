@@ -74,7 +74,7 @@ class TempFileHelper {
     }
 
     /**
-     * Creates a file or directory in in the given given directory (or in the
+     * Creates a file or directory in the given directory (or in the
      * temporary directory if dir is {@code null}).
      */
     private static Path create(Path dir,
@@ -149,7 +149,7 @@ class TempFileHelper {
     }
 
     /**
-     * Creates a temporary file in the given directory, or in in the
+     * Creates a temporary file in the given directory, or in the
      * temporary directory if dir is {@code null}.
      */
     static Path createTempFile(Path dir,
@@ -162,7 +162,7 @@ class TempFileHelper {
     }
 
     /**
-     * Creates a temporary directory in the given directory, or in in the
+     * Creates a temporary directory in the given directory, or in the
      * temporary directory if dir is {@code null}.
      */
     static Path createTempDirectory(Path dir,

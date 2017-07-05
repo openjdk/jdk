@@ -879,7 +879,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
                                             call_does_dispatch, vtable_index);  // out-parameters
           // We lack profiling at this call but type speculation may
           // provide us with a type
-          speculative_receiver_type = receiver_type->speculative_type();
+          speculative_receiver_type = (receiver_type != NULL) ? receiver_type->speculative_type() : NULL;
         }
         CallGenerator* cg = C->call_generator(target, vtable_index, call_does_dispatch, jvms, true, PROB_ALWAYS, speculative_receiver_type, true, true);
         assert(cg == NULL || !cg->is_late_inline() || cg->is_mh_late_inline(), "no late inline here");

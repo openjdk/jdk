@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ import sun.security.util.DerValue;
  * included in end entity or CA certificates.  Conforming CAs MUST mark
  * this extension as non-critical.
  * <p>
- * This extension is defined in <a href="http://www.ietf.org/rfc/rfc3280.txt">
+ * This extension is defined in <a href="http://tools.ietf.org/html/rfc5280">
  * Internet X.509 PKI Certificate and Certificate Revocation List
  * (CRL) Profile</a>. The profile permits
  * the extension to be included in end-entity or CA certificates,

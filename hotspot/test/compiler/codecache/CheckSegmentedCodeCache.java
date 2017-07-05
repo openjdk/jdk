@@ -32,7 +32,7 @@ import com.oracle.java.testlibrary.*;
  */
 public class CheckSegmentedCodeCache {
   // Code heap names
-  private static final String NON_METHOD = "CodeHeap 'non-methods'";
+  private static final String NON_METHOD = "CodeHeap 'non-nmethods'";
   private static final String PROFILED = "CodeHeap 'profiled nmethods'";
   private static final String NON_PROFILED = "CodeHeap 'non-profiled nmethods'";
 
@@ -40,7 +40,7 @@ public class CheckSegmentedCodeCache {
     OutputAnalyzer out = new OutputAnalyzer(pb.start());
     if (enabled) {
       try {
-        // Non-method code heap should be always available with the segmented code cache
+        // Non-nmethod code heap should be always available with the segmented code cache
         out.shouldContain(NON_METHOD);
       } catch (RuntimeException e) {
         // TieredCompilation is disabled in a client VM
@@ -111,14 +111,14 @@ public class CheckSegmentedCodeCache {
                                                "-XX:+PrintCodeCache", "-version");
     verifyCodeHeapNotExists(pb, PROFILED);
 
-    // Fails with too small non-method code heap size
-    pb = ProcessTools.createJavaProcessBuilder("-XX:NonMethodCodeHeapSize=100K");
-    failsWith(pb, "Invalid NonMethodCodeHeapSize");
+    // Fails with too small non-nmethod code heap size
+    pb = ProcessTools.createJavaProcessBuilder("-XX:NonNMethodCodeHeapSize=100K");
+    failsWith(pb, "Invalid NonNMethodCodeHeapSize");
 
     // Fails if code heap sizes do not add up
     pb = ProcessTools.createJavaProcessBuilder("-XX:+SegmentedCodeCache",
                                                "-XX:ReservedCodeCacheSize=10M",
-                                               "-XX:NonMethodCodeHeapSize=5M",
+                                               "-XX:NonNMethodCodeHeapSize=5M",
                                                "-XX:ProfiledCodeHeapSize=5M",
                                                "-XX:NonProfiledCodeHeapSize=5M");
     failsWith(pb, "Invalid code heap sizes");
@@ -127,6 +127,6 @@ public class CheckSegmentedCodeCache {
     pb = ProcessTools.createJavaProcessBuilder("-XX:+SegmentedCodeCache",
                                                "-XX:ReservedCodeCacheSize=1700K",
                                                "-XX:InitialCodeCacheSize=100K");
-    failsWith(pb, "Not enough space in non-method code heap to run VM");
+    failsWith(pb, "Not enough space in non-nmethod code heap to run VM");
   }
 }

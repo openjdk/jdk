@@ -1376,8 +1376,12 @@ public class Logger {
            return;
         }
         if (!isLoggable(Level.FINER)) return;
-        for (int i = 0; i < params.length; i++) {
-            msg = msg + " {" + i + "}";
+        if (params.length > 0) {
+            final StringBuilder b = new StringBuilder(msg);
+            for (int i = 0; i < params.length; i++) {
+                b.append(' ').append('{').append(i).append('}');
+            }
+            msg = b.toString();
         }
         logp(Level.FINER, sourceClass, sourceMethod, msg, params);
     }

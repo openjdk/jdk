@@ -155,6 +155,14 @@ address CompiledIC::stub_address() const {
   return _ic_call->destination();
 }
 
+// Clears the IC stub if the compiled IC is in transition state
+void CompiledIC::clear_ic_stub() {
+  if (is_in_transition_state()) {
+    ICStub* stub = ICStub_from_destination_address(stub_address());
+    stub->clear();
+  }
+}
+
 
 //-----------------------------------------------------------------------------
 // High-level access to an inline cache. Guaranteed to be MT-safe.
@@ -333,10 +341,7 @@ void CompiledIC::set_to_clean() {
 
   if (safe_transition) {
     // Kill any leftover stub we might have too
-    if (is_in_transition_state()) {
-      ICStub* old_stub = ICStub_from_destination_address(stub_address());
-      old_stub->clear();
-    }
+    clear_ic_stub();
     if (is_optimized()) {
     set_ic_destination(entry);
   } else {
