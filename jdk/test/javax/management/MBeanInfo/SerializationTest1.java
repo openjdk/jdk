@@ -26,7 +26,7 @@
  * @bug 6783290
  * @summary Test correct reading of an empty Descriptor.
  * @author Jaroslav Bachorik
- * @modules java.management
+ *
  * @run clean SerializationTest1
  * @run build SerializationTest1
  * @run main SerializationTest1

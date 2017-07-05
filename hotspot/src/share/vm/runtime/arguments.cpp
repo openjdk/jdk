@@ -375,6 +375,7 @@ static SpecialFlag const special_jvm_flags[] = {
   // -------------- Deprecated Flags --------------
   // --- Non-alias flags - sorted by obsolete_in then expired_in:
   { "MaxGCMinorPauseMillis",        JDK_Version::jdk(8), JDK_Version::undefined(), JDK_Version::undefined() },
+  { "UseConcMarkSweepGC",           JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::undefined() },
   { "AutoGCSelectPauseMillis",      JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "UseAutoGCSelectPolicy",        JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
   { "UseParNewGC",                  JDK_Version::jdk(9), JDK_Version::undefined(), JDK_Version::jdk(10) },
@@ -1894,6 +1895,11 @@ void Arguments::set_jvmci_specific_flags() {
     if (FLAG_IS_DEFAULT(NewSizeThreadIncrease)) {
       FLAG_SET_DEFAULT(NewSizeThreadIncrease, 4*K);
     }
+    if (TieredStopAtLevel != CompLevel_full_optimization) {
+      // Currently JVMCI compiler can only work at the full optimization level
+      warning("forcing TieredStopAtLevel to full optimization because JVMCI is enabled");
+      TieredStopAtLevel = CompLevel_full_optimization;
+    }
     if (FLAG_IS_DEFAULT(TypeProfileLevel)) {
       FLAG_SET_DEFAULT(TypeProfileLevel, 0);
     }
@@ -2299,8 +2305,6 @@ jint Arguments::set_aggressive_heap_flags() {
   if (FLAG_SET_CMDLINE(bool, UseParallelGC, true) != Flag::SUCCESS) {
     return JNI_EINVAL;
   }
-  FLAG_SET_DEFAULT(ParallelGCThreads,
-          Abstract_VM_Version::parallel_worker_threads());
 
   // Encourage steady state memory management
   if (FLAG_SET_CMDLINE(uintx, ThresholdTolerance, 100) != Flag::SUCCESS) {
@@ -2506,11 +2510,14 @@ bool Arguments::check_vm_args_consistency() {
     }
 #endif
   }
-#if INCLUDE_JVMCI
 
+#if INCLUDE_JVMCI
   status = status && check_jvmci_args_consistency();
 
   if (EnableJVMCI) {
+    PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
+        AddProperty, UnwriteableProperty, InternalProperty);
+
     if (!ScavengeRootsInCode) {
       warning("forcing ScavengeRootsInCode non-zero because JVMCI is enabled");
       ScavengeRootsInCode = 1;
@@ -2831,11 +2838,14 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         build_jvm_args(option->optionString);
     }
 
-    // -verbose:[class/gc/jni]
+    // -verbose:[class/module/gc/jni]
     if (match_option(option, "-verbose", &tail)) {
       if (!strcmp(tail, ":class") || !strcmp(tail, "")) {
         LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, load));
         LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(class, unload));
+      } else if (!strcmp(tail, ":module")) {
+        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(module, load));
+        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(module, unload));
       } else if (!strcmp(tail, ":gc")) {
         LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(gc));
       } else if (!strcmp(tail, ":jni")) {
@@ -2926,6 +2936,10 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       int res = process_patch_mod_option(tail, patch_mod_javabase);
       if (res != JNI_OK) {
         return res;
+      }
+    } else if (match_option(option, "--permit-illegal-access")) {
+      if (!create_property("jdk.module.permitIllegalAccess", "true", ExternalProperty)) {
+        return JNI_ENOMEM;
       }
     // -agentlib and -agentpath
     } else if (match_option(option, "-agentlib:", &tail) ||
@@ -3169,6 +3183,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
     // -Xprof
     } else if (match_option(option, "-Xprof")) {
 #if INCLUDE_FPROF
+      log_warning(arguments)("Option -Xprof was deprecated in version 9 and will likely be removed in a future release.");
       _has_profile = true;
 #else // INCLUDE_FPROF
       jio_fprintf(defaultStream::error_stream(),
@@ -3700,7 +3715,7 @@ jint Arguments::finalize_vm_init_args() {
 
 #if INCLUDE_JVMCI
   if (EnableJVMCI &&
-      !create_numbered_property("jdk.module.addmods", "jdk.vm.ci", addmods_count++)) {
+      !create_numbered_property("jdk.module.addmods", "jdk.internal.vm.ci", addmods_count++)) {
     return JNI_ENOMEM;
   }
 #endif
