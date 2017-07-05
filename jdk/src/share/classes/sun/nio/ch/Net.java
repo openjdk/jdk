@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ class Net {                                             // package-private
     // -- Socket options
 
     static void setSocketOption(FileDescriptor fd, ProtocolFamily family,
-                                SocketOption name, Object value)
+                                SocketOption<?> name, Object value)
         throws IOException
     {
         if (value == null)
@@ -262,7 +262,7 @@ class Net {                                             // package-private
     }
 
     static Object getSocketOption(FileDescriptor fd, ProtocolFamily family,
-                                  SocketOption name)
+                                  SocketOption<?> name)
         throws IOException
     {
         Class<?> type = name.type();

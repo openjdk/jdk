@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2007-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ public final class StandardSocketOption {
      *
      * @see <a href="http://www.ietf.org/rfc/rfc919.txt">RFC&nbsp;929:
      * Broadcasting Internet Datagrams</a>
+     * @see DatagramSocket#setBroadcast
      */
     public static final SocketOption<Boolean> SO_BROADCAST =
         new StdSocketOption<Boolean>("SO_BROADCAST", Boolean.class);
@@ -78,6 +79,7 @@ public final class StandardSocketOption {
      *
      * @see <a href="http://www.ietf.org/rfc/rfc1122.txt">RFC&nbsp;1122
      * Requirements for Internet Hosts -- Communication Layers</a>
+     * @see Socket#setKeepAlive
      */
     public static final SocketOption<Boolean> SO_KEEPALIVE =
         new StdSocketOption<Boolean>("SO_KEEPALIVE", Boolean.class);
@@ -107,6 +109,8 @@ public final class StandardSocketOption {
      * socket is bound or connected. Whether an implementation allows the
      * socket send buffer to be changed after the socket is bound is system
      * dependent.
+     *
+     * @see Socket#setSendBufferSize
      */
     public static final SocketOption<Integer> SO_SNDBUF =
         new StdSocketOption<Integer>("SO_SNDBUF", Integer.class);
@@ -145,6 +149,8 @@ public final class StandardSocketOption {
      *
      * @see <a href="http://www.ietf.org/rfc/rfc1323.txt">RFC&nbsp;1323: TCP
      * Extensions for High Performance</a>
+     * @see Socket#setReceiveBufferSize
+     * @see ServerSocket#setReceiveBufferSize
      */
     public static final SocketOption<Integer> SO_RCVBUF =
         new StdSocketOption<Integer>("SO_RCVBUF", Integer.class);
@@ -175,6 +181,7 @@ public final class StandardSocketOption {
      *
      * @see <a href="http://www.ietf.org/rfc/rfc793.txt">RFC&nbsp;793: Transmission
      * Control Protocol</a>
+     * @see ServerSocket#setReuseAddress
      */
     public static final SocketOption<Boolean> SO_REUSEADDR =
         new StdSocketOption<Boolean>("SO_REUSEADDR", Boolean.class);
@@ -205,6 +212,8 @@ public final class StandardSocketOption {
      * is system dependent. Setting the linger interval to a value that is
      * greater than its maximum value causes the linger interval to be set to
      * its maximum value.
+     *
+     * @see Socket#setSoLinger
      */
     public static final SocketOption<Integer> SO_LINGER =
         new StdSocketOption<Integer>("SO_LINGER", Integer.class);
@@ -215,15 +224,15 @@ public final class StandardSocketOption {
     /**
      * The Type of Service (ToS) octet in the Internet Protocol (IP) header.
      *
-     * <p> The value of this socket option is an {@code Integer}, the least
-     * significant 8 bits of which represents the value of the ToS octet in IP
-     * packets sent by sockets to an {@link StandardProtocolFamily#INET IPv4}
-     * socket. The interpretation of the ToS octet is network specific and
-     * is not defined by this class. Further information on the ToS octet can be
-     * found in <a href="http://www.ietf.org/rfc/rfc1349.txt">RFC&nbsp;1349</a>
-     * and <a href="http://www.ietf.org/rfc/rfc2474.txt">RFC&nbsp;2474</a>. The
-     * value of the socket option is a <em>hint</em>. An implementation may
-     * ignore the value, or ignore specific values.
+     * <p> The value of this socket option is an {@code Integer} representing
+     * the value of the ToS octet in IP packets sent by sockets to an {@link
+     * StandardProtocolFamily#INET IPv4} socket. The interpretation of the ToS
+     * octet is network specific and is not defined by this class. Further
+     * information on the ToS octet can be found in <a
+     * href="http://www.ietf.org/rfc/rfc1349.txt">RFC&nbsp;1349</a> and <a
+     * href="http://www.ietf.org/rfc/rfc2474.txt">RFC&nbsp;2474</a>. The value
+     * of the socket option is a <em>hint</em>. An implementation may ignore the
+     * value, or ignore specific values.
      *
      * <p> The initial/default value of the TOS field in the ToS octet is
      * implementation specific but will typically be {@code 0}. For
@@ -235,6 +244,8 @@ public final class StandardSocketOption {
      * <p> The behavior of this socket option on a stream-oriented socket, or an
      * {@link StandardProtocolFamily#INET6 IPv6} socket, is not defined in this
      * release.
+     *
+     * @see DatagramSocket#setTrafficClass
      */
     public static final SocketOption<Integer> IP_TOS =
         new StdSocketOption<Integer>("IP_TOS", Integer.class);
@@ -257,6 +268,7 @@ public final class StandardSocketOption {
      * is system dependent.
      *
      * @see java.nio.channels.MulticastChannel
+     * @see MulticastSocket#setInterface
      */
     public static final SocketOption<NetworkInterface> IP_MULTICAST_IF =
         new StdSocketOption<NetworkInterface>("IP_MULTICAST_IF", NetworkInterface.class);
@@ -283,6 +295,7 @@ public final class StandardSocketOption {
      * prior to binding the socket is system dependent.
      *
      * @see java.nio.channels.MulticastChannel
+     * @see MulticastSocket#setTimeToLive
      */
     public static final SocketOption<Integer> IP_MULTICAST_TTL =
         new StdSocketOption<Integer>("IP_MULTICAST_TTL", Integer.class);
@@ -307,6 +320,7 @@ public final class StandardSocketOption {
      * binding the socket is system dependent.
      *
      * @see java.nio.channels.MulticastChannel
+     *  @see MulticastSocket#setLoopbackMode
      */
     public static final SocketOption<Boolean> IP_MULTICAST_LOOP =
         new StdSocketOption<Boolean>("IP_MULTICAST_LOOP", Boolean.class);
@@ -328,11 +342,12 @@ public final class StandardSocketOption {
      * coalescing impacts performance. The socket option may be enabled at any
      * time. In other words, the Nagle Algorithm can be disabled. Once the option
      * is enabled, it is system dependent whether it can be subsequently
-     * disabled. In that case, invoking the {@code setOption} method to disable
-     * the option has no effect.
+     * disabled. If it cannot, then invoking the {@code setOption} method to
+     * disable the option has no effect.
      *
      * @see <a href="http://www.ietf.org/rfc/rfc1122.txt">RFC&nbsp;1122:
      * Requirements for Internet Hosts -- Communication Layers</a>
+     * @see Socket#setTcpNoDelay
      */
     public static final SocketOption<Boolean> TCP_NODELAY =
         new StdSocketOption<Boolean>("TCP_NODELAY", Boolean.class);

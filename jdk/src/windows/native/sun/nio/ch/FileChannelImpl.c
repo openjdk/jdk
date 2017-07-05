@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2007 Sun Microsystems, Inc.  All Rights Reserved.
+ * Copyright 2000-2009 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,6 @@
 
 static jfieldID chan_fd; /* id for jobject 'fd' in java.io.FileChannel */
 
-
-/* false for 95/98/ME, true for NT/W2K */
-static jboolean onNT = JNI_FALSE;
-
 /**************************************************************
  * static method to store field ID's in initializers
  * and retrieve the allocation granularity
@@ -47,15 +43,9 @@ Java_sun_nio_ch_FileChannelImpl_initIDs(JNIEnv *env, jclass clazz)
 {
     SYSTEM_INFO si;
     jint align;
-    OSVERSIONINFO ver;
     GetSystemInfo(&si);
     align = si.dwAllocationGranularity;
     chan_fd = (*env)->GetFieldID(env, clazz, "fd", "Ljava/io/FileDescriptor;");
-    ver.dwOSVersionInfoSize = sizeof(ver);
-    GetVersionEx(&ver);
-    if (ver.dwPlatformId == VER_PLATFORM_WIN32_NT) {
-        onNT = JNI_TRUE;
-    }
     return align;
 }
 
@@ -146,56 +136,6 @@ Java_sun_nio_ch_FileChannelImpl_unmap0(JNIEnv *env, jobject this,
     return 0;
 }
 
-JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileChannelImpl_truncate0(JNIEnv *env, jobject this,
-                                    jobject fdo, jlong size)
-{
-    DWORD lowPos = 0;
-    long highPos = 0;
-    BOOL result = 0;
-    HANDLE h = (HANDLE)(handleval(env, fdo));
-
-    lowPos = (DWORD)size;
-    highPos = (long)(size >> 32);
-    lowPos = SetFilePointer(h, lowPos, &highPos, FILE_BEGIN);
-    if (lowPos == ((DWORD)-1)) {
-        if (GetLastError() != ERROR_SUCCESS) {
-            JNU_ThrowIOExceptionWithLastError(env, "Truncation failed");
-            return IOS_THROWN;
-        }
-    }
-    result = SetEndOfFile(h);
-    if (result == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Truncation failed");
-        return IOS_THROWN;
-    }
-    return 0;
-}
-
-
-JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileChannelImpl_force0(JNIEnv *env, jobject this,
-                                    jobject fdo, jboolean md)
-{
-    int result = 0;
-    HANDLE h = (HANDLE)(handleval(env, fdo));
-
-    if (h != INVALID_HANDLE_VALUE) {
-        result = FlushFileBuffers(h);
-        if (result == 0) {
-            int error = GetLastError();
-            if (error != ERROR_ACCESS_DENIED) {
-                JNU_ThrowIOExceptionWithLastError(env, "Force failed");
-                return IOS_THROWN;
-            }
-        }
-    } else {
-        JNU_ThrowIOExceptionWithLastError(env, "Force failed");
-        return IOS_THROWN;
-    }
-    return 0;
-}
-
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_position0(JNIEnv *env, jobject this,
                                           jobject fdo, jlong offset)
@@ -220,23 +160,6 @@ Java_sun_nio_ch_FileChannelImpl_position0(JNIEnv *env, jobject this,
     return (((jlong)highPos) << 32) | lowPos;
 }
 
-JNIEXPORT jlong JNICALL
-Java_sun_nio_ch_FileChannelImpl_size0(JNIEnv *env, jobject this, jobject fdo)
-{
-    DWORD sizeLow = 0;
-    DWORD sizeHigh = 0;
-    HANDLE h = (HANDLE)(handleval(env, fdo));
-
-    sizeLow = GetFileSize(h, &sizeHigh);
-    if (sizeLow == ((DWORD)-1)) {
-        if (GetLastError() != ERROR_SUCCESS) {
-            JNU_ThrowIOExceptionWithLastError(env, "Size failed");
-            return IOS_THROWN;
-        }
-    }
-    return (((jlong)sizeHigh) << 32) | sizeLow;
-}
-
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_FileChannelImpl_close0(JNIEnv *env, jobject this, jobject fdo)
 {
@@ -256,100 +179,4 @@ Java_sun_nio_ch_FileChannelImpl_transferTo0(JNIEnv *env, jobject this,
                                             jint dstFD)
 {
     return IOS_UNSUPPORTED;
-}
-
-JNIEXPORT jint JNICALL
-Java_sun_nio_ch_FileChannelImpl_lock0(JNIEnv *env, jobject this, jobject fdo,
-                                      jboolean block, jlong pos, jlong size,
-                                      jboolean shared)
-{
-    HANDLE h = (HANDLE)(handleval(env, fdo));
-    DWORD lowPos = (DWORD)pos;
-    long highPos = (long)(pos >> 32);
-    DWORD lowNumBytes = (DWORD)size;
-    DWORD highNumBytes = (DWORD)(size >> 32);
-    jint result = 0;
-    if (onNT) {
-        DWORD flags = 0;
-        OVERLAPPED o;
-        o.hEvent = 0;
-        o.Offset = lowPos;
-        o.OffsetHigh = highPos;
-        if (block == JNI_FALSE) {
-            flags |= LOCKFILE_FAIL_IMMEDIATELY;
-        }
-        if (shared == JNI_FALSE) {
-            flags |= LOCKFILE_EXCLUSIVE_LOCK;
-        }
-        result = LockFileEx(h, flags, 0, lowNumBytes, highNumBytes, &o);
-        if (result == 0) {
-            int error = GetLastError();
-            if (error != ERROR_LOCK_VIOLATION) {
-                JNU_ThrowIOExceptionWithLastError(env, "Lock failed");
-                return sun_nio_ch_FileChannelImpl_NO_LOCK;
-            }
-            if (flags & LOCKFILE_FAIL_IMMEDIATELY) {
-                return sun_nio_ch_FileChannelImpl_NO_LOCK;
-            }
-            JNU_ThrowIOExceptionWithLastError(env, "Lock failed");
-            return sun_nio_ch_FileChannelImpl_NO_LOCK;
-        }
-        return sun_nio_ch_FileChannelImpl_LOCKED;
-    } else {
-        for(;;) {
-            if (size > 0x7fffffff) {
-                size = 0x7fffffff;
-            }
-            lowNumBytes = (DWORD)size;
-            highNumBytes = 0;
-            result = LockFile(h, lowPos, highPos, lowNumBytes, highNumBytes);
-            if (result != 0) {
-                if (shared == JNI_TRUE) {
-                    return sun_nio_ch_FileChannelImpl_RET_EX_LOCK;
-                } else {
-                    return sun_nio_ch_FileChannelImpl_LOCKED;
-                }
-            } else {
-                int error = GetLastError();
-                if (error != ERROR_LOCK_VIOLATION) {
-                    JNU_ThrowIOExceptionWithLastError(env, "Lock failed");
-                    return sun_nio_ch_FileChannelImpl_NO_LOCK;
-                }
-                if (block == JNI_FALSE) {
-                    return sun_nio_ch_FileChannelImpl_NO_LOCK;
-                }
-            }
-            Sleep(100);
-        }
-    }
-    return sun_nio_ch_FileChannelImpl_NO_LOCK;
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileChannelImpl_release0(JNIEnv *env, jobject this,
-                                        jobject fdo, jlong pos, jlong size)
-{
-    HANDLE h = (HANDLE)(handleval(env, fdo));
-    DWORD lowPos = (DWORD)pos;
-    long highPos = (long)(pos >> 32);
-    DWORD lowNumBytes = (DWORD)size;
-    DWORD highNumBytes = (DWORD)(size >> 32);
-    jint result = 0;
-    if (onNT) {
-        OVERLAPPED o;
-        o.hEvent = 0;
-        o.Offset = lowPos;
-        o.OffsetHigh = highPos;
-        result = UnlockFileEx(h, 0, lowNumBytes, highNumBytes, &o);
-    } else {
-        if (size > 0x7fffffff) {
-            size = 0x7fffffff;
-        }
-        lowNumBytes = (DWORD)size;
-        highNumBytes = 0;
-        result = UnlockFile(h, lowPos, highPos, lowNumBytes, highNumBytes);
-    }
-    if (result == 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "Release failed");
-    }
 }
