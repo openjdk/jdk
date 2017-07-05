@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import com.sun.xml.internal.xsom.XSAnnotation;
 import com.sun.xml.internal.xsom.parser.AnnotationContext;
 import com.sun.xml.internal.xsom.parser.AnnotationParser;
 import com.sun.xml.internal.xsom.parser.AnnotationParserFactory;
+import javax.xml.XMLConstants;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -56,7 +57,12 @@ import javax.xml.transform.sax.TransformerHandler;
  * @author Kohsuke Kawaguchi
  */
 public class DomAnnotationParserFactory implements AnnotationParserFactory {
+
     public AnnotationParser create() {
+        return new AnnotationParserImpl();
+    }
+
+    public AnnotationParser create(boolean disableSecureProcessing) {
         return new AnnotationParserImpl();
     }
 
@@ -71,8 +77,13 @@ public class DomAnnotationParserFactory implements AnnotationParserFactory {
         private DOMResult result;
 
         AnnotationParserImpl() {
+            this(false);
+        }
+
+        AnnotationParserImpl(boolean disableSecureProcessing) {
             try {
                 transformer = stf.newTransformerHandler();
+                stf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, disableSecureProcessing);
             } catch (TransformerConfigurationException e) {
                 throw new Error(e); // impossible
             }

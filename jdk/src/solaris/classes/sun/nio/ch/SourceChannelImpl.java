@@ -37,7 +37,7 @@ class SourceChannelImpl
 {
 
     // Used to make native read and write calls
-    private static NativeDispatcher nd;
+    private static final NativeDispatcher nd = new FileDispatcherImpl();
 
     // The file descriptor associated with this channel
     FileDescriptor fd;
@@ -206,10 +206,4 @@ class SourceChannelImpl
             }
         }
     }
-
-    static {
-        Util.load();
-        nd = new FileDispatcherImpl();
-    }
-
 }

@@ -40,6 +40,7 @@ enum Messages {
     UNRECOGNIZED_TYPE_NAME_MAYBE, // 2 args
     UNABLE_TO_CREATE_MAP, // 1 arg
     UNINTERNED_STRINGS, // no args
+    ERRORS_LIMIT_EXCEEDED, // no arg
     ;
 
     private static final ResourceBundle rb = ResourceBundle.getBundle(Messages.class.getName());

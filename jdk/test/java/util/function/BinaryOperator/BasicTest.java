@@ -67,26 +67,26 @@ public class BasicTest {
     };
 
     public void testMaxBy() {
-        Comparator<People> cmp = Comparator.comparing((Function<People, String>) People::getFirstName);
+        Comparator<People> cmp = Comparator.comparing(People::getFirstName);
         // lesser
         assertSame(maxBy(cmp).apply(people[0], people[1]), people[1]);
         // euqal
-        cmp = Comparator.comparing((Function<People, String>) People::getLastName);
+        cmp = Comparator.comparing(People::getLastName);
         assertSame(maxBy(cmp).apply(people[0], people[1]), people[0]);
         // greater
-        cmp = Comparator.comparing((ToIntFunction<People>) People::getAge);
+        cmp = Comparator.comparingInt(People::getAge);
         assertSame(maxBy(cmp).apply(people[0], people[1]), people[0]);
     }
 
-    public void testLesserOf() {
-        Comparator<People> cmp = Comparator.comparing((Function<People, String>) People::getFirstName);
+    public void testMinBy() {
+        Comparator<People> cmp = Comparator.comparing(People::getFirstName);
         // lesser
         assertSame(minBy(cmp).apply(people[0], people[1]), people[0]);
         // euqal
-        cmp = Comparator.comparing((Function<People, String>) People::getLastName);
+        cmp = Comparator.comparing(People::getLastName);
         assertSame(minBy(cmp).apply(people[0], people[1]), people[0]);
         // greater
-        cmp = Comparator.comparing((ToIntFunction<People>) People::getAge);
+        cmp = Comparator.comparingInt(People::getAge);
         assertSame(minBy(cmp).apply(people[0], people[1]), people[1]);
     }
 

@@ -118,6 +118,11 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
     }
 
     @Override
+    public String getClassName() {
+        return "Uint8ClampedArray";
+    }
+
+    @Override
     protected Factory factory() {
         return FACTORY;
     }

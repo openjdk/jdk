@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import java.util.concurrent.Executor;
  * @since 2.2.7
  */
 public class ThreadLocalContainerResolver extends ContainerResolver {
-    private ThreadLocal<Container> containers = new ThreadLocal<Container>() {
+    private ThreadLocal<Container> containerThreadLocal = new ThreadLocal<Container>() {
         @Override
         protected Container initialValue() {
             return Container.NONE;
@@ -54,7 +54,7 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
     };
 
     public Container getContainer() {
-        return containers.get();
+        return containerThreadLocal.get();
     }
 
     /**
@@ -63,8 +63,8 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
      * @return Previous container; must be remembered and passed to exitContainer
      */
     public Container enterContainer(Container container) {
-        Container old = containers.get();
-        containers.set(container);
+        Container old = containerThreadLocal.get();
+        containerThreadLocal.set(container);
         return old;
     }
 
@@ -73,7 +73,7 @@ public class ThreadLocalContainerResolver extends ContainerResolver {
      * @param old Container returned from enterContainer
      */
     public void exitContainer(Container old) {
-        containers.set(old);
+        containerThreadLocal.set(old);
     }
 
     /**

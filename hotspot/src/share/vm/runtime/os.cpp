@@ -443,6 +443,67 @@ void* os::native_java_library() {
   return _native_java_library;
 }
 
+/*
+ * Support for finding Agent_On(Un)Load/Attach<_lib_name> if it exists.
+ * If check_lib == true then we are looking for an
+ * Agent_OnLoad_lib_name or Agent_OnAttach_lib_name function to determine if
+ * this library is statically linked into the image.
+ * If check_lib == false then we will look for the appropriate symbol in the
+ * executable if agent_lib->is_static_lib() == true or in the shared library
+ * referenced by 'handle'.
+ */
+void* os::find_agent_function(AgentLibrary *agent_lib, bool check_lib,
+                              const char *syms[], size_t syms_len) {
+  const char *lib_name;
+  void *handle = agent_lib->os_lib();
+  void *entryName = NULL;
+  char *agent_function_name;
+  size_t i;
+
+  // If checking then use the agent name otherwise test is_static_lib() to
+  // see how to process this lookup
+  lib_name = ((check_lib || agent_lib->is_static_lib()) ? agent_lib->name() : NULL);
+  for (i = 0; i < syms_len; i++) {
+    agent_function_name = build_agent_function_name(syms[i], lib_name, agent_lib->is_absolute_path());
+    if (agent_function_name == NULL) {
+      break;
+    }
+    entryName = dll_lookup(handle, agent_function_name);
+    FREE_C_HEAP_ARRAY(char, agent_function_name, mtThread);
+    if (entryName != NULL) {
+      break;
+    }
+  }
+  return entryName;
+}
+
+// See if the passed in agent is statically linked into the VM image.
+bool os::find_builtin_agent(AgentLibrary *agent_lib, const char *syms[],
+                            size_t syms_len) {
+  void *ret;
+  void *proc_handle;
+  void *save_handle;
+
+  if (agent_lib->name() == NULL) {
+    return false;
+  }
+  proc_handle = get_default_process_handle();
+  // Check for Agent_OnLoad/Attach_lib_name function
+  save_handle = agent_lib->os_lib();
+  // We want to look in this process' symbol table.
+  agent_lib->set_os_lib(proc_handle);
+  ret = find_agent_function(agent_lib, true, syms, syms_len);
+  agent_lib->set_os_lib(save_handle);
+  if (ret != NULL) {
+    // Found an entry point like Agent_OnLoad_lib_name so we have a static agent
+    agent_lib->set_os_lib(proc_handle);
+    agent_lib->set_valid();
+    agent_lib->set_static_lib(true);
+    return true;
+  }
+  return false;
+}
+
 // --------------------- heap allocation utilities ---------------------
 
 char *os::strdup(const char *str, MEMFLAGS flags) {

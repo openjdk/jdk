@@ -39,7 +39,6 @@ import jdk.nashorn.internal.runtime.regexp.joni.constants.NodeType;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.OPCode;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.OPSize;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.TargetInfo;
-import jdk.nashorn.internal.runtime.regexp.joni.encoding.CharacterType;
 
 final class ArrayCompiler extends Compiler {
     private int[] code;
@@ -345,6 +344,7 @@ final class ArrayCompiler extends Compiler {
 
     private static final int QUANTIFIER_EXPAND_LIMIT_SIZE   = 50; // was 50
 
+    @SuppressWarnings("unused")
     private static boolean cknOn(int ckn) {
         return ckn > 0;
     }
@@ -879,6 +879,7 @@ final class ArrayCompiler extends Compiler {
         }
     }
 
+    @SuppressWarnings("unused")
     private void addStateCheckNum(int num) {
         addInt(num);
     }
@@ -887,6 +888,7 @@ final class ArrayCompiler extends Compiler {
         addInt(addr);
     }
 
+    @SuppressWarnings("unused")
     private void addAbsAddr(int addr) {
         addInt(addr);
     }

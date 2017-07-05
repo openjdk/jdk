@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1996, 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,23 +22,23 @@
  */
 
 /**
- * Compare: an interface to enable users to define the result of
- *          a comparison of two objects.
+ * JDK-8023368: Instance __proto__ property should exist and be writable.
  *
- * @author Sunita Mani
+ * @test
+ * @run
  */
 
-package sun.misc;
+load("nashorn:mozilla_compat.js")
 
-public interface Compare {
-
-    /**
-     * doCompare
-     *
-     * @param  obj1 first object to compare.
-     * @param  obj2 second object to compare.
-     * @return -1 if obj1 < obj2, 0 if obj1 == obj2, 1 if obj1 > obj2.
-     */
-    public int doCompare(Object obj1, Object obj2);
-
+// check that we cannot assign to __proto__ of a non-extensible object
+try {
+    var obj = {}
+    Object.preventExtensions(obj);
+    obj.__proto__ = { };
+    fail("Should have thrown TypeError");
+} catch (e) {
+    if (! (e instanceof TypeError)) {
+        fail("Expected TypeError, got " + e);
+    }
+    print(e);
 }

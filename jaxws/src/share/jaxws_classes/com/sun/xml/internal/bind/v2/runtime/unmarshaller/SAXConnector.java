@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,14 @@
 
 package com.sun.xml.internal.bind.v2.runtime.unmarshaller;
 
+import com.sun.xml.internal.bind.Util;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.UnmarshallerHandler;
 
 import com.sun.xml.internal.bind.WhiteSpaceProcessor;
 import com.sun.xml.internal.bind.v2.runtime.ClassBeanInfoImpl;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
@@ -44,6 +47,8 @@ public final class SAXConnector implements UnmarshallerHandler {
 
     private LocatorEx loc;
 
+    private static final Logger logger = Util.getClassLogger();
+
     /**
      * SAX may fire consecutive characters event, but we don't allow it.
      * so use this buffer to perform buffering.
@@ -56,6 +61,7 @@ public final class SAXConnector implements UnmarshallerHandler {
 
     private static final class TagNameImpl extends TagName {
         String qname;
+        @Override
         public String getQname() {
             return qname;
         }
@@ -76,6 +82,7 @@ public final class SAXConnector implements UnmarshallerHandler {
         this.loc = externalLocator;
     }
 
+    @Override
     public Object getResult() throws JAXBException, IllegalStateException {
         return context.getResult();
     }
@@ -84,6 +91,7 @@ public final class SAXConnector implements UnmarshallerHandler {
         return context;
     }
 
+    @Override
     public void setDocumentLocator(final Locator locator) {
         if(loc!=null)
             return; // we already have an external locator. ignore.
@@ -91,23 +99,43 @@ public final class SAXConnector implements UnmarshallerHandler {
         this.loc = new LocatorExWrapper(locator);
     }
 
+    @Override
     public void startDocument() throws SAXException {
+        if (logger.isLoggable(Level.FINER)) {
+            logger.log(Level.FINER, "SAXConnector.startDocument");
+        }
         next.startDocument(loc,null);
     }
 
+    @Override
     public void endDocument() throws SAXException {
+        if (logger.isLoggable(Level.FINER)) {
+            logger.log(Level.FINER, "SAXConnector.endDocument");
+        }
         next.endDocument();
     }
 
+    @Override
     public void startPrefixMapping(String prefix, String uri) throws SAXException {
+        if (logger.isLoggable(Level.FINER)) {
+            logger.log(Level.FINER, "SAXConnector.startPrefixMapping: {0}:{1}", new Object[]{prefix, uri});
+        }
         next.startPrefixMapping(prefix,uri);
     }
 
+    @Override
     public void endPrefixMapping(String prefix) throws SAXException {
+        if (logger.isLoggable(Level.FINER)) {
+            logger.log(Level.FINER, "SAXConnector.endPrefixMapping: {0}", new Object[]{prefix});
+        }
         next.endPrefixMapping(prefix);
     }
 
+    @Override
     public void startElement(String uri, String local, String qname, Attributes atts) throws SAXException {
+        if (logger.isLoggable(Level.FINER)) {
+            logger.log(Level.FINER, "SAXConnector.startElement: {0}:{1}:{2}, attrs: {3}", new Object[]{uri, local, qname, atts});
+        }
         // work gracefully with misconfigured parsers that don't support namespaces
         if( uri==null || uri.length()==0 )
             uri="";
@@ -135,7 +163,11 @@ public final class SAXConnector implements UnmarshallerHandler {
         next.startElement(tagName);
     }
 
+    @Override
     public void endElement(String uri, String localName, String qName) throws SAXException {
+        if (logger.isLoggable(Level.FINER)) {
+            logger.log(Level.FINER, "SAXConnector.startElement: {0}:{1}:{2}", new Object[]{uri, localName, qName});
+        }
         processText(false);
         tagName.uri = uri;
         tagName.local = localName;
@@ -144,19 +176,29 @@ public final class SAXConnector implements UnmarshallerHandler {
     }
 
 
+    @Override
     public final void characters( char[] buf, int start, int len ) {
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.log(Level.FINEST, "SAXConnector.characters: {0}", buf);
+        }
         if( predictor.expectText() )
             buffer.append(buf,start,len);
     }
 
+    @Override
     public final void ignorableWhitespace( char[] buf, int start, int len ) {
+        if (logger.isLoggable(Level.FINEST)) {
+            logger.log(Level.FINEST, "SAXConnector.characters{0}", buf);
+        }
         characters(buf,start,len);
     }
 
+    @Override
     public void processingInstruction(String target, String data) {
         // nop
     }
 
+    @Override
     public void skippedEntity(String name) {
         // nop
     }

@@ -543,8 +543,6 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
     public Node leaveIdentNode(final IdentNode identNode) {
         final String name = identNode.getName();
 
-        start(identNode);
-
         if (identNode.isPropertyName()) {
             // assign a pseudo symbol to property name
             final Symbol pseudoSymbol = pseudoSymbol(name);
@@ -1850,9 +1848,10 @@ final class Attr extends NodeOperatorVisitor<LexicalContext> {
                 append("] ").
                 append(printNode ? node.toString() : "").
                 append(" in '").
-                append(lc.getCurrentFunction().getName());
+                append(lc.getCurrentFunction().getName()).
+                append('\'');
 
-            if(node instanceof Expression) {
+            if (node instanceof Expression) {
                 final Symbol symbol = ((Expression)node).getSymbol();
                 if (symbol == null) {
                     sb.append(" <NO SYMBOL>");

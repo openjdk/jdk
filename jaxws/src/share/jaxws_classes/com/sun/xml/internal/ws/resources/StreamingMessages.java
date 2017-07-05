@@ -99,6 +99,18 @@ public final class StreamingMessages {
         return localizer.localize(localizableXMLREADER_UNEXPECTED_STATE(arg0, arg1));
     }
 
+    public static Localizable localizableWOODSTOX_CANT_LOAD(Object arg0) {
+        return messageFactory.getMessage("woodstox.cant.load", arg0);
+    }
+
+    /**
+     * Unable to load Woodstox class {0}
+     *
+     */
+    public static String WOODSTOX_CANT_LOAD(Object arg0) {
+        return localizer.localize(localizableWOODSTOX_CANT_LOAD(arg0));
+    }
+
     public static Localizable localizableXMLREADER_IO_EXCEPTION(Object arg0) {
         return messageFactory.getMessage("xmlreader.ioException", arg0);
     }
@@ -121,6 +133,18 @@ public final class StreamingMessages {
      */
     public static String FASTINFOSET_NO_IMPLEMENTATION() {
         return localizer.localize(localizableFASTINFOSET_NO_IMPLEMENTATION());
+    }
+
+    public static Localizable localizableINVALID_PROPERTY_VALUE_INTEGER(Object arg0, Object arg1, Object arg2) {
+        return messageFactory.getMessage("invalid.property.value.integer", arg0, arg1, arg2);
+    }
+
+    /**
+     * Ignoring system property "{0}" as value "{1}" is invalid, property value must be a valid integer. Using default value "{2}".
+     *
+     */
+    public static String INVALID_PROPERTY_VALUE_INTEGER(Object arg0, Object arg1, Object arg2) {
+        return localizer.localize(localizableINVALID_PROPERTY_VALUE_INTEGER(arg0, arg1, arg2));
     }
 
     public static Localizable localizableXMLWRITER_IO_EXCEPTION(Object arg0) {
@@ -181,6 +205,18 @@ public final class StreamingMessages {
      */
     public static String XMLREADER_NESTED_ERROR(Object arg0) {
         return localizer.localize(localizableXMLREADER_NESTED_ERROR(arg0));
+    }
+
+    public static Localizable localizableINVALID_PROPERTY_VALUE_LONG(Object arg0, Object arg1, Object arg2) {
+        return messageFactory.getMessage("invalid.property.value.long", arg0, arg1, arg2);
+    }
+
+    /**
+     * Ignoring system property "{0}" as value "{1}" is invalid, property value must be a valid long. Using default value "{2}".
+     *
+     */
+    public static String INVALID_PROPERTY_VALUE_LONG(Object arg0, Object arg1, Object arg2) {
+        return localizer.localize(localizableINVALID_PROPERTY_VALUE_LONG(arg0, arg1, arg2));
     }
 
     public static Localizable localizableSTAXREADER_XMLSTREAMEXCEPTION(Object arg0) {

@@ -115,8 +115,8 @@ public class EntryComparators {
         // Comparator<People> cmp = Comparator.naturalOrder(); // Should fail to compiler as People is not comparable
         // We can use simple comparator, but those have been tested above.
         // Thus choose to do compose for some level of interation.
-        Comparator<People> cmp1 = Comparator.comparing((Function<People, String>) People::getFirstName);
-        Comparator<People> cmp2 = Comparator.comparing((Function<People, String>) People::getLastName);
+        Comparator<People> cmp1 = Comparator.comparing(People::getFirstName);
+        Comparator<People> cmp2 = Comparator.comparing(People::getLastName);
         Comparator<People> cmp = cmp1.thenComparing(cmp2);
 
         assertPairComparison(people[0], people[0], people[1], people[1],

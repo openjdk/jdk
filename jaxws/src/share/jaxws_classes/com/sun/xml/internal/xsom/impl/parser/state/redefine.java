@@ -118,30 +118,81 @@ class redefine extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 2:
+        case 0:
+            {
+                revertToParentFromEnterElement(this, super._cookie, $__uri, $__local, $__qname, $attrs);
+            }
+            break;
+        case 1:
             {
                 if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("annotation"))) {
-                    NGCCHandler h = new annotation(this, super._source, $runtime, 581, null,AnnotationContext.SCHEMA);
+                    NGCCHandler h = new annotation(this, super._source, $runtime, 684, null,AnnotationContext.SCHEMA);
                     spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                 }
                 else {
                     if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("simpleType"))) {
-                        NGCCHandler h = new simpleType(this, super._source, $runtime, 582);
+                        NGCCHandler h = new simpleType(this, super._source, $runtime, 685);
                         spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                     }
                     else {
                         if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("complexType"))) {
-                            NGCCHandler h = new complexType(this, super._source, $runtime, 583);
+                            NGCCHandler h = new complexType(this, super._source, $runtime, 686);
                             spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                         }
                         else {
                             if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("group"))) {
-                                NGCCHandler h = new group(this, super._source, $runtime, 584);
+                                NGCCHandler h = new group(this, super._source, $runtime, 687);
                                 spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                             }
                             else {
                                 if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("attributeGroup"))) {
-                                    NGCCHandler h = new attributeGroupDecl(this, super._source, $runtime, 585);
+                                    NGCCHandler h = new attributeGroupDecl(this, super._source, $runtime, 688);
+                                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
+                                }
+                                else {
+                                    unexpectedEnterElement($__qname);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            break;
+        case 14:
+            {
+                if(($ai = $runtime.getAttributeIndex("","schemaLocation"))>=0) {
+                    $runtime.consumeAttribute($ai);
+                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
+                }
+                else {
+                    unexpectedEnterElement($__qname);
+                }
+            }
+            break;
+        case 2:
+            {
+                if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("annotation"))) {
+                    NGCCHandler h = new annotation(this, super._source, $runtime, 689, null,AnnotationContext.SCHEMA);
+                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
+                }
+                else {
+                    if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("simpleType"))) {
+                        NGCCHandler h = new simpleType(this, super._source, $runtime, 690);
+                        spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
+                    }
+                    else {
+                        if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("complexType"))) {
+                            NGCCHandler h = new complexType(this, super._source, $runtime, 691);
+                            spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
+                        }
+                        else {
+                            if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("group"))) {
+                                NGCCHandler h = new group(this, super._source, $runtime, 692);
+                                spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
+                            }
+                            else {
+                                if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("attributeGroup"))) {
+                                    NGCCHandler h = new attributeGroupDecl(this, super._source, $runtime, 693);
                                     spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
                                 }
                                 else {
@@ -165,57 +216,6 @@ class redefine extends NGCCHandler {
                 }
             }
             break;
-        case 0:
-            {
-                revertToParentFromEnterElement(this, super._cookie, $__uri, $__local, $__qname, $attrs);
-            }
-            break;
-        case 14:
-            {
-                if(($ai = $runtime.getAttributeIndex("","schemaLocation"))>=0) {
-                    $runtime.consumeAttribute($ai);
-                    $runtime.sendEnterElement(super._cookie, $__uri, $__local, $__qname, $attrs);
-                }
-                else {
-                    unexpectedEnterElement($__qname);
-                }
-            }
-            break;
-        case 1:
-            {
-                if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("annotation"))) {
-                    NGCCHandler h = new annotation(this, super._source, $runtime, 576, null,AnnotationContext.SCHEMA);
-                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
-                }
-                else {
-                    if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("simpleType"))) {
-                        NGCCHandler h = new simpleType(this, super._source, $runtime, 577);
-                        spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
-                    }
-                    else {
-                        if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("complexType"))) {
-                            NGCCHandler h = new complexType(this, super._source, $runtime, 578);
-                            spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
-                        }
-                        else {
-                            if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("group"))) {
-                                NGCCHandler h = new group(this, super._source, $runtime, 579);
-                                spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
-                            }
-                            else {
-                                if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("attributeGroup"))) {
-                                    NGCCHandler h = new attributeGroupDecl(this, super._source, $runtime, 580);
-                                    spawnChildFromEnterElement(h, $__uri, $__local, $__qname, $attrs);
-                                }
-                                else {
-                                    unexpectedEnterElement($__qname);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            break;
         default:
             {
                 unexpectedEnterElement($__qname);
@@ -230,15 +230,20 @@ class redefine extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 2:
-            {
-                $_ngcc_current_state = 1;
-                $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
         case 0:
             {
                 revertToParentFromLeaveElement(this, super._cookie, $__uri, $__local, $__qname);
+            }
+            break;
+        case 1:
+            {
+                if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("redefine"))) {
+                    $runtime.onLeaveElementConsumed($__uri, $__local, $__qname);
+                    $_ngcc_current_state = 0;
+                }
+                else {
+                    unexpectedLeaveElement($__qname);
+                }
             }
             break;
         case 14:
@@ -252,15 +257,10 @@ class redefine extends NGCCHandler {
                 }
             }
             break;
-        case 1:
+        case 2:
             {
-                if(($__uri.equals("http://www.w3.org/2001/XMLSchema") && $__local.equals("redefine"))) {
-                    $runtime.onLeaveElementConsumed($__uri, $__local, $__qname);
-                    $_ngcc_current_state = 0;
-                }
-                else {
-                    unexpectedLeaveElement($__qname);
-                }
+                $_ngcc_current_state = 1;
+                $runtime.sendLeaveElement(super._cookie, $__uri, $__local, $__qname);
             }
             break;
         default:
@@ -277,12 +277,6 @@ class redefine extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 2:
-            {
-                $_ngcc_current_state = 1;
-                $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
-            }
-            break;
         case 0:
             {
                 revertToParentFromEnterAttribute(this, super._cookie, $__uri, $__local, $__qname);
@@ -296,6 +290,12 @@ class redefine extends NGCCHandler {
                 else {
                     unexpectedEnterAttribute($__qname);
                 }
+            }
+            break;
+        case 2:
+            {
+                $_ngcc_current_state = 1;
+                $runtime.sendEnterAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
         default:
@@ -312,10 +312,9 @@ class redefine extends NGCCHandler {
         $localName = $__local;
         $qname = $__qname;
         switch($_ngcc_current_state) {
-        case 2:
+        case 0:
             {
-                $_ngcc_current_state = 1;
-                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
+                revertToParentFromLeaveAttribute(this, super._cookie, $__uri, $__local, $__qname);
             }
             break;
         case 12:
@@ -328,9 +327,10 @@ class redefine extends NGCCHandler {
                 }
             }
             break;
-        case 0:
+        case 2:
             {
-                revertToParentFromLeaveAttribute(this, super._cookie, $__uri, $__local, $__qname);
+                $_ngcc_current_state = 1;
+                $runtime.sendLeaveAttribute(super._cookie, $__uri, $__local, $__qname);
             }
             break;
         default:
@@ -344,19 +344,6 @@ class redefine extends NGCCHandler {
     public void text(String $value) throws SAXException {
         int $ai;
         switch($_ngcc_current_state) {
-        case 2:
-            {
-                $_ngcc_current_state = 1;
-                $runtime.sendText(super._cookie, $value);
-            }
-            break;
-        case 13:
-            {
-                schemaLocation = $value;
-                $_ngcc_current_state = 12;
-                action4();
-            }
-            break;
         case 0:
             {
                 revertToParentFromText(this, super._cookie, $value);
@@ -370,71 +357,84 @@ class redefine extends NGCCHandler {
                 }
             }
             break;
+        case 2:
+            {
+                $_ngcc_current_state = 1;
+                $runtime.sendText(super._cookie, $value);
+            }
+            break;
+        case 13:
+            {
+                schemaLocation = $value;
+                $_ngcc_current_state = 12;
+                action4();
+            }
+            break;
         }
     }
 
     public void onChildCompleted(Object $__result__, int $__cookie__, boolean $__needAttCheck__)throws SAXException {
         switch($__cookie__) {
-        case 581:
+        case 689:
             {
                 $_ngcc_current_state = 1;
             }
             break;
-        case 582:
+        case 690:
             {
                 newSt = ((SimpleTypeImpl)$__result__);
                 action3();
                 $_ngcc_current_state = 1;
             }
             break;
-        case 583:
+        case 691:
             {
                 newCt = ((ComplexTypeImpl)$__result__);
                 action2();
                 $_ngcc_current_state = 1;
             }
             break;
-        case 584:
+        case 692:
             {
                 newGrp = ((ModelGroupDeclImpl)$__result__);
                 action1();
                 $_ngcc_current_state = 1;
             }
             break;
-        case 585:
+        case 693:
             {
                 newAg = ((AttGroupDeclImpl)$__result__);
                 action0();
                 $_ngcc_current_state = 1;
             }
             break;
-        case 576:
+        case 684:
             {
                 $_ngcc_current_state = 1;
             }
             break;
-        case 577:
+        case 685:
             {
                 newSt = ((SimpleTypeImpl)$__result__);
                 action3();
                 $_ngcc_current_state = 1;
             }
             break;
-        case 578:
+        case 686:
             {
                 newCt = ((ComplexTypeImpl)$__result__);
                 action2();
                 $_ngcc_current_state = 1;
             }
             break;
-        case 579:
+        case 687:
             {
                 newGrp = ((ModelGroupDeclImpl)$__result__);
                 action1();
                 $_ngcc_current_state = 1;
             }
             break;
-        case 580:
+        case 688:
             {
                 newAg = ((AttGroupDeclImpl)$__result__);
                 action0();

@@ -25,7 +25,10 @@
 
 package com.sun.xml.internal.bind.v2.model.annotation;
 
-
+/**
+ * <p><b>Auto-generated, do not edit.</b></p>
+ *
+ */
 class Init {
 
 

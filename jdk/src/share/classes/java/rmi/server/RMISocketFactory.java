@@ -50,13 +50,13 @@ import java.net.*;
  * @implNote
  * <p>You can use the {@code RMISocketFactory} class to create a server socket that
  * is bound to a specific address, restricting the origin of requests. For example,
- * the following code implements a socket factory that binds server sockets to the
+ * the following code implements a socket factory that binds server sockets to an IPv4
  * loopback address. This restricts RMI to processing requests only from the local host.
  *
  * <pre>{@code
  *     class LoopbackSocketFactory extends RMISocketFactory {
  *         public ServerSocket createServerSocket(int port) throws IOException {
- *             return new ServerSocket(port, 5, InetAddress.getLoopbackAddress());
+ *             return new ServerSocket(port, 5, InetAddress.getByName("127.0.0.1"));
  *         }
  *
  *         public Socket createSocket(String host, int port) throws IOException {
@@ -72,8 +72,8 @@ import java.net.*;
  * }</pre>
  *
  * Set the {@code java.rmi.server.hostname} system property
- * to a host name (typically {@code localhost}) that resolves to the loopback
- * interface to ensure that the generated stubs use the right network interface.
+ * to {@code 127.0.0.1} to ensure that the generated stubs connect to the right
+ * network interface.
  *
  * @author  Ann Wollrath
  * @author  Peter Jones

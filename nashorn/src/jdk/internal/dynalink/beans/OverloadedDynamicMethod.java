@@ -148,6 +148,7 @@ class OverloadedDynamicMethod extends DynamicMethod {
         }
     }
 
+    @SuppressWarnings("fallthrough")
     @Override
     public MethodHandle getInvocation(final CallSiteDescriptor callSiteDescriptor, final LinkerServices linkerServices) {
         final MethodType callSiteType = callSiteDescriptor.getMethodType();

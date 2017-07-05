@@ -1423,6 +1423,9 @@ public final class Packet
                 if (getMtomRequest() != null && getMtomRequest() && getState().equals(State.ServerResponse)) {
                     return true;
                 }
+                if (getMtomRequest() != null && getMtomRequest() && getState().equals(State.ClientRequest)) {
+                    return true;
+                }
             }
         }
         return false;

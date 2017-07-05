@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,9 @@ public final class XSOMParser {
 
     /**
     * Creates a new XSOMParser by using a SAX parser from JAXP.
+     * @deprecated Unsafe, use XSOMParser(factory) instead with
+     * security features initialized by setting
+     * XMLConstants.FEATURE_SECURE_PROCESSING feature.
     */
    public XSOMParser() {
        this(new JAXPParser());
