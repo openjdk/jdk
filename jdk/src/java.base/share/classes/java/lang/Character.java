@@ -10126,7 +10126,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * <blockquote>{@code
      *     Character.UnicodeBlock.of(codePoint).toString().replace('_', ' ')
      *     + " "
-     *     + Integer.toHexString(codePoint).toUpperCase(Locale.ENGLISH);
+     *     + Integer.toHexString(codePoint).toUpperCase(Locale.ROOT);
      *
      * }</blockquote>
      *
@@ -10145,7 +10145,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
         if (!isValidCodePoint(codePoint)) {
             throw new IllegalArgumentException();
         }
-        String name = CharacterName.get(codePoint);
+        String name = CharacterName.getInstance().getName(codePoint);
         if (name != null)
             return name;
         if (getType(codePoint) == UNASSIGNED)
@@ -10153,8 +10153,52 @@ class Character implements java.io.Serializable, Comparable<Character> {
         UnicodeBlock block = UnicodeBlock.of(codePoint);
         if (block != null)
             return block.toString().replace('_', ' ') + " "
-                   + Integer.toHexString(codePoint).toUpperCase(Locale.ENGLISH);
+                   + Integer.toHexString(codePoint).toUpperCase(Locale.ROOT);
         // should never come here
-        return Integer.toHexString(codePoint).toUpperCase(Locale.ENGLISH);
+        return Integer.toHexString(codePoint).toUpperCase(Locale.ROOT);
+    }
+
+    /**
+     * Returns the code point value of the Unicode character specified by
+     * the given Unicode character name.
+     * <p>
+     * Note: if a character is not assigned a name by the <i>UnicodeData</i>
+     * file (part of the Unicode Character Database maintained by the Unicode
+     * Consortium), its name is defined as the result of expression
+     *
+     * <blockquote>{@code
+     *     Character.UnicodeBlock.of(codePoint).toString().replace('_', ' ')
+     *     + " "
+     *     + Integer.toHexString(codePoint).toUpperCase(Locale.ROOT);
+     *
+     * }</blockquote>
+     * <p>
+     * The {@code name} matching is case insensitive, with any leading and
+     * trailing whitespace character removed.
+     *
+     * @param  name the Unicode character name
+     *
+     * @return the code point value of the character specified by its name.
+     *
+     * @throws IllegalArgumentException if the specified {@code name}
+     *         is not a valid Unicode character name.
+     * @throws NullPointerException if {@code name} is {@code null}
+     *
+     * @since 9
+     */
+    public static int codePointOf(String name) {
+        name = name.trim().toUpperCase(Locale.ROOT);
+        int cp = CharacterName.getInstance().getCodePoint(name);
+        if (cp != -1)
+            return cp;
+        try {
+            int off = name.lastIndexOf(' ');
+            if (off != -1) {
+                cp = Integer.parseInt(name, off + 1, name.length(), 16);
+                if (isValidCodePoint(cp) && name.equals(getName(cp)))
+                    return cp;
+            }
+        } catch (Exception x) {}
+        throw new IllegalArgumentException("Unrecognized character name :" + name);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8001562
  * @summary Verify that getAvailableLocales() in locale sensitive services
  *     classes return compatible set of locales as in JDK7.
+ * @modules jdk.localedata
  * @run main Bug8001562
  */
 

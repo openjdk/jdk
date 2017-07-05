@@ -68,7 +68,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import jdk.nashorn.internal.runtime.ScriptingFunctions;
+import jdk.nashorn.tools.Shell;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
@@ -225,7 +225,7 @@ public final class TestFinder {
         boolean explicitOptimistic = false;
 
         String allContent = new String(Files.readAllBytes(testFile));
-        Iterator<String> scanner = ScriptingFunctions.tokenizeString(allContent).iterator();
+        Iterator<String> scanner = Shell.tokenizeString(allContent).iterator();
         while (scanner.hasNext()) {
             // TODO: Scan for /ref=file qualifiers, etc, to determine run
             // behavior

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.nashorn.internal.codegen.types;
 
 import static jdk.internal.org.objectweb.asm.Opcodes.L2D;
 import static jdk.internal.org.objectweb.asm.Opcodes.L2I;
+import static jdk.internal.org.objectweb.asm.Opcodes.LADD;
 import static jdk.internal.org.objectweb.asm.Opcodes.LCONST_0;
 import static jdk.internal.org.objectweb.asm.Opcodes.LCONST_1;
 import static jdk.internal.org.objectweb.asm.Opcodes.LLOAD;
@@ -34,6 +35,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.LRETURN;
 import static jdk.internal.org.objectweb.asm.Opcodes.LSTORE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 import static jdk.nashorn.internal.runtime.JSType.UNDEFINED_LONG;
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.nashorn.internal.codegen.CompilerConstants;
@@ -123,7 +125,12 @@ class LongType extends Type {
 
     @Override
     public Type add(final MethodVisitor method, final int programPoint) {
-        throw new UnsupportedOperationException("add");
+        if(programPoint == INVALID_PROGRAM_POINT) {
+            method.visitInsn(LADD);
+        } else {
+            method.visitInvokeDynamicInsn("ladd", "(JJ)J", MATHBOOTSTRAP, programPoint);
+        }
+        return LONG;
     }
 
     @Override

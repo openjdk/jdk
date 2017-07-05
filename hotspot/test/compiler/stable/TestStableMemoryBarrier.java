@@ -27,7 +27,7 @@
  * @test TestStableMemoryBarrier
  * @bug 8139758
  * @summary tests memory barrier correctly inserted for stable fields
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  *
  * @run main/bootclasspath -Xcomp -XX:CompileOnly=::testCompile
  *                   java.lang.invoke.TestStableMemoryBarrier

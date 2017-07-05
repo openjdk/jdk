@@ -897,6 +897,15 @@ Zone	Asia/Dili	8:22:20 -	LMT	1912 Jan  1
 			9:00	-	TLT
 
 # India
+
+# From Ian P. Beacock, in "A brief history of (modern) time", The Atlantic
+# http://www.theatlantic.com/technology/archive/2015/12/the-creation-of-modern-time/421419/
+# (2015-12-22):
+# In January 1906, several thousand cotton-mill workers rioted on the
+# outskirts of Bombay....  They were protesting the proposed abolition of
+# local time in favor of Indian Standard Time....  Journalists called this
+# dispute the "Battle of the Clocks."  It lasted nearly half a century.
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Kolkata	5:53:28 -	LMT	1880        # Kolkata
 			5:53:20	-	HMT	1941 Oct    # Howrah Mean Time?
@@ -1107,8 +1116,15 @@ Rule	Iran	2032	2033	-	Mar	21	0:00	1:00	D
 Rule	Iran	2032	2033	-	Sep	21	0:00	0	S
 Rule	Iran	2034	2035	-	Mar	22	0:00	1:00	D
 Rule	Iran	2034	2035	-	Sep	22	0:00	0	S
-Rule	Iran	2036	2037	-	Mar	21	0:00	1:00	D
-Rule	Iran	2036	2037	-	Sep	21	0:00	0	S
+#
+# The following rules are approximations starting in the year 2038.
+# These are the best post-2037 approximations available, given the
+# restrictions of a single rule using a Gregorian-based data format.
+# At some point this table will need to be extended, though quite
+# possibly Iran will change the rules first.
+Rule	Iran	2036	max	-	Mar	21	0:00	1:00	D
+Rule	Iran	2036	max	-	Sep	21	0:00	0	S
+
 # Zone	NAME		GMTOFF	RULES	FORMAT	[UNTIL]
 Zone	Asia/Tehran	3:25:44	-	LMT	1916
 			3:25:44	-	TMT	1946     # Tehran Mean Time
@@ -2134,8 +2150,8 @@ Zone	Asia/Kathmandu	5:41:16 -	LMT	1920
 # http://www.app.com.pk/en_/index.php?option=com_content&task=view&id=99374&Itemid=2
 
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
-Rule Pakistan	2002	only	-	Apr	Sun>=2	0:01	1:00	S
-Rule Pakistan	2002	only	-	Oct	Sun>=2	0:01	0	-
+Rule Pakistan	2002	only	-	Apr	Sun>=2	0:00	1:00	S
+Rule Pakistan	2002	only	-	Oct	Sun>=2	0:00	0	-
 Rule Pakistan	2008	only	-	Jun	1	0:00	1:00	S
 Rule Pakistan	2008	2009	-	Nov	1	0:00	0	-
 Rule Pakistan	2009	only	-	Apr	15	0:00	1:00	S
