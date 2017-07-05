@@ -89,8 +89,6 @@ import jdk.internal.dynalink.linker.LinkRequest;
 /**
  * Default implementation of the {@link LinkRequest}, representing a link request to a call site that passes no language
  * runtime specific native context arguments on the stack.
- *
- * @author Attila Szegedi
  */
 public class LinkRequestImpl implements LinkRequest {
 

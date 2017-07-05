@@ -96,7 +96,6 @@ import java.util.concurrent.ConcurrentMap;
  * A dual map that can either strongly or weakly reference a given class depending on whether the class is visible from
  * a class loader or not.
  *
- * @author Attila Szegedi
  * @param <T> the type of the values in the map
  */
 public abstract class ClassMap<T> {

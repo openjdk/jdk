@@ -89,8 +89,6 @@ import jdk.internal.dynalink.linker.LinkRequest;
 /**
  * A link request implementation for call sites that pass language runtime specific context arguments on the stack. The
  * context specific arguments should be the first "n" arguments.
- *
- * @author Attila Szegedi
  */
 public class RuntimeContextLinkRequestImpl extends LinkRequestImpl {
 

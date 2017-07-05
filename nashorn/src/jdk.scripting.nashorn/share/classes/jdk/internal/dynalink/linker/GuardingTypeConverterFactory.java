@@ -91,8 +91,6 @@ import jdk.internal.dynalink.support.TypeUtilities;
  * very likely want to implement {@link ConversionComparator} interface too, as your additional language-specific
  * conversions, in absence of a strategy for prioritizing these conversions, will cause more ambiguity in selecting the
  * correct overload when trying to link to an overloaded POJO method.
- *
- * @author Attila Szegedi
  */
 public interface GuardingTypeConverterFactory {
     /**

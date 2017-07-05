@@ -101,8 +101,6 @@ import jdk.internal.dynalink.support.Guards;
  * external invalidation of the invocation handle. The invocation handle is suitable for invocation if the guard
  * handle returns true for its arguments, and as long as the switch point is not invalidated. Both the guard and the
  * switch point are optional; neither, one, or both can be present.
- *
- * @author Attila Szegedi
  */
 public class GuardedInvocation {
     private final MethodHandle invocation;

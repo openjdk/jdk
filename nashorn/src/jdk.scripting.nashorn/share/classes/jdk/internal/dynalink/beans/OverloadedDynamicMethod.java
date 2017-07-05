@@ -101,8 +101,6 @@ import jdk.internal.dynalink.support.TypeUtilities;
  * Represents a group of {@link SingleDynamicMethod} objects that represents all overloads of a particular name (or all
  * constructors) for a particular class. Correctly handles overload resolution, variable arity methods, and caller
  * sensitive methods within the overloads.
- *
- * @author Attila Szegedi
  */
 class OverloadedDynamicMethod extends DynamicMethod {
     /**
