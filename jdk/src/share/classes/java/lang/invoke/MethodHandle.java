@@ -26,6 +26,7 @@
 package java.lang.invoke;
 
 
+import java.util.ArrayList;
 import sun.invoke.util.ValueConversions;
 import static java.lang.invoke.MethodHandleStatics.*;
 
@@ -708,9 +709,9 @@ public abstract class MethodHandle {
      */
     public MethodHandle asType(MethodType newType) {
         if (!type.isConvertibleTo(newType)) {
-            throw new WrongMethodTypeException("cannot convert "+type+" to "+newType);
+            throw new WrongMethodTypeException("cannot convert "+this+" to "+newType);
         }
-        return MethodHandles.convertArguments(this, newType);
+        return MethodHandleImpl.convertArguments(this, newType, 1);
     }
 
     /**
@@ -750,11 +751,46 @@ public abstract class MethodHandle {
      * @see #asCollector
      */
     public MethodHandle asSpreader(Class<?> arrayType, int arrayLength) {
-        Class<?> arrayElement = arrayType.getComponentType();
-        if (arrayElement == null)  throw newIllegalArgumentException("not an array type");
+        asSpreaderChecks(arrayType, arrayLength);
+        return MethodHandleImpl.spreadArguments(this, arrayType, arrayLength);
+    }
+
+    private void asSpreaderChecks(Class<?> arrayType, int arrayLength) {
+        spreadArrayChecks(arrayType, arrayLength);
         int nargs = type().parameterCount();
         if (nargs < arrayLength)  throw newIllegalArgumentException("bad spread array length");
-        return MethodHandleImpl.spreadArguments(this, arrayType, arrayLength);
+        if (arrayType != Object[].class && arrayLength != 0) {
+            boolean sawProblem = false;
+            Class<?> arrayElement = arrayType.getComponentType();
+            for (int i = nargs - arrayLength; i < nargs; i++) {
+                if (!MethodType.canConvert(arrayElement, type().parameterType(i))) {
+                    sawProblem = true;
+                    break;
+                }
+            }
+            if (sawProblem) {
+                ArrayList<Class<?>> ptypes = new ArrayList<Class<?>>(type().parameterList());
+                for (int i = nargs - arrayLength; i < nargs; i++) {
+                    ptypes.set(i, arrayElement);
+                }
+                // elicit an error:
+                this.asType(MethodType.methodType(type().returnType(), ptypes));
+            }
+        }
+    }
+
+    private void spreadArrayChecks(Class<?> arrayType, int arrayLength) {
+        Class<?> arrayElement = arrayType.getComponentType();
+        if (arrayElement == null)
+            throw newIllegalArgumentException("not an array type", arrayType);
+        if ((arrayLength & 0x7F) != arrayLength) {
+            if ((arrayLength & 0xFF) != arrayLength)
+                throw newIllegalArgumentException("array length is not legal", arrayLength);
+            assert(arrayLength >= 128);
+            if (arrayElement == long.class ||
+                arrayElement == double.class)
+                throw newIllegalArgumentException("array length is not legal for long[] or double[]", arrayLength);
+        }
     }
 
     /**
@@ -802,10 +838,8 @@ public abstract class MethodHandle {
         return MethodHandleImpl.collectArguments(this, type.parameterCount()-1, collector);
     }
 
-    private  void asCollectorChecks(Class<?> arrayType, int arrayLength) {
-        Class<?> arrayElement = arrayType.getComponentType();
-        if (arrayElement == null)
-            throw newIllegalArgumentException("not an array type", arrayType);
+    private void asCollectorChecks(Class<?> arrayType, int arrayLength) {
+        spreadArrayChecks(arrayType, arrayLength);
         int nargs = type().parameterCount();
         if (nargs == 0 || !type().parameterType(nargs-1).isAssignableFrom(arrayType))
             throw newIllegalArgumentException("array type not assignable to trailing argument", this, arrayType);
@@ -965,8 +999,8 @@ assert(failed);
      */
     public MethodHandle asVarargsCollector(Class<?> arrayType) {
         Class<?> arrayElement = arrayType.getComponentType();
-        if (arrayElement == null)  throw newIllegalArgumentException("not an array type");
-        return MethodHandles.asVarargsCollector(this, arrayType);
+        asCollectorChecks(arrayType, 0);
+        return AdapterMethodHandle.makeVarargsCollector(this, arrayType);
     }
 
     /**
@@ -1043,6 +1077,12 @@ assert(failed);
      */
     @Override
     public String toString() {
+        if (DEBUG_METHOD_HANDLE_NAMES)  return debugString();
+        return "MethodHandle"+type;
+    }
+
+    /*non-public*/
+    String debugString() {
         return getNameString(this);
     }
 }
