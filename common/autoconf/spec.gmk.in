@@ -391,7 +391,6 @@ ARFLAGS:=@ARFLAGS@
 NM:=@NM@
 GNM:=@GNM@
 STRIP:=@STRIP@
-MCS:=@MCS@
 
 LIPO:=@LIPO@
 
@@ -440,7 +439,6 @@ EXE_SUFFIX:=@EXE_SUFFIX@
 OBJ_SUFFIX:=@OBJ_SUFFIX@
 
 POST_STRIP_CMD:=@POST_STRIP_CMD@
-POST_MCS_CMD:=@POST_MCS_CMD@
 
 JAVA_FLAGS:=@JAVA_FLAGS@
 JAVA_FLAGS_BIG:=@JAVA_FLAGS_BIG@
@@ -455,7 +453,6 @@ JAVA_CMD:=@JAVA@
 JAVAC_CMD:=@JAVAC@
 JAVAH_CMD:=@JAVAH@
 JAR_CMD:=@JAR@
-NATIVE2ASCII_CMD:=@NATIVE2ASCII@
 JARSIGNER_CMD:=@JARSIGNER@
 SJAVAC_SERVER_JAVA_CMD:=@SJAVAC_SERVER_JAVA@
 # These variables are meant to be used. They are defined with = instead of := to make
@@ -465,7 +462,6 @@ JAVA_SMALL=@FIXPATH@ $(JAVA_CMD) $(JAVA_FLAGS_SMALL) $(JAVA_FLAGS)
 JAVAC=@FIXPATH@ $(JAVAC_CMD)
 JAVAH=@FIXPATH@ $(JAVAH_CMD)
 JAR=@FIXPATH@ $(JAR_CMD)
-NATIVE2ASCII=@FIXPATH@ $(NATIVE2ASCII_CMD) $(JAVA_TOOL_FLAGS_SMALL)
 JARSIGNER=@FIXPATH@ $(JARSIGNER_CMD)
 # A specific java binary with specific options can be used to run
 # the long running background sjavac servers and other long running tasks.
@@ -692,10 +688,10 @@ SYMBOLS_IMAGE_SUBDIR:=symbols
 SYMBOLS_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/$(SYMBOLS_IMAGE_SUBDIR)
 
 # Macosx bundles directory definitions
-JDK_BUNDLE_SUBDIR=jdk-bundle/jdk$(JDK_VERSION).jdk/Contents
-JRE_BUNDLE_SUBDIR=jre-bundle/jre$(JDK_VERSION).jre/Contents
-JDK_BUNDLE_DIR=$(IMAGES_OUTPUTDIR)/$(JDK_BUNDLE_SUBDIR)
-JRE_BUNDLE_DIR=$(IMAGES_OUTPUTDIR)/$(JRE_BUNDLE_SUBDIR)
+JDK_MACOSX_BUNDLE_SUBDIR=jdk-bundle/jdk$(JDK_VERSION).jdk/Contents
+JRE_MACOSX_BUNDLE_SUBDIR=jre-bundle/jre$(JDK_VERSION).jre/Contents
+JDK_MACOSX_BUNDLE_DIR=$(IMAGES_OUTPUTDIR)/$(JDK_MACOSX_BUNDLE_SUBDIR)
+JRE_MACOSX_BUNDLE_DIR=$(IMAGES_OUTPUTDIR)/$(JRE_MACOSX_BUNDLE_SUBDIR)
 
 # This macro is called to allow inclusion of closed source counterparts.
 # Unless overridden in closed sources, it expands to nothing.
