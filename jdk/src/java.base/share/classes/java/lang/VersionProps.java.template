@@ -67,19 +67,35 @@ class VersionProps {
         System.setProperty("java.runtime.name", java_runtime_name);
     }
 
-    static List<Integer> versionNumbers() {
-        List<Integer> versionNumbers = new ArrayList<>(4);
+    private static int parseVersionNumber(String version, int prevIndex, int index) {
+        if (index - prevIndex > 1 &&
+            Character.digit(version.charAt(prevIndex), 10) <= 0)
+            throw new IllegalArgumentException("Leading zeros not supported (" +
+                    version.substring(prevIndex, index) + ")");
+        return Integer.parseInt(version, prevIndex, index, 10);
+    }
+
+    // This method is reflectively used by regression tests.
+    static List<Integer> parseVersionNumbers(String version) {
+        List<Integer> verNumbers = new ArrayList<>(4);
         int prevIndex = 0;
-        int index = VERSION_NUMBER.indexOf('.');
+        int index = version.indexOf('.');
         while (index > 0) {
-            versionNumbers.add(
-                    Integer.parseInt(VERSION_NUMBER, prevIndex, index, 10));
+            verNumbers.add(parseVersionNumber(version, prevIndex, index));
             prevIndex = index + 1; // Skip the period
-            index = VERSION_NUMBER.indexOf('.', prevIndex);
+            index = version.indexOf('.', prevIndex);
         }
-        versionNumbers.add(Integer.parseInt(VERSION_NUMBER,
-                prevIndex, VERSION_NUMBER.length(), 10));
-        return versionNumbers;
+        verNumbers.add(parseVersionNumber(version, prevIndex, version.length()));
+
+        if (verNumbers.get(0) == 0 || verNumbers.get(verNumbers.size() - 1) == 0)
+            throw new IllegalArgumentException("Leading/trailing zeros not supported (" +
+                    verNumbers + ")");
+
+        return verNumbers;
+    }
+
+    static List<Integer> versionNumbers() {
+        return parseVersionNumbers(VERSION_NUMBER);
     }
 
     static Optional<String> pre() {
