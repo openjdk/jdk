@@ -36,7 +36,7 @@ SPEC=$1; shift
 DST=$1; shift
 
 eval `$NAWK <$SPEC '
-  /^[ \t]*copyright / { printf "COPYRIGHT_YEARS=%s\n", $2; }
+  /^[ \t]*copyright / { printf "COPYRIGHT_YEARS=\"%s %s\"\n", $2, $3; }
   /^[ \t]*package / { printf "PKG=%s\n", $2; }
   /^[ \t]*class / { printf "CLASS=%s\n", $2; }
 '`
