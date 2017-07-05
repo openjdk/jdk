@@ -299,55 +299,60 @@ public class X509CertInfo implements CertAttrSet<String> {
         }
         StringBuilder sb = new StringBuilder();
 
-        sb.append("[\n");
-        sb.append("  " + version.toString() + "\n");
-        sb.append("  Subject: " + subject.toString() + "\n");
-        sb.append("  Signature Algorithm: " + algId.toString() + "\n");
-        sb.append("  Key:  " + pubKey.toString() + "\n");
-        sb.append("  " + interval.toString() + "\n");
-        sb.append("  Issuer: " + issuer.toString() + "\n");
-        sb.append("  " + serialNum.toString() + "\n");
+        sb.append("[\n")
+            .append("  ").append(version).append('\n')
+            .append("  Subject: ").append(subject).append('\n')
+            .append("  Signature Algorithm: ").append(algId).append('\n')
+            .append("  Key:  ").append(pubKey).append('\n')
+            .append("  ").append(interval).append('\n')
+            .append("  Issuer: ").append(issuer).append('\n')
+            .append("  ").append(serialNum).append('\n');
 
         // optional v2, v3 extras
         if (issuerUniqueId != null) {
-            sb.append("  Issuer Id:\n" + issuerUniqueId.toString() + "\n");
+            sb.append("  Issuer Id:\n").append(issuerUniqueId).append('\n');
         }
         if (subjectUniqueId != null) {
-            sb.append("  Subject Id:\n" + subjectUniqueId.toString() + "\n");
+            sb.append("  Subject Id:\n").append(subjectUniqueId).append('\n');
         }
         if (extensions != null) {
             Collection<Extension> allExts = extensions.getAllExtensions();
             Extension[] exts = allExts.toArray(new Extension[0]);
-            sb.append("\nCertificate Extensions: " + exts.length);
+            sb.append("\nCertificate Extensions: ").append(exts.length);
             for (int i = 0; i < exts.length; i++) {
-                sb.append("\n[" + (i+1) + "]: ");
+                sb.append("\n[").append(i+1).append("]: ");
                 Extension ext = exts[i];
                 try {
                     if (OIDMap.getClass(ext.getExtensionId()) == null) {
-                        sb.append(ext.toString());
+                        sb.append(ext);
                         byte[] extValue = ext.getExtensionValue();
                         if (extValue != null) {
                             DerOutputStream out = new DerOutputStream();
                             out.putOctetString(extValue);
                             extValue = out.toByteArray();
                             HexDumpEncoder enc = new HexDumpEncoder();
-                            sb.append("Extension unknown: "
-                                      + "DER encoded OCTET string =\n"
-                                      + enc.encodeBuffer(extValue) + "\n");
+                            sb.append("Extension unknown: ")
+                                .append("DER encoded OCTET string =\n")
+                                .append(enc.encodeBuffer(extValue))
+                                .append('\n');
                         }
-                    } else
-                        sb.append(ext.toString()); //sub-class exists
+                    } else {
+                        sb.append(ext); //sub-class exists
+                    }
                 } catch (Exception e) {
                     sb.append(", Error parsing this extension");
                 }
             }
             Map<String,Extension> invalid = extensions.getUnparseableExtensions();
             if (invalid.isEmpty() == false) {
-                sb.append("\nUnparseable certificate extensions: " + invalid.size());
+                sb.append("\nUnparseable certificate extensions: ")
+                    .append(invalid.size());
                 int i = 1;
                 for (Extension ext : invalid.values()) {
-                    sb.append("\n[" + (i++) + "]: ");
-                    sb.append(ext);
+                    sb.append("\n[")
+                        .append(i++)
+                        .append("]: ")
+                        .append(ext);
                 }
             }
         }

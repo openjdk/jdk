@@ -59,6 +59,11 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p, HeapRegion* from
   update_rs(from, p, queue_num());
 }
 
+template <class T> inline void G1ParScanThreadState::push_on_queue(T* ref) {
+  assert(verify_ref(ref), "sanity");
+  _refs->push(ref);
+}
+
 inline void G1ParScanThreadState::do_oop_partial_array(oop* p) {
   assert(has_partial_array_mask(p), "invariant");
   oop from_obj = clear_partial_array_mask(p);

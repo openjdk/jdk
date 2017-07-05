@@ -38,7 +38,7 @@
 import java.util.ArrayList;
 import java.util.Random;
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 
 import sun.hotspot.WhiteBox;
 

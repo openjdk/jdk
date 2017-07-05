@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,9 @@
  */
 package com.sun.hotspot.igv.data.serialization;
 
-import com.sun.hotspot.igv.data.GraphDocument;
-import com.sun.hotspot.igv.data.Group;
-import com.sun.hotspot.igv.data.InputBlock;
-import com.sun.hotspot.igv.data.InputBytecode;
-import com.sun.hotspot.igv.data.InputEdge;
-import com.sun.hotspot.igv.data.InputGraph;
-import com.sun.hotspot.igv.data.InputMethod;
-import com.sun.hotspot.igv.data.InputNode;
-import com.sun.hotspot.igv.data.Properties;
-import com.sun.hotspot.igv.data.Property;
+import com.sun.hotspot.igv.data.*;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Writer;
 import java.util.HashSet;
 import java.util.Set;
@@ -43,6 +35,16 @@ import java.util.Set;
  * @author Thomas Wuerthinger
  */
 public class Printer {
+
+    private InputStream in;
+
+    public Printer() {
+        this(null);
+    }
+
+    public Printer(InputStream inputStream) {
+        this.in = inputStream;
+    }
 
     public void export(Writer writer, GraphDocument document) {
 
@@ -57,8 +59,12 @@ public class Printer {
     private void export(XMLWriter xmlWriter, GraphDocument document) throws IOException {
         xmlWriter.startTag(Parser.ROOT_ELEMENT);
         xmlWriter.writeProperties(document.getProperties());
-        for (Group g : document.getGroups()) {
-            export(xmlWriter, g);
+        for (FolderElement e : document.getElements()) {
+            if (e instanceof Group) {
+                export(xmlWriter, (Group) e);
+            } else if (e instanceof InputGraph) {
+                export(xmlWriter, (InputGraph)e, null, false);
+            }
         }
 
         xmlWriter.endTag();
@@ -71,14 +77,29 @@ public class Printer {
         writer.startTag(Parser.GROUP_ELEMENT, attributes);
         writer.writeProperties(g.getProperties());
 
-        if (g.getMethod() != null) {
-            export(writer, g.getMethod());
+        boolean shouldExport = true;
+        if (in != null) {
+            char c = (char) in.read();
+            if (c != 'y') {
+                shouldExport = false;
+            }
         }
 
-        InputGraph previous = null;
-        for (InputGraph graph : g.getGraphs()) {
-            export(writer, graph, previous, true);
-            previous = graph;
+        if (shouldExport) {
+            if (g.getMethod() != null) {
+                export(writer, g.getMethod());
+            }
+
+            InputGraph previous = null;
+            for (FolderElement e : g.getElements()) {
+                if (e instanceof InputGraph) {
+                    InputGraph graph = (InputGraph) e;
+                    export(writer, graph, previous, true);
+                    previous = graph;
+                } else if (e instanceof Group) {
+                    export(writer, (Group) e);
+                }
+            }
         }
 
         writer.endTag();
@@ -90,8 +111,8 @@ public class Printer {
         writer.writeProperties(graph.getProperties());
         writer.startTag(Parser.NODES_ELEMENT);
 
-        Set<InputNode> removed = new HashSet<InputNode>();
-        Set<InputNode> equal = new HashSet<InputNode>();
+        Set<InputNode> removed = new HashSet<>();
+        Set<InputNode> equal = new HashSet<>();
 
         if (previous != null) {
             for (InputNode n : previous.getNodes()) {
@@ -122,8 +143,8 @@ public class Printer {
         writer.endTag();
 
         writer.startTag(Parser.EDGES_ELEMENT);
-        Set<InputEdge> removedEdges = new HashSet<InputEdge>();
-        Set<InputEdge> equalEdges = new HashSet<InputEdge>();
+        Set<InputEdge> removedEdges = new HashSet<>();
+        Set<InputEdge> equalEdges = new HashSet<>();
 
         if (previous != null) {
             for (InputEdge e : previous.getEdges()) {
@@ -153,23 +174,25 @@ public class Printer {
 
         writer.startTag(Parser.CONTROL_FLOW_ELEMENT);
         for (InputBlock b : graph.getBlocks()) {
-
             writer.startTag(Parser.BLOCK_ELEMENT, new Properties(Parser.BLOCK_NAME_PROPERTY, b.getName()));
 
-            writer.startTag(Parser.SUCCESSORS_ELEMENT);
-            for (InputBlock s : b.getSuccessors()) {
-                writer.simpleTag(Parser.SUCCESSOR_ELEMENT, new Properties(Parser.BLOCK_NAME_PROPERTY, s.getName()));
+            if (b.getSuccessors().size() > 0) {
+                writer.startTag(Parser.SUCCESSORS_ELEMENT);
+                for (InputBlock s : b.getSuccessors()) {
+                    writer.simpleTag(Parser.SUCCESSOR_ELEMENT, new Properties(Parser.BLOCK_NAME_PROPERTY, s.getName()));
+                }
+                writer.endTag();
             }
-            writer.endTag();
 
+            if (b.getNodes().size() > 0) {
             writer.startTag(Parser.NODES_ELEMENT);
-            for (InputNode n : b.getNodes()) {
-                writer.simpleTag(Parser.NODE_ELEMENT, new Properties(Parser.NODE_ID_PROPERTY, n.getId() + ""));
+                for (InputNode n : b.getNodes()) {
+                    writer.simpleTag(Parser.NODE_ELEMENT, new Properties(Parser.NODE_ID_PROPERTY, n.getId() + ""));
+                }
+                writer.endTag();
             }
-            writer.endTag();
 
             writer.endTag();
-
         }
 
         writer.endTag();
@@ -199,8 +222,8 @@ public class Printer {
             b.append(" ");
             b.append(code.getName());
             b.append("\n");
-
         }
+
         b.append("]]>");
         w.write(b.toString());
         w.endTag();
@@ -209,9 +232,15 @@ public class Printer {
 
     private Properties createProperties(InputEdge edge) {
         Properties p = new Properties();
-        p.setProperty(Parser.TO_INDEX_PROPERTY, Integer.toString(edge.getToIndex()));
+        if (edge.getToIndex() != 0) {
+            p.setProperty(Parser.TO_INDEX_PROPERTY, Integer.toString(edge.getToIndex()));
+        }
+        if (edge.getFromIndex() != 0) {
+            p.setProperty(Parser.FROM_INDEX_PROPERTY, Integer.toString(edge.getFromIndex()));
+        }
         p.setProperty(Parser.TO_PROPERTY, Integer.toString(edge.getTo()));
         p.setProperty(Parser.FROM_PROPERTY, Integer.toString(edge.getFrom()));
+        p.setProperty(Parser.TYPE_PROPERTY, edge.getType());
         return p;
     }
 }

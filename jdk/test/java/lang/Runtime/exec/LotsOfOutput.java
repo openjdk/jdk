@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,22 @@
 
 /**
  * @test
- * @bug 4369826
+ * @bug 4369826 8078582
  * @summary Process with lots of output should not crash VM
+ * @key intermittent
  * @author kladko
  */
 
 public class LotsOfOutput {
+    static final Runtime runtime = Runtime.getRuntime();
+
+    // Allow memory to grow by up to 1Mb total
+    static final int THRESHOLD = 1048576;
+
+    // Compute used memory
+    static long usedMemory() {
+        return runtime.totalMemory() - runtime.freeMemory();
+    }
 
     public static void main(String[] args) throws Exception {
         if (! UnixCommands.isUnix) {
@@ -37,18 +47,21 @@ public class LotsOfOutput {
         }
         UnixCommands.ensureCommandsAvailable("cat");
 
-        Process p = Runtime.getRuntime().exec(UnixCommands.cat() + " /dev/zero");
-        long initMemory = Runtime.getRuntime().totalMemory();
-        for (int i=1; i< 10; i++) {
+        Process p = runtime.exec(UnixCommands.cat() + " /dev/zero");
+        long initMemory = usedMemory();
+        boolean growing = false;
+        for (int i = 1; i < 10; i++) {
             Thread.sleep(100);
-            long totalMemory = Runtime.getRuntime().totalMemory();
-            if (totalMemory != initMemory) {
-                System.out.printf("consuming memory: i: %d, initial: %d, total: %d, delta: %d%n",
-                        i, initMemory, totalMemory, totalMemory - initMemory);
+            long used = usedMemory();
+            if (used != initMemory) {
+                System.out.printf("consuming memory: i: %d, initial: %d, used: %d, delta: %d%n",
+                        i, initMemory, used, used - initMemory);
             }
-            if (totalMemory > initMemory + 1000000)
-                throw new Exception("Process consumes memory.");
+            if (used > initMemory + THRESHOLD)
+                growing = true;
         }
+        if (growing)
+            throw new Exception("Process consumes memory.");
 
     }
 }

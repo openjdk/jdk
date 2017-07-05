@@ -24,14 +24,14 @@
 import java.lang.reflect.Executable;
 import java.util.function.BiFunction;
 
-import com.oracle.java.testlibrary.Asserts;
+import jdk.test.lib.Asserts;
 import sun.hotspot.WhiteBox;
 
 /*
  * @test
  * @bug 8074980
  * @library /testlibrary /../../test/lib
- * @build sun.hotspot.WhiteBox com.oracle.java.testlibrary.Asserts GetMethodOptionTest
+ * @build sun.hotspot.WhiteBox jdk.test.lib.Asserts GetMethodOptionTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI

@@ -37,8 +37,8 @@
  *                   -XX:+WhiteBoxAPI TestRTMAbortRatioOptionOnUnsupportedConfig
  */
 
-import com.oracle.java.testlibrary.cli.predicate.AndPredicate;
-import com.oracle.java.testlibrary.cli.predicate.NotPredicate;
+import jdk.test.lib.cli.predicate.AndPredicate;
+import jdk.test.lib.cli.predicate.NotPredicate;
 import rtm.predicate.SupportedCPU;
 import rtm.predicate.SupportedVM;
 

@@ -111,6 +111,8 @@ public class CustomLauncherTest {
         try {
             String[] launcher = getLauncher();
 
+            if (launcher == null) return; // launcher not available for the tested platform; skip
+
             System.out.println("Starting custom launcher:");
             System.out.println("=========================");
             System.out.println("  launcher  : " + launcher[0]);

@@ -35,7 +35,7 @@ import java.util.Vector;
   * This exception is raised when a referral to an alternative context
   * is encountered.
   * <p>
-  * An <tt>LdapReferralException</tt> object contains one or more referrals.
+  * An {@code LdapReferralException} object contains one or more referrals.
   * Each referral is an alternative location for the same target entry.
   * For example, a referral may be an LDAP URL.
   * The referrals are attempted in sequence until one is successful or
@@ -46,20 +46,20 @@ import java.util.Vector;
   * of an authentication error, a referral may be retried with different
   * environment properties.
   * <p>
-  * An <tt>LdapReferralException</tt> object may also contain a reference
-  * to a chain of unprocessed <tt>LdapReferralException</tt> objects.
+  * An {@code LdapReferralException} object may also contain a reference
+  * to a chain of unprocessed {@code LdapReferralException} objects.
   * Once the current set of referrals have been exhausted and unprocessed
-  * <tt>LdapReferralException</tt> objects remain, then the
-  * <tt>LdapReferralException</tt> object referenced by the current
+  * {@code LdapReferralException} objects remain, then the
+  * {@code LdapReferralException} object referenced by the current
   * object is thrown and the cycle continues.
   * <p>
-  * If new <tt>LdapReferralException</tt> objects are generated while
+  * If new {@code LdapReferralException} objects are generated while
   * following an existing referral then these new objects are appended
-  * to the end of the chain of unprocessed <tt>LdapReferralException</tt>
+  * to the end of the chain of unprocessed {@code LdapReferralException}
   * objects.
   * <p>
   * If an exception was recorded while processing a chain of
-  * <tt>LdapReferralException</tt> objects then it is throw once
+  * {@code LdapReferralException} objects then it is throw once
   * processing has completed.
   *
   * @author Vincent Ryan

@@ -220,7 +220,12 @@ public final class Global extends ScriptObject implements Scope {
     @Property(name = "Number", attributes = Attribute.NOT_ENUMERABLE)
     public volatile Object number;
 
-    /** ECMA 15.1.4.7 Date constructor */
+    /**
+     * Getter for ECMA 15.1.4.7 Date property
+     *
+     * @param self self reference
+     * @return Date property value
+     */
     @Getter(name = "Date", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getDate(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -230,6 +235,12 @@ public final class Global extends ScriptObject implements Scope {
         return global.date;
     }
 
+    /**
+     * Setter for ECMA 15.1.4.7 Date property
+     *
+     * @param self self reference
+     * @param value value for the Date property
+     */
     @Setter(name = "Date", attributes = Attribute.NOT_ENUMERABLE)
     public static void setDate(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -238,7 +249,12 @@ public final class Global extends ScriptObject implements Scope {
 
     private volatile Object date = LAZY_SENTINEL;
 
-    /** ECMA 15.1.4.8 RegExp constructor */
+    /**
+     * Getter for ECMA 15.1.4.8 RegExp property
+     *
+     * @param self self reference
+     * @return RegExp property value
+     */
     @Getter(name = "RegExp", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getRegExp(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -248,6 +264,12 @@ public final class Global extends ScriptObject implements Scope {
         return global.regexp;
     }
 
+    /**
+     * Setter for ECMA 15.1.4.8 RegExp property
+     *
+     * @param self self reference
+     * @param value value for the RegExp property
+     */
     @Setter(name = "RegExp", attributes = Attribute.NOT_ENUMERABLE)
     public static void setRegExp(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -256,7 +278,11 @@ public final class Global extends ScriptObject implements Scope {
 
     private volatile Object regexp = LAZY_SENTINEL;
 
-    /** ECMA 15.12 - The JSON object */
+    /**
+     * Getter for ECMA 15.12 - The JSON property
+     * @param self self reference
+     * @return the value of JSON property
+     */
     @Getter(name = "JSON", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getJSON(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -266,6 +292,11 @@ public final class Global extends ScriptObject implements Scope {
         return global.json;
     }
 
+    /**
+     * Setter for ECMA 15.12 - The JSON property
+     * @param self self reference
+     * @param value value for the JSON property
+     */
     @Setter(name = "JSON", attributes = Attribute.NOT_ENUMERABLE)
     public static void setJSON(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -274,7 +305,11 @@ public final class Global extends ScriptObject implements Scope {
 
     private volatile Object json = LAZY_SENTINEL;
 
-    /** Nashorn extension: global.JSAdapter */
+    /**
+     * Getter for Nashorn extension: global.JSAdapter
+     * @param self self reference
+     * @return value of the JSAdapter property
+     */
     @Getter(name = "JSAdapter", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getJSAdapter(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -284,6 +319,11 @@ public final class Global extends ScriptObject implements Scope {
         return global.jsadapter;
     }
 
+    /**
+     * Setter for Nashorn extension: global.JSAdapter
+     * @param self self reference
+     * @param value value for the JSAdapter property
+     */
     @Setter(name = "JSAdapter", attributes = Attribute.NOT_ENUMERABLE)
     public static void setJSAdapter(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -300,7 +340,11 @@ public final class Global extends ScriptObject implements Scope {
     @Property(name = "Error", attributes = Attribute.NOT_ENUMERABLE)
     public volatile Object error;
 
-    /** EvalError object */
+    /**
+     * Getter for the EvalError property
+     * @param self self reference
+     * @return the value of EvalError property
+     */
     @Getter(name = "EvalError", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getEvalError(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -310,6 +354,11 @@ public final class Global extends ScriptObject implements Scope {
         return global.evalError;
     }
 
+    /**
+     * Setter for the EvalError property
+     * @param self self reference
+     * @param value value of the EvalError property
+     */
     @Setter(name = "EvalError", attributes = Attribute.NOT_ENUMERABLE)
     public static void setEvalError(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -318,7 +367,11 @@ public final class Global extends ScriptObject implements Scope {
 
     private volatile Object evalError = LAZY_SENTINEL;
 
-    /** RangeError object */
+    /**
+     * Getter for the RangeError property.
+     * @param self self reference
+     * @return the value of RangeError property
+     */
     @Getter(name = "RangeError", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getRangeError(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -328,6 +381,12 @@ public final class Global extends ScriptObject implements Scope {
         return global.rangeError;
     }
 
+
+    /**
+     * Setter for the RangeError property.
+     * @param self self reference
+     * @param value value for the RangeError property
+     */
     @Setter(name = "RangeError", attributes = Attribute.NOT_ENUMERABLE)
     public static void setRangeError(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -348,7 +407,11 @@ public final class Global extends ScriptObject implements Scope {
     @Property(name = "TypeError", attributes = Attribute.NOT_ENUMERABLE)
     public volatile Object typeError;
 
-    /** URIError object */
+    /**
+     * Getter for the URIError property.
+     * @param self self reference
+     * @return the value of URIError property
+     */
     @Getter(name = "URIError", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getURIError(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -358,6 +421,11 @@ public final class Global extends ScriptObject implements Scope {
         return global.uriError;
     }
 
+    /**
+     * Setter for the URIError property.
+     * @param self self reference
+     * @param value value for the URIError property
+     */
     @Setter(name = "URIError", attributes = Attribute.NOT_ENUMERABLE)
     public static void setURIError(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -366,7 +434,11 @@ public final class Global extends ScriptObject implements Scope {
 
     private volatile Object uriError = LAZY_SENTINEL;
 
-    /** ArrayBuffer object */
+    /**
+     * Getter for the ArrayBuffer property.
+     * @param self self reference
+     * @return the value of the ArrayBuffer property
+     */
     @Getter(name = "ArrayBuffer", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getArrayBuffer(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -376,6 +448,11 @@ public final class Global extends ScriptObject implements Scope {
         return global.arrayBuffer;
     }
 
+    /**
+     * Setter for the ArrayBuffer property.
+     * @param self self reference
+     * @param value value of the ArrayBuffer property
+     */
     @Setter(name = "ArrayBuffer", attributes = Attribute.NOT_ENUMERABLE)
     public static void setArrayBuffer(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -384,7 +461,11 @@ public final class Global extends ScriptObject implements Scope {
 
     private volatile Object arrayBuffer;
 
-    /** DataView object */
+    /**
+     * Getter for the DataView property.
+     * @param self self reference
+     * @return the value of the DataView property
+     */
     @Getter(name = "DataView", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getDataView(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -394,6 +475,12 @@ public final class Global extends ScriptObject implements Scope {
         return global.dataView;
     }
 
+
+    /**
+     * Setter for the DataView property.
+     * @param self self reference
+     * @param value value of the DataView property
+     */
     @Setter(name = "DataView", attributes = Attribute.NOT_ENUMERABLE)
     public static void setDataView(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -402,7 +489,11 @@ public final class Global extends ScriptObject implements Scope {
 
     private volatile Object dataView;
 
-    /** TypedArray (int8) */
+    /**
+     * Getter for the Int8Array property.
+     * @param self self reference
+     * @return the value of the Int8Array property.
+     */
     @Getter(name = "Int8Array", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getInt8Array(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -412,6 +503,11 @@ public final class Global extends ScriptObject implements Scope {
         return global.int8Array;
     }
 
+    /**
+     * Setter for the Int8Array property.
+     * @param self self reference
+     * @param value value of the Int8Array property
+     */
     @Setter(name = "Int8Array", attributes = Attribute.NOT_ENUMERABLE)
     public static void setInt8Array(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -420,7 +516,11 @@ public final class Global extends ScriptObject implements Scope {
 
     private volatile Object int8Array;
 
-    /** TypedArray (uint8) */
+    /**
+     * Getter for the Uin8Array property.
+     * @param self self reference
+     * @return the value of the Uint8Array property
+     */
     @Getter(name = "Uint8Array", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getUint8Array(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -430,6 +530,11 @@ public final class Global extends ScriptObject implements Scope {
         return global.uint8Array;
     }
 
+    /**
+     * Setter for the Uin8Array property.
+     * @param self self reference
+     * @param value value of the Uin8Array property
+     */
     @Setter(name = "Uint8Array", attributes = Attribute.NOT_ENUMERABLE)
     public static void setUint8Array(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -438,7 +543,11 @@ public final class Global extends ScriptObject implements Scope {
 
     private volatile Object uint8Array;
 
-    /** TypedArray (uint8) - Clamped */
+    /**
+     * Getter for the Uint8ClampedArray property.
+     * @param self self reference
+     * @return the value of the Uint8ClampedArray property
+     */
     @Getter(name = "Uint8ClampedArray", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getUint8ClampedArray(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -448,6 +557,11 @@ public final class Global extends ScriptObject implements Scope {
         return global.uint8ClampedArray;
     }
 
+    /**
+     * Setter for the Uint8ClampedArray property.
+     * @param self self reference
+     * @param value value of the Uint8ClampedArray property
+     */
     @Setter(name = "Uint8ClampedArray", attributes = Attribute.NOT_ENUMERABLE)
     public static void setUint8ClampedArray(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -456,7 +570,11 @@ public final class Global extends ScriptObject implements Scope {
 
     private volatile Object uint8ClampedArray;
 
-    /** TypedArray (int16) */
+    /**
+     * Getter for the Int16Array property.
+     * @param self self reference
+     * @return the value of the Int16Array property
+     */
     @Getter(name = "Int16Array", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getInt16Array(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -466,6 +584,11 @@ public final class Global extends ScriptObject implements Scope {
         return global.int16Array;
     }
 
+    /**
+     * Setter for the Int16Array property.
+     * @param self self reference
+     * @param value value of the Int16Array property
+     */
     @Setter(name = "Int16Array", attributes = Attribute.NOT_ENUMERABLE)
     public static void setInt16Array(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -474,7 +597,11 @@ public final class Global extends ScriptObject implements Scope {
 
     private volatile Object int16Array;
 
-    /** TypedArray (uint16) */
+    /**
+     * Getter for the Uint16Array property.
+     * @param self self reference
+     * @return the value of the Uint16Array property
+     */
     @Getter(name = "Uint16Array", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getUint16Array(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -484,6 +611,11 @@ public final class Global extends ScriptObject implements Scope {
         return global.uint16Array;
     }
 
+    /**
+     * Setter for the Uint16Array property.
+     * @param self self reference
+     * @param value value of the Uint16Array property
+     */
     @Setter(name = "Uint16Array", attributes = Attribute.NOT_ENUMERABLE)
     public static void setUint16Array(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -492,7 +624,12 @@ public final class Global extends ScriptObject implements Scope {
 
     private volatile Object uint16Array;
 
-    /** TypedArray (int32) */
+    /**
+     * Getter for the Int32Array property.
+     *
+     * @param self self reference
+     * @return the value of the Int32Array property
+     */
     @Getter(name = "Int32Array", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getInt32Array(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -502,6 +639,13 @@ public final class Global extends ScriptObject implements Scope {
         return global.int32Array;
     }
 
+
+    /**
+     * Setter for the Int32Array property.
+     *
+     * @param self self reference
+     * @param value value of the Int32Array property
+     */
     @Setter(name = "Int32Array", attributes = Attribute.NOT_ENUMERABLE)
     public static void setInt32Array(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -510,7 +654,12 @@ public final class Global extends ScriptObject implements Scope {
 
     private volatile Object int32Array;
 
-    /** TypedArray (uint32) */
+    /**
+     * Getter of the Uint32Array property.
+     *
+     * @param self self reference
+     * @return the value of the Uint32Array property
+     */
     @Getter(name = "Uint32Array", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getUint32Array(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -520,6 +669,13 @@ public final class Global extends ScriptObject implements Scope {
         return global.uint32Array;
     }
 
+
+    /**
+     * Setter of the Uint32Array property.
+     *
+     * @param self self reference
+     * @param value value of the Uint32Array property
+     */
     @Setter(name = "Uint32Array", attributes = Attribute.NOT_ENUMERABLE)
     public static void setUint32Array(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -528,7 +684,12 @@ public final class Global extends ScriptObject implements Scope {
 
     private volatile Object uint32Array;
 
-    /** TypedArray (float32) */
+    /**
+     * Getter for the Float32Array property.
+     *
+     * @param self self reference
+     * @return the value of the Float32Array property
+     */
     @Getter(name = "Float32Array", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getFloat32Array(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -538,6 +699,12 @@ public final class Global extends ScriptObject implements Scope {
         return global.float32Array;
     }
 
+    /**
+     * Setter for the Float32Array property.
+     *
+     * @param self self reference
+     * @param value value of the Float32Array property
+     */
     @Setter(name = "Float32Array", attributes = Attribute.NOT_ENUMERABLE)
     public static void setFloat32Array(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -546,7 +713,12 @@ public final class Global extends ScriptObject implements Scope {
 
     private volatile Object float32Array;
 
-    /** TypedArray (float64) */
+    /**
+     * Getter for the Float64Array property.
+     *
+     * @param self self reference
+     * @return the value of the Float64Array property
+     */
     @Getter(name = "Float64Array", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getFloat64Array(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -556,6 +728,12 @@ public final class Global extends ScriptObject implements Scope {
         return global.float64Array;
     }
 
+    /**
+     * Setter for the Float64Array property.
+     *
+     * @param self self reference
+     * @param value value of the Float64Array property
+     */
     @Setter(name = "Float64Array", attributes = Attribute.NOT_ENUMERABLE)
     public static void setFloat64Array(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -592,7 +770,12 @@ public final class Global extends ScriptObject implements Scope {
     @Property(attributes = Attribute.NOT_ENUMERABLE)
     public volatile Object org;
 
-    /** Nashorn extension: Java access - global.javaImporter */
+    /**
+     * Getter for the Nashorn extension: Java access - global.javaImporter.
+     *
+     * @param self self reference
+     * @return the value of the JavaImporter property
+     */
     @Getter(name = "JavaImporter", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getJavaImporter(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -602,6 +785,12 @@ public final class Global extends ScriptObject implements Scope {
         return global.javaImporter;
     }
 
+    /**
+     * Setter for the Nashorn extension: Java access - global.javaImporter.
+     *
+     * @param self self reference
+     * @param value value of the JavaImporter property
+     */
     @Setter(name = "JavaImporter", attributes = Attribute.NOT_ENUMERABLE)
     public static void setJavaImporter(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -610,7 +799,12 @@ public final class Global extends ScriptObject implements Scope {
 
     private volatile Object javaImporter;
 
-    /** Nashorn extension: global.Java Object constructor. */
+    /**
+     * Getter for the Nashorn extension: global.Java property.
+     *
+     * @param self self reference
+     * @return the value of the Java property
+     */
     @Getter(name = "Java", attributes = Attribute.NOT_ENUMERABLE)
     public static Object getJavaApi(final Object self) {
         final Global global = Global.instanceFrom(self);
@@ -620,6 +814,12 @@ public final class Global extends ScriptObject implements Scope {
         return global.javaApi;
     }
 
+    /**
+     * Setter for the Nashorn extension: global.Java property.
+     *
+     * @param self self reference
+     * @param value value of the Java property
+     */
     @Setter(name = "Java", attributes = Attribute.NOT_ENUMERABLE)
     public static void setJavaApi(final Object self, final Object value) {
         final Global global = Global.instanceFrom(self);
@@ -2139,13 +2339,13 @@ public final class Global extends ScriptObject implements Scope {
     @Override
     public void addBoundProperties(final ScriptObject source, final jdk.nashorn.internal.runtime.Property[] properties) {
         PropertyMap ownMap = getMap();
-        LexicalScope lexicalScope = null;
+        LexicalScope lexScope = null;
         PropertyMap lexicalMap = null;
         boolean hasLexicalDefinitions = false;
 
         if (context.getEnv()._es6) {
-            lexicalScope = (LexicalScope) getLexicalScope();
-            lexicalMap = lexicalScope.getMap();
+            lexScope = (LexicalScope) getLexicalScope();
+            lexicalMap = lexScope.getMap();
 
             for (final jdk.nashorn.internal.runtime.Property property : properties) {
                 if (property.isLexicalBinding()) {
@@ -2165,8 +2365,8 @@ public final class Global extends ScriptObject implements Scope {
 
         for (final jdk.nashorn.internal.runtime.Property property : properties) {
             if (property.isLexicalBinding()) {
-                assert lexicalScope != null;
-                lexicalMap = lexicalScope.addBoundProperty(lexicalMap, source, property);
+                assert lexScope != null;
+                lexicalMap = lexScope.addBoundProperty(lexicalMap, source, property);
 
                 if (ownMap.findProperty(property.getKey()) != null) {
                     // If property exists in the global object invalidate any global constant call sites.
@@ -2180,7 +2380,8 @@ public final class Global extends ScriptObject implements Scope {
         setMap(ownMap);
 
         if (hasLexicalDefinitions) {
-            lexicalScope.setMap(lexicalMap);
+            assert lexScope != null;
+            lexScope.setMap(lexicalMap);
             invalidateLexicalSwitchPoint();
         }
     }

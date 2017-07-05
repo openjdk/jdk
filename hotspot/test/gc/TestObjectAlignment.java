@@ -43,8 +43,8 @@
  * @run main/othervm TestObjectAlignment -Xmx20M -XX:-ExplicitGCInvokesConcurrent -XX:+IgnoreUnrecognizedVMOptions -XX:ObjectAlignmentInBytes=256
  */
 
-import com.oracle.java.testlibrary.ProcessTools;
-import com.oracle.java.testlibrary.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
+import jdk.test.lib.OutputAnalyzer;
 
 public class TestObjectAlignment {
 

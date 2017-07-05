@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,7 @@ import javax.swing.Action;
 import javax.swing.JFileChooser;
 import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileFilter;
-import org.openide.util.HelpCtx;
-import org.openide.util.Lookup;
-import org.openide.util.LookupEvent;
-import org.openide.util.LookupListener;
-import org.openide.util.NbBundle;
-import org.openide.util.Utilities;
+import org.openide.util.*;
 import org.openide.util.actions.CallableSystemAction;
 
 /**
@@ -50,27 +45,31 @@ public final class ExportAction extends CallableSystemAction implements LookupLi
     private final Lookup.Result<ExportCookie> result;
 
     public ExportAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Export current graph as an SVG file");
+        putValue(Action.SHORT_DESCRIPTION, "Export current graph as SVG file");
         putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_E, InputEvent.CTRL_MASK));
         lookup = Utilities.actionsGlobalContext();
-        result = lookup.lookup(new Lookup.Template<ExportCookie>(ExportCookie.class));
+        result = lookup.lookup(new Lookup.Template<>(ExportCookie.class));
         result.addLookupListener(this);
         resultChanged(null);
     }
 
+    @Override
     public void resultChanged(LookupEvent e) {
         super.setEnabled(result.allInstances().size() > 0);
     }
 
+    @Override
     public void performAction() {
 
         JFileChooser fc = new JFileChooser();
         fc.setFileFilter(new FileFilter() {
 
+            @Override
             public boolean accept(File f) {
                 return true;
             }
 
+            @Override
             public String getDescription() {
                 return "SVG files (*.svg)";
             }
@@ -97,15 +96,17 @@ public final class ExportAction extends CallableSystemAction implements LookupLi
         }
     }
 
+    @Override
     public String getName() {
         return NbBundle.getMessage(ExportAction.class, "CTL_ExportAction");
     }
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/view/images/export.gif";
+        return "com/sun/hotspot/igv/view/images/export.png";
     }
 
+    @Override
     public HelpCtx getHelpCtx() {
         return HelpCtx.DEFAULT_HELP;
     }

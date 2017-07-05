@@ -72,12 +72,12 @@ final public class LdapSasl {
      * property has not been set, Context.SECURITY_PRINCIPAL is used.
      * If SASL_CALLBACK has been set, use that instead of the default
      * CallbackHandler.
-     *<p>
+     * <p>
      * If bind is successful and the selected SASL mechanism has a security
      * layer, set inStream and outStream to be filter streams that use
      * the security layer. These will be used for subsequent communication
      * with the server.
-     *<p>
+     *
      * @param conn The non-null connection to use for sending an LDAP BIND
      * @param server Non-null string name of host to connect to
      * @param dn Non-null DN to bind as; also used as authentication ID

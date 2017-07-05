@@ -31,7 +31,7 @@
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:CompressedClassSpaceSize=50m CompressedClassSpaceSizeInJmapHeap
  */
 
-import com.oracle.java.testlibrary.*;
+import jdk.test.lib.*;
 import java.nio.file.*;
 import java.io.File;
 import java.nio.charset.Charset;

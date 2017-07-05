@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 5030233 6214916 6356475 6571029 6684582 6742159 4459600 6758881 6753938
- *      6894719 6968053 7151434 7146424 8007333
+ *      6894719 6968053 7151434 7146424 8007333 8077822
  * @summary Argument parsing validation.
  * @compile -XDignore.symbol.file Arrrghs.java
  * @run main/othervm Arrrghs
@@ -303,6 +303,16 @@ public class Arrrghs extends TestHelper {
             System.out.println(tr);
             throw new RuntimeException("Error: compiling java wildcards");
         }
+
+        // test if javac (the command) can compile *.java with a vmoption
+        tr = doExec(javacCmd, "-cp", ".",
+                    "-J-showversion", "-J-Dsomeproperty=foo",
+                    libDir.getName() + File.separator + "*.java");
+        if (!tr.isOK()) {
+            System.out.println(tr);
+            throw new RuntimeException("Error: compiling java wildcards with vmoptions");
+        }
+
 
         // use the jar cmd to create jars using the ? wildcard
         File jarFoo = new File(libDir, "Foo.jar");

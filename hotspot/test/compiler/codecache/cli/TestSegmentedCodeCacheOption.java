@@ -20,9 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import com.oracle.java.testlibrary.ExitCode;
-import com.oracle.java.testlibrary.Platform;
-import com.oracle.java.testlibrary.cli.CommandLineOptionTest;
+import jdk.test.lib.ExitCode;
+import jdk.test.lib.Platform;
+import jdk.test.lib.cli.CommandLineOptionTest;
 import common.CodeCacheOptions;
 import sun.hotspot.code.BlobType;
 
@@ -35,7 +35,7 @@ import sun.hotspot.code.BlobType;
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
- * @build TestSegmentedCodeCacheOption com.oracle.java.testlibrary.*
+ * @build TestSegmentedCodeCacheOption jdk.test.lib.*
  * @run main TestSegmentedCodeCacheOption
  */
 public class TestSegmentedCodeCacheOption {

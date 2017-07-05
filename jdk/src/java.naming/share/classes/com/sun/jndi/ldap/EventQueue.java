@@ -73,16 +73,16 @@ final class EventQueue implements Runnable {
     // package private;
     /**
      * Enqueue an event.
-     * @param event Either a <tt>NamingExceptionEvent</tt> or a subclass
-     *              of <tt>NamingEvent</tt> or
-     * <tt>UnsolicitedNotificationEvent</tt>.
-     * If it is a subclass of <tt>NamingEvent</tt>, all listeners must implement
-     * the corresponding subinterface of <tt>NamingListener</tt>.
-     * For example, for a <tt>ObjectAddedEvent</tt>, all listeners <em>must</em>
-     * implement the <tt>ObjectAddedListener</tt> interface.
+     * @param event Either a {@code NamingExceptionEvent} or a subclass
+     *        of {@code NamingEvent} or
+     *        {@code UnsolicitedNotificationEvent}.
+     * If it is a subclass of {@code NamingEvent}, all listeners must implement
+     * the corresponding subinterface of {@code NamingListener}.
+     * For example, for a {@code ObjectAddedEvent}, all listeners <em>must</em>
+     * implement the {@code ObjectAddedListener} interface.
      * <em>The current implementation does not check this before dispatching
      * the event.</em>
-     * If the event is a <tt>NamingExceptionEvent</tt>, then all listeners
+     * If the event is a {@code NamingExceptionEvent}, then all listeners
      * are notified.
      * @param vector List of NamingListeners that will be notified of event.
      */

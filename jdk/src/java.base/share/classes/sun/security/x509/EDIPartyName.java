@@ -209,10 +209,15 @@ public class EDIPartyName implements GeneralNameInterface {
      * Return the printable string.
      */
     public String toString() {
-        return ("EDIPartyName: " +
-                 ((assigner == null) ? "" :
-                   ("  nameAssigner = " + assigner + ","))
-                 + "  partyName = " + party);
+        StringBuilder sb = new StringBuilder("EDIPartyName: ");
+        if (assigner != null) {
+            sb.append("  nameAssigner = ")
+              .append(assigner)
+              .append(',');
+        }
+        sb.append("  partyName = ")
+          .append(party);
+        return sb.toString();
     }
 
     /**

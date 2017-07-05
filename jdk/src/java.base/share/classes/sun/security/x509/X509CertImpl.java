@@ -81,7 +81,7 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
 
     private static final long serialVersionUID = -3457612960190864406L;
 
-    private static final String DOT = ".";
+    private static final char DOT = '.';
     /**
      * Public attribute names.
      */
@@ -799,17 +799,10 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
         if (info == null || algId == null || signature == null)
             return "";
 
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("[\n");
-        sb.append(info.toString() + "\n");
-        sb.append("  Algorithm: [" + algId.toString() + "]\n");
-
         HexDumpEncoder encoder = new HexDumpEncoder();
-        sb.append("  Signature:\n" + encoder.encodeBuffer(signature));
-        sb.append("\n]");
-
-        return sb.toString();
+        return "[\n" + info + '\n' +
+            "  Algorithm: [" + algId + "]\n" +
+            "  Signature:\n" + encoder.encodeBuffer(signature) + "\n]";
     }
 
     // the strongly typed gets, as per java.security.cert.X509Certificate
@@ -1941,31 +1934,30 @@ public class X509CertImpl extends X509Certificate implements DerEncoder {
      * only contains 0-9 and A-F. No small case, no colon.
      */
     private String getCertificateFingerPrint(String mdAlg) {
-        String fingerPrint = "";
         try {
             byte[] encCertInfo = getEncoded();
             MessageDigest md = MessageDigest.getInstance(mdAlg);
             byte[] digest = md.digest(encCertInfo);
-            StringBuffer buf = new StringBuffer();
+            StringBuilder sb = new StringBuilder(digest.length * 2);
             for (int i = 0; i < digest.length; i++) {
-                byte2hex(digest[i], buf);
+                byte2hex(digest[i], sb);
             }
-            fingerPrint = buf.toString();
+            return sb.toString();
         } catch (NoSuchAlgorithmException | CertificateEncodingException e) {
             // ignored
         }
-        return fingerPrint;
+        return "";
     }
 
     /**
-     * Converts a byte to hex digit and writes to the supplied buffer
+     * Converts a byte to hex digit and writes to the supplied builder
      */
-    private static void byte2hex(byte b, StringBuffer buf) {
+    private static void byte2hex(byte b, StringBuilder buf) {
         char[] hexChars = { '0', '1', '2', '3', '4', '5', '6', '7', '8',
                 '9', 'A', 'B', 'C', 'D', 'E', 'F' };
         int high = ((b & 0xf0) >> 4);
         int low = (b & 0x0f);
-        buf.append(hexChars[high]);
-        buf.append(hexChars[low]);
+        buf.append(hexChars[high])
+            .append(hexChars[low]);
     }
 }

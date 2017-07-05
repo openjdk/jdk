@@ -25,6 +25,8 @@
 
 #include "precompiled.hpp"
 #include "assembler_zero.inline.hpp"
+#include "entry_zero.hpp"
+#include "interpreter/cppInterpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_zero.hpp"
 #include "oops/oop.inline.hpp"

@@ -441,9 +441,9 @@ public class IssuingDistributionPointExtension extends Extension
      * Returns the extension as user readable string.
      */
     public String toString() {
-
-        StringBuilder sb = new StringBuilder(super.toString());
-        sb.append("IssuingDistributionPoint [\n  ");
+        StringBuilder sb = new StringBuilder();
+        sb.append(super.toString())
+            .append("IssuingDistributionPoint [\n  ");
 
         if (distributionPoint != null) {
             sb.append(distributionPoint);
@@ -453,23 +453,18 @@ public class IssuingDistributionPointExtension extends Extension
             sb.append(revocationReasons);
         }
 
-        sb.append((hasOnlyUserCerts)
-                ? ("  Only contains user certs: true")
-                : ("  Only contains user certs: false")).append("\n");
-
-        sb.append((hasOnlyCACerts)
-                ? ("  Only contains CA certs: true")
-                : ("  Only contains CA certs: false")).append("\n");
-
-        sb.append((hasOnlyAttributeCerts)
-                ? ("  Only contains attribute certs: true")
-                : ("  Only contains attribute certs: false")).append("\n");
-
-        sb.append((isIndirectCRL)
-                ? ("  Indirect CRL: true")
-                : ("  Indirect CRL: false")).append("\n");
-
-        sb.append("]\n");
+        sb.append("  Only contains user certs: ")
+            .append(hasOnlyUserCerts)
+            .append('\n')
+            .append("  Only contains CA certs: ")
+            .append(hasOnlyCACerts)
+            .append('\n')
+            .append("  Only contains attribute certs: ")
+            .append(hasOnlyAttributeCerts)
+            .append('\n')
+            .append("  Indirect CRL: ")
+            .append(isIndirectCRL)
+            .append("\n]\n");
 
         return sb.toString();
     }
