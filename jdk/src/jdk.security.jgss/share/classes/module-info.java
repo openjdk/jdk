@@ -26,6 +26,8 @@
 /**
  * Defines Java extensions to the GSS-API and an implementation of the SASL
  * GSSAPI mechanism.
+ *
+ * @since 9
  */
 module jdk.security.jgss {
     requires transitive java.security.jgss;
