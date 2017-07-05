@@ -1932,7 +1932,7 @@ class JapaneseImperialCalendar extends Calendar {
      * Computes the fixed date under either the Gregorian or the
      * Julian calendar, using the given year and the specified calendar fields.
      *
-     * @param cal the CalendarSystem to be used for the date calculation
+     * @param era era index
      * @param year the normalized year number, with 0 indicating the
      * year 1 BCE, -1 indicating 2 BCE, etc.
      * @param fieldMask the calendar fields to be used for the date calculation
@@ -2141,7 +2141,7 @@ class JapaneseImperialCalendar extends Calendar {
      * Returns the length of the specified month in the specified
      * Gregorian year. The year number must be normalized.
      *
-     * @see #isLeapYear(int)
+     * @see GregorianCalendar#isLeapYear(int)
      */
     private int monthLength(int month, int gregorianYear) {
         return CalendarUtils.isGregorianLeapYear(gregorianYear) ?
@@ -2152,7 +2152,7 @@ class JapaneseImperialCalendar extends Calendar {
      * Returns the length of the specified month in the year provided
      * by internalGet(YEAR).
      *
-     * @see #isLeapYear(int)
+     * @see GregorianCalendar#isLeapYear(int)
      */
     private int monthLength(int month) {
         assert jdate.isNormalized();

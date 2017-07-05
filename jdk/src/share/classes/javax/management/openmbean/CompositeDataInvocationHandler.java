@@ -124,11 +124,6 @@ public class CompositeDataInvocationHandler implements InvocationHandler {
        <p>Construct a handler backed by the given {@code
        CompositeData}.</p>
 
-       @param mbsc the {@code MBeanServerConnection} related to this
-       {@code CompositeData}.  This is only relevant if a method in
-       the interface for which this is an invocation handler returns
-       a type that is an MXBean interface.  Otherwise, it can be null.
-
        @param compositeData the {@code CompositeData} that will supply
        information to getters.
 

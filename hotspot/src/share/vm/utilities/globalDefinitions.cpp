@@ -111,11 +111,12 @@ void basic_types_init() {
       case T_DOUBLE:
       case T_LONG:
       case T_OBJECT:
-      case T_ADDRESS:   // random raw pointer
-      case T_METADATA:  // metadata pointer
-      case T_NARROWOOP: // compressed pointer
-      case T_CONFLICT:  // might as well support a bottom type
-      case T_VOID:      // padding or other unaddressed word
+      case T_ADDRESS:     // random raw pointer
+      case T_METADATA:    // metadata pointer
+      case T_NARROWOOP:   // compressed pointer
+      case T_NARROWKLASS: // compressed klass pointer
+      case T_CONFLICT:    // might as well support a bottom type
+      case T_VOID:        // padding or other unaddressed word
         // layout type must map to itself
         assert(vt == ft, "");
         break;
@@ -179,7 +180,7 @@ void basic_types_init() {
 
 
 // Map BasicType to signature character
-char type2char_tab[T_CONFLICT+1]={ 0, 0, 0, 0, 'Z', 'C', 'F', 'D', 'B', 'S', 'I', 'J', 'L', '[', 'V', 0, 0, 0, 0};
+char type2char_tab[T_CONFLICT+1]={ 0, 0, 0, 0, 'Z', 'C', 'F', 'D', 'B', 'S', 'I', 'J', 'L', '[', 'V', 0, 0, 0, 0, 0};
 
 // Map BasicType to Java type name
 const char* type2name_tab[T_CONFLICT+1] = {
@@ -198,6 +199,7 @@ const char* type2name_tab[T_CONFLICT+1] = {
   "*address*",
   "*narrowoop*",
   "*metadata*",
+  "*narrowklass*",
   "*conflict*"
 };
 
@@ -213,7 +215,7 @@ BasicType name2type(const char* name) {
 
 
 // Map BasicType to size in words
-int type2size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, 1, 1, -1};
+int type2size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, 1, 1, 1, -1};
 
 BasicType type2field[T_CONFLICT+1] = {
   (BasicType)0,            // 0,
@@ -234,7 +236,8 @@ BasicType type2field[T_CONFLICT+1] = {
   T_ADDRESS,               // T_ADDRESS  = 15,
   T_NARROWOOP,             // T_NARROWOOP= 16,
   T_METADATA,              // T_METADATA = 17,
-  T_CONFLICT               // T_CONFLICT = 18,
+  T_NARROWKLASS,           // T_NARROWKLASS = 18,
+  T_CONFLICT               // T_CONFLICT = 19,
 };
 
 
@@ -257,30 +260,32 @@ BasicType type2wfield[T_CONFLICT+1] = {
   T_ADDRESS, // T_ADDRESS  = 15,
   T_NARROWOOP, // T_NARROWOOP  = 16,
   T_METADATA,  // T_METADATA   = 17,
-  T_CONFLICT // T_CONFLICT = 18,
+  T_NARROWKLASS, // T_NARROWKLASS  = 18,
+  T_CONFLICT // T_CONFLICT = 19,
 };
 
 
 int _type2aelembytes[T_CONFLICT+1] = {
-  0,                      // 0
-  0,                      // 1
-  0,                      // 2
-  0,                      // 3
-  T_BOOLEAN_aelem_bytes,  // T_BOOLEAN  =  4,
-  T_CHAR_aelem_bytes,     // T_CHAR     =  5,
-  T_FLOAT_aelem_bytes,    // T_FLOAT    =  6,
-  T_DOUBLE_aelem_bytes,   // T_DOUBLE   =  7,
-  T_BYTE_aelem_bytes,     // T_BYTE     =  8,
-  T_SHORT_aelem_bytes,    // T_SHORT    =  9,
-  T_INT_aelem_bytes,      // T_INT      = 10,
-  T_LONG_aelem_bytes,     // T_LONG     = 11,
-  T_OBJECT_aelem_bytes,   // T_OBJECT   = 12,
-  T_ARRAY_aelem_bytes,    // T_ARRAY    = 13,
-  0,                      // T_VOID     = 14,
-  T_OBJECT_aelem_bytes,   // T_ADDRESS  = 15,
-  T_NARROWOOP_aelem_bytes,// T_NARROWOOP= 16,
-  T_OBJECT_aelem_bytes,   // T_METADATA = 17,
-  0                       // T_CONFLICT = 18,
+  0,                         // 0
+  0,                         // 1
+  0,                         // 2
+  0,                         // 3
+  T_BOOLEAN_aelem_bytes,     // T_BOOLEAN  =  4,
+  T_CHAR_aelem_bytes,        // T_CHAR     =  5,
+  T_FLOAT_aelem_bytes,       // T_FLOAT    =  6,
+  T_DOUBLE_aelem_bytes,      // T_DOUBLE   =  7,
+  T_BYTE_aelem_bytes,        // T_BYTE     =  8,
+  T_SHORT_aelem_bytes,       // T_SHORT    =  9,
+  T_INT_aelem_bytes,         // T_INT      = 10,
+  T_LONG_aelem_bytes,        // T_LONG     = 11,
+  T_OBJECT_aelem_bytes,      // T_OBJECT   = 12,
+  T_ARRAY_aelem_bytes,       // T_ARRAY    = 13,
+  0,                         // T_VOID     = 14,
+  T_OBJECT_aelem_bytes,      // T_ADDRESS  = 15,
+  T_NARROWOOP_aelem_bytes,   // T_NARROWOOP= 16,
+  T_OBJECT_aelem_bytes,      // T_METADATA = 17,
+  T_NARROWKLASS_aelem_bytes, // T_NARROWKLASS= 18,
+  0                          // T_CONFLICT = 19,
 };
 
 #ifdef ASSERT

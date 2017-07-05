@@ -471,8 +471,8 @@ class CryptoPermission extends java.security.Permission {
  * @author Sharon Liu
  */
 final class CryptoPermissionCollection extends PermissionCollection
-implements Serializable {
-
+    implements Serializable
+{
     private static final long serialVersionUID = -511215555898802763L;
 
     private Vector<Permission> permissions;
@@ -493,8 +493,7 @@ implements Serializable {
      * @exception SecurityException - if this CryptoPermissionCollection
      * object has been marked <i>readOnly</i>.
      */
-    public void add(Permission permission)
-    {
+    public void add(Permission permission) {
         if (isReadOnly())
             throw new SecurityException("attempt to add a Permission " +
                                         "to a readonly PermissionCollection");
@@ -506,10 +505,10 @@ implements Serializable {
     }
 
     /**
-      * Check and see if this CryptoPermission object implies
-      * the given Permission object.
+     * Check and see if this CryptoPermission object implies
+     * the given Permission object.
      *
-     * @param p the Permission object to compare
+     * @param permission the Permission object to compare
      *
      * @return true if the given permission  is implied by this
      * CryptoPermissionCollection, false if not.
@@ -538,8 +537,7 @@ implements Serializable {
      * @return an enumeration of all the CryptoPermission objects.
      */
 
-    public Enumeration<Permission> elements()
-    {
+    public Enumeration<Permission> elements() {
         return permissions.elements();
     }
 }

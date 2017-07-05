@@ -218,66 +218,6 @@ public class Util {
         ((DirectBuffer)buf).cleaner().clean();
     }
 
-    private static class SelectorWrapper {
-        private Selector sel;
-        private SelectorWrapper (Selector sel) {
-            this.sel = sel;
-            Cleaner.create(this, new Closer(sel));
-        }
-        private static class Closer implements Runnable {
-            private Selector sel;
-            private Closer (Selector sel) {
-                this.sel = sel;
-            }
-            public void run () {
-                try {
-                    sel.close();
-                } catch (Throwable th) {
-                    throw new Error(th);
-                }
-            }
-        }
-        public Selector get() { return sel;}
-    }
-
-    // Per-thread cached selector
-    private static ThreadLocal<SoftReference<SelectorWrapper>> localSelector
-        = new ThreadLocal<SoftReference<SelectorWrapper>>();
-    // Hold a reference to the selWrapper object to prevent it from
-    // being cleaned when the temporary selector wrapped is on lease.
-    private static ThreadLocal<SelectorWrapper> localSelectorWrapper
-        = new ThreadLocal<SelectorWrapper>();
-
-    // When finished, invoker must ensure that selector is empty
-    // by cancelling any related keys and explicitly releasing
-    // the selector by invoking releaseTemporarySelector()
-    static Selector getTemporarySelector(SelectableChannel sc)
-        throws IOException
-    {
-        SoftReference<SelectorWrapper> ref = localSelector.get();
-        SelectorWrapper selWrapper = null;
-        Selector sel = null;
-        if (ref == null
-            || ((selWrapper = ref.get()) == null)
-            || ((sel = selWrapper.get()) == null)
-            || (sel.provider() != sc.provider())) {
-            sel = sc.provider().openSelector();
-            selWrapper = new SelectorWrapper(sel);
-            localSelector.set(new SoftReference<SelectorWrapper>(selWrapper));
-        }
-        localSelectorWrapper.set(selWrapper);
-        return sel;
-    }
-
-    static void releaseTemporarySelector(Selector sel)
-        throws IOException
-    {
-        // Selector should be empty
-        sel.selectNow();                // Flush cancelled keys
-        assert sel.keys().isEmpty() : "Temporary selector not empty";
-        localSelectorWrapper.set(null);
-    }
-
 
     // -- Random stuff --
 

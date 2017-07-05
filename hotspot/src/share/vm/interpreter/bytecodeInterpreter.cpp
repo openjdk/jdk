@@ -1626,7 +1626,7 @@ run:
           if (rhsObject != NULL) {
             /* Check assignability of rhsObject into arrObj */
             Klass* rhsKlassOop = rhsObject->klass(); // EBX (subclass)
-            Klass* elemKlassOop = objArrayKlass::cast(arrObj->klass())->element_klass(); // superklass EAX
+            Klass* elemKlassOop = ObjArrayKlass::cast(arrObj->klass())->element_klass(); // superklass EAX
             //
             // Check for compatibilty. This check must not GC!!
             // Seems way more expensive now that we must dispatch

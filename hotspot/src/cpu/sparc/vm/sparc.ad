@@ -557,9 +557,9 @@ int MachCallDynamicJavaNode::ret_addr_offset() {
     int entry_offset = InstanceKlass::vtable_start_offset() + vtable_index*vtableEntry::size();
     int v_off = entry_offset*wordSize + vtableEntry::method_offset_in_bytes();
     int klass_load_size;
-    if (UseCompressedOops && UseCompressedKlassPointers) {
+    if (UseCompressedKlassPointers) {
       assert(Universe::heap() != NULL, "java heap should be initialized");
-      if (Universe::narrow_oop_base() == NULL)
+      if (Universe::narrow_klass_base() == NULL)
         klass_load_size = 2*BytesPerInstWord; // see MacroAssembler::load_klass()
       else
         klass_load_size = 3*BytesPerInstWord;
@@ -1707,11 +1707,11 @@ uint reloc_java_to_interp() {
 void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   st->print_cr("\nUEP:");
 #ifdef    _LP64
-  if (UseCompressedOops) {
+  if (UseCompressedKlassPointers) {
     assert(Universe::heap() != NULL, "java heap should be initialized");
     st->print_cr("\tLDUW   [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check - compressed klass");
     st->print_cr("\tSLL    R_G5,3,R_G5");
-    if (Universe::narrow_oop_base() != NULL)
+    if (Universe::narrow_klass_base() != NULL)
       st->print_cr("\tADD    R_G5,R_G6_heap_base,R_G5");
   } else {
     st->print_cr("\tLDX    [R_O0 + oopDesc::klass_offset_in_bytes],R_G5\t! Inline cache check");
@@ -1939,6 +1939,12 @@ const bool Matcher::need_masked_shift_count = false;
 bool Matcher::narrow_oop_use_complex_address() {
   NOT_LP64(ShouldNotCallThis());
   assert(UseCompressedOops, "only for compressed oops code");
+  return false;
+}
+
+bool Matcher::narrow_klass_use_complex_address() {
+  NOT_LP64(ShouldNotCallThis());
+  assert(UseCompressedKlassPointers, "only for compressed klass code");
   return false;
 }
 
@@ -2602,9 +2608,9 @@ encode %{
       int off = __ offset();
       __ load_klass(O0, G3_scratch);
       int klass_load_size;
-      if (UseCompressedOops && UseCompressedKlassPointers) {
+      if (UseCompressedKlassPointers) {
         assert(Universe::heap() != NULL, "java heap should be initialized");
-        if (Universe::narrow_oop_base() == NULL)
+        if (Universe::narrow_klass_base() == NULL)
           klass_load_size = 2*BytesPerInstWord;
         else
           klass_load_size = 3*BytesPerInstWord;
@@ -3604,6 +3610,15 @@ operand immP_poll() %{
 operand immN()
 %{
   match(ConN);
+
+  op_cost(10);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+operand immNKlass()
+%{
+  match(ConNKlass);
 
   op_cost(10);
   format %{ %}
@@ -5870,8 +5885,8 @@ instruct loadI2L_immI(iRegL dst, memory mem, immI mask, iRegL tmp) %{
 %}
 
 // Load Unsigned Integer into a Long Register
-instruct loadUI2L(iRegL dst, memory mem) %{
-  match(Set dst (LoadUI2L mem));
+instruct loadUI2L(iRegL dst, memory mem, immL_32bits mask) %{
+  match(Set dst (AndL (ConvI2L (LoadI mem)) mask));
   ins_cost(MEMORY_REF_COST);
 
   size(4);
@@ -6155,6 +6170,17 @@ instruct loadConN(iRegN dst, immN src) %{
   ins_encode %{
     Register dst = $dst$$Register;
     __ set_narrow_oop((jobject)$src$$constant, dst);
+  %}
+  ins_pipe(ialu_hi_lo_reg);
+%}
+
+instruct loadConNKlass(iRegN dst, immNKlass src) %{
+  match(Set dst src);
+  ins_cost(DEFAULT_COST * 3/2);
+  format %{ "SET    $src,$dst\t! compressed klass ptr" %}
+  ins_encode %{
+    Register dst = $dst$$Register;
+    __ set_narrow_klass((Klass*)$src$$constant, dst);
   %}
   ins_pipe(ialu_hi_lo_reg);
 %}
@@ -6475,6 +6501,25 @@ instruct storeN(memory dst, iRegN src) %{
    ins_pipe(istore_mem_spORreg);
 %}
 
+instruct storeNKlass(memory dst, iRegN src) %{
+   match(Set dst (StoreNKlass dst src));
+   ins_cost(MEMORY_REF_COST);
+   size(4);
+
+   format %{ "STW    $src,$dst\t! compressed klass ptr" %}
+   ins_encode %{
+     Register base = as_Register($dst$$base);
+     Register index = as_Register($dst$$index);
+     Register src = $src$$Register;
+     if (index != G0) {
+       __ stw(src, base, index);
+     } else {
+       __ stw(src, base, $dst$$disp);
+     }
+   %}
+   ins_pipe(istore_mem_spORreg);
+%}
+
 instruct storeN0(memory dst, immN0 src) %{
    match(Set dst (StoreN dst src));
    ins_cost(MEMORY_REF_COST);
@@ -6582,6 +6627,23 @@ instruct decodeHeapOop_not_null(iRegP dst, iRegN src) %{
   ins_pipe(ialu_reg);
 %}
 
+instruct encodeKlass_not_null(iRegN dst, iRegP src) %{
+  match(Set dst (EncodePKlass src));
+  format %{ "encode_klass_not_null $src, $dst" %}
+  ins_encode %{
+    __ encode_klass_not_null($src$$Register, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct decodeKlass_not_null(iRegP dst, iRegN src) %{
+  match(Set dst (DecodeNKlass src));
+  format %{ "decode_klass_not_null $src, $dst" %}
+  ins_encode %{
+    __ decode_klass_not_null($src$$Register, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
 
 //----------MemBar Instructions-----------------------------------------------
 // Memory barrier flavors

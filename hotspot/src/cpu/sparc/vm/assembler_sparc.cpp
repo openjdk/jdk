@@ -1641,6 +1641,21 @@ void  MacroAssembler::set_narrow_oop(jobject obj, Register d) {
 
 }
 
+void  MacroAssembler::set_narrow_klass(Klass* k, Register d) {
+  assert(oop_recorder() != NULL, "this assembler needs an OopRecorder");
+  int klass_index = oop_recorder()->find_index(k);
+  RelocationHolder rspec = metadata_Relocation::spec(klass_index);
+  narrowOop encoded_k = oopDesc::encode_klass(k);
+
+  assert_not_delayed();
+  // Relocation with special format (see relocInfo_sparc.hpp).
+  relocate(rspec, 1);
+  // Assembler::sethi(encoded_k, d);
+  emit_long( op(branch_op) | rd(d) | op2(sethi_op2) | hi22(encoded_k) );
+  // Don't add relocation for 'add'. Do patching during 'sethi' processing.
+  add(d, low10(encoded_k), d);
+
+}
 
 void MacroAssembler::align(int modulus) {
   while (offset() % modulus != 0) nop();
@@ -4660,7 +4675,7 @@ void MacroAssembler::load_klass(Register src_oop, Register klass) {
   // if this changes, change that.
   if (UseCompressedKlassPointers) {
     lduw(src_oop, oopDesc::klass_offset_in_bytes(), klass);
-    decode_heap_oop_not_null(klass);
+    decode_klass_not_null(klass);
   } else {
     ld_ptr(src_oop, oopDesc::klass_offset_in_bytes(), klass);
   }
@@ -4669,7 +4684,7 @@ void MacroAssembler::load_klass(Register src_oop, Register klass) {
 void MacroAssembler::store_klass(Register klass, Register dst_oop) {
   if (UseCompressedKlassPointers) {
     assert(dst_oop != klass, "not enough registers");
-    encode_heap_oop_not_null(klass);
+    encode_klass_not_null(klass);
     st(klass, dst_oop, oopDesc::klass_offset_in_bytes());
   } else {
     st_ptr(klass, dst_oop, oopDesc::klass_offset_in_bytes());
@@ -4829,17 +4844,58 @@ void  MacroAssembler::decode_heap_oop_not_null(Register src, Register dst) {
   // pd_code_size_limit.
   // Also do not verify_oop as this is called by verify_oop.
   assert (UseCompressedOops, "must be compressed");
-  assert (Universe::heap() != NULL, "java heap should be initialized");
   assert (LogMinObjAlignmentInBytes == Universe::narrow_oop_shift(), "decode alg wrong");
   sllx(src, LogMinObjAlignmentInBytes, dst);
   if (Universe::narrow_oop_base() != NULL)
     add(dst, G6_heapbase, dst);
 }
 
+void MacroAssembler::encode_klass_not_null(Register r) {
+  assert(Metaspace::is_initialized(), "metaspace should be initialized");
+  assert (UseCompressedKlassPointers, "must be compressed");
+  assert (LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
+  if (Universe::narrow_klass_base() != NULL)
+    sub(r, G6_heapbase, r);
+  srlx(r, LogKlassAlignmentInBytes, r);
+}
+
+void MacroAssembler::encode_klass_not_null(Register src, Register dst) {
+  assert(Metaspace::is_initialized(), "metaspace should be initialized");
+  assert (UseCompressedKlassPointers, "must be compressed");
+  assert (LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
+  if (Universe::narrow_klass_base() == NULL) {
+    srlx(src, LogKlassAlignmentInBytes, dst);
+  } else {
+    sub(src, G6_heapbase, dst);
+    srlx(dst, LogKlassAlignmentInBytes, dst);
+  }
+}
+
+void  MacroAssembler::decode_klass_not_null(Register r) {
+  assert(Metaspace::is_initialized(), "metaspace should be initialized");
+  // Do not add assert code to this unless you change vtableStubs_sparc.cpp
+  // pd_code_size_limit.
+  assert (UseCompressedKlassPointers, "must be compressed");
+  assert (LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
+  sllx(r, LogKlassAlignmentInBytes, r);
+  if (Universe::narrow_klass_base() != NULL)
+    add(r, G6_heapbase, r);
+}
+
+void  MacroAssembler::decode_klass_not_null(Register src, Register dst) {
+  assert(Metaspace::is_initialized(), "metaspace should be initialized");
+  // Do not add assert code to this unless you change vtableStubs_sparc.cpp
+  // pd_code_size_limit.
+  assert (UseCompressedKlassPointers, "must be compressed");
+  assert (LogKlassAlignmentInBytes == Universe::narrow_klass_shift(), "decode alg wrong");
+  sllx(src, LogKlassAlignmentInBytes, dst);
+  if (Universe::narrow_klass_base() != NULL)
+    add(dst, G6_heapbase, dst);
+}
+
 void MacroAssembler::reinit_heapbase() {
-  if (UseCompressedOops) {
-    // call indirectly to solve generation ordering problem
-    AddressLiteral base(Universe::narrow_oop_base_addr());
+  if (UseCompressedOops || UseCompressedKlassPointers) {
+    AddressLiteral base(Universe::narrow_ptrs_base_addr());
     load_ptr_contents(base, G6_heapbase);
   }
 }

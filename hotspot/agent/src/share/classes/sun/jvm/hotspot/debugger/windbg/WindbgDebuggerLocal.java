@@ -321,6 +321,11 @@ public class WindbgDebuggerLocal extends DebuggerBase implements WindbgDebugger 
     return (WindbgAddress) newAddress(readCompOopAddressValue(address));
   }
 
+  public WindbgAddress readCompKlassAddress(long address)
+    throws UnmappedAddressException, UnalignedAddressException {
+    return (WindbgAddress) newAddress(readCompKlassAddressValue(address));
+  }
+
   /** From the WindbgDebugger interface */
   public WindbgOopHandle readOopHandle(long address)
     throws UnmappedAddressException, UnalignedAddressException, NotInHeapException {

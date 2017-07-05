@@ -441,7 +441,7 @@ public:
     static jint GetJavaModifiers();
     static jint GetButton(int mouseButton);
     static UINT GetButtonMK(int mouseButton);
-    static UINT WindowsKeyToJavaKey(UINT windowsKey, UINT modifiers);
+    static UINT WindowsKeyToJavaKey(UINT windowsKey, UINT modifiers, UINT character, BOOL isDeadKey);
     static void JavaKeyToWindowsKey(UINT javaKey, UINT *windowsKey, UINT *modifiers, UINT originalWindowsKey);
     static void UpdateDynPrimaryKeymap(UINT wkey, UINT jkeyLegacy, jint keyLocation, UINT modifiers);
 
@@ -453,7 +453,7 @@ public:
 
     enum TransOps {NONE, LOAD, SAVE};
 
-    UINT WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops);
+    UINT WindowsKeyToJavaChar(UINT wkey, UINT modifiers, TransOps ops, BOOL &isDeadKey);
 
     /* routines used for input method support */
     void SetInputMethod(jobject im, BOOL useNativeCompWindow);

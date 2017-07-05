@@ -117,6 +117,7 @@ void VM_Version::initialize() {
     // 32-bit oops don't make sense for the 64-bit VM on sparc
     // since the 32-bit VM has the same registers and smaller objects.
     Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
+    Universe::set_narrow_klass_shift(LogKlassAlignmentInBytes);
 #endif // _LP64
 #ifdef COMPILER2
     // Indirect branch is the same cost as direct

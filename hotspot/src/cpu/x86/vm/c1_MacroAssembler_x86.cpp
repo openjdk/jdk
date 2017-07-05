@@ -159,7 +159,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 #ifdef _LP64
   if (UseCompressedKlassPointers) { // Take care not to kill klass
     movptr(t1, klass);
-    encode_heap_oop_not_null(t1);
+    encode_klass_not_null(t1);
     movl(Address(obj, oopDesc::klass_offset_in_bytes()), t1);
   } else
 #endif

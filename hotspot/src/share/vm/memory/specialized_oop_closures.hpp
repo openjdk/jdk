@@ -200,7 +200,7 @@ public:
   enum Kind {
     ik,             // InstanceKlass
     irk,            // InstanceRefKlass
-    oa,             // objArrayKlass
+    oa,             // ObjArrayKlass
     NUM_Kinds
   };
 

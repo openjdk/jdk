@@ -1241,10 +1241,9 @@ public abstract class URLConnection {
 
     /**
      * Gets the Content Handler appropriate for this connection.
-     * @param connection the connection to use.
      */
     synchronized ContentHandler getContentHandler()
-    throws UnknownServiceException
+        throws UnknownServiceException
     {
         String contentType = stripOffParameters(getContentType());
         ContentHandler handler = null;

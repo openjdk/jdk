@@ -44,7 +44,7 @@ void VMError::show_message_box(char *buf, int buflen) {
     jio_snprintf(p, buflen - len,
                "\n\n"
                "Do you want to debug the problem?\n\n"
-               "To debug, run 'gdb /proc/%d/exe %d'; then switch to thread " INTX_FORMAT " (" INTPTR_FORMAT ")\n"
+               "To debug, run 'gdb /proc/%d/exe %d'; then switch to thread " UINTX_FORMAT " (" INTPTR_FORMAT ")\n"
                "Enter 'yes' to launch gdb automatically (PATH must include gdb)\n"
                "Otherwise, press RETURN to abort...",
                os::current_process_id(), os::current_process_id(),
