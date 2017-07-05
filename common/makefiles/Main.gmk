@@ -75,7 +75,14 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_BITS),solaris-64)
   all: overlay-images
 endif
 
-start-make:
+# Setup a rule for SPEC file that fails if executed. This check makes sure the configuration
+# is up to date after changes to configure
+$(SPEC): $(wildcard $(SRC_ROOT)/common/autoconf/*)
+	@$(ECHO) ERROR: $(SPEC) is not up to date
+	@$(ECHO) Please rerun configure!
+	@if test "x$(IGNORE_OLD_CONFIG)" != "xtrue"; then exit 1; fi
+
+start-make: $(SPEC)
 	@$(call AtMakeStart)
 
 langtools: langtools-only
