@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1999 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,7 +38,6 @@ class RuntimeExceptionParameter implements Serializable {
     {
         throw new RuntimeException("wrote a parameter whos writeObject " +
                                    "method always throws a RuntimeException"
-	);
+        );
     }
 }
-

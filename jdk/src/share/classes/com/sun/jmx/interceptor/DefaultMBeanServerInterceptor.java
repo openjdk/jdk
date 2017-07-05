@@ -34,8 +34,6 @@ import java.util.Set;
 import java.util.HashSet;
 import java.util.WeakHashMap;
 import java.lang.ref.WeakReference;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.security.AccessControlContext;
 import java.security.Permission;
 import java.security.ProtectionDomain;
@@ -51,7 +49,6 @@ import javax.management.InstanceAlreadyExistsException;
 import javax.management.InstanceNotFoundException;
 import javax.management.IntrospectionException;
 import javax.management.InvalidAttributeValueException;
-import javax.management.JMException;
 import javax.management.JMRuntimeException;
 import javax.management.ListenerNotFoundException;
 import javax.management.MalformedObjectNameException;
@@ -84,11 +81,10 @@ import static com.sun.jmx.defaults.JmxProperties.MBEANSERVER_LOGGER;
 import com.sun.jmx.mbeanserver.DynamicMBean2;
 import com.sun.jmx.mbeanserver.ModifiableClassLoaderRepository;
 import com.sun.jmx.mbeanserver.MBeanInstantiator;
-import com.sun.jmx.mbeanserver.MXBeanSupport;
 import com.sun.jmx.mbeanserver.Repository;
 import com.sun.jmx.mbeanserver.NamedObject;
-import com.sun.jmx.defaults.ServiceName;
 import com.sun.jmx.mbeanserver.Introspector;
+import com.sun.jmx.mbeanserver.Util;
 import com.sun.jmx.remote.util.EnvHelp;
 
 /**
@@ -623,18 +619,9 @@ public class DefaultMBeanServerInterceptor implements MBeanServerInterceptor {
             List<String> result = new ArrayList<String>(domains.length);
             for (int i = 0; i < domains.length; i++) {
                 try {
-                    ObjectName domain = new ObjectName(domains[i] + ":x=x");
+                    ObjectName domain = Util.newObjectName(domains[i] + ":x=x");
                     checkMBeanPermission((String) null, null, domain, "getDomains");
                     result.add(domains[i]);
-                } catch (MalformedObjectNameException e) {
-                    // Should never occur... But let's log it just in case.
-                    if (MBEANSERVER_LOGGER.isLoggable(Level.SEVERE)) {
-                        MBEANSERVER_LOGGER.logp(Level.SEVERE,
-                                DefaultMBeanServerInterceptor.class.getName(),
-                                "getDomains",
-                                "Failed to check permission for domain = " +
-                                domains[i], e);
-                    }
                 } catch (SecurityException e) {
                     // OK: Do not add this domain to the list
                 }

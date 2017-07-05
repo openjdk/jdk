@@ -997,7 +997,7 @@ void DumperSupport::dump_prim_array(DumpWriter* writer, typeArrayOop array) {
   }
 
   // If the byte ordering is big endian then we can copy most types directly
-  int length_in_bytes = array->length() * type2aelembytes[type];
+  int length_in_bytes = array->length() * type2aelembytes(type);
   assert(length_in_bytes > 0, "nothing to copy");
 
   switch (type) {

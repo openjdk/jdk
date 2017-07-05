@@ -1,4 +1,4 @@
-/* 
+/*
  * Copyright 1998 Sun Microsystems, Inc.  All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,49 +39,49 @@ public class EchoImpl
      * Initialization constructor.
      */
     public EchoImpl(String protocol)
-	throws ActivationException, RemoteException
+        throws ActivationException, RemoteException
     {
-	super(null, makeMarshalledObject(protocol), false, 0,
-	      new MultiSocketFactory.ClientFactory(protocol, pattern),
-	      new MultiSocketFactory.ServerFactory(protocol, pattern));
+        super(null, makeMarshalledObject(protocol), false, 0,
+              new MultiSocketFactory.ClientFactory(protocol, pattern),
+              new MultiSocketFactory.ServerFactory(protocol, pattern));
     }
 
     /**
      * Activation constructor.
      */
     public EchoImpl(ActivationID id, MarshalledObject obj)
-	throws RemoteException
+        throws RemoteException
     {
-	super(id, 0,
-	      new MultiSocketFactory.ClientFactory(getProtocol(obj), pattern),
-	      new MultiSocketFactory.ServerFactory(getProtocol(obj), pattern));
+        super(id, 0,
+              new MultiSocketFactory.ClientFactory(getProtocol(obj), pattern),
+              new MultiSocketFactory.ServerFactory(getProtocol(obj), pattern));
     }
 
     private static MarshalledObject makeMarshalledObject(String protocol) {
-	MarshalledObject obj = null;
-	try {
-	    obj = new MarshalledObject(protocol);
-	} catch (Exception willNotHappen) {
-	}
+        MarshalledObject obj = null;
+        try {
+            obj = new MarshalledObject(protocol);
+        } catch (Exception willNotHappen) {
+        }
 
-	return obj;
+        return obj;
     }
 
     private static String getProtocol(MarshalledObject obj) {
-	String protocol = "";
-	try {
-	    protocol = (String) obj.get();
-	} catch (Exception willNotHappen) {
-	}
+        String protocol = "";
+        try {
+            protocol = (String) obj.get();
+        } catch (Exception willNotHappen) {
+        }
 
-	return protocol;
+        return protocol;
     }
-	      
+
     public byte[] echoNot(byte[] data) {
-	byte[] result = new byte[data.length];
-	for (int i = 0; i < data.length; i++)
-	    result[i] = (byte) ~data[i];
-	return result;
+        byte[] result = new byte[data.length];
+        for (int i = 0; i < data.length; i++)
+            result[i] = (byte) ~data[i];
+        return result;
     }
 
     /**
@@ -89,7 +89,7 @@ public class EchoImpl
      */
     public void shutdown() throws Exception
     {
-	(new Thread(this,"Echo.shutdown")).start();
+        (new Thread(this,"Echo.shutdown")).start();
     }
 
     /**
@@ -98,43 +98,43 @@ public class EchoImpl
      * object may still have pending/executing calls), then
      * unexport the object forcibly.
      */
-    public void run() 
+    public void run()
     {
-	ActivationLibrary.deactivate(this, getID());
+        ActivationLibrary.deactivate(this, getID());
     }
 
     public static void main(String[] args) {
-	/*
-	 * The following line is required with the JDK 1.2 VM so that the
-	 * VM can exit gracefully when this test completes.  Otherwise, the
-	 * conservative garbage collector will find a handle to the server
-	 * object on the native stack and not clear the weak reference to
-	 * it in the RMI runtime's object table.
-	 */
-	Object dummy = new Object();
-	
-	System.setSecurityManager(new RMISecurityManager());
-	
-	try {
-	    String protocol = "";
-	    if (args.length >= 1)
-		protocol = args[0];
+        /*
+         * The following line is required with the JDK 1.2 VM so that the
+         * VM can exit gracefully when this test completes.  Otherwise, the
+         * conservative garbage collector will find a handle to the server
+         * object on the native stack and not clear the weak reference to
+         * it in the RMI runtime's object table.
+         */
+        Object dummy = new Object();
 
-	    System.out.println("EchoServer: creating remote object");
-	    ActivationGroupDesc groupDesc =
-		new ActivationGroupDesc(null, null);
-	    ActivationSystem system = ActivationGroup.getSystem();
-	    ActivationGroupID groupID = system.registerGroup(groupDesc);
-	    ActivationGroup.createGroup(groupID, groupDesc, 0);
-	    
-	    EchoImpl impl = new EchoImpl(protocol);
-	    System.out.println("EchoServer: binding in registry");
-	    Naming.rebind("//:" + UseCustomSocketFactory.REGISTRY_PORT +
-			  "/EchoServer", impl);
-	    System.out.println("EchoServer ready.");
-	} catch (Exception e) {
-	    System.err.println("EXCEPTION OCCURRED:");
-	    e.printStackTrace();
-	}
+        System.setSecurityManager(new RMISecurityManager());
+
+        try {
+            String protocol = "";
+            if (args.length >= 1)
+                protocol = args[0];
+
+            System.out.println("EchoServer: creating remote object");
+            ActivationGroupDesc groupDesc =
+                new ActivationGroupDesc(null, null);
+            ActivationSystem system = ActivationGroup.getSystem();
+            ActivationGroupID groupID = system.registerGroup(groupDesc);
+            ActivationGroup.createGroup(groupID, groupDesc, 0);
+
+            EchoImpl impl = new EchoImpl(protocol);
+            System.out.println("EchoServer: binding in registry");
+            Naming.rebind("//:" + UseCustomSocketFactory.REGISTRY_PORT +
+                          "/EchoServer", impl);
+            System.out.println("EchoServer ready.");
+        } catch (Exception e) {
+            System.err.println("EXCEPTION OCCURRED:");
+            e.printStackTrace();
+        }
     }
 }

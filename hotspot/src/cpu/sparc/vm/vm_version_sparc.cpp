@@ -28,6 +28,12 @@
 int VM_Version::_features = VM_Version::unknown_m;
 const char* VM_Version::_features_str = "";
 
+bool VM_Version::is_niagara1_plus() {
+  // This is a placeholder until the real test is determined.
+  return is_niagara1() &&
+    (os::processor_count() > maximum_niagara1_processor_count());
+}
+
 void VM_Version::initialize() {
   _features = determine_features();
   PrefetchCopyIntervalInBytes = prefetch_copy_interval_in_bytes();
@@ -159,4 +165,14 @@ void VM_Version::allow_all() {
 
 void VM_Version::revert() {
   _features = saved_features;
+}
+
+unsigned int VM_Version::calc_parallel_worker_threads() {
+  unsigned int result;
+  if (is_niagara1_plus()) {
+    result = nof_parallel_worker_threads(5, 16, 8);
+  } else {
+    result = nof_parallel_worker_threads(5, 8, 8);
+  }
+  return result;
 }

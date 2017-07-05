@@ -289,13 +289,15 @@ public:
         _has_sfpt:1,            // True if has non-call safepoint
         _rce_candidate:1;       // True if candidate for range check elimination
 
-  Node_List* _required_safept;      // A inner loop cannot delete these safepts;
+  Node_List* _required_safept;  // A inner loop cannot delete these safepts;
+  bool  _allow_optimizations;   // Allow loop optimizations
 
   IdealLoopTree( PhaseIdealLoop* phase, Node *head, Node *tail )
     : _parent(0), _next(0), _child(0),
       _head(head), _tail(tail),
       _phase(phase),
       _required_safept(NULL),
+      _allow_optimizations(true),
       _nest(0), _irreducible(0), _has_call(0), _has_sfpt(0), _rce_candidate(0)
   { }
 
@@ -850,7 +852,6 @@ private:
   const TypeInt* filtered_type( Node *n ) { return filtered_type(n, NULL); }
  // Helpers for filtered type
   const TypeInt* filtered_type_from_dominators( Node* val, Node *val_ctrl);
-  const TypeInt* filtered_type_at_if( Node* val, Node *if_proj);
 
   // Helper functions
   void register_new_node( Node *n, Node *blk );

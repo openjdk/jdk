@@ -40,6 +40,7 @@ SUBDIRS =                   \
   dir_diff                  \
   dtdbuilder                \
   fontchecker               \
+  freetypecheck             \
   generate_break_iterator   \
   GenerateCharacter         \
   generatecurrencydata      \
@@ -58,4 +59,5 @@ all build clean clobber::
 clean clobber::
 	$(RM) -r $(BUILDTOOLCLASSDIR)
 	$(RM) -r $(BUILDTOOLJARDIR)
+	$(RM) -r $(BUILDTOOLBINDIR)
 

@@ -457,7 +457,8 @@ private:
   bool may_be_copy_of_callee( Node *def ) const;
 
   // If nreg already contains the same constant as val then eliminate it
-  bool eliminate_copy_of_constant(Node* val, Block *current_block, Node_List& value, Node_List &regnd,
+  bool eliminate_copy_of_constant(Node* val, Node* n,
+                                  Block *current_block, Node_List& value, Node_List &regnd,
                                   OptoReg::Name nreg, OptoReg::Name nreg2);
   // Extend the node to LRG mapping
   void add_reference( const Node *node, const Node *old_node);

@@ -43,4 +43,6 @@ protected:
 public:
   // What kind of ciObject is this?
   bool is_obj_array() { return true; }
+
+  ciObject* obj_at(int index);
 };

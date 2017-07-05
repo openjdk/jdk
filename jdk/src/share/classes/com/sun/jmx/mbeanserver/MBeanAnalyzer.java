@@ -107,10 +107,7 @@ class MBeanAnalyzer<M> {
     private MBeanAnalyzer(Class<?> mbeanInterface,
             MBeanIntrospector<M> introspector)
             throws NotCompliantMBeanException {
-        if (!mbeanInterface.isInterface()) {
-            throw new NotCompliantMBeanException("Not an interface: " +
-                    mbeanInterface.getName());
-        }
+        introspector.checkCompliance(mbeanInterface);
 
         try {
             initMaps(mbeanInterface, introspector);
@@ -121,11 +118,10 @@ class MBeanAnalyzer<M> {
 
     // Introspect the mbeanInterface and initialize this object's maps.
     //
-    private void initMaps(Class<?> mbeanInterface,
+    private void initMaps(Class<?> mbeanType,
             MBeanIntrospector<M> introspector) throws Exception {
-        final Method[] methodArray = mbeanInterface.getMethods();
-
-        final List<Method> methods = eliminateCovariantMethods(methodArray);
+        final List<Method> methods1 = introspector.getMethods(mbeanType);
+        final List<Method> methods = eliminateCovariantMethods(methods1);
 
         /* Run through the methods to detect inconsistencies and to enable
            us to give getter and setter together to visitAttribute. */
@@ -234,13 +230,13 @@ class MBeanAnalyzer<M> {
        but existing code may depend on it and users may be used to seeing
        operations or attributes appear in a particular order.  */
     static List<Method>
-            eliminateCovariantMethods(Method[] methodArray) {
+            eliminateCovariantMethods(List<Method> startMethods) {
         // We are assuming that you never have very many methods with the
         // same name, so it is OK to use algorithms that are quadratic
         // in the number of methods with the same name.
 
-        final int len = methodArray.length;
-        final Method[] sorted = methodArray.clone();
+        final int len = startMethods.size();
+        final Method[] sorted = startMethods.toArray(new Method[len]);
         Arrays.sort(sorted,MethodOrder.instance);
         final Set<Method> overridden = newSet();
         for (int i=1;i<len;i++) {
@@ -259,7 +255,7 @@ class MBeanAnalyzer<M> {
             }
         }
 
-        final List<Method> methods = newList(Arrays.asList(methodArray));
+        final List<Method> methods = newList(startMethods);
         methods.removeAll(overridden);
         return methods;
     }

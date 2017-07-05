@@ -524,6 +524,8 @@ class methodOopDesc : public oopDesc {
   void set_is_old()                                 { _access_flags.set_is_old(); }
   bool is_obsolete() const                          { return access_flags().is_obsolete(); }
   void set_is_obsolete()                            { _access_flags.set_is_obsolete(); }
+  // see the definition in methodOop.cpp for the gory details
+  bool should_not_be_cached() const;
 
   // JVMTI Native method prefixing support:
   bool is_prefixed_native() const                   { return access_flags().is_prefixed_native(); }

@@ -1548,10 +1548,11 @@ oop Reflection::invoke_method(oop method_mirror, Handle receiver, objArrayHandle
   }
 
   instanceKlassHandle klass(THREAD, java_lang_Class::as_klassOop(mirror));
-  if (!klass->methods()->is_within_bounds(slot)) {
+  methodOop m = klass->method_with_idnum(slot);
+  if (m == NULL) {
     THROW_MSG_0(vmSymbols::java_lang_InternalError(), "invoke");
   }
-  methodHandle method(THREAD, methodOop(klass->methods()->obj_at(slot)));
+  methodHandle method(THREAD, m);
 
   return invoke(klass, method, receiver, override, ptypes, rtype, args, true, THREAD);
 }
@@ -1564,10 +1565,11 @@ oop Reflection::invoke_constructor(oop constructor_mirror, objArrayHandle args, 
   objArrayHandle ptypes(THREAD, objArrayOop(java_lang_reflect_Constructor::parameter_types(constructor_mirror)));
 
   instanceKlassHandle klass(THREAD, java_lang_Class::as_klassOop(mirror));
-  if (!klass->methods()->is_within_bounds(slot)) {
+  methodOop m = klass->method_with_idnum(slot);
+  if (m == NULL) {
     THROW_MSG_0(vmSymbols::java_lang_InternalError(), "invoke");
   }
-  methodHandle method(THREAD, methodOop(klass->methods()->obj_at(slot)));
+  methodHandle method(THREAD, m);
   assert(method->name() == vmSymbols::object_initializer_name(), "invalid constructor");
 
   // Make sure klass gets initialize

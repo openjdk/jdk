@@ -614,6 +614,13 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
   const TypeOopPtr* p0 = r0->isa_oopptr();
   const TypeOopPtr* p1 = r1->isa_oopptr();
   if (p0 && p1) {
+    Node* in1 = in(1)->uncast();
+    Node* in2 = in(2)->uncast();
+    AllocateNode* alloc1 = AllocateNode::Ideal_allocation(in1, NULL);
+    AllocateNode* alloc2 = AllocateNode::Ideal_allocation(in2, NULL);
+    if (MemNode::detect_ptr_independence(in1, alloc1, in2, alloc2, NULL)) {
+      return TypeInt::CC_GT;  // different pointers
+    }
     ciKlass* klass0 = p0->klass();
     bool    xklass0 = p0->klass_is_exact();
     ciKlass* klass1 = p1->klass();

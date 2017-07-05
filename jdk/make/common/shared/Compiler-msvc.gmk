@@ -47,13 +47,13 @@ ifeq ($(PLATFORM), windows)
   # unset any GNU Make settings of MFLAGS and MAKEFLAGS which may mess up nmake
   NMAKE          = MFLAGS= MAKEFLAGS= $(COMPILER_PATH)nmake -nologo
 
+  # Compiler version and type (Always get word after "Version")
+  CC_VER  := $(shell $(CC) 2>&1 | $(HEAD) -n 1 | $(SED) 's/.*\(Version.*\)/\1/' | $(NAWK) '{print $$2}')
+  
   # SDK-64 and MSVC6 put REBASE.EXE in a different places - go figure...
   ifeq ($(ARCH_DATA_MODEL), 32)
-    CC_VER  := $(shell $(CC) 2>&1 | $(HEAD) -n 1 | $(NAWK) '{print $$8}')
     LINK_VER := $(shell $(LINK) | $(HEAD) -n 1 | $(NAWK) '{print $$6}')
-    CC_TYPE := $(shell $(CC) 2>&1 | $(HEAD) -n 1 | $(NAWK) '{print $$5}')
     CC_MAJORVER :=$(call MajorVersion,$(CC_VER))
-    REQUIRED_CCTYPE = Optimizing
     REQUIRED_CC_VER = 13.10.3077
     REQUIRED_LINK_VER = 7.10.3077
     ifeq ($(CC_MAJORVER), 12)
@@ -85,9 +85,7 @@ ifeq ($(PLATFORM), windows)
       endif
     endif
   else
-    CC_VER := $(shell $(CC) 2>&1 | $(HEAD) -n 1 | $(NAWK) '{print $$7}')
     LINK_VER := $(shell $(LINK) | $(HEAD) -n 1 | $(NAWK) '{print $$6}')
-    CC_TYPE := $(shell $(CC) 2>&1 | $(HEAD) -n 1 | $(NAWK) '{print $$4}')
     CC_MAJORVER :=$(call MajorVersion,$(CC_VER))
     CC_MINORVER :=$(call MinorVersion,$(CC_VER))
     CC_MICROVER :=$(call MicroVersion,$(CC_VER))

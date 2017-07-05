@@ -22,55 +22,58 @@
 # CA 95054 USA or visit www.sun.com if you need additional information or
 # have any questions.
 
-# Builds test program for freetype sanity check.
-#
-# Makefile should be called with following input parameters
-#   FT_TEST    - full name of test program
-#   FT_HEADERS - path to freetype headers
-#   FT_LIB     - location of directory with library
-#   XARCH      - xarch option if required
+# Builds and runs test program for freetype sanity check.
 
 BUILDDIR = ../..
 include $(BUILDDIR)/common/Defs.gmk
 
-#test program is expected in the TEMPDIR
-FT_TEST_PATH = $(TEMPDIR)/$(FT_TEST)
+# Default name
+FT_TEST = $(BUILDTOOLBINDIR)/freetype_versioncheck$(EXE_SUFFIX)
 
-all: $(FT_TEST_PATH)
+# Used on openjdk only
+ifeq ($(OPENJDK),true)
 
 # Start with CFLAGS (which gets us the required -xarch setting on solaris)
 ifeq ($(PLATFORM), windows)
-  FT_OPTIONS  =
+  FT_OPTIONS  = /nologo $(CC_OBJECT_OUTPUT_FLAG)$(TEMPDIR)
+  FREETYPE_DLL = $(FREETYPE_LIB_PATH)/freetype.dll
+  FT_LD_OPTIONS  = $(FREETYPE_LIB_PATH)/freetype.lib
 else
   FT_OPTIONS  = $(CFLAGS)
-endif
-
-FT_OPTIONS += -I$(FT_HEADERS) -I$(FT_HEADERS)/freetype2
-FT_OPTIONS += $(XARCH)
-
-#add runtime library search path
-ifeq ($(PLATFORM), windows)
-  FREETYPE_LIB=$(FT_LIB)/freetype.lib
-  FREETYPE_DLL=$(FT_LIB)/freetype.dll
-  DFLAG=/D
-else
-  FT_OPTIONS += -L$(FT_LIB)
-  DFLAG = -D
-
-  #add runtime lib search path to ensure test will be runnable
+  FT_LD_OPTIONS = -L$(FREETYPE_LIB_PATH)
+  # Add runtime lib search path to ensure test will be runnable
   ifeq ($(PLATFORM), solaris)
-    FT_OPTIONS += -R $(FT_LIB) -lfreetype
+    FT_LD_OPTIONS += -R $(FREETYPE_LIB_PATH) -lfreetype
   else #linux
-      FT_OPTIONS += -Wl,-rpath -Wl,$(FT_LIB) -lfreetype
+      FT_LD_OPTIONS += -Wl,-rpath -Wl,$(FREETYPE_LIB_PATH) -lfreetype
   endif
 endif
+FT_OPTIONS += -I$(FREETYPE_HEADERS_PATH)
+FT_OPTIONS += -I$(FREETYPE_HEADERS_PATH)/freetype2
+FT_OPTIONS += -DREQUIRED_FREETYPE_VERSION=$(REQUIRED_FREETYPE_VERSION)
+FT_LD_OPTIONS += $(LFLAGS_$(COMPILER_VERSION))
 
-FT_OPTIONS += $(DFLAG)REQUIRED_FREETYPE_VERSION=$(REQUIRED_FREETYPE_VERSION)
+# Create test program
+all: $(FT_TEST)
+	@$(FT_TEST)
 
-# On windows we need to copy dll to test dir
-#  ti ensure it will be found in runtime
-$(FT_TEST_PATH): freetypecheck.c
-	@$(CC) $(FT_OPTIONS) $(CC_PROGRAM_OUTPUT_FLAG)$@ $< $(FREETYPE_LIB) $(LFLAGS_$(COMPILER_VERSION))
+# On windows we need to copy dll to test dir to ensure it will be found
+#   at runtime
+$(FT_TEST): freetypecheck.c
+	@$(prep-target)
+	@$(CC) $(FT_OPTIONS) $(CC_PROGRAM_OUTPUT_FLAG)$@ $< $(FT_LD_OPTIONS)
 ifeq ($(PLATFORM), windows)
 	@$(CP) $(FREETYPE_DLL) `dirname $@`
 endif
+
+else
+
+# Inform user this is openjdk only
+all:
+	@$(ECHO) "The freetype files are only used with OpenJDK"
+
+endif
+
+clean::
+	$(RM) $(FT_TEST)
+
